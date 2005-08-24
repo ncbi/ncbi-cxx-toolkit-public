@@ -62,6 +62,14 @@ public:
     /// HTML encodes a string. E.g. &lt;.
     static string HTMLEncode(const string& str);
 
+    /// Encode a string for JavaScript.
+    ///
+    /// Call HTMLEncode and also encode all non-printable characters.
+    /// The non-printable characters will be represented as "\r", "\n",
+    /// "\t", "\\", "\'" or "\xDD" where DD is the character's code in
+    /// hexadecimal.
+    static string JavaScriptEncode(const string& str);
+
     /// Strip all HTML code from a string.
     static string StripHTML(const string& str);
 
@@ -173,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/08/24 12:15:54  ivanov
+ * + CHTMLHelper::JavaScriptEncode()
+ *
  * Revision 1.14  2005/08/22 12:13:02  ivanov
  * Dropped htmlhelper.inl
  *

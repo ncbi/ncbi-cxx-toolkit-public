@@ -79,19 +79,59 @@ string CHTMLHelper::HTMLEncode(const string& input)
             output.append("&gt;");
             break;
         }
-
         // Skip it
         last = ptr + 1;
-
         // Find next symbol to encode
         ptr = input.find_first_of("\"&<>", last);
     }
-
     // Append last part of input
     if ( last != input.size() ) {
         output.append(input, last, input.size() - last);
     }
     return output;
+}
+
+
+string CHTMLHelper::JavaScriptEncode(const string& str)
+{
+    static const char s_Hex[] = "0123456789ABCDEF";
+    ITERATE ( string, it, str ) {
+        if ( !isprint((unsigned char)(*it)) || *it == '\'' || *it == '\\' ) {
+            // Bad character - convert via CNcbiOstrstream
+            CNcbiOstrstream out;
+            // Write first good characters in one chunk
+            out.write(str.data(), it-str.begin());
+            // Convert all other characters one by one
+            do {
+                if (isprint((unsigned char)(*it))) {
+                    // Escape ' and \ anyway
+                    if ( *it == '\'' || *it == '\\' )
+                        out.put('\\');
+                    out.put(*it);
+                } else {
+                    // All other non-printable characters need to be escaped
+                    out.put('\\');
+                    if (*it == '\t') {
+                        out.put('t');
+                    } else if (*it == '\n') {
+                        out.put('n');
+                    } else if (*it == '\r') {
+                        out.put('r');
+                    } else {
+                        // Hex string for non-standard codes
+                        out.put('x');
+                        out.put(s_Hex[(unsigned char) *it >> 4]);
+                        out.put(s_Hex[(unsigned char) *it & 15]);
+                    }
+                }
+            } while (++it < it_end); // it_end is from ITERATE macro
+
+            // Return HTML encoded string
+            return HTMLEncode(CNcbiOstrstreamToString(out));
+        }
+    }
+    // All characters are good - HTML encode orignal string
+    return HTMLEncode(str);
 }
 
 
@@ -249,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/08/24 12:16:04  ivanov
+ * + CHTMLHelper::JavaScriptEncode()
+ *
  * Revision 1.25  2005/08/24 11:12:51  ivanov
  * Rollback to R1.23
  *
