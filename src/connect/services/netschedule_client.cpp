@@ -1339,6 +1339,7 @@ void CNetScheduleClient::CheckOK(string* str)
     }
 }
 
+
 void 
 CNetScheduleClient::MakeCommandPacket(string*       out_str,
                                       const string& cmd_str,
@@ -1487,12 +1488,21 @@ void CNetScheduleClient::MakeJobKey(string*       job_key,
     *job_key = buf;
 }
 
+EIO_Status CNetScheduleClient::Connect(unsigned int   addr, 
+                                       unsigned short port)
+{
+    m_AuthenticationSent = false;
+    return TParent::Connect(addr, port);
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/08/24 14:25:21  kuznets
+ * Fixing bug in comm. protocol
+ *
  * Revision 1.40  2005/08/24 13:51:41  kuznets
  * Changes in sending authentication
  *

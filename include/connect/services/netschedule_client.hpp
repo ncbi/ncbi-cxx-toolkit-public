@@ -80,6 +80,8 @@ struct CNetSchedule_Key
 class NCBI_XCONNECT_EXPORT CNetScheduleClient : public CNetServiceClient
 {
 public:
+    typedef CNetServiceClient TParent;
+
     /// Connection management options
     enum EConnectionMode {
         /// Close connection after each call (default). 
@@ -533,6 +535,8 @@ protected:
     /// ";" delimited list of server queues
     string GetQueueList();
 
+    EIO_Status Connect(unsigned int addr, unsigned short port);
+
 protected:
 
     /// @return TRUE if actually reconnected
@@ -849,6 +853,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/08/24 14:25:02  kuznets
+ * Fixing bug in comm. protocol
+ *
  * Revision 1.42  2005/08/24 13:51:26  kuznets
  * Changes in sending authentication
  *

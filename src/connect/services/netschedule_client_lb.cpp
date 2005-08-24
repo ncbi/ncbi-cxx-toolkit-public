@@ -172,7 +172,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
         }
     } // while
 
-    TParent::CheckConnect(key);
+    return TParent::CheckConnect(key);
 }
 
 void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/08/24 14:25:21  kuznets
+ * Fixing bug in comm. protocol
+ *
  * Revision 1.17  2005/08/24 13:51:48  kuznets
  * Changes in sending authentication
  *
