@@ -106,18 +106,20 @@ public:
     CBDB_Env* GetEnv() { return m_Env; }
 
     /// Open file with specified access mode
-    void Open(const char* filename, EOpenMode open_mode);
+    void Open(const char* filename, EOpenMode open_mode, 
+              bool support_dirty_read = false);
     /// Open file with specified filename and database name.
     /// (Berkeley DB supports having several database tables in one file.) 
     void Open(const char* filename, const char* database,
-              EOpenMode open_mode);
+              EOpenMode open_mode,
+              bool      support_dirty_read = false);
     /// Attach class to external BerkeleyDB file instance.
     /// Note: Should be already open.
     void Attach(CBDB_RawFile& bdb_file);
     /// Close file
     void Close();
     /// Reopen database file. (Should be already open).
-    void Reopen(EOpenMode open_mode);
+    void Reopen(EOpenMode open_mode, bool support_dirty_read = false);
 
     /// Remove the database specified by the filename and database arguments
     void Remove(const char* filename, const char* database = 0);
@@ -181,7 +183,8 @@ private:
 
 protected:
     void x_Open(const char* filename, const char* database,
-                EOpenMode open_mode);
+                EOpenMode open_mode,
+                bool      support_dirty_read);
     void x_Create(const char* filename, const char* database);
 
     void x_Close(EIgnoreError close_mode);
@@ -243,14 +246,17 @@ public:
     CBDB_File(EDuplicateKeys dup_keys = eDuplicatesDisable);
 
     /// Open file with specified access mode
-    void Open(const char* filename, EOpenMode open_mode);
+    void Open(const char* filename, 
+              EOpenMode   open_mode, 
+              bool        support_dirty_read = false);
 
     /// Open file with specified filename and database name.
     /// (Berkeley DB supports having several database tables in one file.) 
     void Open(const char* filename, const char* database,
-              EOpenMode open_mode);
+              EOpenMode open_mode,
+              bool      support_dirty_read = false);
     /// Reopen the db file
-    void Reopen(EOpenMode open_mode);
+    void Reopen(EOpenMode open_mode, bool support_dirty_read = false);
 
     /// Attach external Berkeley DB file.
     /// Note: Should be already open.
@@ -473,9 +479,10 @@ CBDB_File::TUnifiedFieldIndex BDB_GetUFieldIdx(int fidx, bool key)
 
 
 inline 
-void CBDB_RawFile::Open(const char* filename, EOpenMode open_mode)
+void CBDB_RawFile::Open(
+        const char* filename, EOpenMode open_mode, bool support_dirty_read)
 {
-    Open(filename, 0, open_mode);
+    Open(filename, 0, open_mode, support_dirty_read);
 }
 
 
@@ -514,9 +521,10 @@ bool CBDB_RawFile::IsAttached() const
 
 
 inline 
-void CBDB_File::Open(const char* filename, EOpenMode open_mode)
+void CBDB_File::Open(
+  const char* filename, EOpenMode open_mode, bool support_dirty_read)
 {
-    Open(filename, 0, open_mode);
+    Open(filename, 0, open_mode, support_dirty_read);
 }
 
 
@@ -541,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/08/24 18:14:56  kuznets
+ * Added flag to support dirty reads
+ *
  * Revision 1.40  2005/03/22 16:11:44  kuznets
  * +PrintStat() method to print btree statistics
  *

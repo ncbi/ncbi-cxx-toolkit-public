@@ -175,7 +175,8 @@ void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 
 void CBDB_RawFile::Open(const char* filename,
                         const char* database,
-                        EOpenMode   open_mode)
+                        EOpenMode   open_mode,
+                        bool        support_dirty_read)
 {
     if ( !m_FileName.empty() )
         Close();
@@ -183,7 +184,7 @@ void CBDB_RawFile::Open(const char* filename,
     if (!database  ||  !*database)
         database = 0; // database = kDefaultDatabase;
 
-    x_Open(filename, database, open_mode);
+    x_Open(filename, database, open_mode, support_dirty_read);
 
     m_FileName = filename;
     if (database)
@@ -193,7 +194,7 @@ void CBDB_RawFile::Open(const char* filename,
 }
 
 
-void CBDB_RawFile::Reopen(EOpenMode open_mode)
+void CBDB_RawFile::Reopen(EOpenMode open_mode, bool support_dirty_read)
 {
     _ASSERT(!m_FileName.empty());
 
@@ -207,7 +208,7 @@ void CBDB_RawFile::Reopen(EOpenMode open_mode)
     BDB_CHECK(ret, m_FileName.c_str());
     x_Open(m_FileName.c_str(),
            !m_Database.empty() ? m_Database.c_str() : 0,
-           open_mode);
+           open_mode, support_dirty_read);
 }
 
 
@@ -320,7 +321,8 @@ void CBDB_RawFile::x_CreateDB()
 
 void CBDB_RawFile::x_Open(const char* filename,
                           const char* database,
-                          EOpenMode   open_mode)
+                          EOpenMode   open_mode,
+                          bool        support_dirty_read)
 {   
     int ret;    
     if (m_DB == 0) {
@@ -353,6 +355,10 @@ void CBDB_RawFile::x_Open(const char* filename,
             if (m_Env->IsTransactional()) {
                 open_flags |= DB_THREAD | DB_AUTO_COMMIT;
             }
+        }
+
+        if (support_dirty_read) {
+            open_flags |= DB_DIRTY_READ;
         }
 
         ret = m_DB->open(m_DB,
@@ -632,12 +638,13 @@ void CBDB_File::BindData(const char* field_name,
 
 void CBDB_File::Open(const char* filename,
                      const char* database,
-                     EOpenMode   open_mode)
+                     EOpenMode   open_mode,
+                     bool        support_dirty_read)
 {
     if ( IsOpen() )
         Close();
 
-    CBDB_RawFile::Open(filename, database, open_mode);
+    CBDB_RawFile::Open(filename, database, open_mode, support_dirty_read);
     x_CheckConstructBuffers();
 
     m_DB->app_private = (void*) m_KeyBuf.get();
@@ -645,9 +652,9 @@ void CBDB_File::Open(const char* filename,
 }
 
 
-void CBDB_File::Reopen(EOpenMode open_mode)
+void CBDB_File::Reopen(EOpenMode open_mode, bool support_dirty_read)
 {
-    CBDB_RawFile::Reopen(open_mode);
+    CBDB_RawFile::Reopen(open_mode, support_dirty_read);
     m_DB->app_private = (void*) m_KeyBuf.get();
     if ( m_DataBuf.get() ) {
         m_DataBuf->SetAllNull();
@@ -1109,6 +1116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/08/24 18:15:14  kuznets
+ * Added flag to support dirty reads
+ *
  * Revision 1.52  2005/05/31 15:30:33  kuznets
  * Fixed a bug in SetCacheSize()
  *
