@@ -166,6 +166,7 @@ void CNetSchedule_GenerateJobKey(string*        key,
 CNetScheduleClient::CNetScheduleClient(const string& client_name,
                                        const string& queue_name)
     : CNetServiceClient(client_name),
+      m_AuthenticationSent(false),
       m_Queue(queue_name),
       m_RequestRateControl(true),
       m_ConnMode(eCloseConnection)
@@ -177,6 +178,7 @@ CNetScheduleClient::CNetScheduleClient(const string&  host,
                                        const string&  client_name,
                                        const string&  queue_name)
     : CNetServiceClient(host, port, client_name),
+      m_AuthenticationSent(false),
       m_Queue(queue_name),
       m_RequestRateControl(true),
       m_ConnMode(eCloseConnection)
@@ -187,6 +189,7 @@ CNetScheduleClient::CNetScheduleClient(CSocket*      sock,
                                        const string& client_name,
                                        const string& queue_name)
     : CNetServiceClient(sock, client_name),
+      m_AuthenticationSent(false),
       m_Queue(queue_name),
       m_RequestRateControl(true),
       m_ConnMode(eCloseConnection)
@@ -1339,12 +1342,15 @@ void CNetScheduleClient::CheckOK(string* str)
 void 
 CNetScheduleClient::MakeCommandPacket(string*       out_str,
                                       const string& cmd_str,
-                                      bool          add_prefix)
+                                      bool          /*connected*/)
 {
-    if (!add_prefix) {
+    // Check if authentication prefix has already been added
+    // and sent to the server
+    if (m_AuthenticationSent) {
         *out_str = cmd_str;
         return;
     }
+    m_AuthenticationSent = true;
 
     // command with full connection establishment
 
@@ -1394,6 +1400,7 @@ bool CNetScheduleClient::CheckConnect(const string& key)
                 NStr::CompareNocase(m_JobKey.hostname, m_Host) != 0) {
                     m_Sock->Close();
                     CreateSocket(m_JobKey.hostname, m_JobKey.port);
+                    m_AuthenticationSent = false;
                     return true;
             } else {
                 return false;
@@ -1401,12 +1408,14 @@ bool CNetScheduleClient::CheckConnect(const string& key)
             
         } else {
             m_Sock->Close();
+            m_AuthenticationSent = false;
         }
     }
 
     if (!key.empty()) {
         CNetSchedule_ParseJobKey(&m_JobKey, key);
         CreateSocket(m_JobKey.hostname, m_JobKey.port);
+        m_AuthenticationSent = false;
         return true;
     }
 
@@ -1414,11 +1423,12 @@ bool CNetScheduleClient::CheckConnect(const string& key)
 
     if (!m_Host.empty()) { // we can restore connection
         CreateSocket(m_Host, m_Port);
+        m_AuthenticationSent = false;
         return true;
     }
 
     NCBI_THROW(CNetServiceException, eCommunicationError,
-        "Cannot establish connection with a server. Unknown host-port.");
+            "Cannot establish connection with a server. Unknown host-port.");
 
     return false;
 }
@@ -1483,6 +1493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/08/24 13:51:41  kuznets
+ * Changes in sending authentication
+ *
  * Revision 1.39  2005/08/22 14:03:22  kuznets
  * +PutREsultGetJob()
  *

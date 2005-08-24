@@ -105,6 +105,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
         return TParent::CheckConnect(key);
     }
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+        m_AuthenticationSent = false;
         return true; // we are connected, nothing to do
     } 
 
@@ -121,6 +122,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
             const SServiceAddress& sa = *it;
             EIO_Status st = Connect(sa.host, sa.port);
             if (st == eIO_Success) {
+                m_AuthenticationSent = false;
                 break;
             }
             ++m_ServListCurr;
@@ -161,6 +163,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
             EIO_Status st = Connect(sa.host, sa.port);
             if (st == eIO_Success) {
                 if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+                    m_AuthenticationSent = false;
                     return true; // we are connected
                 } 
             }
@@ -665,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/08/24 13:51:48  kuznets
+ * Changes in sending authentication
+ *
  * Revision 1.16  2005/08/17 14:27:38  kuznets
  * Added permanent connection mode
  *

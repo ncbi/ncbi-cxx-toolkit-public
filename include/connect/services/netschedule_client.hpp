@@ -542,13 +542,12 @@ protected:
 
     /// Adds trailing: "client\r\n queue\r\n COMMAND"
     ///
-    /// @param add_prefix 
-    ///    when true function adds full "client-queue" prefix 
-    ///    (new connection established). 
+    /// @param connected 
+    ///    connection established 
     ///
     void MakeCommandPacket(string*       out_str, 
                            const string& cmd_str,
-                           bool          add_prefix);
+                           bool          connected);
 
     /// check string for "OK:" prefix, throws an exception if "ERR:"
     void TrimPrefix(string* str);
@@ -588,6 +587,8 @@ private:
     CNetScheduleClient& operator=(const CNetScheduleClient&);
 
 protected:
+    ///< Flag indicates authentication prefix has been added already
+    bool              m_AuthenticationSent;
     string            m_Queue;
     bool              m_RequestRateControl;
     CNetSchedule_Key  m_JobKey;
@@ -848,6 +849,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/08/24 13:51:26  kuznets
+ * Changes in sending authentication
+ *
  * Revision 1.41  2005/08/22 14:03:10  kuznets
  * +PutREsultGetJob()
  *
