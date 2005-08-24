@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi language call
 * $Log$
+* Revision 1.7  2005/08/24 12:43:15  ssikorsk
+* Use temporary table to store test data
+*
 * Revision 1.6  2004/12/20 16:20:29  ssikorsk
 * Refactoring of dbapi/driver/samples
 *
@@ -83,7 +86,7 @@ inline
 string
 CDbapiQueryApp::GetTableName(void) const
 {
-    return "qry" + GetTableUID();
+    return "#query_test";
 }
 
 // The following function illustrates a dbapi language call

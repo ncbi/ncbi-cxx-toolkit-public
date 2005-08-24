@@ -63,7 +63,7 @@ inline
 string
 CDbapiSendDataApp::GetTableName(void) const
 {
-    return "snd" + GetTableUID();
+    return "#snd_test";
 }
 
 int
@@ -116,6 +116,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/08/24 12:43:15  ssikorsk
+ * Use temporary table to store test data
+ *
  * Revision 1.5  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

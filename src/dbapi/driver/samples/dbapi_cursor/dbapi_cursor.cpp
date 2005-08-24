@@ -136,7 +136,7 @@ inline
 string
 CDbapiCursorApp::GetTableName(void) const
 {
-    return "crs" + GetTableUID();
+    return "#crs_test";
 }
 
 // The following function illustrates a usage of dbapi cursor
@@ -201,6 +201,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/24 12:43:15  ssikorsk
+ * Use temporary table to store test data
+ *
  * Revision 1.6  2004/12/29 19:58:02  ssikorsk
  * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
  *

@@ -77,7 +77,7 @@ inline
 string
 CDbapiBcpApp::GetTableName(void) const
 {
-    return "bcp" + GetTableUID();
+    return "#bcp_test";
 }
 
 int
@@ -165,6 +165,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/24 12:43:15  ssikorsk
+ * Use temporary table to store test data
+ *
  * Revision 1.7  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *
