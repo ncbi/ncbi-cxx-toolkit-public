@@ -74,6 +74,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     m_TableUID += "_" + CSmallDNS::GetLocalHost() + "_";
     m_TableUID += NStr::IntToString(CProcess::GetCurrentPid()) + "_";
     m_TableUID += CTime(CTime::eCurrent).AsString("MDy");
+    replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
 
     return;
 }
@@ -469,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/24 12:41:22  ssikorsk
+ * Substitute '-' with '_' in table names
+ *
  * Revision 1.4  2004/12/29 19:58:02  ssikorsk
  * Fixed memory ABW bug in dbapi/driver/samples/dbapi_testspeed
  *
