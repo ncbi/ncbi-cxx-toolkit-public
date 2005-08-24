@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Vsevolod Sandomirskiy, Anatoliy Kuznetsov
+ * Authors:  Denis Vakatov, Vsevolod Sandomirskiy
  *
  *
  */
@@ -576,6 +576,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/08/24 14:32:50  kuznets
+ * Comment cleanup
+ *
  * Revision 1.56  2005/07/27 15:27:44  ucko
  * New EAppDiagStream option: eDS_ToSyslog
  *
