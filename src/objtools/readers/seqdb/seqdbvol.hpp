@@ -442,6 +442,8 @@ public:
     ///   This OID or later is always returned
     /// @param residue
     ///   The position to find relative to the total length
+    /// @param locked
+    ///   The lock holder object for this thread.
     /// @return
     ///   The OID of the sequence nearest the specified residue
     int GetOidAtOffset(int              first_seq,
