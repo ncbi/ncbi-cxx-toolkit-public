@@ -75,7 +75,7 @@ inline
 string
 CDbapiTestSpeedApp::GetTableName(void) const
 {
-    return m_TableName + GetTableUID();
+    return m_TableName;
 }
 
 // const char usage[] =
@@ -141,7 +141,7 @@ CDbapiTestSpeedApp::InitSample(CArgDescriptions& arg_desc)
         "t", "table_name",
         "Table name",
         CArgDescriptions::eString,
-        "spd"
+        "#spd"
     );
 
     arg_desc.AddOptionalKey(
@@ -629,6 +629,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/08/24 14:36:59  ssikorsk
+ * Use temporary table to store test data
+ *
  * Revision 1.18  2005/01/14 20:15:52  ssikorsk
  * Fixed a couple of "unused variable" warnings
  *
