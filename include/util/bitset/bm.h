@@ -1907,6 +1907,14 @@ private:
                                 extend_gap_block(nblock, BMGAP_PTR(blk));
                             }
                             return prev;
+                        } else {
+                            if (bm::gap_find_in_block(BMGAP_PTR(blk),
+                                                      nbit,
+                                                      &prev))
+                            {
+                                set(prev, false);
+                                return prev;
+                            }
                         }
                     }
                     else // bit block
@@ -2697,6 +2705,7 @@ public:
                                 return;
                             }
                         }
+                        return;
                     }
                 
                     // try to compress
