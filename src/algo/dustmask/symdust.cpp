@@ -128,7 +128,7 @@ inline bool CSymDustMasker::triplets::add( sequence_type::value_type n )
     Uint4 count = stop_ - high_beg_ + 1; // count is the suffix length
 
     // if the condition does not hold then nothing in the window should be masked
-    if( 10*outer_sum_ > thresholds_[count] )
+    if( count < triplet_list_.size() && 10*outer_sum_ > thresholds_[count] )
     {
         // we need a local copy of triplet counts
         std::copy( inner_counts_.begin(), inner_counts_.end(), counts.begin() );
@@ -315,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.13  2005/08/25 11:28:04  morgulis
+ * Fixing the memory access problem when the suffix == window.
+ *
  * Revision 1.12  2005/07/27 18:40:49  morgulis
  * some code simplification
  *
