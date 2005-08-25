@@ -144,7 +144,7 @@ const unsigned kMaxMessageSize = kNetScheduleMaxErrSize * 4;
 ///
 struct SThreadData
 {
-    char      request[kNetScheduleMaxErrSize * 4 + 1];
+    char*      request;
 
     string            auth;
     string            auth_prog;  // prog='...' from auth string
@@ -161,6 +161,12 @@ struct SThreadData
     SJS_Request req;
 
     vector<SNS_BatchSubmitRec>  batch_subm_vec;
+
+private:
+    unsigned int   x_request_buf[kNetScheduleMaxErrSize];
+public:
+    SThreadData() { request = (char*) x_request_buf; }  
+    size_t  RequestBufSize() const { return sizeof(x_request_buf); }
 };
 
 ///@internal
@@ -478,6 +484,8 @@ void CNetScheduleServer::Process(SOCK sock)
     CSocket socket;
     socket.Reset(sock, eTakeOwnership, eCopyTimeoutsFromSOCK);
     bool is_log = IsLog();
+    bool admin_access = false;
+    bool version_control_done = false;
     SThreadData* tdata = x_GetThreadData();
 
     CNetScheduleMonitor* monitor = 0;
@@ -492,14 +500,30 @@ void CNetScheduleServer::Process(SOCK sock)
 
         io_st = socket.ReadLine(tdata->auth);
         JS_CHECK_IO_STATUS(io_st)
+
+        if (tdata->auth == "netschedule_control" ||
+            tdata->auth == "netschedule_admin") {
+            admin_access = true;
+        }
+
         io_st = socket.ReadLine(tdata->queue);
         JS_CHECK_IO_STATUS(io_st)
+
+        unsigned peer_ha;
+        socket.GetPeerAddress(&peer_ha, 0, eNH_NetworkByteOrder);
+
+        CQueueDataBase::CQueue queue(*m_QueueDB, tdata->queue, peer_ha);
+        monitor = queue.GetMonitor();
+
+        if (!queue.IsVersionControl()) {
+            version_control_done = true;
+        }
 
         while (1) {
 
             size_t n_read;
             io_st = socket.ReadLine(tdata->request,
-                                    sizeof(tdata->request),
+                                    tdata->RequestBufSize(),
                                     &n_read);
             if (io_st == eIO_Closed || io_st == eIO_Timeout) {
                 return;
@@ -514,13 +538,6 @@ void CNetScheduleServer::Process(SOCK sock)
                 x_MakeLogMessage(socket, *tdata);
                 m_AccessLog << tdata->lmsg;
             }
-
-            unsigned peer_ha;
-            socket.GetPeerAddress(&peer_ha, 0, eNH_NetworkByteOrder);
-
-            CQueueDataBase::CQueue queue(*m_QueueDB, tdata->queue, peer_ha);
-
-            monitor = queue.GetMonitor();
             if (monitor) {
                 if (!monitor->IsMonitorActive()) {
                     monitor = 0;
@@ -546,12 +563,11 @@ void CNetScheduleServer::Process(SOCK sock)
             //
             // we want status request to be fast, skip version control 
             //
-            if ((req.req_type != eStatusJob) && 
-                    queue.IsVersionControl()) {
+            if (!version_control_done &&
+                (req.req_type != eStatusJob)) {
 
                 // bypass for admin tools
-                if (tdata->auth == "netschedule_control" ||
-                    tdata->auth == "netschedule_admin") 
+                if (admin_access) 
                 {
                     goto end_version_control;
                 }
@@ -582,6 +598,7 @@ void CNetScheduleServer::Process(SOCK sock)
                         bool match = queue.IsMatchingClient(prog_info);
                         if (!match)
                             goto client_ver_err;
+                        version_control_done = true;
                     }
                     catch (exception&)
                     {
@@ -1560,9 +1577,74 @@ void CNetScheduleServer::x_WriteBuf(CSocket& sock,
 }
 
 
+/// NetSchadule command codes
+/// Here I use 4 byte strings packed into integer for int comparison (faster)
+///
+/// @internal
+///
+struct SNS_Commands
+{
+    unsigned  JXCG;
+    unsigned  VERS;
+    unsigned  JRTO;
+    unsigned  PUT_;
+    unsigned  SUBM;
+    unsigned  STAT;
+    unsigned  SHUT;
+    unsigned  GET_;
+    unsigned  GET0;
+    unsigned  MPUT;
+    unsigned  MGET;
+    unsigned  MONI;
+    unsigned  WGET;
+    unsigned  CANC;
+    unsigned  DROJ;
+    unsigned  DUMP;
+    unsigned  FPUT;
+    unsigned  RECO;
+    unsigned  RETU;
+    unsigned  QUIT;
+    unsigned  QLST;
+    unsigned  BSUB;
 
 
+    SNS_Commands()
+    {
+        ::memcpy(&JXCG, "JXCG", 4);
+        ::memcpy(&VERS, "VERS", 4);
+        ::memcpy(&JRTO, "JRTO", 4);
+        ::memcpy(&PUT_, "PUT ", 4);
+        ::memcpy(&SUBM, "SUBM", 4);
+        ::memcpy(&STAT, "STAT", 4);
+        ::memcpy(&SHUT, "SHUT", 4);
+        ::memcpy(&GET_, "GET ", 4);
+        ::strcpy((char*)&GET0, "GET");
+        ::memcpy(&MPUT, "MPUT", 4);
+        ::memcpy(&MGET, "MGET", 4);
+        ::memcpy(&MONI, "MONI", 4);
+        ::memcpy(&WGET, "WGET", 4);
+        ::memcpy(&CANC, "CANC", 4);
+        ::memcpy(&DROJ, "DROJ", 4);
+        ::memcpy(&DUMP, "DUMP", 4);
+        ::memcpy(&FPUT, "FPUT", 4);
+        ::memcpy(&RECO, "RECO", 4);
+        ::memcpy(&RETU, "RETU", 4);
+        ::memcpy(&QUIT, "QUIT", 4);
+        ::memcpy(&QLST, "QLST", 4);
+        ::memcpy(&BSUB, "BSUB", 4);
+    }
 
+    /// 4 byte command comparison (make sure str is aligned)
+    /// otherwise kaaboom on some platforms
+    static
+    bool IsCmd(unsigned cmd, const char* str) 
+    {
+        return cmd == *(unsigned*)str;
+    }
+};
+
+/// @internal
+static SNS_Commands  s_NS_cmd_codes;
 
 
 void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
@@ -1599,20 +1681,26 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     switch (*s) {
 
     case 'S':
-        if (strncmp(s, "STATUS", 6) == 0) {
-            req->req_type = eStatusJob;
-            s += 6;
-            NS_SKIPSPACE(s)
-            NS_GETSTRING(s, req->job_key_str)
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.STAT, s)) {
+            s += 4;
+            // STAT - statictics or STATUS ?
+            if (*s == 'U') {
+                req->req_type = eStatusJob;
+                s += 2;
+                NS_SKIPSPACE(s)
+                NS_GETSTRING(s, req->job_key_str)
             
-            if (req->job_key_str.empty()) {
-                NS_RETURN_ERROR("Misformed STATUS request")
+                if (req->job_key_str.empty()) {
+                    NS_RETURN_ERROR("Misformed STATUS request")
+                }
+            } else {
+                req->req_type = eStatistics;
+                return;
             }
             return;
         }
 
-
-        if (strncmp(s, "SUBMIT", 6) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.SUBM, s)) {
             req->req_type = eSubmitJob;
             s += 6;
             NS_SKIPSPACE(s)
@@ -1659,9 +1747,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             }
 
             for (; *s && isdigit((unsigned char)(*s)); ++s) {}
-
             NS_SKIPSPACE(s)
-
             if (!*s) {
                 return;
             }
@@ -1670,16 +1756,11 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             if (timeout > 0) {
                 req->timeout = timeout;
             }
-
             return;
         }
 
-        if (strncmp(s, "STAT", 4) == 0) {
-            req->req_type = eStatistics;
-            return;
-        }
 
-        if (strncmp(s, "SHUTDOWN", 8) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.SHUT, s)) {
             req->req_type = eShutdown;
             return;
         }
@@ -1687,9 +1768,13 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
         break;
 
     case 'G':
-        if (strncmp(s, "GET", 3) == 0) {
-            req->req_type = eGetJob;
-            
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.GET_, s)
+            ||
+            SNS_Commands::IsCmd(s_NS_cmd_codes.GET0, s)
+            ||
+            (strncmp(s, "GET", 3) == 0)
+           ) {
+            req->req_type = eGetJob;            
             s += 3;
             NS_SKIPSPACE(s)
 
@@ -1704,7 +1789,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
         break;
     case 'M':
-        if (strncmp(s, "MPUT", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.MPUT, s)) {
             req->req_type = ePutProgressMsg;
             s += 4;
 
@@ -1726,17 +1811,16 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
             return;
         }
-        if (strncmp(s, "MGET", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.MGET, s)) {
             req->req_type = eGetProgressMsg;
             s += 4;
-
             NS_SKIPSPACE(s)
             if (*s != 0) {
                 NS_GETSTRING(s, req->job_key_str)
             }
             return;
         }
-        if (strncmp(s, "MONI", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.MONI, s)) {
             req->req_type = eMonitor;
             return;
         }
@@ -1744,7 +1828,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
         break;
 
     case 'J':
-        if (strncmp(s, "JXCG", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.JXCG, s)) {
             req->req_type = eJobExchange;
             s += 4;
             NS_SKIPSPACE(s)
@@ -1754,21 +1838,18 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             }
             goto parse_put_params;
         }
-        if (strncmp(s, "JRTO", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.JRTO, s)) {
             req->req_type = eJobRunTimeout;
             
             s += 4;
             NS_SKIPSPACE(s)
-
             NS_CHECKEND(s, "Misformed job run timeout request")
-
             NS_GETSTRING(s, req->job_key_str)
             
             if (req->job_key_str.empty()) {
                 NS_RETURN_ERROR("Misformed job run timeout request")
             }
             NS_SKIPSPACE(s)
-
             NS_CHECKEND(s, "Misformed job run timeout request")
 
             int timeout = atoi(s);
@@ -1777,19 +1858,17 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                     "Invalid job run timeout request: incorrect timeout value")
             }
             req->timeout = timeout;
-
             return;
         }
         break;
 
     case 'P':
-        if (strncmp(s, "PUT", 3) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.PUT_, s)) {
             req->req_type = ePutJobResult;
             s += 3;
             NS_SKIPSPACE(s)
             parse_put_params:
             NS_GETSTRING(s, req->job_key_str)
-
             NS_SKIPSPACE(s)
 
             // return code
@@ -1806,8 +1885,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             }
 
             // output information
-            NS_SKIPSPACE(s)
-            
+            NS_SKIPSPACE(s)           
             if (*s !='"') {
                 NS_RETURN_ERROR("Misformed PUT request")
             }
@@ -1825,12 +1903,11 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
         break;
     case 'W':
-        if (strncmp(s, "WGET", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.WGET, s)) {
             req->req_type = eWaitGetJob;
             
             s += 4;
             NS_SKIPSPACE(s)
-
             NS_CHECKEND(s, "Misformed WGET request")
 
             int port = atoi(s);
@@ -1849,12 +1926,11 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 timeout = 60;
             }
             req->timeout = timeout;
-            
             return;
         }
         break;
     case 'C':
-        if (strncmp(s, "CANCEL", 6) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.CANC, s)) {
             req->req_type = eCancelJob;
             s += 6;
             NS_SKIPSPACE(s)
@@ -1868,7 +1944,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
         break;
     case 'D':
-        if (strncmp(s, "DROJ", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.DROJ, s)) {
             req->req_type = eDropJob;
             s += 4;
             NS_SKIPSPACE(s)
@@ -1885,7 +1961,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             return;
         }
 
-        if (strncmp(s, "DUMP", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.DUMP, s)) {
             req->req_type = eDumpQueue;
             s += 4;
 
@@ -1896,7 +1972,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
         break;
     case 'F':
-        if (strncmp(s, "FPUT", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.FPUT, s)) {
             req->req_type = ePutJobFailure;
             s += 4;
             NS_SKIPSPACE(s)
@@ -1924,7 +2000,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
         break;
 
     case 'R':
-        if (strncmp(s, "RETURN", 6) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.RETU, s)) {
             req->req_type = eReturnJob;
             s += 6;
             NS_SKIPSPACE(s)
@@ -1933,25 +2009,23 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
             return;
         }
-        if (strncmp(s, "RECO", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.RECO, s)) {
             req->req_type = eReloadConfig;
             return;
         }
-
         break;
     case 'Q':
-        if (strncmp(s, "QUIT", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.QUIT, s)) {
             req->req_type = eQuitSession;
             return;
         }
-        if (strncmp(s, "QLST", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.QLST, s)) {
             req->req_type = eQList;
             return;
         }
-
         break;
     case 'V':
-        if (strncmp(s, "VERSION", 7) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.VERS, s)) {
             req->req_type = eVersion;
             return;
         }
@@ -1967,7 +2041,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
         } // LOG
         break;
     case 'B':
-        if (strncmp(s, "BSUB", 4) == 0) {
+        if (SNS_Commands::IsCmd(s_NS_cmd_codes.BSUB, s)) {
             req->req_type = eSubmitBatch;
             s += 4;
             return;
@@ -2348,6 +2422,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/08/25 15:00:35  kuznets
+ * Optimized command parsing, eliminated many string comparisons
+ *
  * Revision 1.55  2005/08/24 18:17:59  kuznets
  * Incremented program version
  *
