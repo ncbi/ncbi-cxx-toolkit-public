@@ -4090,6 +4090,7 @@ echo "$as_me: error: \"Do not know how to build MT-safe with compiler $CXX $comp
    mt_sfx="MT"
    WithFeatures="$WithFeatures MT"
 else
+   CPPFLAGS="$CPPFLAGS -DNCBI_WITHOUT_MT"
    MT_FLAG=
    THREAD_LIBS=
    mt_sfx=""

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.386 2005/08/12 14:58:33 ucko Exp $
+#  $Id: configure.ac,v 1.387 2005/08/25 14:27:34 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -665,6 +665,7 @@ if test "$with_mt" = "yes" ; then
    mt_sfx="MT"
    WithFeatures="$WithFeatures MT"
 else
+   CPPFLAGS="$CPPFLAGS -DNCBI_WITHOUT_MT"
    MT_FLAG=
    THREAD_LIBS=
    mt_sfx=""
