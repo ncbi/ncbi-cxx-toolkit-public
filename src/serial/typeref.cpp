@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/08/25 13:12:22  gouriano
+* Avoid race condition in MT builds
+*
 * Revision 1.13  2004/05/17 21:03:04  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -79,11 +82,12 @@
 #include <serial/typeinfo.hpp>
 #include <serial/exception.hpp>
 #include <corelib/ncbithr.hpp>
+#include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-DEFINE_STATIC_MUTEX(s_TypeRefMutex);
+//DEFINE_STATIC_MUTEX(s_TypeRefMutex);
 
 
 CTypeRef::CTypeRef(TGet1Proc getter, const CTypeRef& arg)
@@ -146,7 +150,7 @@ CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
 void CTypeRef::Unref(void)
 {
     if ( m_Getter == sx_GetResolve ) {
-        CMutexGuard guard(s_TypeRefMutex);
+        CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
         if ( m_Getter == sx_GetResolve ) {
             m_Getter = sx_GetAbort;
             if ( m_ResolveData->m_RefCount.Add(-1) <= 0 ) {
@@ -166,7 +170,7 @@ void CTypeRef::Assign(const CTypeRef& typeRef)
         m_Getter = sx_GetReturn;
     }
     else {
-        CMutexGuard guard(s_TypeRefMutex);
+        CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
         m_ReturnData = typeRef.m_ReturnData;
         m_Getter = typeRef.m_Getter;
         if ( m_Getter == sx_GetProc ) {
@@ -180,7 +184,7 @@ void CTypeRef::Assign(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_GetAbort(const CTypeRef& typeRef)
 {
-    CMutexGuard guard(s_TypeRefMutex);
+    CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
     if (typeRef.m_Getter != sx_GetAbort)
         return typeRef.m_Getter(typeRef);
     NCBI_THROW(CSerialException,eFail, "uninitialized type ref");
@@ -193,7 +197,7 @@ TTypeInfo CTypeRef::sx_GetReturn(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
 {
-    CMutexGuard guard(s_TypeRefMutex);
+    CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
     if (typeRef.m_Getter != sx_GetProc)
         return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_GetProcData();
@@ -206,7 +210,7 @@ TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_GetResolve(const CTypeRef& typeRef)
 {
-    CMutexGuard guard(s_TypeRefMutex);
+    CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
     if (typeRef.m_Getter != sx_GetResolve)
         return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_ResolveData->GetTypeInfo();
