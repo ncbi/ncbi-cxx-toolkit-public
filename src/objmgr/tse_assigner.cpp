@@ -411,6 +411,7 @@ CRef<CSeq_loc> PatchSeqId(const CSeq_loc& orig, const ISeq_id_Translator& tr)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
     ret->Assign(orig);
+    ret->InvalidateIdCache();
     if (ret->IsEmpty())
         ret->SetEmpty( *PatchSeqId(ret->GetEmpty(), tr));
     if (ret->IsWhole())
@@ -429,12 +430,6 @@ CRef<CSeq_loc> PatchSeqId(const CSeq_loc& orig, const ISeq_id_Translator& tr)
         ret->SetEquiv( *PatchSeqId(ret->GetEquiv(), tr));
     if (ret->IsBond())
         ret->SetBond( *PatchSeqId(ret->GetBond(), tr));
-    /*
-    const CSeq_id* sid = loc.GetId();
-    if (sid) {
-        nloc->SetId( *PatchSeqId(*sid, tr) );
-    }
-    */
     return ret;
 }
 
@@ -582,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/25 15:37:29  didenko
+ * Added call to InvalidateCache() method when the CSeq_los is bieng patched
+ *
  * Revision 1.1  2005/08/25 14:05:37  didenko
  * Restructured TSE loading process
  *
