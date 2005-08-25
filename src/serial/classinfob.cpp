@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/08/25 13:11:56  gouriano
+* Protect MayContainType by mutex
+*
 * Revision 1.21  2005/02/24 14:39:04  gouriano
 * Added PreRead/PostWrite hooks
 *
@@ -342,6 +345,7 @@ const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) cons
 
 bool CClassTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
 {
+    CMutexGuard GUARD(s_ClassInfoMutex);
     TContainedTypes* cache = m_ContainedTypes.get();
     if ( cache ) {
         TContainedTypes::const_iterator found = cache->find(typeInfo);
