@@ -65,6 +65,8 @@ struct PssmMakerOptions
     bool requestWeightedResidueFrequencies;   /**< request observed weighted residue frequencies */
     bool requestFrequencyRatios;               /**< request frequency ratios */
     bool gaplessColumnWeights;
+
+	int unalignedSegThreshold;  // -1 : do not skip unaligned segment
 };
 
 class CdPssmInput : public IPssmInputData, public ColumnReader
@@ -158,6 +160,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/08/25 20:22:48  cliu
+ * conditionally skip long insert
+ *
  * Revision 1.3  2005/07/07 20:29:56  cliu
  * print seqid
  *

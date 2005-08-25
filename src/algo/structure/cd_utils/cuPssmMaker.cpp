@@ -79,7 +79,8 @@ PssmMakerOptions::PssmMakerOptions()
     requestResidueFrequencies(false),            
     requestWeightedResidueFrequencies(false),   
     requestFrequencyRatios(false),
-    gaplessColumnWeights(false)
+    gaplessColumnWeights(false),
+	unalignedSegThreshold(-1)
 {
 };
 
@@ -336,6 +337,10 @@ PssmMaker::~PssmMaker()
 
 CRef<CPssmWithParameters> PssmMaker::make()
 {
+	if (m_config.unalignedSegThreshold >= 0)
+	{
+		m_conMaker.skipUnalignedSeg(m_config.unalignedSegThreshold);
+	}
 	m_pssmInput = new CdPssmInput (m_conMaker.getResidueProfiles(), m_config,m_useConsensus);
 	if (!m_useConsensus)
 		for(int i = 0 ; i < m_pssmInput->GetQueryLength(); i++)
@@ -479,6 +484,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/08/25 20:22:22  cliu
+ * conditionally skip long insert
+ *
  * Revision 1.5  2005/07/11 17:56:42  cliu
  * skip consensus
  *

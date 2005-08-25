@@ -38,13 +38,16 @@ ConsensusMaker::ConsensusMaker(CRef<CSeq_align_set> seqAlign, CCdCore* cd) :
 }*/
 
 ConsensusMaker::ConsensusMaker(CCdCore* cd) :
-	m_cd(cd), m_consensus(), m_rp(), m_seqAligns(cd->GetSeqAligns())
+	m_cd(cd), m_consensus(), m_rp(), m_seqAligns(cd->GetSeqAligns()), m_made(false)
 {
 	addRows();
 	CRef< CSeq_id > seqId;
 	cd->GetSeqIDFromAlignment(0, seqId);
 	if (!IsConsensus(seqId))
+	{
 		makeConsensus();
+		m_made =true;
+	}
 }
 
 ConsensusMaker::~ConsensusMaker()
@@ -127,18 +130,28 @@ CRef< CSeq_align > ConsensusMaker::getGuideSeqAlign()
 	return guideAlignment.toSeqAlign();
 }
 
+void ConsensusMaker::skipUnalignedSeg(int threshold)
+{
+	UnalignedSegReader ucr;
+	m_rp.countUnalignedConsensus(ucr);
+	m_rp.skipUnalignedSeg(ucr, threshold);
+	m_rp.adjustConsensusAndGuide();
+	m_consensus =  m_rp.getConsensus();
+}
+
 CRef<CSeq_align_set> ConsensusMaker::remasterWithConsensus()const
 {
 	CRef<CSeq_align_set> result(new CSeq_align_set);
 	list<CRef< CSeq_align > >& resultList = result->Set();
 	const BlockModelPair& guideAlignment = m_rp.getGuideAlignment();
-	//add the consensus to master
-	BlockModelPair rev(guideAlignment);
-	rev.reverse();
-	resultList.push_back(rev.toSeqAlign());
 
-	//list<CRef< CSeq_align > >& seqAlignList = m_seqAligns->Set();
 	list<CRef< CSeq_align > >::const_iterator lit = m_seqAligns.begin();
+	//add the consensus to master
+	BlockModelPair m2m(*lit);
+	m2m.getSlave() = m2m.getMaster();
+	m2m.remaster(guideAlignment);
+	resultList.push_back(m2m.toSeqAlign());
+
 	for (; lit != m_seqAligns.end(); lit++)
 	{
 		BlockModelPair bmp(*lit);
@@ -164,18 +177,17 @@ void ConsensusMaker::remasterWithConsensus(bool extended)
 	}
 	list<CRef< CSeq_align > >& seqAlignList = *seqAlignLp;
 	list<CRef< CSeq_align > >::iterator lit = seqAlignList.begin(); 
+	//add consensus::old_master pair
+	BlockModelPair m2m(*lit);
+	m2m.getSlave() = m2m.getMaster();
+	m2m.remaster(guideAlignment);
 	for (; lit != seqAlignList.end(); lit++)
 	{
 		BlockModelPair bmp(*lit);
 		bmp.remaster(guideAlignment);
 		(*lit) = bmp.toSeqAlign();
 	}
-	//add consensus::old_master pair
-	guideAlignment.reverse();
-	seqAlignList.push_front(guideAlignment.toSeqAlign());
-	int sizeE = extendedSeqAlignList.size();
-	int sizeL = seqAlignList.size();
-	int sizeCd = cdAlignList.size();
+	seqAlignList.push_front(m2m.toSeqAlign());
 
 	if (extended)
 		cdAlignList.assign(seqAlignList.begin(), seqAlignList.end());
@@ -230,6 +242,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/08/25 20:22:22  cliu
+ * conditionally skip long insert
+ *
  * Revision 1.2  2005/04/19 22:03:35  ucko
  * Empty strings with erase() rather than clear() for GCC 2.95 compatibility.
  *

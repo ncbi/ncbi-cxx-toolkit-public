@@ -61,6 +61,7 @@ BEGIN_SCOPE(cd_utils)
 	char getMostFrequentResidue(int& count) const ;
 	bool hasRow(int row) const;
 	void getResiduesByRow(vector<char>& residues)const;
+	//residues will be in Ncbistd
 	unsigned char getResidueByRow(int row);
 	bool isAligned(char residue, int row)const;
 	bool isAligned(int row)const;
@@ -116,6 +117,36 @@ private:
 	string m_seq;
 };
 
+//forward del
+class UnalignedSegReader : public ColumnReader
+{
+public:
+	typedef pair<int,int> Seg;
+
+	UnalignedSegReader();
+	
+	void setIndexSequence(string& seq);
+	string getIndexSequence();
+	void read(ColumnResidueProfile& crp);
+	Seg getLongestSeg(); 
+	int getLenOfLongestSeg(); 
+	int getTotalUnaligned() {return m_totalUnaligned;}
+	int getTotal() {return m_pos;}
+	int getLongUnalignedSegs(int length, vector<Seg>& segs);
+	string subtractLongestSeg(int threshold);
+	//string subtractLongSeg(int length);
+	string subtractSeg(Seg seg, string& in);
+private:
+	Seg m_maxSeg;
+	Seg m_curSeg;
+	vector<Seg> m_unalignedSegs;
+	int m_totalUnaligned;
+	int m_pos;
+	string m_indexSeq;
+
+	int getLen(Seg seg);
+};
+
  class ResidueProfiles
  {
  public:
@@ -130,7 +161,11 @@ private:
 	const BlockModelPair& getGuideAlignment() const;
 	BlockModelPair& getGuideAlignment();
 	int countColumnsOnMaster(string& seq);
-	string getLongestUnalignedConsensusSegment(int& totalUnaligned, int& total);
+
+	void countUnalignedConsensus(UnalignedSegReader& ucr );
+	bool skipUnalignedSeg(UnalignedSegReader& ucr, int len);
+	void adjustConsensusAndGuide();
+
 	void traverseAllColumns(ColumnReader& cr);
 	void traverseColumnsOnMaster(ColumnReader& cr);
 	void traverseColumnsOnConsensus(ColumnReader& cr);
@@ -149,27 +184,16 @@ private:
 	vector<double> m_rowWeights;
 	vector< CRef< CSeq_id> > m_seqIds; 
 
+	set<int> m_colsToSkipOnMaster;
+	set<int> m_colsToSkipOnConsensus;
+
+	void segsToSet(vector<UnalignedSegReader::Seg>& segs,set<int>& cols);
+
 	//results
 	string m_consensus;
 	BlockModelPair m_guideAlignment;
  };
 
-class UnalignedConsensusReader : public ColumnReader
-{
-public:
-	UnalignedConsensusReader();
-	void read(ColumnResidueProfile& crp);
-	void getLongestSeg(int& start, int& end); 
-	int getTotalUnaligned() {return m_totalUnaligned;}
-	int getTotal() {return m_pos;}
-private:
-	int m_startOfMaxSeg;
-	int m_endOfMaxSeg;
-	int m_start;
-	int m_end;
-	int m_totalUnaligned;
-	int m_pos;
-};
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
@@ -180,6 +204,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/08/25 20:22:48  cliu
+ * conditionally skip long insert
+ *
  * Revision 1.4  2005/08/04 16:04:08  cliu
  * count unaligned consensus with an existing consensus
  *

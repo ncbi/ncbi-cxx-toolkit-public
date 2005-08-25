@@ -60,6 +60,8 @@ public:
 	CRef< CSeq_align > getGuideSeqAlign();
 	CRef<CSeq_align_set> remasterWithConsensus()const;
 	void remasterWithConsensus(bool extended);
+
+	void skipUnalignedSeg(int threshold);
 	
 	static CRef<CSeq_align_set> degapAlignment(CCdCore* cd);
 	static void degapAlignment(CCdCore* cd, list< CRef< CSeq_align > >& seqAligns);
@@ -74,6 +76,7 @@ private:
 	list< CRef< CSeq_align > > m_seqAligns;
 	CRef< CSeq_id > m_masterSeqId;
 	CRef< CSeq_id > m_conSeqId;
+	bool m_made;
 
 	ResidueProfiles m_rp;
 };
@@ -87,6 +90,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/08/25 20:22:48  cliu
+ * conditionally skip long insert
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *

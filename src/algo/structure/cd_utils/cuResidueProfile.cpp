@@ -664,7 +664,11 @@ void ResidueProfiles::traverseColumnsOnMaster(ColumnReader& cr)
 	for (; pit != m_profiles.end(); pit++)
 	{
 		if (pit->first.gap == 0)
-			cr.read(pit->second);
+		{
+			int mPos = pit->first.mPos;
+			if (m_colsToSkipOnMaster.find(mPos) == m_colsToSkipOnMaster.end())
+				cr.read(pit->second);
+		}
 	}
 }
 
@@ -713,9 +717,8 @@ double ResidueProfiles::calcInformationContent(bool byConsensus)
 	return info;
 }
 
-string ResidueProfiles::getLongestUnalignedConsensusSegment(int& totalUnaligned, int& total)
+void ResidueProfiles::countUnalignedConsensus(UnalignedSegReader& ucr )
 {
-	UnalignedConsensusReader ucr;
 	string consensus;
 	if (m_consensus.size() == 0) //master is the consensus
 	{
@@ -725,66 +728,228 @@ string ResidueProfiles::getLongestUnalignedConsensusSegment(int& totalUnaligned,
 	else
 	{
 		traverseColumnsOnConsensus(ucr);
-		consensus = m_consensus;
+		consensus = getConsensus(false);
 	}
-	int start, end;
-	ucr.getLongestSeg(start, end);
-	totalUnaligned = ucr.getTotalUnaligned();
-	total = ucr.getTotal();
-	if (start >= 0 && end >= start)
-		return consensus.substr(start, end-start+1);
-	else
-		return "";
+	//in Ncbistd
+	ucr.setIndexSequence(consensus);
 }
 
-
-UnalignedConsensusReader::UnalignedConsensusReader()
-	: m_startOfMaxSeg(-1), m_endOfMaxSeg(-1),
-	m_start(-1), m_end(-1), m_totalUnaligned(0), m_pos(0)
+void ResidueProfiles::adjustConsensusAndGuide()
 {
+	vector<Block>& blocksOnMaster = m_guideAlignment.getMaster().getBlocks();
+	vector<Block>& blocksOnConsensus = m_guideAlignment.getSlave().getBlocks();
+	blocksOnMaster.clear();
+	blocksOnConsensus.clear();
+	string curConsensus = m_consensus;
+	m_consensus.erase();
+
+	bool inBlock = false;
+	int startM = 0, endM = 0;
+	int startC = 0;
+	int blockId = 0;
+	PosProfileMap::iterator cit = m_profiles.begin();
+	while (cit != m_profiles.end() )
+	{	
+		ColumnResidueProfile& colProfile = cit->second;
+		if (colProfile.getIndexByConsensus() < 0)
+		{
+			cit++;
+			continue;
+		}
+		const ColumnAddress& col = cit->first;
+		int conIndex = colProfile.getIndexByConsensus();
+		bool qualifiedForConsensus = (m_colsToSkipOnConsensus.find(conIndex) == m_colsToSkipOnConsensus.end());
+		bool qualifiedForGuide = qualifiedForConsensus && ((cit->second).isAligned(0)); //is aligned on master
+		if (!inBlock)
+		{
+			if (qualifiedForGuide)
+			{
+				startM = col.mPos;
+				endM = startM;
+				startC = m_consensus.size();
+				//m_consensus += res;
+				inBlock = true;
+			}
+		}
+		else
+		{
+			if (qualifiedForGuide)
+			{
+				assert(col.mPos > endM);
+				if (col.mPos == (endM + 1)) //continue on the previous block
+				{
+					endM++;
+				}
+				else  
+				{	
+					//save the last block
+					blocksOnMaster.push_back(Block(startM, endM - startM + 1, blockId));
+					blocksOnConsensus.push_back(Block(startC, endM - startM + 1, blockId));
+					//start a new block
+					blockId++;
+					startM = col.mPos;
+					endM = startM;
+					startC = m_consensus.size();
+				}
+			}
+			else //ending this block
+			{
+				inBlock = false;
+				blocksOnMaster.push_back(Block(startM, endM - startM + 1, blockId));
+				blocksOnConsensus.push_back(Block(startC, endM - startM + 1, blockId));
+				blockId++;
+			}
+		}
+		if (qualifiedForConsensus)
+		{
+			colProfile.setIndexByConsensus(m_consensus.size());
+			m_consensus += curConsensus[conIndex];
+		}
+		else
+			colProfile.setIndexByConsensus(-2); //use -2 to indicate skiped consensus
+		cit++;
+	}
+	if (inBlock) //block goes to the end of the sequence
+	{
+		blocksOnMaster.push_back(Block(startM, endM - startM + 1, blockId));
+		blocksOnConsensus.push_back(Block(startC, endM - startM + 1, blockId));
+	}
+	assert(m_guideAlignment.isValid());
 }
 
-void UnalignedConsensusReader::read(ColumnResidueProfile& crp)
+bool ResidueProfiles::skipUnalignedSeg(UnalignedSegReader& ucr, int len)
+{
+	vector<UnalignedSegReader::Seg> segs;
+	ucr.getLongUnalignedSegs(len, segs);
+	if (segs.size() == 0)
+		return false;
+	if (m_consensus.size() == 0) //master is the consensus
+	{
+		segsToSet(segs, m_colsToSkipOnMaster);
+	}
+	else
+	{
+		segsToSet(segs, m_colsToSkipOnConsensus);
+	}
+	return true;
+}
+
+void ResidueProfiles::segsToSet(vector<UnalignedSegReader::Seg>& segs,set<int>& cols)
+{
+	for(int i = 0; i < segs.size(); i++)
+	{
+		for(int k = segs[i].first; k <= segs[i].second; k++)
+			cols.insert(k);
+	}
+}
+
+UnalignedSegReader::UnalignedSegReader()
+	: m_totalUnaligned(0), m_pos(0)
+{
+	m_maxSeg.first = -1;
+	m_maxSeg.second = -1;
+	m_curSeg.first = -1;
+	m_curSeg.second = -1;
+}
+
+void UnalignedSegReader::setIndexSequence(string& seq)
+{
+	m_indexSeq = seq;
+}
+
+string UnalignedSegReader::getIndexSequence()
+{
+	return m_indexSeq;
+}
+
+UnalignedSegReader::Seg UnalignedSegReader::getLongestSeg()
+{
+	return m_maxSeg;
+}
+
+int UnalignedSegReader::getLenOfLongestSeg()
+{
+	return getLen(m_maxSeg);
+}
+
+string UnalignedSegReader::subtractLongestSeg(int threshold)
+{
+	if (getLenOfLongestSeg() > threshold)
+	{
+		return subtractSeg(m_maxSeg, m_indexSeq);
+	}
+	else
+		return m_indexSeq;
+}
+
+int UnalignedSegReader::getLongUnalignedSegs(int length, vector<Seg>& segs)
+{
+	for(int i = 0; i < m_unalignedSegs.size(); i++)
+		if (getLen(m_unalignedSegs[i]) >= length)
+			segs.push_back(m_unalignedSegs[i]);
+	return segs.size();
+}
+
+/*
+string UnalignedSegReader::subtractLongSeg(int length)
+{
+	vector<Seg> segs;
+	getLongUnalignedSegs(length, segs);
+	string result = m_indexSeq;;
+	for (int i = 0; i < segs.size(); i++)
+	{
+		if (getLen(segs[i])> length)
+			result = subtractSeg(segs[i], result);
+	}
+	return result;
+}*/
+
+int UnalignedSegReader::getLen(Seg seg)
+{
+	return seg.second - seg.first + 1 ;
+}
+
+string UnalignedSegReader::subtractSeg(Seg seg, string& in)
+{
+	string head = in.substr(0, seg.first);
+	string tail = in.substr(seg.second + 1, in.size() - (seg.second + 1));
+	return head + tail;
+}
+
+void UnalignedSegReader::read(ColumnResidueProfile& crp)
 {
 	if (crp.isAllRowsAligned()) //aligned
 	{
-		if (m_start >= 0) //was in a unaligned region
+		if (m_curSeg.first >= 0) //was in a unaligned region
 		{
-			m_totalUnaligned += m_end - m_start + 1;
-			if (m_startOfMaxSeg < 0)
+			m_totalUnaligned += getLen(m_curSeg);
+			m_unalignedSegs.push_back(m_curSeg);
+			if (m_maxSeg.first < 0)
 			{
-				m_endOfMaxSeg = m_end;
-				m_startOfMaxSeg = m_start;
+				m_maxSeg = m_curSeg;
 			}
-			else if ( (m_end - m_start) > (m_endOfMaxSeg - m_startOfMaxSeg))
+			else if ( getLen(m_curSeg) > getLen(m_maxSeg))
 			{
-				m_endOfMaxSeg = m_end;
-				m_startOfMaxSeg = m_start;
+				m_maxSeg = m_curSeg;
 			}
 		}
 		//-1 to indicate " in aligned region
-		m_start = -1;
-		m_end = -1;
+		m_curSeg.first = -1;
+		m_curSeg.second = -1;
 	}
 	else //unaligned
 	{
-		if (m_start < 0) //see a new unaligned seg
+		if (m_curSeg.first < 0) //see a new unaligned seg
 		{
-			m_start = m_pos;
-			m_end = m_start;
+			m_curSeg.first = m_pos;
+			m_curSeg.second = m_curSeg.first;
 		}
 		else //continue an existing unaligned seg
 		{
-			m_end++;
+			m_curSeg.second++;
 		}
 	}
 	m_pos++;
-}
-
-void UnalignedConsensusReader::getLongestSeg(int& start, int& end)
-{
-	start = m_startOfMaxSeg;
-	end = m_endOfMaxSeg;
 }
 
 END_SCOPE(cd_utils)
@@ -795,6 +960,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/08/25 20:22:22  cliu
+ * conditionally skip long insert
+ *
  * Revision 1.5  2005/08/04 16:35:26  cliu
  * work with longest loop of 1.
  *
