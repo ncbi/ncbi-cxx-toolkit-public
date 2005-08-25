@@ -1078,7 +1078,7 @@ void CLocalIdComment::x_GatherInfo(CBioseqContext&)
         msg << "LocalID: " << m_Oid->GetId();    
         break;
     case CObject_id::e_Str:
-        if ( m_Oid->GetStr().length() < 100 ) {
+        if ( m_Oid->GetStr().length() < 1000 ) {
             msg << "LocalID: " << m_Oid->GetStr();
         } else {
             msg << "LocalID string too large";
@@ -1167,6 +1167,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/08/25 18:37:29  shomrat
+* Show much larger local ids in comment
+*
 * Revision 1.23  2005/06/06 18:32:42  shomrat
 * Fixed WGS comment text
 *
