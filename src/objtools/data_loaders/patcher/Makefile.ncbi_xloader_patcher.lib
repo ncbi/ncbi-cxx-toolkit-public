@@ -1,0 +1,6 @@
+# $Id$
+
+LIB = ncbi_xloader_patcher
+SRC = loaderpatcher
+
+

@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (ncbi_xloader_patcher)
+##################################
+
+LIB_PROJ = ncbi_xloader_patcher
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

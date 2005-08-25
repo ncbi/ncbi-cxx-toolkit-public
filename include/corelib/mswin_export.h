@@ -869,6 +869,14 @@
 #  define NCBI_XLOADER_TRACE_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library ncbi_xloader_patcher
+ */
+#ifdef  NCBI_XLOADER_PATCHER_EXPORTS
+#  define  NCBI_XLOADER_PATCHER_EXPORT __declspec(dllexport)
+#else
+#  define  NCBI_XLOADER_PATCHER_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xncbi
  */
 #ifdef NCBI_XNCBI_EXPORTS
@@ -1105,6 +1113,7 @@
 #  define NCBI_XLOADER_LDS_EXPORT
 #  define NCBI_XLOADER_TABLE_EXPORT
 #  define NCBI_XLOADER_TRACE_EXPORT
+#  define NCBI_XLOADER_PATCHER_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJEDIT_EXPORT
 #  define NCBI_XOBJMANIP_EXPORT
@@ -1145,6 +1154,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.102  2005/08/25 14:06:43  didenko
+ * Added data loader patcher
+ *
  * Revision 1.101  2005/07/20 15:23:55  jcherry
  * Added NCBI_XALGOCONTIG_ASSEMBLY_EXPORT (under NCBI_XALGO_EXPORTS)
  *
