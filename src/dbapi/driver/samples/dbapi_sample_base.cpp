@@ -47,6 +47,7 @@
 #include <dbapi/driver/driver_mgr.hpp>
 #include "dbapi_sample_base.hpp"
 
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -74,7 +75,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     m_TableUID += "_" + CSmallDNS::GetLocalHost() + "_";
     m_TableUID += NStr::IntToString(CProcess::GetCurrentPid()) + "_";
     m_TableUID += CTime(CTime::eCurrent).AsString("MDy");
-    std::replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
+    replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
 
     return;
 }
@@ -470,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/25 18:07:17  ucko
+ * Revert previous (ineffective) change; instead, remember to include <algorithm>.
+ *
  * Revision 1.6  2005/08/25 17:58:54  ssikorsk
  * Call 'replace' explicitly from the std namespace for GCC295 sake.
  *
