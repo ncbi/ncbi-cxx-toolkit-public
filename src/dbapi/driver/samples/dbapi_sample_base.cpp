@@ -74,7 +74,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     m_TableUID += "_" + CSmallDNS::GetLocalHost() + "_";
     m_TableUID += NStr::IntToString(CProcess::GetCurrentPid()) + "_";
     m_TableUID += CTime(CTime::eCurrent).AsString("MDy");
-    replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
+    std::replace( m_TableUID.begin(), m_TableUID.end(), '-', '_' );
 
     return;
 }
@@ -470,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/08/25 17:58:54  ssikorsk
+ * Call 'replace' explicitly from the std namespace for GCC295 sake.
+ *
  * Revision 1.5  2005/08/24 12:41:22  ssikorsk
  * Substitute '-' with '_' in table names
  *
