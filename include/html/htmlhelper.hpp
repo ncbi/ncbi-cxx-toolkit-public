@@ -65,10 +65,11 @@ public:
     /// Encode a string for JavaScript.
     ///
     /// Call HTMLEncode and also encode all non-printable characters.
-    /// The non-printable characters will be represented as "\r", "\n",
-    /// "\t", "\\", "\'" or "\xDD" where DD is the character's code in
-    /// hexadecimal.
-    static string JavaScriptEncode(const string& str);
+    /// The non-printable characters will be represented as "\S"
+    /// where S is the symbol code or as "\xDD" where DD is
+    /// the character's code in hexadecimal.
+    /// @sa NStr::JavaScriptEncode, HTMLEncode
+    static string HTMLJavaScriptEncode(const string& str);
 
     /// Strip all HTML code from a string.
     static string StripHTML(const string& str);
@@ -156,7 +157,20 @@ private:
 //  Inline methods
 //=============================================================================
 
-inline bool CIDs::ExtractID(int id)
+inline
+string CHTMLHelper::HTMLJavaScriptEncode(const string& str)
+{
+    return NStr::JavaScriptEncode(HTMLEncode(str));
+}
+
+inline
+string CHTMLHelper::StripHTML(const string& str)
+{
+    return CHTMLHelper::StripSpecialChars(CHTMLHelper::StripTags(str));
+}
+
+inline
+bool CIDs::ExtractID(int id)
 {
     iterator i = find(begin(), end(), id);
     if ( i != end() ) {
@@ -166,7 +180,8 @@ inline bool CIDs::ExtractID(int id)
     return false;
 }
 
-inline int CIDs::GetNumber(const string& str)
+inline
+int CIDs::GetNumber(const string& str)
 {
     return NStr::StringToInt(str);
 }
@@ -181,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/08/25 18:55:06  ivanov
+ * CHTMLHelper:: Renamed JavaScriptEncode() -> HTMLJavaScriptEncode()
+ *
  * Revision 1.15  2005/08/24 12:15:54  ivanov
  * + CHTMLHelper::JavaScriptEncode()
  *
