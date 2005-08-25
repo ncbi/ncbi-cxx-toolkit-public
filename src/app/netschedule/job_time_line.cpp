@@ -99,9 +99,8 @@ bool CJobTimeLine::RemoveObject(time_t object_time, unsigned object_id)
         if (!bv) {
             return false;
         }
-        bool v = bv->test(object_id);
-        if (v) {
-            bv->set(object_id, false);
+        bool changed = bv->set_bit(object_id, false);
+        if (changed) {
             return true;
         }
     }
@@ -113,9 +112,12 @@ void CJobTimeLine::RemoveObject(unsigned object_id)
     NON_CONST_ITERATE(TTimeLine, it, m_TimeLine) {
         TObjVector* bv = *it;
         if (bv) {
-            bv->set(object_id, false);
+            bool changed = bv->set_bit(object_id, false);
+            if (changed) {
+                return;
+            }
         }
-    }
+    } // NON_CONST_ITERATE
 }
 
 void CJobTimeLine::MoveObject(time_t old_time, 
@@ -177,6 +179,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/08/25 18:08:27  kuznets
+ * Minor performance optimization
+ *
  * Revision 1.2  2005/03/10 14:18:46  kuznets
  * +MoveObject()
  *
