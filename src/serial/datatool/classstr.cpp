@@ -1264,7 +1264,7 @@ void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         if (!CClassCode::GetDoxygenGroup().empty()) {
             out << CClassCode::GetDoxygenGroup();
         } else {
-            out << "dataspec_" << GetModuleName();
+            out << "dataspec_" << GetDoxygenModuleName();
         }
         out
             << "\n *\n"
@@ -1483,6 +1483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2005/08/25 16:00:29  gouriano
+* Corrected doxygen-related code generation
+*
 * Revision 1.70  2005/07/07 18:20:55  gouriano
 * Corrected generation of AnyContent object code
 *

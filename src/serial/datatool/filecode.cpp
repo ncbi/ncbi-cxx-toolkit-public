@@ -485,7 +485,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
                         if (!CClassCode::GetDoxygenGroup().empty()) {
                             header << CClassCode::GetDoxygenGroup();
                         } else {
-                            header << "dataspec_" << i->code->GetModuleName();
+                            header << "dataspec_" << i->code->GetDoxygenModuleName();
                         }
                         header
                             << "\n *\n"
@@ -867,18 +867,19 @@ bool CFileCode::AddType(const CDataType* type)
     return true;
 }
 
-void CFileCode::GetModuleNames( map<string,string>& names) const
+void CFileCode::GetModuleNames( map<string, pair<string,string> >& names) const
 {
     CNcbiOstrstream ostr;
     WriteSourceFile(ostr);
 //    ostr.put('\0');
     string src_file = string(CNcbiOstrstreamToString(ostr));
-    string module_name;
+    string doxmodule_name, module_name;
 
     ITERATE ( TClasses, i, m_Classes ) {
+        doxmodule_name = i->code->GetDoxygenModuleName();
         module_name = i->code->GetModuleName();
         if (names.find(module_name) == names.end()) {
-            names[module_name] = src_file;
+            names[module_name] = make_pair(src_file,doxmodule_name);
         }
     }
 }
@@ -891,6 +892,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.50  2005/08/25 16:00:29  gouriano
+* Corrected doxygen-related code generation
+*
 * Revision 1.49  2005/08/23 18:58:20  gouriano
 * Fix GetModuleNames
 *

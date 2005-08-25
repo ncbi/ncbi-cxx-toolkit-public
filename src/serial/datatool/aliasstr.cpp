@@ -269,7 +269,7 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
         if (!CClassCode::GetDoxygenGroup().empty()) {
             out << CClassCode::GetDoxygenGroup();
         } else {
-            out << "dataspec_" << GetModuleName();
+            out << "dataspec_" << GetDoxygenModuleName();
         }
         out
             << "\n *\n"
@@ -458,6 +458,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/08/25 16:00:29  gouriano
+* Corrected doxygen-related code generation
+*
 * Revision 1.11  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

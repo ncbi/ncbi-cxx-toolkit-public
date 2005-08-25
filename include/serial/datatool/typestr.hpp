@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/08/25 16:00:06  gouriano
+* Corrected doxygen-related code generation
+*
 * Revision 1.13  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -121,6 +124,10 @@ public:
     const string& GetModuleName(void) const
         {
             return m_ModuleName;
+        }
+    string GetDoxygenModuleName(void) const
+        {
+            return NStr::Replace(m_ModuleName,"-","_");
         }
     void SetModuleName(const string& name);
 

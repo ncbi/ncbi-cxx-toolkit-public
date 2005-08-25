@@ -116,7 +116,7 @@ public:
     CNcbiOstream& WriteUserCopyright(CNcbiOstream& out, bool header) const;
     static CNcbiOstream& WriteLogKeyword(CNcbiOstream& out);
 
-    void GetModuleNames( map<string,string>& names) const;
+    void GetModuleNames( map<string, pair<string,string> >& names) const;
 
     static void SetPchHeader(const string& name)
         {
@@ -163,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2005/08/25 16:00:06  gouriano
+* Corrected doxygen-related code generation
+*
 * Revision 1.18  2004/05/19 15:45:46  gouriano
 * Add precompiled header into combining files as well
 *
