@@ -3,4 +3,5 @@
 LIB = ncbi_xloader_patcher
 SRC = loaderpatcher
 
+ASN_DEP = seq seqset
 
