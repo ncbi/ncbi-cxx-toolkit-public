@@ -1496,7 +1496,8 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
             return Set(the_type, the_id);
         } else {
             NCBI_THROW(CSeqIdException, eFormat,
-                       "Negative or non-numeric " + SelectionName(the_type)
+                       "Negative, excessively large, or non-numeric "
+                       + SelectionName(the_type)
                        + " ID " + acc);
         }
         break;
@@ -1603,6 +1604,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.113  2005/08/25 14:02:04  jcherry
+ * More accurate exception message for bad numeric accessions
+ *
  * Revision 6.112  2005/08/18 14:42:26  ucko
  * By request, parse FASTA-style dbSNP IDs greedily, as they may contain
  * extra vertical bars as part of the tag.
