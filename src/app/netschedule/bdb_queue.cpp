@@ -1514,29 +1514,27 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         m_LQueue.status_tracker.PutDone_GetPending(done_job_id, &need_update);
     bool done_rec_updated;
 
-
-    {{
     SQueueDB& db = m_LQueue.db;
+
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
+    {{
 
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(&trans);
 
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CCursorGuard cg(cur);
+
     // put result
     if (need_update) {
-        CBDB_FileCursor& cur = *GetCursor(trans);
-        CCursorGuard cg(cur);
         done_rec_updated =
             x_UpdateDB_PutResultNoLock(
                 db, curr, cur, done_job_id, ret_code, output, NULL);
     }
 
     if (pending_job_id) {
-        CBDB_FileCursor& cur = *GetCursor(trans);
-        CCursorGuard cg(cur);
-
         *job_id = pending_job_id;
         EGetJobUpdateStatus upd_status;
         upd_status =
@@ -1564,9 +1562,11 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         *job_id = 0;
     }
 
+    }}
+
     trans.Commit();
 
-    }}
+
 
     if (*job_id) {
         sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
@@ -3006,6 +3006,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/08/25 16:35:01  kuznets
+ * Fixed bug (uncommited transaction)
+ *
  * Revision 1.47  2005/08/24 18:17:26  kuznets
  * Reduced priority of notifiction thread, increased Tas spins
  *
