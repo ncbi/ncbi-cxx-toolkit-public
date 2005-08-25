@@ -485,7 +485,9 @@ void CBDB_RawFile::PrintStat(CNcbiOstream & out)
         << "bt_leaf_pg    : " << stp->bt_leaf_pg    << NcbiEndl
         << "bt_dup_pg     : " << stp->bt_dup_pg     << NcbiEndl
         << "bt_over_pg    : " << stp->bt_over_pg    << NcbiEndl
+#ifdef BDB_USE_NEW_STAT
         << "bt_empty_pg   : " << stp->bt_empty_pg   << NcbiEndl
+#endif
         << "bt_free       : " << stp->bt_free       << NcbiEndl
         << "bt_int_pgfree : " << stp->bt_int_pgfree << NcbiEndl
         << "bt_leaf_pgfree: " << stp->bt_leaf_pgfree<< NcbiEndl
@@ -1116,6 +1118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/08/25 15:28:11  kuznets
+ * Don't use bt_empty_pg on berkeley db older than 4.3
+ *
  * Revision 1.53  2005/08/24 18:15:14  kuznets
  * Added flag to support dirty reads
  *
