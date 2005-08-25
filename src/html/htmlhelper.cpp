@@ -92,55 +92,6 @@ string CHTMLHelper::HTMLEncode(const string& input)
 }
 
 
-string CHTMLHelper::JavaScriptEncode(const string& str)
-{
-    static const char s_Hex[] = "0123456789ABCDEF";
-    ITERATE ( string, it, str ) {
-        if ( !isprint((unsigned char)(*it)) || *it == '\'' || *it == '\\' ) {
-            // Bad character - convert via CNcbiOstrstream
-            CNcbiOstrstream out;
-            // Write first good characters in one chunk
-            out.write(str.data(), it-str.begin());
-            // Convert all other characters one by one
-            do {
-                if (isprint((unsigned char)(*it))) {
-                    // Escape ' and \ anyway
-                    if ( *it == '\'' || *it == '\\' )
-                        out.put('\\');
-                    out.put(*it);
-                } else {
-                    // All other non-printable characters need to be escaped
-                    out.put('\\');
-                    if (*it == '\t') {
-                        out.put('t');
-                    } else if (*it == '\n') {
-                        out.put('n');
-                    } else if (*it == '\r') {
-                        out.put('r');
-                    } else {
-                        // Hex string for non-standard codes
-                        out.put('x');
-                        out.put(s_Hex[(unsigned char) *it >> 4]);
-                        out.put(s_Hex[(unsigned char) *it & 15]);
-                    }
-                }
-            } while (++it < it_end); // it_end is from ITERATE macro
-
-            // Return HTML encoded string
-            return HTMLEncode(CNcbiOstrstreamToString(out));
-        }
-    }
-    // All characters are good - HTML encode orignal string
-    return HTMLEncode(str);
-}
-
-
-string CHTMLHelper::StripHTML(const string& str)
-{
-    return CHTMLHelper::StripSpecialChars(CHTMLHelper::StripTags(str));
-}
-
-
 string CHTMLHelper::StripTags(const string& str)
 {
     SIZE_TYPE pos = 0;
@@ -289,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/08/25 18:55:38  ivanov
+ * CHTMLHelper:: Renamed JavaScriptEncode() -> HTMLJavaScriptEncode().
+ *
  * Revision 1.26  2005/08/24 12:16:04  ivanov
  * + CHTMLHelper::JavaScriptEncode()
  *
