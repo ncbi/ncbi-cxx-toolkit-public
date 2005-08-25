@@ -55,6 +55,10 @@ class CDataSource;
 class CDataLoader;
 class CTSE_SNP_InfoMap;
 
+class ITSE_Assigner;
+
+struct SAnnotObjectsIndex;
+
 class NCBI_XOBJMGR_EXPORT CTSE_Split_Info : public CObject
 {
 public:
@@ -63,7 +67,7 @@ public:
     typedef int                                     TSplitVersion;
     typedef CTSE_Chunk_Info::TChunkId               TChunkId;
     typedef vector<TChunkId>                        TChunkIds;
-    typedef vector<CTSE_Info*>                      TTSE_Set;
+    typedef map<CTSE_Info*, CRef<ITSE_Assigner> >       TTSE_Set;
     typedef vector<pair<CSeq_id_Handle, TChunkId> > TSeqIdToChunks;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >   TChunks;
     typedef CTSE_Chunk_Info::TBioseqId              TBioseqId;
@@ -77,6 +81,7 @@ public:
     typedef CTSE_Chunk_Info::TAssemblyInfo          TAssemblyInfo;
 
     CTSE_Split_Info(void);
+    CTSE_Split_Info(TBlobId, TBlobVersion);
     ~CTSE_Split_Info(void);
 
     // interface to TSE
@@ -89,7 +94,10 @@ public:
 
     // TSE connection
     void x_DSAttach(CDataSource& ds);
-    void x_TSEAttach(CTSE_Info& tse_info);
+    void x_TSEAttach(CTSE_Info& tse_info, CRef<ITSE_Assigner>& assigner);
+    void x_TSEDetach(CTSE_Info& tse_info);
+
+    CRef<ITSE_Assigner> GetAssigner(const CTSE_Info& tse);
 
     // chunk connection
     void AddChunk(CTSE_Chunk_Info& chunk_info);
@@ -98,31 +106,12 @@ public:
     CTSE_Chunk_Info& GetSkeletonChunk(void);
     void LoadChunks(const TChunkIds& ids) const;
 
-    // get attach points from CTSE_Info
-    CBioseq_Base_Info& x_GetBase(CTSE_Info& tse, const TPlace& place);
-    CBioseq_Info& x_GetBioseq(CTSE_Info& tse, const TPlace& place);
-    CBioseq_set_Info& x_GetBioseq_set(CTSE_Info& tse, const TPlace& place);
-    CBioseq_Info& x_GetBioseq(CTSE_Info& tse, const TBioseqId& id);
-    CBioseq_set_Info& x_GetBioseq_set(CTSE_Info& tse, TBioseq_setId id);
-
     // split information
     void x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id);
     void x_AddAnnotPlace(const TPlace& place, TChunkId chunk_id);
     void x_AddBioseqPlace(TBioseq_setId place_id, TChunkId chunk_id);
     void x_AddSeq_data(const TLocationSet& location, CTSE_Chunk_Info& chunk);
     void x_AddAssemblyInfo(const TAssemblyInfo& info, TChunkId chunk_id);
-
-    void x_AddDescInfo(CTSE_Info& tse_info,
-                       const TDescInfo& info, TChunkId chunk_id);
-    void x_AddAnnotPlace(CTSE_Info& tse_info,
-                         const TPlace& place, TChunkId chunk_id);
-    void x_AddBioseqPlace(CTSE_Info& tse_info,
-                          TBioseq_setId place_id, TChunkId chunk_id);
-    void x_AddSeq_data(CTSE_Info& tse_info,
-                       const TLocationSet& location, CTSE_Chunk_Info& chunk);
-    void x_AddAssemblyInfo(CTSE_Info& tse_info,
-                           const TAssemblyInfo& info,
-                           TChunkId chunk_id);
 
     // id indexing
     void x_UpdateCore(void);
@@ -150,22 +139,8 @@ public:
                         const TSequence& sequence);
     void x_LoadAssembly(const TBioseqId& seq_id,
                         const TAssembly& assembly);
-    void x_LoadDescr(CTSE_Info& tse_info,
-                     const TPlace& place, const CSeq_descr& descr);
-    void x_LoadAnnot(CTSE_Info& tse_info,
-                     const TPlace& place, CRef<CSeq_annot_Info> annot);
-    void x_LoadBioseq(CTSE_Info& tse_info,
-                      const TPlace& place, CRef<CSeq_entry_Info> entry);
-    void x_LoadSequence(CTSE_Info& tse_info,
-                        const TPlace& place, TSeqPos pos,
-                        const TSequence& sequence);
-    void x_LoadAssembly(CTSE_Info& tse_info,
-                        const TBioseqId& seq_id,
-                        const TAssembly& assembly);
-
     void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
-    void x_LoadSeq_entry(CTSE_Info& tse_info,
-                         CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
+
 
 protected:
     TSeqIdToChunks::const_iterator x_FindChunk(const CSeq_id_Handle& id) const;

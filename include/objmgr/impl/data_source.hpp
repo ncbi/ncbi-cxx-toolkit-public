@@ -137,6 +137,12 @@ public:
     typedef CRef<CTSE_Info>                         TTSE_Ref;
     typedef CConstRef<CObject>                      TBlobId;
 
+    typedef CDSAnnotLockReadGuard                   TAnnotLockReadGuard;
+    typedef CDSAnnotLockWriteGuard                  TAnnotLockWriteGuard;
+    typedef CRWLock TMainLock;
+    typedef CRWLock TAnnotLock;
+    typedef CRWLock TCacheLock;
+
     /// Register new TSE (Top Level Seq-entry)
     TTSE_Lock AddTSE(CSeq_entry& se,
                      CTSE_Info::TBlobState = CBioseq_Handle::fState_none);
@@ -254,6 +260,8 @@ public:
 
     virtual void Prefetch(CPrefetchToken_Impl& token);
 
+    TMainLock& GetMainLock() const { return m_DSMainLock; }
+
 private:
     // internal typedefs
 
@@ -292,6 +300,8 @@ private:
     friend class CBioseq_Info;
     friend class CPrefetchToken_Impl;
     friend class CScope_Impl;
+    friend class CDSAnnotLockReadGuard;
+    friend class CDSAnnotLockWriteGuard;
 
     // 
     void x_SetLock(CTSE_Lock& lock, CConstRef<CTSE_Info> tse) const;
@@ -384,17 +394,6 @@ private:
     void x_AddTSEOrphanAnnots(TTSE_LockMatchSet& ret,
                               const TSeq_idSet& ids,
                               const CTSE_Lock& tse_lock);
-
-    //typedef CMutex TMainLock;
-    //typedef CFastMutex TAnnotLock;
-    typedef CRWLock TMainLock;
-    typedef CRWLock TAnnotLock;
-    typedef CRWLock TCacheLock;
-
-    friend class CDSAnnotLockReadGuard;
-    friend class CDSAnnotLockWriteGuard;
-    typedef CDSAnnotLockReadGuard TAnnotLockReadGuard;
-    typedef CDSAnnotLockWriteGuard TAnnotLockWriteGuard;
 
     // Used to lock: m_*_InfoMap, m_TSE_seq
     // Is locked before locks in CTSE_Info

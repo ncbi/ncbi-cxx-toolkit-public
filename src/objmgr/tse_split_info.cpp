@@ -38,8 +38,9 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
-#include <objmgr/impl/bioseq_info.hpp>
-#include <objmgr/impl/bioseq_set_info.hpp>
+//#include <objmgr/impl/bioseq_info.hpp>
+//#include <objmgr/impl/bioseq_set_info.hpp>
+#include <objmgr/impl/tse_assigner.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/seq_map.hpp>
@@ -49,9 +50,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-
-static const int kTSE_Place_id = 0;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -67,6 +65,15 @@ CTSE_Split_Info::CTSE_Split_Info(void)
 {
 }
 
+CTSE_Split_Info::CTSE_Split_Info(TBlobId blob_id, TBlobVersion blob_ver)
+    : m_BlobId(blob_id),
+      m_BlobVersion(blob_ver),
+      m_SplitVersion(-1),
+      m_BioseqChunkId(-1),
+      m_SeqIdToChunksSorted(false)
+{    
+}
+
 
 CTSE_Split_Info::~CTSE_Split_Info(void)
 {
@@ -77,19 +84,30 @@ CTSE_Split_Info::~CTSE_Split_Info(void)
 
 
 // TSE/DS attach
-void CTSE_Split_Info::x_TSEAttach(CTSE_Info& tse)
+
+void CTSE_Split_Info::x_TSEAttach(CTSE_Info& tse, CRef<ITSE_Assigner>& lsnr)
 {
-    if ( !m_BlobId ) {
-        m_BlobId = tse.GetBlobId();
-        _ASSERT(m_BlobId);
-        m_BlobVersion = tse.GetBlobVersion();
-    }
-    m_TSE_Set.push_back(&tse);
+    m_TSE_Set.insert(TTSE_Set::value_type(&tse, lsnr));
     NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        it->second->x_TSEAttach(tse);
+        it->second->x_TSEAttach(tse, *lsnr);
     }
 }
 
+void CTSE_Split_Info::x_TSEDetach(CTSE_Info& tse_info)
+{
+    m_TSE_Set.erase(&tse_info);
+}
+
+
+CRef<ITSE_Assigner> CTSE_Split_Info::GetAssigner(const CTSE_Info& tse)
+{
+    CRef<ITSE_Assigner> ret;
+    TTSE_Set::const_iterator it = m_TSE_Set.find(const_cast<CTSE_Info*>(&tse));
+    if( it != m_TSE_Set.end() )
+        return it->second;
+    
+    return CRef<ITSE_Assigner>();
+}
 
 void CTSE_Split_Info::x_DSAttach(CDataSource& ds)
 {
@@ -196,51 +214,31 @@ void CTSE_Split_Info::LoadChunks(const TChunkIds& ids) const
 // split info
 void CTSE_Split_Info::x_AddDescInfo(const TDescInfo& info, TChunkId chunk_id)
 {
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_AddDescInfo(**it, info, chunk_id);
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.AddDescInfo(tse, info, chunk_id);
     }
 }
-
-
-void CTSE_Split_Info::x_AddDescInfo(CTSE_Info& tse_info,
-                                    const TDescInfo& info,
-                                    TChunkId chunk_id)
-{
-    x_GetBase(tse_info, info.second).x_AddDescrChunkId(info.first, chunk_id);
-}
-
 
 void CTSE_Split_Info::x_AddAssemblyInfo(const TAssemblyInfo& info,
                                         TChunkId chunk_id)
 {
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_AddAssemblyInfo(**it, info, chunk_id);
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.AddAssemblyInfo(tse, info, chunk_id);
     }
 }
-
-
-void CTSE_Split_Info::x_AddAssemblyInfo(CTSE_Info& tse_info,
-                                        const TAssemblyInfo& info,
-                                        TChunkId chunk_id)
-{
-    x_GetBioseq(tse_info, info).x_AddAssemblyChunkId(chunk_id);
-}
-
 
 void CTSE_Split_Info::x_AddAnnotPlace(const TPlace& place, TChunkId chunk_id)
 {
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_AddAnnotPlace(**it, place, chunk_id);
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.AddAnnotPlace(tse, place, chunk_id);
     }
 }
-
-
-void CTSE_Split_Info::x_AddAnnotPlace(CTSE_Info& tse_info,
-                                      const TPlace& place, TChunkId chunk_id)
-{
-    x_GetBase(tse_info, place).x_AddAnnotChunkId(chunk_id);
-}
-
 
 void CTSE_Split_Info::x_AddBioseqPlace(TBioseq_setId place_id,
                                        TChunkId chunk_id)
@@ -250,54 +248,22 @@ void CTSE_Split_Info::x_AddBioseqPlace(TBioseq_setId place_id,
         _ASSERT(chunk_id >= 0);
         m_BioseqChunkId = chunk_id;
     }
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_AddBioseqPlace(**it, place_id, chunk_id);
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.AddBioseqPlace(tse, place_id, chunk_id);
     }
 }
-
-
-void CTSE_Split_Info::x_AddBioseqPlace(CTSE_Info& tse_info,
-                                       TBioseq_setId place_id,
-                                       TChunkId chunk_id)
-{
-    if ( place_id == kTSE_Place_id ) {
-        tse_info.x_SetBioseqChunkId(chunk_id);
-    }
-    else {
-        x_GetBioseq_set(tse_info, place_id).x_AddBioseqChunkId(chunk_id);
-    }
-}
-
 
 void CTSE_Split_Info::x_AddSeq_data(const TLocationSet& location,
                                     CTSE_Chunk_Info& chunk)
 {
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_AddSeq_data(**it, location, chunk);
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.AddSeq_data(tse, location, chunk);
     }
 }
-
-
-void CTSE_Split_Info::x_AddSeq_data(CTSE_Info& tse_info,
-                                    const TLocationSet& locations,
-                                    CTSE_Chunk_Info& chunk)
-{
-    CBioseq_Info* last_bioseq = 0;
-    ITERATE ( TLocationSet, it, locations ) {
-        CBioseq_Info& bioseq = x_GetBioseq(tse_info, it->first);
-        if (&bioseq != last_bioseq) {
-            // Do not add duplicate chunks to the same bioseq
-            bioseq.x_AddSeq_dataChunkId(chunk.GetChunkId());
-        }
-        last_bioseq = &bioseq;
-
-        CSeqMap& seq_map = const_cast<CSeqMap&>(bioseq.GetSeqMap());
-        seq_map.SetRegionInChunk(chunk,
-                                 it->second.GetFrom(),
-                                 it->second.GetLength());
-    }
-}
-
 
 void CTSE_Split_Info::x_SetContainedId(const TBioseqId& id,
                                        TChunkId chunk_id)
@@ -313,10 +279,10 @@ void CTSE_Split_Info::x_UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
     CFastMutexGuard guard(m_SeqIdToChunksMutex);
     if ( !chunk.m_AnnotIndexEnabled ) {
-        ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-            CTSE_Info& tse_info = **it;
-            CDataSource::TAnnotLockWriteGuard guard2(tse_info.GetDataSource());
-            tse_info.UpdateAnnotIndex(chunk);
+        NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+            CTSE_Info& tse = *it->first;
+            ITSE_Assigner& listener = *it->second;
+            listener.UpdateAnnotIndex(tse, chunk);
         }
         chunk.m_AnnotIndexEnabled = true;
     }
@@ -415,17 +381,11 @@ void CTSE_Split_Info::x_UpdateCore(void)
 void CTSE_Split_Info::x_LoadDescr(const TPlace& place,
                                   const CSeq_descr& descr)
 {
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_LoadDescr(**it, place, descr);
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.LoadDescr(tse, place, descr);
     }
-}
-
-
-void CTSE_Split_Info::x_LoadDescr(CTSE_Info& tse_info,
-                                  const TPlace& place,
-                                  const CSeq_descr& descr)
-{
-    x_GetBase(tse_info, place).AddSeq_descr(descr);
 }
 
 
@@ -433,38 +393,25 @@ void CTSE_Split_Info::x_LoadAnnot(const TPlace& place,
                                   CRef<CSeq_annot_Info> annot)
 {
     CRef<CSeq_annot_Info> add;
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
         if ( !add ) {
             add = annot;
         }
         else {
             add = new CSeq_annot_Info(*annot, 0);
         }
-        x_LoadAnnot(**it, place, add);
+        listener.LoadAnnot(tse, place, add);
     }
 }
-
-
-void CTSE_Split_Info::x_LoadAnnot(CTSE_Info& tse_info,
-                                  const TPlace& place,
-                                  CRef<CSeq_annot_Info> annot)
-{
-    {{
-        CDataSource::TMainLock::TWriteLockGuard guard
-            (tse_info.GetDataSource().m_DSMainLock);
-        x_GetBase(tse_info, place).AddAnnot(annot);
-    }}
-    {{
-        CDataSource::TAnnotLockWriteGuard guard(tse_info.GetDataSource());
-        tse_info.UpdateAnnotIndex(*annot);
-    }}
-}
-
 
 void CTSE_Split_Info::x_LoadBioseq(const TPlace& place, const CBioseq& bioseq)
 {
     CRef<CSeq_entry_Info> add;
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
         if ( !add ) {
             add = new CSeq_entry_Info(*new CSeq_entry);
             add->SelectSeq(const_cast<CBioseq&>(bioseq));
@@ -472,47 +419,18 @@ void CTSE_Split_Info::x_LoadBioseq(const TPlace& place, const CBioseq& bioseq)
         else {
             add = new CSeq_entry_Info(*add, 0);
         }
-        x_LoadBioseq(**it, place, add);
+        listener.LoadBioseq(tse, place, add);
     }
-}
-
-
-void CTSE_Split_Info::x_LoadBioseq(CTSE_Info& tse_info,
-                                   const TPlace& place,
-                                   CRef<CSeq_entry_Info> entry)
-{
-    {{
-        CDataSource::TMainLock::TWriteLockGuard guard
-            (tse_info.GetDataSource().m_DSMainLock);
-        if (place == TPlace(CSeq_id_Handle(), kTSE_Place_id)) {
-            tse_info.x_SetObject(*entry, 0); //???
-        }
-        else {
-            x_GetBioseq_set(tse_info, place).AddEntry(entry);
-        }
-    }}
 }
 
 
 void CTSE_Split_Info::x_LoadSequence(const TPlace& place, TSeqPos pos,
                                      const TSequence& sequence)
 {
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_LoadSequence(**it, place, pos, sequence);
-    }
-}
-
-
-void CTSE_Split_Info::x_LoadSequence(CTSE_Info& tse_info,
-                                     const TPlace& place, TSeqPos pos,
-                                     const TSequence& sequence)
-{
-    CSeqMap& seq_map =
-        const_cast<CSeqMap&>(x_GetBioseq(tse_info, place).GetSeqMap());
-    ITERATE ( TSequence, it, sequence ) {
-        const CSeq_literal& literal = **it;
-        seq_map.LoadSeq_data(pos, literal.GetLength(), literal.GetSeq_data());
-        pos += literal.GetLength();
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.LoadSequence(tse, place, pos, sequence);
     }
 }
 
@@ -520,17 +438,11 @@ void CTSE_Split_Info::x_LoadSequence(CTSE_Info& tse_info,
 void CTSE_Split_Info::x_LoadAssembly(const TBioseqId& seq_id,
                                      const TAssembly& assembly)
 {
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
-        x_LoadAssembly(**it, seq_id, assembly);
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
+        listener.LoadAssembly(tse, seq_id, assembly);
     }
-}
-
-
-void CTSE_Split_Info::x_LoadAssembly(CTSE_Info& tse_info,
-                                     const TBioseqId& seq_id,
-                                     const TAssembly& assembly)
-{
-    x_GetBioseq(tse_info, seq_id).SetInst_Hist_Assembly(assembly);
 }
 
 
@@ -538,7 +450,9 @@ void CTSE_Split_Info::x_LoadSeq_entry(CSeq_entry& entry,
                                       CTSE_SNP_InfoMap* snps)
 {
     CRef<CSeq_entry> add;
-    ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+    NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
+        CTSE_Info& tse = *it->first;
+        ITSE_Assigner& listener = *it->second;
         if ( !add ) {
             add = &entry;
         }
@@ -547,72 +461,9 @@ void CTSE_Split_Info::x_LoadSeq_entry(CSeq_entry& entry,
             add->Assign(entry);
             snps = 0;
         }
-        x_LoadSeq_entry(**it, *add, snps);
+        listener.LoadSeq_entry(tse, *add, snps);
     }
 }
-
-
-void CTSE_Split_Info::x_LoadSeq_entry(CTSE_Info& tse_info,
-                                      CSeq_entry& entry,
-                                      CTSE_SNP_InfoMap* snps)
-{
-    tse_info.SetSeq_entry(entry, snps);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// get attach points
-CBioseq_Info& CTSE_Split_Info::x_GetBioseq(CTSE_Info& tse_info,
-                                           const TBioseqId& place_id)
-{
-    return tse_info.x_GetBioseq(place_id);
-}
-
-
-CBioseq_set_Info& CTSE_Split_Info::x_GetBioseq_set(CTSE_Info& tse_info,
-                                                   TBioseq_setId place_id)
-{
-    return tse_info.x_GetBioseq_set(place_id);
-}
-
-
-CBioseq_Base_Info& CTSE_Split_Info::x_GetBase(CTSE_Info& tse_info,
-                                              const TPlace& place)
-{
-    if ( place.first ) {
-        return x_GetBioseq(tse_info, place.first);
-    }
-    else {
-        return x_GetBioseq_set(tse_info, place.second);
-    }
-}
-
-
-CBioseq_Info& CTSE_Split_Info::x_GetBioseq(CTSE_Info& tse_info,
-                                           const TPlace& place)
-{
-    if ( place.first ) {
-        return x_GetBioseq(tse_info, place.first);
-    }
-    else {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "Bioseq-set id where gi is expected");
-    }
-}
-
-
-CBioseq_set_Info& CTSE_Split_Info::x_GetBioseq_set(CTSE_Info& tse_info,
-                                                   const TPlace& place)
-{
-    if ( place.first ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "Gi where Bioseq-set id is expected");
-    }
-    else {
-        return x_GetBioseq_set(tse_info, place.second);
-    }
-}
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

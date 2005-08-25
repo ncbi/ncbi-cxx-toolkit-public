@@ -36,6 +36,7 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_assigner.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
@@ -44,6 +45,8 @@
 #include <objmgr/impl/handle_range.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/seq_id_translator.hpp>
+
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -171,6 +174,12 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
     m_UsedMemory = tse->m_UsedMemory;
     m_LoadState = eLoaded;
     m_Split = tse->m_Split;
+    if (m_Split) {
+        CRef<ITSE_Assigner> lsnr = m_Split->GetAssigner(*tse);
+        if( !lsnr )
+            lsnr.Reset(new CTSE_Default_Assigner);
+        m_Split->x_TSEAttach(*this, lsnr);
+    }
     x_SetObject(*tse, &m_BaseTSE->m_ObjectCopyMap);
 
     x_TSEAttach(*this);
@@ -178,9 +187,57 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
 
 
 CTSE_Info::~CTSE_Info(void)
-{
+{   
     _ASSERT(m_LockCounter.Get() == 0);
     _ASSERT(m_DataSource == 0);
+    if( m_Split )
+        m_Split->x_TSEDetach(*this);
+}
+
+CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
+{
+    //    m_BaseTSE.reset(new SBaseTSE(tse));
+    m_BlobState = tse->m_BlobState;
+    m_Name = tse->m_Name;
+    m_UsedMemory = tse->m_UsedMemory;
+    m_Split = tse->m_Split;
+    if (m_Split) {
+        CRef<ITSE_Assigner> listener = m_Split->GetAssigner(*tse);
+        if( !listener ) 
+            listener.Reset(new CTSE_Default_Assigner);
+        m_Split->x_TSEAttach(*this, listener);
+    }
+
+    if (tse->m_Contents)
+        x_SetObject(*tse,NULL);//tse->m_BaseTSE->m_ObjectCopyMap);
+
+    //x_TSEAttach(*this);
+    return *this;
+}
+
+CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse, 
+                             CRef<CSeq_entry>& entry, 
+                             CRef<ITSE_Assigner>& listener)
+{
+    //    m_BaseTSE.reset(new SBaseTSE(tse));
+    m_BlobState = tse->m_BlobState;
+    m_Name = tse->m_Name;
+    m_UsedMemory = tse->m_UsedMemory;
+    m_Split = tse->m_Split;
+    if (m_Split) {
+        if( !listener ) {
+            listener = m_Split->GetAssigner(*tse);
+            if( !listener ) {
+                listener.Reset(new CTSE_Default_Assigner);
+            }
+        }
+        m_Split->x_TSEAttach(*this, listener);
+    }
+    if (entry)
+        SetSeq_entry(*entry);
+
+    //x_TSEAttach(*this);
+    return *this;
 }
 
 
@@ -418,6 +475,15 @@ void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
 
 void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
 {
+    
+    if ( m_Split ) {
+        m_Split->GetBioseqsIds(ids);
+    }
+    if ( m_Split && m_SeqIdTranslator ) {
+        TBioseqsIds t_ids;
+        m_SeqIdTranslator->TranslateToOrig(ids, t_ids);
+        t_ids.swap(ids);
+    }
     {{
         CFastMutexGuard guard(m_BioseqsMutex);
         ITERATE ( TBioseqs, it, m_Bioseqs ) {
@@ -425,7 +491,6 @@ void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
         }
     }}
     if ( m_Split ) {
-        m_Split->GetBioseqsIds(ids);
         // after adding split bioseq Seq-ids the result may contain
         // duplicates and need to be sorted
         sort(ids.begin(), ids.end());
@@ -442,8 +507,10 @@ bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
             return true;
         }
     }}
-    if ( m_Split && m_Split->ContainsBioseq(id) ) {
-        return true;
+    if ( m_Split ) {
+        return m_SeqIdTranslator ? 
+            m_Split->ContainsBioseq(m_SeqIdTranslator->TranslateToPatched(id)) : 
+            m_Split->ContainsBioseq(id);
     }
     return false;
 }
@@ -518,7 +585,10 @@ SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
 void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
     if ( m_Split ) {
-        m_Split->x_GetRecords(id, bioseq);
+        if ( m_SeqIdTranslator )
+            m_Split->x_GetRecords(m_SeqIdTranslator->TranslateToPatched(id), bioseq);
+        else
+            m_Split->x_GetRecords(id, bioseq);
     }
 }
 
@@ -652,14 +722,14 @@ void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
     }
 }
 
-
+/*
 void CTSE_Info::UpdateAnnotIndex(CTSE_Chunk_Info& chunk)
 {
     CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
     TAnnotLockWriteGuard guard2(GetAnnotLock());
     chunk.x_UpdateAnnotIndex(*this);
 }
-
+*/
 
 void CTSE_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
@@ -954,13 +1024,13 @@ CBioseq_Info& CTSE_Info::x_GetBioseq(const CSeq_id_Handle& id)
 
 CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
 {
-    if ( !m_Split ) {
-        m_Split = new CTSE_Split_Info;
-        m_Split->x_TSEAttach(*this);
+   if ( !m_Split ) {
+        m_Split = new CTSE_Split_Info(GetBlobId(), GetBlobVersion());
+        CRef<ITSE_Assigner> listener(new CTSE_Default_Assigner);
+        m_Split->x_TSEAttach(*this, listener); 
     }
     return *m_Split;
 }
-
 
 CTSE_SNP_InfoMap::CTSE_SNP_InfoMap(void)
 {

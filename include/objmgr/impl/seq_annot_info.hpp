@@ -76,6 +76,7 @@ public:
     typedef CSeq_annot TObject;
     CConstRef<TObject> GetCompleteSeq_annot(void) const;
     CConstRef<TObject> GetSeq_annotCore(void) const;
+    CConstRef<TObject> GetSeq_annotSkeleton(void) const;
 
     const CAnnotName& GetName(void) const;
 
@@ -180,6 +181,11 @@ const CSeq_annot_SNP_Info& CSeq_annot_Info::x_GetSNP_annot_Info(void) const
     return *m_SNP_Info;
 }
 
+inline 
+CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotSkeleton(void) const
+{
+    return m_Object;   
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -187,6 +193,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/08/25 14:05:36  didenko
+* Restructured TSE loading process
+*
 * Revision 1.26  2005/08/23 17:04:20  vasilche
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
 *

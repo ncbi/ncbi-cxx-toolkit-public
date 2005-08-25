@@ -266,7 +266,6 @@ CConstRef<CSeq_entry> CSeq_entry_Info::GetSeq_entryCore(void) const
     return m_Object;
 }
 
-
 void CSeq_entry_Info::x_ParentAttach(CBioseq_set_Info& parent)
 {
     x_BaseParentAttach(parent);
@@ -552,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/08/25 14:05:37  didenko
+ * Restructured TSE loading process
+ *
  * Revision 1.25  2005/06/22 14:23:48  vasilche
  * Added support for original->edited map.
  *

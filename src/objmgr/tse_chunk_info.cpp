@@ -35,6 +35,7 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_assigner.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
@@ -141,6 +142,7 @@ void CTSE_Chunk_Info::x_SplitAttach(CTSE_Split_Info& split_info)
 
 
 // attach chunk to CTSE_Info
+/*
 void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
 {
     _ASSERT(x_Attached());
@@ -174,6 +176,42 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse_info)
         x_UpdateAnnotIndex(tse_info);
     }
 }
+*/
+
+void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse, ITSE_Assigner& lsnr)
+{
+    _ASSERT(x_Attached());
+
+    TChunkId chunk_id = GetChunkId();
+
+    // register descrs places
+    ITERATE ( TDescInfos, it, m_DescInfos ) {
+        lsnr.AddDescInfo(tse, *it, chunk_id);
+    }
+
+    // register assembly places
+    ITERATE ( TAssemblyInfos, it, m_AssemblyInfos ) {
+        lsnr.AddAssemblyInfo(tse, *it, chunk_id);
+    }
+
+    // register annots places
+    ITERATE ( TPlaces, it, m_AnnotPlaces ) {
+        lsnr.AddAnnotPlace(tse, *it, chunk_id);
+    }
+
+    // register bioseqs places
+    ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
+        lsnr.AddBioseqPlace(tse, *it, chunk_id);
+    }
+
+    // register seq-data
+    lsnr.AddSeq_data(tse, m_Seq_data, *this);
+
+    if ( m_AnnotIndexEnabled ) {
+        x_UpdateAnnotIndex(tse);
+    }
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -435,10 +473,11 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
     x_InitObjectIndexList();
     ITERATE ( TObjectIndexList, it, m_ObjectIndexList ) {
         tse.x_MapAnnotObjects(*it);
+        //tse.MapAnnotObjects(*it);
     }
 }
 
-
+/*
 void CTSE_Chunk_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
 {
     ITERATE ( TObjectIndexList, it, m_ObjectIndexList ) {
@@ -446,15 +485,14 @@ void CTSE_Chunk_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
     }
 }
 
-
-void CTSE_Chunk_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
+void CTSE_Chunk_Info::x_DropAnnotObjects(CTSE_Info&)
 {
 }
-
+*/
 
 void CTSE_Chunk_Info::x_DropAnnotObjects(void)
 {
-    m_ObjectIndexList.clear();
+     m_ObjectIndexList.clear();
 }
 
 
@@ -514,6 +552,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/08/25 14:05:37  didenko
+* Restructured TSE loading process
+*
 * Revision 1.26  2005/08/23 17:02:58  vasilche
 * Used SAnnotTypeSelector for storing annotation type in CAnnotObject_Info.
 * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.

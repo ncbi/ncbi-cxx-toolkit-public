@@ -92,6 +92,7 @@ public:
     bool HasSeq_entry(void) const;
     CConstRef<TObject> GetCompleteSeq_entry(void) const;
     CConstRef<TObject> GetSeq_entryCore(void) const;
+    CConstRef<TObject> GetSeq_entrySkeleton(void) const;
 
     // Seq-entry access
     typedef TObject::E_Choice E_Choice;
@@ -229,6 +230,11 @@ CSeq_entry::E_Choice CSeq_entry_Info::Which(void) const
     return m_Which;
 }
 
+inline 
+CConstRef<CSeq_entry> CSeq_entry_Info::GetSeq_entrySkeleton(void) const
+{
+    return m_Object;   
+}
 
 inline
 CSeq_entry& CSeq_entry_Info::x_GetObject(void)
@@ -264,6 +270,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/08/25 14:05:36  didenko
+* Restructured TSE loading process
+*
 * Revision 1.22  2005/06/29 16:10:10  vasilche
 * Removed declarations of obsolete methods.
 *

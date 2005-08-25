@@ -60,6 +60,9 @@ class CBioseq_Info;
 class CBioseq_set_Info;
 class CDataLoader;
 class CTSE_SNP_InfoMap;
+class ITSE_Assigner;
+class CTSE_Default_Assigner;
+
 
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
@@ -186,7 +189,7 @@ protected:
 
     // attach to CTSE_Info
     void x_SplitAttach(CTSE_Split_Info& split_info);
-    void x_TSEAttach(CTSE_Info& tse_info);
+    void x_TSEAttach(CTSE_Info& tse, ITSE_Assigner& tse_info);
     bool x_Attached(void) const;
 
     // return true if chunk is loaded
@@ -203,8 +206,9 @@ protected:
     void x_DisableAnnotIndexWhenLoaded(void);
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
-    void x_UnmapAnnotObjects(CTSE_Info& tse);
-    void x_DropAnnotObjects(CTSE_Info& tse);
+
+    //void x_UnmapAnnotObjects(CTSE_Info& tse);
+    //void x_DropAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(void);
 
     void x_InitObjectIndexList(void);
@@ -212,6 +216,9 @@ protected:
 private:
     friend class CTSE_Info;
     friend class CTSE_Split_Info;
+    
+    friend class CTSE_Default_Assigner;
+
 
     CTSE_Chunk_Info(const CTSE_Chunk_Info&);
     CTSE_Chunk_Info& operator=(const CTSE_Chunk_Info&);
@@ -269,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/08/25 14:05:36  didenko
+* Restructured TSE loading process
+*
 * Revision 1.22  2005/08/15 15:45:37  grichenk
 * Removed split assembly from bioseq-set.
 *

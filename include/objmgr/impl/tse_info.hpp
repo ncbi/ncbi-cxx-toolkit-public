@@ -45,6 +45,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
+#include <objmgr/seq_id_translator.hpp>
 
 #include <map>
 #include <set>
@@ -68,6 +69,13 @@ class CDataSource;
 class CHandleRange;
 class CAnnotTypes_CI;
 class CSeq_entry;
+
+class CSeq_literal;
+
+class ISeq_id_Translator;
+class ITSE_Assigner;
+class CTSE_Default_Assigner;
+
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -190,6 +198,11 @@ public:
     const CTSE_Info& GetTSE_Info(void) const;
     CTSE_Info& GetTSE_Info(void);
 
+    CTSE_Info& Assign(const CTSE_Lock& tse);
+    CTSE_Info& Assign(const CTSE_Lock& tse, 
+                      CRef<CSeq_entry>& entry, 
+                      CRef<ITSE_Assigner>& listener);
+
     // Additional TSE info not available in CSeq_entry
     const TBlobId& GetBlobId(void) const;
     TBlobVersion GetBlobVersion(void) const;
@@ -264,7 +277,7 @@ public:
     void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
     void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(CTSE_Info_Object& object);
-    void UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
+    //void UpdateAnnotIndex(CTSE_Chunk_Info& chunk);
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
@@ -283,6 +296,15 @@ public:
     const CSeq_id_Handle& GetRequestedId(void) const;
     void SetRequestedId(const CSeq_id_Handle& requested_id) const;
 
+    void SetSeqIdTranslator(CRef<ISeq_id_Translator>& tr);
+
+
+    // annot object map mutex
+    typedef CRWLock        TAnnotLock;
+    typedef TAnnotLock::TReadLockGuard  TAnnotLockReadGuard;
+    typedef TAnnotLock::TWriteLockGuard TAnnotLockWriteGuard;
+    TAnnotLock& GetAnnotLock(void) const;
+
 private:
     friend class CTSE_Guard;
     friend class CDataSource;
@@ -296,6 +318,9 @@ private:
     friend class CTSE_Chunk_Info;
     friend class CTSE_Split_Info;
     friend class CSeq_annot_SNP_Info;
+
+    friend class ITSE_Assigner;
+    friend class CTSE_Default_Assigner;
 
     void x_Initialize(void);
 
@@ -367,12 +392,6 @@ private:
     void x_UnindexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
 
     void x_DoUpdate(TNeedUpdateFlags flags);
-
-    // annot object map mutex
-    typedef CRWLock        TAnnotLock;
-    typedef TAnnotLock::TReadLockGuard  TAnnotLockReadGuard;
-    typedef TAnnotLock::TWriteLockGuard TAnnotLockWriteGuard;
-    TAnnotLock& GetAnnotLock(void) const;
 
     friend class CTSE_Lock;
     friend class CTSE_LoadLock;
@@ -463,10 +482,14 @@ private:
     };
     auto_ptr<SBaseTSE> m_BaseTSE;
 
+    CRef<ISeq_id_Translator> m_SeqIdTranslator;
+
 private:
     // Hide copy methods
+    CTSE_Info(const CTSE_Info&);
     CTSE_Info& operator= (const CTSE_Info&);
 };
+
 
 
 /////////////////////////////////////////////////////////////////////
@@ -625,6 +648,11 @@ bool CTSE_Info::OnlyGiAnnotIds(void) const
     return (m_AnnotIdsFlags & fAnnotIds_NonGi) == 0;
 }
 
+inline 
+void CTSE_Info::SetSeqIdTranslator(CRef<ISeq_id_Translator>& tr)
+{
+    m_SeqIdTranslator = tr;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
