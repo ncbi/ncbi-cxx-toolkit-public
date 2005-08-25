@@ -52,6 +52,10 @@ NStr::TStringToNumFlags NStr::fAllStringToNumFlags  (0x7F00, 0);
 NStr::TStringToNumFlags NStr::fStringToNumDefault   (0, 0);
 
 
+// Hex symbols
+static const char s_Hex[] = "0123456789ABCDEF";
+
+
 inline
 std::string::size_type s_DiffPtr(const char* end, const char* start)
 {
@@ -1609,23 +1613,22 @@ string NStr::Join(const vector<string>& arr, const string& delim)
 string NStr::PrintableString(const string&      str,
                              NStr::ENewLineMode nl_mode)
 {
-    static const char s_Hex[] = "0123456789ABCDEF";
     ITERATE ( string, it, str ) {
         if ( !isprint((unsigned char)(*it)) || *it == '"' || *it == '\\' ) {
-            // bad character - convert via CNcbiOstrstream
+            // Bad character - convert via CNcbiOstrstream
             CNcbiOstrstream out;
-            // write first good characters in one chunk
+            // Write first good characters in one chunk
             out.write(str.data(), it-str.begin());
-            // convert all other characters one by one
+            // Convert all other characters one by one
             do {
                 if (isprint((unsigned char)(*it))) {
-                    // escape '"' and '\\' anyway
+                    // Escape '"' and '\\' anyway
                     if ( *it == '"' || *it == '\\' )
                         out.put('\\');
                     out.put(*it);
                 }
                 else if (*it == '\n') {
-                    // newline needs special processing
+                    // New line needs special processing
                     if (nl_mode == eNewLine_Quote) {
                         out.write("\\n", 2);
                     }
@@ -1633,26 +1636,85 @@ string NStr::PrintableString(const string&      str,
                         out.put('\n');
                     }
                 } else {
-                    // all other non-printable characters need to be escaped
+                    // All other non-printable characters need to be escaped
                     out.put('\\');
-                    if (*it == '\t') {
-                        out.put('t');
-                    } else if (*it == '\r') {
+                    if (*it == '\a') {        // bell (alert)
+                        out.put('a');
+                    } else if (*it == '\b') { // backspace
+                        out.put('b');
+                    } else if (*it == '\f') { // form feed
+                        out.put('f');
+                    } else if (*it == '\r') { // carriage return
                         out.put('r');
-                    } else if (*it == '\v') {
+					} else if (*it == '\t') { // horizontal tab
+                        out.put('t');
+					} else if (*it == '\v') { // vertical tab
                         out.put('v');
                     } else {
-                        // hex string for non-standard codes
+                        // Hex string for non-standard codes
                         out.put('x');
                         out.put(s_Hex[(unsigned char) *it >> 4]);
                         out.put(s_Hex[(unsigned char) *it & 15]);
                     }
                 }
             } while (++it < it_end); // it_end is from ITERATE macro
+
+            // Return encoded string
+			return CNcbiOstrstreamToString(out);
+        }
+    }
+    // All characters are good - return orignal string
+    return str;
+}
+
+
+string NStr::JavaScriptEncode(const string& str)
+{
+    ITERATE ( string, it, str ) {
+        if ( !isprint((unsigned char)(*it)) || *it == '\'' || *it == '\\' ) {
+            // Bad character - convert via CNcbiOstrstream
+            CNcbiOstrstream out;
+            // Write first good characters in one chunk
+            out.write(str.data(), it-str.begin());
+            // Convert all other characters one by one
+            do {
+               if (isprint((unsigned char)(*it))) {
+                    // Escape \', \" and \\ anyway.
+                    if ( *it == '\'' || *it == '"' || *it == '\\' )
+                        out.put('\\');
+                    out.put(*it);
+                } else {
+                    // All other non-printable characters need to be escaped
+                    out.put('\\');
+                    if (*it == '\b')        { // backspace
+                        out.put('b');
+                    } else if (*it == '\f') { // form feed
+                        out.put('f');
+                    } else if (*it == '\n') { // new line
+                        out.put('n');
+                    } else if (*it == '\r') { // carriage return
+                        out.put('r');
+                    } else if (*it == '\t') { // horizontal tab
+                        out.put('t');
+                    } else if (*it == '\v') { // vertical tab
+                        out.put('v');
+                    // Note, that not all browsers support all JS symbols
+                    // (for example - \e escape), so they will be encoded
+                    // to hex format.
+                    } else {
+                        // Hex string for non-standard codes.
+                        out.put('x');
+                        out.put(s_Hex[(unsigned char) *it >> 4]);
+                        out.put(s_Hex[(unsigned char) *it & 15]);
+                    }
+                }
+            } while (++it < it_end); // it_end is from ITERATE macro
+
+            // Return encoded string
             return CNcbiOstrstreamToString(out);
         }
     }
-    // all characters are good - return orignal string
+    // All characters are good - return orignal string
     return str;
 }
 
@@ -2213,6 +2275,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.161  2005/08/25 18:57:25  ivanov
+ * Moved JavaScriptEncode() from CHTMLHelper:: to NStr::.
+ * Changed \" processing.
+ *
  * Revision 1.160  2005/08/05 21:26:24  vakatov
  * OBSOLETE_FLAGS() -- report only once, and with the function name
  *

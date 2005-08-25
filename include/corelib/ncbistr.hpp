@@ -1676,6 +1676,18 @@ public:
     };
     typedef int TWrapFlags;     ///< Binary OR of "EWrapFlags"
 
+    /// Encode a string for C/C++.
+    ///
+    /// Synonym for PrintableString().
+    /// @sa PrintableString
+    static string CEncode(const string& str);
+
+    /// Encode a string for JavaScript.
+    ///
+    /// Like to CEncode(), but process some symbols in different way.
+    /// @sa PrintableString, CEncode
+    static string JavaScriptEncode(const string& str);
+
     /// Wrap the specified string into lines of a specified width -- prefix,
     /// prefix1 default version.
     ///
@@ -2328,7 +2340,6 @@ bool AStrEquiv(const Arg1& x, const Arg2& y, Pred pr)
 /////////////////////////////////////////////////////////////////////////////
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //  CNcbiEmptyString::
 //
@@ -2747,6 +2758,13 @@ SIZE_TYPE NStr::FindCase(const string& str, const string& pattern,
 
 
 inline
+string NStr::CEncode(const string& str)
+{
+    return PrintableString(str);
+}
+
+
+inline
 list<string>& NStr::Wrap(const string& str, SIZE_TYPE width, list<string>& arr,
                          NStr::TWrapFlags flags, const string& prefix,
                          const string* prefix1)
@@ -2900,6 +2918,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.92  2005/08/25 18:57:00  ivanov
+ * Moved JavaScriptEncode() from CHTMLHelper:: to NStr::.
+ * Changed \" processing.
+ *
  * Revision 1.91  2005/08/04 11:08:43  ivanov
  * Revamp of NStr::StringTo*() functions
  *
