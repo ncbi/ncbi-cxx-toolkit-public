@@ -55,6 +55,10 @@ public:
 
     bool LoadSeq_idGi(CReaderRequestResult& result,
                       const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
+                           const CSeq_id_Handle& seq_id);
+    bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
+                            const CSeq_id_Handle& seq_id);
 
     void GetSeq_idSeq_ids(CReaderRequestResult& result,
                           CLoadLockSeq_ids& ids,
@@ -66,6 +70,11 @@ public:
     void GetSeq_idBlob_ids(CReaderRequestResult& result,
                            CLoadLockBlob_ids& ids,
                            const CSeq_id_Handle& seq_id);
+    bool GetSeq_idInfo(CReaderRequestResult& result,
+                       const CSeq_id_Handle& seq_id,
+                       CLoadLockSeq_ids& seq_ids,
+                       CLoadLockBlob_ids& blob_ids);
+
     void GetBlobVersion(CReaderRequestResult& result,
                         const CBlob_id& blob_id);
 

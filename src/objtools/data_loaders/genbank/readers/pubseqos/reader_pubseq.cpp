@@ -223,28 +223,80 @@ CDB_Connection* CPubseqReader::x_NewConnection(void)
 }
 
 
+// LoadSeq_idGi, LoadSeq_idSeq_ids, and LoadSeq_idBlob_ids
+// are implemented here and call the same function because
+// PubSeqOS has one RPC call that may suite all needs
+// LoadSeq_idSeq_ids works like this only when Seq-id is not gi
+// To prevent deadlocks these functions lock Seq-ids before Blob-ids.
+
 bool CPubseqReader::LoadSeq_idGi(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id)
 {
-    CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedGi() || ids.IsLoaded() ) {
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    if ( seq_ids->IsLoadedGi() || seq_ids.IsLoaded() ) {
         return true;
     }
 
+    CLoadLockBlob_ids blob_ids(result, seq_id);
+    return GetSeq_idInfo(result, seq_id, seq_ids, blob_ids);
+}
+
+
+bool CPubseqReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
+                                      const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    if ( seq_ids.IsLoaded() ) {
+        return true;
+    }
+    
+    CLoadLockBlob_ids blob_ids(result, seq_id);
+    return GetSeq_idInfo(result, seq_id, seq_ids, blob_ids);
+}
+
+
+bool CPubseqReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
+                                       const CSeq_id_Handle& seq_id)
+{
+    CLoadLockSeq_ids seq_ids(result, seq_id);
+    CLoadLockBlob_ids blob_ids(result, seq_id);
+    if ( blob_ids.IsLoaded() ) {
+        return true;
+    }
+    if ( seq_ids.IsLoaded() ) {
+        if ( seq_ids->GetState() & CBioseq_Handle::fState_no_data ) {
+            blob_ids->SetState(seq_ids->GetState());
+            SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+            return true;
+        }
+    }
+
+    return GetSeq_idInfo(result, seq_id, seq_ids, blob_ids);
+}
+
+
+bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id,
+                                  CLoadLockSeq_ids& seq_ids,
+                                  CLoadLockBlob_ids& blob_ids)
+{
     // Get gi by seq-id
-    _TRACE("ResolveSeq_id to gi: " << seq_id.AsString());
+    _TRACE("ResolveSeq_id to gi/sat/satkey: " << seq_id.AsString());
 
     CDB_VarChar asnIn;
     {{
         CNcbiOstrstream oss;
-        {{
+        if ( seq_id.IsGi() ) {
+            oss << "Seq-id ::= gi " << seq_id.GetGi();
+        }
+        else {
             CObjectOStreamAsn ooss(oss);
             ooss << *seq_id.GetSeqId();
-        }}
+        }
         asnIn = CNcbiOstrstreamToString(oss);
     }}
 
-    CDB_Int giOut;
+    int result_count = 0;
     CConn conn(this);
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
@@ -260,29 +312,119 @@ bool CPubseqReader::LoadSeq_idGi(CReaderRequestResult& result,
             }
         
             while ( dbr->Fetch() ) {
+                CDB_Int giGot;
+                CDB_Int satGot;
+                CDB_Int satKeyGot;
+                CDB_Int extFeatGot;
+
                 _TRACE("next fetch: " << dbr->NofItems() << " items");
+                ++result_count;
                 for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
                     const string& name = dbr->ItemName(pos);
                     _TRACE("next item: " << name);
                     if (name == "gi") {
-                        dbr->GetItem(&giOut);
+                        dbr->GetItem(&giGot);
+                        _TRACE("gi: "<<giGot.Value());
+                    }
+                    else if (name == "sat" ) {
+                        dbr->GetItem(&satGot);
+                        _TRACE("sat: "<<satGot.Value());
+                    }
+                    else if(name == "sat_key") {
+                        dbr->GetItem(&satKeyGot);
+                        _TRACE("sat_key: "<<satKeyGot.Value());
+                    }
+                    else if(name == "extra_feat" || name == "ext_feat") {
+                        dbr->GetItem(&extFeatGot);
+#ifdef _DEBUG
+                        if ( extFeatGot.IsNULL() ) {
+                            _TRACE("ext_feat = NULL");
+                        }
+                        else {
+                            _TRACE("ext_feat = "<<extFeatGot.Value());
+                        }
+#endif
                     }
                     else {
                         dbr->SkipItem();
                     }
                 }
+
+                int gi = giGot.Value();
+                int sat = satGot.Value();
+                int sat_key = satKeyGot.Value();
+                
+                if ( GetDebugLevel() >= 5 ) {
+                    NcbiCout << "CPubseqReader::ResolveSeq_id"
+                        "(" << seq_id.AsString() << ")"
+                        " gi=" << gi <<
+                        " sat=" << sat <<
+                        " satkey=" << sat_key <<
+                        " extfeat=";
+                    if ( extFeatGot.IsNULL() ) {
+                        NcbiCout << "NULL";
+                    }
+                    else {
+                        NcbiCout << extFeatGot.Value();
+                    }
+                    NcbiCout << NcbiEndl;
+                }
+                
+                if ( CProcessor::TrySNPSplit() && sat != eSat_ANNOT ) {
+                    {{
+                        // main blob
+                        CBlob_id blob_id;
+                        blob_id.SetSat(sat);
+                        blob_id.SetSatKey(sat_key);
+                        blob_ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+                    }}
+                    if ( !extFeatGot.IsNULL() ) {
+                        int ext_feat = extFeatGot.Value();
+                        while ( ext_feat ) {
+                            int bit = ext_feat & ~(ext_feat-1);
+                            ext_feat -= bit;
+                            CBlob_id blob_id;
+                            blob_id.SetSat(eSat_ANNOT);
+                            blob_id.SetSatKey(gi);
+                            blob_id.SetSubSat(bit);
+                            blob_ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
+                        }
+                    }
+                }
+                else {
+                    // whole blob
+                    CBlob_id blob_id;
+                    blob_id.SetSat(sat);
+                    blob_id.SetSatKey(sat_key);
+                    if ( !extFeatGot.IsNULL() ) {
+                        blob_id.SetSubSat(extFeatGot.Value());
+                    }
+                    blob_ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+                }
+                SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+
+                if ( giGot.IsNULL() ) {
+                    // no gi -> only one Seq-id - the one used as argument
+                    seq_ids.AddSeq_id(seq_id);
+                    SetAndSaveSeq_idSeq_ids(result, seq_id, seq_ids);
+                }
+                else {
+                    // we've got gi
+                    SetAndSaveSeq_idGi(result, seq_id, seq_ids, giGot.Value());
+                }
             }
         }
     }}
     conn.Release();
+    return result_count > 0;
+}
 
-    int gi = 0;
-    if ( !giOut.IsNULL() ) {
-        gi = giOut.Value();
-    }
 
-    SetAndSaveSeq_idGi(result, seq_id, ids, gi);
-    return true;
+void CPubseqReader::GetSeq_idBlob_ids(CReaderRequestResult& result,
+                                      CLoadLockBlob_ids& ids,
+                                      const CSeq_id_Handle& seq_id)
+{
+    NCBI_THROW(CLoaderException, eLoaderFailed, "invalid call");
 }
 
 
@@ -300,6 +442,9 @@ void CPubseqReader::GetSeq_idSeq_ids(CReaderRequestResult& result,
     }
 
     m_Dispatcher->LoadSeq_idGi(result, seq_id);
+    if ( ids.IsLoaded() ) { // may be loaded as extra information for gi
+        return;
+    }
     int gi = ids->GetGi();
     if ( !gi ) {
         // no gi -> no Seq-ids
@@ -426,141 +571,6 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
                     else {
                         dbr->SkipItem();
                     }
-                }
-            }
-        }
-    }}
-    conn.Release();
-}
-
-
-void CPubseqReader::GetSeq_idBlob_ids(CReaderRequestResult& /*result*/,
-                                      CLoadLockBlob_ids& ids,
-                                      const CSeq_id_Handle& seq_id)
-{
-    _TRACE("ResolveBlob_ids: " << seq_id.AsString());
-    // note: this was
-    //CDB_VarChar asnIn(static_cast<string>(CNcbiOstrstreamToString(oss)));
-    // but MSVC doesn't like this.  This is the only version that
-    // will compile:
-    CDB_VarChar asnIn;
-    {{
-        CNcbiOstrstream oss;
-        {{
-            CObjectOStreamAsn ooss(oss);
-            ooss << *seq_id.GetSeqId();
-        }}
-        asnIn = CNcbiOstrstreamToString(oss);
-    }}
-
-    
-    CConn conn(this);
-    {{
-        CDB_Connection* db_conn = x_GetConnection(conn);
-        AutoPtr<CDB_RPCCmd> cmd(db_conn->RPC("id_gi_by_seqid_asn", 1));
-        cmd->SetParam("@asnin", &asnIn);
-        cmd->Send();
-        
-        while ( cmd->HasMoreResults() ) {
-            AutoPtr<CDB_Result> dbr(cmd->Result());
-            if ( !dbr.get()  ||  dbr->ResultType() != eDB_RowResult) {
-                continue;
-            }
-            
-            while ( dbr->Fetch() ) {
-                CDB_Int giGot;
-                CDB_Int satGot;
-                CDB_Int satKeyGot;
-                CDB_Int extFeatGot;
-            
-                _TRACE("next fetch: " << dbr->NofItems() << " items");
-                for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
-                    const string& name = dbr->ItemName(pos);
-                    _TRACE("next item: " << name);
-                    if (name == "gi") {
-                        dbr->GetItem(&giGot);
-                        _TRACE("gi: "<<giGot.Value());
-                    }
-                    else if (name == "sat" ) {
-                        dbr->GetItem(&satGot);
-                        _TRACE("sat: "<<satGot.Value());
-                    }
-                    else if(name == "sat_key") {
-                        dbr->GetItem(&satKeyGot);
-                        _TRACE("sat_key: "<<satKeyGot.Value());
-                    }
-                    else if(name == "extra_feat" || name == "ext_feat") {
-                        dbr->GetItem(&extFeatGot);
-#ifdef _DEBUG
-                        if ( extFeatGot.IsNULL() ) {
-                            _TRACE("ext_feat = NULL");
-                        }
-                        else {
-                            _TRACE("ext_feat = "<<extFeatGot.Value());
-                        }
-#endif
-                    }
-                    else {
-                        dbr->SkipItem();
-                    }
-                }
-                
-                int gi = giGot.Value();
-                int sat = satGot.Value();
-                int sat_key = satKeyGot.Value();
-                
-                if ( GetDebugLevel() >= 5 ) {
-                    NcbiCout << "CPubseqReader::ResolveSeq_id"
-                        "(" << seq_id.AsString() << ")"
-                        " gi=" << gi <<
-                        " sat=" << sat <<
-                        " satkey=" << sat_key <<
-                        " extfeat=";
-                    if ( extFeatGot.IsNULL() ) {
-                        NcbiCout << "NULL";
-                    }
-                    else {
-                        NcbiCout << extFeatGot.Value();
-                    }
-                    NcbiCout << NcbiEndl;
-                }
-                
-                if ( CProcessor::TrySNPSplit() && sat != eSat_ANNOT ) {
-                    {{
-                        // main blob
-                        CBlob_id blob_id;
-                        blob_id.SetSat(sat);
-                        blob_id.SetSatKey(sat_key);
-                        ids.AddBlob_id(blob_id, fBlobHasAllLocal);
-                    }}
-                    if ( !extFeatGot.IsNULL() ) {
-                        int ext_feat = extFeatGot.Value();
-                        while ( ext_feat ) {
-                            int bit = ext_feat & ~(ext_feat-1);
-                            ext_feat -= bit;
-#ifdef GENBANK_USE_SNP_SATELLITE_15
-                            if ( bit == eSubSat_SNP ) {
-                                AddSNPBlob_id(ids, gi);
-                                continue;
-                            }
-#endif
-                            CBlob_id blob_id;
-                            blob_id.SetSat(eSat_ANNOT);
-                            blob_id.SetSatKey(gi);
-                            blob_id.SetSubSat(bit);
-                            ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
-                        }
-                    }
-                }
-                else {
-                    // whole blob
-                    CBlob_id blob_id;
-                    blob_id.SetSat(sat);
-                    blob_id.SetSatKey(sat_key);
-                    if ( !extFeatGot.IsNULL() ) {
-                        blob_id.SetSubSat(extFeatGot.Value());
-                    }
-                    ids.AddBlob_id(blob_id, fBlobHasAllLocal);
                 }
             }
         }
