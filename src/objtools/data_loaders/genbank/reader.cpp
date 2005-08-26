@@ -239,8 +239,11 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
 {
     CLoadLockSeq_ids ids(result, seq_id);
     if ( !ids.IsLoaded() ) {
-        if ( !LoadStringSeq_ids(result, seq_id) || !ids.IsLoaded() ) {
+        if ( !LoadStringSeq_ids(result, seq_id) && !ids.IsLoaded() ) {
             return false;
+        }
+        if ( !ids.IsLoaded() ) {
+            return true;
         }
     }
     if ( ids->size() == 1 ) {
@@ -256,8 +259,11 @@ bool CReader::LoadBlobs(CReaderRequestResult& result,
 {
     CLoadLockBlob_ids ids(result, seq_id);
     if ( !ids.IsLoaded() ) {
-        if ( !LoadSeq_idBlob_ids(result, seq_id) || !ids.IsLoaded() ) {
+        if ( !LoadSeq_idBlob_ids(result, seq_id) && !ids.IsLoaded() ) {
             return false;
+        }
+        if ( !ids.IsLoaded() ) {
+            return true;
         }
     }
     m_Dispatcher->LoadBlobs(result, ids, mask);
