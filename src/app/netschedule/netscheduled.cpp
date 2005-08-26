@@ -70,7 +70,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.6.2  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.6.3  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1220,7 +1220,8 @@ CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
     }
     queue.PutResultGetJob(done_job_id, req.job_return_code, req.output,
                           key_buf, client_address, &job_id,
-                          req.input, m_Host, GetPort());
+                          req.input, m_Host, GetPort(),
+                          false /*don't change the timeline*/);
 
     if (job_id) {
         x_MakeGetAnswer(key_buf, tdata);
@@ -1228,9 +1229,12 @@ CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
     } else {
         WriteMsg(sock, "OK:", "");
     }
+    // postpone removal from the timeline, so we remove while 
+    // request response is network transferred
+    queue.TimeLineExchange(done_job_id, job_id, time(0));
 
     CNetScheduleMonitor* monitor = queue.GetMonitor();
-    if (monitor->IsMonitorActive() && job_id) {
+    if (monitor->IsMonitorActive()) {
         string msg = "::ProcessJobExchange ";
         msg += m_LocalTimer.GetLocalTime().AsString();
         msg += tdata.answer;
@@ -1289,8 +1293,13 @@ void CNetScheduleServer::ProcessPut(CSocket&                sock,
     SJS_Request& req = tdata.req;
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
-    queue.PutResult(job_id, req.job_return_code, req.output);
+    queue.PutResult(job_id, 
+                    req.job_return_code, req.output, 
+                    false // don't remove from tl
+                    );
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
+    queue.RemoveFromTimeLine(job_id);
+
 }
 
 
@@ -2422,6 +2431,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/08/26 12:36:10  kuznets
+ * Performance optimization
+ *
  * Revision 1.56  2005/08/25 15:00:35  kuznets
  * Optimized command parsing, eliminated many string comparisons
  *

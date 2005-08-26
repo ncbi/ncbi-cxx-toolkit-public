@@ -38,10 +38,20 @@ BEGIN_NCBI_SCOPE
 
 CNetScheduler_JobStatusTracker::CNetScheduler_JobStatusTracker()
  : m_BorrowedIds(bm::BM_GAP),
-   m_LastPending(0)
+   m_LastPending(0),
+   m_DoneCnt(0)
 {
     for (int i = 0; i < CNetScheduleClient::eLastStatus; ++i) {
-        bm::bvector<>* bv = new bm::bvector<>();
+        bm::bvector<>* bv;
+        if (i == (int)CNetScheduleClient::eDone     ||
+            i == (int)CNetScheduleClient::eCanceled ||
+            i == (int)CNetScheduleClient::eFailed   ||
+            i == (int)CNetScheduleClient::ePending
+            ) {
+            bv = new bm::bvector<>(bm::BM_GAP);
+        } else {
+            bv = new bm::bvector<>();
+        }
         m_StatusStor.push_back(bv);
     }
 }
@@ -125,6 +135,10 @@ CNetScheduler_JobStatusTracker::SetStatus(unsigned int  job_id,
         bv.set(job_id, (int)status == (int)i);
     }
     m_BorrowedIds.set(job_id, false);
+
+    if (status == CNetScheduleClient::eDone) {
+        IncDoneJobs();
+    }
 }
 
 void CNetScheduler_JobStatusTracker::ClearAll()
@@ -141,7 +155,11 @@ void CNetScheduler_JobStatusTracker::ClearAll()
 void CNetScheduler_JobStatusTracker::FreeUnusedMem()
 {
     CWriteLockGuard guard(m_Lock);
+    FreeUnusedMemNoLock();
+}
 
+void CNetScheduler_JobStatusTracker::FreeUnusedMemNoLock()
+{
     for (TStatusStorage::size_type i = 0; i < m_StatusStor.size(); ++i) {
         TBVector& bv = *m_StatusStor[i];
         bv.optimize(0, TBVector::opt_free_0);
@@ -259,6 +277,7 @@ CNetScheduler_JobStatusTracker::ChangeStatus(unsigned int  job_id,
         if (old_status != CNetScheduleClient::eJobNotFound) {
             TBVector& bv = *m_StatusStor[(int)status];
             bv.set_bit(job_id, true);
+            IncDoneJobs();
             break;
         }
         old_status = IsStatusNoLock(job_id, 
@@ -353,6 +372,7 @@ CNetScheduler_JobStatusTracker::PutDone_GetPending(
         if (bit_changed) {
             TBVector& bv2 = *m_StatusStor[(int)CNetScheduleClient::eDone];
             bv2.set_bit(done_job_id, true);
+            IncDoneJobs();
         } else { // job canceled or returned or something else?
             old_status = 
                 ClearIfStatusNoLock(done_job_id,
@@ -361,6 +381,7 @@ CNetScheduler_JobStatusTracker::PutDone_GetPending(
             if (old_status != CNetScheduleClient::eJobNotFound) {
                 TBVector& bv2 = *m_StatusStor[(int)CNetScheduleClient::eDone];
                 bv2.set_bit(done_job_id, true);
+                IncDoneJobs();
                 break;
             }
 
@@ -588,11 +609,30 @@ CNetScheduler_JobStatusTracker::PrintStatusMatrix(CNcbiOstream& out) const
     
 }
 
+void CNetScheduler_JobStatusTracker::IncDoneJobs()
+{
+    ++m_DoneCnt;
+    if (m_DoneCnt == 65535 * 2) {
+        m_DoneCnt = 0;
+        {{
+        TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::eDone];
+        bv.optimize(0, TBVector::opt_free_01);
+        }}
+        {{
+        TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+        bv.optimize(0, TBVector::opt_free_0);
+        }}
+    }
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/08/26 12:36:10  kuznets
+ * Performance optimization
+ *
  * Revision 1.21  2005/08/22 14:01:58  kuznets
  * Added JobExchange command
  *

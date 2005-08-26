@@ -1343,7 +1343,8 @@ void CQueueDataBase::CQueue::DropJob(unsigned job_id)
 
 void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                                        int           ret_code,
-                                       const char*   output)
+                                       const char*   output,
+                                       bool          remove_from_tl)
 {
     CNetSchedule_JS_Guard js_guard(m_LQueue.status_tracker, 
                                    job_id,
@@ -1373,44 +1374,12 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     }}
 
 
-/*
-    unsigned subm_addr, subm_port, subm_timeout, time_submit, time_run;
-    time_t curr = time(0);
-
-    {{
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(&trans);
-
-    CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
-
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << job_id;
-
-    if (cur.FetchFirst() != eBDB_Ok) {
-        // TODO: Integrity error or job just expired?
-        return;
-    }
-    
-    time_submit = db.time_submit;
-    time_run    = db.time_run;
-    subm_addr = db.subm_addr;
-    subm_port = db.subm_port;
-    subm_timeout = db.subm_timeout;
-
-    db.status = (int) CNetScheduleClient::eDone;
-    db.ret_code = ret_code;
-    db.output = output;
-    db.time_done = curr;
-
-    cur.Update();
-
-    }}
-*/
     trans.Commit();
     js_guard.Release();
 
-    RemoveFromTimeLine(job_id);
+    if (remove_from_tl) {
+        RemoveFromTimeLine(job_id);
+    }
 
 
     if (rec_updated) {
@@ -1501,7 +1470,8 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                         unsigned int*  job_id,
                                         char*          input,
                                         const string&  host,
-                                        unsigned       port)
+                                        unsigned       port,
+                                        bool           update_tl)
 {
     _ASSERT(job_id);
     _ASSERT(input);
@@ -1572,6 +1542,10 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
     }
 
+    if (update_tl) {
+        TimeLineExchange(done_job_id, *job_id, curr);
+    }
+/*
     // setup the job in the timeline
     if (*job_id && m_LQueue.run_time_line) {
         CJobTimeLine& tl = *m_LQueue.run_time_line;
@@ -1582,7 +1556,10 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     }
 
 
-    RemoveFromTimeLine(done_job_id);
+    if (remove_done_from_tl) {
+        RemoveFromTimeLine(done_job_id);
+    }
+*/
     if (done_rec_updated) {
         // TODO: send a UDP notification and update runtime stat
     }
@@ -2730,9 +2707,33 @@ void CQueueDataBase::CQueue::RemoveFromTimeLine(unsigned job_id)
         msg += NStr::IntToString(job_id);
         m_LQueue.monitor.SendString(msg);
     }
-
 }
 
+void 
+CQueueDataBase::CQueue::TimeLineExchange(unsigned remove_job_id, 
+                                         unsigned add_job_id,
+                                         time_t   curr)
+{
+    if (m_LQueue.run_time_line) {
+        CWriteLockGuard guard(m_LQueue.rtl_lock);
+        m_LQueue.run_time_line->RemoveObject(remove_job_id);
+
+        if (add_job_id) {
+            CJobTimeLine& tl = *m_LQueue.run_time_line;
+            time_t projected_time_done = curr + m_LQueue.run_timeout;
+            tl.AddObject(projected_time_done, add_job_id);
+        }
+    }
+    if (m_LQueue.monitor.IsMonitorActive()) {
+        CTime tmp_t(CTime::eCurrent);
+        string msg = tmp_t.AsString();
+        msg += " CQueue::TimeLineExchange: job removed=";
+        msg += NStr::IntToString(remove_job_id);
+        msg += " job added=";
+        msg += NStr::IntToString(add_job_id);
+        m_LQueue.monitor.SendString(msg);
+    }
+}
 
 void CQueueDataBase::CQueue::RegisterNotificationListener(
                                             unsigned int    host_addr,
@@ -3006,6 +3007,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/08/26 12:36:10  kuznets
+ * Performance optimization
+ *
  * Revision 1.48  2005/08/25 16:35:01  kuznets
  * Fixed bug (uncommited transaction)
  *

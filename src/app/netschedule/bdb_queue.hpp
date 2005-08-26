@@ -430,7 +430,8 @@ public:
         void Cancel(unsigned int job_id);
         void PutResult(unsigned int  job_id,
                        int           ret_code,
-                       const char*   output);
+                       const char*   output,
+                       bool          remove_from_tl);
 
         void PutResultGetJob(unsigned int   done_job_id,
                              int            ret_code,
@@ -440,7 +441,8 @@ public:
                              unsigned int*  job_id, 
                              char*          input,
                              const string&  host,
-                             unsigned       port);
+                             unsigned       port,
+                             bool           update_tl);
 
 
         void PutProgressMessage(unsigned int  job_id,
@@ -573,10 +575,13 @@ public:
                    m_LQueue.wnode_hosts.IsAllowed(m_ClientHostAddr);
         }
 
+        void RemoveFromTimeLine(unsigned job_id);
+        void TimeLineExchange(unsigned remove_job_id, 
+                              unsigned add_job_id,
+                              time_t   curr);
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
-        void RemoveFromTimeLine(unsigned job_id);
 
         time_t x_ComputeExpirationTime(unsigned time_run, 
                                        unsigned run_timeout) const; 
@@ -695,6 +700,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/08/26 12:36:10  kuznets
+ * Performance optimization
+ *
  * Revision 1.33  2005/08/22 14:01:58  kuznets
  * Added JobExchange command
  *

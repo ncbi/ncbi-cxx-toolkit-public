@@ -183,6 +183,8 @@ protected:
 
     void Return2PendingNoLock();
     unsigned int GetPendingJobNoLock();
+    void FreeUnusedMemNoLock();
+    void IncDoneJobs();
 
 private:
     CNetScheduler_JobStatusTracker(const CNetScheduler_JobStatusTracker&);
@@ -196,6 +198,8 @@ private:
     TBVector                m_BorrowedIds; 
     /// Last pending id
     bm::id_t                m_LastPending;
+    /// Done jobs counter
+    unsigned                m_DoneCnt;
 };
 
 
@@ -285,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/08/26 12:36:10  kuznets
+ * Performance optimization
+ *
  * Revision 1.11  2005/08/22 14:01:58  kuznets
  * Added JobExchange command
  *
