@@ -260,8 +260,13 @@ public:
                 const char       * synop,
                 const char       * comment);
 
-    /// Require this boolean function
+    /// Require this boolean function.
     virtual bool NeedRemote() = 0;
+    
+    /// Avoid compiler warning.
+    virtual ~COptionWalker()
+    {
+    }
 };
 
 
@@ -756,6 +761,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/08/29 20:32:17  bealer
+ * - Avoid compiler warning.
+ *
  * Revision 1.10  2005/01/12 16:28:07  bealer
  * - Remove incorrect code and fold into other case.
  *
