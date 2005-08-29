@@ -12,6 +12,7 @@ algo/winmask$
 app/project_tree_builder
 bdb$
 cgi$
+check
 connect$
 connect/ext$
 connect/services$
