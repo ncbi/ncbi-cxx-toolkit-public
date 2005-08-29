@@ -2163,15 +2163,6 @@ get_job_id:
 
     time_t curr = time(0);
 
-/*
-fetch_db:
-    ++fetch_attempts;
-    if (fetch_attempts > kMaxGetAttempts) {
-        LOG_POST(Error << "Failed to fetch the job record job_id=" << *job_id);
-        *job_id = 0;
-        goto get_job_id; // fall back and try to get another id
-    }
-*/
 
     try {
         SQueueDB& db = m_LQueue.db;
@@ -2190,119 +2181,6 @@ fetch_db:
         upd_status = 
             x_UpdateDB_GetJobNoLock(db, curr, cur, trans, 
                                     worker_node, *job_id, input);
-/*
-        cur.SetCondition(CBDB_FileCursor::eEQ);
-        cur.From << *job_id;
-        if (cur.Fetch() != eBDB_Ok) {
-            if (fetch_attempts < kMaxGetAttempts) {
-                goto fetch_db;
-            }
-            m_LQueue.status_tracker.ChangeStatus(*job_id, 
-                                              CNetScheduleClient::ePending);
-            *job_id = 0; 
-            return;
-        }
-
-        int status = db.status;
-
-        // internal integrity check
-        if (!(status == (int)CNetScheduleClient::ePending ||
-              status == (int)CNetScheduleClient::eReturned)
-            ) {
-            if (m_LQueue.status_tracker.IsCancelCode(
-                (CNetScheduleClient::EJobStatus) status)) {
-                // this job has been canceled while i'm fetching
-                goto get_job_id;
-            }
-                ERR_POST(Error << "GetJob::Status integrity violation " 
-                            << " job = " << *job_id 
-                            << " status = " << status
-                            << " expected status = " 
-                            << (int)CNetScheduleClient::ePending);
-            *job_id = 0;
-            return;
-        }
-
-        const char* fld_str = db.input;
-        ::strcpy(input, fld_str);
-        unsigned run_counter = db.run_counter;
-
-        db.status = (int) CNetScheduleClient::eRunning;
-        db.time_run = curr;
-        db.run_timeout = 0;
-        db.run_counter = ++run_counter;
-
-        unsigned time_submit = db.time_submit;
-        unsigned timeout = db.timeout;
-        if (timeout == 0) {
-            timeout = m_LQueue.timeout;
-        }
-
-        _ASSERT(timeout);
-        // check if job already expired
-        if (timeout && (time_submit + timeout < (unsigned)curr)) {
-            *job_id = 0; 
-            db.time_run = 0;
-            db.time_done = curr;
-            db.run_counter = --run_counter;
-            db.status = (int) CNetScheduleClient::eFailed;
-            db.err_msg = "Job expired and cannot be scheduled.";
-            m_LQueue.status_tracker.ChangeStatus(*job_id, 
-                                         CNetScheduleClient::eFailed);
-
-            if (m_LQueue.monitor.IsMonitorActive()) {
-                CTime tmp_t(CTime::eCurrent);
-                string msg = tmp_t.AsString();
-                msg += " CQueue::GetJob() timeout expired job id=";
-                msg += NStr::IntToString(*job_id);
-                m_LQueue.monitor.SendString(msg);
-            }
-
-        } else {
-
-
-            switch (run_counter) {
-            case 1:
-                db.worker_node1 = worker_node;
-                break;
-            case 2:
-                db.worker_node2 = worker_node;
-                break;
-            case 3:
-                db.worker_node3 = worker_node;
-                break;
-            case 4:
-                db.worker_node4 = worker_node;
-                break;
-            case 5:
-                db.worker_node5 = worker_node;
-                break;
-            default:
-
-                m_LQueue.status_tracker.ChangeStatus(*job_id, 
-                                            CNetScheduleClient::eFailed);
-                ERR_POST(Error << "Too many run attempts. job=" << *job_id);
-                db.status = (int) CNetScheduleClient::eFailed;
-                db.err_msg = "Too many run attempts.";
-                db.time_done = curr;
-                db.run_counter = --run_counter;
-
-                if (m_LQueue.monitor.IsMonitorActive()) {
-                    CTime tmp_t(CTime::eCurrent);
-                    string msg = tmp_t.AsString();
-                    msg += " CQueue::GetJob() Too many run attempts job id=";
-                    msg += NStr::IntToString(*job_id);
-                    m_LQueue.monitor.SendString(msg);
-                }
-
-                *job_id = 0; 
-
-            } // switch
-
-        }
-
-        cur.Update();
-*/
         }}
         trans.Commit();
 
@@ -3007,6 +2885,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/08/29 12:10:18  kuznets
+ * Removed dead code
+ *
  * Revision 1.49  2005/08/26 12:36:10  kuznets
  * Performance optimization
  *
