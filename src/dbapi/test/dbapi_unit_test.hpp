@@ -198,6 +198,7 @@ private:
     auto_ptr<IConnection> m_Conn;
 
     const string m_TableName;
+    unsigned int m_max_varchar_size;
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -214,6 +215,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2005/08/29 16:07:23  ssikorsk
+ * Adapted Bulk_Writing for Sybase.
+ *
  * Revision 1.22  2005/08/17 18:05:47  ssikorsk
  * Added initial tests for BulkInsert with INT and BIGINT datatypes
  *

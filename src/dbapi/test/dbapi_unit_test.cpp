@@ -111,6 +111,13 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
 void 
 CDBAPIUnitTest::TestInit(void)
 {
+    if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+        m_max_varchar_size = 8000;
+    } else {
+        // Sybase
+        m_max_varchar_size = 960;
+    }
+    
     m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
     m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
@@ -163,8 +170,8 @@ CDBAPIUnitTest::TestInit(void)
         if ( m_args.GetServerName() != "MOZART" ) {
             sql  = " CREATE TABLE #bulk_insert_table( \n";
             sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vc8000_field VARCHAR(8000) NULL, \n";
-            sql += "    vb8000_field VARBINARY(8000) NULL \n";
+            sql += "    vc8000_field VARCHAR(960) NULL, \n";
+            sql += "    vb8000_field VARBINARY(960) NULL \n";
             sql += " )";
 
             // Create the table
@@ -286,17 +293,17 @@ CDBAPIUnitTest::Bulk_Writing(void)
             auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 3) );
             
             CVariant col1(eDB_Int);
-            CVariant col2(eDB_LongBinary, 8000);
+            CVariant col2(eDB_LongBinary, m_max_varchar_size);
 
             bi->Bind(1, &col1);
             bi->Bind(3, &col2);
             
             for(int i = 0; i < num_of_tests; ++i ) {
-                int int_value = 8000 / num_of_tests * i;
+                int int_value = m_max_varchar_size / num_of_tests * i;
                 string str_val(int_value , char_val);
                 
                 col1 = int_value;
-                col2 = CVariant::LongBinary(8000, str_val.c_str(), str_val.size());
+                col2 = CVariant::LongBinary(m_max_varchar_size, str_val.c_str(), str_val.size());
                 bi->AddRow();
             }
             bi->Complete();
@@ -319,7 +326,7 @@ CDBAPIUnitTest::Bulk_Writing(void)
             for(int i = 0; i < num_of_tests; ++i ) {
                 BOOST_CHECK( rs->Next() );
                 
-                int int_value = 8000 / num_of_tests * i;
+                int int_value = m_max_varchar_size / num_of_tests * i;
                 Int4 id = rs->GetVariant(1).GetInt4();
                 string vb8000_value = rs->GetVariant(2).GetString(); 
                 
@@ -476,7 +483,14 @@ CDBAPIUnitTest::Bulk_Writing(void)
     
     // VARCHAR ...
     {
-        enum { num_of_tests = 7 };
+        int num_of_tests;
+        
+        if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+            num_of_tests = 7;
+        } else {
+            // Sybase
+            num_of_tests = 2;
+        }
         
         // Clean table ...
         auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
@@ -496,7 +510,7 @@ CDBAPIUnitTest::Bulk_Writing(void)
                     BulkAddRow(bi, CVariant(eDB_VarChar));
                     break;
                 case 1:
-                    BulkAddRow(bi, CVariant(eDB_LongChar, 8000));
+                    BulkAddRow(bi, CVariant(eDB_LongChar, m_max_varchar_size));
                     break;
                 case 2:
                     BulkAddRow(bi, CVariant(eDB_LongChar, 1024));
@@ -539,7 +553,7 @@ CDBAPIUnitTest::Bulk_Writing(void)
                             BOOST_CHECK_EQUAL(col1.size(), string::size_type(255));
                             break;
                         case 1:
-                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(8000));
+                            BOOST_CHECK_EQUAL(col1.size(), string::size_type(m_max_varchar_size));
                             break;
                         case 2:
                             BOOST_CHECK_EQUAL(col1.size(), string::size_type(1024));
@@ -2510,8 +2524,10 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
     
-    if ( args.GetDriverName() == "ftds" && args.GetServerType() == 
-         CTestArguments::eMsSql ) {
+    // ctlib/dblib do not work at the moment.
+    // ftds works with MS SQL Server only at the moment. 
+    if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
+        CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Bulk_Writing, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -2643,6 +2659,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2005/08/29 16:07:23  ssikorsk
+ * Adapted Bulk_Writing for Sybase.
+ *
  * Revision 1.36  2005/08/22 17:01:30  ssikorsk
  * Disabled Test_SelectStmtXML for the msdblib driver.
  *
