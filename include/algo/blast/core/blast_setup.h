@@ -51,13 +51,12 @@ extern "C" {
  * @param program_number Type of BLAST program (0=blastn, ...). [in]
  * @param qsup_options options for query setup. [in]
  * @param scoring_options options for scoring. [in]
- * @param hit_options options for saving hits. [in]
  * @param query_blk BLAST_SequenceBlk* for the query. [in]
  * @param query_info The query information block [in]
  * @param scale_factor Multiplier for cutoff and dropoff scores [in]
  * @param lookup_segments Start/stop locations for non-masked query 
  *                        segments [out]
- * @param maskInfo masking location information, mask_at_hash value. [out]
+ * @param mask masking locations. [out]
  * @param sbpp Contains scoring information. [out]
  * @param blast_message error or warning [out] 
  */
@@ -65,12 +64,11 @@ NCBI_XBLAST_EXPORT
 Int2 BLAST_MainSetUp(EBlastProgramType program_number,
         const QuerySetUpOptions* qsup_options,
         const BlastScoringOptions* scoring_options,
-        const BlastHitSavingOptions* hit_options,
         BLAST_SequenceBlk* query_blk,
         const BlastQueryInfo* query_info, 
         double scale_factor,
         BlastSeqLoc* *lookup_segments,
-        BlastMaskInformation* maskInfo,
+        BlastMaskLoc* *mask,
         BlastScoreBlk* *sbpp, 
         Blast_Message* *blast_message);
 
@@ -242,6 +240,11 @@ PHIPatternSpaceCalc(BlastQueryInfo* query_info,
 /*
  *
 * $Log$
+* Revision 1.55  2005/08/29 14:32:36  dondosha
+* From Ilya Dondoshansky:
+* Removed BlastMaskInformation wrapper structure, because mask_at_hash can
+* be retrieved from options
+*
 * Revision 1.54  2005/08/15 16:10:21  dondosha
 * Added error return argument to Blast_ScoreBlkKbpGappedCalc
 *
