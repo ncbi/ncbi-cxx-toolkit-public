@@ -56,8 +56,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-static const size_t g_sizeof_endl = strlen(Endl());
-
+static const size_t kEndlSize = strlen(Endl());
+static const size_t kStrBufSize = 1024*1024;
 
 #define THROW_FATAL(exception_class, err_code, message) \
 { exception_class e = NCBI_EXCEPTION(exception_class, err_code, message); \
@@ -71,12 +71,14 @@ void CSeqLoader::Open(const string& filename_index)
     if(idxstream) {
         
         // first read file names
-        char buf [1024];
+        vector<char> vc (kStrBufSize);
+        char* buf = &vc.front();
+
         bool found_start = false;
         while(idxstream.good()) {
 
             buf[0] = 0;
-            idxstream.getline(buf, sizeof buf, '\n');
+            idxstream.getline(buf, kStrBufSize, '\n');
             if(buf[0] == '#') continue;
             if(idxstream.fail()) {
                 goto throw_file_corrupt;
@@ -96,8 +98,9 @@ void CSeqLoader::Open(const string& filename_index)
         found_start = false;
         m_min_idx = kMax_UInt;
         while(idxstream.good()) {
+
             buf[0] = 0;
-            idxstream.getline(buf, sizeof buf, '\n');
+            idxstream.getline(buf, kStrBufSize, '\n');
 
             if(strcmp("$$$SI", buf) == 0) {
                 found_start = true;
@@ -133,7 +136,7 @@ void CSeqLoader::Open(const string& filename_index)
         while(idxstream.good()) {
             
             buf[0] = 0;
-            idxstream.getline(buf, sizeof buf, '\n');
+            idxstream.getline(buf, kStrBufSize, '\n');
             
             if(buf[0] == '#') continue; // skip comments
             if(idxstream.eof()) break;
@@ -170,16 +173,75 @@ void CSeqLoader::Open(const string& filename_index)
 }
 
 
-void CSeqLoader::Load(const string& id, vector<char>* seq,
-		      size_t from, size_t to)
+void CSeqLoader::x_ReadFromRetained(size_t from, size_t to, vector<char>* seq)
+    const
+{
+    const size_t max_coord = m_RetainedSeq.size() - 1;
+    if(to > max_coord) {
+        to = max_coord;
+    }
+
+    if(from > to) {
+        THROW_FATAL(CSplignAppException,
+                    eInternal,
+                    "cSeqLoader: requested interval invalid");
+    }
+
+    seq->resize(1 + to - from);
+    copy(m_RetainedSeq.begin() + from, 
+         m_RetainedSeq.begin() + to + 1,
+         seq->begin());
+}
+
+
+void ReadWholeSeq(CNcbiIstream* input, vector<char>* seq)
+{
+    seq->clear();
+    vector<char> vc (kStrBufSize);
+    char* buf = &vc.front();
+
+    // read entire sequence until the next one or eof
+    while(*input) {
+            
+        CT_POS_TYPE i0 = input->tellg();
+        input->getline(buf, kStrBufSize, '\n');
+        if(!*input) {
+            break;
+        }
+        CT_POS_TYPE i1 = input->tellg();
+        if(i1 - i0 > 1) {
+            CT_OFF_TYPE line_size = i1 - i0;
+            line_size -= kEndlSize;
+            if(buf[0] == '>') break;
+            size_t size_old = seq->size();
+            seq->resize(size_old + line_size);
+            transform(buf, buf + line_size, seq->begin() + size_old,
+                      (int(*)(int))toupper);
+        }
+        else if (i0 == i1) {
+            break; // GCC hack
+        }
+    }
+}
+
+
+void CSeqLoader::Load(const string& id, 
+                      vector<char>* seq,
+		      size_t from, 
+                      size_t to,
+                      bool keep)
 {
     if(seq == 0) {
         THROW_FATAL( CSplignAppException,
                      eInternal,
-                     "Null pointer passed to CSeqLoader::Load()");
-        
+                     "Null pointer passed to CSeqLoader::Load()");        
     }
     
+    if(id == m_RetainedID) {
+        x_ReadFromRetained(from, to, seq);
+        return;
+    }
+
     auto_ptr<CNcbiIstream> input (0);
     
     map<string, SIdxTarget>::const_iterator im = m_idx.find(id);
@@ -206,8 +268,10 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
         input->seekg(im->second.m_offset);
     }
   
-    char buf [1024];
-    input->getline(buf, sizeof buf, '\n'); // info line
+    vector<char> vc (kStrBufSize);
+    char* buf = &vc.front();
+
+    input->getline(buf, kStrBufSize, '\n'); // info line
     if(input->fail()) {
         THROW_FATAL( CSplignAppException,
                      eCannotReadFile,
@@ -215,42 +279,27 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     }
     
     seq->clear();
+
+    if (keep) {
+        ReadWholeSeq(input.get(), &m_RetainedSeq);
+        x_ReadFromRetained(from, to, seq);
+        m_RetainedID = id;
+        return;
+    }
     
     if(from == 0 && to == kMax_UInt) {
-
-        // read entire sequence until the next one or eof
-        while(*input) {
-
-            CT_POS_TYPE i0 = input->tellg();
-            input->getline(buf, sizeof buf, '\n');
-            if(!*input) {
-                break;
-            }
-            CT_POS_TYPE i1 = input->tellg();
-            if(i1 - i0 > 1) {
-                CT_OFF_TYPE line_size = i1 - i0;
-                line_size -= g_sizeof_endl;
-                if(buf[0] == '>') break;
-                size_t size_old = seq->size();
-                seq->resize(size_old + line_size);
-                transform(buf, buf + line_size, seq->begin() + size_old,
-                          (int(*)(int))toupper);
-            }
-            else if (i0 == i1) {
-                break; // GCC hack
-            }
-        }
+        ReadWholeSeq(input.get(), seq);
     }
     else {
 
         // read only a portion of a sequence
         const size_t dst_seq_len = to - from + 1;
-        seq->resize(dst_seq_len + sizeof buf);
+        seq->resize(dst_seq_len + kStrBufSize);
         CT_POS_TYPE i0 = input->tellg(), i1;
         CT_OFF_TYPE dst_read = 0, src_read = 0;
         while(*input) {
 
-            input->getline(buf, sizeof buf, '\n');
+            input->getline(buf, kStrBufSize, '\n');
             if(buf[0] == '>' || !*input) {
                 seq->resize(dst_read);
                 return;
@@ -258,10 +307,10 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
             i1 = input->tellg();
             
             CT_OFF_TYPE off = i1 - i0;
-            if (off > g_sizeof_endl) {
-                src_read += off - g_sizeof_endl;
+            if (off > kEndlSize) {
+                src_read += off - kEndlSize;
             }
-            else if (off == g_sizeof_endl) {
+            else if (off == kEndlSize) {
                 continue;
             }
             else { 
@@ -271,7 +320,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
             if(src_read > CT_OFF_TYPE(from)) {
 
                 CT_OFF_TYPE line_size = i1 - i0;
-                line_size = line_size - g_sizeof_endl;
+                line_size = line_size - kEndlSize;
                 size_t start  = dst_read? 0: (line_size - (src_read - from));
                 size_t finish = (src_read > CT_OFF_TYPE(to))?
                     (line_size - (src_read - to) + 1):
@@ -341,7 +390,8 @@ CSeqLoaderPairwise::CSeqLoaderPairwise(const string& query_filename,
 
 
 void CSeqLoaderPairwise::Load(const string& id, vector<char> *seq,
-                              size_t start, size_t finish)
+                              size_t start, size_t finish,
+                              bool)
 {
     if(seq == 0) {
         THROW_FATAL( CSplignAppException,
@@ -392,6 +442,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/08/29 14:14:49  kapustin
+ * Retain last subject sequence in memory when in batch mode.
+ *
  * Revision 1.22  2005/08/18 17:25:48  ucko
  * Fix typo in THROW_FATAL.
  *

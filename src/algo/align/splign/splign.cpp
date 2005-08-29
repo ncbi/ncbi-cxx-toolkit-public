@@ -382,7 +382,7 @@ void CSplign::Run( THits* phits )
 
     // pre-load the spliced sequence and calculate min coverage
     m_mrna.clear();
-    m_sa->Load(query, &m_mrna, 0, kMax_UInt);
+    m_sa->Load(query, &m_mrna, 0, kMax_UInt, false);
 
     if(!m_strand) { // make reverse complimentary
         reverse (m_mrna.begin(), m_mrna.end());
@@ -517,11 +517,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     // select terminal genomic extents based on uncovered end sizes
     size_t extent_left = x_GetGenomicExtent(qmin);
-    // (qmin >= kNonCoveredEndThreshold)? m_max_genomic_ext: (kSubjPerQuery + 1)* qmin;
-
     size_t qspace = m_mrna.size() - qmax + 1;
     size_t extent_right = x_GetGenomicExtent(qspace);
-    // (qspace >= kNonCoveredEndThreshold)? m_max_genomic_ext: (kSubjPerQuery + 1)* qspace;
 
     if((*hits)[0].IsStraight()) {
         smin = max(0, int(smin - extent_left));
@@ -546,7 +543,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     bool ctg_strand = (*hits)[0].IsStraight();
     
     m_genomic.clear();
-    m_sa->Load(subj, &m_genomic, smin, smax);
+    m_sa->Load(subj, &m_genomic, smin, smax, true);
     
     const size_t ctg_end = smin + m_genomic.size();
     if(ctg_end - 1 < smax) { // perhabs adjust smax
@@ -725,7 +722,8 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         const SAlnMapElem& zone = m_alnmap[i];
 
         // setup sequences
-        m_aligner->SetSequences(Seq1 + zone.m_box[0],
+        m_aligner->SetSequences(
+            Seq1 + zone.m_box[0],
             zone.m_box[1] - zone.m_box[0] + 1,
             Seq2 + zone.m_box[2],
             zone.m_box[3] - zone.m_box[2] + 1,
@@ -1582,6 +1580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/08/29 14:14:49  kapustin
+ * Retain last subject sequence in memory when in batch mode.
+ *
  * Revision 1.32  2005/08/18 15:11:15  kapustin
  * Use fatal severety to report missing IDs
  *

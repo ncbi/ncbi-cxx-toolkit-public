@@ -65,8 +65,11 @@ public:
     {
     }
 
-    virtual void Load(const string& id, vector<char> *seq,
-                      size_t start, size_t finish)
+    virtual void Load(const string& id, 
+                      vector<char> *seq,
+                      size_t start, 
+                      size_t finish,
+                      bool)
     {
         if (!seq) {
             NCBI_THROW(CAlgoAlignException, eNotInitialized,
@@ -220,6 +223,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.15  2005/08/29 14:14:49  kapustin
+* Retain last subject sequence in memory when in batch mode.
+*
 * Revision 1.14  2005/08/04 19:24:44  kapustin
 * Adjust seq-id handling with changes in the toolkit
 *

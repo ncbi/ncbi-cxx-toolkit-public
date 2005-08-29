@@ -72,10 +72,10 @@ void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-  SetVersion(CVersionInfo(1, 15, 0, "Splign"));  
+  SetVersion(CVersionInfo(1, 16, 0, "Splign"));  
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.15");
+  string program_name ("Splign v.1.16");
 
 #ifdef GENOME_PIPELINE
   program_name += 'p';
@@ -723,6 +723,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/08/29 14:14:49  kapustin
+ * Retain last subject sequence in memory when in batch mode.
+ *
  * Revision 1.45  2005/08/08 17:43:15  kapustin
  * Bug fix: keep external stream buf as long as the stream
  *

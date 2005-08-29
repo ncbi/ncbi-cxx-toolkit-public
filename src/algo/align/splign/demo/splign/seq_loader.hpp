@@ -51,22 +51,29 @@ class CSeqLoader: public CSplignSeqAccessor
 public:
 
     void Open (const string& filename_index);  
-    virtual void Load( const string& id, vector<char> *seq,
-                       size_t start, size_t finish);
+    virtual void Load(const string& id, 
+                      vector<char> *seq,
+                      size_t start, 
+                      size_t finish,
+                      bool keep);
     
-private:
+protected:
     
-    vector<string> m_filenames;
+    void x_ReadFromRetained(size_t from, size_t to, vector<char>* seq) const;
+
+    vector<string>              m_filenames;
     
     struct SIdxTarget {
         SIdxTarget(): m_filename_idx(kMax_UInt), m_offset(kMax_UInt) {}
         size_t m_filename_idx;
         size_t m_offset;
     };
-    map<string, SIdxTarget> m_idx;
+    map<string, SIdxTarget>     m_idx;
     
-    size_t m_min_idx;
-    
+    size_t                      m_min_idx;
+
+    string                      m_RetainedID;
+    vector<char>                m_RetainedSeq;
 };
 
 
@@ -80,8 +87,11 @@ public:
     CSeqLoaderPairwise(const string& query_filename,
                        const string& subj_filename);
     
-    virtual void Load( const string& id, vector<char> *seq,
-                       size_t start, size_t finish);
+    virtual void Load( const string& id, 
+                       vector<char> *seq,
+                       size_t start, 
+                       size_t finish,
+                       bool);
     
     string GetQueryStringId(void) const {
         return m_QueryId;
@@ -112,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/08/29 14:14:49  kapustin
+ * Retain last subject sequence in memory when in batch mode.
+ *
  * Revision 1.9  2004/05/10 20:52:27  ucko
  * #include <.../Seq_entry.hpp>, since use of CRef<CSeq_entry> requires
  * more than just a forward declaration on some compilers.
