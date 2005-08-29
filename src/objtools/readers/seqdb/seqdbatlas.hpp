@@ -160,6 +160,9 @@ public:
     /// which may trigger another garbage collection.
     
     virtual void operator()() = 0;
+    
+    /// Destructor to avoid warnings.
+    virtual ~CSeqDBFlushCB() {}
 };
 
 
