@@ -45,7 +45,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 /**
  * Example:
@@ -554,12 +554,16 @@ private:
 };
 
 /***********************Inlines************************/
-END_SCOPE(objects);
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* 
 *===========================================
 *$Log$
+*Revision 1.36  2005/08/29 20:22:44  ucko
+*Be sure NOT to follow BEGIN_/END_SCOPE(...) with semicolons, to avoid
+*"empty declaration" errors under WorkShop.
+*
 *Revision 1.35  2005/08/29 16:10:14  camacho
 *Fix to previous commit
 *
