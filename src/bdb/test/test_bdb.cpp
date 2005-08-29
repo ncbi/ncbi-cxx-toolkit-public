@@ -229,7 +229,7 @@ void s_TEST_BDB_Transaction(void)
     dbf3.idata = 13;
     dbf3.Insert();
 
-    //trans.Commit();
+//    trans.Commit();
 
     dbf3.ikey = 10;
     EBDB_ErrCode ret = dbf3.Fetch();
@@ -260,10 +260,10 @@ void s_TEST_BDB_Transaction(void)
     dbf3.SetTransaction(0);
     dbf3.ikey = 10;
     ret = dbf3.Fetch();
-    assert (ret == eBDB_Ok);
+    assert (ret == eBDB_NotFound);
     
-    idata = dbf3.idata;
-    assert(idata == 11);
+//    idata = dbf3.idata;
+//    assert(idata == 11);
 
     env.TransactionCheckpoint();
 
@@ -1255,6 +1255,53 @@ static void s_TEST_BDB_LOB_File(void)
 {
     cout << "======== LOB file test." << endl;    
 
+
+    {{
+    CBDB_LobFile lob;
+
+    lob.SetCacheSize(25 * 1024 * 1024);
+    lob.Open("big_lobtest_.db", "lob", CBDB_LobFile::eCreate);
+
+    size_t bsize = 50 * 1024 * 1024;
+    char* buf = new char[bsize];
+
+    int test_size = 50;
+
+    cout << "Big blob write timing test" << endl;
+    for (int i = 0; i < test_size; ++i) {
+
+        size_t lob_len = (i+1) * 1024 * 1024;
+        cout << "Writing " << lob_len / (1024 * 1024) << "MB" << endl;
+        time_t start = time(0);
+        EBDB_ErrCode ret = lob.Insert(i+1, buf, lob_len);
+        assert(ret == eBDB_Ok);
+        time_t finish = time(0);
+        cout << "Time=" << finish - start << "sec." << endl;
+    }
+
+    cout << "Big blob write timing test OK." << endl;
+
+    cout << "Big blob file timing test." << endl;
+
+    for (int i = 0; i < test_size; ++i) {
+
+        size_t lob_len = (i+1) * 1024 * 1024;
+        cout << "Writing " << lob_len / (1024 * 1024) << "MB" << endl;
+        time_t start = time(0);
+
+        ofstream fs("test_file.bin");
+        fs.write(buf, lob_len);
+
+        time_t finish = time(0);
+        cout << "Time=" << finish - start << "sec." << endl;
+    }
+    cout << "Big blob file timing test OK." << endl;
+    delete buf;
+
+
+    }}
+
+
     CBDB_LobFile lob;
     lob.Open("lobtest.db", "lob", CBDB_LobFile::eCreate);
 
@@ -1988,6 +2035,7 @@ int CBDB_Test::Run(void)
 
     try
     {        
+
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -2051,6 +2099,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2005/08/29 16:14:55  kuznets
+ * Added thread test for BDB transactions
+ *
  * Revision 1.60  2005/03/15 14:47:28  kuznets
  * Removed unnecessary transaction commit()
  *
