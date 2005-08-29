@@ -832,6 +832,66 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    return 0;
 }
 
+Int2 BLAST_GetSuggestedThreshold(EBlastProgramType program_number, const char* matrixName, Int4* threshold)
+{
+
+    const Int4 kB62_threshold = 11;
+
+    if (program_number == eBlastTypeBlastn)
+      return 0;
+
+    if (matrixName == NULL)
+      return -1;
+
+    if(strcasecmp(matrixName, "BLOSUM62") == 0)
+        *threshold = kB62_threshold;
+    else if(strcasecmp(matrixName, "BLOSUM45") == 0)
+        *threshold = 14;
+    else if(strcasecmp(matrixName, "BLOSUM62_20") == 0)
+        *threshold = 100;
+    else if(strcasecmp(matrixName, "BLOSUM80") == 0)
+        *threshold = 12;
+    else if(strcasecmp(matrixName, "PAM30") == 0)
+        *threshold = 16;
+    else if(strcasecmp(matrixName, "PAM70") == 0)
+        *threshold = 14;
+    else
+        *threshold = kB62_threshold;
+
+    if (Blast_SubjectIsTranslated(program_number) == TRUE)
+        *threshold += 2;  /* Covers tblastn, tblastx, psi-tblastn rpstblastn. */
+    else if (Blast_QueryIsTranslated(program_number) == TRUE)
+        *threshold += 1;
+
+    return 0;
+}
+
+Int2 BLAST_GetSuggestedWindowSize(EBlastProgramType program_number, const char* matrixName, Int4* window_size)
+{
+    const Int4 kB62_windowsize = 40;
+
+    if (program_number == eBlastTypeBlastn)
+      return 0;
+
+    if (matrixName == NULL)
+      return -1;
+
+    if(strcasecmp(matrixName, "BLOSUM62") == 0)
+        *window_size = kB62_windowsize;
+    else if(strcasecmp(matrixName, "BLOSUM45") == 0)
+        *window_size = 60;
+    else if(strcasecmp(matrixName, "BLOSUM80") == 0)
+        *window_size = 25;
+    else if(strcasecmp(matrixName, "PAM30") == 0)
+        *window_size = 15;
+    else if(strcasecmp(matrixName, "PAM70") == 0)
+        *window_size = 20;
+    else
+        *window_size = kB62_windowsize;
+
+    return 0;
+}
+
 /** Validate options for the discontiguous word megablast
  * Word size must be 11 or 12; template length 16, 18 or 21; 
  * template type 0, 1 or 2.
@@ -1204,6 +1264,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.172  2005/08/29 13:51:44  madden
+ * Add functions BLAST_GetSuggestedThreshold and BLAST_GetSuggestedWindowSize
+ *
  * Revision 1.171  2005/06/24 12:15:40  madden
  * Add protection against NULL pointers in options free functons
  *
