@@ -53,6 +53,9 @@ BEGIN_SCOPE(blast)
 /// interfaces
 struct IPssmInput_Base 
 {
+    /// virtual destructor
+    virtual ~IPssmInput_Base() {}
+
     /// Get the query sequence used as master for the multiple sequence
     /// alignment in ncbistdaa encoding.
     virtual unsigned char* GetQuery() = 0;
@@ -128,6 +131,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/08/29 14:14:20  camacho
+ * + virtual destructor to IPssmInput_Base
+ *
  * Revision 1.12  2005/08/03 11:36:20  kuznets
  * Removed double @addtogroup (doxygen)
  *
