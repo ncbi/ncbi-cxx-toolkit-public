@@ -365,6 +365,9 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
     CNetCacheClient cl(m_ClientName);
     cl.SetClientNameComment(m_ClientNameComment);
     IReader* rd = cl.GetData(key, blob_size);
+    if (rd == 0) {
+        return rd; // BLOB not found
+    }
     cl.DetachSocket();
     CNetCacheSock_RW* rw = dynamic_cast<CNetCacheSock_RW*>(rd);
     if (rw) {
@@ -469,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/08/29 16:35:01  kuznets
+ * Fixed casting zero pointer(BLOB does not exist)
+ *
  * Revision 1.22  2005/08/11 17:51:24  kuznets
  * Added IWriter implementation with transmission checking
  *
