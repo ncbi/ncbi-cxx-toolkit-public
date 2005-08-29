@@ -516,6 +516,63 @@ EProgram ProgramNameToEnum(const std::string& program_name)
                "Program type '" + program_name + "' not supported");
 }
 
+string Blast_ProgramNameFromType(EBlastProgramType program)
+{
+    switch (program) {
+    case eBlastTypeBlastn: return "blastn";
+    case eBlastTypeBlastp: return "blastp";
+    case eBlastTypeBlastx: return "blastx";
+    case eBlastTypeTblastn: return "tblastn";
+    case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn: return "rpsblast";
+    default: return "blast";
+    }
+}
+
+void 
+Blast_GetSeqLocInfoVector(EBlastProgramType program, 
+                          vector< CRef<CSeq_id> >& seqid_v,
+                          const BlastMaskLoc* mask, 
+                          TSeqLocInfoVector& mask_v)
+{
+    const bool kTranslatedQuery = Blast_QueryIsTranslated(program);
+    const int kNumFrames = (kTranslatedQuery ? NUM_FRAMES : 1);
+
+    if (seqid_v.size() != mask->total_size/kNumFrames) {
+        string msg = "Blast_GetSeqLocInfoVector: number of query ids " +
+            NStr::IntToString(seqid_v.size()) + 
+            " not equal to number of queries in mask " + 
+            NStr::IntToString(mask->total_size/kNumFrames);
+        NCBI_THROW(CBlastException, eInvalidArgument, msg);
+    }
+
+    for (unsigned int query_index = 0; query_index < seqid_v.size(); 
+         ++query_index) {
+        list<CRef<CSeqLocInfo> > mask_info_list;
+
+        for (int tmp_index = 0; tmp_index < kNumFrames; tmp_index++) {
+            BlastSeqLoc* loc = NULL;
+            if (mask)
+                loc = mask->seqloc_array[query_index*kNumFrames+tmp_index];
+        
+            for ( ; loc; loc = loc->next) {
+                CRef<CSeqLocInfo> seqloc_info(new CSeqLocInfo());
+                int frame = (kTranslatedQuery ? 
+                    (int) BLAST_ContextToFrame(program, tmp_index) : 0);
+                seqloc_info->SetFrame(frame);
+
+                
+                CSeq_interval* seqint =
+                    new CSeq_interval(*seqid_v[query_index], loc->ssr->left, 
+                                      loc->ssr->right);
+            
+                seqloc_info->SetInterval(seqint);
+                mask_info_list.push_back(seqloc_info);
+            }
+        }
+        mask_v.push_back(mask_info_list);
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -525,6 +582,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.76  2005/08/29 14:39:07  camacho
+ * From Ilya Dondoshansky:
+ * Added class CSeqLocInfo, type TSeqLocInfoVector and method to construct
+ * it from the BlastMaskLoc core structure
+ *
  * Revision 1.75  2005/07/07 16:32:11  camacho
  * Revamping of BLAST exception classes and error codes
  *

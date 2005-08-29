@@ -39,6 +39,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/metareg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 #include <algo/blast/api/blast_types.hpp>
 // NewBlast includes
@@ -49,6 +50,7 @@
 #include <algo/blast/core/blast_gapalign.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_psi.h>
+#include <algo/blast/core/blast_hspstream.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -75,12 +77,14 @@ typedef AutoPtr<type, CDeleter<type> > TAuto ## type ## Ptr
 #define TYPEDEF_AUTOPTR_ARRAYDELETER(type) \
 typedef AutoPtr<type, ArrayDeleter<type> > TAuto ## type ## ArrayPtr
 
+#ifndef SKIP_DOXYGEN_PROCESSING
 /// Declares TAutoUint1Ptr (for Uint1 arrays allocated with malloc/calloc)
 TYPEDEF_AUTOPTR_CDELETER(Uint1);
 /// Declares TAutoCharPtr (for Char arrays allocated with malloc/calloc)
 TYPEDEF_AUTOPTR_CDELETER(Char);
 /// Declares TAutoUint1ArrayPtr (for Uint1 arrays allocated with new[])
 TYPEDEF_AUTOPTR_ARRAYDELETER(Uint1);
+#endif
 
 /// Map a string into an element of the ncbi::blast::EProgram enumeration 
 /// (except eBlastProgramMax).
@@ -91,6 +95,12 @@ TYPEDEF_AUTOPTR_ARRAYDELETER(Uint1);
 /// elements
 NCBI_XBLAST_EXPORT
 EProgram ProgramNameToEnum(const std::string& program_name);
+
+/// Returns a string program name, given a blast::EBlastProgramType enumeration.
+/// @param program Enumerated program value [in]
+/// @return String program name.
+NCBI_XBLAST_EXPORT
+string Blast_ProgramNameFromType(EBlastProgramType program);
 
 /** Converts a CSeq_loc into a BlastSeqLoc structure used in NewBlast
  * @param slp CSeq_loc to convert [in]
@@ -107,6 +117,58 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp);
 NCBI_XBLAST_EXPORT
 TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code);
+
+///structure for seqloc info
+class CSeqLocInfo : public CObject {
+public:
+    typedef enum ETranslationFrame {
+        eFramePlus1  =  1,
+        eFramePlus2  =  2,
+        eFramePlus3  =  3,
+        eFrameMinus1 = -1,
+        eFrameMinus2 = -2,
+        eFrameMinus3 = -3,
+        eFrameNotSet = 0
+    };
+
+    const objects::CSeq_interval& GetInterval() const { return *m_Interval; }
+    void SetInterval(objects::CSeq_interval* interval) {
+        m_Interval.Reset(interval);
+    }
+    int GetFrame() const { return (int) m_Frame; }
+    void SetFrame(int frame); // Throws exception on out-of-range input
+private:
+    CRef <objects::CSeq_interval> m_Interval; 
+    ETranslationFrame m_Frame;         // For translated nucleotide sequence
+};
+
+inline void CSeqLocInfo::SetFrame(int frame)
+{
+    if (frame < -3 || frame > 3) {
+        string msg = 
+            "CSeqLocInfo::SetFrame: input " + NStr::IntToString(frame) + 
+            " out of range";
+        throw std::out_of_range(msg);
+    }
+    m_Frame = (ETranslationFrame) frame;
+}
+
+/// Vector of per-query mask lists
+typedef vector<list<CRef<CSeqLocInfo> > > TSeqLocInfoVector;
+
+/// Converts a BlastMaskLoc internal structure into an object returned by the 
+/// C++ API.
+/// @param program Type of BLAST program [in]
+/// @param seqid_v Vector of query Seq-ids [in]
+/// @param mask All masking locations [in]
+/// @param mask_v Vector of per-query lists of mask locations in CSeqLocInfo 
+///               form. [out]
+void 
+Blast_GetSeqLocInfoVector(EBlastProgramType program, 
+                          vector< CRef<objects::CSeq_id> >& seqid_v,
+                          const BlastMaskLoc* mask, 
+                          TSeqLocInfoVector& mask_v);
+
 
 /** Declares class to handle deallocating of the structure using the appropriate
  * function
@@ -207,6 +269,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2005/08/29 14:37:51  camacho
+* From Ilya Dondoshansky:
+* Added class CSeqLocInfo, type TSeqLocInfoVector and method to construct
+* it from the BlastMaskLoc core structure
+*
 * Revision 1.61  2005/06/23 16:18:45  camacho
 * Doxygen fixes
 *
