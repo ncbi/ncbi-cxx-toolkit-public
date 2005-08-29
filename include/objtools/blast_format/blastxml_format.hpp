@@ -56,6 +56,8 @@ USING_SCOPE(blast);
 class IBlastXMLReportData
 {
 public:
+    /// Virtual destructor
+    virtual ~IBlastXMLReportData() {}
     /// Returns BLAST program name as string.
     virtual string GetBlastProgramName(void) const = 0;
     /// Returns BLAST task as an enumerated value.
@@ -124,6 +126,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/08/29 14:17:08  camacho
+* + virtual destructor to IBlastXMLReportData
+*
 * Revision 1.1  2005/07/20 18:15:44  dondosha
 * API for formatting BLAST results in XML form
 *
