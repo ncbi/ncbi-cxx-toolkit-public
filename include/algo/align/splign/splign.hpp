@@ -48,9 +48,13 @@ public:
     // start and finish are zero-based;
     // must return full sequence when start == 0 and finish == kMax_UInt;
     // sequence characters are expected to be in upper case.
+    // If keep == true, sequence will be retained in memory.
 
-    virtual void Load(const string& id, vector<char> *seq,
-                      size_t start, size_t finish) = 0;
+    virtual void Load(const string& id, 
+                      vector<char> *seq,
+                      size_t start, 
+                      size_t finish,
+                      bool keep) = 0;
 };
 
 
@@ -242,6 +246,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2005/08/29 14:13:42  kapustin
+ * CSeqLoader::Load() +keep
+ *
  * Revision 1.24  2005/08/02 15:55:48  kapustin
  * +x_GetGenomicExtent()
  *
