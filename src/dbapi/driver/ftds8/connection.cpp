@@ -130,7 +130,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                     DBTXPLEN,
                     desc.m_TimeStamp_is_NULL ? 0 : desc.m_TimeStamp,
                     log_it ? TRUE : FALSE,
-                    data_size, 0) != SUCCEED ||
+                    static_cast<int>(data_size), 0) != SUCCEED ||
         dbsqlok(m_Link) != SUCCEED ||
         //        dbresults(m_Link) == FAIL) {
         x_Results(m_Link) == FAIL) {
@@ -505,7 +505,8 @@ size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
     if (nof_bytes > m_Bytes2go)
         nof_bytes = m_Bytes2go;
 
-    if (dbmoretext(m_Cmd, nof_bytes, (BYTE*) pChunk) != SUCCEED) {
+    if (dbmoretext(m_Cmd, static_cast<DBINT>(nof_bytes), (BYTE*) pChunk) 
+        != SUCCEED) {
         dbcancel(m_Cmd);
         DATABASE_DRIVER_ERROR( "dbmoretext failed", 290001 );
     }
@@ -551,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/08/29 17:10:38  ssikorsk
+ * Get rid of warnings on 64-bit platforms
+ *
  * Revision 1.11  2005/07/20 12:33:05  ssikorsk
  * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
  *

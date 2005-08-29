@@ -127,21 +127,21 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             case eDB_Binary: {
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
-                             val.IsNULL() ? 0 : val.Size(),
+                             val.IsNULL() ? 0 : static_cast<int>(val.Size()),
                              0, 0, SYBBINARY, i + 1);
             }
             break;
             case eDB_VarBinary: {
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
-                             val.IsNULL() ? 0 : val.Size(),
+                             val.IsNULL() ? 0 : static_cast<int>(val.Size()),
                              0, 0, SYBVARBINARY, i + 1);
             }
             break;
             case eDB_LongBinary: {
                 CDB_LongBinary& val = dynamic_cast<CDB_LongBinary&> (param);
                 r = bcp_bind(m_Cmd, (BYTE*) val.Value(), 0,
-                             val.IsNULL() ? 0 : val.DataSize(),
+                             val.IsNULL() ? 0 : static_cast<int>(val.DataSize()),
                              0, 0, SYBBINARY, i + 1);
             }
             break;
@@ -182,14 +182,14 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_Text: {
                 CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : val.Size(),
+                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : static_cast<int>(val.Size()),
                              0, 0, SYBTEXT, i + 1);
                 m_HasTextImage = true;
             }
             break;
             case eDB_Image: {
                 CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : val.Size(),
+                r = bcp_bind(m_Cmd, 0, 0, val.IsNULL() ? 0 : static_cast<int>(val.Size()),
                              0, 0, SYBIMAGE, i + 1);
                 m_HasTextImage = true;
             }
@@ -272,7 +272,8 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.Size(), i + 1)
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : 
+                               static_cast<int>(val.Size()), i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
@@ -280,7 +281,8 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
                 CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
                 r = bcp_colptr(m_Cmd, (BYTE*) val.Value(), i + 1)
                     == SUCCEED &&
-                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : val.Size(), i + 1)
+                    bcp_collen(m_Cmd, val.IsNULL() ? 0 : 
+                               static_cast<int>(val.Size()), i + 1)
                     == SUCCEED ? SUCCEED : FAIL;
             }
             break;
@@ -335,12 +337,12 @@ bool CTDS_BCPInCmd::x_AssignParams(void* pb)
             break;
             case eDB_Text: {
                 CDB_Text& val = dynamic_cast<CDB_Text&> (param);
-                r = bcp_collen(m_Cmd, val.Size(), i + 1);
+                r = bcp_collen(m_Cmd, static_cast<int>(val.Size()), i + 1);
             }
             break;
             case eDB_Image: {
                 CDB_Image& val = dynamic_cast<CDB_Image&> (param);
-                r = bcp_collen(m_Cmd, val.Size(), i + 1);
+                r = bcp_collen(m_Cmd, static_cast<int>(val.Size()), i + 1);
             }
             break;
             default:
@@ -388,7 +390,8 @@ bool CTDS_BCPInCmd::SendRow()
                 size_t l = val.Read(buff, sizeof(buff));
                 if (l > s)
                     l = s;
-                if (bcp_moretext(m_Cmd, l, (BYTE*) buff) != SUCCEED) {
+                if (bcp_moretext(m_Cmd, static_cast<int>(l), (BYTE*) buff) 
+                    != SUCCEED) {
                     m_HasFailed = true;
                     string error;
 
@@ -478,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/08/29 17:10:38  ssikorsk
+ * Get rid of warnings on 64-bit platforms
+ *
  * Revision 1.9  2005/08/17 18:01:03  ssikorsk
  * Bind Int8 as SYBINT8 (was DBNUMERIC)
  *
