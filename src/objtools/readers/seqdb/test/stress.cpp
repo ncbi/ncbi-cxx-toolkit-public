@@ -274,7 +274,7 @@ bool read_arguments(vector<string>   & arglist,
     args.Get("-threads",  num_threads);
     args.Get("-max-iter", max_iter);
     args.Get("-oids",     oid_range);
-    args.Get("-dbname",   dbname);
+    args.Get("-db",       dbname);
     
     if (args.Get("-nucl", is_nucl)) {
         seqtype = is_nucl ? CSeqDB::eNucleotide : CSeqDB::eProtein;

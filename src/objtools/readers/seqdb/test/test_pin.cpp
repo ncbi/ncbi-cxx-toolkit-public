@@ -372,6 +372,39 @@ int test1(int argc, char ** argv)
             return 0;
         }
         
+        if (s == "-megabuild") {
+            //seqdb_logfile = new ofstream("seqdb.log.1");
+            //seqdb_logclass = 4;
+            
+            for(int i = 150; i<1000; i++) {
+                //string sous;
+                
+                vector< CRef<CSeqDB> > v;
+                
+                cout << "Iteration " << i << ":" << flush;
+                
+                v.reserve(i);
+                for(int j = 0; j<i; j++) {
+                    //sous.resize(j*1024*1024);
+                    
+                    CRef<CSeqDB> s(new CSeqDB(dbname, seqtype));
+                    v.push_back(s);
+                    cout << "." << flush;
+                }
+                
+                cout << " success" << endl;
+                
+                if (i > 5) {
+                    i--;
+                    i = i + i + i;
+                }
+            }
+            
+            delete seqdb_logfile;
+            
+            return 0;
+        }
+        
         if (s == "-taxnames") {
             CSeqDB db(dbname, seqtype);
             
