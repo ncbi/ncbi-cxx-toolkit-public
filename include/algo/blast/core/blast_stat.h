@@ -418,6 +418,17 @@ double BLAST_LargeGapSumE (Int2 num,  double xsum,
                            Int4 query_length, Int4 subject_length,
                            Int8 searchsp_eff, double weight_divisor );
 
+/** Extract the recommended gap existence and extension values.
+ * Only to be used with protein matrices. 
+ * @param  matrixName name of the matrix [in]
+ * @param gap_existence returns recommended existence cost [in|out]
+ * @param gap_extension returns recommended extension cost [in|out]
+ * @return zero on success 
+ */
+Int2 BLAST_GetGapExistenceExtendParams(const char* matrixName,
+                                       Int4* gap_existence,
+                                       Int4* gap_extension);
+
 /** Extract the alpha and beta settings for this matrixName, and these
  *  gap open and gap extension costs
  * @param matrixName name of the matrix used [in]
