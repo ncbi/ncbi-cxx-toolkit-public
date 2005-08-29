@@ -136,8 +136,7 @@ public:
     virtual TSeqAlignVector RunTraceback(); 
 
     /// Retrieves regions filtered on the query/queries
-    // const TSeqLocVector& GetFilteredQueryRegions() const;
-    const BlastMaskLoc* GetFilteredQueryRegions() const;
+    TSeqLocInfoVector GetFilteredQueryRegions() const;
 
     /// Retrieve the data structure for the source of subject sequences
     const BlastSeqSrc* GetSeqSrc() const;
@@ -271,12 +270,6 @@ CDbBlast::GetOptionsHandle() const
     return *m_OptsHandle;
 }
 
-inline const BlastMaskLoc*
-CDbBlast::GetFilteredQueryRegions() const
-{
-    return m_ipFilteredRegions;
-}
-
 inline const BlastSeqSrc* CDbBlast::GetSeqSrc() const
 {
     return m_pSeqSrc;
@@ -337,6 +330,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2005/08/29 14:37:31  camacho
+* From Ilya Dondoshansky:
+* GetFilteredQueryRegions now returns TSeqLocInfoVector
+*
 * Revision 1.37  2005/06/28 20:36:47  camacho
 * Experimental: implemented ctor which uses query retrieval interface
 *

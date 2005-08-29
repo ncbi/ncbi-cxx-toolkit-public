@@ -132,8 +132,8 @@ public:
     virtual void PartialRun();
 
     /// Retrieves regions filtered on the query/queries
-    //const TSeqLocVector& GetFilteredQueryRegions() const;
-    const vector< CConstRef<objects::CSeq_loc> >& GetFilteredQueryRegions() const;
+    TSeqLocInfoVector GetFilteredQueryRegions() const;
+
     /// Retrieves the diagnostics information returned from the engine
     BlastDiagnostics* GetDiagnostics() const;
 
@@ -187,8 +187,8 @@ private:
     /// Return search statistics data
     BlastDiagnostics*                   mi_pDiagnostics;
 
-    /// Regions filtered out from the query sequence, one per query
-    vector< CConstRef<objects::CSeq_loc> >       mi_vFilteredRegions;
+    /// Regions filtered out from the query sequences
+    BlastMaskLoc* m_ipFilteredRegions;
 
     /// Resets query data structures
     void x_ResetQueryDs();
@@ -265,12 +265,6 @@ CBl2Seq::GetOptionsHandle() const
     return *m_OptsHandle;
 }
 
-inline const vector< CConstRef<objects::CSeq_loc> >&
-CBl2Seq::GetFilteredQueryRegions() const
-{
-    return mi_vFilteredRegions;
-}
-
 inline BlastDiagnostics* CBl2Seq::GetDiagnostics() const
 {
     return mi_pDiagnostics;
@@ -290,6 +284,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2005/08/29 14:37:31  camacho
+* From Ilya Dondoshansky:
+* GetFilteredQueryRegions now returns TSeqLocInfoVector
+*
 * Revision 1.42  2005/06/23 16:18:45  camacho
 * Doxygen fixes
 *

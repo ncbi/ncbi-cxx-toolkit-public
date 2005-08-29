@@ -42,6 +42,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/seq_vector.hpp> // For CSeqVectorException type
+#include <objmgr/util/sequence.hpp>
 
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_options.hpp>
@@ -539,22 +540,19 @@ void CDbBlast::SetupSearch()
             scale_factor = m_ipRpsInfo->aux_info.scale_factor;
         else
             scale_factor = 1.0;
-
-        BlastMaskInformation maskInfo;
+        // Lookup table is needed only if this is a full search, but 
+        // always if it is PHI BLAST. 
+        bool need_lookup_table = 
+            (!m_ibTracebackOnly || Blast_ProgramIsPhiBlast(x_eProgram)); 
 
         status = 
-            BLAST_MainSetUp(x_eProgram, 
-                            kOptions.GetQueryOpts(),
-                            kOptions.GetScoringOpts(),
-                            kOptions.GetHitSaveOpts(),
-                            m_iclsQueries, m_iclsQueryInfo,
-                            scale_factor,
-                            (m_ibTracebackOnly ? NULL : &m_ipLookupSegments),
-                            &maskInfo, &m_ipScoreBlock, &blast_message);
+            BLAST_MainSetUp(x_eProgram, kOptions.GetQueryOpts(),
+                            kOptions.GetScoringOpts(), m_iclsQueries, 
+                            m_iclsQueryInfo, scale_factor,
+                            (need_lookup_table ? &m_ipLookupSegments : NULL),
+                            &m_ipFilteredRegions, &m_ipScoreBlock, 
+                            &blast_message);
 
-        m_ipFilteredRegions = maskInfo.filter_slp;
-        maskInfo.filter_slp = NULL;
-        
         if (status != 0) {
             string msg = blast_message ? blast_message->message : 
                 "BLAST_MainSetUp failed";
@@ -566,7 +564,7 @@ void CDbBlast::SetupSearch()
             m_ivErrors.push_back(blast_message);
         }
         
-        if (!m_ibTracebackOnly) {
+        if (need_lookup_table) {
             LookupTableWrapInit(m_iclsQueries, 
                                 kOptions.GetLutOpts(), 
                                 m_ipLookupSegments, m_ipScoreBlock, 
@@ -765,6 +763,27 @@ CDbBlast::x_Results2SeqAlign()
     return retval;
 }
 
+TSeqLocInfoVector
+CDbBlast::GetFilteredQueryRegions() const
+{
+    vector<CRef<CSeq_id> > seqid_v;
+
+    for (unsigned int index = 0; index < m_tQueries.size(); ++index) {
+        CRef<CSeq_id> id(const_cast<CSeq_id*>(
+            &sequence::GetId(*m_tQueries[index].seqloc,
+                             m_tQueries[index].scope)));
+        seqid_v.push_back(id);
+    }
+
+    const EBlastProgramType kProgram =
+        GetOptionsHandle().GetOptions().GetProgramType();
+    TSeqLocInfoVector mask_v;
+
+    Blast_GetSeqLocInfoVector(kProgram, seqid_v, m_ipFilteredRegions,
+                              mask_v);
+    return mask_v;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -774,6 +793,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.81  2005/08/29 14:38:48  camacho
+ * From Ilya Dondoshansky:
+ * GetFilteredQueryRegions now returns TSeqLocInfoVector
+ *
  * Revision 1.80  2005/07/19 13:44:08  madden
  * Add call to Blast_FindDustFilterLoc
  *

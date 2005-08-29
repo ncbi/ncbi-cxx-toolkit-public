@@ -138,6 +138,7 @@ void CBl2Seq::x_InitSeqs(const TSeqLocVector& queries,
     mi_pResults = NULL;
     mi_pDiagnostics = NULL;
     mi_pSeqSrc = NULL;
+    m_ipFilteredRegions = NULL;
 }
 
 CBl2Seq::~CBl2Seq()
@@ -157,7 +158,7 @@ CBl2Seq::x_ResetQueryDs()
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
     mi_pLookupSegments = BlastSeqLocFree(mi_pLookupSegments);
-    // TODO: should clean filtered regions?
+    m_ipFilteredRegions = BlastMaskLocFree(m_ipFilteredRegions);
 }
 
 void
@@ -210,8 +211,6 @@ CBl2Seq::SetupSearch()
         SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
                      prog, strand_opt, gc.get(), &mi_clsBlastMessage);
 
-        // FIXME
-        BlastMaskInformation maskInfo;
         Blast_Message* blmsg = NULL;
         double scale_factor = 1.0;
         short st;
@@ -219,17 +218,9 @@ CBl2Seq::SetupSearch()
         st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgramType(), 
                              m_OptsHandle->GetOptions().GetQueryOpts(),
                              m_OptsHandle->GetOptions().GetScoringOpts(),
-                             m_OptsHandle->GetOptions().GetHitSaveOpts(),
-                             mi_clsQueries, 
-                             mi_clsQueryInfo, 
-                             scale_factor,
-                             &mi_pLookupSegments, 
-                             &maskInfo, &mi_pScoreBlock, &blmsg);
-
-        // Convert the BlastMaskLoc* into a CSeq_loc
-        // TODO: Implement this! 
-        //mi_vFilteredRegions = BLASTBlastMaskLoc2SeqLoc(maskInfo.filter_slp);
-        BlastMaskLocFree(maskInfo.filter_slp); // FIXME, return seqlocs for formatter
+                             mi_clsQueries, mi_clsQueryInfo, scale_factor,
+                             &mi_pLookupSegments, &m_ipFilteredRegions, &mi_pScoreBlock,
+                             &blmsg);
 
         // TODO: Check that lookup_segments are not filtering the whole 
         // sequence (SSeqRange set to -1 -1)
@@ -362,6 +353,27 @@ CBl2Seq::GetErrorMessage() const
     return retval;
 }
 
+TSeqLocInfoVector
+CBl2Seq::GetFilteredQueryRegions() const
+{
+    vector<CRef<CSeq_id> > seqid_v;
+
+    for (unsigned int index = 0; index < m_tQueries.size(); ++index) {
+        CRef<CSeq_id> id(const_cast<CSeq_id*>(
+            &sequence::GetId(*m_tQueries[index].seqloc,
+                             m_tQueries[index].scope)));
+        seqid_v.push_back(id);
+    }
+
+    const EBlastProgramType kProgram =
+        m_OptsHandle->GetOptions().GetProgramType();
+    TSeqLocInfoVector mask_v;
+
+    Blast_GetSeqLocInfoVector(kProgram, seqid_v, m_ipFilteredRegions,
+                              mask_v);
+    return mask_v;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -371,6 +383,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.80  2005/08/29 14:38:48  camacho
+ * From Ilya Dondoshansky:
+ * GetFilteredQueryRegions now returns TSeqLocInfoVector
+ *
  * Revision 1.79  2005/07/19 13:44:08  madden
  * Add call to Blast_FindDustFilterLoc
  *
