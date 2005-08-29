@@ -563,26 +563,24 @@ string CHTMLPopupMenu::GetCodeItems(void) const
                 }
                 code.append(nl + "]" + nl);
             }
-            // Write menu only if it have items
-            if ( m_Items.size() ) {
-                code.append("var " + m_Name + " = [" + nl);
-                if ( !m_ConfigName.empty() ) {
-                    code.append("  [\"UseLocalConfig\",\"" + 
-                                m_ConfigName + "\",\"\",\"\"]");
-                }
-                // Write menu items
-                ITERATE (TItems, i, m_Items) {
-                    if ( !m_ConfigName.empty()  ||  i != m_Items.begin()) {
-                        code.append("," + nl);
-                    }
-                    code.append("  [\"" +
-                                i->title     + "\",\""  +
-                                i->action    + "\",\""  +
-                                i->mouseover + "\",\""  +
-                                i->mouseout  + "\"]");
-                }
-                code.append(nl + "]" + nl);
+            // Write menu always, even it is empty
+            code.append("var " + m_Name + " = [" + nl);
+            if ( !m_ConfigName.empty() ) {
+                code.append("  [\"UseLocalConfig\",\"" + 
+                            m_ConfigName + "\",\"\",\"\"]");
             }
+            // Write menu items
+            ITERATE (TItems, i, m_Items) {
+                if ( !m_ConfigName.empty()  ||  i != m_Items.begin()) {
+                    code.append("," + nl);
+                }
+                code.append("  [\"" +
+                            i->title     + "\",\""  +
+                            i->action    + "\",\""  +
+                            i->mouseover + "\",\""  +
+                            i->mouseout  + "\"]");
+            }
+            code.append(nl + "]" + nl);
         }
         break;
 
@@ -626,6 +624,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/08/29 15:11:11  ivanov
+ * eKurdinConf -- define menu variable always, even it doesn't have items
+ *
  * Revision 1.34  2005/08/18 14:16:47  ivanov
  * Use CHTMLHelper::GetNL() for EOL instead of '\n'
  *
