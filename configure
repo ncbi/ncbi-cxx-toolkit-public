@@ -4648,6 +4648,10 @@ case "$compiler:$compiler_version" in
     # -static-libcxa when building shared libraries....
     LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
     ;;
+  ICC:9* )
+    # Back and forth we go.
+    LDFLAGS="-i-static $LDFLAGS"
+    ;;
 esac
 
 # DLLs and profiling don't mix on all platforms

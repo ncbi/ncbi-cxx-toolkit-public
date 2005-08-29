@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.387 2005/08/25 14:27:34 ucko Exp $
+#  $Id: configure.ac,v 1.388 2005/08/29 15:50:27 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1153,6 +1153,10 @@ case "$compiler:$compiler_version" in
     # Back to the runpath approach, since ICC now ignores
     # -static-libcxa when building shared libraries....
     LDFLAGS="$CONF_f_runpath$compiler_root/lib $LDFLAGS"
+    ;;
+  ICC:9* )
+    # Back and forth we go.
+    LDFLAGS="-i-static $LDFLAGS"
     ;;
 esac
 
