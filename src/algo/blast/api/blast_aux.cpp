@@ -537,7 +537,7 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
     const bool kTranslatedQuery = Blast_QueryIsTranslated(program);
     const int kNumFrames = (kTranslatedQuery ? NUM_FRAMES : 1);
 
-    if (seqid_v.size() != mask->total_size/kNumFrames) {
+    if (seqid_v.size() != (size_t) mask->total_size/kNumFrames) {
         string msg = "Blast_GetSeqLocInfoVector: number of query ids " +
             NStr::IntToString(seqid_v.size()) + 
             " not equal to number of queries in mask " + 
@@ -582,6 +582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.77  2005/08/29 18:09:43  camacho
+ * Fix warning
+ *
  * Revision 1.76  2005/08/29 14:39:07  camacho
  * From Ilya Dondoshansky:
  * Added class CSeqLocInfo, type TSeqLocInfoVector and method to construct
