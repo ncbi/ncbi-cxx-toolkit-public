@@ -256,24 +256,24 @@ bool
 s_BuildLineage( string& str, CTaxon1Node* pNode, unsigned sz, int sp_rank )
 {
     if( !pNode->IsRoot() ) {
-        if( pNode->GetRank() > sp_rank-1 ) {
-            s_BuildLineage( str, pNode->GetParent(), 0, sp_rank );
-            return false;
-        } else {
-            if( pNode->IsGenBankHidden() ) {
-                return s_BuildLineage( str, pNode->GetParent(), sz, sp_rank );
-            }
-            bool bCont;
-            bCont=s_BuildLineage( str, pNode->GetParent(),
-                                  sz+pNode->GetName().size()+2, sp_rank );
-            if( bCont ) {
-                str.append( pNode->GetName() );
-                if( sz != 0 ) {
-                    str.append( "; " );
-                }
-            }
-            return bCont;
-        }
+//         if( pNode->GetRank() > sp_rank-1 ) {
+//             s_BuildLineage( str, pNode->GetParent(), 0, sp_rank );
+//             return false;
+//         } else {
+	if( pNode->IsGenBankHidden() ) {
+	    return s_BuildLineage( str, pNode->GetParent(), sz, sp_rank );
+	}
+	bool bCont;
+	bCont=s_BuildLineage( str, pNode->GetParent(),
+			      sz+pNode->GetName().size()+2, sp_rank );
+	if( bCont ) {
+	    str.append( pNode->GetName() );
+	    if( sz != 0 ) {
+		str.append( "; " );
+	    }
+	}
+	return bCont;
+//         }
     } else {
         str.reserve( sz );
     }
@@ -286,6 +286,8 @@ s_AfterPrefix( const string& str1, const string& prefix )
     string::size_type pos(0);
     if( NStr::StartsWith( str1, prefix ) ) {
         pos += prefix.size();
+    } else {
+	return string::npos;
     }
     return str1.find_first_not_of( " \t\n\r", pos );
 }
@@ -386,8 +388,10 @@ s_NofTokens( const string& s )
 COrgMod::ESubtype
 COrgRefCache::GetSubtypeFromName( string& sName )
 {
-    static const string s_sSubspCf( "subsp. cf." );
-    static const string s_sSubspAff( "subsp. aff." );
+    static const string s_sSubspCf( " subsp. cf." );
+    static const string s_sSubspAff( " subsp. aff." );
+    static const string s_sCf( " cf." );
+    static const string s_sAff( " aff." );
 
     string::size_type pos;
     if( sName.find('.') == string::npos ) {
@@ -400,22 +404,31 @@ COrgRefCache::GetSubtypeFromName( string& sName )
     if( NStr::FindNoCase( sName, s_sSubspAff ) != string::npos ) {
         return COrgMod::eSubtype_other;
     }
+    /* ignore cf. and aff. */
+    if( NStr::FindNoCase( sName, s_sCf ) != string::npos ) {
+	return COrgMod::eSubtype_other;
+    }
+    if( NStr::FindNoCase( sName, s_sAff ) != string::npos ) {
+	return COrgMod::eSubtype_other;
+    }
 
     /* check for subsp */
     SSubtypeAbbr* pSubtypeAbbr = &s_aSubtypes[0];
     while( pSubtypeAbbr->m_eSubtype != COrgMod::eSubtype_other ) {
-        if( (pos=NStr::FindNoCase( sName,
-                                   string(pSubtypeAbbr->m_pchAbbr,
-                                          pSubtypeAbbr->m_nAbbrLen) )) != NPOS ) {
-            sName.erase( pos, pSubtypeAbbr->m_nAbbrLen );
-            sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
-            if( pSubtypeAbbr->m_eSubtype == COrgMod::eSubtype_sub_species
-                && s_NofTokens( sName ) != 1 ) {
-                break; // Return other
-            }
-            return pSubtypeAbbr->m_eSubtype;
-        }
-        ++pSubtypeAbbr;
+	if( (pos=NStr::FindNoCase( sName,
+	       string(pSubtypeAbbr->m_pchAbbr,
+		      pSubtypeAbbr->m_nAbbrLen) )) != NPOS ) {
+	    if( pos == 0 || sName[pos-1] == ' ' || sName[pos-1] == '\t' ) {
+		sName.erase( pos, pSubtypeAbbr->m_nAbbrLen );
+		sName = NStr::TruncateSpaces( sName, NStr::eTrunc_Begin );
+		if( pSubtypeAbbr->m_eSubtype == COrgMod::eSubtype_sub_species
+		    && s_NofTokens( sName ) != 1 ) {
+		    break; // Return other
+		}
+		return pSubtypeAbbr->m_eSubtype;
+	    }
+	}
+	++pSubtypeAbbr;
     }
     return COrgMod::eSubtype_other;
 }
@@ -445,6 +458,9 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
     if( pParent ) { // Get rid of parent prefix
         pos = s_AfterPrefix( pNode->GetName(),
                              pParent->GetName() );
+	if( pos == string::npos ) {
+	    return false;
+	}
     }
     pMod->SetSubname().assign( pNode->GetName(), pos,
                                pNode->GetName().size()-pos );
@@ -452,23 +468,29 @@ COrgRefCache::BuildOrgModifier( CTaxon1Node* pNode,
     pMod->SetSubtype( GetSubtypeFromName( pMod->SetSubname() ) );
 
     if( pMod->GetSubtype() == COrgMod_Base::eSubtype_sub_species &&
-        pNode->GetRank() != GetSubspeciesRank() ) {
+	(pNode->GetRank() != GetSubspeciesRank() ||
+	 s_NofTokens( pMod->GetSubname() ) != 1) ) {
         pMod->SetSubtype( COrgMod_Base::eSubtype_other );
     }
+    if( pMod->GetSubtype() == COrgMod_Base::eSubtype_variety &&
+	(pNode->GetRank() != GetVarietyRank() ||
+	 s_NofTokens( pMod->GetSubname() ) != 1) ) {
+	pMod->SetSubtype( COrgMod_Base::eSubtype_other );
+    }
+    if( pMod->GetSubtype() == COrgMod_Base::eSubtype_forma &&
+	(pNode->GetRank() != GetFormaRank() ||
+	 s_NofTokens( pMod->GetSubname() ) != 1) ) {
+	pMod->SetSubtype( COrgMod_Base::eSubtype_other );
+    } 
 
     if( pMod->GetSubtype() == COrgMod_Base::eSubtype_other ) {
-        int rank = pNode->GetRank();
-        if( rank == GetSubspeciesRank() ) {
-            if( s_NofTokens( pNode->GetName() ) == 3 ) {
-                pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
-            }
-        } else if( rank == GetVarietyRank() ) {
-            pMod->SetSubtype( COrgMod_Base::eSubtype_variety );
-        } else if( rank == GetFormaRank() ) {
-            pMod->SetSubtype( COrgMod_Base::eSubtype_forma );
-        } else { // Do not insert invalid modifier
-            return false;
-        }
+	int rank = pNode->GetRank();
+	if( rank == GetSubspeciesRank() &&
+	    s_NofTokens( pNode->GetName() ) == 3 ) {
+	    pMod->SetSubtype( COrgMod_Base::eSubtype_sub_species );
+	} else { // Do not insert invalid modifier
+	    return false;
+	}
     }
     // Store it into list
     on.SetMod().push_back( pMod );
@@ -1377,6 +1399,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.26  2005/08/29 15:52:29  domrach
+ * Some issues with build org modifier resolved.
+ *
  * Revision 6.25  2005/06/09 16:44:17  domrach
  * Changes heuristic of assigning is_species flag for no-ranks under species subgroup parent
  *
