@@ -385,12 +385,11 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
 Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     const QuerySetUpOptions *qsup_options,
     const BlastScoringOptions *scoring_options,
-    const BlastHitSavingOptions *hit_options,
     BLAST_SequenceBlk *query_blk,
     const BlastQueryInfo *query_info,
     double scale_factor,
     BlastSeqLoc **lookup_segments, 
-    BlastMaskInformation* maskInfo,
+    BlastMaskLoc **mask,
     BlastScoreBlk **sbpp, 
     Blast_Message **blast_message)
 {
@@ -400,11 +399,8 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     SBlastFilterOptions* filter_options = NULL;
 
 
-    if (maskInfo)
-    {
-       maskInfo->filter_slp = NULL;
-       maskInfo->mask_at_hash = FALSE;
-    }
+    if (mask)
+        *mask = NULL;
 
     if (qsup_options->filtering_options == NULL && qsup_options->filter_string)
     {
@@ -416,16 +412,18 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     status = BlastSetUp_GetFilteringLocations(query_blk, 
                                               query_info, 
                                               program_number, 
-                                              filter_options ? filter_options : qsup_options->filtering_options, 
+                                              (filter_options ? filter_options : 
+                                              qsup_options->filtering_options), 
                                               & filter_maskloc, 
                                               blast_message);
-
 
     if (status) {
         return status;
     } 
 
-    mask_at_hash = SBlastFilterOptionsMaskAtHash(filter_options ? filter_options : qsup_options->filtering_options);
+    mask_at_hash = 
+        SBlastFilterOptionsMaskAtHash(filter_options ? filter_options : 
+                                      qsup_options->filtering_options);
 
     filter_options = SBlastFilterOptionsFree(filter_options);
 
@@ -451,7 +449,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
                                       filter_maskloc, lookup_segments);
     }
 
-    if (maskInfo)
+    if (mask)
     {
         if (program_number == eBlastTypeBlastx || 
             program_number == eBlastTypeTblastx ||
@@ -460,8 +458,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
                convert them back to nucleotide here. */
             BlastMaskLocProteinToDNA(filter_maskloc, query_info);
         }
-        maskInfo->filter_slp = filter_maskloc;
-        maskInfo->mask_at_hash = mask_at_hash;
+        *mask = filter_maskloc;
         filter_maskloc = NULL;
     }
     else 
