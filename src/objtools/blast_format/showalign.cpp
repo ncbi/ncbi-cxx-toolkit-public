@@ -92,7 +92,6 @@
 #include <objtools/blast_format/blastfmtutil.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE (objects);
 USING_SCOPE (sequence);
 
 static const char k_IdentityChar = '.';
@@ -2449,6 +2448,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.86  2005/08/29 16:10:26  camacho
+*Fix to previous commit
+*
 *Revision 1.85  2005/08/29 14:40:47  camacho
 *From Ilya Dondoshansky:
 *SeqlocInfo structure changed to a CSeqLocInfo class, definition moved to

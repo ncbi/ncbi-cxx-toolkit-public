@@ -45,7 +45,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects);
 
 /**
  * Example:
@@ -554,11 +554,15 @@ private:
 };
 
 /***********************Inlines************************/
+END_SCOPE(objects);
 END_NCBI_SCOPE
 
 /* 
 *===========================================
 *$Log$
+*Revision 1.35  2005/08/29 16:10:14  camacho
+*Fix to previous commit
+*
 *Revision 1.34  2005/08/29 14:40:05  camacho
 *From Ilya Dondoshansky:
 *SeqlocInfo structure changed to a CSeqLocInfo class, definition moved to

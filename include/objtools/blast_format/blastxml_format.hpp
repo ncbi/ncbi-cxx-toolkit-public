@@ -44,8 +44,6 @@
 #include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
-USING_SCOPE(blast);
 
 /** @addtogroup BlastFormat
  *
@@ -59,7 +57,7 @@ public:
     /// Returns BLAST program name as string.
     virtual string GetBlastProgramName(void) const = 0;
     /// Returns BLAST task as an enumerated value.
-    virtual EProgram GetBlastTask(void) const = 0;
+    virtual blast::EProgram GetBlastTask(void) const = 0;
     /// Returns database name.
     virtual string GetDatabaseName(void) const = 0;
     /// Returns e-value theshold used in search.
@@ -100,11 +98,12 @@ public:
     /// Returns Karlin-Altschul H parameter for a given query.
     virtual double GetEntropy(int query_index) const = 0;
     /// Returns a query Seq-loc for a given query index.
-    virtual const CSeq_loc* GetQuery(int query_index) const = 0;
+    virtual const objects::CSeq_loc* GetQuery(int query_index) const = 0;
     /// Returns scope for a given query.
-    virtual CScope* GetScope(int query_index) const = 0;
+    virtual objects::CScope* GetScope(int query_index) const = 0;
     /// Returns set of alignments found for a given query.
-    virtual const CSeq_align_set* GetAlignment(int query_index) const = 0;
+    virtual const objects::CSeq_align_set* 
+    GetAlignment(int query_index) const = 0;
     /// Returns true if search was gapped, false otherwise.
     virtual bool GetGappedMode(void) const = 0;
 };
@@ -124,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/08/29 16:10:14  camacho
+* Fix to previous commit
+*
 * Revision 1.3  2005/08/29 14:40:05  camacho
 * From Ilya Dondoshansky:
 * SeqlocInfo structure changed to a CSeqLocInfo class, definition moved to
