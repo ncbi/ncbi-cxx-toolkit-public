@@ -58,13 +58,13 @@ int main()
         CLoadLockBlob_ids ids(request, seq_id);
         dispatcher->LoadSeq_idSeq_ids(request, seq_id);
         ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
-            const CBlob_id& blob_id = i->first;
+            CConstRef<CBlob_id> blob_id = i->first;
             cout << "gi: " << gi <<
-                " Sat=" << blob_id.GetSat() <<
-                " SatKey=" << blob_id.GetSatKey() << endl;
+                " Sat=" << blob_id->GetSat() <<
+                " SatKey=" << blob_id->GetSatKey() << endl;
       
-            CLoadLockBlob blob(request, blob_id);
-            dispatcher->LoadBlob(request, blob_id);
+            CLoadLockBlob blob(request, *blob_id);
+            dispatcher->LoadBlob(request, *blob_id);
             if ( !blob.IsLoaded() ) {
                 cout << "blob is not available\n";
                 continue;
@@ -77,6 +77,12 @@ int main()
 
 /*
 * $Log$
+* Revision 1.12  2005/08/29 15:01:08  grichenk
+* Use CRef to store blob-ids.
+* Do not release locked objects in x_GC.
+* Prevent duplicates in excluded blobs.
+* Check mask for all local/external anots.
+*
 * Revision 1.11  2005/07/14 17:05:47  vasilche
 * Fixed for dispatcher.
 *

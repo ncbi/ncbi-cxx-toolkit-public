@@ -241,11 +241,11 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     data.push_back(IDS_MAGIC);
     data.push_back(ids->GetState());
     ITERATE ( CLoadInfoBlob_ids, it, *ids ) {
-        const CBlob_id& id = it->first;
+        CConstRef<CBlob_id> id = it->first;
         const CBlob_Info& info = it->second;
-        data.push_back(id.GetSat());
-        data.push_back(id.GetSubSat());
-        data.push_back(id.GetSatKey());
+        data.push_back(id->GetSat());
+        data.push_back(id->GetSubSat());
+        data.push_back(id->GetSatKey());
         data.push_back(info.GetContentsMask());
     }
     _ASSERT(data.size() % IDS_SIZE == IDS_HSIZE && data.front() == IDS_MAGIC);

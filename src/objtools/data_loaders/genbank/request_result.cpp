@@ -139,7 +139,7 @@ CLoadInfoBlob_ids::TBlob_Info&
 CLoadInfoBlob_ids::AddBlob_id(const TBlobId& id, const TBlob_Info& info)
 {
     _ASSERT(!IsLoaded());
-    return m_Blob_ids.insert(TBlobIds::value_type(id, info))
+    return m_Blob_ids.insert(TBlobIds::value_type(Ref(new TBlobId(id)), info))
         .first->second;
 }
 

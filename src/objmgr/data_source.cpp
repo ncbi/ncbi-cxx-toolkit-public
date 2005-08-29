@@ -466,12 +466,14 @@ CDataSource::FindBioseq_Lock(const CBioseq& bioseq,
 void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                                     TLoadedBlob_ids& blob_ids) const
 {
+    typedef set<TBlobId> TLoadedBlob_ids_Set;
+    TLoadedBlob_ids_Set ids;
     {{
         TMainLock::TReadLockGuard guard(m_DSMainLock);
         TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq.find(idh);
         if (tse_set != m_TSE_seq.end()) {
             ITERATE(TTSE_Set, tse, tse_set->second) {
-                blob_ids.push_back((*tse)->GetBlobId());
+                ids.insert((*tse)->GetBlobId());
             }
         }
     }}
@@ -480,16 +482,19 @@ void CDataSource::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
         TSeq_id2TSE_Set::const_iterator tse_set = m_TSE_seq_annot.find(idh);
         if (tse_set != m_TSE_seq_annot.end()) {
             ITERATE(TTSE_Set, tse, tse_set->second) {
-                blob_ids.push_back((*tse)->GetBlobId());
+                ids.insert((*tse)->GetBlobId());
             }
         }
         tse_set = m_TSE_orphan_annot.find(idh);
         if (tse_set != m_TSE_orphan_annot.end()) {
             ITERATE(TTSE_Set, tse, tse_set->second) {
-                blob_ids.push_back((*tse)->GetBlobId());
+                ids.insert((*tse)->GetBlobId());
             }
         }
     }}
+    ITERATE(TLoadedBlob_ids_Set, it, ids) {
+        blob_ids.push_back(*it);
+    }
 }
 
 

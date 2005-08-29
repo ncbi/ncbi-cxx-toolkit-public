@@ -328,6 +328,10 @@ protected:
     void x_GC(void)
     {
         while ( m_Index.size() > m_MaxSize ) {
+            if ( !m_Queue.back().second->ReferencedOnlyOnce()  ||
+                !m_Queue.back().second->IsLoaded() ) {
+                break;
+            }
             m_Index.erase(m_Queue.back().first);
             m_Queue.pop_back();
         }
@@ -360,6 +364,12 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.7  2005/08/29 15:01:08  grichenk
+ * Use CRef to store blob-ids.
+ * Do not release locked objects in x_GC.
+ * Prevent duplicates in excluded blobs.
+ * Check mask for all local/external anots.
+ *
  * Revision 1.6  2005/03/28 19:26:02  vasilche
  * Added auto cleaning maps for id resolution information.
  * Commented out obsolete classes CRefresher, CMutexPool, and CGBLGuard.

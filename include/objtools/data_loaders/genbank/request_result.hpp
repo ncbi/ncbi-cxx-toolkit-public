@@ -170,7 +170,7 @@ public:
     typedef TSeq_id TKey;
     typedef CBlob_id TBlobId;
     typedef CBlob_Info TBlob_Info;
-    typedef map<TBlobId, TBlob_Info> TBlobIds;
+    typedef map<CRef<TBlobId>, TBlob_Info> TBlobIds;
     typedef TBlobIds::const_iterator const_iterator;
 
     CLoadInfoBlob_ids(const TSeq_id& id);

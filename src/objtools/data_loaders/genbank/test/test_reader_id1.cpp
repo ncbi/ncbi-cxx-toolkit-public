@@ -109,14 +109,14 @@ int CTestApplication::Run(void)
             dispatcher->LoadSeq_idBlob_ids(request, seq_id);
             CLoadLockBlob_ids blob_ids(request, seq_id);
             ITERATE ( CLoadInfoBlob_ids, i, *blob_ids ) {
-                const CBlob_id& blob_id = i->first;
-                NcbiCout << "  " << blob_id.ToString() << NcbiEndl;
+                CConstRef<CBlob_id> blob_id = i->first;
+                NcbiCout << "  " << blob_id->ToString() << NcbiEndl;
 
-                if ( !blob_id.IsMainBlob() ) {
+                if ( !blob_id->IsMainBlob() ) {
                     continue;
                 }
-                CLoadLockBlob blob(request, blob_id);
-                dispatcher->LoadBlob(request, blob_id);
+                CLoadLockBlob blob(request, *blob_id);
+                dispatcher->LoadBlob(request, *blob_id);
                 if ( !blob.IsLoaded() ) {
                     NcbiCout << "blob is not available" << NcbiEndl;
                     continue;
@@ -137,6 +137,12 @@ int main(int argc, const char* argv[])
 
 /*
 * $Log$
+* Revision 1.11  2005/08/29 15:01:08  grichenk
+* Use CRef to store blob-ids.
+* Do not release locked objects in x_GC.
+* Prevent duplicates in excluded blobs.
+* Check mask for all local/external anots.
+*
 * Revision 1.10  2005/06/22 14:32:16  vasilche
 * Updated ID1 reader test.
 *

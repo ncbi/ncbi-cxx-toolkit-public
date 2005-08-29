@@ -573,7 +573,7 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
         if ( info.GetContentsMask() & fBlobHasCore ) {
-            return TBlobId(&it->first);
+            return TBlobId(it->first.GetPointer());
         }
     }
     return TBlobId();
@@ -925,13 +925,14 @@ CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih, TBlobContentsMask mask)
     ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
         const CBlob_Info& info = it->second;
         if ( info.GetContentsMask() & mask ) {
-            CLoadLockBlob blob(result, it->first);
+            CLoadLockBlob blob(result, *it->first);
             _ASSERT(blob.IsLoaded());
             if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
                 NCBI_THROW2(CBlobStateException, eBlobStateError,
-                            "blob state error for "+it->first.ToString(),
+                            "blob state error for "+it->first->ToString(),
                             blob.GetBlobState());
             }
+            locks.insert(blob);
         }
     }
     result.SaveLocksTo(locks);
@@ -986,7 +987,7 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
         ITERATE (CLoadInfoBlob_ids, it, *blob_ids_lock) {
             const CBlob_Info& info = it->second;
             if ( info.GetContentsMask() & mask ) {
-                CLoadLockBlob blob(result, it->first);
+                CLoadLockBlob blob(result, *it->first);
                 _ASSERT(blob.IsLoaded());
                 /*
                 if ((blob.GetBlobState() & CBioseq_Handle::fState_no_data) != 0) {
@@ -994,7 +995,7 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
                     continue;
                 }
                 */
-                tse_set->second.insert(result.GetTSE_LoadLock(it->first));
+                tse_set->second.insert(result.GetTSE_LoadLock(*it->first));
             }
         }
     }
