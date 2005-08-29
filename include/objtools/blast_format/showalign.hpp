@@ -42,8 +42,10 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objtools/readers/getfeature.hpp>
 
+#include <algo/blast/api/blast_aux.hpp>
+
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+USING_SCOPE(objects);
 
 /**
  * Example:
@@ -63,17 +65,6 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
   public:
     // Defines
     
-    /// frame defines for translated alignment
-    enum TranslatedFrames {
-        eFrameNotSet = 0,
-        ePlusStrand1 = 1,
-        ePlusStrand2 = 2,
-        ePlusStrand3 = 3,
-        eMinusStrand1 = -1,
-        eMinusStrand2 = -2,
-        eMinusStrand3 = -3
-    };
-
     ///db type
     enum DbType {
         eDbGi = 0,
@@ -86,12 +77,6 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         eNotSet = 0,            // Default
         eNuc = 1,
         eProt = 2
-    };
-
-    ///structure for seqloc info
-    struct SeqlocInfo {
-        CRef < CSeq_loc > seqloc;       // must be seqloc int
-        TranslatedFrames frame;         // For translated nucleotide sequence
     };
 
     ///structure for store feature display info
@@ -180,7 +165,7 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
     ///
     CDisplaySeqalign(const CSeq_align_set & seqalign,
                      CScope & scope,
-                     list < SeqlocInfo * >* mask_seqloc = NULL,
+                     list < CRef<blast::CSeqLocInfo> >* mask_seqloc = NULL,
                      list < FeatureInfo * >* external_feature = NULL,
                      const int matrix[][ePMatrixSize] = NULL);
     
@@ -349,7 +334,7 @@ private:
     
     ///store seqloc info
     struct SAlnSeqlocInfo {
-        SeqlocInfo *seqloc;
+        CRef<blast::CSeqLocInfo> seqloc;
         CRange < TSignedSeqPos > aln_range;
     };
 
@@ -357,7 +342,7 @@ private:
     CConstRef < CSeq_align_set > m_SeqalignSetRef; 
     
     /// display character option for list of seqloc         
-    list < SeqlocInfo * >* m_Seqloc; 
+    list < CRef<blast::CSeqLocInfo>  >* m_Seqloc; 
 
     /// external feature such as phiblast
     list < FeatureInfo * >* m_QueryFeature; 
@@ -569,31 +554,16 @@ private:
 };
 
 /***********************Inlines************************/
-
-/// Type definition for a list of mask pointers.
-typedef list<CDisplaySeqalign::SeqlocInfo*> TSeqLocInfo;
-
-/// Class wrapper for a list of mask pointers, needed to avoid memory leaks.
-class CSeqLocInfoVector : public vector<TSeqLocInfo> {
-public:
-    /// Destructor - frees the SeqlocInfo pointers in all mask lists.
-    ~CSeqLocInfoVector()
-    {
-        // Free all masks.
-        for (iterator vec_iter = begin(); vec_iter != end(); ++vec_iter) {
-            ITERATE(TSeqLocInfo, list_iter, *vec_iter) {
-                delete *list_iter;
-            }
-        }
-    }
-};
-
-END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* 
 *===========================================
 *$Log$
+*Revision 1.34  2005/08/29 14:40:05  camacho
+*From Ilya Dondoshansky:
+*SeqlocInfo structure changed to a CSeqLocInfo class, definition moved to
+*the xblast library
+*
 *Revision 1.33  2005/08/11 15:31:59  jianye
 *add taxid to user url
 *

@@ -41,7 +41,7 @@
 #include <objtools/blast_format/blastfmtutil.hpp>
 #include <objects/blastxml/blastxml__.hpp>
 
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -56,8 +56,6 @@ USING_SCOPE(blast);
 class IBlastXMLReportData
 {
 public:
-    /// Virtual destructor
-    virtual ~IBlastXMLReportData() {}
     /// Returns BLAST program name as string.
     virtual string GetBlastProgramName(void) const = 0;
     /// Returns BLAST task as an enumerated value.
@@ -85,7 +83,7 @@ public:
     /// Returns number of query sequences.
     virtual unsigned int GetNumQueries(void) const = 0;
     /// Returns list of mask locations for a given query.
-    virtual const list<CDisplaySeqalign::SeqlocInfo*>* 
+    virtual const list<CRef<blast::CSeqLocInfo> >*
     GetMaskLocations(int query_index) const = 0;
     /// Returns number of database sequences.
     virtual int GetDbNumSeqs(void) const = 0;
@@ -126,8 +124,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.2  2005/08/29 14:17:08  camacho
-* + virtual destructor to IBlastXMLReportData
+* Revision 1.3  2005/08/29 14:40:05  camacho
+* From Ilya Dondoshansky:
+* SeqlocInfo structure changed to a CSeqLocInfo class, definition moved to
+* the xblast library
 *
 * Revision 1.1  2005/07/20 18:15:44  dondosha
 * API for formatting BLAST results in XML form

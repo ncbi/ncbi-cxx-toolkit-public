@@ -92,7 +92,7 @@
 #include <objtools/blast_format/blastfmtutil.hpp>
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE (objects)
+USING_SCOPE (objects);
 USING_SCOPE (sequence);
 
 static const char k_IdentityChar = '.';
@@ -148,7 +148,7 @@ type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
 
 CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, 
                                    CScope& scope,
-                                   list <SeqlocInfo*>* mask_seqloc, 
+                                   list <CRef<blast::CSeqLocInfo> >* mask_seqloc, 
                                    list <FeatureInfo*>* external_feature,
                                    const int matrix[][ePMatrixSize])
     : m_SeqalignSetRef(&seqalign),
@@ -1393,8 +1393,8 @@ void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
                  iter != loc_list.end(); iter++){
                 int from=(*iter)->aln_range.GetFrom();
                 int to=(*iter)->aln_range.GetTo();
-                int locFrame = (*iter)->seqloc->frame;
-                if(id.Match((*iter)->seqloc->seqloc->GetInt().GetId()) 
+                int locFrame = (*iter)->seqloc->GetFrame();
+                if(id.Match((*iter)->seqloc->GetInterval().GetId()) 
                    && locFrame == frame){
                     bool isFirstChar = true;
                     CRange<int> eachSeqloc(0, 0);
@@ -2291,30 +2291,26 @@ void CDisplaySeqalign::x_FillLocList(list<SAlnSeqlocInfo*>& loc_list) const
     if(!m_Seqloc){
         return;
     }
-    for (list<SeqlocInfo*>::iterator iter=m_Seqloc->begin(); 
+    for (list<CRef<blast::CSeqLocInfo> >::iterator iter=m_Seqloc->begin(); 
          iter!=m_Seqloc->end(); iter++){
         SAlnSeqlocInfo* alnloc = new SAlnSeqlocInfo;    
         for (int i=0; i<m_AV->GetNumRows(); i++){
-            if((*iter)->seqloc->GetInt().GetId().Match(m_AV->GetSeqId(i))){
+            if((*iter)->GetInterval().GetId().Match(m_AV->GetSeqId(i))){
                 int actualAlnStart = 0, actualAlnStop = 0;
                 if(m_AV->IsPositiveStrand(i)){
-                    actualAlnStart 
-                        = m_AV->GetAlnPosFromSeqPos(i, 
-                                                    (*iter)->seqloc->GetInt().\
-                                                    GetFrom());
-                    actualAlnStop 
-                        = m_AV->GetAlnPosFromSeqPos(i, 
-                                                    (*iter)->seqloc->GetInt().\
-                                                    GetTo());
+                    actualAlnStart =
+                        m_AV->GetAlnPosFromSeqPos(i, 
+                            (*iter)->GetInterval().GetFrom());
+                    actualAlnStop =
+                        m_AV->GetAlnPosFromSeqPos(i, 
+                            (*iter)->GetInterval().GetTo());
                 } else {
-                    actualAlnStart 
-                        = m_AV->GetAlnPosFromSeqPos(i, 
-                                                    (*iter)->seqloc->GetInt().\
-                                                    GetTo());
-                    actualAlnStop 
-                        = m_AV->GetAlnPosFromSeqPos(i, 
-                                                    (*iter)->seqloc->GetInt().\
-                                                    GetFrom());
+                    actualAlnStart =
+                        m_AV->GetAlnPosFromSeqPos(i, 
+                            (*iter)->GetInterval().GetTo());
+                    actualAlnStop =
+                        m_AV->GetAlnPosFromSeqPos(i, 
+                            (*iter)->GetInterval().GetFrom());
                 }
                 alnloc->aln_range.Set(actualAlnStart, actualAlnStop);      
                 break;
@@ -2448,13 +2444,16 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
     }
 }
 
-
-END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* 
 *============================================================
 *$Log$
+*Revision 1.85  2005/08/29 14:40:47  camacho
+*From Ilya Dondoshansky:
+*SeqlocInfo structure changed to a CSeqLocInfo class, definition moved to
+*the xblast library
+*
 *Revision 1.84  2005/08/11 15:30:26  jianye
 *add taxid to user url
 *

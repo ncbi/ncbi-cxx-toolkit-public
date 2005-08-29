@@ -87,7 +87,7 @@ public:
 ///                    alignment for?
 static void
 s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq, 
-               const list<CDisplaySeqalign::SeqlocInfo*>& mask_info, 
+               const list<CRef<blast::CSeqLocInfo> >& mask_info, 
                CDisplaySeqalign::SeqLocCharOption mask_char,
                int query_frame)
 {
@@ -101,15 +101,15 @@ s_MaskQuerySeq(CAlnVec& alnvec, string& query_seq,
 
     CRangeVector masks_v;
     int aln_stop = query_seq.size() - 1;
-    ITERATE(list<CDisplaySeqalign::SeqlocInfo*>, mask_iter, mask_info) {
-        if ((*mask_iter)->frame != query_frame)
+    ITERATE(list<CRef<blast::CSeqLocInfo> >, mask_iter, mask_info) {
+        if ((*mask_iter)->GetFrame() != query_frame)
             continue;
         int start = 
             alnvec.GetAlnPosFromSeqPos(0, 
-                                       (*mask_iter)->seqloc->GetInt().GetFrom());
+                                       (*mask_iter)->GetInterval().GetFrom());
         int stop = 
             alnvec.GetAlnPosFromSeqPos(0, 
-                                       (*mask_iter)->seqloc->GetInt().GetTo());
+                                       (*mask_iter)->GetInterval().GetTo());
         // For negative frames, start and stop must be swapped.
         if (query_frame < 0) {
             int tmp = start;
@@ -194,7 +194,7 @@ static void
 s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list, 
                        const CSeq_align_set& alnset, CScope* scope, 
                        const CBlastFormattingMatrix* matrix,
-                       const list<CDisplaySeqalign::SeqlocInfo*>* mask_info)
+                       const list<CRef<blast::CSeqLocInfo> >* mask_info)
 {
     int index = 1;
     ITERATE(CSeq_align_set::Tdata, iter, alnset.Get()) {
@@ -394,7 +394,7 @@ s_SeqAlignSetToXMLHsps(list<CRef<CHsp> >& xhsp_list,
 static void 
 s_SeqAlignToXMLHit(CRef<CHit>& hit, const CSeq_align& align_in, CScope* scope,
                    const CBlastFormattingMatrix* matrix, 
-                   const list<CDisplaySeqalign::SeqlocInfo*>* mask_info, 
+                   const list<CRef<blast::CSeqLocInfo> >* mask_info, 
                    bool ungapped)
 {
     _ASSERT(align_in.GetSegs().IsDisc());
@@ -491,7 +491,7 @@ s_GetSubjectId(const CSeq_align& align)
 static void
 s_SeqAlignSetToXMLHits(list <CRef<CHit> >& hits, const CSeq_align_set& alnset,
                        CScope* scope, const CBlastFormattingMatrix* matrix, 
-                       const list<CDisplaySeqalign::SeqlocInfo*>* mask_info,
+                       const list<CRef<blast::CSeqLocInfo> >* mask_info,
                        bool ungapped)
 {
     // If there are no hits for this query, return with empty Hits list.
@@ -552,7 +552,7 @@ static void
 s_BlastXMLAddIteration(CBlastOutput& bxmlout, const CSeq_align_set* alnset,
                        const CSeq_loc& seqloc, CScope* scope, 
                        const CBlastFormattingMatrix* matrix, 
-                       const list<CDisplaySeqalign::SeqlocInfo*>* mask_info,
+                       const list<CRef<blast::CSeqLocInfo> >* mask_info,
                        int index, CStatistics& stat, bool is_ungapped)
 {
     list<CRef<CIteration> >& iterations = bxmlout.SetIterations();
