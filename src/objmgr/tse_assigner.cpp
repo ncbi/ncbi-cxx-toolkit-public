@@ -137,25 +137,16 @@ void CTSE_Default_Assigner::AddDescInfo(CTSE_Info& tse,
                                         const TDescInfo& info, 
                                         TChunkId chunk_id)
 {
-    if (!m_SeqIdTranslator)
-        x_GetBase(tse, info.second).x_AddDescrChunkId(info.first, chunk_id);
-    else {
-        x_GetBase(tse, PatchSeqId(info.second, *m_SeqIdTranslator))
-                  .x_AddDescrChunkId(info.first, chunk_id);
-    }
+    x_GetBase(tse, PatchId(info.second))
+              .x_AddDescrChunkId(info.first, chunk_id);
 }
 
 void CTSE_Default_Assigner::AddAnnotPlace(CTSE_Info& tse, 
                                           const TPlace& place, 
                                           TChunkId chunk_id)
 {
-    if (!m_SeqIdTranslator)
-        x_GetBase(tse, place).x_AddAnnotChunkId(chunk_id);
-    else {
-        x_GetBase(tse, PatchSeqId(place, *m_SeqIdTranslator))
-                  .x_AddAnnotChunkId(chunk_id);
-    }
-    
+    x_GetBase(tse, PatchId(place))
+              .x_AddAnnotChunkId(chunk_id);
 }
 void CTSE_Default_Assigner::AddBioseqPlace(CTSE_Info& tse, 
                                            TBioseq_setId place_id, 
@@ -174,10 +165,7 @@ void CTSE_Default_Assigner::AddSeq_data(CTSE_Info& tse,
 {
     CBioseq_Info* last_bioseq = 0, *bioseq;
     ITERATE ( TLocationSet, it, locations ) {
-        if (!m_SeqIdTranslator)
-            bioseq = &x_GetBioseq(tse, it->first);
-        else 
-            bioseq = &x_GetBioseq(tse, PatchSeqId(it->first, *m_SeqIdTranslator));
+        bioseq = &x_GetBioseq(tse, PatchId(it->first));
         if (bioseq != last_bioseq) {
             // Do not add duplicate chunks to the same bioseq
             bioseq->x_AddSeq_dataChunkId(chunk.GetChunkId());
@@ -195,12 +183,8 @@ void CTSE_Default_Assigner::AddAssemblyInfo(CTSE_Info& tse,
                                             const TAssemblyInfo& info, 
                                             TChunkId chunk_id)
 {
-    if (!m_SeqIdTranslator)
-        x_GetBioseq(tse, info).x_AddAssemblyChunkId(chunk_id);
-    else { 
-        x_GetBioseq(tse, PatchSeqId(info, *m_SeqIdTranslator))
-            .x_AddAssemblyChunkId(chunk_id);
-    }
+    x_GetBioseq(tse, PatchId(info))
+                .x_AddAssemblyChunkId(chunk_id);
 }
 
 void CTSE_Default_Assigner::UpdateAnnotIndex(CTSE_Info& tse, 
@@ -216,39 +200,48 @@ void CTSE_Default_Assigner::LoadDescr(CTSE_Info& tse,
                                       const TPlace& place, 
                                       const CSeq_descr& descr)
 {
-    if (!m_SeqIdTranslator)
-        x_GetBase(tse, place).AddSeq_descr(descr);
-    else {
-        x_GetBase(tse, PatchSeqId(place, *m_SeqIdTranslator))
-            .AddSeq_descr(descr);
-    }
+    LoadDescr_NoPatch(tse, PatchId(place), descr);
 }
+
+void CTSE_Default_Assigner::LoadDescr_NoPatch(CTSE_Info& tse, 
+                                              const TPlace& place, 
+                                              const CSeq_descr& descr)
+{
+    x_GetBase(tse, place).AddSeq_descr(descr);
+}
+
 void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
                                       const TPlace& place, 
                                       CRef<CSeq_annot_Info> annot)
 {
+    LoadAnnot_NoPatch(tse, PatchId(place), PatchId(annot));
+}
+
+void CTSE_Default_Assigner::LoadAnnot_NoPatch(CTSE_Info& tse,
+                                              const TPlace& place, 
+                                              CRef<CSeq_annot_Info> annot)
+{
     {{
         CDataSource::TMainLock::TWriteLockGuard guard
             (tse.GetDataSource().GetMainLock());
-        if (!m_SeqIdTranslator)
-            x_GetBase(tse, place).AddAnnot(annot);
-        else {
-            CRef<CSeq_annot> patched_annot = PatchSeqId(*annot->GetSeq_annotSkeleton(), 
-                                                        *m_SeqIdTranslator);
-            CRef<CSeq_annot_Info> patched_info( new CSeq_annot_Info(*patched_annot) );
-            x_GetBase(tse, PatchSeqId(place, *m_SeqIdTranslator))
-                .AddAnnot(patched_info);
-        }
-
+        x_GetBase(tse, place).AddAnnot(annot);
     }}
     {{
         CDataSource::TAnnotLockWriteGuard guard(tse.GetDataSource());
         tse.UpdateAnnotIndex(*annot);
     }}
 }
+
 void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
                                        const TPlace& place, 
                                        CRef<CSeq_entry_Info> entry)
+{
+    LoadBioseq_NoPatch(tse, PatchId(place), PatchId(entry));
+}
+
+void CTSE_Default_Assigner::LoadBioseq_NoPatch(CTSE_Info& tse,
+                                               const TPlace& place, 
+                                               CRef<CSeq_entry_Info> entry)
 {
     {{
         CDataSource::TMainLock::TWriteLockGuard guard
@@ -257,59 +250,97 @@ void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
             tse.x_SetObject(*entry, 0); //???
         }
         else {
-            if (!m_SeqIdTranslator)
-                x_GetBioseq_set(tse, place).AddEntry(entry);
-            else {
-                CRef<CSeq_entry> patched_entry = PatchSeqId(*entry->GetSeq_entrySkeleton(),
-                                                            *m_SeqIdTranslator);
-                CRef<CSeq_entry_Info> patched_info(new CSeq_entry_Info(*patched_entry));
-                x_GetBioseq_set(tse, PatchSeqId(place, *m_SeqIdTranslator))
-                    .AddEntry(patched_info);
-            }
+            x_GetBioseq_set(tse, place).AddEntry(entry);
         }
     }}
 
 }
+
 void CTSE_Default_Assigner::LoadSequence(CTSE_Info& tse, const TPlace& place, 
                                          TSeqPos pos, const TSequence& sequence)
 {
-    CSeqMap* seq_map = 0;
-    if (!m_SeqIdTranslator)
-        seq_map = const_cast<CSeqMap*>(&x_GetBioseq(tse, place).GetSeqMap());
-    else {
-        seq_map = const_cast<CSeqMap*>(&x_GetBioseq(tse, PatchSeqId(place, *m_SeqIdTranslator))
-                                       .GetSeqMap());
-    }
+    LoadSequence_NoPatch(tse, PatchId(place), pos, sequence);
+}
+
+void CTSE_Default_Assigner::LoadSequence_NoPatch(CTSE_Info& tse, 
+                                                 const TPlace& place, 
+                                                 TSeqPos pos, 
+                                                 const TSequence& sequence)
+{
+    CSeqMap& seq_map = const_cast<CSeqMap&>(x_GetBioseq(tse, place).GetSeqMap());;
     ITERATE ( TSequence, it, sequence ) {
         const CSeq_literal& literal = **it;
-        seq_map->LoadSeq_data(pos, literal.GetLength(), literal.GetSeq_data());
+        seq_map.LoadSeq_data(pos, literal.GetLength(), literal.GetSeq_data());
         pos += literal.GetLength();
     }
 }
+
 void CTSE_Default_Assigner::LoadAssembly(CTSE_Info& tse,
                                          const TBioseqId& seq_id,
                                          const TAssembly& assembly)
 {
-    if (!m_SeqIdTranslator)
-        x_GetBioseq(tse, seq_id).SetInst_Hist_Assembly(assembly);
-    else {
-        TAssembly patched_assembly(assembly);
-        PatchSeqIds(patched_assembly, *m_SeqIdTranslator);
-        x_GetBioseq(tse, PatchSeqId(seq_id, *m_SeqIdTranslator))
-            .SetInst_Hist_Assembly(patched_assembly);
-    }
+    x_GetBioseq(tse, seq_id).SetInst_Hist_Assembly(assembly);
 }
+
 void CTSE_Default_Assigner::LoadSeq_entry(CTSE_Info& tse,
                                           CSeq_entry& entry, 
                                           CTSE_SNP_InfoMap* snps)
 {
-    if (!m_SeqIdTranslator)
-        tse.SetSeq_entry(entry, snps);
-    else {       
-        CRef<CSeq_entry> patched = PatchSeqId(entry, *m_SeqIdTranslator);
-        tse.SetSeq_entry( *patched, snps);
-    }
+    LoadSeq_entry_NoPatch(tse, *PatchId(entry), snps);
 }
+
+void CTSE_Default_Assigner::LoadSeq_entry_NoPatch(CTSE_Info& tse,
+                                                  CSeq_entry& entry, 
+                                                  CTSE_SNP_InfoMap* snps)
+{
+    tse.SetSeq_entry(entry, snps);
+}
+
+CSeq_id_Handle CTSE_Default_Assigner::PatchId(const CSeq_id_Handle& orig) const
+{
+    if (!m_SeqIdTranslator)
+        return orig;
+    return PatchSeqId(orig, *m_SeqIdTranslator);
+}
+ITSE_Assigner::TPlace CTSE_Default_Assigner::PatchId(const TPlace& orig) const
+{
+    if (!m_SeqIdTranslator)
+        return orig;
+    return PatchSeqId(orig, *m_SeqIdTranslator);
+}
+
+CRef<CSeq_entry> CTSE_Default_Assigner::PatchId(const CSeq_entry& orig) const
+{
+    if (!m_SeqIdTranslator)
+        return Ref(const_cast<CSeq_entry*>(&orig));
+    return PatchSeqId(orig, *m_SeqIdTranslator);
+}
+
+CConstRef<CSeq_annot> CTSE_Default_Assigner::PatchId(const CSeq_annot& orig) const
+{
+    if (!m_SeqIdTranslator)
+        return ConstRef(&orig);
+    return PatchSeqId(orig, *m_SeqIdTranslator);
+}
+
+CRef<CSeq_annot_Info> CTSE_Default_Assigner::PatchId(CRef<CSeq_annot_Info> annot) const
+{
+    if (!m_SeqIdTranslator)
+        return annot;
+    CConstRef<CSeq_annot> patched_annot = PatchId(*annot->GetSeq_annotSkeleton() ); 
+    CRef<CSeq_annot_Info> patched_info( new CSeq_annot_Info(*patched_annot) );
+    return patched_info;
+}
+
+CRef<CSeq_entry_Info> CTSE_Default_Assigner::PatchId(CRef<CSeq_entry_Info> entry) const
+{
+    if (!m_SeqIdTranslator)
+        return entry;
+    CRef<CSeq_entry> patched_entry = PatchId(*entry->GetSeq_entrySkeleton() );
+    CRef<CSeq_entry_Info> patched_info(new CSeq_entry_Info(*patched_entry));
+    return patched_info;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -577,6 +608,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/08/29 16:15:01  didenko
+ * Modified default implementation of ITSE_Assigner in a way that it can be used as base class for
+ * the user's implementations of this interface
+ *
  * Revision 1.2  2005/08/25 15:37:29  didenko
  * Added call to InvalidateCache() method when the CSeq_los is bieng patched
  *

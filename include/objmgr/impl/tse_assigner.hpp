@@ -125,7 +125,35 @@ public:
     virtual void LoadSeq_entry(CTSE_Info&, CSeq_entry& entry, 
                                CTSE_SNP_InfoMap* snps);
 
+protected:
+    void LoadDescr_NoPatch(CTSE_Info& tse, 
+                           const TPlace& place, 
+                           const CSeq_descr& descr);
+    void LoadAnnot_NoPatch(CTSE_Info& tse,
+                           const TPlace& place, 
+                           CRef<CSeq_annot_Info> annot);
+    void LoadBioseq_NoPatch(CTSE_Info& tse,
+                            const TPlace& place, 
+                            CRef<CSeq_entry_Info> entry);
+    void LoadSequence_NoPatch(CTSE_Info& tse, 
+                              const TPlace& place, 
+                              TSeqPos pos, 
+                              const TSequence& sequence);
+    void LoadSeq_entry_NoPatch(CTSE_Info& tse,
+                               CSeq_entry& entry, 
+                               CTSE_SNP_InfoMap* snps);
+
+
+    CSeq_id_Handle PatchId(const CSeq_id_Handle& orig) const;
+    TPlace PatchId(const TPlace& orig) const;
+    CRef<CSeq_entry> PatchId(const CSeq_entry& orig) const;
+    CConstRef<CSeq_annot> PatchId(const CSeq_annot& orig) const;
+
+    CRef<CSeq_annot_Info> PatchId(CRef<CSeq_annot_Info> annot) const;
+    CRef<CSeq_entry_Info> PatchId(CRef<CSeq_entry_Info> entry) const;
+
 private:
+
 
     CTSE_Default_Assigner(const CTSE_Default_Assigner&);
     CTSE_Default_Assigner& operator=(const CTSE_Default_Assigner&);
@@ -208,6 +236,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/08/29 16:15:01  didenko
+* Modified default implementation of ITSE_Assigner in a way that it can be used as base class for
+* the user's implementations of this interface
+*
 * Revision 1.1  2005/08/25 14:05:36  didenko
 * Restructured TSE loading process
 *
