@@ -60,6 +60,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_HeaderCache  (256)
 {
     INIT_CLASS_MARK();
+    
     m_Aliases.SetMasks(m_VolSet);
     m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list);
     
@@ -85,11 +86,19 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     // to compute the totals.  Presence of a user GI list implies that
     // the alias file cannot have correct values.
     
-    if (gi_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
-        x_ScanTotals();
-    } else {
-        m_NumSeqs      = x_GetNumSeqs();
-        m_TotalLength  = x_GetTotalLength();
+    try {
+        if (gi_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
+            x_ScanTotals();
+        } else {
+            m_NumSeqs      = x_GetNumSeqs();
+            m_TotalLength  = x_GetTotalLength();
+        }
+    }
+    catch(CSeqDBException & e) {
+        m_UserGiList.Reset();
+        m_VolSet.UnLease();
+        m_FlushCB.SetImpl(0);
+        throw;
     }
     
     CHECK_MARKER();
