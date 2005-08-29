@@ -497,6 +497,8 @@ public:
         CSeqDBLockHold locked(m_Atlas);
         
         m_Atlas.Lock(locked);
+        
+        Verify();
         UnLease();
     }
     
@@ -619,9 +621,17 @@ public:
     /// Release any memory leases temporarily held here.
     void UnLease()
     {
+        Verify();
         x_ClrHdr();
         x_ClrSeq();
         x_ClrAmb();
+    }
+    
+    void Verify()
+    {
+        m_HdrLease.Verify();
+        m_SeqLease.Verify();
+        m_AmbLease.Verify();
     }
     
 private:

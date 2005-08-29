@@ -169,6 +169,8 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
       m_OffAmb        (0),
       m_EndAmb        (0)
 {
+    Verify();
+    
     // Input validation
     
     if (dbname.empty()) {
@@ -214,12 +216,6 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
         off2   = off1 + region_bytes;
         off3   = off2 + region_bytes;
         offend = off3 + region_bytes;
-        
-        // This could still be done this way, for example, by keeping
-        // leases on the parts of the index file.  If this was done a
-        // little effort may be needed to insure proper destruction order.
-        // For now, I will keep offsets and get the lease each time it is
-        // needed.  The atlas will still contain all the pieces.
     }
     catch(...) {
         m_Atlas.RetRegion(lease);
