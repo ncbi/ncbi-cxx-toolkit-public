@@ -295,6 +295,7 @@ static Int4 blosum80_prefs[BLOSUM80_VALUES_MAX] = {
     BLAST_MATRIX_NOMINAL,
     BLAST_MATRIX_NOMINAL,
     BLAST_MATRIX_NOMINAL,
+    BLAST_MATRIX_NOMINAL,
     BLAST_MATRIX_BEST,
     BLAST_MATRIX_NOMINAL
 };  /**< Quality values for BLOSUM80 matrix, each element corresponds to same element number in array blosum80_values */
@@ -351,8 +352,8 @@ BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
-BLAST_MATRIX_BEST,
 BLAST_MATRIX_NOMINAL,
+BLAST_MATRIX_BEST,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
 BLAST_MATRIX_NOMINAL,
@@ -2697,6 +2698,36 @@ void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
    sfree(beta_arr);
 }
 
+Int2 BLAST_GetGapExistenceExtendParams(const char* matrixName, 
+                                       Int4* gap_existence, 
+                                       Int4* gap_extension)
+{
+   Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
+   Int2 num_values;
+   Int4 i; /*loop index*/
+
+   num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
+     &gapExtend_arr, NULL, NULL, NULL, NULL,  NULL, NULL,
+     &pref_flags);
+
+   if (num_values <= 0)
+     return -1;
+   
+   for(i = 1; i < num_values; i++) {
+       if(pref_flags[i]==BLAST_MATRIX_BEST) {
+         (*gap_existence) = gapOpen_arr[i];
+         (*gap_extension) = gapExtend_arr[i];
+         break;
+       }
+   }
+   
+   sfree(gapOpen_arr);
+   sfree(gapExtend_arr);
+   sfree(pref_flags);
+
+   return 0;
+}
+
 /** Fills in error_return with strings describing the allowed values.
  * @param matrix_name name of the matrix [in]
  * @param error_return object to be filled in [in|out]
@@ -3997,6 +4028,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.124  2005/08/29 13:52:05  madden
+ * Add BLAST_GetGapExistenceExtendParams
+ *
  * Revision 1.123  2005/08/19 17:56:18  dondosha
  * Removed unnecessary redefinition of HUGE_VAL
  *
