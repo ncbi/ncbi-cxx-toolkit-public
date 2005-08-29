@@ -53,6 +53,24 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef SEQDB_TRACE_LOGFILE
+
+#define SEQDB_LOGCLASS_DEFAULT 1
+#define SEQDB_LOGCLASS_MMAP    2
+#define SEQDB_LOGCLASS_MFILE   4
+#define SEQDB_LOGCLASS_GET     8
+
+extern ofstream * seqdb_logfile;
+extern int        seqdb_logclass;
+
+void seqdb_log(const char * s);
+void seqdb_log(const char * s1, const string & s2);
+
+void seqdb_log(int cl, const char * s);
+void seqdb_log(int cl, const char * s1, const string & s2);
+void seqdb_log(int cl, const char * s1, int s2);
+#endif // SEQDB_TRACE_LOGFILE
+
 #ifdef _DEBUG
 
 #include <iostream>
@@ -87,6 +105,8 @@ BEGIN_NCBI_SCOPE
 /// Assertion to verify the marker
 #define CHECK_MARKER() \
    if (m_ClassMark != x_GetClassMark()) { \
+       cout << "Marker=" << m_ClassMark << endl; \
+       cout << "GetMrk=" << x_GetClassMark() << endl; \
        cout << "\n!! Broken  [" << x_GetMarkString() << "] mark detected.\n" \
             << "!! Mark is [" << hex << m_ClassMark << "], should be [" \
             << hex << x_GetClassMark() << "]." << endl; \
@@ -109,7 +129,6 @@ BEGIN_NCBI_SCOPE
 #define BREAK_MARKER()
 
 #endif
-
 
 /// CSeqDBAtlas class - a collection of memory maps.
 class CSeqDBAtlas; // WorkShop needs this forward declaration.
@@ -795,6 +814,11 @@ public:
     {
         CHECK_MARKER();
         return m_Data == 0;
+    }
+    
+    void Verify() const
+    {
+        CHECK_MARKER();
     }
     
     /// Get another reference to the held CRegionMap object.
@@ -1503,7 +1527,7 @@ private:
         m_Recent[0] = r;
     }
     
-    
+
     // Data
     
     /// Protects most of the critical regions of the SeqDB library.

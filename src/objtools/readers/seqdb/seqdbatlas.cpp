@@ -48,6 +48,78 @@
 
 BEGIN_NCBI_SCOPE
 
+#ifdef SEQDB_TRACE_LOGFILE
+
+// By default, the first 16 trace classes are enabled
+
+ofstream * seqdb_logfile  = 0;
+int        seqdb_logclass = 0xFFFF;
+
+void seqdb_log(const char * s)
+{
+    seqdb_log(1, s);
+}
+
+void seqdb_log(const char * s1, const string & s2)
+{
+    seqdb_log(1, s1, s2);
+}
+
+inline bool seqdb_log_disabled(int cl)
+{
+    return ! (seqdb_logfile && (cl & seqdb_logclass));
+}
+
+void seqdb_log(int cl, const char * s)
+{
+    if (seqdb_log_disabled(cl))
+        return;
+    
+    (*seqdb_logfile) << s << endl;
+}
+
+void seqdb_log(int cl, const char * s1, const string & s2)
+{
+    if (seqdb_log_disabled(cl))
+        return;
+    
+    (*seqdb_logfile) << s1 << s2 << endl;
+}
+
+void seqdb_log(int cl, const char * s1, int s2)
+{
+    if (seqdb_log_disabled(cl))
+        return;
+    
+    (*seqdb_logfile) << s1 << s2 << endl;
+}
+
+void seqdb_log(int cl, const char * s1, int s2, const char * s3)
+{
+    if (seqdb_log_disabled(cl))
+        return;
+    
+    (*seqdb_logfile) << s1 << s2 << s3 << endl;
+}
+
+void seqdb_log(int cl, const char * s1, int s2, const char * s3, int s4)
+{
+    if (seqdb_log_disabled(cl))
+        return;
+    
+    (*seqdb_logfile) << s1 << s2 << s3 << s4 << endl;
+}
+
+void seqdb_log(int cl, const char * s1, int s2, const char * s3, int s4, const char * s5, int s6)
+{
+    if (seqdb_log_disabled(cl))
+        return;
+    
+    (*seqdb_logfile) << s1 << s2 << s3 << s4 << s5 << s6 << endl;
+}
+#endif // SEQDB_TRACE_LOGFILE
+
+
 // Further optimizations:
 
 // 1. Regions could be stored in a map<>, sorted by file, then offset.
@@ -76,6 +148,15 @@ void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg)
         NCBI_THROW(CSeqDBException, eMemErr, msg);
     }
 }
+
+static void s_SeqDB_FileNotFound(const string & fname)
+{
+    string msg("File [");
+    msg += fname;
+    msg += "] not found.";
+    SeqDB_ThrowException(CSeqDBException::eFileErr, msg);
+}
+
 
 /// Check the size of a number relative to the scope of a numeric type.
 
@@ -150,7 +231,7 @@ const char * CSeqDBAtlas::GetFile(const string & fname, TIndx & length, CSeqDBLo
 {
     Verify(locked);
     if (! GetFileSize(fname, length, locked)) {
-        SeqDB_ThrowException(CSeqDBException::eFileErr, "File did not exist.");
+        s_SeqDB_FileNotFound(fname);
     }
     
     // If allocating more than 256MB in a file, do a full sweep first.
@@ -185,7 +266,7 @@ void CSeqDBAtlas::GetFile(CSeqDBMemLease & lease,
                           CSeqDBLockHold & locked)
 {
     if (! GetFileSize(fname, length, locked)) {
-        SeqDB_ThrowException(CSeqDBException::eFileErr, "File did not exist.");
+        s_SeqDB_FileNotFound(fname);
     }
     
     // If allocating more than 256MB in a file, do a full sweep first.
@@ -666,8 +747,6 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         
         auto_ptr<CRegionMap> newmap(nregion);
         
-        m_NameOffsetLookup.insert(nregion);
-        
         if (rmap)
             *rmap = nregion;
         
@@ -686,10 +765,12 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
             newmap->AddRef();
         }
         
+        m_NameOffsetLookup.insert(nregion);
+        
         newmap->GetBoundaries(start, begin, end);
         
         if (retval == 0) {
-            SeqDB_ThrowException(CSeqDBException::eFileErr, "File did not exist.");
+            s_SeqDB_FileNotFound(fname);
         }
         
         m_AddressLookup[nregion->Data()] = nregion;
@@ -703,6 +784,10 @@ CSeqDBAtlas::x_GetRegion(const string   & fname,
         m_Regions.push_back(nmp);
     }
     catch(std::bad_alloc) {
+        if (m_NameOffsetLookup.find(nregion) != m_NameOffsetLookup.end()) {
+            m_NameOffsetLookup.erase(nregion);
+        }
+        
         SeqDB_ThrowException(CSeqDBException::eMemErr,
                              "CSeqDBAtlas::x_GetRegion: allocation failed.");
     }
@@ -973,6 +1058,7 @@ CRegionMap::CRegionMap(const string * fname, int fid, TIndx begin, TIndx end)
 CRegionMap::~CRegionMap()
 {
     CHECK_MARKER();
+    
     if (m_MemFile) {
         delete m_MemFile;
         m_MemFile = 0;
@@ -1006,8 +1092,8 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
                 throw std::bad_alloc();
             }
             
-            if ((m_Begin != 0) || (m_End != flength)) {
-                x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas);
+            if ((m_Begin != 0) || (m_End != flength)) { 
+                x_Roundup(m_Begin, m_End, m_Penalty, flength, true, atlas); 
                 atlas->PossiblyGarbageCollect(m_End - m_Begin);
             }
             
@@ -1025,7 +1111,6 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
         }
         
         if (expt.length()) {
-            
             // For now, if I can't memory map the file, I'll revert to
             // the old way: malloc a chunk of core and copy the data
             // into it.
@@ -1053,6 +1138,7 @@ bool CRegionMap::MapMmap(CSeqDBAtlas * atlas)
 bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
 {
     CHECK_MARKER();
+    
     // Okay, rethink:
     
     // 1. Unlike mmap, the file state disappears, the only state here
@@ -1106,7 +1192,7 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
               atlas);
     
     atlas->PossiblyGarbageCollect(m_End - m_Begin);
-    
+
     istr.seekg(m_Begin);
     
     Uint8 rdsize8 = m_End - m_Begin;
@@ -1116,6 +1202,8 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
     
     char * newbuf = 0;
     
+    bool throw_afe = false;
+    
     try {
         newbuf = new char[rdsize];
         
@@ -1123,12 +1211,22 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
         // said to be non-compliant in this regard:
         
         if (! newbuf) {
+            CHECK_MARKER();
             throw std::bad_alloc();
         }
     }
     catch(std::bad_alloc) {
-        NCBI_THROW(CSeqDBException, eMemErr,
-                   "CSeqDBAtlas::MapFile: allocation failed.");
+        throw_afe = true;
+    }
+    
+    if (throw_afe) {
+        CHECK_MARKER();
+        
+        string msg("CSeqDBAtlas::MapFile: allocation failed for ");
+        msg += NStr::IntToString(rdsize);
+        msg += " bytes.";
+        
+        NCBI_THROW(CSeqDBException, eMemErr, msg);
     }
     
     TIndx amt_read = 0;
@@ -1146,7 +1244,7 @@ bool CRegionMap::MapFile(CSeqDBAtlas * atlas)
     }
     
     m_Data = newbuf;
-    
+
     return (amt_read == rdsize);
 }
 
