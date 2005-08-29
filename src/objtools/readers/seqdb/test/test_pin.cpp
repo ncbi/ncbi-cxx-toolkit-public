@@ -400,7 +400,7 @@ int test1(int argc, char ** argv)
                 }
             }
             
-            delete seqdb_logfile;
+            //delete seqdb_logfile;
             
             return 0;
         }
