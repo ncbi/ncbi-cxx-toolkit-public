@@ -82,6 +82,14 @@ public:
         m_Hosts.clear();
 
         ITERATE(vector<string>, it, hosts) {
+            const string& hn = *it;
+            if (NStr::CompareNocase(hn, "localhost") == 0) {
+                string my_name = CSocketAPI::gethostname();
+                unsigned int ha = CSocketAPI::gethostbyname(my_name);
+                if (ha != 0) {
+                    m_Hosts.set(ha);
+                }
+            }
             unsigned int ha = CSocketAPI::gethostbyname(*it);
             if (ha != 0) {
                 m_Hosts.set(ha);
@@ -123,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/08/30 14:18:57  kuznets
+ * Improved localhost processing
+ *
  * Revision 1.2  2005/06/27 15:53:03  kuznets
  * Print host name not the address
  *
