@@ -185,6 +185,8 @@ Int2 BlastProgram2Number(const char *program, EBlastProgramType *number)
 		*number = eBlastTypeRpsTblastn;
     else if (strcasecmp("psiblast", program) == 0)
         *number = eBlastTypePsiBlast;
+    else if (strcasecmp("psitblastn", program) == 0)
+        *number = eBlastTypePsiTblastn;
     else if (strcasecmp("phiblastn", program) == 0)
         *number = eBlastTypePhiBlastn;
     else if (strcasecmp("phiblastp", program) == 0)
@@ -223,6 +225,9 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 			break;
         case eBlastTypePsiBlast:
             *program = strdup("psiblast");
+            break;
+        case eBlastTypePsiTblastn:
+            *program = strdup("psitblastn");
             break;
         default:
 			*program = strdup("unknown");
@@ -644,7 +649,7 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
 
 Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
 {
-   Int1 frame = 127;	/* 127 is used to indicate error */
+   Int1 frame = INT1_MAX;	/* INT1_MAX is used to indicate error */
 
    if (prog_number == eBlastTypeBlastn) {
       if (context_number % NUM_STRANDS == 0)
@@ -653,8 +658,8 @@ Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
          frame = -1;
    } else if (prog_number == eBlastTypeBlastp   ||
               prog_number == eBlastTypeRpsBlast ||
-              prog_number == eBlastTypePsiBlast ||
               prog_number == eBlastTypeTblastn  ||
+              Blast_ProgramIsPsiBlast(prog_number) ||
               Blast_ProgramIsPhiBlast(prog_number)) {
       /* Query and subject are protein, no frame. */
       frame = 0;
