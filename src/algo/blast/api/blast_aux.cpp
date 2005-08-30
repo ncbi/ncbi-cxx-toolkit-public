@@ -41,6 +41,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/core/blast_seqsrc_impl.h>
+#include "blast_setup.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -534,10 +535,10 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
                           const BlastMaskLoc* mask, 
                           TSeqLocInfoVector& mask_v)
 {
-    const bool kTranslatedQuery = Blast_QueryIsTranslated(program);
-    const int kNumFrames = (kTranslatedQuery ? NUM_FRAMES : 1);
+    ASSERT(mask);
+    const unsigned int kNumFrames = GetNumberOfFrames(program);
 
-    if (seqid_v.size() != (size_t) mask->total_size/kNumFrames) {
+    if (seqid_v.size() != mask->total_size/kNumFrames) {
         string msg = "Blast_GetSeqLocInfoVector: number of query ids " +
             NStr::IntToString(seqid_v.size()) + 
             " not equal to number of queries in mask " + 
@@ -545,31 +546,30 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
         NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
 
-    for (unsigned int query_index = 0; query_index < seqid_v.size(); 
-         ++query_index) {
-        list<CRef<CSeqLocInfo> > mask_info_list;
+    unsigned int qindex(0); // index into seqid_v vector
+    NON_CONST_ITERATE(vector< CRef<CSeq_id> >, query_id, seqid_v) {
 
-        for (int tmp_index = 0; tmp_index < kNumFrames; tmp_index++) {
-            BlastSeqLoc* loc = NULL;
-            if (mask)
-                loc = mask->seqloc_array[query_index*kNumFrames+tmp_index];
+        list<CRef<CSeqLocInfo> > query_masks;
+        for (unsigned int index = 0; index < kNumFrames; index++) {
+            // N.B.: The elements of the seqloc_array corresponding to reverse
+            // strands are all NULL except in a reverse-strand-only search
+            BlastSeqLoc* loc = mask->seqloc_array[qindex*kNumFrames+index];
         
             for ( ; loc; loc = loc->next) {
-                CRef<CSeqLocInfo> seqloc_info(new CSeqLocInfo());
-                int frame = (kTranslatedQuery ? 
-                    (int) BLAST_ContextToFrame(program, tmp_index) : 0);
-                seqloc_info->SetFrame(frame);
-
-                
-                CSeq_interval* seqint =
-                    new CSeq_interval(*seqid_v[query_index], loc->ssr->left, 
-                                      loc->ssr->right);
-            
-                seqloc_info->SetInterval(seqint);
-                mask_info_list.push_back(seqloc_info);
+                int frame = BLAST_ContextToFrame(program, index);
+                if (frame == INT1_MAX) {
+                    string msg("Conversion from context to frame failed for ");
+                    msg += "'" + Blast_ProgramNameFromType(program) + "'";
+                    NCBI_THROW(CBlastException, eCoreBlastError, msg);
+                }
+                CRef<CSeq_interval> seqint(new CSeq_interval(**query_id, 
+                                                             loc->ssr->left, 
+                                                             loc->ssr->right));
+                CRef<CSeqLocInfo> seqloc_info(new CSeqLocInfo(seqint, frame));
+                query_masks.push_back(seqloc_info);
             }
         }
-        mask_v.push_back(mask_info_list);
+        mask_v.push_back(query_masks), qindex++;
     }
 }
 
@@ -582,6 +582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.79  2005/08/30 20:32:28  camacho
+ * Fixes to Blast_GetSeqLocInfoVector
+ *
  * Revision 1.78  2005/08/30 15:47:01  camacho
  * Remove redundant implementation of Blast_ProgramNameFromType (call BlastNumber2Program)
  *
