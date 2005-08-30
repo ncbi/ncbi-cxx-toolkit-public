@@ -2698,32 +2698,39 @@ void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
    sfree(beta_arr);
 }
 
-Int2 BLAST_GetGapExistenceExtendParams(const char* matrixName, 
+Int2 BLAST_GetGapExistenceExtendParams(EBlastProgramType program_number,
+                                       const char* matrixName, 
                                        Int4* gap_existence, 
                                        Int4* gap_extension)
 {
-   Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
-   Int2 num_values;
-   Int4 i; /*loop index*/
-
-   num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
-     &gapExtend_arr, NULL, NULL, NULL, NULL,  NULL, NULL,
-     &pref_flags);
-
-   if (num_values <= 0)
-     return -1;
-   
-   for(i = 1; i < num_values; i++) {
-       if(pref_flags[i]==BLAST_MATRIX_BEST) {
-         (*gap_existence) = gapOpen_arr[i];
-         (*gap_extension) = gapExtend_arr[i];
-         break;
-       }
+   if (Blast_QueryIsNucleotide(program_number) == TRUE && Blast_QueryIsTranslated(program_number) == FALSE)
+   {
+       (*gap_existence) = BLAST_GAP_OPEN_NUCL;
+       (*gap_extension) = BLAST_GAP_EXTN_NUCL;
    }
+   else
+   {
+       Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
+       Int4 i; /*loop index*/
+       Int2 num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
+         &gapExtend_arr, NULL, NULL, NULL, NULL,  NULL, NULL,
+         &pref_flags);
+
+       if (num_values <= 0)
+         return -1;
    
-   sfree(gapOpen_arr);
-   sfree(gapExtend_arr);
-   sfree(pref_flags);
+       for(i = 1; i < num_values; i++) {
+           if(pref_flags[i]==BLAST_MATRIX_BEST) {
+             (*gap_existence) = gapOpen_arr[i];
+             (*gap_extension) = gapExtend_arr[i];
+             break;
+           }
+       }
+   
+       sfree(gapOpen_arr);
+       sfree(gapExtend_arr);
+       sfree(pref_flags);
+   }
 
    return 0;
 }
@@ -4028,6 +4035,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.125  2005/08/30 15:42:58  madden
+ * BLAST_GetGapExistenceExtendParams now takes program_number as an argument so it can properly identify blastn queries
+ *
  * Revision 1.124  2005/08/29 13:52:05  madden
  * Add BLAST_GetGapExistenceExtendParams
  *
