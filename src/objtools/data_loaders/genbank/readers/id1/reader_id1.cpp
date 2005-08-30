@@ -278,6 +278,9 @@ void CId1Reader::GetSeq_idSeq_ids(CReaderRequestResult& result,
     }
     
     m_Dispatcher->LoadSeq_idGi(result, seq_id);
+    if ( ids.IsLoaded() ) {
+        return;
+    }
     int gi = ids->GetGi();
     if ( !gi ) {
         // no gi -> no Seq-ids
