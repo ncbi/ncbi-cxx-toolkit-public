@@ -1046,6 +1046,7 @@ GetNumberOfFrames(EBlastProgramType p)
     case eBlastTypeRpsBlast:
     case eBlastTypeTblastn: 
     case eBlastTypePsiBlast:
+    case eBlastTypePsiTblastn:
     case eBlastTypePhiBlastp:
         retval = 1;
         break;
@@ -1057,8 +1058,10 @@ GetNumberOfFrames(EBlastProgramType p)
     default:
         {
             int debug_value = static_cast<int>(p);
+            string prog_name(Blast_ProgramNameFromType(p));
             string msg = "Cannot get number of frames for invalid program ";
-            msg += "type: " + NStr::IntToString(debug_value);
+            msg += "type: " + prog_name + " (" + NStr::IntToString(debug_value);
+            msg += ")";
             NCBI_THROW(CBlastException, eNotSupported, msg);
         }
     }
@@ -1075,6 +1078,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.94  2005/08/30 20:22:14  camacho
+ * + psitblastn to GetNumberOfFrames
+ *
  * Revision 1.93  2005/07/07 16:32:12  camacho
  * Revamping of BLAST exception classes and error codes
  *
