@@ -130,11 +130,13 @@ public:
         eFrameMinus3 = -3,
         eFrameNotSet = 0
     };
+    CSeqLocInfo(objects::CSeq_interval* interval, int frame)
+        : m_Interval(interval)
+    { SetFrame(frame); }
 
     const objects::CSeq_interval& GetInterval() const { return *m_Interval; }
-    void SetInterval(objects::CSeq_interval* interval) {
-        m_Interval.Reset(interval);
-    }
+    void SetInterval(objects::CSeq_interval* interval) 
+    { m_Interval.Reset(interval); }
     int GetFrame() const { return (int) m_Frame; }
     void SetFrame(int frame); // Throws exception on out-of-range input
 private:
@@ -269,6 +271,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2005/08/30 20:31:37  camacho
+* + parametrized constructor for CSeqLocInfo
+*
 * Revision 1.62  2005/08/29 14:37:51  camacho
 * From Ilya Dondoshansky:
 * Added class CSeqLocInfo, type TSeqLocInfoVector and method to construct
