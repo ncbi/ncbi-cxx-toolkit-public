@@ -99,7 +99,8 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       dust_linker( 1 ),
       checkdup( args["checkdup"].AsBoolean() ),
       sformat( args["sformat"].AsString() ),
-      smem( args["smem"].AsInteger() )
+      smem( args["smem"].AsInteger() ),
+      use_ba( args["use_ba"].AsBoolean() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
@@ -210,6 +211,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.11  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.10  2005/07/14 20:43:06  morgulis
  * support for symmetric DUST
  *

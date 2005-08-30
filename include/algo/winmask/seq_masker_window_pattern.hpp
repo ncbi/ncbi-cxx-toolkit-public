@@ -62,7 +62,8 @@ public:
     CSeqMaskerWindowPattern( const objects::CSeqVector & arg_data, 
                              Uint1 arg_unit_size, Uint1 arg_window_size,
                              Uint4 window_step, Uint4 arg_pattern,
-                             Uint1 arg_unit_step = 1 );
+                             Uint1 arg_unit_step = 1,
+                             TSeqPos start = 0, TSeqPos stop = 0 );
 
     /**
      **\brief Object destructor.
@@ -116,6 +117,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.3  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.

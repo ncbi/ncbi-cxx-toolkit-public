@@ -26,55 +26,57 @@
  * Author:  Aleksandr Morgulis
  *
  * File Description:
- *   Implementation of CSeqMaskerOStatOptBin class.
+ *   CSeqMaskerCacheBoost member and method definitions.
  *
  */
 
 #include <ncbi_pch.hpp>
 
-#include "algo/winmask/seq_masker_ostat_opt_bin.hpp"
+#include <algo/winmask/seq_masker_cache_boost.hpp>
 
 BEGIN_NCBI_SCOPE
 
 //------------------------------------------------------------------------------
-CSeqMaskerOstatOptBin::CSeqMaskerOstatOptBin( const string & name, 
-                                              Uint2 sz, bool arg_use_ba )
-    : CSeqMaskerOstatOpt( static_cast< CNcbiOstream& >(
-        *new CNcbiOfstream( name.c_str(), IOS_BASE::binary ) ), sz ),
-      use_ba( arg_use_ba )
-{ 
-    if( use_ba )
-        write_word( (Uint4)2 ); 
-    else write_word( (Uint4)1 );
-} 
+inline Uint1 CSeqMaskerCacheBoost::bit_at( TUnit pos ) const
+{
+    pos /= od_->divisor_;
+    TSeqPos word = pos/(8*sizeof( Uint4 ));
+    TSeqPos bit = pos%(8*sizeof( Uint4 ));
+    Uint1 res = (((od_->cba_[word])>>bit)&0x1) == 0 ? 0 : 1;
+    return res;
+}
 
 //------------------------------------------------------------------------------
-void CSeqMaskerOstatOptBin::write_out( const params & p ) const
+inline bool CSeqMaskerCacheBoost::full_check() const
 {
-    write_word( (Uint4)UnitSize() );
-    write_word( p.M );
-    write_word( (Uint4)p.k );
-    write_word( (Uint4)p.roff );
-    write_word( (Uint4)p.bc );
+    for( unsigned int i = 0; i < nu_; ++i )
+        if( bit_at( window_[i] ) != 0 )
+            return false;
 
-    for( Uint4 i = 0; i < GetParams().size(); ++i )
-        write_word( GetParams()[i] );
+    return true;
+}
 
-    if( use_ba )
-        if( p.cba != 0 )
+//------------------------------------------------------------------------------
+bool CSeqMaskerCacheBoost::Check() 
+{
+    if( od_ == 0 || od_->cba_ == 0 )
+        return true;
+
+    while( window_ )
+    {
+        if( last_checked_ + 1 != window_.End() )
         {
-            Uint8 total = 
-                (UnitSize() == 16) ? 0x100000000ULL : (1<<(2*UnitSize()));
-            Uint4 size = (Uint4)(total/(8*sizeof( Uint4 )));
-            write_word( (Uint4)1 );
-            out_stream.write( (const char *)(p.cba), size*sizeof( Uint4 ) );
+            if( !full_check() )
+                break;
         }
-        else write_word( (Uint4)0 );
+        else if( bit_at( window_[nu_-1] ) != 0 )
+                break;
 
-    Uint4 sz = (1<<p.k);
-    out_stream.write( (const char *)(p.ht), sz*sizeof( Uint4 ) );
-    out_stream.write( (const char *)(p.vt), p.M*sizeof( Uint2 ) );
-    out_stream << flush;
+        last_checked_ = window_.End();
+        ++window_;
+    }
+
+    return bool( window_ );
 }
 
 END_NCBI_SCOPE
@@ -82,12 +84,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
- * Revision 1.2  2005/08/30 14:35:19  morgulis
+ * Revision 1.1  2005/08/30 14:35:19  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.
- *
- * Revision 1.1  2005/05/02 14:27:46  morgulis
- * Implemented hash table based unit counts formats.
  *
  * ========================================================================
  */

@@ -54,7 +54,7 @@ CSeqMaskerOstatFactory::CSeqMaskerOstatFactoryException::GetErrCodeString() cons
 
 //------------------------------------------------------------------------------
 CSeqMaskerOstat * CSeqMaskerOstatFactory::create( 
-    const string & ustat_type, const string & name )
+    const string & ustat_type, const string & name, bool use_ba )
 {
     try
     {
@@ -70,7 +70,7 @@ CSeqMaskerOstat * CSeqMaskerOstatFactory::create(
         else if( ustat_type.substr( 0, 7 ) == "obinary" )
         {
             Uint4 size = atoi( ustat_type.substr( 7 ).c_str() );
-            return new CSeqMaskerOstatOptBin( name, size );
+            return new CSeqMaskerOstatOptBin( name, size, use_ba );
         }
         else NCBI_THROW( CSeqMaskerOstatFactoryException,
                          eBadName,
@@ -89,6 +89,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.4  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

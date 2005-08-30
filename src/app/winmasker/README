@@ -14,9 +14,9 @@ ABSTRACT
 
 SYNOPSIS
 
-    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory]
+    windowmasker -mk_counts true [-input input_file_name] [-output output_file_name] [-checkdup check_duplicates] [-t_low T_low] [-t_high T_high] [-fa_list input_is_a_list] [-mem available_memory] [-unit unit_length [-genome_size genome_size] [-exclude_ids exclide_id_list] [-ids id_list] [-sformat unit_counts_format] [-smem available_memory] [-use_ba use_bit_arrays]
 
-    windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-oformat output_format] [-dust use_dust] [-sdust use_sdust] [-exclude_ids exclude_id_list] [-ids id_list]
+    windowmasker -ustat unit_counts [-input input_file_name] [-output output_file_name] [-window window_size] [-t_thres T_threshold] [-t_extend T_extend] [-t_low T_low] [-t_high T_high] [-set_t_low score] [-set_t_high score] [-oformat output_format] [-dust use_dust] [-sdust use_sdust] [-exclude_ids exclude_id_list] [-ids id_list] [-use_ba use_bit_arrays]
 
 
 DESCRIPTION
@@ -114,6 +114,16 @@ Common Options
         per line) in the input that should be processed. See section 
         FILES for an example. This option and "-exclude_ids" option 
         are mutually exclusive.
+
+    -use_ba true/false
+
+        default: true
+
+        Optimize unit counts data structure performance using bit arrays
+        if possible. This increases the masking speed by about 20% but
+        also increases the process memory footprint. This optimization
+        is currently available only for unit counts database created
+        with "-sformat obinary" option.
 
 Stage 1 Options
 

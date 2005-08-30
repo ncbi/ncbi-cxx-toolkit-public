@@ -49,6 +49,27 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstat : public CObject
 public:
 
     /**
+        \brief Structure containing information about optimization
+               parameters used.
+     */
+    struct optimization_data
+    {
+        /**
+            \brief Object constructor.
+            \param divisor initial value of the divisor_
+            \param cba initial value of cba_
+         */
+        optimization_data( Uint4 divisor, Uint4 * cba )
+            : divisor_( divisor/(8*sizeof( Uint4 )) ), cba_( cba ) 
+        {}
+
+        Uint4 divisor_;     /**< How many units are represented by one
+                                 4-byte word in cba_ array. */
+        Uint4 * cba_;       /**< Bit array with zeroes where all corresponding
+                                 units have counts below t_extend. */
+    };
+
+    /**
         **\brief Object constructor.
         **\param arg_threshold the value of t_threshold to use instead of
         **                     the one supplied in the unit counts file
@@ -75,8 +96,9 @@ public:
             use_max_count( arg_use_max_count ),
             min_count( arg_min_count ),
             use_min_count( arg_use_min_count ),
-            ambig_unit( 0 )
-    {}
+            ambig_unit( 0 ),
+            opt_data_( 0, 0 )
+    { total_ = 0; }
 
     /**
         **\brief Object destructor.
@@ -89,7 +111,10 @@ public:
         **\return the count of the unit
         **/
     Uint4 operator[]( Uint4 unit ) const
-    { return at( unit ); }
+    { 
+        ++total_;
+        return at( unit ); 
+    }
 
     /**
         **\brief Get the unit size.
@@ -115,6 +140,16 @@ public:
         **\return T_extend value
         **/
     Uint4 get_textend() const { return textend; }
+
+    /**
+        \brief Get the data structure optimization parameters.
+        \return pointer to optimization structure, if it is
+                initialized, NULL otherwise
+     */
+    const optimization_data * get_optimization_data() const
+    { return opt_data_.cba_ == 0 ? 0 : &opt_data_; }
+
+    mutable Uint8 total_;
 
 protected:
 
@@ -156,6 +191,7 @@ protected:
     void set_max_count( Uint4 arg_max_count )
     { max_count = arg_max_count; }
 
+public:
     /**
         **\brief Get the count value for units with actual counts 
         **       above T_high.
@@ -163,6 +199,7 @@ protected:
         **/
     Uint4 get_use_max_count() const { return use_max_count; }
 
+protected:
     /**
         **\brief Set the count value for units with actual counts
         **       above T_high.
@@ -185,6 +222,7 @@ protected:
     void set_min_count( Uint4 arg_min_count )
     { min_count = arg_min_count; }
 
+public:
     /**
         **\brief Get the count value for units with actual counts
         **       below T_low.
@@ -192,6 +230,7 @@ protected:
         **/
     Uint4 get_use_min_count() const { return use_min_count; }
 
+protected:
     /**
         **\brief Set the count value for units with actual counts
         **       below T_low.
@@ -216,6 +255,16 @@ protected:
         const CSeqMaskerWindow::TUnit & arg_ambig_unit )
     { ambig_unit = arg_ambig_unit; }
 
+    /** 
+        \brief Set optimization parameters.
+
+        Constructor of the derived class is responsible for this.
+
+        \param opt_data new optimization parameters
+     */
+    void set_optimization_data( const optimization_data & opt_data )
+    { opt_data_ = opt_data; }
+
 private:
 
     /**\name Provide reference semantics for CSeqMaskerOstat. */
@@ -233,6 +282,8 @@ private:
     Uint1 unit_size;        /**<\internal The unit size. */
 
     CSeqMaskerWindow::TUnit ambig_unit; /**<\internal Unit value to represent ambiguities. */
+
+    optimization_data opt_data_; /**<\internal Optimization parameters. */
 };
 
 END_NCBI_SCOPE
@@ -242,6 +293,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.2  2005/04/13 13:47:48  dicuccio
  * Added export specifiers.  White space changes: reindented class body
  *

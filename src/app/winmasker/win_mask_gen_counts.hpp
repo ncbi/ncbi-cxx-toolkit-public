@@ -81,6 +81,8 @@ public:
      **\param use_list true if input file contains the list of fasta
      **                file names; false if input is the name of the
      **                fasta file itself
+     **\param use_ba use bit array optimization for optimized binary
+     **              unit counts format
      **
      **/
     CWinMaskCountsGenerator( const string & input,
@@ -95,7 +97,8 @@ public:
                              bool check_duplicates,
                              bool use_list,
                              const set< objects::CSeq_id_Handle > & ids,
-                             const set< objects::CSeq_id_Handle > & exclude_ids );
+                             const set< objects::CSeq_id_Handle > & exclude_ids,
+                             bool use_ba );
 
     /**
      **\brief Object destructor.
@@ -162,6 +165,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.8  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.7  2005/05/02 17:58:01  morgulis
  * Fixed a few warnings for solaris.
  *

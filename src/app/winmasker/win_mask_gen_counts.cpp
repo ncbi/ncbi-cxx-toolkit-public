@@ -147,9 +147,10 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool arg_check_duplicates,
     bool arg_use_list,
     const set< CSeq_id_Handle > & arg_ids,
-    const set< CSeq_id_Handle > & arg_exclude_ids )
+    const set< CSeq_id_Handle > & arg_exclude_ids,
+    bool use_ba )
 :   input( arg_input ),
-    ustat( CSeqMaskerOstatFactory::create( sformat, output ) ),
+    ustat( CSeqMaskerOstatFactory::create( sformat, output, use_ba ) ),
     max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
@@ -218,7 +219,7 @@ void CWinMaskCountsGenerator::operator()()
             }
 
             cerr << "done." << endl;
-            cerr << total << endl;
+            // cerr << total << endl;
             genome_size = total;
         }
 
@@ -478,6 +479,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.15  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.14  2005/07/11 14:36:17  morgulis
  * Fixes for performance problems with large number of short sequences.
  * Windowmasker is now statically linked against object manager libs.

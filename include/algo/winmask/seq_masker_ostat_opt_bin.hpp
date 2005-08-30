@@ -51,8 +51,9 @@ CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
          **\param name output file name
          **\param sz requested upper limit on the size of the data structure
          **          (forwarded to CSeqMaskerOstatOpt)
+         **\param use_ba use bit array optimization
          **/
-        explicit CSeqMaskerOstatOptBin( const string & name, Uint2 sz );
+        explicit CSeqMaskerOstatOptBin( const string & name, Uint2 sz, bool use_ba );
 
         /**
          **\brief Object destructor.
@@ -79,6 +80,11 @@ CSeqMaskerOstatOptBin : public CSeqMaskerOstatOpt
             out_stream.write( 
                 reinterpret_cast< const char * >(&word), sizeof( Uint4 ) );
         }
+
+        /**\internal
+         **\brief Use bit array optimization.
+         **/
+        bool use_ba;
 };
 
 END_NCBI_SCOPE
@@ -88,6 +94,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.2  2005/08/03 18:07:02  jcherry
  * Added export specifiers
  *

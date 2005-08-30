@@ -82,10 +82,11 @@ public:
         **
         **\param ustat_type the name of the unit counts file format
         **\param name the name of the file to save unit counts data to
+        **\param use_ba whether to use bit array based optimizations
         **\return pointer to the newly created object
         **/
     static CSeqMaskerOstat * create( 
-        const string & ustat_type, const string & name );
+        const string & ustat_type, const string & name, bool use_ba );
 };
 
 END_NCBI_SCOPE
@@ -95,6 +96,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.4  2005/04/13 13:47:48  dicuccio
  * Added export specifiers.  White space changes: reindented class body
  *

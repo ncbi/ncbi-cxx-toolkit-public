@@ -97,6 +97,44 @@ void CSeqMaskerOstatOpt::doSetParam( const string & name, Uint4 value )
 }
 
 //------------------------------------------------------------------------------
+void CSeqMaskerOstatOpt::createCacheBitArray( Uint4 ** cba )
+{
+    *cba = 0;
+    typedef vector< Uint4 >::size_type size_type;
+    Uint8 total = (unit_bit_size == 32) ? 0x100000000ULL : (1<<unit_bit_size);
+    Uint8 divisor = 8*sizeof( Uint4 );
+    cerr << "divisor: " << divisor << " size: " 
+         << (total/(2048*divisor)) << " KB" << endl;
+    size_type size = (size_type)( total/divisor );
+
+    try
+    {
+        *cba = new Uint4[size];
+    }
+    catch( ... )
+    { size = 0; }
+
+    if( size > 0 )
+    {
+        fill( *cba, *cba + size, 0 );
+
+        for( size_type i = 0; i < units.size(); ++i )
+        {
+            if( counts[i] >= pvalues[1] )
+            {
+                Uint4 unit = units[i];
+                Uint4 rcunit = CSeqMaskerUtil::reverse_complement( 
+                    unit, unit_bit_size/2 );
+                Uint4 & word = (*cba)[unit/divisor];
+                word |= (1<<(unit%divisor));
+                Uint4 & word1 = (*cba)[rcunit/divisor];
+                word1 |= (1<<(rcunit%divisor));
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 Uint1 CSeqMaskerOstatOpt::findBestRoff( Uint1 k, Uint1 & max_coll, 
                                         Uint4 & M, Uint4 * ht )
 {
@@ -145,6 +183,8 @@ Uint1 CSeqMaskerOstatOpt::findBestRoff( Uint1 k, Uint1 & max_coll,
 void CSeqMaskerOstatOpt::doFinalize()
 {
     NcbiCerr << "Optimizing the data structure." << endl;
+    Uint4 *cba = 0;
+    createCacheBitArray( &cba );
     Uint1 k = unit_bit_size - 1;
     Uint1 roff, max_coll;
     Uint4 M; /* Units with collisions. */
@@ -242,7 +282,7 @@ void CSeqMaskerOstatOpt::doFinalize()
             }
     }
 
-    params p = { M, k, roff, bc, htp, vtp };
+    params p = { M, k, roff, bc, htp, vtp, cba };
     write_out( p );
 }
 
@@ -261,6 +301,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.1  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

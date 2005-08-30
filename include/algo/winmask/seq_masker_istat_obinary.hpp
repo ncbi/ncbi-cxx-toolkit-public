@@ -88,6 +88,7 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOBinary
          **\param arg_use_max_count value to use for units with count > T_high
          **\param arg_min_count T_low
          **\param arg_use_min_count value to use for units with count < T_low
+         **\param arg_use_ba use bit array optimization if available
          **/
         explicit CSeqMaskerIstatOBinary( const string & name,
                                          Uint4 arg_threshold,
@@ -95,7 +96,8 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOBinary
                                          Uint4 arg_max_count,
                                          Uint4 arg_use_max_count,
                                          Uint4 arg_min_count,
-                                         Uint4 arg_use_min_count );
+                                         Uint4 arg_use_min_count,
+                                         bool arg_use_ba );
 
         /**
          **\brief Object destructor.
@@ -139,6 +141,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.1  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

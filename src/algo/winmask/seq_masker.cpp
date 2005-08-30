@@ -46,6 +46,7 @@
 #include <algo/winmask/seq_masker.hpp>
 #include <algo/winmask/seq_masker_util.hpp>
 #include <algo/winmask/seq_masker_istat_factory.hpp>
+#include <algo/winmask/seq_masker_cache_boost.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -70,14 +71,16 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
                         const string & arg_trigger,
                         Uint1 tmin_count,
                         bool arg_discontig,
-                        Uint4 arg_pattern )
+                        Uint4 arg_pattern,
+                        bool arg_use_ba )
     : ustat( CSeqMaskerIstatFactory::create( lstat_name,
                                              arg_cutoff_score,
                                              arg_textend,
                                              arg_max_score,
                                              arg_set_max_score,
                                              arg_min_score,
-                                             arg_set_min_score ) ),
+                                             arg_set_min_score,
+                                             arg_use_ba ) ),
       score( NULL ), score_p3( NULL ), trigger_score( NULL ),
       window_size( arg_window_size ), window_step( arg_window_step ),
       unit_step( arg_unit_step ),
@@ -130,9 +133,14 @@ CSeqMasker::~CSeqMasker()
 //-------------------------------------------------------------------------
 CSeqMasker::TMaskList *
 CSeqMasker::operator()( const CSeqVector& data ) const
+{ return DoMask( data, 0, data.size() ); }
+
+//-------------------------------------------------------------------------
+CSeqMasker::TMaskList *
+CSeqMasker::DoMask( 
+    const CSeqVector& data, TSeqPos begin, TSeqPos stop ) const
 {
-    Uint4 cutoff_score = ustat->get_threshold();
-    Uint4 textend = ustat->get_textend();
+    ustat->total_ = 0;
     auto_ptr<TMaskList> mask(new TMaskList);
 
     if( window_size > data.size() )
@@ -141,6 +149,8 @@ CSeqMasker::operator()( const CSeqVector& data ) const
                   << "length of data is shorter than the window size" );
     }
 
+    Uint4 cutoff_score = ustat->get_threshold();
+    Uint4 textend = ustat->get_textend();
     Uint1 nbits = discontig ? CSeqMaskerUtil::BitCount( pattern ) : 0;
     Uint4 unit_size = ustat->UnitSize() + nbits;
     auto_ptr<CSeqMaskerWindow> window_ptr
@@ -149,7 +159,7 @@ CSeqMasker::operator()( const CSeqVector& data ) const
                                                   pattern, unit_step )
          : new CSeqMaskerWindow( data, unit_size, 
                                  window_size, window_step, 
-                                 unit_step ));
+                                 unit_step, begin, stop ));
     CSeqMaskerWindow & window = *window_ptr;
     score->SetWindow( window );
 
@@ -157,11 +167,16 @@ CSeqMasker::operator()( const CSeqVector& data ) const
 
     Uint4 start = 0, end = 0, cend = 0;
     Uint4 limit = textend;
+    const CSeqMaskerIstat::optimization_data * od 
+        = ustat->get_optimization_data();
+
+    CSeqMaskerCacheBoost booster( window, od );
 
     while( window )
     {
         Uint4 ts = (*trigger_score)();
         Uint4 s = (*score)();
+        Uint4 adv = window_step;
 
         if( s < limit )
         {
@@ -172,6 +187,16 @@ CSeqMasker::operator()( const CSeqVector& data ) const
                     mask->push_back( TMaskedInterval( start, end ) );
                     start = end = cend = 0;
                 }
+            }
+
+            if( od != 0 && od->cba_ != 0 )
+            {
+                adv = window.Start();
+
+                if( !booster.Check() )
+                    break;
+
+                adv = window_step*( 1 + window.Start() - adv );
             }
         }
         else if( ts < cutoff_score )
@@ -197,21 +222,27 @@ CSeqMasker::operator()( const CSeqVector& data ) const
                 }
             }
             else start = window.Start();
-
+    
             cend = end = window.End();
         }
 
-        score->PreAdvance( window_step );
-        ++window;
-        score->PostAdvance( window_step );
+        
+        if( adv == window_step )
+            ++window;
+
+        score->PostAdvance( adv );
     }
 
-    if( end > start ) mask->push_back( TMaskedInterval( start, end ) );
+    if( end > start ) 
+        mask->push_back( TMaskedInterval( start, end ) );
 
     window_ptr.reset();
 
     if( merge_pass )
     {
+        Uint1 nbits = discontig ? CSeqMaskerUtil::BitCount( pattern ) : 0;
+        Uint4 unit_size = ustat->UnitSize() + nbits;
+
         if( mask->size() < 2 ) return mask.release();
 
         TMList masked, unmasked;
@@ -500,6 +531,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.14  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.13  2005/05/02 17:58:01  morgulis
  * Fixed a few warnings for solaris.
  *

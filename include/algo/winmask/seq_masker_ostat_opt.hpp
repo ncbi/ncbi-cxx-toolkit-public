@@ -89,12 +89,13 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatOpt : public CSeqMaskerOstat
          **/
         struct params
         {
-            Uint4 M;    /**< Number of units that have a collision. */
-            Uint1 k;    /**< The size of the hash key in bits. */
-            Uint1 roff; /**< Right offset of the hash key in bits. */
-            Uint1 bc;   /**< Size of the collisions field in the table in bits. */
-            Uint4 * ht; /**< Hash table. */
-            Uint2 * vt; /**< Secondary counts table. */
+            Uint4 M;     /**< Number of units that have a collision. */
+            Uint1 k;     /**< The size of the hash key in bits. */
+            Uint1 roff;  /**< Right offset of the hash key in bits. */
+            Uint1 bc;    /**< Size of the collisions field in the table in bits. */
+            Uint4 * ht;  /**< Hash table. */
+            Uint2 * vt;  /**< Secondary counts table. */
+            Uint4 * cba; /**< Cache bit array. */
         };
 
         /**
@@ -175,6 +176,17 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerOstatOpt : public CSeqMaskerOstat
          **/
         Uint1 findBestRoff( Uint1 k, Uint1 & max_coll, Uint4 & M, Uint4 * ht );
 
+        /** \internal
+            \brief Create the cache bit array with.
+
+            Bit array contains 0 if all nmers in the corresponding group are 
+            less than t_extend, 1 otherwise. The size of the group is determined
+            dynamically from the nmer size.
+
+            \param cba [OUT] pointer to the cache bit array
+         */
+        void createCacheBitArray( Uint4 ** cba );
+
         Uint2 size_requested;       /**<\internal User specified upper limit of the data structure size. */
         Uint1 unit_bit_size;        /**<\internal Unit size in bits. */
 
@@ -191,6 +203,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.1  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

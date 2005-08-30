@@ -83,11 +83,13 @@ public:
      **                   advances when operator++() is applied
      **\param unit_step the number of bases between consequtive
      **                 units in a window
-     **
+     **\param winstart start window at this data position
+     **\param winend do not advance beyond this data position
      **/
     CSeqMaskerWindow( const objects::CSeqVector & arg_data, 
                       Uint1 arg_unit_size, Uint1 arg_window_size,
-                      Uint4 window_step, Uint1 unit_step = 1 );
+                      Uint4 window_step, Uint1 unit_step = 1,
+                      Uint4 winstart = 0, Uint4 winend = 0 );
 
     /**
      **\brief Object destructor.
@@ -172,8 +174,6 @@ public:
      **/
     Uint1 NumUnits() const{ return (window_size - unit_size)/unit_step + 1; }
 
-protected:
-
     /**
      **\brief Slide the window by the given number of bases.
      **
@@ -182,6 +182,15 @@ protected:
      **
      **/
     virtual void Advance( Uint4 step );
+
+    /**
+        \brief Get the unit size.
+        \return the unit size (1-16)
+     */
+    Uint1 GetUnitSize() const
+    { return unit_size; }
+
+protected:
 
     const objects::CSeqVector& data;        /**< The sequence data in iupacna format. */
     bool state;             /**< true, if the end of the sequence has not been reached. */
@@ -194,6 +203,7 @@ protected:
     TUnits::size_type first_unit;  /**< The position in the array of units of the first unit of the current window. */
     TUnits units;          /**< The array of units. */
     TUnit unit_mask;           /**< The mask to use when accessing the integer value of a unit. */
+    Uint4 winend;               /**< Final position in the sequence. */
 
 private:
 
@@ -212,6 +222,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.3  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.

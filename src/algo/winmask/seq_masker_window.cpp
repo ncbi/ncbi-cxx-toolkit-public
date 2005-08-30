@@ -50,11 +50,13 @@ CSeqMaskerWindow::CSeqMaskerWindow( const CSeqVector & arg_data,
                                     Uint1 arg_unit_size, 
                                     Uint1 arg_window_size,
                                     Uint4 arg_window_step,
-                                    Uint1 arg_unit_step )
+                                    Uint1 arg_unit_step,
+                                    Uint4 winstart,
+                                    Uint4 arg_winend )
     : data(arg_data), state( false ), 
       unit_size( arg_unit_size ), unit_step( arg_unit_step ),
       window_size( arg_window_size ), window_step( arg_window_step ),
-      end( 0 ), first_unit( 0 ), unit_mask( 0 )
+      end( 0 ), first_unit( 0 ), unit_mask( 0 ), winend( arg_winend )
 {
     static bool first_call = true;
 
@@ -72,7 +74,11 @@ CSeqMaskerWindow::CSeqMaskerWindow( const CSeqVector & arg_data,
 
     units.resize( NumUnits(), 0 );
     unit_mask = (1 << (unit_size << 1)) - 1;
-    FillWindow( 0 );
+    
+    if( winend == 0 )
+        winend = data.size();
+
+    FillWindow( winstart );
 }
 
 CSeqMaskerWindow::~CSeqMaskerWindow()
@@ -93,7 +99,7 @@ void CSeqMaskerWindow::Advance( Uint4 step )
     Uint4 unit = units[last_unit];
     Uint4 iter = 0;
 
-    for( ; ++end < data.size() && iter < step ; ++iter, ++start )
+    for( ; ++end < winend && iter < step ; ++iter, ++start )
     {
         Uint1 letter = LOOKUP[unsigned(data[end])];
 
@@ -153,6 +159,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.3  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.

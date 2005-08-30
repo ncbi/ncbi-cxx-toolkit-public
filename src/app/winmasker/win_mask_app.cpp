@@ -213,6 +213,10 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "ids", "id_list",
                              "file containing the list of ids to process",
                              CArgDescriptions::eString, "" );
+    arg_desc->AddDefaultKey( "use_ba", "use_bit_array_optimization",
+                             "whether to use extra bit array optimization "
+                             "for optimized binary counts format",
+                             CArgDescriptions::eBoolean, "T" );
 
     // Set some constraints on command line parameters
     arg_desc->SetConstraint( "window",
@@ -301,7 +305,8 @@ int CWinMaskApplication::Run (void)
                                         aConfig.CheckDup(),
                                         aConfig.FaList(),
                                         aConfig.Ids(),
-                                        aConfig.ExcludeIds() );
+                                        aConfig.ExcludeIds(),
+                                        aConfig.UseBA() );
             cg();
         }
         return 0;
@@ -327,7 +332,8 @@ int CWinMaskApplication::Run (void)
                           aConfig.Trigger(),
                           aConfig.TMin_Count(),
                           aConfig.Discontig(),
-                          aConfig.Pattern() );
+                          aConfig.Pattern(),
+                          aConfig.UseBA() );
     CRef< CSeq_entry > aSeqEntry( 0 );
     Uint4 total = 0, total_masked = 0;
     CDustMasker * duster( 0 );
@@ -402,6 +408,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.14  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.13  2005/07/14 20:42:44  morgulis
  * support for symmetric DUST
  *

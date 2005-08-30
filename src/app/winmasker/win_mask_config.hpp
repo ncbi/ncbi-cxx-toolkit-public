@@ -484,6 +484,12 @@ public:
      **/
     const set< objects::CSeq_id_Handle > & ExcludeIds() const { return exclude_ids; }
 
+    /**\brief Whether to use bit array optimization for 
+     **       optimized binary counts format.
+     **\return true if optimization should be used; false otherwise
+     **/
+    bool UseBA() const { return use_ba; }
+
 private:
 
     /**\internal
@@ -683,6 +689,7 @@ private:
     Uint4 smem;                     /**< memory (in megabytes available for masking stage) */
     set< objects::CSeq_id_Handle > ids;              /**< list of ids to process */
     set< objects::CSeq_id_Handle > exclude_ids;      /**< list of ids to exclude from processing */
+    bool use_ba;                    /**< use bit array based optimization */
     //@}
 };
 
@@ -691,6 +698,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.6  2005/07/14 20:43:21  morgulis
  * support for symmetric DUST
  *

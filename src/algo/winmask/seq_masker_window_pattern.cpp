@@ -46,15 +46,18 @@ CSeqMaskerWindowPattern::CSeqMaskerWindowPattern( const CSeqVector & arg_data,
                                                   Uint1 arg_window_size,
                                                   Uint4 window_step, 
                                                   Uint4 arg_pattern,
-                                                  Uint1 arg_unit_step )
+                                                  Uint1 arg_unit_step,
+                                                  TSeqPos begin,
+                                                  TSeqPos stop )
     : CSeqMaskerWindow( arg_data, arg_unit_size, 
-                        arg_window_size, window_step, arg_unit_step ),
+                        arg_window_size, window_step, arg_unit_step,
+                        begin, stop ),
       pattern( arg_pattern )
 {
     Uint1 cusz = unit_size - CSeqMaskerUtil::BitCount( pattern );
     unit_mask = (cusz < 4*sizeof( TUnit )) ? ((1<<(2*cusz)) - 1) 
         : ~((TUnit)0);
-    FillWindow( 0 );
+    FillWindow( begin );
 }
 
 //-------------------------------------------------------------------------
@@ -91,7 +94,7 @@ void CSeqMaskerWindowPattern::FillWindow( Uint4 winstart )
     end = winstart + unit_size - 1;
     Uint4 wstart = winstart;
 
-    for( ; iter < NumUnits() && end < data.size(); )
+    for( ; iter < NumUnits() && end < data.size() && end < winend; )
         if( MakeUnit( winstart, unit ) )
         {
             units[iter] = unit;
@@ -119,6 +122,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.3  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.

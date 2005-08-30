@@ -12,7 +12,7 @@ SRC = seq_masker seq_masker_score_mean seq_masker_score_mean_glob \
     seq_masker_uset_simple seq_masker_istat_factory seq_masker_ostat_bin \
     seq_masker_uset_array seq_masker_istat_bin seq_masker_ostat_opt \
     seq_masker_ostat_opt_ascii seq_masker_uset_hash seq_masker_istat_oascii \
-    seq_masker_ostat_opt_bin seq_masker_istat_obinary
+    seq_masker_ostat_opt_bin seq_masker_istat_obinary seq_masker_cache_boost
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)

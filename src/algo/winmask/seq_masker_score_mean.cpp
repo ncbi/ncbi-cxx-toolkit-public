@@ -46,9 +46,7 @@ CSeqMaskerScoreMean::CSeqMaskerScoreMean(
 
 //-------------------------------------------------------------------------
 Uint4 CSeqMaskerScoreMean::operator()()
-{
-    return sum/num;
-}
+{ return sum/num; }
 
 //-------------------------------------------------------------------------
 void CSeqMaskerScoreMean::PreAdvance( Uint4 step )
@@ -67,11 +65,13 @@ void CSeqMaskerScoreMean::PostAdvance( Uint4 step )
            && window->UnitStep() == 1 
            && window->Start() - start == 1 )
     {
+        /*!!!!NEW CODE*/ sum -= *scores_start;
         *scores_start = (*ustat)[(*window)[num - 1]];
         sum += *scores_start;
         scores_start = (scores_start - &scores[0] == (int)(num - 1) ) 
 	             ? &scores[0]
                      : scores_start + 1;
+        /*!!!!NEW CODE*/ start = window->Start();
     }
     else{ FillScores(); }
 }
@@ -97,6 +97,8 @@ void CSeqMaskerScoreMean::FillScores()
     scores[i] = (*ustat)[(*window)[i]];
     sum += scores[i];
   }
+
+  /*!!!!NEW CODE*/ start = window->Start();
 }
 
 END_NCBI_SCOPE
@@ -104,6 +106,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/08/30 14:35:20  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.4  2005/04/04 14:28:46  morgulis
  * Decoupled reading and accessing unit counts information from seq_masker
  * core functionality and changed it to be able to support several unit

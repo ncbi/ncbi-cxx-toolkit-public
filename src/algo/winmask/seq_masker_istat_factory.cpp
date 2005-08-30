@@ -59,7 +59,8 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                                   Uint4 max_count,
                                                   Uint4 use_max_count,
                                                   Uint4 min_count,
-                                                  Uint4 use_min_count )
+                                                  Uint4 use_min_count,
+                                                  bool use_ba )
 {
     try
     {
@@ -83,11 +84,12 @@ CSeqMaskerIstat * CSeqMaskerIstatFactory::create( const string & name,
                                                   threshold, textend,
                                                   max_count, use_max_count,
                                                   min_count, use_min_count );
-            else if( data == 1 ) 
+            else if( data == 1 || data == 2 ) 
                 return new CSeqMaskerIstatOBinary( name,
                                                    threshold, textend,
                                                    max_count, use_max_count,
-                                                   min_count, use_min_count );
+                                                   min_count, use_min_count,
+                                                   use_ba );
         }
 
         return new CSeqMaskerIstatAscii( name,
@@ -109,6 +111,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.3  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *

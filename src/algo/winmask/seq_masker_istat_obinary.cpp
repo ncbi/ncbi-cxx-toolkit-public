@@ -73,11 +73,13 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
                                                 Uint4 arg_max_count,
                                                 Uint4 arg_use_max_count,
                                                 Uint4 arg_min_count,
-                                                Uint4 arg_use_min_count )
+                                                Uint4 arg_use_min_count,
+                                                bool arg_use_ba )
     :   CSeqMaskerIstat(    arg_threshold, arg_textend, 
                             arg_max_count, arg_use_max_count,
                             arg_min_count, arg_use_min_count )
 {
+    bool use_opt = true;
     CNcbiIfstream input_stream( name.c_str(), IOS_BASE::binary );
 
     if( !input_stream )
@@ -94,6 +96,10 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
           M;
 
     word = readWord( input_stream );
+
+    if( word == 1 )
+        use_opt = false;
+
     word = readWord( input_stream );
     unit_size = (Uint1)word;
 
@@ -143,6 +149,40 @@ CSeqMaskerIstatOBinary::CSeqMaskerIstatOBinary( const string & name,
     if( get_use_max_count() == 0 )
       set_use_max_count( get_max_count() );
 
+    if( use_opt )
+    {
+        Uint4 divisor = readWord( input_stream );
+
+        if( divisor > 0 )
+        {
+            Uint8 total = (1ULL<<(2*unit_size));
+            Uint4 cba_size = (Uint4)(total/(8*sizeof( Uint4 )));
+            Uint4 * cba = new Uint4[cba_size];
+
+            if( cba == 0 )
+                NcbiCerr << "Warning: allocation failed: "
+                            "bit array optimizations are not used." 
+                         << endl;
+            else if( !input_stream.read( (char *)cba, cba_size*sizeof( Uint4 ) ) )
+            {
+                NcbiCerr << "Warning: file read failed: "
+                            "bit array optimizations are not used." 
+                         << endl;
+                delete[] cba;
+                cba = 0;
+            }
+                
+            if( !arg_use_ba )
+            {
+                delete[] cba;
+                cba = 0;
+            }
+
+            optimization_data opt_data( 8*sizeof( Uint4 ), cba );
+            set_optimization_data( opt_data );
+        }
+    }
+
     Uint4 ht_size = (1<<k);
     Uint4 * ht = new Uint4[ht_size];
     
@@ -183,6 +223,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/30 14:35:19  morgulis
+ * NMer counts optimization using bit arrays. Performance is improved
+ * by about 20%.
+ *
  * Revision 1.1  2005/05/02 14:27:46  morgulis
  * Implemented hash table based unit counts formats.
  *
