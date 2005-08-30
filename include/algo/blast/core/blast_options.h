@@ -873,7 +873,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
 
 /** Get thresholds for word-finding suggested by Stephen Altschul.
  *
- * @param blast_program Type of blast program: blastn, blastp, blastx, 
+ * @param program_number Type of blast program: blastn, blastp, blastx, 
  *                      tblastn, tblastx) [in]
  * @param matrixName matrix, e.g., BLOSUM62 [in]
  * @param threshold returns suggested value [in|out]
@@ -885,7 +885,7 @@ Int2 BLAST_GetSuggestedThreshold(EBlastProgramType program_number,
 
 /** Get window sizes for two hit algorithm suggested by Stephen Altschul.
  *
- * @param blast_program Type of blast program: blastn, blastp, blastx, 
+ * @param program_number Type of blast program: blastn, blastp, blastx, 
  *                      tblastn, tblastx) [in]
  * @param matrixName matrix, e.g., BLOSUM62 [in]
  * @param window_size returns suggested value [in|out]
