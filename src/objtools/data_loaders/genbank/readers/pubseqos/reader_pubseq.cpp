@@ -238,7 +238,12 @@ bool CPubseqReader::LoadSeq_idGi(CReaderRequestResult& result,
     }
 
     CLoadLockBlob_ids blob_ids(result, seq_id);
-    return GetSeq_idInfo(result, seq_id, seq_ids, blob_ids);
+    if ( !GetSeq_idInfo(result, seq_id, seq_ids, blob_ids) ) {
+        return false;
+    }
+    // gi is always loaded in GetSeq_idInfo()
+    _ASSERT(seq_ids->IsLoadedGi());
+    return true;
 }
 
 
@@ -249,9 +254,11 @@ bool CPubseqReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
     if ( seq_ids.IsLoaded() ) {
         return true;
     }
-    
+
     CLoadLockBlob_ids blob_ids(result, seq_id);
-    return GetSeq_idInfo(result, seq_id, seq_ids, blob_ids);
+    GetSeq_idSeq_ids(result, seq_ids, seq_id);
+    SetAndSaveSeq_idSeq_ids(result, seq_id, seq_ids);
+    return true;
 }
 
 
@@ -263,15 +270,20 @@ bool CPubseqReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     if ( blob_ids.IsLoaded() ) {
         return true;
     }
-    if ( seq_ids.IsLoaded() ) {
-        if ( seq_ids->GetState() & CBioseq_Handle::fState_no_data ) {
-            blob_ids->SetState(seq_ids->GetState());
-            SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
-            return true;
-        }
+    if ( seq_ids.IsLoaded() &&
+         seq_ids->GetState() & CBioseq_Handle::fState_no_data ) {
+        // no such seq-id
+        blob_ids->SetState(seq_ids->GetState());
+        SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
+        return true;
     }
 
-    return GetSeq_idInfo(result, seq_id, seq_ids, blob_ids);
+    if ( !GetSeq_idInfo(result, seq_id, seq_ids, blob_ids) ) {
+        return false;
+    }
+    // blob_ids are always loaded in GetSeq_idInfo()
+    _ASSERT(blob_ids.IsLoaded());
+    return true;
 }
 
 
@@ -369,48 +381,52 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                     }
                     NcbiCout << NcbiEndl;
                 }
-                
-                if ( CProcessor::TrySNPSplit() && sat != eSat_ANNOT ) {
-                    {{
+
+                if ( !blob_ids.IsLoaded() ) {
+                    if ( CProcessor::TrySNPSplit() && sat != eSat_ANNOT ) {
                         // main blob
                         CBlob_id blob_id;
                         blob_id.SetSat(sat);
                         blob_id.SetSatKey(sat_key);
                         blob_ids.AddBlob_id(blob_id, fBlobHasAllLocal);
-                    }}
-                    if ( !extFeatGot.IsNULL() ) {
-                        int ext_feat = extFeatGot.Value();
-                        while ( ext_feat ) {
-                            int bit = ext_feat & ~(ext_feat-1);
-                            ext_feat -= bit;
-                            CBlob_id blob_id;
-                            blob_id.SetSat(eSat_ANNOT);
-                            blob_id.SetSatKey(gi);
-                            blob_id.SetSubSat(bit);
-                            blob_ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
+                        if ( !extFeatGot.IsNULL() ) {
+                            int ext_feat = extFeatGot.Value();
+                            while ( ext_feat ) {
+                                int bit = ext_feat & ~(ext_feat-1);
+                                ext_feat -= bit;
+                                blob_id.SetSat(eSat_ANNOT);
+                                blob_id.SetSatKey(gi);
+                                blob_id.SetSubSat(bit);
+                                blob_ids.AddBlob_id(blob_id, fBlobHasExtAnnot);
+                            }
                         }
                     }
-                }
-                else {
-                    // whole blob
-                    CBlob_id blob_id;
-                    blob_id.SetSat(sat);
-                    blob_id.SetSatKey(sat_key);
-                    if ( !extFeatGot.IsNULL() ) {
-                        blob_id.SetSubSat(extFeatGot.Value());
+                    else {
+                        // whole blob
+                        CBlob_id blob_id;
+                        blob_id.SetSat(sat);
+                        blob_id.SetSatKey(sat_key);
+                        if ( !extFeatGot.IsNULL() ) {
+                            blob_id.SetSubSat(extFeatGot.Value());
+                        }
+                        blob_ids.AddBlob_id(blob_id, fBlobHasAllLocal);
                     }
-                    blob_ids.AddBlob_id(blob_id, fBlobHasAllLocal);
+                    SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
                 }
-                SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
 
                 if ( giGot.IsNULL() ) {
                     // no gi -> only one Seq-id - the one used as argument
-                    seq_ids.AddSeq_id(seq_id);
-                    SetAndSaveSeq_idSeq_ids(result, seq_id, seq_ids);
+                    if ( !seq_ids.IsLoaded() ) {
+                        seq_ids.AddSeq_id(seq_id);
+                        SetAndSaveSeq_idSeq_ids(result, seq_id, seq_ids);
+                    }
                 }
                 else {
                     // we've got gi
-                    SetAndSaveSeq_idGi(result, seq_id, seq_ids, giGot.Value());
+                    if ( !seq_ids->IsLoadedGi() ) {
+                        SetAndSaveSeq_idGi(result, seq_id, seq_ids,
+                                           giGot.Value());
+                    }
                 }
             }
         }
