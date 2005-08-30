@@ -139,6 +139,10 @@ typedef Uint1 Boolean;
 #define INT2_MAX    32767
 /** smallest (most negative) number represented by signed (two byte) short */
 #define INT2_MIN    (-32768)
+/** largest number represented by signed short (one byte) */
+#define INT1_MAX    127
+/** smallest (most negative) number represented by signed short (one byte) */
+#define INT1_MIN    (-128)
 
 #ifndef DIM
 /** dimension of an array. */
