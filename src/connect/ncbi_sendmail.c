@@ -278,7 +278,7 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
             if (quote) {
                 if (c == quote)
                     quote = 0;
-            } else if (c == '"'  ||  c == '<'  ||  c == '\'') {
+            } else if (c == '"'  ||  c == '<') {
                 quote = c == '<' ? '>' : c;
             } else if (c == ',')
                 break;
@@ -294,7 +294,7 @@ static const char* s_SendRcpt(SOCK sock, const char* to,
             SENDMAIL_RETURN("Recepient address is too long");
         buf[k] = 0;
         if (quote) {
-            CORE_LOGF(eLOG_Warning, ("[SendMail]  Ubalanced delimiters in "
+            CORE_LOGF(eLOG_Warning, ("[SendMail]  Unbalanced delimiters in "
                                      "recepient %s for %s: \"%c\" expected",
                                      buf, what, quote));
         }
@@ -519,6 +519,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2005/08/30 18:06:23  lavr
+ * Do not treat single quotes specially
+ *
  * Revision 6.24  2005/06/04 00:14:58  lavr
  * Do read probes when writing long data chunks
  *
