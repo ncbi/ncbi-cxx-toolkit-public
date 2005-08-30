@@ -440,6 +440,10 @@ void CReader::SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
     if ( seq_ids.IsLoaded() ) {
         return;
     }
+    if ( seq_ids->empty() ) {
+        seq_ids->SetState(seq_ids->GetState() |
+                          CBioseq_Handle::fState_no_data);
+    }
     seq_ids.SetLoaded();
     if (seq_ids->GetState() & CBioseq_Handle::fState_no_data) {
         CLoadLockBlob_ids blob_ids(result, seq_id);
