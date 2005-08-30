@@ -518,13 +518,13 @@ EProgram ProgramNameToEnum(const std::string& program_name)
 
 string Blast_ProgramNameFromType(EBlastProgramType program)
 {
-    switch (program) {
-    case eBlastTypeBlastn: return "blastn";
-    case eBlastTypeBlastp: return "blastp";
-    case eBlastTypeBlastx: return "blastx";
-    case eBlastTypeTblastn: return "tblastn";
-    case eBlastTypeRpsBlast: case eBlastTypeRpsTblastn: return "rpsblast";
-    default: return "blast";
+    char* program_string(0);
+    if (BlastNumber2Program(program, &program_string) == 0) {
+        string retval(program_string);
+        sfree(program_string);
+        return retval;
+    } else {
+        return NcbiEmptyString;
     }
 }
 
@@ -582,6 +582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.78  2005/08/30 15:47:01  camacho
+ * Remove redundant implementation of Blast_ProgramNameFromType (call BlastNumber2Program)
+ *
  * Revision 1.77  2005/08/29 18:09:43  camacho
  * Fix warning
  *
