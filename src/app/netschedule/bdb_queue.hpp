@@ -641,6 +641,9 @@ public:
                                     unsigned             job_id,
                                     char*                input);
 
+        SQueueDB*        x_GetLocalDb();
+        CBDB_FileCursor* x_GetLocalCursor(CBDB_Transaction& trans);
+
     private:
         CQueue(const CQueue&);
         CQueue& operator=(const CQueue&);
@@ -649,6 +652,11 @@ public:
         CQueueDataBase& m_Db;      ///< Parent structure reference
         SLockedQueue&   m_LQueue;  
         unsigned        m_ClientHostAddr;
+        unsigned        m_QueueDbAccessCounter;
+        /// Private database (for long running sessions)
+        auto_ptr<SQueueDB>         m_QueueDB;
+        /// Private cursor
+        auto_ptr<CBDB_FileCursor>  m_QueueDB_Cursor;
     };
 
     const CQueueCollection& GetQueueCollection() const 
@@ -700,6 +708,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/08/30 14:19:33  kuznets
+ * Added thread-local database for better scalability
+ *
  * Revision 1.34  2005/08/26 12:36:10  kuznets
  * Performance optimization
  *

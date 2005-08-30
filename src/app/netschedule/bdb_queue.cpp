@@ -953,7 +953,8 @@ CQueueDataBase::CQueue::CQueue(CQueueDataBase& db,
                                unsigned        client_host_addr)
 : m_Db(db),
   m_LQueue(db.m_QueueCollection.GetLockedQueue(queue_name)),
-  m_ClientHostAddr(client_host_addr)
+  m_ClientHostAddr(client_host_addr),
+  m_QueueDbAccessCounter(0)
 {
 }
 
@@ -1461,6 +1462,44 @@ CQueueDataBase::CQueue::x_UpdateDB_PutResultNoLock(
     return true;
 }
 
+SQueueDB* CQueueDataBase::CQueue::x_GetLocalDb()
+{
+    SQueueDB* pqdb = m_QueueDB.get();
+    if (pqdb == 0) {
+        ++m_QueueDbAccessCounter;
+        if (m_QueueDbAccessCounter > 2) {
+            const string& file_name = m_LQueue.db.FileName();
+            CBDB_Env* env = m_LQueue.db.GetEnv();
+            m_QueueDB.reset(pqdb = new SQueueDB());
+            if (env) {
+                pqdb->SetEnv(*env);
+            }
+            pqdb->Open(file_name.c_str(), CBDB_RawFile::eReadWrite);
+        }
+    }
+    return pqdb;
+}
+
+CBDB_FileCursor* 
+CQueueDataBase::CQueue::x_GetLocalCursor(CBDB_Transaction& trans)
+{
+    CBDB_FileCursor* pcur = m_QueueDB_Cursor.get();
+    if (pcur) {
+        pcur->ReOpen(&trans);
+        return pcur;
+    }
+
+    SQueueDB* pqdb = m_QueueDB.get();
+    if (pqdb == 0) {
+        return 0;
+    }
+    pcur = new CBDB_FileCursor(*pqdb, 
+                               trans,
+                               CBDB_FileCursor::eReadModifyUpdate);
+    m_QueueDB_Cursor.reset(pcur);
+    return pcur;
+}
+
 void 
 CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                         int            ret_code,
@@ -1484,55 +1523,86 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         m_LQueue.status_tracker.PutDone_GetPending(done_job_id, &need_update);
     bool done_rec_updated;
 
-    SQueueDB& db = m_LQueue.db;
 
-    CBDB_Transaction trans(*db.GetEnv(), 
+    SQueueDB* pqdb = x_GetLocalDb();
+    bool use_db_mutex;
+
+    if (pqdb) {
+        // we use private (this thread only data file)
+        use_db_mutex = false;
+    } else {
+        use_db_mutex = true;
+        pqdb = &m_LQueue.db;
+    }
+
+    CBDB_Transaction trans(*(pqdb->GetEnv()), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
-    {{
 
-    CFastMutexGuard guard(m_LQueue.lock);
-    db.SetTransaction(&trans);
+    try {
 
-    CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);
+        //CFastMutexGuard guard(m_LQueue.lock);
+        if (use_db_mutex) {
+            m_LQueue.lock.Lock();
+        }
+        pqdb->SetTransaction(&trans);
 
-    // put result
-    if (need_update) {
-        done_rec_updated =
-            x_UpdateDB_PutResultNoLock(
-                db, curr, cur, done_job_id, ret_code, output, NULL);
+
+        CBDB_FileCursor* pcur;
+        if (use_db_mutex) {
+            pcur = GetCursor(trans);
+        } else {
+            pcur = x_GetLocalCursor(trans);
+        }
+        //CBDB_FileCursor& cur = *GetCursor(trans);
+        CBDB_FileCursor& cur = *pcur;
+        CCursorGuard cg(cur);
+
+        // put result
+        if (need_update) {
+            done_rec_updated =
+                x_UpdateDB_PutResultNoLock(
+                    *pqdb, curr, cur, done_job_id, ret_code, output, NULL);
+        }
+
+        if (pending_job_id) {
+            *job_id = pending_job_id;
+            EGetJobUpdateStatus upd_status;
+            upd_status =
+                x_UpdateDB_GetJobNoLock(*pqdb, curr, cur, trans,
+                                        worker_node, pending_job_id, input);
+            switch (upd_status) {
+            case eGetJobUpdate_JobFailed:
+                m_LQueue.status_tracker.ChangeStatus(*job_id, 
+                                            CNetScheduleClient::eFailed);
+                *job_id = 0;
+                break;
+            case eGetJobUpdate_JobStopped:
+                *job_id = 0;
+                break;
+            case eGetJobUpdate_NotFound:
+                *job_id = 0;
+                break;
+            case eGetJobUpdate_Ok:
+                break;
+            default:
+                _ASSERT(0);
+            } // switch
+
+        } else {
+            *job_id = 0;
+        }
+
+        if (use_db_mutex) {
+            m_LQueue.lock.Unlock();
+        }
+
+    } catch(...) {
+        if (use_db_mutex) {
+            m_LQueue.lock.Unlock();
+        }
     }
 
-    if (pending_job_id) {
-        *job_id = pending_job_id;
-        EGetJobUpdateStatus upd_status;
-        upd_status =
-            x_UpdateDB_GetJobNoLock(db, curr, cur, trans,
-                                    worker_node, pending_job_id, input);
-        switch (upd_status) {
-        case eGetJobUpdate_JobFailed:
-            m_LQueue.status_tracker.ChangeStatus(*job_id, 
-                                         CNetScheduleClient::eFailed);
-            *job_id = 0;
-            break;
-        case eGetJobUpdate_JobStopped:
-            *job_id = 0;
-            break;
-        case eGetJobUpdate_NotFound:
-            *job_id = 0;
-            break;
-        case eGetJobUpdate_Ok:
-            break;
-        default:
-            _ASSERT(0);
-        } // switch
-
-    } else {
-        *job_id = 0;
-    }
-
-    }}
 
     trans.Commit();
 
@@ -1545,21 +1615,6 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     if (update_tl) {
         TimeLineExchange(done_job_id, *job_id, curr);
     }
-/*
-    // setup the job in the timeline
-    if (*job_id && m_LQueue.run_time_line) {
-        CJobTimeLine& tl = *m_LQueue.run_time_line;
-        time_t projected_time_done = curr + m_LQueue.run_timeout;
-
-        CWriteLockGuard guard(m_LQueue.rtl_lock);
-        tl.AddObject(projected_time_done, *job_id);
-    }
-
-
-    if (remove_done_from_tl) {
-        RemoveFromTimeLine(done_job_id);
-    }
-*/
     if (done_rec_updated) {
         // TODO: send a UDP notification and update runtime stat
     }
@@ -2426,7 +2481,9 @@ CQueueDataBase::CQueue::GetStatus(unsigned int job_id) const
     return m_LQueue.status_tracker.GetStatus(job_id);
 }
 
-CBDB_FileCursor* CQueueDataBase::CQueue::GetCursor(CBDB_Transaction& trans)
+CBDB_FileCursor* CQueueDataBase::CQueue::GetCursor(
+    CBDB_Transaction& trans
+    )
 {
     CBDB_FileCursor* cur = m_LQueue.cur.get();
     if (cur) { 
@@ -2885,6 +2942,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/08/30 14:19:33  kuznets
+ * Added thread-local database for better scalability
+ *
  * Revision 1.50  2005/08/29 12:10:18  kuznets
  * Removed dead code
  *
