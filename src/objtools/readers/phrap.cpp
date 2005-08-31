@@ -71,6 +71,8 @@ string ReadLine(CNcbiIstream& in)
 {
     in >> ws;
     string ret;
+    getline(in, ret);
+    /*
     char buf[1024];
     do {
         in.clear();
@@ -80,6 +82,7 @@ string ReadLine(CNcbiIstream& in)
     if ( in.fail() ) {
         in.clear();
     }
+    */
     return ret;
 }
 
@@ -1356,17 +1359,27 @@ void CPhrap_Contig::x_AddReadLocFeats(CRef<CSeq_annot>& annot) const
                 "Coordinates are specified for padded read and contig");
             loc_feat->SetData().SetImp().SetKey("read_start");
             CSeq_loc& loc = loc_feat->SetLocation();
-            loc.SetPnt().SetId(*read->second->GetId());
+            loc.SetInt().SetId(*read->second->GetId());
+            loc.SetInt().SetFrom(0);
+            loc.SetInt().SetTo(read->second->GetPaddedLength() - 1);
             if ( read->second->IsComplemented() ) {
-                loc.SetPnt().SetPoint(read->second->GetPaddedLength() - 1);
-                loc.SetPnt().SetStrand(eNa_strand_minus);
-            }
-            else {
-                loc.SetPnt().SetPoint(0);
+                loc.SetInt().SetStrand(eNa_strand_minus);
             }
             CSeq_loc& prod = loc_feat->SetProduct();
-            prod.SetPnt().SetId(*GetId());
-            prod.SetPnt().SetPoint(rd_start);
+            TSignedSeqPos rd_stop =
+                rd_start + read->second->GetPaddedLength() - 1;
+            if (rd_stop >= GetPaddedLength()) {
+                // Circular contig, split ranges
+                prod.SetPacked_int().AddInterval(*GetId(),
+                    rd_start, GetPaddedLength() - 1);
+                prod.SetPacked_int().AddInterval(*GetId(),
+                    0, rd_stop - GetPaddedLength());
+            }
+            else {
+                prod.SetInt().SetId(*GetId());
+                prod.SetInt().SetFrom(rd_start);
+                prod.SetInt().SetTo(rd_stop);
+            }
             annot->SetData().SetFtable().push_back(loc_feat);
         }
     }
@@ -1597,6 +1610,7 @@ private:
     };
     typedef vector<SAssmTag> TAssmTags;
 
+    void x_ConvertContig(void);
     void x_ReadContig(void);
     void x_ReadRead(void);
     void x_ReadTag(string tag); // CT{} and RT{}
@@ -1663,10 +1677,9 @@ CRef<CSeq_entry> CPhrapReader::Read(void)
         m_Stream >> m_NumContigs >> m_NumReads;
         CheckStreamState(m_Stream, "invalid data in AS tag.");
         for (size_t i = 0; i < m_NumContigs; i++) {
-            x_ReadContig();
+			x_ReadContig();
+            x_ConvertContig();
         }
-        _ASSERT(m_Contigs.size() == m_NumContigs);
-
         if (x_GetTag() != ePhrap_eof) {
             NCBI_THROW2(CObjReaderParseException, eFormat,
                         "ReadPhrap: unrecognized extra-data, EOF expected.",
@@ -1678,24 +1691,35 @@ CRef<CSeq_entry> CPhrapReader::Read(void)
         x_UngetTag(tag);
         x_ReadOldFormatData();
     }
-
-    if (m_Contigs.size() == 1) {
-        m_Entry = m_Contigs[0]->CreateContig(1);
-        x_CreateDesc(m_Entry->SetSet());
-    }
-    else {
-        m_Entry.Reset(new CSeq_entry);
-        CBioseq_set& bset = m_Entry->SetSet();
-        bset.SetLevel(1);
-        //bset.SetClass(...);
-        //bset.SetDescr(...);
-        for (size_t i = 0; i < m_Contigs.size(); i++) {
-            bset.SetSeq_set().push_back(m_Contigs[i]->CreateContig(2));
-        }
-        x_CreateDesc(m_Entry->SetSet());
-    }
+	_ASSERT( m_Entry  &&  m_Entry->IsSet() );
+    x_CreateDesc(m_Entry->SetSet());
 
     return m_Entry;
+}
+
+
+void CPhrapReader::x_ConvertContig(void)
+{
+    if ( m_Contigs.empty() ) {
+        return;
+    }
+    _ASSERT(m_Contigs.size() == 1);
+    CRef<CSeq_entry> entry = m_Contigs[0]->CreateContig(
+        m_NumContigs > 1 ? 2 : 1);
+	m_Contigs.clear();
+	m_Seqs.clear();
+	if (m_NumContigs == 1) {
+		_ASSERT( !m_Entry );
+		m_Entry = entry;
+	}
+	else {
+		if ( !m_Entry ) {
+			m_Entry.Reset(new CSeq_entry);
+			CBioseq_set& bset = m_Entry->SetSet();
+			bset.SetLevel(1);
+		}
+		m_Entry->SetSet().SetSeq_set().push_back(entry);
+	}
 }
 
 
@@ -2026,6 +2050,8 @@ CRef<CPhrap_Contig> CPhrapReader::x_AddContig(CPhrap_Sequence& seq)
                     seq.GetName() + " - was 'read'.",
                     m_Stream.tellg() - CT_POS_TYPE(0));
     }
+    // If have a loaded contig, convert it first
+    x_ConvertContig();
     // Contig can not be already registered
     CRef<CPhrap_Contig> contig = seq.GetContig();
     m_Contigs.push_back(contig);
@@ -2103,17 +2129,7 @@ void CPhrapReader::x_ReadOldFormatData(void)
                         m_Stream.tellg() - CT_POS_TYPE(0));
         }
     }
-    ITERATE(TSequences, it, seqs) {
-        if ( it->second->IsContig() ) {
-        }
-        else if ( it->second->IsRead() ) {
-        }
-        else {
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                "ReadPhrap: incomplete sequence data " + it->first + ".",
-                        CT_POS_TYPE(-1));
-        }
-    }
+    x_ConvertContig();
 }
 
 
@@ -2216,6 +2232,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/08/31 18:21:16  grichenk
+* Discard ACE data after converting each contig.
+* Put both start and stop into read location feature.
+*
 * Revision 1.9  2005/08/08 14:58:04  grichenk
 * Adjusted version flags to autodetect ACE version by default.
 *
