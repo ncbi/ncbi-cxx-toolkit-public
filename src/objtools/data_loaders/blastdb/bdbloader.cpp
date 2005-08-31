@@ -71,6 +71,17 @@ string DbTypeToStr(CBlastDbDataLoader::EDbType dbtype)
 }
 
 
+inline
+CSeqDB::ESeqType DbTypeToSeqType(CBlastDbDataLoader::EDbType dbtype)
+{
+    switch (dbtype) {
+    case CBlastDbDataLoader::eNucleotide: return CSeqDB::eNucleotide;
+    case CBlastDbDataLoader::eProtein:    return CSeqDB::eProtein;
+    default:                              return CSeqDB::eUnknown;
+    }
+}
+
+
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
     return "BLASTDB_" + param.m_DbName + DbTypeToStr(param.m_DbType);
@@ -84,9 +95,7 @@ CBlastDbDataLoader::CBlastDbDataLoader(const string        & loader_name,
       m_DBType       (param.m_DbType),
       m_NextChunkId  (0)
 {
-    m_SeqDB.Reset(new CSeqDB(m_DBName, (m_DBType == eProtein
-                                        ? CSeqDB::eProtein
-                                        : CSeqDB::eNucleotide)));
+    m_SeqDB.Reset(new CSeqDB(m_DBName, DbTypeToSeqType(m_DBType)));
 }
 
 CBlastDbDataLoader::~CBlastDbDataLoader(void)
@@ -587,6 +596,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.32  2005/08/31 15:12:35  bealer
+ * - Allow eUnknown.
+ *
  * Revision 1.31  2005/08/04 17:39:47  bealer
  * - Use single-oid interface for blastdb data loader.
  *
