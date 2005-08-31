@@ -200,8 +200,8 @@ public:
 
     CTSE_Info& Assign(const CTSE_Lock& tse);
     CTSE_Info& Assign(const CTSE_Lock& tse, 
-                      CRef<CSeq_entry>& entry, 
-                      CRef<ITSE_Assigner>& listener);
+                      CRef<CSeq_entry> entry, 
+                      CRef<ITSE_Assigner> listener);
 
     // Additional TSE info not available in CSeq_entry
     const TBlobId& GetBlobId(void) const;
@@ -296,7 +296,7 @@ public:
     const CSeq_id_Handle& GetRequestedId(void) const;
     void SetRequestedId(const CSeq_id_Handle& requested_id) const;
 
-    void SetSeqIdTranslator(CRef<ISeq_id_Translator>& tr);
+    void SetSeqIdTranslator(CRef<ISeq_id_Translator> tr);
 
 
     // annot object map mutex
@@ -649,7 +649,7 @@ bool CTSE_Info::OnlyGiAnnotIds(void) const
 }
 
 inline 
-void CTSE_Info::SetSeqIdTranslator(CRef<ISeq_id_Translator>& tr)
+void CTSE_Info::SetSeqIdTranslator(CRef<ISeq_id_Translator> tr)
 {
     m_SeqIdTranslator = tr;
 }

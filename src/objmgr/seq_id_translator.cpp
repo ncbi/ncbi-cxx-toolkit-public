@@ -58,7 +58,7 @@ void CSeq_id_Translator_Simple::AddMapEntry(const CSeq_id_Handle& orig,
     m_OrigToPatched[orig] = patched;
     m_OrigToPatched[patched] = CSeq_id_Handle();
     m_PatchedToOrig[patched] = orig;
-    m_PatchedToOrig[orig] = CSeq_id_Handle();
+    //m_PatchedToOrig[orig] = CSeq_id_Handle();
     
 }
 
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/08/31 19:36:44  didenko
+ * Reduced the number of objects copies which are being created while doing PatchSeqIds
+ *
  * Revision 1.1  2005/08/25 14:05:37  didenko
  * Restructured TSE loading process
  *

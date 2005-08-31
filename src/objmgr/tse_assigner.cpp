@@ -122,6 +122,30 @@ CBioseq_set_Info& ITSE_Assigner::x_GetBioseq_set(CTSE_Info& tse_info,
     }
 }
 
+CSeq_id_Handle ITSE_Assigner::PatchId(const CSeq_id_Handle& orig) const
+{
+    if (!m_SeqIdTranslator)
+        return orig;
+    return PatchSeqId(orig, *m_SeqIdTranslator);
+}
+ITSE_Assigner::TPlace ITSE_Assigner::PatchId(const TPlace& orig) const
+{
+    if (!m_SeqIdTranslator)
+        return orig;
+    return PatchSeqId(orig, *m_SeqIdTranslator);
+}
+void ITSE_Assigner::PatchId(CSeq_entry& orig) const
+{
+    if (m_SeqIdTranslator)
+        PatchSeqId(orig, *m_SeqIdTranslator);
+}
+
+void ITSE_Assigner::PatchId(CSeq_annot& orig) const
+{
+    if (m_SeqIdTranslator)
+        PatchSeqId_Copy(orig, *m_SeqIdTranslator);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -214,7 +238,8 @@ void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
                                       const TPlace& place, 
                                       CRef<CSeq_annot> annot)
 {
-    LoadAnnot_NoPatch(tse, PatchId(place), PatchId(*annot));
+    PatchId(*annot);
+    LoadAnnot_NoPatch(tse, PatchId(place), annot);
 }
 
 void CTSE_Default_Assigner::LoadAnnot_NoPatch(CTSE_Info& tse,
@@ -237,7 +262,8 @@ void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
                                        const TPlace& place, 
                                        CRef<CSeq_entry> entry)
 {
-    LoadBioseq_NoPatch(tse, PatchId(place), PatchId(*entry));
+    PatchId(*entry);
+    LoadBioseq_NoPatch(tse, PatchId(place), entry);
 }
 
 void CTSE_Default_Assigner::LoadBioseq_NoPatch(CTSE_Info& tse,
@@ -288,7 +314,8 @@ void CTSE_Default_Assigner::LoadSeq_entry(CTSE_Info& tse,
                                           CSeq_entry& entry, 
                                           CTSE_SNP_InfoMap* snps)
 {
-    LoadSeq_entry_NoPatch(tse, *PatchId(entry), snps);
+    PatchId(entry);
+    LoadSeq_entry_NoPatch(tse, entry, snps);
 }
 
 void CTSE_Default_Assigner::LoadSeq_entry_NoPatch(CTSE_Info& tse,
@@ -298,291 +325,187 @@ void CTSE_Default_Assigner::LoadSeq_entry_NoPatch(CTSE_Info& tse,
     tse.SetSeq_entry(entry, snps);
 }
 
-CSeq_id_Handle CTSE_Default_Assigner::PatchId(const CSeq_id_Handle& orig) const
-{
-    if (!m_SeqIdTranslator)
-        return orig;
-    return PatchSeqId(orig, *m_SeqIdTranslator);
-}
-ITSE_Assigner::TPlace CTSE_Default_Assigner::PatchId(const TPlace& orig) const
-{
-    if (!m_SeqIdTranslator)
-        return orig;
-    return PatchSeqId(orig, *m_SeqIdTranslator);
-}
-
-CRef<CSeq_entry> CTSE_Default_Assigner::PatchId(CSeq_entry& orig) const
-{
-    if (!m_SeqIdTranslator)
-        return Ref(&orig);
-    return PatchSeqId(orig, *m_SeqIdTranslator);
-}
-
-CRef<CSeq_annot> CTSE_Default_Assigner::PatchId(CSeq_annot& orig) const
-{
-    if (!m_SeqIdTranslator)
-        return Ref(&orig);
-    return PatchSeqId(orig, *m_SeqIdTranslator);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 
-CRef<CSeq_feat> PatchSeqId(const CSeq_feat& feat, const ISeq_id_Translator& tr)
+void PatchSeqId(CSeq_feat& feat, const ISeq_id_Translator& tr)
 {
-    CRef<CSeq_feat> ret(new CSeq_feat);
-    ret->Assign(feat);
-    if (ret->IsSetProduct())
-        ret->SetProduct( *PatchSeqId(ret->GetProduct(), tr));
-    if (ret->IsSetLocation())
-        ret->SetLocation( *PatchSeqId(ret->GetLocation(), tr));
-    if (ret->IsSetData()) {
-        CRef<CSeqFeatData> fd(new CSeqFeatData);
-        fd->Assign(ret->GetData());
-        if( ret->GetData().IsSeq() )
-            fd->SetSeq( *PatchSeqId(ret->GetData().GetSeq(), tr));
-        ret->SetData( *fd );
+    if (feat.IsSetProduct())
+        PatchSeqId(feat.SetProduct(), tr);
+    if (feat.IsSetLocation())
+        PatchSeqId(feat.SetLocation(), tr);
+    if (feat.IsSetData()) {
+        if( feat.GetData().IsSeq() )
+            PatchSeqId(feat.SetData().SetSeq(), tr);
     }
-    return ret;
-}
-/////////////////////////////////////////////////////////////////////////////
-
-template<class T>
-inline CRef<T> PatchSeqId_CallSetIds(const T& orig, const ISeq_id_Translator& tr)
-{
-    CRef<T> ret(new T);
-    ret->Assign(orig);
-    if (ret->IsSetIds())
-        PatchSeqIds(ret->SetIds(), tr);
-    return ret;   
-}
-template<class T>
-inline CRef<T> PatchSeqId_CallSetId(const T& orig, const ISeq_id_Translator& tr)
-{
-    CRef<T> ret(new T);
-    ret->Assign(orig);
-    if (ret->IsSetId())
-        ret->SetId( *PatchSeqId(ret->GetId(), tr));
-    return ret;   
 }
 
 template<class T>
-inline CRef<T> PatchSeqId_CallSet(const T& orig, const ISeq_id_Translator& tr)
+inline void PatchSeqId_CallSetIds(T& orig, const ISeq_id_Translator& tr)
 {
-    CRef<T> ret(new T);
-    ret->Assign(orig);
-    if (ret->IsSet())
-        PatchSeqIds(ret->Set(), tr);
-    return ret;   
+    if (orig.IsSetIds())
+        PatchSeqIds(orig.SetIds(), tr);
+}
+template<class T>
+inline void PatchSeqId_CallSetId(T& orig, const ISeq_id_Translator& tr)
+{
+    if (orig.IsSetId())
+        PatchSeqId(orig.SetId(), tr);
+}
+template<class T>
+inline void PatchSeqId_CallSet(T& orig, const ISeq_id_Translator& tr)
+{
+    if (orig.IsSet())
+        PatchSeqIds(orig.Set(), tr);
 }
 
-inline
-CRef<CSeq_interval> PatchSeqId(const CSeq_interval& orig, const ISeq_id_Translator& tr)
+inline void PatchSeqId(CSeq_interval& orig, const ISeq_id_Translator& tr)
 {
-    return PatchSeqId_CallSetId(orig, tr);
+    PatchSeqId_CallSetId(orig, tr);
+}
+inline void PatchSeqId(CPacked_seqint& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSet(orig, tr);
+}
+inline void PatchSeqId(CSeq_point& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSetId(orig, tr);
+}
+inline void PatchSeqId(CSeq_bond& orig, const ISeq_id_Translator& tr)
+{
+    if (orig.IsSetA())
+        PatchSeqId(orig.SetA(), tr);
+    if (orig.IsSetB())
+        PatchSeqId(orig.SetB(), tr);
+}
+inline void PatchSeqId(CSeq_loc_mix& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSet(orig, tr);
+}
+inline void PatchSeqId(CSeq_loc_equiv& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSet(orig, tr);
+}
+inline void PatchSeqId(CPacked_seqpnt& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSetId(orig, tr);
+}
+void PatchSeqId(CSeq_loc& orig, const ISeq_id_Translator& tr)
+{
+    orig.InvalidateIdCache();
+    if (orig.IsEmpty())
+        PatchSeqId(orig.SetEmpty(), tr);
+    if (orig.IsWhole())
+        PatchSeqId(orig.SetWhole(), tr);
+    if (orig.IsInt())
+        PatchSeqId(orig.SetInt(), tr);
+    if (orig.IsPacked_int())
+        PatchSeqId(orig.SetPacked_int(), tr);
+    if (orig.IsPnt()) 
+        PatchSeqId(orig.SetPnt(), tr);
+    if (orig.IsPacked_pnt())
+        PatchSeqId(orig.SetPacked_pnt(), tr);
+    if (orig.IsMix())
+        PatchSeqId(orig.SetMix(), tr);
+    if (orig.IsEquiv())
+        PatchSeqId(orig.SetEquiv(), tr);
+    if (orig.IsBond())
+        PatchSeqId(orig.SetBond(), tr);
+}
+inline void PatchSeqId(CDense_diag& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSetIds(orig, tr);
+}
+inline void PatchSeqId(CPacked_seg& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSetIds(orig, tr);
+}
+inline void PatchSeqId(CDense_seg& orig, const ISeq_id_Translator& tr)
+{
+    PatchSeqId_CallSetIds(orig, tr);
 }
 
-inline
-CRef<CPacked_seqint> PatchSeqId(const CPacked_seqint& orig, const ISeq_id_Translator& tr)
+inline void PatchSeqId(CStd_seg& orig, const ISeq_id_Translator& tr)
 {
-    return PatchSeqId_CallSet(orig, tr);
+    if (orig.IsSetIds())
+        PatchSeqIds(orig.SetIds(), tr);
+    if (orig.IsSetLoc())
+        PatchSeqIds(orig.SetLoc(), tr);  
 }
-inline
-CRef<CSeq_point> PatchSeqId(const CSeq_point& orig, const ISeq_id_Translator& tr)
+inline void PatchSeqId(CSeq_align_set& orig, const ISeq_id_Translator& tr)
 {
-    return PatchSeqId_CallSetId(orig, tr);
+    PatchSeqId_CallSet(orig, tr);
 }
-inline
-CRef<CPacked_seqpnt> PatchSeqId(const CPacked_seqpnt& orig, const ISeq_id_Translator& tr)
+void PatchSeqId(CSeq_align& align, const ISeq_id_Translator& tr)
 {
-    return PatchSeqId_CallSetId(orig, tr);
-}
-inline
-CRef<CSeq_loc_mix> PatchSeqId(const CSeq_loc_mix& orig, const ISeq_id_Translator& tr)
-{
-    return PatchSeqId_CallSet(orig, tr);
-}
-inline
-CRef<CSeq_loc_equiv> PatchSeqId(const CSeq_loc_equiv& orig, const ISeq_id_Translator& tr)
-{
-    return PatchSeqId_CallSet(orig, tr);
-}
-inline 
-CRef<CSeq_bond> PatchSeqId(const CSeq_bond& orig, const ISeq_id_Translator& tr)
-{
-    CRef<CSeq_bond> ret(new CSeq_bond);
-    ret->Assign(orig);
-    if (ret->IsSetA())
-        ret->SetA( *PatchSeqId(ret->GetA(), tr));
-    if (ret->IsSetB())
-        ret->SetB( *PatchSeqId(ret->GetB(), tr));
-    return ret;   
-}
-
-
-CRef<CSeq_loc> PatchSeqId(const CSeq_loc& orig, const ISeq_id_Translator& tr)
-{
-    CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->Assign(orig);
-    ret->InvalidateIdCache();
-    if (ret->IsEmpty())
-        ret->SetEmpty( *PatchSeqId(ret->GetEmpty(), tr));
-    if (ret->IsWhole())
-        ret->SetWhole( *PatchSeqId(ret->GetWhole(), tr));
-    if (ret->IsInt())
-        ret->SetInt( *PatchSeqId(ret->GetInt(), tr));
-    if (ret->IsPacked_int())
-        ret->SetPacked_int( *PatchSeqId(ret->GetPacked_int(), tr));
-    if (ret->IsPnt()) 
-        ret->SetPnt( *PatchSeqId(ret->GetPnt(), tr));
-    if (ret->IsPacked_pnt())
-        ret->SetPacked_pnt( *PatchSeqId(ret->GetPacked_pnt(), tr));
-    if (ret->IsMix())
-        ret->SetMix( *PatchSeqId(ret->GetMix(), tr));
-    if (ret->IsEquiv())
-        ret->SetEquiv( *PatchSeqId(ret->GetEquiv(), tr));
-    if (ret->IsBond())
-        ret->SetBond( *PatchSeqId(ret->GetBond(), tr));
-    return ret;
-}
-
-inline 
-CRef<CDense_diag> PatchSeqId(const CDense_diag& orig, const ISeq_id_Translator& tr)
-{
-    return PatchSeqId_CallSetIds(orig, tr);
-}
-
-inline 
-CRef<CDense_seg> PatchSeqId(const CDense_seg& orig, const ISeq_id_Translator& tr)
-{
-    return PatchSeqId_CallSetIds(orig, tr);
-}
-
-inline 
-CRef<CStd_seg> PatchSeqId(const CStd_seg& orig, const ISeq_id_Translator& tr)
-{
-    CRef<CStd_seg> ret(new CStd_seg);
-    ret->Assign(orig);
-    if (ret->IsSetIds())
-        PatchSeqIds(ret->SetIds(), tr);
-    if (ret->IsSetLoc())
-        PatchSeqIds(ret->SetLoc(), tr);  
-    return ret;   
-}
-
-inline 
-CRef<CPacked_seg> PatchSeqId(const CPacked_seg& orig, const ISeq_id_Translator& tr)
-{
-    return PatchSeqId_CallSetIds(orig, tr);
-}
-
-inline 
-CRef<CSeq_align_set> PatchSeqId(const CSeq_align_set& orig, 
-                                const ISeq_id_Translator& tr)
-{
-    return PatchSeqId_CallSet(orig, tr);
-}
-
-CRef<CSeq_align> PatchSeqId(const CSeq_align& align, const ISeq_id_Translator& tr)
-{
-    CRef<CSeq_align> ret(new CSeq_align);
-    ret->Assign(align);
-    if (ret->IsSetBounds()) {
-        PatchSeqIds(ret->SetBounds(), tr);
+    if (align.IsSetBounds()) {
+        PatchSeqIds(align.SetBounds(), tr);
     }
-    
-    if (ret->IsSetSegs()) {
-        CRef<CSeq_align::TSegs> segs(new CSeq_align::TSegs);
-        segs->Assign(ret->GetSegs());
-        if (segs->IsDendiag()) 
-            PatchSeqIds(segs->SetDendiag(), tr);
-
-        if (segs->IsDenseg()) 
-            segs->SetDenseg( *PatchSeqId(segs->GetDenseg(), tr ));
-        if (segs->IsStd()) 
-            PatchSeqIds(segs->SetStd(), tr);
-        if (segs->IsPacked()) 
-            segs->SetPacked( *PatchSeqId(segs->GetPacked(), tr));
-        if (segs->IsDisc()) 
-            segs->SetDisc( *PatchSeqId(segs->GetDisc(), tr));
-        ret->SetSegs(*segs);
+    if (align.IsSetSegs()) {
+        CSeq_align::TSegs& segs = align.SetSegs();
+        if (segs.IsDendiag()) 
+            PatchSeqIds(segs.SetDendiag(), tr);
+        
+        if (segs.IsDenseg()) 
+            PatchSeqId(segs.SetDenseg(), tr);
+        if (segs.IsStd()) 
+            PatchSeqIds(segs.SetStd(), tr);
+        if (segs.IsPacked()) 
+            PatchSeqId(segs.SetPacked(), tr);
+        if (segs.IsDisc()) 
+            PatchSeqId(segs.SetDisc(), tr);
     }
-    return ret;
 }
-/////////////////////////////////////////////////////////////////////////////
-CRef<CSeq_graph> PatchSeqId(const CSeq_graph& graph, 
-                            const ISeq_id_Translator& tr)
+void PatchSeqId(CSeq_graph& graph, const ISeq_id_Translator& tr)
 {
-    CRef<CSeq_graph> ret(new CSeq_graph);
-    ret->Assign(graph);
-    if (ret->IsSetLoc())
-        ret->SetLoc( *PatchSeqId(ret->GetLoc(), tr));
-
-    return ret;
+    if (graph.IsSetLoc())
+        PatchSeqId(graph.SetLoc(), tr);
 }
 
-/////////////////////////////////////////////////////////////////////////////
-CRef<CSeq_annot> PatchSeqId(const CSeq_annot& annot, 
-                            const ISeq_id_Translator& tr)
+void PatchSeqId(CSeq_annot& annot, const ISeq_id_Translator& tr)
 {
-    CRef<CSeq_annot> ret(new CSeq_annot);
-    ret->Assign(annot);
-    if (ret->IsSetData()) {
-        CRef<CSeq_annot::TData> data(new CSeq_annot::TData);
-        data->Assign(ret->GetData());
-        if (data->IsFtable()) 
-            PatchSeqIds( data->SetFtable(), tr);
-        if (data->IsAlign())
-            PatchSeqIds( data->SetAlign(), tr);
-        if (data->IsGraph())
-            PatchSeqIds( data->SetGraph(), tr);
-        if (data->IsIds()) 
-            PatchSeqIds( data->SetIds(), tr);
-        if (data->IsLocs())
-            PatchSeqIds( data->SetLocs(), tr);
-
-        ret->SetData(*data);
+    if (annot.IsSetData()) {
+        CSeq_annot::TData& data = annot.SetData();
+        if (data.IsFtable()) 
+            PatchSeqIds( data.SetFtable(), tr);
+        if (data.IsAlign())
+            PatchSeqIds( data.SetAlign(), tr);
+        if (data.IsGraph())
+            PatchSeqIds( data.SetGraph(), tr);
+        if (data.IsIds()) 
+            PatchSeqIds( data.SetIds(), tr);
+        if (data.IsLocs())
+            PatchSeqIds( data.SetLocs(), tr);
     }
-    return ret;
 }
+
+void PatchSeqId(CBioseq& bioseq, const ISeq_id_Translator& tr)
+{
+    if (bioseq.IsSetId())
+        PatchSeqIds( bioseq.SetId(), tr);
+    if (bioseq.IsSetAnnot())
+        PatchSeqIds( bioseq.SetAnnot(), tr);
+}
+
+void PatchSeqId(CBioseq_set& bioseq_set, const ISeq_id_Translator& tr)
+{
+    if (bioseq_set.IsSetSeq_set())
+        PatchSeqIds( bioseq_set.SetSeq_set(), tr);
+    if (bioseq_set.IsSetAnnot())
+        PatchSeqIds( bioseq_set.SetAnnot(), tr);
+}
+
+void PatchSeqId(CSeq_entry& entry, const ISeq_id_Translator& tr)
+{
+    if (entry.IsSeq())
+        PatchSeqId(entry.SetSeq(), tr);
+    if (entry.IsSet())
+        PatchSeqId(entry.SetSet(), tr);
+}
+
 /////////////////////////////////////////////////////////////////////////////
-
-CRef<CBioseq> PatchSeqId(const CBioseq& bioseq, const ISeq_id_Translator& tr)
-{
-    CRef<CBioseq> ret(new CBioseq);
-    ret->Assign(bioseq);
-    if (ret->IsSetId())
-        PatchSeqIds( ret->SetId(), tr);
-    if (ret->IsSetAnnot())
-        PatchSeqIds( ret->SetAnnot(), tr);
-    return ret;
-}
-
-CRef<CBioseq_set> PatchSeqId(const CBioseq_set& bioseq_set, 
-                             const ISeq_id_Translator& tr)
-{
-    CRef<CBioseq_set> ret(new CBioseq_set);
-    ret->Assign(bioseq_set);
-    if (ret->IsSetSeq_set())
-        PatchSeqIds( ret->SetSeq_set(), tr);
-    if (ret->IsSetAnnot())
-        PatchSeqIds( ret->SetAnnot(), tr);
-    return ret;
-}
-
-CRef<CSeq_entry> PatchSeqId(const CSeq_entry& entry, 
-                            const ISeq_id_Translator& tr)
-{
-    CRef<CSeq_entry> ret(new CSeq_entry);
-    ret->Assign(entry);
-    if (ret->IsSeq())
-        ret->SetSeq( *PatchSeqId(ret->GetSeq(), tr));
-    if (ret->IsSet())
-        ret->SetSet( *PatchSeqId(ret->GetSet(), tr));
-    return ret;
-    
-}
+/////////////////////////////////////////////////////////////////////////////
 
 
 END_SCOPE(objects)
@@ -591,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/08/31 19:36:44  didenko
+ * Reduced the number of objects copies which are being created while doing PatchSeqIds
+ *
  * Revision 1.4  2005/08/31 14:47:14  didenko
  * Changed the object parameter type for LoadAnnot and LoadBioseq methods
  *

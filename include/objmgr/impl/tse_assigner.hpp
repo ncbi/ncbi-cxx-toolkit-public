@@ -89,7 +89,13 @@ public:
 
 protected:
 
+    void PatchId(CSeq_entry& orig) const;
+    CSeq_id_Handle PatchId(const CSeq_id_Handle& orig) const;
+    TPlace PatchId(const TPlace& orig) const;
+    void PatchId(CSeq_annot& orig) const;
+
     CRef<ISeq_id_Translator> m_SeqIdTranslator;
+
 
 };
 
@@ -144,12 +150,6 @@ protected:
                                CTSE_SNP_InfoMap* snps);
 
 
-    CSeq_id_Handle PatchId(const CSeq_id_Handle& orig) const;
-    TPlace PatchId(const TPlace& orig) const;
-    CRef<CSeq_entry> PatchId(CSeq_entry& orig) const;
-    CRef<CSeq_annot> PatchId(CSeq_annot& orig) const;
-
-
 private:
 
 
@@ -174,13 +174,10 @@ inline CSeq_id_Handle PatchSeqId(const CSeq_id_Handle& id,
     return tr.TranslateToOrig(id);
 }
 
-inline CRef<CSeq_id> PatchSeqId(const CSeq_id& id,
-                                const ISeq_id_Translator& tr)
+inline void PatchSeqId(CSeq_id& id, const ISeq_id_Translator& tr)
 {
     CSeq_id_Handle handle = tr.TranslateToOrig(CSeq_id_Handle::GetHandle(id));
-    CRef<CSeq_id> ref(new CSeq_id);
-    ref->Assign(*handle.GetSeqId());
-    return ref;
+    id.Assign(*handle.GetSeqId());
 }
 
 template<class TCont> 
@@ -191,41 +188,49 @@ inline void PatchSeqIds( TCont& ids, const ISeq_id_Translator& tr)
 
     for( TContIt it = ids.begin(); it != ids.end(); ++it ) {
         value_type& sid = *it;
-        sid = PatchSeqId(*sid, tr);
+        PatchSeqId(*sid, tr);
     }   
 }
 
+template<class T>
+inline CRef<T> PatchSeqId_Copy(const T& orig, const ISeq_id_Translator& tr)
+{
+    CRef<T> ret(new T);
+    ret->Assign(orig);
+    PatchSeqId(*ret, tr);
+    return ret;
+}
+
 NCBI_XOBJMGR_EXPORT
-CRef<CSeq_loc> PatchSeqId(const CSeq_loc& loc, const ISeq_id_Translator& tr);
+void PatchSeqId(CSeq_loc& loc, const ISeq_id_Translator& tr);
 
 class CSeq_feat;
 NCBI_XOBJMGR_EXPORT
-CRef<CSeq_feat> PatchSeqId(const CSeq_feat& feat, const ISeq_id_Translator& tr);
+void PatchSeqId(CSeq_feat& feat, const ISeq_id_Translator& tr);
 
 class CSeq_align;
 NCBI_XOBJMGR_EXPORT
-CRef<CSeq_align> PatchSeqId(const CSeq_align& align, const ISeq_id_Translator& tr);
+void PatchSeqId(CSeq_align& align, const ISeq_id_Translator& tr);
 
 class CSeq_graph;
 NCBI_XOBJMGR_EXPORT
-CRef<CSeq_graph> PatchSeqId(const CSeq_graph& graph, const ISeq_id_Translator& tr);
+void PatchSeqId(CSeq_graph& graph, const ISeq_id_Translator& tr);
 
 class CSeq_annot;
 NCBI_XOBJMGR_EXPORT
-CRef<CSeq_annot> PatchSeqId(const CSeq_annot& annot, const ISeq_id_Translator& tr);
+void PatchSeqId(CSeq_annot& annot, const ISeq_id_Translator& tr);
 
 class CSeq_entry;
 NCBI_XOBJMGR_EXPORT
-CRef<CSeq_entry> PatchSeqId(const CSeq_entry& entry, const ISeq_id_Translator& tr);
+void PatchSeqId(CSeq_entry& entry, const ISeq_id_Translator& tr);
 
 class CBioseq;
 NCBI_XOBJMGR_EXPORT
-CRef<CBioseq> PatchSeqId(const CBioseq& bioseq, const ISeq_id_Translator& tr);
+void PatchSeqId(CBioseq& bioseq, const ISeq_id_Translator& tr);
 
 class CBioseq_set;
 NCBI_XOBJMGR_EXPORT
-CRef<CBioseq_set> PatchSeqId(const CBioseq_set& bioseq_set, 
-                             const ISeq_id_Translator& tr);
+void PatchSeqId(CBioseq_set& bioseq_set, const ISeq_id_Translator& tr);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -234,6 +239,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/08/31 19:36:44  didenko
+* Reduced the number of objects copies which are being created while doing PatchSeqIds
+*
 * Revision 1.3  2005/08/31 14:47:14  didenko
 * Changed the object parameter type for LoadAnnot and LoadBioseq methods
 *

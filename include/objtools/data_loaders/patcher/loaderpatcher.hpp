@@ -44,16 +44,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class IDataPatcher : public CObject
+class NCBI_XLOADER_PATCHER_EXPORT IDataPatcher : public CObject
 {
 public:
 
-    virtual ~IDataPatcher() {}
+    virtual ~IDataPatcher();
 
     virtual CRef<ITSE_Assigner> GetAssigner() = 0;
     virtual CRef<ISeq_id_Translator> GetSeqIdTranslator() = 0;
 
-    virtual void Patch(CSeq_entry& entry) = 0;
+    virtual void Patch(CSeq_entry& entry);
     virtual bool IsPatchNeeded(const CTSE_Info& ) = 0;
 };
 
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.2  2005/08/31 19:36:44  didenko
+ * Reduced the number of objects copies which are being created while doing PatchSeqIds
+ *
  * Revision 1.1  2005/08/25 14:06:44  didenko
  * Added data loader patcher
  *

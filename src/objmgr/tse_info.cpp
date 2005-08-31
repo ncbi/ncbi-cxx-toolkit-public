@@ -216,8 +216,8 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
 }
 
 CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse, 
-                             CRef<CSeq_entry>& entry, 
-                             CRef<ITSE_Assigner>& listener)
+                             CRef<CSeq_entry> entry, 
+                             CRef<ITSE_Assigner> listener)
 {
     //    m_BaseTSE.reset(new SBaseTSE(tse));
     m_BlobState = tse->m_BlobState;

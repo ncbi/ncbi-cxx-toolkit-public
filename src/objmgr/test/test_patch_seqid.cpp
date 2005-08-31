@@ -88,7 +88,7 @@ void Test_PatchSeqId_SeqId()
     const ISeq_id_Translator& translator = GetSeqIdTranslator();
 
     CConstRef<CSeq_id> patched = id_patched.GetSeqId();
-    CRef<CSeq_id> orig = PatchSeqId(*patched, translator);
+    CRef<CSeq_id> orig = PatchSeqId_Copy(*patched, translator);
     BOOST_CHECK(orig->Equals(*id_orig.GetSeqId()));
 }
 
@@ -126,6 +126,9 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/08/31 19:36:44  didenko
+* Reduced the number of objects copies which are being created while doing PatchSeqIds
+*
 * Revision 1.1  2005/08/25 14:55:54  didenko
 * Added test for seqid patcher
 *

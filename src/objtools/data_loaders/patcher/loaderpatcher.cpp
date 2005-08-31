@@ -45,6 +45,19 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+void IDataPatcher::Patch(CSeq_entry& entry)
+{
+    CRef<ISeq_id_Translator> tr = GetSeqIdTranslator();
+    if (tr) 
+        PatchSeqId(entry, *tr);
+}
+
+IDataPatcher::~IDataPatcher() 
+{
+}
+
+
+
 CDataLoaderPatcher::TRegisterLoaderInfo 
 CDataLoaderPatcher::RegisterInObjectManager(
     CObjectManager& om,
@@ -216,16 +229,15 @@ CDataLoaderPatcher::PatchLock(const TTSE_Lock& lock)
         if (!m_Patcher->IsPatchNeeded(*lock) ) 
             nlock->Assign(lock);
         else {
-            CRef<ISeq_id_Translator> translator(m_Patcher->GetSeqIdTranslator());
             CRef<CSeq_entry> entry;
             CConstRef<CSeq_entry> orig_entry = lock->GetSeq_entrySkeleton();
             if( orig_entry ) {
-                entry = PatchSeqId(*orig_entry, *translator);
+                entry.Reset(new CSeq_entry);
+                entry->Assign(*orig_entry);
                 m_Patcher->Patch(*entry);
             }
-            CRef<ITSE_Assigner> assigner(m_Patcher->GetAssigner());
-            nlock->Assign(lock, entry, assigner);
-            nlock->SetSeqIdTranslator(translator);
+            nlock->Assign(lock, entry, m_Patcher->GetAssigner());
+            nlock->SetSeqIdTranslator(m_Patcher->GetSeqIdTranslator());
         }
 
         nlock.SetLoaded();
@@ -351,6 +363,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.2  2005/08/31 19:36:44  didenko
+ * Reduced the number of objects copies which are being created while doing PatchSeqIds
+ *
  * Revision 1.1  2005/08/25 14:06:44  didenko
  * Added data loader patcher
  *
