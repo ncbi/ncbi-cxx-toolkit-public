@@ -174,7 +174,7 @@ public:
 
     // data attachment
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
-    void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
+    void x_LoadAnnot(const TPlace& place, const CSeq_annot& annot);
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& seq);
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/08/31 14:47:14  didenko
+* Changed the object parameter type for LoadAnnot and LoadBioseq methods
+*
 * Revision 1.23  2005/08/25 14:05:36  didenko
 * Restructured TSE loading process
 *

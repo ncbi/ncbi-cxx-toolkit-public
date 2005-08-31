@@ -68,9 +68,9 @@ public:
     virtual void LoadDescr(CTSE_Info&, const TPlace& place, 
                            const CSeq_descr& descr) = 0;
     virtual void LoadAnnot(CTSE_Info&, const TPlace& place, 
-                           CRef<CSeq_annot_Info> annot) = 0;
+                           CRef<CSeq_annot> annot) = 0;
     virtual void LoadBioseq(CTSE_Info&, const TPlace& place, 
-                            CRef<CSeq_entry_Info> entry) = 0;
+                            CRef<CSeq_entry> entry) = 0;
     virtual void LoadSequence(CTSE_Info&, const TPlace& place, TSeqPos pos,
                               const TSequence& sequence) = 0;
     virtual void LoadAssembly(CTSE_Info&, const TBioseqId& seq_id,
@@ -115,9 +115,9 @@ public:
     virtual void LoadDescr(CTSE_Info&, const TPlace& place, 
                            const CSeq_descr& descr);
     virtual void LoadAnnot(CTSE_Info&, const TPlace& place, 
-                           CRef<CSeq_annot_Info> annot);
+                           CRef<CSeq_annot> annot);
     virtual void LoadBioseq(CTSE_Info&, const TPlace& place, 
-                            CRef<CSeq_entry_Info> entry);
+                            CRef<CSeq_entry> entry);
     virtual void LoadSequence(CTSE_Info&, const TPlace& place, TSeqPos pos,
                               const TSequence& sequence);
     virtual void LoadAssembly(CTSE_Info&, const TBioseqId& seq_id,
@@ -131,10 +131,10 @@ protected:
                            const CSeq_descr& descr);
     void LoadAnnot_NoPatch(CTSE_Info& tse,
                            const TPlace& place, 
-                           CRef<CSeq_annot_Info> annot);
+                           CRef<CSeq_annot> annot);
     void LoadBioseq_NoPatch(CTSE_Info& tse,
                             const TPlace& place, 
-                            CRef<CSeq_entry_Info> entry);
+                            CRef<CSeq_entry> entry);
     void LoadSequence_NoPatch(CTSE_Info& tse, 
                               const TPlace& place, 
                               TSeqPos pos, 
@@ -146,11 +146,9 @@ protected:
 
     CSeq_id_Handle PatchId(const CSeq_id_Handle& orig) const;
     TPlace PatchId(const TPlace& orig) const;
-    CRef<CSeq_entry> PatchId(const CSeq_entry& orig) const;
-    CConstRef<CSeq_annot> PatchId(const CSeq_annot& orig) const;
+    CRef<CSeq_entry> PatchId(CSeq_entry& orig) const;
+    CRef<CSeq_annot> PatchId(CSeq_annot& orig) const;
 
-    CRef<CSeq_annot_Info> PatchId(CRef<CSeq_annot_Info> annot) const;
-    CRef<CSeq_entry_Info> PatchId(CRef<CSeq_entry_Info> entry) const;
 
 private:
 
@@ -236,6 +234,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/08/31 14:47:14  didenko
+* Changed the object parameter type for LoadAnnot and LoadBioseq methods
+*
 * Revision 1.2  2005/08/29 16:15:01  didenko
 * Modified default implementation of ITSE_Assigner in a way that it can be used as base class for
 * the user's implementations of this interface

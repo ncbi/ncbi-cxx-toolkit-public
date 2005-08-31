@@ -390,17 +390,19 @@ void CTSE_Split_Info::x_LoadDescr(const TPlace& place,
 
 
 void CTSE_Split_Info::x_LoadAnnot(const TPlace& place,
-                                  CRef<CSeq_annot_Info> annot)
+                                  const CSeq_annot& annot)
 {
-    CRef<CSeq_annot_Info> add;
+    CRef<CSeq_annot> add;
     NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
         CTSE_Info& tse = *it->first;
         ITSE_Assigner& listener = *it->second;
         if ( !add ) {
-            add = annot;
+            add.Reset(const_cast<CSeq_annot*>(&annot));
         }
         else {
-            add = new CSeq_annot_Info(*annot, 0);
+            CRef<CSeq_annot> tmp(add);
+            add.Reset(new CSeq_annot);
+            add->Assign(*tmp);
         }
         listener.LoadAnnot(tse, place, add);
     }
@@ -408,16 +410,18 @@ void CTSE_Split_Info::x_LoadAnnot(const TPlace& place,
 
 void CTSE_Split_Info::x_LoadBioseq(const TPlace& place, const CBioseq& bioseq)
 {
-    CRef<CSeq_entry_Info> add;
+    CRef<CSeq_entry> add;
     NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
         CTSE_Info& tse = *it->first;
         ITSE_Assigner& listener = *it->second;
         if ( !add ) {
-            add = new CSeq_entry_Info(*new CSeq_entry);
-            add->SelectSeq(const_cast<CBioseq&>(bioseq));
+            add = new CSeq_entry;
+            add->SetSeq(const_cast<CBioseq&>(bioseq));
         }
         else {
-            add = new CSeq_entry_Info(*add, 0);
+            CRef<CSeq_entry> tmp(add);
+            add.Reset(new CSeq_entry);
+            add->Assign(*tmp);
         }
         listener.LoadBioseq(tse, place, add);
     }

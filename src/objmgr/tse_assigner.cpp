@@ -212,45 +212,47 @@ void CTSE_Default_Assigner::LoadDescr_NoPatch(CTSE_Info& tse,
 
 void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
                                       const TPlace& place, 
-                                      CRef<CSeq_annot_Info> annot)
+                                      CRef<CSeq_annot> annot)
 {
-    LoadAnnot_NoPatch(tse, PatchId(place), PatchId(annot));
+    LoadAnnot_NoPatch(tse, PatchId(place), PatchId(*annot));
 }
 
 void CTSE_Default_Assigner::LoadAnnot_NoPatch(CTSE_Info& tse,
                                               const TPlace& place, 
-                                              CRef<CSeq_annot_Info> annot)
+                                              CRef<CSeq_annot> annot)
 {
+    CRef<CSeq_annot_Info> annot_info;
     {{
         CDataSource::TMainLock::TWriteLockGuard guard
             (tse.GetDataSource().GetMainLock());
-        x_GetBase(tse, place).AddAnnot(annot);
+        annot_info.Reset(x_GetBase(tse, place).AddAnnot(*annot));
     }}
     {{
         CDataSource::TAnnotLockWriteGuard guard(tse.GetDataSource());
-        tse.UpdateAnnotIndex(*annot);
+        tse.UpdateAnnotIndex(*annot_info);
     }}
 }
 
 void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
                                        const TPlace& place, 
-                                       CRef<CSeq_entry_Info> entry)
+                                       CRef<CSeq_entry> entry)
 {
-    LoadBioseq_NoPatch(tse, PatchId(place), PatchId(entry));
+    LoadBioseq_NoPatch(tse, PatchId(place), PatchId(*entry));
 }
 
 void CTSE_Default_Assigner::LoadBioseq_NoPatch(CTSE_Info& tse,
                                                const TPlace& place, 
-                                               CRef<CSeq_entry_Info> entry)
+                                               CRef<CSeq_entry> entry)
 {
     {{
         CDataSource::TMainLock::TWriteLockGuard guard
             (tse.GetDataSource().GetMainLock());
         if (place == TPlace(CSeq_id_Handle(), kTSE_Place_id)) {
-            tse.x_SetObject(*entry, 0); //???
+            CRef<CSeq_entry_Info> entry_info(new CSeq_entry_Info(*entry));
+            tse.x_SetObject(*entry_info, 0); //???
         }
         else {
-            x_GetBioseq_set(tse, place).AddEntry(entry);
+            x_GetBioseq_set(tse, place).AddEntry(*entry);
         }
     }}
 
@@ -309,38 +311,19 @@ ITSE_Assigner::TPlace CTSE_Default_Assigner::PatchId(const TPlace& orig) const
     return PatchSeqId(orig, *m_SeqIdTranslator);
 }
 
-CRef<CSeq_entry> CTSE_Default_Assigner::PatchId(const CSeq_entry& orig) const
+CRef<CSeq_entry> CTSE_Default_Assigner::PatchId(CSeq_entry& orig) const
 {
     if (!m_SeqIdTranslator)
-        return Ref(const_cast<CSeq_entry*>(&orig));
+        return Ref(&orig);
     return PatchSeqId(orig, *m_SeqIdTranslator);
 }
 
-CConstRef<CSeq_annot> CTSE_Default_Assigner::PatchId(const CSeq_annot& orig) const
+CRef<CSeq_annot> CTSE_Default_Assigner::PatchId(CSeq_annot& orig) const
 {
     if (!m_SeqIdTranslator)
-        return ConstRef(&orig);
+        return Ref(&orig);
     return PatchSeqId(orig, *m_SeqIdTranslator);
 }
-
-CRef<CSeq_annot_Info> CTSE_Default_Assigner::PatchId(CRef<CSeq_annot_Info> annot) const
-{
-    if (!m_SeqIdTranslator)
-        return annot;
-    CConstRef<CSeq_annot> patched_annot = PatchId(*annot->GetSeq_annotSkeleton() ); 
-    CRef<CSeq_annot_Info> patched_info( new CSeq_annot_Info(*patched_annot) );
-    return patched_info;
-}
-
-CRef<CSeq_entry_Info> CTSE_Default_Assigner::PatchId(CRef<CSeq_entry_Info> entry) const
-{
-    if (!m_SeqIdTranslator)
-        return entry;
-    CRef<CSeq_entry> patched_entry = PatchId(*entry->GetSeq_entrySkeleton() );
-    CRef<CSeq_entry_Info> patched_info(new CSeq_entry_Info(*patched_entry));
-    return patched_info;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
@@ -608,6 +591,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/08/31 14:47:14  didenko
+ * Changed the object parameter type for LoadAnnot and LoadBioseq methods
+ *
  * Revision 1.3  2005/08/29 16:15:01  didenko
  * Modified default implementation of ITSE_Assigner in a way that it can be used as base class for
  * the user's implementations of this interface

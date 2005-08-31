@@ -418,7 +418,7 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
         }
 
         ITERATE ( CID2S_Chunk_Data::TAnnots, it, data.GetAnnots() ) {
-            chunk.x_LoadAnnot(place, Ref(new CSeq_annot_Info(**it)));
+            chunk.x_LoadAnnot(place, **it/*Ref(new CSeq_annot_Info(**it))*/);
         }
 
         if ( data.IsSetAssembly() ) {
@@ -452,6 +452,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.18  2005/08/31 14:47:14  didenko
+ * Changed the object parameter type for LoadAnnot and LoadBioseq methods
+ *
  * Revision 1.17  2005/08/15 15:45:37  grichenk
  * Removed split assembly from bioseq-set.
  *

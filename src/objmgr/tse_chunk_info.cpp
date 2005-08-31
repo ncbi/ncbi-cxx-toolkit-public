@@ -507,7 +507,7 @@ void CTSE_Chunk_Info::x_LoadDescr(const TPlace& place,
 
 
 void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
-                                  CRef<CSeq_annot_Info> annot)
+                                  const CSeq_annot& annot)
 {
     _ASSERT(x_Attached());
     m_SplitInfo->x_LoadAnnot(place, annot);
@@ -552,6 +552,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/08/31 14:47:14  didenko
+* Changed the object parameter type for LoadAnnot and LoadBioseq methods
+*
 * Revision 1.27  2005/08/25 14:05:37  didenko
 * Restructured TSE loading process
 *

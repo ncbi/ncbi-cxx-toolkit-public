@@ -118,8 +118,7 @@ void CSplitDataLoader::GetChunk(TChunk chunk)
     if (annot_chunks != m_AnnotChunks.end()) {
         // Attach all related annotations
         ITERATE(TAnnots, annot, annot_chunks->second) {
-            CRef<CSeq_annot_Info> info(new CSeq_annot_Info(*annot->m_Annot));
-            chunk->x_LoadAnnot(annot->m_Place, info);
+            chunk->x_LoadAnnot(annot->m_Place, *annot->m_Annot);
         }
     }
     // Find descriptors related to the chunk
