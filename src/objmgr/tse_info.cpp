@@ -223,6 +223,10 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse,
     m_BlobState = tse->m_BlobState;
     m_Name = tse->m_Name;
     m_UsedMemory = tse->m_UsedMemory;
+
+    if (entry)
+        SetSeq_entry(*entry);
+
     m_Split = tse->m_Split;
     if (m_Split) {
         if( !listener ) {
@@ -233,8 +237,6 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse,
         }
         m_Split->x_TSEAttach(*this, listener);
     }
-    if (entry)
-        SetSeq_entry(*entry);
 
     //x_TSEAttach(*this);
     return *this;
