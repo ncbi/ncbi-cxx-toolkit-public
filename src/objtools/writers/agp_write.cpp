@@ -123,7 +123,7 @@ static void s_AgpWrite(CNcbiOstream& os,
                     sequence::GetId(*iter.GetRefSeqid().GetSeqId(), scope,
                                     sequence::eGetId_Best);
                 string id_str;
-                idh.GetSeqId()->GetLabel(&id_str);
+                idh.GetSeqId()->GetLabel(&id_str, CSeq_id::eContent);
                 os << id_str;
             }}
 
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/08/31 20:16:49  jcherry
+ * Eliminated prefixed (like "gb|") on component id strings
+ *
  * Revision 1.6  2005/05/02 16:07:36  dicuccio
  * Updated AgpWrite(): added additional constructors to write data from CSeqMap,
  * CBioseqHandle, and CBioseqHandle with sequence range.  Refactored internals.
