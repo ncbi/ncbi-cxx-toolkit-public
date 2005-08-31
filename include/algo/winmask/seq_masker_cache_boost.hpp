@@ -40,29 +40,58 @@
 
 BEGIN_NCBI_SCOPE
 
+/**\brief Interface to the bit array used to check if the score of a unit is
+ **       below t_extend.
+ **/
 class CSeqMaskerCacheBoost
 {
     public:
 
+        /**\brief Object constructor.
+         **\param window will advance the window if runs of low-value units
+         **              are found
+         **\param od pointer to the data structure containing the bit array
+         **/
         CSeqMaskerCacheBoost( CSeqMaskerWindow & window,
                               const CSeqMaskerIstat::optimization_data * od )
             : window_( window ), od_( od ), last_checked_( 0 )
         { nu_ = window_.NumUnits(); }
 
+        /**\brief Check if the current state of the window and advance.
+         **
+         ** If the current window has all units below the t_extend, then advance
+         ** it until the above condition does not hold true.
+         **
+         **\return true if the end of the sequence has been reached; 
+         **        false otherwise
+         **/
         bool Check();
 
     private:
 
+        /**\internal
+         **\brief Type representing an Nmer.
+         **/
         typedef CSeqMaskerWindow::TUnit TUnit;
 
-        Uint1 bit_at( TSeqPos pos ) const;
+        /**\internal
+         **\brief Get the bit value corresponding to the given Nmer value.
+         **\param pos the Nmer value
+         **\return the bit value corresponding to pos
+         **/
+        Uint1 bit_at( TUnit pos ) const;
+
+        /**\internal
+         **\brief Check if all units of the window are below t_extend.
+         **\return true if the above condition holds; false otherwise
+         **/
         bool full_check() const;
         
-        CSeqMaskerWindow & window_;
-        const CSeqMaskerIstat::optimization_data * od_;
+        CSeqMaskerWindow & window_; /**<\internal Reference to the window object. */
+        const CSeqMaskerIstat::optimization_data * od_; /**<\internal Structure containing the bit array. */
 
-        TSeqPos last_checked_;
-        Uint8 nu_;
+        TSeqPos last_checked_;  /**<\internal Last window state for which the check was done. */
+        Uint8 nu_;  /**<\internal Number of units in a window. */
 };
 
 END_NCBI_SCOPE
@@ -72,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/08/31 16:47:28  morgulis
+ * Adding comments.
+ *
  * Revision 1.1  2005/08/30 14:35:19  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.
