@@ -29,6 +29,13 @@
  *
  */
 
+// Data member whose type is an enum of the enclosing class.
+%ignore *::CEventHandler_SPostRequest::m_DispHow;
+
+// For some reason SWIG thinks that this nested struct has
+// a default ctor.
+%ignore *::CSeqMaskerIstat_optimization_data;
+
 // Temporary class
 %ignore ncbi::NStr_TStringToNumFlags;
 
@@ -120,6 +127,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/08/31 17:02:55  jcherry
+ * %ignore CSeqMaskerIstat::optimization_data and
+ * CEventHandler::SPostRequest::m_DispHow
+ *
  * Revision 1.5  2005/08/06 15:00:34  jcherry
  * %ignore temporary class NStr::TStringToNumFlags
  *
