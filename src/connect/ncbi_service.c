@@ -491,7 +491,7 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
             if (!BUF_Write(&buf, referrer_header, sizeof(referrer_header)-1) ||
                 !BUF_Write(&buf, "lbsm://", 7)                               ||
                 !BUF_Write(&buf, host, strlen(host))                         ||
-                !BUF_Write(&buf, "/lbsmd?service=", 18)                      ||
+                !BUF_Write(&buf, "/lbsmd?service=", 15)                      ||
                 !BUF_Write(&buf, name, strlen(name))                         ||
                 !BUF_Write(&buf, "\r\n", 2)) {
                 BUF_Destroy(buf);
@@ -593,6 +593,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.68  2005/08/31 19:25:16  lavr
+ * Fix number of bytes written in new referer
+ *
  * Revision 6.67  2005/08/31 19:02:17  lavr
  * Change LBSMD referer HTTP tag
  *
