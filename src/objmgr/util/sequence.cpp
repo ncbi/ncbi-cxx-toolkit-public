@@ -1501,6 +1501,9 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
             }
         }
     }
+    if (line_pos > 0) {
+        m_Out << '\n';
+    }
     m_Out << NcbiFlush;
 }
 
@@ -2511,6 +2514,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.132  2005/08/31 21:43:55  ucko
+* CFastaOstream::WriteSequence: don't forget a trailing newline!
+*
 * Revision 1.131  2005/08/18 20:48:07  ucko
 * Rework CFastaOstream to use the object manager in a more modern fashion;
 * in particular, take advantage of CSeqVector's support for gap reporting.
