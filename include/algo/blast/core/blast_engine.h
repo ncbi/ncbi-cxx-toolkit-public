@@ -93,38 +93,6 @@ Blast_RunFullSearch(EBlastProgramType program_number,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
    BlastDiagnostics* diagnostics, BlastHSPResults** results);
 
-/** The high level function performing an RPS BLAST search 
- * @param program_number Type of BLAST program [in]
- * @param query The query sequence [in]
- * @param query_info Additional query information [in]
- * @param seq_src Structure containing BLAST database [in]
- * @param sbp Scoring and statistical parameters [in]
- * @param score_options Hit scoring options [in]
- * @param lookup_wrap The lookup table, constructed earlier [in] 
- * @param word_options Options for processing initial word hits [in]
- * @param ext_options Options and parameters for the gapped extension [in]
- * @param hit_options Options for saving the HSPs [in]
- * @param eff_len_options Options for setting effective lengths [in]
- * @param psi_options Options specific to PSI-BLAST [in]
- * @param hsp_stream Placeholder for saving results [in]
- * @param diagnostics Return statistics containing numbers of hits on 
- *                    different stages of the search [out]
- * @param results Structure holding all saved results [in] [out]
- */
-Int4 
-BLAST_RPSSearchEngine(EBlastProgramType program_number, 
-   BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrc* seq_src, BlastScoreBlk* sbp, 
-   const BlastScoringOptions* score_options, 
-   LookupTableWrap* lookup_wrap, 
-   const BlastInitialWordOptions* word_options, 
-   const BlastExtensionOptions* ext_options, 
-   const BlastHitSavingOptions* hit_options,
-   const BlastEffectiveLengthsOptions* eff_len_options,
-   const PSIBlastOptions* psi_options, 
-   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics, 
-   BlastHSPResults** results);
-
 /** Perform the preliminary stage of the BLAST search.
  * @param  program_number Type of BLAST program [in]
  * @param query The query sequence [in]
