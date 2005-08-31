@@ -30,6 +30,8 @@
  *
  */
 
+%ignore ncbi::objects::SAnnotObjectsIndex::ReserveInfoSize;
+
 %ignore ncbi::objects::CConstSageData::GetMethod() const;
 
 %ignore BLAST_RPSSearchEngine;
@@ -82,6 +84,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/08/31 17:01:47  jcherry
+ * %ignore SAnnotObjectsIndex::ReserveInfoSize
+ *
  * Revision 1.7  2005/08/12 20:26:53  jcherry
  * Added objtools/format
  *
