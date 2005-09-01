@@ -109,20 +109,31 @@ void CCgiResponse::SetHeaderValue(const string& name, const string& value)
 }
 
 
-void CCgiResponse::SetHeaderValue(const string& name, const tm& date)
+void CCgiResponse::SetHeaderValue(const string& name, const struct tm& date)
 {
     if ( s_ZeroTime(date) ) {
         RemoveHeaderValue(name);
         return;
     }
 
-    char buff[30];
+    char buff[64];
     if ( !::strftime(buff, sizeof(buff),
                      "%a, %d %b %Y %H:%M:%S GMT", &date) ) {
         NCBI_THROW(CCgiErrnoException, eErrno,
                    "CCgiResponse::SetHeaderValue() -- strftime() failed");
     }
     SetHeaderValue(name, buff);
+}
+
+
+void CCgiResponse::SetHeaderValue(const string& name, const CTime& date)
+{
+    if ( date.IsEmpty()) {
+        RemoveHeaderValue(name);
+        return;
+    }
+    SetHeaderValue(name,
+                   date.GetGmtTime().AsString("w, D b Y h:m:s") + " GMT");
 }
 
 
@@ -202,6 +213,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2005/09/01 17:41:24  lavr
+* +SetHeaderValue(CTime&)
+*
 * Revision 1.21  2004/05/17 20:56:50  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

@@ -33,6 +33,7 @@
  *
  */
 
+#include <corelib/ncbitime.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <map>
 
@@ -64,8 +65,9 @@ public:
     void SetStatus(unsigned int code, const string& reason = kEmptyStr);
 
     // Header setters
-    void SetHeaderValue   (const string& name, const string& value);
-    void SetHeaderValue   (const string& name, const tm&     value);
+    void SetHeaderValue   (const string& name, const string&    value);
+    void SetHeaderValue   (const string& name, const struct tm& value);
+    void SetHeaderValue   (const string& name, const CTime&     value);
     void RemoveHeaderValue(const string& name);
 
     // Header getter
@@ -187,6 +189,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/09/01 17:40:57  lavr
+ * +SetHeaderValue(CTime&)
+ *
  * Revision 1.16  2004/06/22 16:50:51  lavr
  * Note default content type (if explicit one is not provided)
  *
