@@ -144,6 +144,12 @@ CBlastDbDataLoader::CCachedSeqData::CCachedSeqData(const CSeq_id_Handle & idh,
     
     CRef<CBioseq> bioseq(m_SeqDB->GetBioseqNoData(m_OID, gi));
     
+    CConstRef<CSeq_id> first_ident( bioseq->GetFirstId() );
+    
+    if (first_ident.NotEmpty()) {
+        m_SIH = CSeq_id_Handle::GetHandle(*first_ident);
+    }
+    
     bioseq->SetInst().SetMol((m_SeqDB->GetSequenceType() == CSeqDB::eProtein)
                              ? CSeq_inst::eMol_aa
                              : CSeq_inst::eMol_na);
@@ -303,7 +309,8 @@ void CBlastDbDataLoader::x_AddSplitSeqChunk(TChunks        & chunks,
     chunks.push_back(chunk);
 }
 
-bool CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock & lock)
+bool CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle & idh,
+                                    CTSE_LoadLock        & lock)
 {
     CRef<CCachedSeqData> cached;
     int oid = -1;
@@ -596,6 +603,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.33  2005/09/01 14:33:38  bealer
+ * - Use Seq-id from Bioseq instead of user's Seq-id to register Seq-data.
+ *
  * Revision 1.32  2005/08/31 15:12:35  bealer
  * - Allow eUnknown.
  *
