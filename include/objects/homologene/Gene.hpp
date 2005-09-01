@@ -60,7 +60,7 @@ public:
     typedef TGene_links TLinks;
     bool IsSetLinks(void) const { return IsSetGene_links(); }
     bool CanGetLinks(void) const { return CanGetGene_links(); }
-    void ResetLinks(void) { return ResetGene_links(); }
+    void ResetLinks(void) { ResetGene_links(); }
     const TLinks& GetLinks(void) const { return GetGene_links(); }
     TLinks& SetLinks(void) { return SetGene_links(); }
 
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/09/01 20:09:27  vasilche
+* Fixed compilation error.
+*
 * Revision 1.1  2005/09/01 17:46:09  dicuccio
 * Initial revision - moved over from internal tree
 *
