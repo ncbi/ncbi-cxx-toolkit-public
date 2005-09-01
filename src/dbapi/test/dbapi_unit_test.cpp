@@ -115,7 +115,7 @@ CDBAPIUnitTest::TestInit(void)
         m_max_varchar_size = 8000;
     } else {
         // Sybase
-        m_max_varchar_size = 960;
+        m_max_varchar_size = 1900;
     }
     
     m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
@@ -158,9 +158,16 @@ CDBAPIUnitTest::TestInit(void)
         sql  = " CREATE TABLE #bulk_insert_table( \n";
         sql += "    id INT PRIMARY KEY, \n";
         sql += "    vc8000_field VARCHAR(8000) NULL, \n";
-        sql += "    vb8000_field VARBINARY(8000) NULL, \n";
         sql += "    int_field INT NULL, \n";
         sql += "    bigint_field BIGINT NULL \n";
+        sql += " )";
+
+        // Create the table
+        auto_stmt->ExecuteUpdate(sql);
+        
+        sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
+        sql += "    id INT PRIMARY KEY, \n";
+        sql += "    vb8000_field VARBINARY(8000) NULL, \n";
         sql += " )";
 
         // Create the table
@@ -170,8 +177,15 @@ CDBAPIUnitTest::TestInit(void)
         if ( m_args.GetServerName() != "MOZART" ) {
             sql  = " CREATE TABLE #bulk_insert_table( \n";
             sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vc8000_field VARCHAR(960) NULL, \n";
-            sql += "    vb8000_field VARBINARY(960) NULL \n";
+            sql += "    vc8000_field VARCHAR(1900) NULL, \n";
+            sql += " )";
+
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
+            
+            sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
+            sql += "    id INT PRIMARY KEY, \n";
+            sql += "    vb8000_field VARBINARY(1900) NULL \n";
             sql += " )";
 
             // Create the table
@@ -286,17 +300,17 @@ CDBAPIUnitTest::Bulk_Writing(void)
         const char char_val('2');
         
         // Clean table ...
-        auto_stmt->ExecuteUpdate( "DELETE FROM #bulk_insert_table" );
+        auto_stmt->ExecuteUpdate( "DELETE FROM #bin_bulk_insert_table" );
         
         // Insert data ...
         {
-            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 3) );
+            auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bin_bulk_insert_table", 2) );
             
             CVariant col1(eDB_Int);
             CVariant col2(eDB_LongBinary, m_max_varchar_size);
 
             bi->Bind(1, &col1);
-            bi->Bind(3, &col2);
+            bi->Bind(2, &col2);
             
             for(int i = 0; i < num_of_tests; ++i ) {
                 int int_value = m_max_varchar_size / num_of_tests * i;
@@ -313,7 +327,7 @@ CDBAPIUnitTest::Bulk_Writing(void)
         {
             auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
-            sql  = " SELECT id, vb8000_field FROM #bulk_insert_table";
+            sql  = " SELECT id, vb8000_field FROM #bin_bulk_insert_table";
             sql += " ORDER BY id";
 
             auto_stmt->Execute( sql );
@@ -351,13 +365,13 @@ CDBAPIUnitTest::Bulk_Writing(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 4) );
+                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 3) );
                 
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
 
                 bi->Bind(1, &col1);
-                bi->Bind(4, &col2);
+                bi->Bind(3, &col2);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     col1 = i;
@@ -403,13 +417,13 @@ CDBAPIUnitTest::Bulk_Writing(void)
 
             // Insert data ...
             {
-                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 5) );
+                auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#bulk_insert_table", 4) );
                 
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_BigInt);
 
                 bi->Bind(1, &col1);
-                bi->Bind(5, &col2);
+                bi->Bind(4, &col2);
 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     col1 = i;
@@ -489,7 +503,7 @@ CDBAPIUnitTest::Bulk_Writing(void)
             num_of_tests = 7;
         } else {
             // Sybase
-            num_of_tests = 2;
+            num_of_tests = 3;
         }
         
         // Clean table ...
@@ -745,6 +759,40 @@ CDBAPIUnitTest::Test_SelectStmt(void)
         rs.reset( auto_stmt2->ExecuteQuery( "select qq = 57.55 + 0.0033" ) );
         BOOST_CHECK( rs.get() != NULL );
     }
+    
+//     // TMP
+//     {
+//         auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+//         BOOST_CHECK( conn.get() != NULL );
+//
+//         conn->SetMode(IConnection::eBulkInsert);
+//
+//         conn->Connect(
+//             "anyone",
+//             "allowed",
+//             "MSSQL10",
+//             "gMapDB"
+//             );
+//
+//         auto_ptr<IStatement> auto_stmt( conn->GetStatement() );
+//
+//         string sql;
+//
+//         sql  = "SELECT len(seq_loc) l, seq_loc FROM protein where ProtGi =56964519";
+//
+//         auto_stmt->Execute( sql );
+//         while( auto_stmt->HasMoreResults() ) {
+//             if( auto_stmt->HasRows() ) {
+//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+//
+//                 // Retrieve results, if any
+//                 while( rs->Next() ) {
+//                     string col2 = rs->GetVariant(2).GetString();
+//                     BOOST_CHECK_EQUAL(col2.size(), 355);
+//                 }
+//             }
+//         }
+//     }
 }
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
@@ -2659,6 +2707,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2005/09/01 15:11:59  ssikorsk
+ * Restructured #bulk_insert_table
+ *
  * Revision 1.37  2005/08/29 16:07:23  ssikorsk
  * Adapted Bulk_Writing for Sybase.
  *
