@@ -369,6 +369,15 @@ void CGBDataLoader::x_CreateDriver(const string& reader_name)
         SetParam(GetLoaderParams(app_params.get()),
                  NCBI_GBLOADER_PARAM_READER_NAME,
                  reader_name);
+        string writer_name = reader_name;
+        NStr::ToLower(writer_name);
+        if ( writer_name == "cache" ||
+             NStr::StartsWith(writer_name, "cache;") ) {
+            writer_name = "cache";
+            SetParam(GetLoaderParams(app_params.get()),
+                     NCBI_GBLOADER_PARAM_WRITER_NAME,
+                     writer_name);
+        }
     }
     x_CreateDriver(app_params.get());
 }
@@ -432,7 +441,8 @@ void CGBDataLoader::x_CreateWriters(const TParamTree* params)
         // try config first
         string env_reader = GetConfigString("GENBANK", "LOADER_METHOD");
         NStr::ToLower(env_reader);
-        if ( NStr::StartsWith(env_reader, "cache") ) {
+        if ( env_reader == "cache" ||
+             NStr::StartsWith(env_reader, "cache;") ) {
             str = "cache";
         }
     }
