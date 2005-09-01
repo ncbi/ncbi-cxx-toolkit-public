@@ -2660,7 +2660,7 @@ void s_AddEntry(CDir::TEntries* contents, const string& base_path,
     }
 }
 
-#elif defined(NCBI_OS_UNIX)
+#else //NCBI_OS_UNIX
 
 #  define IS_RECURSIVE_ENTRY                   \
     ( (flags & CDir::fIgnoreRecursive)  &&     \
@@ -2675,11 +2675,14 @@ void s_AddEntry(CDir::TEntries* contents, const string& base_path,
         CDirEntry::EType type = CDir::eUnknown;
 #  if defined(_DIRENT_HAVE_D_TYPE)
         struct stat st;
-        st.st_mode = DTTOIF(entry->d_type);
-        type = CDirEntry::GetType(st);
-#  else                                 
-        type = CDirEntry(path).GetType();
-#  endif                                 
+        if (entry->d_type) {
+            st.st_mode = DTTOIF(entry->d_type);
+            type = CDirEntry::GetType(st);
+        }
+#  endif
+        if (type == CDir::eUnknown) {
+            type = CDirEntry(path).GetType();                                
+        }
         contents->push_back(CDirEntry::CreateObject(type, path));
     } else {
         contents->push_back(new CDirEntry(path));
@@ -2687,9 +2690,6 @@ void s_AddEntry(CDir::TEntries* contents, const string& base_path,
 }
 
 #endif
-
-# define ADD_ENTRY \
-    s_AddEntry(contents, base_path, entry, flags)
 
 
 CDir::TEntries CDir::GetEntries(const string& mask,
@@ -2750,7 +2750,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
                     if ( mask.empty()  ||
                         MatchesMask(entry.cFileName, mask.c_str(),
                                     use_case) ) {
-                        ADD_ENTRY;
+                        s_AddEntry(contents, base_path, entry, flags);
                         break;
                     }                
                 }
@@ -2772,7 +2772,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
                 const string& mask = *it;
                 if ( mask.empty()  ||
                      MatchesMask(entry->d_name, mask.c_str(), use_case) ) {
-                    ADD_ENTRY;
+                    s_AddEntry(contents, base_path, entry, flags);
                     break;
                 }
             } // ITERATE
@@ -2811,7 +2811,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
         do {
             if ( !IS_RECURSIVE_ENTRY  &&
                  masks.Match(entry.cFileName, use_case) ) {
-                ADD_ENTRY;
+                s_AddEntry(contents, base_path, entry, flags);
             }
         } while ( FindNextFile(handle, &entry) );
         FindClose(handle);
@@ -2825,7 +2825,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const CMask& masks,
         while (struct dirent* entry = readdir(dir)) {
             if ( !IS_RECURSIVE_ENTRY  &&
                  masks.Match(entry->d_name, use_case) ) {
-                ADD_ENTRY;
+                s_AddEntry(contents, base_path, entry, flags);
             }
         }
         closedir(dir);
@@ -3711,6 +3711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.123  2005/09/01 15:30:41  lavr
+ * Fix adding unknown d_type (in case of NFS) in GetEntries w/CreateObjects
+ *
  * Revision 1.122  2005/08/12 14:52:28  ivanov
  * CFile::CreateTmpFile() -- return 0 also if created stream is not "good"
  *
