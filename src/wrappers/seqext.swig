@@ -154,6 +154,7 @@ objmgr/impl/seq_vector_cvt.hpp
 objmgr/impl/seq_vector_cvt_gen.hpp
 objmgr/impl/snp_annot_info.hpp
 objmgr/impl/synonyms.hpp
+objmgr/impl/tse_assigner.hpp
 objmgr/impl/tse_chunk_info.hpp
 objmgr/impl/tse_info.hpp
 objmgr/impl/tse_info_object.hpp
@@ -313,6 +314,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/09/01 16:08:01  jcherry
+ * Added objmgr/impl/tse_assigner.hpp (fixes compilation errors)
+ *
  * Revision 1.9  2005/08/12 20:26:53  jcherry
  * Added objtools/format
  *
