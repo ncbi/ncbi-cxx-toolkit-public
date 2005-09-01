@@ -61,7 +61,6 @@ static CSeq_id_Handle id_orig = CSeq_id_Handle::GetGiHandle(32324);
 static CSeq_id_Handle id_patched = CSeq_id_Handle::GetGiHandle(52256);   
 static CSeq_id_Handle id_empty;
 
-
 const ISeq_id_Translator& GetSeqIdTranslator()
 {
     static auto_ptr<ISeq_id_Translator> s_Translator;
@@ -73,13 +72,13 @@ const ISeq_id_Translator& GetSeqIdTranslator()
     return *s_Translator;
 }
 
+
 void Test_SeqIdTranslator()
 {
     const ISeq_id_Translator& translator = GetSeqIdTranslator();
     
     BOOST_CHECK( translator.TranslateToOrig(id_patched) == id_orig );
     BOOST_CHECK( translator.TranslateToPatched(id_orig) == id_patched);
-    BOOST_CHECK( translator.TranslateToOrig(id_orig) == id_empty );
     BOOST_CHECK( translator.TranslateToPatched(id_patched) == id_empty );
 }
 
@@ -90,6 +89,22 @@ void Test_PatchSeqId_SeqId()
     CConstRef<CSeq_id> patched = id_patched.GetSeqId();
     CRef<CSeq_id> orig = PatchSeqId_Copy(*patched, translator);
     BOOST_CHECK(orig->Equals(*id_orig.GetSeqId()));
+}
+
+void Test_PatchSeqId_SeqIds()
+{
+    const ISeq_id_Translator& translator = GetSeqIdTranslator();
+    typedef vector<CRef<CSeq_id> > TSeqIds;
+    TSeqIds ids;
+    ids.push_back(Ref(new CSeq_id(id_patched.AsString())));
+    ids.push_back(Ref(new CSeq_id("3"))); 
+    ids.push_back(Ref(new CSeq_id("4"))); 
+
+    PatchSeqIds(ids, translator);
+
+    BOOST_CHECK(ids[0]->Equals(*id_orig.GetSeqId()));
+    BOOST_CHECK(ids[1]->Equals(*CSeq_id_Handle::GetGiHandle(3).GetSeqId()));
+    BOOST_CHECK(ids[2]->Equals(*CSeq_id_Handle::GetGiHandle(4).GetSeqId()));
 }
 
 END_NCBI_SCOPE
@@ -118,6 +133,7 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 
     test_suite* patch_suite = BOOST_TEST_SUITE("PatchSeqId");
     idtr_suite->add(BOOST_TEST_CASE(ncbi::Test_PatchSeqId_SeqId));
+    idtr_suite->add(BOOST_TEST_CASE(ncbi::Test_PatchSeqId_SeqIds));
     test->add(patch_suite);
 
     return test.release();
@@ -126,6 +142,9 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/09/01 15:28:23  didenko
+* Added a test for patching a container of CSeq_id
+*
 * Revision 1.2  2005/08/31 19:36:44  didenko
 * Reduced the number of objects copies which are being created while doing PatchSeqIds
 *
