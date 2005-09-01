@@ -1361,7 +1361,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
         }
         else {
             m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
-            ERR_POST(Warning << "CId2Reader: ID2-Reply-Get-Blob: "
+            ERR_POST(Info << "CId2Reader: ID2-Reply-Get-Blob: "
                      "blob already loaded: " << blob_id.ToString());
             return;
         }
@@ -1427,7 +1427,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
         return;
     }
     if ( blob.IsLoaded() ) {
-        ERR_POST("CId2Reader: ID2S-Reply-Get-Split-Info: "
+        ERR_POST(Info << "CId2Reader: ID2S-Reply-Get-Split-Info: "
                  "blob already loaded: " << blob_id.ToString());
         return;
     }
