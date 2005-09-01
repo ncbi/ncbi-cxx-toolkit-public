@@ -807,7 +807,9 @@ void CTSE_ScopeInfo::x_UserUnlockTSE(void)
 {
     if ( m_TSE_LockCounter.Add(-1) == 0 ) {
         _ASSERT(CanBeUnloaded());
-        GetDSInfo().ReleaseTSELock(*this);
+        if ( IsAttached() ) {
+            GetDSInfo().ReleaseTSELock(*this);
+        }
     }
 }
 
@@ -816,7 +818,9 @@ void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
 {
     if ( m_TSE_LockCounter.Add(-1) == 0 ) {
         _ASSERT(CanBeUnloaded());
-        GetDSInfo().ForgetTSELock(*this);
+        if ( IsAttached() ) {
+            GetDSInfo().ForgetTSELock(*this);
+        }
     }
 }
 
@@ -1738,6 +1742,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/09/01 18:20:04  vasilche
+* Allow unlocking of detached handles.
+*
 * Revision 1.24  2005/08/12 16:14:40  vasilche
 * Fixed premature deletion of CBioseq_ScopeInfo.
 *
