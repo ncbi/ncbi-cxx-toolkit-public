@@ -400,6 +400,13 @@ Blast_SetUpSubjectTranslation(BLAST_SequenceBlk* subject_blk,
                               Int4** frame_offsets,
                               Boolean* partial_translation);
 
+/** Get the number of contexts for a given program. This corresponds to the
+ * number of translation frames or strands whenever applicable. 
+ * @return 0 on unsupported program, non-zero otherwise
+ */
+NCBI_XBLAST_EXPORT
+unsigned int BLAST_GetNumberOfContexts(EBlastProgramType program);
+
 #ifdef __cplusplus
 }
 #endif

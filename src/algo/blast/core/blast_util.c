@@ -1325,3 +1325,32 @@ char* BLAST_StrToUpper(const char* string)
     return retval;
 }
 
+unsigned int
+BLAST_GetNumberOfContexts(EBlastProgramType p)
+{
+    unsigned int retval = 0;
+
+    switch (p) {
+    case eBlastTypeBlastn:
+    case eBlastTypePhiBlastn:
+        retval = NUM_STRANDS;
+        break;
+    case eBlastTypeBlastp:
+    case eBlastTypeRpsBlast:
+    case eBlastTypeTblastn: 
+    case eBlastTypePsiBlast:
+    case eBlastTypePsiTblastn:
+    case eBlastTypePhiBlastp:
+        retval = 1;
+        break;
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastx:
+    case eBlastTypeRpsTblastn: 
+        retval = NUM_FRAMES;
+        break;
+    default:
+        break;
+    }
+
+    return retval;
+}
