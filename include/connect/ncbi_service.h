@@ -37,9 +37,9 @@
 #include <connect/ncbi_host_info.h>
 
 
-/* Revision 6.101 */
+/* Revision 6.200 */
 #define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  101
+#define SERV_CLIENT_REVISION_MINOR  200
 
 
 /** @addtogroup ServiceSupport
@@ -207,6 +207,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.40  2005/09/02 14:28:18  lavr
+ * Bump client revision number to 6.200 for use with patched PubFetch
+ *
  * Revision 6.39  2005/07/06 18:54:44  lavr
  * +enum ESERV_SpecialType to hold special server type bits (instead of macros)
  *
