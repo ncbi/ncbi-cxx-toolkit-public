@@ -67,7 +67,7 @@ public:
 
     bool IsSetCore_genes(void) const { return IsSetGenes(); }
     bool CanGetCore_genes(void) const { return CanGetGenes(); }
-    void ResetCore_genes(void) { return ResetGenes(); }
+    void ResetCore_genes(void) { ResetGenes(); }
     const TCore_genes& GetCore_genes(void) const { return GetGenes(); }
     TCore_genes& SetCore_genes(void) { return SetGenes(); }
 };
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/09/02 13:21:36  vasilche
+* Returning void value is incorrect.
+*
 * Revision 1.1  2005/09/01 17:46:09  dicuccio
 * Initial revision - moved over from internal tree
 *
