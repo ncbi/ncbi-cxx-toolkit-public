@@ -220,6 +220,8 @@ EAnnotPriority GetSeqdescPriority(const CSeqdesc& desc)
     case CSeqdesc::e_Pub:
     case CSeqdesc::e_Comment:
         return eAnnotPriority_low;
+    default:
+        break;
     }
     return eAnnotPriority_regular;
 }
@@ -270,24 +272,8 @@ void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
 void CBlobSplitterImpl::CollectPieces(const CPlaceId& place_id,
                                       const CSeq_hist_SplitInfo& info)
 {
-    size_t max_size = m_Params.m_MaxChunkSize;
-    size_t size = info.m_Size.GetZipSize();
-    bool add_as_whole = size <= max_size  ||  info.m_Assembly.size() <= 1;
-    if ( 0 && add_as_whole ) {
-        // add whole history asembly as one piece
-        Add(SAnnotPiece(place_id, info));
-    }
-    else {
-        // split assembly alignments
-        _ASSERT(info.m_Location.size() == 1);
-        TSeqPos seq_length = info.m_Location.begin()->second.
-            GetTotalRange().GetLength();
-        ITERATE ( CSeq_hist::TAssembly, i, info.m_Assembly ) {
-            CSeq_hist_SplitInfo* piece_info =
-                new CSeq_hist_SplitInfo(place_id, **i, m_Params);
-            Add(SAnnotPiece(place_id, *piece_info));
-        }
-    }
+    // add whole history asembly as one piece
+    Add(SAnnotPiece(place_id, info));
 }
 
 
@@ -575,6 +561,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/09/02 14:33:18  vasilche
+* Fixed warning.
+* Keep assembly in one chunk.
+*
 * Revision 1.14  2005/06/13 15:44:53  grichenk
 * Implemented splitting of assembly. Added splitting of seqdesc objects
 * into multiple chunks.
