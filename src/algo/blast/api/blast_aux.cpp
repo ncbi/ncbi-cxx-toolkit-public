@@ -536,13 +536,13 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
                           TSeqLocInfoVector& mask_v)
 {
     ASSERT(mask);
-    const unsigned int kNumFrames = GetNumberOfFrames(program);
+    const unsigned int kNumContexts = GetNumberOfContexts(program);
 
-    if (seqid_v.size() != mask->total_size/kNumFrames) {
+    if (seqid_v.size() != mask->total_size/kNumContexts) {
         string msg = "Blast_GetSeqLocInfoVector: number of query ids " +
             NStr::IntToString(seqid_v.size()) + 
             " not equal to number of queries in mask " + 
-            NStr::IntToString(mask->total_size/kNumFrames);
+            NStr::IntToString(mask->total_size/kNumContexts);
         NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
 
@@ -550,10 +550,10 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
     NON_CONST_ITERATE(vector< CRef<CSeq_id> >, query_id, seqid_v) {
 
         list<CRef<CSeqLocInfo> > query_masks;
-        for (unsigned int index = 0; index < kNumFrames; index++) {
+        for (unsigned int index = 0; index < kNumContexts; index++) {
             // N.B.: The elements of the seqloc_array corresponding to reverse
             // strands are all NULL except in a reverse-strand-only search
-            BlastSeqLoc* loc = mask->seqloc_array[qindex*kNumFrames+index];
+            BlastSeqLoc* loc = mask->seqloc_array[qindex*kNumContexts+index];
         
             for ( ; loc; loc = loc->next) {
                 int frame = BLAST_ContextToFrame(program, index);
@@ -582,6 +582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.80  2005/09/02 15:58:17  camacho
+ * Rename GetNumberOfFrames -> GetNumberOfContexts
+ *
  * Revision 1.79  2005/08/30 20:32:28  camacho
  * Fixes to Blast_GetSeqLocInfoVector
  *
