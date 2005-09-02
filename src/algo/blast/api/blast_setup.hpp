@@ -328,11 +328,12 @@ FindMatrixPath(const char* matrix_name, bool is_prot);
 string
 FindBlastDbPath(const char* dbname, bool is_prot);
 
-/** Returns the number of frames for a given BLAST program
+/** Returns the number of contexts for a given BLAST program
+ * @sa BLAST_GetNumberOfContexts
  * @param p program 
  */
 unsigned int 
-GetNumberOfFrames(EBlastProgramType p);
+GetNumberOfContexts(EBlastProgramType p);
 
 
 /// Returns the encoding for the sequence data used in BLAST for the query
@@ -357,6 +358,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2005/09/02 15:58:14  camacho
+* Rename GetNumberOfFrames -> GetNumberOfContexts, delegate to CORE function
+*
 * Revision 1.50  2005/07/07 16:32:11  camacho
 * Revamping of BLAST exception classes and error codes
 *

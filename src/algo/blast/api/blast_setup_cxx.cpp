@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include <corelib/ncbiapp.hpp>
 #include <corelib/metareg.hpp>
 #include <algo/blast/core/blast_setup.h>
+#include <algo/blast/core/blast_util.h>
 
 #include "blast_setup.hpp"
 
@@ -102,10 +103,10 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query info");
     }
 
-    unsigned int nframes = GetNumberOfFrames(prog);
+    const unsigned int kNumContexts = GetNumberOfContexts(prog);
     query_info->num_queries = static_cast<int>(queries.Size());
     query_info->first_context = 0;
-    query_info->last_context = query_info->num_queries * nframes - 1;
+    query_info->last_context = query_info->num_queries * kNumContexts - 1;
 
     query_info->contexts =
         (BlastContextInfo*) calloc(query_info->last_context + 1, 
@@ -162,7 +163,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
         }
 
         if (translate) {
-            for (unsigned int i = 0; i < nframes; i++) {
+            for (unsigned int i = 0; i < kNumContexts; i++) {
                 unsigned int prot_length = 
                     (length == 0 ? 0 : 
                      (length - i % CODON_LENGTH) / CODON_LENGTH);
@@ -225,7 +226,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                 s_QueryInfo_SetContext(query_info, ctx_index, length, prog);
             }
         }
-        ctx_index += nframes;
+        ctx_index += kNumContexts;
     }
     query_info->max_length = max_length;
     *qinfo = query_info;
@@ -260,7 +261,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
         (prog == eBlastTypeRpsTblastn));
 
     unsigned int ctx_index = 0;      // index into context_offsets array
-    unsigned int nframes = GetNumberOfFrames(prog);
+    const unsigned int kNumContexts = GetNumberOfContexts(prog);
 
     CBlastMaskLoc mask(BlastMaskLocNew(qinfo->num_queries));
 
@@ -322,7 +323,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                    seqbuf_rev = sequence.data.get();
 
                 // Populate the sequence buffer
-                for (unsigned int i = 0; i < nframes; i++) {
+                for (unsigned int i = 0; i < kNumContexts; i++) {
                     if (qinfo->contexts[i].query_length <= 0) {
                         continue;
                     }
@@ -376,7 +377,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 
             mask->seqloc_array[index] = bsl_tmp;
             ++index;
-            ctx_index += nframes;
+            ctx_index += kNumContexts;
         } catch (const CException& e) {
             error_string += 
                 "Query number " + NStr::IntToString(query_num) + ": ";
@@ -1033,37 +1034,16 @@ FindBlastDbPath(const char* dbname, bool is_prot)
 }
 
 unsigned int
-GetNumberOfFrames(EBlastProgramType p)
+GetNumberOfContexts(EBlastProgramType p)
 {
     unsigned int retval = 0;
-
-    switch (p) {
-    case eBlastTypeBlastn:
-    case eBlastTypePhiBlastn:
-        retval = NUM_STRANDS;
-        break;
-    case eBlastTypeBlastp:
-    case eBlastTypeRpsBlast:
-    case eBlastTypeTblastn: 
-    case eBlastTypePsiBlast:
-    case eBlastTypePsiTblastn:
-    case eBlastTypePhiBlastp:
-        retval = 1;
-        break;
-    case eBlastTypeBlastx:
-    case eBlastTypeTblastx:
-    case eBlastTypeRpsTblastn: 
-        retval = NUM_FRAMES;
-        break;
-    default:
-        {
-            int debug_value = static_cast<int>(p);
-            string prog_name(Blast_ProgramNameFromType(p));
-            string msg = "Cannot get number of frames for invalid program ";
-            msg += "type: " + prog_name + " (" + NStr::IntToString(debug_value);
-            msg += ")";
-            NCBI_THROW(CBlastException, eNotSupported, msg);
-        }
+    if ( (retval = BLAST_GetNumberOfContexts(p)) == 0) {
+        int debug_value = static_cast<int>(p);
+        string prog_name(Blast_ProgramNameFromType(p));
+        string msg = "Cannot get number of contexts for invalid program ";
+        msg += "type: " + prog_name + " (" + NStr::IntToString(debug_value);
+        msg += ")";
+        NCBI_THROW(CBlastException, eNotSupported, msg);
     }
 
     return retval;
@@ -1078,6 +1058,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.95  2005/09/02 15:58:15  camacho
+ * Rename GetNumberOfFrames -> GetNumberOfContexts, delegate to CORE function
+ *
  * Revision 1.94  2005/08/30 20:22:14  camacho
  * + psitblastn to GetNumberOfFrames
  *
