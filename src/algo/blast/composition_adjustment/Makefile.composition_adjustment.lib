@@ -1,0 +1,8 @@
+# 
+
+SRC_C = Mode_condition Newton_procedures RE_interface_ds \
+	nlm_numerics re_newton
+
+SRC   = $(SRC_C)
+
+LIB = composition_adjustment

@@ -1,0 +1,9 @@
+#
+
+# Meta-makefile("ALGO" project)
+#################################
+
+LIB_PROJ = composition_adjustment
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
