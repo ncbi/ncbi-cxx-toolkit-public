@@ -6,6 +6,11 @@
 #  Filter out redundant warnings issued by WorkShop 7 C++ 5.4 compiler.
 #  Simplify the output.
 
+# Force locale settings that won't interfere with our use of non-ASCII
+# single-byte characters.
+LC_ALL=C
+export LC_ALL
+
 sed 's/std::basic_string<char, std::char_traits<char>, std::allocator<char>>/std::string/g
 s/std::basic_\([a-z]*stream\)<char, std::char_traits<char>>/std::\1/g
 :level
