@@ -1,7 +1,7 @@
 # $Id$
 
-SRC_C = Mode_condition Newton_procedures RE_interface_ds \
-	nlm_numerics re_newton
+SRC_C = blast_adjust_scores.c compo_mode_condition.c \
+	composition_adjustment.c nlm_linear_algebra.c optimize_target_freq.c
 
 SRC   = $(SRC_C)
 
