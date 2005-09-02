@@ -1013,9 +1013,9 @@ void CSplitCacheApp::TestSplitBlob(CSeq_id_Handle id,
             for (CBioseq_CI seq(handle.GetTopLevelEntry()); seq; ++seq) {
                 CSeqdesc_CI desc_ci(*seq);
             }
-            size_t seq_desc_count = CollectDescriptors(*tse_core).first;
             // All bioseq descriptors must be loaded
-            _ASSERT(seq_desc_count == content.GetSeqDescCount());
+            _ASSERT(CollectDescriptors(*tse_core).first ==
+                    content.GetSeqDescCount());
         }
         if ( check_high_desc ) {
             // Load descriptors with high priority. Low priority
@@ -1106,6 +1106,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/09/02 14:32:27  vasilche
+* Removed unused variable.
+*
 * Revision 1.38  2005/06/20 18:37:55  grichenk
 * Optimized loading of whole split bioseqs
 *
