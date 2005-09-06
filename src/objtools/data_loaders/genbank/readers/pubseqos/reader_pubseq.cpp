@@ -414,7 +414,7 @@ bool CPubseqReader::GetSeq_idInfo(CReaderRequestResult& result,
                     SetAndSaveSeq_idBlob_ids(result, seq_id, blob_ids);
                 }
 
-                if ( giGot.IsNULL() ) {
+                if ( giGot.IsNULL() || gi == 0 ) {
                     // no gi -> only one Seq-id - the one used as argument
                     if ( !seq_ids.IsLoaded() ) {
                         seq_ids.AddSeq_id(seq_id);
