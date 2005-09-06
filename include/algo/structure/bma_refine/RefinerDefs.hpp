@@ -74,6 +74,8 @@ enum RefinerResultCode {
     eRefinerResultCantDoBlockEditing = 19,
     eRefinerResultTrialInitializationError = 20,
     eRefinerResultTrialExecutionError = 21,
+    eRefinerResultLeaveOneOutExecutionError = 22,
+    eRefinerResultLeaveNOutExecutionError = 23,
     eRefinerResultPhaseSkipped = 100
 };
 
@@ -90,6 +92,7 @@ struct LeaveOneOutParams {
     //  score change, stop future LOO phases.
     double  sameScoreThreshold;
     unsigned int seed;   //  for determining order of row selection
+    unsigned int lno;    //  number of rows to leave out between PSSM recalculation
     vector<unsigned int> rowsToExclude;  //  specify extra row numbers to exclude
 
     //  Parameters passed to block-aligner
@@ -110,6 +113,7 @@ struct LeaveOneOutParams {
 
         sameScoreThreshold = 0;
         seed = 0;
+        lno = 1;
 
         percentile = 1.0;
         extension = 0;
@@ -139,6 +143,7 @@ struct LeaveOneOutParams {
 
         sameScoreThreshold = rhs.sameScoreThreshold;
         seed = rhs.seed;
+        lno = rhs.lno;
         rowsToExclude.assign(rhs.rowsToExclude.begin(), rhs.rowsToExclude.end());
 
         percentile = rhs.percentile;
@@ -265,6 +270,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/06 18:49:44  lanczyck
+ * add leave-N-out variable to LOO param struct; add LNO error codes
+ *
  * Revision 1.2  2005/06/28 14:26:36  lanczyck
  * add 'error' code for a skipped phase
  *
