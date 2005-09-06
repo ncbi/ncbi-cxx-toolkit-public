@@ -156,6 +156,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     //  Initialize everything from the base class.
     ResetBase();
 
+    bool recomputeScores = false;
     bool writeDetails = (detailsStream != NULL && m_verbose);
     IOS_BASE::fmtflags initFlags = (detailsStream) ? detailsStream->flags() : cout.flags();
 
@@ -168,14 +169,19 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     TScoreType rowScore, beforeLOORowScore;
     vector<unsigned int> blockWidths;
     vector<TScoreType> originalBlockScores;
+    map<unsigned int, TScoreType> beforeLOORowScores;
     RowScorer rowScorer;
 
+    vector<unsigned int> rows, froms, tos;
+
     string noChange = " no score change ", accepted = " accepted ";
+    string lnoString = (m_looParams.lno > 1) ? "DoLeaveNOut" : "DoLeaveOneOut";
 
     const BlockMultipleAlignment* bma;
     BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
     BlockMultipleAlignment::UngappedAlignedBlockList::iterator blockIt;
     Ranges rangesBeforeLOO, rangesAfterLOO;
+    map<unsigned int, Ranges> rangesBeforeLOOMap, rangesAfterLOOMap;
 
     //  In past we tried to accept only score-improving moves; preserve that capability.
     bool acceptAll = true;
@@ -208,6 +214,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         m_rowSelector->Shuffle();
     }
 
+    //(*detailsStream) << "starting while loop over rows in DoPhase\n";
     tries = 0;
     sumShifts = 0;
     while (m_rowSelector->HasNext() && au) {
@@ -215,9 +222,14 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         row = m_rowSelector->GetNext();
 
         if (row == 0) {
-            WARNING_MESSAGE_CL("Cannot run 'DoLeaveOneOut' for the master (row = 0).  Continuing.");
+            WARNING_MESSAGE_CL("Cannot run '" << lnoString << "' for the master (row = 0).  Continuing.");
             continue;
         }
+
+        rows.push_back(row);
+        froms.push_back(m_looParams.froms[row]);
+        tos.push_back(m_looParams.tos[row]);
+
 
         seqIdStr = GetSeqIdStringForRowFromAU(au, row);
 
@@ -232,7 +244,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         if (bma) {
             bma->GetUngappedAlignedBlocks(&alignedBlocks);
             for (blockIt = alignedBlocks.begin(); blockIt != alignedBlocks.end(); ++blockIt) {
-                rangesBeforeLOO.push_back(*(*blockIt)->GetRangeOfRow(row));
+                rangesBeforeLOOMap[row].push_back(*(*blockIt)->GetRangeOfRow(row));
                 if (nRowsTried == 0) {
                     blockWidths.push_back((*blockIt)->m_width);
                 }
@@ -250,6 +262,8 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         //  the DoLeaveOneOut call.
 
         beforeLOORowScore = rowScorer.ComputeBlockScores(*au, m_initialBlockScores[row], row);
+        beforeLOORowScores[row] = beforeLOORowScore;
+
         if (!acceptAll) {
             //                beforeLOORowScore = GetScore(*au, row);
             auRollbackCopy = au->Clone();
@@ -264,28 +278,75 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         //                cout << "##### row: " << row+1 << " perc " << percentileLOO << "; ext " << extensionLOO << " cut " << cutoffLOO << " from/to " << queryFrom[row] << " " << queryTo[row] << endl;
 
         //  If LOO failed continue to the next row (rollbacks first, if created a copy earlier)
-        if (!au->DoLeaveOneOut(row, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
-                               m_looParams.cutoff, m_looParams.froms[row], m_looParams.tos[row])) {
+        //(*detailsStream) << "    about to do LOO for row " << row << endl;
+//        if (!au->DoLeaveOneOut(row, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
+//                               m_looParams.cutoff, m_looParams.froms[row], m_looParams.tos[row])) {
+
+        //  Accummulate enough rows...
+        if (rows.size() < m_looParams.lno) continue;
+
+        if (!au->DoLeaveNOut(rows, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
+                               m_looParams.cutoff, froms, tos)) {
             if (!acceptAll) {
                 delete au;  //  DoLeaveOneOut likely has modified 'au' 
                 au = auRollbackCopy;
+                ERROR_MESSAGE_CL(lnoString << " failed for " << seqIdStr << " at row " << row+1 << ".\nRollback & continue.");
+                continue;
+            } else {
+                ERROR_MESSAGE_CL(lnoString << " failed during call involving " << seqIdStr << " at row " << row+1 << ".\nTerminating phase at processing of " << nRowsTried << "-th row.");
+                return (m_looParams.lno > 1) ? eRefinerResultLeaveNOutExecutionError : eRefinerResultLeaveOneOutExecutionError;
             }
-            ERROR_MESSAGE_CL("DoLeaveOneOut failed for " << seqIdStr << " at row " << row+1 << ".\nRollback & continue.\n\n");
-            continue;
 
         } else {
-            ++tries;
-            oldScore = score;
-            score    = (TScoreType) rowScorer.ComputeScore(*au);  //GetScore(*au);
-            //                rowScore = GetScore(*au, row);
-            rowScore = rowScorer.ComputeBlockScores(*au, m_finalBlockScores[row], row);
 
-            if (writeDetails) {
-                (*detailsStream) << "DoLeaveOneOut for " << seqIdStr << " at row " << row+1 << " (before LOO rowScore = " << beforeLOORowScore << "; ";
-                (*detailsStream) << "after LOO rowScore = " << rowScore << ")" << endl; 
-            } else {
-                TRACE_MESSAGE_CL("DoLeaveOneOut for " << seqIdStr << " at row " << row+1 << " (before LOO rowScore = " << beforeLOORowScore << ")"); 
-                TRACE_MESSAGE_CL("              (after LOO rowScore = " << rowScore << ")"); 
+            oldScore = score;
+            //(*detailsStream) << "    about to do rowScorer.ComputeScore after LOO for row " << row << endl;
+            score    = (TScoreType) rowScorer.ComputeScore(*au);  //GetScore(*au);
+
+            for (unsigned int i = 0; i < m_looParams.lno; ++i) {
+                row = rows[i];
+                (*detailsStream) << "    about to do rowScorer.ComputeBlockScores after LOO for row " << row << endl;
+                rowScore = rowScorer.ComputeBlockScores(*au, m_finalBlockScores[row], row);
+                seqIdStr = GetSeqIdStringForRowFromAU(au, row);
+
+                if (writeDetails) {
+                    (*detailsStream) << lnoString << " for " << seqIdStr << " at row " << row+1 << " (before LOO rowScore = " << beforeLOORowScores[row] << "; ";
+                    (*detailsStream) << "after LOO rowScore = " << rowScore << ")" << endl; 
+                } else {
+                    TRACE_MESSAGE_CL(lnoString << " for " << seqIdStr << " at row " << row+1 << " (before LOO rowScore = " << beforeLOORowScores[row] << ")"); 
+                    TRACE_MESSAGE_CL("              (after LOO rowScore = " << rowScore << ")"); 
+                }
+
+
+                if (au && (bma = au->GetBlockMultipleAlignment())) {
+                    alignedBlocks.clear();
+                    bma->GetUngappedAlignedBlocks(&alignedBlocks);
+                    for (blockIt = alignedBlocks.begin(); blockIt != alignedBlocks.end(); ++blockIt) {
+                        rangesAfterLOOMap[row].push_back(*(*blockIt)->GetRangeOfRow(row));
+                    }
+                }
+
+                //  Only add shift to the map if its non-zero.
+                shiftOnRow = AnalyzeRowShifts(rangesBeforeLOOMap[row], rangesAfterLOOMap[row], row, detailsStream);
+                if (shiftOnRow > 0) {
+                    m_scalarChangeData[row] = shiftOnRow;
+                    sumShifts += shiftOnRow;
+                }
+
+                //  Output individual block scores
+                if (writeDetails) {
+                    (*detailsStream) << "    Block scores on row " << row+1 << " (row, block number, block size, before LOO, after LOO): " << endl;
+                    for (unsigned int bnum = 0; bnum < m_initialBlockScores[row].size(); ++bnum) {
+                        detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+                        (*detailsStream) << "    row " << setw(5) << row+1 << " BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum];
+
+                        detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
+                        (*detailsStream) << " " << setw(7) << m_initialBlockScores[row][bnum] << " " << setw(7) << m_finalBlockScores[row][bnum] << endl;
+                    }
+                    detailsStream->setf(initFlags, IOS_BASE::adjustfield);
+                    (*detailsStream) << endl;
+                }
+
             }
 
             //  DoLeaveOneOut modifies the underlying alignment.  If the change is not 
@@ -294,7 +355,8 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             if (acceptAll) {
                 if (writeDetails) {
                     string& msg = (score == oldScore) ? noChange : accepted;
-                    (*detailsStream) << "LOO move" << msg << "for " << seqIdStr << " at row " << row+1 << ".  oldScore = " << oldScore << "; new score = " << score;
+//                    (*detailsStream) << "LOO move" << msg << "for " << seqIdStr << " at row " << row+1 << ".  oldScore = " << oldScore << "; new score = " << score;
+                    (*detailsStream) << "LOO move" << msg << ".  oldScore = " << oldScore << "; new score = " << score;
                 }
                 if (score == oldScore) {
                     ++scoreSame;
@@ -304,7 +366,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 }
 
             } else {
-                TRACE_MESSAGE_CL("DoLeaveOneOut NOT accepted for " << seqIdStr << " at row " << row+1 << ".  oldScore = " << oldScore << "; rejected new score = " << score);
+                TRACE_MESSAGE_CL(lnoString << " NOT accepted.  oldScore = " << oldScore << "; rejected new score = " << score);
                 if (score < oldScore) ++scoreDrop; // use if to not depend on Accept implementation
 
                 delete au;
@@ -312,34 +374,12 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 score = oldScore;
             }
 		
-            if (au && (bma = au->GetBlockMultipleAlignment())) {
-                alignedBlocks.clear();
-                bma->GetUngappedAlignedBlocks(&alignedBlocks);
-                for (blockIt = alignedBlocks.begin(); blockIt != alignedBlocks.end(); ++blockIt) {
-                    rangesAfterLOO.push_back(*(*blockIt)->GetRangeOfRow(row));
-                }
-            }
-
-            //  Only add shift to the map if its non-zero.
-            shiftOnRow = AnalyzeRowShifts(rangesBeforeLOO, rangesAfterLOO, row, detailsStream);
-            if (shiftOnRow > 0) {
-                m_scalarChangeData[row] = shiftOnRow;
-                sumShifts += shiftOnRow;
-            }
-
-            //  Output individual block scores
-            if (writeDetails) {
-                (*detailsStream) << "    Block scores on row " << row+1 << " (row, block number, block size, before LOO, after LOO): " << endl;
-                for (unsigned int bnum = 0; bnum < m_initialBlockScores[row].size(); ++bnum) {
-                    detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
-                    (*detailsStream) << "    row " << setw(5) << row+1 << " BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum];
-
-                    detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
-                    (*detailsStream) << " " << setw(7) << m_initialBlockScores[row][bnum] << " " << setw(7) << m_finalBlockScores[row][bnum] << endl;
-                }
-                detailsStream->setf(initFlags, IOS_BASE::adjustfield);
-                (*detailsStream) << endl;
-            }
+            tries += m_looParams.lno;
+            rows.clear();
+            froms.clear();
+            tos.clear();
+            beforeLOORowScores.clear();
+            recomputeScores = false;
 
         }
     }
@@ -798,6 +838,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/06 19:08:24  lanczyck
+ * add Leave-N-out support to DoPhase
+ *
  * Revision 1.4  2005/07/07 22:22:06  lanczyck
  * return a default return value when sequence is neither gi nor pdb
  *
