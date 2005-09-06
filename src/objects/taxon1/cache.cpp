@@ -534,16 +534,22 @@ COrgRefCache::SetBinomialName( CTaxon1Node& node, COrgName& on )
     bon.SetGenus( pGenus->GetName() );
 
     if( pSpec ) { // we have a species in lineage
-        bon.SetSpecies().assign( pSpec->GetName(),
-                                 pos=s_AfterPrefix( pSpec->GetName(),
-                                                    pGenus->GetName() ),
-                                 pSpec->GetName().size() - pos );
-
+	pos = s_AfterPrefix( pSpec->GetName(), pGenus->GetName() );
+	if( pos != string::npos ) {
+	    bon.SetSpecies().assign( pSpec->GetName(),
+				     pos, pSpec->GetName().size() - pos );
+	} else {
+	    bon.SetSpecies().assign( pSpec->GetName() );
+	}
         if( pSubspec ) { // we also have a subspecies in lineage
-            bon.SetSubspecies().assign( pSubspec->GetName(),
-                                        pos=s_AfterPrefix(pSubspec->GetName(),
-                                                          pSpec->GetName()),
-                                        pSubspec->GetName().size() - pos );
+	    pos = s_AfterPrefix( pSubspec->GetName(), pSpec->GetName() );
+	    if( pos != string::npos ) {
+		bon.SetSubspecies().assign( pSubspec->GetName(),
+					    pos,
+					    pSubspec->GetName().size() - pos );
+	    } else {
+		bon.SetSubspecies().assign( pSubspec->GetName() );
+	    }
         }
         if( pNode != pSpec ) {
             BuildOrgModifier( pNode, on );
@@ -552,10 +558,14 @@ COrgRefCache::SetBinomialName( CTaxon1Node& node, COrgName& on )
     }
     // no species in lineage
     if( pSubspec ) { // we have no species but we have subspecies
-        bon.SetSubspecies().assign( pSubspec->GetName(),
-                                    pos=s_AfterPrefix(pSubspec->GetName(),
-                                                      pGenus->GetName()),
-                                    pSubspec->GetName().size() - pos );
+	pos = s_AfterPrefix( pSubspec->GetName(), pGenus->GetName() );
+	if( pos != string::npos ) {
+	    bon.SetSubspecies().assign( pSubspec->GetName(),
+					pos,
+					pSubspec->GetName().size() - pos );
+	} else {
+	    bon.SetSubspecies().assign( pSubspec->GetName() );
+	}
         BuildOrgModifier( pNode, on,
                           pNode==pSubspec ? pGenus : pSubspec );
         return true;
@@ -1399,6 +1409,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.27  2005/09/06 16:25:38  domrach
+ * Bad bug assigning species/subspecies in binomial name fixed
+ *
  * Revision 6.26  2005/08/29 15:52:29  domrach
  * Some issues with build org modifier resolved.
  *
