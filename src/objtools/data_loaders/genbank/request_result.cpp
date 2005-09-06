@@ -105,6 +105,7 @@ bool CLoadInfoSeq_ids::IsLoadedGi(void)
                     break;
                 }
             }
+            SetLoadedGi(0);
         }
     }
     return m_GiLoaded;
