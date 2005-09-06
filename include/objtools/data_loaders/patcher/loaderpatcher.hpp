@@ -40,11 +40,10 @@
 #include <objmgr/data_loader.hpp>
 #include <objmgr/impl/tse_assigner.hpp>
 #include <objmgr/seq_id_translator.hpp>
+#include <objtools/data_loaders/patcher/datapatcher_iface.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-class IDataPatcher;
 
 /////////////////////////////////////////////////////////////////////////////////
 //
@@ -179,6 +178,11 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.4  2005/09/06 20:05:17  ucko
+ * Include datapatcher_iface.hpp rather than just forward-declaring
+ * IDataPatcher, as some compiler versions (such as GCC 2.95) otherwise
+ * take issue with the use of CRef<IDataPatcher>.
+ *
  * Revision 1.3  2005/09/06 13:22:11  didenko
  * IDataPatcher interface moved to a separate file
  *
