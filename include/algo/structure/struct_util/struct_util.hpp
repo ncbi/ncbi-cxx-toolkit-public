@@ -119,6 +119,19 @@ public:
         double percentile, unsigned int extension, unsigned int cutoff,         // to calculate max loop lengths
         unsigned int queryFrom = 0, unsigned int queryTo = kMax_UInt);          // range on realigned row to search
 
+    // Adaptation of DoLeaveOneOut.  Only one PSSM computation for all rows left out.
+    //
+    // For each row in 'rowsToRealign', block align against the PSSM computed
+    // with all those rows removed from the multiple alignment.  After all are
+    // individually re-aligned against the PSSM, re-insert the rows.
+    // The leave-N-out (LNO) algorithm (implies IBM) using the block aligner.
+    // Numbering in these arguments starts from zero. Note that this currently requires
+    // the file "data/BLOSUM62" to be present, used for PSSM calculation.
+	// Returns true on success.
+    bool DoLeaveNOut(std::vector<unsigned int>& rowsToRealign, const std::vector < unsigned int >& blocksToRealign, // what to realign
+        double percentile, unsigned int extension, unsigned int cutoff,         // to calculate max loop lengths
+        std::vector<unsigned int>& queryFrom, std::vector<unsigned int>& queryTo);        // range on realigned row to search
+
 private:
     // sequence data
     SeqEntryList m_seqEntries;
@@ -147,6 +160,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/09/06 18:47:31  lanczyck
+* add method DoLeaveNOut:  faster than DoLeaveOneOut run N times, at possible cost of a lower alignment score
+*
 * Revision 1.11  2004/11/03 19:09:15  lanczyck
 * add Clone() method
 *
