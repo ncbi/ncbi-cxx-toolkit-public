@@ -150,6 +150,13 @@ void CSplignApp::Init()
      CArgDescriptions::eDouble, "0.5");
 
   argdescr->AddDefaultKey
+      ("max_extent", "max_extent",
+       "Max genomic extent to look for exons beyond compartment boundaries "
+       "as determined with Blast hits.",
+       CArgDescriptions::eInteger,
+       NStr::IntToString(CSplign::s_GetDefaultMaxGenomicExtent()) );
+
+  argdescr->AddDefaultKey
     ("min_exon_idty", "identity",
      "Minimal exon identity. Lower identity segments "
      "will be marked as gaps.",
@@ -164,7 +171,16 @@ void CSplignApp::Init()
   argdescr->AddDefaultKey
     ("quality", "quality", "Genomic sequence quality.",
      CArgDescriptions::eString, kQuality_high);
+    
+  // restrictions
+
+  CArgAllow_Strings* constrain_errlevel = new CArgAllow_Strings;
+  constrain_errlevel->Allow(kQuality_low)->Allow(kQuality_high);
+  argdescr->SetConstraint("quality", constrain_errlevel);
   
+#endif
+  
+
   argdescr->AddDefaultKey
     ("Wm", "match", "match score",
      CArgDescriptions::eInteger,
@@ -205,14 +221,6 @@ void CSplignApp::Init()
      CArgDescriptions::eInteger,
      NStr::IntToString(CSplicedAligner16::GetDefaultWi(3)).c_str());
   
-  // restrictions
-
-  CArgAllow_Strings* constrain_errlevel = new CArgAllow_Strings;
-  constrain_errlevel->Allow(kQuality_low)->Allow(kQuality_high);
-  argdescr->SetConstraint("quality", constrain_errlevel);
-  
-#endif
-    
   CArgAllow_Strings* constrain_strand = new CArgAllow_Strings;
   constrain_strand->Allow(kStrandPlus)->Allow(kStrandMinus)
       ->Allow(kStrandBoth);
@@ -223,6 +231,9 @@ void CSplignApp::Init()
   argdescr->SetConstraint("min_exon_idty", constrain01);
   argdescr->SetConstraint("compartment_penalty", constrain01);
   argdescr->SetConstraint("min_query_cov", constrain01);
+
+  CArgAllow* constrain_positives = new CArgAllow_Integers(1, kMax_Int);
+  argdescr->SetConstraint("max_extent", constrain_positives);
     
   SetupArgDescriptions(argdescr.release());
 }
@@ -531,7 +542,7 @@ int CSplignApp::Run()
   splign.SetCompartmentPenalty(args["compartment_penalty"].AsDouble());
   splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
   splign.SetEndGapDetection(!(args["noendgaps"]));
-  splign.SetMaxGenomicExtension(5500);
+  splign.SetMaxGenomicExtent(args["max_extent"].AsInteger());
 
   splign.SetAligner() = aligner;
   splign.SetSeqAccessor() = seq_loader;
@@ -723,6 +734,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/09/06 17:52:52  kapustin
+ * Add interface to max_extent member
+ *
  * Revision 1.46  2005/08/29 14:14:49  kapustin
  * Retain last subject sequence in memory when in batch mode.
  *

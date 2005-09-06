@@ -70,7 +70,7 @@ CSplign::CSplign( void )
     m_MinCompartmentIdty = 0.5;
     m_endgaps = true;
     m_strand = true;
-    m_max_genomic_ext = 5500;
+    m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
     m_nopolya = false;
     m_model_id = 0;
 }
@@ -139,6 +139,25 @@ void CSplign::SetMinCompartmentIdentity( double idty )
     }
 }
 
+
+size_t CSplign::s_GetDefaultMaxGenomicExtent(void)
+{
+    return 10000;
+}
+
+
+void CSplign::SetMaxGenomicExtent(size_t mge)
+{
+    m_max_genomic_ext = mge;
+}
+
+
+size_t CSplign::GetMaxGenomicExtent(void) const
+{
+    return m_max_genomic_ext;
+}
+
+
 double CSplign::GetMinExonIdentity( void ) const {
     return m_MinExonIdty;
 }
@@ -147,14 +166,6 @@ double CSplign::GetMinCompartmentIdentity( void ) const {
     return m_MinCompartmentIdty;
 }
 
-
-void CSplign::SetMaxGenomicExtension( size_t ext ) {
-    m_max_genomic_ext = ext;
-}
-
-size_t CSplign::GetMaxGenomicExtension( void ) const {
-    return m_max_genomic_ext;
-}
 
 void CSplign::SetMinQueryCoverage( double cov )
 {
@@ -1580,6 +1591,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/09/06 17:52:52  kapustin
+ * Add interface to max_extent member
+ *
  * Revision 1.33  2005/08/29 14:14:49  kapustin
  * Retain last subject sequence in memory when in batch mode.
  *

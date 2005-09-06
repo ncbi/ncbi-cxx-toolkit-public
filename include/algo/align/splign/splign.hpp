@@ -83,8 +83,9 @@ public:
     void   SetStrand(bool strand);
     bool   GetStrand(void) const;
 
-    void   SetMaxGenomicExtension(size_t ext);
-    size_t GetMaxGenomicExtension(void) const;
+    void   SetMaxGenomicExtent(size_t mge);
+    static size_t s_GetDefaultMaxGenomicExtent(void);
+    size_t GetMaxGenomicExtent(void) const;
 
     void   SetMinQueryCoverage(double cov);
     double GetMinQueryCoverage(void) const;
@@ -246,6 +247,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2005/09/06 17:52:29  kapustin
+ * Add interface to max_extent member
+ *
  * Revision 1.25  2005/08/29 14:13:42  kapustin
  * CSeqLoader::Load() +keep
  *
