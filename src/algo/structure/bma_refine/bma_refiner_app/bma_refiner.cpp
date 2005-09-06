@@ -130,9 +130,12 @@ void CAlignmentRefiner::Init(void)
 //    argDescr->SetConstraint("nr", new CArgAllow_Integers(1, N_MAX_ROWS));
 
     //  declare whether structures are to be among the rows left out
-    argDescr->AddFlag("fix_structs", "do not perform LOO refinement on structures (i.e., those sequences having a PDB identifier)\n\n", true);
+    argDescr->AddFlag("fix_structs", "do not perform LOO refinement on structures (i.e., those sequences having a PDB identifier)", true);
 
-
+    //  switch from 'leave-one-out' to 'leave-N-out':  recompute PSSM only after
+    //  lno rows refined.
+    argDescr->AddDefaultKey("lno", "integer", "leave-N-out mode:  recompute PSSM after 'lno' rows have been left out\n(values exceeding the number of rows interpreted as Nrows - 1)\n", argDescr->eInteger, "1");
+    argDescr->SetConstraint("lno", new CArgAllow_Integers(0, kMax_Int));
 
     //
     //  Block aligner parameters / constraints on search space
@@ -403,6 +406,7 @@ RefinerResultCode CAlignmentRefiner::ExtractLOOArgs(unsigned int nAlignedBlocks,
         m_loo.cExt = (args["cex"]) ? args["cex"].AsInteger() : args["ex"].AsInteger();
 
         m_loo.seed = (args["seed"]) ? args["seed"].AsInteger() : 0; 
+        m_loo.lno  = (unsigned int) args["lno"].AsInteger();
         m_loo.sameScoreThreshold      = args["convSameScore"].AsDouble();
 
         m_loo.percentile = args["p"].AsDouble();
@@ -611,6 +615,7 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
         echoStream << "Leave-One_Out parameters:" << endl;
         echoStream << "=================================" << endl;
         echoStream << "LOO on?  " << m_loo.doLOO << endl;
+        echoStream << "Number left out between score recomputation = " << m_loo.lno << endl;
         echoStream << "Fix alignment of structures?  " << m_loo.fixStructures << endl;
         echoStream << "Use full sequence (true) or aligned footprint (false)?  " << m_loo.fullSequence << endl;
         echoStream << "Extra arguments refer to rows (true) or blocks (false)?  " << m_loo.extrasAreRows << endl;
@@ -747,6 +752,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/06 19:09:48  lanczyck
+ * add Leave-N-out support
+ *
  * Revision 1.4  2005/07/07 22:07:05  lanczyck
  * do not offset the seed by one
  *
