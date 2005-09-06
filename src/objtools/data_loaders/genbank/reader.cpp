@@ -446,9 +446,7 @@ void CReader::SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
     }
     seq_ids.SetLoaded();
     if (seq_ids->GetState() & CBioseq_Handle::fState_no_data) {
-        CLoadLockBlob_ids blob_ids(result, seq_id);
-        blob_ids->SetState(seq_ids->GetState());
-        blob_ids.SetLoaded();
+        SetAndSaveSeq_idBlob_ids(result, seq_id);
     }
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
     if( writer ) {
@@ -479,6 +477,10 @@ void CReader::SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
 {
     if ( blob_ids.IsLoaded() ) {
         return;
+    }
+    if ( blob_ids->empty() ) {
+        blob_ids->SetState(blob_ids->GetState() |
+                           CBioseq_Handle::fState_no_data);
     }
     blob_ids.SetLoaded();
     CWriter *writer = m_Dispatcher->GetWriter(result, CWriter::eIdWriter);
