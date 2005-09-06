@@ -878,7 +878,8 @@ void CPhrap_Contig::ReadReadLocation(CNcbiIstream& in, TSeqs& seqs)
     read->AddReadLoc(start, complemented); 
     if (start < 0) {
         // Add second location
-        start += GetPaddedLength();
+        // Negative % produces strange results on Windows
+        start = GetPaddedLength() - (-start % GetPaddedLength());
         read->AddReadLoc(start, complemented);
         // Mark the contig as circular
         m_Circular = true;
@@ -2232,6 +2233,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/09/06 18:38:08  grichenk
+* Fixed processing of negative read starts
+*
 * Revision 1.10  2005/08/31 18:21:16  grichenk
 * Discard ACE data after converting each contig.
 * Put both start and stop into read location feature.
