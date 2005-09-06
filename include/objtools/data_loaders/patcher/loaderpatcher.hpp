@@ -44,18 +44,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XLOADER_PATCHER_EXPORT IDataPatcher : public CObject
-{
-public:
-
-    virtual ~IDataPatcher();
-
-    virtual CRef<ITSE_Assigner> GetAssigner() = 0;
-    virtual CRef<ISeq_id_Translator> GetSeqIdTranslator() = 0;
-
-    virtual void Patch(CSeq_entry& entry);
-    virtual bool IsPatchNeeded(const CTSE_Info& ) = 0;
-};
+class IDataPatcher;
 
 /////////////////////////////////////////////////////////////////////////////////
 //
@@ -63,6 +52,9 @@ public:
 //
 
 // Parameter names used by loader factory
+
+const string kCFParam_DLP_DataLoader = "DataLoader"; 
+const string kCFParam_DLP_DataPatcher = "DataPatcher"; // = EDbType (e.g. "Protein")
 
 class NCBI_XLOADER_PATCHER_EXPORT CDataLoaderPatcher : public CDataLoader
 {
@@ -165,7 +157,6 @@ private:
 
 END_SCOPE(objects)
 
-
 extern NCBI_XLOADER_PATCHER_EXPORT const string kDataLoader_Patcher_DriverName;
 
 extern "C"
@@ -188,6 +179,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.3  2005/09/06 13:22:11  didenko
+ * IDataPatcher interface moved to a separate file
+ *
  * Revision 1.2  2005/08/31 19:36:44  didenko
  * Reduced the number of objects copies which are being created while doing PatchSeqIds
  *

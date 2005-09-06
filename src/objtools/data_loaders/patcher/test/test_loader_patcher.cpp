@@ -44,6 +44,7 @@
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/patcher/loaderpatcher.hpp>
+#include <objtools/data_loaders/patcher/datapatcher_iface.hpp>
 
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
@@ -189,6 +190,9 @@ int main(int argc, const char** argv)
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/09/06 13:22:11  didenko
+* IDataPatcher interface moved to a separate file
+*
 * Revision 1.1  2005/09/01 15:29:25  didenko
 * Added a test for data loader patcher
 *

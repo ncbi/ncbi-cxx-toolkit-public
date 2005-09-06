@@ -31,6 +31,7 @@
 */
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/patcher/loaderpatcher.hpp>
+#include <objtools/data_loaders/patcher/datapatcher_iface.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
@@ -44,18 +45,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-void IDataPatcher::Patch(CSeq_entry& entry)
-{
-    CRef<ISeq_id_Translator> tr = GetSeqIdTranslator();
-    if (tr) 
-        PatchSeqId(entry, *tr);
-}
-
-IDataPatcher::~IDataPatcher() 
-{
-}
-
 
 
 CDataLoaderPatcher::TRegisterLoaderInfo 
@@ -306,38 +295,44 @@ CDataLoader* CDLPatcher_DataLoaderCF::CreateAndRegister(
     CObjectManager& om,
     const TPluginManagerParamTree* params) const
 {
-    return NULL;
-    /*    if ( !ValidParams(params) ) {
-        // Use constructor without arguments
-        return CDataLoaderPatcher::RegisterInObjectManager(om).GetLoader();
+    if ( !ValidParams(params) ) {
+        return NULL;
     }
-    // Parse params, select constructor
-        const string& dbname =
+    //Parse params, select constructor
+    const string& data_loader =
         GetParam(GetDriverName(), params,
-        kCFParam_BlastDb_DbName, false, kEmptyStr);
-    const string& dbtype_str =
+                 kCFParam_DLP_DataLoader, false, kEmptyStr);
+    const string& data_patcher =
         GetParam(GetDriverName(), params,
-        kCFParam_BlastDb_DbType, false, kEmptyStr);
-    if ( !dbname.empty() ) {
-        // Use database name
-        CDataLoaderPatcher::EDbType dbtype = CDataLoaderPatcher::eUnknown;
-        if ( !dbtype_str.empty() ) {
-            if (NStr::CompareNocase(dbtype_str, "Nucleotide") == 0) {
-                dbtype = CDataLoaderPatcher::eNucleotide;
-            }
-            else if (NStr::CompareNocase(dbtype_str, "Protein") == 0) {
-                dbtype = CDataLoaderPatcher::eProtein;
-            }
+                 kCFParam_DLP_DataPatcher, false, kEmptyStr);
+    if ( !data_loader.empty() && !data_patcher.empty() ) {
+        const TPluginManagerParamTree* dl_tree = 
+            params->FindNode(data_loader);
+        
+        typedef CPluginManager<CDataLoader> TDLManager;
+        TDLManager dl_manager;
+        CRef<CDataLoader> dl(dl_manager.CreateInstance(data_loader,
+                                                      TDLManager::GetDefaultDrvVers(),
+                                                      dl_tree));
+        const TPluginManagerParamTree* dp_tree = 
+            params->FindNode(data_patcher);
+        
+        typedef CPluginManager<IDataPatcher> TDPManager;
+        TDPManager dp_manager;
+        CRef<IDataPatcher> dp(dp_manager.CreateInstance(data_patcher,
+                                                        TDPManager::GetDefaultDrvVers(),
+                                                        dp_tree));
+
+        if (dl && dp) {
+            return CDataLoaderPatcher::RegisterInObjectManager(
+                             om,
+                             dl,
+                             dp,
+                             GetIsDefault(params),
+                             GetPriority(params)).GetLoader();
         }
-        return CDataLoaderPatcher::RegisterInObjectManager(
-            om,
-            dbname,
-            dbtype,
-            GetIsDefault(params),
-            GetPriority(params)).GetLoader();
-            }
-    // IsDefault and Priority arguments may be specified
-    return CDataLoaderPatcher::RegisterInObjectManager(om).GetLoader();*/
+    }
+    return NULL;
 }
 
 
@@ -363,6 +358,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.3  2005/09/06 13:22:11  didenko
+ * IDataPatcher interface moved to a separate file
+ *
  * Revision 1.2  2005/08/31 19:36:44  didenko
  * Reduced the number of objects copies which are being created while doing PatchSeqIds
  *
