@@ -162,7 +162,7 @@ public:
 
     /// Current timezone. Used in AsString() method.
     enum {
-	    eCurrentTimeZone= -1
+	    eCurrentTimeZone = -1
     };
 
     /// Which format use to get name of month or week of day.
@@ -397,8 +397,9 @@ public:
     ///   - B = full month name                (January-December)  
     ///   - b = abbeviated month name          (Jan-Dec)
     ///   - D = day as decimal number          (01-31)
-    ///   - h = hour in 24-hour format         (00-23)
+    ///   - d = day as decimal number (w/o 0)  (1-31)
     ///   - H = hour in 12-hour format         (00-12)
+    ///   - h = hour in 24-hour format         (00-23)
     ///   - m = minute as decimal number       (00-59)
     ///   - s = second as decimal number       (00-59)
     ///   - l = milliseconds as decimal number (000-999)
@@ -407,6 +408,7 @@ public:
     ///   - P = am/pm                          (AM/PM) 
     ///   - p = am/pm                          (am/pm) 
     ///   - Z = timezone format                (GMT or none) 
+    ///   - z = timezone shift                 (GMT[+/-HHMM]) 
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
     /// @sa
@@ -907,24 +909,25 @@ private:
     CTime& x_AddHour(int hours = 1, EDaylight daylight = eDaylightDefault, 
                      bool shift_time = true);
 
-    // Time
-
-    int           m_Year;       ///< Private data member year
-    unsigned char m_Month;      ///< Private data member month
-    unsigned char m_Day;        ///< Private data member day
-    unsigned char m_Hour;       ///< Private data member hour
-    unsigned char m_Minute;     ///< Private data member minute
-    unsigned char m_Second;     ///< Private data member second
-    unsigned long m_NanoSecond; ///< Private data member nanosecond
-
-    // Timezone and precision
-
-    ETimeZone          m_Tz;    ///< Private data member timezone
-    ETimeZonePrecision m_TzPrecision;///< Private data member time zone prec.
-
-    /// Difference between GMT and local time in seconds,
-    /// as stored during the last call to x_AdjustTime***().
-    int m_AdjustTimeDiff;
+private:
+    typedef struct {
+        // Time
+        unsigned int  year        : 12;  // 4 digits
+        unsigned char month       :  4;  // 0..12
+        unsigned char day         :  5;  // 0..31
+        unsigned char hour        :  5;  // 0..23
+        unsigned char min         :  6;  // 0..59
+        unsigned char sec         :  6;  // 0..61
+        // Difference between GMT and local time in seconds,
+        // as stored during the last call to x_AdjustTime***().
+        Int4          adjTimeDiff : 18; 
+        // Timezone and precision
+        ETimeZone     tz          :  2;  // Time format local/GMT
+        ETimeZonePrecision tzprec :  4;  // Time zone precission
+        unsigned                  :  0;  // Force alignment
+        Int4          nanosec;
+    } TData;
+    TData m_Data;  ///< Packed members
 
     // Friend left-hand operators
     NCBI_XNCBI_EXPORT
@@ -1471,25 +1474,25 @@ ostream& operator<< (ostream& os, const CStopWatch& sw)
 //
 
 inline 
-int CTime::Year(void) const { return m_Year; }
+int CTime::Year(void) const { return m_Data.year; }
 
 inline 
-int CTime::Month(void) const { return m_Month; }
+int CTime::Month(void) const { return m_Data.month; }
 
 inline 
-int CTime::Day(void) const { return m_Day; }
+int CTime::Day(void) const { return m_Data.day; }
 
 inline 
-int CTime::Hour(void) const { return m_Hour; }
+int CTime::Hour(void) const { return m_Data.hour; }
 
 inline 
-int CTime::Minute(void) const { return m_Minute; }
+int CTime::Minute(void) const { return m_Data.min; }
 
 inline 
-int CTime::Second(void) const { return m_Second; }
+int CTime::Second(void) const { return m_Data.sec; }
 
 inline 
-long CTime::NanoSecond(void) const { return (long) m_NanoSecond; }
+long CTime::NanoSecond(void) const { return (long)m_Data.nanosec; }
 
 inline 
 CTime& CTime::AddYear(int years, EDaylight adl)
@@ -1590,18 +1593,7 @@ CTime& CTime::operator= (const CTime& t)
 {
     if ( &t == this )
         return *this;
-
-    m_Year           = t.m_Year;
-    m_Month          = t.m_Month;
-    m_Day            = t.m_Day;
-    m_Hour           = t.m_Hour;
-    m_Minute         = t.m_Minute;
-    m_Second         = t.m_Second;
-    m_NanoSecond     = t.m_NanoSecond;
-    m_Tz             = t.m_Tz;
-    m_TzPrecision    = t.m_TzPrecision;
-    m_AdjustTimeDiff = t.m_AdjustTimeDiff;
-
+    m_Data = t.m_Data;
     return *this;
 }
 
@@ -1663,36 +1655,36 @@ double CTime::DiffNanoSecond(const CTime& t) const
 }
 
 inline 
-bool CTime::IsLocalTime(void) const { return m_Tz == eLocal; } 
+bool CTime::IsLocalTime(void) const { return m_Data.tz == eLocal; } 
 
 inline 
-bool CTime::IsGmtTime(void) const { return m_Tz == eGmt; }
+bool CTime::IsGmtTime(void) const { return m_Data.tz == eGmt; }
 
 inline 
 CTime::ETimeZone CTime::GetTimeZoneFormat(void) const
 {
-    return m_Tz;
+    return m_Data.tz;
 }
 
 inline 
 CTime::ETimeZonePrecision CTime::GetTimeZonePrecision(void) const
 {
-    return m_TzPrecision;
+    return m_Data.tzprec;
 }
 
 inline 
 CTime::ETimeZone CTime::SetTimeZoneFormat(ETimeZone val)
 {
-    ETimeZone tmp = m_Tz;
-    m_Tz = val;
+    ETimeZone tmp = m_Data.tz;
+    m_Data.tz = val;
     return tmp;
 }
 
 inline 
 CTime::ETimeZonePrecision CTime::SetTimeZonePrecision(ETimeZonePrecision val)
 {
-    ETimeZonePrecision tmp = m_TzPrecision;
-    m_TzPrecision = val;
+    ETimeZonePrecision tmp = m_Data.tzprec;
+    m_Data.tzprec = val;
     return tmp;
 }
 
@@ -1995,6 +1987,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/09/06 12:11:34  ivanov
+ * CTime: using bit fields and fixed-size types for class members
+ *
  * Revision 1.47  2005/05/31 13:18:56  ivanov
  * Minor comments fix
  *
