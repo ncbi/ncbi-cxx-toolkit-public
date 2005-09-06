@@ -143,7 +143,9 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
     }
 
     if (writeDetails) {
+        //(*detailsStream) << "    about to compute block scores in DoTrial\n";
         rowScorer.ComputeBlockScores(*au, originalBlockScores);
+        //(*detailsStream) << "    after computed  block scores in DoTrial\n";
 
         if (au->GetBlockMultipleAlignment()) {
             au->GetBlockMultipleAlignment()->GetUngappedAlignedBlocks(&alignedBlocks);
@@ -154,6 +156,7 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
 
     }
 
+    //(*detailsStream) << "start cycles loop in DoTrial\n";
     for (unsigned int i = 0; i < nCycles; ++i) {
 
         //  Stop the trial if no change in previous cycle or some error condition
@@ -180,7 +183,7 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
                 TRACE_MESSAGE_CL("Cycle " << i+1 << " not saving intermediate alignments.  Score = " << finalScore << "; made change = " << madeChange << "\n");
             }
         } else {
-            WARNING_MESSAGE_CL("Cycle " << i+1 << " gave invalid final score.\n");
+            WARNING_MESSAGE_CL("Cycle " << i+1 << " reports a problem (code " << (int) cycleResult << "); assigning cycle an invalid final score.\n");
             finalScore = REFINER_INVALID_SCORE;
             m_trialResults.insert(RefinedAlignmentsVT(finalScore, RefinerAU(i, NULL)));
         }
@@ -253,6 +256,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/06 19:07:14  lanczyck
+ * modify error message
+ *
  * Revision 1.1  2005/06/28 13:44:23  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *

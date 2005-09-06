@@ -212,7 +212,9 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
 
         // create same starting AlignmentUtility class object for trial
         delete au;
+        //(*detailsStream) << "    about to clone original in RunTrials\n";
         au = m_originalAlignment->Clone();
+        //(*detailsStream) << "    after cloned   original in RunTrials\n";
         if (!au || !au->Okay()) {
             delete au;
             CleanUp(false);
@@ -240,7 +242,7 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
             if (detailsStream) {
                 (*detailsStream) << "Original alignment score = " << GetInitialScore() << ":  Invalid final score\n";
             }
-            ERROR_MESSAGE_CL("Problem in trial " << i+1 << ": returned with error code " << (int) resultCode << "\nSkipping to next scheduled trial.\n");
+            ERROR_MESSAGE_CL("Problem in trial " << i+1 << ": returned with error code " << (int) resultCode << "\nSkipping to next scheduled trial.");
             m_perTrialResults.insert(RefinedAlignmentsVT(REFINER_INVALID_SCORE, RefinerAU(i+1, NULL)));
             continue;
         }
