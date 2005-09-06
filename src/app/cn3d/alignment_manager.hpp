@@ -139,7 +139,7 @@ public:
     void PurgeSequence(const MoleculeIdentifier *identifier);
 
     // show sequence/alignment/update viewer
-    void ShowSequenceViewer(void) const;
+    void ShowSequenceViewer(bool showNow) const;
     void ShowUpdateWindow(void) const;
 
 private:
@@ -169,6 +169,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/09/06 20:57:12  thiessen
+* fix -n option
+*
 * Revision 1.51  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

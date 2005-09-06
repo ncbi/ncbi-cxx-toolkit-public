@@ -906,7 +906,7 @@ void StructureWindow::OnShowWindow(wxCommandEvent& event)
             RaiseLogWindow();
             break;
         case MID_SHOW_SEQ_V:
-            if (glCanvas->structureSet) glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
+            if (glCanvas->structureSet) glCanvas->structureSet->alignmentManager->ShowSequenceViewer(true);
             break;
         case MID_SHOW_LOG_START:
             RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START,
@@ -1513,7 +1513,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
     if (!glCanvas->renderer->HasASNViewSettings())
         glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
-    glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
+//    glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
     SetCursor(wxNullCursor);
 
     return true;
@@ -1666,6 +1666,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/09/06 20:57:12  thiessen
+* fix -n option
+*
 * Revision 1.40  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

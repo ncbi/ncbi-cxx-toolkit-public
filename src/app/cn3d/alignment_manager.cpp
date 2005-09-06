@@ -591,9 +591,9 @@ const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int
         return NULL;
 }
 
-void AlignmentManager::ShowSequenceViewer(void) const
+void AlignmentManager::ShowSequenceViewer(bool showNow) const
 {
-    sequenceViewer->CreateSequenceWindow(true);
+    sequenceViewer->CreateSequenceWindow(showNow);
 }
 
 void AlignmentManager::ShowUpdateWindow(void) const
@@ -1158,6 +1158,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2005/09/06 20:57:12  thiessen
+* fix -n option
+*
 * Revision 1.101  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

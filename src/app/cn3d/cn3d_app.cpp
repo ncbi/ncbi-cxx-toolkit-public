@@ -594,8 +594,7 @@ bool Cn3DApp::OnInit(void)
     }
 
     // optionally show alignment window
-    if (!commandLine.Found("n") && structureWindow->glCanvas->structureSet)
-        structureWindow->glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
+    structureWindow->glCanvas->structureSet->alignmentManager->ShowSequenceViewer(!commandLine.Found("n"));
 
     // optionally open imports window, but only if any imports present
     if (commandLine.Found("i") && structureWindow->glCanvas->structureSet &&
@@ -651,6 +650,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/09/06 20:57:12  thiessen
+* fix -n option
+*
 * Revision 1.25  2005/04/26 14:29:19  thiessen
 * avoid error dialog recursion
 *
