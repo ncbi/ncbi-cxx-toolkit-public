@@ -142,8 +142,8 @@ public:
     int Test(const unsigned test_id,const unsigned thread_count);
 };
 
-const unsigned c_TestFrom = 1;
-const unsigned c_TestTo   = 201;
+const unsigned c_TestFrom = 2;
+const unsigned c_TestTo   = 202;
 const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
 int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
@@ -250,6 +250,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/09/07 19:15:38  vasilche
+* Exclude from test invalid gi 1.
+*
 * Revision 1.5  2004/11/30 15:06:04  dicuccio
 * Added #include for ncbithr.hpp
 *
