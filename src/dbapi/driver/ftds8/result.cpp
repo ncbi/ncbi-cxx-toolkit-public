@@ -454,6 +454,12 @@ int CTDS_RowResult::CurrentItemNo() const
 }
 
 
+int CTDS_RowResult::GetColumnNum(void) const
+{
+    return m_NofCols;
+}
+
+
 // Aux. for CTDS_RowResult::GetItem()
 static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                              STDS_ColDescr* fmt, CDB_Object* item_buff)
@@ -723,6 +729,12 @@ bool CTDS_BlobResult::Fetch()
 int CTDS_BlobResult::CurrentItemNo() const
 {
     return m_CurrItem;
+}
+
+
+int CTDS_BlobResult::GetColumnNum(void) const
+{
+    return -1;
 }
 
 
@@ -1158,6 +1170,12 @@ int CTDS_StatusResult::CurrentItemNo() const
 }
 
 
+int CTDS_StatusResult::GetColumnNum(void) const
+{
+    return 1;
+}
+
+
 CDB_Object* CTDS_StatusResult::GetItem(CDB_Object* item_buff)
 {
     if (!item_buff)
@@ -1330,6 +1348,12 @@ int CTDS_CursorResult::CurrentItemNo() const
 }
 
 
+int CTDS_CursorResult::GetColumnNum(void) const
+{
+    return m_Res ? m_Res->GetColumnNum() : -1;
+}
+
+
 CDB_Object* CTDS_CursorResult::GetItem(CDB_Object* item_buff)
 {
     return m_Res ? m_Res->GetItem(item_buff) : 0;
@@ -1435,6 +1459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/09/07 11:06:32  ssikorsk
+ * Added a GetColumnNum implementation
+ *
  * Revision 1.17  2005/07/20 12:33:05  ssikorsk
  * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
  *

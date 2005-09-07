@@ -468,6 +468,12 @@ int CDBL_RowResult::CurrentItemNo() const
 }
 
 
+int CDBL_RowResult::GetColumnNum(void) const
+{
+    return static_cast<int>(m_NofCols);
+}
+
+
 // Aux. for CDBL_RowResult::GetItem()
 static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                              SDBL_ColDescr* fmt, CDB_Object* item_buff)
@@ -739,6 +745,12 @@ bool CDBL_BlobResult::Fetch()
 int CDBL_BlobResult::CurrentItemNo() const
 {
     return m_CurrItem;
+}
+
+
+int CDBL_BlobResult::GetColumnNum(void) const
+{
+    return 0;
 }
 
 
@@ -1249,6 +1261,12 @@ int CDBL_StatusResult::CurrentItemNo() const
 }
 
 
+int CDBL_StatusResult::GetColumnNum(void) const
+{
+    return 1;
+}
+
+
 CDB_Object* CDBL_StatusResult::GetItem(CDB_Object* item_buff)
 {
     if (!item_buff)
@@ -1418,6 +1436,12 @@ int CDBL_CursorResult::CurrentItemNo() const
 }
 
 
+int CDBL_CursorResult::GetColumnNum(void) const
+{
+    return m_Res ? m_Res->GetColumnNum() : -1;
+}
+
+
 CDB_Object* CDBL_CursorResult::GetItem(CDB_Object* item_buff)
 {
     return m_Res ? m_Res->GetItem(item_buff) : 0;
@@ -1568,6 +1592,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/09/07 11:06:32  ssikorsk
+ * Added a GetColumnNum implementation
+ *
  * Revision 1.24  2005/07/07 19:12:55  ssikorsk
  * Improved to support a ftds driver
  *

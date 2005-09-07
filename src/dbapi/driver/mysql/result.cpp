@@ -141,6 +141,12 @@ int CMySQL_RowResult::CurrentItemNo() const
 }
 
 
+int CMySQL_RowResult::GetColumnNum(void) const
+{
+    return static_cast<int>(m_NofCols);
+}
+
+
 static CDB_Object* s_GetItem(EDB_Type    data_type,
                              CDB_Object* item_buff,
                              EDB_Type    b_type,
@@ -311,6 +317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/09/07 11:06:32  ssikorsk
+ * Added a GetColumnNum implementation
+ *
  * Revision 1.9  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

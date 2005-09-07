@@ -177,6 +177,11 @@ int CTL_RowResult::CurrentItemNo() const
     return m_CurrItem;
 }
 
+int CTL_RowResult::GetColumnNum(void) const
+{
+    return static_cast<int>(m_NofCols);
+}
+
 CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item, 
                                          CS_VOID* buffer, 
                                          CS_INT buflen, CS_INT *outlen)
@@ -1047,6 +1052,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/07 11:06:32  ssikorsk
+ * Added a GetColumnNum implementation
+ *
  * Revision 1.19  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

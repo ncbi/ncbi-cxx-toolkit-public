@@ -175,6 +175,11 @@ int CODBC_RowResult::CurrentItemNo() const
     return m_CurrItem;
 }
 
+int CODBC_RowResult::GetColumnNum(void) const
+{
+    return static_cast<int>(m_NofCols);
+}
+
 int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
                               SQLINTEGER buffer_size)
 {
@@ -987,6 +992,12 @@ int CODBC_CursorResult::CurrentItemNo() const
 }
 
 
+int CODBC_CursorResult::GetColumnNum(void) const
+{
+    return m_Res ? m_Res->GetColumnNum() : -1;
+}
+
+
 CDB_Object* CODBC_CursorResult::GetItem(CDB_Object* item_buff)
 {
     return m_Res ? m_Res->GetItem(item_buff) : 0;
@@ -1031,6 +1042,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/09/07 11:06:32  ssikorsk
+ * Added a GetColumnNum implementation
+ *
  * Revision 1.17  2005/04/07 18:09:04  soussov
  * fixes bug with RowCount in RowResult
  *
