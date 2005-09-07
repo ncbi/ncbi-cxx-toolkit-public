@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 1, 2, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 2, 0, 0);
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
@@ -497,6 +497,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/09/07 16:09:26  ssikorsk
+ * Replaced interface version 1.2.0 with 2.0.0
+ *
  * Revision 1.15  2005/09/07 10:58:17  ssikorsk
  * Added GetColumnNum method to I_Result.
  * Changed interface version to 1.2.0.
