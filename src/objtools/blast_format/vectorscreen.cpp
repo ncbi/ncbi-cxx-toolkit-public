@@ -361,6 +361,10 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
     CHTML_tc* tc;
     double pixel_factor = ((double)kMasterPixel)/m_MasterLen;
     int column = 0;
+    
+    if(m_AlnInfoList.empty()){
+        return;
+    }
 
     //title
     CRef<CHTML_b> b(new CHTML_b);
@@ -472,8 +476,8 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
 
 CRef<CSeq_align_set> CVecscreen::VecscreenDisplay(CNcbiOstream& out){
     CSeq_align_set actual_aln_list;
-    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
-                                                     *m_SeqalignSetRef);
+    //CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
+    //                                                 *m_SeqalignSetRef);
     x_MergeSeqalign(actual_aln_list);  
     x_BuildHtmlBar(out);
     m_FinalSeqalign->Set().sort(AlnScoreDescendingSort);
@@ -658,6 +662,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.4  2005/09/07 20:12:33  jianye
+*no output if no above-threshhold seqalign
+*
 *Revision 1.3  2005/06/20 14:47:09  jianye
 *modify redundancy filtering
 *
