@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS63_INCLUDE FTDS63_LIBS FTDS63_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds8 ftds63 mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm ncbi_crypt serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL EGREP VALGRIND_PATH CXXCPP AMQ CPP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS63_INCLUDE FTDS63_LIBS FTDS63_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds ftds8 ftds63 mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath LINK C_LINK TAIL_N EGREP_Q FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm ncbi_crypt serial bdb dbapi objects gui algo app internal check CHECK_ARG CHECK_TOOLS script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB BDB_CACHE_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_LIBS BERKELEYDB_STATIC_LIBS BERKELEYDB_CXX_LIBS BERKELEYDB_CXX_STATIC_LIBS ODBC_INCLUDE ODBC_LIBS PYTHON_INCLUDE PYTHON_LIBS CPPUNIT_INCLUDE CPPUNIT_LIBS BOOST_INCLUDE BOOST_LIBPATH BOOST_TAG BOOST_TEST_PEM_LIBS BOOST_TEST_PEM_STATIC_LIBS BOOST_TEST_TEM_LIBS BOOST_TEST_TEM_STATIC_LIBS BOOST_TEST_UTF_LIBS BOOST_TEST_UTF_STATIC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_STATIC_LIBS FLTK_STATIC_LIBS_GL FLTK_STATIC_LIBS_IMAGES FLTK_STATIC_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_STATIC_LIBS WXWIN_GL_LIBS WXWIN_GL_STATIC_LIBS WXWIN_POST_LINK FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR ICU_CONFIG ICU_INCLUDE ICU_LIBS ICU_STATIC_LIBS EXPAT_STATIC_LIBS SABLOT_STATIC_LIBS LIBXML_STATIC_LIBS XERCES_INCLUDE XERCES_LIBS XERCES_STATIC_LIBS XALAN_INCLUDE XALAN_LIBS XALAN_STATIC_LIBS NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -872,6 +872,7 @@ Optional Packages:
  --with-dll              build all libraries as DLLs
  --with-static           build all libraries statically even if --with-dll
  --with-static-exe       build all executables as statically as possible
+ --with-bin-release      build executables suitable for public release
  --with-mt               compile in a MultiThread-safe manner
  --with-64               compile to 64-bit code
  --without-exe           do not build executables
@@ -889,7 +890,8 @@ Optional Packages:
  --with-lib-rebuilds     ensure that apps use up-to-date libraries
  --with-lib-rebuilds=ask ask whether to update each app's libraries
  --with-projects=FILE    build projects listed in FILE by default
- --with-check=           run test suite after the build
+ --with-check            run test suite after the build
+ --with-check-tools=...  use the specified tools for testing
  --with-ncbi-public      ensure compatibility for all in-house platforms
  --with-strip            strip binaries at build time
  --with-pch              use precompiled headers if possible
@@ -902,7 +904,6 @@ Optional Packages:
  --with-included-sss     use the in-tree copy of SSS
  --without-geo           do not use NCBI GEO libraries
  --with-included-geo     use the in-tree copy of GEO
- --without-pubmed        do not use NCBI PubMed libraries
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
  --with-bz2=DIR          use bzlib installation in DIR
@@ -1541,6 +1542,12 @@ if test "${with_static_exe+set}" = set; then
 
 fi;
 
+# Check whether --with-bin-release or --without-bin-release was given.
+if test "${with_bin_release+set}" = set; then
+  withval="$with_bin_release"
+
+fi;
+
 # Check whether --with-mt or --without-mt was given.
 if test "${with_mt+set}" = set; then
   withval="$with_mt"
@@ -1650,6 +1657,12 @@ if test "${with_check+set}" = set; then
 
 fi;
 
+# Check whether --with-check-tools or --without-check-tools was given.
+if test "${with_check_tools+set}" = set; then
+  withval="$with_check_tools"
+
+fi;
+
 # Check whether --with-ncbi-public or --without-ncbi-public was given.
 if test "${with_ncbi_public+set}" = set; then
   withval="$with_ncbi_public"
@@ -1721,12 +1734,6 @@ fi;
 # Check whether --with-included-geo or --without-included-geo was given.
 if test "${with_included_geo+set}" = set; then
   withval="$with_included_geo"
-
-fi;
-
-# Check whether --with-pubmed or --without-pubmed was given.
-if test "${with_pubmed+set}" = set; then
-  withval="$with_pubmed"
 
 fi;
 
@@ -2221,12 +2228,11 @@ fi;
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe strip version lfs pch caution \
+check static-exe bin-release strip version lfs pch caution \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
-sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
-expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
+sp expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt serial objects dbapi app ctools gui algo internal"
 
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -2257,7 +2263,7 @@ echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >
       ;;
 
       --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
-      | --with-projects=* | --with-check=* \
+      | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [A-Z]*=* \
@@ -2280,6 +2286,20 @@ echo "$as_me: error: \"  $x_arg:  unknown option;  use --help to show usage\"" >
       ;;
    esac
 done
+
+
+if test "$with_bin_release" = "yes" ; then
+   # Default some other options accordingly
+   : ${with_ncbi_public=yes}
+   : ${with_dll=no}
+   : ${with_local_lbsm=no}
+   : ${with_ncbi_crypt=no}
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_BIN_RELEASE 1
+_ACEOF
+
+fi
 
 
 #### Check for special options
@@ -4427,6 +4447,12 @@ CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
+: ${MATH_LIBS:="-lm"}
+
+### Math lib to be always linked in
+LIBS="$MATH_LIBS $LIBS"
+C_LIBS="$MATH_LIBS $C_LIBS"
+
 if test -n "$with_64"; then
 
 echo "$as_me:$LINENO: checking whether this system supports --with(out)-64" >&5
@@ -4605,8 +4631,21 @@ if test -z "$CONF_f_runpath" ; then
    esac
 fi
 
-case "$compiler:$compiler_version" in
-  GCC:[3-9]* )
+case "$compiler:$compiler_version:$with_bin_release" in
+  GCC:*:yes )
+    libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
+    case "$libstdcxx" in
+       /*)
+          LIBS="$libstdcxx $LIBS"
+	  LINK=$C_LINK
+	  ;;
+       *)
+          { echo "$as_me:$LINENO: WARNING: Unable to find static libstdc++ requested by --with-bin-release." >&5
+echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-release." >&2;}
+	  ;;
+    esac
+    ;;
+  GCC:* )
     # Need to specify runpath for compiler-provided libraries
     case $compiler_version in
         30*     ) major=3 ;;
@@ -5356,6 +5395,43 @@ else
 fi
 echo "$as_me:$LINENO: result: $EGREP_Q" >&5
 echo "${ECHO_T}$EGREP_Q" >&6
+
+# Extract the first word of "valgrind", so it can be a program name with args.
+set dummy valgrind; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_VALGRIND_PATH+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$VALGRIND_PATH"; then
+  ac_cv_prog_VALGRIND_PATH="$VALGRIND_PATH" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_VALGRIND_PATH="valgrind"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+VALGRIND_PATH=$ac_cv_prog_VALGRIND_PATH
+if test -n "$VALGRIND_PATH"; then
+  echo "$as_me:$LINENO: result: $VALGRIND_PATH" >&5
+echo "${ECHO_T}$VALGRIND_PATH" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -16304,13 +16380,6 @@ done
 fi
 LIBS=$orig_LIBS
 
-MATH_LIBS=${MATH_LIBS:="-lm"}
-
-
-### Math lib to be always linked in
-LIBS="$MATH_LIBS $LIBS"
-C_LIBS="$MATH_LIBS $C_LIBS"
-
 
 ### Save original compiler/linker flags
 orig_CPPFLAGS="$CPPFLAGS"
@@ -21957,100 +22026,6 @@ _ACEOF
 fi
 
 
-## NCBI PubMed
-if test "$with_ncbi_c" = "no" ; then
-   with_pubmed="no"
-fi
-
-if test "$with_pubmed" != "no" ; then
-   case "$NCBI_PM_PATH" in
-      "" )          NCBI_PM_PATH=$NCBI/pubmed${bit64_sfx} ;;
-      *$bit64_sfx ) ;;
-      * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
-   esac
-   pmtag=${DEBUG_SFX}${bit64_sfx:-32}
-   vpath="$NCBI_PM_PATH/${compiler_vpfx}build"
-   test -d "$vpath"  &&  NCBI_PM_PATH=$vpath
-
-   echo "$as_me:$LINENO: checking for NCBI PubMed libraries in $NCBI_PM_PATH" >&5
-echo $ECHO_N "checking for NCBI PubMed libraries in $NCBI_PM_PATH... $ECHO_C" >&6
-if test "${ncbi_cv_lib_pm+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test ! -d "${NCBI_PM_PATH}" ; then
-          ncbi_cv_lib_pm="no"
-       else
-          CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
-          LIBS="-L$NCBI_PM_PATH/xmldb$mt_sfx/out.$pmtag/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez.$pmtag$mt_sfx/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
-          cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <ncbistr.hpp>
-               #include <hastring.h>
-int
-main ()
-{
- CNcbiString("abc"); CAString("def");
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_lib_pm=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ncbi_cv_lib_pm=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-       fi
-fi
-echo "$as_me:$LINENO: result: $ncbi_cv_lib_pm" >&5
-echo "${ECHO_T}$ncbi_cv_lib_pm" >&6
-   if test "$ncbi_cv_lib_pm" = "no"; then
-      with_pubmed="no"
-   fi
-fi
-
-if test "$with_pubmed" = "no" ; then
-   NCBI_PM_PATH="No_NCBI_PubMed"
-   WithoutPackages="$WithoutPackages PubMed"
-else
-   WithPackages="$WithPackages PubMed"
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBPUBMED 1
-_ACEOF
-
-fi
-
-
 ## ORBacus CORBA
 if test "${with_orbacus:-yes}" = yes; then
    if test -d $NCBI/corba/${compiler_vpfx}ReleaseMT; then
@@ -23952,10 +23927,6 @@ else
      reason="$reason${sep}SSS"
      sep=", "
    fi
-   if test "$with_pubmed" = "no"; then
-     reason="$reason${sep}PubMed"
-     sep=", "
-   fi
    if test -n "$reason" -a "$with_internal" = "yes"; then
       if test -z "$with_projects"  -o  "$with_projects" = "no"; then
          { { echo "$as_me:$LINENO: error: \"--with-internal:  Cannot build INTERNAL projects: missing $reason\"" >&5
@@ -24037,6 +24008,7 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
    fi
    WithFeatures="$WithFeatures check"
 fi
+CHECK_TOOLS=$with_check_tools
 
 
 ### Cleanup
@@ -24119,6 +24091,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
@@ -25036,6 +25009,7 @@ s,@TSORT@,$TSORT,;t t
 s,@CCACHE@,$CCACHE,;t t
 s,@TAIL@,$TAIL,;t t
 s,@EGREP@,$EGREP,;t t
+s,@VALGRIND_PATH@,$VALGRIND_PATH,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@AMQ@,$AMQ,;t t
 s,@CPP@,$CPP,;t t
@@ -25126,6 +25100,7 @@ s,@app@,$app,;t t
 s,@internal@,$internal,;t t
 s,@check@,$check,;t t
 s,@CHECK_ARG@,$CHECK_ARG,;t t
+s,@CHECK_TOOLS@,$CHECK_TOOLS,;t t
 s,@script_shell@,$script_shell,;t t
 s,@make_shell@,$make_shell,;t t
 s,@obj_ext@,$obj_ext,;t t

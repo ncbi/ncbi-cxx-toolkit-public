@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.388 2005/08/29 15:50:27 ucko Exp $
+#  $Id: configure.ac,v 1.389 2005/09/07 19:25:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -88,6 +88,8 @@ AC_ARG_WITH(static,
    [ --with-static           build all libraries statically even if --with-dll])
 AC_ARG_WITH(static-exe,
    [ --with-static-exe       build all executables as statically as possible])
+AC_ARG_WITH(bin-release,
+   [ --with-bin-release      build executables suitable for public release])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
 AC_ARG_WITH(64,
@@ -125,7 +127,9 @@ AC_ARG_WITH(lib-rebuilds2,
 AC_ARG_WITH(projects,
    [ --with-projects=FILE    build projects listed in FILE by default])
 AC_ARG_WITH(check,
-   [ --with-check=           run test suite after the build])
+   [ --with-check            run test suite after the build])
+AC_ARG_WITH(check-tools,
+   [ --with-check-tools=...  use the specified tools for testing])
 AC_ARG_WITH(ncbi-public,
    [ --with-ncbi-public      ensure compatibility for all in-house platforms])
 AC_ARG_WITH(strip,
@@ -152,8 +156,6 @@ AC_ARG_WITH(geo,
    [ --without-geo           do not use NCBI GEO libraries])
 AC_ARG_WITH(included-geo,
    [ --with-included-geo     use the in-tree copy of GEO])
-AC_ARG_WITH(pubmed,
-   [ --without-pubmed        do not use NCBI PubMed libraries])
 
 ## Third-party and system packages
 AC_ARG_WITH(z,
@@ -326,12 +328,11 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe strip version lfs pch caution \
+check static-exe bin-release strip version lfs pch caution \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
-sp pubmed \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
-expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
+sp expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -362,7 +363,7 @@ for x_arg in "$@" ; do
       ;;
 
       --with-extra-action=* | --with-build-root=* | --with-fake-root=* \
-      | --with-projects=* | --with-check=* \
+      | --with-projects=* | --with-check=* | --with-check-tools=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
@@ -383,6 +384,17 @@ for x_arg in "$@" ; do
       ;;
    esac
 done
+
+
+if test "$with_bin_release" = "yes" ; then
+   # Default some other options accordingly
+   : ${with_ncbi_public=yes}
+   : ${with_dll=no}
+   : ${with_local_lbsm=no}
+   : ${with_ncbi_crypt=no}
+   AC_DEFINE(NCBI_BIN_RELEASE, 1,
+             [Define to 1 when building binaries for public release.])
+fi
 
 
 #### Check for special options
@@ -985,6 +997,12 @@ CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
+: ${MATH_LIBS:="-lm"}
+
+### Math lib to be always linked in
+LIBS="$MATH_LIBS $LIBS"
+C_LIBS="$MATH_LIBS $C_LIBS"
+
 if test -n "$with_64"; then
    AC_CACHE_CHECK([whether this system supports --with(out)-64],
       ncbi_cv_sys_with64_ok,
@@ -1111,8 +1129,20 @@ if test -z "$CONF_f_runpath" ; then
    esac
 fi
 
-case "$compiler:$compiler_version" in
-  GCC:[[3-9]]* )
+case "$compiler:$compiler_version:$with_bin_release" in
+  GCC:*:yes )
+    libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
+    case "$libstdcxx" in
+       /*)
+          LIBS="$libstdcxx $LIBS"
+	  LINK=$C_LINK
+	  ;;
+       *)
+          AC_MSG_WARN([Unable to find static libstdc++ requested by --with-bin-release.])
+	  ;;
+    esac
+    ;;
+  GCC:* )
     # Need to specify runpath for compiler-provided libraries
     case $compiler_version in
         30*     ) major=3 ;;
@@ -1410,6 +1440,9 @@ else
    EGREP_Q=">/dev/null $EGREP"
 fi
 AC_MSG_RESULT($EGREP_Q)
+
+AC_CHECK_PROG(VALGRIND_PATH, valgrind, valgrind)
+
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -2433,13 +2466,6 @@ else
    AC_CHECK_FUNCS(freehostent getipnodebyaddr getipnodebyname inet_ntop)
 fi
 LIBS=$orig_LIBS
-
-MATH_LIBS=${MATH_LIBS:="-lm"}
-
-
-### Math lib to be always linked in
-LIBS="$MATH_LIBS $LIBS"
-C_LIBS="$MATH_LIBS $C_LIBS"
 
 
 ### Save original compiler/linker flags
@@ -3889,48 +3915,6 @@ else
 fi
 
 
-## NCBI PubMed
-if test "$with_ncbi_c" = "no" ; then
-   with_pubmed="no"
-fi
-
-if test "$with_pubmed" != "no" ; then
-   case "$NCBI_PM_PATH" in
-      "" )          NCBI_PM_PATH=$NCBI/pubmed${bit64_sfx} ;;
-      *$bit64_sfx ) ;;
-      * )           NCBI_PM_PATH=${NCBI_PM_PATH}${bit64_sfx} ;;
-   esac
-   pmtag=${DEBUG_SFX}${bit64_sfx:-32}
-   vpath="$NCBI_PM_PATH/${compiler_vpfx}build"
-   test -d "$vpath"  &&  NCBI_PM_PATH=$vpath
-
-   AC_CACHE_CHECK([for NCBI PubMed libraries in $NCBI_PM_PATH], ncbi_cv_lib_pm,
-      [if test ! -d "${NCBI_PM_PATH}" ; then
-          ncbi_cv_lib_pm="no"
-       else
-          CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi -I$NCBI_PM_PATH/xmldb/ur/include $NCBI_C_INCLUDE $orig_CPPFLAGS"
-          LIBS="-L$NCBI_PM_PATH/xmldb$mt_sfx/out.$pmtag/lib -lpmurapi-static -L$NCBI_PM_PATH/pmentrez.$pmtag$mt_sfx/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
-          AC_LINK_IFELSE([AC_LANG_PROGRAM(
-             [[#include <ncbistr.hpp>
-               #include <hastring.h>]],
-             [[ CNcbiString("abc"); CAString("def"); ]])],
-             [ncbi_cv_lib_pm=yes], [ncbi_cv_lib_pm=no])
-       fi])
-   if test "$ncbi_cv_lib_pm" = "no"; then
-      with_pubmed="no"
-   fi
-fi
-
-if test "$with_pubmed" = "no" ; then
-   NCBI_PM_PATH="No_NCBI_PubMed"
-   WithoutPackages="$WithoutPackages PubMed"
-else
-   WithPackages="$WithPackages PubMed"
-   AC_DEFINE(HAVE_LIBPUBMED, 1,
-             [Define to 1 if NCBI PubMed libraries are available.])
-fi
-
-
 ## ORBacus CORBA
 if test "${with_orbacus:-yes}" = yes; then
    if test -d $NCBI/corba/${compiler_vpfx}ReleaseMT; then
@@ -4628,10 +4612,6 @@ else
      reason="$reason${sep}SSS"
      sep=", "
    fi
-   if test "$with_pubmed" = "no"; then
-     reason="$reason${sep}PubMed"
-     sep=", "
-   fi
    if test -n "$reason" -a "$with_internal" = "yes"; then
       if test -z "$with_projects"  -o  "$with_projects" = "no"; then
          AC_MSG_ERROR(["--with-internal:  Cannot build INTERNAL projects: missing $reason"])
@@ -4702,6 +4682,7 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
    fi
    WithFeatures="$WithFeatures check"
 fi
+CHECK_TOOLS=$with_check_tools
 
 
 ### Cleanup
@@ -4838,6 +4819,7 @@ AC_SUBST(internal)
 
 AC_SUBST(check)
 AC_SUBST(CHECK_ARG)
+AC_SUBST(CHECK_TOOLS)
 
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
@@ -4941,7 +4923,6 @@ AC_SUBST(LIBGEODB)
 AC_SUBST(geo)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
-AC_SUBST(NCBI_PM_PATH)
 AC_SUBST(ORBACUS_INCLUDE)
 AC_SUBST(ORBACUS_LIBPATH)
 AC_SUBST(LIBOB)

@@ -198,9 +198,6 @@
 /* Define to 1 if libpng is available. */
 #undef HAVE_LIBPNG
 
-/* Define to 1 if NCBI PubMed libraries are available. */
-#undef HAVE_LIBPUBMED
-
 /* Define to 1 if RPCSVC is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBRPCSVC
@@ -455,6 +452,9 @@
 
 /* Define to 0xffffffff if your operating system doesn't. */
 #undef INADDR_NONE
+
+/* Define to 1 when building binaries for public release. */
+#undef NCBI_BIN_RELEASE
 
 /* Compiler name */
 #undef NCBI_COMPILER_COMPAQ
