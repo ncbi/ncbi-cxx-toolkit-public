@@ -160,7 +160,8 @@ public:
     void Test_SelectStmtXML(void);
     void Test_Cursor(void);
     void Test_Procedure(void);
-    void Bulk_Writing(void);
+    void Test_Bulk_Writing(void);
+    void Test_GetColumnNo(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -215,6 +216,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2005/09/07 11:08:19  ssikorsk
+ * Added Test_GetColumnNo to the test-suite
+ *
  * Revision 1.23  2005/08/29 16:07:23  ssikorsk
  * Adapted Bulk_Writing for Sybase.
  *
