@@ -239,19 +239,8 @@ CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src, const string& seq_id)
 
 CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
                                    const CSeq_id_Handle& seq_id)
+    : m_Blob_ids(src, seq_id)
 {
-    CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
-    Lock(*info, src);
-    if ( !IsLoaded() ) {
-        src.SetRequestedId(seq_id);
-    }
-}
-
-
-CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
-                                   const CSeq_id& seq_id_obj)
-{
-    CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(seq_id_obj);
     CRef<TInfo> info = src.GetInfoSeq_ids(seq_id);
     Lock(*info, src);
     if ( !IsLoaded() ) {
@@ -280,18 +269,6 @@ void CLoadLockSeq_ids::AddSeq_id(const CSeq_id& seq_id)
 CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
                                      const CSeq_id_Handle& seq_id)
 {
-    CRef<TInfo> info = src.GetInfoBlob_ids(seq_id);
-    Lock(*info, src);
-    if ( !IsLoaded() ) {
-        src.SetRequestedId(seq_id);
-    }
-}
-
-
-CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
-                                     const CSeq_id& seq_id_obj)
-{
-    CSeq_id_Handle seq_id = CSeq_id_Handle::GetHandle(seq_id_obj);
     CRef<TInfo> info = src.GetInfoBlob_ids(seq_id);
     Lock(*info, src);
     if ( !IsLoaded() ) {

@@ -340,52 +340,15 @@ private:
 };
 
 
-class NCBI_XREADER_EXPORT CLoadLockSeq_ids : public CLoadLock_Base
-{
-public:
-    typedef CLoadInfoSeq_ids TInfo;
-
-    CLoadLockSeq_ids(TMutexSource& src, const string& seq_id);
-    CLoadLockSeq_ids(TMutexSource& src, const CSeq_id& seq_id);
-    CLoadLockSeq_ids(TMutexSource& src, const CSeq_id_Handle& seq_id);
-
-    TInfo& Get(void)
-        {
-            return static_cast<TInfo&>(CLoadLock_Base::Get());
-        }
-    const TInfo& Get(void) const
-        {
-            return static_cast<const TInfo&>(CLoadLock_Base::Get());
-        }
-    TInfo& operator*(void)
-        {
-            return Get();
-        }
-    TInfo* operator->(void)
-        {
-            return &Get();
-        }
-    const TInfo& operator*(void) const
-        {
-            return Get();
-        }
-    const TInfo* operator->(void) const
-        {
-            return &Get();
-        }
-
-    void AddSeq_id(const CSeq_id_Handle& seq_id);
-    void AddSeq_id(const CSeq_id& seq_id);
-};
-
-
 class NCBI_XREADER_EXPORT CLoadLockBlob_ids : public CLoadLock_Base
 {
 public:
     typedef CLoadInfoBlob_ids TInfo;
 
+    CLoadLockBlob_ids(void)
+        {
+        }
     CLoadLockBlob_ids(TMutexSource& src, const CSeq_id_Handle& seq_id);
-    CLoadLockBlob_ids(TMutexSource& src, const CSeq_id& seq_id);
     
     TInfo& Get(void)
         {
@@ -417,6 +380,52 @@ public:
 
 private:
     void x_Initialize(TMutexSource& src, const CSeq_id_Handle& seq_id);
+};
+
+
+class NCBI_XREADER_EXPORT CLoadLockSeq_ids : public CLoadLock_Base
+{
+public:
+    typedef CLoadInfoSeq_ids TInfo;
+
+    CLoadLockSeq_ids(TMutexSource& src, const string& seq_id);
+    CLoadLockSeq_ids(TMutexSource& src, const CSeq_id_Handle& seq_id);
+
+    TInfo& Get(void)
+        {
+            return static_cast<TInfo&>(CLoadLock_Base::Get());
+        }
+    const TInfo& Get(void) const
+        {
+            return static_cast<const TInfo&>(CLoadLock_Base::Get());
+        }
+    TInfo& operator*(void)
+        {
+            return Get();
+        }
+    TInfo* operator->(void)
+        {
+            return &Get();
+        }
+    const TInfo& operator*(void) const
+        {
+            return Get();
+        }
+    const TInfo* operator->(void) const
+        {
+            return &Get();
+        }
+
+    void AddSeq_id(const CSeq_id_Handle& seq_id);
+    void AddSeq_id(const CSeq_id& seq_id);
+
+    CLoadLockBlob_ids& GetBlob_ids(void)
+        {
+            return m_Blob_ids;
+        }
+
+private:
+    CLoadLockBlob_ids m_Blob_ids;
 };
 
 
