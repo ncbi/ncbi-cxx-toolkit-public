@@ -89,7 +89,7 @@ void CGenbankFormatter::EndSection
 {
     list<string> l;
     l.push_back("//");
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, NULL);
 }
 
 
@@ -166,7 +166,7 @@ void CGenbankFormatter::FormatLocus
         << locus.GetDate();
 
     Wrap(l, GetWidth(), "LOCUS", CNcbiOstrstreamToString(locus_line));
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, locus.GetObject());
 }
 
 
@@ -180,7 +180,7 @@ void CGenbankFormatter::FormatDefline
 {
     list<string> l;
     Wrap(l, "DEFINITION", defline.GetDefline());
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, defline.GetObject());
 }
 
 
@@ -203,7 +203,7 @@ void CGenbankFormatter::FormatAccession
     } else {
         Wrap(l, "ACCESSION", acc_line);
     }
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, acc.GetObject());
 }
 
 
@@ -228,7 +228,7 @@ void CGenbankFormatter::FormatVersion
         Wrap(l, GetWidth(), "VERSION", CNcbiOstrstreamToString(version_line));
     }
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, version.GetObject());
 }
 
 
@@ -242,7 +242,7 @@ void CGenbankFormatter::FormatKeywords
 {
     list<string> l;
     x_GetKeywords(keys, "KEYWORDS", l);
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, keys.GetObject());
 }
 
 
@@ -260,7 +260,7 @@ void CGenbankFormatter::FormatSegment
     segment_line << seg.GetNum() << " of " << seg.GetCount();
 
     Wrap(l, "SEGMENT", CNcbiOstrstreamToString(segment_line));
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, seg.GetObject());
 }
 
 
@@ -277,7 +277,7 @@ void CGenbankFormatter::FormatSource
     list<string> l;
     x_FormatSourceLine(l, source);
     x_FormatOrganismLine(l, source);
-    text_os.AddParagraph(l);    
+    text_os.AddParagraph(l, source.GetObject());    
 }
 
 
@@ -361,7 +361,7 @@ void CGenbankFormatter::FormatReference
     x_Pubmed(l, ref, ctx);
     x_Remark(l, ref, ctx);
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, ref.GetObject());
 }
 
 
@@ -532,7 +532,7 @@ void CGenbankFormatter::x_FormatBarcodeComment
         TrimSpaces(*it, 16);
     }
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, barcode.GetObject());
 }
 
 
@@ -554,7 +554,7 @@ void CGenbankFormatter::FormatComment
         }
     }
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, comment.GetObject());
 }
 
 
@@ -572,7 +572,7 @@ void CGenbankFormatter::FormatFeatHeader
 
     Wrap(l, "FEATURES", "Location/Qualifiers", eFeatHead);
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, NULL);
 }
 
 
@@ -605,7 +605,7 @@ void CGenbankFormatter::FormatFeature
     NON_CONST_ITERATE (list<string>, it, l) {
         NStr::TruncateSpacesInPlace(*it, NStr::eTrunc_End);
     }
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, f.GetObject());
 }
 
 
@@ -631,7 +631,7 @@ void CGenbankFormatter::FormatBasecount
         bc_line << setw(7) << bc.GetOther() << " others";
     }
     Wrap(l, "BASE COUNT", CNcbiOstrstreamToString(bc_line));
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, bc.GetObject());
 }
 
 
@@ -708,7 +708,7 @@ void CGenbankFormatter::FormatSequence
         l.push_back(line);
     }
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, seq.GetObject());
 }
 
 
@@ -729,7 +729,7 @@ void CGenbankFormatter::FormatDBSource
             tag.erase();
         }
         if ( !l.empty() ) {
-            text_os.AddParagraph(l);
+            text_os.AddParagraph(l, dbs.GetObject());
         }
     }        
 }
@@ -768,7 +768,7 @@ void CGenbankFormatter::FormatWGS
     } else {
         Wrap(l, tag, wgs.GetFirstID() + "-" + wgs.GetLastID());
     }
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, wgs.GetObject());
 }
 
 
@@ -784,7 +784,7 @@ void CGenbankFormatter::FormatPrimary
 
     Wrap(l, "PRIMARY", primary.GetString());
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, primary.GetObject());
 }
 
 
@@ -811,8 +811,11 @@ void CGenbankFormatter::FormatContig
     list<string> l;
     string assembly = CFlatSeqLoc(contig.GetLoc(), *contig.GetContext(), 
         CFlatSeqLoc::eType_assembly).GetString();
+    if (assembly.empty()) {
+        assembly = "join()";
+    }
     Wrap(l, "CONTIG", assembly);
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, contig.GetObject());
 }
 
 
@@ -830,7 +833,7 @@ void CGenbankFormatter::FormatOrigin
     } else {
         Wrap(l, "ORIGIN", origin.GetOrigin());
     }
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, origin.GetObject());
 }
 
 
@@ -859,7 +862,7 @@ void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os
     NStr::Wrap(estimated_length, GetWidth(), l, SetWrapFlags(),
         GetFeatIndent(), GetFeatIndent() + "/estimated_length=");
 
-    text_os.AddParagraph(l);
+    text_os.AddParagraph(l, gap.GetObject());
 }
 
 END_SCOPE(objects)
@@ -870,6 +873,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2005/09/07 16:06:14  shomrat
+* Pass the object to the text output stream
+*
 * Revision 1.33  2005/04/27 17:12:37  shomrat
 * Addapt to changes in NStr::Wrap
 *
