@@ -251,9 +251,7 @@ bool CResultSet::WasNull()
 
 int CResultSet::GetColumnNo()
 {
-    int col = m_rs->CurrentItemNo();
-
-    return col >= 0 ? col + 1 : -1;
+    return m_rs->GetColumnNum();
 }
 
 unsigned int CResultSet::GetTotalColumns()
@@ -421,6 +419,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.41  2005/09/07 11:03:02  ssikorsk
+* Changed an implementation of the CResultSet::GetColumnNo method
+*
 * Revision 1.40  2005/05/25 21:02:54  kholodov
 * Added: select ownership for IResultSetMetaData object
 *
