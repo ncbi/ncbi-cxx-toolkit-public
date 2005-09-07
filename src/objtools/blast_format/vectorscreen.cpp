@@ -476,8 +476,8 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
 
 CRef<CSeq_align_set> CVecscreen::VecscreenDisplay(CNcbiOstream& out){
     CSeq_align_set actual_aln_list;
-    //CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
-    //                                                 *m_SeqalignSetRef);
+    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
+                                                     *m_SeqalignSetRef);
     x_MergeSeqalign(actual_aln_list);  
     x_BuildHtmlBar(out);
     m_FinalSeqalign->Set().sort(AlnScoreDescendingSort);
@@ -662,6 +662,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.5  2005/09/07 20:58:58  jianye
+*fixed typo
+*
 *Revision 1.4  2005/09/07 20:12:33  jianye
 *no output if no above-threshhold seqalign
 *
