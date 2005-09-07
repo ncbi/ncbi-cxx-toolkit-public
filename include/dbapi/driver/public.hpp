@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 1, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 1, 2, 0);
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
@@ -168,6 +168,9 @@ public:
     // Return "-1" if no more items left (or available) to read.
     virtual int CurrentItemNo() const;
 
+    // Return number of columns in the recordset.
+    virtual int GetColumnNum(void) const;
+    
     // Get a result item (you can use either GetItem or ReadItem).
     // If "item_buf" is not NULL, then use "*item_buf" (its type should be
     // compatible with the type of retrieved item!) to retrieve the item to;
@@ -494,6 +497,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/09/07 10:58:17  ssikorsk
+ * Added GetColumnNum method to I_Result.
+ * Changed interface version to 1.2.0.
+ *
  * Revision 1.14  2005/07/14 19:11:12  ssikorsk
  * Rolled back previous change because it affected other code
  *
