@@ -249,6 +249,12 @@ int CDB_Result::CurrentItemNo() const
     return m_Res->CurrentItemNo();
 }
 
+int CDB_Result::GetColumnNum(void) const
+{
+    CHECK_RESULT(m_Res);
+    return m_Res->GetColumnNum();
+}
+
 CDB_Object* CDB_Result::GetItem(CDB_Object* item_buf)
 {
     CHECK_RESULT(m_Res);
@@ -690,6 +696,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/09/07 11:05:37  ssikorsk
+ * Added a CDB_Result::GetColumnNum implementation
+ *
  * Revision 1.16  2005/08/09 13:15:45  ssikorsk
  * Removed redudant comments
  *
