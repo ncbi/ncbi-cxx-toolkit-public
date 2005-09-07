@@ -983,10 +983,6 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
     CReadDispatcher::TIds ids;
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
         CLoadLockBlob_ids blob_ids_lock(result, tse_set->first);
-        if ( blob_ids_lock.IsLoaded() ) {
-            CLoadLockSeq_ids seq_ids_lock(result, tse_set->first);
-            _ASSERT( seq_ids_lock.IsLoaded() );
-        }
         ids.push_back(tse_set->first);
     }
     m_Dispatcher->LoadBlobSet(result, ids);
