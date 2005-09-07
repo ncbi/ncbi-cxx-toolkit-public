@@ -67,9 +67,15 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/impl/synonyms.hpp>
-
 #include <objmgr/object_manager.hpp>
+
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
+
+#include <objtools/lds/lds.hpp>
+#include <objtools/lds/admin/lds_admin.hpp>
+#include <objtools/data_loaders/lds/lds_dataloader.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -88,8 +94,6 @@ class CDemoApp : public CNcbiApplication
 public:
     virtual void Init(void);
     virtual int  Run (void);
-
-    CRef<CGBDataLoader> gb_loader;
 };
 
 
@@ -147,10 +151,21 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("limit_tse", "Limit annotations from sequence TSE only");
     arg_desc->AddFlag("externals", "Search for external features only");
 
-    arg_desc->AddDefaultKey("loader", "Loader",
-                            "Use specified loaders",
-                            CArgDescriptions::eString, "");
-
+    arg_desc->AddOptionalKey("loader", "Loader",
+                             "Use specified GenBank loader readers (\"-\" means no GenBank",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("lds_dir", "LDSDir",
+                             "Use local data storage loader from the specified firectory",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("blast", "Blast",
+                             "Use BLAST data loader from the specified DB",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("blast_type", "BlastType",
+                             "Use BLAST data loader type (default: eUnknown)",
+                             CArgDescriptions::eString);
+    arg_desc->SetConstraint("blast_type",
+                            &(*new CArgAllow_Strings,
+                              "protein", "p", "nucleotide", "n"));
 
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
     arg_desc->AddFlag("whole_sequence", "load whole sequence");
@@ -370,10 +385,6 @@ int CDemoApp::Run(void)
     if ( args["missing"].AsString() == "fail" )
         missing = SAnnotSelector::eFailUnresolved;
     bool externals_only = args["externals"];
-    if ( !args["loader"].AsString().empty() ) {
-        string env = "GENBANK_LOADER_METHOD="+args["loader"].AsString();
-        ::putenv(::strdup(env.c_str()));
-    }
     bool limit_tse = args["limit_tse"];
 
     int repeat_count = args["count"].AsInteger();
@@ -443,12 +454,58 @@ int CDemoApp::Run(void)
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
-    if ( !gb_loader ) {
-        // Create genbank data loader and register it with the OM.
-        // The last argument "eDefault" informs the OM that the loader
-        // must be included in scopes during the CScope::AddDefaults() call
-        gb_loader.Reset(CGBDataLoader::RegisterInObjectManager
-                        (*pOm).GetLoader());
+    CRef<CGBDataLoader> gb_loader;
+    if ( args["loader"] ) {
+        string genbank_readers = args["loader"].AsString();
+        if ( genbank_readers != "-" ) {
+            // Create genbank data loader and register it with the OM.
+            // The last argument "eDefault" informs the OM that the loader
+            // must be included in scopes during the CScope::AddDefaults() call
+            gb_loader = CGBDataLoader::RegisterInObjectManager
+                (*pOm, genbank_readers).GetLoader();
+        }
+    }
+    else {
+        gb_loader = CGBDataLoader::RegisterInObjectManager(*pOm).GetLoader();
+    }
+    if ( args["lds_dir"] ) {
+        string lds_dir = args["lds_dir"].AsString();
+        CLDS_Management::ERecurse recurse = CLDS_Management::eRecurseSubDirs;
+        CLDS_Management::EComputeControlSum control_sum =
+            CLDS_Management::eComputeControlSum;
+        bool is_created = false;
+        auto_ptr<CLDS_Database> lds_db
+            (CLDS_Management::OpenCreateDB(lds_dir, "lds.db", 
+                                           &is_created,
+                                           recurse, control_sum));
+        if ( !is_created ) {
+            CLDS_Management mgmt(*lds_db);
+            mgmt.SyncWithDir(lds_dir, recurse, control_sum);
+        }
+        CLDS_DataLoader::RegisterInObjectManager(*pOm, *lds_db,
+                                                 CObjectManager::eDefault);
+        lds_db.release();
+    }
+    if ( args["blast"] || args["blast_type"] ) {
+        string db;
+        if ( args["blast"] ) {
+            db = args["blast"].AsString();
+        }
+        else {
+            db = "nr";
+        }
+        CBlastDbDataLoader::EDbType type = CBlastDbDataLoader::eUnknown;
+        if ( args["blast_type"] ) {
+            string s = args["blast_type"].AsString();
+            if ( s.size() > 0 && s[0] == 'p' ) {
+                type = CBlastDbDataLoader::eProtein;
+            }
+            else if ( s.size() > 0 && s[0] == 'n' ) {
+                type = CBlastDbDataLoader::eNucleotide;
+            }
+        }
+        CBlastDbDataLoader::RegisterInObjectManager
+            (*pOm, db, type, CObjectManager::eDefault, 88);
     }
 
     // Create a new scope.
@@ -464,7 +521,10 @@ int CDemoApp::Run(void)
         if ( used_memory_check ) {
             exit(0);
         }
-        added_entry = scope.AddTopLevelSeqEntry(*entry);
+        CBioseq_Handle h2 = scope.GetBioseqHandle(*id);
+        if ( !h2 ) {
+            added_entry = scope.AddTopLevelSeqEntry(*entry);
+        }
     }
     if ( args["bfile"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
@@ -485,12 +545,13 @@ int CDemoApp::Run(void)
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*id);
     if ( get_ids ) {
         NcbiCout << "Ids:" << NcbiEndl;
+        //scope.GetBioseqHandle(idh);
         vector<CSeq_id_Handle> ids = scope.GetIds(idh);
         ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
             NcbiCout << "    " << it->AsString() << NcbiEndl;
         }
     }
-    {{
+    if ( gb_loader ) {
         try {
             CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
             if ( !blob_id ) {
@@ -505,13 +566,13 @@ int CDemoApp::Run(void)
             ERR_POST("Cannot blob id of "<<id->AsFastaString()<<": "<<
                      exc.GetMsg());
         }
-    }}
+    }
 
     // Get bioseq handle for the seq-id. Most of requests will use this handle.
     CBioseq_Handle handle = scope.GetBioseqHandle(idh);
     // Check if the handle is valid
     if ( !handle ) {
-        ERR_POST(Fatal << "Bioseq not found");
+        ERR_POST(Fatal << "Bioseq not found: state: " << handle.GetState());
     }
     if ( get_synonyms ) {
         NcbiCout << "Synonyms:" << NcbiEndl;
@@ -576,6 +637,7 @@ int CDemoApp::Run(void)
         
         // get handle again, check for scope TSE locking
         handle = scope.GetBioseqHandle(idh);
+        //scope.RemoveFromHistory(handle.GetTSE_Handle()); break;
 
         string sout;
         int count;
@@ -1047,6 +1109,7 @@ int CDemoApp::Run(void)
         }
 
         if ( args["modify"] ) {
+            CTSE_Handle tse = handle.GetTSE_Handle();
             CBioseq_EditHandle ebh = handle.GetEditHandle();
         }
         if ( used_memory_check ) {
@@ -1090,6 +1153,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2005/09/07 19:18:15  vasilche
+* Added possibility to load from BLAST and LDS.
+*
 * Revision 1.103  2005/06/29 16:11:10  vasilche
 * Do not abort if blob id cannot be determined.
 *
@@ -1195,7 +1261,7 @@ int main(int argc, const char* argv[])
 * Added "range_from" and "range_to" options.
 *
 * Revision 1.72  2004/07/13 14:04:28  vasilche
-* Optional compilation with Berkley DB.
+* Optional compilation with Berkeley DB.
 *
 * Revision 1.71  2004/07/12 19:21:14  ucko
 * Don't assume that size_t == unsigned.
