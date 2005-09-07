@@ -50,7 +50,7 @@ class CSeq_feat;
 class CFlatItemOStream;
 
 
-class CFlatGatherer : public CObject
+class NCBI_FORMAT_EXPORT CFlatGatherer : public CObject
 {
 public:
     
@@ -152,6 +152,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/09/07 16:04:12  shomrat
+* Added export specifier
+*
 * Revision 1.16  2005/03/28 17:12:40  shomrat
 * Removed no longer used method
 *

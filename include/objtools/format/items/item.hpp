@@ -47,7 +47,7 @@ class IFlatTextOStream;
 class IFormatter;
 
 
-class IFlatItem : public CObject
+class NCBI_FORMAT_EXPORT IFlatItem : public CObject
 {
 public:
     virtual void Format(IFormatter& formatter,
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/09/07 16:04:53  shomrat
+* Added export specifier
+*
 * Revision 1.1  2003/12/17 19:48:07  shomrat
 * Initial revision (adapted from flat lib)
 *

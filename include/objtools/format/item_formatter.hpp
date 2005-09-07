@@ -69,7 +69,7 @@ class CDBSourceItem;
 class COriginItem;
 
 
-class CFlatItemFormatter : public IFormatter
+class NCBI_FORMAT_EXPORT CFlatItemFormatter : public IFormatter
 {
 public:
     
@@ -180,6 +180,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/09/07 16:04:32  shomrat
+* Added export specifier
+*
 * Revision 1.12  2005/03/29 18:15:51  shomrat
 * Barcode comment has special indentation
 *
