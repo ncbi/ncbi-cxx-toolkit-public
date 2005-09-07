@@ -1227,7 +1227,9 @@ MakeTupleFromResult(IResultSet& rs)
 {
     // Set data. Make a sequence (tuple) ...
     int col_num = rs.GetColumnNo();
-    col_num = (col_num > 0 ? col_num - 1 : col_num);
+    
+    // Previous implementation of GetColumnNo used to return invalid value ...
+    // col_num = (col_num > 0 ? col_num - 1 : col_num);
     pythonpp::CTuple tuple(col_num);
 
     for ( int i = 0; i < col_num; ++i) {
@@ -1283,13 +1285,8 @@ MakeTupleFromResult(IResultSet& rs)
         case eDB_VarChar :
         case eDB_Char :
         case eDB_LongChar :
-        case eDB_Text :
             tuple[i] = pythonpp::CString( value.GetString() );
             break;
-        /* Future development
-        case eDB_Text :
-        */
-        case eDB_Image :
         case eDB_LongBinary :
         case eDB_VarBinary :
         case eDB_Binary :
@@ -1297,8 +1294,13 @@ MakeTupleFromResult(IResultSet& rs)
             tuple[i] = pythonpp::CString( value.GetString() );
             break;
         /* Future development
-        case eDB_Binary :
+            case eDB_Text :
+            case eDB_Image :
         */
+        case eDB_Text :
+        case eDB_Image :
+            tuple[i] = pythonpp::CString();
+            break;
         case eDB_UnsupportedType :
             break;
         }
@@ -2555,6 +2557,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/09/07 11:13:28  ssikorsk
+* Fixed MakeTupleFromResult to accommodate GetColumnNo changes
+*
 * Revision 1.22  2005/07/18 12:41:26  ssikorsk
 * Replaced WIN32 with NCBI_OS_MSWIN
 *
