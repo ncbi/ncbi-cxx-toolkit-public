@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/09/07 19:16:35  vasilche
+* Add test for accession fetching.
+* Add test for scope.GetIds().
+*
 * Revision 1.13  2005/08/05 15:50:10  vasilche
 * Reordered calls to make error messages more informative.
 *
@@ -185,6 +189,7 @@ DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
     const int g_gi_from = 156000;
     const int g_gi_to   = 157000;
 #endif
+const int g_acc_from = 1;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -343,14 +348,37 @@ bool CTestOM::Thread_Run(int idx)
             TMapKey key(sih, delta>0);
             try {
                 // load sequence
+                bool preload_ids = ((idx ^ i) & 2) != 0;
+                vector<CSeq_id_Handle> ids1, ids2, ids3;
+                if ( preload_ids ) {
+                    ids1 = scope.GetIds(sih);
+                    sort(ids1.begin(), ids1.end());
+                }
+
                 CBioseq_Handle handle = scope.GetBioseqHandle(sih);
                 if (!handle) {
+                    if ( preload_ids ) {
+                        _ASSERT(ids1.empty());
+                    }
                     LOG_POST("T" << idx << ": id = " << sih.AsString() <<
                              ": INVALID HANDLE");
                     SetValue(m_DescMap, key, -1);
                     continue;
                 }
                 SetValue(m_BlobIdMap, key, handle.GetTSE_Handle().GetBlobId());
+
+                ids2 = handle.GetId();
+                sort(ids2.begin(), ids2.end());
+                _ASSERT(!ids2.empty());
+                ids3 = scope.GetIds(sih);
+                sort(ids3.begin(), ids3.end());
+                _ASSERT(ids2 == ids3);
+                if ( preload_ids ) {
+                    if ( ids1 != ids2 ) {
+                        ERR_POST("Ids discrepancy for " << sih.AsString());
+                    }
+                    //_ASSERT(ids1 == ids2);
+                }
 
                 if ( !m_load_only ) {
                     // check CSeqMap_CI
@@ -505,14 +533,14 @@ bool CTestOM::Thread_Run(int idx)
 
 bool CTestOM::TestApp_Args( CArgDescriptions& args)
 {
-    args.AddDefaultKey
+    args.AddOptionalKey
         ("fromgi", "FromGi",
          "Process sequences in the interval FROM this Gi",
-         CArgDescriptions::eInteger, NStr::IntToString(g_gi_from));
-    args.AddDefaultKey
+         CArgDescriptions::eInteger);
+    args.AddOptionalKey
         ("togi", "ToGi",
          "Process sequences in the interval TO this Gi",
-         CArgDescriptions::eInteger, NStr::IntToString(g_gi_to));
+         CArgDescriptions::eInteger);
     args.AddOptionalKey
         ("idlist", "IdList",
          "File with list of Seq-ids to test",
@@ -563,15 +591,33 @@ bool CTestOM::TestApp_Init(void)
         NcbiCout << "Testing ObjectManager (" <<
             m_Ids.size() << " Seq-ids from file)..." << NcbiEndl;
     }
-    if ( m_Ids.empty() ) {
-        int gi_from  = args["fromgi"].AsInteger();
-        int gi_to    = args["togi"].AsInteger();
+    if ( m_Ids.empty() && (args["fromgi"] || args["togi"]) ) {
+        int gi_from  = args["fromgi"]? args["fromgi"].AsInteger(): g_gi_from;
+        int gi_to    = args["togi"]? args["togi"].AsInteger(): g_gi_to;
         int delta = gi_to > gi_from? 1: -1;
         for ( int gi = gi_from; gi != gi_to+delta; gi += delta ) {
             m_Ids.push_back(CSeq_id_Handle::GetGiHandle(gi));
         }
         NcbiCout << "Testing ObjectManager ("
             "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
+    }
+    if ( m_Ids.empty() ) {
+        int count = g_gi_to-g_gi_from+1;
+        for ( int i = 0; i < count; ++i ) {
+            if ( i % 3 != 0 ) {
+                m_Ids.push_back(CSeq_id_Handle::GetGiHandle(i+g_gi_from));
+            }
+            else {
+                CNcbiOstrstream str;
+                str << "AA" << setfill('0') << setw(6) << (i/3+g_acc_from);
+                string acc = CNcbiOstrstreamToString(str);
+                CSeq_id seq_id(acc);
+                m_Ids.push_back(CSeq_id_Handle::GetHandle(seq_id));
+            }
+        }
+        NcbiCout << "Testing ObjectManager ("
+            "accessions and gi from " <<
+            g_gi_from << " to " << g_gi_to << ")..." << NcbiEndl;
     }
     m_load_only = args["load_only"];
     m_no_seq_map = args["no_seq_map"];
