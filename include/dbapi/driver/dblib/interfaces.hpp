@@ -575,6 +575,7 @@ protected:
     virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const;
+    virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
@@ -616,6 +617,7 @@ protected:
     virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const;
+    virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
@@ -703,6 +705,7 @@ protected:
     virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const ;
+    virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
@@ -730,6 +733,7 @@ protected:
     virtual EDB_Type        ItemDataType(unsigned int item_num) const;
     virtual bool            Fetch();
     virtual int             CurrentItemNo() const;
+    virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
@@ -831,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/09/07 11:00:07  ssikorsk
+ * Added GetColumnNum method
+ *
  * Revision 1.24  2005/08/09 14:57:26  ssikorsk
  * Added the FTDS_LOGIC define to be able to turn on an old ftds driver logic
  *
