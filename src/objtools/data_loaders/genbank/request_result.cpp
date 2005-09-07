@@ -90,25 +90,27 @@ CLoadInfoSeq_ids::~CLoadInfoSeq_ids(void)
 
 bool CLoadInfoSeq_ids::IsLoadedGi(void)
 {
-    if ( !m_GiLoaded ) {
-        if ( IsLoaded() ) {
-            ITERATE ( CLoadInfoSeq_ids, it, *this ) {
-                if ( it->Which() == CSeq_id::e_Gi ) {
-                    int gi;
-                    if ( it->IsGi() ) {
-                        gi = it->GetGi();
-                    }
-                    else {
-                        gi = it->GetSeqId()->GetGi();
-                    }
-                    SetLoadedGi(gi);
-                    break;
-                }
+    if ( m_GiLoaded ) {
+        return true;
+    }
+    if ( !IsLoaded() ) {
+        return false;
+    }
+    ITERATE ( CLoadInfoSeq_ids, it, *this ) {
+        if ( it->Which() == CSeq_id::e_Gi ) {
+            int gi;
+            if ( it->IsGi() ) {
+                gi = it->GetGi();
             }
-            SetLoadedGi(0);
+            else {
+                gi = it->GetSeqId()->GetGi();
+            }
+            SetLoadedGi(gi);
+            return true;
         }
     }
-    return m_GiLoaded;
+    SetLoadedGi(0);
+    return true;
 }
 
 
