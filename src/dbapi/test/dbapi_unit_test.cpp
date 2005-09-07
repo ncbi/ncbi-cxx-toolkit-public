@@ -266,6 +266,85 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
+CDBAPIUnitTest::Test_GetColumnNo(void)
+{ 
+    string sql;
+    
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // Create table ...
+    {
+        sql = 
+            "CREATE TABLE #Overlaps ( \n"
+            "	pairId int NOT NULL , \n"
+            "	overlapNum smallint NOT NULL , \n"
+            "	start1 int NOT NULL , \n"
+            "	start2 int NOT NULL , \n"
+            "	stop1 int NOT NULL , \n"
+            "	stop2 int NOT NULL , \n"
+            "	orient char (2) NOT NULL , \n"
+            "	gaps int NOT NULL , \n"
+            "	mismatches int NOT NULL , \n"
+            "	adjustedLen int NOT NULL , \n"
+            "	length int NOT NULL , \n"
+            "	contained tinyint NOT NULL , \n"
+            "	seq_align text  NULL , \n"
+            "	merged_sa char (1) NOT NULL , \n"
+            "	CONSTRAINT PK_Overlaps PRIMARY KEY CLUSTERED  \n"
+            "	( \n"
+            "		pairId, \n"
+            "		overlapNum \n"
+            "	) \n"
+            ") \n";
+        
+        auto_stmt->ExecuteUpdate( sql );
+    }
+    
+    // Insert data into the table ...
+    {
+        sql = 
+            "INSERT INTO #Overlaps VALUES( \n"
+            "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n"
+            "'Seq-align ::= { }', 'n')";
+        
+        auto_stmt->ExecuteUpdate( sql );
+    }
+    
+    // Actual check ...
+    {
+        sql = "SELECT * FROM #Overlaps";
+        
+        auto_stmt->Execute( sql );
+        while( auto_stmt->HasMoreResults() ) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
+                int col_num = -2;
+                
+//                 switch ( rs->GetResultType() ) {
+//                 case eDB_RowResult:
+//                     col_num = rs->GetColumnNo();
+//                     break;
+//                 case eDB_ParamResult:
+//                     col_num = rs->GetColumnNo();
+//                     break;
+//                 case eDB_StatusResult:
+//                     col_num = rs->GetColumnNo();
+//                     break;
+//                 case eDB_ComputeResult:
+//                 case eDB_CursorResult:
+//                     col_num = rs->GetColumnNo();
+//                     break;
+//                 }
+                
+                col_num = rs->GetColumnNo();
+                BOOST_CHECK_EQUAL( 14, col_num );
+            } 
+        }
+    }
+}
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void 
 BulkAddRow(const auto_ptr<IBulkInsert>& bi, const CVariant& col)
 {
     string msg(8000, 'A');
@@ -287,7 +366,7 @@ CDBAPIUnitTest::DumpResults(const auto_ptr<IStatement>& auto_stmt)
 }
 
 void
-CDBAPIUnitTest::Bulk_Writing(void)
+CDBAPIUnitTest::Test_Bulk_Writing(void)
 {
     string sql;
     
@@ -2536,9 +2615,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     boost::unit_test::test_case* tc_init = 
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
+    add(tc_init);
+    
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+    
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
-    add(tc_init);
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -2576,7 +2660,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     // ftds works with MS SQL Server only at the moment. 
     if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
         CTestArguments::eMsSql ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Bulk_Writing, DBAPIInstance);
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -2707,6 +2791,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2005/09/07 11:09:39  ssikorsk
+ * Added an implementation of the Test_GetColumnNo method
+ *
  * Revision 1.38  2005/09/01 15:11:59  ssikorsk
  * Restructured #bulk_insert_table
  *
