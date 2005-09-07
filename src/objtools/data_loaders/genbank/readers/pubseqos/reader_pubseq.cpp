@@ -233,12 +233,11 @@ bool CPubseqReader::LoadSeq_idGi(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeq_ids seq_ids(result, seq_id);
-    if ( seq_ids->IsLoadedGi() || seq_ids.IsLoaded() ) {
+    if ( seq_ids->IsLoadedGi() ) {
         return true;
     }
 
-    CLoadLockBlob_ids blob_ids(result, seq_id);
-    if ( !GetSeq_idInfo(result, seq_id, seq_ids, blob_ids) ) {
+    if ( !GetSeq_idInfo(result, seq_id, seq_ids, seq_ids.GetBlob_ids()) ) {
         return false;
     }
     // gi is always loaded in GetSeq_idInfo()
@@ -255,7 +254,6 @@ bool CPubseqReader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
         return true;
     }
 
-    CLoadLockBlob_ids blob_ids(result, seq_id);
     GetSeq_idSeq_ids(result, seq_ids, seq_id);
     SetAndSaveSeq_idSeq_ids(result, seq_id, seq_ids);
     return true;
@@ -266,7 +264,7 @@ bool CPubseqReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeq_ids seq_ids(result, seq_id);
-    CLoadLockBlob_ids blob_ids(result, seq_id);
+    CLoadLockBlob_ids& blob_ids = seq_ids.GetBlob_ids();
     if ( blob_ids.IsLoaded() ) {
         return true;
     }
@@ -468,10 +466,10 @@ void CPubseqReader::GetSeq_idSeq_ids(CReaderRequestResult& result,
     }
 
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    CLoadLockSeq_ids gi_ids(result, gi_handle);
     m_Dispatcher->LoadSeq_idSeq_ids(result, gi_handle);
     
     // copy Seq-id list from gi to original seq-id
-    CLoadLockSeq_ids gi_ids(result, gi_handle);
     ids->m_Seq_ids = gi_ids->m_Seq_ids;
     ids->SetState(gi_ids->GetState());
 }

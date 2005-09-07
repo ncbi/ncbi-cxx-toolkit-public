@@ -288,10 +288,10 @@ void CId1Reader::GetSeq_idSeq_ids(CReaderRequestResult& result,
     }
 
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    CLoadLockSeq_ids gi_ids(result, gi_handle);
     m_Dispatcher->LoadSeq_idSeq_ids(result, gi_handle);
 
     // copy Seq-id list from gi to original seq-id
-    CLoadLockSeq_ids gi_ids(result, gi_handle);
     ids->m_Seq_ids = gi_ids->m_Seq_ids;
     ids->SetState(gi_ids->GetState());
 }
@@ -332,8 +332,8 @@ void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
         }
     }
 
-    m_Dispatcher->LoadSeq_idGi(result, seq_id);
     CLoadLockSeq_ids seq_ids(result, seq_id);
+    m_Dispatcher->LoadSeq_idGi(result, seq_id);
     int gi = seq_ids->GetGi();
     if ( !gi ) {
         // no gi -> no blobs
@@ -342,10 +342,10 @@ void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
     }
 
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
+    CLoadLockBlob_ids gi_ids(result, gi_handle);
     m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle);
 
     // copy Seq-id list from gi to original seq-id
-    CLoadLockBlob_ids gi_ids(result, gi_handle);
     ids->m_Blob_ids = gi_ids->m_Blob_ids;
     ids->SetState(gi_ids->GetState());
     SetAndSaveSeq_idBlob_ids(result, seq_id, ids);
