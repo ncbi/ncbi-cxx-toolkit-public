@@ -127,6 +127,7 @@ public:
     void TestExecuteMany(void);
     void Test_callproc(void);
     void TestExecuteStoredProc(void);
+    void Test_SelectStmt(void);
 
     // Test scenarios.
     void TestTransaction(void);
@@ -136,6 +137,7 @@ public:
 
 private:
     static void ExecuteStr(const char* cmd);
+    static void ExecuteSQL(const string& sql);
 
 private:
     pythonpp::CEngine m_Engine;
@@ -156,6 +158,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/09/07 11:14:44  ssikorsk
+ * Added Test_SelectStmt to the test-suite
+ *
  * Revision 1.9  2005/06/02 22:09:43  ssikorsk
  * Added "ExecuteStr" method
  *
