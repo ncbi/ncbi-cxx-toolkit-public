@@ -50,6 +50,13 @@ CPythonDBAPITest::ExecuteStr(const char* cmd)
     pythonpp::CEngine::ExecuteStr(cmd);
 }
 
+void 
+CPythonDBAPITest::ExecuteSQL(const string& sql)
+{
+    string cmd = string("cursor.execute('''") + sql + "''') \n";
+    ExecuteStr(cmd.c_str());
+}
+
 void
 CPythonDBAPITest::MakeTestPreparation(void)
 {
@@ -374,6 +381,69 @@ CPythonDBAPITest::TestExecuteStoredProc(void)
 }
 
 
+void 
+CPythonDBAPITest::Test_SelectStmt(void)
+{
+    string sql;
+    
+    try {
+        // Prepare ...
+        {
+            ExecuteStr("cursor = conn_simple.cursor()\n");
+            
+            sql = 
+            "CREATE TABLE #Overlaps ( \n"
+            "	pairId int NOT NULL , \n"
+            "	overlapNum smallint NOT NULL , \n"
+            "	start1 int NOT NULL , \n"
+            "	start2 int NOT NULL , \n"
+            "	stop1 int NOT NULL , \n"
+            "	stop2 int NOT NULL , \n"
+            "	orient char (2) NOT NULL , \n"
+            "	gaps int NOT NULL , \n"
+            "	mismatches int NOT NULL , \n"
+            "	adjustedLen int NOT NULL , \n"
+            "	length int NOT NULL , \n"
+            "	contained tinyint NOT NULL , \n"
+            "	seq_align text  NULL , \n"
+            "	merged_sa char (1) NOT NULL , \n"
+            "	CONSTRAINT PK_Overlaps PRIMARY KEY CLUSTERED  \n"
+            "	( \n"
+            "		pairId, \n"
+            "		overlapNum \n"
+            "	) \n"
+            ") \n";
+            
+            ExecuteSQL(sql);
+            
+            // Insert data into the table ...
+            sql = 
+                "INSERT INTO #Overlaps VALUES( \n"
+                "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n"
+                "'Seq-align ::= { type partial, dim 2, score \n"
+                "{ { id str \"score\", value int 6771 }, { id str \n"
+                "\"e_value\", value real { 0, 10, 0 } }, { id str \n"
+                "\"bit_score\", value real { 134230121751674, 10, -10 } }, \n"
+                "{ id str \"num_ident\", value int 7017 } }, segs denseg \n"
+                "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts \n"
+                "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, \n"
+                "strands { minus, minus, minus, minus, minus, minus } } }', 'n')";
+            
+            ExecuteSQL(sql);
+        }
+        
+        sql = "SELECT * FROM #Overlaps";
+        ExecuteSQL(sql);
+        ExecuteStr("if len(cursor.fetchone()) != 14 : "
+                   "raise StandardError('Invalid number of columns.') \n"
+        );
+
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////
 CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     : test_suite("DBAPI Test Suite")
@@ -385,6 +455,10 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::MakeTestPreparation, DBAPIInstance);
 
     add(tc_init);
+
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_SelectStmt, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestBasic, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -418,7 +492,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-
+    
 //     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFromFile, DBAPIInstance);
 //     tc->depends_on(tc_init);
 //     add(tc);
@@ -492,7 +566,7 @@ CTestArguments::GetServerType(void) const
 {
     if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
         return eSybase;
-    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
+    } else if ( NStr::EqualNocase( GetServerName(), 0, sizeof("MS_DEV") - 1, "MS_DEV") ) {
         return eMsSql;
     }
 
@@ -554,6 +628,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/09/07 11:15:36  ssikorsk
+* Added an implementation of the Test_SelectStmt method
+*
 * Revision 1.15  2005/08/09 14:55:54  ssikorsk
 * Added explicit cursor creation.
 *
