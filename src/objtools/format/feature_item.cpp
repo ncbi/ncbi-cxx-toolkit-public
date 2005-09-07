@@ -463,6 +463,7 @@ CFeatureItemBase::CFeatureItemBase
  const CSeq_loc* loc) :
     CFlatItem(&ctx), m_Feat(&feat), m_Loc(loc != 0 ? loc : &feat.GetLocation())
 {
+    x_SetObject(*m_Feat);
 }
 
 
@@ -3657,6 +3658,7 @@ CSourceFeatureItem::CSourceFeatureItem
         x_SetSkip();
         return;
     }
+    x_SetObject(src);
 
     CSeq_feat& feat = const_cast<CSeq_feat&>(*m_Feat);
     feat.SetData().SetBiosrc(const_cast<CBioSource&>(src));
@@ -3709,6 +3711,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2005/09/07 16:07:05  shomrat
+* Keep the Seq-feat object
+*
 * Revision 1.56  2005/08/16 16:52:36  shomrat
 * Suppress comment features when covering whole part
 *
