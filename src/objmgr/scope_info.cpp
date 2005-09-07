@@ -928,6 +928,8 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
     
     TScopeInfoMap old_map; // save old scope info map
     old_map.swap(m_ScopeInfoMap);
+    TBioseqById old_bioseq_map; // save old bioseq info map
+    old_bioseq_map.swap(m_BioseqById);
 
     GetDSInfo().RemoveFromHistory(*this); // remove tse from old ds
     _ASSERT(!m_TSE_Lock);
@@ -958,6 +960,9 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
         _VERIFY(m_ScopeInfoMap.insert
                 (TScopeInfoMap::value_type(new_obj, info)).second);
     }
+    // restore bioseq info map
+    m_BioseqById.swap(old_bioseq_map);
+
     new_ds.AttachTSE(*this, new_tse_lock);
 
     _ASSERT(&GetDSInfo() == &new_ds);
@@ -1742,6 +1747,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/09/07 15:17:19  vasilche
+* Save and restore Bioseq map also.
+*
 * Revision 1.25  2005/09/01 18:20:04  vasilche
 * Allow unlocking of detached handles.
 *
