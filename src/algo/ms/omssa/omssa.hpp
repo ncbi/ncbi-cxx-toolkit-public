@@ -179,6 +179,23 @@ public:
                            CMSPeak *Peaks,
                            const TMassPeak *MassPeak);
 
+    /**
+    * Checks to see that given modindex points to a site shared by a fixed mod
+    * 
+    * @param i index into ModIndex
+    * @param IsFixed array indicating if mod ordinal points to fixed site
+    * @param NumFixed number of fixed mods in ModIndex
+    * @param Site sequence position of mods
+    * @param ModIndex array of iterators pointing to mod ordinals
+    * @return true if shared
+    * 
+    */
+    bool CheckFixed(int i,
+                    int *IsFixed,
+                    int NumFixed, 
+                    const char *Site[], 
+                    int *ModIndex );
+
     void InitModIndex(int *ModIndex, 
                       int& iMod, 
                       int NumMod, 
@@ -232,6 +249,20 @@ public:
                    CMSPeak* Peaks,         //!< the spectrum to be scored
                    bool NewScore           //!< use the new scoring
                    );
+
+    /**
+     *  delete variable mods that overlap with fixed mods
+     * @param NumMod the number of modifications
+     * @param Site the position of the modifications
+     * @param DeltaMass the mass of the modifications
+     * @param ModEnum the type of the modification
+     * @param IsFixed is the modification fixed?
+     */
+    void DeleteVariableOverlap(int& NumMod,
+                          const char *Site[],
+                          int DeltaMass[],
+                          int ModEnum[],
+                          int IsFixed[]);
 
     // update sites and masses for new peptide
     void UpdateWithNewPep(int Missed,
@@ -361,6 +392,8 @@ private:
 
 ///////////////////  CSearch inline methods
 
+
+
 // ModIndex contains the positions of the modified sites (aka set bits).
 // InitModIndex points ModIndex to all of the lower sites.
 inline void CSearch::InitModIndex(int *ModIndex, 
@@ -381,7 +414,7 @@ inline void CSearch::InitModIndex(int *ModIndex,
     NumFixed = j;
     const char *OldSite(0);
     for(i = 0; i < NumMod && j - NumFixed <= iMod; i++) {
-//        for(i = 0; i < NumMod && j - NumFixed <= iMod; i++) {
+
         if(IsFixed[i] != 1 && Site[i] != OldSite) {
             ModIndex[j] = i;
             OldSite = Site[i];
@@ -458,14 +491,15 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
 
                     // increment low until it doesn't point at the same site
                     // or a fixed site
-                    while(IsFixed[ModIndex[Low]] == 1 || 
-                          OldSite == Site[ModIndex[Low]])
+                    while(IsFixed[Low] == 1 || 
+                          OldSite == Site[Low])
                         Low++;
 
                     ModIndex[i] = Low;
-                    OldSite = Site[ModIndex[Low]];
+                    OldSite = Site[ModIndex[i]];
                     Low++;
                 }
+
             }
             return true;
         }
@@ -544,6 +578,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.32  2005/09/07 21:30:50  lewisg
+  force fixed and variable mods not to overlap
+
   Revision 1.31  2005/08/15 14:24:56  lewisg
   new mod, enzyme; stat test
 

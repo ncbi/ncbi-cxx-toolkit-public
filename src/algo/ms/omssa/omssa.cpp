@@ -360,6 +360,52 @@ struct CMassMaskCompare {
     }
 };
 
+/**
+ *  delete variable mods that overlap with fixed mods
+ * @param NumMod the number of modifications
+ * @param Site the position of the modifications
+ * @param DeltaMass the mass of the modifications
+ * @param ModEnum the type of the modification
+ * @param IsFixed is the modification fixed?
+ */
+void CSearch::DeleteVariableOverlap(int& NumMod,
+                      const char *Site[],
+                      int DeltaMass[],
+                      int ModEnum[],
+                      int IsFixed[])
+{
+    int i, j, k;
+    for (i = 0; i < NumMod; i++) {
+        // if variable mod
+        if(IsFixed[i] != 1) {
+            // iterate thru all mods for comparison
+            for(j = 0; j < NumMod; j++) {
+                // if fixed and at same site
+                if(IsFixed[j] == 1 && Site[i] == Site[j]) {
+                    // mark mod for deletion
+                    IsFixed[i] = -1;
+                }
+            } // j loop
+        } // IsFixed
+    } // i loop
+
+    // now do the deletion
+    for (i = 0; i < NumMod;) {
+        if(IsFixed[i] == -1) {
+            NumMod--;
+            // if last mod, then just return
+            if(i == NumMod) return;
+            // otherwise, delete the modification
+            Site[i] = Site[i+1];
+            DeltaMass[i] = DeltaMass[i+1];
+            ModEnum[i] = ModEnum[i+1];
+            IsFixed[i] = IsFixed[i+1];
+        }
+        else i++;
+    }
+    return;
+}
+
 // update sites and masses for new peptide
 void CSearch::UpdateWithNewPep(int Missed,
 			       const char *PepStart[],
@@ -849,6 +895,13 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                Modset,
                                MyRequest->GetSettings().GetMaxproductions()
                                );
+
+        // delete variable mods that overlap with fixed mods
+        DeleteVariableOverlap(NumMod[Missed - 1],
+                              Site[Missed - 1],
+                              DeltaMass[Missed - 1],
+                              ModEnum[Missed - 1],
+                              IsFixed[Missed - 1]);
 
         // count the number of unique sites modified
         CountModSites(NumModSites[Missed - 1],
@@ -1623,6 +1676,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.56  2005/09/07 21:30:50  lewisg
+force fixed and variable mods not to overlap
+
 Revision 1.55  2005/08/16 02:52:51  lewisg
 adjust n dependence
 
