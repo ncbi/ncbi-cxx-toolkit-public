@@ -1381,7 +1381,8 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
 
     // Special case -- dbSNP IDs have historically contained internal
     // vertical bars, so we have to parse them greedily.
-    if (type == e_General  &&  NStr::EqualNocase(fields[0], "dbSNP")) {
+    if (type == e_General  &&  NStr::EqualNocase(fields[0], "dbSNP")
+        &&  !fasta_pieces.empty() ) {
         fields[1] += '|';
         fields[1] += NStr::Join(fasta_pieces, "|");
         fasta_pieces.clear();
@@ -1604,6 +1605,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.114  2005/09/07 15:41:12  ucko
+ * dbSNP is moving away from extra fields, so don't assume they're always
+ * present.
+ *
  * Revision 6.113  2005/08/25 14:02:04  jcherry
  * More accurate exception message for bad numeric accessions
  *
