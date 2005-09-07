@@ -208,7 +208,7 @@ static void Test_Html(void)
     
     // Print in HTML format
     html->Print(cout);
-    LOG_POST("\n");
+    cout << endl;
 }
 
 
@@ -268,8 +268,7 @@ static void Test_Template(void)
 
     // Print test result
     page.Print(cout, CNCBINode::eHTML);
-    cout << endl << endl;
-    LOG_POST("\n");
+    cout << endl;
 }
 
 
@@ -348,6 +347,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/09/07 16:44:18  ivanov
+ * Cosmetic changes
+ *
  * Revision 1.10  2004/05/17 21:00:08  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
