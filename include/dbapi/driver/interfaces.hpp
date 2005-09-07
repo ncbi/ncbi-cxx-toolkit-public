@@ -366,6 +366,9 @@ public:
     // Return "-1" if no more items left (or available) to read.
     virtual int CurrentItemNo() const = 0;
 
+    // Return number of columns in the recordset.
+    virtual int GetColumnNum(void) const = 0;
+    
     // Get a result item (you can use either GetItem or ReadItem).
     // If "item_buf" is not NULL, then use "*item_buf" (its type should be
     // compatible with the type of retrieved item!) to retrieve the item to;
@@ -610,6 +613,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/09/07 10:55:37  ssikorsk
+ * Added GetColumnNum method to CDB_BaseEnt
+ *
  * Revision 1.35  2005/03/01 15:21:52  ssikorsk
  * Database driver manager revamp to use "core" CPluginManager
  *
