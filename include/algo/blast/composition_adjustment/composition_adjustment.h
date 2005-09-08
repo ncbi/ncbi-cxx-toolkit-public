@@ -31,15 +31,6 @@ Authors: E. Michael Gertz, Alejandro Schaffer, Yi-Kuo Yu
 Contents: Definitions for Newton's method used in compositional score
           matrix adjustment
 ******************************************************************************/
-/*
- * $Log$
- * Revision 1.1  2005/09/08 20:10:46  gertz
- * Initial revision.
- *
- * Revision 1.1  2005/05/16 16:11:41  papadopo
- * Initial revision
- *
- */
 
 #ifndef NRDEFS
 #define NRDEFS

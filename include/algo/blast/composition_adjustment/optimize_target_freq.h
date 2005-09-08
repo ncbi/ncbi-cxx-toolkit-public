@@ -34,15 +34,6 @@ Contents: Exports for re_newton.c
           Used in conjunction with Newton_procedures.c and nlm_numerics
 
 ******************************************************************************/
-/*
- * $Log$
- * Revision 1.1  2005/09/08 20:10:46  gertz
- * Initial revision.
- *
- * Revision 1.1  2005/05/16 16:11:41  papadopo
- * Initial revision
- *
- */
 
 #ifndef RE_NEWTON
 #define RE_NEWTON
