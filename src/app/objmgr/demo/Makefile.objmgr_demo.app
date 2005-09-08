@@ -10,7 +10,7 @@ REQUIRES = objects
 
 APP = objmgr_demo
 SRC = objmgr_demo
-BLAST = ncbi_xloader_blastdb seqdb xnetblastcli xnetblast scoremat blastdb tables
-LIB = $(BLAST) ncbi_xloader_lds lds_admin lds bdb xobjread xobjutil $(OBJMGR_LIBS)
+BLAST = seqdb xnetblastcli xnetblast scoremat blastdb tables
+LIB = ncbi_xloader_blastdb $(BLAST) ncbi_xloader_lds lds_admin lds bdb xobjread xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(BERKELEYDB_LIBS) $(ORIG_LIBS)
