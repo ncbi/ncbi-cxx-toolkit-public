@@ -198,7 +198,8 @@ public:
                     break;
                     
                 case '\\':
-                    s2.erase(0);
+                    s2.erase(0, 1);
+                    // fall through
                     
                 default:
                     m_Argmap[s1] = s2;
