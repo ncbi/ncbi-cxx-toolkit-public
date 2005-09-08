@@ -192,6 +192,11 @@ public:
             } else {
                 string s2 = args[i];
                 
+                if (s2.empty()) {
+                    i++;
+		    continue;
+                }
+                
                 switch(s2[0]) {
                 case '-':
                     m_Argmap[s1] = "T";

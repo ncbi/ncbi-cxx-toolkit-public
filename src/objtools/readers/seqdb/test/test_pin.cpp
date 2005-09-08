@@ -336,7 +336,10 @@ int test1(int argc, char ** argv)
     list<string> args;
     
     while(argc > 1) {
-        args.push_front(string(argv[--argc]));
+        string a(argv[--argc]);
+	if (! a.empty()) {
+            args.push_front(a);
+	}
     }
     
     orig_args = args;
@@ -368,6 +371,10 @@ int test1(int argc, char ** argv)
         args.pop_front();
         
         if (s == "-stress") {
+              CSeq_id id("gb|AAG22538.1|");
+
+  id.GetGenbank().GetVersion();
+
             stress_test_seqdb(orig_args);
             return 0;
         }
