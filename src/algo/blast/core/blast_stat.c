@@ -3083,10 +3083,11 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
     int num_combinations = 0;
     int index;
     int gap_open_max, gap_extend_max;
+    const array_of_8 *kValues;
 
 
 #ifdef NEW_BLASTN_STAT
-    const array_of_8 *kValues = 
+    kValues = 
         s_GetNuclValuesArray(reward, penalty, &num_combinations, 
                              &gap_open_max, &gap_extend_max, error_return);
 #endif
@@ -3162,9 +3163,10 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
     Int4 num_combinations = 0;
     Int4 gap_open_max = 0, gap_extend_max = 0;
     Int4 index = 0;
+    const array_of_8 *kValues;
 
 #ifdef NEW_BLASTN_STAT
-    const array_of_8 *kValues = 
+    kValues = 
         s_GetNuclValuesArray(reward, penalty, &num_combinations, 
                              &gap_open_max, &gap_extend_max, NULL);;
 #endif
@@ -4041,6 +4043,11 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.127  2005/09/08 14:48:11  ucko
+ * Tweak Blast_KarlinBlkNuclGappedCalc and Blast_GetNuclAlphaBeta to
+ * declare kValues unconditionally, to fix compilation errors when
+ * NEW_BLASTN_STAT is undefined.
+ *
  * Revision 1.126  2005/09/08 13:40:34  coulouri
  * Call s_GetNuclValuesArray iff NEW_BLASTN_STAT
  *
