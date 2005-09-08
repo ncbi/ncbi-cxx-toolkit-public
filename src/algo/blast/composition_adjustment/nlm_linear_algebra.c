@@ -34,15 +34,6 @@ Contents: Basic matrix and vector operations for use in conjunction
           with higher-level procedures in re_newton.c
 
 ******************************************************************************/
-/*
- * $Log$
- * Revision 1.1  2005/09/08 20:09:12  gertz
- * Initial revision
- *
- * Revision 1.1  2005/05/16 16:11:41  papadopo
- * Initial revision
- *
- */
 
 #include <assert.h>
 #include <math.h>

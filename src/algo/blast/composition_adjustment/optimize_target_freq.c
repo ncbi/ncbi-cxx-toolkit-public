@@ -35,22 +35,7 @@ Contents: Mid-level functions that directly solve the optimization
           Used in conjunction with Newton_procedures.c and nlm_numerics
 
 ******************************************************************************/
-/*
- * $Log$
- * Revision 1.1  2005/09/08 20:09:12  gertz
- * Initial revision
- *
- * Revision 1.3  2005/07/25 12:48:39  camacho
- * Updated reference for compositional adjustment
- *
- * Revision 1.2  2005/07/14 20:19:58  coulouri
- *    - In OptimizeTargetFrequencies, change the convergence tests to robustly
- *      handle NaN (floating point not a number)
- *
- * Revision 1.1  2005/05/16 16:11:41  papadopo
- * Initial revision
- *
- */
+
 #include <string.h>
 #include <assert.h>
 #include <math.h>

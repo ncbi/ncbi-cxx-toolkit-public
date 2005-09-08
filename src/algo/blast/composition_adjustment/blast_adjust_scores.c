@@ -35,22 +35,6 @@ Contents: Sets up the optimization problem for conditional
           two matching sequences.
 
 ******************************************************************************/
-/*
- * $Log$
- * Revision 1.1  2005/09/08 20:09:12  gertz
- * Initial revision
- *
- * Revision 1.2  2005/07/14 20:20:15  coulouri
- *    - In assign_frequencies, do not divide by sum if sum is zero.
- *    - In assign_frequencies, only divide by sum once when normalizing.
- *    - Changed printf format %lf to %f to suppress compiler warnings; these
- *      formats are equivalent for printf, but ANSI (ISO 90) C does not
- *      support %lf.
- *
- * Revision 1.1  2005/05/16 16:11:41  papadopo
- * Initial revision
- *
- */
 
 /* Code to find the new joint probability matrix given an original
    joint probabilities and new set(s) of background frequency(ies)

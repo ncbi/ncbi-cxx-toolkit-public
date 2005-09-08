@@ -34,15 +34,6 @@ Contents: Highest level functions to solve the optimization problem
           for compositional score matrix adjustment
 
 ******************************************************************************/
-/*
- * $Log$
- * Revision 1.1  2005/09/08 20:09:12  gertz
- * Initial revision
- *
- * Revision 1.1  2005/05/16 16:11:41  papadopo
- * Initial revision
- *
- */
 
 /* Functions that find the new joint probability matrix given 
    an original joint prob and new set(s) of background frequency(ies)
