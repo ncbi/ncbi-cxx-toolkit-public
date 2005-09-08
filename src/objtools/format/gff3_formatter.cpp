@@ -119,7 +119,8 @@ static const string& s_GetMatchType(const CSeq_id& ref_id, const CSeq_id& tgt_id
     CSeq_id::EAccessionInfo tgt_info = tgt_id.IdentifyAccession();
     if ((ref_info & CSeq_id::fAcc_prot)  ||  (tgt_info & CSeq_id::fAcc_prot)) {
         return kNucToProt;
-    } else if ((ref_info & CSeq_id::eAcc_est) ||  (tgt_info & CSeq_id::eAcc_est)) {
+    } else if (((ref_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) ||
+               ((tgt_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est)) {
         return kEST;
     }
     // HACK HACK HACK
@@ -348,6 +349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/08 16:16:46  shomrat
+* Fixed match type
+*
 * Revision 1.5  2005/08/16 15:09:46  shomrat
 * Added scores; Match type based on both reference and target sequences
 *
