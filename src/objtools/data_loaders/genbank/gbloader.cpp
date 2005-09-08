@@ -903,6 +903,10 @@ CGBDataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
             ret.swap(ret2);
             break;
         }
+        else if ( it->Which() == CSeq_id::e_Gi ) {
+            // gi is not found, do not try any other Seq-id
+            break;
+        }
     }
     return ret;
 }
