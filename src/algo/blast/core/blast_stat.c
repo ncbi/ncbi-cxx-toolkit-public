@@ -3084,9 +3084,12 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
     int index;
     int gap_open_max, gap_extend_max;
 
+
+#ifdef NEW_BLASTN_STAT
     const array_of_8 *kValues = 
         s_GetNuclValuesArray(reward, penalty, &num_combinations, 
                              &gap_open_max, &gap_extend_max, error_return);
+#endif
 
     ASSERT(kbp && kbp_ungap);
 
@@ -3159,9 +3162,12 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
     Int4 num_combinations = 0;
     Int4 gap_open_max = 0, gap_extend_max = 0;
     Int4 index = 0;
+
+#ifdef NEW_BLASTN_STAT
     const array_of_8 *kValues = 
         s_GetNuclValuesArray(reward, penalty, &num_combinations, 
                              &gap_open_max, &gap_extend_max, NULL);;
+#endif
     
     ASSERT(alpha && beta && kbp);
 
@@ -4035,6 +4041,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.126  2005/09/08 13:40:34  coulouri
+ * Call s_GetNuclValuesArray iff NEW_BLASTN_STAT
+ *
  * Revision 1.125  2005/08/30 15:42:58  madden
  * BLAST_GetGapExistenceExtendParams now takes program_number as an argument so it can properly identify blastn queries
  *
