@@ -887,7 +887,7 @@ static void s_TEST_MemoryFile(void)
         assert( memcmp(m2.GetPtr(), s_DataTest, s_DataLen) == 0 );
 
         // Restore previous data
-        memcpy(ptr, s_Data, s_DataLen);
+        memcpy(ptr, s_Data + m1.GetOffset(), m1.GetSize());
         // Flushing data to disk at memory unmapping in the destructor
     }}
 
@@ -1011,6 +1011,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/09/08 18:25:38  ivanov
+ * Restore correct number of bytes in the CMemoryFile test
+ *
  * Revision 1.53  2005/08/11 11:20:19  ivanov
  * eIgnoreRecursive -> fIgnoreRecursive
  * Fixed warnings on 64-bit compilers.
