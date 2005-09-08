@@ -428,11 +428,11 @@ private:
     string x_GetUrl(const list < CRef < CSeq_id > >&ids, int gi,
                     int row, int taxid) const;
 
-    ///get dumpgnl url to sequence record 
+    ///get dumpgnl url to sequence record
     ///@param ids: id list
     ///@param row: the current row
     ///@param alternative_url: user specified url or empty string
-     ///@param taxid: taxid
+    ///@param taxid: taxid
     ///
     string x_GetDumpgnlLink(const list < CRef < CSeq_id > >&ids, int row,
                             const string & alternative_url, int taxid) const;
@@ -560,6 +560,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.37  2005/09/08 13:41:03  camacho
+*Doxygen fix
+*
 *Revision 1.36  2005/08/29 20:22:44  ucko
 *Be sure NOT to follow BEGIN_/END_SCOPE(...) with semicolons, to avoid
 *"empty declaration" errors under WorkShop.
