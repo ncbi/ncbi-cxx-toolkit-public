@@ -73,9 +73,16 @@
 
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
-#include <objtools/lds/lds.hpp>
-#include <objtools/lds/admin/lds_admin.hpp>
-#include <objtools/data_loaders/lds/lds_dataloader.hpp>
+#ifdef HAVE_BDB
+#  define HAVE_LDS 1
+#elif defined(HAVE_LDS)
+#  undef HAVE_LDS
+#endif
+
+#ifdef HAVE_LDS
+#  include <objtools/data_loaders/lds/lds_dataloader.hpp>
+#  include <objtools/lds/admin/lds_admin.hpp>
+#endif
 
 #include <serial/iterator.hpp>
 
@@ -155,9 +162,11 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("loader", "Loader",
                              "Use specified GenBank loader readers (\"-\" means no GenBank",
                              CArgDescriptions::eString);
+#ifdef HAVE_LDS
     arg_desc->AddOptionalKey("lds_dir", "LDSDir",
                              "Use local data storage loader from the specified firectory",
                              CArgDescriptions::eString);
+#endif
     arg_desc->AddOptionalKey("blast", "Blast",
                              "Use BLAST data loader from the specified DB",
                              CArgDescriptions::eString);
@@ -469,6 +478,7 @@ int CDemoApp::Run(void)
     else {
         gb_loader = CGBDataLoader::RegisterInObjectManager(*pOm).GetLoader();
     }
+#ifdef HAVE_LDS
     if ( args["lds_dir"] ) {
         string lds_dir = args["lds_dir"].AsString();
         CLDS_Management::ERecurse recurse = CLDS_Management::eRecurseSubDirs;
@@ -487,6 +497,7 @@ int CDemoApp::Run(void)
                                                  CObjectManager::eDefault);
         lds_db.release();
     }
+#endif
     if ( args["blast"] || args["blast_type"] ) {
         string db;
         if ( args["blast"] ) {
@@ -1154,6 +1165,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2005/09/09 16:25:00  vasilche
+* Optionally compile with LDS data loader.
+*
 * Revision 1.105  2005/09/09 14:26:46  grichenk
 * Added fBinary flag to bfile argument.
 *
