@@ -59,7 +59,7 @@ Nlm_DenseMatrixNew(int nrows,
     mat[0] = (double *) malloc((size_t) nrows *
                                (size_t) ncols * sizeof(double));
     assert(mat[0]);
-        
+
     for (i = 1;  i < nrows;  i++) {
         mat[i] = &mat[0][i * ncols];
     }
@@ -80,7 +80,6 @@ Nlm_LtriangMatrixNew(int n)
     double ** L;                /* the new, lower triangular matrix */
     size_t nelts;               /* the number of elements in
                                    the matrix */
-
     nelts = ((size_t) n * (n + 1))/2;
 
     L    = (double**) calloc(n, sizeof(double *));   assert(L);
@@ -175,10 +174,8 @@ void Nlm_SolveLtriangPosDef(double * x, int n,
         }
         x[i] = temp/L[i][i];
     }
-    /* Now x = z */
-
-    /* Back solve; L\T y = z */
-    for (j = n - 1; j >= 0; j--) {
+    /* Now x = z.  Back solve the system L\T y = z */
+    for (j = n - 1;  j >= 0;  j--) {
         x[j] /= L[j][j];
         for (i = 0;  i < j;  i++) {
             x[i] -= L[j][i] * x[j];
@@ -230,7 +227,9 @@ void Nlm_AddVectors(double * y, int n, double alpha, const double * x)
 {
     int i;                     /* iteration index */
 
-    for( i = 0; i < n; i++ ) y[i] += alpha * x[i];
+    for (i = 0; i < n; i++) {
+        y[i] += alpha * x[i];
+    }
 }
 
 
