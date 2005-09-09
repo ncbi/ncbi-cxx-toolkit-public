@@ -122,7 +122,8 @@ void CDemoApp::Init(void)
                              CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("bfile", "SeqEntryFile",
                              "file with Seq-entry to load (binary ASN.1)",
-                             CArgDescriptions::eInputFile);
+                             CArgDescriptions::eInputFile,
+                             CArgDescriptions::fBinary);
     arg_desc->AddOptionalKey("annot_file", "SeqAnnotFile",
                              "file with Seq-annot to load (text ASN.1)",
                              CArgDescriptions::eInputFile);
@@ -1153,6 +1154,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2005/09/09 14:26:46  grichenk
+* Added fBinary flag to bfile argument.
+*
 * Revision 1.104  2005/09/07 19:18:15  vasilche
 * Added possibility to load from BLAST and LDS.
 *
