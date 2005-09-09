@@ -24,16 +24,14 @@ static char const rcsid[] = "$Id$";
 *
 * ===========================================================================*/
 
-/*****************************************************************************
-
-File name: Mode_condition.c
-
-Authors: Alejandro Schaffer, Yi-Kuo Yu
-
-Contents: Functions to test whether conditional score matrix 
-          adjustment should be applied for a pair of matching sequences.
-
-******************************************************************************/
+/**
+ * @file compo_mode_condition.c
+ *
+ * Authors: Alejandro Schaffer, Yi-Kuo Yu
+ *
+ * Functions to test whether conditional score matrix adjustment
+ * should be applied for a pair of matching sequences.
+ */
 
 #include <math.h>
 #include <string.h>
@@ -43,7 +41,8 @@ Contents: Functions to test whether conditional score matrix
 #include <algo/blast/composition_adjustment/compo_mode_condition.h>
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
 
-double BLOSUM62_bg[Alphsize] =
+
+double BLOSUM62_bg[COMPOSITION_ALPHABET_SIZE] =
     { 0.0742356686, 0.0515874541, 0.0446395713, 0.0536092024, 0.0246865086,
       0.0342500470, 0.0543174458, 0.0741431988, 0.0262119099, 0.0679331197,
       0.0989057232, 0.0581774322, 0.0249972837, 0.0473970070, 0.0385382904,
@@ -51,20 +50,19 @@ double BLOSUM62_bg[Alphsize] =
     };
   /* BLOSUM 62 is the correct bg */
 
+
 #define HALF_CIRCLE_DEGREES 180
 #define PI 3.1415926543
 #define QUERY_MATCH_DISTANCE_THRESHOLD 0.16
 #define LENGTH_RATIO_THRESHOLD 3.0
-#define ANGLE_DEGREE_THRESHOLD 70
+#define ANGLE_DEGREE_THRESHOLD 70.0
 
 
 /* type of function used to choose a mode for composition-based
- * statistics */
-typedef int (*Condition) (int, int, double *, double *, char *);
-/*
- * variable orders: Queryseq_length, Matchseq_length,
- *                  query_amino_count, match_amino_account, matrix_name
- */
+ * statistics. The varables are Queryseq_length, Matchseq_length,
+ * query_amino_count, match_amino_account and matrix_name.*/
+typedef int (*Condition) (int, int, const double *, const double *, 
+                          const char *);
 
 
 /* If this function is used relative-entropy score adjustment is
@@ -72,11 +70,11 @@ typedef int (*Condition) (int, int, double *, double *, char *);
 static int
 TestToApplyREAdjustmentUnconditional(int Len_query,
                                      int Len_match,
-                                     double * P_query,
-                                     double * P_match,
-                                     char *matrix_name)
+                                     const double * P_query,
+                                     const double * P_match,
+                                     const char *matrix_name)
 {
-    return RE_USER_SPECIFIED;
+    return eUserSpecifiedRelEntropy;
 }
 
 
@@ -87,17 +85,17 @@ TestToApplyREAdjustmentUnconditional(int Len_query,
 static int
 TestToApplyREAdjustmentConditional(int Len_query,
                                    int Len_match,
-                                   double * P_query,
-                                   double * P_match,
-                                   char *matrix_name)
+                                   const double * P_query,
+                                   const double * P_match,
+                                   const char *matrix_name)
 {
     int mode_value;              /* which relative entropy mode to
                                      return */
     int i;                       /* loop indices */
-    double p_query[Alphsize], p_match[Alphsize]; /*letter
-                                                   probabilities for
-                                                   query and match*/
-    double *p_matrix;             /* letter probabilities used in
+    double p_query[COMPOSITION_ALPHABET_SIZE];
+    double p_match[COMPOSITION_ALPHABET_SIZE]; /*letter probabilities
+                                                for query and match*/
+    const double *p_matrix;       /* letter probabilities used in
                                      constructing matrix name*/
     double D_m_mat, D_q_mat, D_m_q;  /* distances between match and
                                         original between query and
@@ -113,9 +111,9 @@ TestToApplyREAdjustmentConditional(int Len_query,
     double angle;                 /* angle between query and match
                                      probabilities */
 
-    p_matrix = Get_bg_freq(matrix_name);
+    p_matrix = Blast_GetMatrixBackgroundFreq(matrix_name);
 
-    for (i = 0;  i < Alphsize;  i++) {
+    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
         p_query[i] = P_query[i];
         p_match[i] = P_match[i];
         corr_factor +=
@@ -144,9 +142,9 @@ TestToApplyREAdjustmentConditional(int Len_query,
     if ((D_m_q > QUERY_MATCH_DISTANCE_THRESHOLD) &&
         (len_large / len_small > LENGTH_RATIO_THRESHOLD) &&
         (angle > ANGLE_DEGREE_THRESHOLD)) {
-        mode_value = KEEP_OLD_MATRIX;
+        mode_value = eCompoKeepOldMatrix;
     } else {
-        mode_value = RE_USER_SPECIFIED;
+        mode_value = eUserSpecifiedRelEntropy;
     }
     return mode_value;
 }
@@ -154,8 +152,8 @@ TestToApplyREAdjustmentConditional(int Len_query,
 
 /* Retrieve the background letter probabilities implicitly used in
  * constructing the score matrix matrix_name*/
-double *
-Get_bg_freq(char *matrix_name)
+const double *
+Blast_GetMatrixBackgroundFreq(const char *matrix_name)
 {
     if (0 == strcmp(matrix_name, "BLOSUM62")) {
         return BLOSUM62_bg;
@@ -182,12 +180,12 @@ Condition Cond_func[] ={ TestToApplyREAdjustmentConditional,
  * score matrix; testFunctionIndex allows different rules to be tested
  * for the relative entropy decision. */
 int
-chooseMode(int length1,
-           int length2,
-           double * probArray1,
-           double * probArray2,
-           char *matrixName,
-           int testFunctionIndex)
+Blast_ChooseCompoAdjustMode(int length1,
+                            int length2,
+                            const double * probArray1,
+                            const double * probArray2,
+                            const char *matrixName,
+                            int testFunctionIndex)
 {
     return
         Cond_func[testFunctionIndex] (length1,    length2,
