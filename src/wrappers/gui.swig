@@ -241,7 +241,6 @@ gui/objutils/registry.hpp
 gui/objutils/seq_map.hpp
 gui/objutils/seqid_dictionary.hpp
 gui/objutils/sequence.hpp
-gui/objutils/used.hpp
 gui/objutils/utils.hpp
 gui/objutils/vis_range.hpp
 
@@ -320,6 +319,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/09 15:05:21  jcherry
+ * Removed gui/objutils/used.hpp, which no longer exists
+ *
  * Revision 1.1  2005/08/04 21:13:02  jcherry
  * Initial version
  *
