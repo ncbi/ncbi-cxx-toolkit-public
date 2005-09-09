@@ -24,18 +24,6 @@ static char const rcsid[] = "$Id$";
 *
 * ===========================================================================*/
 
-/*****************************************************************************
-
-File name: re_newton.c
-
-Authors: E. Michael Gertz, Alejandro Schaffer
-
-Contents: Mid-level functions that directly solve the optimization 
-          problem for compositional score matrix adjustment.  
-          Used in conjunction with Newton_procedures.c and nlm_numerics
-
-******************************************************************************/
-
 #include <string.h>
 #include <assert.h>
 #include <math.h>
@@ -45,7 +33,7 @@ Contents: Mid-level functions that directly solve the optimization
 #include <algo/blast/composition_adjustment/optimize_target_freq.h>
 
 /**
- * @file re_newton.c
+ * @file optimize_target_freq.c
  *
  * Author E. Michael Gertz
  * 
@@ -59,7 +47,7 @@ Contents: Mid-level functions that directly solve the optimization
  *
  *       sum_k x[k] * ln(x[k]/q[k])
  *
-* from the set q of target frequencies from a standard matrix.  They
+ * from the set q of target frequencies from a standard matrix.  They
  * also satisfy the constraints
  *
  * \sum_{i = 0...alphsize - 1} x[i * alphsize + j] = col_sums[j]
@@ -106,6 +94,7 @@ Contents: Mid-level functions that directly solve the optimization
  * Substitution Matrices.  FEBS Journal, in press.
  */
 
+
 /**
  * Compute the symmetric product A D A^T, where A is the matrix of
  * linear constraints from the problem of generating optimal target
@@ -125,7 +114,7 @@ Contents: Mid-level functions that directly solve the optimization
  *                     length alphsize * alphsize
  */
 static void
-ScaledSymmetricProductA(double ** W, double diagonal[], int alphsize)
+ScaledSymmetricProductA(double ** W, const double diagonal[], int alphsize)
 {
     int rowW, colW;   /* iteration indices over the rows and columns of W */
     int i, j;         /* iteration indices over characters in the alphabet */
