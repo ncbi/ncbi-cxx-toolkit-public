@@ -24,19 +24,20 @@
 
 /*****************************************************************************
 
-File name: re_newton.h
+File name: optimize_target_freq.h
 
 Author: E. Michael Gertz
 
-Contents: Exports for re_newton.c
-          Mid-level functions that directly solve the optimization 
-          problem for compositional score matrix adjustment.  
-          Used in conjunction with Newton_procedures.c and nlm_numerics
+Contents: Exports for optimized_target_freq.c
 
 ******************************************************************************/
 
-#ifndef RE_NEWTON
-#define RE_NEWTON
+#ifndef __OPTIMIZE_TARGET_FREQ__
+#define __OPTIMIZE_TARGET_FREQ__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int
 Blast_OptimizeTargetFrequencies(double x[],
@@ -49,4 +50,8 @@ Blast_OptimizeTargetFrequencies(double x[],
                                 double tol,
                                 int maxits);
     
+#ifdef __cplusplus
+}
+#endif
+
 #endif

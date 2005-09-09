@@ -24,16 +24,20 @@
 
 /*****************************************************************************
 
-File name: nlm_numerics.h
+File name: nlm_linear_algebra.h
 
 Author: E. Michael Gertz
 
-Contents: Definitions used in nlm_numerics.c
+Contents: Declarations for several linear algebra routines
 
 ******************************************************************************/
 
-#ifndef NLMNUMERICS
-#define NLMNUMERICS
+#ifndef __NLM_LINEAR_ALGEBRA__
+#define __NLM_LINEAR_ALGEBRA__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 double ** Nlm_DenseMatrixNew(int nrows, int ncols);
 double ** Nlm_LtriangMatrixNew(int n);
@@ -49,5 +53,9 @@ void Nlm_AddVectors(double y[], int n, double alpha,
 
 double Nlm_StepBound(const double x[], int n,
                      const double step_x[], double max);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
