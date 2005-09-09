@@ -77,8 +77,14 @@ void CDate_std::SetToTime(const CTime& time, CDate::EPrecision prec)
 
 CTime CDate_std::AsCTime(CTime::ETimeZone tz) const
 {
-    return CTime(GetYear(), GetMonth(), GetDay(),
-                 GetHour(), GetMinute(), GetSecond(), 0, tz);
+    return CTime(GetYear(),
+                 CanGetMonth()  ? GetMonth()  : 1,
+                 CanGetDay()    ? GetDay()    : 1,
+                 CanGetHour()   ? GetHour()   : 0,
+                 CanGetMinute() ? GetMinute() : 0,
+                 CanGetSecond() ? GetSecond() : 0,
+                 0, // nanoseconds, not supported by CDate_std.
+                 tz);
 }
 
 
@@ -90,14 +96,14 @@ CDate::ECompare CDate_std::Compare(const CDate_std& date) const
         return CDate::eCompare_after;
     }
 
-    if ((IsSetSeason()  ||  date.IsSetSeason())
-        && ( !IsSetSeason()  ||  !date.IsSetSeason()
+    if ((CanGetSeason()  ||  date.CanGetSeason())
+        && ( !CanGetSeason()  ||  !date.CanGetSeason()
             || GetSeason()  !=  date.GetSeason())) {
         return CDate::eCompare_unknown;
     }
 
-    if (IsSetMonth()  ||  date.IsSetMonth()) {
-        if ( !IsSetMonth()  ||  !date.IsSetMonth()) {
+    if (CanGetMonth()  ||  date.CanGetMonth()) {
+        if ( !CanGetMonth()  ||  !date.CanGetMonth()) {
             return CDate::eCompare_unknown;
         } else if (GetMonth() < date.GetMonth()) {
             return CDate::eCompare_before;
@@ -106,8 +112,8 @@ CDate::ECompare CDate_std::Compare(const CDate_std& date) const
         }
     }
 
-    if (IsSetDay()  ||  date.IsSetDay()) {
-        if ( !IsSetDay()  ||  !date.IsSetDay()) {
+    if (CanGetDay()  ||  date.CanGetDay()) {
+        if ( !CanGetDay()  ||  !date.CanGetDay()) {
             return CDate::eCompare_unknown;
         } else if (GetDay() < date.GetDay()) {
             return CDate::eCompare_before;
@@ -116,8 +122,8 @@ CDate::ECompare CDate_std::Compare(const CDate_std& date) const
         }
     }
 
-    if (IsSetHour()  ||  date.IsSetHour()) {
-        if ( !IsSetHour()  ||  !date.IsSetHour()) {
+    if (CanGetHour()  ||  date.CanGetHour()) {
+        if ( !CanGetHour()  ||  !date.CanGetHour()) {
             return CDate::eCompare_unknown;
         } else if (GetHour() < date.GetHour()) {
             return CDate::eCompare_before;
@@ -126,8 +132,8 @@ CDate::ECompare CDate_std::Compare(const CDate_std& date) const
         }
     }
 
-    if (IsSetMinute()  ||  date.IsSetMinute()) {
-        if ( !IsSetMinute()  ||  !date.IsSetMinute()) {
+    if (CanGetMinute()  ||  date.CanGetMinute()) {
+        if ( !CanGetMinute()  ||  !date.CanGetMinute()) {
             return CDate::eCompare_unknown;
         } else if (GetMinute() < date.GetMinute()) {
             return CDate::eCompare_before;
@@ -136,8 +142,8 @@ CDate::ECompare CDate_std::Compare(const CDate_std& date) const
         }
     }
 
-    if (IsSetSecond()  ||  date.IsSetSecond()) {
-        if ( !IsSetSecond()  ||  !date.IsSetSecond()) {
+    if (CanGetSecond()  ||  date.CanGetSecond()) {
+        if ( !CanGetSecond()  ||  !date.CanGetSecond()) {
             return CDate::eCompare_unknown;
         } else if (GetSecond() < date.GetSecond()) {
             return CDate::eCompare_before;
@@ -234,12 +240,12 @@ void CDate_std::GetDate(string* label, const string& format) const
         switch (*it) {
         case 'Y': value = GetYear(); break;
         case 'M':
-        case 'N': value = IsSetMonth()  ? GetMonth()  : -1; break;
-        case 'D': value = IsSetDay()    ? GetDay()    : -1; break;
-        case 'S': value = IsSetSeason() ? 1           : -1; break;
-        case 'h': value = IsSetHour()   ? GetHour()   : -1; break;
-        case 'm': value = IsSetMinute() ? GetMinute() : -1; break;
-        case 's': value = IsSetSecond() ? GetSecond() : -1; break;
+        case 'N': value = CanGetMonth()  ? GetMonth()  : -1; break;
+        case 'D': value = CanGetDay()    ? GetDay()    : -1; break;
+        case 'S': value = CanGetSeason() ? 1           : -1; break;
+        case 'h': value = CanGetHour()   ? GetHour()   : -1; break;
+        case 'm': value = CanGetMinute() ? GetMinute() : -1; break;
+        case 's': value = CanGetSecond() ? GetSecond() : -1; break;
         default:
             NCBI_THROW2(CGeneralParseException, eFormat,
                         "CDate_std::GetDate(): unrecognized format specifier",
@@ -325,6 +331,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.9  2005/09/09 19:05:51  ucko
+ * AsCTime: press on even if some fields are unavailable, defaulting to
+ * the lowest legal value in each case.
+ * In general, replace IsSetXxx() with CanGetXxx().
+ *
  * Revision 6.8  2005/06/03 16:51:39  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
