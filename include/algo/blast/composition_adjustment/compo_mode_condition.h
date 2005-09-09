@@ -24,27 +24,34 @@
 
 /*****************************************************************************
 
-File name: Mode_condition.h
+File name: compo_mode_condition.h
 
 Authors: Alejandro Schaffer, Yi-Kuo Yu
 
-Contents: Definitions used only in Mode_condition.c
+Contents: Declarations of functions used to choose the mode for
+          composition-based statistics.
 
 ******************************************************************************/
 
-#ifndef MODE_CONDITION
-#define MODE_CONDITION
+#ifndef __COMPO_MODE_CONDITION__
+#define __COMPO_MODE_CONDITION__
 
-#define Mode_1_per  0.3
-#define Mode_unchange_per 0.6
-#define RE_mode_1_limit 0.18
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-double *Get_bg_freq(char *matrix_name);
-
+const double *
+Blast_GetMatrixBackgroundFreq(const char *matrix_name);
 
 int
-chooseMode(int length1, int length2,
-           double * probArray1, double * probArray2,
-           char *matrixName, int testFunctionIndex);
+Blast_ChooseCompoAdjustMode(int length1, int length2,
+                            const double * probArray1, 
+                            const double * probArray2,
+                            const char * matrixName, 
+                            int testFunctionIndex);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
