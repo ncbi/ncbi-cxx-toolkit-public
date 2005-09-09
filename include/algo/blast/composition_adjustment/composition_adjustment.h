@@ -24,83 +24,54 @@
 
 /*****************************************************************************
 
-File name: NRdefs.h
+File name: compostion_adjustment.h
 
 Authors: E. Michael Gertz, Alejandro Schaffer, Yi-Kuo Yu
 
-Contents: Definitions for Newton's method used in compositional score
-          matrix adjustment
+Contents: Definitions used in compositional score matrix adjustment
 ******************************************************************************/
 
-#ifndef NRDEFS
-#define NRDEFS
+#ifndef __COMPOSITION_ADJUSTMENT__
+#define __COMPOSITION_ADJUSTMENT__
 
-#define Alphsize 20
+#define COMPOSITION_ALPHABET_SIZE 20
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Next five constants are the options for how relative entropy is
    specified */
-enum{ SMITH_WATERMAN_ONLY   = (-1),
-      KEEP_OLD_MATRIX       = 0,
-      RE_NO_CONSTRAINT      = 1,
-      RE_OLDMAT_NEWCONTEXT  = 2,
-      RE_OLDMAT_OLDCONTEXT  = 3,
-      RE_USER_SPECIFIED     = 4,
-      NUM_RE_OPTIONS};
+enum ECompoAdjustModes { 
+    eNoCompositionAdjustment       = (-1),
+    eCompoKeepOldMatrix            = 0,
+    eUnconstrainedRelEntropy       = 1,
+    eRelEntropyOldMatrixNewContext = 2,
+    eRelEntropyOldMatrixOldContext = 3,
+    eUserSpecifiedRelEntropy       = 4,
+    eNumCompoAdjustModes
+};
+typedef enum ECompoAdjustModes ECompoAdjustModes;
 
-#define NR_ERROR_TOLERANCE     0.00000001   /* bound on error for Newton's
-                                               method */
-#define NR_ITERATION_LIMIT     2000
-#define PROB_SUM_TOLERANCE     0.000000001  /* bound on error for sum of
-                                               probabilities*/
-#define SCORE_BOUND            0.0000000001
+int
+Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
+                             double col_sums[], const char *matrixName);
+void
+Blast_ApplyPseudocounts(double * probs_with_pseudo, 
+                        int length,
+                        double * normalized_probs,
+                        const double * observed_freq,
+                        const double * background_probs,
+                        int pseudocounts);
 
-#define LAMBDA_STEP_FRACTION   0.5          /* default step fraction in
-                                               Newton's method */
-#define INITIAL_LAMBDA         1.0
-#define LAMBDA_ITERATION_LIMIT 300
-#define LAMBDA_ERROR_TOLERANCE 0.0000001    /* bound on error for estimating
-                                               lambda */
+double Blast_GetRelativeEntropy(const double A[], const double B[]);
+void
+Blast_ScoreMatrixFromFreq(double ** score, int alphsize, double ** freq,
+                          const double row_sum[], const double col_sum[]);
 
-typedef struct NRitems {
-    int flag;             /* determines which of the optimization
-                              problems are solved */
-    double ** mat_b;
-    double ** score_old;
-    double ** mat_final;
-    double ** score_final;
 
-    double RE_final;       /* the relative entropy used, either
-                              re_o_implicit or re_o_newcontext */
-    double RE_o_implicit;  /* used for RE_OLDMAT_OLDCONTEXT mode */
-
-    double * first_seq_freq;          /* freq vector of first seq */
-    double * second_seq_freq;         /* freq. vector for the second. */
-    double * first_standard_freq;     /* background freq vector of first
-                                         seq using matrix */
-    double * second_standard_freq;    /* background freq vector for
-                                                   the second. */
-    double * first_seq_freq_wpseudo;  /* freq vector of first seq
-                                         w/pseudocounts */
-    double * second_seq_freq_wpseudo; /* freq. vector for the
-                                         second seq w/pseudocounts */
-} NRitems;
-
-NRitems * allocate_NR_memory();
-void free_NR_memory(NRitems * NRrecord);
-
-double Blast_GetRelativeEntropy(double *A, double *B);
-
-double 
-RE_interface(char *matrixName,
-             int length1, int length2,
-             double *probArray1, double *probArray2,
-             int pseudocounts, double specifiedRE, 
-             NRitems *NRrecord);
-
-int initializeNRprobabilities(NRitems * NRrecord, char *matrixName);
-int score_matrix_direct_solve(NRitems * NRrecord, double tol, int maxits);
-
-double
-compute_lambda(NRitems * NRrecord, int compute_re, double * lambdaToReturn);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
