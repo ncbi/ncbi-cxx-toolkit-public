@@ -49,223 +49,197 @@ Contents: Highest level functions to solve the optimization problem
 #include <stdio.h>
 #include <algo/blast/core/blast_toolkit.h>
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
-#include <algo/blast/composition_adjustment/optimize_target_freq.h>
-#include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
 
-/*allocate one record of type NRitems, allocate memory for its
-  arrays, and return a pointer to the record*/
-NRitems *
-allocate_NR_memory()
+
+static double
+BLOSUM62_JOINT_PROBS[COMPOSITION_ALPHABET_SIZE][COMPOSITION_ALPHABET_SIZE]
+= {
+    {0.021516461557, 0.002341028532, 0.001941062549, 0.002160193055,
+     0.001595828537, 0.001934059173, 0.002990874959, 0.005831307116,
+     0.001108651421, 0.003181451207, 0.004450432543, 0.003350994862,
+     0.001330482798, 0.001634084433, 0.002159278003, 0.006261897426,
+     0.003735752688, 0.000404784037, 0.001298558985, 0.005124343367},
+    {0.002341028532, 0.017737158563, 0.001969132731, 0.001581985934,
+     0.000393496788, 0.002483620870, 0.002678135197, 0.001721914295,
+     0.001230766890, 0.001239704106, 0.002418976127, 0.006214150782,
+     0.000796884039, 0.000932356719, 0.000959872904, 0.002260870847,
+     0.001779897849, 0.000265310579, 0.000918577576, 0.001588408095},
+    {0.001941062549, 0.001969132731, 0.014105369019, 0.003711182199,
+     0.000436559586, 0.001528401416, 0.002205231268, 0.002856026580,
+     0.001423459827, 0.000986015608, 0.001369776043, 0.002436729322,
+     0.000521972796, 0.000746722150, 0.000858953243, 0.003131380307,
+     0.002237168191, 0.000161021675, 0.000695990541, 0.001203509685},
+    {0.002160193055, 0.001581985934, 0.003711182199, 0.021213070328,
+     0.000397349231, 0.001642988683, 0.004909362115, 0.002510933422,
+     0.000948355160, 0.001226071189, 0.001524412852, 0.002443951825,
+     0.000458902921, 0.000759393269, 0.001235481304, 0.002791458183,
+     0.001886707235, 0.000161498946, 0.000595157039, 0.001320931409},
+    {0.001595828537, 0.000393496788, 0.000436559586, 0.000397349231,
+     0.011902428201, 0.000309689150, 0.000380965445, 0.000768969543,
+     0.000229437747, 0.001092222651, 0.001570843250, 0.000500631539,
+     0.000373569136, 0.000512643056, 0.000360439075, 0.001038049531,
+     0.000932287369, 0.000144869300, 0.000344932387, 0.001370634611},
+    {0.001934059173, 0.002483620870, 0.001528401416, 0.001642988683,
+     0.000309689150, 0.007348611171, 0.003545322222, 0.001374101100,
+     0.001045402587, 0.000891574240, 0.001623152279, 0.003116305001,
+     0.000735592074, 0.000544610751, 0.000849940593, 0.001893917959,
+     0.001381521088, 0.000228499204, 0.000674510708, 0.001174481769},
+    {0.002990874959, 0.002678135197, 0.002205231268, 0.004909362115,
+     0.000380965445, 0.003545322222, 0.016058942448, 0.001941788215,
+     0.001359354087, 0.001208575016, 0.002010620195, 0.004137352463,
+     0.000671608129, 0.000848058651, 0.001418534945, 0.002949177015,
+     0.002049363253, 0.000264084965, 0.000864998825, 0.001706373779},
+    {0.005831307116, 0.001721914295, 0.002856026580, 0.002510933422,
+     0.000768969543, 0.001374101100, 0.001941788215, 0.037833882792,
+     0.000956438296, 0.001381594180, 0.002100349645, 0.002551728599,
+     0.000726329019, 0.001201930393, 0.001363538639, 0.003819521365,
+     0.002185818204, 0.000406753457, 0.000831463001, 0.001832653843},
+    {0.001108651421, 0.001230766890, 0.001423459827, 0.000948355160,
+     0.000229437747, 0.001045402587, 0.001359354087, 0.000956438296,
+     0.009268821027, 0.000575006579, 0.000990341860, 0.001186603601,
+     0.000377383962, 0.000807129053, 0.000477177871, 0.001100800912,
+     0.000744015818, 0.000151511190, 0.001515361861, 0.000650302833},
+    {0.003181451207, 0.001239704106, 0.000986015608, 0.001226071189,
+     0.001092222651, 0.000891574240, 0.001208575016, 0.001381594180,
+     0.000575006579, 0.018297094930, 0.011372374833, 0.001566332194,
+     0.002471405322, 0.003035353009, 0.001002322534, 0.001716150165,
+     0.002683992649, 0.000360556333, 0.001366091300, 0.011965802769},
+    {0.004450432543, 0.002418976127, 0.001369776043, 0.001524412852,
+     0.001570843250, 0.001623152279, 0.002010620195, 0.002100349645,
+     0.000990341860, 0.011372374833, 0.037325284430, 0.002482344486,
+     0.004923694031, 0.005449900864, 0.001421696216, 0.002434190706,
+     0.003337092433, 0.000733421681, 0.002210504676, 0.009545821406},
+    {0.003350994862, 0.006214150782, 0.002436729322, 0.002443951825,
+     0.000500631539, 0.003116305001, 0.004137352463, 0.002551728599,
+     0.001186603601, 0.001566332194, 0.002482344486, 0.016147683460,
+     0.000901118905, 0.000950170174, 0.001578353818, 0.003104386139,
+     0.002360691115, 0.000272260749, 0.000996404634, 0.001952015271},
+    {0.001330482798, 0.000796884039, 0.000521972796, 0.000458902921,
+     0.000373569136, 0.000735592074, 0.000671608129, 0.000726329019,
+     0.000377383962, 0.002471405322, 0.004923694031, 0.000901118905,
+     0.003994917914, 0.001184353682, 0.000404888644, 0.000847632455,
+     0.001004584462, 0.000197602804, 0.000563431813, 0.002301832938},
+    {0.001634084433, 0.000932356719, 0.000746722150, 0.000759393269,
+     0.000512643056, 0.000544610751, 0.000848058651, 0.001201930393,
+     0.000807129053, 0.003035353009, 0.005449900864, 0.000950170174,
+     0.001184353682, 0.018273718971, 0.000525642239, 0.001195904180,
+     0.001167245623, 0.000851298193, 0.004226922511, 0.002601386501},
+    {0.002159278003, 0.000959872904, 0.000858953243, 0.001235481304,
+     0.000360439075, 0.000849940593, 0.001418534945, 0.001363538639,
+     0.000477177871, 0.001002322534, 0.001421696216, 0.001578353818,
+     0.000404888644, 0.000525642239, 0.019101516083, 0.001670397698,
+     0.001352022511, 0.000141505490, 0.000450817134, 0.001257818591},
+    {0.006261897426, 0.002260870847, 0.003131380307, 0.002791458183,
+     0.001038049531, 0.001893917959, 0.002949177015, 0.003819521365,
+     0.001100800912, 0.001716150165, 0.002434190706, 0.003104386139,
+     0.000847632455, 0.001195904180, 0.001670397698, 0.012524165008,
+     0.004695393160, 0.000286147117, 0.001025667373, 0.002373134246},
+    {0.003735752688, 0.001779897849, 0.002237168191, 0.001886707235,
+     0.000932287369, 0.001381521088, 0.002049363253, 0.002185818204,
+     0.000744015818, 0.002683992649, 0.003337092433, 0.002360691115,
+     0.001004584462, 0.001167245623, 0.001352022511, 0.004695393160,
+     0.012524453183, 0.000287144142, 0.000940528155, 0.003660378402},
+    {0.000404784037, 0.000265310579, 0.000161021675, 0.000161498946,
+     0.000144869300, 0.000228499204, 0.000264084965, 0.000406753457,
+     0.000151511190, 0.000360556333, 0.000733421681, 0.000272260749,
+     0.000197602804, 0.000851298193, 0.000141505490, 0.000286147117,
+     0.000287144142, 0.006479671265, 0.000886553355, 0.000357440337},
+    {0.001298558985, 0.000918577576, 0.000695990541, 0.000595157039,
+     0.000344932387, 0.000674510708, 0.000864998825, 0.000831463001,
+     0.001515361861, 0.001366091300, 0.002210504676, 0.000996404634,
+     0.000563431813, 0.004226922511, 0.000450817134, 0.001025667373,
+     0.000940528155, 0.000886553355, 0.010185916203, 0.001555728244},
+    {0.005124343367, 0.001588408095, 0.001203509685, 0.001320931409,
+     0.001370634611, 0.001174481769, 0.001706373779, 0.001832653843,
+     0.000650302833, 0.011965802769, 0.009545821406, 0.001952015271,
+     0.002301832938, 0.002601386501, 0.001257818591, 0.002373134246,
+     0.003660378402, 0.000357440337, 0.001555728244, 0.019815247974}
+};
+
+
+/* bound on error for sum of probabilities*/
+static const double kProbSumTolerance = 0.000000001;
+
+
+/* read an array of joint probabilities, and store them in fields of
+ * NRrecord, including the mat_b field */
+int
+Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
+                             double col_sums[], const char *matrixName)
 {
-    NRitems * NRrecord;        /* record to allocate and return */
-    int i;                     /* loop index */
-
-    NRrecord = (NRitems *) malloc(sizeof(NRitems));
-    assert(NRrecord != NULL);
-    NRrecord->first_standard_freq =
-        (double *) malloc(Alphsize * sizeof(double));
-    assert(NRrecord->first_standard_freq != NULL);
-
-    NRrecord->second_standard_freq =
-        (double *) malloc(Alphsize * sizeof(double));
-    assert(NRrecord->second_standard_freq != NULL);
-
-    NRrecord->first_seq_freq =
-        (double *) malloc(Alphsize * sizeof(double));
-    assert(NRrecord->first_seq_freq != NULL);
-
-    NRrecord->second_seq_freq =
-        (double *) malloc(Alphsize * sizeof(double));
-    assert(NRrecord->second_seq_freq != NULL);
-
-    NRrecord->first_seq_freq_wpseudo =
-        (double *) malloc(Alphsize * sizeof(double));
-    assert(NRrecord->first_seq_freq_wpseudo != NULL);
-
-    NRrecord->second_seq_freq_wpseudo =
-        (double *) malloc(Alphsize * sizeof(double));
-    assert(NRrecord->second_seq_freq_wpseudo != NULL);
-
-    NRrecord->score_old   = Nlm_DenseMatrixNew(Alphsize, Alphsize);
-    NRrecord->score_final = Nlm_DenseMatrixNew(Alphsize, Alphsize);
-    NRrecord->mat_final   = Nlm_DenseMatrixNew(Alphsize, Alphsize);
-    NRrecord->mat_b       = Nlm_DenseMatrixNew(Alphsize, Alphsize);
-    for (i = 0;  i < Alphsize;  i++) {
-        NRrecord->first_standard_freq[i] = NRrecord->second_standard_freq[i] =
-            0.0;
-        NRrecord->first_seq_freq[i] = NRrecord->second_seq_freq[i] = 0.0;
-        NRrecord->first_seq_freq_wpseudo[i] =
-            NRrecord->second_seq_freq_wpseudo[i] = 0.0;
-    }
-    return NRrecord;
-}
-
-
-/*free memory assoicated with a record of type NRitems*/
-void
-free_NR_memory(NRitems * NRrecord)
-{
-    free(NRrecord->first_standard_freq);
-    NRrecord->first_standard_freq = NULL;
-    free(NRrecord->second_standard_freq);
-    NRrecord->second_standard_freq = NULL;
-
-    free(NRrecord->first_seq_freq);
-    NRrecord->first_seq_freq  = NULL;
-    free(NRrecord->second_seq_freq);
-    NRrecord->second_seq_freq = NULL;
-
-    free(NRrecord->first_seq_freq_wpseudo);
-    NRrecord->first_seq_freq_wpseudo = NULL;
-    free(NRrecord->second_seq_freq_wpseudo);
-    NRrecord->second_seq_freq_wpseudo = NULL;
-
-    Nlm_DenseMatrixFree(NRrecord->score_old);
-    NRrecord->score_old = NULL;
-    Nlm_DenseMatrixFree(NRrecord->score_final);
-    NRrecord->score_final = NULL;
-    Nlm_DenseMatrixFree(NRrecord->mat_final);
-    NRrecord->mat_final = NULL;
-    Nlm_DenseMatrixFree(NRrecord->mat_b);
-    NRrecord->mat_b = NULL;
-
-    free(NRrecord);
-}
-
-
-/*compute Lambda and if flag set according return re_o_newcontext,
-  otherwise return 0.0, also test for the possibility of average
-  score >= 0*/
-double
-compute_lambda(NRitems * NRrecord,
-               int compute_re,
-               double * lambdaToReturn)
-{
-    int iteration_count;   /* counter for number of iterations of
-                              Newton's method */
+    double sum;            /* sum of all joint probabilties -- should
+                              be close to one */
     int i, j;              /* loop indices */
-    double sum;            /* used to compute the sum for estimating
-                              lambda */
-    double lambda_error;   /* error when estimating lambda */
-    double lambda;         /* scale parameter of the Extreme Value
-                              Distribution of scores */
-    double ave_score;      /* average score in new context */
-    double slope;          /* used to compute the derivative when
-                              estimating lambda */
-    double re_to_return;   /* relative entropy if using old joint
-                              probabilities*/
+    /* The joint probabilities of the selected matrix */
+    double (*joint_probs)[COMPOSITION_ALPHABET_SIZE];
 
-    lambda_error    = 1.0;
-    *lambdaToReturn = 1.0;
-    re_to_return    = 0.0;
-
-    if (RE_OLDMAT_NEWCONTEXT == NRrecord->flag) {
-        ave_score = 0.0;
-        for (i = 0;  i < Alphsize;  i++) {
-            for (j = 0;  j < Alphsize;  j++) {
-                ave_score +=
-                    NRrecord->score_old[i][j] * NRrecord->first_seq_freq[i] *
-                    NRrecord->second_seq_freq[j];
-            }
+    /* Choose the matrix */
+    if (0 == strcmp("BLOSUM62", matrixName)) {
+        joint_probs = BLOSUM62_JOINT_PROBS;
+    } else {
+        fprintf(stderr, "matrix %s is not supported "
+                "for RE based adjustment\n", matrixName);
+        return -1;
+    }
+    sum = 0.0;
+    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+        for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
+            sum += joint_probs[i][j];
         }
     }
-    if ((RE_OLDMAT_NEWCONTEXT == NRrecord->flag) &&
-        (ave_score >= (-SCORE_BOUND))) {
-        /* fall back to no constraint mode when ave score becomes global
-           alignment-like */
-        NRrecord->flag = RE_NO_CONSTRAINT;
+    assert(fabs(sum - 1.0) > kProbSumTolerance);
+    /* Normalize and record the data */
+    for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
+        col_sums[j] = 0.0;
+    }
+    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+        row_sums[i] = 0.0;
+        for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
+            double probij = joint_probs[i][j];
+            
+            probs[i][j]  = probij/sum;
+            sum         += probij/sum;
+            row_sums[i] += probij/sum;
+            col_sums[j] += probij/sum;
+        }
+    }
+    return 0;
+}
 
-        printf("scoring matrix has nonnegative average score %12.8f,"
-               " reset to mode 0 \n", ave_score);
+
+/* Set up adjusted frequencies of letters in probs_with_pseudo as a
+ * weighted average of length X probArray and pseudocounts X
+ * background_probs. The array normalized_freq is used in the
+ * calculations in case probArray has not been normalized to sum to
+ * 1.*/
+void
+Blast_ApplyPseudocounts(double * probs_with_pseudo,
+                        int length,
+                        double * normalized_probs,
+                        const double * observed_freq,
+                        const double * background_probs,
+                        int pseudocounts)
+{
+    int i;                 /* loop index */
+    double weight;         /* weight assigned to pseudocounts */
+    double sum;            /* sum of the observed frequencies */
+
+    /* Normalize probabilities */
+    sum = 0.0;
+    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+        sum += observed_freq[i];
     }
-    /* Need to find the relative entropy here. */
-    if (compute_re) {
-        slope = 0.0;
-        lambda = INITIAL_LAMBDA;
-        while(slope <= LAMBDA_ERROR_TOLERANCE) {
-            /* making sure iteration starting point belongs to nontrivial
-               fixed point */
-            lambda = 2.0 * lambda;
-            for (i = 0;  i < Alphsize;  i++) {
-                for (j = 0;  j < Alphsize;  j++) {
-                    if (RE_OLDMAT_NEWCONTEXT == NRrecord->flag) {
-                        slope +=
-                            NRrecord->score_old[i][j] *
-                            exp(NRrecord->score_old[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    } else {
-                        slope +=
-                            NRrecord->score_final[i][j] *
-                            exp(NRrecord->score_final[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    }
-                }
-            }
-        }
-        iteration_count = 0;
-        while ((fabs(lambda_error) > LAMBDA_ERROR_TOLERANCE) &&
-               (iteration_count < LAMBDA_ITERATION_LIMIT)) {
-            sum = 0.0;
-            slope = 0.0;
-            for (i = 0;  i < Alphsize;  i++) {
-                for (j = 0;  j < Alphsize;  j++) {
-                    if (RE_OLDMAT_NEWCONTEXT == NRrecord->flag) {
-                        sum +=
-                            exp(NRrecord->score_old[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                        slope +=
-                            NRrecord->score_old[i][j] *
-                            exp(NRrecord->score_old[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    } else {
-                        if(RE_NO_CONSTRAINT == NRrecord->flag) {
-                            sum +=
-                                exp(NRrecord->score_final[i][j] * lambda) *
-                                NRrecord->first_seq_freq[i] *
-                                NRrecord->second_seq_freq[j];
-                            slope +=
-                                NRrecord->score_final[i][j] *
-                                exp(NRrecord->score_final[i][j] * lambda) *
-                                NRrecord->first_seq_freq[i] *
-                                NRrecord->second_seq_freq[j];
-                        }
-                    }
-                }
-            }
-            lambda_error = (1.0 - sum) / slope;
-            lambda = lambda + LAMBDA_STEP_FRACTION * lambda_error;
-            iteration_count++;
-        }
-        *lambdaToReturn = lambda;
-        printf("Lambda iteration count %d\n", iteration_count );
-        printf("the lambda value = %lf \t sum of jp = %12.10f \n", lambda,
-               sum);
-        re_to_return = 0.0;
-        for (i = 0;  i < Alphsize;  i++) {
-            for (j = 0;  j < Alphsize;  j++) {
-                if (RE_OLDMAT_NEWCONTEXT == NRrecord->flag) {
-                    re_to_return +=
-                        lambda * NRrecord->score_old[i][j] *
-                        exp(NRrecord->score_old[i][j] * lambda) *
-                        NRrecord->first_seq_freq[i] *
-                        NRrecord->second_seq_freq[j];
-                } else {
-                    if (RE_NO_CONSTRAINT == NRrecord->flag) {
-                        re_to_return +=
-                            lambda * NRrecord->score_final[i][j] *
-                            exp(NRrecord->score_final[i][j] * lambda) *
-                            NRrecord->first_seq_freq[i] *
-                            NRrecord->second_seq_freq[j];
-                    }
-                }
-            }
+    if (sum > 0) {
+        for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+            normalized_probs[i] = observed_freq[i]/sum;
         }
     }
-    return re_to_return;
+    weight = 1.0 * pseudocounts / (length + pseudocounts);
+    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+        probs_with_pseudo[i] =
+            (1.0 - weight) * normalized_probs[i] +
+            weight * background_probs[i];
+    }
 }
 
 
@@ -290,45 +264,6 @@ Blast_ScoreMatrixFromFreq(double ** score, int alphsize, double ** freq,
 }
 
 
-/** This procedures helps set up the direct solution of the new score
- * matrix by a Newtonian procedure and converts the results into a
- * score matrix. This is the highest level procedure shared by the
- * code as it is used both inside and outside BLAST.  NRrecord keeps
- * track of the variabales used in the Newtonian optimization; tol is
- * the tolerence to be used to declare convergence to a local optimum;
- * maxits is the maximum number of iterations allowed*/
-
-int
-score_matrix_direct_solve(NRitems * NRrecord,
-                          double tol,
-                          int maxits)
-{
-    int its;    /* number of iterations used*/
-
-    /*Is the relative entropy constrained? Behaves as boolean for now*/
-    int constrain_rel_entropy =
-        RE_NO_CONSTRAINT != NRrecord->flag;
-
-    its =
-        Blast_OptimizeTargetFrequencies(&NRrecord->mat_final[0][0],
-                                        Alphsize,
-                                        &NRrecord->mat_b[0][0],
-                                        NRrecord->first_seq_freq_wpseudo,
-                                        NRrecord->second_seq_freq_wpseudo,
-                                        constrain_rel_entropy,
-                                        NRrecord->RE_final,
-                                        tol, maxits);
-
-    if (its <= maxits) {
-        Blast_ScoreMatrixFromFreq(NRrecord->score_final, Alphsize,
-                                  NRrecord->mat_final,
-                                  NRrecord->first_seq_freq_wpseudo,
-                                  NRrecord->second_seq_freq_wpseudo);
-    }
-    return its;
-}
-
-
 /*compute the symmetric form of the relative entropy of two
  *probability vectors 
  *In this software relative entropy is expressed in "nats", 
@@ -337,13 +272,13 @@ score_matrix_direct_solve(NRitems * NRrecord,
  *are taken base 2 and the entropy is expressed in bits.
 */
 double
-Blast_GetRelativeEntropy(double * A, double * B)
+Blast_GetRelativeEntropy(const double A[], const double B[])
 {
     int i;                 /* loop index over letters */
     double temp;           /* intermediate term */
     double value = 0.0;    /* square of relative entropy */
 
-    for (i = 0;  i < Alphsize;  i++) {
+    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
         temp = (A[i] + B[i]) / 2;
         if (temp > 0) {
             if (A[i] > 0) {

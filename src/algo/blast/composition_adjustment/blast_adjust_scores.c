@@ -24,245 +24,144 @@ static char const rcsid[] = "$Id$";
 *
 * ===========================================================================*/
 
-/*****************************************************************************
+/**
+ * @file blast_adjust_scores.c
+ *
+ * Authors: E. Michael Gertz, Alejandro Schaffer, Yi-Kuo Yu
+ *
+ * Sets up the optimization problem for conditional score matrix
+ * adjustment based on relative entropy of the two matching sequences.
+ */
 
-File name: RE_interface_ds.c
-
-Authors: E. Michael Gertz, Alejandro Schaffer, Yi-Kuo Yu
-
-Contents: Sets up the optimization problem for conditional
-          score matrix adjustment based on relative entropy of the
-          two matching sequences.
-
-******************************************************************************/
-
-/* Code to find the new joint probability matrix given an original
-   joint probabilities and new set(s) of background frequency(ies)
-   The eta parameter is a Lagrangian multiplier to
-   fix the relative entropy between the new target and the new background
-
-   RE_FLAG is used to indicate various choices:
-   1    no constraint on the relative entropy
-   2    the final relative entropy equals to that of old matrix in new
-        context
-   3    the final relative entropy equals to that of old matrix in its
-        own context
-   4    the final relative entropy equals to a user specified value
-*/
-
-#include <string.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <algo/blast/core/blast_toolkit.h>
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
-#include <algo/blast/composition_adjustment/compo_mode_condition.h>
+#include <algo/blast/composition_adjustment/optimize_target_freq.h>
+#include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
+#include <algo/blast/composition_adjustment/blast_adjust_scores.h>
+
+#define SCORE_BOUND            0.0000000001
+#define LAMBDA_STEP_FRACTION   0.5          /* default step fraction in
+                                               Newton's method */
+#define INITIAL_LAMBDA         1.0
+#define LAMBDA_ITERATION_LIMIT 300
+#define LAMBDA_ERROR_TOLERANCE 0.0000001    /* bound on error for estimating
+                                               lambda */
+
+/* bound on error for Newton's method */
+static const double kCompoAdjustErrTolerance = 0.00000001;
+/* iteration limit for Newton's method */
+static const int kCompoAdjustIterationLimit = 2000;
 
 
-static double BLOSUM62_JOINT_PROBS[Alphsize][Alphsize] = {
-    {0.021516461557, 0.002341028532, 0.001941062549, 0.002160193055,
-     0.001595828537, 0.001934059173, 0.002990874959, 0.005831307116,
-     0.001108651421, 0.003181451207, 0.004450432543, 0.003350994862,
-     0.001330482798, 0.001634084433, 0.002159278003, 0.006261897426,
-     0.003735752688, 0.000404784037, 0.001298558985, 0.005124343367},
-    {0.002341028532, 0.017737158563, 0.001969132731, 0.001581985934,
-     0.000393496788, 0.002483620870, 0.002678135197, 0.001721914295,
-     0.001230766890, 0.001239704106, 0.002418976127, 0.006214150782,
-     0.000796884039, 0.000932356719, 0.000959872904, 0.002260870847,
-     0.001779897849, 0.000265310579, 0.000918577576, 0.001588408095},
-    {0.001941062549, 0.001969132731, 0.014105369019, 0.003711182199,
-     0.000436559586, 0.001528401416, 0.002205231268, 0.002856026580,
-     0.001423459827, 0.000986015608, 0.001369776043, 0.002436729322,
-     0.000521972796, 0.000746722150, 0.000858953243, 0.003131380307,
-     0.002237168191, 0.000161021675, 0.000695990541, 0.001203509685},
-    {0.002160193055, 0.001581985934, 0.003711182199, 0.021213070328,
-     0.000397349231, 0.001642988683, 0.004909362115, 0.002510933422,
-     0.000948355160, 0.001226071189, 0.001524412852, 0.002443951825,
-     0.000458902921, 0.000759393269, 0.001235481304, 0.002791458183,
-     0.001886707235, 0.000161498946, 0.000595157039, 0.001320931409},
-    {0.001595828537, 0.000393496788, 0.000436559586, 0.000397349231,
-     0.011902428201, 0.000309689150, 0.000380965445, 0.000768969543,
-     0.000229437747, 0.001092222651, 0.001570843250, 0.000500631539,
-     0.000373569136, 0.000512643056, 0.000360439075, 0.001038049531,
-     0.000932287369, 0.000144869300, 0.000344932387, 0.001370634611},
-    {0.001934059173, 0.002483620870, 0.001528401416, 0.001642988683,
-     0.000309689150, 0.007348611171, 0.003545322222, 0.001374101100,
-     0.001045402587, 0.000891574240, 0.001623152279, 0.003116305001,
-     0.000735592074, 0.000544610751, 0.000849940593, 0.001893917959,
-     0.001381521088, 0.000228499204, 0.000674510708, 0.001174481769},
-    {0.002990874959, 0.002678135197, 0.002205231268, 0.004909362115,
-     0.000380965445, 0.003545322222, 0.016058942448, 0.001941788215,
-     0.001359354087, 0.001208575016, 0.002010620195, 0.004137352463,
-     0.000671608129, 0.000848058651, 0.001418534945, 0.002949177015,
-     0.002049363253, 0.000264084965, 0.000864998825, 0.001706373779},
-    {0.005831307116, 0.001721914295, 0.002856026580, 0.002510933422,
-     0.000768969543, 0.001374101100, 0.001941788215, 0.037833882792,
-     0.000956438296, 0.001381594180, 0.002100349645, 0.002551728599,
-     0.000726329019, 0.001201930393, 0.001363538639, 0.003819521365,
-     0.002185818204, 0.000406753457, 0.000831463001, 0.001832653843},
-    {0.001108651421, 0.001230766890, 0.001423459827, 0.000948355160,
-     0.000229437747, 0.001045402587, 0.001359354087, 0.000956438296,
-     0.009268821027, 0.000575006579, 0.000990341860, 0.001186603601,
-     0.000377383962, 0.000807129053, 0.000477177871, 0.001100800912,
-     0.000744015818, 0.000151511190, 0.001515361861, 0.000650302833},
-    {0.003181451207, 0.001239704106, 0.000986015608, 0.001226071189,
-     0.001092222651, 0.000891574240, 0.001208575016, 0.001381594180,
-     0.000575006579, 0.018297094930, 0.011372374833, 0.001566332194,
-     0.002471405322, 0.003035353009, 0.001002322534, 0.001716150165,
-     0.002683992649, 0.000360556333, 0.001366091300, 0.011965802769},
-    {0.004450432543, 0.002418976127, 0.001369776043, 0.001524412852,
-     0.001570843250, 0.001623152279, 0.002010620195, 0.002100349645,
-     0.000990341860, 0.011372374833, 0.037325284430, 0.002482344486,
-     0.004923694031, 0.005449900864, 0.001421696216, 0.002434190706,
-     0.003337092433, 0.000733421681, 0.002210504676, 0.009545821406},
-    {0.003350994862, 0.006214150782, 0.002436729322, 0.002443951825,
-     0.000500631539, 0.003116305001, 0.004137352463, 0.002551728599,
-     0.001186603601, 0.001566332194, 0.002482344486, 0.016147683460,
-     0.000901118905, 0.000950170174, 0.001578353818, 0.003104386139,
-     0.002360691115, 0.000272260749, 0.000996404634, 0.001952015271},
-    {0.001330482798, 0.000796884039, 0.000521972796, 0.000458902921,
-     0.000373569136, 0.000735592074, 0.000671608129, 0.000726329019,
-     0.000377383962, 0.002471405322, 0.004923694031, 0.000901118905,
-     0.003994917914, 0.001184353682, 0.000404888644, 0.000847632455,
-     0.001004584462, 0.000197602804, 0.000563431813, 0.002301832938},
-    {0.001634084433, 0.000932356719, 0.000746722150, 0.000759393269,
-     0.000512643056, 0.000544610751, 0.000848058651, 0.001201930393,
-     0.000807129053, 0.003035353009, 0.005449900864, 0.000950170174,
-     0.001184353682, 0.018273718971, 0.000525642239, 0.001195904180,
-     0.001167245623, 0.000851298193, 0.004226922511, 0.002601386501},
-    {0.002159278003, 0.000959872904, 0.000858953243, 0.001235481304,
-     0.000360439075, 0.000849940593, 0.001418534945, 0.001363538639,
-     0.000477177871, 0.001002322534, 0.001421696216, 0.001578353818,
-     0.000404888644, 0.000525642239, 0.019101516083, 0.001670397698,
-     0.001352022511, 0.000141505490, 0.000450817134, 0.001257818591},
-    {0.006261897426, 0.002260870847, 0.003131380307, 0.002791458183,
-     0.001038049531, 0.001893917959, 0.002949177015, 0.003819521365,
-     0.001100800912, 0.001716150165, 0.002434190706, 0.003104386139,
-     0.000847632455, 0.001195904180, 0.001670397698, 0.012524165008,
-     0.004695393160, 0.000286147117, 0.001025667373, 0.002373134246},
-    {0.003735752688, 0.001779897849, 0.002237168191, 0.001886707235,
-     0.000932287369, 0.001381521088, 0.002049363253, 0.002185818204,
-     0.000744015818, 0.002683992649, 0.003337092433, 0.002360691115,
-     0.001004584462, 0.001167245623, 0.001352022511, 0.004695393160,
-     0.012524453183, 0.000287144142, 0.000940528155, 0.003660378402},
-    {0.000404784037, 0.000265310579, 0.000161021675, 0.000161498946,
-     0.000144869300, 0.000228499204, 0.000264084965, 0.000406753457,
-     0.000151511190, 0.000360556333, 0.000733421681, 0.000272260749,
-     0.000197602804, 0.000851298193, 0.000141505490, 0.000286147117,
-     0.000287144142, 0.006479671265, 0.000886553355, 0.000357440337},
-    {0.001298558985, 0.000918577576, 0.000695990541, 0.000595157039,
-     0.000344932387, 0.000674510708, 0.000864998825, 0.000831463001,
-     0.001515361861, 0.001366091300, 0.002210504676, 0.000996404634,
-     0.000563431813, 0.004226922511, 0.000450817134, 0.001025667373,
-     0.000940528155, 0.000886553355, 0.010185916203, 0.001555728244},
-    {0.005124343367, 0.001588408095, 0.001203509685, 0.001320931409,
-     0.001370634611, 0.001174481769, 0.001706373779, 0.001832653843,
-     0.000650302833, 0.011965802769, 0.009545821406, 0.001952015271,
-     0.002301832938, 0.002601386501, 0.001257818591, 0.002373134246,
-     0.003660378402, 0.000357440337, 0.001555728244, 0.019815247974}
-};
-
-
-/* read an array of joint probabilities, and store them in fields of
- * NRrecord, including the mat_b field */
-int
-record_joint_probs(char *matrixName,
-                   NRitems * NRrecord)
+/*allocate one record of type Blast_CompositionWorkspace, allocate
+ * memory for its arrays, and return a pointer to the record*/
+Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
 {
-    double sum;            /* sum of frequency ratios, should be 1 */
-    int i, j;              /* loop indices */
+    Blast_CompositionWorkspace * NRrecord;        /* record to allocate
+                                                    and return */
+    int i;                     /* loop index */
 
-    if (0 == strcmp("BLOSUM62", matrixName)) {
-        sum = 0.0;
-        for (i = 0;  i < Alphsize;  i++) {
-            for (j = 0;  j < Alphsize;  j++) {
-                NRrecord->mat_b[i][j] = BLOSUM62_JOINT_PROBS[i][j];
+    NRrecord = (Blast_CompositionWorkspace *) 
+        malloc(sizeof(Blast_CompositionWorkspace));
+    assert(NRrecord != NULL);
+    NRrecord->first_standard_freq =
+        (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
+    assert(NRrecord->first_standard_freq != NULL);
 
-                sum                               += NRrecord->mat_b[i][j];
-                NRrecord->first_standard_freq[i]  += NRrecord->mat_b[i][j];
-                NRrecord->second_standard_freq[j] += NRrecord->mat_b[i][j];
-            }
-        }
-        if (fabs(sum - 1.0) > PROB_SUM_TOLERANCE) {
-            fprintf(stderr,
-                    "the sum of joint probabilities in %s is %16.12f,"
-                    " which is too far from 1\n",
-                    matrixName, sum);
-            exit(1);
-        } else {
-            for (i = 0;  i < Alphsize;  i++) {
-                NRrecord->second_standard_freq[i] /= sum;
-                NRrecord->first_standard_freq[i]  /= sum;
-            }
-            for (i = 0;  i < Alphsize;  i++) {
-                for (j = 0;  j < Alphsize;  j++) {
-                    NRrecord->mat_b[i][j] /= sum;
-                }
-            }
-        }
-        return 0;
+    NRrecord->second_standard_freq =
+        (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
+    assert(NRrecord->second_standard_freq != NULL);
+
+    NRrecord->first_seq_freq =
+        (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
+    assert(NRrecord->first_seq_freq != NULL);
+
+    NRrecord->second_seq_freq =
+        (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
+    assert(NRrecord->second_seq_freq != NULL);
+
+    NRrecord->first_seq_freq_wpseudo =
+        (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
+    assert(NRrecord->first_seq_freq_wpseudo != NULL);
+
+    NRrecord->second_seq_freq_wpseudo =
+        (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
+    assert(NRrecord->second_seq_freq_wpseudo != NULL);
+
+    NRrecord->score_old   = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
+                                               COMPOSITION_ALPHABET_SIZE);
+    NRrecord->score_final = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
+                                               COMPOSITION_ALPHABET_SIZE);
+    NRrecord->mat_final   = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
+                                               COMPOSITION_ALPHABET_SIZE);
+    NRrecord->mat_b       = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
+                                               COMPOSITION_ALPHABET_SIZE);
+    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+        NRrecord->first_standard_freq[i] = 
+            NRrecord->second_standard_freq[i] = 0.0;
+        NRrecord->first_seq_freq[i] = NRrecord->second_seq_freq[i] = 0.0;
+        NRrecord->first_seq_freq_wpseudo[i] =
+            NRrecord->second_seq_freq_wpseudo[i] = 0.0;
     }
-    fprintf(stderr, "matrix %s is not supported for RE based adjustment\n",
-            matrixName);
-    return -1;
+    return NRrecord;
 }
 
 
-/* Set up adjusted frequencies of letters in one_seq_freq as a
- * weighted average of length X probArray and pseudocounts X
- * background_probs. The array input_probs is used in the calculations
- * in case probArray has not been normalized to sum to 1.*/
+/*free memory assoicated with a record of type Blast_CompositionWorkspace*/
 void
-assign_frequencies(int length,
-                   double * probArray,
-                   double * one_seq_freq,
-                   double * background_probs,
-                   double * input_probs,
-                   int pseudocounts)
+Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** pNRrecord)
 {
-    int i;                 /* loop index */
-    double weight;         /* weight assigned to pseudocounts */
-    double sum;            /* sum of initial probabilities */
+    Blast_CompositionWorkspace * NRrecord = *pNRrecord;
+    
+    free(NRrecord->first_standard_freq);
+    NRrecord->first_standard_freq = NULL;
+    free(NRrecord->second_standard_freq);
+    NRrecord->second_standard_freq = NULL;
 
-    /* Normalize probabilities */
-    sum = 0.0;
-    for (i = 0;  i < Alphsize;  i++) {
-        input_probs[i] = probArray[i];
-        sum += input_probs[i];
-    }
-    if (sum > 0) {
-        for (i = 0;  i < Alphsize;  i++) {
-            input_probs[i] /= sum;
-        }
-    }
-    weight = 1.0 * pseudocounts / (length + pseudocounts);
-    for (i = 0;  i < Alphsize;  i++) {
-        one_seq_freq[i] =
-            (1.0 - weight) * input_probs[i] + weight * background_probs[i];
-    }
+    free(NRrecord->first_seq_freq);
+    NRrecord->first_seq_freq  = NULL;
+    free(NRrecord->second_seq_freq);
+    NRrecord->second_seq_freq = NULL;
+
+    free(NRrecord->first_seq_freq_wpseudo);
+    NRrecord->first_seq_freq_wpseudo = NULL;
+    free(NRrecord->second_seq_freq_wpseudo);
+    NRrecord->second_seq_freq_wpseudo = NULL;
+
+    Nlm_DenseMatrixFree(NRrecord->score_old);
+    NRrecord->score_old = NULL;
+    Nlm_DenseMatrixFree(NRrecord->score_final);
+    NRrecord->score_final = NULL;
+    Nlm_DenseMatrixFree(NRrecord->mat_final);
+    NRrecord->mat_final = NULL;
+    Nlm_DenseMatrixFree(NRrecord->mat_b);
+    NRrecord->mat_b = NULL;
+
+    free(NRrecord);
+    pNRrecord = NULL;
 }
 
 
 /* initialize the joint probabilities used later from inside
    NRrecord */
 int
-initializeNRprobabilities(NRitems * NRrecord,
-                          char *matrixName)
+Blast_CompositionWorkspaceInit(Blast_CompositionWorkspace * NRrecord,
+                               const char *matrixName)
 {
-    double re_o_implicit = 0.0;    /* implicit relative entropy
-                                           of starting matrix */
-    int i, j;                          /* loop indices */
+    double re_o_implicit = 0.0;    /* implicit relative entropy of
+                                      starting matrix */
+    int i, j;                      /* loop indices */
 
-    if (0 != strcmp("BLOSUM62", matrixName)) {
-        fprintf(stderr,
-                "Matrix %s not currently supported for RE based adjustment\n",
-                matrixName);
-        return (-1);
-    }
-
-    if (0 == record_joint_probs(matrixName, NRrecord)) {
-        for (i = 0;  i < Alphsize;  i++) {
-            for (j = 0;  j < Alphsize;  j++) {
+    if (0 == Blast_GetJointProbsForMatrix(NRrecord->mat_b,
+                                          NRrecord->first_standard_freq,
+                                          NRrecord->second_standard_freq,
+                                          matrixName)) {
+        for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+            for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
                 re_o_implicit +=
                     NRrecord->mat_b[i][j] * log(NRrecord->mat_b[i][j] /
                                                 NRrecord->
@@ -277,8 +176,148 @@ initializeNRprobabilities(NRitems * NRrecord,
         }
         NRrecord->RE_o_implicit = re_o_implicit;
         return 0;
-    } else
+    } else {
+        fprintf(stderr,
+                "Matrix %s not currently supported for RE based adjustment\n",
+                matrixName);
         return -1;
+    }
+}
+
+
+/*compute Lambda and if flag set according return re_o_newcontext,
+  otherwise return 0.0, also test for the possibility of average
+  score >= 0*/
+static double
+Blast_CalcLambdaForComposition(Blast_CompositionWorkspace * NRrecord,
+                               int compute_re,
+                               double * lambdaToReturn)
+{
+    int iteration_count;   /* counter for number of iterations of
+                              Newton's method */
+    int i, j;              /* loop indices */
+    double sum;            /* used to compute the sum for estimating
+                              lambda */
+    double lambda_error;   /* error when estimating lambda */
+    double lambda;         /* scale parameter of the Extreme Value
+                              Distribution of scores */
+    double ave_score;      /* average score in new context */
+    double slope;          /* used to compute the derivative when
+                              estimating lambda */
+    double re_to_return;   /* relative entropy if using old joint
+                              probabilities*/
+
+    lambda_error    = 1.0;
+    *lambdaToReturn = 1.0;
+    re_to_return    = 0.0;
+
+    if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
+        ave_score = 0.0;
+        for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+            for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
+                ave_score +=
+                    NRrecord->score_old[i][j] * NRrecord->first_seq_freq[i] *
+                    NRrecord->second_seq_freq[j];
+            }
+        }
+    }
+    if ((eRelEntropyOldMatrixNewContext == NRrecord->flag) &&
+        (ave_score >= (-SCORE_BOUND))) {
+        /* fall back to no constraint mode when ave score becomes global
+           alignment-like */
+        NRrecord->flag = eUnconstrainedRelEntropy;
+
+        printf("scoring matrix has nonnegative average score %12.8f,"
+               " reset to mode 0 \n", ave_score);
+    }
+    /* Need to find the relative entropy here. */
+    if (compute_re) {
+        slope = 0.0;
+        lambda = INITIAL_LAMBDA;
+        while(slope <= LAMBDA_ERROR_TOLERANCE) {
+            /* making sure iteration starting point belongs to nontrivial
+               fixed point */
+            lambda = 2.0 * lambda;
+            for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+                for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
+                    if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
+                        slope +=
+                            NRrecord->score_old[i][j] *
+                            exp(NRrecord->score_old[i][j] * lambda) *
+                            NRrecord->first_seq_freq[i] *
+                            NRrecord->second_seq_freq[j];
+                    } else {
+                        slope +=
+                            NRrecord->score_final[i][j] *
+                            exp(NRrecord->score_final[i][j] * lambda) *
+                            NRrecord->first_seq_freq[i] *
+                            NRrecord->second_seq_freq[j];
+                    }
+                }
+            }
+        }
+        iteration_count = 0;
+        while ((fabs(lambda_error) > LAMBDA_ERROR_TOLERANCE) &&
+               (iteration_count < LAMBDA_ITERATION_LIMIT)) {
+            sum = 0.0;
+            slope = 0.0;
+            for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+                for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
+                    if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
+                        sum +=
+                            exp(NRrecord->score_old[i][j] * lambda) *
+                            NRrecord->first_seq_freq[i] *
+                            NRrecord->second_seq_freq[j];
+                        slope +=
+                            NRrecord->score_old[i][j] *
+                            exp(NRrecord->score_old[i][j] * lambda) *
+                            NRrecord->first_seq_freq[i] *
+                            NRrecord->second_seq_freq[j];
+                    } else {
+                        if(eUnconstrainedRelEntropy == NRrecord->flag) {
+                            sum +=
+                                exp(NRrecord->score_final[i][j] * lambda) *
+                                NRrecord->first_seq_freq[i] *
+                                NRrecord->second_seq_freq[j];
+                            slope +=
+                                NRrecord->score_final[i][j] *
+                                exp(NRrecord->score_final[i][j] * lambda) *
+                                NRrecord->first_seq_freq[i] *
+                                NRrecord->second_seq_freq[j];
+                        }
+                    }
+                }
+            }
+            lambda_error = (1.0 - sum) / slope;
+            lambda = lambda + LAMBDA_STEP_FRACTION * lambda_error;
+            iteration_count++;
+        }
+        *lambdaToReturn = lambda;
+        printf("Lambda iteration count %d\n", iteration_count );
+        printf("the lambda value = %f \t sum of jp = %12.10f \n", lambda,
+               sum);
+        re_to_return = 0.0;
+        for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+            for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
+                if (eRelEntropyOldMatrixNewContext == NRrecord->flag) {
+                    re_to_return +=
+                        lambda * NRrecord->score_old[i][j] *
+                        exp(NRrecord->score_old[i][j] * lambda) *
+                        NRrecord->first_seq_freq[i] *
+                        NRrecord->second_seq_freq[j];
+                } else {
+                    if (eUnconstrainedRelEntropy == NRrecord->flag) {
+                        re_to_return +=
+                            lambda * NRrecord->score_final[i][j] *
+                            exp(NRrecord->score_final[i][j] * lambda) *
+                            NRrecord->first_seq_freq[i] *
+                            NRrecord->second_seq_freq[j];
+                    }
+                }
+            }
+        }
+    }
+    return re_to_return;
 }
 
 
@@ -299,14 +338,14 @@ initializeNRprobabilities(NRitems * NRrecord,
  * - NRrecord stores all field needed for multidimensional Newton's
  *   method lambda is returned*/
 double
-RE_interface(char *matrixName,
-             int length1,
-             int length2,
-             double * probArray1,
-             double * probArray2,
-             int pseudocounts,
-             double specifiedRE,
-             NRitems * NRrecord)
+Blast_AdjustComposition(const char *matrixName,
+                        int length1,
+                        int length2,
+                        const double * probArray1,
+                        const double * probArray2,
+                        int pseudocounts,
+                        double specifiedRE,
+                        Blast_CompositionWorkspace * NRrecord)
 {
     int i;                         /* loop indices */
     double re_o_newcontext = 0.0;  /* relative entropy implied by
@@ -321,32 +360,35 @@ RE_interface(char *matrixName,
     static int max_iterations = 0; /* maximum number of iterations
                                       observed in a call to
                                       compute_new_score_matrix */
-    double lambdaComputed = 1.0;   /* lambda computed by compute_lambda */
+    double lambdaComputed = 1.0;   /* lambda computed this composition */
+    /*Is the relative entropy constrained? Behaves as boolean for now*/
+    int constrain_rel_entropy =
+        eUnconstrainedRelEntropy != NRrecord->flag;
 
-    assign_frequencies(length1, probArray1,
-                       NRrecord->first_seq_freq_wpseudo,
-                       NRrecord->first_standard_freq,
-                       NRrecord->first_seq_freq, pseudocounts);
+    Blast_ApplyPseudocounts(NRrecord->first_seq_freq_wpseudo, length1,
+                            NRrecord->first_seq_freq, probArray1,
+                            NRrecord->first_standard_freq, pseudocounts);
     /* plug in frequencies for second sequence, will be the matching
        sequence in BLAST */
-    assign_frequencies(length2, probArray2,
-                       NRrecord->second_seq_freq_wpseudo,
-                       NRrecord->second_standard_freq,
-                       NRrecord->second_seq_freq, pseudocounts);
-
+    Blast_ApplyPseudocounts(NRrecord->second_seq_freq_wpseudo, length2,
+                            NRrecord->second_seq_freq, probArray2,
+                            NRrecord->second_standard_freq, pseudocounts);
     re_o_newcontext =
-        compute_lambda(NRrecord, (NRrecord->flag == RE_OLDMAT_NEWCONTEXT),
-                       &lambdaComputed);
+        Blast_CalcLambdaForComposition(
+            NRrecord, (NRrecord->flag == eRelEntropyOldMatrixNewContext),
+            &lambdaComputed);
     switch (NRrecord->flag) {
-    case RE_NO_CONSTRAINT:
+    case eUnconstrainedRelEntropy:
+        /* Initialize to a arbitrary value; it won't be used */
+        NRrecord->RE_final = 0.0;
         break;
-    case RE_OLDMAT_NEWCONTEXT:
+    case eRelEntropyOldMatrixNewContext:
         NRrecord->RE_final = re_o_newcontext;
         break;
-    case RE_OLDMAT_OLDCONTEXT:
+    case eRelEntropyOldMatrixOldContext:
         NRrecord->RE_final = NRrecord->RE_o_implicit;
         break;
-    case RE_USER_SPECIFIED:
+    case eUserSpecifiedRelEntropy:
         NRrecord->RE_final = specifiedRE;
         break;
     default:
@@ -354,83 +396,43 @@ RE_interface(char *matrixName,
                 NRrecord->flag);
         break;
     }
-    new_iterations =
-        score_matrix_direct_solve(NRrecord, NR_ERROR_TOLERANCE,
-                                      NR_ITERATION_LIMIT);
-
+    new_iterations  =
+        Blast_OptimizeTargetFrequencies(&NRrecord->mat_final[0][0],
+                                        COMPOSITION_ALPHABET_SIZE,
+                                        &NRrecord->mat_b[0][0],
+                                        NRrecord->first_seq_freq_wpseudo,
+                                        NRrecord->second_seq_freq_wpseudo,
+                                        constrain_rel_entropy,
+                                        NRrecord->RE_final,
+                                        kCompoAdjustErrTolerance,
+                                        kCompoAdjustIterationLimit);
     total_iterations += new_iterations;
-    if(new_iterations > max_iterations)
+    if (new_iterations > max_iterations)
         max_iterations = new_iterations;
 
-    if(NR_ITERATION_LIMIT < new_iterations) {
+    if (new_iterations <= kCompoAdjustIterationLimit) {
+        Blast_ScoreMatrixFromFreq(NRrecord->score_final,
+                                  COMPOSITION_ALPHABET_SIZE,
+                                  NRrecord->mat_final,
+                                  NRrecord->first_seq_freq_wpseudo,
+                                  NRrecord->second_seq_freq_wpseudo);
+    } else {
         fprintf(stderr, "bad probabilities from sequence 1, length %d\n",
                 length1);
-        for (i = 0;  i < Alphsize;  i++)
+        for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++)
             fprintf(stderr, "%15.12f\n", probArray1[i]);
         fprintf(stderr, "bad probabilities from sequence 2, length %d\n",
                 length2);
-        for (i = 0;  i < Alphsize;  i++)
+        for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++)
             fprintf(stderr, "%15.12f\n", probArray2[i]);
         fflush(stderr);
         return (-1);
     }
-    /*  else {
-       printf("test probabilities from sequence 1, length %d\n", length1);
-       for(i = 0; i < Alphsize; i++)
-       printf("%15.12lf\n",probArray1[i]);
-       printf("test probabilities from sequence 2, length %d\n", length2);
-       for(i = 0; i < Alphsize; i++)
-       printf("%15.12lf\n",probArray2[i]);
-       fflush(stdout);
-       } */
-
-    if (NRrecord->flag == RE_NO_CONSTRAINT) {
+    if (NRrecord->flag == eUnconstrainedRelEntropy) {
         /* Compute the unconstrained relative entropy */
-        double re_free = compute_lambda(NRrecord, 1, &lambdaComputed);
+        double re_free =
+            Blast_CalcLambdaForComposition(NRrecord, 1, &lambdaComputed);
         printf("RE_uncons  = %6.4f\n\n", re_free);
     }
-
-    return (lambdaComputed);
-}
-
-
-void disp_RE_data(NRitems * NRrecord)
-{
-    int j;
-
-     /*next three variables are arguments to pass to
-       compute_new_score_matrix */
-    double H_01, H_0B, H_1B;       /*relative entropies */
-    double ratio, corr_factor;     /*ratio and correlation of relative
-                                     entropies */
-   /* RE between first seq and BLOSUM 62 background */
-    H_0B = Blast_GetRelativeEntropy(NRrecord->first_seq_freq,
-                                    NRrecord->first_standard_freq);
-    H_1B = Blast_GetRelativeEntropy(NRrecord->second_seq_freq,
-                                    NRrecord->second_standard_freq);
-    /* RE between first seq and BLOSUM 62 background */
-    H_01 = Blast_GetRelativeEntropy(NRrecord->second_seq_freq,
-                                    NRrecord->first_seq_freq);
-
-    /* New way to define RE between 1 and 2 */
-    corr_factor = 0.0;
-    for (j = 0;  j < Alphsize;  j++) {
-        corr_factor +=
-            (NRrecord->first_seq_freq[j] -
-             NRrecord->first_standard_freq[j]) *
-            (NRrecord->second_seq_freq[j] -
-             NRrecord->second_standard_freq[j]);
-    }
-    ratio = 2.0 * H_01 / (H_0B + H_1B);
-    /*
-    printf("H_01 (re between two sequence composition freq.) = %6.4f\n",
-           H_01);
-    printf("H_0B (re between 1st seq freq and BLOSUM implicit freq) "
-           "= %6.4f\n", H_0B);
-    printf("H_1B (re between 2nd seq freq and BLOSUM implicit freq) ="
-           " %6.4f\n", H_1B);
-    printf("corr_factor of the frequencies between two seqs = "
-           "%6.4lf\n", corr_factor);
-    printf("Ratio of 2*H_01/(H_0B+H_1B) = %6.4f\n", ratio);
-    */
+    return lambdaComputed;
 }
