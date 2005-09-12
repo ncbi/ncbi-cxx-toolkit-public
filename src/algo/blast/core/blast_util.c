@@ -202,10 +202,10 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
 		return 1;
     
 	switch (number) {
-		case eBlastTypeBlastn: case eBlastTypePhiBlastn:
+		case eBlastTypeBlastn: 
 			*program = strdup("blastn");
 			break;
-		case eBlastTypeBlastp: case eBlastTypePhiBlastp:
+		case eBlastTypeBlastp: 
 			*program = strdup("blastp");
 			break;
 		case eBlastTypeBlastx:
@@ -229,6 +229,12 @@ Int2 BlastNumber2Program(EBlastProgramType number, char* *program)
         case eBlastTypePsiTblastn:
             *program = strdup("psitblastn");
             break;
+        case eBlastTypePhiBlastp:
+			*program = strdup("phiblastp");
+			break;
+        case eBlastTypePhiBlastn:
+			*program = strdup("phiblastn");
+			break;
         default:
 			*program = strdup("unknown");
 			break;
