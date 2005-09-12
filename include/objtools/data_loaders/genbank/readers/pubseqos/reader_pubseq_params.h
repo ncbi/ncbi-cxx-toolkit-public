@@ -37,4 +37,13 @@
 /* Name of PUBSEQ reader driver */
 #define NCBI_GBLOADER_READER_PUBSEQ_DRIVER_NAME "pubseqos"
 
+/* Maximum number of simultaneous connection to PUBSEQ_OS server */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_NUM_CONN "no_conn"
+/* PUBSEQ_OS server name */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_SERVER   "server"
+/* PUBSEQ_OS login name */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_USER     "user"
+/* PUBSEQ_OS login password */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_PASSWORD "password"
+
 #endif
