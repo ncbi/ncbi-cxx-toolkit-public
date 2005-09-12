@@ -55,6 +55,7 @@ public:
 
     typedef CRef<THit>           THitRef;
     typedef vector<THitRef>      THitRefs;
+    typedef typename THit::TCoord TCoord;
 
     // hits must be in plus strand
     CCompartmentFinder(typename THitRefs::const_iterator start,
@@ -102,7 +103,7 @@ public:
         
         CCompartment(void) {
             m_coverage = 0;
-            m_box[0] = m_box[2] = kMax_UInt;
+            m_box[0] = m_box[2] = numeric_limits<TCoord>::max();
             m_box[1] = m_box[3] = 0;
         }
 
@@ -134,7 +135,7 @@ public:
             return THitRef(NULL);
         }
         
-        const size_t* GetBox(void) const {
+        const TCoord* GetBox(void) const {
             return m_box;
         }
         
@@ -152,7 +153,7 @@ public:
         
         size_t              m_coverage;
         THitRefs            m_members;
-        size_t              m_box[4];
+        TCoord              m_box[4];
         mutable size_t      m_iter;
     };
 
@@ -213,6 +214,7 @@ public:
 
     typedef CCompartmentFinder<THit> TCompartmentFinder;
     typedef typename TCompartmentFinder::THitRefs THitRefs;
+    typedef typename TCompartmentFinder::TCoord   TCoord;
 
     // [start,finish) are assumed to share same query and subj
     CCompartmentAccessor(typename THitRefs::iterator start, 
@@ -726,7 +728,7 @@ void CCompartmentAccessor<THit>::x_Copy2Pending(
             vh.push_back(ph);
         }
         
-        const size_t* box = compartment->GetBox();
+        const TCoord* box = compartment->GetBox();
         m_ranges.push_back(box[0] - 1);
         m_ranges.push_back(box[1] - 1);
         m_ranges.push_back(box[2] - 1);
@@ -766,6 +768,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/12 20:15:16  ucko
+ * Use TCoord rather than size_t for m_box for consistency with THitFilter.
+ *
  * Revision 1.1  2005/09/12 16:21:34  kapustin
  * Add compartmentization algorithm
  *
