@@ -35,10 +35,11 @@
 
 #include <corelib/ncbistd.hpp>
 #include <algo/align/nw/nw_spliced_aligner.hpp>
-#include <algo/align/splign/splign_hit.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
+class CBlastTabular;
 
 // Abstract base for splign sequence accessors
 class NCBI_XALGOALIGN_EXPORT CSplignSeqAccessor: public CObject
@@ -106,9 +107,11 @@ public:
         return m_model_id + 1;
     }
 
-    typedef vector<CHit> THits;
+    typedef CBlastTabular           THit;
+    typedef CRef<THit>              THitRef;
+    typedef vector<THitRef>         THitRefs;
 
-    void Run(THits* hits);
+    void Run(THitRefs* hitrefs);
   
     // a segment can represent an exon or an unaligning piece of mRna (a gap)
     struct NCBI_XALGOALIGN_EXPORT SSegment {
@@ -230,12 +233,12 @@ protected:
     size_t       m_model_id;
     TResults     m_result;
 
-    SAlignedCompartment x_RunOnCompartment( THits* hits,
+    SAlignedCompartment x_RunOnCompartment( THitRefs* hitrefs,
                                             size_t range_left,
                                             size_t range_right );
     void   x_Run(const char* seq1, const char* seq2);
     size_t x_TestPolyA(void);
-    void   x_SetPattern(THits* hits);
+    void   x_SetPattern(THitRefs* hitrefs);
     void   x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent) const;
 };
@@ -247,6 +250,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/09/12 16:22:31  kapustin
+ * Move compartmentization to xalgoutil
+ *
  * Revision 1.26  2005/09/06 17:52:29  kapustin
  * Add interface to max_extent member
  *
@@ -257,7 +263,8 @@ END_NCBI_SCOPE
  * +x_GetGenomicExtent()
  *
  * Revision 1.23  2005/07/05 16:50:31  kapustin
- * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ * Adjust compartmentization and term genomic extent. 
+ * Introduce min overall identity required for compartments to align.
  *
  * Revision 1.22  2005/06/01 18:57:23  kapustin
  * +SAlignedCompartment::GetBox()

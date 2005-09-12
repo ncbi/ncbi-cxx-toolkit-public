@@ -40,6 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CSeq_id;
     class CDense_seg;
+    class CSeq_align;
     class CSeq_align_set;
 END_SCOPE(objects)
 
@@ -85,6 +86,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/09/12 16:22:31  kapustin
+ * Move compartmentization to xalgoutil
+ *
  * Revision 1.11  2005/01/04 15:48:30  kapustin
  * Move SetSeqIds() implementation to the cpp file
  *
