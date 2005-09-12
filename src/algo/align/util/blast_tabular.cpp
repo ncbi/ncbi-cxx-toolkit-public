@@ -229,5 +229,18 @@ void CBlastTabular::x_PartialDeserialize(const char* m8)
 }
 
 
+void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
+{
+    const TCoord query_span_old = GetQuerySpan();
+    TParent::Modify(where, new_pos);
+    const TCoord query_span_new = GetQuerySpan();
+    const double kq = double(query_span_new) / query_span_old;
+
+    SetMismatches(TCoord(kq*GetMismatches()));
+    SetGaps(TCoord(kq*GetGaps()));
+    SetLength(TCoord(kq*GetLength()));
+    SetScore(kq*GetScore());
+}
+
 END_NCBI_SCOPE
 

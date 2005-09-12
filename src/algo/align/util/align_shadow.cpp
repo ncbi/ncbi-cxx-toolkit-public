@@ -503,11 +503,158 @@ CAlignShadow::TCoord CAlignShadow::GetSubjMax() const
 }
 
 
+CAlignShadow::TCoord CAlignShadow::GetQuerySpan(void) const
+{
+    return 1 + GetQueryMax() - GetQueryMin();
+}
+
+
+CAlignShadow::TCoord CAlignShadow::GetSubjSpan(void) const
+{
+    return 1 + GetSubjMax() - GetSubjMin();
+}
+
+
+void CAlignShadow::Shift(Int4 shift_query, Int4 shift_subj)
+{
+    m_Box[0] += shift_query;
+    m_Box[1] += shift_query;
+    m_Box[2] += shift_subj;
+    m_Box[3] += shift_subj;
+}
+
+
+void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
+{
+    TCoord qmin, qmax;
+    bool qstrand;
+    if(m_Box[0] < m_Box[1]) {
+        qmin = m_Box[0];
+        qmax = m_Box[1];
+        qstrand = true;
+    }
+    else {
+        qmin = m_Box[1];
+        qmax = m_Box[0];
+        qstrand = false;
+    }
+
+    TCoord smin, smax;
+    bool sstrand;
+    if(m_Box[2] < m_Box[3]) {
+        smin = m_Box[2];
+        smax = m_Box[3];
+        sstrand = true;
+    }
+    else {
+        smin = m_Box[3];
+        smax = m_Box[2];
+        sstrand = false;
+    }
+
+    TCoord qlen = 1 + qmax - qmin, slen = 1 + smax - smin;
+    double k = double(qlen) / slen;
+
+    Int4 delta_q, delta_s;
+    switch(where) {
+
+    case 0: // query min
+
+        if(new_pos >= qmax) {
+            goto invalid_newpos;
+        }
+
+        delta_q = new_pos - qmin;
+        delta_s = Int4( delta_q / k);
+
+        SetQueryMin(qmin + delta_q);
+        if(qstrand == sstrand) {
+            SetSubjMin(smin + delta_s);
+        }
+        else {
+            SetSubjMax(smax - delta_s);
+        }
+
+        break;
+
+    case 1: // query max
+
+        if(new_pos <= qmin) {
+            goto invalid_newpos;
+        }
+
+        delta_q = new_pos - qmax;
+        delta_s = Int4(delta_q / k);
+
+        SetQueryMax(qmax + delta_q);
+        if(qstrand == sstrand) {
+            SetSubjMax(smax + delta_s);
+        }
+        else {
+            SetSubjMin(smin - delta_s);
+        }
+
+        break;
+
+    case 2: // subj min
+
+        if(new_pos >= smax) {
+            goto invalid_newpos;
+        }
+
+        delta_s = new_pos - smin;
+        delta_q = Int4(delta_s * k);
+
+        SetSubjMin(smin + delta_s);
+        if(qstrand == sstrand) {
+            SetQueryMin(qmin + delta_q);
+        }
+        else {
+            SetQueryMax(qmax - delta_q);
+        }
+
+        break;
+
+    case 3: // subj max
+
+        if(new_pos <= smin) {
+            goto invalid_newpos;
+        }
+
+        delta_s = new_pos - smax;
+        delta_q = Int4(delta_s * k);
+
+        SetSubjMax(smax + delta_s);
+        if(qstrand == sstrand) {
+            SetQueryMax(qmin + delta_q);
+        }
+        else {
+            SetQueryMin(qmax - delta_q);
+        }
+
+        break;
+
+    default:
+        NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+                   "CAlignShadow::Modify(): invalid end requested"); 
+    };
+
+    return;
+
+ invalid_newpos:
+    NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
+               "CAlignShadow::Modify(): requested new position invalid"); 
+}
+
+
 END_NCBI_SCOPE
 
 
 /* 
  * $Log$
+ * Revision 1.12  2005/09/12 16:23:15  kapustin
+ * +Modify()
+ *
  * Revision 1.11  2005/07/28 14:55:35  kapustin
  * Use std::pair instead of array to fix gcc304 complains
  *
