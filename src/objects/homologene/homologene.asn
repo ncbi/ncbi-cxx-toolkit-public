@@ -9,28 +9,28 @@ IMPORTS Date FROM NCBI-General
 -- HomoloGeneEntry taxid is the tax id of the group node, which can
 -- be the same as the Gene tax id in case of singletons
 
-HomoloGeneEntrySet ::= SEQUENCE {
-	entries		SET OF HomoloGeneEntry
+HG-EntrySet ::= SEQUENCE {
+	entries		SET OF HG-Entry -- homologene entry
 }
 
 
-HomoloGeneEntry ::= SEQUENCE {
+HG-Entry ::= SEQUENCE {
 	hg-id		INTEGER,
 	version		INTEGER OPTIONAL,
 	title		VisibleString OPTIONAL,
 	caption		VisibleString OPTIONAL,
 	taxid		INTEGER OPTIONAL,
-	genes		SET OF Gene OPTIONAL,
+	genes		SET OF HG-Gene OPTIONAL,
 	cr-date		Date OPTIONAL,
 	up-date		Date OPTIONAL,
-	distances	SET OF Stats OPTIONAL,
-	commentaries	SET OF CommentarySet OPTIONAL,
+	distances	SET OF HG-Stats OPTIONAL,
+	commentaries	SET OF HG-CommentarySet OPTIONAL,
 	warnings	SET OF VisibleString OPTIONAL,
-	node		HomoloGeneNode OPTIONAL
+	node		HG-Node OPTIONAL
 }
 
 
-Gene ::= SEQUENCE {
+HG-Gene ::= SEQUENCE {
 	geneid		INTEGER OPTIONAL,
 	otherid		INTEGER OPTIONAL, 	-- internal use only!!!!!
 	symbol		VisibleString OPTIONAL,
@@ -42,15 +42,15 @@ Gene ::= SEQUENCE {
 	prot-len	INTEGER OPTIONAL,
 	nuc-gi		INTEGER OPTIONAL,
 	nuc-acc		VisibleString OPTIONAL,
-	gene-links	SET OF Link OPTIONAL,
-	prot-links	SET OF Link OPTIONAL,
-	domains		SET OF Domain OPTIONAL,
-        chr             VisibleString OPTIONAL,
-        location        Seq-loc OPTIONAL        -- location on the genome
+	gene-links	SET OF HG-Link OPTIONAL,
+	prot-links	SET OF HG-Link OPTIONAL,
+	domains		SET OF HG-Domain OPTIONAL,
+   chr             VisibleString OPTIONAL,
+   location        Seq-loc OPTIONAL        -- location on the genome
 }
 
 
-Stats ::= SEQUENCE {
+HG-Stats ::= SEQUENCE {
 	gi1		INTEGER,
 	gi2		INTEGER,
 	nuc-change	REAL,
@@ -64,31 +64,31 @@ Stats ::= SEQUENCE {
 }
 
 
-Commentary ::= SEQUENCE {
-	link			Link,
+HG-Commentary ::= SEQUENCE {
+	link			HG-Link,
 	description		VisibleString OPTIONAL, -- main description
 	caption			VisibleString OPTIONAL, -- extra text
 	provider		VisibleString OPTIONAL,
-	other-links		SET OF Link OPTIONAL,
-	other-commentaries	SET OF Commentary OPTIONAL,
+	other-links		SET OF HG-Link OPTIONAL,
+	other-commentaries	SET OF HG-Commentary OPTIONAL,
 	taxid			INTEGER OPTIONAL,
 	geneid			INTEGER OPTIONAL
 }
 
-CommentarySet ::= SEQUENCE {
+HG-CommentarySet ::= SEQUENCE {
 	hg-id		INTEGER OPTIONAL,
 	title		VisibleString,
-	commentaries	SET OF Commentary
+	commentaries	SET OF HG-Commentary
 }
 
-CommentaryContainer ::= SET OF CommentarySet
+HG-CommentaryContainer ::= SET OF HG-CommentarySet
 
-Link ::= SEQUENCE {
+HG-Link ::= SEQUENCE {
 	hypertext	VisibleString,
 	url		VisibleString OPTIONAL
 }
 
-Domain ::= SEQUENCE {
+HG-Domain ::= SEQUENCE {
 	begin		INTEGER,
 	end		INTEGER,
 	pssm-id		INTEGER OPTIONAL,	-- entrez uid
@@ -96,21 +96,21 @@ Domain ::= SEQUENCE {
 	cdd-name	VisibleString OPTIONAL
 }
 
-HomoloGeneNode ::= SEQUENCE {
+HG-Node ::= SEQUENCE {
 	type		ENUMERATED {
 				family(0),
 				ortholog(1),
 				paralog(2),
 				leaf(3)
 			},
-	id		Node-id,
+	id		HG-Node-id,
 	caption		VisibleString OPTIONAL,
 	current-node	BOOLEAN DEFAULT FALSE,
-	children	SET OF HomoloGeneNode OPTIONAL,
+	children	SET OF HG-Node OPTIONAL,
 	branch-len	INTEGER OPTIONAL
 }
 
-Node-id ::= SEQUENCE {
+HG-Node-id ::= SEQUENCE {
 	id		INTEGER OPTIONAL,
 	id-type		ENUMERATED {
 				none(0),
@@ -119,11 +119,11 @@ Node-id ::= SEQUENCE {
 			}
 }
 
-HomoloGeneAlignment ::= SEQUENCE {
+HG-Alignment ::= SEQUENCE {
 	hg-id		INTEGER,
 	alignment	Seq-align
 }
 
-HomoloGeneAlignmentSet ::= SET OF HomoloGeneAlignment
+HG-AlignmentSet ::= SET OF HG-Alignment
 
 END
