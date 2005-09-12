@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/09/12 16:05:22  vasilche
+* Report major GetIds inconsistency instead of abort.
+*
 * Revision 1.19  2005/09/12 14:33:19  vasilche
 * Disable comprehensive test of GetIds().
 *
@@ -455,7 +458,9 @@ bool CTestOM::Thread_Run(int idx)
                 _ASSERT(ids2 == ids3);
                 if ( preload_ids ) {
                     if ( 1 ) {
-                        _ASSERT(!ids1.empty());
+                        if ( ids1.empty() ) {
+                            ERR_POST("Ids discrepancy for " << sih.AsString());
+                        }
                     }
                     else if ( 1 ) {
                         if ( GetAccession(ids1) != GetAccession(ids2) ) {
