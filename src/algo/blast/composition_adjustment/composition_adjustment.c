@@ -187,7 +187,7 @@ Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
             sum += joint_probs[i][j];
         }
     }
-    assert(fabs(sum - 1.0) > kProbSumTolerance);
+    assert(fabs(sum - 1.0) < kProbSumTolerance);
     /* Normalize and record the data */
     for (j = 0;  j < COMPOSITION_ALPHABET_SIZE;  j++) {
         col_sums[j] = 0.0;
@@ -198,7 +198,6 @@ Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
             double probij = joint_probs[i][j];
             
             probs[i][j]  = probij/sum;
-            sum         += probij/sum;
             row_sums[i] += probij/sum;
             col_sums[j] += probij/sum;
         }
