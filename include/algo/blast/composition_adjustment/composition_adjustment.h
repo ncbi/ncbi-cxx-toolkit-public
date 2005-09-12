@@ -33,6 +33,8 @@ Contents: Definitions used in compositional score matrix adjustment
 
 #ifndef __COMPOSITION_ADJUSTMENT__
 #define __COMPOSITION_ADJUSTMENT__
+ 
+#include <algo/blast/core/blast_export.h>
 
 #define COMPOSITION_ALPHABET_SIZE 20
 
@@ -53,9 +55,11 @@ enum ECompoAdjustModes {
 };
 typedef enum ECompoAdjustModes ECompoAdjustModes;
 
+NCBI_XBLAST_EXPORT
 int
 Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
                              double col_sums[], const char *matrixName);
+NCBI_XBLAST_EXPORT
 void
 Blast_ApplyPseudocounts(double * probs_with_pseudo, 
                         int length,
@@ -64,7 +68,10 @@ Blast_ApplyPseudocounts(double * probs_with_pseudo,
                         const double * background_probs,
                         int pseudocounts);
 
+NCBI_XBLAST_EXPORT
 double Blast_GetRelativeEntropy(const double A[], const double B[]);
+
+NCBI_XBLAST_EXPORT
 void
 Blast_ScoreMatrixFromFreq(double ** score, int alphsize, double ** freq,
                           const double row_sum[], const double col_sum[]);

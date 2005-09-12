@@ -31,6 +31,8 @@ Authors: E. Michael Gertz, Alejandro Schaffer, Yi-Kuo Yu
 
 #ifndef __BLAST_ADJUST_SCORES__
 #define __BLAST_ADJUST_SCORES__
+ 
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,10 +63,16 @@ typedef struct Blast_CompositionWorkspace {
                                          second seq w/pseudocounts */
 } Blast_CompositionWorkspace;
 
+NCBI_XBLAST_EXPORT
 Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew();
+
+NCBI_XBLAST_EXPORT
 void Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** NRrecord);
+
+NCBI_XBLAST_EXPORT
 int Blast_CompositionWorkspaceInit(Blast_CompositionWorkspace * NRrecord,
                                    const char *matrixName);
+NCBI_XBLAST_EXPORT
 double 
 Blast_AdjustComposition(const char *matrixName,
                         int length1, int length2,

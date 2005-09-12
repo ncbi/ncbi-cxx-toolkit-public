@@ -34,23 +34,36 @@ Contents: Declarations for several linear algebra routines
 
 #ifndef __NLM_LINEAR_ALGEBRA__
 #define __NLM_LINEAR_ALGEBRA__
+ 
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+NCBI_XBLAST_EXPORT
 double ** Nlm_DenseMatrixNew(int nrows, int ncols);
+
+NCBI_XBLAST_EXPORT
 double ** Nlm_LtriangMatrixNew(int n);
+
+NCBI_XBLAST_EXPORT
 double ** Nlm_DenseMatrixFree(double ** mat);
 
+NCBI_XBLAST_EXPORT
 void Nlm_FactorLtriangPosDef(double ** A, int n);
+
+NCBI_XBLAST_EXPORT
 void Nlm_SolveLtriangPosDef(double x[], int n, double ** L);
 
+NCBI_XBLAST_EXPORT
 double Nlm_EuclideanNorm(const double v[], int n);
 
+NCBI_XBLAST_EXPORT
 void Nlm_AddVectors(double y[], int n, double alpha,
                     const double x[]);
 
+NCBI_XBLAST_EXPORT
 double Nlm_StepBound(const double x[], int n,
                      const double step_x[], double max);
 

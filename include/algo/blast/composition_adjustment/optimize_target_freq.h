@@ -34,11 +34,14 @@ Contents: Exports for optimized_target_freq.c
 
 #ifndef __OPTIMIZE_TARGET_FREQ__
 #define __OPTIMIZE_TARGET_FREQ__
+ 
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+NCBI_XBLAST_EXPORT
 int
 Blast_OptimizeTargetFrequencies(double x[],
                                 int alphsize,

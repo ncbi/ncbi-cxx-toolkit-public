@@ -35,14 +35,18 @@ Contents: Declarations of functions used to choose the mode for
 
 #ifndef __COMPO_MODE_CONDITION__
 #define __COMPO_MODE_CONDITION__
+ 
+#include <algo/blast/core/blast_export.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+NCBI_XBLAST_EXPORT
 const double *
 Blast_GetMatrixBackgroundFreq(const char *matrix_name);
 
+NCBI_XBLAST_EXPORT
 int
 Blast_ChooseCompoAdjustMode(int length1, int length2,
                             const double * probArray1, 
