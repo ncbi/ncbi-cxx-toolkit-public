@@ -421,6 +421,52 @@ BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to)
    return loc;
 }
 
+/** Makes a copy of the BlastSeqLoc and also a copy of the 
+ * SSRange element.  Does not copy BlastSeqLoc that is pointed
+ * to by "next".
+ * @param source the object to be copied [in]
+ * @return another BlastSeqLoc*
+ */
+static BlastSeqLoc* s_BlastSeqLocNodeDup(BlastSeqLoc* source)
+{
+    if ( !source ) {
+        return NULL;
+    }
+    ASSERT(source->ssr);
+    return BlastSeqLocNew(NULL, source->ssr->left, source->ssr->right);
+}
+
+/** Prepend node to the head of the list and return the new head of the list */
+BlastSeqLoc* s_BlastSeqLocPrependNode(BlastSeqLoc* head, BlastSeqLoc* node)
+{
+    if ( !node ) {
+        return NULL;
+    }
+    node->next = head;
+    return node;
+}
+
+/** Reverse elements in the list 
+ * @param head pointer to pointer to the head of the list. After this call,
+ * this is set to NULL [in|out]
+ * @return the new head of the list or NULL if argument is NULL
+ */
+BlastSeqLoc* s_BlastSeqLocListReverse(BlastSeqLoc** head)
+{
+    BlastSeqLoc* retval = NULL;     /* return value */
+    BlastSeqLoc* itr = NULL;        /* iterator */
+
+    if ( !head ) {
+        return NULL;
+    }
+
+    for (itr = *head; itr; itr = itr->next) {
+        retval = s_BlastSeqLocPrependNode(retval, s_BlastSeqLocNodeDup(itr));
+    }
+    *head = BlastSeqLocFree(*head);
+    return retval;
+}
+
 BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 {
    SSeqRange* seq_range;
@@ -750,7 +796,6 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
    const BlastMaskLoc* mask_loc, BlastSeqLoc* *complement_mask) 
 {
    Int4 context;
-   BlastSeqLoc* loc,* last_loc = NULL,* start_loc = NULL;
    const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
 
    if (complement_mask == NULL)
@@ -767,6 +812,7 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       Int4 index; /* loop index */
       Int4 start_offset, end_offset, filter_start, filter_end;
       Int4 left=0, right; /* Used for left/right extent of a region. */
+      BlastSeqLoc* loc = NULL;
 
       start_offset = query_info->contexts[context].query_offset;
       end_offset = query_info->contexts[context].query_length + start_offset - 1;
@@ -783,27 +829,15 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       if (mask_loc == NULL || mask_loc->seqloc_array[index] == NULL)
       {
          /* No masks for this context */
-         if (!last_loc)
-            last_loc = BlastSeqLocNew(complement_mask, start_offset, end_offset);
-         else 
-            last_loc = BlastSeqLocNew(&last_loc, start_offset, end_offset);
+         BlastSeqLocNew(complement_mask, start_offset, end_offset);
          continue;
       }
       
       if (reverse) {
-         BlastSeqLoc* prev_loc = NULL;
-         /* Reverse the order of the locations */
-         for (start_loc = mask_loc->seqloc_array[index]; start_loc; 
-              start_loc = start_loc->next) {
-            loc = s_BlastSeqLocDup(start_loc);
-            loc->next = prev_loc;
-            prev_loc = loc;
-         }
-         /* Save where this list starts, so it can be freed later */
-         start_loc = loc;
-      } else {
-         loc = mask_loc->seqloc_array[index];
+         mask_loc->seqloc_array[index] = 
+             s_BlastSeqLocListReverse(&mask_loc->seqloc_array[index]);
       }
+      loc = mask_loc->seqloc_array[index];
 
       first = TRUE;
       for ( ; loc; loc = loc->next) {
@@ -837,10 +871,7 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
 
          right = filter_start - 1;
 
-         if (!last_loc)
-            last_loc = BlastSeqLocNew(complement_mask, left, right);
-         else 
-            last_loc = BlastSeqLocNew(&last_loc, left, right);
+         BlastSeqLocNew(complement_mask, left, right);
          if (filter_end >= end_offset) {
             /* last masked region at end of sequence */
             last_interval_open = FALSE;
@@ -850,17 +881,10 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
          }
       }
 
-      if (reverse) {
-         start_loc = BlastSeqLocFree(start_loc);
-      }
-      
       if (last_interval_open) {
          /* Need to finish SSeqRange* for last interval. */
          right = end_offset;
-         if (!last_loc)
-            last_loc = BlastSeqLocNew(complement_mask, left, right);
-         else 
-            last_loc = BlastSeqLocNew(&last_loc, left, right);
+         BlastSeqLocNew(complement_mask, left, right);
       }
    }
    return 0;
