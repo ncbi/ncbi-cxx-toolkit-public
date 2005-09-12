@@ -49,8 +49,10 @@ public:
     enum ESortCriterion {
         eQueryMin,
         eSubjMin,
+        eSubjMaxQueryMax,
         eQueryId,
-        eSubjId
+        eSubjId,
+        eSubjStrand
     };
 
     CHitComparator(ESortCriterion sort_type): m_SortType (sort_type) {}
@@ -72,25 +74,53 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
                                        const THitRef& rhs) const 
 {
     bool rv;
+
     switch(m_SortType) {
 
     case eQueryMin:
+
         rv = lhs->GetQueryMin() <= rhs->GetQueryMin();
         break;
 
     case eSubjMin:
+
         rv = lhs->GetSubjMin() <= rhs->GetSubjMin();
         break;
 
+    case eSubjMaxQueryMax: 
+        {
+        typename THit::TCoord lhs_subj_max = lhs->GetSubjMax();
+        typename THit::TCoord rhs_subj_max = rhs->GetSubjMax();
+
+        if(lhs_subj_max < rhs_subj_max) {
+            rv = true;
+        }
+        else if(lhs_subj_max > rhs_subj_max) {
+            rv = false;
+        }
+        else {
+            rv = lhs->GetQueryMax() < rhs->GetQueryMax();
+        }
+        }
+        break;
+        
     case eQueryId:
+
         rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
         break;
 
     case eSubjId:
+
         rv = *(lhs->GetSubjId()) < *(rhs->GetSubjId());
         break;
 
+    case eSubjStrand:
+
+        rv = lhs->GetSubjStrand() < rhs->GetSubjStrand();
+        break;
+
     default:
+
         NCBI_THROW(CAlgoAlignUtilException, eInternal, 
                    "CHitComparator: Sorting criterion not supported.");
     };
@@ -105,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/09/12 16:21:34  kapustin
+ * Add compartmentization algorithm
+ *
  * Revision 1.3  2005/07/28 14:55:25  kapustin
  * Use std::pair instead of array to fix gcc304 complains
  *

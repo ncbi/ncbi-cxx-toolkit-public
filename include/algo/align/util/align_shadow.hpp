@@ -100,6 +100,9 @@ public:
     void   SetSubjMin(TCoord pos);
     void   SetSubjMax(TCoord pos);
 
+    TCoord GetQuerySpan(void) const;
+    TCoord GetSubjSpan(void) const;
+
     TCoord GetStart(Uint1 where) const;
     TCoord GetStop(Uint1 where) const;
     TCoord GetQueryStart(void) const;
@@ -112,6 +115,9 @@ public:
     void   SetQueryStop(TCoord pos);
     void   SetSubjStart(TCoord pos);
     void   SetSubjStop(TCoord pos);
+
+    void         Shift(Int4 shift_query, Int4 shift_subj);
+    virtual void Modify(Uint1 where, TCoord new_pos);
 
     // tabular serialization
     friend NCBI_XALGOALIGN_EXPORT CNcbiOstream& operator << (CNcbiOstream& os, 
@@ -138,6 +144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/09/12 16:21:34  kapustin
+ * Add compartmentization algorithm
+ *
  * Revision 1.12  2005/07/28 15:17:02  kapustin
  * Add export specifiers
  *

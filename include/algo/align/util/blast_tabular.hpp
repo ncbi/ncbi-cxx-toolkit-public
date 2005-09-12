@@ -70,6 +70,8 @@ public:
     void   SetScore(float evalue);
     float  GetScore(void) const;
 
+    virtual void Modify(Uint1 where, TCoord new_pos);
+
 protected:
     
     TCoord  m_Length;     // length of the alignment           
@@ -94,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/12 16:21:34  kapustin
+ * Add compartmentization algorithm
+ *
  * Revision 1.4  2005/07/28 15:17:02  kapustin
  * Add export specifiers
  *

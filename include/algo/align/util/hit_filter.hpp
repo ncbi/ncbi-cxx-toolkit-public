@@ -131,7 +131,37 @@ public:
                           TCoord(0), 
                           CHitCoverageAccumulator<THit>(where));
     }
+
+    // 0 = query min, 1 = query max, 2 = subj min, 3 = subj max
+    static void s_GetSpan(const THitRefs& hitrefs, TCoord span [4]) 
+    {      
+        span[0] = span[2] = kMax_UInt; 
+        span[1] = span[3] = 0;
+          
+        for(typename THitRefs::const_iterator ii = hitrefs.begin(),
+                ii_end = hitrefs.end(); ii != ii_end; ++ii) {
+            
+            TCoord x = (*ii)->GetQueryMin();
+            if(span[0] > x) {
+                span[0] = x;
+            }
+            x = (*ii)->GetSubjMin();
+            if(span[2] > x) {
+                span[2] = x;
+            }
+            x = (*ii)->GetQueryMax();
+            if(span[1] < x) {
+                span[1] = x;
+            }
+            x = (*ii)->GetSubjMax();
+            if(span[3] < x) {
+                span[3] = x;
+            }
+        }
+    }
 };
+
+
 
 
 END_NCBI_SCOPE
@@ -141,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/12 16:21:34  kapustin
+ * Add compartmentization algorithm
+ *
  * Revision 1.4  2005/07/28 16:43:35  kapustin
  * sort => stable_sort
  *
@@ -148,7 +181,8 @@ END_NCBI_SCOPE
  * s_GetCoverage: remove redundant class specifier that made GCC 2.95 choke.
  *
  * Revision 1.2  2005/07/27 20:45:03  kapustin
- * Move s_GetCoverage() definition under the class declaration to calm down MSVC
+ * Move s_GetCoverage() definition under the class declaration 
+ * to calm down MSVC
  *
  * Revision 1.1  2005/07/27 18:53:16  kapustin
  * Initial revision
