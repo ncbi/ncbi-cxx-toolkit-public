@@ -32,14 +32,19 @@
 
 
 #include <ncbi_pch.hpp>
+
 #include "splign_util.hpp"
 #include "messages.hpp"
 
-#include <algo/align/splign/splign_compartment_finder.hpp>
+#include <algo/align/util/blast_tabular.hpp>
+#include <algo/align/util/hit_comparator.hpp>
+#include <algo/align/util/compartment_finder.hpp>
+
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
-#include <algo/align/splign/splign.hpp>
 #include <algo/align/nw/nw_formatter.hpp>
 #include <algo/align/nw/align_exception.hpp>
+
+#include <algo/align/splign/splign.hpp>
 
 #include <deque>
 #include <math.h>
@@ -197,17 +202,23 @@ double CSplign::GetCompartmentPenalty( void ) const
     return m_compartment_penalty;
 }
 
-void CSplign::x_SetPattern(THits* hits)
+
+void CSplign::x_SetPattern(THitRefs* phitrefs)
 {  
-    sort(hits->begin(), hits->end(), CHit::PPrecedeQ);
+    typedef CHitComparator<THit> THitComparator;
+    THitComparator sorter (THitComparator::eQueryMin);
+    stable_sort(phitrefs->begin(), phitrefs->end(), sorter);
+
     vector<size_t> pattern0;
-    for(size_t i = 0, n = hits->size(); i < n; ++i) {
-        const CHit& h = (*hits)[i];
-        if(1 + h.m_ai[1] - h.m_ai[0] >= 10) {
-            pattern0.push_back( h.m_ai[0] );
-            pattern0.push_back( h.m_ai[1] );
-            pattern0.push_back( h.m_ai[2] );
-            pattern0.push_back( h.m_ai[3] );
+    for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
+
+        const THitRef& h = (*phitrefs)[i];
+        if(h->GetQuerySpan() >= 10) {
+            
+            pattern0.push_back( h->GetQueryMin() );
+            pattern0.push_back( h->GetQueryMax() );
+            pattern0.push_back( h->GetSubjMin() );
+            pattern0.push_back( h->GetSubjMax() );
         }
     }
 
@@ -229,13 +240,16 @@ void CSplign::x_SetPattern(THits* hits)
             }
             
             if(i > 4) {
-                if(pattern0[i]<=pattern0[i-3] || pattern0[i+2]<=pattern0[i-2]){
+                if(pattern0[i] <= pattern0[i-3] 
+                   || pattern0[i+2] <= pattern0[i-1]){
+
                     err = "Pattern hits coordinates must be sorted";
                     break;
                 }
             }
             
             if(pattern0[i+1] >= SeqLen1 || pattern0[i+3] >= SeqLen2) {
+
                 err = "One or several pattern hits are out of range";
                 break;
             }
@@ -358,15 +372,15 @@ void CSplign::x_SetPattern(THits* hits)
 // PRE:  Input Blast hits.
 // POST: TResults - a vector of aligned compartments.
 
-void CSplign::Run( THits* phits )
+void CSplign::Run( THitRefs* phitrefs )
 {
-    if(!phits) {
+    if(!phitrefs) {
         NCBI_THROW( CAlgoAlignException,
                     eInternal,
                     "Unexpected NULL pointers" );
     }
 
-    THits& hits = *phits;
+    THitRefs& hitrefs = *phitrefs;
 
     if(m_sa.IsNull()) {
         NCBI_THROW( CAlgoAlignException,
@@ -380,14 +394,13 @@ void CSplign::Run( THits* phits )
                   g_msg_AlignedNotSpecified);
     }
 
-    if(hits.size() == 0) {
+    if(hitrefs.size() == 0) {
       NCBI_THROW( CAlgoAlignException,
 		  eNoData,
 		  g_msg_EmptyHitVectorPassed );
     }
 
-    const string query ( hits[0].m_Query );
-    const string subj  ( hits[0].m_Subj );
+    const string query ( hitrefs.front()->GetQueryId()->GetSeqIdString(true) );
 
     m_result.clear();
 
@@ -406,10 +419,10 @@ void CSplign::Run( THits* phits )
     const size_t min_matches = size_t(m_MinCompartmentIdty * mrna_size);
 
     // iterate through compartments
-    CCompartmentAccessor comps (hits.begin(), hits.end(),
-                                comp_penalty_bps,
-                                min_coverage,
-                                min_matches);
+    CCompartmentAccessor<THit> comps (hitrefs.begin(), hitrefs.end(),
+                                      comp_penalty_bps,
+                                      min_coverage,
+                                      min_matches);
     
     // compartments share the space between them
     size_t smin = 0, smax = kMax_UInt;
@@ -431,9 +444,9 @@ void CSplign::Run( THits* phits )
      
         try {
 
-            THits comp_hits;
+            THitRefs comp_hits;
             comps.Get(i, comp_hits);
-            SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin,smax);
+            SAlignedCompartment ac = x_RunOnCompartment(&comp_hits,smin,smax);
             ac.m_id = ++m_model_id;
             ac.m_segments = m_segments;
             ac.m_error = false;
@@ -474,7 +487,7 @@ size_t CSplign::x_TestPolyA(void)
 // POST: A set of segments packed into the aligned compartment.
 
 CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
-    THits* hits, size_t range_left, size_t range_right )
+    THitRefs* phitrefs, size_t range_left, size_t range_right )
 {    
     SAlignedCompartment rv;
     m_segments.clear();
@@ -483,37 +496,39 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         NCBI_THROW( CAlgoAlignException, eInternal,
                     g_msg_InvalidRange);
     }
+
+    XFilter(phitrefs);
     
-    XFilter(hits);
-    
-    if(hits->size() == 0) {
+    if(phitrefs->size() == 0) {
         NCBI_THROW( CAlgoAlignException, eNoData,
                     g_msg_NoHitsAfterFiltering);
     }
     
     const size_t mrna_size = m_mrna.size();
-    const string query ( hits->front().m_Query );
-    const string subj  ( hits->front().m_Subj );
-    
+    const string subj (phitrefs->front()->GetSubjId()->GetSeqIdString(true));
     
     if( !m_strand ) {
         
         // adjust the hits
-        for(size_t i = 0, n = hits->size(); i < n; ++i) {
-            CHit& h = (*hits)[i];
-            size_t a0 = mrna_size - h.m_ai[0] + 1;
-            size_t a1 = mrna_size - h.m_ai[1] + 1;
-            h.m_an[0] = h.m_ai[0] = a1;
-            h.m_an[1] = h.m_ai[1] = a0;
-            swap(h.m_an[2], h.m_an[3]);
+        for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
+
+            THitRef& h = (*phitrefs)[i];
+            THit::TCoord a0 = mrna_size - h->GetQueryMin() - 1;
+            THit::TCoord a1 = mrna_size - h->GetQueryMax() - 1;
+            const bool new_strand = ! (h->GetSubjStrand());
+            h->SetQueryStart(a1);
+            h->SetQueryStop(a0);
+            h->SetSubjStrand(new_strand);
         }
     }
     
     m_polya_start = m_nopolya? kMax_UInt: x_TestPolyA();
     
     if(m_polya_start < kMax_UInt) {
-        CleaveOffByTail(hits, m_polya_start + 1); // cleave off hits beyond cds
-        if(hits->size() == 0) {
+
+        // cleave off hits beyond cds
+        CleaveOffByTail(phitrefs, m_polya_start); 
+        if(phitrefs->size() == 0) {
             NCBI_THROW( CAlgoAlignException,
                         eNoData,
                         g_msg_NoHitsBeyondPolya );
@@ -522,16 +537,19 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     // find regions of interest on mRna (query)
     // and contig (subj)
-    size_t qmin, qmax, smin, smax;
-    GetHitsMinMax(*hits, &qmin, &qmax, &smin, &smax);
-    --qmin; --qmax; --smin; --smax;
-    
+    THit::TCoord span [4];
+    CHitFilter<THit>::s_GetSpan(*phitrefs, span);
+    size_t qmin = span[0], qmax = span[1], smin = span[2], smax = span[3];    
+
     // select terminal genomic extents based on uncovered end sizes
     size_t extent_left = x_GetGenomicExtent(qmin);
     size_t qspace = m_mrna.size() - qmax + 1;
     size_t extent_right = x_GetGenomicExtent(qspace);
 
-    if((*hits)[0].IsStraight()) {
+    bool ctg_strand = phitrefs->front()->GetSubjStrand();
+
+    if(ctg_strand) {
+
         smin = max(0, int(smin - extent_left));
         smax += extent_right;
     }
@@ -551,46 +569,43 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         smax = range_right;
     }
     
-    bool ctg_strand = (*hits)[0].IsStraight();
-    
     m_genomic.clear();
     m_sa->Load(subj, &m_genomic, smin, smax, true);
-    
+
     const size_t ctg_end = smin + m_genomic.size();
     if(ctg_end - 1 < smax) { // perhabs adjust smax
         smax = ctg_end - 1;
     }
 
     if(!ctg_strand) {
+
         // make reverse complementary
         // for the contig's area of interest
         reverse (m_genomic.begin(), m_genomic.end());
         transform(m_genomic.begin(), m_genomic.end(), m_genomic.begin(),
                   SCompliment());
-        // flip the hits
-        for(size_t i = 0, n = hits->size(); i < n; ++i) {
-            CHit& h = (*hits)[i];
-            size_t a2 = smax - (h.m_ai[3] - smin) + 2;
-            size_t a3 = smax - (h.m_ai[2] - smin) + 2;
-            h.m_an[2] = h.m_ai[2] = a2;
-            h.m_an[3] = h.m_ai[3] = a3;
+
+        // flip hits
+        NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
+
+            THitRef& h = *ii;
+            THit::TCoord a2 = smax - (h->GetSubjMax() - smin);
+            THit::TCoord a3 = smax - (h->GetSubjMin() - smin);
+            h->SetSubjStart(a2);
+            h->SetSubjStop(a3);
         }
     }
     
     rv.m_QueryStrand = m_strand;
     rv.m_SubjStrand  = ctg_strand;
     
-    // shift hits so that they originate from qmin, smin;
-    // also make them zero-based
-    for(size_t i = 0, n = hits->size(); i < n; ++i) {
-        CHit& h = (*hits)[i];
-        h.m_an[0] = h.m_ai[0] -= qmin + 1;
-        h.m_an[1] = h.m_ai[1] -= qmin + 1;
-        h.m_an[2] = h.m_ai[2] -= smin + 1;
-        h.m_an[3] = h.m_ai[3] -= smin + 1;
+    // shift hits so that they originate from zero
+
+    NON_CONST_ITERATE(THitRefs, ii, *phitrefs) {
+        (*ii)->Shift( -qmin, -smin);
     }  
     
-    x_SetPattern( hits );
+    x_SetPattern(phitrefs);
     x_Run(&m_mrna.front(), &m_genomic.front());
     
     const size_t seg_dim = m_segments.size();
@@ -713,6 +728,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     return rv;
 }
+
 
 static const char s_kGap [] = "<GAP>";
 
@@ -1410,7 +1426,8 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
 
 Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len) const 
 {
-    const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) * m_max_genomic_ext;
+    const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) 
+        * m_max_genomic_ext;
     const double rv = k * pow(query_len, 1. / kPower);
 
     return Uint4(rv);
@@ -1591,6 +1608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/09/12 16:24:00  kapustin
+ * Move compartmentization to xalgoalignutil.
+ *
  * Revision 1.34  2005/09/06 17:52:52  kapustin
  * Add interface to max_extent member
  *
@@ -1604,7 +1624,8 @@ END_NCBI_SCOPE
  * +x_GetGenomicExtent()
  *
  * Revision 1.30  2005/07/05 16:50:47  kapustin
- * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ * Adjust compartmentization and term genomic extent. 
+ * Introduce min overall identity required for compartments to align.
  *
  * Revision 1.29  2005/06/02 13:30:17  kapustin
  * Adjust GetBox() for different orientations

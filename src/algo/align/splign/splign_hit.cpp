@@ -31,12 +31,15 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <algo/align/splign/splign_hit.hpp>
+
+#include "splign_hit.hpp"
+
 #include <algo/align/nw/align_exception.hpp>
 #include <corelib/ncbistre.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+
 #include <algorithm>
 #include <numeric>
 #include <math.h>
@@ -472,6 +475,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/09/12 16:24:00  kapustin
+* Move compartmentization to xalgoalignutil.
+*
 * Revision 1.9  2004/12/16 23:12:26  kapustin
 * algo/align rearrangement
 *

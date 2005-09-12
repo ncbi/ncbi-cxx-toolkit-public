@@ -34,10 +34,13 @@
 
 #include <ncbi_pch.hpp>
 #include "messages.hpp"
+
 #include <algo/align/splign/splign_simple.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/nw/align_exception.hpp>
+#include <algo/align/util/blast_tabular.hpp>
+
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
@@ -171,15 +174,17 @@ const CSplign::TResults& CSplignSimple::Run(void)
         !blastRes.front()->Get().empty()  &&
         !blastRes.front()->Get().front()->GetSegs().GetDisc().Get().empty()) {
         
-        CSplign::THits hits;
+        CSplign::THitRefs hitrefs;
 
         const CSeq_align_set::Tdata &sas =
             blastRes.front()->Get().front()->GetSegs().GetDisc().Get();
         ITERATE(CSeq_align_set::Tdata, saI, sas) {
-            hits.push_back(CHit(**saI));
+
+            CSplign::THitRef hitref (new CSplign::THit (**saI));
+            hitrefs.push_back(hitref);
         }
 
-        m_Splign->Run(&hits);
+        m_Splign->Run(&hitrefs);
 
         const CSplign::TResults &splignRes = m_Splign->GetResult();        
         ITERATE(CSplign::TResults, resI, splignRes) {
@@ -223,6 +228,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.16  2005/09/12 16:24:00  kapustin
+* Move compartmentization to xalgoalignutil.
+*
 * Revision 1.15  2005/08/29 14:14:49  kapustin
 * Retain last subject sequence in memory when in batch mode.
 *

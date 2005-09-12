@@ -34,8 +34,7 @@
 */
 
 
-#include <algo/align/nw/nw_aligner.hpp>
-#include <algo/align/splign/splign_hit.hpp>
+#include <algo/align/splign/splign.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -129,12 +128,13 @@ protected:
 /////////////////////
 // helpers
 
-void   CleaveOffByTail(vector<CHit>* hits, size_t polya_start);
-void   GetHitsMinMax(const vector<CHit>& hits,
+void   CleaveOffByTail(CSplign::THitRefs* hitrefs, size_t polya_start);
+
+void   GetHitsMinMax(const CSplign::THitRefs& hitrefs,
 		     size_t* qmin, size_t* qmax,
 		     size_t* smin, size_t* smax);
 
-void   XFilter(vector<CHit>* hits);
+void   XFilter(CSplign::THitRefs* hitrefs);
 
 struct SCompliment
 {
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/09/12 16:24:00  kapustin
+ * Move compartmentization to xalgoalignutil.
+ *
  * Revision 1.8  2005/05/24 19:36:08  kapustin
  * -RLE()
  *

@@ -35,8 +35,8 @@
 
 #include "seq_loader.hpp"
 
+#include <algo/align/util/blast_tabular.hpp>
 #include <algo/align/splign/splign.hpp>
-
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -53,22 +53,30 @@ public:
 
 protected:
 
-    string    x_RunOnPair(vector<CHit>* hits, int model_id,
+    typedef CSplign::THitRef  THitRef;
+    typedef CSplign::THitRefs THitRefs;
+
+    string    x_RunOnPair(THitRefs* hits, 
+                          int model_id,
                           size_t range_left, size_t range_right);
-    bool      x_GetNextPair(istream* ifs, vector<CHit>* hits);
+    bool      x_GetNextPair(istream* ifs, THitRefs* hits);
     istream*  x_GetPairwiseHitStream(CSeqLoaderPairwise& seq_loader_pw,
                                      bool cross_species_mode,
                                      string* strbuf) const;
 
     // status log
     ofstream m_logstream;
-    void   x_LogStatus(size_t model_id, bool query_strand, const string& query,
-                       const string& subj, bool error, const string& msg);
-    
+    void   x_LogStatus(size_t model_id,
+                       bool query_strand,
+                       const CAlignShadow::TId& query,
+                       const CAlignShadow::TId& subj,
+                       bool error,
+                       const string& msg);
+
 private:
 
-    string       m_firstline;
-    vector<CHit> m_pending; 
+    string          m_firstline;
+    THitRefs        m_pending; 
 
 #ifdef GENOME_PIPELINE
 
@@ -77,7 +85,7 @@ private:
     CNWAligner::TScore m_Wg;
     CNWAligner::TScore m_Ws;
     CNWAligner::TScore m_Wi [4];
-    size_t m_IntronMinSize;
+    size_t             m_IntronMinSize;
 
 #endif
 
@@ -89,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/09/12 16:24:01  kapustin
+ * Move compartmentization to xalgoalignutil.
+ *
  * Revision 1.12  2005/08/08 17:43:15  kapustin
  * Bug fix: keep external stream buf as long as the stream
  *

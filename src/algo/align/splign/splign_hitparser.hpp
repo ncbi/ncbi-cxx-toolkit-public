@@ -34,7 +34,7 @@
 */
 
 
-#include <algo/align/splign/splign_hit.hpp>
+#include "splign_hit.hpp"
 
 
 BEGIN_NCBI_SCOPE

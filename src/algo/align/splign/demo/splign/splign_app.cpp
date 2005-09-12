@@ -72,10 +72,10 @@ void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-  SetVersion(CVersionInfo(1, 16, 0, "Splign"));  
+  SetVersion(CVersionInfo(1, 17, 0, "Splign"));  
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.16");
+  string program_name ("Splign v.1.17");
 
 #ifdef GENOME_PIPELINE
   program_name += 'p';
@@ -239,83 +239,95 @@ void CSplignApp::Init()
 }
 
 
-bool CSplignApp::x_GetNextPair(istream* ifs, vector<CHit>* hits)
+bool CSplignApp::x_GetNextPair(istream* ifs, THitRefs* hitrefs)
 {
-  hits->clear();
-  if(!m_pending.size() && (!ifs || !*ifs) ) {
-    return false;
-  }
+    hitrefs->resize(0);
+    if(!m_pending.size() && (!ifs || !*ifs) ) {
+        return false;
+    }
+    
+    if(!m_pending.size()) {
 
-  if(!m_pending.size()) {
+        CAlignShadow::TId query, subj;
 
-    string query, subj;
-    if(m_firstline.size()) {
-      CHit hit (m_firstline.c_str());
-      query = hit.m_Query;
-      subj  = hit.m_Subj;
-      m_pending.push_back(hit);
+        if(m_firstline.size()) {
+
+            THitRef hitref (new CBlastTabular(m_firstline.c_str()));
+            query = hitref->GetQueryId();
+            subj  = hitref->GetSubjId();
+            m_pending.push_back(hitref);
+        }
+
+        char buf [1024];
+        while(ifs) {
+
+            buf[0] = 0;
+            CT_POS_TYPE pos0 = ifs->tellg();
+            ifs->getline(buf, sizeof buf, '\n');
+            CT_POS_TYPE pos1 = ifs->tellg();
+            if(pos1 == pos0) break; // GCC hack
+            if(buf[0] == '#') continue; // skip comments
+            const char* p = buf; // skip leading spaces
+            while(*p == ' ' || *p == '\t') ++p;
+            if(*p == 0) continue; // skip empty lines
+            
+            THitRef hit (new CBlastTabular(p));
+            if(query.IsNull()) {
+                query = hit->GetQueryId();
+            }
+            if(subj.IsNull()) {
+                subj = hit->GetSubjId();
+            }
+            if(hit->GetQueryStrand() == false) {
+                NCBI_THROW(CSplignAppException,
+                           eBadData,
+                           "Hit with query in minus strand not expected." );
+            }
+            if(hit->GetSubjStop() == hit->GetSubjStart()) {
+                // skip single bases
+                continue;
+            }
+            
+            if(hit->GetQueryId()->Match(*query) == false || 
+               hit->GetSubjId()->Match(*subj) == false) {
+
+                m_firstline = p;
+                break;
+            }
+            
+            m_pending.push_back(hit);
+        }
     }
 
-    char buf [1024];
-    while(ifs) {
-      buf[0] = 0;
-      CT_POS_TYPE pos0 = ifs->tellg();
-      ifs->getline(buf, sizeof buf, '\n');
-      CT_POS_TYPE pos1 = ifs->tellg();
-      if(pos1 == pos0) break; // GCC hack
-      if(buf[0] == '#') continue; // skip comments
-      const char* p = buf; // skip leading spaces
-      while(*p == ' ' || *p == '\t') ++p;
-      if(*p == 0) continue; // skip empty lines
+    const size_t pending_size = m_pending.size();
+    if(pending_size) {
 
-      CHit hit (p);
-      if(query.size() == 0) {
-	query = hit.m_Query;
-      }
-      if(subj.size() == 0) {
-	subj = hit.m_Subj;
-      }
-      if(hit.m_ai[0] > hit.m_ai[1]) {
-        NCBI_THROW(CSplignAppException,
-                   eBadData,
-                   "Hit with reversed query coordinates detected." );
-      }
-      if(hit.m_ai[2] == hit.m_ai[3]) { // skip single bases
-        continue;
-      }
+        CAlignShadow::TId query = m_pending[0]->GetQueryId();
+        CAlignShadow::TId subj  = m_pending[0]->GetSubjId();
+        size_t i = 1;
+        for(; i < pending_size; ++i) {
 
-      if(hit.m_Query != query || hit.m_Subj != subj) {
-	m_firstline = p;
-	break;
-      }
-
-      m_pending.push_back(hit);
+            THitRef h = m_pending[i];
+            if(h->GetQueryId()->Match(*query) == false || 
+               h->GetSubjId()->Match(*subj) == false) {
+                break;
+            }
+        }
+        hitrefs->resize(i);
+        copy(m_pending.begin(), m_pending.begin() + i, hitrefs->begin());
+        m_pending.erase(m_pending.begin(), m_pending.begin() + i);
     }
-  }
-
-  const size_t pending_size = m_pending.size();
-  if(pending_size) {
-    const string& query = m_pending[0].m_Query;
-    const string& subj  = m_pending[0].m_Subj;
-    size_t i = 1;
-    for(; i < pending_size; ++i) {
-      const CHit& h = m_pending[i];
-      if(h.m_Query != query || h.m_Subj != subj) {
-        break;
-      }
-    }
-    hits->resize(i);
-    copy(m_pending.begin(), m_pending.begin() + i, hits->begin());
-    m_pending.erase(m_pending.begin(), m_pending.begin() + i);
-  }
-
-  return hits->size() > 0;
+    
+    return hitrefs->size() > 0;
 }
 
 
-void CSplignApp::x_LogStatus(size_t model_id, bool query_strand,
-                             const string& query, const string& subj,
-			     bool error, const string& msg)
+void CSplignApp::x_LogStatus(size_t model_id, 
+                             bool query_strand,
+                             const CAlignShadow::TId& query, 
+                             const CAlignShadow::TId& subj, 
+			     bool error, 
+                             const string& msg)
 {
     string error_tag (error? "Error: ": "");
     if(model_id == 0) {
@@ -325,15 +337,15 @@ void CSplignApp::x_LogStatus(size_t model_id, bool query_strand,
         m_logstream << (query_strand? '+': '-') << model_id;
     }
     
-    m_logstream << '\t' << query << '\t' << subj 
+    m_logstream << '\t' << query->GetSeqIdString(true) 
+                << '\t' << subj->GetSeqIdString(true)
                 << '\t' << error_tag << msg << endl;
 }
 
 
-istream* CSplignApp::x_GetPairwiseHitStream (
-    CSeqLoaderPairwise& seq_loader,
-    bool cross_species_mode,
-    string* strbuffer) const
+istream* CSplignApp::x_GetPairwiseHitStream ( CSeqLoaderPairwise& seq_loader,
+                                              bool cross_species_mode,
+                                              string* strbuffer) const
 {
     USING_SCOPE(blast);
 
@@ -393,7 +405,8 @@ istream* CSplignApp::x_GetPairwiseHitStream (
         const CSeq_align_set::Tdata &sas =
             blast_output.front()->Get().front()->GetSegs().GetDisc().Get();
         ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
-            CHit hit (**sa_iter);
+
+            CBlastTabular hit (**sa_iter);
             oss << hit << endl;
         }
         *strbuffer = CNcbiOstrstreamToString(oss);
@@ -577,44 +590,42 @@ int CSplignApp::Run()
 
   // iterate over input hits
 
-  CSplign::THits hits;
-  while(x_GetNextPair(hit_stream.get(), &hits) ) {
+  THitRefs hitrefs;
+  while(x_GetNextPair(hit_stream.get(), &hitrefs) ) {
 
-    if(hits.size() == 0) {
+    if(hitrefs.size() == 0) {
         continue;
     }
 
-    const string query (hits[0].m_Query);
-    CRef<CSeq_id> seqid_query = GetSeqId(query);
-    const string subj (hits[0].m_Subj);
-    CRef<CSeq_id> seqid_subj = GetSeqId(subj);
-    formatter.SetSeqIds(seqid_query, seqid_subj);
+    CAlignShadow::TId query = hitrefs[0]->GetQueryId();
+    CAlignShadow::TId subj = hitrefs[0]->GetSubjId();
+    formatter.SetSeqIds(query, subj);
 
     const string strand = args["strand"].AsString();
     CSplign::TResults splign_results;
     if(strand == kStrandPlus) {
 
         splign.SetStrand(true);
-        splign.Run(&hits);
+        splign.Run(&hitrefs);
         const CSplign::TResults& results = splign.GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
     }
     else if(strand == kStrandMinus) {
 
         splign.SetStrand(false);
-        splign.Run(&hits);
+        splign.Run(&hitrefs);
         const CSplign::TResults& results = splign.GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
     }
     else { // kStrandBoth
 
-        CSplign::THits hits0 (hits.begin(), hits.end());
+        THitRefs hits0 (hitrefs.begin(), hitrefs.end());
         static size_t mid = 1;
         size_t mid_plus, mid_minus;
         {{
         splign.SetStrand(true);
         splign.SetStartModelId(mid);
-        splign.Run(&hits);
+        splign.Run(&hitrefs);
         const CSplign::TResults& results = splign.GetResult();
         copy(results.begin(), results.end(), back_inserter(splign_results));
         mid_plus = splign.GetNextModelId();
@@ -734,6 +745,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/09/12 16:24:01  kapustin
+ * Move compartmentization to xalgoalignutil.
+ *
  * Revision 1.47  2005/09/06 17:52:52  kapustin
  * Add interface to max_extent member
  *
@@ -747,7 +761,8 @@ int main(int argc, const char* argv[])
  * Adjust max genomic extent
  *
  * Revision 1.43  2005/07/05 16:50:47  kapustin
- * Adjust compartmentization and term genomic extent. Introduce min overall identity required for compartments to align.
+ * Adjust compartmentization and term genomic extent. 
+ * Introduce min overall identity required for compartments to align.
  *
  * Revision 1.42  2005/07/01 16:40:36  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
