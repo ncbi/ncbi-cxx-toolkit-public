@@ -104,7 +104,6 @@ CPubseqReader::CPubseqReader(int max_connections,
     if ( m_Password.empty() ) {
         m_Password = DEFAULT_DB_PASSWORD;
     }
-    //m_Server = "IDDEV_OS_LX";
 
 #if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
     if ( s_pubseq_readers.Add(1) > 1 ) {
@@ -114,6 +113,7 @@ CPubseqReader::CPubseqReader(int max_connections,
                    "without MT-safe DB library");
     }
 #endif
+
     SetInitialConnections(max_connections);
 }
 
@@ -191,7 +191,7 @@ CDB_Connection* CPubseqReader::x_NewConnection(void)
         m_Context = drvMgr.GetDriverContext("ctlib", &errmsg, &args);
         if ( !m_Context ) {
             LOG_POST(errmsg);
-#if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
+#if defined(NCBI_THREADS)
             NCBI_THROW(CLoaderException, eNoConnection,
                        "Cannot create dbapi context");
 #else
@@ -561,12 +561,30 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
         cmd->SetParam("@bin", &binIn);
         cmd->Send();
     
+        bool not_found = false;
+        int id_count = 0;
         while ( cmd->HasMoreResults() ) {
             AutoPtr<CDB_Result> dbr(cmd->Result());
-            if ( !dbr.get() || dbr->ResultType() != eDB_RowResult) {
+            if ( !dbr.get() ) {
                 continue;
             }
+            
+            if ( dbr->ResultType() == eDB_StatusResult ) {
+                dbr->Fetch();
+                CDB_Int v;
+                dbr->GetItem(&v);
+                int status = v.Value();
+                if ( status == 100 ) {
+                    // gi does not exist
+                    not_found = true;
+                }
+                break;
+            }
         
+            if ( dbr->ResultType() != eDB_RowResult ) {
+                continue;
+            }
+
             while ( dbr->Fetch() ) {
                 _TRACE("next fetch: " << dbr->NofItems() << " items");
                 for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
@@ -580,6 +598,7 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
                         while ( in.HaveMoreData() ) {
                             in >> id;
                             ids.AddSeq_id(id);
+                            ++id_count;
                         }
                     }
                     else {
@@ -587,6 +606,10 @@ void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
                     }
                 }
             }
+        }
+        if ( id_count == 0 && !not_found ) {
+            // artificially add argument Seq-id if empty set was received
+            ids.AddSeq_id(seq_id);
         }
     }}
     conn.Release();
@@ -815,6 +838,43 @@ public:
         : TParent(NCBI_GBLOADER_READER_PUBSEQ_DRIVER_NAME, 0) {}
 
     ~CPubseqReaderCF() {}
+
+    objects::CReader* 
+    CreateInstance(const string& driver  = kEmptyStr,
+                   CVersionInfo version =
+                   NCBI_INTERFACE_VERSION(objects::CReader),
+                   const TPluginManagerParamTree* params = 0) const
+    {
+        objects::CReader* drv = 0;
+        if ( !driver.empty()  &&  driver != m_DriverName ) {
+            return 0;
+        }
+        if (version.Match(NCBI_INTERFACE_VERSION(objects::CReader)) 
+                            != CVersionInfo::eNonCompatible) {
+            objects::CReader::TConn noConn = GetParamDataSize(
+                params,
+                NCBI_GBLOADER_READER_PUBSEQ_PARAM_NUM_CONN,
+                false,
+                2);
+            string server =
+                GetParam(params,
+                         NCBI_GBLOADER_READER_PUBSEQ_PARAM_SERVER,
+                         false,
+                         kEmptyStr);
+            string user =
+                GetParam(params,
+                         NCBI_GBLOADER_READER_PUBSEQ_PARAM_USER,
+                         false,
+                         kEmptyStr);
+            string password =
+                GetParam(params,
+                         NCBI_GBLOADER_READER_PUBSEQ_PARAM_PASSWORD,
+                         false,
+                         kEmptyStr);
+            drv = new objects::CPubseqReader(noConn, server, user, password);
+        }
+        return drv;
+    }
 };
 
 
