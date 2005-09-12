@@ -42,7 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
 
 
-double BLOSUM62_bg[COMPOSITION_ALPHABET_SIZE] =
+static double BLOSUM62_bg[COMPOSITION_ALPHABET_SIZE] =
     { 0.0742356686, 0.0515874541, 0.0446395713, 0.0536092024, 0.0246865086,
       0.0342500470, 0.0543174458, 0.0741431988, 0.0262119099, 0.0679331197,
       0.0989057232, 0.0581774322, 0.0249972837, 0.0473970070, 0.0385382904,
@@ -167,9 +167,11 @@ Blast_GetMatrixBackgroundFreq(const char *matrix_name)
 /* initialization of array of functions that can be used to decide
  * which optimization formulation should be used for score
  * adjustment */
-Condition Cond_func[] ={ TestToApplyREAdjustmentConditional,
-                         TestToApplyREAdjustmentUnconditional,
-                         NULL };
+static Condition Cond_func[] = {
+    TestToApplyREAdjustmentConditional,
+    TestToApplyREAdjustmentUnconditional,
+    NULL
+};
 
 
 /* Choose how the relative entropy should be constrained based on
