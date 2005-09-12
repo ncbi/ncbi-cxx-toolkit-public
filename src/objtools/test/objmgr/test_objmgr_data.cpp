@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/09/12 14:33:19  vasilche
+* Disable comprehensive test of GetIds().
+*
 * Revision 1.18  2005/09/07 19:16:31  vasilche
 * Add test for accession fetching.
 * Add test for scope.GetIds().
@@ -339,6 +342,40 @@ void CTestOM::Exit(void)
         THROW1_TRACE(runtime_error, "Cannot exit test application");
 }
 
+
+static string GetAccession(const vector<CSeq_id_Handle>& ids)
+{
+    CSeq_id_Handle gi;
+    CSeq_id_Handle text;
+    ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
+        if ( it->Which() == CSeq_id::e_Gi ) {
+            _ASSERT(!gi);
+            gi = *it;
+        }
+        else {
+            CConstRef<CSeq_id> seq_id = it->GetSeqId();
+            const CTextseq_id* text_id = seq_id->GetTextseq_Id();
+            if ( text_id ) {
+                _ASSERT(!text);
+                text = *it;
+            }
+        }
+    }
+    if ( text ) {
+        CSeq_id id;
+        id.Assign(*text.GetSeqId());
+        CTextseq_id* text_id = const_cast<CTextseq_id*>(id.GetTextseq_Id());
+        text_id->ResetName();
+        text_id->ResetRelease();
+        return id.AsFastaString();
+    }
+    else if ( gi ) {
+        return gi.AsString();
+    }
+    return string();
+}
+
+
 bool CTestOM::Thread_Run(int idx)
 {
     // initialize scope
@@ -417,17 +454,32 @@ bool CTestOM::Thread_Run(int idx)
                 sort(ids3.begin(), ids3.end());
                 _ASSERT(ids2 == ids3);
                 if ( preload_ids ) {
-                    if ( ids1 != ids2 ) {
-                        NcbiCerr << sih.AsString() << ": Ids discrepancy:\n";
-                        NcbiCerr << " GetIds():";
-                        ITERATE ( vector<CSeq_id_Handle>, it, ids1 ) {
-                            NcbiCerr << " " << it->AsString();
+                    if ( 1 ) {
+                        _ASSERT(!ids1.empty());
+                    }
+                    else if ( 1 ) {
+                        if ( GetAccession(ids1) != GetAccession(ids2) ) {
+                            NcbiCerr << sih.AsString() <<
+                                ": Ids discrepancy:\n";
+                            NcbiCerr << " GetIds(): " << GetAccession(ids1);
+                            NcbiCerr << "\n   handle: " << GetAccession(ids2);
+                            NcbiCerr << NcbiEndl;
                         }
-                        NcbiCerr << "\n   handle:";
-                        ITERATE ( vector<CSeq_id_Handle>, it, ids2 ) {
-                            NcbiCerr << " " << it->AsString();
+                    }
+                    else {
+                        if ( ids1 != ids2 ) {
+                            NcbiCerr << sih.AsString() <<
+                                ": Ids discrepancy:\n";
+                            NcbiCerr << " GetIds():";
+                            ITERATE ( vector<CSeq_id_Handle>, it, ids1 ) {
+                                NcbiCerr << " " << it->AsString();
+                            }
+                            NcbiCerr << "\n   handle:";
+                            ITERATE ( vector<CSeq_id_Handle>, it, ids2 ) {
+                                NcbiCerr << " " << it->AsString();
+                            }
+                            NcbiCerr << NcbiEndl;
                         }
-                        NcbiCerr << NcbiEndl;
                     }
                 }
                 

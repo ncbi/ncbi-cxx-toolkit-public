@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/09/12 14:33:19  vasilche
+* Disable comprehensive test of GetIds().
+*
 * Revision 1.14  2005/09/07 19:16:35  vasilche
 * Add test for accession fetching.
 * Add test for scope.GetIds().
@@ -374,10 +377,15 @@ bool CTestOM::Thread_Run(int idx)
                 sort(ids3.begin(), ids3.end());
                 _ASSERT(ids2 == ids3);
                 if ( preload_ids ) {
-                    if ( ids1 != ids2 ) {
-                        ERR_POST("Ids discrepancy for " << sih.AsString());
+                    if ( 1 ) {
+                        _ASSERT(!ids1.empty());
                     }
-                    //_ASSERT(ids1 == ids2);
+                    else {
+                        if ( ids1 != ids2 ) {
+                            ERR_POST("Ids discrepancy for " << sih.AsString());
+                        }
+                        //_ASSERT(ids1 == ids2);
+                    }
                 }
 
                 if ( !m_load_only ) {
