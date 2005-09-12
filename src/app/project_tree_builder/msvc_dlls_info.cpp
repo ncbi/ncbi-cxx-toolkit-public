@@ -409,6 +409,9 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
     dll->m_NcbiCLibs.sort();
     dll->m_NcbiCLibs.unique();
 
+    if (dll->m_MsvcProjectMakefileDir == lib.m_MsvcProjectMakefileDir) {
+        return;
+    }
     if (dll->m_MsvcProjectMakefileDir.empty()) {
         dll->m_MsvcProjectMakefileDir = lib.m_MsvcProjectMakefileDir;
     } else {
@@ -592,6 +595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/09/12 20:20:36  gouriano
+ * Corrected choosing MSVC tune-up file path
+ *
  * Revision 1.31  2005/06/30 20:09:16  gouriano
  * Corrected search for libs in DLL
  *
