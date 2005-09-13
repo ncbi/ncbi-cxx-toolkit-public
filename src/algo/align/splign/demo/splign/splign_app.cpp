@@ -279,9 +279,7 @@ bool CSplignApp::x_GetNextPair(istream* ifs, THitRefs* hitrefs)
                 subj = hit->GetSubjId();
             }
             if(hit->GetQueryStrand() == false) {
-                NCBI_THROW(CSplignAppException,
-                           eBadData,
-                           "Hit with query in minus strand not expected." );
+                hit->FlipStrands();
             }
             if(hit->GetSubjStop() == hit->GetSubjStart()) {
                 // skip single bases
@@ -745,6 +743,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/09/13 16:02:04  kapustin
+ * Flip hit strands when query is in minus strand
+ *
  * Revision 1.48  2005/09/12 16:24:01  kapustin
  * Move compartmentization to xalgoalignutil.
  *
