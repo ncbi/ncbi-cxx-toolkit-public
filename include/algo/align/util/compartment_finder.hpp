@@ -53,8 +53,8 @@ class CCompartmentFinder {
 
 public:
 
-    typedef CRef<THit>           THitRef;
-    typedef vector<THitRef>      THitRefs;
+    typedef CRef<THit>            THitRef;
+    typedef vector<THitRef>       THitRefs;
     typedef typename THit::TCoord TCoord;
 
     // hits must be in plus strand
@@ -646,7 +646,8 @@ CCompartmentAccessor<THit>::CCompartmentAccessor(
     THitComparator sorter (THitComparator::eSubjStrand);
     stable_sort(ib, ie, sorter);
 
-    size_t minus_subj_min = kMax_UInt, minus_subj_max = 0;
+    size_t minus_subj_min = numeric_limits<size_t>::max(), 
+        minus_subj_max = 0;
     for(ii = ib; ii != ie; ++ii) {
         if((*ii)->GetSubjStrand()) {
             iplus_beg = ii;
@@ -768,6 +769,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/13 15:56:15  kapustin
+ * kMax* => numeric_limits<>
+ *
  * Revision 1.2  2005/09/12 20:15:16  ucko
  * Use TCoord rather than size_t for m_box for consistency with THitFilter.
  *
