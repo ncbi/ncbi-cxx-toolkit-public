@@ -211,26 +211,26 @@ CPythonDBAPITest::TestParameters(void)
             ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
         }
 
-        /* Future development ...
         // Test for text strings ...
-        {
-            ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
-            // ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
-            ExecuteStr("seq_align = 254 * '-' + 'X' \n");
-            ExecuteStr("if len(seq_align) != 255 : raise StandardError('Invalid string length.') \n");
-            ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
-            ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
-            ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
-
-            ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
-            ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
-            ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
-            ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
-            ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
-            ExecuteStr("if len(cursor.fetchone()[0]) != 355 : raise StandardError('Invalid string length.') \n");
-        }
-        */
-    }
+//         {
+//             ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
+//             // ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
+//             ExecuteStr("seq_align = 254 * '-' + 'X' \n");
+//             ExecuteStr("if len(seq_align) != 255 : raise StandardError('Invalid string length.') \n");
+//             ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
+//             ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
+//             ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
+//
+//             ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
+//             ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
+//             ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
+//             ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
+//             ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
+//             ExecuteStr("record = cursor.fetchone() \n");
+//             ExecuteStr("print record \n");
+//             ExecuteStr("if len(record[0]) != 355 : raise StandardError('Invalid string length.') \n");
+//         }
+   }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
     }
@@ -417,31 +417,92 @@ CPythonDBAPITest::Test_SelectStmt(void)
             ExecuteSQL(sql);
             
             // Insert data into the table ...
-            sql = 
+            string long_string = 
+                "Seq-align ::= { type partial, dim 2, score "
+                "{ { id str \"score\", value int 6771 }, { id str "
+                "\"e_value\", value real { 0, 10, 0 } }, { id str "
+                "\"bit_score\", value real { 134230121751674, 10, -10 } }, "
+                "{ id str \"num_ident\", value int 7017 } }, segs denseg "
+                "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts "
+                "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, "
+                "strands { minus, minus, minus, minus, minus, minus } } }";
+            
+            sql  = "long_str = '"+ long_string + "' \n";
+            ExecuteStr( sql.c_str() );
+            sql  = 
                 "INSERT INTO #Overlaps VALUES( \n"
-                "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n"
-                "'Seq-align ::= { type partial, dim 2, score \n"
-                "{ { id str \"score\", value int 6771 }, { id str \n"
-                "\"e_value\", value real { 0, 10, 0 } }, { id str \n"
-                "\"bit_score\", value real { 134230121751674, 10, -10 } }, \n"
-                "{ id str \"num_ident\", value int 7017 } }, segs denseg \n"
-                "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts \n"
-                "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, \n"
-                "strands { minus, minus, minus, minus, minus, minus } } }', 'n')";
+                "1, 1, 0, 25794, 7126, 32916, '--', 1, 21, 7124, 7127, 0, \n";
+            sql += "'" + long_string + "', 'n')";
             
             ExecuteSQL(sql);
         }
         
-        sql = "SELECT * FROM #Overlaps";
-        ExecuteSQL(sql);
-        ExecuteStr("if len(cursor.fetchone()) != 14 : "
-                   "raise StandardError('Invalid number of columns.') \n"
-        );
-
+        // Check ...
+        {
+            sql = "SELECT * FROM #Overlaps";
+            ExecuteSQL(sql);
+            ExecuteStr("record = cursor.fetchone() \n");
+            // ExecuteStr("print record \n");
+            ExecuteStr("if len(record) != 14 : "
+                       "raise StandardError('Invalid number of columns.') \n"
+            );
+            // ExecuteStr("print len(record[12]) \n");
+            ExecuteStr("if len(record[12]) != len(long_str) : "
+                       "raise StandardError('Invalid string size: ') \n"
+            );
+        }
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
     }
+}
+
+void 
+CPythonDBAPITest::Test_LOB(void)
+{
+    string sql;
+    
+    try {
+        // Prepare ...
+        {
+            ExecuteStr( "cursor = conn_simple.cursor()\n" );
+            ExecuteSQL( "DELETE FROM #t2" );
+        }
+        
+        // Insert data ...
+        {
+            string long_string = 
+                "Seq-align ::= { type partial, dim 2, score "
+                "{ { id str \"score\", value int 6771 }, { id str "
+                "\"e_value\", value real { 0, 10, 0 } }, { id str "
+                "\"bit_score\", value real { 134230121751674, 10, -10 } }, "
+                "{ id str \"num_ident\", value int 7017 } }, segs denseg "
+                "{ dim 2, numseg 3, ids { gi 3021694, gi 3924652 }, starts "
+                "{ 6767, 32557, 6763, -1, 0, 25794 }, lens { 360, 4, 6763 }, "
+                "strands { minus, minus, minus, minus, minus, minus } } }";
+            
+            sql  = "long_str = '"+ long_string + "' \n";
+            ExecuteStr( sql.c_str() );
+            
+            sql  = "INSERT INTO #t2(text_val) VALUES('" + long_string + "')";
+            ExecuteSQL( sql );
+        }
+        
+        // Check ...
+        {
+            sql = "SELECT text_val FROM #t2";
+            ExecuteSQL(sql);
+            ExecuteStr("record = cursor.fetchone() \n");
+            // ExecuteStr("print len(record[12]) \n");
+            ExecuteStr("if len(record[0]) != len(long_str) : "
+                       "raise StandardError('Invalid string size: ') \n"
+            );
+        }
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
+           
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -455,6 +516,11 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::MakeTestPreparation, DBAPIInstance);
 
     add(tc_init);
+
+    // This test doen't work with the dblib driver currently ...
+//     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_LOB, DBAPIInstance);
+//     tc->depends_on(tc_init);
+//     add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_SelectStmt, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -628,6 +694,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/09/13 14:46:39  ssikorsk
+* Added a Test_LOB implementation
+*
 * Revision 1.16  2005/09/07 11:15:36  ssikorsk
 * Added an implementation of the Test_SelectStmt method
 *

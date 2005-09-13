@@ -266,6 +266,77 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
+CDBAPIUnitTest::Test_LOB(void)
+{
+    static char clob_value[] = "1234567890";
+    string sql;
+    
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // Prepare data ...
+    {
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+        
+        // Insert data ...
+        sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
+        sql += " VALUES(0, '')";
+        auto_stmt->ExecuteUpdate( sql );
+        
+        sql  = " SELECT text_field FROM " + GetTableName();
+        // sql += " FOR UPDATE OF text_field";
+        
+        auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+
+        // blobRs should be destroyed before auto_cursor ...
+        auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+        while(blobRs->Next()) {
+            ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob_value) - 1, eDisableLog);
+            out.write(clob_value, sizeof(clob_value) - 1);
+            out.flush();
+        }
+        
+//         auto_stmt->Execute( sql );
+//         while( auto_stmt->HasMoreResults() ) {
+//             if( auto_stmt->HasRows() ) {
+//                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+//                 while ( rs->Next() ) {
+//                     ostream& out = rs->GetBlobOStream(sizeof(clob_value) - 1, eDisableLog);
+//                     out.write(clob_value, sizeof(clob_value) - 1);
+//                     out.flush();
+//                 }
+//             }
+//         }
+    }
+    
+    // Retrieve data ...
+    {
+        sql = "SELECT text_field FROM "+ GetTableName();
+        
+        auto_stmt->Execute( sql );
+        while( auto_stmt->HasMoreResults() ) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
+                
+                rs->BindBlobToVariant(true);
+                
+                while ( rs->Next() ) {
+                    const CVariant& value = rs->GetVariant(1);
+
+
+                    BOOST_CHECK( !value.IsNull() );
+
+                    size_t blob_size = value.GetBlobSize();
+                    BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
+                    // Int8 value = rs->GetVariant(1).GetInt8();
+                }
+            } 
+        }
+    }
+}
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void 
 CDBAPIUnitTest::Test_GetColumnNo(void)
 { 
     string sql;
@@ -1258,6 +1329,47 @@ CDBAPIUnitTest::Test_Procedure(void)
         auto_stmt->Execute();
         auto_stmt.reset( m_Conn->GetCallableStatement("sp_databases") );
         auto_stmt->Execute();
+    }
+    
+    // Temporary test ...
+    // !!! This is a bug ...
+    if (false) {
+        auto_ptr<IConnection> conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        BOOST_CHECK( conn.get() != NULL );
+
+        conn->Connect(
+            "anyone",
+            "allowed",
+            "PUBSEQ_OS_LXA",
+            ""
+            );
+
+        auto_ptr<ICallableStatement> auto_stmt( conn->GetCallableStatement("id_seqid4gi") );
+        auto_stmt->SetParam( CVariant(1), "@gi" );
+        auto_stmt->Execute();
+        while(auto_stmt->HasMoreResults()) {
+            if( auto_stmt->HasRows() ) {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+
+                switch( rs->GetResultType() ) {
+                case eDB_RowResult:
+                    while(rs->Next()) {
+                        // retrieve row results
+                    }
+                    break;
+                case eDB_ParamResult:
+                    _ASSERT(false);
+                    while(rs->Next()) {
+                        // Retrieve parameter row
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+        // Get status 
+        int status = auto_stmt->GetReturnStatus();
     }
 }
 
@@ -2672,6 +2784,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
+    // Does not work with all databases and drivers currently ...
+//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
+//     tc->depends_on(tc_init);
+//     add(tc);
+
 //     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
 //     tc->depends_on(tc_parameters);
 //     add(tc);
@@ -2791,6 +2908,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2005/09/13 14:48:30  ssikorsk
+ * Added a Test_LOB implementation
+ *
  * Revision 1.39  2005/09/07 11:09:39  ssikorsk
  * Added an implementation of the Test_GetColumnNo method
  *
