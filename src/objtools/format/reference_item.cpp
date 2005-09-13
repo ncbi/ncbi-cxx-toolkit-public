@@ -230,6 +230,11 @@ CReferenceItem::CReferenceItem(const CSubmit_block& sub, CBioseqContext& ctx) :
     }
 }
 
+
+CReferenceItem::~CReferenceItem() {
+}
+
+
 void CReferenceItem::SetLoc(const CConstRef<CSeq_loc>& loc)
 {
     m_Loc = loc;
@@ -1324,6 +1329,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/09/13 17:14:01  jcherry
+* Added export specifier.  Accomodated MSVC's consequent desire to generate
+* special methods.
+*
 * Revision 1.32  2005/05/19 19:33:27  shomrat
 * Ignore strand when merging duplicate references; Merge if not dump mode
 *

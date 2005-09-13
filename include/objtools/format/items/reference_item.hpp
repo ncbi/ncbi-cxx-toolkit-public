@@ -63,7 +63,7 @@ class CBioseqContext;
 class IFormatter;
 
 
-class CReferenceItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CReferenceItem : public CFlatItem
 {
 public:
     enum ECategory {
@@ -98,6 +98,9 @@ public:
         const CSeq_loc* loc = NULL);
     CReferenceItem(const CSubmit_block&  sub, CBioseqContext& ctx);
     
+    /// destructor
+    ~CReferenceItem();
+
     /// format
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
@@ -158,6 +161,9 @@ public:
     static void FormatAffil(const CAffil& affil, string& result, bool gen_sub = false);
 
 private:
+ 
+    CReferenceItem(const CReferenceItem& value);
+    CReferenceItem& operator=(const CReferenceItem& value);
     
     void x_GatherInfo(CBioseqContext& ctx);
     void x_Init(const CPub&           pub,  CBioseqContext& ctx);
@@ -243,6 +249,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/09/13 17:14:01  jcherry
+* Added export specifier.  Accomodated MSVC's consequent desire to generate
+* special methods.
+*
 * Revision 1.17  2005/04/27 17:08:15  shomrat
 * Suppress unique string creation if other identifiers exist
 *
