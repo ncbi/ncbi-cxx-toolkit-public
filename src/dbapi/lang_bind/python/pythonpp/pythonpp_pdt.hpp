@@ -656,6 +656,10 @@ public:
     : CObject(PyString_FromString(str), eTakeOwnership)
     {
     }
+    CString(const char* str, size_t str_size)
+    : CObject(PyString_FromStringAndSize(const_cast<char*>(str), str_size), eTakeOwnership)
+    {
+    }
 
 public:
     // Assign operators ...
@@ -970,6 +974,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/09/13 14:41:10  ssikorsk
+* Add new constructor to pythonpp::CString
+*
 * Revision 1.4  2005/02/10 17:43:56  ssikorsk
 * Changed: more 'precise' exception types
 *
