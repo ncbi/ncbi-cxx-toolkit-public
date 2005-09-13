@@ -916,6 +916,7 @@ CStmtHelper::Execute(void)
         switch ( m_StmtStr.GetType() ) {
         case estSelect :
             m_RS.reset( m_Stmt->ExecuteQuery ( m_StmtStr.GetStr() ) );
+            m_RS->BindBlobToVariant(true);
             break;
         default:
             m_RS.release();
@@ -1209,6 +1210,7 @@ CCallableStmtHelper::NextRS(void)
         while ( m_Stmt->HasMoreResults() ) {
             if ( m_Stmt->HasRows() ) {
                 m_RS.reset( m_Stmt->GetResultSet() );
+                m_RS->BindBlobToVariant(true);
                 return true;
             }
         }
@@ -1234,7 +1236,7 @@ MakeTupleFromResult(IResultSet& rs)
 
     for ( int i = 0; i < col_num; ++i) {
         const CVariant& value = rs.GetVariant (i + 1);
-
+        
         if ( value.IsNull() ) {
             continue;
         }
@@ -1299,7 +1301,14 @@ MakeTupleFromResult(IResultSet& rs)
         */
         case eDB_Text :
         case eDB_Image :
-            tuple[i] = pythonpp::CString();
+            {
+                size_t lob_size = value.GetBlobSize();
+                string tmp_str;
+                
+                tmp_str.resize(lob_size);
+                value.Read( (void*)tmp_str.c_str(), lob_size );
+                tuple[i] = pythonpp::CString(tmp_str);
+            }
             break;
         case eDB_UnsupportedType :
             break;
@@ -2557,6 +2566,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/09/13 14:42:37  ssikorsk
+* Improved reading of LOB (Text/Image) data types
+*
 * Revision 1.23  2005/09/07 11:13:28  ssikorsk
 * Fixed MakeTupleFromResult to accommodate GetColumnNo changes
 *
