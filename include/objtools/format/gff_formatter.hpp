@@ -61,7 +61,7 @@ BEGIN_SCOPE(objects)
 class CFlatFeature;
 
 
-class CGFFFormatter : public CFlatItemFormatter
+class NCBI_FORMAT_EXPORT CGFFFormatter : public CFlatItemFormatter
 {
 public:
     enum EGFFFlags {
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/13 19:22:55  jcherry
+* Added export specifiers
+*
 * Revision 1.5  2005/03/02 13:45:20  shomrat
 * Fixed warning
 *

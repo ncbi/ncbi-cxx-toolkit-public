@@ -264,7 +264,7 @@ private:
 // When formatting segmented bioseq CMasterContext holds information
 // on the Master bioseq.
 
-class CMasterContext : public CObject
+class NCBI_FORMAT_EXPORT CMasterContext : public CObject
 {
 public:
     // constructor
@@ -297,7 +297,7 @@ private:
 //
 // CFlatFileContext
 
-class CFlatFileContext : public CObject
+class NCBI_FORMAT_EXPORT CFlatFileContext : public CObject
 {
 public:
     // types
@@ -557,6 +557,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2005/09/13 19:22:55  jcherry
+* Added export specifiers
+*
 * Revision 1.27  2005/04/27 17:08:57  shomrat
 * GetConfig return non-const
 *

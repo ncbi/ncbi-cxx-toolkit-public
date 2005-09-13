@@ -45,7 +45,7 @@ class CBioseqContext;
 class CBioseq;
 
 
-class CGenbankGatherer : public CFlatGatherer
+class NCBI_FORMAT_EXPORT CGenbankGatherer : public CFlatGatherer
 {
 public:
     CGenbankGatherer(void);
@@ -65,6 +65,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/09/13 19:22:55  jcherry
+* Added export specifiers
+*
 * Revision 1.4  2004/04/22 15:45:40  shomrat
 * Changes in context
 *

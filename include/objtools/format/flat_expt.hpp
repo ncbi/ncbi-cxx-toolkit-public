@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFlatException : public CException
+class NCBI_FORMAT_EXPORT CFlatException : public CException
 {
 public:
 
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/09/13 19:22:55  jcherry
+* Added export specifiers
+*
 * Revision 1.2  2004/01/14 15:51:53  shomrat
 * Added invalid parameter exception type
 *

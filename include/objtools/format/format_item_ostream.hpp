@@ -46,7 +46,7 @@ class IFlatTextOStream;
 class IFormatter;
 
 
-class CFormatItemOStream : public CFlatItemOStream
+class NCBI_FORMAT_EXPORT CFormatItemOStream : public CFlatItemOStream
 {
 public:
     // NB: formatter and text_os must be allocated on the heap!
@@ -69,6 +69,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/09/13 19:22:55  jcherry
+* Added export specifiers
+*
 * Revision 1.2  2004/02/12 20:22:53  shomrat
 * pointer instead of auto_ptr
 *

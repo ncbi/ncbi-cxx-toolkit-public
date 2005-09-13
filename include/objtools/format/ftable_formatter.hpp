@@ -45,7 +45,7 @@ BEGIN_SCOPE(objects)
 class CSeq_loc;
 
 
-class CFtableFormatter : public CFlatItemFormatter
+class NCBI_FORMAT_EXPORT CFtableFormatter : public CFlatItemFormatter
 {
 public:
     CFtableFormatter(void);
@@ -70,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/09/13 19:22:55  jcherry
+* Added export specifiers
+*
 * Revision 1.3  2004/04/22 15:43:56  shomrat
 * Changes in context
 *

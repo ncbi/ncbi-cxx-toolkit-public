@@ -69,7 +69,7 @@ class CBarcodeComment;
 
 
 
-class CGenbankFormatter : public CFlatItemFormatter
+class NCBI_FORMAT_EXPORT CGenbankFormatter : public CFlatItemFormatter
 {
 public:
     CGenbankFormatter(void);
@@ -128,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/09/13 19:22:55  jcherry
+* Added export specifiers
+*
 * Revision 1.6  2005/03/29 18:15:25  shomrat
 * Added barcode comment formatting
 *
