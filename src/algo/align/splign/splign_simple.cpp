@@ -181,6 +181,9 @@ const CSplign::TResults& CSplignSimple::Run(void)
         ITERATE(CSeq_align_set::Tdata, saI, sas) {
 
             CSplign::THitRef hitref (new CSplign::THit (**saI));
+            if(hitref->GetQueryStrand() == false) {
+                hitref->FlipStrands();
+            }
             hitrefs.push_back(hitref);
         }
 
@@ -228,6 +231,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.17  2005/09/13 18:44:37  kapustin
+* Flip hit strands if query is in minus
+*
 * Revision 1.16  2005/09/12 16:24:00  kapustin
 * Move compartmentization to xalgoalignutil.
 *
