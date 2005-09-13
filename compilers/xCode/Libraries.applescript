@@ -85,6 +85,7 @@ property creaders : {name:"creaders", path:"util:creaders"}
 property xalgoalign : {name:"xalgoalign", path:"algo:align"}
 property xalgosplign : {name:"xalgosplign", path:"algo:align:splign"}
 property xalgoalignnw : {name:"xalgoalignnw", path:"algo:align:nw"}
+property xalgoaligutil : {name:"xalgoaligutil", path:"algo:align:util"}
 property xalgoseq : {name:"xalgoseq", path:"algo:sequence"}
 property xalgoseqqa : {name:"xalgoseqqa", path:"algo:seqqa"}
 property blast : {name:"blast", path:"algo:blast:core"}
@@ -267,7 +268,7 @@ property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core" & IMG_L
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core", req:true}
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver", req:true}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", req:true}
-property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoalignnw, xalgoseq, xalgoseqqa, blast, xblast, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext", req:true}
+property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, xblast, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
@@ -410,6 +411,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2005/09/13 11:41:34  lebedev
+ * xalgoalignutil added
+ *
  * Revision 1.67  2005/08/25 11:58:55  lebedev
  * Libraries definitions updated
  *
