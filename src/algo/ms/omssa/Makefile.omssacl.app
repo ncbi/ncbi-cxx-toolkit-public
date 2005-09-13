@@ -4,7 +4,7 @@
 # Build application "omssacl"
 #################################
 
-NCBI_C_LIBS =  -lncbitool -lncbiobj -lncbi
+NCBI_C_LIBS =  -lncbitool -lblastcompadj -lncbiobj -lncbi
 
 LIBS = $(PCRE_LIBS) $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(ORIG_LIBS)
 

@@ -30,6 +30,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..  $(NCBI_C_INCLUDE)
 
 #LDFLAGS  = $(FAST_LDFLAGS)
 
-NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
+NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj \
+              -lncbiobj -lncbi
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) 
