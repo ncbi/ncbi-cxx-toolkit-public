@@ -56,7 +56,7 @@ class IFormatter;
 //
 // PRIMARY
 
-class CPrimaryItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CPrimaryItem : public CFlatItem
 {
 public:
     CPrimaryItem(CBioseqContext& ctx);
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.4  2004/08/30 15:06:56  shomrat
 * use multimap for denseseg map
 *

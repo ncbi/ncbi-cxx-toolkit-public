@@ -49,7 +49,7 @@ class IFormatter;
 //
 // SEQUENCE
 
-class CGapItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CGapItem : public CFlatItem
 {
 public:
 
@@ -111,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.1  2004/11/24 16:48:31  shomrat
 * Initial Revision
 *

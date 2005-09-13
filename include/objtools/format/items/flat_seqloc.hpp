@@ -48,7 +48,7 @@ class CSeq_loc;
 class CBioseqContext;
 
 
-class CFlatGapLoc : public CSeq_loc
+class NCBI_FORMAT_EXPORT CFlatGapLoc : public CSeq_loc
 {
 public:
     typedef TSeqPos TLength;
@@ -63,7 +63,7 @@ private:
 };
 
 
-class CFlatSeqLoc : public CObject // derived from CObject to allow for caching
+class NCBI_FORMAT_EXPORT CFlatSeqLoc : public CObject // derived from CObject to allow for caching
 {
 public:
     enum EType
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.5  2004/08/19 16:43:15  shomrat
 * changed return type from void to bool for x_Add methods
 *

@@ -52,7 +52,7 @@ class IFormatter;
 //
 // CONTIG
 
-class CContigItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CContigItem : public CFlatItem
 {
 public:
     CContigItem(CBioseqContext& ctx);
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.3  2004/04/22 15:34:41  shomrat
 * Changes in context
 *

@@ -52,7 +52,7 @@ class IFormatter;
 //
 // Version
 
-class CVersionItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CVersionItem : public CFlatItem
 {
 public:
     CVersionItem(CBioseqContext& ctx);
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.2  2004/04/22 15:40:17  shomrat
 * Changes in context
 *

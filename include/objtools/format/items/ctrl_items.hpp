@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 class CBioseqContext;
 
 
-class CCtrlItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CCtrlItem : public CFlatItem
 {
 public:
     CCtrlItem(CBioseqContext* bctx = 0) : CFlatItem(bctx) {}
@@ -59,7 +59,7 @@ public:
 //
 // Signals the start of the data
 
-class CStartItem : public CCtrlItem
+class NCBI_FORMAT_EXPORT CStartItem : public CCtrlItem
 {
 public:
     CStartItem(void) {}
@@ -75,7 +75,7 @@ public:
 // 
 // Signals the begining of a new section
 
-class CStartSectionItem : public CCtrlItem
+class NCBI_FORMAT_EXPORT CStartSectionItem : public CCtrlItem
 {
 public:
     CStartSectionItem(CBioseqContext& ctx) : CCtrlItem(&ctx) {
@@ -93,7 +93,7 @@ public:
 //
 // Signals the end of a section
 
-class CEndSectionItem : public CCtrlItem
+class NCBI_FORMAT_EXPORT CEndSectionItem : public CCtrlItem
 {
 public:
     CEndSectionItem(CBioseqContext& ctx) : CCtrlItem(&ctx) {}
@@ -109,7 +109,7 @@ public:
 //
 // Signals the termination of data
 
-class CEndItem : public CCtrlItem
+class NCBI_FORMAT_EXPORT CEndItem : public CCtrlItem
 {
 public:
     CEndItem(void) {}
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.3  2004/04/22 15:35:01  shomrat
 * Changes in context
 *

@@ -63,7 +63,7 @@ struct SModelEvidance;
 //
 // Comment
 
-class CCommentItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CCommentItem : public CFlatItem
 {
 public:
     enum EType {
@@ -150,7 +150,7 @@ private:
 
 // --- CGenomeAnnotComment
 
-class CGenomeAnnotComment : public CCommentItem
+class NCBI_FORMAT_EXPORT CGenomeAnnotComment : public CCommentItem
 {
 public:
     CGenomeAnnotComment(CBioseqContext& ctx, const string& build_num = kEmptyStr);
@@ -165,7 +165,7 @@ private:
 
 // --- CHistComment
 
-class CHistComment : public CCommentItem
+class NCBI_FORMAT_EXPORT CHistComment : public CCommentItem
 {
 public:
     enum EType {
@@ -186,7 +186,7 @@ private:
 
 // --- CGsdbComment
 
-class CGsdbComment : public CCommentItem
+class NCBI_FORMAT_EXPORT CGsdbComment : public CCommentItem
 {
 public:
     CGsdbComment(const CDbtag& dbtag, CBioseqContext& ctx);
@@ -201,7 +201,7 @@ private:
 
 // --- CLocalIdComment
 
-class CLocalIdComment : public CCommentItem
+class NCBI_FORMAT_EXPORT CLocalIdComment : public CCommentItem
 {
 public:
     CLocalIdComment(const CObject_id& oid, CBioseqContext& ctx);
@@ -216,7 +216,7 @@ private:
 
 // --- CBarcodeComment
 
-class CBarcodeComment : public CCommentItem
+class NCBI_FORMAT_EXPORT CBarcodeComment : public CCommentItem
 {
 public:
     CBarcodeComment(CBioseqContext& ctx);
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.15  2005/04/27 17:06:25  shomrat
 * GetStringForRefTrack signature change
 *

@@ -49,7 +49,7 @@ class IFormatter;
 //
 // ALIGNMENT
 
-class CAlignmentItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CAlignmentItem : public CFlatItem
 {
 public:
     CAlignmentItem(const CSeq_align& align, CBioseqContext& ctx);
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.2  2005/04/13 14:36:56  ucko
 * Accept const Seq_align objects, as there's no reason not to.
 *

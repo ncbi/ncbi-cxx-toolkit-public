@@ -49,7 +49,7 @@ class IFormatter;
 //
 // ORIGIN
 
-class COriginItem : public CFlatItem
+class NCBI_FORMAT_EXPORT COriginItem : public CFlatItem
 {
 public:
     COriginItem(CBioseqContext& ctx);
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.2  2004/04/22 15:37:43  shomrat
 * Changes in context
 *

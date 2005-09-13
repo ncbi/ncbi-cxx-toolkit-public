@@ -54,7 +54,7 @@ class IFormatter;
 //
 // Accession
 
-class CAccessionItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CAccessionItem : public CFlatItem
 {
 public:
     // typedef
@@ -128,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.5  2005/03/28 17:13:26  shomrat
 * Support for complex user location (REGION)
 *

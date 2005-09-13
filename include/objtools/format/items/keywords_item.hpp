@@ -53,7 +53,7 @@ class IFormatter;
 //
 // Keywords
 
-class CKeywordsItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CKeywordsItem : public CFlatItem
 {
 public:
     // types
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.3  2004/10/05 15:29:56  shomrat
 * list -> vector; changes to x_AddKeyword
 *

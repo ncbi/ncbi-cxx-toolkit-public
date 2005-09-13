@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CFeatHeaderItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CFeatHeaderItem : public CFlatItem
 {
 public:
     CFeatHeaderItem(CBioseqContext& ctx);
@@ -68,7 +68,7 @@ private:
 };
 
 
-class CFlatFeature : public CObject
+class NCBI_FORMAT_EXPORT CFlatFeature : public CObject
 {
 public:
     CFlatFeature(const string& key, const CFlatSeqLoc& loc, const CSeq_feat& feat)
@@ -91,7 +91,7 @@ private:
 };
 
 
-class CFeatureItemBase : public CFlatItem
+class NCBI_FORMAT_EXPORT CFeatureItemBase : public CFlatItem
 {
 public:
     CConstRef<CFlatFeature> Format(void) const;
@@ -122,7 +122,7 @@ protected:
 };
 
 
-class CFeatureItem : public CFeatureItemBase
+class NCBI_FORMAT_EXPORT CFeatureItem : public CFeatureItemBase
 {
 public:
     enum EMapped
@@ -240,7 +240,7 @@ private:
 };
 
 
-class CSourceFeatureItem : public CFeatureItemBase
+class NCBI_FORMAT_EXPORT CSourceFeatureItem : public CFeatureItemBase
 {
 public:
     typedef CRange<TSeqPos> TRange;
@@ -305,6 +305,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.26  2005/08/16 16:43:44  shomrat
 * Added SetLoc() to CSourceFeatureItem
 *

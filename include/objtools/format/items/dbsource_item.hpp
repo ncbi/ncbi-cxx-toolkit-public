@@ -48,7 +48,7 @@ class IFormatter;
 //
 // DBSOURCE
 
-class CDBSourceItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CDBSourceItem : public CFlatItem
 {
 public:
     typedef list<string> TDBSource;
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.4  2004/12/06 17:23:07  shomrat
 * Use CSeq_id_Handle instead of CSeq_id
 *

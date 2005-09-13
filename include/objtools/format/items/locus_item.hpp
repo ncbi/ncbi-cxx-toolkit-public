@@ -54,7 +54,7 @@ class IFormatter;
 //
 // Locus
 
-class CLocusItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CLocusItem : public CFlatItem
 {
 public:
     typedef CMolInfo::TBiomol       TBiomol;
@@ -160,6 +160,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.3  2004/08/19 16:17:17  shomrat
 * Added inline methods
 *

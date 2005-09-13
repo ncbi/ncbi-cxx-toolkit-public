@@ -63,7 +63,7 @@ class CBioseqContext;
 /////////////////////////////////////////////////////////////////////////////
 // low-level formatted qualifier
 
-class CFormatQual : public CObject
+class NCBI_FORMAT_EXPORT CFormatQual : public CObject
 {
 public:
     enum EStyle {
@@ -104,7 +104,7 @@ typedef vector<TFlatQual>    TFlatQuals;
 /////////////////////////////////////////////////////////////////////////////
 // abstract qualifier value
 
-class IFlatQVal : public CObject
+class NCBI_FORMAT_EXPORT IFlatQVal : public CObject
 {
 public:
     enum EFlags {
@@ -144,7 +144,7 @@ protected:
 // qualifiers container
 
 template<typename Key>
-class CQualContainer : public CObject
+class NCBI_FORMAT_EXPORT CQualContainer : public CObject
 {
 public:
     // typedef
@@ -206,7 +206,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 // concrete qualifiers
 
-class CFlatBoolQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatBoolQVal : public IFlatQVal
 {
 public:
     CFlatBoolQVal(bool value) : m_Value(value) { }
@@ -217,7 +217,7 @@ private:
 };
 
 
-class CFlatIntQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatIntQVal : public IFlatQVal
 {
 public:
     CFlatIntQVal(int value) : m_Value(value) { }
@@ -232,7 +232,7 @@ private:
 //  tilde mode?
 //  expand SGML entities?
 // (handle via subclasses?)
-class CFlatStringQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatStringQVal : public IFlatQVal
 {
 public:
     CFlatStringQVal(const string& value, TStyle style = CFormatQual::eQuoted);
@@ -252,7 +252,7 @@ protected:
 };
 
 
-class CFlatNumberQVal : public CFlatStringQVal
+class NCBI_FORMAT_EXPORT CFlatNumberQVal : public CFlatStringQVal
 {
 public:
     CFlatNumberQVal(const string& value) :
@@ -264,7 +264,7 @@ public:
 };
 
 
-class CFlatBondQVal : public CFlatStringQVal
+class NCBI_FORMAT_EXPORT CFlatBondQVal : public CFlatStringQVal
 {
 public:
     CFlatBondQVal(const string& value) : CFlatStringQVal(value)
@@ -275,7 +275,7 @@ public:
 };
 
 
-class CFlatGeneQVal : public CFlatStringQVal
+class NCBI_FORMAT_EXPORT CFlatGeneQVal : public CFlatStringQVal
 {
 public:
     CFlatGeneQVal(const string& value) : CFlatStringQVal(value)
@@ -286,7 +286,7 @@ public:
 };
 
 
-class CFlatSiteQVal : public CFlatStringQVal
+class NCBI_FORMAT_EXPORT CFlatSiteQVal : public CFlatStringQVal
 {
 public:
     CFlatSiteQVal(const string& value) : CFlatStringQVal(value)
@@ -297,7 +297,7 @@ public:
 };
 
 
-class CFlatStringListQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatStringListQVal : public IFlatQVal
 {
 public:
     typedef list<string>    TValue;
@@ -321,7 +321,7 @@ protected:
 };
 
 
-class CFlatGeneSynonymsQVal : public CFlatStringListQVal
+class NCBI_FORMAT_EXPORT CFlatGeneSynonymsQVal : public CFlatStringListQVal
 {
 public:
     CFlatGeneSynonymsQVal(const CGene_ref::TSyn& syns) :
@@ -335,7 +335,7 @@ public:
 };
 
 
-class CFlatCodeBreakQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatCodeBreakQVal : public IFlatQVal
 {
 public:
     CFlatCodeBreakQVal(const CCdregion::TCode_break& value) : m_Value(value) { }
@@ -347,7 +347,7 @@ private:
 };
 
 
-class CFlatCodonQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatCodonQVal : public IFlatQVal
 {
 public:
     CFlatCodonQVal(unsigned int codon, unsigned char aa, bool is_ascii = true);
@@ -361,7 +361,7 @@ private:
 };
 
 
-class CFlatExpEvQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatExpEvQVal : public IFlatQVal
 {
 public:
     CFlatExpEvQVal(CSeq_feat::TExp_ev value) : m_Value(value) { }
@@ -373,7 +373,7 @@ private:
 };
 
 
-class CFlatIllegalQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatIllegalQVal : public IFlatQVal
 {
 public:
     CFlatIllegalQVal(const CGb_qual& value) : m_Value(&value) { }
@@ -385,7 +385,7 @@ private:
 };
 
 
-class CFlatLabelQVal : public CFlatStringQVal
+class NCBI_FORMAT_EXPORT CFlatLabelQVal : public CFlatStringQVal
 {
 public:
     CFlatLabelQVal(const string& value)
@@ -394,7 +394,7 @@ public:
 };
 
 
-class CFlatMolTypeQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatMolTypeQVal : public IFlatQVal
 {
 public:
     typedef CMolInfo::TBiomol TBiomol;
@@ -410,7 +410,7 @@ private:
 };
 
 
-class CFlatOrgModQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatOrgModQVal : public IFlatQVal
 {
 public:
     CFlatOrgModQVal(const COrgMod& value) :
@@ -424,7 +424,7 @@ private:
 };
 
 
-class CFlatOrganelleQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatOrganelleQVal : public IFlatQVal
 {
 public:
     CFlatOrganelleQVal(CBioSource::TGenome value) : m_Value(value) { }
@@ -436,7 +436,7 @@ private:
 };
 
 
-class CFlatPubSetQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatPubSetQVal : public IFlatQVal
 {
 public:
     CFlatPubSetQVal(const CPub_set& value) : m_Value(&value) { }
@@ -448,7 +448,7 @@ private:
 };
 
 
-class CFlatSeqIdQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatSeqIdQVal : public IFlatQVal
 {
 public:
     CFlatSeqIdQVal(const CSeq_id& value, bool add_gi_prefix = false) 
@@ -462,7 +462,7 @@ private:
 };
 
 
-class CFlatSeqLocQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatSeqLocQVal : public IFlatQVal
 {
 public:
     CFlatSeqLocQVal(const CSeq_loc& value) : m_Value(&value) { }
@@ -475,7 +475,7 @@ private:
 };
 
 
-class CFlatSubSourceQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatSubSourceQVal : public IFlatQVal
 {
 public:
     CFlatSubSourceQVal(const CSubSource& value) :
@@ -490,7 +490,7 @@ private:
 };
 
 
-class CFlatXrefQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatXrefQVal : public IFlatQVal
 {
 public:
     typedef CSeq_feat::TDbxref                TXref;
@@ -509,7 +509,7 @@ private:
 };
 
 
-class CFlatModelEvQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatModelEvQVal : public IFlatQVal
 {
 public:
     CFlatModelEvQVal(const CUser_object& value) : m_Value(&value) { }
@@ -521,7 +521,7 @@ private:
 };
 
 
-class CFlatGoQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatGoQVal : public IFlatQVal
 {
 public:
     CFlatGoQVal(const CUser_field& value) : m_Value(&value) { }
@@ -533,7 +533,7 @@ private:
 };
 
 
-class CFlatAnticodonQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatAnticodonQVal : public IFlatQVal
 {
 public:
     CFlatAnticodonQVal(const CSeq_loc& ac, const string& aa) :
@@ -547,7 +547,7 @@ private:
 };
 
 
-class CFlatTrnaCodonsQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatTrnaCodonsQVal : public IFlatQVal
 {
 public:
     CFlatTrnaCodonsQVal(const CTrna_ext& trna, const string& comment) : 
@@ -562,7 +562,7 @@ private:
 };
 
 
-class CFlatProductNamesQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatProductNamesQVal : public IFlatQVal
 {
 public:
     CFlatProductNamesQVal(const CProt_ref::TName& value, const string& gene) : 
@@ -586,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.23  2005/08/16 16:46:10  shomrat
 * Changed CFlatProductQVal, now CFlatProductNamesQVal
 *

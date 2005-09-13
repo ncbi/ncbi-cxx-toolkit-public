@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 class CBioseqContext;
 
 
-class CFlatItem : public IFlatItem
+class NCBI_FORMAT_EXPORT CFlatItem : public IFlatItem
 {
 public:
     virtual void Format(IFormatter& formatter,
@@ -171,6 +171,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/09/13 17:16:38  jcherry
+* Added export specifiers
+*
 * Revision 1.6  2005/01/12 17:24:26  vasilche
 * Avoid performance warning on MSVC.
 *
