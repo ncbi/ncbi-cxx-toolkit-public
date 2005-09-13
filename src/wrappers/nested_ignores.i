@@ -58,8 +58,6 @@
 
 %ignore *::CTSE_Info_SIdAnnotInfo;  // in objmgr/impl
 
-%ignore ncbi::CCompartmentFinder_CCompartment::SetMembers;
-
 %ignore ncbi::objects::CSeqVector_CI_CTempValue;
 
 %ignore *::CAlignInfo_CExon::GetGenomicLocation();
@@ -77,15 +75,7 @@
 
 %ignore *::CMemoryRegistry_SSection;
 
-// A friend defined in the CComparmentFinder::CCompartment body
-%ignore PLowerSubj;
-%ignore *::PLowerSubj;
-%ignore ncbi::PLowerSubj;
-%ignore ncbi::CCompartmentFinder_CCompartment::PLowerSubj;
-
 %ignore ncbi::CSplign_SAlignedCompartment::m_segments;
-%ignore ncbi::CCompartmentFinder_CCompartment::GetMembers;
-%ignore ncbi::CCompartmentFinder_CCompartment::operator<;
 
 %ignore *::CDisplaySeqalign_SeqlocInfo;
 
@@ -127,6 +117,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/09/13 15:23:24  jcherry
+ * Remove %ignore's related to CCompartmentFinder, which no longer exists
+ *
  * Revision 1.6  2005/08/31 17:02:55  jcherry
  * %ignore CSeqMaskerIstat::optimization_data and
  * CEventHandler::SPostRequest::m_DispHow
