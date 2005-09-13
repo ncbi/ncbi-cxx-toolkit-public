@@ -316,7 +316,7 @@ on SetProjectData()
 		
 		AddAppProjectList("test_gui_registry", {"cmdline"}, "gui:objutils:test", {"test_gui_registry.cpp"}, {"gui_objutils", "gui_utils", "xalnmgr", "xobjutil", "tables"} & objMgrLibs, {})
 		
-		AddAppProjectList("demo_multialign", {"fltk", "libdl", "images"}, "gui:widgets:aln_multiple:demo", {"multi_demo.cpp", "multi_demo_ui.cpp"}, {"w_aln_multi", "w_aln_data", "w_gl", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "biotree", "ximage", "xformat", "gbseq", "xalnmgr", "tables", "xobjutils", "seqalign_ext"} & objMgrLibs, {})
+		AddAppProjectList("demo_multialign", {"fltk", "libdl", "images"}, "gui:widgets:aln_multiple:demo", {"multi_demo.cpp", "multi_demo_ui.cpp"}, {"w_aln_multi", "w_aln_data", "w_gl", "w_data", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "biotree", "ximage", "xformat", "gbseq", "xalnmgr", "tables", "xobjutils", "seqalign_ext"} & objMgrLibs, {})
 		
 		AddAppProject("demo_seqgraphic", {"fltk", "libdl", "images"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
@@ -324,7 +324,7 @@ on SetProjectData()
 		
 		AddAppProjectList("demo_workspace", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_workspace.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & commonObjLibs & CompressLibs, {})
 		
-		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
+		AddAppProjectList("bdbtest", {"bdb"}, "bdb:test", {"test_bdb.cpp"}, {"bdb", "libdb", "xncbi", "xutil"}, {})
 		
 		AddAppProjectList("demo_config_dlg", {"fltk", "images"}, "gui:widgets:config:demo", {"test_config_dlg.cpp"}, {"w_seq_graphic", "w_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils", "ximage", "xalnmgr", "tables"} & objMgrLibs, {})
 		
@@ -680,6 +680,12 @@ on SetupTarget(proj, targetIndex)
 			Set Preferences of panel targetPanelName to ppcProject of projSettings
 		end if
 		
+		if projFeatures contains "fltklib" then
+			-- path for our special fltk config.h file.
+			my AppendAccessPath(gRsrcsDir & "fltk:", false, false)
+			-- erase the stuff in the preprocesser panel so we do not depend on the ncbi tree.
+			Set Preferences of panel "C/C++ Preprocessor" to {Prefix Text:""}
+		end if
 		if projFeatures contains "fltk" or projFeatures contains "fltklib" then
 			my AppendAccessPath(gFLTKRootFolder & "FL:", false, true)
 			my AppendAccessPath(gFLTKRootFolder, false, false)

@@ -1,3 +1,4 @@
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -345,6 +346,7 @@ on SetProjectData()
 		AddObject("featdef")
 		AddObject("gbseq")
 		AddSimpleProjectListFiles("general", {}, "objects:general", {"general__", "general___", "uoconv", "cleanup_utils"})
+		AddObject("homologene")
 		AddObject("id1")
 		AddSimpleProjectListFiles("id1cli", {}, "objects:id1", {"id1_client", "id1_client_"})
 		AddObject("id2")
@@ -414,6 +416,7 @@ on SetProjectData()
 		
 		-- AddSimpleProject("xalgoalignutil", {}, "algo:align:util") -- fix.
 		AddSimpleProject("xalgodustmask", {}, "algo:dustmask")
+		AddSimpleProject("xalgowinmask", {}, "algo:winmask")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xstruct_dp", {}, "algo:structure:struct_dp")
 		-- AddSimpleProject("xstruct_util", {}, "algo:structure:struct_util")
@@ -476,9 +479,9 @@ on SetProjectData()
 		AddGuiProject("w_workspace", {}, "widgets:workspace")
 		AddGuiProject("w_serial_browse", {}, "widgets:serial_browse")
 		AddGuiProject("w_feat_compare", {}, "widgets:feat_compare")
-		
 		AddGuiProject("w_feat_table", {}, "widgets:feat_table")
 		AddGuiProject("w_controls", {}, "widgets:controls")
+		AddGuiProject("w_data", {}, "widgets:data")
 		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
@@ -517,7 +520,8 @@ on SetProjectData()
 			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images", "sqlitelib"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "xalgodustmask"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", Â
+			"gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask"}, {}))
 		
 		-- PLUGINS --
 		
@@ -1100,7 +1104,7 @@ on SetupTarget(proj, targetIndex)
 		on error errmsg number errnum
 			-- ignore errors when none of those libraries exist.
 			-- happens when populating a target when we haven't built any of the libraries for that target spec.
-			if errnum is not 9393 then error errmsg number errnum
+			if errnum is not 9393 and errnum is not 5440 then error errmsg number errnum
 		end try
 	end tell
 	
@@ -1339,9 +1343,10 @@ on CreateProject(proj)
 		else if pUpdateExistingProjects then
 			-- project already exists. Make sure it has all right files.
 			
-			-- "w_phylo_tree" has a file name that is too long for out update mechanism. 
-			-- So just skip it.It is pretty stable. Shouldn't be any new source files.
-			if proj's name is not "w_phylo_tree" then
+			-- "w_phylo_tree" and "xalgowinmask  have  file names that are too long for our update mechanism. 
+			-- So just skip them. It is pretty stable. Shouldn't be any new source files.
+			-- If there are just delete those projects and rebuild them.
+			if proj's name is not "w_phylo_tree" and proj's name is not "xalgowinmask" then
 				
 				open (projPathname)
 				set openedProject to true
