@@ -81,6 +81,7 @@ public:
     void  SetStrand(Uint1 where, bool strand);
     void  SetQueryStrand(bool strand);
     void  SetSubjStrand(bool strand);
+    void  FlipStrands(void);
 
     typedef TSeqPos TCoord;
     
@@ -144,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/09/13 15:55:51  kapustin
+ * +FlipStrand()
+ *
  * Revision 1.13  2005/09/12 16:21:34  kapustin
  * Add compartmentization algorithm
  *

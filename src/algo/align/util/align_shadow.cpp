@@ -36,6 +36,8 @@
 
 BEGIN_NCBI_SCOPE
 
+const CAlignShadow::TCoord g_UndefCoord 
+    = numeric_limits<CAlignShadow::TCoord>::max();
 
 CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align)
 {
@@ -117,7 +119,7 @@ CNcbiOstream& operator << (CNcbiOstream& os, const CAlignShadow& align_shadow)
 
 CAlignShadow::CAlignShadow(void)
 {
-    m_Box[0] = m_Box[1] = m_Box[2] = m_Box[3] = TCoord(-1);
+    m_Box[0] = m_Box[1] = m_Box[2] = m_Box[3] = g_UndefCoord;
 }
 
 
@@ -210,10 +212,9 @@ void CAlignShadow::SetStrand(Uint1 where, bool strand)
     }
 #endif
 
-    const TCoord undef_coord = TCoord(-1);
     const Uint1 i1 = where << 1, i2 = i1 + 1;
 
-    if(m_Box[i1] == undef_coord || m_Box[i1] == undef_coord) {
+    if(m_Box[i1] == g_UndefCoord || m_Box[i1] == g_UndefCoord) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::SetStrand() -start and/or stop not yet set");
     }
@@ -234,6 +235,13 @@ void CAlignShadow::SetQueryStrand(bool strand)
 void CAlignShadow::SetSubjStrand(bool strand)
 {
     SetStrand(1, strand);
+}
+
+
+void CAlignShadow::FlipStrands(void) 
+{
+    SetQueryStrand(!GetQueryStrand());
+    SetSubjStrand(!GetSubjStrand());
 }
 
 
@@ -391,8 +399,7 @@ void CAlignShadow::SetMin(Uint1 where, TCoord val)
 
     Uint1 i1 = where << 1, i2 = i1 + 1;
 
-    const TCoord undef_coord = TCoord(-1);
-    if(m_Box[i1] == undef_coord || m_Box[i1] == undef_coord) {
+    if(m_Box[i1] == g_UndefCoord || m_Box[i1] == g_UndefCoord) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::SetMin() - start and/or stop not yet set");
     }
@@ -424,8 +431,7 @@ void CAlignShadow::SetMax(Uint1 where, TCoord val)
 
     Uint1 i1 = where << 1, i2 = i1 + 1;
 
-    const TCoord undef_coord = TCoord(-1);
-    if(m_Box[i1] == undef_coord || m_Box[i1] == undef_coord) {
+    if(m_Box[i1] == g_UndefCoord || m_Box[i1] == g_UndefCoord) {
         NCBI_THROW(CAlgoAlignUtilException, eBadParameter,
                    "CAlignShadow::SetMax() - start and/or stop not yet set");
     }
@@ -652,6 +658,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.13  2005/09/13 15:56:31  kapustin
+ * +FlipStrand()
+ *
  * Revision 1.12  2005/09/12 16:23:15  kapustin
  * +Modify()
  *
