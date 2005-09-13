@@ -162,6 +162,7 @@ public:
     void Test_Procedure(void);
     void Test_Bulk_Writing(void);
     void Test_GetColumnNo(void);
+    void Test_LOB(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -216,6 +217,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2005/09/13 14:47:35  ssikorsk
+ * Added a Test_LOB test to the test-suite
+ *
  * Revision 1.24  2005/09/07 11:08:19  ssikorsk
  * Added Test_GetColumnNo to the test-suite
  *

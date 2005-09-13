@@ -128,6 +128,7 @@ public:
     void Test_callproc(void);
     void TestExecuteStoredProc(void);
     void Test_SelectStmt(void);
+    void Test_LOB(void);
 
     // Test scenarios.
     void TestTransaction(void);
@@ -158,6 +159,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/09/13 14:44:58  ssikorsk
+ * Added a Test_LOB test to the test-suite
+ *
  * Revision 1.10  2005/09/07 11:14:44  ssikorsk
  * Added Test_SelectStmt to the test-suite
  *
