@@ -586,7 +586,7 @@ static string x_TitleFromChromosome(const CBioSource& source,
         break;
     case CBioSource::eGenome_virion:
         if (!is_virus) {
-            orgnl = "virion";
+            orgnl = "virus";
         }
         break;
     case CBioSource::eGenome_nucleomorph:  orgnl = "nucleomorph";   break;
@@ -868,6 +868,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.52  2005/09/13 15:29:40  ucko
+* x_TitleFromChromosome: substitute "virus" for "virion" per recent
+* changes to the C Toolkit.
+*
 * Revision 1.51  2005/07/15 18:17:08  ucko
 * Substitute "transcript variant" for "isoform" when describing RefSeq
 * mRNA records, per a recent change to the C Toolkit.
