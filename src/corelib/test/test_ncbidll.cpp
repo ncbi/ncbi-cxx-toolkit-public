@@ -95,9 +95,11 @@ static void s_TEST_SimpleDll(void)
     
     string* str = Dll_StrRepeat("ab",2);
     assert( *str == "abab");
+    delete str;
 
     str = Dll_StrRepeat("a",4);  
     assert( *str == "aaaa");
+    delete str;
 
     // Unload used dll
     dll.Unload();
@@ -220,6 +222,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2005/09/13 18:37:45  ivanov
+ * Fixed memory leak
+ *
  * Revision 6.11  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
