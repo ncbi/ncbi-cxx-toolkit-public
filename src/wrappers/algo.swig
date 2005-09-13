@@ -67,7 +67,6 @@ algo/align/nw/nw_spliced_aligner32.hpp
 algo/align/nw/nw_band_aligner.hpp
 algo/align/nw/nw_pssm_aligner.hpp
 algo/align/splign/splign.hpp
-algo/align/splign/splign_compartment_finder.hpp
 algo/align/splign/splign_formatter.hpp
 // "temporary" code, has problems
 //algo/align/splign/splign_hit.hpp
@@ -252,6 +251,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/09/13 15:22:34  jcherry
+ * Remove splign_compartment_finder.hpp, which no longer exists
+ *
  * Revision 1.7  2005/08/23 13:06:59  jcherry
  * Added vector<CRef<CSeq_align> >
  *
