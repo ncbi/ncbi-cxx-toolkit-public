@@ -73,13 +73,14 @@ NCBI_XBLAST_EXPORT
 int Blast_CompositionWorkspaceInit(Blast_CompositionWorkspace * NRrecord,
                                    const char *matrixName);
 NCBI_XBLAST_EXPORT
-double 
+int 
 Blast_AdjustComposition(const char *matrixName,
                         int length1, int length2,
                         const double *probArray1, 
                         const double *probArray2,
                         int pseudocounts, double specifiedRE, 
-                        Blast_CompositionWorkspace * NRrecord);
+                        Blast_CompositionWorkspace * NRrecord,
+                        double * lambdaComputed);
 
 #ifdef __cplusplus
 }

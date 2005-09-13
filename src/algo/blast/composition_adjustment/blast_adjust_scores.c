@@ -337,7 +337,7 @@ Blast_CalcLambdaForComposition(Blast_CompositionWorkspace * NRrecord,
  *   optimization constraint
  * - NRrecord stores all field needed for multidimensional Newton's
  *   method lambda is returned*/
-double
+int
 Blast_AdjustComposition(const char *matrixName,
                         int length1,
                         int length2,
@@ -345,7 +345,8 @@ Blast_AdjustComposition(const char *matrixName,
                         const double * probArray2,
                         int pseudocounts,
                         double specifiedRE,
-                        Blast_CompositionWorkspace * NRrecord)
+                        Blast_CompositionWorkspace * NRrecord,
+                        double * lambdaComputed)
 {
     int i;                         /* loop indices */
     double re_o_newcontext = 0.0;  /* relative entropy implied by
@@ -360,7 +361,6 @@ Blast_AdjustComposition(const char *matrixName,
     static int max_iterations = 0; /* maximum number of iterations
                                       observed in a call to
                                       compute_new_score_matrix */
-    double lambdaComputed = 1.0;   /* lambda computed this composition */
     /*Is the relative entropy constrained? Behaves as boolean for now*/
     int constrain_rel_entropy =
         eUnconstrainedRelEntropy != NRrecord->flag;
@@ -376,7 +376,7 @@ Blast_AdjustComposition(const char *matrixName,
     re_o_newcontext =
         Blast_CalcLambdaForComposition(
             NRrecord, (NRrecord->flag == eRelEntropyOldMatrixNewContext),
-            &lambdaComputed);
+            lambdaComputed);
     switch (NRrecord->flag) {
     case eUnconstrainedRelEntropy:
         /* Initialize to a arbitrary value; it won't be used */
@@ -431,8 +431,8 @@ Blast_AdjustComposition(const char *matrixName,
     if (NRrecord->flag == eUnconstrainedRelEntropy) {
         /* Compute the unconstrained relative entropy */
         double re_free =
-            Blast_CalcLambdaForComposition(NRrecord, 1, &lambdaComputed);
+            Blast_CalcLambdaForComposition(NRrecord, 1, lambdaComputed);
         printf("RE_uncons  = %6.4f\n\n", re_free);
     }
-    return lambdaComputed;
+    return 0;
 }
