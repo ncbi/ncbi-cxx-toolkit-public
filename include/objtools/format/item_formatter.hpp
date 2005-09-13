@@ -118,8 +118,6 @@ protected:
     typedef NStr::TWrapFlags    TWrapFlags;
 
     CFlatItemFormatter(void) : m_WrapFlags(NStr::fWrap_FlatFile) {}
-    CFlatItemFormatter(const CFlatItemFormatter&);
-    CFlatItemFormatter& operator=(const CFlatItemFormatter&);
 
     enum EPadContext {
         ePara,
@@ -163,6 +161,9 @@ protected:
     TWrapFlags& SetWrapFlags(void) { return m_WrapFlags; }
 
 private:
+    CFlatItemFormatter(const CFlatItemFormatter&);
+    CFlatItemFormatter& operator=(const CFlatItemFormatter&);
+
     // data
     string                 m_Indent;
     string                 m_FeatIndent;
@@ -180,6 +181,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/09/13 19:22:33  jcherry
+* Added export specifier.  Changed declarations of unimplemented copy ctor
+* and assignment operator from protected to private.
+*
 * Revision 1.13  2005/09/07 16:04:32  shomrat
 * Added export specifier
 *
