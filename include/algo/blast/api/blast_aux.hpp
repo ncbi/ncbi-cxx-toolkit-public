@@ -165,6 +165,7 @@ typedef vector<list<CRef<CSeqLocInfo> > > TSeqLocInfoVector;
 /// @param mask All masking locations [in]
 /// @param mask_v Vector of per-query lists of mask locations in CSeqLocInfo 
 ///               form. [out]
+NCBI_XBLAST_EXPORT
 void 
 Blast_GetSeqLocInfoVector(EBlastProgramType program, 
                           vector< CRef<objects::CSeq_id> >& seqid_v,
@@ -271,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/09/13 18:54:45  jcherry
+* Added missing export specifier
+*
 * Revision 1.63  2005/08/30 20:31:37  camacho
 * + parametrized constructor for CSeqLocInfo
 *
