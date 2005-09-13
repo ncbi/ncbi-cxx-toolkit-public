@@ -37,6 +37,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objtools/format/items/item_base.hpp>
 
+#include <objects/general/Date.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -44,7 +45,6 @@ BEGIN_SCOPE(objects)
 
 class CBioseqContext;
 class IFormatter;
-class CDate;
 class CBioseq_Handle;
 
 
@@ -52,7 +52,7 @@ class CBioseq_Handle;
 //
 // END SECTION
 
-class CDateItem : public CFlatItem
+class NCBI_FORMAT_EXPORT CDateItem : public CFlatItem
 {
 public:
     CDateItem(CBioseqContext& ctx);
@@ -78,6 +78,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/09/13 17:16:21  jcherry
+* Added export specifier.  Changed forward declaration of CDate to
+* #include of Date.hpp to accomodate MSVC.
+*
 * Revision 1.2  2004/04/22 15:35:16  shomrat
 * Changes in context
 *
