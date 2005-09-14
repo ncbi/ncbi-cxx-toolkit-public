@@ -125,6 +125,16 @@ CTDSContext::CTDSContext(DBINT version) :
 }
 
 
+bool CTDSContext::ConnectedToMSSQLServer(void) const
+{
+    return (m_TDSVersion == DBVERSION_70 || m_TDSVersion == DBVERSION_80);
+}
+
+int CTDSContext::GetTDSVersion(void) const
+{
+    return m_TDSVersion;
+}
+
 bool CTDSContext::SetLoginTimeout(unsigned int nof_secs)
 {
     m_LoginTimeout= nof_secs;
@@ -675,6 +685,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/09/14 14:12:26  ssikorsk
+ * Implement ConnectedToMSSQLServer and GetTDSVersion methods for the CFTDSContext class
+ *
  * Revision 1.41  2005/07/20 13:17:39  ssikorsk
  * NCBI_DBAPIDRIVER_FTDS_EXPORT -> NCBI_DBAPIDRIVER_DBLIB_EXPORT
  *
