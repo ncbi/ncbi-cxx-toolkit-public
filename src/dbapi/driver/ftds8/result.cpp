@@ -1312,13 +1312,12 @@ bool CTDS_CursorResult::Fetch()
         // finish this command
         if (m_Res)
             delete m_Res;
+        
         while (m_Cmd->HasMoreResults()) {
-            m_Res = m_Cmd->Result();
-            if (m_Res) {
-                while (m_Res->Fetch())
+            auto_ptr<CDB_Result> res( m_Cmd->Result() );
+            if (res.get()) {
+                while (res->Fetch())
                     continue;
-                delete m_Res;
-                m_Res = 0;
             }
         }
         // send the another "fetch cursor_name" command
@@ -1459,6 +1458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/09/14 14:16:25  ssikorsk
+ * Small improvement
+ *
  * Revision 1.18  2005/09/07 11:06:32  ssikorsk
  * Added a GetColumnNum implementation
  *
