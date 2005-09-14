@@ -351,7 +351,7 @@ class NCBI_FORMAT_EXPORT CFlatCodonQVal : public IFlatQVal
 {
 public:
     CFlatCodonQVal(unsigned int codon, unsigned char aa, bool is_ascii = true);
-    CFlatCodonQVal(const string& value); // for imports
+    // CFlatCodonQVal(const string& value); // for imports
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
@@ -586,6 +586,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/09/14 18:44:15  jcherry
+* Commented out declaration of unimplemented constructor
+*
 * Revision 1.24  2005/09/13 17:16:38  jcherry
 * Added export specifiers
 *

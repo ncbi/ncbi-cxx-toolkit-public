@@ -110,7 +110,7 @@ class CFlatCodonQV : public IFlatQV
 {
 public:
     CFlatCodonQV(unsigned int codon, unsigned char aa, bool is_ascii = true);
-    CFlatCodonQV(const string& value); // for imports
+    // CFlatCodonQV(const string& value); // for imports
     void Format(TFlatQuals& quals, const string& name, CFlatContext& ctx,
                 TFlags flags) const;
 
@@ -277,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/14 18:44:15  jcherry
+* Commented out declaration of unimplemented constructor
+*
 * Revision 1.5  2004/07/21 23:41:28  jcherry
 * Removed const qualifier from argument passed by value
 *
