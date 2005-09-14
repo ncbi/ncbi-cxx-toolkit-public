@@ -691,11 +691,16 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	int iSearch, hits;
 	unsigned char *Sequence;  // start position
 	int endposition, position;
+
+    // initialize fixed mods
 	FixedMods.Init(MyRequest->GetSettings().GetFixed(), Modset);
 	MassArray.Init(FixedMods, MyRequest->GetSettings().GetProductsearchtype(), Modset);
 	PrecursorMassArray.Init(FixedMods, 
                             MyRequest->GetSettings().GetPrecursorsearchtype(), Modset);
-	VariableMods.Init(MyRequest->GetSettings().GetVariable(), Modset);
+    // initialize variable mods and set enzyme to use n-term methionine cleavage
+	enzyme->SetNMethionine() = 
+        VariableMods.Init(MyRequest->GetSettings().GetVariable(), Modset);
+
 	const int *IntMassArray = MassArray.GetIntMass();
 	const int *PrecursorIntMassArray = PrecursorMassArray.GetIntMass();
 	const char *PepStart[MAXMISSEDCLEAVE];
@@ -704,15 +709,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
     // contains informations on individual mod sites
     CMod ModList[MAXMISSEDCLEAVE][MAXMOD];
 
-	// the position within the peptide of a variable modification
-//	const char *Site[MAXMISSEDCLEAVE][MAXMOD];
-	// the modification mass at the Site
-//	int DeltaMass[MAXMISSEDCLEAVE][MAXMOD];
-	// the modification type (used for saving for output)
-//	int ModEnum[MAXMISSEDCLEAVE][MAXMOD];
-	// track fixed mods
-//	int IsFixed[MAXMISSEDCLEAVE][MAXMOD];
-	// the number of modifications + 1 unmodified
 	int NumMod[MAXMISSEDCLEAVE];
     // the number of modification sites.  always less than NumMod.
 	int NumModSites[MAXMISSEDCLEAVE];
@@ -1627,6 +1623,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.58  2005/09/14 17:46:11  lewisg
+treat n-term methionine cut as cleavage
+
 Revision 1.57  2005/09/14 15:30:17  lewisg
 neutral loss
 

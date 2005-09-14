@@ -61,8 +61,17 @@ class NCBI_XOMSSA_EXPORT CMSMod {
 public:
     CMSMod(void) {};
     CMSMod(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Modset);
-    // initialize variable mod type array
-    void Init(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Modset);
+
+    /**
+     *  initialize variable mod type array
+     * 
+     * @param Mods list of input mods
+     * @param Modset container for mods
+     * @return was methionine cleavage one of the mods?
+     */
+    bool Init(const CMSSearchSettings::TVariable &Mods,
+               CRef<CMSModSpecSet> Modset);
+
     const CMSSearchSettings::TVariable &GetAAMods(EMSModType Type) const;    
 private:
     CMSSearchSettings::TVariable ModLists[eMSModType_modmax];
@@ -86,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/09/14 17:46:11  lewisg
+* treat n-term methionine cut as cleavage
+*
 * Revision 1.11  2005/03/14 22:29:54  lewisg
 * add mod file input
 *

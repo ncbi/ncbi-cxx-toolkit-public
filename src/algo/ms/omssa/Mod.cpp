@@ -53,16 +53,25 @@ CMSMod::CMSMod(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Mod
     Init(Mods, Modset);
 }
 
-void CMSMod::Init(const CMSSearchSettings::TVariable &Mods, CRef<CMSModSpecSet> Modset)
+bool CMSMod::Init(const CMSSearchSettings::TVariable &Mods,
+                  CRef<CMSModSpecSet> Modset)
 {
+    bool retval(false);
+
     CMSSearchSettings::TVariable::const_iterator iMods;
     if (!Modset || !Modset->IsArrayed()) {
         ERR_POST(Error << "CMSMod::Init: not able to use modification arrays");
-        return;
+        return false;
     }
     for(iMods = Mods.begin(); iMods != Mods.end(); iMods++) {
+        // if methionine cleavage, skip
+        if(*iMods == eMSMod_ntermmcleave) {
+            retval = true;
+            continue;
+        }
 	    ModLists[Modset->GetModType(*iMods)].push_back(*iMods);
     }
+    return retval;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -74,6 +83,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/14 17:46:11  lewisg
+* treat n-term methionine cut as cleavage
+*
 * Revision 1.5  2005/03/14 22:29:54  lewisg
 * add mod file input
 *

@@ -471,7 +471,7 @@ public:
                     CMod ModList[],
                     const int *IntCalcMass,  // array of int AA masses
                     const int *PrecursorIntCalcMass, // precursor masses
-                     CRef <CMSModSpecSet> Modset,
+                    CRef <CMSModSpecSet> Modset,
                     int Maxproductions
                     );
 
@@ -481,9 +481,10 @@ public:
      *  Used by CalcAndCut
      * 
      * @param iPepStart pointer to location of sequence cursor
+     * @param iSeqStart points to start of the sequence
      */
 
-    bool CheckCleave(const char *iPepStart);
+    bool CheckCleave(const char *iPepStart, const char *iSeqStart);
 
 
     /**
@@ -532,9 +533,9 @@ public:
                      CRef <CMSModSpecSet> Modset
              );
 
-///
-/// checks all mods for a particular type
-///
+    /**
+     * checks all mods for a particular type
+     */
     void CheckMods(EMSModType NonSpecific, EMSModType Specific,
                    CMSMod &VariableMods, CMSMod &FixedMods,
 				   int& NumMod, char SeqChar, int MaxNumMod,
@@ -566,6 +567,16 @@ public:
       * Get the number of cleavage chars
       */
     int GetCleaveNum(void) const;
+
+    /**
+     * Is there n-term methionine cleavage?
+     */
+    bool GetNMethionine(void) const;
+
+    /**
+     * Set n-term methionine cleavage
+     */
+    bool& SetNMethionine(void);
 
 protected:
     int ProtonMass; // mass of the proton
@@ -610,6 +621,11 @@ protected:
      * Should we apply the proline rule (no cleavage before proline)
      */
     bool CheckProline;
+
+    /**
+     * n-terminal methionine cleavage
+     */
+    bool NMethionine;
 };    
 
 
@@ -638,8 +654,14 @@ bool CCleave::CheckCleaveChar(const char *iPepStart) const
  * @param iPepStart pointer to location of sequence cursor
  */
 inline
-bool CCleave::CheckCleave(const char *iPepStart)
+bool CCleave::CheckCleave(const char *iPepStart, const char *iSeqStart)
 {
+    // methionine cleavage
+    // (allowed even if TopDown or NonSpecific)
+    if(iPepStart == iSeqStart && NMethionine && *(iPepStart) == '\x0c') {
+        return true;
+    }
+
     if(TopDown) return false; // todo: methionine cleavage allowed
 
     if(NonSpecific) {
@@ -795,6 +817,21 @@ int CCleave::GetCleaveNum(void) const
 {
     return kCleave;
 }
+
+
+inline
+bool CCleave::GetNMethionine(void) const
+{
+    return NMethionine;
+}
+
+
+inline
+bool& CCleave::SetNMethionine(void)
+{
+    return NMethionine;
+}
+
 
 /////////////////// end of CCleave inline methods
 
@@ -971,6 +1008,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.26  2005/09/14 17:46:11  lewisg
+  treat n-term methionine cut as cleavage
+
   Revision 1.25  2005/09/14 17:11:09  lewisg
   retval for assignment operator
 

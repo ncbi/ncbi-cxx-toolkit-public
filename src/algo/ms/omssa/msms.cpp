@@ -70,7 +70,7 @@ CAA::CAA(void)
 //
 
 
-CCleave::CCleave(void): CleaveAt(0), kCleave(0)
+CCleave::CCleave(void): CleaveAt(0), kCleave(0), NMethionine(false)
 {
     ProtonMass = static_cast <int> (kProton*MSSCALE);
     TermMass = static_cast <int> 
@@ -166,7 +166,7 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     	CalcMass(SeqChar, Masses, PrecursorIntCalcMass);
     
     	// check for cleavage point
-    	if(CheckCleave(*PepStart)) { 
+    	if(CheckCleave(*PepStart, SeqStart)) { 
             // check c term peptide mods
             CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, 
                       ModList, *PepStart, Modset);
@@ -608,6 +608,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.26  2005/09/14 17:46:11  lewisg
+  treat n-term methionine cut as cleavage
+
   Revision 1.25  2005/09/14 15:30:17  lewisg
   neutral loss
 
