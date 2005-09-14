@@ -361,7 +361,7 @@ CDBAPIUnitTest::Test_GetColumnNo(void)
             "	contained tinyint NOT NULL , \n"
             "	seq_align text  NULL , \n"
             "	merged_sa char (1) NOT NULL , \n"
-            "	CONSTRAINT PK_Overlaps PRIMARY KEY CLUSTERED  \n"
+            "	PRIMARY KEY  \n"
             "	( \n"
             "		pairId, \n"
             "		overlapNum \n"
@@ -609,40 +609,63 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         }
     }
 
-    // Yet another BIGINT test ...
+    // Yet another BIGINT test (and more) ...
     {
         auto_ptr<IStatement> stmt( m_Conn->CreateStatement() );
         
-        stmt->ExecuteUpdate(
-            "create table #__blki_test ( name char(32) not null, value bigint null )" );
-        stmt->Close();
+        // Create table ...
+        {
+            stmt->ExecuteUpdate(
+                // "create table #__blki_test ( name char(32) not null, value bigint null )" );
+                "create table #__blki_test ( name char(32), value bigint null )" );
+            stmt->Close();
+        }
         
-        auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+        // First test ...
+        {
+            auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+
+            CVariant col1(eDB_Char,32);
+            CVariant col2(eDB_BigInt);
+
+            blki->Bind(1, &col1);
+            blki->Bind(2, &col2);
+
+            col1 = "Hello-1";
+            col2 = Int8( 123 );
+            blki->AddRow();
+
+            col1 = "Hello-2";
+            col2 = Int8( 1234 );
+            blki->AddRow();
+
+            col1 = "Hello-3";
+            col2 = Int8( 12345 );
+            blki->AddRow();
+
+            col1 = "Hello-4";
+            col2 = Int8( 123456 );
+            blki->AddRow();
+
+            blki->Complete();
+            blki->Close();
+        }
         
-        CVariant col1(eDB_Char,32);
-        CVariant col2(eDB_BigInt);
-        
-        blki->Bind(1, &col1);
-        blki->Bind(2, &col2);
-        
-        col1 = "Hello-1";
-        col2 = Int8( 123 );
-        blki->AddRow();
-        
-        col1 = "Hello-2";
-        col2 = Int8( 1234 );
-        blki->AddRow();
-        
-        col1 = "Hello-3";
-        col2 = Int8( 12345 );
-        blki->AddRow();
-        
-        col1 = "Hello-4";
-        col2 = Int8( 123456 );
-        blki->AddRow();
-        
-        blki->Complete();
-        blki->Close();
+        // Second test ...
+        {
+            auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+
+            CVariant col1(eDB_Char,64);
+            CVariant col2(eDB_BigInt);
+
+            blki->Bind(1, &col1);
+            blki->Bind(2, &col2);
+            
+            string name(8000, 'A');
+            col1 = name;
+            col2 = Int8( 123 );
+            blki->AddRow();
+        }
     }
     
     // VARCHAR ...
@@ -739,7 +762,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 } 
             }
         }
-    }
+    } 
 }
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
@@ -2912,6 +2935,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2005/09/14 17:58:57  ssikorsk
+ * Do not use named constraints with a temporary table
+ *
  * Revision 1.41  2005/09/14 14:18:15  ssikorsk
  * Enabled Test_Cursor and Test_LOB tests for ctlib and ftds + MSSQL only
  *
