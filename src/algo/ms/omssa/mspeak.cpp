@@ -161,7 +161,8 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 						   int NumMod,
 						   const char *PepStart,
                            int Searchctermproduct,
-                           int Searchb1
+                           int Searchb1,
+                           int TheoreticalMassIn
 						   )
 {
     // create hitlist.  note that this is deleted in the copy operator
@@ -171,6 +172,7 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 	NumModInfo = CountMods(ModMask,NumMod);
 	ModInfo.reset(new CMSModInfo[NumModInfo]);
 
+    TheoreticalMass = TheoreticalMassIn;
 
     // increment thru hithist
     int iHitInfo(0); 

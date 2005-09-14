@@ -1018,7 +1018,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 									  NumMod[iMissed],
 									  PepStart[iMissed],
                                       MyRequest->GetSettings().GetSearchctermproduct(),
-                                      MyRequest->GetSettings().GetSearchb1()
+                                      MyRequest->GetSettings().GetSearchb1(),
+                                      SetMassAndMask(iMissed, iMod).Mass
 									  );
 				    }
 				}
@@ -1287,6 +1288,7 @@ TaxContinue2:
 		}
 		else {
 		    Hit = new CMSHits;
+            Hit->SetTheomass(MSHit->GetTheoreticalMass());
 		    Hit->SetPepstring(seqstring);
             Hit->SetProtlength(length);
             // set the start AA, if there is one
@@ -1623,6 +1625,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.59  2005/09/14 18:50:56  lewisg
+add theoretical mass to hit
+
 Revision 1.58  2005/09/14 17:46:11  lewisg
 treat n-term methionine cut as cleavage
 

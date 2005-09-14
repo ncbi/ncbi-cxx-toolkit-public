@@ -214,9 +214,14 @@ public:
     // return number of hits above threshold
     int GetHits(double Threshold, int MaxI);
 
-  // for poisson test
-// return number of hits above threshold scaled by m/z positions
+    // for poisson test
+    // return number of hits above threshold scaled by m/z positions
     int GetHits(double Threshold, int MaxI, int High);
+
+    /**
+     * return theoretical mass of hit
+     */
+    int GetTheoreticalMass(void) const;
 
     /**     
      * Make a record of the hits to the mass ladders
@@ -232,6 +237,7 @@ public:
      * @param PepStart starting position of peptide
      * @param Searchctermproduct search the c terminal ions
      * @param Searchb1 search the first forward ion?
+     * @param TheoreticalMassIn the mass of the theoretical peptide
      */
     void RecordMatches(CLadder& BLadder,
 					   CLadder& YLadder, 
@@ -243,7 +249,8 @@ public:
 					   int NumMod,
 					   const char *PepStart,
                        int Searchctermproduct,
-                       int Searchb1
+                       int Searchb1,
+                       int TheoreticalMassIn
 						);
 
 
@@ -267,9 +274,10 @@ public:
                        );
 
 
-	///
-    /// copy operator
-	///
+	/**
+     * assignment operator
+     * does a copy 
+	 */
 
     CMSHit& operator= (CMSHit& in);
 
@@ -292,7 +300,21 @@ protected:
 
 private:
     int Start, Stop;
-    int Index, Mass;
+
+    /**
+     * blast ordinal
+     */
+    int Index;
+    /**
+     * the experimental mass
+     */
+    int Mass;
+
+    /**
+     * theoretical mass
+     */
+    int TheoreticalMass;
+
     int Hits;  // number of peaks hit
     int Charge;  // the charge of the hit
     THitInfo HitInfo;
@@ -377,6 +399,14 @@ void CMSHit::SetMass(int MassIn)
 { 
     Mass = MassIn; 
 }
+
+
+inline
+int CMSHit::GetTheoreticalMass(void) const
+{
+    return TheoreticalMass;
+}
+
 
 inline 
 const int CMSHit::GetHits(void) const
@@ -1054,6 +1084,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.32  2005/09/14 18:50:56  lewisg
+  add theoretical mass to hit
+
   Revision 1.31  2005/09/14 15:30:17  lewisg
   neutral loss
 
