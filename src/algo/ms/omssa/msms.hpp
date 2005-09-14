@@ -328,6 +328,8 @@ const CMod& CMod::operator= (const CMod& rhs)
     ProductDelta = rhs.ProductDelta;
     ModEnum = rhs.ModEnum;
     IsFixed = rhs.IsFixed;
+
+    return *this;
 }
 
 /**
@@ -969,6 +971,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.25  2005/09/14 17:11:09  lewisg
+  retval for assignment operator
+
   Revision 1.24  2005/09/14 15:30:17  lewisg
   neutral loss
 
