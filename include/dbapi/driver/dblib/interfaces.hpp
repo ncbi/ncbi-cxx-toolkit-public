@@ -229,6 +229,10 @@ public:
     void SetClientCharset(const char* charset) const;
     CDBLibContext* GetContext(void) const;
 
+public:
+    bool ConnectedToMSSQLServer(void) const;
+    int GetTDSVersion(void) const;
+    
 private:
     string                m_AppName;
     string                m_HostName;
@@ -835,6 +839,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/09/14 14:10:00  ssikorsk
+ * Add ConnectedToMSSQLServer and GetTDSVersion methods to the CDBLibContext class
+ *
  * Revision 1.25  2005/09/07 11:00:07  ssikorsk
  * Added GetColumnNum method
  *
