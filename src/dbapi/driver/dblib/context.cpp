@@ -118,8 +118,11 @@ extern "C" {
 static CDBLibContext* g_pContext = NULL;
 
 
-CDBLibContext::CDBLibContext(DBINT version) :
-    m_AppName("DBLibDriver"), m_HostName(""), m_PacketSize(0)
+CDBLibContext::CDBLibContext(DBINT version) 
+: m_AppName( "DBLibDriver" )
+, m_HostName( "" )
+, m_PacketSize( 0 )
+, m_TDSVersion( version )
 {
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
@@ -162,6 +165,22 @@ CDBLibContext::CDBLibContext(DBINT version) :
     _ASSERT(m_Login);
 }
 
+
+bool CDBLibContext::ConnectedToMSSQLServer(void) const
+{
+#if defined(MS_DBLIB_IN_USE)
+    return true;
+#elif defined(FTDS_IN_USE)
+    return (m_TDSVersion == DBVERSION_70 || m_TDSVersion == DBVERSION_80);
+#else
+    return false;
+#endif
+}
+
+int CDBLibContext::GetTDSVersion(void) const
+{
+    return m_TDSVersion;
+}
 
 bool CDBLibContext::SetLoginTimeout(unsigned int nof_secs)
 {
@@ -1065,6 +1084,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/09/14 14:11:42  ssikorsk
+ * Implement ConnectedToMSSQLServer and GetTDSVersion methods for the CDBLibContext class
+ *
  * Revision 1.46  2005/07/18 18:11:31  ssikorsk
  * Export DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
  *
