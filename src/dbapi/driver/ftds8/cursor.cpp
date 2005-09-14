@@ -73,6 +73,12 @@ static bool for_update_of(const string& q)
 
 CDB_Result* CTDS_CursorCmd::Open()
 {
+    _ASSERT(m_Connect);
+    _ASSERT(m_Connect->m_Context);
+    
+    const bool connected_to_MSSQLServer = m_Connect->m_Context->ConnectedToMSSQLServer();
+    const int TDSVersion = m_Connect->m_Context->GetTDSVersion();
+    
     if (m_IsOpen) { // need to close it first
         Close();
     }
@@ -88,38 +94,33 @@ CDB_Result* CTDS_CursorCmd::Open()
 
 
     m_LCmd = 0;
-    string cur_feat;
-    if(for_update_of(m_Query)) {
-        cur_feat= " cursor FORWARD_ONLY SCROLL_LOCKS for ";
-    }
-    else {
-        cur_feat= " cursor FORWARD_ONLY for ";
-    }
+    
+    string buff;
+    if ( connected_to_MSSQLServer ) {
+        string cur_feat;
         
-    string buff = "declare " + m_Name + cur_feat + m_Query;
+        if(for_update_of(m_Query)) {
+            cur_feat = " cursor FORWARD_ONLY SCROLL_LOCKS for ";
+        } else {
+            cur_feat = " cursor FORWARD_ONLY for ";
+        }
+
+        buff = "declare " + m_Name + cur_feat + m_Query;
+    } else {
+        // Sybase ...
+        
+        buff = "declare " + m_Name + " cursor for " + m_Query;
+    }
 
     try {
-        m_LCmd = m_Connect->LangCmd(buff);
-        m_LCmd->Send();
-        m_LCmd->DumpResults();
-#if 0
-        while (m_LCmd->HasMoreResults()) {
-            CDB_Result* r = m_LCmd->Result();
-            if (r) {
-                while (r->Fetch())
-                    ;
-                delete r;
-            }
-        }
-#endif
-        delete m_LCmd;
+        auto_ptr<CDB_LangCmd> cmd(m_Connect->LangCmd(buff));
+        
+        cmd->Send();
+        cmd->DumpResults();
     } catch (CDB_Exception&) {
-        if (m_LCmd) {
-            delete m_LCmd;
-            m_LCmd = 0;
-        }
         DATABASE_DRIVER_ERROR( "failed to declare cursor", 222001 );
     }
+    
     m_IsDeclared = true;
 
     // open the cursor
@@ -127,27 +128,14 @@ CDB_Result* CTDS_CursorCmd::Open()
     buff = "open " + m_Name;
 
     try {
-        m_LCmd = m_Connect->LangCmd(buff);
-        m_LCmd->Send();
-        m_LCmd->DumpResults();
-#if 0
-        while (m_LCmd->HasMoreResults()) {
-            CDB_Result* r = m_LCmd->Result();
-            if (r) {
-                while (r->Fetch())
-                    ;
-                delete r;
-            }
-        }
-#endif
-        delete m_LCmd;
+        auto_ptr<CDB_LangCmd> cmd(m_Connect->LangCmd(buff));
+        
+        cmd->Send();
+        cmd->DumpResults();
     } catch (CDB_Exception&) {
-        if (m_LCmd) {
-            delete m_LCmd;
-            m_LCmd = 0;
-        }
         DATABASE_DRIVER_ERROR( "failed to open cursor", 222002 );
     }
+    
     m_IsOpen = true;
 
     m_LCmd = 0;
@@ -543,6 +531,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/09/14 14:14:40  ssikorsk
+ * Improved the CDBL_CursorCmd::Open method
+ *
  * Revision 1.13  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

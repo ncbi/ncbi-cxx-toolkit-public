@@ -64,7 +64,6 @@ bool CDBL_CursorCmd::BindParam(const string& param_name, CDB_Object* param_ptr)
         m_Params.BindParam(CDB_Params::kNoParamNumber, param_name, param_ptr);
 }
 
-#ifdef FTDS_IN_USE
 static bool for_update_of(const string& q)
 {
     if((q.find("update") == string::npos) && 
@@ -78,9 +77,15 @@ static bool for_update_of(const string& q)
     // TODO: add more logic here to find "for update" clause
     return false;
 }
-#endif
+
 CDB_Result* CDBL_CursorCmd::Open()
 {
+    _ASSERT(m_Connect);
+    _ASSERT(m_Connect->m_Context);
+    
+    const bool connected_to_MSSQLServer = m_Connect->m_Context->ConnectedToMSSQLServer();
+    const int TDSVersion = m_Connect->m_Context->GetTDSVersion();
+    
     if (m_IsOpen) { // need to close it first
         Close();
     }
@@ -97,42 +102,32 @@ CDB_Result* CDBL_CursorCmd::Open()
 
     m_LCmd = 0;
 
-#ifdef FTDS_IN_USE
-    // Actually, this code id database-dependet, but not driver dependent.
-    string cur_feat;
-    if(for_update_of(m_Query)) {
-        cur_feat= " cursor FORWARD_ONLY SCROLL_LOCKS for ";
-    }
-    else {
-        cur_feat= " cursor FORWARD_ONLY for ";
-    }
+    string buff;
+    if ( connected_to_MSSQLServer ) {
+        string cur_feat;
         
-    string buff = "declare " + m_Name + cur_feat + m_Query;
-#else
-    string buff = "declare " + m_Name + " cursor for " + m_Query;
-#endif
+        if(for_update_of(m_Query)) {
+            cur_feat = " cursor FORWARD_ONLY SCROLL_LOCKS for ";
+        } else {
+            cur_feat = " cursor FORWARD_ONLY for ";
+        }
+
+        buff = "declare " + m_Name + cur_feat + m_Query;
+    } else {
+        // Sybase ...
+        
+        buff = "declare " + m_Name + " cursor for " + m_Query;
+    }
 
     try {
-        m_LCmd = m_Connect->LangCmd(buff);
-        m_LCmd->Send();
-        m_LCmd->DumpResults();
-#if 0
-        while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
-            if (r.get()) {
-                while (r->Fetch())
-                    continue;
-            }
-        }
-#endif
-        delete m_LCmd;
+        auto_ptr<CDB_LangCmd> cmd( m_Connect->LangCmd(buff) );
+        
+        cmd->Send();
+        cmd->DumpResults();
     } catch (CDB_Exception& ) {
-        if (m_LCmd) {
-            delete m_LCmd;
-            m_LCmd = 0;
-        }
         DATABASE_DRIVER_ERROR( "failed to declare cursor", 222001 );
     }
+    
     m_IsDeclared = true;
 
     // open the cursor
@@ -140,26 +135,14 @@ CDB_Result* CDBL_CursorCmd::Open()
     buff = "open " + m_Name;
 
     try {
-        m_LCmd = m_Connect->LangCmd(buff);
-        m_LCmd->Send();
-        m_LCmd->DumpResults();
-#if 0
-        while(m_LCmd->HasMoreResults()) {
-            auto_ptr<CDB_Result> r(m_LCmd->Result());
-            if (r.get()) {
-                while (r->Fetch())
-                    continue;
-            }
-        }
-#endif
-        delete m_LCmd;
+        auto_ptr<CDB_LangCmd> cmd( m_Connect->LangCmd(buff) );
+        
+        cmd->Send();
+        cmd->DumpResults();
     } catch (CDB_Exception& ) {
-        if (m_LCmd) {
-            delete m_LCmd;
-            m_LCmd = 0;
-        }
         DATABASE_DRIVER_ERROR( "failed to open cursor", 222002 );
     }
+    
     m_IsOpen = true;
 
     m_LCmd = 0;
@@ -563,6 +546,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/09/14 14:14:24  ssikorsk
+ * Improved the CDBL_CursorCmd::Open method
+ *
  * Revision 1.15  2005/07/07 20:34:16  vasilche
  * Added #include <stdio.h> for sprintf().
  *
