@@ -2784,14 +2784,18 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    // Does not work with all databases and drivers currently ...
-//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
-//     tc->depends_on(tc_init);
-//     add(tc);
+    // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
+    if ((args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eMsSql) ||
+        args.GetDriverName() == "ctlib") {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
+        tc->depends_on(tc_parameters);
+        add(tc);
 
-//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
-//     tc->depends_on(tc_parameters);
-//     add(tc);
+        // Does not work with all databases and drivers currently ...
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -2908,6 +2912,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.41  2005/09/14 14:18:15  ssikorsk
+ * Enabled Test_Cursor and Test_LOB tests for ctlib and ftds + MSSQL only
+ *
  * Revision 1.40  2005/09/13 14:48:30  ssikorsk
  * Added a Test_LOB implementation
  *
