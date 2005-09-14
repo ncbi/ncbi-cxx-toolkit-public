@@ -48,7 +48,7 @@ NCBI_XBLAST_EXPORT
 double ** Nlm_LtriangMatrixNew(int n);
 
 NCBI_XBLAST_EXPORT
-double ** Nlm_DenseMatrixFree(double ** mat);
+void Nlm_DenseMatrixFree(double *** mat);
 
 NCBI_XBLAST_EXPORT
 void Nlm_FactorLtriangPosDef(double ** A, int n);

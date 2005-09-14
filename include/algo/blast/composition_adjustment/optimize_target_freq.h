@@ -45,6 +45,7 @@ NCBI_XBLAST_EXPORT
 int
 Blast_OptimizeTargetFrequencies(double x[],
                                 int alphsize,
+                                int * iterations,
                                 const double q[],
                                 const double row_sums[],
                                 const double col_sums[],

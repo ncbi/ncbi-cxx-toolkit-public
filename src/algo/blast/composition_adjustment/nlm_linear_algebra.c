@@ -35,7 +35,6 @@ Contents: Basic matrix and vector operations for use in conjunction
 
 ******************************************************************************/
 
-#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <algo/blast/core/blast_toolkit.h>
@@ -55,13 +54,18 @@ Nlm_DenseMatrixNew(int nrows,
     int i;             /* iteration index */
     double ** mat;     /* the new matrix */
 
-    mat = (double **) calloc(nrows, sizeof(double *));  assert(mat);
-    mat[0] = (double *) malloc((size_t) nrows *
-                               (size_t) ncols * sizeof(double));
-    assert(mat[0]);
-
-    for (i = 1;  i < nrows;  i++) {
-        mat[i] = &mat[0][i * ncols];
+    mat = (double **) calloc(nrows, sizeof(double *));
+    if (mat != NULL) {
+        mat[0] = (double *) malloc((size_t) nrows *
+                                   (size_t) ncols * sizeof(double));
+        if (mat[0] != NULL) {
+            for (i = 1;  i < nrows;  i++) {
+                mat[i] = &mat[0][i * ncols];
+            }
+        } else {
+            free(mat);
+            mat = NULL;
+        }
     }
     return mat;
 }
@@ -82,11 +86,17 @@ Nlm_LtriangMatrixNew(int n)
                                    the matrix */
     nelts = ((size_t) n * (n + 1))/2;
 
-    L    = (double**) calloc(n, sizeof(double *));   assert(L);
-    L[0] = (double*) malloc(nelts * sizeof(double)); assert(L[0]);
-
-    for (i = 1;  i < n;  i++) {
-        L[i] = L[i - 1] + i;
+    L    = (double**) calloc(n, sizeof(double *));
+    if (L != NULL) {
+        L[0] = (double*) malloc(nelts * sizeof(double));
+        if (L[0] != NULL) {
+            for (i = 1;  i < n;  i++) {
+                L[i] = L[i - 1] + i;
+            }
+        } else {
+            free(L);
+            L = NULL;
+        }
     }
     return L;
 }
@@ -99,14 +109,14 @@ Nlm_LtriangMatrixNew(int n)
  * @param mat       the matrix to be freed
  * @return          always NULL
  */
-double **
-Nlm_DenseMatrixFree(double ** mat)
+void
+Nlm_DenseMatrixFree(double *** mat)
 {
-    free(mat[0]);
-    mat[0] = NULL;
-    free(mat);
-
-    return NULL;
+    if(*mat != NULL) {
+        free((*mat)[0]);
+        free(*mat);
+    }
+    *mat = NULL;
 }
 
 

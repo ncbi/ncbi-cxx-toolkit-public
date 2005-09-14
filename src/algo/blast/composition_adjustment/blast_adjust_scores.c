@@ -57,6 +57,31 @@ static const double kCompoAdjustErrTolerance = 0.00000001;
 static const int kCompoAdjustIterationLimit = 2000;
 
 
+/*free memory assoicated with a record of type Blast_CompositionWorkspace*/
+void
+Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** pNRrecord)
+{
+    Blast_CompositionWorkspace * NRrecord = *pNRrecord;
+    
+    if (NRrecord != NULL) {
+        free(NRrecord->first_standard_freq);
+        free(NRrecord->second_standard_freq);
+        free(NRrecord->first_seq_freq);
+        free(NRrecord->second_seq_freq);
+        free(NRrecord->first_seq_freq_wpseudo);
+        free(NRrecord->second_seq_freq_wpseudo);
+
+        Nlm_DenseMatrixFree(&NRrecord->score_old);
+        Nlm_DenseMatrixFree(&NRrecord->score_final);
+        Nlm_DenseMatrixFree(&NRrecord->mat_final);
+        Nlm_DenseMatrixFree(&NRrecord->mat_b);
+
+        free(NRrecord);
+    }
+    pNRrecord = NULL;
+}
+
+
 /*allocate one record of type Blast_CompositionWorkspace, allocate
  * memory for its arrays, and return a pointer to the record*/
 Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
@@ -67,39 +92,59 @@ Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
 
     NRrecord = (Blast_CompositionWorkspace *) 
         malloc(sizeof(Blast_CompositionWorkspace));
-    assert(NRrecord != NULL);
+    if (NRrecord == NULL) goto error_return;
+
+    NRrecord->first_standard_freq      = NULL;
+    NRrecord->second_standard_freq     = NULL;
+    NRrecord->first_seq_freq           = NULL;
+    NRrecord->second_seq_freq          = NULL;
+    NRrecord->first_seq_freq_wpseudo   = NULL;
+    NRrecord->second_seq_freq_wpseudo  = NULL;
+    NRrecord->score_old                = NULL;
+    NRrecord->score_final              = NULL;
+    NRrecord->mat_final                = NULL;
+    NRrecord->mat_b                    = NULL;
+    
     NRrecord->first_standard_freq =
         (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
-    assert(NRrecord->first_standard_freq != NULL);
+    if (NRrecord->first_standard_freq == NULL) goto error_return;
 
     NRrecord->second_standard_freq =
         (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
-    assert(NRrecord->second_standard_freq != NULL);
+    if (NRrecord->second_standard_freq == NULL) goto error_return;
 
     NRrecord->first_seq_freq =
         (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
-    assert(NRrecord->first_seq_freq != NULL);
+    if (NRrecord->first_seq_freq == NULL) goto error_return;
 
     NRrecord->second_seq_freq =
         (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
-    assert(NRrecord->second_seq_freq != NULL);
+    if (NRrecord->second_seq_freq == NULL) goto error_return;
 
     NRrecord->first_seq_freq_wpseudo =
         (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
-    assert(NRrecord->first_seq_freq_wpseudo != NULL);
+    if (NRrecord->first_seq_freq_wpseudo == NULL) goto error_return;
 
     NRrecord->second_seq_freq_wpseudo =
         (double *) malloc(COMPOSITION_ALPHABET_SIZE * sizeof(double));
-    assert(NRrecord->second_seq_freq_wpseudo != NULL);
+    if (NRrecord->second_seq_freq_wpseudo == NULL) goto error_return;
 
     NRrecord->score_old   = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
                                                COMPOSITION_ALPHABET_SIZE);
+    if (NRrecord->score_old == NULL) goto error_return;
+    
     NRrecord->score_final = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
                                                COMPOSITION_ALPHABET_SIZE);
+    if (NRrecord->score_final == NULL) goto error_return;
+    
     NRrecord->mat_final   = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
                                                COMPOSITION_ALPHABET_SIZE);
+    if (NRrecord->mat_final == NULL) goto error_return;
+    
     NRrecord->mat_b       = Nlm_DenseMatrixNew(COMPOSITION_ALPHABET_SIZE,
                                                COMPOSITION_ALPHABET_SIZE);
+    if (NRrecord->mat_b == NULL) goto error_return;
+
     for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
         NRrecord->first_standard_freq[i] = 
             NRrecord->second_standard_freq[i] = 0.0;
@@ -107,42 +152,12 @@ Blast_CompositionWorkspace * Blast_CompositionWorkspaceNew()
         NRrecord->first_seq_freq_wpseudo[i] =
             NRrecord->second_seq_freq_wpseudo[i] = 0.0;
     }
+
+    goto normal_return;
+error_return:
+    Blast_CompositionWorkspaceFree(&NRrecord);
+normal_return:
     return NRrecord;
-}
-
-
-/*free memory assoicated with a record of type Blast_CompositionWorkspace*/
-void
-Blast_CompositionWorkspaceFree(Blast_CompositionWorkspace ** pNRrecord)
-{
-    Blast_CompositionWorkspace * NRrecord = *pNRrecord;
-    
-    free(NRrecord->first_standard_freq);
-    NRrecord->first_standard_freq = NULL;
-    free(NRrecord->second_standard_freq);
-    NRrecord->second_standard_freq = NULL;
-
-    free(NRrecord->first_seq_freq);
-    NRrecord->first_seq_freq  = NULL;
-    free(NRrecord->second_seq_freq);
-    NRrecord->second_seq_freq = NULL;
-
-    free(NRrecord->first_seq_freq_wpseudo);
-    NRrecord->first_seq_freq_wpseudo = NULL;
-    free(NRrecord->second_seq_freq_wpseudo);
-    NRrecord->second_seq_freq_wpseudo = NULL;
-
-    Nlm_DenseMatrixFree(NRrecord->score_old);
-    NRrecord->score_old = NULL;
-    Nlm_DenseMatrixFree(NRrecord->score_final);
-    NRrecord->score_final = NULL;
-    Nlm_DenseMatrixFree(NRrecord->mat_final);
-    NRrecord->mat_final = NULL;
-    Nlm_DenseMatrixFree(NRrecord->mat_b);
-    NRrecord->mat_b = NULL;
-
-    free(NRrecord);
-    pNRrecord = NULL;
 }
 
 
@@ -361,6 +376,8 @@ Blast_AdjustComposition(const char *matrixName,
     static int max_iterations = 0; /* maximum number of iterations
                                       observed in a call to
                                       compute_new_score_matrix */
+    int status;                    /* status code for operations that may
+                                      fail */
     /*Is the relative entropy constrained? Behaves as boolean for now*/
     int constrain_rel_entropy =
         eUnconstrainedRelEntropy != NRrecord->flag;
@@ -373,6 +390,7 @@ Blast_AdjustComposition(const char *matrixName,
     Blast_ApplyPseudocounts(NRrecord->second_seq_freq_wpseudo, length2,
                             NRrecord->second_seq_freq, probArray2,
                             NRrecord->second_standard_freq, pseudocounts);
+    *lambdaComputed = 1.0;
     re_o_newcontext =
         Blast_CalcLambdaForComposition(
             NRrecord, (NRrecord->flag == eRelEntropyOldMatrixNewContext),
@@ -396,9 +414,10 @@ Blast_AdjustComposition(const char *matrixName,
                 NRrecord->flag);
         break;
     }
-    new_iterations  =
+    status =
         Blast_OptimizeTargetFrequencies(&NRrecord->mat_final[0][0],
                                         COMPOSITION_ALPHABET_SIZE,
+                                        &new_iterations,
                                         &NRrecord->mat_b[0][0],
                                         NRrecord->first_seq_freq_wpseudo,
                                         NRrecord->second_seq_freq_wpseudo,
@@ -410,13 +429,24 @@ Blast_AdjustComposition(const char *matrixName,
     if (new_iterations > max_iterations)
         max_iterations = new_iterations;
 
-    if (new_iterations <= kCompoAdjustIterationLimit) {
+    if (status == 0) {
         Blast_ScoreMatrixFromFreq(NRrecord->score_final,
                                   COMPOSITION_ALPHABET_SIZE,
                                   NRrecord->mat_final,
                                   NRrecord->first_seq_freq_wpseudo,
                                   NRrecord->second_seq_freq_wpseudo);
+        if (NRrecord->flag == eUnconstrainedRelEntropy) {
+            /* Compute the unconstrained relative entropy */
+            double re_free =
+                Blast_CalcLambdaForComposition(NRrecord, 1, lambdaComputed);
+            printf("RE_uncons  = %6.4f\n\n", re_free);
+        }
+        status = 0;
+    } else if (status == -1) {
+        /* Generic error, probably out of memory */
+        status = -1;
     } else {
+        /* Iteration did not converge */
         fprintf(stderr, "bad probabilities from sequence 1, length %d\n",
                 length1);
         for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++)
@@ -426,7 +456,7 @@ Blast_AdjustComposition(const char *matrixName,
         for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++)
             fprintf(stderr, "%15.12f\n", probArray2[i]);
         fflush(stderr);
-        return (-1);
+        status = 1;
     }
     if (NRrecord->flag == eUnconstrainedRelEntropy) {
         /* Compute the unconstrained relative entropy */
@@ -434,5 +464,5 @@ Blast_AdjustComposition(const char *matrixName,
             Blast_CalcLambdaForComposition(NRrecord, 1, lambdaComputed);
         printf("RE_uncons  = %6.4f\n\n", re_free);
     }
-    return 0;
+    return status;
 }

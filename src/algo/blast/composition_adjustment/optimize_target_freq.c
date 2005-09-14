@@ -387,6 +387,31 @@ typedef struct ReNewtonSystem ReNewtonSystem;
 
 
 /**
+ * Free the memory associated with a ReNewtonSystem.
+ *
+ * @param newton_system      on entry *newton_system points to the
+ *                           system to be freed.  On exit, *newton_system
+ *                           is set to NULL.
+ */
+static void
+ReNewtonSystemFree(ReNewtonSystem ** newton_system)
+{
+    if (*newton_system != NULL) {
+        Nlm_DenseMatrixFree(&(*newton_system)->W);
+
+        free((*newton_system)->Dinv);
+        (*newton_system)->Dinv = NULL;
+
+        free((*newton_system)->grad_re);
+        (*newton_system)->grad_re = NULL;
+
+        free(*newton_system);
+        *newton_system = NULL;
+    }
+}
+
+
+/**
  * Create a new uninitialized ReNewtonSystem; the fields are
  * initialized by the FactorReNewtonSystem procedure.
  * ReNewtonSystemNew and FactorReNewtonSystem are called from only the
@@ -400,43 +425,31 @@ static ReNewtonSystem * ReNewtonSystemNew(int alphsize)
     ReNewtonSystem * newton_system;  /* the new ReNewtonSystem */
 
     newton_system = (ReNewtonSystem *) malloc(sizeof(ReNewtonSystem));
-    assert(newton_system != NULL);
-
-    newton_system->alphsize              = alphsize;
-    newton_system->constrain_rel_entropy = 1;
-    newton_system->W                     = Nlm_LtriangMatrixNew(2 * alphsize);
-
-    newton_system->Dinv =
-        (double *) malloc(alphsize * alphsize * sizeof(double));
-    assert(newton_system->Dinv != NULL);
-    newton_system->grad_re =
-        (double *) malloc(alphsize * alphsize * sizeof(double));
-    assert(newton_system->grad_re != NULL);
+    if (newton_system != NULL) {
+        newton_system->alphsize = alphsize;
+        newton_system->constrain_rel_entropy = 1;
+        newton_system->W = NULL;
+        newton_system->Dinv = NULL;
+        newton_system->grad_re = NULL;
+        
+        newton_system->W = Nlm_LtriangMatrixNew(2 * alphsize);
+        if (newton_system->W == NULL) 
+            goto error_return;
+        newton_system->Dinv =
+            (double *) malloc(alphsize * alphsize * sizeof(double));
+        if (newton_system->Dinv == NULL) 
+            goto error_return;
+        newton_system->grad_re =
+            (double *) malloc(alphsize * alphsize * sizeof(double));
+        if (newton_system->grad_re == NULL) 
+            goto error_return;
+    }
+    goto normal_return;
+error_return:
+    ReNewtonSystemFree(&newton_system);
+normal_return:
 
     return newton_system;
-}
-
-
-/**
- * Free the memory associated with a ReNewtonSystem.
- *
- * @param newton_system      on entry *newton_system points to the
- *                           system to be freed.  On exit, *newton_system
- *                           is set to NULL.
- */
-static void
-ReNewtonSystemFree(ReNewtonSystem ** newton_system)
-{
-    (*newton_system)->W = Nlm_DenseMatrixFree((*newton_system)->W);
-    
-    free((*newton_system)->Dinv);
-    (*newton_system)->Dinv = NULL;
-    
-    free((*newton_system)->grad_re);
-    (*newton_system)->grad_re = NULL;
-
-    free(*newton_system);
-    *newton_system = NULL;
 }
 
 
@@ -459,7 +472,8 @@ FactorReNewtonSystem(ReNewtonSystem * newton_system,
                      const double x[],
                      const double z[],
                      double ** grads,
-                     int constrain_rel_entropy)
+                     int constrain_rel_entropy,
+                     double * workspace)
 {
     int i;          /* iteration index */
     int n;          /* the length of x */
@@ -505,25 +519,18 @@ FactorReNewtonSystem(ReNewtonSystem * newton_system,
     ScaledSymmetricProductA(W, Dinv, alphsize);
 
     if (constrain_rel_entropy) {
-        double * work;      /* a vector for intermediate computations */
-
         /* Save the gradient of the relative entropy constraint. */
         memcpy(grad_re, grads[1], n * sizeof(double));
 
         /* Fill in the part of J D^{-1} J^T that corresponds to the relative
          * entropy constraint. */
-        work = (double *) malloc(n * sizeof(double));
-        assert(work != NULL);
-
         W[m - 1][m - 1] = 0.0;
         for (i = 0;  i < n;  i++) {
-            work[i] = Dinv[i] * grad_re[i];
+            workspace[i] = Dinv[i] * grad_re[i];
 
-            W[m - 1][m - 1] += grad_re[i] * work[i];
+            W[m - 1][m - 1] += grad_re[i] * workspace[i];
         }
-        MultiplyByA(0.0, &W[m - 1][0], alphsize, 1.0, work);
-
-        free(work);
+        MultiplyByA(0.0, &W[m - 1][0], alphsize, 1.0, workspace);
     }
     /* Factor J D^{-1} J^T and save the result in W. */
     Nlm_FactorLtriangPosDef(W, m);
@@ -542,13 +549,12 @@ FactorReNewtonSystem(ReNewtonSystem * newton_system,
  */
 static void
 SolveReNewtonSystem(double x[], double z[],
-                    const ReNewtonSystem * newton_system)
+                    const ReNewtonSystem * newton_system, double workspace[])
 {
     int i;                     /* iteration index */
     int n;                     /* the size of x */
     int mA;                    /* the number of linear constraints */
     int m;                     /* the size of z */
-    double * work;             /* vector for intermediate calculations */
 
     /* Local variables that represent fields of newton_system */
     double ** W       = newton_system->W;
@@ -561,22 +567,19 @@ SolveReNewtonSystem(double x[], double z[],
     mA = 2 * alphsize - 1;
     m  = constrain_rel_entropy ? mA + 1 : mA;
 
-    work = (double*) malloc(n * sizeof(double));
-    assert(work != NULL);
-
     /* Apply the same block reduction to the right-hand side as was
      * applied to the matrix:
      *
      *     rzhat = rz - J D^{-1} rx
      */
     for (i = 0;  i < n;  i++) {
-        work[i] = x[i] * Dinv[i];
+        workspace[i] = x[i] * Dinv[i];
     }
-    MultiplyByA(1.0, z, alphsize, -1.0, work);
+    MultiplyByA(1.0, z, alphsize, -1.0, workspace);
 
     if (constrain_rel_entropy) {
         for (i = 0;  i < n;  i++) {
-            z[m - 1] -= grad_re[i] * work[i];
+            z[m - 1] -= grad_re[i] * workspace[i];
         }
     }
 
@@ -597,7 +600,6 @@ SolveReNewtonSystem(double x[], double z[],
     for (i = 0;  i < n;  i++) {
         x[i] *= Dinv[i];
     }
-    free(work);
 }
 
 
@@ -710,12 +712,13 @@ ComputeScoresFromProbs(double scores[],
  *                  algorithm to terminate.
  *
  * @returns         if an optimal set of target frequencies is
- *                  found, then the number of iterations used by the
- *                  optimization algorithm; otherwise maxits + 1.
+ *                  found, then 0, if the iteration failed to
+ *                  converge, then 1, if there was some error, then -1.
  */
 int
 Blast_OptimizeTargetFrequencies(double x[],
                                 int alphsize,
+                                int *iterations,
                                 const double q[],
                                 const double row_sums[],
                                 const double col_sums[],
@@ -731,40 +734,47 @@ Blast_OptimizeTargetFrequencies(double x[],
 
     double         values[2];   /* values of the nonlinear functions
                                    at this iterate */
-    double ** grads;            /* gradients of the nonlinear
+    double ** grads = NULL;     /* gradients of the nonlinear
                                    functions at this iterate */
 
-    ReNewtonSystem * newton_system;     /* factored matrix of the
-                                           linear system to be solved
-                                           at this iteration */
-    double * z;                 /* dual variables (Lagrange multipliers) */
-    double * resids_x;          /* dual residuals (gradient of Lagrangian) */
-    double * resids_z;          /* primal (constraint) residuals */
+    ReNewtonSystem * 
+        newton_system = NULL;   /* factored matrix of the linear
+                                   system to be solved at this
+                                   iteration */
+    double * z = NULL;          /* dual variables (Lagrange multipliers) */
+    double * resids_x = NULL;   /* dual residuals (gradient of Lagrangian) */
+    double * resids_z = NULL;   /* primal (constraint) residuals */
     double rnorm;               /* norm of the residuals for the
                                    current iterate */
-    double * old_scores;        /* a scoring matrix, with lambda = 1,
+    double * old_scores = NULL; /* a scoring matrix, with lambda = 1,
                                    generated from q, row_sums and
                                    col_sums */
-    int converged;             /* true if Newton's method converged
+    double * workspace = NULL;  /* A vector for intermediate computations */
+    int converged;              /* true if Newton's method converged
                                    to a *minimizer* (strong
                                    second-order point) */
+    int status;                 /* the return status */
     n  = alphsize * alphsize;
     mA = 2 * alphsize - 1;
     m  = constrain_rel_entropy ? mA + 1 : mA;
 
     newton_system = ReNewtonSystemNew(alphsize);
-
+    if (newton_system == NULL) goto error_return;
     resids_x = (double *) malloc(n * sizeof(double));
-    assert(resids_x != NULL);
+    if (resids_x == NULL) goto error_return;
     resids_z = (double *) malloc((mA + 1) * sizeof(double));
-    assert(resids_z != NULL);
+    if (resids_z == NULL) goto error_return;
     /* z must be initialized to zero */
     z = (double *) calloc( mA + 1,   sizeof(double));
-
+    if (z == NULL) goto error_return;
     old_scores = (double *) malloc(n * sizeof(double));
-    ComputeScoresFromProbs(old_scores, alphsize, q, row_sums, col_sums);
-
+    if (old_scores == NULL) goto error_return;
+    workspace = (double *) malloc(n * sizeof(double));
+    if (workspace == NULL) goto error_return;
     grads = Nlm_DenseMatrixNew(2, n);
+    if (grads == NULL) goto error_return;
+    
+    ComputeScoresFromProbs(old_scores, alphsize, q, row_sums, col_sums);
 
     /* Use q as the initial value for x */
     memcpy(x, q, n * sizeof(double));
@@ -794,8 +804,9 @@ Blast_OptimizeTargetFrequencies(double x[],
                                        Newton step. */
 
                 FactorReNewtonSystem(newton_system, x, z, grads,
-                                     constrain_rel_entropy);
-                SolveReNewtonSystem(resids_x, resids_z, newton_system);
+                                     constrain_rel_entropy, workspace);
+                SolveReNewtonSystem(resids_x, resids_z, newton_system,
+                                    workspace);
 
                 /* Calculate a value of alpha that ensure that x is
                    positive */
@@ -815,13 +826,22 @@ Blast_OptimizeTargetFrequencies(double x[],
             converged = 1;
         }
     }
-
-    grads      = Nlm_DenseMatrixFree(grads);
+    status = converged ? 0 : 1;
+    *iterations = its;
+    goto normal_return;
+    
+error_return:
+    status = -1;
+    *iterations = 0;
+normal_return:
+    
+    Nlm_DenseMatrixFree(&grads);
+    free(workspace);
     free(old_scores);
     free(z);
     free(resids_z);
     free(resids_x);
     ReNewtonSystemFree(&newton_system);
 
-    return converged ? its : maxits + 1;
+    return status;
 }
