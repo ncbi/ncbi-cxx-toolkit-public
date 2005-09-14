@@ -132,12 +132,17 @@ public:
 
     void SetClientCharset(const char* charset) const;
 
+public:
+    bool ConnectedToMSSQLServer(void) const;
+    int GetTDSVersion(void) const;
+
 private:
     static CMSDBLibContext* m_pDBLibContext;
     string                m_AppName;
     string                m_HostName;
-    short                 m_PacketSize;
-    LOGINREC*             m_Login;
+    short                m_PacketSize;
+    LOGINREC*         m_Login;
+    int                    m_TDSVersion;
 
     DBPROCESS* x_ConnectToServer(const string&   srv_name,
                                  const string&   user_name,
@@ -690,6 +695,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/09/14 14:32:39  ssikorsk
+ * Add ConnectedToMSSQLServer and GetTDSVersion methods to
+ * the CMSDBLibContext class
+ *
  * Revision 1.11  2005/09/07 11:00:07  ssikorsk
  * Added GetColumnNum method
  *
