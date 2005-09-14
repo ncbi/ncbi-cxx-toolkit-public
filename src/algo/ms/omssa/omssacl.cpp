@@ -87,7 +87,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 0, 6));
+    SetVersion(CVersionInfo(1, 0, 8));
 }
 
 
@@ -246,7 +246,7 @@ void COMSSA::Init()
                 "usermods.xml");
     argDesc->AddDefaultKey("mm", "maxmod", 
 			   "the maximum number of mass ladders to generate per database peptide",
-			   CArgDescriptions::eInteger, NStr::IntToString(MAXMOD2));
+			   CArgDescriptions::eInteger, /*NStr::IntToString(MAXMOD2)*/ "128");
     argDesc->AddDefaultKey("e", "enzyme", 
 			   "id number of enzyme to use",
 			   CArgDescriptions::eInteger, 
@@ -604,6 +604,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.41  2005/09/14 15:30:17  lewisg
+  neutral loss
+
   Revision 1.40  2005/08/15 14:24:56  lewisg
   new mod, enzyme; stat test
 

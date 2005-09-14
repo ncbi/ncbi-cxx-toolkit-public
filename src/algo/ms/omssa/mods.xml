@@ -1931,4 +1931,48 @@
        <MSModSpec_residues_E>K</MSModSpec_residues_E>
      </MSModSpec_residues>
    </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="phosphoneutrallosss">132</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>Phospho S with neutral loss</MSModSpec_name>
+     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
+     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>S</MSModSpec_residues_E>
+     </MSModSpec_residues>
+     <MSModSpec_neutralloss>
+         <MSMassSet>
+             <MSMassSet_monomass>97.976896</MSMassSet_monomass>
+             <MSMassSet_averagemass>97.9952</MSMassSet_averagemass>
+             <MSMassSet_n15mass>0</MSMassSet_n15mass>
+         </MSMassSet>
+     </MSModSpec_neutralloss>
+   </MSModSpec>
+  <MSModSpec>
+     <MSModSpec_mod>
+       <MSMod value="phosphoneutrallosst">133</MSMod>
+     </MSModSpec_mod>
+     <MSModSpec_type>
+       <MSModType value="modaa">0</MSModType>
+     </MSModSpec_type>
+     <MSModSpec_name>Phospho T with neutral loss</MSModSpec_name>
+     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
+     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
+     <MSModSpec_n15mass>0</MSModSpec_n15mass>
+     <MSModSpec_residues>
+       <MSModSpec_residues_E>T</MSModSpec_residues_E>
+     </MSModSpec_residues>
+     <MSModSpec_neutralloss>
+         <MSMassSet>
+             <MSMassSet_monomass>97.976896</MSMassSet_monomass>
+             <MSMassSet_averagemass>97.9952</MSMassSet_averagemass>
+             <MSMassSet_n15mass>0</MSMassSet_n15mass>
+         </MSMassSet>
+     </MSModSpec_neutralloss>
+   </MSModSpec>
 </MSModSpecSet>

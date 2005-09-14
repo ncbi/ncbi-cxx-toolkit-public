@@ -136,13 +136,11 @@ public:
      * 
      * @param NumModSites the number of unique mod sites
      * @param NumMod the number of mods
-     * @param Site the position of the mods
-     * @param IsFixed is the mod fixed?
+     * @param ModList modification information
      */
     void CountModSites(int &NumModSites,
                        int NumMod,
-                       const char *Site[],
-                       int IsFixed[]);
+                       CMod ModList[]);
 
     //! Performs the ms/ms search
     /*!
@@ -162,8 +160,7 @@ public:
 		      int endposition,
 		      int *Masses, int iMissed, CAA& AA, 
 		      int iMod,
-		      const char **Site,
-		      int *DeltaMass,
+		      CMod ModList[],
 		      int NumMod,
               int ForwardIon,  //!< a,b,c series
               int BackwardIon  //!< x,y,z series
@@ -183,25 +180,22 @@ public:
     * Checks to see that given modindex points to a site shared by a fixed mod
     * 
     * @param i index into ModIndex
-    * @param IsFixed array indicating if mod ordinal points to fixed site
     * @param NumFixed number of fixed mods in ModIndex
-    * @param Site sequence position of mods
+    * @param ModList modification information
     * @param ModIndex array of iterators pointing to mod ordinals
     * @return true if shared
     * 
     */
     bool CheckFixed(int i,
-                    int *IsFixed,
                     int NumFixed, 
-                    const char *Site[], 
+                    CMod ModList[], 
                     int *ModIndex );
 
     void InitModIndex(int *ModIndex, 
                       int& iMod, 
                       int NumMod, 
-                      int *IsFixed, 
                       int NumModSites, 
-                      const char *Site[]);
+                      CMod ModList[]);
 
     unsigned MakeBoolMask(int *ModIndex, int iMod);
     void MakeBoolMap(bool *ModMask, int *ModIndex, int& iMod, int& NumMod);
@@ -210,9 +204,8 @@ public:
                       int& iMod, 
                       int& NumMod, 
                       int NumFixed,
-                      int *IsFixed, 
                       int NumModSites, 
-                      const char *Site[]);
+                      CMod CModList[]);
 
     unsigned MakeIntFromBoolMap(bool *ModMask,  int& NumMod);
     ReadDBFILEPtr Getrdfp(void) { return rdfp; }
@@ -253,28 +246,19 @@ public:
     /**
      *  delete variable mods that overlap with fixed mods
      * @param NumMod the number of modifications
-     * @param Site the position of the modifications
-     * @param DeltaMass the mass of the modifications
-     * @param ModEnum the type of the modification
-     * @param IsFixed is the modification fixed?
+     * @param ModList modification information
      */
     void DeleteVariableOverlap(int& NumMod,
-                          const char *Site[],
-                          int DeltaMass[],
-                          int ModEnum[],
-                          int IsFixed[]);
+                               CMod ModList[]);
 
     // update sites and masses for new peptide
     void UpdateWithNewPep(int Missed,
 			  const char *PepStart[],
 			  const char *PepEnd[], 
 			  int NumMod[], 
-			  const char *Site[][MAXMOD],
-			  int DeltaMass[][MAXMOD],
+			  CMod ModList[][MAXMOD],
 			  int Masses[],
 			  int EndMasses[],
-            int ModEnum[][MAXMOD],
-            int IsFixed[][MAXMOD],
                           int NumModSites[]);
 
     // create the various combinations of mods
@@ -283,11 +267,9 @@ public:
             			       int Masses[],
             			       int EndMasses[],
             			       int NumMod[],
-            			       int DeltaMass[][MAXMOD],
             			       unsigned NumMassAndMask[],
-                               int IsFixed[][MAXMOD],
                                int NumModSites[],
-                               const char *Site[][MAXMOD]);
+                               CMod ModList[][MAXMOD]);
 
     /**
      * initialize mass ladders
@@ -399,14 +381,13 @@ private:
 inline void CSearch::InitModIndex(int *ModIndex, 
                                   int& iMod, 
                                   int NumMod,
-                                  int *IsFixed, 
                                   int NumModSites, 
-                                  const char *Site[])
+                                  CMod ModList[])
 {
     // pack all the mods to the first possible sites
     int j(0), i, NumFixed;
     for(i = 0; i < NumMod; i++) {
-        if(IsFixed[i] == 1) {
+        if(ModList[i].GetFixed() == 1) {
             ModIndex[j] = i;
             j++;
         }
@@ -415,9 +396,9 @@ inline void CSearch::InitModIndex(int *ModIndex,
     const char *OldSite(0);
     for(i = 0; i < NumMod && j - NumFixed <= iMod; i++) {
 
-        if(IsFixed[i] != 1 && Site[i] != OldSite) {
+        if(ModList[i].GetFixed() != 1 && ModList[i].GetSite() != OldSite) {
             ModIndex[j] = i;
-            OldSite = Site[i];
+            OldSite = ModList[i].GetSite();
             j++;
         }
     }
@@ -461,9 +442,8 @@ inline unsigned CSearch::MakeIntFromBoolMap(bool *ModMask,  int& NumMod)
 inline bool CSearch::CalcModIndex(int *ModIndex, 
                                   int& iMod, int& NumMod,
                                   int NumFixed, 
-                                  int *IsFixed, 
                                   int NumModSites, 
-                                  const char *Site[])
+                                  CMod ModList[])
 {
     const char *TopSite;
     int j, OldIndex;
@@ -472,16 +452,16 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
     for (j = NumFixed; j <= iMod + NumFixed; j++) {
         OldIndex = ModIndex[j];
         if (j == iMod + NumFixed) TopSite = 0;
-        else TopSite = Site[ModIndex[j+1]];
+        else TopSite = ModList[ModIndex[j+1]].GetSite();
 
         // move the low index. keep incrementing if pointing at fixed site
         do {
             ModIndex[j]++;
-        } while (IsFixed[ModIndex[j]] == 1);
+        } while (ModList[ModIndex[j]].GetFixed() == 1);
 
         // if the low index doesn't point to the top site and it isn't too big
         // allow the move
-        if (ModIndex[j] < NumMod && Site[ModIndex[j]] != TopSite) {
+        if (ModIndex[j] < NumMod && ModList[ModIndex[j]].GetSite() != TopSite) {
             {
                 // now push all of the indices lower than the low index to
                 // their lowest possible value
@@ -491,12 +471,12 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
 
                     // increment low until it doesn't point at the same site
                     // or a fixed site
-                    while(IsFixed[Low] == 1 || 
-                          OldSite == Site[Low])
+                    while(ModList[Low].GetFixed() == 1 || 
+                          OldSite == ModList[Low].GetSite())
                         Low++;
 
                     ModIndex[i] = Low;
-                    OldSite = Site[ModIndex[i]];
+                    OldSite = ModList[ModIndex[i]].GetSite();
                     Low++;
                 }
 
@@ -578,6 +558,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.33  2005/09/14 15:30:17  lewisg
+  neutral loss
+
   Revision 1.32  2005/09/07 21:30:50  lewisg
   force fixed and variable mods not to overlap
 

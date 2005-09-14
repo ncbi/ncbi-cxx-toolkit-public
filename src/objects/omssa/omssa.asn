@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.25 2005/08/15 14:24:56 lewisg Exp $
+-- $Id: omssa.asn,v 1.26 2005/09/14 15:30:18 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -203,7 +203,9 @@ MSMod ::= INTEGER {
     icatlight (129),
     icatheavy (130),
     camthiopropanoylk (131),
-    max (132), -- maximum number of mods
+    phosphoneutrallosss (132),
+    phosphoneutrallosst (133),
+    max (134), -- maximum number of mods
     none(10000)
     }
 
@@ -223,6 +225,14 @@ MSModType ::= INTEGER {
     }
 
 
+-- mass container
+
+MSMassSet ::= SEQUENCE {
+    monomass REAL,
+    averagemass REAL,
+    n15mass REAL
+    }
+
 -- Modification Definition
 
 MSModSpec ::= SEQUENCE {
@@ -232,7 +242,8 @@ MSModSpec ::= SEQUENCE {
     monomass REAL,       -- monoisotopic mass
     averagemass REAL,    -- average mass
     n15mass REAL,        -- monoisotopic n15 mass
-    residues SEQUENCE OF VisibleString OPTIONAL  -- residues to apply mod to
+    residues SEQUENCE OF VisibleString OPTIONAL,  -- residues to apply mod to
+    neutralloss MSMassSet OPTIONAL  -- loss after precursor mass determination
     }
     
 -- Holds a set of modifications

@@ -106,12 +106,9 @@ int CCleave::findfirst(char* Seq, int Pos, int SeqLen)
  * @param EndMass the end masses of the peptides
  * @param VariableMods list of variable mods
  * @param FixedMods list of fixed modifications
- * @param Site ** to variable mod sites
- * @param DeltaMass the masses of the variable mods
+ * @param ModList mod site info
  * @param IntCalcMass integer AA masses
  * @param PrecursorIntCalcMass integer precursor masses
- * @param ModEnum variable mod types
- * @param IsFixed is modification fixed?
  * @param Modset list of possible mods
  * @param Maxproductions max number of product ions to calculate
  * @return true if end of sequence
@@ -126,12 +123,13 @@ bool CCleave::CalcAndCut(const char *SeqStart,
                          int *EndMasses,
                          CMSMod &VariableMods,
                          CMSMod &FixedMods,
-                         const char **Site,
-                         int *DeltaMass,
+                         CMod ModList[],
+//                         const char **Site,
+//                         int *DeltaMass,
                          const int *IntCalcMass,  // array of int AA masses
                          const int *PrecursorIntCalcMass, // precursor masses
-                         int *ModEnum,       // the mod type at each site
-                         int *IsFixed,
+//                         int *ModEnum,       // the mod type at each site
+//                         int *IsFixed,
                          CRef <CMSModSpecSet> Modset,
                          int Maxproductions
                          )
@@ -140,12 +138,12 @@ bool CCleave::CalcAndCut(const char *SeqStart,
 
     // n terminus protein
     if(*PepStart == SeqStart) CheckMods(eMSModType_modn, eMSModType_modnaa, VariableMods, FixedMods,
-                                        NumMod, SeqChar, MaxNumMod, Site,
-                                        DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
+                                        NumMod, SeqChar, MaxNumMod, ModList,
+                                        *PepStart, Modset);
 
     // n terminus peptide
-    CheckMods(eMSModType_modnp, eMSModType_modnpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
+    CheckMods(eMSModType_modnp, eMSModType_modnpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, ModList,
+              *PepStart, Modset);
 
 
     // iterate through sequence
@@ -161,8 +159,8 @@ bool CCleave::CalcAndCut(const char *SeqStart,
            (GetTopDown() && ( *PepStart - SeqStart < Maxproductions ||
            SeqEnd - *PepStart < Maxproductions))) {
             // check for mods that are type AA only, variable only
-            CheckAAMods(eMSModType_modaa, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
-                        DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
+            CheckAAMods(eMSModType_modaa, VariableMods, NumMod, SeqChar, MaxNumMod, ModList,
+                        *PepStart, false, Modset);
         }
     
     	CalcMass(SeqChar, Masses, PrecursorIntCalcMass);
@@ -170,8 +168,8 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     	// check for cleavage point
     	if(CheckCleave(*PepStart)) { 
             // check c term peptide mods
-            CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-    				 DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
+            CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, 
+                      ModList, *PepStart, Modset);
     	    EndMass(EndMasses);
     	    return false;
     	}
@@ -182,14 +180,14 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     CalcMass(**PepStart, Masses, PrecursorIntCalcMass);
 
     // check for mods that are type AA only, variable only
-    CheckAAMods(eMSModType_modaa, VariableMods, NumMod, **PepStart, MaxNumMod, Site,
-            DeltaMass, *PepStart, ModEnum, IsFixed, false, Modset);
+    CheckAAMods(eMSModType_modaa, VariableMods, NumMod, **PepStart, MaxNumMod, ModList,
+                *PepStart, false, Modset);
     // check c term peptide mods
-    CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-             DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
+    CheckMods(eMSModType_modcp, eMSModType_modcpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, ModList,
+              *PepStart, Modset);
     // check c term protein mods
-    CheckMods(eMSModType_modc, eMSModType_modcaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, Site,
-             DeltaMass, *PepStart, ModEnum, IsFixed, Modset);
+    CheckMods(eMSModType_modc, eMSModType_modcaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, ModList,
+              *PepStart, Modset);
 
     EndMass(EndMasses);
     return true;  // end of sequence
@@ -610,6 +608,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.25  2005/09/14 15:30:17  lewisg
+  neutral loss
+
   Revision 1.24  2005/08/15 14:24:56  lewisg
   new mod, enzyme; stat test
 

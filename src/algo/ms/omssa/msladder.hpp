@@ -87,8 +87,7 @@ public:
      * @param MassArray AA masses
      * @param AA used for mass calculation
      * @param ModMask bit mask of modifications to use
-     * @param Site positions of the modifications
-     * @param DeltaMass the masses of the modifications
+     * @param ModList modification information
      * @param NumMod the total number of mods
      * @param Searchctermproduct should the cterminal ions be created
      * @param Searchb1 should the first forward ion be created
@@ -105,8 +104,7 @@ public:
                       CMassArray& MassArray, 
                       CAA &AA,
                       unsigned ModMask,
-                      const char **Site,
-                      int *DeltaMass,
+                      CMod ModList[],
                       int NumMod,
                       int Searchctermproduct,
                       int Searchb1
@@ -117,7 +115,7 @@ public:
     ///
     bool CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *Sequence,
                         int Offset, int Direction, int NumMod, int &ModIndex,
-                        const char **Site, unsigned ModMask, int *DeltaMass, int i);
+                        CMod ModList[], unsigned ModMask, int i);
 
 
     // check if modification mask position is set
@@ -164,16 +162,16 @@ private:
 inline
 bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *Sequence,
                         int Offset, int Direction, int NumMod, int &ModIndex,
-                        const char **Site, unsigned ModMask, int *DeltaMass, int i)
+                        CMod ModList[], unsigned ModMask, int i)
 {
     delta = IntMassArray[AAMap[Sequence[Offset + Direction*i]]];
     if(!delta) return false; // unusable char (-BXZ*)
 
 
     while(NumMod > 0 && ModIndex >= 0 && ModIndex < NumMod &&
-        Site[ModIndex] == &(Sequence[Offset + Direction*i])) {
+        ModList[ModIndex].GetSite() == &(Sequence[Offset + Direction*i])) {
         if (MaskSet(ModMask, ModIndex)) { 
-            delta += DeltaMass[ModIndex];
+            delta += ModList[ModIndex].GetProductDelta();
         }
         ModIndex += Direction;
     }
@@ -263,6 +261,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.15  2005/09/14 15:30:17  lewisg
+  neutral loss
+
   Revision 1.14  2005/05/19 16:59:17  lewisg
   add top-down searching, fix variable mod bugs
 

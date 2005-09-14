@@ -160,6 +160,267 @@ inline char *CAA::GetMap(void)
 
 /////////////////// end of CAA inline methods
 
+/**
+ * contains information for a post translational modification
+ * at a particular sequence site
+ */
+
+class NCBI_XOMSSA_EXPORT CMod {
+public:
+
+    /**
+     * type for a site on a sequence
+     */
+
+    typedef const char * TSite;
+
+    /**
+     *  type for masses
+     */
+    typedef int TMass;
+
+    /**
+     * what is the type of the mod?
+     */
+    typedef int TEnum;
+
+    /**
+     * is the mod fixed?
+     */
+    typedef int TFixed;
+
+    /**
+     * default constructor
+     */
+    CMod(void);
+
+    /**
+     * copy constructor
+     */
+    CMod(const CMod &Old);
+
+    /**
+     * assignment
+     */
+    const CMod& operator= (const CMod& rhs);
+
+    /**
+     * reset to default values
+     */
+    void Reset(void);
+
+    /**
+     * Get the site position
+     */
+    TSite GetSite(void) const;
+
+    /**
+     * Set the site postion
+     */
+    TSite& SetSite(void);
+
+    /**
+     * Get the mass to be added to the precursor mass
+     */
+    TMass GetPrecursorDelta(void) const;
+
+    /**
+     * Set the site postion
+     */
+    TMass& SetPrecursorDelta(void);
+
+    /**
+     * Get the mass to be added to the product mass
+     */
+    TMass GetProductDelta(void) const;
+
+    /**
+     * Set the site postion
+     */
+    TMass& SetProductDelta(void);
+
+    /**
+     * Get mod type
+     */
+    TEnum GetEnum(void) const;
+
+    /**
+     * Set the mod type
+     */
+    TEnum& SetEnum(void);
+
+    /**
+     * Is the mod fixed?
+     */
+    TFixed GetFixed(void) const;
+
+    /**
+     * set mod state (1 = fixed)
+     */
+    TFixed& SetFixed(void);
+
+private:
+	/**
+     *  the position within the peptide of a variable modification
+     */
+	const char *Site;
+
+	/**
+     *  the modification mass for the precursor
+     */
+	int PrecursorDelta;
+
+    /**
+     *  the modification mass for the product
+     */
+    int ProductDelta;
+
+	/**
+     *  the modification type (used for saving for output)
+     */
+	int ModEnum;
+
+	/**
+     *  track fixed mods, 1 == fixed
+     */
+	int IsFixed;
+};
+
+/**
+ * default constructor
+ */
+inline
+CMod::CMod(void)
+{
+    Reset();
+}
+
+/**
+ * reset to default values
+ */
+inline
+void CMod::Reset(void)
+{
+    Site = (const char *)-1;
+    PrecursorDelta = 0;
+    ProductDelta = 0;
+    ModEnum = 0;
+    IsFixed = 0;
+}
+
+/**
+ * copy constructor
+ */
+inline
+CMod::CMod(const CMod &Old)
+{
+    *this = Old;
+}
+
+/**
+ * assignment
+ */
+inline
+const CMod& CMod::operator= (const CMod& rhs)
+{
+    Site = rhs.Site;
+    PrecursorDelta = rhs.PrecursorDelta;
+    ProductDelta = rhs.ProductDelta;
+    ModEnum = rhs.ModEnum;
+    IsFixed = rhs.IsFixed;
+}
+
+/**
+ * Get the site position
+ */
+inline
+CMod::TSite CMod::GetSite(void) const
+{
+    return Site;
+}
+
+/**
+ * Set the site postion
+ */
+inline
+CMod::TSite& CMod::SetSite(void)
+{
+    return Site;
+}
+
+/**
+ * Get the mass to be added to the precursor mass
+ */
+inline
+CMod::TMass CMod::GetPrecursorDelta(void) const
+{
+    return PrecursorDelta;
+}
+
+/**
+ * Set the site postion
+ */
+inline
+CMod::TMass& CMod::SetPrecursorDelta(void)
+{
+    return PrecursorDelta;
+}
+
+/**
+ * Get the mass to be added to the product mass
+ */
+inline
+CMod::TMass CMod::GetProductDelta(void) const
+{
+    return ProductDelta;
+}
+
+/**
+ * Set the site postion
+ */
+inline
+CMod::TMass& CMod::SetProductDelta(void)
+{
+    return ProductDelta;
+}
+
+/**
+ * Get mod type
+ */
+inline
+CMod::TEnum CMod::GetEnum(void) const
+{
+    return ModEnum;
+}
+
+/**
+ * Set the mod type
+ */
+inline
+CMod::TEnum& CMod::SetEnum(void)
+{
+    return ModEnum;
+}
+
+/**
+ * Is the mod fixed?
+ */
+inline
+CMod::TFixed CMod::GetFixed(void) const
+{
+    return IsFixed;
+}
+
+/**
+ * set mod state (1 = fixed)
+ */
+inline
+CMod::TFixed& CMod::SetFixed(void)
+{
+    return IsFixed;
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -190,12 +451,9 @@ public:
      * @param EndMass the end masses of the peptides
      * @param VariableMods list of variable mods
      * @param FixedMods list of fixed modifications
-     * @param Site ** to variable mod sites
-     * @param DeltaMass the masses of the variable mods
+     * @param ModList mod site info
      * @param IntCalcMass integer AA masses
      * @param PrecursorIntCalcMass integer precursor masses
-     * @param ModEnum variable mod types
-     * @param IsFixed is modification fixed?
      * @param Modset list of possible mods
      * @param Maxproductions max number of product ions to calculate
      */
@@ -208,13 +466,10 @@ public:
                     int *EndMasses,
                     CMSMod &VariableMods,
                     CMSMod &FixedMods,
-                    const char **Site,
-                    int *DeltaMass,
+                    CMod ModList[],
                     const int *IntCalcMass,  // array of int AA masses
                     const int *PrecursorIntCalcMass, // precursor masses
-                    int *ModEnum,     // the mod type at each site
-                    int *IsFixed,
-                    CRef <CMSModSpecSet> Modset,
+                     CRef <CMSModSpecSet> Modset,
                     int Maxproductions
                     );
 
@@ -255,11 +510,8 @@ public:
 			      CMSMod &VariableMods, // list of mods to look for
 			      int& NumMod, // number of mods applied to peptide
 			      int MaxNumMod,  // maximum mods for a peptide
-			      const char **Site,  // list of mod sites
-			      int *DeltaMass, // mass of mod
+			      CMod ModList[],  // list of mod sites
 			      const char *iPepStart, // position in protein
-                  int *ModEnum,   // enum of mod
-                  int *IsFixed,
                   bool setfixed,
                               CRef <CMSModSpecSet> Modset
                   ); 
@@ -272,11 +524,8 @@ public:
 		     int& NumMod, // number of mods applied to peptide
 		     char SeqChar,  // the amino acid
 		     int MaxNumMod,  // maximum mods for a peptide
-		     const char **Site,  // list of mod sites
-		     int *DeltaMass, // mass of mod
+		     CMod ModList[],  // list of mod sites
 		     const char *iPepStart,  // position in protein
-             int *ModEnum,   // enum of mod
-             int *IsFixed,
              bool setfixed,
                      CRef <CMSModSpecSet> Modset
              );
@@ -287,9 +536,8 @@ public:
     void CheckMods(EMSModType NonSpecific, EMSModType Specific,
                    CMSMod &VariableMods, CMSMod &FixedMods,
 				   int& NumMod, char SeqChar, int MaxNumMod,
-				   const char **Site,
-				   int *DeltaMass, const char *iPepStart,
-                   int *ModEnum, int *IsFixed,
+				   CMod ModList[],
+				   const char *iPepStart,
                    CRef <CMSModSpecSet> Modset);
 
     /**
@@ -430,52 +678,54 @@ void CCleave::EndMass( int *EndMasses
 
 inline
 void CCleave::CheckAAMods(EMSModType ModType, CMSMod &VariableMods, int& NumMod,
-			 char SeqChar, int MaxNumMod, const char **Site,
-			 int *DeltaMass, const char *iPepStart,
-        int *ModEnum, int *IsFixed, bool setfixed,
+                          char SeqChar, int MaxNumMod, CMod ModList[],
+                          const char *iPepStart,
+                          bool setfixed,
                           CRef <CMSModSpecSet> Modset)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
     int iChar;
 
-    for(iMods = VariableMods.GetAAMods(ModType).begin();
-	iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
-	for(iChar = 0; iChar < Modset->GetModNumChars(*iMods); iChar++) {
-	    if (SeqChar == Modset->GetModChar(*iMods, iChar) && NumMod < MaxNumMod) {
-		Site[NumMod] = iPepStart;
-		DeltaMass[NumMod] = Modset->GetModMass(*iMods);
-        ModEnum[NumMod] = *iMods;
-        if(setfixed) IsFixed[NumMod] = 1;
-        else IsFixed[NumMod] = 0;
-		NumMod++; 
-	    }
-	}
+    for (iMods = VariableMods.GetAAMods(ModType).begin();
+        iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
+        for (iChar = 0; iChar < Modset->GetModNumChars(*iMods); iChar++) {
+            if (SeqChar == Modset->GetModChar(*iMods, iChar) && NumMod < MaxNumMod) {
+                ModList[NumMod].SetSite() = iPepStart;
+                ModList[NumMod].SetPrecursorDelta() = Modset->GetModMass(*iMods);
+                ModList[NumMod].SetProductDelta() = Modset->GetNeutralLoss(*iMods);
+                ModList[NumMod].SetEnum() = *iMods;
+                if (setfixed) ModList[NumMod].SetFixed() = 1;
+                else ModList[NumMod].SetFixed() = 0;
+                NumMod++; 
+            }
+        }
     }
 }
 
 
 inline
 void CCleave::CheckNonSpecificMods(EMSModType ModType, CMSMod &VariableMods,
-				   int& NumMod, int MaxNumMod,
-				   const char **Site,
-				   int *DeltaMass, const char *iPepStart,
-        int *ModEnum, int *IsFixed, bool setfixed,
+                                   int& NumMod, int MaxNumMod,
+                                   CMod ModList[],
+                                   const char *iPepStart,
+                                   bool setfixed,
                                    CRef <CMSModSpecSet> Modset)
 {
     // iterator thru mods
     CMSSearchSettings::TVariable::const_iterator iMods;
 
-    for(iMods = VariableMods.GetAAMods(ModType).begin();
-	iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
-	if (NumMod < MaxNumMod) {
-	    Site[NumMod] = iPepStart;
-	    DeltaMass[NumMod] = Modset->GetModMass(*iMods);
-        ModEnum[NumMod] = *iMods;
-        if(setfixed) IsFixed[NumMod] = 1;
-        else IsFixed[NumMod] = 0;
-	    NumMod++; 
-	}
+    for (iMods = VariableMods.GetAAMods(ModType).begin();
+        iMods !=  VariableMods.GetAAMods(ModType).end(); iMods++) {
+        if (NumMod < MaxNumMod) {
+            ModList[NumMod].SetSite() = iPepStart;
+            ModList[NumMod].SetPrecursorDelta() = Modset->GetModMass(*iMods);
+            ModList[NumMod].SetProductDelta() = Modset->GetNeutralLoss(*iMods);
+            ModList[NumMod].SetEnum() = *iMods;
+            if (setfixed) ModList[NumMod].SetFixed() = 1;
+            else  ModList[NumMod].SetFixed() = 0;
+            NumMod++; 
+        }
     }
 }
 
@@ -483,19 +733,18 @@ inline
 void CCleave::CheckMods(EMSModType NonSpecific, EMSModType Specific,
                         CMSMod &VariableMods, CMSMod &FixedMods,
                         int& NumMod, char SeqChar, int MaxNumMod,
-                        const char **Site,
-                        int *DeltaMass, const char *iPepStart,
-                        int *ModEnum, int *IsFixed,
+                        CMod ModList[],
+                        const char *iPepStart,
                         CRef <CMSModSpecSet> Modset)
 {
     // check non-specific mods
-    CheckNonSpecificMods(NonSpecific, VariableMods, NumMod, MaxNumMod, Site,
-                 DeltaMass, iPepStart, ModEnum, IsFixed, false, Modset);
-    CheckNonSpecificMods(NonSpecific, FixedMods, NumMod, MaxNumMod, Site,
-                 DeltaMass, iPepStart, ModEnum, IsFixed, true, Modset);
+    CheckNonSpecificMods(NonSpecific, VariableMods, NumMod, MaxNumMod, ModList,
+                         iPepStart, false, Modset);
+    CheckNonSpecificMods(NonSpecific, FixedMods, NumMod, MaxNumMod, ModList,
+                         iPepStart, true, Modset);
     // check specific mods
-    CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod,
-            Site, DeltaMass, iPepStart, ModEnum, IsFixed, false, Modset);
+    CheckAAMods(Specific, VariableMods, NumMod, SeqChar, MaxNumMod, ModList, 
+                iPepStart, false, Modset);
 }
 
 
@@ -720,6 +969,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.24  2005/09/14 15:30:17  lewisg
+  neutral loss
+
   Revision 1.23  2005/08/01 13:44:18  lewisg
   redo enzyme classes, no-enzyme, fix for fixed mod enumeration
 

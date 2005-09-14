@@ -110,8 +110,7 @@ CLadder::~CLadder()
  * @param MassArray AA masses
  * @param AA used for mass calculation
  * @param ModMask bit mask of modifications to use
- * @param Site positions of the modifications
- * @param DeltaMass the masses of the modifications
+ * @param ModList modification info
  * @param NumMod the total number of mods
  * @param Searchctermproduct should the cterminal ions be created
  * @param Searchb1 should the first forward ion be created
@@ -128,8 +127,7 @@ bool CLadder::CreateLadder(int IonType,
                            CMassArray& MassArray,
                            CAA &AA,
                            unsigned ModMask,
-                           const char **Site,
-                           int *DeltaMass,
+                           CMod ModList[],
                            int NumMod, 
                            int Searchctermproduct,
                            int Searchb1
@@ -168,7 +166,7 @@ bool CLadder::CreateLadder(int IonType,
         if(Searchb1 == 1) {
             if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
                           Offset, Direction, NumMod, ModIndex,
-                          Site, ModMask, DeltaMass, 0)) return false;
+                          ModList, ModMask, 0)) return false;
             ion += delta/Charge;
             iSkip = 1;
             LadderIndex--;
@@ -182,7 +180,7 @@ bool CLadder::CreateLadder(int IonType,
          if(Searchctermproduct == 1) {
              if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
                      Offset, Direction, NumMod, ModIndex,
-                     Site, ModMask, DeltaMass, 0)) return false;
+                     ModList, ModMask, 0)) return false;
                ion += delta/Charge;
                iSkip = 1;
          }
@@ -193,7 +191,7 @@ bool CLadder::CreateLadder(int IonType,
         GetHit()[i] = 0;
         if(!CalcDelta(delta, IntMassArray, AAMap, Sequence,
                       Offset, Direction, NumMod, ModIndex,
-                      Site, ModMask, DeltaMass, i+iSkip)) return false;
+                      ModList, ModMask, i+iSkip)) return false;
         ion += delta/Charge;
         (*this)[i] = ion;
     }

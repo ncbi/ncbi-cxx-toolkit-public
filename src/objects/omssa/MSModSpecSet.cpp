@@ -66,6 +66,15 @@ void CMSModSpecSet::CreateArrays(void)
 
         ModTypes[ModNum] = static_cast <EMSModType> ((*iMods)->GetType());
         ModMass[ModNum] = static_cast <int> ((*iMods)->GetMonomass() * MSSCALE);
+
+        // set up neutral loss if specified
+        if((*iMods)->CanGetNeutralloss())
+            NeutralLoss[ModNum] = static_cast <int> 
+            (((*iMods)->GetMonomass() -
+              (*iMods)->GetNeutralloss().GetMonomass()) * MSSCALE);
+        else 
+            NeutralLoss[ModNum] = ModMass[ModNum];
+
         strncpy(ModNames[ModNum], (*iMods)->GetName().c_str(), kMaxNameSize - 1);
         // make sure name is null terminated
         ModNames[ModNum][kMaxNameSize-1] = '\0';
@@ -114,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/09/14 15:30:18  lewisg
+* neutral loss
+*
 * Revision 1.3  2005/04/21 21:54:03  lewisg
 * fix Jeri's mem bug, split off mod file, add aspn and gluc
 *

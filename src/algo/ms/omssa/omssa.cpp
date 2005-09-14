@@ -104,8 +104,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                            int iMissed,
                            CAA& AA, 
                            int iMod,
-                           const char **Site,
-                           int *DeltaMass,
+                           CMod ModList[],
                            int NumMod,
                            int ForwardIon,
                            int BackwardIon)
@@ -120,8 +119,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                                     MassArray,
                                     AA,
                                     SetMassAndMask(iMissed, iMod).Mask,
-                                    Site,
-                                    DeltaMass,
+                                    ModList,
                                     NumMod,
                                     MyRequest->GetSettings().GetSearchctermproduct(),
                                     MyRequest->GetSettings().GetSearchb1()
@@ -136,8 +134,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                                     MassArray,
                                     AA, 
                                     SetMassAndMask(iMissed, iMod).Mask,
-                                    Site, 
-                                    DeltaMass,
+                                    ModList, 
                                     NumMod,
                                     MyRequest->GetSettings().GetSearchctermproduct(),
                                     MyRequest->GetSettings().GetSearchb1()
@@ -152,8 +149,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                                      MassArray, 
                                      AA, 
                                      SetMassAndMask(iMissed, iMod).Mask,
-                                     Site, 
-                                     DeltaMass,
+                                     ModList, 
                                      NumMod,
                                      MyRequest->GetSettings().GetSearchctermproduct(),
                                      MyRequest->GetSettings().GetSearchb1()
@@ -168,8 +164,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                                      MassArray,
                                      AA,
                                      SetMassAndMask(iMissed, iMod).Mask,
-                                     Site,
-                                     DeltaMass,
+                                     ModList,
                                      NumMod,
                                      MyRequest->GetSettings().GetSearchctermproduct(),
                                      MyRequest->GetSettings().GetSearchb1()
@@ -363,27 +358,22 @@ struct CMassMaskCompare {
 /**
  *  delete variable mods that overlap with fixed mods
  * @param NumMod the number of modifications
- * @param Site the position of the modifications
- * @param DeltaMass the mass of the modifications
- * @param ModEnum the type of the modification
- * @param IsFixed is the modification fixed?
+ * @param ModList modification information
  */
 void CSearch::DeleteVariableOverlap(int& NumMod,
-                      const char *Site[],
-                      int DeltaMass[],
-                      int ModEnum[],
-                      int IsFixed[])
+                      CMod ModList[])
 {
     int i, j, k;
     for (i = 0; i < NumMod; i++) {
         // if variable mod
-        if(IsFixed[i] != 1) {
+        if(ModList[i].GetFixed() != 1) {
             // iterate thru all mods for comparison
             for(j = 0; j < NumMod; j++) {
                 // if fixed and at same site
-                if(IsFixed[j] == 1 && Site[i] == Site[j]) {
+                if(ModList[j].GetFixed() == 1 && 
+                   ModList[i].GetSite() == ModList[j].GetSite()) {
                     // mark mod for deletion
-                    IsFixed[i] = -1;
+                    ModList[i].SetFixed() = -1;
                 }
             } // j loop
         } // IsFixed
@@ -391,15 +381,12 @@ void CSearch::DeleteVariableOverlap(int& NumMod,
 
     // now do the deletion
     for (i = 0; i < NumMod;) {
-        if(IsFixed[i] == -1) {
+        if(ModList[i].GetFixed() == -1) {
             NumMod--;
             // if last mod, then just return
             if(i == NumMod) return;
             // otherwise, delete the modification
-            Site[i] = Site[i+1];
-            DeltaMass[i] = DeltaMass[i+1];
-            ModEnum[i] = ModEnum[i+1];
-            IsFixed[i] = IsFixed[i+1];
+            ModList[i] = ModList[i+1];
         }
         else i++;
     }
@@ -411,12 +398,9 @@ void CSearch::UpdateWithNewPep(int Missed,
 			       const char *PepStart[],
 			       const char *PepEnd[], 
 			       int NumMod[], 
-			       const char *Site[][MAXMOD],
-			       int DeltaMass[][MAXMOD],
+                               CMod ModList[][MAXMOD],
 			       int Masses[],
 			       int EndMasses[],
-                               int ModEnum[][MAXMOD],
-                               int IsFixed[][MAXMOD],
                                int NumModSites[])
 {
     // iterate over missed cleavages
@@ -447,23 +431,13 @@ void CSearch::UpdateWithNewPep(int Missed,
 	for(iMod = NumMod[iMissed]; 
 	    iMod < NumMod[iMissed] + ModMax;
 	    iMod++) {
-	    Site[iMissed][iMod] = 
-		Site[Missed-1][iMod - NumMod[iMissed]];
-
-	    DeltaMass[iMissed][iMod] = 
-		DeltaMass[Missed-1][iMod - NumMod[iMissed]];
-        
-	    ModEnum[iMissed][iMod] = 
-		ModEnum[Missed-1][iMod - NumMod[iMissed]];
-
-	    IsFixed[iMissed][iMod] = 
-		IsFixed[Missed-1][iMod - NumMod[iMissed]];      
+        ModList[iMissed][iMod] = ModList[Missed-1][iMod - NumMod[iMissed]];
 
         // increment if 
-        if(OldSite != Site[iMissed][iMod] &&
-            IsFixed[iMissed][iMod] != 1) {
+        if(OldSite != ModList[iMissed][iMod].GetSite() &&
+            ModList[iMissed][iMod].GetFixed() != 1) {
             NumModSitesCount++;
-            OldSite = Site[iMissed][iMod];
+            OldSite = ModList[iMissed][iMod].GetSite();
         }
 
 	}
@@ -488,13 +462,11 @@ void CSearch::UpdateWithNewPep(int Missed,
  * 
  * @param NumModSites the number of unique mod sites
  * @param NumMod the number of mods
- * @param Site the position of the mods
- * @param IsFixed is the mod fixed?
+ * @param ModList modification information
  */
 void CSearch::CountModSites(int &NumModSites,
               int NumMod,
-              const char *Site[],
-              int IsFixed[])
+              CMod ModList[])
 {
     NumModSites = 0;
     int i;
@@ -502,9 +474,9 @@ void CSearch::CountModSites(int &NumModSites,
 
     for(i = 0; i < NumMod; i++) {
         // skip repeated sites and fixed mods
-        if(Site[i] != OldSite && IsFixed[i] != 1 ) {
+        if(ModList[i].GetSite() != OldSite && ModList[i].GetFixed() != 1 ) {
             NumModSites++;
-            OldSite = Site[i];
+            OldSite = ModList[i].GetSite();
         }
     }
 }
@@ -516,11 +488,9 @@ void CSearch::CreateModCombinations(int Missed,
                 				    int Masses[],
                 				    int EndMasses[],
                 				    int NumMod[],
-                				    int DeltaMass[][MAXMOD],
                 				    unsigned NumMassAndMask[],
-                                    int IsFixed[][MAXMOD],
                                     int NumModSites[],
-                                    const char *Site[][MAXMOD])
+                                    CMod ModList[][MAXMOD])
 {
     // need to iterate thru combinations that have iMod.
     // i.e. iMod = 3 and NumMod=5
@@ -557,8 +527,8 @@ void CSearch::CreateModCombinations(int Missed,
     int NumFixed;
     // add in fixed mods
     for(iMod = 0; iMod < NumMod[iMissed]; iMod++) {
-        if(IsFixed[iMissed][iMod]) {
-            SetMassAndMask(iMissed, iModCount).Mass += DeltaMass[iMissed][iMod];
+        if(ModList[iMissed][iMod].GetFixed()) {
+            SetMassAndMask(iMissed, iModCount).Mass += ModList[iMissed][iMod].GetPrecursorDelta();
             SetMassAndMask(iMissed, iModCount).Mask |= 1 << iMod;
             NumVariable--;
         }
@@ -574,14 +544,14 @@ void CSearch::CreateModCombinations(int Missed,
 
         // todo: ModIndex must always include fixed mods
 
-	    InitModIndex(ModIndex, iMod, NumMod[iMissed], IsFixed[iMissed],
-                     NumModSites[iMissed], Site[iMissed]);
+	    InitModIndex(ModIndex, iMod, NumMod[iMissed],
+                     NumModSites[iMissed], ModList[iMissed]);
 	    do {
     			
     		// calculate mass
     		MassOfMask = SetMassAndMask(iMissed, 0).Mass;
     		for(iiMod = 0; iiMod <= iMod; iiMod++ ) 
-    		    MassOfMask += DeltaMass[iMissed][ModIndex[iiMod + NumFixed]];
+    		    MassOfMask += ModList[iMissed][ModIndex[iiMod + NumFixed]].GetPrecursorDelta();
     		// make bool mask
     		Mask = MakeBoolMask(ModIndex, iMod + NumFixed);
     		// put mass and mask into storage
@@ -602,8 +572,8 @@ printf("\n");
 // todo: calcmodindex must ignore fixed mods
 
 	    } while(iModCount < MaxModPerPep &&
-		    CalcModIndex(ModIndex, iMod, NumMod[iMissed], NumFixed, IsFixed[iMissed],
-                         NumModSites[iMissed], Site[iMissed]));
+		    CalcModIndex(ModIndex, iMod, NumMod[iMissed], NumFixed,
+                         NumModSites[iMissed], ModList[iMissed]));
 	} // iMod
 
 	// sort mask and mass by mass
@@ -731,14 +701,17 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	const char *PepStart[MAXMISSEDCLEAVE];
 	const char *PepEnd[MAXMISSEDCLEAVE];
 
+    // contains informations on individual mod sites
+    CMod ModList[MAXMISSEDCLEAVE][MAXMOD];
+
 	// the position within the peptide of a variable modification
-	const char *Site[MAXMISSEDCLEAVE][MAXMOD];
+//	const char *Site[MAXMISSEDCLEAVE][MAXMOD];
 	// the modification mass at the Site
-	int DeltaMass[MAXMISSEDCLEAVE][MAXMOD];
+//	int DeltaMass[MAXMISSEDCLEAVE][MAXMOD];
 	// the modification type (used for saving for output)
-	int ModEnum[MAXMISSEDCLEAVE][MAXMOD];
+//	int ModEnum[MAXMISSEDCLEAVE][MAXMOD];
 	// track fixed mods
-	int IsFixed[MAXMISSEDCLEAVE][MAXMOD];
+//	int IsFixed[MAXMISSEDCLEAVE][MAXMOD];
 	// the number of modifications + 1 unmodified
 	int NumMod[MAXMISSEDCLEAVE];
     // the number of modification sites.  always less than NumMod.
@@ -831,10 +804,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		NumMod[iMissed] = 0;
 		NumModSites[iMissed] = 0;
 
-		DeltaMass[iMissed][0] = 0;
-		ModEnum[iMissed][0] = 0;
-        IsFixed[iMissed][0] = 0;
-		Site[iMissed][0] = (const char *)-1;
+        ModList[iMissed][0].Reset();
 	    }
 	    PepStart[Missed - 1] = (const char *)Sequence;
 
@@ -855,10 +825,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		NumMod[Missed - 1] = 0;
 		NumModSites[Missed - 1] = 0;
 		// init no modification elements
-		Site[Missed - 1][0] = (const char *)-1;
-		DeltaMass[Missed - 1][0] = 0;
-        ModEnum[Missed - 1][0] = 0;
-        IsFixed[Missed - 1][0] = 0;
+        ModList[Missed - 1][0].Reset();
 
 #ifdef CHECKGI
 {
@@ -886,35 +853,28 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                MAXMOD,
                                &(EndMasses[Missed - 1]),
                                VariableMods, FixedMods,
-                               Site[Missed - 1],
-                               DeltaMass[Missed - 1],
+                               ModList[Missed - 1],
                                IntMassArray,
                                PrecursorIntMassArray,
-                               ModEnum[Missed - 1],
-                               IsFixed[Missed - 1],
                                Modset,
                                MyRequest->GetSettings().GetMaxproductions()
                                );
 
         // delete variable mods that overlap with fixed mods
         DeleteVariableOverlap(NumMod[Missed - 1],
-                              Site[Missed - 1],
-                              DeltaMass[Missed - 1],
-                              ModEnum[Missed - 1],
-                              IsFixed[Missed - 1]);
+                              ModList[Missed - 1]);
 
         // count the number of unique sites modified
         CountModSites(NumModSites[Missed - 1],
                       NumMod[Missed - 1],
-                      Site[Missed - 1],
-                      IsFixed[Missed - 1]);
+                      ModList[Missed - 1]);
 
-        UpdateWithNewPep(Missed, PepStart, PepEnd, NumMod, Site,
-				 DeltaMass, Masses, EndMasses, ModEnum, IsFixed, NumModSites);
+        UpdateWithNewPep(Missed, PepStart, PepEnd, NumMod, ModList,
+                         Masses, EndMasses, NumModSites);
 	
         CreateModCombinations(Missed, PepStart, Masses,
-				      EndMasses, NumMod, DeltaMass, NumMassAndMask,
-				      IsFixed, NumModSites, Site);
+				      EndMasses, NumMod, NumMassAndMask,
+				      NumModSites, ModList);
 
 
 		int OldMass;  // keeps the old peptide mass for comparison
@@ -982,10 +942,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                                  position,
                                  endposition,
                                  Masses,
-                                 iMissed, AA,
+                                 iMissed, 
+                                 AA,
                                  iMod,
-                                 Site[iMissed],
-                                 DeltaMass[iMissed],
+                                 ModList[iMissed],
                                  NumMod[iMissed],
                                  ForwardIon,
                                  BackwardIon
@@ -1058,11 +1018,9 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 									  *(Y2Ladder[iMod]),
 									  Peaks,
 									  SetMassAndMask(iMissed, iMod).Mask,
-									  Site[iMissed],
-									  ModEnum[iMissed],
+									  ModList[iMissed],
 									  NumMod[iMissed],
 									  PepStart[iMissed],
-                                      IsFixed[iMissed],
                                       MyRequest->GetSettings().GetSearchctermproduct(),
                                       MyRequest->GetSettings().GetSearchb1()
 									  );
@@ -1118,22 +1076,15 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                     NumModSitesCount = 0;
                     for (iMod = 0; iMod < NumMod[iMissed + 1]; iMod++) {
                         // throw away the c term peptide mods as we have a new c terminus
-                        if (Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcp  && 
-                            Modset->GetModType(ModEnum[iMissed + 1][iMod]) != eMSModType_modcpaa) {
-                            DeltaMass[iMissed][NumModCount] = 
-                                DeltaMass[iMissed + 1][iMod];
-                            Site[iMissed][NumModCount] = 
-                                Site[iMissed + 1][iMod];
-                            ModEnum[iMissed][NumModCount] = 
-                                ModEnum[iMissed + 1][iMod];
-                            IsFixed[iMissed][NumModCount] = 
-                                IsFixed[iMissed + 1][iMod];
+                        if (Modset->GetModType(ModList[iMissed + 1][iMod].GetEnum()) != eMSModType_modcp  && 
+                            Modset->GetModType(ModList[iMissed + 1][iMod].GetEnum()) != eMSModType_modcpaa) {
+                            ModList[iMissed][NumModCount] = ModList[iMissed + 1][iMod];
                             NumModCount++;
                             // increment mod site count if new site and not fixed mod
-                            if (OldSite != Site[iMissed + 1][iMod] &&
-                                IsFixed[iMissed + 1][iMod] != 1) {
+                            if (OldSite != ModList[iMissed + 1][iMod].GetSite() &&
+                                ModList[iMissed + 1][iMod].GetFixed() != 1) {
                                 NumModSitesCount++;
-                                OldSite = Site[iMissed + 1][iMod];
+                                OldSite = ModList[iMissed + 1][iMod].GetSite();
                             }
                         }
                     }
@@ -1676,6 +1627,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.57  2005/09/14 15:30:17  lewisg
+neutral loss
+
 Revision 1.56  2005/09/07 21:30:50  lewisg
 force fixed and variable mods not to overlap
 

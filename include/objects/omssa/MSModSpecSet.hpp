@@ -88,6 +88,13 @@ public:
     */
     int GetModMass(int Mod) const;
 
+    /** 
+     * get neutral loss
+     *
+     * @param Mod the modification number
+     */
+    int GetNeutralLoss(int Mod) const;
+
     //! get modification friendly name
     /*!
     \param Mod the modification number
@@ -119,6 +126,9 @@ private:
 
     //! the integer scaled mass of the mod
     int ModMass[eMSMod_max];
+
+    //! the integer scaled mass of the neutral loss
+    int NeutralLoss[eMSMod_max];
 
     //! friendly names
     char ModNames[eMSMod_max][kMaxNameSize];
@@ -167,6 +177,12 @@ int CMSModSpecSet::GetModMass(int Mod) const
     return ModMass[Mod];
 }
 
+inline
+int CMSModSpecSet::GetNeutralLoss(int Mod) const
+{
+    return NeutralLoss[Mod];
+}
+
 //! get modification mass
 /*!
 \param Mod the modification number
@@ -210,6 +226,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/09/14 15:30:18  lewisg
+* neutral loss
+*
 * Revision 1.2  2005/04/21 21:54:03  lewisg
 * fix Jeri's mem bug, split off mod file, add aspn and gluc
 *

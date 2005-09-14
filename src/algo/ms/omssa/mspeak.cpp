@@ -119,19 +119,17 @@ int CMSHit::CountMods(unsigned ModMask, int NumMod)
  */
 
 void CMSHit::RecordModInfo(unsigned ModMask,
-						   const char **Site,
-						   int *ModEnum,
+						   CMod ModList[],
 						   int NumMod,
-						   const char *PepStart,
-                           int *IsFixed
+						   const char *PepStart
 						   )
 {
 	int i, j(0);
 	for(i = 0; i < NumMod; i++) {
 		if(ModMask & (1 << i)) {
-			SetModInfo(j).SetModEnum() = ModEnum[i];
-			SetModInfo(j).SetSite() = Site[i] - PepStart;
-            SetModInfo(j).SetIsFixed() = IsFixed[i];
+			SetModInfo(j).SetModEnum() = ModList[i].GetEnum();
+			SetModInfo(j).SetSite() = ModList[i].GetSite() - PepStart;
+            SetModInfo(j).SetIsFixed() = ModList[i].GetFixed();
 			j++;
 		}
 	}
@@ -147,11 +145,9 @@ void CMSHit::RecordModInfo(unsigned ModMask,
  * @param Y2Ladder plus two backward ladder
  * @param Peaks the experimental spectrum
  * @param ModMask the bit array of modifications
- * @param Site modification positions
- * @param ModEnum
+ * @param ModList modification information
  * @param NumMod  number of modifications
  * @param PepStart starting position of peptide
- * @param IsFixed array of indices to fixed mods
  * @param Searchctermproduct search the c terminal ions
  * @param Searchb1 search the first forward ion?
  */
@@ -161,11 +157,9 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 						   CLadder& Y2Ladder,
 						   CMSPeak *Peaks,
 						   unsigned ModMask,
-						   const char **Site,
-						   int *ModEnum,
+						   CMod ModList[],
 						   int NumMod,
 						   const char *PepStart,
-                           int *IsFixed,
                            int Searchctermproduct,
                            int Searchb1
 						   )
@@ -202,11 +196,9 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 
 	// need to make function to save the info in ModInfo
 	RecordModInfo(ModMask,
-				  Site,
-				  ModEnum,
+				  ModList,
 				  NumMod,
-				  PepStart,
-                  IsFixed
+				  PepStart
 				  );
 }
 

@@ -227,11 +227,9 @@ public:
      * @param Y2Ladder plus two backward ladder
      * @param Peaks the experimental spectrum
      * @param ModMask the bit array of modifications
-     * @param Site modification positions
-     * @param ModEnum
+     * @param ModList modification information
      * @param NumMod  number of modifications
      * @param PepStart starting position of peptide
-     * @param IsFixed array of indices to fixed mods
      * @param Searchctermproduct search the c terminal ions
      * @param Searchb1 search the first forward ion?
      */
@@ -241,11 +239,9 @@ public:
 					   CLadder& Y2Ladder,
 					   CMSPeak *Peaks,
 					   unsigned ModMask,
-					   const char **Site,
-					   int *ModEnum,
+					   CMod ModList[],
 					   int NumMod,
 					   const char *PepStart,
-                       int *IsFixed,
                        int Searchctermproduct,
                        int Searchb1
 						);
@@ -265,12 +261,10 @@ public:
      * and the positions are not recorded anywhere
      */
 	void RecordModInfo(unsigned ModMask,
-							   const char **Site,
-							   int *DeltaMass,
-							   int NumMod,
-							   const char *PepStart,
-                               int *IsFixed
-							   );
+                       CMod ModList[],
+                       int NumMod,
+                       const char *PepStart
+                       );
 
 
 	///
@@ -1060,6 +1054,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.31  2005/09/14 15:30:17  lewisg
+  neutral loss
+
   Revision 1.30  2005/08/15 14:24:56  lewisg
   new mod, enzyme; stat test
 
