@@ -407,7 +407,7 @@ CPythonDBAPITest::Test_SelectStmt(void)
             "	contained tinyint NOT NULL , \n"
             "	seq_align text  NULL , \n"
             "	merged_sa char (1) NOT NULL , \n"
-            "	CONSTRAINT PK_Overlaps PRIMARY KEY CLUSTERED  \n"
+            "	PRIMARY KEY \n"
             "	( \n"
             "		pairId, \n"
             "		overlapNum \n"
@@ -694,6 +694,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/09/14 17:50:55  ssikorsk
+* 	  Do not use named constraints with a temporary table
+*
 * Revision 1.17  2005/09/13 14:46:39  ssikorsk
 * Added a Test_LOB implementation
 *
