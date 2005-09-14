@@ -1373,7 +1373,9 @@ match the prefix of the general ID of the CDS or mRNA product Bioseq.",
 //  SEQ_FEAT_MrnaTransFail 
 "A fundamental error occurred in software while attempting to transcribe this \
 messenger RNA. It is either a software problem or sever data corruption.",
-
+//   SEQ_FEAT_ImproperBondLocation,
+"Only bond features should have locations of type bond. Most other features should \
+use interval or point locations.",
 END(SEQ_FEAT),
 
 /* SEQ_ALIGN */
@@ -1486,6 +1488,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2005/09/14 14:17:19  rsmith
+* add validation of Bond locations.
+*
 * Revision 1.59  2005/06/28 17:36:20  shomrat
 * Include more information in the each error object
 *

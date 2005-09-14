@@ -293,6 +293,10 @@ void CValidError_feat::ValidateSeqFeatData
     } else {
         ValidateOperon(feat);
     }
+    
+    if ( !data.IsBond() ) {
+        ValidateBondLocs(feat);
+    }
 }
 
 
@@ -2952,6 +2956,21 @@ void CValidError_feat::ValidateFeatBioSource
 }
 
 
+void CValidError_feat::ValidateBondLocs(const CSeq_feat& feat)
+{
+    _ASSERT( ! feat.GetData().IsBond() );
+    
+    // Bond Seq_locs only allowed on Bond features.
+    CSeq_loc_CI loc_ci(feat.GetLocation());
+    for (; loc_ci; ++loc_ci) {
+        if (loc_ci.GetSeq_loc().IsBond()) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_ImproperBondLocation,
+                "Bond location should only be on bond features", feat);
+            break;
+        }
+    }
+}
+
 // REQUIRES: feature is either Gene or mRNA
 bool CValidError_feat::IsSameAsCDS(const CSeq_feat& feat)
 {
@@ -3033,6 +3052,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.77  2005/09/14 14:17:19  rsmith
+* add validation of Bond locations.
+*
 * Revision 1.76  2005/06/28 17:40:09  shomrat
 * Fixes in partial location validation; bug fix in trna validation
 *

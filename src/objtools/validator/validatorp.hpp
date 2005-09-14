@@ -296,6 +296,7 @@ enum EErrType {
     eErr_SEQ_FEAT_UnnecessaryException,
     eErr_SEQ_FEAT_LocusTagProductMismatch,
     eErr_SEQ_FEAT_MrnaTransFail,
+    eErr_SEQ_FEAT_ImproperBondLocation,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN),
@@ -835,6 +836,7 @@ private:
     void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
     void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
+    void ValidateBondLocs(const CSeq_feat& feat);
 
     bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat);
@@ -990,6 +992,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.81  2005/09/14 14:17:19  rsmith
+* add validation of Bond locations.
+*
 * Revision 1.80  2005/06/30 17:25:34  shomrat
 * Removed wrong enum value
 *
