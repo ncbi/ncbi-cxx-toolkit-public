@@ -34,17 +34,9 @@
 
 %ignore ncbi::objects::CConstSageData::GetMethod() const;
 
-%ignore BLAST_RPSSearchEngine;
-
 %ignore ncbi::CAlignSelector::SetPublicOnly;
 
-%ignore ncbi::CHTML_area::CHTML_area();
-
-// objtools/data_loaders/cdd/cdd.hpp
 %ignore ncbi::objects::CCddDataLoader::CCddDataLoader();
-
-%ignore ncbi::objects::CFlatCodonQVal::CFlatCodonQVal(const string&);
-%ignore ncbi::objects::CFlatCodonQV::CFlatCodonQV(const string&);
 
 %ignore ncbi::CIntervalTree::Add(const interval_type &interval,
                                  const mapped_type &value);
@@ -68,7 +60,6 @@
 %ignore ncbi::objects::CAlnMap::
     GetNumberOfInsertedSegmentsOnRight(TNumrow row, TNumseg seg) const;
 
-%ignore ncbi::CHTML_table::ColumnWidth(CHTML_table *, TIndex, const string &);
 %ignore ncbi::CHTMLHelper::LoadIDList(TIDList& ids,  
                                       const TCgiEntries& values,
                                       const string& hiddenPrefix,
@@ -76,7 +67,7 @@
 %ignore ncbi::CHTMLHelper::StoreIDList(CHTML_form *form,
                                        const TIDList&  ids,
                                        const string&  hiddenPrefix,
-                                       const string&  checkboxPrefix) ;
+                                       const string&  checkboxPrefix);
 
 %ignore ncbi::COptionDescription::COptionDescription();
 
@@ -84,6 +75,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/09/15 15:13:48  jcherry
+ * Removed some obsolete %ignore's.  Rearranged a bit.
+ *
  * Revision 1.8  2005/08/31 17:01:47  jcherry
  * %ignore SAnnotObjectsIndex::ReserveInfoSize
  *
