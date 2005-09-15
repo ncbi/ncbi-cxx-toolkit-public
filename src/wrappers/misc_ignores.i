@@ -30,6 +30,10 @@
  */
 
 
+// On Windows, SWIG strangely tries to wrap these private members
+%ignore ncbi::objects::CArticleIdSet_Base::m_set_State;
+%ignore ncbi::objects::CArticleIdSet_Base::m_data;
+
 // sequence_type type is a public typedef, but it's typedef'ed to
 // a private typedef (seq_t).
 %ignore ncbi::CSymDustMasker::operator();
@@ -224,6 +228,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/09/15 16:30:49  jcherry
+ * %ignore some private data members that are inexplicably wrapped on Windows
+ *
  * Revision 1.5  2005/08/16 15:19:39  jcherry
  * CDirEntry::GetType(const struct stat &st) is now static, and hence
  * not const
