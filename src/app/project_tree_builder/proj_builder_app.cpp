@@ -222,7 +222,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,0,0) );
+    SetVersion( CVersionInfo(1,0,1) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1099,6 +1099,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/09/15 18:24:37  gouriano
+ * Recognize and process local (within a single makefile) macros
+ *
  * Revision 1.61  2005/08/03 13:53:20  gouriano
  * Remove circular dependencies between static libraries
  *

@@ -123,6 +123,47 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
     }
 }
 
+void CSymResolver::Resolve(const string& define, list<string>* resolved_def,
+                           const CSimpleMakeFileContents& mdata)
+{
+    resolved_def->clear();
+
+    if ( !HasDefine(define) ) {
+	    resolved_def->push_back(define);
+	    return;
+    }
+
+    string data(define);
+    string::size_type start, end;
+    start = data.find("$(");
+    end = data.find(")", start);
+    if (end == string::npos) {
+        LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + define);
+	    resolved_def->push_back(define);
+	    return;
+    }
+    string raw_define = data.substr(start,end-start+1);
+    string str_define = StripDefine( raw_define );
+
+    ITERATE(CSimpleMakeFileContents::TContents, p, mdata.m_Contents) {
+	    if (p->first == str_define) {
+            ITERATE(list<string>, n, p->second) {
+                list<string> new_resolved_def;
+                Resolve(*n, &new_resolved_def, mdata);
+                copy(new_resolved_def.begin(),
+                    new_resolved_def.end(),
+                    back_inserter(*resolved_def));
+            }
+	    }
+    }
+
+    if ( !IsDefine(define) && resolved_def->size() == 1 ) {
+        data = NStr::Replace(data, raw_define, resolved_def->front());
+        resolved_def->clear();
+        resolved_def->push_back(data);
+    }
+}
+
 
 CSymResolver& CSymResolver::operator+= (const CSymResolver& src)
 {
@@ -210,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/09/15 18:24:37  gouriano
+ * Recognize and process local (within a single makefile) macros
+ *
  * Revision 1.11  2005/07/06 19:12:20  gouriano
  * Recognize and process macros inside a larger string
  *

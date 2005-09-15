@@ -53,6 +53,8 @@ public:
     ~CSymResolver(void);
 
     void Resolve(const string& define, list<string>* resolved_def);
+    static void Resolve(const string& define, list<string>* resolved_def,
+                        const CSimpleMakeFileContents& data);
 
     CSymResolver& operator+= (const CSymResolver& src);
 
@@ -84,6 +86,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/09/15 18:25:04  gouriano
+ * Recognize and process local (within a single makefile) macros
+ *
  * Revision 1.7  2005/07/06 19:12:39  gouriano
  * Recognize and process macros inside a larger string
  *

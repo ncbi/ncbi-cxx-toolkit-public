@@ -146,7 +146,12 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                     } else {
                         list<string> resolved_def;
                         string val_define = FilterDefine(val);
-	                    resolver.Resolve(val_define, &resolved_def);
+                        if (val_define == val) {
+	                        CSymResolver::Resolve(val_define, &resolved_def, p->second);
+	                    }
+	                    if ( resolved_def.empty() ) {
+    	                    resolver.Resolve(val_define, &resolved_def);
+    	                }
 	                    if ( resolved_def.empty() ) {
                             defs_unresolved.insert(val);
 		                    new_vals.push_back(val); //not resolved - keep old val
@@ -1573,6 +1578,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/09/15 18:24:37  gouriano
+ * Recognize and process local (within a single makefile) macros
+ *
  * Revision 1.30  2005/07/06 19:12:20  gouriano
  * Recognize and process macros inside a larger string
  *
