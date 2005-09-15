@@ -1237,8 +1237,9 @@ static bool s_IsDuplicateFeatures(const CSeq_feat_Handle& f1, const CSeq_feat_Ha
 {
     _ASSERT(f1  &&  f2);
 
-    return f1.GetFeatSubtype() == f2.GetFeatSubtype()  &&
-           f1.GetLocation().Equals(f2.GetLocation())   &&
+    return !f1.IsTableSNP()  &&  !f2.IsTableSNP()       &&
+           f1.GetFeatSubtype() == f2.GetFeatSubtype()   &&
+           f1.GetLocation().Equals(f2.GetLocation())    &&
            f1.GetSeq_feat()->Equals(*f2.GetSeq_feat());
 }
 
@@ -1623,6 +1624,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2005/09/15 20:27:49  shomrat
+* Fix check for duplicate features
+*
 * Revision 1.49  2005/08/16 15:50:42  shomrat
 * Merge equal BioSources
 *
