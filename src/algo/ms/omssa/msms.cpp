@@ -124,22 +124,21 @@ bool CCleave::CalcAndCut(const char *SeqStart,
                          CMSMod &VariableMods,
                          CMSMod &FixedMods,
                          CMod ModList[],
-//                         const char **Site,
-//                         int *DeltaMass,
                          const int *IntCalcMass,  // array of int AA masses
                          const int *PrecursorIntCalcMass, // precursor masses
-//                         int *ModEnum,       // the mod type at each site
-//                         int *IsFixed,
                          CRef <CMSModSpecSet> Modset,
                          int Maxproductions
                          )
 {
     char SeqChar(**PepStart);
 
-    // n terminus protein
-    if(*PepStart == SeqStart) CheckMods(eMSModType_modn, eMSModType_modnaa, VariableMods, FixedMods,
-                                        NumMod, SeqChar, MaxNumMod, ModList,
-                                        *PepStart, Modset);
+    // n terminus protein mods
+    // allow alternative start if n-term methionine cleavage
+    if(*PepStart == SeqStart ||
+       (*PepStart == SeqStart+1 && NMethionine && *SeqStart == '\x0c'))
+        CheckMods(eMSModType_modn, eMSModType_modnaa, VariableMods, FixedMods,
+                  NumMod, SeqChar, MaxNumMod, ModList,
+                  *PepStart, Modset);
 
     // n terminus peptide
     CheckMods(eMSModType_modnp, eMSModType_modnpaa, VariableMods, FixedMods, NumMod, SeqChar, MaxNumMod, ModList,
@@ -608,6 +607,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.27  2005/09/15 21:29:24  lewisg
+  filter out n-term protein mods
+
   Revision 1.26  2005/09/14 17:46:11  lewisg
   treat n-term methionine cut as cleavage
 

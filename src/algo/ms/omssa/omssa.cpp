@@ -401,12 +401,13 @@ void CSearch::UpdateWithNewPep(int Missed,
                                CMod ModList[][MAXMOD],
 			       int Masses[],
 			       int EndMasses[],
-                               int NumModSites[])
+                               int NumModSites[],
+                               CRef <CMSModSpecSet> Modset)
 {
     // iterate over missed cleavages
     int iMissed;
     // maximum mods allowed
-    int ModMax; 
+    //int ModMax; 
     // iterate over mods
     int iMod;
     
@@ -421,25 +422,38 @@ void CSearch::UpdateWithNewPep(int Missed,
 	// update new mod masses to add in any new mods from new peptide
 
 	// first determine the maximum value for updated mod list
-	if(NumMod[iMissed] + NumMod[Missed-1] >= MAXMOD)
-	    ModMax = MAXMOD - NumMod[iMissed];
-	else ModMax = NumMod[Missed-1];
+	//if(NumMod[iMissed] + NumMod[Missed-1] >= MAXMOD)
+	//    ModMax = MAXMOD - NumMod[iMissed];
+	//else ModMax = NumMod[Missed-1];
 
 	// now interate thru the new entries
     const char *OldSite(0);
-    int NumModSitesCount(0);
-	for(iMod = NumMod[iMissed]; 
-	    iMod < NumMod[iMissed] + ModMax;
-	    iMod++) {
-        ModList[iMissed][iMod] = ModList[Missed-1][iMod - NumMod[iMissed]];
+    int NumModSitesCount(0), NumModCount(0);
+	for(iMod = 0; iMod < NumMod[Missed-1]; iMod++) {
 
-        // increment if 
-        if(OldSite != ModList[iMissed][iMod].GetSite() &&
-            ModList[iMissed][iMod].GetFixed() != 1) {
-            NumModSitesCount++;
-            OldSite = ModList[iMissed][iMod].GetSite();
+        // if n-term protein mod and not at the start of the peptide, don't copy
+        if ((Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modn || 
+            Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modnaa) &&
+            PepStart[iMissed] != ModList[Missed-1][iMod].GetSite()) {
+            continue;
         }
 
+        // increment number of mods
+        NumModCount++;
+
+        // don't do more than the maximum number of modifications
+        if(NumModCount + NumMod[iMissed] >= MAXMOD) break;
+
+        // copy the mod to the old peptide
+        ModList[iMissed][NumModCount + NumMod[iMissed]] = 
+            ModList[Missed-1][iMod];
+
+        // increment site count if not fixed mod and not the same site
+        if(OldSite != ModList[iMissed][NumModCount + NumMod[iMissed]].GetSite() &&
+            ModList[iMissed][NumModCount + NumMod[iMissed]].GetFixed() != 1) {
+            NumModSitesCount++;
+            OldSite = ModList[iMissed][NumModCount + NumMod[iMissed]].GetSite();
+        }
 	}
 				
 	// update old masses
@@ -449,7 +463,7 @@ void CSearch::UpdateWithNewPep(int Missed,
 	EndMasses[iMissed] = EndMasses[Missed - 1];
 			
 	// update number of Mods
-	NumMod[iMissed] += ModMax;
+	NumMod[iMissed] += NumModCount;
 
     // update number of Modification Sites
     NumModSites[iMissed] += NumModSitesCount;
@@ -789,7 +803,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	TaxContinue:
 	    length = readdb_get_sequence(rdfp, iSearch, &Sequence);
 	    SequenceDone = false;
-	    //	PepStart = (const char *)Sequence[0];
 		
 	    // initialize missed cleavage matrix
 	    for(iMissed = 0; iMissed < Missed; iMissed++) {
@@ -866,7 +879,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                       ModList[Missed - 1]);
 
         UpdateWithNewPep(Missed, PepStart, PepEnd, NumMod, ModList,
-                         Masses, EndMasses, NumModSites);
+                         Masses, EndMasses, NumModSites, Modset);
 	
         CreateModCombinations(Missed, PepStart, Masses,
 				      EndMasses, NumMod, NumMassAndMask,
@@ -884,8 +897,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		    endposition = PepEnd[iMissed] - (const char *)Sequence;
 		
 		    // init bool for "Has ladder been calculated?"
-		 //   for(iMod = 0; iMod < MaxModPerPep/*NumMassAndMask[iMissed]*/ ; iMod++) 
-		  //    SetLadderCalc(iMod) = false;
 			ClearLadderCalc(NumMassAndMask[iMissed]);
 		
 		    OldMass = 0;
@@ -1095,7 +1106,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                 // init new start from old stop
                 PepEnd[Missed-1] += 1;
                 PepStart[Missed-1] = PepEnd[Missed-1];
-                // PepStart = PepEnd + 1;
             }
         }
 
@@ -1625,6 +1635,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.60  2005/09/15 21:29:24  lewisg
+filter out n-term protein mods
+
 Revision 1.59  2005/09/14 18:50:56  lewisg
 add theoretical mass to hit
 

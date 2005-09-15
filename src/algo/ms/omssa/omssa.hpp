@@ -251,7 +251,19 @@ public:
     void DeleteVariableOverlap(int& NumMod,
                                CMod ModList[]);
 
-    // update sites and masses for new peptide
+    /**
+     *  update sites and masses for new peptide
+     * 
+     * @param Missed how many missed cleavages
+     * @param PepStart array of peptide starts
+     * @param PepEnd array of peptide ends
+     * @param NumMod array of the number of mods
+     * @param ModList modification info
+     * @param Masses peptide masses
+     * @param EndMasses peptide end masses
+     * @param NumModSites array of number of unfixed mod sites
+     * @param Modset modification specifications
+     */
     void UpdateWithNewPep(int Missed,
 			  const char *PepStart[],
 			  const char *PepEnd[], 
@@ -259,7 +271,8 @@ public:
 			  CMod ModList[][MAXMOD],
 			  int Masses[],
 			  int EndMasses[],
-                          int NumModSites[]);
+                          int NumModSites[],
+                          CRef <CMSModSpecSet> Modset);
 
     // create the various combinations of mods
     void CreateModCombinations(int Missed,
@@ -558,6 +571,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.34  2005/09/15 21:29:24  lewisg
+  filter out n-term protein mods
+
   Revision 1.33  2005/09/14 15:30:17  lewisg
   neutral loss
 
