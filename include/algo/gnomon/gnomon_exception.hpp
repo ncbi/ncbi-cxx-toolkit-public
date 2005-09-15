@@ -35,13 +35,15 @@
 #include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(gnomon)
 
 class CGnomonException : EXCEPTION_VIRTUAL_BASE public CException
 {
 public:
     // Enumerated list of document management errors
     enum EErrCode {
-        eGenericError
+        eGenericError,
+        eMemoryLimit
     };
 
     // Translate the specific error code into a string representations of
@@ -50,6 +52,7 @@ public:
     {
         switch (GetErrCode()) {
         case eGenericError: return "eGenericError";
+        case eMemoryLimit: return "eMemoryLimit";
         default:            return CException::GetErrCodeString();
         }
     }
@@ -58,12 +61,16 @@ public:
 };
 
 
+END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/15 21:16:01  chetvern
+ * redesigned API
+ *
  * Revision 1.2  2004/08/19 12:42:48  dicuccio
  * Dropped unnecessary export specifier
  *
