@@ -53,11 +53,12 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/seq_vector.hpp>
-#include "../gnomon/gene_finder.hpp"
+#include <algo/gnomon/gnomon.hpp>
 #include <algo/sequence/orf.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+USING_SCOPE(gnomon);
 
 
 bool CTestTranscript::CanTest(const CSerialObject& obj,
@@ -312,74 +313,25 @@ CTestTranscript_InframeUpstreamStop::RunTest(const CSerialObject& obj,
 static void s_CodingPropensity(const CSeq_id& id, const CSeqTestContext* ctx,
                                CFeat_CI feat_iter, CSeq_test_result& result)
 {
-    // Need to know GC content in order to load correct models.
-    // Compute on the whole transcript, not just CDS.
-    CBioseq_Handle xcript_hand = ctx->GetScope().GetBioseqHandle(id);
-    CSeqVector xcript_vec = xcript_hand.GetSeqVector();
-    xcript_vec.SetIupacCoding();
-    unsigned int gc_count = 0;
-    CSeqVector_CI xcript_iter(xcript_vec);
-    for( ;  xcript_iter;  ++xcript_iter) {
-        if (*xcript_iter == 'G' || *xcript_iter == 'C') {
-            ++gc_count;
-        }
-    }
-    unsigned int gc_percent(static_cast<unsigned int>
-                            ((100.0 * gc_count) / xcript_vec.size() + 0.5));
-    
-    // Load models from file
+    const CSeq_loc& cds = feat_iter->GetLocation();
+    const CSeq_id* idp = &id;
+    cds.CheckId(idp);
+
     if (!ctx->HasKey("gnomon_model_file")) {
         return;
     }
     string model_file_name = (*ctx)["gnomon_model_file"];
-    MC3_CodingRegion<5> coding_mc(model_file_name, gc_percent);
-    MC_NonCodingRegion<5> non_coding_mc(model_file_name, gc_percent);
 
-    // Represent coding sequence as enum Nucleotides
-    CSeqVector vec(feat_iter->GetLocation(), ctx->GetScope());
-    vec.SetIupacCoding();
-    vector<char> seq;
-    seq.reserve(vec.size());
-    CSeqVector_CI iter(vec);
-    for( ;  iter;  ++iter) {
-        switch (*iter) {
-        case 'A':
-            seq.push_back(nA);
-            break;
-        case 'C':
-            seq.push_back(nC);
-            break;
-        case 'G':
-            seq.push_back(nG);
-            break;
-        case 'T':
-            seq.push_back(nT);
-            break;
-        default:
-            seq.push_back(nN);
-            break;
-        }
-    }
+    int gccontent=0;
+    double score = CCodingPropensity::GetScore(model_file_name, cds, ctx->GetScope(), &gccontent);
 
-    // Sum coding and non-coding scores across coding sequence.
-    // Don't include stop codon!
-    double coding_score = 0;
-    for (unsigned int i = 5;  i < seq.size() - 3;  ++i) {
-        coding_score += coding_mc.Score(seq, i, i % 3);
-    }
-    
-    double non_coding_score = 0;
-    for (unsigned int i = 5;  i < seq.size() - 3;  ++i) {
-        non_coding_score += non_coding_mc.Score(seq, i);
-    }
-    
     // Record results
     result.SetOutput_data()
         .AddField("model_file", model_file_name);
     result.SetOutput_data()
-        .AddField("model_percent_gc", (int) gc_percent);
+        .AddField("model_percent_gc", gccontent);
     result.SetOutput_data()
-        .AddField("score", max(coding_score - non_coding_score, -1e100));
+        .AddField("score", max(score, -1e100));
     
 }
 
@@ -750,6 +702,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/09/15 21:29:32  chetvern
+ * Updated to match new gnomon API
+ *
  * Revision 1.13  2005/04/18 18:33:15  jcherry
  * Explicit cast to eliminate compiler warning
  *
