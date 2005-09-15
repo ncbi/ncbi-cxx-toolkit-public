@@ -185,7 +185,7 @@ objtools/simple/simple_om.hpp
 %include lds.swig
 %include image.swig
 
-%ifdef GUI %include gui.swig
+%include gui.swig
 
 %%
 
@@ -199,6 +199,9 @@ objtools/simple/simple_om.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/15 16:32:26  jcherry
+ * Turn on wrapping of some gui stuff
+ *
  * Revision 1.4  2005/08/01 17:23:22  jcherry
  * Made %include basic_containers.i come earlier (NStr was coming before
  * vector<string> and list<string>)
