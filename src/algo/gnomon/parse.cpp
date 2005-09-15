@@ -30,141 +30,133 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "gene_finder.hpp"
+#include <algo/gnomon/gnomon_model.hpp>
+#include <algo/gnomon/gnomon_exception.hpp>
+#include "hmm.hpp"
+#include "parse.hpp"
+#include "hmm_inlines.hpp"
+
 
 BEGIN_NCBI_SCOPE
-
-template<class T> inline void PushState(ParseVec<T>* vecp, int strand, int point)
-{
-    for(int phase = 0; phase < 3; ++phase)
-    {
-        vecp[phase].push_back(T(strand,phase,point));
-        ++vecp[phase].num;
-    }
-}
-
-template<class T> inline void PushState(ParseVec<T>& vec, int strand, int point)
-{
-    vec.push_back(T(strand,point));
-    ++vec.num;
-}
-
-inline void PushState(ParseVec<LastExon>& vec, int strand, int point)
-{
-    vec.push_back(LastExon(strand,2,point));
-    ++vec.num;
-}
-
-inline void PushState(ParseVec<FirstExon>& vec, int strand, int point)
-{
-    vec.push_back(FirstExon(strand,0,point));
-    ++vec.num;
-}
+BEGIN_SCOPE(gnomon)
 
 template<class L, class R> inline 
-bool TooFar(const L& left, const R& right, double score) 
+bool s_TooFar(const L& left, const R& right, double score) 
 {
-    if(left.MScore() == BadScore) return true;
+    if(left.MScore() == kBadScore) return true;
     int len = right.Stop()-left.Stop();
-    return (len > TooFarLen && score+left.MScore() < right.Score());
+    return (len > kTooFarLen && score+left.MScore() < right.Score());
 }
 
-struct RState
+struct SRState
 {
-    RState(const HMM_State& l, const HMM_State& r)
+    SRState(const CHMM_State& l, const CHMM_State& r)
     {
         lsp = r.LeftState();
-        rsp = const_cast<HMM_State*>(&r);
+        rsp = const_cast<CHMM_State*>(&r);
         rsp->UpdateLeftState(l);
     }
-    ~RState() { rsp->UpdateLeftState(*lsp); } 
-
-    const HMM_State* lsp;
-    HMM_State* rsp;
+    ~SRState() { rsp->UpdateLeftState(*lsp); } 
+        
+    const CHMM_State* lsp;
+    CHMM_State* rsp;
 };
 
 template<class Left, class Right> inline
-bool EvaluateNewScore(const Left& left, const Right& right, double& rscore, bool& openrgn)
+bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bool& openrgn)
 {
 
-    rscore = BadScore;
+    rscore = kBadScore;
 
-    RState rst(left,right);
-
+    SRState rst(left,right);
+    
     int len = right.Stop()-left.Stop();
     if(len > right.MaxLen()) return false;
     if(!right.NoRightEnd() && len < right.MinLen()) return true;
-
+    
     double scr, score = 0;
     if(left.isPlus())
     {
         scr = left.BranchScore(right);
-        if(scr == BadScore) return true;
+        if(scr == kBadScore) return true;
     }
     else
     {
         scr = right.BranchScore(left);
-        if(scr == BadScore) return true;
+        if(scr == kBadScore) return true;
         scr += right.DenScore()-left.DenScore();
     }
     score += scr;
 
     // this check is frame-dependent and MUST be after BranchScore
     if(right.StopInside()) return false;     
-
+    
     if(right.NoRightEnd()) scr = right.ClosingLengthScore();
     else scr = right.LengthScore();
-    if(scr == BadScore) return true;
+    if(scr == kBadScore) return true;
     score += scr;
-
+    
     scr = right.RgnScore();
-    if(scr == BadScore) return true;
+    if(scr == kBadScore) return true;
     score += scr;
-
+    
     if(!right.NoRightEnd())
     {
         scr = right.TermScore();
-        if(scr == BadScore) return true;
+        if(scr == kBadScore) return true;
         score += scr;
     }
-
+    
     openrgn = right.OpenRgn();
     rscore = score;
     return true;
 }
 
+// leftprot   0 no protein, 1 there is a protein
+// rightprot  0 no protein, 1 must be a protein, -1 don't care 
 template<class L, class R> // template for all exons
-inline bool ForwardStep(const L& left, R& right)
+inline bool s_ForwardStep(const L& left, R& right, int leftprot, int rightprot)
 {
     double score;
     bool openrgn;
-    if(!EvaluateNewScore(left,right,score,openrgn)) return false;
-    else if(score == BadScore) return true;
-
-    if(left.Score() != BadScore && openrgn)
+    if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
+    else if(score == kBadScore) return true;
+    
+    int protnum = right.GetSeqScores()->ProtNumber(left.Stop(),right.Stop());
+    
+    if(rightprot == 0 && (leftprot != 0 || protnum != 0))    // there is a protein 
     {
-        double scr = score+left.Score();
+        return true;
+    }
+    
+    if(leftprot == 0)
+    {
+        if(rightprot == 1 && protnum == 0) return true;      // no proteins
+        else if(protnum > 0) --protnum;                      // for first protein no penalty
+    }
+    
+    if(left.Score() != kBadScore && openrgn)
+    {
+         double scr = score-protnum*right.GetSeqScores()->MultiProtPenalty()+left.Score();
         if(scr > right.Score())
         {
             right.UpdateLeftState(left);
             right.UpdateScore(scr);
         }
     }
-
-    if(!openrgn)  return false;
-
-    return true;
+        
+    return openrgn;
 }
 
 template<class L> 
-inline bool ForwardStep(const L& left, Intron& right)
+inline bool s_ForwardStep(const L& left, CIntron& right)
 {
     double score;
     bool openrgn;
-    if(!EvaluateNewScore(left,right,score,openrgn)) return false;
-    else if(score == BadScore) return true;
-
-    if(left.Score() != BadScore && openrgn)
+    if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
+    else if(score == kBadScore) return true;
+    
+    if(left.Score() != kBadScore && openrgn)
     {
         double scr = score+left.Score();
         if(scr > right.Score())
@@ -173,21 +165,19 @@ inline bool ForwardStep(const L& left, Intron& right)
             right.UpdateScore(scr);
         }
     }
-
-    if(!openrgn || TooFar(left, right, score))  return false;
-
-    return true;
+        
+    return (openrgn && !s_TooFar(left, right, score));
 }
 
 template<class L> 
-inline bool ForwardStep(const L& left, Intergenic& right)
+inline bool s_ForwardStep(const L& left, CIntergenic& right)
 {
     double score;
     bool openrgn;
-    if(!EvaluateNewScore(left,right,score,openrgn)) return false;
-    else if(score == BadScore) return true;
-
-    if(left.Score() != BadScore && openrgn)
+    if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
+    else if(score == kBadScore) return true;
+    
+    if(left.Score() != kBadScore && openrgn)
     {
         double scr = score+left.Score();
         if(scr > right.Score())
@@ -196,277 +186,266 @@ inline bool ForwardStep(const L& left, Intergenic& right)
             right.UpdateScore(scr);
         }
     }
-
-    if(!openrgn || TooFar(left, right, score))  return false;
-
-    return true;
+        
+    return (openrgn && !s_TooFar(left, right, score));
 }
 
 
 template<class L, class R> // template for all exons
-inline void MakeStep(ParseVec<L>& lvec, ParseVec<R>& rvec)
+inline void s_MakeStep(vector<L>& lvec, vector<R>& rvec, int leftprot, int rightprot)
 {
-    if(lvec.num < 0) return;
-    int i = lvec.num;
-    if(lvec[i].Stop() == rvec[rvec.num].Stop()) --i;
-    while(i >= 0 && ForwardStep(lvec[i--],rvec[rvec.num]));
-
-    if(rvec.num > 0) rvec[rvec.num].UpdatePrevExon(rvec[rvec.num-1]);
+    if(lvec.empty()) return;
+    int i = lvec.size()-1;
+    if(lvec[i].Stop() == rvec.back().Stop()) --i;
+    while(i >= 0 && s_ForwardStep(lvec[i--],rvec.back(),leftprot,rightprot));
+    
+    if(rvec.size() > 1) 
+    {
+        rvec.back().UpdatePrevExon(rvec[rvec.size()-2]);
+    }
 }
 
 template<class L> 
-inline void MakeStep(ParseVec<L>& lvec, ParseVec<Intron>& rvec)
+inline void s_MakeStep(vector<L>& lvec, vector<CIntron>& rvec)
 {
-    if(lvec.num < 0) return;
-    Intron& right = rvec[rvec.num];
-    int i = lvec.num;
+    if(lvec.empty()) return;
+    CIntron& right = rvec.back();
+    int i = lvec.size()-1;
     int rlimit = right.Stop();
     if(lvec[i].Stop() == rlimit) --i;
-    int nearlimit = max(0,rlimit-TooFarLen);
+    int nearlimit = max(0,rlimit-kTooFarLen);
     while(i >= 0 && lvec[i].Stop() >= nearlimit) 
     {
-        if(!ForwardStep(lvec[i--],right)) return;
+        if(!s_ForwardStep(lvec[i--],right)) return; 
+    }
+    if(i < 0) return; 
+    for(const L* p = &lvec[i]; p !=0; p = p->PrevExon())
+    {
+        if(!s_ForwardStep(*p,right)) return; 
+    }
+}
+
+
+template<class L> 
+inline void s_MakeStep(vector<L>& lvec, vector<CIntergenic>& rvec)
+{
+    if(lvec.empty()) return;
+    CIntergenic& right = rvec.back();
+    int i = lvec.size()-1;
+    int rlimit = right.Stop();
+    if(lvec[i].Stop() == rlimit) --i;
+    while(i >= 0 && lvec[i].Stop() >= CHMM_State::GetSeqScores()->LeftAlignmentBoundary(right.Stop())) --i;  // no intergenics in alignment
+    int nearlimit = max(0,rlimit-kTooFarLen);
+    while(i >= 0 && lvec[i].Stop() >= nearlimit) 
+    {
+        if(!s_ForwardStep(lvec[i--],right)) return;
     }
     if(i < 0) return;
     for(const L* p = &lvec[i]; p !=0; p = p->PrevExon())
     {
-        if(!ForwardStep(*p,right)) return;
+        if(!s_ForwardStep(*p,right)) return;
     }
 }
 
-
-template<class L> 
-inline void MakeStep(ParseVec<L>& lvec, ParseVec<Intergenic>& rvec)
+inline void s_MakeStep(EStrand strand, int point, vector<CIntergenic>& lvec, vector<CSingleExon>& rvec)            // L - intergenic, R - single exon
 {
-    if(lvec.num < 0) return;
-    Intergenic& right = rvec[rvec.num];
-    int i = lvec.num;
-    int rlimit = right.Stop();
-    if(lvec[i].Stop() == rlimit) --i;
-    while(i >= 0 && lvec[i].Stop() >= HMM_State::GetSeqScores()->LeftAlignmentBoundary(right.Stop())) --i;  // no intergenics in alignment
-    int nearlimit = max(0,rlimit-TooFarLen);
-    while(i >= 0 && lvec[i].Stop() >= nearlimit) 
-    {
-        if(!ForwardStep(lvec[i--],right)) return;
-    }
-    if(i < 0) return;
-    for(const L* p = &lvec[i]; p !=0; p = p->PrevExon())
-    {
-        if(!ForwardStep(*p,right)) return;
-    }
+    rvec.push_back(CSingleExon(strand,point));
+    s_MakeStep(lvec, rvec, 0, -1);
+    if(rvec.back().Score() == kBadScore) rvec.pop_back();
 }
 
-template<class L, class R> 
-inline void MakeStep(ParseVec<L>& lvec, ParseVec<R>* rvec)
+template<class R> 
+inline void s_MakeStep(EStrand strand, int point, vector<CIntergenic>& lvec, vector<R> rvec[][3])                 // L - intergenic, R - first/last exon
 {
-    for(int phr = 0; phr < 3; ++phr)
-    {
-        MakeStep(lvec, rvec[phr]);
-    }
-}
-
-template<class L, class R> 
-inline void MakeStep(ParseVec<L>* lvec, ParseVec<R>& rvec)
-{
-    for(int phl = 0; phl < 3; ++phl)
-    {
-        MakeStep(lvec[phl], rvec);
-    }
-}
-
-template<class L, class R> 
-inline void MakeStep(ParseVec<L>* lvec, ParseVec<R>* rvec)
-{
-    for(int phl = 0; phl < 3; ++phl)
+    for(int kr = 0; kr < 2; ++kr)
     {
         for(int phr = 0; phr < 3; ++phr)
         {
-            MakeStep(lvec[phl], rvec[phr]);
+            rvec[kr][phr].push_back(R(strand,phr,point));
+            s_MakeStep(lvec, rvec[kr][phr], 0, kr);
+            if(rvec[kr][phr].back().Score() == kBadScore) rvec[kr][phr].pop_back();
         }
     }
 }
 
-template<class L, class R> 
-inline void MakeStep(ParseVec<L>* lvec, ParseVec<R>* rvec, int shift)
+template<class R> 
+inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vector<R>& rvec)                 // L - intron R - first/last exon
 {
-    for(int phl = 0; phl < 3; ++phl)
+    rvec.push_back(R(strand,0,point));          // phase is bogus, it will be redefined in constructor
+    for(int kl = 0; kl < 2; ++kl)
     {
-        int phr = (shift+phl)%3;
-        MakeStep(lvec[phl], rvec[phr]);
+        for(int phl = 0; phl < 3; ++phl)
+        {
+            s_MakeStep(lvec[kl][phl], rvec, kl, -1);
+        }
+    }
+    if(rvec.back().Score() == kBadScore) rvec.pop_back();
+}
+
+inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vector<CInternalExon> rvec[][3])   // L - intron, R - internal exon
+{
+    for(int phr = 0; phr < 3; ++phr)
+    {
+        for(int kr = 0; kr < 2; ++kr)
+        {
+            rvec[kr][phr].push_back(CInternalExon(strand,phr,point));
+            for(int phl = 0; phl < 3; ++phl)
+            {
+                for(int kl = 0; kl < 2; ++kl)
+                {
+                    s_MakeStep(lvec[kl][phl], rvec[kr][phr], kl, kr);
+                }
+            }
+            if(rvec[kr][phr].back().Score() == kBadScore) rvec[kr][phr].pop_back();
+        }
     }
 }
 
-Parse::Parse(const SeqScores& ss) : seqscr(ss)
+template<class L1, class L2> 
+inline void s_MakeStep(EStrand strand, int point, vector<L1> lvec1[][3], vector<L2> lvec2[][3], vector<CIntron> rvec[][3], int shift)    // L1,L2 - exons, R -intron
+{
+    for(int k = 0; k < 2; ++k)
+    {
+        for(int phl = 0; phl < 3; ++phl)
+        {
+            int phr = (shift+phl)%3;
+            rvec[k][phr].push_back(CIntron(strand,phr,point));
+            if(k == 1) rvec[k][phr].back().UpdateScore(kBadScore);   // proteins don't come from outside
+            s_MakeStep(lvec1[k][phl], rvec[k][phr]);
+            s_MakeStep(lvec2[k][phl], rvec[k][phr]);
+            if(rvec[k][phr].back().Score() == kBadScore) rvec[k][phr].pop_back();
+        }
+    }
+}
+
+CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
 {
     try
     {
-        igplus.reserve(seqscr.StartNumber(Plus)+1);
-        igminus.reserve(seqscr.StopNumber(Minus)+1);
-        feminus.reserve(seqscr.StartNumber(Minus)+1);
-        leplus.reserve(seqscr.StopNumber(Plus)+1);
-        seplus.reserve(seqscr.StopNumber(Plus)+1);
-        seminus.reserve(seqscr.StartNumber(Minus)+1);
-        for(int phase = 0; phase < 3; ++phase)
+        m_igplus.reserve(m_seqscr.StartNumber(ePlus)+1);
+        m_igminus.reserve(m_seqscr.StopNumber(eMinus)+1);
+        m_feminus.reserve(m_seqscr.StartNumber(eMinus)+1);
+        m_leplus.reserve(m_seqscr.StopNumber(ePlus)+1);
+        m_seplus.reserve(m_seqscr.StopNumber(ePlus)+1);
+        m_seminus.reserve(m_seqscr.StartNumber(eMinus)+1);
+        for(int k = 0; k < 2; ++k)
         {
-            inplus[phase].reserve(seqscr.AcceptorNumber(Plus)+1);
-            inminus[phase].reserve(seqscr.DonorNumber(Minus)+1);
-            feplus[phase].reserve(seqscr.DonorNumber(Plus)+1);
-            ieplus[phase].reserve(seqscr.DonorNumber(Plus)+1);
-            ieminus[phase].reserve(seqscr.AcceptorNumber(Minus)+1);
-            leminus[phase].reserve(seqscr.AcceptorNumber(Minus)+1);
+            for(int phase = 0; phase < 3; ++phase)
+            {
+                m_inplus[k][phase].reserve(m_seqscr.AcceptorNumber(ePlus)+1);
+                m_inminus[k][phase].reserve(m_seqscr.DonorNumber(eMinus)+1);
+                m_feplus[k][phase].reserve(m_seqscr.DonorNumber(ePlus)+1);
+                m_ieplus[k][phase].reserve(m_seqscr.DonorNumber(ePlus)+1);
+                m_ieminus[k][phase].reserve(m_seqscr.AcceptorNumber(eMinus)+1);
+                m_leminus[k][phase].reserve(m_seqscr.AcceptorNumber(eMinus)+1);
+            }
         }
     }
     catch(bad_alloc)
     {
-        cerr << "Not enough memory in Parse\n";
-        exit(1);
+        NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CParse");
     }
-
-    int len = seqscr.SeqLen();
-
+    
+    int len = m_seqscr.SeqLen();
+    
     for(int i = 0; i < len; ++i)
     {
-        if(seqscr.AcceptorScore(i,Plus) != BadScore)
+        if(m_seqscr.AcceptorScore(i,ePlus) != kBadScore)
         {
-            PushState(inplus,Plus,i);
-            MakeStep(ieplus,inplus,1);
-            MakeStep(feplus,inplus,1);
+            s_MakeStep(ePlus,i,m_ieplus,m_feplus,m_inplus,1);
         }
 
-        if(seqscr.AcceptorScore(i,Minus) != BadScore)
+        if(m_seqscr.AcceptorScore(i,eMinus) != kBadScore)
         {
-            PushState(ieminus,Minus,i);
-            PushState(leminus,Minus,i);
-            MakeStep(inminus,ieminus);
-            MakeStep(igminus,leminus);
+            s_MakeStep(eMinus,i,m_inminus,m_ieminus);
+            s_MakeStep(eMinus,i,m_igminus,m_leminus);
         }
 
-        if(seqscr.DonorScore(i,Plus) != BadScore)
+        if(m_seqscr.DonorScore(i,ePlus) != kBadScore)
         {
-            PushState(feplus,Plus,i);
-            PushState(ieplus,Plus,i);
-            MakeStep(inplus,ieplus);
-            MakeStep(igplus,feplus);
+            s_MakeStep(ePlus,i,m_inplus,m_ieplus);
+            s_MakeStep(ePlus,i,m_igplus,m_feplus);
         }
 
-        if(seqscr.DonorScore(i,Minus) != BadScore)
+        if(m_seqscr.DonorScore(i,eMinus) != kBadScore)
         {
-            PushState(inminus,Minus,i);
-            MakeStep(leminus,inminus,0);
-            MakeStep(ieminus,inminus,0);
+            s_MakeStep(eMinus,i,m_leminus,m_ieminus,m_inminus,0);
         }
 
-        if(seqscr.StartScore(i,Plus) != BadScore)
+        if(m_seqscr.StartScore(i,ePlus) != kBadScore)
         {
-            PushState(igplus,Plus,i);
-            MakeStep(seplus,igplus);
-            MakeStep(seminus,igplus);
-            MakeStep(leplus,igplus);
-            MakeStep(feminus,igplus);
+            m_igplus.push_back(CIntergenic(ePlus,i));
+            s_MakeStep(m_seplus,m_igplus);
+            s_MakeStep(m_seminus,m_igplus);
+            s_MakeStep(m_leplus,m_igplus);
+            s_MakeStep(m_feminus,m_igplus);
         }
 
-        if(seqscr.StartScore(i,Minus) != BadScore)
+        if(m_seqscr.StartScore(i,eMinus) != kBadScore)
         {
-            PushState(feminus,Minus,i);
-            PushState(seminus,Minus,i);
-            MakeStep(inminus,feminus);
-            MakeStep(igminus,seminus);
+            s_MakeStep(eMinus,i,m_inminus,m_feminus);
+            s_MakeStep(eMinus,i,m_igminus,m_seminus);
         }
 
-        if(seqscr.StopScore(i,Plus) != BadScore)
+        if(m_seqscr.StopScore(i,ePlus) != kBadScore)
         {
-            PushState(leplus,Plus,i);
-            PushState(seplus,Plus,i);
-            MakeStep(inplus,leplus);
-            MakeStep(igplus,seplus);
+            s_MakeStep(ePlus,i,m_inplus,m_leplus);
+            s_MakeStep(ePlus,i,m_igplus,m_seplus);
         }
 
-        if(seqscr.StopScore(i,Minus) != BadScore)
+        if(m_seqscr.StopScore(i,eMinus) != kBadScore)
         {
-            PushState(igminus,Minus,i);
-            MakeStep(seplus,igminus);
-            MakeStep(seminus,igminus);
-            MakeStep(leplus,igminus);
-            MakeStep(feminus,igminus);
+            m_igminus.push_back(CIntergenic(eMinus,i));
+            s_MakeStep(m_seplus,m_igminus);
+            s_MakeStep(m_seminus,m_igminus);
+            s_MakeStep(m_leplus,m_igminus);
+            s_MakeStep(m_feminus,m_igminus);
         }
     }
 
-    PushState(inplus,Plus,-1);
-    MakeStep(ieplus,inplus,1);
-    MakeStep(feplus,inplus,1);
+    s_MakeStep(ePlus,-1,m_ieplus,m_feplus,m_inplus,1);        // may be popped
+    
+    s_MakeStep(eMinus,-1,m_leminus,m_ieminus,m_inminus,0);    // may be popped
 
-    PushState(ieminus,Minus,-1);
-    MakeStep(inminus,ieminus);
+    m_igplus.push_back(CIntergenic(ePlus,-1));                // never is popped
+    s_MakeStep(m_seplus,m_igplus);
+    s_MakeStep(m_seminus,m_igplus);
+    s_MakeStep(m_leplus,m_igplus);
+    s_MakeStep(m_feminus,m_igplus);
 
-    PushState(leminus,Minus,-1);
-    MakeStep(igminus,leminus);
-
-    PushState(ieplus,Plus,-1);
-    MakeStep(inplus,ieplus);
-
-    PushState(feplus,Plus,-1);
-    MakeStep(igplus,feplus);
-
-    PushState(inminus,Minus,-1);
-    MakeStep(leminus,inminus,0);
-    MakeStep(ieminus,inminus,0);
-
-    PushState(igplus,Plus,-1);
-    MakeStep(seplus,igplus);
-    MakeStep(seminus,igplus);
-    MakeStep(leplus,igplus);
-    MakeStep(feminus,igplus);
-
-    PushState(feminus,Minus,-1);
-    MakeStep(inminus,feminus);
-
-    PushState(seminus,Minus,-1);
-    MakeStep(igminus,seminus);
-
-    PushState(leplus,Plus,-1);
-    MakeStep(inplus,leplus);
-
-    PushState(seplus,Plus,-1);
-    MakeStep(igplus,seplus);
-
-    PushState(igminus,Minus,-1);
-    MakeStep(seplus,igminus);
-    MakeStep(seminus,igminus);
-    MakeStep(leplus,igminus);
-    MakeStep(feminus,igminus);
-
-    igplus.back().UpdateScore(AddProbabilities(igplus.back().Score(),igminus.back().Score()));
-
-    const HMM_State* p = &igplus.back();
-    if(feminus.back().Score() > p->Score()) p = &feminus.back();
-    if(leplus.back().Score() > p->Score()) p = &leplus.back();
-    if(seplus.back().Score() > p->Score()) p = &seplus.back();
-    if(seminus.back().Score() > p->Score()) p = &seminus.back();
-    for(int ph = 0; ph < 3; ++ph)
+    m_igminus.push_back(CIntergenic(eMinus,-1));               // never is popped
+    s_MakeStep(m_seplus,m_igminus);
+    s_MakeStep(m_seminus,m_igminus);
+    s_MakeStep(m_leplus,m_igminus);
+    s_MakeStep(m_feminus,m_igminus);
+    
+    m_igplus.back().UpdateScore(AddProbabilities(m_igplus.back().Score(),m_igminus.back().Score()));
+    
+    const CHMM_State* p = &m_igplus.back();
+    for(int k = 0; k < 2; ++k)
     {
-        if(inplus[ph].back().Score() > p->Score()) p = &inplus[ph].back();
-        if(inminus[ph].back().Score() > p->Score()) p = &inminus[ph].back();
-        if(ieplus[ph].back().Score() > p->Score()) p = &ieplus[ph].back();
-        if(ieminus[ph].back().Score() > p->Score()) p = &ieminus[ph].back();
-        if(leminus[ph].back().Score() > p->Score()) p = &leminus[ph].back();
-        if(feplus[ph].back().Score() > p->Score()) p = &feplus[ph].back();
+        for(int ph = 0; ph < 3; ++ph)
+        {
+            if(!m_inplus[k][ph].empty() && m_inplus[k][ph].back().NoRightEnd() && m_inplus[k][ph].back().Score() > p->Score()) p = &m_inplus[k][ph].back();
+            if(!m_inminus[k][ph].empty() && m_inminus[k][ph].back().NoRightEnd() && m_inminus[k][ph].back().Score() > p->Score()) p = &m_inminus[k][ph].back();
+        }
     }
 
-    path = p;
+    m_path = p;
 }
 
-template<class T> void Out(T t, int w, ostream& to = cout)
+template<class T> void Out(T t, int w, CNcbiOstream& to = cout)
 {
     to.width(w);
-    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
+    to.setf(ios_base::right,ios_base::adjustfield);
     to << t;
 }
 
-void Out(double t, int w, ostream& to = cout, int prec = 1)
+void Out(double t, int w, CNcbiOstream& to = cout, int prec = 1)
 {
     to.width(w);
-    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
-    to.setf(IOS_BASE::fixed,IOS_BASE::floatfield);
+    to.setf(ios_base::right,ios_base::adjustfield);
+    to.setf(ios_base::fixed,ios_base::floatfield);
     to.precision(prec);
 
     if(t > 1000000000) to << "+Inf";
@@ -474,47 +453,134 @@ void Out(double t, int w, ostream& to = cout, int prec = 1)
     else to << t;
 }
 
-inline char toACGT(int c)
+void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) const
 {
-    switch(c)
+    int gene_start = -1;
+    int gene_stop = 0;
+
+    for(int i = 0; i < (int)size(); ++i)
     {
-    case nA: 
-        return 'A';
-    case nC: 
-        return 'C';
-    case nG: 
-        return 'G';
-    case nT: 
-        return 'T';
-    case nN: 
-        return 'N';
+        const CExonData& exon((*this)[i]);
+
+        to << m_contig << '\t';
+        to << gnum << '\t' << mnum << '\t';
+        to << exon.Type() << '\t';
+        to << ((Strand() == ePlus) ? '+' : '-') << '\t';
+        
+        const TFrameShifts& fshifts(exon.ExonFrameShifts());
+        TFrameShifts::const_iterator fsi = fshifts.begin(); 
+        TSignedSeqPos estart = exon.GetFrom();
+        TSignedSeqPos estop = exon.GetTo();
+        int len = estop-estart+1;
+        TSignedSeqPos aa = estart;
+        for( ; fsi != fshifts.end() && fsi->Loc() <= aa; ++fsi)        // insertions/deletions after first splice
+        {
+            if(fsi->IsDeletion()) 
+            {
+                to << 'D' << fsi->DeletedValue() << '-' << fsi->Loc() << ' ';
+                len += fsi->Len();
+            }
+            else
+            {
+                to << 'I' << fsi->Loc() << '-' << fsi->Loc()+fsi->Len()-1 << ' ';
+                len -= fsi->Len();
+            }
+        }
+        while(aa <= estop)
+        {
+
+            to << aa << ' ';
+            TSignedSeqPos bb = (fsi != fshifts.end() && fsi->Loc() <= estop) ? fsi->Loc()-1 : estop;
+            to << bb;
+
+            for( ; fsi != fshifts.end() && fsi->Loc() == bb+1; ++fsi)    // insertions/deletions in the middle and before the second splice
+            {
+                if(fsi->IsDeletion()) 
+                {
+                    to << " D" << fsi->DeletedValue() << '-' << fsi->Loc();
+                    len += fsi->Len();
+                }
+                else
+                {
+                    bb = fsi->Loc()+fsi->Len()-1;
+                    to << " I" << fsi->Loc() << '-' << bb;
+                    len -= fsi->Len();
+                }
+            }
+            if(bb != estop) to << ' ';
+            aa = bb+1;
+        }
+
+        to << '\t';
+        
+        to << len << '\t' << exon.SupportedLen() << '\t';
+        
+        int lframe = exon.lFrame();
+        int rframe = exon.rFrame();
+        if(lframe < 0)
+        {
+            to << "-\t";
+        }
+        else
+        {
+            to << lframe << '/' << rframe << '\t';
+            if(gene_start < 0) gene_start = estart;
+            gene_stop = estop;
+        }
+        
+        if(exon.Score() != kBadScore) to << exon.Score() << '\t';
+        else to << "-\t";
+        
+        if(exon.ChainID().empty())
+        {
+            to << '-';
+        }
+        else 
+        {
+            set<int>::const_iterator it = exon.ChainID().begin();
+            to << *it++;
+            while(it != exon.ChainID().end()) to << '+' << *it++;
+        }
+
+        to << '\n';
+    }        
+        
+    toprot << '>' << m_contig << ".";
+    toprot << gene_start << "." << gene_stop << "_"
+           << ((Strand() == ePlus) ? "plus" : "minus")
+           << " hmm" << mnum << '\n';
+            
+    int ii;
+    for(ii = CDS_Shift(); ii < (int)m_cds.size()-2; ii +=3)
+    {
+        toprot << k_aa_table[fromACGT(m_cds[ii])*25+fromACGT(m_cds[ii+1])*5+fromACGT(m_cds[ii+2])];
+        if((ii+3-CDS_Shift())%150 == 0) toprot << '\n';
     }
+    if((ii-CDS_Shift())%150 != 0) toprot << '\n';
 }
 
-int Parse::PrintGenes(ostream& to, ostream& toprot, bool complete) const
+int CParse::PrintGenes(CUniqNumber& unumber, CNcbiOstream& to, CNcbiOstream& toprot, bool complete) const
 {
-    enum {DNA_Align = 1, Prot_Align = 2 };
-
-    list<Gene> genes = GetGenes();
-    for(list<Gene>::iterator it = genes.begin(); it != genes.end();)
+    list<CGene> genes = GetGenes();
+    for(list<CGene>::iterator it = genes.begin(); it != genes.end();)
     {
         if(it->CDS().size() < 6) it = genes.erase(it);
         else ++it;
     }
 
-    int right = seqscr.SeqMap(seqscr.SeqLen()-1,true);
+    TSignedSeqPos right = m_seqscr.SeqMap(m_seqscr.SeqLen()-1,CSeqScores::eNoMove);
     if(complete && !genes.empty() && !genes.back().RightComplete())
     {
-        int partial_start = genes.back().front().Start();
+        TSignedSeqPos partial_start = genes.back().front().GetFrom();
         genes.pop_back();
-
+            
         if(!genes.empty()) // end of the last complete gene
         {
-            right = genes.back().back().Stop();
+            right = genes.back().back().GetTo();
         }
         else
         {
-            if(partial_start > seqscr.SeqMap(0,true)+1000)
+            if(int(partial_start) > m_seqscr.SeqMap(0,CSeqScores::eNoMove)+1000)
             {
                 right = partial_start-100;
             }
@@ -524,254 +590,198 @@ int Parse::PrintGenes(ostream& to, ostream& toprot, bool complete) const
             }
         }
     }
-
-    to << "\n" << seqscr.Contig() << '_' << seqscr.SeqMap(0,true) << '_' << right << "\n\n";
-    to << (int)genes.size() << " genes found\n";
-
-    set<int> chain_id, prot_id;
-    for(list<Gene>::iterator it = genes.begin(); it != genes.end(); ++it)
+    
+    for(list<CGene>::iterator it = genes.begin(); it != genes.end(); ++it)
     {
-        const Gene& gene(*it);
-        for(int i = 0; i < (int)gene.size(); ++i)
-        {
-            chain_id.insert(gene[i].ChainID().begin(),gene[i].ChainID().end());
-            prot_id.insert(gene[i].ProtID().begin(),gene[i].ProtID().end());
-        }
-    }
-    to << (int)(chain_id.size()+prot_id.size()) << " alignments used\n";
-
-    int num = 0;
-    for(list<Gene>::iterator it = genes.begin(); it != genes.end(); ++it)
-    {
-        ++num;
-
-        to << "\n\n";
-        Out(" ",19,to);
-        Out("Start",10,to);
-        Out("Stop",10,to);
-        Out("Length",7,to);
-        Out("Frame",6,to);
-        Out("Align",10,to);
-        Out("Prot",12,to);
-        Out("FShift",7,to);
-        to << '\n';
-
-        const Gene& gene(*it);
-        int gene_start = -1;
-        int gene_stop = 0;
-        int align_type = 0;
-
-        for(int i = 0; i < (int)gene.size(); ++i)
-        {
-            const ExonData& exon(gene[i]);
-
-            const FrameShifts& fshifts(exon.ExonFrameShifts());
-            int estart = exon.Start();
-            int lframe = exon.lFrame();
-            int rframe = exon.rFrame();
-
-            if(gene_start < 0 && lframe >= 0) gene_start = estart;
-            if(!exon.ChainID().empty()) align_type = align_type|DNA_Align;
-            if(!exon.ProtID().empty()) align_type = align_type|Prot_Align;
-
-            for(int k = 0; k < (int)fshifts.size(); ++k)
-            {
-                int estop = fshifts[k].Loc()-1;
-                int rf = (gene.Strand() == Plus) ? (lframe+estop-estart)%3 : (lframe-estop+estart)%3;
-                if(rf < 0) rf += 3; 
-
-                Out(num,4,to);
-                Out(exon.Type(),13,to); 
-                Out((gene.Strand() == Plus) ? '+' : '-',2,to);
-                Out(estart,10,to);
-                Out(estop,10,to);
-                Out(estop-estart+1,7,to);
-                to << "  " << lframe << '/' << rframe << " ";
-                if(exon.ChainID().empty()) Out("-",10,to);
-                else Out(*exon.ChainID().begin(),10,to);
-                if(exon.ProtID().empty()) Out("-",12,to);
-                else Out(*exon.ProtID().begin(),12,to);
-                if(fshifts[k].IsInsertion()) 
-                {
-                    Out("+",7,to);
-                    estart = estop;
-                }
-                else 
-                {
-                    Out("-",7,to);
-                    estart = estop+2;
-                }
-                to << '\n';
-
-                lframe = (gene.Strand() == Plus) ? (rf+1)%3 : (rf+2)%3;
-            }
-            int estop = exon.Stop();
-
-            Out(num,4,to);
-            Out(exon.Type(),13,to); 
-            Out((gene.Strand() == Plus) ? '+' : '-',2,to);
-            Out(estart,10,to);
-            Out(estop,10,to);
-            Out(estop-estart+1,7,to);
-            if(lframe < 0)
-            {
-                to << "   -  ";
-            }
-            else
-            {
-                to << "  " << lframe << '/' << rframe << " ";
-            }
-            if(exon.ChainID().empty()) Out("-",10,to);
-            else Out(*exon.ChainID().begin(),10,to);
-            if(exon.ProtID().empty()) Out("-",12,to);
-            else Out(*exon.ProtID().begin(),12,to);
-            Out("*",7,to);
-            to << '\n';
-            if(lframe >= 0) gene_stop = estop;
-        }	
-
-        int prot_start = gene.LeftComplete() ? gene_start : seqscr.SeqMap(0,true);
-        int prot_stop = gene.RightComplete() ? gene_stop : seqscr.SeqMap(seqscr.SeqLen()-1,false);
-        toprot << '>' << seqscr.Contig() << "_" << gene_start << "_" << gene_stop << "_"
-            << ((gene.Strand() == Plus) ? "plus" : "minus") << "_" << align_type 
-            << ' ' << prot_start << ' ' << prot_stop << '\n';
-
-        const CVec& cds(gene.CDS());
-
-        int ii;
-        for(ii = gene.CDS_Shift(); ii < (int)cds.size()-2; ii +=3)
-        {
-            toprot << aa_table[cds[ii]*25+cds[ii+1]*5+cds[ii+2]];
-            if((ii+3-gene.CDS_Shift())%150 == 0) toprot << '\n';
-        }
-        if((ii-gene.CDS_Shift())%150 != 0) toprot << '\n';
+        ++unumber;
+        it->Print(unumber, unumber, to, toprot);
     }
 
     return right;
 }
 
-
-list<Gene> Parse::GetGenes() const
+list<CGene> CParse::GetGenes() const
 {
-    list<Gene> genes;
-
-    const CClusterSet& cls(seqscr.Alignments());
-
-    if(dynamic_cast<const Intron*>(Path()) && Path()->LeftState()) genes.push_front(Gene(Path()->Strand(),false,false));
-
-    for(const HMM_State* p = Path(); p != 0; p = p->LeftState()) 
+    list<CGene> genes;
+    vector< vector<const CExon*> > gen_exons;
+    
+    if(dynamic_cast<const CIntron*>(Path()) && Path()->LeftState()) 
     {
-        if(const Exon* pe = dynamic_cast<const Exon*>(p))
+        genes.push_front(CGene(Path()->Strand(),false,false));
+        gen_exons.push_back(vector<const CExon*>());
+    }
+
+    for(const CHMM_State* p = Path(); p != 0; p = p->LeftState()) 
+    {
+        if(const CExon* pe = dynamic_cast<const CExon*>(p))
         {
+            if(dynamic_cast<const CSingleExon*>(pe) ||
+               (dynamic_cast<const CLastExon*>(pe) && pe->isPlus()) ||
+               (dynamic_cast<const CFirstExon*>(pe) && pe->isMinus())) gen_exons.push_back(vector<const CExon*>());
+            
+            gen_exons.back().push_back(pe);
+        }
+    }
+    
+    const TFrameShifts& fs = m_seqscr.SeqTFrameShifts();
+    int cur_fs = fs.size()-1;
+    
+    for(int gnum = 0; gnum < (int)gen_exons.size(); ++gnum)
+    {
+        TSignedSeqRange gene_cds_limits(gen_exons[gnum].back()->Start(),gen_exons[gnum].front()->Stop());
+        gene_cds_limits.SetFrom( m_seqscr.SeqMap(gene_cds_limits.GetFrom(),CSeqScores::eMoveRight) );
+        gene_cds_limits.SetTo( m_seqscr.SeqMap(gene_cds_limits.GetTo(),CSeqScores::eMoveLeft) );
+        
+        const TAlignList& align_list = m_seqscr.Alignments();
+        CClusterSet cls(m_seqscr.Contig());
+        for(TAlignListConstIt it = align_list.begin(); it != align_list.end(); ++it)
+        {
+            const CAlignVec& algn(*it);
+            
+            if(algn.Type() == CAlignVec::eWall || algn.Type() == CAlignVec::eNested) continue;
+            if(!Include(TSignedSeqRange(m_seqscr.From(),m_seqscr.To()),algn.Limits())) continue;
+            
+            
+            if(algn.CdsLimits().Empty())
+            {
+                if(algn.Limits().IntersectingWith(gene_cds_limits)) cls.InsertAlignment(algn);
+            }
+            else
+            {
+                if(algn.CdsLimits().IntersectingWith(gene_cds_limits)) cls.InsertAlignment(algn);
+            }
+        }
+        
+        for(int exnum = 0; exnum < (int)gen_exons[gnum].size(); ++exnum)
+        {
+            const CExon* pe = gen_exons[gnum][exnum];
+
             bool stopcodon = false;
             bool startcodon = false;
-
-            if(dynamic_cast<const SingleExon*>(pe))
+            double score = pe->RgnScore();
+            
+            if(dynamic_cast<const CSingleExon*>(pe))
             {
-                genes.push_front(Gene(pe->Strand(),true,true));
+                genes.push_front(CGene(pe->Strand(),true,true));
                 startcodon = true;
                 stopcodon = true;
+                
+                score += dynamic_cast<const CIntergenic*>(pe->LeftState())->TermScore();
+                score += dynamic_cast<const CSingleExon*>(pe)->TermScore();
             }
-            else if(dynamic_cast<const LastExon*>(pe))
+            else if(dynamic_cast<const CLastExon*>(pe))
             {
+                score += dynamic_cast<const CLastExon*>(pe)->TermScore();
                 if(pe->isPlus()) 
                 {
-                    genes.push_front(Gene(pe->Strand(),false,true));
+                    score += dynamic_cast<const CIntron*>(pe->LeftState())->TermScore();
+                    genes.push_front(CGene(pe->Strand(),false,true));
                 }
                 else 
                 {
-                    genes.front().leftend = true;
+                    score += dynamic_cast<const CIntergenic*>(pe->LeftState())->TermScore();
+                    genes.front().SetLeftComplete(true);
                 }
                 stopcodon = true;
             }
-            else if(dynamic_cast<const FirstExon*>(pe))
+            else if(dynamic_cast<const CFirstExon*>(pe))
             {
+                score += dynamic_cast<const CFirstExon*>(pe)->TermScore();
                 if(pe->isMinus()) 
                 {
-                    genes.push_front(Gene(pe->Strand(),false,true));
+                    score += dynamic_cast<const CIntron*>(pe->LeftState())->TermScore();
+                    genes.push_front(CGene(pe->Strand(),false,true));
                 }
                 else 
                 {
-                    genes.front().leftend = true;
+                    score += dynamic_cast<const CIntergenic*>(pe->LeftState())->TermScore();
+                    genes.front().SetLeftComplete(true);
                 }
                 startcodon = true;
             }
-
-            Gene& curgen = genes.front();
-
+            else
+            {
+                score += dynamic_cast<const CInternalExon*>(pe)->TermScore();
+                score += dynamic_cast<const CIntron*>(pe->LeftState())->TermScore();
+            }
+            
+            CGene& curgen = genes.front();
+            
+            curgen.SetContigName(m_seqscr.Contig());
+            
             int estart = pe->Start();
             int estop = pe->Stop();
-
+            
             int rframe = pe->Phase();
             int lframe = pe->isPlus() ? (rframe-(estop-estart))%3 : (rframe+(estop-estart))%3;
             if(lframe < 0) lframe += 3;
-
+            
             if(pe->isPlus())
             {
-                curgen.cds_shift = (3-lframe)%3;  // first complete codon for partial CDS
+                curgen.SetCdsShift((3-lframe)%3);  // first complete codon for partial CDS
             }
             else if(curgen.empty())
             {
-                curgen.cds_shift = (3-rframe)%3;
+                curgen.SetCdsShift((3-rframe)%3);
             }
-
+            
             if(pe->isMinus() && startcodon)
             {
-                curgen.cds.push_back(nT);
-                curgen.cds.push_back(nA);
-                curgen.cds.push_back(nC);
+                curgen.CDS().push_back('T');
+                curgen.CDS().push_back('A');
+                curgen.CDS().push_back('C');
             }
-            for(int i = estop; i >= estart; --i) curgen.cds.push_back(*seqscr.SeqPtr(i,Plus));
+            for(int i = estop; i >= estart; --i) curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(i,ePlus)));
             if(pe->isPlus() && startcodon)
             {
-                curgen.cds.push_back(nG);
-                curgen.cds.push_back(nT);
-                curgen.cds.push_back(nA);
+                curgen.CDS().push_back('G');
+                curgen.CDS().push_back('T');
+                curgen.CDS().push_back('A');
             }
 
-            int a = seqscr.SeqMap(estart,true);
-            bool a_insertion = (estart != seqscr.RevSeqMap(a,true));
-            int b = seqscr.SeqMap(estop,false);
-            bool b_insertion = (estop != seqscr.RevSeqMap(b,true));
-            IPair ab_limits(a,b);
-
-            //			if(a_insertion) lframe = pe->isPlus() ? (lframe+1)%3 : (lframe+2)%3;
-            //			if(b_insertion) rframe = pe->isPlus() ? (rframe+2)%3 : (rframe+1)%3;
-
-            pair<CClusterSet::ConstIt,CClusterSet::ConstIt> lim = cls.equal_range(Cluster(a,b));
-            CClusterSet::ConstIt first = lim.first;
-            CClusterSet::ConstIt last = lim.second;
+            
+            // a is first point on the original sequence which is not insertion
+            // b is last point on the original sequence which is not insertion
+            // a_deletion, b_deletion are total deletion length
+            
+            int a_deletion, b_deletion;
+            int a = m_seqscr.SeqMap(estart,CSeqScores::eMoveRight,&a_deletion); 
+            int b = m_seqscr.SeqMap(estop,CSeqScores::eMoveLeft,&b_deletion);   
+            TSignedSeqRange ab_limits(a,b);
+            
+            pair<CClusterSet::TConstIt,CClusterSet::TConstIt> lim = cls.equal_range(CCluster(a,b));
+            CClusterSet::TConstIt first = lim.first;
+            CClusterSet::TConstIt last = lim.second;
             if(lim.first != lim.second) --last;
-
+            
             int lastid = 0;
             int margin = numeric_limits<int>::min();   // difference between end of exon and end of alignment exon
             bool rightexon = false;
             string right_utr = pe->isPlus() ? "3'_Utr" : "5'_Utr";
             if(((startcodon && pe->isMinus()) || (stopcodon && pe->isPlus())) && lim.first != lim.second)   // rightside UTR
             {
-                for(Cluster::ConstIt it = last->begin(); it != last->end(); ++it)
+                for(CCluster::TConstIt it = last->begin(); it != last->end(); ++it)
                 {
-                    const AlignVec& algn(*it);
-                    if(algn.Type() == AlignVec::Prot || !algn.Limits().Intersect(ab_limits)) continue;
-
+                    const CAlignVec& algn(*it);
+                    if(!algn.Limits().IntersectingWith(ab_limits)) continue;
+                    
                     for(int i = (int)algn.size()-1; i >= 0; --i)
                     {
-                        if(b < algn[i].first) 
+                        if(b < (int)algn[i].GetFrom()) 
                         {
-                            curgen.push_back(ExonData(algn[i].first,algn[i].second,-1,-1,right_utr));
-                            curgen.back().chain_id.insert(algn.ID()); 
+                            curgen.push_back(CExonData(algn[i].GetFrom(),algn[i].GetTo(),-1,-1,right_utr));
+                            curgen.back().ChainID().insert(algn.ID()); 
                             rightexon = true;
                         }
-                        else if(algn[i].second >= a && algn[i].second-b > margin)
+                        else if((int)algn[i].GetTo() >= a && (int)algn[i].GetTo() > b+margin)
                         {
-                            margin = algn[i].second-b;
+                            margin = algn[i].GetTo()-b;
                             lastid = algn.ID();
                         }
                     }
                 }
             }
-
-
+            
             int remaina = 0;
             if((pe->isMinus() && startcodon) || (pe->isPlus() && stopcodon))   // start/stop position correction
             {
@@ -789,21 +799,21 @@ list<Gene> Parse::GetGenes() const
                 }
                 else
                 {
-                    b += 3;
+                    b = m_seqscr.SeqMap(estop+3,CSeqScores::eMoveLeft,&b_deletion);
                     margin = 0;
                 }
             }
             if(margin > 0)
             {
-                curgen.push_back(ExonData(b+1,b+margin,-1,-1,right_utr)); 
-                curgen.back().chain_id.insert(lastid); 
+                curgen.push_back(CExonData(b+1,b+margin,-1,-1,right_utr)); 
+                curgen.back().ChainID().insert(lastid); 
             }
             else if(remaina > 0)
             {
-                ExonData& e = curgen.back();
-                int aa = e.start;
-                e.start += remaina;
-                int bb = aa+remaina-1;
+                CExonData& e = curgen.back();
+                TSignedSeqPos aa = e.GetFrom();
+                e.SetFrom( aa + remaina );
+                TSignedSeqPos bb = aa+remaina-1;
                 int lf, rf;
                 string etype;
                 if(pe->isMinus())    // splitted start/stop
@@ -818,10 +828,10 @@ list<Gene> Parse::GetGenes() const
                     rf = 2;
                     etype = "Last_Cds";
                 }
-                ExonData er(aa,bb,lf,rf,etype);
-                er.chain_id = e.chain_id;
-
-                if(e.start <= e.stop)
+                CExonData er(aa,bb,lf,rf,etype);
+                er.ChainID() = e.ChainID();
+                
+                if(e.GetFrom() <= e.GetTo())
                 {
                     curgen.push_back(er);
                 }
@@ -830,125 +840,170 @@ list<Gene> Parse::GetGenes() const
                     e = er;     // nothing left of e
                 }
             }
-
-            curgen.push_back(ExonData(a,b,lframe,rframe,"Internal_Cds"));
-            ExonData& exon = curgen.back();
+            
+            curgen.push_back(CExonData(a,b,lframe,rframe,"Internal_Cds"));
+            CExonData& exon = curgen.back();
+            
+            exon.SetScore( score );
+            
             margin = numeric_limits<int>::min();
             bool leftexon = false;
             lastid = 0;
-            for(CClusterSet::ConstIt cls_it = lim.first; cls_it != lim.second; ++cls_it)
+            for(CClusterSet::TConstIt cls_it = lim.first; cls_it != lim.second; ++cls_it)
             {
-                for(Cluster::ConstIt it = cls_it->begin(); it != cls_it->end(); ++it)
+                for(CCluster::TConstIt it = cls_it->begin(); it != cls_it->end(); ++it)
                 {
-                    const AlignVec& algn(*it);
-                    if(!algn.Limits().Intersect(ab_limits)) continue;
-
+                    const CAlignVec& algn(*it);
+                    if(!algn.Limits().IntersectingWith(ab_limits)) continue;
+                    
                     for(int i = 0; i < (int)algn.size(); ++i)
                     {
-                        if(ab_limits.second < algn[i].first) 
+                        if(ab_limits.GetTo() < algn[i].GetFrom()) 
                         {
                             break;
                         }
-                        else if(algn[i].second < ab_limits.first) 
+                        else if(algn[i].GetTo() < ab_limits.GetFrom()) 
                         {
                             leftexon = true;
                             continue;
                         }
-                        else if(algn.Type() == AlignVec::Prot) 
-                        {
-                            exon.prot_id.insert(algn.ID()); 
-                        }
                         else 
                         {
-                            exon.chain_id.insert(algn.ID());
-                            if(a-algn[i].first > margin)
+                            exon.ChainID().insert(algn.ID());
+                            if (a > int(algn[i].GetFrom())+margin)
                             {
-                                margin = a-algn[i].first;
+                                margin = a-algn[i].GetFrom();
                                 lastid = algn.ID();
                             }
                         }
                     }
                 }
             }
-
-            const FrameShifts& fs = seqscr.SeqFrameShifts();
-            for(int i = 0; i < (int)fs.size(); ++i)
-            {
-                if((fs[i].Loc() == a && a_insertion) ||    // exon starts from insertion
-                   (fs[i].Loc() == b+1 && b_insertion) ||  // exon ends by insertion
-                   (fs[i].Loc() <= b && fs[i].Loc() > a)) exon.fshifts.push_back(fs[i]);
-            }
-
+            
             int remainb = 0;
             if((pe->isPlus() && startcodon) || (pe->isMinus() && stopcodon))   // start/stop position correction
             {
                 if(margin >= 3)
                 {
-                    exon.start -= 3;
+                    exon.SetFrom(exon.GetFrom() - 3);
                     margin -= 3;
                 }
                 else if(margin >= 0 && leftexon)
                 {
-                    exon.start -= margin;
-                    exon.lframe = pe->isPlus() ? (exon.lframe-margin+3)%3 : (exon.lframe+margin)%3;
+                    exon.SetFrom(exon.GetFrom() - margin);
+                    exon.SetlFrame( pe->isPlus() ? (exon.lFrame()-margin+3)%3 : (exon.lFrame()+margin)%3 );
                     remainb = 3-margin;
                     margin = 0;
                 }
                 else
                 {
-                    exon.start -= 3;
+                    exon.SetFrom( m_seqscr.SeqMap(estart-3,CSeqScores::eMoveRight,&a_deletion) );
                     margin = 0;
                 }
+            }
+            
+            if(cur_fs >= 0)
+            {
+                int ifs = (int)fs.size();
+                while(cur_fs >= 0 && fs[cur_fs].Loc() > exon.GetFrom()) 
+                {
+                    ifs = cur_fs--;
+                }
+                
+                TSignedSeqPos aa = exon.GetFrom();
+                for(; cur_fs >= 0 && (fs[cur_fs].IsDeletion() ? fs[cur_fs].Loc() : fs[cur_fs].Loc()+fs[cur_fs].Len()) == aa; --cur_fs)
+                {
+                    const CFrameShiftInfo& cfs = fs[cur_fs];
+                    if(cfs.IsDeletion())
+                    {
+                        int dl = min(cfs.Len(),a_deletion);
+                        string del_v = cfs.DeletedValue().substr(cfs.Len()-dl);
+                        exon.ExonFrameShifts().push_back(CFrameShiftInfo(cfs.Loc(),dl,false,del_v));
+                        a_deletion -= dl;
+                        if(cfs.Len() > dl) break;
+                    }
+                    else
+                    {
+                        exon.ExonFrameShifts().push_back(cfs);
+                        aa = cfs.Loc();
+                    }
+                }
+                
+                for(; ifs < (int)fs.size() && fs[ifs].Loc() <= exon.GetTo() && fs[ifs].Loc() > exon.GetFrom(); ++ifs)
+                {
+                    exon.ExonFrameShifts().push_back(fs[ifs]);
+                }
+                
+                TSignedSeqPos bb = exon.GetTo();
+                for(; ifs < (int)fs.size() && fs[ifs].Loc() == bb+1; ++ifs)
+                {
+                    const CFrameShiftInfo& cfs = fs[ifs];
+                    if(cfs.IsDeletion())
+                    {
+                        int dl = min(cfs.Len(),b_deletion);
+                        string del_v = cfs.DeletedValue().substr(0,dl);
+                        exon.ExonFrameShifts().push_back(CFrameShiftInfo(cfs.Loc(),dl,false,del_v));
+                        b_deletion -= dl;
+                        if(cfs.Len() > dl) break;
+                    }
+                    else
+                    {
+                        exon.ExonFrameShifts().push_back(cfs);
+                        bb = cfs.Loc()+cfs.Len()-1;
+                    }
+                }
+                
+                sort(exon.ExonFrameShifts().begin(),exon.ExonFrameShifts().end());
             }
 
             if(startcodon && stopcodon)   // maybe Single
             {
                 if(remaina == 0 && remainb == 0)
                 {
-                    exon.type = "Single_Cds";
+                    exon.SetType( "Single_Cds" );
                 }
                 else if(remainb == 0)
                 {
-                    exon.type = pe->isPlus() ? "First_Cds" : "Last_Cds";
+                    exon.SetType( pe->isPlus() ? "First_Cds" : "Last_Cds" );
                 }
                 else if(remaina == 0)
                 {
-                    exon.type = pe->isPlus() ? "Last_Cds" : "First_Cds";
+                    exon.SetType( pe->isPlus() ? "Last_Cds" : "First_Cds" );
                 }
             }
             else if(startcodon)          // maybe First
             {
-                if((pe->isPlus() && remainb == 0) || (pe->isMinus() && remaina == 0)) exon.type = "First_Cds";
+                if((pe->isPlus() && remainb == 0) || (pe->isMinus() && remaina == 0)) exon.SetType( "First_Cds" );
             }
             else if(stopcodon)          // maybe Last
             {
-                if((pe->isMinus() && remainb == 0) || (pe->isPlus() && remaina == 0)) exon.type = "Last_Cds";
+                if((pe->isMinus() && remainb == 0) || (pe->isPlus() && remaina == 0)) exon.SetType( "Last_Cds" );
             }
-
-
+            
+            
             string left_utr = pe->isPlus() ? "5'_Utr" : "3'_Utr";
             if(((startcodon && pe->isPlus()) || (stopcodon && pe->isMinus())) && lim.first != lim.second)   // leftside UTR
             {
-                int estt = exon.start;
-
+                TSignedSeqPos estt = exon.GetFrom();
+            
                 if(margin > 0)
                 {
-                    curgen.push_back(ExonData(estt-margin,estt-1,-1,-1,left_utr)); 
-                    curgen.back().chain_id.insert(lastid); 
+                    curgen.push_back(CExonData(estt-margin,estt-1,-1,-1,left_utr)); 
+                    curgen.back().ChainID().insert(lastid); 
                 }
-
-                for(Cluster::ConstIt it = first->begin(); it != first->end(); ++it)
+                
+                for(CCluster::TConstIt it = first->begin(); it != first->end(); ++it)
                 {
-                    const AlignVec& algn(*it);
+                    const CAlignVec& algn(*it);
 
-                    if(algn.Type() == AlignVec::Prot || !algn.Limits().Intersect(ab_limits)) continue;
-
+                    if(!algn.Limits().IntersectingWith(ab_limits)) continue;
+                    
                     for(int i = (int)algn.size()-1; i >= 0; --i)
                     {
-                        if(estt > algn[i].second) 
+                        if(estt > algn[i].GetTo()) 
                         {
-                            int aa = algn[i].first;
-                            int bb = algn[i].second;
+                            int aa = algn[i].GetFrom();
+                            int bb = algn[i].GetTo();
                             if(remainb > 0)
                             {
                                 string etype;
@@ -965,49 +1020,86 @@ list<Gene> Parse::GetGenes() const
                                     rf = 3-remainb;
                                     etype = "Last_Cds";
                                 }
-                                curgen.push_back(ExonData(bb-remainb+1,bb,lf,rf,etype));
-                                curgen.back().chain_id.insert(algn.ID()); 
+                                curgen.push_back(CExonData(bb-remainb+1,bb,lf,rf,etype));
+                                curgen.back().ChainID().insert(algn.ID()); 
                                 bb -= remainb;
                                 remainb = 0;
                             }
                             if(aa <= bb)
                             {
-                                curgen.push_back(ExonData(aa,bb,-1,-1,left_utr)); 
-                                curgen.back().chain_id.insert(algn.ID());
+                                curgen.push_back(CExonData(aa,bb,-1,-1,left_utr)); 
+                                curgen.back().ChainID().insert(algn.ID());
                             } 
                         }
                     }
                 }
             }
         }
-    }
-
-    for(list<Gene>::iterator it = genes.begin(); it != genes.end(); ++it)
-    {
-        Gene& g(*it);
-        reverse(g.begin(),g.end());
-
-        if(g.Strand() == Plus) 
+        
+        CGene& curgen = genes.front();
+        for(unsigned int i = 0; i < curgen.size(); ++i)
         {
-            reverse(g.cds.begin(),g.cds.end());
+            CExonData& exon = curgen[i];
+            TSignedSeqPos estart = exon.GetFrom();
+            TSignedSeqPos estop = exon.GetTo();
+            for(CClusterSet::TConstIt cls_it = cls.begin(); cls_it != cls.end(); ++cls_it)
+            {
+                for(CCluster::TConstIt it = cls_it->begin(); it != cls_it->end(); ++it)
+                {
+                    const CAlignVec& algn(*it);
+                    for(unsigned int j = 0; j < algn.size(); ++j)
+                    {
+                        TSignedSeqPos astart = max(estart,algn[j].GetFrom());
+                        TSignedSeqPos astop = min(estop,algn[j].GetTo());
+                        int intersect = astop-astart+1;
+                        if(intersect > 0) 
+                        {
+                            exon.AddSupportedLen( intersect );
+            
+                            for(int i = 0; i < (int)fs.size(); ++i)
+                            {
+                                if(fs[i].IsDeletion() && (fs[i].Loc() == astart || fs[i].Loc() == astop+1))
+                                {
+                                    exon.AddSupportedLen( fs[i].Len() );
+                                }
+                                else if(fs[i].Loc() <= astop && fs[i].Loc() > astart) 
+                                {
+                                    exon.AddSupportedLen( (fs[i].IsDeletion() ? fs[i].Len() : -fs[i].Len()) );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    for(list<CGene>::iterator it = genes.begin(); it != genes.end(); ++it)
+    {
+        CGene& g(*it);
+        reverse(g.begin(),g.end());
+        
+        if(g.Strand() == ePlus) 
+        {
+            reverse(g.CDS().begin(),g.CDS().end());
         }
         else
         {
-            for(int i = 0; i < (int)g.cds.size(); ++i)
+            for(int i = 0; i < (int)g.CDS().size(); ++i)
             {
-                g.cds[i] = toMinus[g.cds[i]];
+                g.CDS()[i] = Complement(g.CDS()[i]);
             }
         }
-
+        
     }
 
     return genes;
 }
 
-void Parse::PrintInfo() const
+void CParse::PrintInfo() const
 {
-    vector<const HMM_State*> states;
-    for(const HMM_State* p = Path(); p != 0; p = p->LeftState()) states.push_back(p);
+    vector<const CHMM_State*> states;
+    for(const CHMM_State* p = Path(); p != 0; p = p->LeftState()) states.push_back(p);
     reverse(states.begin(),states.end());
 
     Out(" ",15);
@@ -1020,216 +1112,57 @@ void Parse::PrintInfo() const
     Out("TrmScr",8);
     Out("AccScr",8);
     cout << endl;
-
+    
     for(int i = 0; i < (int)states.size(); ++i)
     {
-        const HMM_State* p = states[i];
-        if(dynamic_cast<const Intergenic*>(p)) cout << endl;
-
+        const CHMM_State* p = states[i];
+        if(dynamic_cast<const CIntergenic*>(p)) cout << endl;
+        
         Out(p->GetStateName(),13);
         Out(p->isPlus() ? '+' : '-',2);
-        int a = seqscr.SeqMap(p->Start(),true);
-        int b = seqscr.SeqMap(p->Stop(),false);
+        int a = m_seqscr.SeqMap(p->Start(),CSeqScores::eNoMove);
+        int b = m_seqscr.SeqMap(p->Stop(),CSeqScores::eNoMove);
         Out(a,11);
         Out(b,11);
-        StateScores sc = p->GetStateScores();
-        Out(sc.score,8);
-        Out(sc.branch,8);
-        Out(sc.length,8);
-        Out(sc.region,8);
-        Out(sc.term,8);
+        SStateScores sc = p->GetStateScores();
+        Out(sc.m_score,8);
+        Out(sc.m_branch,8);
+        Out(sc.m_length,8);
+        Out(sc.m_region,8);
+        Out(sc.m_term,8);
         Out(p->Score(),8);
         cout << endl;
     }
 }
 
-void LogicalCheck(const HMM_State& st, const SeqScores& ss)
-{
-    typedef const Intergenic* Ig;
-    typedef const Intron* I;
-    typedef const FirstExon* FE;
-    typedef const InternalExon* IE;
-    typedef const LastExon* LE;
-    typedef const SingleExon* SE;
-    typedef const Exon* E;
 
-    bool out = false;
-    int phase = 0;
-    int strand = 0;
-    vector< pair<int,int> > exons;
-    for(const HMM_State* state = &st; state != 0; state = state->LeftState())
-    {
-        const HMM_State* left = state->LeftState();
-        if(left == 0)
-        {
-            if(!dynamic_cast<Ig>(state) && !dynamic_cast<I>(state)) 
-            { cout << "Logical error1\n"; exit(1); }
-
-            out = true;
-        }
-        else if(dynamic_cast<Ig>(state))
-        {
-            if(!dynamic_cast<SE>(left) &&
-               !(dynamic_cast<LE>(left) && left->isPlus()) &&
-               !(dynamic_cast<FE>(left) && left->isMinus()))
-            { cout << "Logical error2\n"; exit(1); }
-
-            out = true;
-        }
-        else if(I ps = dynamic_cast<I>(state))
-        {
-            E p = 0;
-            int ph = -1;
-            if(((p = dynamic_cast<FE>(left)) && left->isPlus()) ||
-               ((p = dynamic_cast<LE>(left)) && left->isMinus()) ||
-               (p = dynamic_cast<IE>(left))) ph = p->Phase();
-
-            if((ph < 0) || (ps->Strand() != left->Strand()) ||
-               (ps->isPlus() && (ph+1)%3 != ps->Phase()) ||
-               (ps->isMinus() && ph != ps->Phase()))
-            { cout << "Logical error3\n"; exit(1); }
-
-            out = false;
-        }
-        else if(SE ps = dynamic_cast<SE>(state))
-        {
-            if(!(dynamic_cast<Ig>(left) && ps->Strand() == left->Strand()))
-            { cout << "Logical error4\n"; exit(1); }
-
-            int a = ps->Start(), b = ps->Stop();
-            if((b-a+1)%3 ||
-               (ps->isPlus() && (!ss.isStart(a,Plus) || !ss.isStop(b+1,Plus))) ||
-               (ps->isMinus() && (!ss.isStart(b,Minus) || !ss.isStop(a-1,Minus)))) 
-            { cout << "Logical error5\n"; exit(1); }
-        }
-        else if(FE ps = dynamic_cast<FE>(state))
-        {
-            I p = 0;
-            if((ps->Strand() != left->Strand()) ||
-               (!(dynamic_cast<Ig>(left) && ps->isPlus()) &&
-                !((p = dynamic_cast<I>(left)) && ps->isMinus())))
-            { cout << "Logical error6\n"; exit(1); }
-
-            int a = ps->Start(), b = ps->Stop();
-            if(ps->isPlus())
-            {
-                if(ps->Phase() != (b-a)%3)
-                { cout << "Logical error7\n"; exit(1); }
-            }
-            else
-            {
-                if(p->Phase() != (b+1-a)%3)
-                { cout << "Logical error8\n"; exit(1); }
-            }
-
-            //			if((ps->isPlus() && (!ss.isStart(a,Plus) || !ss.isGT(b+1,Plus))) ||
-            //			   (ps->isMinus() && (!ss.isStart(b,Minus) || !ss.isGT(a-1,Minus)))) 
-            //			{ cout << "Logical error9\n"; exit(1); }
-        }
-        else if(IE ps = dynamic_cast<IE>(state))
-        {
-            I p = 0;
-            if((ps->Strand() != left->Strand()) || 
-               !(p = dynamic_cast<I>(left)))
-            { cout << "Logical error10\n"; exit(1); }
-
-            int a = ps->Start(), b = ps->Stop();
-            if(ps->isPlus())
-            {
-                if(ps->Phase() != (p->Phase()+b-a)%3)
-                { cout << "Logical error11\n"; exit(1); }
-            }
-            else
-            {
-                if(p->Phase() != (ps->Phase()+b+1-a)%3)
-                { cout << "Logical error12\n"; exit(1); }
-            }
-
-            //			if((ps->isPlus() && (!ss.isAG(a-1,Plus) || !ss.isGT(b+1,Plus))) ||
-            //			   (ps->isMinus() && (!ss.isAG(b+1,Minus) || !ss.isGT(a-1,Minus)))) 
-            //			{ cout << "Logical error13\n"; exit(1); }
-        }
-        else if(LE ps = dynamic_cast<LE>(state))
-        {
-            I p = 0;
-            if((ps->Strand() != left->Strand()) ||
-               (!(dynamic_cast<Ig>(left) && ps->isMinus()) && 
-                !((p = dynamic_cast<I>(left)) && ps->isPlus())))
-            { cout << "Logical error14\n"; exit(1); }
-
-            int a = ps->Start(), b = ps->Stop();
-            if(ps->isPlus())
-            {
-                if((p->Phase()+b-a)%3 != 2)
-                { cout << "Logical15 error\n"; exit(1); }
-            }
-            else
-            {
-                if((ps->Phase()+b-a)%3 != 2)
-                { cout << "Logical error16\n"; exit(1); }
-            }
-
-            //			if((ps->isPlus() && (!ss.isAG(a-1,Plus) || !ss.isStop(b+1,Plus))) ||
-            //			   (ps->isMinus() && (!ss.isStop(a-1,Minus) || !ss.isAG(b+1,Minus)))) 
-            //			{ cout << "Logical error17\n"; exit(1); }
-        }
-
-        if(E ps = dynamic_cast<E>(state))
-        {
-            phase = ps->Phase();
-            strand = ps->Strand();
-            exons.push_back(make_pair(ps->Start(),ps->Stop()));
-            out = false;
-        }
-
-        if(out && !exons.empty())
-        {
-            CVec seq;
-
-            if(strand == Plus)
-            {
-                for(int i = (int)exons.size()-1; i >= 0; --i)
-                {
-                    int a = exons[i].first;
-                    int b = exons[i].second;
-                    seq.insert(seq.end(),ss.SeqPtr(a,Plus),ss.SeqPtr(b,Plus)+1);
-                }
-                phase = (phase-exons.back().second+exons.back().first)%3;
-                if(phase < 0) phase += 3;
-            }
-            else
-            {
-                for(int i = 0; i < (int)exons.size(); ++i)
-                {
-                    int b = exons[i].first;
-                    int a = exons[i].second;
-                    seq.insert(seq.end(),ss.SeqPtr(a,Minus),ss.SeqPtr(b,Minus)+1);
-                }
-                int l = (int)seq.size()-1;
-                phase = (phase+exons.back().second-exons.back().first-l)%3;
-                if(phase < 0) phase += 3;
-            }
-
-            for(int i = (3-phase)%3; i+2 < (int)seq.size(); i += 3)
-            {
-                if((seq[i] == nT && seq[i+1] == nA && seq[i+2] == nA) ||
-                   (seq[i] == nT && seq[i+1] == nA && seq[i+2] == nG) ||
-                   (seq[i] == nT && seq[i+1] == nG && seq[i+2] == nA)) 
-                { cout << "Logical error18\n"; exit(1); }
-            }
-
-            exons.clear();
-            //			cout << "Gene is cleared\n";
-        }
-
-    }
-}
-
+END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
+ * Revision 1.6  2005/06/03 18:40:55  souvorov
+ * Changes to indels and output format for main files
+ *
+ * Revision 1.5  2005/05/03 14:26:42  souvorov
+ * Change of gene output
+ *
+ * Revision 1.4  2005/04/13 18:57:49  souvorov
+ * Score output for exons
+ *
+ * Revision 1.3  2005/04/07 15:25:30  souvorov
+ * Output for supported length
+ *
+ * Revision 1.2  2005/03/23 20:50:02  souvorov
+ * Mulpiprot penalty introduction
+ *
+ * Revision 1.1  2005/02/18 15:18:31  souvorov
+ * First commit
+ *
  * Revision 1.5  2004/07/28 17:28:53  ucko
  * Use macros from ncbistre.hpp for portability.
  * Use CVec rather than IVec in LogicalCheck to deal with WorkShop,

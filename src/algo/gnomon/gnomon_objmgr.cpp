@@ -25,13 +25,16 @@
  *
  * Authors:  Mike DiCuccio
  *
- * File Description:
+ * File Description: gnomon library parts requiring object manager support
+ * to allow apps not using these to be linked w/o object manager libs
  *
  */
 
 #include <ncbi_pch.hpp>
 #include <algo/gnomon/gnomon.hpp>
-#include "gene_finder.hpp"
+#include <algo/gnomon/gnomon_exception.hpp>
+#include "hmm.hpp"
+#include "hmm_inlines.hpp"
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -45,156 +48,28 @@
 #include <stdio.h>
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(gnomon)
 USING_SCOPE(ncbi::objects);
 
 
-CGnomon::CGnomon()
-: m_Repeats(false)
-, m_ScanRange(CRange<TSeqPos>::GetWhole())
-{
-}
-
-
-CGnomon::~CGnomon()
-{
-}
-
 
 //
-// set our sequence information
+// helper function - convert a vector<TSignedSeqRange> into a compact CSeq_loc
 //
-void CGnomon::SetSequence(const vector<char>& seq)
-{
-    m_Seq = seq;
-}
-
-
-void CGnomon::SetSequence(const string& str)
-{
-    m_Seq.clear();
-    m_Seq.reserve(str.length());
-    ITERATE (string, iter, str) {
-        m_Seq.push_back(*iter);
-    }
-}
-
-
-void CGnomon::SetSequence(const CSeqVector& vec)
-{
-    CSeqVector my_vec(vec);
-    my_vec.SetCoding(CSeq_data::e_Iupacna);
-
-    m_Seq.clear();
-    m_Seq.reserve(my_vec.size());
-    CSeqVector_CI iter(my_vec);
-    for ( ;  iter;  ++iter) {
-        m_Seq.push_back(*iter);
-    }
-}
-
-
-//
-// set the model data file
-// we save this as a string, as it is read multiple times
-//
-void CGnomon::SetModelData(const string& data_file)
-{
-    m_ModelFile = data_file;
-}
-
-
-//
-// set the a priori information
-//
-void CGnomon::SetAprioriInfo(const string& file)
-{
-    m_Clusters.reset(new CClusterSet());
-    if (file.empty()) {
-        return;
-    }
-
-    CNcbiIfstream from(file.c_str());
-    from >> *m_Clusters;
-}
-
-
-
-//
-// set the frame shift information
-//
-void CGnomon::SetFrameShiftInfo(const string& file)
-{
-    m_Fshifts.reset(new TFrameShifts());
-    if (file.empty()) {
-        return;
-    }
-
-    CNcbiIfstream from(file.c_str());
-    int loc;
-    while(from >> loc)
-    {
-        char is_i;
-        char c = 'N';
-        from >> is_i;
-        if(is_i == '+') {
-            from >> c;
-        }
-        m_Fshifts->push_back(CFrameShiftInfo(loc, (is_i == '+'), c));
-    }
-}
-
-
-//
-// set the repeats flag
-//
-void CGnomon::SetRepeats(bool b)
-{
-    m_Repeats = b;
-}
-
-
-//
-// set our scan range
-//
-void CGnomon::SetScanRange(const CRange<TSeqPos>& range)
-{
-    m_ScanRange = range;
-}
-
-
-//
-// set the scan start position
-//
-void CGnomon::SetScanFrom(TSeqPos from)
-{
-    m_ScanRange.SetFrom(from);
-}
-
-
-//
-// set the scan stop position
-//
-void CGnomon::SetScanTo(TSeqPos to)
-{
-    m_ScanRange.SetTo(to);
-}
-
-//
-// helper function - convert a vector<IPair> into a compact CSeq_loc
-//
-static inline
-CRef<CSeq_loc> s_ExonDataToLoc(const vector<IPair>& vec,
+namespace {
+inline
+CRef<CSeq_loc> s_ExonDataToLoc(const vector<TSignedSeqRange>& vec,
                                ENa_strand strand, CSeq_id& id)
 {
     CRef<CSeq_loc> loc(new CSeq_loc());
 
     CPacked_seqint::Tdata data;
-    ITERATE (vector<IPair>, iter, vec) {
+    ITERATE (vector<TSignedSeqRange>, iter, vec) {
         CRef<CSeq_interval> ival(new CSeq_interval());
         ival->SetId(id);
         ival->SetStrand(strand);
-        ival->SetFrom(iter->first);
-        ival->SetTo  (iter->second);
+        ival->SetFrom(iter->GetFrom());
+        ival->SetTo  (iter->GetTo());
 
         data.push_back(ival);
     }
@@ -208,83 +83,15 @@ CRef<CSeq_loc> s_ExonDataToLoc(const vector<IPair>& vec,
     return loc;
 }
 
+} //end unnamed namespace
 
-//
-// Run() performs all the housekeeping necessary for GNOMON to work
-//
-void CGnomon::Run(void)
+void CGnomonEngine::GenerateSeqAnnot()
 {
-    // compute the GC content of the sequence
-    TSeqPos gc_content = 0;
-    ITERATE (vector<char>, iter, m_Seq) {
-        int c = toupper((unsigned char)(*iter));
-        if (c == 'C'  ||  c == 'G') {
-            ++gc_content;
-        }
-    }
-    gc_content = static_cast<int>
-        (gc_content*100.0 / (m_Seq.size()) + 0.4999999);
+    list<CGene> genes = GetGenes();
 
-    //
-    // determine our scan range
-    //
-    TSeqPos from = m_ScanRange.GetFrom();
-    TSeqPos to   = m_ScanRange.GetTo();
-
-    if (m_ScanRange == CRange<TSeqPos>::GetWhole()) {
-        from = 0;
-        to   = m_Seq.size();
-    }
-
-    // TSeqPos is unsigned, so from is always > 0
-    to = min(to, (TSeqPos)m_Seq.size());
-    if (from > to) {
-        swap (from, to);
-    }
-
-    //
-    // GNOMON setup
-    //
-    auto_ptr<Terminal> donorp;
-    if(m_ModelFile.find("Human.inp") == m_ModelFile.length() - 9) {
-        donorp.reset(new MDD_Donor(m_ModelFile, gc_content));
-    } else {
-        donorp.reset(new WAM_Donor<2>(m_ModelFile,gc_content));
-    }
-
-    WAM_Acceptor<2>       acceptor      (m_ModelFile, gc_content);
-    WMM_Start             start         (m_ModelFile, gc_content);
-    WAM_Stop              stop          (m_ModelFile, gc_content);
-    MC3_CodingRegion<5>   cdr           (m_ModelFile, gc_content);
-    MC_NonCodingRegion<5> intron_reg    (m_ModelFile, gc_content);
-    MC_NonCodingRegion<5> intergenic_reg(m_ModelFile, gc_content);
-
-    Intron::Init    (m_ModelFile, gc_content, to - from + 1);
-    Intergenic::Init(m_ModelFile, gc_content, to - from + 1);
-    Exon::Init      (m_ModelFile, gc_content);
-
-    bool leftwall = true;
-    bool rightwall = true;
-
-    if ( !m_Clusters.get() ) {
-        m_Clusters.reset(new CClusterSet());
-    }
-
-    if ( !m_Fshifts.get() ) {
-        m_Fshifts.reset(new TFrameShifts());
-    }
-
-    SeqScores ss(acceptor, *donorp, start, stop, cdr, intron_reg, 
-                 intergenic_reg, m_Seq, from, to - from + 1,
-                 *m_Clusters, *m_Fshifts, m_Repeats,
-                 leftwall, rightwall, m_ModelFile);
-    HMM_State::SetSeqScores(ss);
 
     m_Annot.Reset(new CSeq_annot());
     m_Annot->AddName("GNOMON gene scan output");
-
-    Parse parse(ss);
-    list<Gene> genes = parse.GetGenes();
 
     CRef<CSeq_id> id(new CSeq_id("lcl|gnomon"));
 
@@ -292,39 +99,39 @@ void CGnomon::Run(void)
 
     size_t counter = 0;
     string locus_tag_base("GNOMON_");
-    ITERATE (list<Gene>, it, genes) {
-        const Gene& igene = *it;
+    ITERATE (list<CGene>, it, genes) {
+        const CGene& igene = *it;
         int strand = igene.Strand();
 
-        vector<IPair> mrna_vec;
-        vector<IPair> cds_vec;
+        vector<TSignedSeqRange> mrna_vec;
+        vector<TSignedSeqRange> cds_vec;
 
         for (size_t j = 0;  j < igene.size();  ++j) {
-            const ExonData& exon = igene[j];
-            int a = exon.Start();
-            int b = exon.Stop();
+            const CExonData& exon = igene[j];
+            TSignedSeqPos a = exon.GetFrom();
+            TSignedSeqPos b = exon.GetTo();
 
-            if (j == 0  ||  igene[j-1].Stop()+1 != a) {
+            if (j == 0  ||  igene[j-1].GetTo()+1 != a) {
                 // new exon
-                mrna_vec.push_back(IPair(a,b));
+                mrna_vec.push_back(TSignedSeqRange(a,b));
             } else {
                 // attaching cds-part to utr-part
-                mrna_vec.back().second = b;
+                mrna_vec.back().SetTo(b);
             } 
 
-            if (exon.Type().find("Cds") == 0) {
-                cds_vec.push_back(IPair(a,b));
+            if (exon.Type().find("Cds") != NPOS) {
+                cds_vec.push_back(TSignedSeqRange(a,b));
             }
         }
 
         // stop-codon removal from cds
         if (cds_vec.size()  &&
-            strand == Plus  &&  igene.RightComplete()) {
-            cds_vec.back().second -= 3;
+            strand == ePlus  &&  igene.RightComplete()) {
+            cds_vec.back().SetTo(cds_vec.back().GetTo() - 3);
         }
         if (cds_vec.size()  &&
-            strand == Minus  &&  igene.LeftComplete()) {
-            cds_vec.front().first += 3;
+            strand == eMinus  &&  igene.LeftComplete()) {
+            cds_vec.front().SetFrom(cds_vec.back().GetFrom() + 3);
         }
 
         //
@@ -335,7 +142,7 @@ void CGnomon::Run(void)
             feat_mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
             feat_mrna->SetLocation
                 (*s_ExonDataToLoc(mrna_vec,
-                 (strand == Plus ? eNa_strand_plus : eNa_strand_minus), *id));
+                 (strand == ePlus ? eNa_strand_plus : eNa_strand_minus), *id));
         } else {
             continue;
         }
@@ -349,7 +156,7 @@ void CGnomon::Run(void)
 
             feat_cds->SetLocation
                 (*s_ExonDataToLoc(cds_vec,
-                 (strand == Plus ? eNa_strand_plus : eNa_strand_minus), *id));
+                 (strand == ePlus ? eNa_strand_plus : eNa_strand_minus), *id));
         }
 
         //
@@ -366,7 +173,7 @@ void CGnomon::Run(void)
         feat_gene->SetLocation().SetInt()
             .SetTo(feat_mrna->GetLocation().GetTotalRange().GetTo());
         feat_gene->SetLocation().SetInt().SetStrand
-            (strand == Plus ? eNa_strand_plus : eNa_strand_minus);
+            (strand == ePlus ? eNa_strand_plus : eNa_strand_minus);
 
         const CSeq_id& loc_id = sequence::GetId(feat_mrna->GetLocation(), 0);
 
@@ -381,18 +188,68 @@ void CGnomon::Run(void)
     }
 }
 
-CRef<CSeq_annot> CGnomon::GetAnnot(void) const
+CRef<CSeq_annot> CGnomonEngine::GetAnnot(void)
 {
+    if (!m_Annot)
+	GenerateSeqAnnot();
     return m_Annot;
 }
 
 
+double CCodingPropensity::GetScore(const string& modeldatafilename, const CSeq_loc& cds, CScope& scope, int *const gccontent)
+{
+    *gccontent = 0;
+    const CSeq_id* seq_id = cds.GetId();
+    if (seq_id == NULL)
+	NCBI_THROW(CGnomonException, eGenericError, "CCodingPropensity: CDS has multiple ids or no id at all");
+    
+    // Need to know GC content in order to load correct models.
+    // Compute on the whole transcript, not just CDS.
+    CBioseq_Handle xcript_hand = scope.GetBioseqHandle(*seq_id);
+    CSeqVector xcript_vec = xcript_hand.GetSeqVector();
+    xcript_vec.SetIupacCoding();
+    unsigned int gc_count = 0;
+    CSeqVector_CI xcript_iter(xcript_vec);
+    for( ;  xcript_iter;  ++xcript_iter) {
+        if (*xcript_iter == 'G' || *xcript_iter == 'C') {
+            ++gc_count;
+        }
+    }
+    *gccontent = static_cast<unsigned int>(100.0 * gc_count / xcript_vec.size() + 0.5);
+	
+    // Load models from file
+    CMC3_CodingRegion<5>   cdr(modeldatafilename, *gccontent);
+    CMC_NonCodingRegion<5> ncdr(modeldatafilename, *gccontent);
+
+    // Represent coding sequence as enum Nucleotides
+    CSeqVector vec(cds, scope);
+    vec.SetIupacCoding();
+    CEResidueVec seq;
+    seq.reserve(vec.size());
+    CSeqVector_CI iter(vec);
+    for( ;  iter;  ++iter) {
+	seq.push_back(fromACGT(*iter));
+    }
+
+    // Sum coding and non-coding scores across coding sequence.
+    // Don't include stop codon!
+    double score = 0;
+    for (unsigned int i = 5;  i < seq.size() - 3;  ++i)
+        score += cdr.Score(seq, i, i % 3) - ncdr.Score(seq, i);
+
+    return score;
+}
+
+END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.1  2005/09/15 21:28:07  chetvern
+ * Sync with Sasha's working tree
+ *
  * Revision 1.11  2005/06/03 16:22:57  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
