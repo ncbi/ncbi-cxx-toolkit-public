@@ -3,7 +3,7 @@
 # Meta-makefile("GNOMON" project)
 #################################
 
-APP_RPOJ = gnomon localfinder
+APP_PROJ = localfinder
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

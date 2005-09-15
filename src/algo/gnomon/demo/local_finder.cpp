@@ -41,6 +41,7 @@
 
 USING_SCOPE(ncbi);
 USING_SCOPE(ncbi::objects);
+USING_SCOPE(ncbi::gnomon);
 
 class CLocalFinderApp : public CNcbiApplication
 {
@@ -79,11 +80,6 @@ void CLocalFinderApp::Init(void)
                             CArgDescriptions::eString,
                             "");
 
-    arg_desc->AddDefaultKey("fs", "FrameShifts",
-                            "Frame Shifts",
-                            CArgDescriptions::eString,
-                            "");
-
     arg_desc->AddFlag("rep", "Repeats");
 
 
@@ -103,90 +99,38 @@ int CLocalFinderApp::Run(void)
     int right           = myargs["to"].AsInteger();
     string modeldata    = myargs["model"].AsString();
     string apriorifile  = myargs["ap"].AsString();
-    string shifts       = myargs["fs"].AsString();
     bool repeats        = myargs["rep"];
 
-
-    CGnomon gnomon;
-
-    // set our model data file
-    gnomon.SetModelData(modeldata);
 
     //
     // read our sequence data
     //
+    CResidueVec seq;
     {{
-         CNcbiIfstream from(file.c_str());
-         vector<char> seq;
-         string line;
-         char c;
-         getline(from,line);
-         while(from >> c) seq.push_back(c);
-         gnomon.SetSequence(seq);
+	CNcbiIfstream from(file.c_str());
+	string line;
+	char c;
+	getline(from,line);
+	while(from >> c) seq.push_back(c);
      }}
 
+    // create engine
+    CGnomonEngine gnomon(modeldata,file,seq,TSignedSeqRange(left, right));
+
+
     // set the a priori information
-    gnomon.SetAprioriInfo(apriorifile);
-
-    // set the frame shift information
-    gnomon.SetFrameShiftInfo(shifts);
-
-    // set the repeats flag
-    gnomon.SetRepeats(repeats);
-
-    // set the scan range
-    gnomon.SetScanRange(CRange<TSeqPos>(left, right));
+    TAlignList cls;
+    if(myargs["ap"]) {
+        CNcbiIstream& apriorifile = myargs["ap"].AsInputFile();
+        CAlignVec algn;
+        
+        while(apriorifile >> algn) {
+            cls.push_back(algn);
+        }
+    }
 
     // run!
-    gnomon.Run();
-
-    /**
-      int cgcontent = 0;
-      int len = seq.size();
-      right = min(right,len-1);
-      for(int i = left; i <= right; ++i)
-      {
-      int c = toupper((unsigned char) seq[i]);
-      if(c == 'C' || c == 'G') ++cgcontent;
-      }
-      cgcontent = cgcontent*100./(right-left+1)+0.5;
-
-      double e1 = sw.Elapsed();
-
-      if(debug) cerr << "Input time: " << e1 << endl;
-
-      sw.Start();
-    //	MDD_Donor donor(modeldata,cgcontent);
-    WAM_Donor<2> donor(modeldata,cgcontent);
-    WAM_Acceptor<2> acceptor(modeldata,cgcontent);
-    WMM_Start start(modeldata,cgcontent);
-    WAM_Stop stop(modeldata,cgcontent);
-    MC3_CodingRegion<5> cdr(modeldata,cgcontent);
-    MC_NonCodingRegion<5> intron_reg(modeldata,cgcontent), intergenic_reg(modeldata,cgcontent);
-    //	NullRegion intron_reg, intergenic_reg;
-    Intron::Init(modeldata,cgcontent,right-left+1);
-    Intergenic::Init(modeldata,cgcontent,right-left+1);
-    Exon::Init(modeldata,cgcontent);
-    double e2 = sw.Elapsed();
-    if(debug) cerr << "Init time: " << e2 << endl;
-
-    sw.Start();
-    bool leftwall = true, rightwall = true;
-    SeqScores ss(acceptor, donor, start, stop, cdr, intron_reg, 
-    intergenic_reg, seq, left, right, cls, fshifts, repeats, 
-    leftwall, rightwall, file);
-    HMM_State::SetSeqScores(ss);
-    double e3 = sw.Elapsed();
-    if(debug) cerr << "Scoring time: " << e3 << endl;
-
-    sw.Start();
-    Parse parse(ss);
-    double e4 = sw.Elapsed();
-    if(debug) cerr << "Parse time: " << e4 << endl;
-
-    sw.Start();
-    parse.PrintGenes();
-     **/
+    gnomon.Run(cls,repeats,true,true,10.0);
 
     // dump the annotation
     CRef<CSeq_annot> annot = gnomon.GetAnnot();
@@ -211,6 +155,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/09/15 21:22:13  chetvern
+ * Updated to match new API
+ *
  * Revision 1.3  2005/06/03 16:23:19  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
