@@ -367,9 +367,15 @@ CDB_UserHandler* CDB_UserHandler_Wrapper::Set(CDB_UserHandler* h)
 
 CDB_UserHandler_Wrapper::~CDB_UserHandler_Wrapper()
 {
-    delete m_Handler;
-    m_Handler = 0;
-    s_CDB_DefUserHandler_IsSet = false;
+    try {
+        delete m_Handler;
+        m_Handler = 0;
+        s_CDB_DefUserHandler_IsSet = false;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -428,7 +434,13 @@ CDB_UserHandler_Diag::CDB_UserHandler_Diag(const string& prefix)
 
 CDB_UserHandler_Diag::~CDB_UserHandler_Diag()
 {
-    m_Prefix.erase();
+    try {
+        m_Prefix.erase();
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -468,12 +480,18 @@ CDB_UserHandler_Stream::CDB_UserHandler_Stream(ostream*      os,
 
 CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
 {
-    if ( m_OwnOutput ) {
-        delete m_Output;
-        m_OwnOutput = false;
-        m_Output = 0;
+    try {
+        if ( m_OwnOutput ) {
+            delete m_Output;
+            m_OwnOutput = false;
+            m_Output = 0;
+        }
+        m_Prefix.erase();
     }
-    m_Prefix.erase();
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -501,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.17  2005/05/16 10:58:22  ssikorsk
  * Using severity level from the CException class
  *

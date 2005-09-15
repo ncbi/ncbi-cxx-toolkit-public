@@ -323,11 +323,17 @@ void CODBC_RPCCmd::Release()
 
 CODBC_RPCCmd::~CODBC_RPCCmd()
 {
-    if (m_BR)
-        *m_BR = 0;
-    if (m_WasSent)
-        Cancel();
-    SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+    try {
+        if (m_BR)
+            *m_BR = 0;
+        if (m_WasSent)
+            Cancel();
+        SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -547,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.11  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

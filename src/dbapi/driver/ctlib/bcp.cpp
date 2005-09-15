@@ -403,19 +403,25 @@ void CTL_BCPInCmd::Release()
 
 CTL_BCPInCmd::~CTL_BCPInCmd()
 {
-    if ( m_BR ) {
-        *m_BR = 0;
+    try {
+        if ( m_BR ) {
+            *m_BR = 0;
+        }
+
+        if ( m_WasSent ) {
+            try {
+                Cancel();
+            } catch (CDB_Exception& ) {}
+        }
+
+        delete[] m_Bind;
+
+        blk_drop(m_Cmd);
     }
-
-    if ( m_WasSent ) {
-        try {
-            Cancel();
-        } catch (CDB_Exception& ) {}
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
-
-    delete[] m_Bind;
-
-    blk_drop(m_Cmd);
 }
 
 
@@ -426,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.10  2005/04/04 13:03:56  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

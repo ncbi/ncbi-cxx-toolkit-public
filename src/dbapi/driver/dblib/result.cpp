@@ -652,12 +652,18 @@ bool CDBL_RowResult::SkipItem()
 
 CDBL_RowResult::~CDBL_RowResult()
 {
-    if (m_ColFmt) {
-        delete[] m_ColFmt;
-        m_ColFmt = 0;
+    try {
+        if (m_ColFmt) {
+            delete[] m_ColFmt;
+            m_ColFmt = 0;
+        }
+        if (!m_EOR)
+            dbcanquery(m_Cmd);
     }
-    if (!m_EOR)
-        dbcanquery(m_Cmd);
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -879,8 +885,14 @@ bool CDBL_BlobResult::SkipItem()
 
 CDBL_BlobResult::~CDBL_BlobResult()
 {
-    if (!m_EOR)
-        dbcanquery(m_Cmd);
+    try {
+        if (!m_EOR)
+            dbcanquery(m_Cmd);
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -1021,9 +1033,15 @@ I_ITDescriptor* CDBL_ParamResult::GetImageOrTextDescriptor()
 
 CDBL_ParamResult::~CDBL_ParamResult()
 {
-    if (m_ColFmt) {
-        delete[] m_ColFmt;
-        m_ColFmt = 0;
+    try {
+        if (m_ColFmt) {
+            delete[] m_ColFmt;
+            m_ColFmt = 0;
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -1191,12 +1209,18 @@ I_ITDescriptor* CDBL_ComputeResult::GetImageOrTextDescriptor()
 
 CDBL_ComputeResult::~CDBL_ComputeResult()
 {
-    if (m_ColFmt) {
-        delete[] m_ColFmt;
-        m_ColFmt = 0;
+    try {
+        if (m_ColFmt) {
+            delete[] m_ColFmt;
+            m_ColFmt = 0;
+        }
+        while (!m_EOR) {
+            Fetch();
+        }
     }
-    while (!m_EOR) {
-        Fetch();
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -1474,7 +1498,13 @@ bool CDBL_CursorResult::SkipItem()
 
 CDBL_CursorResult::~CDBL_CursorResult()
 {
-    delete m_Res;
+    try {
+        delete m_Res;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -1592,6 +1622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.25  2005/09/07 11:06:32  ssikorsk
  * Added a GetColumnNum implementation
  *

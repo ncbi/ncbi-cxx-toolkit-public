@@ -931,27 +931,33 @@ bool CTL_RowResult::SkipItem()
 
 CTL_RowResult::~CTL_RowResult()
 {
-    if ( m_ColFmt ) {
-        delete[] m_ColFmt;
-    }
-    if(m_BindedCols) {
-      delete [] m_BindItem;
-      delete [] m_Copied;
-      delete [] m_Indicator;
-    }
+    try {
+        if ( m_ColFmt ) {
+            delete[] m_ColFmt;
+        }
+        if(m_BindedCols) {
+          delete [] m_BindItem;
+          delete [] m_Copied;
+          delete [] m_Indicator;
+        }
 
-    if ( m_EOR ) {
-        return;
-    }
+        if ( m_EOR ) {
+            return;
+        }
 
-    switch (ct_cancel(NULL, m_Cmd, CS_CANCEL_CURRENT)) {
-    case CS_SUCCEED:
-    case CS_CANCELED:
-        break;
-    default:
-        CS_INT err_code = 130007;
-        ct_cmd_props(m_Cmd, CS_SET, CS_USERDATA,
-                     &err_code, (CS_INT) sizeof(err_code), 0);
+        switch (ct_cancel(NULL, m_Cmd, CS_CANCEL_CURRENT)) {
+        case CS_SUCCEED:
+        case CS_CANCELED:
+            break;
+        default:
+            CS_INT err_code = 130007;
+            ct_cmd_props(m_Cmd, CS_SET, CS_USERDATA,
+                         &err_code, (CS_INT) sizeof(err_code), 0);
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -1012,13 +1018,19 @@ bool CTL_CursorResult::SkipItem()
 
 CTL_CursorResult::~CTL_CursorResult()
 {
-    if (m_EOR) { // this is not a bug
-        CS_INT res_type;
-        while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
-            continue;
+    try {
+        if (m_EOR) { // this is not a bug
+            CS_INT res_type;
+            while (ct_results(m_Cmd, &res_type) == CS_SUCCEED) {
+                continue;
+            }
         }
+        else m_EOR= true; // to prevent ct_cancel call (close cursor will do a job)
     }
-    else m_EOR= true; // to prevent ct_cancel call (close cursor will do a job)
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -1052,6 +1064,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.20  2005/09/07 11:06:32  ssikorsk
  * Added a GetColumnNum implementation
  *

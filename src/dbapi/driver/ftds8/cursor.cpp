@@ -361,10 +361,16 @@ void CTDS_CursorCmd::Release()
 
 CTDS_CursorCmd::~CTDS_CursorCmd()
 {
-    if (m_BR)
-        *m_BR = 0;
-    if (m_IsOpen)
-        Close();
+    try {
+        if (m_BR)
+            *m_BR = 0;
+        if (m_IsOpen)
+            Close();
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -531,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.14  2005/09/14 14:14:40  ssikorsk
  * Improved the CDBL_CursorCmd::Open method
  *

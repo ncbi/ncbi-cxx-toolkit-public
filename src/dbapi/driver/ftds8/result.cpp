@@ -636,12 +636,18 @@ bool CTDS_RowResult::SkipItem()
 
 CTDS_RowResult::~CTDS_RowResult()
 {
-    if (m_ColFmt) {
-        delete[] m_ColFmt;
-        m_ColFmt = 0;
+    try {
+        if (m_ColFmt) {
+            delete[] m_ColFmt;
+            m_ColFmt = 0;
+        }
+        if (!m_EOR)
+            dbcanquery(m_Cmd);
     }
-    if (!m_EOR)
-        dbcanquery(m_Cmd);
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -865,8 +871,15 @@ bool CTDS_BlobResult::SkipItem()
 
 CTDS_BlobResult::~CTDS_BlobResult()
 {
-    if (!m_EOR)
-        dbcanquery(m_Cmd);
+    try {
+        if (!m_EOR) {
+            dbcanquery(m_Cmd);
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -1006,9 +1019,15 @@ I_ITDescriptor* CTDS_ParamResult::GetImageOrTextDescriptor()
 
 CTDS_ParamResult::~CTDS_ParamResult()
 {
-    if (m_ColFmt) {
-        delete[] m_ColFmt;
-        m_ColFmt = 0;
+    try {
+        if (m_ColFmt) {
+            delete[] m_ColFmt;
+            m_ColFmt = 0;
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -1385,7 +1404,13 @@ bool CTDS_CursorResult::SkipItem()
 
 CTDS_CursorResult::~CTDS_CursorResult()
 {
-    delete m_Res;
+    try {
+        delete m_Res;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -1458,6 +1483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.19  2005/09/14 14:16:25  ssikorsk
  * Small improvement
  *

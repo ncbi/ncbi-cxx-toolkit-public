@@ -282,37 +282,43 @@ bool CTLibContext::IsAbleTo(ECapability cpb) const
 
 CTLibContext::~CTLibContext()
 {
-    CFastMutexGuard mg(m_Mtx);
+    try {
+        CFastMutexGuard mg(m_Mtx);
 
-    if ( !m_Context ) {
-        return;
-    }
-
-    // close all connections first
-    for (int i = m_NotInUse.NofItems();  i--; ) {
-        CTL_Connection* t_con = static_cast<CTL_Connection*>(m_NotInUse.Get(i));
-        delete t_con;
-    }
-
-    for (int i = m_InUse.NofItems();  i--; ) {
-        CTL_Connection* t_con = static_cast<CTL_Connection*> (m_InUse.Get(i));
-        delete t_con;
-    }
-
-    CS_INT       outlen;
-    CPointerPot* p_pot = 0;
-
-    if (cs_config(m_Context, CS_GET, CS_USERDATA,
-                  (void*) &p_pot, (CS_INT) sizeof(p_pot), &outlen) == CS_SUCCEED
-        &&  p_pot != 0) {
-        p_pot->Remove(this);
-        if (p_pot->NofItems() == 0) { // this is a last driver for this context
-            delete p_pot;
-            if (ct_exit(m_Context, CS_UNUSED) != CS_SUCCEED) {
-                ct_exit(m_Context, CS_FORCE_EXIT);
-            }
-            cs_ctx_drop(m_Context);
+        if ( !m_Context ) {
+            return;
         }
+
+        // close all connections first
+        for (int i = m_NotInUse.NofItems();  i--; ) {
+            CTL_Connection* t_con = static_cast<CTL_Connection*>(m_NotInUse.Get(i));
+            delete t_con;
+        }
+
+        for (int i = m_InUse.NofItems();  i--; ) {
+            CTL_Connection* t_con = static_cast<CTL_Connection*> (m_InUse.Get(i));
+            delete t_con;
+        }
+
+        CS_INT       outlen;
+        CPointerPot* p_pot = 0;
+
+        if (cs_config(m_Context, CS_GET, CS_USERDATA,
+                      (void*) &p_pot, (CS_INT) sizeof(p_pot), &outlen) == CS_SUCCEED
+            &&  p_pot != 0) {
+            p_pot->Remove(this);
+            if (p_pot->NofItems() == 0) { // this is a last driver for this context
+                delete p_pot;
+                if (ct_exit(m_Context, CS_UNUSED) != CS_SUCCEED) {
+                    ct_exit(m_Context, CS_FORCE_EXIT);
+                }
+                cs_ctx_drop(m_Context);
+            }
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -1055,6 +1061,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.41  2005/07/18 17:01:10  ssikorsk
  * Export DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
  *

@@ -176,9 +176,15 @@ CDB_Connection::SetResultProcessor(CDB_ResultProcessor* rp)
 
 CDB_Connection::~CDB_Connection()
 {
-    if ( m_Connect ) {
-        m_Connect->Release();
-        Context()->x_Recycle(m_Connect, m_Connect->IsReusable());
+    try {
+        if ( m_Connect ) {
+            m_Connect->Release();
+            Context()->x_Recycle(m_Connect, m_Connect->IsReusable());
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -282,8 +288,14 @@ bool CDB_Result::SkipItem()
 
 CDB_Result::~CDB_Result()
 {
-    if ( m_Res ) {
-        m_Res->Release();
+    try {
+        if ( m_Res ) {
+            m_Res->Release();
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -380,8 +392,14 @@ void CDB_LangCmd::DumpResults()
 
 CDB_LangCmd::~CDB_LangCmd()
 {
-    if ( m_Cmd ) {
-        m_Cmd->Release();
+    try {
+        if ( m_Cmd ) {
+            m_Cmd->Release();
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -476,8 +494,14 @@ void CDB_RPCCmd::SetRecompile(bool recompile)
 
 CDB_RPCCmd::~CDB_RPCCmd()
 {
-    if ( m_Cmd ) {
-        m_Cmd->Release();
+    try {
+        if ( m_Cmd ) {
+            m_Cmd->Release();
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -529,8 +553,14 @@ bool CDB_BCPInCmd::CompleteBCP()
 
 CDB_BCPInCmd::~CDB_BCPInCmd()
 {
-    if ( m_Cmd ) {
-        m_Cmd->Release();
+    try {
+        if ( m_Cmd ) {
+            m_Cmd->Release();
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -602,8 +632,14 @@ bool CDB_CursorCmd::Close()
 
 CDB_CursorCmd::~CDB_CursorCmd()
 {
-    if ( m_Cmd ) {
-        m_Cmd->Release();
+    try {
+        if ( m_Cmd ) {
+            m_Cmd->Release();
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -632,8 +668,14 @@ size_t CDB_SendDataCmd::SendChunk(const void* pChunk, size_t nofBytes)
 
 CDB_SendDataCmd::~CDB_SendDataCmd()
 {
-    if (m_Cmd) {
-        m_Cmd->Release();
+    try {
+        if ( m_Cmd ) {
+            m_Cmd->Release();
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -677,15 +719,20 @@ void CDB_ResultProcessor::ProcessResult(CDB_Result& res)
 
 CDB_ResultProcessor::~CDB_ResultProcessor()
 {
-    if ( m_Con ) {
-        m_Con->SetResultProcessor(m_Prev);
-        if(m_Prev) m_Con->Acquire((CDB_BaseEnt**)(&m_Prev->m_Con));
-        else m_Con->Release();
+    try {
+        if ( m_Con ) {
+            m_Con->SetResultProcessor(m_Prev);
+            if(m_Prev) m_Con->Acquire((CDB_BaseEnt**)(&m_Prev->m_Con));
+            else m_Con->Release();
+        }
+        else if(m_Prev) m_Prev->m_Con= 0;
+
+        if(m_Prev) m_Prev->Release();
     }
-    else if(m_Prev) m_Prev->m_Con= 0;
-
-    if(m_Prev) m_Prev->Release();
-
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -696,6 +743,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.17  2005/09/07 11:05:37  ssikorsk
  * Added a CDB_Result::GetColumnNum implementation
  *

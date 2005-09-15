@@ -316,10 +316,16 @@ void CDBL_LangCmd::Release()
 
 CDBL_LangCmd::~CDBL_LangCmd()
 {
-    if (m_BR)
-        *m_BR = 0;
-    if (m_WasSent)
-        Cancel();
+    try {
+        if (m_BR)
+            *m_BR = 0;
+        if (m_WasSent)
+            Cancel();
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -545,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.18  2005/08/09 14:54:37  ssikorsk
  * Stylistic changes.
  *

@@ -246,26 +246,32 @@ bool CTDSContext::IsAbleTo(ECapability cpb) const
 
 CTDSContext::~CTDSContext()
 {
-    CTDS_Connection* t_con;
+    try {
+        CTDS_Connection* t_con;
 
-    // close all connections first
-    for (int i = m_NotInUse.NofItems(); i--; ) {
-        t_con = static_cast<CTDS_Connection*> (m_NotInUse.Get(i));
-        delete t_con;
-    }
+        // close all connections first
+        for (int i = m_NotInUse.NofItems(); i--; ) {
+            t_con = static_cast<CTDS_Connection*> (m_NotInUse.Get(i));
+            delete t_con;
+        }
 
-    for (int i = m_InUse.NofItems(); i--; ) {
-        t_con = static_cast<CTDS_Connection*> (m_InUse.Get(i));
-        delete t_con;
-    }
+        for (int i = m_InUse.NofItems(); i--; ) {
+            t_con = static_cast<CTDS_Connection*> (m_InUse.Get(i));
+            delete t_con;
+        }
 
-    dbloginfree(m_Login);
-    dbexit();
-    g_pTDSContext = 0;
+        dbloginfree(m_Login);
+        dbexit();
+        g_pTDSContext = 0;
 
 #if defined(NCBI_OS_MSWIN)
-    WSACleanup();
+        WSACleanup();
 #endif
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -685,6 +691,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.42  2005/09/14 14:12:26  ssikorsk
  * Implement ConnectedToMSSQLServer and GetTDSVersion methods for the CFTDSContext class
  *

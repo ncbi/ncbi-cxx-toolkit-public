@@ -260,9 +260,15 @@ void CDBL_Connection::Release()
 
 CDBL_Connection::~CDBL_Connection()
 {
-    Refresh();
-    dbclose(m_Link);
-    m_Link = NULL;
+    try {
+        Refresh();
+        dbclose(m_Link);
+        m_Link = NULL;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -620,10 +626,16 @@ void CDBL_SendDataCmd::Release()
 
 CDBL_SendDataCmd::~CDBL_SendDataCmd()
 {
-    if (m_Bytes2go > 0)
-        dbcancel(m_Cmd);
-    if (m_BR)
-        *m_BR = 0;
+    try {
+        if (m_Bytes2go > 0)
+            dbcancel(m_Cmd);
+        if (m_BR)
+            *m_BR = 0;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -634,6 +646,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.17  2005/08/09 14:54:37  ssikorsk
  * Stylistic changes.
  *

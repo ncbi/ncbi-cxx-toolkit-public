@@ -525,11 +525,17 @@ CMemStore::CMemStore(C_SA_Storage& storage, size_t block_size)
 
 CMemStore::~CMemStore()
 {
-    while ( m_Last ) {
-        m_Current = m_Last->prev;
-        delete [] m_Last->body;
-        delete m_Last;
-        m_Last = m_Current;
+    try {
+        while ( m_Last ) {
+            m_Current = m_Last->prev;
+            delete [] m_Last->body;
+            delete m_Last;
+            m_Last = m_Current;
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -541,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.8  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

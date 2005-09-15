@@ -328,10 +328,16 @@ void CODBC_CursorCmd::Release()
 
 CODBC_CursorCmd::~CODBC_CursorCmd()
 {
-    if (m_BR)
-        *m_BR = 0;
-    if (m_IsOpen)
-        Close();
+    try {
+        if (m_BR)
+            *m_BR = 0;
+        if (m_IsOpen)
+            Close();
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -342,6 +348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.5  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

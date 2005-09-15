@@ -467,10 +467,16 @@ void CTDS_BCPInCmd::Release()
 
 CTDS_BCPInCmd::~CTDS_BCPInCmd()
 {
-    if (m_BR)
-        *m_BR = 0;
-    if (m_WasSent)
-        Cancel();
+    try {
+        if (m_BR)
+            *m_BR = 0;
+        if (m_WasSent)
+            Cancel();
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -481,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.10  2005/08/29 17:10:38  ssikorsk
  * Get rid of warnings on 64-bit platforms
  *

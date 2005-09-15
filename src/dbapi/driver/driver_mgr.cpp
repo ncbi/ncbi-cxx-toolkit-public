@@ -279,11 +279,17 @@ C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
 
 C_DriverMgr::~C_DriverMgr()
 {
-    CFastMutexGuard mg(s_DrvMutex); // lock the mutex
-    if(--s_DrvCount <= 0) { // this is a last one
-        delete s_DrvMgr;
-        s_DrvMgr= 0;
-        s_DrvCount= 0;
+    try {
+        CFastMutexGuard mg(s_DrvMutex); // lock the mutex
+        if(--s_DrvCount <= 0) { // this is a last one
+            delete s_DrvMgr;
+            s_DrvMgr= 0;
+            s_DrvCount= 0;
+        }
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
 }
 
@@ -377,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.27  2005/06/07 16:19:39  ssikorsk
  * Moved a definition of CDllResolver_Getter<I_DriverContext>::operator()(void) into cpp (again).
  *

@@ -308,32 +308,38 @@ bool CDBLibContext::IsAbleTo(ECapability cpb) const
 
 CDBLibContext::~CDBLibContext()
 {
-    CDBL_Connection* t_con;
+    try {
+        CDBL_Connection* t_con;
 
-    // close all connections first
-    for (int i = m_NotInUse.NofItems(); i--; ) {
-        t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(i));
-        delete t_con;
-    }
+        // close all connections first
+        for (int i = m_NotInUse.NofItems(); i--; ) {
+            t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(i));
+            delete t_con;
+        }
 
-    for (int i = m_InUse.NofItems(); i--; ) {
-        t_con = static_cast<CDBL_Connection*> (m_InUse.Get(i));
-        delete t_con;
-    }
+        for (int i = m_InUse.NofItems(); i--; ) {
+            t_con = static_cast<CDBL_Connection*> (m_InUse.Get(i));
+            delete t_con;
+        }
 
 #ifdef MS_DBLIB_IN_USE
-    // Fails for some reason (04/08/05) ...
-    // dbfreelogin(m_Login);
+        // Fails for some reason (04/08/05) ...
+        // dbfreelogin(m_Login);
 #else
-    dbloginfree(m_Login);
+        dbloginfree(m_Login);
 #endif
 
-    dbexit();
-    g_pContext = NULL;
+        dbexit();
+        g_pContext = NULL;
 
 #if defined(NCBI_OS_MSWIN)
-    WSACleanup();
+        WSACleanup();
 #endif
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -1084,6 +1090,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.47  2005/09/14 14:11:42  ssikorsk
  * Implement ConnectedToMSSQLServer and GetTDSVersion methods for the CDBLibContext class
  *

@@ -263,10 +263,16 @@ void CTDS_LangCmd::Release()
 
 CTDS_LangCmd::~CTDS_LangCmd()
 {
-    if (m_BR)
-        *m_BR = 0;
-    if (m_WasSent)
-        Cancel();
+    try {
+        if (m_BR)
+            *m_BR = 0;
+        if (m_WasSent)
+            Cancel();
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -490,6 +496,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.15  2005/07/20 12:33:05  ssikorsk
  * Merged ftds/interfaces.hpp into dblib/interfaces.hpp
  *

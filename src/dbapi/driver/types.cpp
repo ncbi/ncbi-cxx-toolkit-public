@@ -271,7 +271,13 @@ void CDB_Char::AssignValue(CDB_Object& v)
 
 CDB_Char::~CDB_Char()
 {
-    delete [] m_Val;
+    try {
+        delete [] m_Val;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -309,7 +315,13 @@ void CDB_LongChar::AssignValue(CDB_Object& v)
 
 CDB_LongChar::~CDB_LongChar()
 {
-    delete [] m_Val;
+    try {
+        delete [] m_Val;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -369,7 +381,13 @@ void CDB_Binary::AssignValue(CDB_Object& v)
 
 CDB_Binary::~CDB_Binary()
 {
-    delete[] m_Val;
+    try {
+        delete [] m_Val;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -405,7 +423,13 @@ void CDB_LongBinary::AssignValue(CDB_Object& v)
 
 CDB_LongBinary::~CDB_LongBinary()
 {
-    delete[] m_Val;
+    try {
+        delete [] m_Val;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -534,7 +558,13 @@ void CDB_Stream::AssignValue(CDB_Object& v)
 
 CDB_Stream::~CDB_Stream()
 {
-    delete m_Store;
+    try {
+        delete m_Store;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -931,6 +961,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.19  2005/05/31 21:02:37  ssikorsk
  * Added GetTypeName method to the CDB_Object class
  *

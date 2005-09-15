@@ -253,8 +253,14 @@ void CTDS_Connection::Release()
 
 CTDS_Connection::~CTDS_Connection()
 {
-    Refresh();
-    dbclose(m_Link);
+    try {
+        Refresh();
+        dbclose(m_Link);
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -538,10 +544,16 @@ void CTDS_SendDataCmd::Release()
 
 CTDS_SendDataCmd::~CTDS_SendDataCmd()
 {
-    if (m_Bytes2go > 0)
-        dbcancel(m_Cmd);
-    if (m_BR)
-        *m_BR = 0;
+    try {
+        if (m_Bytes2go > 0)
+            dbcancel(m_Cmd);
+        if (m_BR)
+            *m_BR = 0;
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -552,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.12  2005/08/29 17:10:38  ssikorsk
  * Get rid of warnings on 64-bit platforms
  *

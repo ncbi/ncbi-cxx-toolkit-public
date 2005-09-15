@@ -180,14 +180,20 @@ bool CDB_Params::SetParam(unsigned int param_no, const string& param_name,
 
 CDB_Params::~CDB_Params()
 {
-    if ( !m_NofParams  || !m_Params)
-        return;
+    try {
+        if ( !m_NofParams  || !m_Params)
+            return;
 
-    for (unsigned int i = 0;  i < m_NofParams;  i++) {
-        if ((m_Params[i].status & fSet) != 0)
-            delete m_Params[i].param;
+        for (unsigned int i = 0;  i < m_NofParams;  i++) {
+            if ((m_Params[i].status & fSet) != 0)
+                delete m_Params[i].param;
+        }
+        delete [] m_Params;
     }
-    delete [] m_Params;
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -227,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.15  2005/06/13 18:24:10  lavr
  * #include <corelib/ncbimisc.hpp> instead of <ctype.h>
  *

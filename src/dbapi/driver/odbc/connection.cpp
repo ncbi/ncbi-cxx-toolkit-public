@@ -309,22 +309,28 @@ void CODBC_Connection::Release()
 
 CODBC_Connection::~CODBC_Connection()
 {
-    if (Refresh()) {
-        switch(SQLDisconnect(m_Link)) {
-        case SQL_SUCCESS_WITH_INFO:
-        case SQL_ERROR:
+    try {
+        if (Refresh()) {
+            switch(SQLDisconnect(m_Link)) {
+            case SQL_SUCCESS_WITH_INFO:
+            case SQL_ERROR:
+                m_Reporter.ReportErrors();
+            case SQL_SUCCESS:
+                break;
+            default:
+                DATABASE_DRIVER_ERROR( "SQLDisconnect failed (memory corruption suspected)", 410009 );
+
+            }
+        }
+        if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
             m_Reporter.ReportErrors();
-        case SQL_SUCCESS:
-            break;
-        default:
-            DATABASE_DRIVER_ERROR( "SQLDisconnect failed (memory corruption suspected)", 410009 );
-            
         }
     }
-    if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
-        m_Reporter.ReportErrors();
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
     }
-        
+     
 }
 
 
@@ -570,11 +576,17 @@ void CODBC_SendDataCmd::Release()
 
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
-    if (m_Bytes2go > 0)
-        xCancel();
-    if (m_BR)
-        *m_BR = 0;
-    SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+    try {
+        if (m_Bytes2go > 0)
+            xCancel();
+        if (m_BR)
+            *m_BR = 0;
+        SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 void CODBC_SendDataCmd::xCancel()
@@ -595,6 +607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.9  2005/08/09 20:41:28  soussov
  * adds SQLDisconnect to Abort
  *

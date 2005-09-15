@@ -269,22 +269,28 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
 
 CODBCContext::~CODBCContext()
 {
-    if ( !m_Context ) {
-        return;
-    }
+    try {
+        if ( !m_Context ) {
+            return;
+        }
 
-    // close all connections first
-    for (int i = m_NotInUse.NofItems();  i--; ) {
-        CODBC_Connection* t_con = static_cast<CODBC_Connection*>(m_NotInUse.Get(i));
-        delete t_con;
-    }
+        // close all connections first
+        for (int i = m_NotInUse.NofItems();  i--; ) {
+            CODBC_Connection* t_con = static_cast<CODBC_Connection*>(m_NotInUse.Get(i));
+            delete t_con;
+        }
 
-    for (int i = m_InUse.NofItems();  i--; ) {
-        CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
-        delete t_con;
-    }
+        for (int i = m_InUse.NofItems();  i--; ) {
+            CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
+            delete t_con;
+        }
 
-    SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+        SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -564,6 +570,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/09/15 11:00:02  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.21  2005/06/07 16:22:51  ssikorsk
  * Included <dbapi/driver/driver_mgr.hpp> to make CDllResolver_Getter<I_DriverContext> explicitly visible.
  *

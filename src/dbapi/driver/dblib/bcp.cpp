@@ -507,10 +507,16 @@ void CDBL_BCPInCmd::Release()
 
 CDBL_BCPInCmd::~CDBL_BCPInCmd()
 {
-    if (m_BR)
-        *m_BR = 0;
-    if (m_WasSent)
-        Cancel();
+    try {
+        if (m_BR)
+            *m_BR = 0;
+        if (m_WasSent)
+            Cancel();
+    }
+    catch(...) {
+        // Destructors do not throw ...
+        _ASSERT(false);
+    }
 }
 
 
@@ -521,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/09/15 11:00:01  ssikorsk
+ * Destructors do not throw exceptions any more.
+ *
  * Revision 1.14  2005/08/22 15:16:48  ssikorsk
  * Treat eDB_BigInt as SYBINT8 in case of FreeTDS and as SYBNUMERIC in case of Sybase dblib
  *
