@@ -278,7 +278,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_GDB, "http://www.gdb.org/gdb-bin/genera/genera/hgd/DBObject/GDB:"),
     TDbtUrl(CDbtag::eDbtagType_GO, "http://www.godatabase.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query="),
     TDbtUrl(CDbtag::eDbtagType_GeneDB, "http://www.genedb.org/genedb/Dispatcher?formType=navBar&submit=Search+for&organism=All%3Apombe%3Acerevisiae%3Adicty%3Aasp%3Atryp%3Aleish%3Amalaria%3Astyphi%3Aglossina&desc=yes&ohmr=%2F&name="),
-    TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=retrieve&dopt=graphics&list_uids="),
+    TDbtUrl(CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?db=gene&cmd=retrieve&dopt=full_report&list_uids="),
     TDbtUrl(CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp"),
     TDbtUrl(CDbtag::eDbtagType_IFO, "http://www.ifo.or.jp/index_e.html"),
     TDbtUrl(CDbtag::eDbtagType_IMGT_GENEDB, "http://imgt.cines.fr/cgi-bin/GENElect.jv?species=Homo+sapiens&query=2+"),
@@ -506,6 +506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.27  2005/09/15 15:14:23  kskatz
+ * Changed eDbTagType_GeneID dopt=graphics to dopt=full_report
+ *
  * Revision 6.26  2005/06/03 16:51:49  lavr
  * Explicit (unsigned char) casts in ctype routines
  *
