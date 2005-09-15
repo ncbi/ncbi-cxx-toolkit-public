@@ -48,6 +48,7 @@ CMsvcMetaMakefile::CMsvcMetaMakefile(const string& file_path)
         m_MakeFile.Read(ifs);
         //and remember dir from where it has been loaded
         CDirEntry::SplitPath(file_path, &m_MakeFileBaseDir);
+        LOG_POST(Info << "Using rules from " << file_path);
     }
 }
 
@@ -612,6 +613,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/15 18:25:48  gouriano
+ * Log info about msvc metamakefiles used
+ *
  * Revision 1.19  2005/05/12 18:05:56  gouriano
  * Process macros in custom build info
  *
