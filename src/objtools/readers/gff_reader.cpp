@@ -690,6 +690,10 @@ void CGFFReader::x_ParseV2Attributes(SRecord& record, const vector<string>& v,
 
                 switch (s[pos2]) {
                 case ' ':
+                    if (pos2 == s.size() - 1) {
+                        x_AddAttribute(record, attr_values);
+                        attr_values.clear();
+                    }
                     break;
 
                 case '#':
@@ -705,7 +709,8 @@ void CGFFReader::x_ParseV2Attributes(SRecord& record, const vector<string>& v,
                     break;
 
                 // NB: we don't currently search for single quotes.
-                case '\"': case '\'':
+                case '\"':
+                case '\'':
                     quote_char = s[pos2];
                     break;
 
@@ -1127,6 +1132,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/09/16 17:51:10  dicuccio
+* Suppress copious warnings resulting from legal GFF/GTF files that lack trailing
+* semicolons on the last indicated attribute
+*
 * Revision 1.18  2005/08/04 12:19:17  ivanov
 * Use 'flag' version of NStr::StringToInt()
 *
