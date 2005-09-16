@@ -9,6 +9,8 @@ InlineFunctionExpansion=1
 Optimization=0
 # Get rid of /Gy
 EnableFunctionLevelLinking=FALSE
+# Get rid of /Og
+GlobalOptimizations=FALSE
 
 [Linker]
 
