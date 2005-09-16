@@ -2698,39 +2698,117 @@ void BLAST_GetAlphaBeta(const char* matrixName, double *alpha,
    sfree(beta_arr);
 }
 
-Int2 BLAST_GetGapExistenceExtendParams(EBlastProgramType program_number,
-                                       const char* matrixName, 
+/** Returns the array of values corresponding to the given match/mismatch
+ * scores, the number of supported gap cost combinations and thresholds for 
+ * the gap costs, beyond which the ungapped statistics can be applied.
+ * @param reward Match reward score [in]
+ * @param penalty Mismatch penalty score [in]
+ * @param array_size Number of supported combinations for this match/mismatch
+ *                   pair [out]
+ * @param gap_open_max Gap opening cost threshold for infinite gap costs [in]
+ * @param gap_extend_max Gap extension cost threshold for infinite gap costs [in]
+ * @param error_return Pointer to error message [in] [out]
+ * @return Corresponding array of values.
+ */
+static const array_of_8 *
+s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
+                     Int4* gap_open_max, Int4* gap_extend_max,
+                     Blast_Message** error_return)
+{
+    const array_of_8 * kValues = NULL;
+
+    if (reward == 1 && penalty == -4) {
+        kValues = blastn_values_1_4;
+        *array_size = sizeof(blastn_values_1_4)/sizeof(array_of_8);
+        *gap_open_max = 2;
+        *gap_extend_max = 2;
+    } else if (reward == 2 && penalty == -7) {
+        kValues = blastn_values_2_7;
+        *array_size = sizeof(blastn_values_2_7)/sizeof(array_of_8);
+        *gap_open_max = 4;
+        *gap_extend_max = 4;
+    } else if (reward == 1 && penalty == -3) { 
+        kValues = blastn_values_1_3;
+        *array_size = sizeof(blastn_values_1_3)/sizeof(array_of_8);
+        *gap_open_max = 2;
+        *gap_extend_max = 2;
+    } else if (reward == 2 && penalty == -5) {
+        kValues = blastn_values_2_5;
+        *array_size = sizeof(blastn_values_2_5)/sizeof(array_of_8);
+        *gap_open_max = 4;
+        *gap_extend_max = 4;
+    } else if (reward == 1 && penalty == -2) {
+        kValues = blastn_values_1_2;
+        *array_size = sizeof(blastn_values_1_2)/sizeof(array_of_8);
+        *gap_open_max = 2;
+        *gap_extend_max = 2;
+    } else if (reward == 2 && penalty == -3) {
+        kValues = blastn_values_2_3;
+        *array_size = sizeof(blastn_values_2_3)/sizeof(array_of_8);
+        *gap_open_max = 6;
+        *gap_extend_max = 4;
+    } else if (reward == 1 && penalty == -1) {
+        kValues = blastn_values_1_1;
+        *array_size = sizeof(blastn_values_1_1)/sizeof(array_of_8);
+        *gap_open_max = 4;
+        *gap_extend_max = 2;
+    } else if (reward == 4 && penalty == -5) {
+        kValues = blastn_values_4_5;
+        *array_size = sizeof(blastn_values_4_5)/sizeof(array_of_8);
+        *gap_open_max = 12;
+        *gap_extend_max = 8;
+    } else if (reward == 5 && penalty == -4) {
+        kValues = blastn_values_5_4;
+        *array_size = sizeof(blastn_values_5_4)/sizeof(array_of_8);
+        *gap_open_max = 25;
+        *gap_extend_max = 10;
+    } else if (error_return) {
+        char buffer[256];
+        /* Unsupported reward-penalty */
+        sprintf(buffer, "Substitution scores %d and %d are not supported", 
+                reward, penalty);
+        Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+    }
+
+    return kValues;
+}
+Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName, 
                                        Int4* gap_existence, 
                                        Int4* gap_extension)
 {
-   if (Blast_QueryIsNucleotide(program_number) == TRUE && Blast_QueryIsTranslated(program_number) == FALSE)
-   {
-       (*gap_existence) = BLAST_GAP_OPEN_NUCL;
-       (*gap_extension) = BLAST_GAP_EXTN_NUCL;
-   }
-   else
-   {
-       Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
-       Int4 i; /*loop index*/
-       Int2 num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
-         &gapExtend_arr, NULL, NULL, NULL, NULL,  NULL, NULL,
-         &pref_flags);
+     Int4* gapOpen_arr,* gapExtend_arr,* pref_flags;
+     Int4 i; /*loop index*/
+     Int2 num_values = Blast_GetMatrixValues(matrixName, &gapOpen_arr, 
+       &gapExtend_arr, NULL, NULL, NULL, NULL,  NULL, NULL, &pref_flags);
 
-       if (num_values <= 0)
+     if (num_values <= 0)
          return -1;
    
-       for(i = 1; i < num_values; i++) {
-           if(pref_flags[i]==BLAST_MATRIX_BEST) {
+     for(i = 1; i < num_values; i++) {
+         if(pref_flags[i]==BLAST_MATRIX_BEST) {
              (*gap_existence) = gapOpen_arr[i];
              (*gap_extension) = gapExtend_arr[i];
              break;
-           }
-       }
+         }
+     }
    
-       sfree(gapOpen_arr);
-       sfree(gapExtend_arr);
-       sfree(pref_flags);
-   }
+     sfree(gapOpen_arr);
+     sfree(gapExtend_arr);
+     sfree(pref_flags);
+
+     return 0;
+}
+
+Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
+                                       Int4 penalty,
+                                       Int4* gap_existence, 
+                                       Int4* gap_extension)
+{
+    int array_size = 0; /* dummy parameter. */
+    const array_of_8* retvalue  = s_GetNuclValuesArray(reward, penalty, &array_size, gap_existence, gap_extension, NULL);
+    /* if retvalue NULL then this reward/penalty is not supported. */
+    if (retvalue == NULL)
+       return -1;
 
    return 0;
 }
@@ -2994,81 +3072,6 @@ BLAST_PrintAllowedValues(const char *matrix_name, Int4 gap_open, Int4 gap_extend
    return buffer;
 }
 
-/** Returns the array of values corresponding to the given match/mismatch
- * scores, the number of supported gap cost combinations and thresholds for 
- * the gap costs, beyond which the ungapped statistics can be applied.
- * @param reward Match reward score [in]
- * @param penalty Mismatch penalty score [in]
- * @param array_size Number of supported combinations for this match/mismatch
- *                   pair [out]
- * @param gap_open_max Gap opening cost threshold for infinite gap costs [in]
- * @param gap_extend_max Gap extension cost threshold for infinite gap costs [in]
- * @param error_return Pointer to error message [in] [out]
- * @return Corresponding array of values.
- */
-static const array_of_8 *
-s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
-                     Int4* gap_open_max, Int4* gap_extend_max,
-                     Blast_Message** error_return)
-{
-    const array_of_8 * kValues = NULL;
-
-    if (reward == 1 && penalty == -4) {
-        kValues = blastn_values_1_4;
-        *array_size = sizeof(blastn_values_1_4)/sizeof(array_of_8);
-        *gap_open_max = 2;
-        *gap_extend_max = 2;
-    } else if (reward == 2 && penalty == -7) {
-        kValues = blastn_values_2_7;
-        *array_size = sizeof(blastn_values_2_7)/sizeof(array_of_8);
-        *gap_open_max = 4;
-        *gap_extend_max = 4;
-    } else if (reward == 1 && penalty == -3) { 
-        kValues = blastn_values_1_3;
-        *array_size = sizeof(blastn_values_1_3)/sizeof(array_of_8);
-        *gap_open_max = 2;
-        *gap_extend_max = 2;
-    } else if (reward == 2 && penalty == -5) {
-        kValues = blastn_values_2_5;
-        *array_size = sizeof(blastn_values_2_5)/sizeof(array_of_8);
-        *gap_open_max = 4;
-        *gap_extend_max = 4;
-    } else if (reward == 1 && penalty == -2) {
-        kValues = blastn_values_1_2;
-        *array_size = sizeof(blastn_values_1_2)/sizeof(array_of_8);
-        *gap_open_max = 2;
-        *gap_extend_max = 2;
-    } else if (reward == 2 && penalty == -3) {
-        kValues = blastn_values_2_3;
-        *array_size = sizeof(blastn_values_2_3)/sizeof(array_of_8);
-        *gap_open_max = 6;
-        *gap_extend_max = 4;
-    } else if (reward == 1 && penalty == -1) {
-        kValues = blastn_values_1_1;
-        *array_size = sizeof(blastn_values_1_1)/sizeof(array_of_8);
-        *gap_open_max = 4;
-        *gap_extend_max = 2;
-    } else if (reward == 4 && penalty == -5) {
-        kValues = blastn_values_4_5;
-        *array_size = sizeof(blastn_values_4_5)/sizeof(array_of_8);
-        *gap_open_max = 12;
-        *gap_extend_max = 8;
-    } else if (reward == 5 && penalty == -4) {
-        kValues = blastn_values_5_4;
-        *array_size = sizeof(blastn_values_5_4)/sizeof(array_of_8);
-        *gap_open_max = 25;
-        *gap_extend_max = 10;
-    } else if (error_return) {
-        char buffer[256];
-        /* Unsupported reward-penalty */
-        sprintf(buffer, "Substitution scores %d and %d are not supported", 
-                reward, penalty);
-        Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
-    }
-
-    return kValues;
-}
-   
 Int2
 Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, 
                               Int4 gap_extend, Int4 reward, Int4 penalty,
@@ -3115,11 +3118,25 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
         if (gap_open >= gap_open_max && gap_extend >= gap_extend_max) {
             Blast_KarlinBlkCopy(kbp, kbp_ungap);
         } else if (error_return) {
-            char buffer[256];
+            char buffer[8192];
+            int i=0;
+            int len=0;
             /* Unsupported gap costs combination. */
-            sprintf(buffer, "Gap existence and extension values %d and %d "
-                    "are not supported for substitution scores %d and %d", 
-                    gap_open, gap_extend, reward, penalty);
+            sprintf(buffer, "Gap existence and extension values %ld and %ld "
+                    "are not supported for substitution scores %ld and %ld\n", 
+                    (long) gap_open, (long) gap_extend, (long) reward, (long) penalty);
+            for (i = 0; i < num_combinations; ++i)
+            {
+                 len = strlen(buffer);
+                 sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n", 
+                    (long) kValues[i][kGapOpenIndex],  (long) kValues[i][kGapExtIndex]);
+            }
+            len = strlen(buffer);
+            sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n", 
+                 (long) gap_open_max, (long) gap_extend_max);
+            len = strlen(buffer);
+            sprintf(buffer+len, "Any values more stringent than %ld and %ld are supported\n", 
+                 (long) gap_open_max, (long) gap_extend_max);
             Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
             return 1;
         }
@@ -4029,6 +4046,11 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.129  2005/09/16 14:01:45  madden
+ * 1.) BLAST_GetGapExistenceExtendParams renamed to BLAST_GetProteinGapExistenceExtendParams
+ * 2.) Added BLAST_GetNucleotideGapExistenceExtendParams
+ * 3.) Added informative error message to s_GetNuclValuesArray
+ *
  * Revision 1.128  2005/09/12 19:16:38  coulouri
  * Enable precomputed statistical parameters for blastn
  *
