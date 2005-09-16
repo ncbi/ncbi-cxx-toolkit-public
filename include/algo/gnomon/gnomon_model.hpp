@@ -87,6 +87,10 @@ class NCBI_XALGOGNOMON_EXPORT CFrameShiftInfo
         bool operator<(const CFrameShiftInfo& fsi) const { return ((m_loc == fsi.m_loc && IsDeletion() != fsi.IsDeletion()) ? IsDeletion() : m_loc < fsi.m_loc); } // if location is same deletion first
         bool operator==(const CFrameShiftInfo& fsi) const 
         { return (m_loc == fsi.m_loc) && (m_len == fsi.m_len) && (m_is_insert == fsi.m_is_insert) && (m_delet_value == fsi.m_delet_value); }
+        bool operator!=(const CFrameShiftInfo& fsi) const
+        {
+            return !(*this == fsi);
+        }
     private:
         TSignedSeqPos m_loc;  // left location for insertion, deletion is before m_loc
                     // insertion - when there are extra bases in the genome
@@ -350,6 +354,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/16 20:22:28  ucko
+ * Whoops, MIPSpro also needs operator!= for CFrameShiftInfo.
+ *
  * Revision 1.2  2005/09/16 18:02:31  ucko
  * Formal portability fixes:
  * - Replace kBadScore with an inline BadScore function that always
