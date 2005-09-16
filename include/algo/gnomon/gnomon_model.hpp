@@ -33,13 +33,10 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 
-#include <string>
-#include <vector>
-#include <list>
 #include <set>
 #include <algorithm>
-#include <limits>
 #include <math.h>
 
 #include <objmgr/seq_vector_ci.hpp> // CSeqVectorTypes::TResidue
@@ -52,7 +49,11 @@ USING_SCOPE(objects);
 
 class CGnomonEngine;
 
-const double kBadScore = -numeric_limits<double>::max();
+// Making this a constant declaration (kBadScore) would be preferable,
+// but backfires on WorkShop, where it is implicitly static and hence
+// unavailable for use in inline functions.
+inline
+double BadScore() { return -numeric_limits<double>::max(); }
 
 enum EStrand { ePlus, eMinus };
 
@@ -105,6 +106,10 @@ public:
     { 
         return (m_limits==p.m_limits && m_fsplice == p.m_fsplice && m_ssplice == p.m_ssplice); 
     }
+    bool operator!=(const CAlignExon& p) const
+    {
+        return !(*this == p);
+    }
     bool operator<(const CAlignExon& p) const { return Precede(m_limits,p.m_limits); }
     
     const TSignedSeqRange& Limits() const { return m_limits; }
@@ -130,7 +135,7 @@ class NCBI_XALGOGNOMON_EXPORT CAlignVec : public vector<CAlignExon>
         CAlignVec(EStrand s = ePlus, int i = 0, int t = eEST, TSignedSeqRange cdl = TSignedSeqRange::GetEmpty()) :
 	    m_type(t), m_strand(s), m_id(i), 
 	    m_cds_limits(cdl),
-	    m_score(kBadScore), m_open_cds(false), m_pstop(false) {}
+	    m_score(BadScore()), m_open_cds(false), m_pstop(false) {}
         void Insert(const CAlignExon& p);
         TSignedSeqRange Limits() const { return front().Limits().CombinationWith(back().Limits()); }
     //        void SetLimits(SIPair p) { m_limits = p; }
@@ -274,7 +279,7 @@ class NCBI_XALGOGNOMON_EXPORT CExonData
 {
     //    friend list<CGene> CParse::GetGenes() const;
 public:
-    CExonData(TSignedSeqPos stt = 0, TSignedSeqPos stp = 0, int lf = 0, int rf = 0, string tp = kEmptyStr, int sl = 0, double sc = kBadScore) :
+    CExonData(TSignedSeqPos stt = 0, TSignedSeqPos stp = 0, int lf = 0, int rf = 0, string tp = kEmptyStr, int sl = 0, double sc = BadScore()) :
 	m_limits(stt,stp), 
 	m_lframe(lf), m_rframe(rf), m_supported_len(sl), m_type(tp), m_score(sc) {} 
 
@@ -345,6 +350,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/16 18:02:31  ucko
+ * Formal portability fixes:
+ * - Replace kBadScore with an inline BadScore function that always
+ *   returns the same value to avoid lossage in optimized WorkShop builds.
+ * - Use <corelib/ncbi_limits.hpp> rather than <limits> for GCC 2.95.
+ * - Supply CAlignExon::operator!= to satisfy SGI's MIPSpro compiler.
+ * Don't bother explicitly including STL headers already pulled in by
+ * ncbistd.hpp.
+ *
  * Revision 1.1  2005/09/15 21:16:01  chetvern
  * redesigned API
  *
