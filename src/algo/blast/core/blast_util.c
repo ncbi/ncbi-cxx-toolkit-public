@@ -741,6 +741,57 @@ BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info)
    return retval;
 }
 
+/** Calculates length of the DNA query from the BlastQueryInfo structure that 
+ * contains context information for translated frames for a set of queries.
+ * @param query_info Query information containing data for all contexts [in]
+ * @param query_index Which query to find DNA length for?
+ * @return DNA length of the query, calculated as sum of 3 protein frame lengths, 
+ *         plus 2, because 2 last nucleotide residues do not have a 
+ *         corresponding codon.
+ */
+static Int4 
+s_GetTranslatedQueryDNALength(const BlastQueryInfo* query_info, Int4 query_index)
+{
+    Int4 start_context = NUM_FRAMES*query_index;
+    Int4 dna_length = 2;
+    Int4 index;
+ 
+    /* Make sure that query index is within appropriate range, and that this is
+       really a translated search */
+    ASSERT(query_index < query_info->num_queries);
+    ASSERT(start_context < query_info->last_context);
+
+    /* If only reverse strand is searched, then forward strand contexts don't 
+       have lengths information */
+    if (query_info->contexts[start_context].query_length == 0)
+        start_context += 3;
+
+    for (index = start_context; index < start_context + 3; ++index)
+        dna_length += query_info->contexts[index].query_length;
+ 
+    return dna_length;
+}
+
+Int4 BlastQueryInfoGetQueryLength(const BlastQueryInfo* qinfo,
+                                  EBlastProgramType program,
+                                  Int4 query_index)
+{
+    const Uint4 kNumContexts = BLAST_GetNumberOfContexts(program);
+    ASSERT(query_index < qinfo->num_queries);
+
+    if (Blast_QueryIsTranslated(program)) {
+        return s_GetTranslatedQueryDNALength(qinfo, query_index);
+    } else if (program == eBlastTypeBlastn) {
+        Int4 retval = qinfo->contexts[query_index*kNumContexts].query_length;
+        if (retval <= 0) {
+            retval = qinfo->contexts[query_index*kNumContexts+1].query_length;
+        }
+        return retval;
+    } else {
+        return qinfo->contexts[query_index*kNumContexts].query_length;
+    }
+}
+
 Int2 BLAST_PackDNA(const Uint1* buffer, Int4 length, EBlastEncoding encoding, 
                           Uint1** packed_seq)
 {

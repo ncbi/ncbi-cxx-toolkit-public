@@ -396,44 +396,51 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
     Int2 status = 0;            /* return value */
     BlastMaskLoc *filter_maskloc = NULL;   /* Local variable for mask locs. */
-    SBlastFilterOptions* filter_options = NULL;
+
+    SBlastFilterOptions* filter_options = qsup_options->filtering_options;
+    Boolean filter_options_allocated = FALSE;
 
 
     if (mask)
         *mask = NULL;
 
-    if (qsup_options->filtering_options == NULL && qsup_options->filter_string)
+    if (filter_options == NULL && qsup_options->filter_string)
     {
-         status = BlastFilteringOptionsFromString(program_number, qsup_options->filter_string, &filter_options, blast_message);
-         if (status)
+         status = BlastFilteringOptionsFromString(program_number, 
+                                                  qsup_options->filter_string, 
+                                                  &filter_options, 
+                                                  blast_message);
+         if (status) {
+            filter_options = SBlastFilterOptionsFree(filter_options);
             return status;
+         }
+         filter_options_allocated = TRUE;
     }
+    ASSERT(filter_options);
 
     status = BlastSetUp_GetFilteringLocations(query_blk, 
                                               query_info, 
                                               program_number, 
-                                              (filter_options ? filter_options : 
-                                              qsup_options->filtering_options), 
+                                              filter_options,
                                               & filter_maskloc, 
                                               blast_message);
 
     if (status) {
+        if (filter_options_allocated)
+            filter_options = SBlastFilterOptionsFree(filter_options);
         return status;
     } 
 
-    mask_at_hash = 
-        SBlastFilterOptionsMaskAtHash(filter_options ? filter_options : 
-                                      qsup_options->filtering_options);
+    mask_at_hash = SBlastFilterOptionsMaskAtHash(filter_options);
 
-    filter_options = SBlastFilterOptionsFree(filter_options);
+    if (filter_options_allocated) {
+        filter_options = SBlastFilterOptionsFree(filter_options);
+    }
 
-    if (!mask_at_hash)
-    {
-        status = BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, 
-                                      program_number);
-        if (status != 0) {
-            return status;
-        }
+
+    if (!mask_at_hash) {
+        BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, 
+                             program_number);
     }
 
     if (program_number == eBlastTypeBlastx && scoring_options->is_ooframe) {
@@ -451,9 +458,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
 
     if (mask)
     {
-        if (program_number == eBlastTypeBlastx || 
-            program_number == eBlastTypeTblastx ||
-            program_number == eBlastTypeRpsTblastn) {
+        if (Blast_QueryIsTranslated(program_number)) {
             /* Filter locations so far are in protein coordinates; 
                convert them back to nucleotide here. */
             BlastMaskLocProteinToDNA(filter_maskloc, query_info);
@@ -685,8 +690,7 @@ BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to)
          /* Shift the pointer to the next link in chain and free this link. */
          if (last_loc)
             last_loc->next = seqloc->next;
-         sfree(seqloc->ssr);
-         sfree(seqloc);
+         seqloc = BlastSeqLocNodeFree(seqloc);
       } else if (!head_loc) {
          /* First time a mask was found within the range. */
          head_loc = last_loc = seqloc;

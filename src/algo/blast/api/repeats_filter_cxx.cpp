@@ -144,8 +144,7 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
             }
         }
         // Make the intervals unique
-        CombineMaskLocations(loc_list, &ordered_loc_list, 
-                             REPEAT_MASK_LINK_VALUE);
+        ordered_loc_list = BlastSeqLocCombine(loc_list, REPEAT_MASK_LINK_VALUE);
 
         // Free the list of locations that's no longer needed.
         loc_list = BlastSeqLocFree(loc_list);
@@ -236,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.22  2005/09/16 17:02:36  camacho
+ *  Refactoring of filtering locations code.
+ *
  *  Revision 1.21  2005/07/07 16:32:12  camacho
  *  Revamping of BLAST exception classes and error codes
  *

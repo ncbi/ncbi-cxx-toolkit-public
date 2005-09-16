@@ -397,28 +397,38 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number, const char* in
 BlastSeqLoc* BlastSeqLocNew(BlastSeqLoc** head, Int4 from, Int4 to)
 {
    BlastSeqLoc* loc = (BlastSeqLoc*) calloc(1, sizeof(BlastSeqLoc));
-   SSeqRange* seq_range = (SSeqRange*) malloc(sizeof(SSeqRange));
-
-   seq_range->left = from;
-   seq_range->right = to;
-   loc->ssr = seq_range;
-
-   if (head)
-   {
-       if (*head)
-       {
-          BlastSeqLoc* tmp = *head;
-          while (tmp->next)
-             tmp = tmp->next;
-          tmp->next = loc;
-       }
-       else
-       {
-          *head = loc;
-       }
+   if ( !loc ) {
+       return NULL;
    }
-       
-   return loc;
+   loc->ssr = (SSeqRange*) calloc(1, sizeof(SSeqRange));
+   loc->ssr->left = from;
+   loc->ssr->right = to;
+
+   return BlastSeqLocAppend(head, loc);
+}
+
+BlastSeqLoc* BlastSeqLocAppend(BlastSeqLoc** head, BlastSeqLoc* node)
+{
+    if ( !node ) {
+        return NULL;
+    }
+
+    if (head)
+    {
+        if (*head)
+        {
+            BlastSeqLoc* tmp = *head;
+            while (tmp->next)
+               tmp = tmp->next;
+            tmp->next = node;
+        }
+        else
+        {
+            *head = node;
+        }
+    }
+        
+    return node;
 }
 
 /** Makes a copy of the BlastSeqLoc and also a copy of the 
@@ -437,7 +447,7 @@ static BlastSeqLoc* s_BlastSeqLocNodeDup(BlastSeqLoc* source)
 }
 
 /** Prepend node to the head of the list and return the new head of the list */
-BlastSeqLoc* s_BlastSeqLocPrependNode(BlastSeqLoc* head, BlastSeqLoc* node)
+static BlastSeqLoc* s_BlastSeqLocPrepend(BlastSeqLoc* head, BlastSeqLoc* node)
 {
     if ( !node ) {
         return NULL;
@@ -451,7 +461,7 @@ BlastSeqLoc* s_BlastSeqLocPrependNode(BlastSeqLoc* head, BlastSeqLoc* node)
  * this is set to NULL [in|out]
  * @return the new head of the list or NULL if argument is NULL
  */
-BlastSeqLoc* s_BlastSeqLocListReverse(BlastSeqLoc** head)
+static BlastSeqLoc* s_BlastSeqLocListReverse(BlastSeqLoc** head)
 {
     BlastSeqLoc* retval = NULL;     /* return value */
     BlastSeqLoc* itr = NULL;        /* iterator */
@@ -461,57 +471,51 @@ BlastSeqLoc* s_BlastSeqLocListReverse(BlastSeqLoc** head)
     }
 
     for (itr = *head; itr; itr = itr->next) {
-        retval = s_BlastSeqLocPrependNode(retval, s_BlastSeqLocNodeDup(itr));
+        retval = s_BlastSeqLocPrepend(retval, s_BlastSeqLocNodeDup(itr));
     }
     *head = BlastSeqLocFree(*head);
     return retval;
 }
 
-BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
+BlastSeqLoc* BlastSeqLocNodeFree(BlastSeqLoc* loc)
 {
-   SSeqRange* seq_range;
-   BlastSeqLoc* next_loc;
-
-   while (loc) {
-      next_loc = loc->next;
-      seq_range = loc->ssr;
-      sfree(seq_range);
-      sfree(loc);
-      loc = next_loc;
-   }
-   return NULL;
+    if ( !loc ) {
+        return NULL;
+    }
+    sfree(loc->ssr);
+    sfree(loc);
+    return NULL;
 }
 
-/** Makes a copy of the BlastSeqLoc and also a copy of the 
- * SSRange element.  Does not copy BlastSeqLoc that is pointed
- * to by "next".
- * @param from the object to be copied [in]
- * @return another BlastSeqLoc*
- */
-
-static BlastSeqLoc* s_BlastSeqLocDup(BlastSeqLoc* from)
+BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 {
-    BlastSeqLoc* to;
-    SSeqRange* seq_range;
+    while (loc) {
+        BlastSeqLoc* next_loc = loc->next;
+        loc = BlastSeqLocNodeFree(loc);
+        loc = next_loc;
+    }
+    return NULL;
+}
 
-    if (from == NULL)
-       return NULL;
+BlastSeqLoc* BlastSeqLocListDup(BlastSeqLoc* head)
+{
+    BlastSeqLoc* retval = NULL;
 
-    seq_range = from->ssr;
-    ASSERT(seq_range);
+    for (; head; head = head->next) {
+        BlastSeqLocAppend(&retval, s_BlastSeqLocNodeDup(head));
+    }
 
-    to = BlastSeqLocNew(NULL, seq_range->left, seq_range->right);
-
-    return to;
+    return retval;
 }
 
 BlastMaskLoc* BlastMaskLocNew(Int4 total)
 {
-      BlastMaskLoc* retval = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-      retval->total_size = total;
-      if (total > 0)
-          retval->seqloc_array = (BlastSeqLoc **) calloc(total, sizeof(BlastSeqLoc *));
-      return retval;
+    BlastMaskLoc* retval = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+    retval->total_size = total;
+    if (total > 0)
+        retval->seqloc_array = (BlastSeqLoc **) calloc(total, 
+                                                       sizeof(BlastSeqLoc *));
+    return retval;
 }
 
 BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
@@ -529,37 +533,6 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
    sfree(mask_loc->seqloc_array);
    sfree(mask_loc);
    return NULL;
-}
-
-/** Calculates length of the DNA query from the BlastQueryInfo structure that 
- * contains context information for translated frames for a set of queries.
- * @param query_info Query information containing data for all contexts [in]
- * @param query_index Which query to find DNA length for?
- * @return DNA length of the query, calculated as sum of 3 protein frame lengths, 
- *         plus 2, because 2 last nucleotide residues do not have a 
- *         corresponding codon.
- */
-static Int4 
-s_GetTranslatedQueryDNALength(const BlastQueryInfo* query_info, Int4 query_index)
-{
-    Int4 start_context = NUM_FRAMES*query_index;
-    Int4 dna_length = 2;
-    Int4 index;
- 
-    /* Make sure that query index is within appropriate range, and that this is
-       really a translated search */
-    ASSERT(query_index < query_info->num_queries);
-    ASSERT(start_context < query_info->last_context);
-
-    /* If only reverse strand is searched, then forward strand contexts don't 
-       have lengths information */
-    if (query_info->contexts[start_context].query_length == 0)
-        start_context += 3;
-
-    for (index = start_context; index < start_context + 3; ++index)
-        dna_length += query_info->contexts[index].query_length;
- 
-    return dna_length;
 }
 
 Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc, 
@@ -585,7 +558,9 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
         BlastSeqLoc** prot_seqloc = 
             &(prot_seqloc_array[NUM_FRAMES*seq_index]);
         BlastSeqLoc* dna_seqloc = mask_loc->seqloc_array[seq_index];
-        Int4 dna_length = s_GetTranslatedQueryDNALength(query_info, seq_index);
+        Int4 dna_length = BlastQueryInfoGetQueryLength(query_info,
+                                                       eBlastTypeBlastx,
+                                                       seq_index);
         Int4 context;
 
         /* Reproduce this mask for all 6 frames, with translated coordinates */
@@ -638,7 +613,9 @@ Int2 BlastMaskLocProteinToDNA(BlastMaskLoc* mask_loc,
    {
        Int4 frame_start = index*NUM_FRAMES;
        Int4 frame_index;
-       Int4 dna_length = s_GetTranslatedQueryDNALength(query_info, index);
+       Int4 dna_length = BlastQueryInfoGetQueryLength(query_info,
+                                                      eBlastTypeBlastx,
+                                                      index);
        /* Loop over all frames of one DNA sequence */
        for (frame_index=frame_start; frame_index<(frame_start+NUM_FRAMES); 
             frame_index++) {
@@ -730,64 +707,44 @@ s_BlastSeqLocSort (BlastSeqLoc* list,
         return list;
 }
 
-/* This will go in place of CombineSeqLocs to combine filtered locations */
-Int2
-CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
-                     Int4 link_value)
+BlastSeqLoc*
+BlastSeqLocCombine(BlastSeqLoc* mask_loc, Int4 link_value)
 {
-   Int2 status=0;		/* return value. */
-   Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
-   SSeqRange* ssr = NULL;
-   BlastSeqLoc* loc_head=NULL,* last_loc=NULL,* loc_var=NULL;
-   BlastSeqLoc* new_loc = NULL;
+   BlastSeqLoc* retval = NULL;
+   Int4 start, stop;	/* Used to merge overlapping SeqLoc's. */
+   BlastSeqLoc* loc_head=NULL,* loc_var=NULL;
    
-   if (!mask_loc) {
-      *mask_loc_out = NULL;
-      return 0;
+   if ( !mask_loc ) {
+      return NULL;
    }
 
-   /* Put all the SeqLoc's into one big linked list. */
-   loc_var = mask_loc;
-   loc_head = last_loc = s_BlastSeqLocDup(loc_var);
-   while (loc_var->next)
-   {
-       last_loc->next = s_BlastSeqLocDup(loc_var->next);
-       last_loc = last_loc->next;
-       loc_var = loc_var->next;
+   /* Copy the BlastSeqLoc-s and sort them by starting position. */
+   loc_head = loc_var = s_BlastSeqLocSort(BlastSeqLocListDup(mask_loc),
+                                          s_SeqRangeSortByStartPosition);
+   if ( !loc_head ) {
+       return NULL;
    }
-   
-   /* Sort them by starting position. */
-   loc_head = (BlastSeqLoc*)   
-      s_BlastSeqLocSort (loc_head, s_SeqRangeSortByStartPosition);
-   
-   ssr = (SSeqRange*) loc_head->ssr;
-   start = ssr->left;
-   stop = ssr->right;
-   loc_var = loc_head;
-   ssr = NULL;
+   start = loc_head->ssr->left;
+   stop = loc_head->ssr->right;
 
-   while (loc_var) {
-      if (loc_var->next)
-         ssr = loc_var->next->ssr;
-      if (ssr && ((stop + link_value) > ssr->left)) {
-         stop = MAX(stop, ssr->right);
-      } else {
-         BlastSeqLocNew(&new_loc, start, stop);
-         if (loc_var->next) {
-             start = ssr->left;
-             stop = ssr->right;
-         }
-      }
-      loc_var = loc_var->next;
-      ssr = NULL;
+   for (; loc_var; loc_var = loc_var->next) {
+       SSeqRange* ssr = loc_var->next ? loc_var->next->ssr : NULL;
+
+       if (ssr && ((stop + link_value) > ssr->left)) {
+          stop = MAX(stop, ssr->right);
+       } else {
+          BlastSeqLocNew(&retval, start, stop);
+          if (loc_var->next) {
+              start = ssr->left;
+              stop = ssr->right;
+          }
+       }
    }
 
-   *mask_loc_out = new_loc;
-      
-   /* Free memory allocated for the temporary list of SeqLocs */
+   /* Free memory allocated for the temporary list of BlastSeqLoc-s */
    BlastSeqLocFree(loc_head);
 
-   return status;
+   return retval;
 }
 
 Int2 
@@ -808,41 +765,36 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
 
       Boolean first = TRUE;	/* Specifies beginning of query. */
       Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
-      Boolean reverse = FALSE; /* Sequence on minus strand. */
-      Int4 index; /* loop index */
       Int4 start_offset, end_offset, filter_start, filter_end;
       Int4 left=0, right; /* Used for left/right extent of a region. */
       BlastSeqLoc* loc = NULL;
 
-      start_offset = query_info->contexts[context].query_offset;
-      end_offset = query_info->contexts[context].query_length + start_offset - 1;
-      
-      /* For blastn: check if this strand is not searched at all */
-      if (end_offset < start_offset)
+      if (query_info->contexts[context].query_length <= 0) {
           continue;
-      index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
-      reverse = BlastIsReverseStrand(kIsNucl, context);
-     
+      }
 
-      /* mask_loc NULL is simply the case that NULL was passed in, which we take to 
-         mean that nothing on query is masked. */
-      if (mask_loc == NULL || mask_loc->seqloc_array[index] == NULL)
-      {
-         /* No masks for this context */
+      start_offset = query_info->contexts[context].query_offset;
+      end_offset = query_info->contexts[context].query_length 
+          + start_offset - 1;
+      ASSERT(start_offset <= end_offset);
+
+      /* mask_loc NULL is simply the case that NULL was passed in, which we 
+         take to mean that nothing on query is masked. */
+      if (mask_loc == NULL || mask_loc->seqloc_array[context] == NULL) {
          BlastSeqLocNew(complement_mask, start_offset, end_offset);
          continue;
       }
       
-      if (reverse) {
-         mask_loc->seqloc_array[index] = 
-             s_BlastSeqLocListReverse(&mask_loc->seqloc_array[index]);
+      if (BlastIsReverseStrand(kIsNucl, context)) {
+         mask_loc->seqloc_array[context] = 
+             s_BlastSeqLocListReverse(&mask_loc->seqloc_array[context]);
       }
-      loc = mask_loc->seqloc_array[index];
+      loc = mask_loc->seqloc_array[context];
 
       first = TRUE;
       for ( ; loc; loc = loc->next) {
          SSeqRange* seq_range = loc->ssr;
-         if (reverse) {
+         if (BlastIsReverseStrand(kIsNucl, context)) {
             filter_start = end_offset - seq_range->right;
             filter_end = end_offset - seq_range->left;
          } else {
@@ -892,51 +844,44 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
 
 
 Int2
-BlastSetUp_Filter(EBlastProgramType program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, const SBlastFilterOptions* filter_options, BlastSeqLoc* *seqloc_retval,
-   Blast_Message* *blast_message)
+BlastSetUp_Filter(EBlastProgramType program_number, 
+                  Uint1* sequence, 
+                  Int4 length, 
+                  Int4 offset, 
+                  const SBlastFilterOptions* filter_options, 
+                  BlastSeqLoc** seqloc_retval, 
+                  Blast_Message* *blast_message)
 {
-	Int2 seqloc_num=0;
 	Int2 status=0;		/* return value. */
-        BlastSeqLoc* seg_loc = NULL;
 
-        ASSERT(filter_options);
-        ASSERT(seqloc_retval);
+    ASSERT(filter_options);
+    ASSERT(seqloc_retval);
 
-        *seqloc_retval = NULL;
+    *seqloc_retval = NULL;
 
-        status = SBlastFilterOptionsValidate(program_number, filter_options, blast_message);
-        if (status)
-           return status;
+    status = SBlastFilterOptionsValidate(program_number, filter_options, 
+                                         blast_message);
+    if (status)
+       return status;
 
 	if (filter_options->segOptions)
 	{
-                SSegOptions* seg_options = filter_options->segOptions;
-	        SegParameters* sparamsp=NULL;
+        SSegOptions* seg_options = filter_options->segOptions;
+        SegParameters* sparamsp=NULL;
 
-                sparamsp = SegParametersNewAa();
-                sparamsp->overlaps = TRUE;
-                if (seg_options->window > 0)
-                    sparamsp->window = seg_options->window;
-                if (seg_options->locut > 0.0)
-                    sparamsp->locut = seg_options->locut;
-                if (seg_options->hicut > 0.0)
-                    sparamsp->hicut = seg_options->hicut;
+        sparamsp = SegParametersNewAa();
+        sparamsp->overlaps = TRUE;
+        if (seg_options->window > 0)
+            sparamsp->window = seg_options->window;
+        if (seg_options->locut > 0.0)
+            sparamsp->locut = seg_options->locut;
+        if (seg_options->hicut > 0.0)
+            sparamsp->hicut = seg_options->hicut;
 
-		SeqBufferSeg(sequence, length, offset, sparamsp, &seg_loc);
+		status = SeqBufferSeg(sequence, length, offset, sparamsp, 
+                              seqloc_retval);
 		SegParametersFree(sparamsp);
 		sparamsp = NULL;
-		seqloc_num++;
-	}
-
-	if (seqloc_num)
-	{ 
-	      BlastSeqLoc* seqloc_list=NULL;  /* Holds all SeqLoc's for
-                                                      return. */
-              if (seg_loc)
-                 seqloc_list = seg_loc;
-
-		*seqloc_retval = seqloc_list;
 	}
 
 	return status;
@@ -962,139 +907,137 @@ BlastSeqLocReverse(const BlastSeqLoc* filter_in, Int4 query_length)
 }
 
 static Int2
-s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, Int4 context, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastSeqLoc* *filter_out, Blast_Message* *blast_message)
+s_GetFilteringLocationsForOneContext(BLAST_SequenceBlk* query_blk, 
+                                     const BlastQueryInfo* query_info, 
+                                     Int4 context, 
+                                     EBlastProgramType program_number, 
+                                     const SBlastFilterOptions* filter_options, 
+                                     BlastSeqLoc* *filter_out, 
+                                     Blast_Message* *blast_message)
 {
-        Int2 status = 0;
-        Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
-        Int4 context_offset;
-        BlastSeqLoc *lcase_mask_slp = NULL; /* Auxiliary locations for lower-case masking  */
-        BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
-        BlastSeqLoc *filter_slp_combined;   /* Used to hold combined SeqLoc's */
-        Uint1 *buffer;              /* holds sequence for plus strand or protein. */
+    Int2 status = 0;
+    Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
+    Int4 context_offset;
+    BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
+    Uint1 *buffer;              /* holds sequence for plus strand or protein. */
 
-        const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
-        Int4 index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
-        
-        context_offset = query_info->contexts[context].query_offset;
-        buffer = &query_blk->sequence[context_offset];
+    const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
 
-        if ((query_length = query_info->contexts[context].query_length) <= 0)
-           return 0;
+    context_offset = query_info->contexts[context].query_offset;
+    buffer = &query_blk->sequence[context_offset];
 
-        if ((status = BlastSetUp_Filter(program_number, buffer,
-                       query_length, 0, filter_options, &filter_slp, blast_message))) 
-             return status;
+    if ((query_length = query_info->contexts[context].query_length) <= 0) {
+       return 0;
+    }
 
-        if (BlastIsReverseStrand(kIsNucl, context) == TRUE)
-        {  /* Reverse this as it's on minus strand. */
-              BlastSeqLoc *filter_slp_rev = BlastSeqLocReverse(filter_slp, query_length);
-              filter_slp = BlastSeqLocFree(filter_slp);
-              filter_slp = filter_slp_rev;
-        }
+    status = BlastSetUp_Filter(program_number, 
+                               buffer, 
+                               query_length, 
+                               0, 
+                               filter_options, 
+                               &filter_slp, 
+                               blast_message);
+    if (status)
+         return status;
 
-        /* Extract the mask locations corresponding to this query 
-               (frame, strand), detach it from other masks.
-               NB: for translated search the mask locations are expected in 
-               protein coordinates. The nucleotide locations must be converted
-               to protein coordinates prior to the call to BLAST_MainSetUp.
-        */
-        lcase_mask_slp = NULL;
+    if (BlastIsReverseStrand(kIsNucl, context) == TRUE)
+    {  /* Reverse this as it's on minus strand. */
+          BlastSeqLoc* tmp = BlastSeqLocReverse(filter_slp, query_length);
+          filter_slp = BlastSeqLocFree(filter_slp);
+          filter_slp = tmp;
+    }
+
+    /* Extract the mask locations corresponding to this query 
+       (frame, strand), detach it from other masks.
+       NB: for translated search the mask locations are expected in 
+       protein coordinates. The nucleotide locations must be converted
+       to protein coordinates prior to the call to BLAST_MainSetUp.
+    */
+    {
+        /* Auxiliary locations for lower-case masking or any other masking
+         * which occurred outside of CORE BLAST */
+        BlastSeqLoc *lcase_mask_slp = NULL; 
         if (query_blk->lcase_mask && query_blk->lcase_mask->seqloc_array)
         {
-             lcase_mask_slp = query_blk->lcase_mask->seqloc_array[index];
-             /* Set location list to NULL, to allow safe memory deallocation, 
-               ownership transferred to filter_slp below. */
-             query_blk->lcase_mask->seqloc_array[index] = NULL;
+            ASSERT(context < query_blk->lcase_mask->total_size);
+            lcase_mask_slp = query_blk->lcase_mask->seqloc_array[context];
+            /* Set location list to NULL, to allow safe memory deallocation, 
+              ownership transferred to filter_slp below. */
+            query_blk->lcase_mask->seqloc_array[context] = NULL;
         }
 
-        /* Attach the lower case mask locations to the filter locations and combine them */
-        if (lcase_mask_slp) {
-             if (filter_slp) {
-                  BlastSeqLoc *loc;           /* Iterator variable */
-                  for (loc = filter_slp; loc->next; loc = loc->next);
-                    loc->next = lcase_mask_slp;
-             } else {
-                   filter_slp = lcase_mask_slp;
-             }
-        }
+        /* Attach the lower case mask locations to the filter locations and 
+           combine them */
+        BlastSeqLocAppend(&filter_slp, lcase_mask_slp);
+    }
 
-        filter_slp_combined = NULL;
-        CombineMaskLocations(filter_slp, &filter_slp_combined, 0);
-        *filter_out = filter_slp_combined;
-
-        filter_slp = BlastSeqLocFree(filter_slp);
+    *filter_out = BlastSeqLocCombine(filter_slp, 0);
+    filter_slp = BlastSeqLocFree(filter_slp);
 
 	return 0;
 }
 
-
 Int2
-BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, EBlastProgramType program_number, const SBlastFilterOptions* filter_options, BlastMaskLoc** filter_maskloc, Blast_Message * *blast_message)
+BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk, 
+                                 const BlastQueryInfo* query_info, 
+                                 EBlastProgramType program_number, 
+                                 const SBlastFilterOptions* filter_options, 
+                                 BlastMaskLoc** filter_maskloc, 
+                                 Blast_Message** blast_message)
 {
-
     Int2 status = 0;
     Int4 context = 0; /* loop variable. */
-    const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
-    Boolean no_forward_strand = (query_info->first_context > 0);  /* filtering needed on reverse strand. */
+    const int kNumContexts = query_info->last_context + 1;
 
     ASSERT(query_info && query_blk && filter_maskloc);
 
-    *filter_maskloc = BlastMaskLocNew(query_info->last_context+1);
+    ASSERT(kNumContexts == 
+           query_info->num_queries*BLAST_GetNumberOfContexts(program_number));
+    *filter_maskloc = BlastMaskLocNew(kNumContexts);
 
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
-      
-        Boolean reverse = BlastIsReverseStrand(kIsNucl, context);
-
-        /* For each query, check if forward strand is present */
-        if (query_info->contexts[context].query_length <= 0)
-        {
-            if (kIsNucl && (context & 1) == 0)  /* Needed only for blastn, or does this not apply FIXME */
-               no_forward_strand = TRUE;  /* No plus strand, we cannot simply infer locations by going from plus to minus */
-            continue;
+  
+        BlastSeqLoc *filter_per_context = NULL;
+        status = s_GetFilteringLocationsForOneContext(query_blk, 
+                                                      query_info, 
+                                                      context, 
+                                                      program_number, 
+                                                      filter_options, 
+                                                      &filter_per_context, 
+                                                      blast_message);
+        if (status) {
+           Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
+              "Failure at filtering");
+           return status;
         }
-        else if (!reverse)  /* This is a plus strand, safe to set no_forward_strand to FALSE as clearly there is one. */
-               no_forward_strand = FALSE;
 
-        if (!reverse || no_forward_strand)
-        {
-            BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
-            Int4 filter_index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
-            if ((status=s_GetFilteringLocationsForOneContext(query_blk, query_info, context, program_number, filter_options, &filter_per_context, blast_message)))
-            {
-               Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
-                  "Failure at filtering");
-               return status;
-            }
-
-        /* NB: for translated searches filter locations are returned in 
-               protein coordinates, because the DNA lengths of sequences are 
-               not available here. The caller must take care of converting 
-               them back to nucleotide coordinates. */
-             (*filter_maskloc)->seqloc_array[filter_index] = filter_per_context;
-         }
+    /* NB: for translated searches filter locations are returned in 
+           protein coordinates, because the DNA lengths of sequences are 
+           not available here. The caller must take care of converting 
+           them back to nucleotide coordinates. */
+         (*filter_maskloc)->seqloc_array[context] = filter_per_context;
     }
 
     return 0;
 }
 
-Int2
+void
 Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
                       const BlastSeqLoc* mask_loc, Boolean reverse, Int4 offset)
 {
-    SSeqRange *loc = NULL;
-    Int2 status = 0;
-    Int4 index, start, stop;
-    const Uint1 kMaskingLetter = is_na ? kNuclMask : kProtMask;
-
+    ASSERT(buffer);
     for (; mask_loc; mask_loc = mask_loc->next) {
-        loc = (SSeqRange *) mask_loc->ssr;
+
+        Int4 index, start, stop;
+        const Uint1 kMaskingLetter = is_na ? kNuclMask : kProtMask;
+
         if (reverse) {
-            start = length - 1 - loc->right;
-            stop = length - 1 - loc->left;
+            start = length - 1 - mask_loc->ssr->right;
+            stop = length - 1 - mask_loc->ssr->left;
         } else {
-            start = loc->left;
-            stop = loc->right;
+            start = mask_loc->ssr->left;
+            stop = mask_loc->ssr->right;
         }
 
         start -= offset;
@@ -1103,47 +1046,38 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
         for (index = start; index <= stop; index++)
             buffer[index] = kMaskingLetter;
     }
-
-    return status;
 }
 
-Int2 
-BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, const BlastQueryInfo* query_info, const BlastMaskLoc *filter_maskloc, EBlastProgramType program_number)
+void
+BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, 
+                     const BlastQueryInfo* query_info, 
+                     const BlastMaskLoc *filter_maskloc, 
+                     EBlastProgramType program_number)
 {
     const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
     Int4 context; /* loop variable. */
-    Int2 status=0;
+
+    ASSERT(query_blk);
+    ASSERT(query_info);
+    ASSERT(filter_maskloc);
 
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
       
-        BlastSeqLoc *filter_per_context = NULL;   /* Used to hold combined SeqLoc's */
-        Boolean reverse = BlastIsReverseStrand(kIsNucl, context);
-        Int4 query_length;
-        Int4 context_offset;
-        Int4 maskloc_index;
-        Uint1 *buffer;              /* holds sequence */
+        Int4 query_length = 0;
+        Int4 context_offset = 0;
+        Uint1 *buffer = NULL;              /* holds sequence */
 
         /* For each query, check if forward strand is present */
-        if ((query_length = query_info->contexts[context].query_length) <= 0)
+        if ( (query_length = query_info->contexts[context].query_length) <= 0)
             continue;
 
         context_offset = query_info->contexts[context].query_offset;
         buffer = &query_blk->sequence[context_offset];
+        ASSERT(buffer);
 
-        maskloc_index = BlastGetMaskLocIndexFromContext(kIsNucl, context);
-	filter_per_context = filter_maskloc->seqloc_array[maskloc_index];
-        
-        if (buffer) {
-
-            if ((status =
-                     Blast_MaskTheResidues(buffer, query_length, kIsNucl,
-                                                filter_per_context, reverse, 0)))
-            {
-                    return status;
-            }
-        }
+        Blast_MaskTheResidues(buffer, query_length, kIsNucl, 
+                              filter_maskloc->seqloc_array[context],
+                              BlastIsReverseStrand(kIsNucl, context), 0);
     }
-
-    return 0;
 }

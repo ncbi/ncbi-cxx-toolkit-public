@@ -215,6 +215,18 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
 NCBI_XBLAST_EXPORT
 BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
 
+/** Obtains the sequence length for a given query in the query, without taking
+ * into consideration any applicable translations 
+ * @param qinfo BlastQueryInfo structure [in]
+ * @param program CORE program type [in]
+ * @param query_index number of the query 
+ * (query_index < BlastQueryInfo::num_queries) [in]
+ * @return the length of the query sequence requested
+ */
+Int4 BlastQueryInfoGetQueryLength(const BlastQueryInfo* qinfo,
+                                  EBlastProgramType program,
+                                  Int4 query_index);
+
 /** Create auxiliary query structures with all data corresponding
  * to a single query sequence within a concatenated set. Allocates the 
  * structures if the pointers are NULL on input; otherwise only changes the
