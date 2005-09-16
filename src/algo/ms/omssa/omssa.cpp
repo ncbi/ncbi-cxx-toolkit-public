@@ -277,7 +277,7 @@ bool CSearch::CompareLaddersTop(int iMod,
 }
 
 #ifdef _DEBUG
-// #define CHECKGI
+#define CHECKGI
 #endif
 #ifdef CHECKGI
 bool CheckGi(int gi)
@@ -431,18 +431,15 @@ void CSearch::UpdateWithNewPep(int Missed,
     int NumModSitesCount(0), NumModCount(0);
 	for(iMod = 0; iMod < NumMod[Missed-1]; iMod++) {
 
+        // don't do more than the maximum number of modifications
+        if(NumModCount + NumMod[iMissed] >= MAXMOD) break;
+
         // if n-term protein mod and not at the start of the peptide, don't copy
         if ((Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modn || 
             Modset->GetModType(ModList[Missed-1][iMod].GetEnum()) == eMSModType_modnaa) &&
             PepStart[iMissed] != ModList[Missed-1][iMod].GetSite()) {
             continue;
         }
-
-        // increment number of mods
-        NumModCount++;
-
-        // don't do more than the maximum number of modifications
-        if(NumModCount + NumMod[iMissed] >= MAXMOD) break;
 
         // copy the mod to the old peptide
         ModList[iMissed][NumModCount + NumMod[iMissed]] = 
@@ -454,6 +451,11 @@ void CSearch::UpdateWithNewPep(int Missed,
             NumModSitesCount++;
             OldSite = ModList[iMissed][NumModCount + NumMod[iMissed]].GetSite();
         }
+
+        // increment number of mods
+        NumModCount++;
+
+
 	}
 				
 	// update old masses
@@ -1635,6 +1637,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.61  2005/09/16 21:40:09  lewisg
+fix mod count
+
 Revision 1.60  2005/09/15 21:29:24  lewisg
 filter out n-term protein mods
 
