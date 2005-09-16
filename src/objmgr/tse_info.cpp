@@ -173,6 +173,10 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
     m_Name = tse->m_Name;
     m_UsedMemory = tse->m_UsedMemory;
     m_LoadState = eLoaded;
+
+    x_SetObject(*tse, &m_BaseTSE->m_ObjectCopyMap);
+    x_TSEAttach(*this);
+
     m_Split = tse->m_Split;
     if (m_Split) {
         CRef<ITSE_Assigner> lsnr = m_Split->GetAssigner(*tse);
@@ -180,9 +184,6 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
             lsnr.Reset(new CTSE_Default_Assigner);
         m_Split->x_TSEAttach(*this, lsnr);
     }
-    x_SetObject(*tse, &m_BaseTSE->m_ObjectCopyMap);
-
-    x_TSEAttach(*this);
 }
 
 
