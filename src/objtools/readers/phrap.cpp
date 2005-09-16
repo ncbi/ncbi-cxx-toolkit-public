@@ -72,17 +72,6 @@ string ReadLine(CNcbiIstream& in)
     in >> ws;
     string ret;
     getline(in, ret);
-    /*
-    char buf[1024];
-    do {
-        in.clear();
-        in.getline(buf, 1024);
-        ret += string(buf);
-    } while ( !in.eof()  &&  in.fail() );
-    if ( in.fail() ) {
-        in.clear();
-    }
-    */
     return ret;
 }
 
@@ -152,8 +141,16 @@ public:
     typedef map<TSeqPos, TSeqPos> TPadMap;
     const TPadMap& GetPadMap(void) const { return m_PadMap; }
 
+    TSeqPos GetAlignedFrom(void) const { return m_AlignedFrom; }
+    TSeqPos GetAlignedTo(void) const { return m_AlignedTo; }
+
 protected:
     void CreatePadsFeat(CRef<CSeq_annot>& annot) const;
+    void SetAligned(TSeqPos from, TSeqPos to)
+        {
+            m_AlignedFrom = from;
+            m_AlignedTo = to;
+        }
 
 private:
     void x_FillSeqData(CSeq_data& data) const;
@@ -169,7 +166,8 @@ private:
     string          m_Data;   // pads are already removed
     TPadMap         m_PadMap; // shifts for unpadded positions
     bool            m_Complemented;
-
+    TSeqPos         m_AlignedFrom;
+    TSeqPos         m_AlignedTo;
     mutable CRef<CSeq_id> m_Id;
 };
 
@@ -180,7 +178,9 @@ CPhrap_Seq::CPhrap_Seq(TPhrapReaderFlags flags)
     : m_Flags(flags),
       m_PaddedLength(0),
       m_UnpaddedLength(0),
-      m_Complemented(false)
+      m_Complemented(false),
+      m_AlignedFrom(0),
+      m_AlignedTo(kInvalidSeqPos)
 {
 }
 
@@ -190,7 +190,9 @@ CPhrap_Seq::CPhrap_Seq(const string& name, TPhrapReaderFlags flags)
       m_Name(name),
       m_PaddedLength(0),
       m_UnpaddedLength(0),
-      m_Complemented(false)
+      m_Complemented(false),
+      m_AlignedFrom(0),
+      m_AlignedTo(kInvalidSeqPos)
 {
 }
 
@@ -206,6 +208,8 @@ void CPhrap_Seq::CopyFrom(CPhrap_Seq& seq)
     _ASSERT(m_PadMap.empty());
     m_PadMap.swap(seq.m_PadMap);
     m_Complemented = seq.m_Complemented;
+    m_AlignedFrom = seq.m_AlignedFrom;
+    m_AlignedTo = seq.m_AlignedTo;
     m_Id = seq.m_Id;
 }
 
@@ -261,6 +265,7 @@ void CPhrap_Seq::ReadData(CNcbiIstream& in)
     m_UnpaddedLength = new_pos;
     m_Data.resize(m_UnpaddedLength);
     m_PadMap[m_PaddedLength] = m_PaddedLength - m_UnpaddedLength;
+    m_AlignedTo = m_PaddedLength - 1;
 }
 
 
@@ -398,19 +403,21 @@ public:
         TSeqPos m_End;
         string  m_Date;
     };
-    typedef vector<SReadTag> TReadTags;
-    typedef vector<TSignedSeqPos> TStarts;
+    typedef vector<SReadTag>      TReadTags;
+    typedef TSignedSeqPos         TStart;
     typedef CRange<TSignedSeqPos> TRange;
 
     void AddReadLoc(TSignedSeqPos start, bool complemented);
 
-    const TStarts& GetStarts(void) const { return m_Starts; }
+    TStart GetStart(void) const { return m_Start; }
 
     void ReadQuality(CNcbiIstream& in);  // QA
     void ReadDS(CNcbiIstream& in);       // DS
     virtual void ReadTag(CNcbiIstream& in, char tag); // RT{}
 
     CRef<CSeq_entry> CreateRead(void) const;
+
+    bool IsCircular(void) const;
 
 private:
     void x_CreateFeat(CBioseq& bioseq) const;
@@ -421,8 +428,7 @@ private:
     size_t    m_NumInfoItems;
     size_t    m_NumReadTags;
     TRange    m_HiQualRange;
-    TRange    m_AlignedRange;
-    TStarts   m_Starts;
+    TStart    m_Start;
     SReadDS*  m_DS;
     TReadTags m_Tags;
 };
@@ -433,7 +439,7 @@ CPhrap_Read::CPhrap_Read(const string& name, TPhrapReaderFlags flags)
       m_NumInfoItems(0),
       m_NumReadTags(0),
       m_HiQualRange(TRange::GetEmpty()),
-      m_AlignedRange(TRange::GetEmpty()),
+      m_Start(0),
       m_DS(0)
 {
 }
@@ -455,6 +461,12 @@ void CPhrap_Read::Read(CNcbiIstream& in)
 }
 
 
+bool CPhrap_Read::IsCircular(void) const
+{
+    return m_Start + GetAlignedFrom() < 0;
+}
+
+
 void CPhrap_Read::ReadQuality(CNcbiIstream& in)
 {
     TSignedSeqPos start, stop;
@@ -469,7 +481,7 @@ void CPhrap_Read::ReadQuality(CNcbiIstream& in)
     in >> start >> stop;
     CheckStreamState(in, "QA data.");
     if (start > 0  &&  stop > 0) {
-        m_AlignedRange.Set(start - 1, stop - 1);
+        SetAligned(start - 1, stop - 1);
     }
 }
 
@@ -551,8 +563,9 @@ void CPhrap_Read::ReadTag(CNcbiIstream& in, char tag)
 inline
 void CPhrap_Read::AddReadLoc(TSignedSeqPos start, bool complemented)
 {
+    _ASSERT(m_Start == 0);
     SetComplemented(complemented);
-    m_Starts.push_back(start);
+    m_Start = start;
 }
 
 
@@ -576,16 +589,30 @@ void CPhrap_Read::x_AddTagFeats(CRef<CSeq_annot>& annot) const
         feat->SetData().SetImp().SetKey(tag.m_Type);
         CSeq_loc& loc = feat->SetLocation();
         loc.SetInt().SetId(*GetId());
+        TSeqPos unpadded_start = GetUnpaddedPos(tag.m_Start);
+        TSeqPos unpadded_end = GetUnpaddedPos(tag.m_End);
         if ( IsComplemented() ) {
             loc.SetInt().SetFrom(GetUnpaddedLength() -
-                GetUnpaddedPos(tag.m_End) - 1);
+                unpadded_end - 1);
             loc.SetInt().SetTo(GetUnpaddedLength() -
-                GetUnpaddedPos(tag.m_Start) - 1);
+                unpadded_start - 1);
             loc.SetInt().SetStrand(eNa_strand_minus);
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                loc.SetInt().SetFuzz_from().
+                    SetP_m(tag.m_End - unpadded_end);
+                loc.SetInt().SetFuzz_to().
+                    SetP_m(tag.m_Start - unpadded_start);
+            }
         }
         else {
-            loc.SetInt().SetFrom(GetUnpaddedPos(tag.m_Start));
+            loc.SetInt().SetFrom(unpadded_start);
             loc.SetInt().SetTo(GetUnpaddedPos(tag.m_End));
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                loc.SetInt().SetFuzz_from().
+                    SetP_m(tag.m_Start - unpadded_start);
+                loc.SetInt().SetFuzz_to().
+                    SetP_m(tag.m_End - unpadded_end);
+            }
         }
         annot->SetData().SetFtable().push_back(feat);
     }
@@ -594,8 +621,10 @@ void CPhrap_Read::x_AddTagFeats(CRef<CSeq_annot>& annot) const
 
 void CPhrap_Read::x_AddQualityFeat(CRef<CSeq_annot>& annot) const
 {
-    if ( !FlagSet(fPhrap_FeatQuality)  ||
-        (m_HiQualRange.Empty()  &&  m_AlignedRange.Empty())) {
+    if ( !FlagSet(fPhrap_FeatQuality) ) {
+        return;
+    }
+    if ( m_HiQualRange.Empty()  &&  GetAlignedTo() == kInvalidSeqPos ) {
         return;
     }
     if ( !annot ) {
@@ -612,28 +641,48 @@ void CPhrap_Read::x_AddQualityFeat(CRef<CSeq_annot>& annot) const
             loc.SetInt().SetFrom(GetUnpaddedLength() - stop - 1);
             loc.SetInt().SetTo(GetUnpaddedLength() - start - 1);
             loc.SetInt().SetStrand(eNa_strand_minus);
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                loc.SetInt().SetFuzz_from().
+                    SetP_m(m_HiQualRange.GetTo() - stop);
+                loc.SetInt().SetFuzz_to().
+                    SetP_m(m_HiQualRange.GetFrom() - start);
+            }
         }
         else {
             loc.SetInt().SetFrom(start);
             loc.SetInt().SetTo(stop);
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                loc.SetInt().SetFuzz_from().
+                    SetP_m(m_HiQualRange.GetFrom() - start);
+                loc.SetInt().SetFuzz_to().
+                    SetP_m(m_HiQualRange.GetTo() - stop);
+            }
         }
         annot->SetData().SetFtable().push_back(feat);
     }
-    if ( !m_AlignedRange.Empty() ) {
+    if (GetAlignedTo() != kInvalidSeqPos) {
         CRef<CSeq_feat> feat(new CSeq_feat);
         feat->SetData().SetImp().SetKey("aligned_segment");
         CSeq_loc& loc = feat->SetLocation();
         loc.SetInt().SetId(*GetId());
-        TSeqPos start = GetUnpaddedPos(m_AlignedRange.GetFrom());
-        TSeqPos stop = GetUnpaddedPos(m_AlignedRange.GetTo());
+        TSeqPos start = GetUnpaddedPos(GetAlignedFrom());
+        TSeqPos stop = GetUnpaddedPos(GetAlignedTo());
         if ( IsComplemented() ) {
             loc.SetInt().SetFrom(GetUnpaddedLength() - stop - 1);
             loc.SetInt().SetTo(GetUnpaddedLength() - start - 1);
             loc.SetInt().SetStrand(eNa_strand_minus);
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                loc.SetInt().SetFuzz_from().SetP_m(GetAlignedTo() - stop);
+                loc.SetInt().SetFuzz_to().SetP_m(GetAlignedFrom() - start);
+            }
         }
         else {
             loc.SetInt().SetFrom(start);
             loc.SetInt().SetTo(stop);
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                loc.SetInt().SetFuzz_from().SetP_m(GetAlignedFrom() - start);
+                loc.SetInt().SetFuzz_to().SetP_m(GetAlignedTo() - stop);
+            }
         }
         annot->SetData().SetFtable().push_back(feat);
     }
@@ -762,6 +811,8 @@ public:
 
     CRef<CSeq_entry> CreateContig(int level) const;
 
+    bool IsCircular(void) const;
+
 private:
     void x_CreateAlign(CBioseq_set& bioseq_set) const;
     void x_CreateGraph(CBioseq& bioseq) const;
@@ -806,15 +857,13 @@ private:
     TBaseSegMap       m_BaseSegMap;
     TContigTags       m_Tags;
     mutable TReads    m_Reads;
-    bool              m_Circular;
 };
 
 
 CPhrap_Contig::CPhrap_Contig(TPhrapReaderFlags flags)
     : CPhrap_Seq(flags),
       m_NumReads(0),
-      m_NumSegs(0),
-      m_Circular(false)
+      m_NumSegs(0)
 {
 }
 
@@ -876,14 +925,17 @@ void CPhrap_Contig::ReadReadLocation(CNcbiIstream& in, TSeqs& seqs)
         }
     }
     read->AddReadLoc(start, complemented); 
-    if (start < 0) {
-        // Add second location
-        // Negative % produces strange results on Windows
-        start = GetPaddedLength() - (-start % GetPaddedLength());
-        read->AddReadLoc(start, complemented);
-        // Mark the contig as circular
-        m_Circular = true;
+}
+
+
+bool CPhrap_Contig::IsCircular(void) const
+{
+    ITERATE(TReads, read, m_Reads) {
+        if ( read->second->IsCircular() ) {
+            return true;
+        }
     }
+    return false;
 }
 
 
@@ -1016,13 +1068,14 @@ bool CPhrap_Contig::x_AddAlignRanges(TSeqPos           global_start,
                                      TAlignMap&        aln_map,
                                      TAlignStarts&     aln_starts) const
 {
-    if (global_start >= seq.GetPaddedLength() + offset) {
+    TSeqPos aln_from = seq.GetAlignedFrom();
+    TSeqPos aln_len = seq.GetAlignedTo() - aln_from;
+    if (global_start >= seq.GetPaddedLength() + offset + aln_from) {
         return false;
     }
     bool ret = false;
-    TSeqPos pstart = max(offset, TSignedSeqPos(global_start));
-    // Make special method to do all the work and return the
-    // correct initial pad iterator.
+    TSeqPos pstart = max(offset + TSignedSeqPos(aln_from),
+                         TSignedSeqPos(global_start));
     TSeqPos ustart = seq.GetUnpaddedPos(pstart - offset, &pstart);
     if (ustart == kInvalidSeqPos) {
         return false;
@@ -1040,6 +1093,9 @@ bool CPhrap_Contig::x_AddAlignRanges(TSeqPos           global_start,
             break;
         }
         TSeqPos len = pad - ustart;
+        if (len > aln_len) {
+            len = aln_len;
+        }
         if (pstart + len > global_stop) {
             len = global_stop - pstart;
         }
@@ -1051,9 +1107,12 @@ bool CPhrap_Contig::x_AddAlignRanges(TSeqPos           global_start,
         aln_starts.insert(rg.GetToOpen());
         aln_map.insert(TAlignMap::value_type(rg, info));
         ret = true;
+        if ( (aln_len -= len) == 0) {
+            break;
+        }
     }
     _ASSERT(seq.GetUnpaddedLength() >= ustart);
-    TSeqPos len = seq.GetUnpaddedLength() - ustart;
+    TSeqPos len = min(aln_len, seq.GetUnpaddedLength() - ustart);
     if (len > 0  &&  pstart < global_stop) {
         if (pstart + len > global_stop) {
             len = global_stop - pstart;
@@ -1180,13 +1239,14 @@ void CPhrap_Contig::x_CreateAlignAll(CBioseq_set& bioseq_set) const
     }
     ITERATE (TReads, rd, m_Reads) {
         const CPhrap_Read& read = *rd->second;
-        for (size_t loc = 0; loc < read.GetStarts().size(); loc++) {
-            TSignedSeqPos start = read.GetStarts()[loc];
+        TSignedSeqPos start = read.GetStart();
+        while ( start < TSignedSeqPos(GetPaddedLength()) ) {
             if (x_AddAlignRanges(global_start, global_stop,
                 read, dim, start, aln_map, aln_starts)) {
                 dim++;
                 rows.push_back(CConstRef<CPhrap_Seq>(&read));
             }
+            start += GetPaddedLength();
         }
     }
     CRef<CSeq_align> align = x_CreateSeq_align(aln_map, aln_starts, rows);
@@ -1211,16 +1271,19 @@ void CPhrap_Contig::x_CreateAlignPairs(CBioseq_set& bioseq_set) const
         size_t dim = 1;
         rows.push_back(CConstRef<CPhrap_Seq>(this));
         // Align unpadded contig and each loc of each read to padded coords
-        ITERATE(CPhrap_Read::TStarts, offset, read.GetStarts()) {
-            TSignedSeqPos global_start = *offset < 0 ? 0 : *offset;
-            TSignedSeqPos global_stop = read.GetPaddedLength() + *offset;
+//        ITERATE(CPhrap_Read::TStarts, offset, read.GetStarts()) {
+        TSignedSeqPos start = read.GetStart();
+        while ( start < TSignedSeqPos(GetPaddedLength()) ) {
+            TSignedSeqPos global_start = read.GetStart() < 0 ? 0 : start;
+            TSignedSeqPos global_stop = read.GetPaddedLength() + start;
             x_AddAlignRanges(global_start, global_stop,
                 *this, 0, 0, aln_map, aln_starts);
             if ( x_AddAlignRanges(global_start, global_stop,
-                read, dim, *offset, aln_map, aln_starts) ) {
+                read, dim, start, aln_map, aln_starts) ) {
                 rows.push_back(CConstRef<CPhrap_Seq>(&read));
                 dim++;
             }
+            start += GetPaddedLength();
         }
         CRef<CSeq_align> align = x_CreateSeq_align(aln_map, aln_starts, rows);
         if  ( !align ) {
@@ -1253,13 +1316,14 @@ void CPhrap_Contig::x_CreateAlignOptimized(CBioseq_set& bioseq_set) const
         }
         ITERATE (TReads, rd, m_Reads) {
             const CPhrap_Read& read = *rd->second;
-            for (size_t loc = 0; loc < read.GetStarts().size(); loc++) {
-                TSignedSeqPos start = read.GetStarts()[loc];
+            TSignedSeqPos start = read.GetStart();
+            while (start < TSignedSeqPos(GetPaddedLength())) {
                 if (x_AddAlignRanges(g_start, g_stop,
                     read, dim, start, aln_map, aln_starts)) {
                     dim++;
                     rows.push_back(CConstRef<CPhrap_Seq>(&read));
                 }
+                start += GetPaddedLength();
             }
         }
         CRef<CSeq_align> align = x_CreateSeq_align(aln_map, aln_starts, rows);
@@ -1288,24 +1352,17 @@ void CPhrap_Contig::x_AddBaseSegFeats(CRef<CSeq_annot>& annot) const
                         CT_POS_TYPE(-1));
         }
         ITERATE(TBaseSegs, bs, bs_set->second) {
-            TSignedSeqPos rd_start;
-            _ASSERT(!read->GetStarts().empty());
-            for (size_t i = 0; i < read->GetStarts().size(); i++) {
-                TSignedSeqPos start = read->GetStarts()[i];
-                if (start >= 0) {
-                    if (bs->m_Start >= start &&
-                        bs->m_End <= start + read->GetPaddedLength()) {
-                        rd_start = start;
-                        break;
-                    }
+            TSignedSeqPos rd_start = read->GetStart();
+            while (rd_start < TSignedSeqPos(GetPaddedLength())) {
+                TSignedSeqPos aln_start = rd_start + read->GetAlignedFrom();
+                TSignedSeqPos aln_stop = rd_start + read->GetAlignedTo();
+                if (TSignedSeqPos(bs->m_Start) >= aln_start  &&
+                    TSignedSeqPos(bs->m_End) <= aln_stop) {
+                    break;
                 }
-                else {
-                    if (bs->m_End <= start + read->GetPaddedLength()) {
-                        rd_start = start;
-                        break;
-                    }
-                }
+                rd_start += GetPaddedLength();
             }
+            _ASSERT(rd_start < TSignedSeqPos(GetPaddedLength()));
             TSeqPos start = bs->m_Start - rd_start;
             TSeqPos stop = bs->m_End - rd_start;
             start = read->GetUnpaddedPos(start);
@@ -1348,41 +1405,64 @@ void CPhrap_Contig::x_AddReadLocFeats(CRef<CSeq_annot>& annot) const
         annot.Reset(new CSeq_annot);
     }
     ITERATE(TReads, read, m_Reads) {
-        for (size_t i = 0; i < read->second->GetStarts().size(); i++) {
-            TSignedSeqPos rd_start = read->second->GetStarts()[i];
-            if (rd_start < 0) {
-                // Add only positive starts
-                continue;
-            }
-            CRef<CSeq_feat> loc_feat(new CSeq_feat);
-            loc_feat->SetExcept(true);
-            loc_feat->SetExcept_text(
-                "Coordinates are specified for padded read and contig");
-            loc_feat->SetData().SetImp().SetKey("read_start");
-            CSeq_loc& loc = loc_feat->SetLocation();
-            loc.SetInt().SetId(*read->second->GetId());
-            loc.SetInt().SetFrom(0);
-            loc.SetInt().SetTo(read->second->GetPaddedLength() - 1);
-            if ( read->second->IsComplemented() ) {
-                loc.SetInt().SetStrand(eNa_strand_minus);
-            }
-            CSeq_loc& prod = loc_feat->SetProduct();
-            TSignedSeqPos rd_stop =
-                rd_start + read->second->GetPaddedLength() - 1;
-            if (rd_stop >= GetPaddedLength()) {
-                // Circular contig, split ranges
-                prod.SetPacked_int().AddInterval(*GetId(),
-                    rd_start, GetPaddedLength() - 1);
-                prod.SetPacked_int().AddInterval(*GetId(),
-                    0, rd_stop - GetPaddedLength());
-            }
-            else {
-                prod.SetInt().SetId(*GetId());
-                prod.SetInt().SetFrom(rd_start);
-                prod.SetInt().SetTo(rd_stop);
-            }
-            annot->SetData().SetFtable().push_back(loc_feat);
+        TSignedSeqPos rd_start = read->second->GetStart() +
+            read->second->GetAlignedFrom();
+        while (rd_start < 0) {
+            rd_start += GetPaddedLength();
         }
+        CRef<CSeq_feat> loc_feat(new CSeq_feat);
+        loc_feat->SetData().SetImp().SetKey("read_start");
+        CSeq_loc& loc = loc_feat->SetLocation();
+        TSeqPos aln_rd_start = read->second->GetUnpaddedPos(
+            read->second->GetAlignedFrom());
+        TSeqPos aln_rd_stop = read->second->GetUnpaddedPos(
+            read->second->GetAlignedTo());
+        loc.SetInt().SetId(*read->second->GetId());
+        loc.SetInt().SetFrom(aln_rd_start);
+        loc.SetInt().SetTo(aln_rd_stop - 1);
+        if ( read->second->IsComplemented() ) {
+            loc.SetInt().SetStrand(eNa_strand_minus);
+        }
+        if ( FlagSet(fPhrap_PadsToFuzz) ) {
+            loc.SetInt().SetFuzz_from().
+                SetP_m(read->second->GetAlignedFrom() - aln_rd_start);
+            loc.SetInt().SetFuzz_to().
+                SetP_m(read->second->GetAlignedTo() - aln_rd_stop);
+        }
+        CSeq_loc& prod = loc_feat->SetProduct();
+        TSignedSeqPos rd_stop = rd_start +
+            read->second->GetAlignedTo() - read->second->GetAlignedFrom();
+        if (rd_stop >= GetPaddedLength()) {
+            // Circular contig, split ranges
+            CRef<CSeq_interval> rg1(new CSeq_interval(*GetId(),
+                GetUnpaddedPos(rd_start), GetUnpaddedLength() - 1));
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                rg1->SetFuzz_from().SetP_m(rd_start - rg1->GetFrom());
+                rg1->SetFuzz_to().SetP_m(GetPaddedLength() - GetUnpaddedLength());
+            }
+            prod.SetPacked_int().Set().push_back(rg1);
+
+            CRef<CSeq_interval> rg2(new CSeq_interval(*GetId(),
+                0, GetUnpaddedPos(rd_stop - GetPaddedLength())));
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                rg2->SetFuzz_from().SetP_m(0);
+                rg2->SetFuzz_from().
+                    SetP_m(rd_stop - GetPaddedLength() - rg2->GetTo());
+            }
+            prod.SetPacked_int().Set().push_back(rg2);
+        }
+        else {
+            prod.SetInt().SetId(*GetId());
+            prod.SetInt().SetFrom(GetUnpaddedPos(rd_start));
+            prod.SetInt().SetTo(GetUnpaddedPos(rd_stop));
+            if ( FlagSet(fPhrap_PadsToFuzz) ) {
+                prod.SetInt().SetFuzz_from().
+                    SetP_m(rd_start - prod.SetInt().GetFrom());
+                prod.SetInt().SetFuzz_to().
+                    SetP_m(rd_stop - prod.SetInt().GetTo());
+            }
+        }
+        annot->SetData().SetFtable().push_back(loc_feat);
     }
 }
 
@@ -1422,6 +1502,12 @@ void CPhrap_Contig::x_AddTagFeats(CRef<CSeq_annot>& annot) const
         loc.SetInt().SetId(*GetId());
         loc.SetInt().SetFrom(GetUnpaddedPos(tag.m_Start));
         loc.SetInt().SetTo(GetUnpaddedPos(tag.m_End));
+        if ( FlagSet(fPhrap_PadsToFuzz) ) {
+            loc.SetInt().SetFuzz_from().
+                SetP_m(tag.m_Start - loc.SetInt().GetFrom());
+            loc.SetInt().SetFuzz_to().
+                SetP_m(tag.m_End - loc.SetInt().GetTo());
+        }
         annot->SetData().SetFtable().push_back(feat);
     }
 }
@@ -1455,7 +1541,7 @@ CRef<CSeq_entry> CPhrap_Contig::CreateContig(int level) const
     CRef<CBioseq> bioseq = CreateBioseq();
     _ASSERT(bioseq);
     bioseq->SetInst().SetRepr(CSeq_inst::eRepr_consen);
-    if ( m_Circular ) {
+    if ( IsCircular() ) {
         bioseq->SetInst().SetTopology(CSeq_inst::eTopology_circular);
     }
     cont_entry->SetSeq(*bioseq);
@@ -2233,6 +2319,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/09/16 18:43:16  grichenk
+* Changed features' coordinates to reflect aligned segment.
+* Added padding shift as int-fuzz.
+*
 * Revision 1.11  2005/09/06 18:38:08  grichenk
 * Fixed processing of negative read starts
 *

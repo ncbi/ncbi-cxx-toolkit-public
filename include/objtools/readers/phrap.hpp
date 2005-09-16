@@ -62,7 +62,8 @@ enum EPhrapReaderFlags {
     fPhrap_OldVersion     = 0x1000, ///< force old ACE format
     fPhrap_NewVersion     = 0x2000, ///< force new ACE format
     fPhrap_Version        = fPhrap_OldVersion | fPhrap_NewVersion,
-
+    fPhrap_PadsToFuzz     = 0x4000, ///< Add int-fuzz.p-m to indicate padded
+                                    ///< coordinates offset.
     fPhrap_Default = fPhrap_PackSeqData
                    | fPhrap_FeatGaps
                    | fPhrap_FeatBaseSegs
@@ -87,6 +88,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/09/16 18:43:16  grichenk
+* Changed features' coordinates to reflect aligned segment.
+* Added padding shift as int-fuzz.
+*
 * Revision 1.4  2005/08/08 14:58:04  grichenk
 * Adjusted version flags to autodetect ACE version by default.
 *

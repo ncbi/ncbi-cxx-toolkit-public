@@ -114,6 +114,11 @@ void CAce2AsnApp::Init(void)
                             "Add descriptors (DS and WA tags)",
                             CArgDescriptions::eBoolean,
                             "t");
+    arg_desc->AddDefaultKey("fuzz",
+                            "fPhrap_PadsToFuzz",
+                            "Add padded coordinates using int-fuzz",
+                            CArgDescriptions::eBoolean,
+                            "f");
     arg_desc->AddDefaultKey("align", "AlignType",
                             "Alignment type",
                             CArgDescriptions::eString, "optimized");
@@ -166,6 +171,9 @@ int CAce2AsnApp::Run(void)
     }
     if ( args["descr"].AsBoolean() ) {
         flags |= fPhrap_Descr;
+    }
+    if ( args["fuzz"].AsBoolean() ) {
+        flags |= fPhrap_PadsToFuzz;
     }
 
     if (args["align"].AsString() == "optimized") {
@@ -221,6 +229,10 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/09/16 18:43:16  grichenk
+ * Changed features' coordinates to reflect aligned segment.
+ * Added padding shift as int-fuzz.
+ *
  * Revision 1.3  2005/08/08 14:58:04  grichenk
  * Adjusted version flags to autodetect ACE version by default.
  *
