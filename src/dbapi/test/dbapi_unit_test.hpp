@@ -163,6 +163,7 @@ public:
     void Test_Bulk_Writing(void);
     void Test_GetColumnNo(void);
     void Test_LOB(void);
+    void Test_UNIQUE(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -217,6 +218,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2005/09/16 16:59:11  ssikorsk
+ * + Test_UNIQUE test
+ *
  * Revision 1.25  2005/09/13 14:47:35  ssikorsk
  * Added a Test_LOB test to the test-suite
  *
