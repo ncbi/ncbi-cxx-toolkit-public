@@ -78,7 +78,7 @@ template<int order> inline double CMarkovChainArray<order>::Score(const EResidue
     for(int i = 0; i < m_length; ++i)
     {
         double s = m_mc[i].Score(seq+i);
-        if(s == kBadScore) return kBadScore;
+        if(s == BadScore()) return BadScore();
         score += s;
     }
     return score;
@@ -96,9 +96,9 @@ double CWAM_Donor<order>::Score(const CEResidueVec& seq, int i) const
 {
     int first = i-m_left+1;
     int last = i+m_right;
-    if(first-order < 0 || last >= (int)seq.size()) return kBadScore;    // out of range
-    if(seq[i+1] != enG || (seq[i+2] != enT && seq[i+2] != enC)) return kBadScore;   // no GT/GC
-//    if(seq[i+1] != enG || seq[i+2] != enT) return kBadScore;   // no GT
+    if(first-order < 0 || last >= (int)seq.size()) return BadScore();    // out of range
+    if(seq[i+1] != enG || (seq[i+2] != enT && seq[i+2] != enC)) return BadScore();   // no GT/GC
+//    if(seq[i+1] != enG || seq[i+2] != enT) return BadScore();   // no GT
     
     return m_matrix.Score(&seq[first]);
 }
@@ -136,8 +136,8 @@ double CWAM_Acceptor<order>::Score(const CEResidueVec& seq, int i) const
 {
     int first = i-m_left+1;
     int last = i+m_right;
-    if(first-order < 0 || last >= (int)seq.size()) return kBadScore;  // out of range
-    if(seq[i-1] != enA || seq[i] != enG) return kBadScore;   // no AG
+    if(first-order < 0 || last >= (int)seq.size()) return BadScore();  // out of range
+    if(seq[i-1] != enA || seq[i] != enG) return BadScore();   // no AG
     
     return m_matrix.Score(&seq[first]);
 }
@@ -189,7 +189,7 @@ CMC3_CodingRegion<order>::CMC3_CodingRegion(const string& file, int cgcontent)
 template<int order>
 double CMC3_CodingRegion<order>::Score(const CEResidueVec& seq, int i, int codonshift) const
 {
-    if(i-order < 0) return kBadScore;  // out of range
+    if(i-order < 0) return BadScore();  // out of range
 //    else if(seq[i] == enN) return -2.;  // discourage making exons of Ns
     else return m_matrix[codonshift].Score(&seq[i]);
 }
@@ -211,7 +211,7 @@ CMC_NonCodingRegion<order>::CMC_NonCodingRegion(const string& file, int cgconten
 template<int order>
 double CMC_NonCodingRegion<order>::Score(const CEResidueVec& seq, int i) const
 {
-    if(i-order < 0) return kBadScore;  // out of range
+    if(i-order < 0) return BadScore();  // out of range
     return m_matrix.Score(&seq[i]);
 }
 
@@ -255,8 +255,8 @@ inline bool CSeqScores::isGT(int i, int strand) const
 
 inline bool CSeqScores::isConsensusIntron(int i, int j, int strand) const
 {
-    if(strand == ePlus) return (m_dscr[ePlus][i-1] != kBadScore) && (m_ascr[ePlus][j] != kBadScore);
-    else                return (m_ascr[eMinus][i-1] != kBadScore) && (m_dscr[eMinus][j] != kBadScore);
+    if(strand == ePlus) return (m_dscr[ePlus][i-1] != BadScore()) && (m_ascr[ePlus][j] != BadScore());
+    else                return (m_ascr[eMinus][i-1] != BadScore()) && (m_dscr[eMinus][j] != BadScore());
 //    if(strand == ePlus) return isGT(i,strand) && isAG(j,strand);
 //    else return isAG(i,strand) && isGT(j,strand);
 }
@@ -360,15 +360,15 @@ inline TSignedSeqPos CSeqScores::RevSeqMap(TSignedSeqPos i) const
 
 inline double AddProbabilities(double scr1, double scr2)
 {
-    if(scr1 == kBadScore) return scr2;
-    else if(scr2 == kBadScore) return scr1;
+    if(scr1 == BadScore()) return scr2;
+    else if(scr2 == BadScore()) return scr1;
     else if(scr1 >= scr2)  return scr1+log(1+exp(scr2-scr1));
     else return scr2+log(1+exp(scr1-scr2));
 }
 
 inline double AddScores(double scr1, double scr2)
 {
-    if(scr1 == kBadScore || scr2 == kBadScore) return kBadScore;
+    if(scr1 == BadScore() || scr2 == BadScore()) return BadScore();
     else return scr1+scr2;
 }
 
@@ -395,17 +395,17 @@ template<class State> inline void EvaluateInitialScore(State& r)
     {
         score = r.InitialLengthScore();
     }
-    if(score == kBadScore) return;
+    if(score == BadScore()) return;
 
     double scr;
     scr = r.RgnScore();
-    if(scr == kBadScore) return;
+    if(scr == BadScore()) return;
     score += scr;
 
     if(!r.NoRightEnd())
     {
         scr = r.TermScore();
-        if(scr == kBadScore) return;
+        if(scr == BadScore()) return;
         score += scr;
     }
 
@@ -414,7 +414,7 @@ template<class State> inline void EvaluateInitialScore(State& r)
 
 inline double CLorentz::ClosingScore(int l) const
 {
-    if(l == MaxLen()) return kBadScore;
+    if(l == MaxLen()) return BadScore();
     int i = (l-1)/m_step;
     int delx = min((i+1)*m_step,MaxLen())-l;
     double dely = (i == 0 ? 1 : m_clscore[i-1])-m_clscore[i];
@@ -422,7 +422,7 @@ inline double CLorentz::ClosingScore(int l) const
 }
 
 inline CHMM_State::CHMM_State(EStrand strn, int point) : m_stop(point), m_strand(strn), 
-                                      m_score(kBadScore), m_leftstate(0), m_terminal(0) 
+                                      m_score(BadScore()), m_leftstate(0), m_terminal(0) 
 {
     if(sm_seqscr == 0) 
     {
@@ -556,7 +556,7 @@ inline double CSingleExon::TermScore() const
 inline double CSingleExon::BranchScore(const CIntergenic& next) const 
 { 
     if(isPlus() || (Stop()-Start())%3 == 2) return kLnHalf;
-    else return kBadScore;
+    else return BadScore();
 }
 
 inline CFirstExon::CFirstExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
@@ -589,12 +589,12 @@ inline double CFirstExon::TermScore() const
 
 inline double CFirstExon::BranchScore(const CIntron& next) const
 {
-    if(Strand() != next.Strand()) return kBadScore;
+    if(Strand() != next.Strand()) return BadScore();
 
     int ph = isPlus() ? Phase() : Phase()+Stop()-Start();
 
     if((ph+1)%3 == next.Phase()) return 0;
-    else return kBadScore;
+    else return BadScore();
 }
 
 inline CInternalExon::CInternalExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
@@ -633,12 +633,12 @@ inline double CInternalExon::TermScore() const
 
 inline double CInternalExon::BranchScore(const CIntron& next) const
 {
-    if(Strand() != next.Strand()) return kBadScore;
+    if(Strand() != next.Strand()) return BadScore();
 
     int ph = isPlus() ? Phase() : Phase()+Stop()-Start();
 
     if((ph+1)%3 == next.Phase()) return 0;
-    else return kBadScore;
+    else return BadScore();
 }
 
 inline CLastExon::CLastExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
@@ -672,7 +672,7 @@ inline double CLastExon::TermScore() const
 inline double CLastExon::BranchScore(const CIntergenic& next) const 
 { 
     if(isPlus() || (Phase()+Stop()-Start())%3 == 2) return kLnHalf;
-    else return kBadScore; 
+    else return BadScore(); 
 }
 
 inline CIntron::CIntron(EStrand strn, int ph, int point) : CHMM_State(strn,point), m_phase(ph)
@@ -685,7 +685,7 @@ inline CIntron::CIntron(EStrand strn, int ph, int point) : CHMM_State(strn,point
 
 inline double CIntron::LengthScore() const 
 { 
-    if(SplittedStop()) return kBadScore;
+    if(SplittedStop()) return BadScore();
     else return sm_intronlen.Score(Stop()-Start()+1); 
 }
 
@@ -707,7 +707,7 @@ inline double CIntron::TermScore() const
 
 inline double CIntron::BranchScore(const CLastExon& next) const
 {
-    if(Strand() != next.Strand()) return kBadScore;
+    if(Strand() != next.Strand()) return BadScore();
 
     if(isPlus())
     {
@@ -716,12 +716,12 @@ inline double CIntron::BranchScore(const CLastExon& next) const
     }
     else if(Phase() == next.Phase()) return sm_lnTerminal;
             
-    return kBadScore;
+    return BadScore();
 }
 
 inline double CIntron::BranchScore(const CInternalExon& next) const
 {
-    if(Strand() != next.Strand()) return kBadScore;
+    if(Strand() != next.Strand()) return BadScore();
 
     if(isPlus())
     {
@@ -730,7 +730,7 @@ inline double CIntron::BranchScore(const CInternalExon& next) const
     }
     else if(Phase() == next.Phase()) return sm_lnInternal;
             
-    return kBadScore;
+    return BadScore();
 }
 
 inline bool CIntron::SplittedStop() const
@@ -778,14 +778,14 @@ inline double CIntergenic::BranchScore(const CFirstExon& next) const
     if(&next == m_leftstate)
     {
         if(next.isMinus()) return sm_lnMulti;
-        else return kBadScore;
+        else return BadScore();
     }
     else if(isPlus() && next.isPlus()) 
     {
         if((next.Stop()-next.Start())%3 == next.Phase()) return sm_lnMulti;
-        else return kBadScore;
+        else return BadScore();
     }
-    else return kBadScore;
+    else return BadScore();
 }
 
 inline double CIntergenic::BranchScore(const CSingleExon& next) const 
@@ -793,11 +793,11 @@ inline double CIntergenic::BranchScore(const CSingleExon& next) const
     if(&next == m_leftstate)
     {
         if(next.isMinus()) return sm_lnSingle;
-        else return kBadScore;
+        else return BadScore();
     }
     else if(isPlus() && next.isPlus() && 
               (next.Stop()-next.Start())%3 == 2) return sm_lnSingle;
-    else return kBadScore;
+    else return BadScore();
 }
 
 END_SCOPE(gnomon)
@@ -806,6 +806,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/16 18:04:16  ucko
+ * kBadScore has been replaced with an inline BadScore function that
+ * always returns the same value to avoid lossage in optimized WorkShop
+ * builds.
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *

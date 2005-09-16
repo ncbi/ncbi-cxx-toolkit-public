@@ -107,16 +107,16 @@ bool rightwall, string cntg, double mpp)
         for(int strand = 0; strand < 2; ++strand)
         {
             m_seq[strand].resize(len);
-            m_ascr[strand].resize(len,kBadScore);
-            m_dscr[strand].resize(len,kBadScore);
-            m_sttscr[strand].resize(len,kBadScore);
-            m_stpscr[strand].resize(len,kBadScore);
-            m_ncdrscr[strand].resize(len,kBadScore);
-            m_ingscr[strand].resize(len,kBadScore);
+            m_ascr[strand].resize(len,BadScore());
+            m_dscr[strand].resize(len,BadScore());
+            m_sttscr[strand].resize(len,BadScore());
+            m_stpscr[strand].resize(len,BadScore());
+            m_ncdrscr[strand].resize(len,BadScore());
+            m_ingscr[strand].resize(len,BadScore());
             m_notinintron[strand].resize(len,-1);
             for(int frame = 0; frame < 3; ++frame)
             {
-                m_cdrscr[strand][frame].resize(len,kBadScore);
+                m_cdrscr[strand][frame].resize(len,BadScore());
                 m_laststop[strand][frame].resize(len,-1);
                 m_notinexon[strand][frame].resize(len,-1);
             }
@@ -513,7 +513,7 @@ bool rightwall, string cntg, double mpp)
             for(TSignedSeqPos i = 0; i < len; ++i)
             {
                 m_ascr[strand][i] = max(m_ascr[strand][i],m_acceptor.Score(s,i));
-                if(m_ascr[strand][i] != kBadScore)
+                if(m_ascr[strand][i] != BadScore())
                 {
                     if(s[i+1] == enA && s[i+2] == enA) m_asplit[strand][0][i] |= stpT;
                     if(s[i+1] == enA && s[i+2] == enG) m_asplit[strand][0][i] |= stpT; 
@@ -522,7 +522,7 @@ bool rightwall, string cntg, double mpp)
                     if(s[i+1] == enG) m_asplit[strand][1][i] |= stpTA;
                 }
                 m_dscr[strand][i] = max(m_dscr[strand][i],m_donor.Score(s,i));
-                if(m_dscr[strand][i] != kBadScore)
+                if(m_dscr[strand][i] != BadScore())
                 {
                     if(s[i] == enT) m_dsplit[strand][0][i] |= stpT;
                     if(s[i-1] == enT && s[i] == enA) m_dsplit[strand][1][i] |= stpTA;
@@ -530,9 +530,9 @@ bool rightwall, string cntg, double mpp)
                 }
                 m_sttscr[strand][i] = m_start.Score(s,i);
                 m_stpscr[strand][i] = m_stop.Score(s,i);
-                if(m_ascr[strand][i] != kBadScore) ++m_anum[strand];
-                if(m_dscr[strand][i] != kBadScore) ++m_dnum[strand];
-                if(m_sttscr[strand][i] != kBadScore) ++m_sttnum[strand];
+                if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
+                if(m_dscr[strand][i] != BadScore()) ++m_dnum[strand];
+                if(m_sttscr[strand][i] != BadScore()) ++m_sttnum[strand];
             }
         }
         else
@@ -541,7 +541,7 @@ bool rightwall, string cntg, double mpp)
             {
                 int ii = len-2-i;   // extra -1 because ii is point on the "right"
                 m_ascr[strand][i] = max(m_ascr[strand][i],m_acceptor.Score(s,ii));
-                if(m_ascr[strand][i] != kBadScore)
+                if(m_ascr[strand][i] != BadScore())
                 {
                     if(s[ii+1] == enA && s[ii+2] == enA) m_asplit[strand][0][i] |= stpT;
                     if(s[ii+1] == enA && s[ii+2] == enG) m_asplit[strand][0][i] |= stpT; 
@@ -550,7 +550,7 @@ bool rightwall, string cntg, double mpp)
                     if(s[ii+1] == enG) m_asplit[strand][1][i] |= stpTA;
                 }
                 m_dscr[strand][i] = max(m_dscr[strand][i],m_donor.Score(s,ii));
-                if(m_dscr[strand][i] != kBadScore)
+                if(m_dscr[strand][i] != BadScore())
                 {
                     if(s[ii] == enT) m_dsplit[strand][0][i] |= stpT;
                     if(s[ii-1] == enT && s[ii] == enA) m_dsplit[strand][1][i] |= stpTA;
@@ -558,8 +558,8 @@ bool rightwall, string cntg, double mpp)
                 }
                 m_sttscr[strand][i] = m_start.Score(s,ii);
                 m_stpscr[strand][i] = m_stop.Score(s,ii);
-                if(m_ascr[strand][i] != kBadScore) ++m_anum[strand];
-                if(m_dscr[strand][i] != kBadScore) ++m_dnum[strand];
+                if(m_ascr[strand][i] != BadScore()) ++m_anum[strand];
+                if(m_dscr[strand][i] != BadScore()) ++m_dnum[strand];
             }
         }
     }		
@@ -665,7 +665,7 @@ bool rightwall, string cntg, double mpp)
                 if(!algn[k].m_ssplice) --b;
                 for(TSignedSeqPos i = a; i <= b; ++i)
                 {
-                    if(cds_lim.GetFrom() <= i && i < cds_lim.GetTo()) m_stpscr[strand][i] = kBadScore;  // score on last coding base
+                    if(cds_lim.GetFrom() <= i && i < cds_lim.GetTo()) m_stpscr[strand][i] = BadScore();  // score on last coding base
                 }
             }
         }
@@ -687,7 +687,7 @@ bool rightwall, string cntg, double mpp)
                 TSignedSeqPos b = algn[k].GetTo();
                 for(TSignedSeqPos i = a; i <= b; ++i)
                 {
-                    if(i >= cds_lim.GetFrom() && i <= cds_lim.GetTo()) m_stpscr[strand][i] = kBadScore;  // score on last intergenic (first stop) base
+                    if(i >= cds_lim.GetFrom() && i <= cds_lim.GetTo()) m_stpscr[strand][i] = BadScore();  // score on last intergenic (first stop) base
                 }
             }
         }
@@ -697,9 +697,9 @@ bool rightwall, string cntg, double mpp)
     {
         for(TSignedSeqPos i = 0; i < len; ++i)
         {
-            if(m_sttscr[strand][i] != kBadScore) ++m_sttnum[strand];
+            if(m_sttscr[strand][i] != BadScore()) ++m_sttnum[strand];
             
-            if(m_stpscr[strand][i] != kBadScore)
+            if(m_stpscr[strand][i] != BadScore())
             {
                 if(strand == ePlus)
                 {
@@ -727,12 +727,12 @@ bool rightwall, string cntg, double mpp)
             TSignedSeqPos ii = strand == ePlus ? i : len-1-i;
             
             double score = m_ncdr.Score(s,ii);
-            if(score == kBadScore) score = 0;
+            if(score == BadScore()) score = 0;
             m_ncdrscr[strand][i] = score;
             if(i > 0) m_ncdrscr[strand][i] += m_ncdrscr[strand][i-1];
 
             score = m_intrg.Score(s,ii);
-            if(score == kBadScore) score = 0;
+            if(score == BadScore()) score = 0;
             m_ingscr[strand][i] = score;
             if(i > 0) m_ingscr[strand][i] += m_ingscr[strand][i-1];
         }
@@ -755,7 +755,7 @@ bool rightwall, string cntg, double mpp)
                 }
 
                 double score = m_cdr.Score(s,ii,codonshift);
-                if(score == kBadScore) score = 0;
+                if(score == BadScore()) score = 0;
 
                 m_cdrscr[strand][frame][i] = score;
                 if(i > 0) 
@@ -783,28 +783,28 @@ bool rightwall, string cntg, double mpp)
             m_ingscr[strand][i] -= m_ncdrscr[strand][i];
 
             int left, right;
-            if(m_dscr[strand][i] != kBadScore)
+            if(m_dscr[strand][i] != BadScore())
             {
                 CTerminal& t = m_donor;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
                 right = i+(strand==ePlus ? t.Right():t.Left());
                 m_dscr[strand][i] -= NonCodingScore(left,right,strand);
             }
-            if(m_ascr[strand][i] != kBadScore)
+            if(m_ascr[strand][i] != BadScore())
             {
                 CTerminal& t = m_acceptor;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
                 right = i+(strand==ePlus ? t.Right():t.Left());
                 m_ascr[strand][i] -= NonCodingScore(left,right,strand);
             }
-            if(m_sttscr[strand][i] != kBadScore)
+            if(m_sttscr[strand][i] != BadScore())
             {
                 CTerminal& t = m_start;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
                 right = i+(strand==ePlus ? t.Right():t.Left());
                 m_sttscr[strand][i] -= NonCodingScore(left,right,strand);
             }
-            if(m_stpscr[strand][i] != kBadScore)
+            if(m_stpscr[strand][i] != BadScore())
             {
                 CTerminal& t = m_stop;
                 left = i+1-(strand==ePlus ? t.Left():t.Right());
@@ -978,7 +978,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
             {
                 int l = exons[i-1].GetTo();
                 double scr = donor.Score(ds[ePlus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -987,7 +987,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
                     for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[ePlus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -998,7 +998,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
             {
                 int l = exons[i].GetFrom()-1;
                 double scr = acceptor.Score(ds[ePlus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -1007,7 +1007,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
                     for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[ePlus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -1026,7 +1026,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
             {
                 int l = len-2-exons[i-1].GetTo();
                 double scr = acceptor.Score(ds[eMinus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -1035,7 +1035,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
                     for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[eMinus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -1046,7 +1046,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
             {
                 int l = len-1-exons[i].GetFrom();
                 double scr = donor.Score(ds[eMinus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -1055,7 +1055,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
                     for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[eMinus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -1067,21 +1067,21 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
     TDVec cdrscr[3];
     for(int frame = 0; frame < 3; ++frame)
     {
-        cdrscr[frame].resize(cds.size(),kBadScore);
+        cdrscr[frame].resize(cds.size(),BadScore());
         for(int i = 0; i < (int)cds.size(); ++i)
         {
             int codonshift = (i-frame)%3;
             if(codonshift < 0) codonshift += 3;
                 
             double scr = cdr.Score(cds,i,codonshift);
-            if(scr == kBadScore) 
+            if(scr == BadScore()) 
             {
                 scr = 0;
             }
             else
             {
                 double s = ncdr.Score(cds,i);
-                if(s == kBadScore) s = 0;
+                if(s == BadScore()) s = 0;
                 scr -= s;
             }
 
@@ -1095,7 +1095,7 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
         SetCdsLimits(TSignedSeqRange::GetEmpty());
         SetMaxCdsLimits(TSignedSeqRange::GetEmpty());
     }
-    SetScore(kBadScore);
+    SetScore(BadScore());
 
     for(int frame = 0; frame < 3; ++frame)
     {
@@ -1120,17 +1120,17 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
             
             double s = cdrscr[frame][stop]-cdrscr[frame][start+2];
             
-            double stt_score = kBadScore;
+            double stt_score = BadScore();
             if(start >= stt.Left()+2)    // 5 extra bases for ncdr
             {
                 int pnt = start+2;
                 stt_score = stt.Score(cds,pnt);
-                if(stt_score != kBadScore)
+                if(stt_score != BadScore())
                 {
                     for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k)
                     {
                         double sn = ncdr.Score(cds,k);
-                        if(sn != kBadScore) stt_score -= sn;
+                        if(sn != BadScore()) stt_score -= sn;
                     }
                 }
             }
@@ -1138,24 +1138,24 @@ void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims)
             {
                 int pnt = (strand == ePlus) ? cdsmap[start]+2 : len-1-cdsmap[start]+2;
                 stt_score = stt.Score(ds[strand],pnt);
-                if(stt_score != kBadScore)
+                if(stt_score != BadScore())
                 {
                     for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k)
                     {
                         double sn = ncdr.Score(ds[strand],k);
-                        if(sn != kBadScore) stt_score -= sn;
+                        if(sn != BadScore()) stt_score -= sn;
                     }
                 }
             }
-            if(stt_score != kBadScore) s += stt_score;
+            if(stt_score != BadScore()) s += stt_score;
             
             double stp_score = stp.Score(cds,stop);
-            if(stp_score != kBadScore) 
+            if(stp_score != BadScore()) 
             {
                  for(int k = stop-stp.Left()+1; k <= stop+stp.Right(); ++k)
                  {
                      double sn = ncdr.Score(cds,k);
-                     if(sn != kBadScore) stp_score -= sn;
+                     if(sn != BadScore()) stp_score -= sn;
                  }
                  s += stp_score;
             }
@@ -1381,7 +1381,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
             {
                 int l = exons[i-1].GetTo();
                 double scr = donor.Score(ds[ePlus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -1390,7 +1390,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
                     for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[ePlus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -1401,7 +1401,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
             {
                 int l = exons[i].GetFrom()-1;
                 double scr = acceptor.Score(ds[ePlus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -1410,7 +1410,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
                     for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[ePlus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -1429,7 +1429,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
             {
                 int l = len-2-exons[i-1].GetTo();
                 double scr = acceptor.Score(ds[eMinus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -1438,7 +1438,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
                     for(int k = l-acceptor.Left()+1; k <= l+acceptor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[eMinus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -1449,7 +1449,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
             {
                 int l = len-1-exons[i].GetFrom();
                 double scr = donor.Score(ds[eMinus],l);
-                if(scr == kBadScore) 
+                if(scr == BadScore()) 
                 {
                     scr = 0;
                 }
@@ -1458,7 +1458,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
                     for(int k = l-donor.Left()+1; k <= l+donor.Right(); ++k)
                     {
                         double s = ncdr.Score(ds[eMinus],k);
-                        if(s == kBadScore) s = 0;
+                        if(s == BadScore()) s = 0;
                         scr -= s;
                     }
                 }
@@ -1470,21 +1470,21 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
     TDVec cdrscr[3];
     for(int frame = 0; frame < 3; ++frame)
     {
-        cdrscr[frame].resize(cds.size(),kBadScore);
+        cdrscr[frame].resize(cds.size(),BadScore());
         for(int i = 0; i < (int)cds.size(); ++i)
         {
             int codonshift = (i-frame)%3;
             if(codonshift < 0) codonshift += 3;
                 
             double scr = cdr.Score(cds,i,codonshift);
-            if(scr == kBadScore) 
+            if(scr == BadScore()) 
             {
                 scr = 0;
             }
             else
             {
                 double s = ncdr.Score(cds,i);
-                if(s == kBadScore) s = 0;
+                if(s == BadScore()) s = 0;
                 scr -= s;
             }
 
@@ -1498,7 +1498,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
         model.SetCdsLimits(TSignedSeqRange::GetEmpty());
         model.SetMaxCdsLimits(TSignedSeqRange::GetEmpty());
     }
-    model.SetScore(kBadScore);
+    model.SetScore(BadScore());
 
     for(int frame = 0; frame < 3; ++frame)
     {
@@ -1523,17 +1523,17 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
             
             double s = cdrscr[frame][stop]-cdrscr[frame][start+2];
             
-            double stt_score = kBadScore;
+            double stt_score = BadScore();
             if(start >= stt.Left()+2)    // 5 extra bases for ncdr
             {
                 int pnt = start+2;
                 stt_score = stt.Score(cds,pnt);
-                if(stt_score != kBadScore)
+                if(stt_score != BadScore())
                 {
                     for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k)
                     {
                         double sn = ncdr.Score(cds,k);
-                        if(sn != kBadScore) stt_score -= sn;
+                        if(sn != BadScore()) stt_score -= sn;
                     }
                 }
             }
@@ -1541,24 +1541,24 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
             {
                 int pnt = (strand == ePlus) ? cdsmap[start]+2 : len-1-cdsmap[start]+2;
                 stt_score = stt.Score(ds[strand],pnt);
-                if(stt_score != kBadScore)
+                if(stt_score != BadScore())
                 {
                     for(int k = pnt-stt.Left()+1; k <= pnt+stt.Right(); ++k)
                     {
                         double sn = ncdr.Score(ds[strand],k);
-                        if(sn != kBadScore) stt_score -= sn;
+                        if(sn != BadScore()) stt_score -= sn;
                     }
                 }
             }
-            if(stt_score != kBadScore) s += stt_score;
+            if(stt_score != BadScore()) s += stt_score;
             
             double stp_score = stp.Score(cds,stop);
-            if(stp_score != kBadScore) 
+            if(stp_score != BadScore()) 
             {
                  for(int k = stop-stp.Left()+1; k <= stop+stp.Right(); ++k)
                  {
                      double sn = ncdr.Score(cds,k);
-                     if(sn != kBadScore) stp_score -= sn;
+                     if(sn != BadScore()) stp_score -= sn;
                  }
                  s += stp_score;
             }
@@ -1629,6 +1629,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2005/09/16 18:04:16  ucko
+ * kBadScore has been replaced with an inline BadScore function that
+ * always returns the same value to avoid lossage in optimized WorkShop
+ * builds.
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *

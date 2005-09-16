@@ -66,11 +66,11 @@ void CMarkovChain<0>::Average(Type& mc0, Type& mc1, Type& mc2, Type& mc3)
 
 void CMarkovChain<0>::toScore()
 {
-    m_score[enA] = (m_score[enA] <= 0) ? kBadScore : log(4*m_score[enA]);
-    m_score[enC] = (m_score[enC] <= 0) ? kBadScore : log(4*m_score[enC]);
-    m_score[enG] = (m_score[enG] <= 0) ? kBadScore : log(4*m_score[enG]);
-    m_score[enT] = (m_score[enT] <= 0) ? kBadScore : log(4*m_score[enT]);
-    m_score[enN] = (m_score[enN] <= 0) ? kBadScore : log(4*m_score[enN]);
+    m_score[enA] = (m_score[enA] <= 0) ? BadScore() : log(4*m_score[enA]);
+    m_score[enC] = (m_score[enC] <= 0) ? BadScore() : log(4*m_score[enC]);
+    m_score[enG] = (m_score[enG] <= 0) ? BadScore() : log(4*m_score[enG]);
+    m_score[enT] = (m_score[enT] <= 0) ? BadScore() : log(4*m_score[enT]);
+    m_score[enN] = (m_score[enN] <= 0) ? BadScore() : log(4*m_score[enN]);
 }
 
 pair<int,int> CInputModel::FindContent(CNcbiIfstream& from, const string& label, int gccontent)
@@ -97,8 +97,8 @@ double CMDD_Donor::Score(const CEResidueVec& seq, int i) const
 {
     int first = i-m_left+1;
     int last = i+m_right;
-    if(first < 0 || last >= (int)seq.size()) return kBadScore;    // out of range
-    if(seq[i+1] != enG || seq[i+2] != enT) return kBadScore;   // no GT
+    if(first < 0 || last >= (int)seq.size()) return BadScore();    // out of range
+    if(seq[i+1] != enG || seq[i+2] != enT) return BadScore();   // no GT
     
     int mat = 0;
     for(int j = 0; j < (int)m_position.size(); ++j)
@@ -185,8 +185,8 @@ double CWMM_Start::Score(const CEResidueVec& seq, int i) const
 {
     int first = i-m_left+1;
     int last = i+m_right;
-    if(first < 0 || last >= (int)seq.size()) return kBadScore;  // out of range
-    if(seq[i-2] != enA || seq[i-1] != enT || seq[i] != enG) return kBadScore; // no ATG
+    if(first < 0 || last >= (int)seq.size()) return BadScore();  // out of range
+    if(seq[i-2] != enA || seq[i-1] != enT || seq[i] != enG) return BadScore(); // no ATG
     
     return m_matrix.Score(&seq[first]);
 }
@@ -219,10 +219,10 @@ double CWAM_Stop::Score(const CEResidueVec& seq, int i) const
 {
     int first = i-m_left+1;
     int last = i+m_right;
-    if(first-1 < 0 || last >= (int)seq.size()) return kBadScore;  // out of range
+    if(first-1 < 0 || last >= (int)seq.size()) return BadScore();  // out of range
     if((seq[i+1] != enT || seq[i+2] != enA || seq[i+3] != enA) &&
         (seq[i+1] != enT || seq[i+2] != enA || seq[i+3] != enG) &&
-        (seq[i+1] != enT || seq[i+2] != enG || seq[i+3] != enA)) return kBadScore; // no stop-codon
+        (seq[i+1] != enT || seq[i+2] != enG || seq[i+3] != enA)) return BadScore(); // no stop-codon
     
     return m_matrix.Score(&seq[first]);
 }
@@ -294,7 +294,7 @@ bool CLorentz::Init(CNcbiIstream& from, const string& label)
     m_clscore[num-1] = 0;
     for(int i = num-2; i >= 0; --i) m_clscore[i] = m_clscore[i+1]+m_score[i+1]*m_step;
 
-    for(int i = 0; i < num; ++i) m_score[i] = (m_score[i] == 0) ? kBadScore : log(m_score[i]);
+    for(int i = 0; i < num; ++i) m_score[i] = (m_score[i] == 0) ? BadScore() : log(m_score[i]);
     
     return true;
 }
@@ -305,11 +305,11 @@ double CLorentz::Through(int seqlen) const
     for(int l = seqlen+1; l <= MaxLen(); ++l) 
     {
         int i = (l-1)/m_step;
-        if(m_score[i] == kBadScore) continue;
+        if(m_score[i] == BadScore()) continue;
         through += exp(m_score[i])*(l-seqlen);
     }
     through /= AvLen();
-    through = (through == 0) ? kBadScore : log(through);
+    through = (through == 0) ? BadScore() : log(through);
     return through;
 }
 
@@ -390,7 +390,7 @@ void CIntron::Init(const string& file, int cgcontent, int seqlen)
     for(int i = 0; i < 3; ++i)
     {
         sm_lnDen[i] = log(initp*phasep[i]);
-        sm_lnThrough[i] = (lnthrough == kBadScore) ? kBadScore : sm_lnDen[i]+lnthrough;
+        sm_lnThrough[i] = (lnthrough == BadScore()) ? BadScore() : sm_lnDen[i]+lnthrough;
     }
     
     sm_initialised = true;
@@ -431,7 +431,7 @@ void CIntergenic::Init(const string& file, int cgcontent, int seqlen)
 
     double lnthrough = sm_intergeniclen.Through(seqlen);
     sm_lnDen = log(initp);
-    sm_lnThrough = (lnthrough == kBadScore) ? kBadScore : sm_lnDen+lnthrough;
+    sm_lnThrough = (lnthrough == BadScore()) ? BadScore() : sm_lnDen+lnthrough;
     
     sm_initialised = true;
     from.close();
@@ -444,6 +444,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2005/09/16 18:04:16  ucko
+ * kBadScore has been replaced with an inline BadScore function that
+ * always returns the same value to avoid lossage in optimized WorkShop
+ * builds.
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *

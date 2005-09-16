@@ -234,7 +234,7 @@ template<class State> SStateScores CalcStateScores(const State& st)
     
     sc.m_region = st.RgnScore();
     sc.m_term = st.TermScore();
-    if(sc.m_term == kBadScore) sc.m_term = 0;
+    if(sc.m_term == BadScore()) sc.m_term = 0;
     sc.m_score = st.Score();
     if(st.LeftState()) sc.m_score -= st.LeftState()->Score();
     sc.m_branch = sc.m_score-sc.m_length-sc.m_region-sc.m_term;
@@ -304,15 +304,15 @@ class CExon : public CHMM_State
     public:
         static void Init(const string& file, int cgcontent);
         CExon(EStrand strn, int point, int ph) : CHMM_State(strn,point), m_phase(ph), 
-                                                   m_prevexon(0), m_mscore(kBadScore) {}
+                                                   m_prevexon(0), m_mscore(BadScore()) {}
         int Phase() const { return m_phase; }  // frame of right exon end relatively start-codon
         bool StopInside() const;
         bool OpenRgn() const;
         double RgnScore() const;
         double DenScore() const { return 0; }
-        double ThroughLengthScore() const { return kBadScore; } 
-        double InitialLengthScore() const { return kBadScore; }
-        double ClosingLengthScore() const { return kBadScore; }
+        double ThroughLengthScore() const { return BadScore(); } 
+        double InitialLengthScore() const { return BadScore(); }
+        double ClosingLengthScore() const { return BadScore(); }
         void UpdatePrevExon(const CExon& e);
         double MScore() const { return m_mscore; }
         
@@ -337,7 +337,7 @@ class CSingleExon : public CExon
         const CSingleExon* PrevExon() const { return static_cast<const CSingleExon*>(m_prevexon); }
         double LengthScore() const; 
         double TermScore() const;
-        double BranchScore(const CHMM_State& next) const { return kBadScore; }
+        double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CIntergenic& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "SingleExon"; }
@@ -353,7 +353,7 @@ class CFirstExon : public CExon
         const CFirstExon* PrevExon() const { return static_cast<const CFirstExon*>(m_prevexon); }
         double LengthScore() const;
         double TermScore() const;
-        double BranchScore(const CHMM_State& next) const { return kBadScore; }
+        double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CIntron& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "FirstExon"; }
@@ -369,7 +369,7 @@ class CInternalExon : public CExon
         const CInternalExon* PrevExon() const { return static_cast<const CInternalExon*>(m_prevexon); }
         double LengthScore() const; 
         double TermScore() const;
-        double BranchScore(const CHMM_State& next) const { return kBadScore; }
+        double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CIntron& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "InternalExon"; }
@@ -385,7 +385,7 @@ class CLastExon : public CExon
         const CLastExon* PrevExon() const { return static_cast<const CLastExon*>(m_prevexon); }
         double LengthScore() const; 
         double TermScore() const;
-        double BranchScore(const CHMM_State& next) const { return kBadScore; }
+        double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CIntergenic& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "LastExon"; }
@@ -411,7 +411,7 @@ class CIntron : public CHMM_State
         double ClosingLengthScore() const;
         double ThroughLengthScore() const  { return sm_lnThrough[Phase()]; }
         double InitialLengthScore() const { return sm_lnDen[Phase()]+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
-        double BranchScore(const CHMM_State& next) const { return kBadScore; }
+        double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CLastExon& next) const;
         double BranchScore(const CInternalExon& next) const;
         bool SplittedStop() const;
@@ -443,7 +443,7 @@ class CIntergenic : public CHMM_State
         double ClosingLengthScore() const { return sm_intergeniclen.ClosingScore(Stop()-Start()+1); }
         double ThroughLengthScore() const { return sm_lnThrough; }
         double InitialLengthScore() const { return sm_lnDen+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
-        double BranchScore(const CHMM_State& next) const { return kBadScore; }
+        double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CFirstExon& next) const; 
         double BranchScore(const CSingleExon& next) const;
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
@@ -462,6 +462,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/16 18:04:16  ucko
+ * kBadScore has been replaced with an inline BadScore function that
+ * always returns the same value to avoid lossage in optimized WorkShop
+ * builds.
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *
