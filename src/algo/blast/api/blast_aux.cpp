@@ -35,6 +35,8 @@
 
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
+
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -529,47 +531,139 @@ string Blast_ProgramNameFromType(EBlastProgramType program)
     }
 }
 
+template <class Position>
+CRange<Position> Map(const CRange<Position>& target,
+                     const CRange<Position>& range)
+{
+    if (target.Empty()) {
+        throw std::runtime_error("Target range is empty");
+    } 
+    
+    if (range.Empty() || 
+        (range.GetFrom() > target.GetTo()) ||
+        ((range.GetFrom() + target.GetFrom()) > target.GetTo())) {
+        return target;
+    }
+
+    CRange<Position> retval;
+    retval.SetFrom(max(target.GetFrom() + range.GetFrom(), target.GetFrom()));
+    retval.SetTo(min(target.GetFrom() + range.GetTo(), target.GetTo()));
+    return retval;
+}
+
+/// Return the masked locations for a given query as well as whether the
+/// linked list's elements should be reverted or not (true in the case of
+/// negative only strand)
+/// The first element of the returned pair is the linked list of masked
+/// locations
+/// The second element of the returned pair is true if the linked list needs to
+/// be reversed
+static pair<BlastSeqLoc*, bool>
+s_GetBlastnMask(const BlastMaskLoc* mask, unsigned int query_index)
+{
+    const unsigned int kNumContexts = GetNumberOfContexts(eBlastTypeBlastn);
+    ASSERT(query_index*kNumContexts < (unsigned int)mask->total_size);
+
+    unsigned int context_index(query_index * kNumContexts);
+
+    BlastSeqLoc* core_seqloc(0);
+    bool needs_reversing(false);
+    // N.B.: The elements of the seqloc_array corresponding to reverse
+    // strands are all NULL except in a reverse-strand-only search
+    if ( !(core_seqloc = mask->seqloc_array[context_index++])) {
+        core_seqloc = mask->seqloc_array[context_index];
+        needs_reversing = true;
+    }
+    return make_pair(core_seqloc, needs_reversing);
+}
+
+/// Convert EBlastTypeBlastn CORE masks into TSeqLocInfoVector
+static void s_ConvertBlastnMasks(const CPacked_seqint::Tdata& query_intervals,
+                                 const BlastMaskLoc* mask,
+                                 TSeqLocInfoVector& retval)
+{
+    unsigned int i(0);
+    ITERATE(CPacked_seqint::Tdata, query_interval, query_intervals) {
+        const TSeqRange kTarget((*query_interval)->GetFrom(), 
+                                (*query_interval)->GetTo());
+
+        list< CRef<CSeqLocInfo> > query_masks;
+        pair<BlastSeqLoc*, bool> loc_aux = s_GetBlastnMask(mask, i++);
+        for (BlastSeqLoc* loc = loc_aux.first; loc; loc = loc->next) {
+            TSeqRange masked_range(loc->ssr->left, loc->ssr->right);
+            TSeqRange range(Map(kTarget, masked_range));
+            if (range.NotEmpty() && range != kTarget) {
+                CRef<CSeq_interval> seqint(new CSeq_interval);
+                seqint->SetId().Assign((*query_interval)->GetId());
+                seqint->SetFrom(range.GetFrom());
+                seqint->SetTo(range.GetTo());
+                CRef<CSeqLocInfo> seqlocinfo
+                    (new CSeqLocInfo(seqint, CSeqLocInfo::eFrameNotSet));
+                query_masks.push_back(seqlocinfo);
+            }
+        }
+        if (loc_aux.second) {
+            reverse(query_masks.begin(), query_masks.end());
+        }
+        retval.push_back(query_masks);
+    }
+}
+
 void 
 Blast_GetSeqLocInfoVector(EBlastProgramType program, 
-                          vector< CRef<CSeq_id> >& seqid_v,
+                          const CPacked_seqint& queries,
                           const BlastMaskLoc* mask, 
                           TSeqLocInfoVector& mask_v)
 {
     ASSERT(mask);
     const unsigned int kNumContexts = GetNumberOfContexts(program);
+    const CPacked_seqint::Tdata& query_intervals = queries.Get();
 
-    if (seqid_v.size() != mask->total_size/kNumContexts) {
+    if (query_intervals.size() != mask->total_size/kNumContexts) {
         string msg = "Blast_GetSeqLocInfoVector: number of query ids " +
-            NStr::IntToString(seqid_v.size()) + 
+            NStr::IntToString(query_intervals.size()) + 
             " not equal to number of queries in mask " + 
             NStr::IntToString(mask->total_size/kNumContexts);
         NCBI_THROW(CBlastException, eInvalidArgument, msg);
     }
 
-    unsigned int qindex(0); // index into seqid_v vector
-    NON_CONST_ITERATE(vector< CRef<CSeq_id> >, query_id, seqid_v) {
+    if (program == eBlastTypeBlastn) {
+        s_ConvertBlastnMasks(query_intervals, mask, mask_v);
+        return;
+    }
 
+    unsigned int qindex(0);
+    ITERATE(CPacked_seqint::Tdata, query_interval, query_intervals) {
+
+        const TSeqRange kTarget((*query_interval)->GetFrom(),
+                                (*query_interval)->GetTo());
         list<CRef<CSeqLocInfo> > query_masks;
         for (unsigned int index = 0; index < kNumContexts; index++) {
-            // N.B.: The elements of the seqloc_array corresponding to reverse
-            // strands are all NULL except in a reverse-strand-only search
+
             BlastSeqLoc* loc = mask->seqloc_array[qindex*kNumContexts+index];
-        
             for ( ; loc; loc = loc->next) {
-                int frame = BLAST_ContextToFrame(program, index);
-                if (frame == INT1_MAX) {
-                    string msg("Conversion from context to frame failed for ");
-                    msg += "'" + Blast_ProgramNameFromType(program) + "'";
-                    NCBI_THROW(CBlastException, eCoreBlastError, msg);
+                TSeqRange masked_range(loc->ssr->left, loc->ssr->right);
+                TSeqRange range(Map(kTarget, masked_range));
+                if (range.NotEmpty() && range != kTarget) {
+                    int frame = BLAST_ContextToFrame(program, index);
+                    if (frame == INT1_MAX) {
+                        string msg("Conversion from context to frame failed ");
+                        msg += "for '" + Blast_ProgramNameFromType(program) 
+                            + "'";
+                        NCBI_THROW(CBlastException, eCoreBlastError, msg);
+                    }
+                    CRef<CSeq_interval> seqint(new CSeq_interval);
+                    seqint->SetId().Assign((*query_interval)->GetId());
+                    seqint->SetFrom(range.GetFrom());
+                    seqint->SetTo(range.GetTo());
+                    CRef<CSeqLocInfo> seqloc_info
+                        (new CSeqLocInfo(seqint, frame));
+                    query_masks.push_back(seqloc_info);
                 }
-                CRef<CSeq_interval> seqint(new CSeq_interval(**query_id, 
-                                                             loc->ssr->left, 
-                                                             loc->ssr->right));
-                CRef<CSeqLocInfo> seqloc_info(new CSeqLocInfo(seqint, frame));
-                query_masks.push_back(seqloc_info);
             }
         }
-        mask_v.push_back(query_masks), qindex++;
+        mask_v.push_back(query_masks);
+        qindex++;
     }
 }
 
@@ -582,6 +676,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.81  2005/09/16 17:01:52  camacho
+ * Changed Blast_GetSeqLocInfoVector interface to consider masked locations in
+ * query sequences.
+ *
  * Revision 1.80  2005/09/02 15:58:17  camacho
  * Rename GetNumberOfFrames -> GetNumberOfContexts
  *

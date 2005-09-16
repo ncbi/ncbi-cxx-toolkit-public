@@ -56,6 +56,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_loc;
+    class CPacked_seqint;
 END_SCOPE(objects)
 
 /** @addtogroup AlgoBlast
@@ -161,14 +162,14 @@ typedef vector<list<CRef<CSeqLocInfo> > > TSeqLocInfoVector;
 /// Converts a BlastMaskLoc internal structure into an object returned by the 
 /// C++ API.
 /// @param program Type of BLAST program [in]
-/// @param seqid_v Vector of query Seq-ids [in]
+/// @param queries Container of query ids and start/stop locations [in]
 /// @param mask All masking locations [in]
 /// @param mask_v Vector of per-query lists of mask locations in CSeqLocInfo 
 ///               form. [out]
 NCBI_XBLAST_EXPORT
 void 
 Blast_GetSeqLocInfoVector(EBlastProgramType program, 
-                          vector< CRef<objects::CSeq_id> >& seqid_v,
+                          const objects::CPacked_seqint& queries,
                           const BlastMaskLoc* mask, 
                           TSeqLocInfoVector& mask_v);
 
@@ -272,6 +273,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2005/09/16 17:00:39  camacho
+* Changed Blast_GetSeqLocInfoVector interface to consider masked locations in
+* query sequences.
+*
 * Revision 1.64  2005/09/13 18:54:45  jcherry
 * Added missing export specifier
 *
