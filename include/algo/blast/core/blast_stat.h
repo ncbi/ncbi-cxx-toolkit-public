@@ -420,15 +420,25 @@ double BLAST_LargeGapSumE (Int2 num,  double xsum,
 
 /** Extract the recommended gap existence and extension values.
  * Only to be used with protein matrices. 
- * @param program_number used to distinguish between defaults for blastn
- *   and other programs [in]
  * @param  matrixName name of the matrix [in]
  * @param gap_existence returns recommended existence cost [in|out]
  * @param gap_extension returns recommended extension cost [in|out]
  * @return zero on success 
  */
-Int2 BLAST_GetGapExistenceExtendParams(EBlastProgramType program_number,
-                                       const char* matrixName,
+Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName,
+                                       Int4* gap_existence,
+                                       Int4* gap_extension);
+
+/** Extract the recommended gap existence and extension values.
+ * Only to be used with blastn searches.
+ * @param reward match score [in]
+ * @param penalty mismatch score [in]
+ * @param gap_existence returns recommended existence cost [in|out]
+ * @param gap_extension returns recommended extension cost [in|out]
+ * @return zero on success 
+ */
+Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
+                                       Int4 penalty,
                                        Int4* gap_existence,
                                        Int4* gap_extension);
 
