@@ -34,8 +34,6 @@
 
 %ignore ncbi::objects::CConstSageData::GetMethod() const;
 
-%ignore ncbi::CAlignSelector::SetPublicOnly;
-
 %ignore ncbi::objects::CCddDataLoader::CCddDataLoader();
 
 %ignore ncbi::CIntervalTree::Add(const interval_type &interval,
@@ -53,7 +51,6 @@
                                      nothrow_t const&);
 
 %ignore ncbi::x_SwapPointers(void* volatile*, void*);
-%ignore ncbi::CPIDGuard::Remove;
 
 %ignore ncbi::objects::CAlnMap::
     GetNumberOfInsertedSegmentsOnLeft(TNumrow row, TNumseg seg) const;
@@ -75,6 +72,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/09/16 15:06:43  jcherry
+ * Removed some obsolete %ignore's.
+ *
  * Revision 1.9  2005/09/15 15:13:48  jcherry
  * Removed some obsolete %ignore's.  Rearranged a bit.
  *
