@@ -172,6 +172,15 @@ GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding,
             ESentinelType sentinel = eSentinels,
             std::string* warnings = NULL);
 
+/** Converts a TSeqLocVector into a CPacked_seqint. Note that a consequence of
+ * this is that the CSeq_loc-s specified in the TSeqLocVector cannot be
+ * of type mix or packed int
+ * @param sequences data to convert from [in]
+ * @return CPacked_seqint containing data from previous sequences
+ */
+CRef<objects::CPacked_seqint>
+TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

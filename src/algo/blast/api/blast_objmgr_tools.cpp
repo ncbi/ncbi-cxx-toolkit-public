@@ -528,6 +528,40 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     return retval;
 }
 
+CRef<CPacked_seqint>
+TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences)
+{
+    CRef<CPacked_seqint> retval;
+    if (sequences.empty()) {
+        return retval;
+    }
+
+    retval.Reset(new CPacked_seqint);
+    ITERATE(TSeqLocVector, seq, sequences) {
+        const CSeq_id& id(sequence::GetId(*seq->seqloc, &*seq->scope));
+        TSeqRange range(TSeqRange::GetWhole());
+        if (seq->seqloc->IsWhole()) {
+            try {
+                range.Set(0, sequence::GetLength(*seq->seqloc, &*seq->scope));
+            } catch (const CException&) {
+                range = TSeqRange::GetWhole();
+            }
+        } else if (seq->seqloc->IsInt()) {
+            try {
+                range.SetFrom(sequence::GetStart(*seq->seqloc, &*seq->scope));
+                range.SetTo(sequence::GetStop(*seq->seqloc, &*seq->scope));
+            } catch (const CException&) {
+                range = TSeqRange::GetWhole();
+            }
+        } else {
+            NCBI_THROW(CBlastException, eNotSupported, 
+                       "Unsupported Seq-loc type used for query");
+        }
+        retval->AddInterval(id, range.GetFrom(), range.GetTo());
+    }
+    return retval;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -537,6 +571,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2005/09/16 17:04:13  camacho
+* + TSeqLocVector2Packed_seqint auxiliary function
+*
 * Revision 1.58  2005/07/21 17:17:28  bealer
 * - OMF version of seqalign generation.
 *
