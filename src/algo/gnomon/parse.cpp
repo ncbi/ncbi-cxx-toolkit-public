@@ -43,7 +43,7 @@ BEGIN_SCOPE(gnomon)
 template<class L, class R> inline 
 bool s_TooFar(const L& left, const R& right, double score) 
 {
-    if(left.MScore() == kBadScore) return true;
+    if(left.MScore() == BadScore()) return true;
     int len = right.Stop()-left.Stop();
     return (len > kTooFarLen && score+left.MScore() < right.Score());
 }
@@ -66,7 +66,7 @@ template<class Left, class Right> inline
 bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bool& openrgn)
 {
 
-    rscore = kBadScore;
+    rscore = BadScore();
 
     SRState rst(left,right);
     
@@ -78,12 +78,12 @@ bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bo
     if(left.isPlus())
     {
         scr = left.BranchScore(right);
-        if(scr == kBadScore) return true;
+        if(scr == BadScore()) return true;
     }
     else
     {
         scr = right.BranchScore(left);
-        if(scr == kBadScore) return true;
+        if(scr == BadScore()) return true;
         scr += right.DenScore()-left.DenScore();
     }
     score += scr;
@@ -93,17 +93,17 @@ bool s_EvaluateNewScore(const Left& left, const Right& right, double& rscore, bo
     
     if(right.NoRightEnd()) scr = right.ClosingLengthScore();
     else scr = right.LengthScore();
-    if(scr == kBadScore) return true;
+    if(scr == BadScore()) return true;
     score += scr;
     
     scr = right.RgnScore();
-    if(scr == kBadScore) return true;
+    if(scr == BadScore()) return true;
     score += scr;
     
     if(!right.NoRightEnd())
     {
         scr = right.TermScore();
-        if(scr == kBadScore) return true;
+        if(scr == BadScore()) return true;
         score += scr;
     }
     
@@ -120,7 +120,7 @@ inline bool s_ForwardStep(const L& left, R& right, int leftprot, int rightprot)
     double score;
     bool openrgn;
     if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
-    else if(score == kBadScore) return true;
+    else if(score == BadScore()) return true;
     
     int protnum = right.GetSeqScores()->ProtNumber(left.Stop(),right.Stop());
     
@@ -135,7 +135,7 @@ inline bool s_ForwardStep(const L& left, R& right, int leftprot, int rightprot)
         else if(protnum > 0) --protnum;                      // for first protein no penalty
     }
     
-    if(left.Score() != kBadScore && openrgn)
+    if(left.Score() != BadScore() && openrgn)
     {
          double scr = score-protnum*right.GetSeqScores()->MultiProtPenalty()+left.Score();
         if(scr > right.Score())
@@ -154,9 +154,9 @@ inline bool s_ForwardStep(const L& left, CIntron& right)
     double score;
     bool openrgn;
     if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
-    else if(score == kBadScore) return true;
+    else if(score == BadScore()) return true;
     
-    if(left.Score() != kBadScore && openrgn)
+    if(left.Score() != BadScore() && openrgn)
     {
         double scr = score+left.Score();
         if(scr > right.Score())
@@ -175,9 +175,9 @@ inline bool s_ForwardStep(const L& left, CIntergenic& right)
     double score;
     bool openrgn;
     if(!s_EvaluateNewScore(left,right,score,openrgn)) return false;
-    else if(score == kBadScore) return true;
+    else if(score == BadScore()) return true;
     
-    if(left.Score() != kBadScore && openrgn)
+    if(left.Score() != BadScore() && openrgn)
     {
         double scr = score+left.Score();
         if(scr > right.Score())
@@ -251,7 +251,7 @@ inline void s_MakeStep(EStrand strand, int point, vector<CIntergenic>& lvec, vec
 {
     rvec.push_back(CSingleExon(strand,point));
     s_MakeStep(lvec, rvec, 0, -1);
-    if(rvec.back().Score() == kBadScore) rvec.pop_back();
+    if(rvec.back().Score() == BadScore()) rvec.pop_back();
 }
 
 template<class R> 
@@ -263,7 +263,7 @@ inline void s_MakeStep(EStrand strand, int point, vector<CIntergenic>& lvec, vec
         {
             rvec[kr][phr].push_back(R(strand,phr,point));
             s_MakeStep(lvec, rvec[kr][phr], 0, kr);
-            if(rvec[kr][phr].back().Score() == kBadScore) rvec[kr][phr].pop_back();
+            if(rvec[kr][phr].back().Score() == BadScore()) rvec[kr][phr].pop_back();
         }
     }
 }
@@ -279,7 +279,7 @@ inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vec
             s_MakeStep(lvec[kl][phl], rvec, kl, -1);
         }
     }
-    if(rvec.back().Score() == kBadScore) rvec.pop_back();
+    if(rvec.back().Score() == BadScore()) rvec.pop_back();
 }
 
 inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vector<CInternalExon> rvec[][3])   // L - intron, R - internal exon
@@ -296,7 +296,7 @@ inline void s_MakeStep(EStrand strand, int point, vector<CIntron> lvec[][3], vec
                     s_MakeStep(lvec[kl][phl], rvec[kr][phr], kl, kr);
                 }
             }
-            if(rvec[kr][phr].back().Score() == kBadScore) rvec[kr][phr].pop_back();
+            if(rvec[kr][phr].back().Score() == BadScore()) rvec[kr][phr].pop_back();
         }
     }
 }
@@ -310,10 +310,10 @@ inline void s_MakeStep(EStrand strand, int point, vector<L1> lvec1[][3], vector<
         {
             int phr = (shift+phl)%3;
             rvec[k][phr].push_back(CIntron(strand,phr,point));
-            if(k == 1) rvec[k][phr].back().UpdateScore(kBadScore);   // proteins don't come from outside
+            if(k == 1) rvec[k][phr].back().UpdateScore(BadScore());   // proteins don't come from outside
             s_MakeStep(lvec1[k][phl], rvec[k][phr]);
             s_MakeStep(lvec2[k][phl], rvec[k][phr]);
-            if(rvec[k][phr].back().Score() == kBadScore) rvec[k][phr].pop_back();
+            if(rvec[k][phr].back().Score() == BadScore()) rvec[k][phr].pop_back();
         }
     }
 }
@@ -350,29 +350,29 @@ CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
     
     for(int i = 0; i < len; ++i)
     {
-        if(m_seqscr.AcceptorScore(i,ePlus) != kBadScore)
+        if(m_seqscr.AcceptorScore(i,ePlus) != BadScore())
         {
             s_MakeStep(ePlus,i,m_ieplus,m_feplus,m_inplus,1);
         }
 
-        if(m_seqscr.AcceptorScore(i,eMinus) != kBadScore)
+        if(m_seqscr.AcceptorScore(i,eMinus) != BadScore())
         {
             s_MakeStep(eMinus,i,m_inminus,m_ieminus);
             s_MakeStep(eMinus,i,m_igminus,m_leminus);
         }
 
-        if(m_seqscr.DonorScore(i,ePlus) != kBadScore)
+        if(m_seqscr.DonorScore(i,ePlus) != BadScore())
         {
             s_MakeStep(ePlus,i,m_inplus,m_ieplus);
             s_MakeStep(ePlus,i,m_igplus,m_feplus);
         }
 
-        if(m_seqscr.DonorScore(i,eMinus) != kBadScore)
+        if(m_seqscr.DonorScore(i,eMinus) != BadScore())
         {
             s_MakeStep(eMinus,i,m_leminus,m_ieminus,m_inminus,0);
         }
 
-        if(m_seqscr.StartScore(i,ePlus) != kBadScore)
+        if(m_seqscr.StartScore(i,ePlus) != BadScore())
         {
             m_igplus.push_back(CIntergenic(ePlus,i));
             s_MakeStep(m_seplus,m_igplus);
@@ -381,19 +381,19 @@ CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
             s_MakeStep(m_feminus,m_igplus);
         }
 
-        if(m_seqscr.StartScore(i,eMinus) != kBadScore)
+        if(m_seqscr.StartScore(i,eMinus) != BadScore())
         {
             s_MakeStep(eMinus,i,m_inminus,m_feminus);
             s_MakeStep(eMinus,i,m_igminus,m_seminus);
         }
 
-        if(m_seqscr.StopScore(i,ePlus) != kBadScore)
+        if(m_seqscr.StopScore(i,ePlus) != BadScore())
         {
             s_MakeStep(ePlus,i,m_inplus,m_leplus);
             s_MakeStep(ePlus,i,m_igplus,m_seplus);
         }
 
-        if(m_seqscr.StopScore(i,eMinus) != kBadScore)
+        if(m_seqscr.StopScore(i,eMinus) != BadScore())
         {
             m_igminus.push_back(CIntergenic(eMinus,i));
             s_MakeStep(m_seplus,m_igminus);
@@ -437,15 +437,15 @@ CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
 template<class T> void Out(T t, int w, CNcbiOstream& to = cout)
 {
     to.width(w);
-    to.setf(ios_base::right,ios_base::adjustfield);
+    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
     to << t;
 }
 
 void Out(double t, int w, CNcbiOstream& to = cout, int prec = 1)
 {
     to.width(w);
-    to.setf(ios_base::right,ios_base::adjustfield);
-    to.setf(ios_base::fixed,ios_base::floatfield);
+    to.setf(IOS_BASE::right,IOS_BASE::adjustfield);
+    to.setf(IOS_BASE::fixed,IOS_BASE::floatfield);
     to.precision(prec);
 
     if(t > 1000000000) to << "+Inf";
@@ -528,7 +528,7 @@ void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) co
             gene_stop = estop;
         }
         
-        if(exon.Score() != kBadScore) to << exon.Score() << '\t';
+        if(exon.Score() != BadScore()) to << exon.Score() << '\t';
         else to << "-\t";
         
         if(exon.ChainID().empty())
@@ -1142,6 +1142,12 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2005/09/16 18:03:26  ucko
+ * kBadScore has been replaced with an inline BadScore function that
+ * always returns the same value to avoid lossage in optimized WorkShop
+ * builds.
+ * Use IOS_BASE rather than ios_base for portability to GCC 2.95.
+ *
  * Revision 1.6  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *
