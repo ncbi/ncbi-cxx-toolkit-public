@@ -266,6 +266,47 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
+CDBAPIUnitTest::Test_UNIQUE(void)
+{
+    string sql;
+    
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // Initialization ...
+    {
+        sql = 
+            "CREATE TABLE #test_unique ( \n"
+            "	id INT , \n"
+            "   unique_field UNIQUEIDENTIFIER DEFAULT NEWID() \n"
+            ") \n";
+        
+        auto_stmt->ExecuteUpdate( sql );
+        
+        sql = "INSERT INTO #test_unique(id) VALUES(1)";
+        
+        auto_stmt->ExecuteUpdate( sql );
+    }
+    
+    // Retrieve data ...
+    {
+        sql = "SELECT * FROM #test_unique";
+        
+        auto_stmt->Execute( sql );
+        while( auto_stmt->HasMoreResults() ) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
+                while ( rs->Next() ) {
+                    const CVariant& value = rs->GetVariant(2);
+                    string str_value = value.GetString();
+                    string str_value2 = str_value;
+                }
+            } 
+        }
+    }
+}
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void 
 CDBAPIUnitTest::Test_LOB(void)
 {
     static char clob_value[] = "1234567890";
@@ -2752,9 +2793,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
     
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
+        CTestArguments::eMsSql ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UNIQUE, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
     
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
@@ -2819,6 +2863,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+    
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+    
 }
 
 CDBAPITestSuite::~CDBAPITestSuite(void)
@@ -2935,6 +2984,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2005/09/16 16:59:46  ssikorsk
+ * + Test_UNIQUE test implementation
+ *
  * Revision 1.42  2005/09/14 17:58:57  ssikorsk
  * Do not use named constraints with a temporary table
  *
