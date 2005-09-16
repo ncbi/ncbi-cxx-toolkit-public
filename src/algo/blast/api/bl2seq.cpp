@@ -193,6 +193,26 @@ CBl2Seq::PartialRun()
     ScanDB();
 }
 
+static int s_BlastSeqLocListLen(const BlastSeqLoc* bsl) {
+    int retval(0);
+    for (BlastSeqLoc* curr = (BlastSeqLoc*)bsl; curr; curr = curr->next) {
+        retval++;
+    }
+    return retval;
+}
+
+#if 0
+static void 
+s_PrintLookupSegments(const BlastSeqLoc* bsl, ostream& out)
+{
+    out << "Lookup segments (" << 
+        s_BlastSeqLocListLen(bsl) << " elements)" << endl;
+    for (BlastSeqLoc* curr = (BlastSeqLoc*)bsl; curr; curr = curr->next) {
+        out << "{ " << curr->ssr->left << ", " 
+            << curr->ssr->right << " }" << endl;
+    }
+}
+#endif
 
 void 
 CBl2Seq::SetupSearch()
@@ -353,25 +373,34 @@ CBl2Seq::GetErrorMessage() const
     return retval;
 }
 
+#if 0
+static void 
+s_PrintTSeqLocInfoVector(const TSeqLocInfoVector& tsiv, 
+                         const string& program,
+                         ostream& out)
+{
+    size_t i(0);
+    ITERATE(TSeqLocInfoVector, itr, tsiv) {
+        out << "Query " << ++i << endl;
+
+        size_t index(0);
+        ITERATE(list< CRef<CSeqLocInfo> >, masked_regions, *itr) {
+            out << "Seq-loc=" << ++index << endl << "frame=" <<
+                (*masked_regions)->GetFrame() << " " << MSerial_AsnText <<
+                (*masked_regions)->GetInterval() << endl;
+        }
+    }
+}
+#endif
+
 TSeqLocInfoVector
 CBl2Seq::GetFilteredQueryRegions() const
 {
-    vector<CRef<CSeq_id> > seqid_v;
-
-    for (unsigned int index = 0; index < m_tQueries.size(); ++index) {
-        CRef<CSeq_id> id(const_cast<CSeq_id*>(
-            &sequence::GetId(*m_tQueries[index].seqloc,
-                             m_tQueries[index].scope)));
-        seqid_v.push_back(id);
-    }
-
-    const EBlastProgramType kProgram =
-        m_OptsHandle->GetOptions().GetProgramType();
-    TSeqLocInfoVector mask_v;
-
-    Blast_GetSeqLocInfoVector(kProgram, seqid_v, m_ipFilteredRegions,
-                              mask_v);
-    return mask_v;
+    CConstRef<CPacked_seqint> queries(TSeqLocVector2Packed_seqint(m_tQueries));
+    EBlastProgramType program(GetOptionsHandle().GetOptions().GetProgramType());
+    TSeqLocInfoVector retval;
+    Blast_GetSeqLocInfoVector(program, *queries, m_ipFilteredRegions, retval);
+    return retval;
 }
 
 END_SCOPE(blast)
@@ -383,6 +412,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.81  2005/09/16 17:03:09  camacho
+ * Use new Blast_GetSeqLocInfoVector interface
+ *
  * Revision 1.80  2005/08/29 14:38:48  camacho
  * From Ilya Dondoshansky:
  * GetFilteredQueryRegions now returns TSeqLocInfoVector

@@ -468,6 +468,35 @@ CDbBlast::x_InitHSPStream()
     }
 }
 
+#if 0
+void
+PrintBlastMask(const BlastMaskLoc* mask, EBlastProgramType program, 
+                 ostream& out)
+{
+    out << "Program=" << Blast_ProgramNameFromType(program) << endl;
+    if (!mask) {
+        out << "Empty BlastMaskLoc" << endl;
+        return;
+    }
+    out << "BlastMaskLoc::total_size=" << mask->total_size << endl;
+    for (int i = 0; i < mask->total_size; i++) {
+        out << "BlastMaskLoc::seqloc_array[" << i << "]";
+        if (mask->seqloc_array[i] == NULL) {
+            out << " = NULL" << endl;
+            continue;
+        } else {
+            out << " =" << endl;
+            for (BlastSeqLoc* curr = mask->seqloc_array[i]; 
+                 curr; 
+                 curr = curr->next) {
+                out << "{ " << curr->ssr->left << ", " 
+                    << curr->ssr->right << " } " << endl;
+            }
+        }
+    }
+}
+#endif
+
 void CDbBlast::SetupSearch()
 {
     int status = 0;
@@ -766,22 +795,11 @@ CDbBlast::x_Results2SeqAlign()
 TSeqLocInfoVector
 CDbBlast::GetFilteredQueryRegions() const
 {
-    vector<CRef<CSeq_id> > seqid_v;
-
-    for (unsigned int index = 0; index < m_tQueries.size(); ++index) {
-        CRef<CSeq_id> id(const_cast<CSeq_id*>(
-            &sequence::GetId(*m_tQueries[index].seqloc,
-                             m_tQueries[index].scope)));
-        seqid_v.push_back(id);
-    }
-
-    const EBlastProgramType kProgram =
-        GetOptionsHandle().GetOptions().GetProgramType();
-    TSeqLocInfoVector mask_v;
-
-    Blast_GetSeqLocInfoVector(kProgram, seqid_v, m_ipFilteredRegions,
-                              mask_v);
-    return mask_v;
+    CConstRef<CPacked_seqint> queries(TSeqLocVector2Packed_seqint(m_tQueries));
+    EBlastProgramType program(GetOptionsHandle().GetOptions().GetProgramType());
+    TSeqLocInfoVector retval;
+    Blast_GetSeqLocInfoVector(program, *queries, m_ipFilteredRegions, retval);
+    return retval;
 }
 
 END_SCOPE(blast)
@@ -793,6 +811,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.82  2005/09/16 17:03:09  camacho
+ * Use new Blast_GetSeqLocInfoVector interface
+ *
  * Revision 1.81  2005/08/29 14:38:48  camacho
  * From Ilya Dondoshansky:
  * GetFilteredQueryRegions now returns TSeqLocInfoVector
