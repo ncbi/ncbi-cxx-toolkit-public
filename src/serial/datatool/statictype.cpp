@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/09/16 13:04:23  gouriano
+* Corrected DTD for boolean type
+*
 * Revision 1.41  2005/08/05 15:11:40  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -366,7 +369,8 @@ const char* CBoolDataType::GetDEFKeyword(void) const
 
 const char* CBoolDataType::GetXMLContents(void) const
 {
-    return "%BOOLEAN;";
+//    return "%BOOLEAN;";
+    return "EMPTY";
 }
 
 void CBoolDataType::GetXMLSchemaContents(string& type, string& contents) const
