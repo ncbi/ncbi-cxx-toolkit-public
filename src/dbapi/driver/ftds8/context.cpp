@@ -127,7 +127,9 @@ CTDSContext::CTDSContext(DBINT version) :
 
 bool CTDSContext::ConnectedToMSSQLServer(void) const
 {
-    return (m_TDSVersion == DBVERSION_70 || m_TDSVersion == DBVERSION_80);
+    return (m_TDSVersion == DBVERSION_70 || 
+            m_TDSVersion == DBVERSION_80 ||
+            m_TDSVersion == DBVERSION_UNKNOWN);
 }
 
 int CTDSContext::GetTDSVersion(void) const
@@ -691,6 +693,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/09/16 14:45:53  ssikorsk
+ * Improved the CDBLibContext::ConnectedToMSSQLServer method
+ *
  * Revision 1.43  2005/09/15 11:00:02  ssikorsk
  * Destructors do not throw exceptions any more.
  *

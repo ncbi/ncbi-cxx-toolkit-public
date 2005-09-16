@@ -171,7 +171,9 @@ bool CDBLibContext::ConnectedToMSSQLServer(void) const
 #if defined(MS_DBLIB_IN_USE)
     return true;
 #elif defined(FTDS_IN_USE)
-    return (m_TDSVersion == DBVERSION_70 || m_TDSVersion == DBVERSION_80);
+    return (m_TDSVersion == DBVERSION_70 || 
+            m_TDSVersion == DBVERSION_80 ||
+            m_TDSVersion == DBVERSION_UNKNOWN);
 #else
     return false;
 #endif
@@ -1090,6 +1092,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/09/16 14:45:53  ssikorsk
+ * Improved the CDBLibContext::ConnectedToMSSQLServer method
+ *
  * Revision 1.48  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *
