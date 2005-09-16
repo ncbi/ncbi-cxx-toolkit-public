@@ -182,30 +182,32 @@ void CTSE_Chunk_Info::x_TSEAttach(CTSE_Info& tse, ITSE_Assigner& lsnr)
 {
     _ASSERT(x_Attached());
 
-    TChunkId chunk_id = GetChunkId();
+    if ( NotLoaded() ) {
+        TChunkId chunk_id = GetChunkId();
 
-    // register descrs places
-    ITERATE ( TDescInfos, it, m_DescInfos ) {
-        lsnr.AddDescInfo(tse, *it, chunk_id);
+        // register descrs places
+        ITERATE ( TDescInfos, it, m_DescInfos ) {
+            lsnr.AddDescInfo(tse, *it, chunk_id);
+        }
+
+        // register assembly places
+        ITERATE ( TAssemblyInfos, it, m_AssemblyInfos ) {
+            lsnr.AddAssemblyInfo(tse, *it, chunk_id);
+        }
+
+        // register annots places
+        ITERATE ( TPlaces, it, m_AnnotPlaces ) {
+            lsnr.AddAnnotPlace(tse, *it, chunk_id);
+        }
+
+        // register bioseqs places
+        ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
+            lsnr.AddBioseqPlace(tse, *it, chunk_id);
+        }
+
+        // register seq-data
+        lsnr.AddSeq_data(tse, m_Seq_data, *this);
     }
-
-    // register assembly places
-    ITERATE ( TAssemblyInfos, it, m_AssemblyInfos ) {
-        lsnr.AddAssemblyInfo(tse, *it, chunk_id);
-    }
-
-    // register annots places
-    ITERATE ( TPlaces, it, m_AnnotPlaces ) {
-        lsnr.AddAnnotPlace(tse, *it, chunk_id);
-    }
-
-    // register bioseqs places
-    ITERATE ( TBioseqPlaces, it, m_BioseqPlaces ) {
-        lsnr.AddBioseqPlace(tse, *it, chunk_id);
-    }
-
-    // register seq-data
-    lsnr.AddSeq_data(tse, m_Seq_data, *this);
 
     if ( m_AnnotIndexEnabled ) {
         x_UpdateAnnotIndex(tse);
@@ -552,6 +554,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/09/16 19:59:11  didenko
+* check if chunk is not loaded in TSEAttach method
+*
 * Revision 1.28  2005/08/31 14:47:14  didenko
 * Changed the object parameter type for LoadAnnot and LoadBioseq methods
 *
