@@ -356,6 +356,7 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     case SYBREAL:      return eDB_Float;
     case SYBTEXT:      return eDB_Text;
     case SYBIMAGE:     return eDB_Image;
+    case SYBUNIQUE:    return eDB_VarBinary;
     default:           return eDB_UnsupportedType;
     }
     DBTYPEINFO* t = dbcoltypeinfo(cmd, n);
@@ -900,6 +901,7 @@ static EDB_Type s_RetGetDataType(DBPROCESS* cmd, int n)
     case SYBINT4:      return eDB_Int;
     case SYBFLT8:      return eDB_Double;
     case SYBREAL:      return eDB_Float;
+    case SYBUNIQUE:    return eDB_VarBinary;
     default:           return eDB_UnsupportedType;
     }
 }
@@ -1049,6 +1051,7 @@ static EDB_Type s_AltGetDataType(DBPROCESS* cmd, int id, int n)
     case SYBINT4:      return eDB_Int;
     case SYBFLT8:      return eDB_Double;
     case SYBREAL:      return eDB_Float;
+    case SYBUNIQUE:    return eDB_VarBinary;
     default:           return eDB_UnsupportedType;
     }
 }
@@ -1483,6 +1486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/09/16 16:58:17  ssikorsk
+ * Handle SYBUNIQUE data type as eDB_VarBinary
+ *
  * Revision 1.20  2005/09/15 11:00:02  ssikorsk
  * Destructors do not throw exceptions any more.
  *
