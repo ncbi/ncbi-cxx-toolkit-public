@@ -193,27 +193,6 @@ CBl2Seq::PartialRun()
     ScanDB();
 }
 
-static int s_BlastSeqLocListLen(const BlastSeqLoc* bsl) {
-    int retval(0);
-    for (BlastSeqLoc* curr = (BlastSeqLoc*)bsl; curr; curr = curr->next) {
-        retval++;
-    }
-    return retval;
-}
-
-#if 0
-static void 
-s_PrintLookupSegments(const BlastSeqLoc* bsl, ostream& out)
-{
-    out << "Lookup segments (" << 
-        s_BlastSeqLocListLen(bsl) << " elements)" << endl;
-    for (BlastSeqLoc* curr = (BlastSeqLoc*)bsl; curr; curr = curr->next) {
-        out << "{ " << curr->ssr->left << ", " 
-            << curr->ssr->right << " }" << endl;
-    }
-}
-#endif
-
 void 
 CBl2Seq::SetupSearch()
 {
@@ -373,26 +352,6 @@ CBl2Seq::GetErrorMessage() const
     return retval;
 }
 
-#if 0
-static void 
-s_PrintTSeqLocInfoVector(const TSeqLocInfoVector& tsiv, 
-                         const string& program,
-                         ostream& out)
-{
-    size_t i(0);
-    ITERATE(TSeqLocInfoVector, itr, tsiv) {
-        out << "Query " << ++i << endl;
-
-        size_t index(0);
-        ITERATE(list< CRef<CSeqLocInfo> >, masked_regions, *itr) {
-            out << "Seq-loc=" << ++index << endl << "frame=" <<
-                (*masked_regions)->GetFrame() << " " << MSerial_AsnText <<
-                (*masked_regions)->GetInterval() << endl;
-        }
-    }
-}
-#endif
-
 TSeqLocInfoVector
 CBl2Seq::GetFilteredQueryRegions() const
 {
@@ -412,6 +371,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.82  2005/09/16 18:47:50  camacho
+ * Remove dead code
+ *
  * Revision 1.81  2005/09/16 17:03:09  camacho
  * Use new Blast_GetSeqLocInfoVector interface
  *
