@@ -725,6 +725,7 @@ const string CValidErrItem::sm_Terse [] = {
     "UnnecessaryException",
     "LocusTagProductMismatch",
     "MrnaTransFail",
+    "ImproperBondLocation",
     END(SEQ_FEAT),
 
     BEGIN(SEQ_ALIGN),
@@ -1488,6 +1489,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2005/09/19 15:58:00  rsmith
+* + ImproperBondLocation to terse explanations.
+*
 * Revision 1.60  2005/09/14 14:17:19  rsmith
 * add validation of Bond locations.
 *
