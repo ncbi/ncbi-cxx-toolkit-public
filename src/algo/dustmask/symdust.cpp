@@ -310,11 +310,27 @@ void CSymDustMasker::GetMaskedLocs(
             new objects::CSeq_loc( seq_id, it->first, it->second ) ) );
 }
 
+//------------------------------------------------------------------------------
+CRef< objects::CPacked_seqint > CSymDustMasker::GetMaskedInts( 
+        objects::CSeq_id & seq_id, const sequence_type & seq )
+{
+    CRef< objects::CPacked_seqint > result( new objects::CPacked_seqint );
+    std::auto_ptr< TMaskList > res = (*this)( seq );
+
+    for( TMaskList::const_iterator it = res->begin(); it != res->end(); ++it )
+        result->AddInterval( seq_id, it->first, it->second );
+
+    return result;
+}
+
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.14  2005/09/19 14:37:09  morgulis
+ * Added API to return masked intervals as CRef< CPacked_seqint >.
+ *
  * Revision 1.13  2005/08/25 11:28:04  morgulis
  * Fixing the memory access problem when the suffix == window.
  *

@@ -78,10 +78,11 @@ of fixed length $W$ (subsequences of length less than $W$ are considered at
 the beginning and at the end of the input sequence) of the input nucleotide 
 sequence.  For each such subsequence $\cals$ it finds the high scoring prefix 
 $\cals'$ with the largest score (ties are resolved in favor of the leftmost
-such prefix). Then it finds a subsequence $\cals''$ of $\cals'$ with the maximum
-score (again the ties are resolved in favor of the leftmost subsequence). 
-The algorithm then masks the union of all such $\cals''$ over all the windows
-in the input sequence.
+such prefix). If the score of the selected prefix is greater than a given
+threshold value $T$ then the algorithm finds a subsequence $\cals''$ of $\cals'$ 
+with the maximum score (again the ties are resolved in favor of the leftmost 
+subsequence). The algorithm then masks the union of all such $\cals''$ over 
+all the windows in the input sequence.
 
 Below is the original DUST algorithm in pseudocode.
 

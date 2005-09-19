@@ -43,6 +43,7 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
 
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/object_manager.hpp>
@@ -171,7 +172,7 @@ int CDustMaskApplication::Run (void)
 
             CSeqVector data 
                 = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
-			std::auto_ptr< duster_type::TMaskList > res = duster( data );
+            std::auto_ptr< duster_type::TMaskList > res = duster( data );
 
             if( output_stream != 0 )
             {
@@ -186,8 +187,6 @@ int CDustMaskApplication::Run (void)
                     *output_stream << it->first  << " - " 
                                    << it->second << "\n";
             }
-
-            cerr << "." << flush;
 
             /*
             CConstRef< objects::CSeq_id > id = bsh.GetSeqId();
@@ -212,6 +211,32 @@ int CDustMaskApplication::Run (void)
                       << "\n";
             }
             */
+
+            /*
+            CConstRef< objects::CSeq_id > id = bsh.GetSeqId();
+            CRef< CPacked_seqint > masked( 
+                    duster.GetMaskedInts( 
+                        const_cast< objects::CSeq_id &>( *id.GetPointer() ),
+                        data ) );
+            typedef CPacked_seqint::Tdata Tdata;
+
+            if( output_stream != 0 ) {
+                const Tdata & mask_data = masked->Get();
+                *output_stream << ">"
+                               << CSeq_id::GetStringDescr( 
+                                    *bsh.GetCompleteBioseq(),
+                                    CSeq_id::eFormat_FastA )
+                               << " " << sequence::GetTitle( bsh ) << "\n";
+                for( Tdata::const_iterator i = mask_data.begin();
+                        i != mask_data.end(); ++i )
+                    *output_stream << (*i)->GetFrom()
+                                   << " - "
+                                   << (*i)->GetTo()
+                                   << "\n";
+            }
+            */
+
+            cerr << "." << flush;
         }
     }
 
@@ -225,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/09/19 14:37:09  morgulis
+ * Added API to return masked intervals as CRef< CPacked_seqint >.
+ *
  * Revision 1.6  2005/07/12 14:16:19  morgulis
  * Changes to object manager related code to improve performance with large
  * number of short sequences.

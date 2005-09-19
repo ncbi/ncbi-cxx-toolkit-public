@@ -46,6 +46,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
 #include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -175,6 +176,14 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
             const sequence_type & seq,
             std::vector< CConstRef< objects::CSeq_loc > > & locs );
 
+        /**\brief Mask a sequence and return result as a CPacked_seqint
+                  instance.
+           \param seq_id sequence id
+           \param seq the sequence
+          */
+        CRef< objects::CPacked_seqint > GetMaskedInts( 
+            objects::CSeq_id & seq_id, const sequence_type & seq );
+
     private:
 
         /**\internal Sequence iterator type. */
@@ -296,6 +305,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.11  2005/09/19 14:37:09  morgulis
+ * Added API to return masked intervals as CRef< CPacked_seqint >.
+ *
  * Revision 1.10  2005/07/18 14:55:59  morgulis
  * Removed position lists maintanance.
  *
