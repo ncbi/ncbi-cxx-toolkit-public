@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.389 2005/09/07 19:25:24 ucko Exp $
+#  $Id: configure.ac,v 1.390 2005/09/19 20:33:29 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3917,8 +3917,8 @@ fi
 
 ## ORBacus CORBA
 if test "${with_orbacus:-yes}" = yes; then
-   if test -d $NCBI/corba/${compiler_vpfx}ReleaseMT; then
-      : ${ORBACUS_PATH=$NCBI/corba/${compiler_vpfx}ReleaseMT}
+   if test -d $NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT; then
+      : ${ORBACUS_PATH=$NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT}
    else
       : ${ORBACUS_PATH=$NCBI/corba/OB-4.0.1}
    fi
@@ -3951,7 +3951,7 @@ if test "$with_orbacus" != no; then
    esac
    AC_CACHE_CHECK([for ORBacus in $ORBACUS_PATH], ncbi_cv_lib_orbacus,
       [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
-       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
+       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $DL_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <OB/CORBA.h>]],
           [[

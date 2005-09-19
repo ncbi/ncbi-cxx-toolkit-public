@@ -22028,8 +22028,8 @@ fi
 
 ## ORBacus CORBA
 if test "${with_orbacus:-yes}" = yes; then
-   if test -d $NCBI/corba/${compiler_vpfx}ReleaseMT; then
-      : ${ORBACUS_PATH=$NCBI/corba/${compiler_vpfx}ReleaseMT}
+   if test -d $NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT; then
+      : ${ORBACUS_PATH=$NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT}
    else
       : ${ORBACUS_PATH=$NCBI/corba/OB-4.0.1}
    fi
@@ -22066,7 +22066,7 @@ if test "${ncbi_cv_lib_orbacus+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
-       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $orig_LIBS"
+       LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $DL_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
