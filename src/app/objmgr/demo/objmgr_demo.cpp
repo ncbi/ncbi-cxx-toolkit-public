@@ -81,7 +81,7 @@
 
 #ifdef HAVE_LDS
 #  include <objtools/data_loaders/lds/lds_dataloader.hpp>
-#  include <objtools/lds/admin/lds_admin.hpp>
+#  include <objtools/lds/lds_admin.hpp>
 #endif
 
 #include <serial/iterator.hpp>
@@ -1165,6 +1165,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2005/09/19 14:56:46  kuznets
+* lds_admin.lib merged with lds.lib
+*
 * Revision 1.106  2005/09/09 16:25:00  vasilche
 * Optionally compile with LDS data loader.
 *
