@@ -269,6 +269,7 @@ void
 CDBAPIUnitTest::Test_UNIQUE(void)
 {
     string sql;
+    CVariant value(eDB_VarBinary, 16);
     
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
     
@@ -296,13 +297,40 @@ CDBAPIUnitTest::Test_UNIQUE(void)
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
                 while ( rs->Next() ) {
-                    const CVariant& value = rs->GetVariant(2);
+                    value = rs->GetVariant(2);
                     string str_value = value.GetString();
                     string str_value2 = str_value;
                 }
             } 
         }
     }
+    
+    // Insert retrieved data back into the table ...
+    {
+        auto_stmt->SetParam( value, "@guid" );
+        
+        sql = "INSERT INTO #test_unique(id, unique_field) VALUES(2, @guid)";
+        
+        auto_stmt->ExecuteUpdate( sql );
+    }
+    
+    // Retrieve data again ...
+    {
+        sql = "SELECT * FROM #test_unique";
+        
+        auto_stmt->Execute( sql );
+        while( auto_stmt->HasMoreResults() ) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
+                while ( rs->Next() ) {
+                    const CVariant& cur_value = rs->GetVariant(2);
+                    
+                    BOOST_CHECK( !cur_value.IsNull() );
+                }
+            } 
+        }
+    }
+    
 }
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
@@ -2984,6 +3012,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2005/09/19 14:23:22  ssikorsk
+ * Added insertion of UNIQUEIDENTIFIER test to Test_UNIQUE
+ *
  * Revision 1.43  2005/09/16 16:59:46  ssikorsk
  * + Test_UNIQUE test implementation
  *
