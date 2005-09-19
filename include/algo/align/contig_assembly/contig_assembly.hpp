@@ -56,7 +56,9 @@ public:
     Align(const objects::CSeq_id& id0, const objects::CSeq_id& id1,
           const string& blast_params, double min_ident,
           unsigned int max_end_slop, objects::CScope& scope,
-          CNcbiOstream* ostr = 0, unsigned int band_halfwidth = 200,
+          CNcbiOstream* ostr = 0,
+          const vector<unsigned int>& band_halfwidths
+              = vector<unsigned int>(1, 200),
           unsigned int diag_finding_window = 200);
 
     /// Utility for running blastn.
@@ -122,6 +124,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/19 15:32:43  jcherry
+ * Take a vector of (increasing) widths for alignment band, to be tried
+ * in succession.  Catch some exceptions thrown by banded alignment
+ * (such as out-of-memory) and blast (e.g., when a sequence consists
+ * of all N's).  Don't count gaps in denominator for fractional identity.
+ * Limit band size when it would exceed the bounds of the square (or
+ * nearly so).
+ *
  * Revision 1.2  2005/07/20 15:28:55  jcherry
  * Added export specifier for CContigAssembly
  *

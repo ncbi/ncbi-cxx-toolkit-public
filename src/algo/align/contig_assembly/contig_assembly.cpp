@@ -43,6 +43,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <algo/align/nw/nw_band_aligner.hpp>
+#include <algo/align/nw/align_exception.hpp>
 #include <objtools/alnmgr/alnvec.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -322,6 +323,13 @@ CContigAssembly::BandedGlobalAlignment(const CSeq_id& id0, const CSeq_id& id1,
         sub_seq1 = seq1.substr(begin1, end1 - begin1 + 1);
     }
 
+    // For short overlaps, need to limit band width.
+    // For len(sub_seq0) - 1, alignment runs ok but
+    // may produce empty aligment.
+    if (half_width >= sub_seq0.size() - 1) {
+        half_width = sub_seq0.size() - 2;
+    }
+
     CBandAligner alnr(sub_seq0, sub_seq1, 0, half_width);
     alnr.SetEndSpaceFree(true, true, true, true);
 
@@ -455,19 +463,20 @@ double CContigAssembly::FracIdent(const CDense_seg& ds, CScope& scope)
     string row0, row1;
     avec.GetAlnSeqString(row0, 0, CRange<TSignedSeqPos>(0, avec.GetAlnStop()));
     avec.GetAlnSeqString(row1, 1, CRange<TSignedSeqPos>(0, avec.GetAlnStop()));
-    TSeqPos total_len = 0;
-    for (unsigned int i = 0; i < ds.GetLens().size(); ++i) {
-        total_len += ds.GetLens()[i];
-    }
+
+    TSeqPos nongap_len = 0;
     TSeqPos ident_count = 0;
-    for (unsigned int i = 0; i < total_len; ++i) {
-        if (row0[i] == row1[i]) {
-            // This relies on there never being gaps
-            // in both sequences in the same column
-            ident_count += 1;
+    for (unsigned int i = 0; i < row0.size(); ++i) {
+        char res0 = row0[i];
+        char res1 = row1[i];
+        if (res0 != '-' && res1 != '-') {
+            if (res0 == res1) {
+                ident_count += 1;
+            }
+            nongap_len += 1;
         }
     }
-    return double(ident_count) / total_len;
+    return double(ident_count) / nongap_len;
 }
 
 
@@ -562,7 +571,8 @@ vector<CRef<CSeq_align> >
 CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
                        const string& blast_params, double min_ident,
                        unsigned int max_end_slop, CScope& scope,
-                       CNcbiOstream* ostr, unsigned int band_halfwidth,
+                       CNcbiOstream* ostr,
+                       const vector<unsigned int>& band_halfwidths,
                        unsigned int diag_finding_window)
 {
     if (min_ident > 1 || min_ident < 0) {
@@ -574,7 +584,16 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
         *ostr << "Running blast for " << id0.GetSeqIdString()
               << " and " << id1.GetSeqIdString() << endl;
     }
-    CRef<CSeq_align_set> alns = Blastn(id0, id1, blast_params, scope);
+    CRef<CSeq_align_set> alns;
+    try {
+        alns = Blastn(id0, id1, blast_params, scope);
+    }
+    catch (exception& e) {
+        if (ostr) {
+            *ostr << "blast failed:\n" << e.what() << endl;
+        }
+        return vector<CRef<CSeq_align> >();
+    }
     vector<CRef<CSeq_align> > good_alns;
     ITERATE (CSeq_align_set::Tdata, aln, alns->Get()) {
         if (IsDovetail((*aln)->GetSegs().GetDenseg(), max_end_slop, scope)
@@ -601,80 +620,96 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
             }
             return vector<CRef<CSeq_align> >();
         }
-        if (ostr) {
-            *ostr << "Trying banded global alignment" << endl;
-        }
         ENa_strand strand;
         unsigned int diag;
         FindDiagFromAlignSet(*alns, scope, diag_finding_window, strand, diag);
-        CRef<CDense_seg> global_ds =
-            BandedGlobalAlignment(id0, id1, strand,
-                                  diag, band_halfwidth, scope);
-        CRef<CDense_seg> local_ds = BestLocalSubAlignment(*global_ds, scope);
-        double frac_ident = FracIdent(*local_ds, scope);
-        if (ostr) {
-            *ostr << "Fraction identity: " << frac_ident << endl;
-        }
-        if (IsDovetail(*local_ds, max_end_slop, scope)
-            && FracIdent(*local_ds, scope) >= min_ident) {
+        CRef<CDense_seg> local_ds;
+        ITERATE(vector<unsigned int>, band_halfwidth, band_halfwidths) {
             if (ostr) {
-                *ostr << "Alignment acceptable (full dovetail)" << endl;
+                *ostr << "Trying banded global alignment with bandwidth = "
+                      << 2 * *band_halfwidth + 1 << endl;
             }
-            CRef<CSeq_align> aln(new CSeq_align);
-            aln->SetSegs().SetDenseg(*local_ds);
-            aln->SetType(aln->eType_partial);
-            return vector<CRef<CSeq_align> >(1, aln);
-         } else {
-             if (ostr) {
-                 *ostr << "Alignment not acceptable" << endl;
-             }
-             // Check for any half-dovetails (including contained)
-             // in blast results
-             good_alns.clear();
-             ITERATE (CSeq_align_set::Tdata, aln, alns->Get()) {
-                 if (IsAtLeastHalfDovetail((*aln)->GetSegs().GetDenseg(),
-                                           max_end_slop, scope)
-                     && FracIdent((*aln)->GetSegs().GetDenseg(), scope)
-                     >= min_ident) {
-                     good_alns.push_back(*aln);
-                 }
-             }
-             if (ostr) {
-                 *ostr << "Found " <<  good_alns.size() <<
-                     " acceptable half-dovetail "
-                     "or contained alignment(s) by blast" << endl;
-             }
-             if (!good_alns.empty()) {
-                 return good_alns;
-             } else {
-                 // Check whether banded alignment is an
-                 // acceptable half-dovetail (including contained)
-                 if (IsAtLeastHalfDovetail(*local_ds, max_end_slop, scope)
-                     && FracIdent(*local_ds, scope) >= min_ident) {
-                     string dovetail_string;
-                     if (IsContained(*local_ds, max_end_slop, scope)) {
-                         dovetail_string = "contained";
-                     } else {
-                         dovetail_string = "half-dovetail";
-                     }
-                     if (ostr) {
-                         *ostr << "Banded alignment acceptable ("
-                               << dovetail_string << ")" << endl;
-                     }
-                     CRef<CSeq_align> aln(new CSeq_align);
-                     aln->SetSegs().SetDenseg(*local_ds);
-                     aln->SetType(aln->eType_partial);
-                     return vector<CRef<CSeq_align> >(1, aln);
+            CRef<CDense_seg> global_ds;
+            try {
+                global_ds = 
+                    BandedGlobalAlignment(id0, id1, strand,
+                                          diag, *band_halfwidth, scope);
+            }
+            catch (CAlgoAlignException& e) {
+                if (ostr) {
+                    *ostr << "banded alignment failed:\n" << e.what()  << endl;
+                }
+                continue;
+            }
+
+            local_ds = BestLocalSubAlignment(*global_ds, scope);
+            double frac_ident = FracIdent(*local_ds, scope);
+            if (ostr) {
+                *ostr << "Fraction identity: " << frac_ident << endl;
+            }
+            if (IsDovetail(*local_ds, max_end_slop, scope)
+                && FracIdent(*local_ds, scope) >= min_ident) {
+                if (ostr) {
+                    *ostr << "Alignment acceptable (full dovetail)" << endl;
+                }
+                CRef<CSeq_align> aln(new CSeq_align);
+                aln->SetSegs().SetDenseg(*local_ds);
+                aln->SetType(aln->eType_partial);
+                return vector<CRef<CSeq_align> >(1, aln);
+            }
+        }
+
+        if (ostr) {
+            *ostr << "No acceptable alignments from banded alignment algorithm"
+                  << endl;
+        }
+        // Check for any half-dovetails (including contained)
+        // in blast results
+        good_alns.clear();
+        ITERATE (CSeq_align_set::Tdata, aln, alns->Get()) {
+            if (IsAtLeastHalfDovetail((*aln)->GetSegs().GetDenseg(),
+                                      max_end_slop, scope)
+                && FracIdent((*aln)->GetSegs().GetDenseg(), scope)
+                >= min_ident) {
+                good_alns.push_back(*aln);
+            }
+        }
+        if (ostr) {
+            *ostr << "Found " <<  good_alns.size() <<
+                " acceptable half-dovetail "
+                "or contained alignment(s) by blast" << endl;
+        }
+        if (!good_alns.empty()) {
+            return good_alns;
+        } else {
+            // Check whether banded alignment is an
+            // acceptable half-dovetail (including contained)
+            if (local_ds
+                && IsAtLeastHalfDovetail(*local_ds, max_end_slop, scope)
+                && FracIdent(*local_ds, scope) >= min_ident) {
+                string dovetail_string;
+                if (IsContained(*local_ds, max_end_slop, scope)) {
+                    dovetail_string = "contained";
+                } else {
+                    dovetail_string = "half-dovetail";
+                }
+                if (ostr) {
+                    *ostr << "Banded alignment acceptable ("
+                          << dovetail_string << ")" << endl;
+                }
+                CRef<CSeq_align> aln(new CSeq_align);
+                aln->SetSegs().SetDenseg(*local_ds);
+                aln->SetType(aln->eType_partial);
+                return vector<CRef<CSeq_align> >(1, aln);
                      
-                 } else {
-                     if (ostr) {
-                         *ostr << "Banded alignment not an acceptable "
-                             "half-dovetail or contained" << endl;
-                     }
-                     return vector<CRef<CSeq_align> >();
-                 }
-             }
-         }
+            } else {
+                if (ostr) {
+                    *ostr << "Banded alignment not an acceptable "
+                        "half-dovetail or contained" << endl;
+                }
+                return vector<CRef<CSeq_align> >();
+            }
+        }
     }
 }
 
@@ -684,6 +719,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/19 15:32:43  jcherry
+ * Take a vector of (increasing) widths for alignment band, to be tried
+ * in succession.  Catch some exceptions thrown by banded alignment
+ * (such as out-of-memory) and blast (e.g., when a sequence consists
+ * of all N's).  Don't count gaps in denominator for fractional identity.
+ * Limit band size when it would exceed the bounds of the square (or
+ * nearly so).
+ *
  * Revision 1.4  2005/07/13 18:01:56  jcherry
  * When no full dovetails are found, prefer BLAST half-dovetails to
  * banded alignment half-dovetails (so more than one can be found).
