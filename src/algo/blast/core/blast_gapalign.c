@@ -253,8 +253,10 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
       for (i = 1; i <= max_cost; i++)
 	 gamp->last_seq2_off_affine[i] = 
 	    gamp->last_seq2_off_affine[i-1] + 2*max_d_1 + 6;
-      if (!gamp->last_seq2_off_affine || !gamp->last_seq2_off_affine[0])
+      if (!gamp->last_seq2_off_affine || !gamp->last_seq2_off_affine[0]) {
          s_BlastGreedyAlignsFree(gamp);
+         return NULL;
+      }
    }
    gamp->max_score = (Int4*) malloc(sizeof(Int4) * (max_d + 1 + d_diff));
 
