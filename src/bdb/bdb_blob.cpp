@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 //  CBDB_BLobFile::
 //
 
-CBDB_BLobFile::CBDB_BLobFile()
+CBDB_BLobFile::CBDB_BLobFile(EDuplicateKeys dups)
+    : CBDB_File(dups)
 { 
     DisableDataBufProcessing();
 }
@@ -397,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/09/19 13:02:41  dicuccio
+ * Add fag to permit duplicate keys in a BLob file
+ *
  * Revision 1.21  2004/12/28 16:45:44  kuznets
  * +CBDB_BlobFile::UpdateInsert()
  *

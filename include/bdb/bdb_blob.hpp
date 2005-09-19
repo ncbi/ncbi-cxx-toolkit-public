@@ -57,7 +57,7 @@ class NCBI_BDB_EXPORT CBDB_BLobFile : public CBDB_File
 {
 public:
 
-    CBDB_BLobFile();
+    CBDB_BLobFile(EDuplicateKeys dup_keys=eDuplicatesDisable);
 
     /// Insert BLOB into the database
     ///
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/09/19 13:02:41  dicuccio
+ * Add fag to permit duplicate keys in a BLob file
+ *
  * Revision 1.16  2004/12/28 16:45:31  kuznets
  * +CBDB_BlobFile::UpdateInsert()
  *
