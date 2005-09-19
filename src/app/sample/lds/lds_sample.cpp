@@ -55,7 +55,7 @@
 
 //#include <objtools/data_loaders/genbank/gbloader.hpp>
 
-#include <objtools/lds/admin/lds_admin.hpp>
+#include <objtools/lds/lds_admin.hpp>
 #include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_reader.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
@@ -95,9 +95,8 @@ void CSampleLdsApplication::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // GI to fetch
-    arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
-                     CArgDescriptions::eInteger);
-
+    arg_desc->AddKey("id", "SeqEntryID", "ID of the Seq-Entry to fetch",
+                     CArgDescriptions::eString);
 
 
     // Program description
@@ -139,9 +138,9 @@ int CSampleLdsApplication::Run(void)
 
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
-    int gi = args["gi"].AsInteger();
+    string id = args["id"].AsString();
 
-    NcbiCout << "Searching for gi:" << gi << NcbiEndl;
+    NcbiCout << "Searching for :" << id << NcbiEndl;
 
     // Create a new scope ("attached" to our OM).
     CScope scope(*object_manager);
@@ -149,8 +148,8 @@ int CSampleLdsApplication::Run(void)
     scope.AddDefaults();
 
     // Create Seq-id, set it to the GI specified on the command line
-    CSeq_id seq_id;
-    seq_id.SetGi(gi);
+    CSeq_id seq_id (CSeq_id::e_Local, id);
+    //CSeq_id seq_id (id);
 
     /////////////////////////////////////////////////////////////////////////
     // Get list of synonyms for the Seq-id.
@@ -172,7 +171,7 @@ int CSampleLdsApplication::Run(void)
 
     // Terminate the program if the GI cannot be resolved to a Bioseq.
     if ( !bioseq_handle ) {
-        ERR_POST(Fatal << "Bioseq not found, with GI=" << gi);
+        ERR_POST(Fatal << "Bioseq not found, with id=" << id);
     }
     string object_title = sequence::GetTitle(bioseq_handle);
     NcbiCout << "Title: " << object_title << NcbiEndl;
@@ -183,11 +182,11 @@ int CSampleLdsApplication::Run(void)
 
     // NcbiCout << MSerial_Xml << *se;
 
-
     // Done
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     return 0;
 }
+
 
 void CSampleLdsApplication::x_InitLDS()
 {
@@ -271,6 +270,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/09/19 14:41:43  kuznets
+ * Reflecting changes in lds lib
+ *
  * Revision 1.2  2005/01/13 17:40:34  kuznets
  * Sample improvements
  *
