@@ -378,10 +378,7 @@ CTL_LangCmd::~CTL_LangCmd()
 
         ct_cmd_drop(m_Cmd);
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -416,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/09/19 14:19:02  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.11  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *

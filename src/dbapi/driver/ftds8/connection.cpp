@@ -257,10 +257,7 @@ CTDS_Connection::~CTDS_Connection()
         Refresh();
         dbclose(m_Link);
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -550,10 +547,7 @@ CTDS_SendDataCmd::~CTDS_SendDataCmd()
         if (m_BR)
             *m_BR = 0;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -564,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/09/19 14:19:05  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.13  2005/09/15 11:00:02  ssikorsk
  * Destructors do not throw exceptions any more.
  *

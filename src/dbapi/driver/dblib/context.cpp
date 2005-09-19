@@ -338,10 +338,7 @@ CDBLibContext::~CDBLibContext()
         WSACleanup();
 #endif
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1092,6 +1089,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/09/19 14:19:05  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.49  2005/09/16 14:45:53  ssikorsk
  * Improved the CDBLibContext::ConnectedToMSSQLServer method
  *

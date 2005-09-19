@@ -955,10 +955,7 @@ CTL_RowResult::~CTL_RowResult()
                          &err_code, (CS_INT) sizeof(err_code), 0);
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1027,10 +1024,7 @@ CTL_CursorResult::~CTL_CursorResult()
         }
         else m_EOR= true; // to prevent ct_cancel call (close cursor will do a job)
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1064,6 +1058,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/09/19 14:19:02  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.21  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *

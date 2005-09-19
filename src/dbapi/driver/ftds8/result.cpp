@@ -645,10 +645,7 @@ CTDS_RowResult::~CTDS_RowResult()
         if (!m_EOR)
             dbcanquery(m_Cmd);
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -877,10 +874,7 @@ CTDS_BlobResult::~CTDS_BlobResult()
             dbcanquery(m_Cmd);
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1027,10 +1021,7 @@ CTDS_ParamResult::~CTDS_ParamResult()
             m_ColFmt = 0;
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1410,10 +1401,7 @@ CTDS_CursorResult::~CTDS_CursorResult()
     try {
         delete m_Res;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1486,6 +1474,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/09/19 14:19:05  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.21  2005/09/16 16:58:17  ssikorsk
  * Handle SYBUNIQUE data type as eDB_VarBinary
  *

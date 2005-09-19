@@ -660,10 +660,7 @@ CDBL_RowResult::~CDBL_RowResult()
         if (!m_EOR)
             dbcanquery(m_Cmd);
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -889,10 +886,7 @@ CDBL_BlobResult::~CDBL_BlobResult()
         if (!m_EOR)
             dbcanquery(m_Cmd);
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1039,10 +1033,7 @@ CDBL_ParamResult::~CDBL_ParamResult()
             m_ColFmt = 0;
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1218,10 +1209,7 @@ CDBL_ComputeResult::~CDBL_ComputeResult()
             Fetch();
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1501,10 +1489,7 @@ CDBL_CursorResult::~CDBL_CursorResult()
     try {
         delete m_Res;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1622,6 +1607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/09/19 14:19:05  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.26  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *

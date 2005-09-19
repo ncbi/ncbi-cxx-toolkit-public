@@ -852,10 +852,7 @@ CODBC_RowResult::~CODBC_RowResult()
         if (!m_EOR)
             SQLFreeStmt(m_Cmd, SQL_CLOSE);
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1040,10 +1037,7 @@ CODBC_CursorResult::~CODBC_CursorResult()
         if (m_Res)
             delete m_Res;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1054,6 +1048,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/19 14:19:05  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.19  2005/09/15 11:00:02  ssikorsk
  * Destructors do not throw exceptions any more.
  *

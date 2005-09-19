@@ -316,10 +316,7 @@ CTLibContext::~CTLibContext()
             }
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -1061,6 +1058,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/09/19 14:19:02  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.42  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *

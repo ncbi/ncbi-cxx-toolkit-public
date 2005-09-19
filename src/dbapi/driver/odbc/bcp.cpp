@@ -440,10 +440,7 @@ CODBC_BCPInCmd::~CODBC_BCPInCmd()
         if (m_WasSent)
             Cancel();
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -454,6 +451,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/09/19 14:19:05  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.7  2005/09/15 11:00:02  ssikorsk
  * Destructors do not throw exceptions any more.
  *
