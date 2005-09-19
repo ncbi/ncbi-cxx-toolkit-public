@@ -35,8 +35,8 @@
 #include <bdb/bdb_cursor.hpp>
 
 #include <objtools/lds/lds.hpp>
-#include <objtools/lds/admin/lds_object.hpp>
-#include <objtools/lds/admin/lds_files.hpp>
+#include <objtools/lds/lds_object.hpp>
+#include <objtools/lds/lds_files.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -267,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/09/19 14:40:16  kuznets
+ * Merjing lds admin and lds libs together
+ *
  * Revision 1.18  2004/06/21 15:21:13  kuznets
  * Increased cache size for objects_db
  *

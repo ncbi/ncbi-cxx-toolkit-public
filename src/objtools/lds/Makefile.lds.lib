@@ -2,10 +2,11 @@
 
 # Build library "lds"
 ###############################
-ASN_DEP = seq
+ASN_DEP = seq submit seqset
 
 LIB = lds
-SRC = lds lds_reader lds_query
+SRC = lds lds_reader lds_query \
+      lds_admin lds_coreobjreader lds_files lds_object
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
