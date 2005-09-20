@@ -253,7 +253,11 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
             id.Type() == CProjKey::eLib) {
             continue;
         }
-
+        if ( GetApp().GetSite().IsLibWithChoice(id.Id()) ) {
+            if ( GetApp().GetSite().GetChoiceForLib(id.Id()) == CMsvcSite::e3PartyLib ) {
+                continue;
+            }
+        }
         TProjects::const_iterator n = m_Projects.find(id);
         if (n == m_Projects.end()) {
 // also check user projects
@@ -410,6 +414,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/09/20 20:01:03  gouriano
+ * Corrected project dependencies for lib with choice
+ *
  * Revision 1.25  2005/01/31 16:36:43  gouriano
  * Do not include certain projects into BUILD-ALL one
  *
