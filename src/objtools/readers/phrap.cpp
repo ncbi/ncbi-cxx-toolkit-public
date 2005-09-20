@@ -145,6 +145,7 @@ public:
     TSeqPos GetAlignedTo(void) const { return m_AlignedTo; }
 
 protected:
+    void CreateComplementedDescr(CRef<CSeq_descr>& descr) const;
     void CreatePadsFeat(CRef<CSeq_annot>& annot) const;
     void SetAligned(TSeqPos from, TSeqPos to)
         {
@@ -333,6 +334,19 @@ void CPhrap_Seq::x_FillSeqData(CSeq_data& data) const
     }
     if ( FlagSet(fPhrap_PackSeqData) ) {
         CSeqportUtil::Pack(&data);
+    }
+}
+
+
+void CPhrap_Seq::CreateComplementedDescr(CRef<CSeq_descr>& descr) const
+{
+    if ( m_Complemented  &&  FlagSet(fPhrap_NoComplement) ) {
+        if ( !descr ) {
+            descr.Reset(new CSeq_descr);
+        }
+        CRef<CSeqdesc> desc(new CSeqdesc);
+        desc->SetComment("Complemented");
+        descr->Set().push_back(desc);
     }
 }
 
@@ -703,48 +717,56 @@ void CPhrap_Read::x_CreateFeat(CBioseq& bioseq) const
 
 void CPhrap_Read::x_CreateDesc(CBioseq& bioseq) const
 {
-    if ( !FlagSet(fPhrap_Descr)  ||  !m_DS ) {
-        return;
-    }
-    CRef<CSeq_descr> descr(new CSeq_descr);
-    CRef<CSeqdesc> desc;
+    CRef<CSeq_descr> descr;
 
-    if ( !m_DS->m_ChromatFile.empty() ) {
-        desc.Reset(new CSeqdesc);
-        desc->SetComment("CHROMAT_FILE: " + m_DS->m_ChromatFile);
-        descr->Set().push_back(desc);
+    // Always add desc.comment = "Complemented" to indicate reversed read
+    CreateComplementedDescr(descr);
+
+    if ( FlagSet(fPhrap_Descr)  &&  m_DS ) {
+        if ( !descr ) {
+            descr.Reset(new CSeq_descr);
+        }
+        CRef<CSeqdesc> desc;
+
+        if ( !m_DS->m_ChromatFile.empty() ) {
+            desc.Reset(new CSeqdesc);
+            desc->SetComment("CHROMAT_FILE: " + m_DS->m_ChromatFile);
+            descr->Set().push_back(desc);
+        }
+        if ( !m_DS->m_PhdFile.empty() ) {
+            desc.Reset(new CSeqdesc);
+            desc->SetComment("PHD_FILE: " + m_DS->m_PhdFile);
+            descr->Set().push_back(desc);
+        }
+        if ( !m_DS->m_Chem.empty() ) {
+            desc.Reset(new CSeqdesc);
+            desc->SetComment("CHEM: " + m_DS->m_Chem);
+            descr->Set().push_back(desc);
+        }
+        if ( !m_DS->m_Direction.empty() ) {
+            desc.Reset(new CSeqdesc);
+            desc->SetComment("DIRECTION: " + m_DS->m_Direction);
+            descr->Set().push_back(desc);
+        }
+        if ( !m_DS->m_Dye.empty() ) {
+            desc.Reset(new CSeqdesc);
+            desc->SetComment("DYE: " + m_DS->m_Dye);
+            descr->Set().push_back(desc);
+        }
+        if ( !m_DS->m_Template.empty() ) {
+            desc.Reset(new CSeqdesc);
+            desc->SetComment("TEMPLATE: " + m_DS->m_Template);
+            descr->Set().push_back(desc);
+        }
+        if ( !m_DS->m_Time.empty() ) {
+            desc.Reset(new CSeqdesc);
+            desc->SetCreate_date().SetStr(m_DS->m_Time);
+            descr->Set().push_back(desc);
+        }
     }
-    if ( !m_DS->m_PhdFile.empty() ) {
-        desc.Reset(new CSeqdesc);
-        desc->SetComment("PHD_FILE: " + m_DS->m_PhdFile);
-        descr->Set().push_back(desc);
+    if ( descr  &&  !descr->Get().empty() ) {
+        bioseq.SetDescr(*descr);
     }
-    if ( !m_DS->m_Chem.empty() ) {
-        desc.Reset(new CSeqdesc);
-        desc->SetComment("CHEM: " + m_DS->m_Chem);
-        descr->Set().push_back(desc);
-    }
-    if ( !m_DS->m_Direction.empty() ) {
-        desc.Reset(new CSeqdesc);
-        desc->SetComment("DIRECTION: " + m_DS->m_Direction);
-        descr->Set().push_back(desc);
-    }
-    if ( !m_DS->m_Dye.empty() ) {
-        desc.Reset(new CSeqdesc);
-        desc->SetComment("DYE: " + m_DS->m_Dye);
-        descr->Set().push_back(desc);
-    }
-    if ( !m_DS->m_Template.empty() ) {
-        desc.Reset(new CSeqdesc);
-        desc->SetComment("TEMPLATE: " + m_DS->m_Template);
-        descr->Set().push_back(desc);
-    }
-    if ( !m_DS->m_Time.empty() ) {
-        desc.Reset(new CSeqdesc);
-        desc->SetCreate_date().SetStr(m_DS->m_Time);
-        descr->Set().push_back(desc);
-    }
-    bioseq.SetDescr(*descr);
 }
 
 
@@ -1432,7 +1454,7 @@ void CPhrap_Contig::x_AddReadLocFeats(CRef<CSeq_annot>& annot) const
         CSeq_loc& prod = loc_feat->SetProduct();
         TSignedSeqPos rd_stop = rd_start +
             read->second->GetAlignedTo() - read->second->GetAlignedFrom();
-        if (rd_stop >= GetPaddedLength()) {
+        if (rd_stop >= TSignedSeqPos(GetPaddedLength())) {
             // Circular contig, split ranges
             CRef<CSeq_interval> rg1(new CSeq_interval(*GetId(),
                 GetUnpaddedPos(rd_start), GetUnpaddedLength() - 1));
@@ -1528,10 +1550,16 @@ void CPhrap_Contig::x_CreateFeat(CBioseq& bioseq) const
 
 void CPhrap_Contig::x_CreateDesc(CBioseq& bioseq) const
 {
-    if ( !FlagSet(fPhrap_Descr) ) {
-        return;
+    CRef<CSeq_descr> descr;
+    CreateComplementedDescr(descr);
+
+    if ( FlagSet(fPhrap_Descr) ) {
+        // Reserved for possible descriptors
     }
-    return;
+
+    if ( descr  &&  !descr->Get().empty() ) {
+        bioseq.SetDescr(*descr);
+    }
 }
 
 
@@ -2319,6 +2347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/09/20 18:49:20  grichenk
+* Add descriptor to indicate complemented reads.
+*
 * Revision 1.12  2005/09/16 18:43:16  grichenk
 * Changed features' coordinates to reflect aligned segment.
 * Added padding shift as int-fuzz.

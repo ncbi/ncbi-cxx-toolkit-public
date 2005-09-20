@@ -45,7 +45,9 @@ class CSeq_entry;
 
 
 enum EPhrapReaderFlags {
-    fPhrap_NoComplement   = 0x0001, ///< ignore "complemented" flags of traces
+    fPhrap_NoComplement   = 0x0001, ///< ignore "complemented" flags of traces.
+                                    ///< To indicate reversed reads check for
+                                    ///< seqdesc.comment = "Complemented"
     fPhrap_PackSeqData    = 0x0002, ///< use best coding to pack sequence data
 
     fPhrap_FeatGaps       = 0x0004, ///< add features with list of gaps
@@ -88,6 +90,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/20 18:49:20  grichenk
+* Add descriptor to indicate complemented reads.
+*
 * Revision 1.5  2005/09/16 18:43:16  grichenk
 * Changed features' coordinates to reflect aligned segment.
 * Added padding shift as int-fuzz.
