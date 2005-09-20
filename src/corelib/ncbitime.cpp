@@ -573,10 +573,11 @@ void CTime::SetMonth(int month)
 
 void CTime::SetDay(int day)
 {
-    m_Data.day = day;
     int n_days = DaysInMonth();
-    if ( m_Data.day > n_days ) {
+    if ( day > n_days ) {
         m_Data.day = n_days;
+    } else {
+        m_Data.day = day;
     }
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
@@ -2089,6 +2090,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2005/09/20 15:56:08  ivanov
+ * CTime::SetDay() -- fix for backward compatibility after switching to
+ * using bit fields class members.
+ *
  * Revision 1.65  2005/09/06 12:11:50  ivanov
  * CTime: using bit fields and fixed-size types for class members
  *
