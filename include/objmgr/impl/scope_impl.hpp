@@ -196,7 +196,7 @@ public:
 
     // Add annotations to a seq-entry (seq or set)
     CSeq_annot_EditHandle AttachAnnot(const CSeq_entry_EditHandle& entry,
-                                      const CSeq_annot& annot);
+                                      CSeq_annot& annot);
     CSeq_annot_EditHandle CopyAnnot(const CSeq_entry_EditHandle& entry,
                                     const CSeq_annot_Handle& annot);
     // Argument annot will be moved to new place.

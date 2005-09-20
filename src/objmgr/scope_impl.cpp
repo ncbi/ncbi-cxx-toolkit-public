@@ -645,7 +645,7 @@ CScope_Impl::SelectSet(const CSeq_entry_EditHandle& entry,
 
 CSeq_annot_EditHandle
 CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
-                         const CSeq_annot& annot)
+                         CSeq_annot& annot)
 {
     CHECK_HANDLE(AttachAnnot, entry);
     _ASSERT(entry);

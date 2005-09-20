@@ -136,7 +136,7 @@ public:
     TDesc_CI x_GetFirstDesc(TDescTypeMask types) const;
     TDesc_CI x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const;
 
-    CRef<CSeq_annot_Info> AddAnnot(const CSeq_annot& annot);
+    CRef<CSeq_annot_Info> AddAnnot(CSeq_annot& annot);
     void AddAnnot(CRef<CSeq_annot_Info> annot);
     void RemoveAnnot(CRef<CSeq_annot_Info> annot);
 
@@ -270,6 +270,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/09/20 15:42:16  vasilche
+* AttachAnnot takes non-const object.
+*
 * Revision 1.23  2005/08/25 14:05:36  didenko
 * Restructured TSE loading process
 *

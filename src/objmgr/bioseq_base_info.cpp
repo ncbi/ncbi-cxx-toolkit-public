@@ -141,7 +141,7 @@ void CBioseq_Base_Info::x_SetAnnot(void)
 {
     _ASSERT(m_ObjAnnot == 0);
     m_ObjAnnot = &x_SetObjAnnot();
-    ITERATE( TObjAnnot, it, *m_ObjAnnot ) {
+    NON_CONST_ITERATE( TObjAnnot, it, *m_ObjAnnot ) {
         CRef<CSeq_annot_Info> info(new CSeq_annot_Info(**it));
         m_Annot.push_back(info);
         x_AttachAnnot(info);
@@ -410,7 +410,7 @@ void CBioseq_Base_Info::ResetAnnot(void)
 }
 
 
-CRef<CSeq_annot_Info> CBioseq_Base_Info::AddAnnot(const CSeq_annot& annot)
+CRef<CSeq_annot_Info> CBioseq_Base_Info::AddAnnot(CSeq_annot& annot)
 {
     CRef<CSeq_annot_Info> info(new CSeq_annot_Info(annot));
     AddAnnot(info);
@@ -463,6 +463,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/09/20 15:42:16  vasilche
+* AttachAnnot takes non-const object.
+*
 * Revision 1.12  2005/08/15 15:45:37  grichenk
 * Removed split assembly from bioseq-set.
 *

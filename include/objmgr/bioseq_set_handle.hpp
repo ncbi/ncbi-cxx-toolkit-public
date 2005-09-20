@@ -304,7 +304,7 @@ public:
     /// @sa
     ///  CopyAnnot()
     ///  TakeAnnot()
-    CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+    CSeq_annot_EditHandle AttachAnnot(CSeq_annot& annot) const;
 
     /// Attach a copy of the annotation
     ///
@@ -575,6 +575,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/09/20 15:42:16  vasilche
+* AttachAnnot takes non-const object.
+*
 * Revision 1.20  2005/07/14 17:04:14  vasilche
 * Fixed detaching from data loader.
 * Implemented 'Removed' handles.

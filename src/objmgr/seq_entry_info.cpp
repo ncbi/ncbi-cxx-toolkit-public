@@ -497,7 +497,7 @@ CSeq_entry_Info::x_GetNextDesc(TDesc_CI iter, TDescTypeMask types) const
 }
 
 
-CRef<CSeq_annot_Info> CSeq_entry_Info::AddAnnot(const CSeq_annot& annot)
+CRef<CSeq_annot_Info> CSeq_entry_Info::AddAnnot(CSeq_annot& annot)
 {
     return m_Contents->AddAnnot(annot);
 }
@@ -551,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/09/20 15:42:16  vasilche
+ * AttachAnnot takes non-const object.
+ *
  * Revision 1.26  2005/08/25 14:05:37  didenko
  * Restructured TSE loading process
  *

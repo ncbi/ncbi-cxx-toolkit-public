@@ -161,13 +161,13 @@ public:
 
     /// Add annotations to a Seq-entry.
     CRef<CSeq_annot_Info> AttachAnnot(CSeq_entry_Info& parent,
-                                      const CSeq_annot& annot);
+                                      CSeq_annot& annot);
     CRef<CSeq_annot_Info> AttachAnnot(CBioseq_Base_Info& parent,
-                                      const CSeq_annot& annot);
+                                      CSeq_annot& annot);
     // Remove/replace seq-annot from the given entry
     void RemoveAnnot(CSeq_annot_Info& annot);
     CRef<CSeq_annot_Info> ReplaceAnnot(CSeq_annot_Info& old_annot,
-                                       const CSeq_annot& new_annot);
+                                       CSeq_annot& new_annot);
 
     /// Get TSE info by seq-id handle. This should also get the list of all
     /// seq-ids for all bioseqs and the list of seq-ids used in annotations.

@@ -410,8 +410,8 @@ public:
     void ReadObject(CObjectIStream& stream,
                     const CObjectInfo& object)
         {
-            const CSeq_annot* ptr = CType<CSeq_annot>::Get(object);
-            m_Index.push_back(ConstRef(ptr));
+            CSeq_annot* ptr = CType<CSeq_annot>::Get(object);
+            m_Index.push_back(Ref(ptr));
             DefaultRead(stream, object);
         }
             
@@ -597,6 +597,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.23  2005/09/20 15:46:13  vasilche
+ * AttachAnnot takes non-const object.
+ *
  * Revision 1.22  2005/08/09 15:39:24  vasilche
  * Store parsed SNP tables in separate class to simplify forward declarations.
  * Added x_LoadSeq_entry() to chunk and split infos.

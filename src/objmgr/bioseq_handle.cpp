@@ -653,7 +653,7 @@ CSeq_entry_EditHandle CBioseq_EditHandle::GetParentEntry(void) const
 
 
 CSeq_annot_EditHandle
-CBioseq_EditHandle::AttachAnnot(const CSeq_annot& annot) const
+CBioseq_EditHandle::AttachAnnot(CSeq_annot& annot) const
 {
     return GetParentEntry().AttachAnnot(annot);
 }
@@ -878,6 +878,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2005/09/20 15:42:16  vasilche
+* AttachAnnot takes non-const object.
+*
 * Revision 1.92  2005/07/14 17:04:14  vasilche
 * Fixed detaching from data loader.
 * Implemented 'Removed' handles.

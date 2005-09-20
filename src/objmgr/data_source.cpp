@@ -596,7 +596,7 @@ void CDataSource::RemoveEntry(CSeq_entry_Info& entry)
 
 
 CRef<CSeq_annot_Info> CDataSource::AttachAnnot(CSeq_entry_Info& entry_info,
-                                               const CSeq_annot& annot)
+                                               CSeq_annot& annot)
 {
     if ( m_Loader ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
@@ -609,7 +609,7 @@ CRef<CSeq_annot_Info> CDataSource::AttachAnnot(CSeq_entry_Info& entry_info,
 
 
 CRef<CSeq_annot_Info> CDataSource::AttachAnnot(CBioseq_Base_Info& parent,
-                                               const CSeq_annot& annot)
+                                               CSeq_annot& annot)
 {
     if ( m_Loader ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
@@ -635,7 +635,7 @@ void CDataSource::RemoveAnnot(CSeq_annot_Info& annot)
 
 
 CRef<CSeq_annot_Info> CDataSource::ReplaceAnnot(CSeq_annot_Info& old_annot,
-                                                const CSeq_annot& new_annot)
+                                                CSeq_annot& new_annot)
 {
     if ( m_Loader ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,

@@ -115,7 +115,7 @@ public:
     bool HasAnnots(void) const;
     const TAnnot& GetAnnot(void) const;
     void ResetAnnot(void);
-    CRef<CSeq_annot_Info> AddAnnot(const CSeq_annot& annot);
+    CRef<CSeq_annot_Info> AddAnnot(CSeq_annot& annot);
     void AddAnnot(CRef<CSeq_annot_Info> annot);
     void RemoveAnnot(CRef<CSeq_annot_Info> annot);
 
@@ -215,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2005/09/20 15:42:16  vasilche
+ * AttachAnnot takes non-const object.
+ *
  * Revision 1.11  2005/08/15 15:45:37  grichenk
  * Removed split assembly from bioseq-set.
  *
