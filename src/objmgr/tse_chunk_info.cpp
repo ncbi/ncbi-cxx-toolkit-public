@@ -440,33 +440,6 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
         infos.PackKeys();
         infos.PackIndices();
     }
-
-    /*
-    // fill keys
-    TObjectIndexList::iterator list_iter = m_ObjectIndexList.begin();
-    ITERATE ( TAnnotContents, it, m_AnnotContents ) {
-        _ASSERT(list_iter != m_ObjectIndexList.end());
-        TObjectIndex& infos = *list_iter++;
-        _ASSERT(infos.GetName() == it->first);
-        
-        size_t info_index = 0;
-        ITERATE ( TAnnotTypes, tit, it->second ) {
-            CAnnotObject_Info& info = infos.GetInfo(info_index++);
-            _ASSERT(info.IsChunkStub() && &info.GetChunk_Info() == this);
-            _ASSERT(info.GetTypeSelector() == tit->first);
-            SAnnotObject_Key key;
-            SAnnotObject_Index index;
-            key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
-            ITERATE ( TLocationSet, lit, tit->second ) {
-                key.m_Handle = lit->first;
-                key.m_Range = lit->second;
-                infos.AddMap(key, index);
-            }
-        }
-        infos.PackKeys();
-        infos.PackIndices();
-    }
-    */
 }
 
 
@@ -479,18 +452,6 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
     }
 }
 
-/*
-void CTSE_Chunk_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
-{
-    ITERATE ( TObjectIndexList, it, m_ObjectIndexList ) {
-        tse.x_UnmapAnnotObjects(*it);
-    }
-}
-
-void CTSE_Chunk_Info::x_DropAnnotObjects(CTSE_Info&)
-{
-}
-*/
 
 void CTSE_Chunk_Info::x_DropAnnotObjects(void)
 {
@@ -554,6 +515,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/09/20 15:42:42  vasilche
+* Removed obsolete code.
+*
 * Revision 1.29  2005/09/16 19:59:11  didenko
 * check if chunk is not loaded in TSEAttach method
 *
