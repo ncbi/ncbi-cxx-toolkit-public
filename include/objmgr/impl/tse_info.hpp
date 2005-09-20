@@ -379,10 +379,15 @@ private:
                           const CAnnotName& name,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& index);
+    void x_MapAnnotObject(const CAnnotName& name,
+                          const SAnnotObject_Key& key,
+                          const SAnnotObject_Index& index);
     void x_MapAnnotObjects(const SAnnotObjectsIndex& infos);
 
     bool x_UnmapAnnotObject(TAnnotObjs& objs,
                             const CAnnotName& name,
+                            const SAnnotObject_Key& key);
+    void x_UnmapAnnotObject(const CAnnotName& name,
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos);
 

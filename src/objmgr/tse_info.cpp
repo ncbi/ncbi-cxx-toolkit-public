@@ -195,6 +195,7 @@ CTSE_Info::~CTSE_Info(void)
         m_Split->x_TSEDetach(*this);
 }
 
+
 CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
 {
     //    m_BaseTSE.reset(new SBaseTSE(tse));
@@ -215,6 +216,7 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
     //x_TSEAttach(*this);
     return *this;
 }
+
 
 CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse, 
                              CRef<CSeq_entry> entry, 
@@ -928,8 +930,7 @@ bool CTSE_Info::x_UnmapAnnotObject(TAnnotObjs& objs,
                                    const SAnnotObject_Key& key)
 {
     TAnnotObjs::iterator it = objs.find(key.m_Handle);
-    _ASSERT(it != objs.end() && it->first == key.m_Handle);
-    if ( x_UnmapAnnotObject(it->second, key) ) {
+    if ( it != objs.end() && x_UnmapAnnotObject(it->second, key) ) {
         x_UnindexAnnotTSE(name, key.m_Handle);
         objs.erase(it);
         return objs.empty();
@@ -961,6 +962,14 @@ void CTSE_Info::x_UnmapSNP_Table(const CAnnotName& name,
 }
 
 
+void CTSE_Info::x_MapAnnotObject(const CAnnotName& name,
+                          const SAnnotObject_Key& key,
+                          const SAnnotObject_Index& index)
+{
+    x_MapAnnotObject(x_SetAnnotObjs(name), name, key, index);
+}
+
+
 void CTSE_Info::x_MapAnnotObjects(const SAnnotObjectsIndex& infos)
 {
     const SAnnotObjectsIndex::TObjectKeys& keys = infos.GetKeys();
@@ -978,6 +987,19 @@ void CTSE_Info::x_MapAnnotObjects(const SAnnotObjectsIndex& infos)
         _ASSERT(value != values.end());
         x_MapAnnotObject(index, name, *key, *value);
         ++value;
+    }
+}
+
+
+void CTSE_Info::x_UnmapAnnotObject(const CAnnotName& name,
+                                   const SAnnotObject_Key& key)
+{
+    TAnnotObjs& index = x_SetAnnotObjs(name);
+
+    x_UnmapAnnotObject(index, name, key);
+
+    if ( index.empty() ) {
+        x_RemoveAnnotObjs(name);
     }
 }
 
