@@ -538,26 +538,21 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
 Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc, 
                               const BlastQueryInfo* query_info)
 {
-    BlastSeqLoc** prot_seqloc_array;
     Uint4 seq_index;
 
     if (!mask_loc)
         return 0;
 
-    /* Check that the number of sequences in BlastQueryInfo is the same as the
-       size of the DNA mask locations array in the BlastMaskLoc. */
-    ASSERT(mask_loc->total_size == query_info->num_queries);
-
-    mask_loc->total_size *= NUM_FRAMES;
-    prot_seqloc_array = 
-        (BlastSeqLoc**) calloc(mask_loc->total_size, sizeof(BlastSeqLoc*));
+    /* Check that the array size in BlastMaskLoc corresponds to the number
+       of contexts in BlastQueryInfo. */
+    ASSERT(mask_loc->total_size == query_info->last_context + 1);
 
     /* Loop over multiple DNA sequences */
     for (seq_index = 0; seq_index < (Uint4)query_info->num_queries; 
          ++seq_index) { 
-        BlastSeqLoc** prot_seqloc = 
-            &(prot_seqloc_array[NUM_FRAMES*seq_index]);
-        BlastSeqLoc* dna_seqloc = mask_loc->seqloc_array[seq_index];
+        const Uint4 kCtxIndex = NUM_FRAMES * seq_index;
+        BlastSeqLoc* dna_seqloc = mask_loc->seqloc_array[kCtxIndex];
+        BlastSeqLoc** prot_seqloc = &(mask_loc->seqloc_array[kCtxIndex]);
         Int4 dna_length = BlastQueryInfoGetQueryLength(query_info,
                                                        eBlastTypeBlastx,
                                                        seq_index);
@@ -586,8 +581,6 @@ Int2 BlastMaskLocDNAToProtein(BlastMaskLoc* mask_loc,
         }
         BlastSeqLocFree(dna_seqloc);
     }
-    sfree(mask_loc->seqloc_array);
-    mask_loc->seqloc_array = prot_seqloc_array;
 
     return 0;
 }
@@ -1018,7 +1011,6 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk,
            them back to nucleotide coordinates. */
          (*filter_maskloc)->seqloc_array[context] = filter_per_context;
     }
-
     return 0;
 }
 
