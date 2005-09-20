@@ -122,14 +122,27 @@ typedef struct BlastSeqLoc {
 
 /** Structure for keeping the query masking information */
 typedef struct BlastMaskLoc {
-   Int4 total_size; /**< Total size of the BlastSeqLoc array below. Inside the
-                       engine equal to number of contexts in the BlastQueryInfo
-                       structure. For lower case mask in a translated search,
-                       total size is at first equal to number of query 
-                       sequences, but then expanded to number of contexts
-                       (total number of translated frames), i.e. 6 times number
-                       of queries. */
-   BlastSeqLoc** seqloc_array; /**< array of mask locations. */
+   /** Total size of the BlastSeqLoc array below. This is always the number 
+     of queries times the number of contexts. Note that in the case of 
+     translated query searches, these locations must be provided in protein 
+     coordinates to BLAST_MainSetUp.
+     @sa BLAST_GetNumberOfContexts 
+     @sa BlastMaskLocDNAToProtein
+    */
+   Int4 total_size; 
+
+   /** Array of masked locations. 
+     Every query is allocated the number of contexts associated with the 
+     program. In the case of nucleotide searches, the strand(s) to search 
+     dictatate which elements of the array for a given query are filled. For 
+     translated searches, this should also be the same (by design) but the 
+     C toolkit API does NOT implement this, it rather fills all elements 
+     for all queries with masked locations in protein coordinates (if any). 
+     The C++ API does follow the convention which populates each element, only
+     if so dictated by the strand(s) to search for each query.
+     @sa BLAST_GetNumberOfContexts
+    */
+   BlastSeqLoc** seqloc_array; 
 } BlastMaskLoc;
 
 /** Structure to hold a sequence. */
