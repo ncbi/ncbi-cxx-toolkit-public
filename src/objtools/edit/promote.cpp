@@ -131,7 +131,7 @@ void CPromote::PromoteFeatures(const CSeq_annot_Handle& annot) const
     x_PromoteFeatures(const_cast<CSeq_annot&>(*sap));
 
     // re-attach the annotation
-    m_Seq.GetEditHandle().AttachAnnot(*sap);
+    m_Seq.GetEditHandle().AttachAnnot(const_cast<CSeq_annot&>(*sap));
 }
 
 
@@ -195,7 +195,7 @@ void CPromote::PromoteCdregion(CSeq_feat_Handle& feat) const
 
     x_PromoteCdregion(const_cast<CSeq_feat&>(*cds));
 
-    m_Seq.GetEditHandle().AttachAnnot(*sap);
+    m_Seq.GetEditHandle().AttachAnnot(const_cast<CSeq_annot&>(*sap));
 }
 
 
@@ -350,7 +350,7 @@ void CPromote::PromoteRna(CSeq_feat_Handle& feat) const
 
     x_PromoteRna(const_cast<CSeq_feat&>(*rna));
 
-    m_Seq.GetEditHandle().AttachAnnot(*sap);
+    m_Seq.GetEditHandle().AttachAnnot(const_cast<CSeq_annot&>(*sap));
 }
 
 
@@ -409,7 +409,7 @@ void CPromote::PromotePub(CSeq_feat_Handle& feat) const
 
     x_PromotePub(const_cast<CSeq_feat&>(*rna));
 
-    m_Seq.GetEditHandle().AttachAnnot(*sap);
+    m_Seq.GetEditHandle().AttachAnnot(const_cast<CSeq_annot&>(*sap));
 }
 
 
@@ -672,6 +672,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/09/20 15:03:11  vasilche
+* AttachAnnot takes non-const object.
+*
 * Revision 1.5  2005/06/22 14:31:22  vasilche
 * Added constness of CSeq_annot_Handle argument.
 *
