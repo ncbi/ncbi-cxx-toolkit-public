@@ -37,9 +37,11 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbidiag.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <corelib/ncbifloat.h>
 #include <util/math/miscmath.h>
+#include <algo/blast/core/ncbi_math.h>
 
 #include <fstream>
 #include <string>
@@ -51,7 +53,7 @@
 #include "SpectrumSet.hpp"
 #include "omssa.hpp"
 
-#include <ncbimath.h>
+// #include <ncbimath.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -65,38 +67,32 @@ USING_SCOPE(omssa);
 //
 
 
-CSearch::CSearch(void): rdfp(0), UseRankScore(false)
+CSearch::CSearch(void): UseRankScore(false)
 {
 }
 
-int CSearch::InitBlast(const char *blastdb, bool InitDb)
+int CSearch::InitBlast(const char *blastdb)
 {
     if(!blastdb) return 0;
-    if(rdfp) readdb_destruct(rdfp);
-    rdfp = readdb_new_ex2((char *)blastdb,TRUE, READDB_NEW_DO_TAXDB | 
-			  READDB_NEW_INDEX, NULL, NULL);
-    if(!rdfp) return 1;
-	
-    numseq = readdb_get_num_entries(rdfp);
-	
-    if(InitDb) {
-	int iSearch, length;
-	char testchar;
-	unsigned char *Sequence;
-		
-	for(iSearch = 0; iSearch < numseq; iSearch++) {
-	    length = readdb_get_sequence(rdfp, iSearch, &Sequence);
-	    testchar = Sequence[0];
-	}
+    try {
+        rdfp.Reset(new CSeqDB(blastdb, CSeqDB::eProtein));
+        numseq = rdfp->GetNumOIDs();
     }
-    return 0;
-	
+    catch(const exception &e) {
+        ERR_POST(Critical << "Unable to open blast library " << blastdb << " with error:" <<
+                  e.what());
+        return 1;
+    } catch(...) {
+        ERR_POST(Critical << "Unable to open blast library " << blastdb);
+        return 1;
+    }
+    return 0;	
 }
 
 
 // create the ladders from sequence
 
-int CSearch::CreateLadders(unsigned char *Sequence,
+int CSearch::CreateLadders(const char *Sequence,
                            int iSearch,
                            int position,
                            int endposition,
@@ -111,7 +107,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
 {
     if(!BLadder[iMod]->CreateLadder(ForwardIon,
                                     1,
-                                    (char *)Sequence,
+                                    Sequence,
                                     iSearch,
                                     position,
                                     endposition,
@@ -126,7 +122,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                                     )) return 1;
     if(!YLadder[iMod]->CreateLadder(BackwardIon,
                                     1,
-                                    (char *)Sequence,
+                                    Sequence,
                                     iSearch,
                                     position,
                                     endposition,
@@ -141,7 +137,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                                     )) return 1;
     if(!B2Ladder[iMod]->CreateLadder(ForwardIon,
                                      2,
-                                     (char *)Sequence,
+                                     Sequence,
                                      iSearch,
                                      position,
                                      endposition, 
@@ -156,7 +152,7 @@ int CSearch::CreateLadders(unsigned char *Sequence,
                                      )) return 1;
     if(!Y2Ladder[iMod]->CreateLadder(BackwardIon,
                                      2,
-                                     (char *)Sequence,
+                                     Sequence,
                                      iSearch,
                                      position,
                                      endposition,
@@ -276,20 +272,6 @@ bool CSearch::CompareLaddersTop(int iMod,
     return false;
 }
 
-#ifdef _DEBUG
-#define CHECKGI
-#endif
-#ifdef CHECKGI
-bool CheckGi(int gi)
-{
-    if( gi == 6323138){
-	ERR_POST(Info << "test seq");
-	return true;
-    }
-    return false;
-}
-#endif
-
 
 // loads spectra into peaks
 void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
@@ -363,7 +345,7 @@ struct CMassMaskCompare {
 void CSearch::DeleteVariableOverlap(int& NumMod,
                       CMod ModList[])
 {
-    int i, j, k;
+    int i, j;
     for (i = 0; i < NumMod; i++) {
         // if variable mod
         if(ModList[i].GetFixed() != 1) {
@@ -675,16 +657,11 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
         MyResponse = MyResponseIn;
 
         SetupMods(Modset);
-	int length;
-	CCleave* enzyme =
+
+        CCleave* enzyme =
 		  CCleaveFactory::CleaveFactory(static_cast <EMSEnzymes> 
 				 (MyRequest->GetSettings().GetEnzyme()));
-	unsigned header;
 
-#ifdef CHECKGI
-	char *blastdefline;
-	SeqId *sip;
-#endif
 
 	// set maximum number of ladders to calculate per peptide
 	MaxModPerPep = MyRequest->GetSettings().GetMaxmods();
@@ -705,7 +682,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	int iMissed; // iterate thru missed cleavages
     
 	int iSearch, hits;
-	unsigned char *Sequence;  // start position
 	int endposition, position;
 
     // initialize fixed mods
@@ -748,9 +724,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	int iMod;   // used to iterate thru modifications
 	
 	bool SequenceDone;  // are we done iterating through the sequences?
-	int taxid;
-	const CMSSearchSettings::TTaxids& Tax = MyRequest->GetSettings().GetTaxids();
+
+    const CMSSearchSettings::TTaxids& Tax = MyRequest->GetSettings().GetTaxids();
 	CMSSearchSettings::TTaxids::const_iterator iTax;
+
 	CMSHit NewHit;  // a new hit of a ladder to an m/z value
 	CMSHit *NewHitOut;  // copy of new hit
 	
@@ -766,50 +743,30 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 	ofstream histos("histo.txt");
 #endif
 
+    vector <int> taxids;
+    vector <int>::iterator itaxids;
 	// iterate through sequences
 	for(iSearch = 0; iSearch < numseq; iSearch++) {
 	    if(iSearch/10000*10000 == iSearch) ERR_POST(Info << "sequence " << 
 							iSearch);
-	    header = 0;
-#ifdef CHECKGI
-	    int testgi;
-#endif 
-	    if(MyRequest->GetSettings().IsSetTaxids()) {
-		while(readdb_get_header_ex(rdfp, iSearch, &header, 
-#ifdef CHECKGI
-					   &sip, &blastdefline,
-#else
-					   NULL, NULL,
-#endif
 
-					   &taxid, NULL, NULL)) {
-			
-#ifdef CHECKGI
-		    SeqId *bestid = SeqIdFindBest(sip, SEQID_GI);
-		    CheckGi(bestid->data.intvalue);
-		    testgi = bestid->data.intvalue;
-		    //			    cout << testgi << endl;
-#endif 
-			
-#ifdef CHECKGI
-		    MemFree(blastdefline);
-		    SeqIdSetFree(sip);
-#endif
-		    for(iTax = Tax.begin(); iTax != Tax.end(); iTax++) {
-			if(taxid == *iTax) goto TaxContinue;
-		    } 
-		    //else goto TaxContinue;
-		}
-		continue;
-	    }
-	TaxContinue:
-	    length = readdb_get_sequence(rdfp, iSearch, &Sequence);
-	    SequenceDone = false;
-		
-	    // initialize missed cleavage matrix
-	    for(iMissed = 0; iMissed < Missed; iMissed++) {
+	    if(MyRequest->GetSettings().IsSetTaxids()) {
+            rdfp->GetTaxIDs(iSearch, taxids, false);
+            for(itaxids = taxids.begin(); itaxids != taxids.end(); ++itaxids) {   		
+                for(iTax = Tax.begin(); iTax != Tax.end(); ++iTax) {
+                    if(*itaxids == *iTax) goto TaxContinue;
+                } 
+            }
+            continue;
+        }
+        TaxContinue:
+        CSeqDBSequence Sequence(rdfp.GetPointer(), iSearch);
+        SequenceDone = false;
+        
+        // initialize missed cleavage matrix
+        for(iMissed = 0; iMissed < Missed; iMissed++) {
 		PepStart[iMissed] = (const char *)-1; // mark start
-		PepEnd[iMissed] = (const char *)Sequence;
+		PepEnd[iMissed] = Sequence.GetData();
 		Masses[iMissed] = 0;
 		EndMasses[iMissed] = 0;
 		NumMod[iMissed] = 0;
@@ -817,11 +774,11 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
         ModList[iMissed][0].Reset();
 	    }
-	    PepStart[Missed - 1] = (const char *)Sequence;
+	    PepStart[Missed - 1] = Sequence.GetData();
 
         // if non-specific enzyme, set stop point
         if(enzyme->GetNonSpecific()) {
-            enzyme->SetStop() = (const char *)Sequence + MyRequest->GetSettings().GetMinnoenzyme();
+            enzyme->SetStop() = Sequence.GetData() + MyRequest->GetSettings().GetMinnoenzyme();
         }
 
 	    // iterate thru the sequence by digesting it
@@ -838,26 +795,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		// init no modification elements
         ModList[Missed - 1][0].Reset();
 
-#ifdef CHECKGI
-{
-
-			    SeqId *bestid;
-						
-			    header = 0;
-			    readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
-			    bestid = SeqIdFindBest(sip, SEQID_GI);
-			    if(CheckGi(bestid->data.intvalue) /*&& ((PepStart[iMissed] - (const char *)Sequence) == 355) */ )
-				header = header;
-			    //			int testgi = bestid->data.intvalue;
-			    MemFree(blastdefline);
-			    SeqIdSetFree(sip);
-}
-#endif
-
 		// calculate new stop and mass
 		SequenceDone = 
-		    enzyme->CalcAndCut((const char *)Sequence,
-                               (const char *)Sequence + length - 1, 
+		    enzyme->CalcAndCut(Sequence.GetData(),
+                               Sequence.GetData() + Sequence.GetLength() - 1, 
                                &(PepEnd[Missed - 1]),
                                &(Masses[Missed - 1]),
                                NumMod[Missed - 1],
@@ -895,8 +836,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		    if(PepStart[iMissed] == (const char *)-1) continue;  // skip start
 				
 		    // get the start and stop position, inclusive, of the peptide
-		    position =  PepStart[iMissed] - (const char *)Sequence;
-		    endposition = PepEnd[iMissed] - (const char *)Sequence;
+		    position =  PepStart[iMissed] - Sequence.GetData();
+		    endposition = PepEnd[iMissed] - Sequence.GetData();
 		
 		    // init bool for "Has ladder been calculated?"
 			ClearLadderCalc(NumMassAndMask[iMissed]);
@@ -928,25 +869,10 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 			    // make sure we look thru other mod masks with the same mass
 			    NoMassMatch = false;
 						
-#ifdef CHECKGI
-{
-
-			    SeqId *bestid;
-						
-			    header = 0;
-			    readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
-			    bestid = SeqIdFindBest(sip, SEQID_GI);
-			    if(/*Peaks->GetNumber() == 245 && */CheckGi(bestid->data.intvalue))
-				header = header;
-			    //			int testgi = bestid->data.intvalue;
-			    MemFree(blastdefline);
-			    SeqIdSetFree(sip);
-}
-#endif
 						
 						
 			    if(!GetLadderCalc(iMod)) {
-				if(CreateLadders(Sequence, 
+				if(CreateLadders(Sequence.GetData(), 
                                  iSearch,
                                  position,
                                  endposition,
@@ -979,10 +905,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 				// end of new addition
 
                                 if(!UseRankScore) Peaks->SetPeptidesExamined(MassPeak->Charge)++;
-#ifdef CHECKGI
-				/*if(Peaks->GetNumber() == 245)*/
-				//			    cout << testgi << " " << position << " " << endposition << endl;
-#endif
 				Peaks->ClearUsedAll();
 				CompareLadders(iMod, 
                                Peaks,
@@ -1046,10 +968,11 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                 // check that stop is within bounds
                 // upper bound is max precursor mass divided by lightest AA
                 if(enzyme->GetStop() - PepStart[0] < MaxMZ/MonoMass[7]/MSSCALE &&
-                   enzyme->GetStop() < (const char *)Sequence + length) {
+                   enzyme->GetStop() < Sequence.GetData() + Sequence.GetLength()) {
                     enzyme->SetStop()++;
                 }
-                else if ( PepStart[0] < (const char *)Sequence + length - MyRequest->GetSettings().GetMinnoenzyme()) {
+                else if ( PepStart[0] < Sequence.GetData() + Sequence.GetLength() - 
+                          MyRequest->GetSettings().GetMinnoenzyme()) {
                     PepStart[0]++;
                     enzyme->SetStop() = PepStart[0] + MyRequest->GetSettings().GetMinnoenzyme();
                 }
@@ -1060,8 +983,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                 // for start, need to check sequence before (check for start of seq)
                 // for end, need to deal with end of protein case
                 if(!SequenceDone && enzyme->GetCleaveNum() > 0 &&
-                   PepStart[0] != (const char *)Sequence &&
-                   enzyme->GetStop() != (const char *)Sequence + length ) {
+                   PepStart[0] != Sequence.GetData() &&
+                   enzyme->GetStop() != Sequence.GetData() + Sequence.GetLength() ) {
                     if (!enzyme->CheckCleaveChar(PepStart[0]-1) &&
                         !enzyme->CheckCleaveChar(enzyme->GetStop())) 
                         goto PartialLoop;
@@ -1193,13 +1116,6 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
     TScoreList ScoreList;
     TScoreList::iterator iScoreList;
     CMSHit * MSHit;
-    unsigned header;
-    char *blastdefline;
-    SeqId *sip, *bestid;
-    int length;
-    unsigned char *Sequence;
-    char accession[kAccLen]; // temp holder for accession
-    int iSearch; // counter for the length of hit list
 
     // set the search library version
     MyResponse->SetDbversion(numseq);
@@ -1249,16 +1165,15 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
               Peaks,
               !UseRankScore );
 		
-	int taxid;
 	const CMSSearchSettings::TTaxids& Tax = MyRequest->GetSettings().GetTaxids();
 	CMSSearchSettings::TTaxids::const_iterator iTax;
 		
 	// keep a list of redundant peptides
 	map <string, CMSHits * > PepDone;
 	// add to hitset by score
-	for(iScoreList = ScoreList.begin(), iSearch = 0;
+	for(iScoreList = ScoreList.begin();
 	    iScoreList != ScoreList.end();
-	    iScoreList++, iSearch++) {
+	    iScoreList++) {
 
         double Score = iScoreList->first;
         if(Score > Evalcutoff) continue;
@@ -1266,32 +1181,30 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
 	    CMSPepHit * Pephit;
 			
 	    MSHit = iScoreList->second;
-	    header = 0;
 
-
-	    while (readdb_get_header_ex(rdfp, MSHit->GetSeqIndex(), &header,
-                                    &sip,
-                                    &blastdefline, &taxid, NULL, NULL)) {
-
-            if(MyRequest->GetSettings().IsSetTaxids()) {
-                for(iTax = Tax.begin(); iTax != Tax.end(); iTax++) {
-                    if(taxid == *iTax) goto TaxContinue2;
-                } 
-                continue;
-            }
+        CBlast_def_line_set::Tdata::const_iterator iDefLine;
+        CRef<CBlast_def_line_set> Hdr = rdfp->GetHdr(MSHit->GetSeqIndex());
+        // scan taxids
+        for(iDefLine = Hdr->Get().begin();
+             iDefLine != Hdr->Get().end();
+             ++iDefLine) {
+        if(MyRequest->GetSettings().IsSetTaxids()) {
+            for(iTax = Tax.begin(); iTax != Tax.end(); iTax++) {
+                if((*iDefLine)->GetTaxid() == *iTax) goto TaxContinue2;
+            } 
+            continue;
+        }
 TaxContinue2:
 		string seqstring, modseqstring;
-		string deflinestring;
-        if(blastdefline) deflinestring = blastdefline;
+
+        CSeqDBSequence Sequence(rdfp.GetPointer(), MSHit->GetSeqIndex());
 
         string tempstartstop;
 		int iseq;
-		length = readdb_get_sequence(rdfp, MSHit->GetSeqIndex(),
-					     &Sequence);
 				
 		for (iseq = MSHit->GetStart(); iseq <= MSHit->GetStop();
 		     iseq++) {
-		    seqstring += UniqueAA[Sequence[iseq]];
+		    seqstring += UniqueAA[Sequence.GetData()[iseq]];
 		}
 		MakeModString(seqstring, modseqstring, MSHit);
 
@@ -1302,17 +1215,16 @@ TaxContinue2:
 		    Hit = new CMSHits;
             Hit->SetTheomass(MSHit->GetTheoreticalMass());
 		    Hit->SetPepstring(seqstring);
-            Hit->SetProtlength(length);
             // set the start AA, if there is one
             if(MSHit->GetStart() > 0) {
-                tempstartstop = UniqueAA[Sequence[MSHit->GetStart()-1]];
+                tempstartstop = UniqueAA[Sequence.GetData()[MSHit->GetStart()-1]];
                 Hit->SetPepstart(tempstartstop);
             }
             else Hit->SetPepstart("");
 
             // set the end AA, if there is one
-            if(MSHit->GetStop() < length - 1) {
-                tempstartstop = UniqueAA[Sequence[MSHit->GetStop()+1]];
+            if(MSHit->GetStop() < Sequence.GetLength() - 1) {
+                tempstartstop = UniqueAA[Sequence.GetData()[MSHit->GetStop()+1]];
                 Hit->SetPepstop(tempstartstop);
             }
             else Hit->SetPepstop("");
@@ -1347,24 +1259,35 @@ TaxContinue2:
 		
 		Pephit = new CMSPepHit;
 
-		accession[0] = 0;
-		SeqIdWrite(SeqIdFindBestAccession(sip), accession,
-			   PRINTID_TEXTID_ACCESSION, kAccLen);
-		accession[kAccLen-1] = 0;
-		if(accession[0] != '\0') Pephit->SetAccession(accession);
+//list< CRef< CSeq_id > > = (*iDefLine)->GetSeqid()
 
-		bestid = SeqIdFindBest(sip, SEQID_GI);
-		if(bestid && bestid->choice == SEQID_GI)
-             Pephit->SetGi(bestid->data.intvalue);
+        // seqid.Which() == CSeq_id::e_Gi
+        // seqid.GetSeqIdString() for best seqid
+      //  Pephit->SetAccession("test");
+       // Pephit->SetGi(123);
+
+        if ((*iDefLine)->CanGetSeqid()) {
+            // find a gi
+            ITERATE(list< CRef<CSeq_id> >, seqid, (*iDefLine)->GetSeqid()) {
+                if ((**seqid).IsGi()) {
+                    Pephit->SetGi((**seqid).GetGi());
+                    break;
+                }
+            }
+
+            Pephit->SetAccession(
+                FindBestChoice((*iDefLine)->GetSeqid(), CSeq_id::Score)->
+                GetSeqIdString(false));
+        }
+            
+ 
 
 		Pephit->SetStart(MSHit->GetStart());
 		Pephit->SetStop(MSHit->GetStop());;
-		Pephit->SetDefline(deflinestring);
+		Pephit->SetDefline((*iDefLine)->GetTitle());
 		CRef<CMSPepHit> pepref(Pephit);
 		Hit->SetPephits().push_back(pepref);
 
-		MemFree(blastdefline);
-		SeqIdSetFree(sip);
 	    }
 	}
 	ScoreList.clear();
@@ -1381,8 +1304,6 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 {
     int iCharges;
     int iHitList;
-    int length;
-    unsigned char *Sequence;
     int Tophitnum = MyRequest->GetSettings().GetTophitnum();
 	
     for(iCharges = 0; iCharges < Peaks->GetNumCharges(); iCharges++) {
@@ -1390,25 +1311,6 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 	TMSHitList& HitList = Peaks->GetHitList(iCharges);   
 	for(iHitList = 0; iHitList != Peaks->GetHitListIndex(iCharges);
 	    iHitList++) {
-#ifdef CHECKGI
-	    unsigned header;
-	    char *blastdefline;
-	    SeqId *sip, *bestid;
-			
-	    header = 0;
-	    readdb_get_header(rdfp, HitList[iHitList].GetSeqIndex(),
-			      &header, &sip,&blastdefline);
-	    bestid = SeqIdFindBest(sip, SEQID_GI);
-	    if(!bestid) continue;
-	    CheckGi(bestid->data.intvalue);
-	    MemFree(blastdefline);
-	    SeqIdSetFree(sip);
-#endif
-			
-	    // recompute ladder
-	    length = readdb_get_sequence(rdfp, 
-					 HitList[iHitList].GetSeqIndex(),
-					 &Sequence);
 			
 	    int tempMass = HitList[iHitList].GetMass();
 	    int tempStart = HitList[iHitList].GetStart();
@@ -1496,11 +1398,8 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 double CSearch::CalcPoissonTopHit(double Mean, int i, double TopHitProb)
 {
 double retval;
-#ifdef NCBI_OS_MSWIN
-    retval =  exp(-Mean) * pow(Mean, i) / exp(LnGamma(i+1));
-#else
-    retval =  exp(-Mean) * pow(Mean, i) / exp(lgamma(i+1));
-#endif
+    retval =  exp(-Mean) * pow(Mean, i) / exp(BLAST_LnGammaInt(i+1));
+//    retval =  exp(-Mean) * pow(Mean, i) / exp(lgamma(i+1));
 // conditional needed because zero to the zeroth is zero, not one
 if(TopHitProb != 1.0L) retval *= 1.0L - pow((1.0L-TopHitProb), i);
 return retval;
@@ -1508,11 +1407,8 @@ return retval;
 
 double CSearch::CalcPoisson(double Mean, int i)
 {
-#ifdef NCBI_OS_MSWIN
-    return exp(-Mean) * pow(Mean, i) / exp(LnGamma(i+1));
-#else
-    return exp(-Mean) * pow(Mean, i) / exp(lgamma(i+1));
-#endif
+    return exp(-Mean) * pow(Mean, i) / exp(BLAST_LnGammaInt(i+1));
+//    return exp(-Mean) * pow(Mean, i) / exp(lgamma(i+1));
 }
 
 double CSearch::CalcPvalue(double Mean, int Hits, int n)
@@ -1632,11 +1528,13 @@ double CSearch::CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
 
 CSearch::~CSearch()
 {
-    if(rdfp) readdb_destruct(rdfp);
 }
 
 /*
 $Log$
+Revision 1.62  2005/09/20 21:07:57  lewisg
+get rid of c-toolkit dependencies and nrutil
+
 Revision 1.61  2005/09/16 21:40:09  lewisg
 fix mod count
 

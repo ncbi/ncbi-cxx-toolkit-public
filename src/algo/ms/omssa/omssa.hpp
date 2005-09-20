@@ -35,12 +35,11 @@
 #define OMSSA__HPP
 
 #include <objects/omssa/omssa__.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 #include "msms.hpp"
 #include "msladder.hpp"
 #include "mspeak.hpp"
-
-#include <readdb.h>
 
 #include <vector>
 
@@ -118,7 +117,7 @@ public:
                             int& Sum);
     
     // init blast databases.  stream thru db if InitDB true
-    int InitBlast(const char *blastdb, bool InitDb);
+    int InitBlast(const char *blastdb);
 
     // loads spectra into peaks
     void Spectrum2Peak(CMSPeakSet& PeakSet);
@@ -156,7 +155,7 @@ public:
     void SetIons(int& ForwardIon, int& BackwardIon);
 
     //! create the ladders from sequence
-    int CreateLadders(unsigned char *Sequence, int iSearch, int position,
+    int CreateLadders(const char *Sequence, int iSearch, int position,
 		      int endposition,
 		      int *Masses, int iMissed, CAA& AA, 
 		      int iMod,
@@ -208,7 +207,6 @@ public:
                       CMod CModList[]);
 
     unsigned MakeIntFromBoolMap(bool *ModMask,  int& NumMod);
-    ReadDBFILEPtr Getrdfp(void) { return rdfp; }
     int Getnumseq(void) { return numseq; }
     double CalcPoisson(double Mean, int i);
     double CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
@@ -331,7 +329,9 @@ protected:
     TMassMask& SetMassAndMask(int i, int j);
 
 private:
-    ReadDBFILEPtr rdfp; 
+    /** blast library */
+    CRef <CSeqDB> rdfp;
+
     //    CMSHistSet HistSet;  // score arrays
     CMassArray MassArray;  // amino acid mass arrays
     CMassArray PrecursorMassArray;  // precursor mass arrays
@@ -571,6 +571,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.35  2005/09/20 21:07:57  lewisg
+  get rid of c-toolkit dependencies and nrutil
+
   Revision 1.34  2005/09/15 21:29:24  lewisg
   filter out n-term protein mods
 

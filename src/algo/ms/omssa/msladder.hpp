@@ -96,7 +96,7 @@ public:
      */
     bool CreateLadder(int IonType,
                       int Charge,
-                      char *Sequence,
+                      const char *Sequence,
                       int SeqIndex,
                       int start,
                       int stop,
@@ -113,7 +113,7 @@ public:
     ///
     /// calculate the mass difference
     ///
-    bool CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *Sequence,
+    bool CalcDelta(int &delta, const int *IntMassArray, char *AAMap, const char *Sequence,
                         int Offset, int Direction, int NumMod, int &ModIndex,
                         CMod ModList[], unsigned ModMask, int i);
 
@@ -160,7 +160,7 @@ private:
 /////////////////// CLadder inline methods
 
 inline
-bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, char *Sequence,
+bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, const char *Sequence,
                         int Offset, int Direction, int NumMod, int &ModIndex,
                         CMod ModList[], unsigned ModMask, int i)
 {
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.16  2005/09/20 21:07:57  lewisg
+  get rid of c-toolkit dependencies and nrutil
+
   Revision 1.15  2005/09/14 15:30:17  lewisg
   neutral loss
 

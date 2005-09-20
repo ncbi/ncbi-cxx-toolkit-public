@@ -119,7 +119,7 @@ CLadder::~CLadder()
  */
 bool CLadder::CreateLadder(int IonType,
                            int ChargeIn,
-                           char *Sequence,
+                           const char *Sequence,
                            int SeqIndex,
                            int start,
                            int stop,

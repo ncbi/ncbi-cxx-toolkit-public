@@ -55,7 +55,6 @@
 #include "omssa.hpp"
 #include "SpectrumSet.hpp"
 #include "Mod.hpp"
-#include <readdb.h>
 
 
 USING_NCBI_SCOPE;
@@ -386,7 +385,7 @@ int COMSSA::Run()
     // set up rank scoring
     if(args["ns"]) Search.SetRankScore() = true;
 
-	int retval = Search.InitBlast(args["d"].AsString().c_str(), false);
+	int retval = Search.InitBlast(args["d"].AsString().c_str());
 	if(retval) {
 	    ERR_POST(Fatal << "ommsacl: unable to initialize blastdb, error " 
 		     << retval);
@@ -604,6 +603,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.42  2005/09/20 21:07:57  lewisg
+  get rid of c-toolkit dependencies and nrutil
+
   Revision 1.41  2005/09/14 15:30:17  lewisg
   neutral loss
 
