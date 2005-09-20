@@ -158,7 +158,7 @@ property xalnmgr : {name:"xalnmgr", path:"objtools:alnmgr"}
 property xcddalignview : {name:"xcddalignview", path:"objtools:cddalignview"}
 property xflat : {name:"xflat", path:"objtools:flat"}
 property lds : {name:"lds", path:"objtools:lds"}
-property lds_admin : {name:"lds_admin", path:"objtools:lds:admin"}
+--property lds_admin : {name:"lds_admin", path:"objtools:lds:admin"}
 property xvalidate : {name:"xvalidate", path:"objtools:validator"}
 property xobjmanip : {name:"xobjmanip", path:"objtools:manip"}
 property xobjread : {name:"xobjread", path:"objtools:readers"}
@@ -275,7 +275,7 @@ property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scorem
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xflat, xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
-property ncbi_lds : {name:"ncbi_lds", libs:{lds, lds_admin}, dep:"ncbi_core ncbi_xcache_bdb ncbi_bdb ncbi_general ncbi_seq ncbi_seqext", req:true}
+property ncbi_lds : {name:"ncbi_lds", libs:{lds}, dep:"ncbi_core ncbi_xcache_bdb ncbi_bdb ncbi_general ncbi_seq ncbi_seqext", req:true}
 property ncbi_xreader : {name:"ncbi_xreader", libs:{xreader}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
 property ncbi_xreader_id1 : {name:"ncbi_xreader_id1", libs:{xreader_id1}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader", req:true}
 property ncbi_xreader_id2 : {name:"ncbi_xreader_id2", libs:{xreader_id2}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader", req:true}
@@ -411,6 +411,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2005/09/20 18:19:54  lebedev
+ * lds_admin disabled
+ *
  * Revision 1.68  2005/09/13 11:41:34  lebedev
  * xalgoalignutil added
  *
