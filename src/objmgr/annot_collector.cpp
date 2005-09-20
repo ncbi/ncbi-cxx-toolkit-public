@@ -366,9 +366,9 @@ void CAnnotMapping_Info::InitializeMappedSeq_feat(const CSeq_feat& src,
 
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object.GetSeq_annot_Info()),
-      m_AnnotObjectPtr(&object),
-      m_ObjectType(eType_Seq_annot_Info)
+      m_AnnotIndex(object.GetAnnotIndex())
 {
+    _ASSERT(IsRegular());
     if ( object.IsFeat() ) {
         const CSeq_feat& feat = *object.GetFeatFast();
         if ( feat.IsSetPartial() ) {
@@ -381,9 +381,9 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
 CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    const SSNP_Info& snp_info)
     : m_Object(&snp_annot),
-      m_AnnotObjectPtr(&snp_info),
-      m_ObjectType(eType_Seq_annot_SNP_Info)
+      m_AnnotIndex(snp_annot.GetIndex(snp_info)+kMin_I4)
 {
+    _ASSERT(IsSNPFeat());
 }
 
 
@@ -404,37 +404,33 @@ void CAnnotObject_Ref::ResetLocation(void)
 
 const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
 {
-    _ASSERT(!IsSNPFeat());
-    return *static_cast<const CAnnotObject_Info*>(m_AnnotObjectPtr);
+    _ASSERT(IsRegular());
+    return GetSeq_annot_Info().GetInfo(m_AnnotIndex);
 }
 
 
 const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
 {
     _ASSERT(IsSNPFeat());
-    return *static_cast<const SSNP_Info*>(m_AnnotObjectPtr);
+    return GetSeq_annot_SNP_Info().GetInfo(m_AnnotIndex);
 }
 
 
 bool CAnnotObject_Ref::IsFeat(void) const
 {
-    return GetObjectType() == eType_Seq_annot_SNP_Info ||
-        (GetObjectType() == eType_Seq_annot_Info &&
-         GetAnnotObject_Info().IsFeat());
+    return IsSNPFeat() || GetAnnotObject_Info().IsFeat();
 }
 
 
 bool CAnnotObject_Ref::IsGraph(void) const
 {
-    return GetObjectType() == eType_Seq_annot_Info &&
-        GetAnnotObject_Info().IsGraph();
+    return GetAnnotObject_Info().IsGraph();
 }
 
 
 bool CAnnotObject_Ref::IsAlign(void) const
 {
-    return GetObjectType() == eType_Seq_annot_Info &&
-        GetAnnotObject_Info().IsAlign();
+    return GetAnnotObject_Info().IsAlign();
 }
 
 
@@ -459,7 +455,7 @@ const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
 void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
                                     CSeq_loc_Conversion* cvt)
 {
-    _ASSERT(GetObjectType() == eType_Seq_annot_SNP_Info);
+    _ASSERT(IsSNPFeat());
     TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
     ENa_strand src_strand =
         snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
@@ -1428,7 +1424,7 @@ void CAnnot_Collector::x_AddTSE(const CTSE_Handle& tse)
 void CAnnot_Collector::x_AddAnnot(const CAnnotObject_Ref& ref)
 {
     const CSeq_annot_Info* info;
-    if ( ref.GetObjectType() == ref.eType_Seq_annot_SNP_Info ) {
+    if ( ref.IsSNPFeat() ) {
         info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
     }
     else {
@@ -1454,7 +1450,7 @@ void CAnnot_Collector::x_AddAnnot(const CAnnotObject_Ref& ref)
 CSeq_annot_Handle CAnnot_Collector::GetAnnot(const CAnnotObject_Ref& ref) const
 {
     const CSeq_annot_Info* info;
-    if ( ref.GetObjectType() == ref.eType_Seq_annot_SNP_Info ) {
+    if ( ref.IsSNPFeat() ) {
         info = &ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
     }
     else {
@@ -2219,6 +2215,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2005/09/20 15:45:36  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.64  2005/08/23 17:02:56  vasilche
 * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.

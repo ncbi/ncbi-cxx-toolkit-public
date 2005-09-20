@@ -32,6 +32,9 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/seq_align_handle.hpp>
+#include <objmgr/seq_graph_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -230,12 +233,34 @@ void CSeq_annot_EditHandle::Remove(void) const
 }
 
 
+CSeq_feat_Handle CSeq_annot_EditHandle::AddFeat(const CSeq_feat& new_obj) const
+{
+    return CSeq_feat_Handle(*this, x_GetInfo().Add(new_obj));
+}
+
+
+CSeq_align_Handle CSeq_annot_EditHandle::AddAlign(const CSeq_align& new_obj) const
+{
+    return CSeq_align_Handle(*this, x_GetInfo().Add(new_obj));
+}
+
+
+CSeq_graph_Handle CSeq_annot_EditHandle::AddGraph(const CSeq_graph& new_obj) const
+{
+    return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/09/20 15:45:36  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.17  2005/06/22 14:27:31  vasilche
 * Implemented copying of shared Seq-entries at edit request.
 * Added invalidation of handles to removed objects.

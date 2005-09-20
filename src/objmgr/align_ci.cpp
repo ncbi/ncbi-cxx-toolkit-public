@@ -206,7 +206,7 @@ const CSeq_align& CAlign_CI::GetOriginalSeq_align(void) const
 
 CSeq_align_Handle CAlign_CI::GetSeq_align_Handle(void) const
 {
-    return CSeq_align_Handle(GetAnnot(), GetIterator()->GetAnnotObject_Info());
+    return CSeq_align_Handle(GetAnnot(), GetIterator()->GetAnnotIndex());
 }
 
 
@@ -216,6 +216,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/09/20 15:45:36  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.33  2005/08/23 17:03:01  vasilche
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
 *

@@ -52,7 +52,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot& annot)
+CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot)
 {
     x_SetObject(annot);
 }
@@ -215,7 +215,7 @@ CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotCore(void) const
 }
 
 
-void CSeq_annot_Info::x_SetObject(const TObject& obj)
+void CSeq_annot_Info::x_SetObject(TObject& obj)
 {
     _ASSERT(!m_SNP_Info && !m_Object);
     m_Object.Reset(&obj);
@@ -223,6 +223,7 @@ void CSeq_annot_Info::x_SetObject(const TObject& obj)
         x_DSMapObject(m_Object, GetDataSource());
     }
     x_UpdateName();
+    x_InitAnnotList();
     x_SetDirtyAnnotIndex();
 }
 
@@ -243,6 +244,7 @@ namespace {
         if ( src.IsSetDesc() ) {
             obj->SetDesc().Set() = src.GetDesc().Get();
         }
+        /*
         switch ( src.GetData().Which() ) {
         case CSeq_annot::C_Data::e_Ftable:
             obj->SetData().SetFtable() = src.GetData().GetFtable();
@@ -262,6 +264,7 @@ namespace {
         default:
             break;
         }
+        */
         return obj;
     }
 }
@@ -281,6 +284,7 @@ void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info,
         m_SNP_Info->x_ParentAttach(*this);
         x_AttachObject(*m_SNP_Info);
     }
+    x_InitAnnotList(info);
     x_SetDirtyAnnotIndex();
 }
 
@@ -293,6 +297,178 @@ void CSeq_annot_Info::x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info)
     snp_info.x_ParentAttach(*this);
     _ASSERT(&snp_info.GetParentSeq_annot_Info() == this);
     x_AttachObject(snp_info);
+}
+
+
+void CSeq_annot_Info::x_InitAnnotList(void)
+{
+    _ASSERT(m_Object);
+    _ASSERT(m_ObjectIndex.IsEmpty());
+
+    C_Data& data = m_Object->SetData();
+    switch ( data.Which() ) {
+    case C_Data::e_Ftable:
+        x_InitFeatList(data.SetFtable());
+        break;
+    case C_Data::e_Align:
+        x_InitAlignList(data.SetAlign());
+        break;
+    case C_Data::e_Graph:
+        x_InitGraphList(data.SetGraph());
+        break;
+    case C_Data::e_Locs:
+        x_InitLocsList(data.SetLocs());
+        break;
+    default:
+        break;
+    }
+}
+
+
+void CSeq_annot_Info::x_InitFeatList(TFtable& objs)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    NON_CONST_ITERATE ( TFtable, oit, objs ) {
+        m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index++, oit));
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
+}
+
+
+void CSeq_annot_Info::x_InitAlignList(TAlign& objs)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    NON_CONST_ITERATE ( TAlign, oit, objs ) {
+        m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index++, oit));
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
+}
+
+
+void CSeq_annot_Info::x_InitGraphList(TGraph& objs)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    NON_CONST_ITERATE ( TGraph, oit, objs ) {
+        m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index++, oit));
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
+}
+
+
+void CSeq_annot_Info::x_InitLocsList(TLocs& objs)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    NON_CONST_ITERATE ( TLocs, oit, objs ) {
+        m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index++, oit));
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
+}
+
+
+void CSeq_annot_Info::x_InitAnnotList(const CSeq_annot_Info& info)
+{
+    _ASSERT(m_Object);
+    _ASSERT(m_ObjectIndex.IsEmpty());
+
+    const C_Data& src_data = info.x_GetObject().GetData();
+    C_Data& data = m_Object->SetData();
+    _ASSERT(data.Which() == C_Data::e_not_set);
+    switch ( src_data.Which() ) {
+    case C_Data::e_Ftable:
+        x_InitFeatList(data.SetFtable(), info);
+        break;
+    case C_Data::e_Align:
+        x_InitAlignList(data.SetAlign(), info);
+        break;
+    case C_Data::e_Graph:
+        x_InitGraphList(data.SetGraph(), info);
+        break;
+    case C_Data::e_Locs:
+        x_InitLocsList(data.SetLocs(), info);
+        break;
+    case C_Data::e_Ids:
+        data.SetIds() = src_data.GetIds();
+        break;
+    default:
+        break;
+    }
+}
+
+
+void CSeq_annot_Info::x_InitFeatList(TFtable& objs, const CSeq_annot_Info& info)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    ITERATE ( SAnnotObjectsIndex::TObjectInfos, oit,
+              info.m_ObjectIndex.GetInfos() ) {
+        if ( oit->IsRemoved() ) {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info());
+        }
+        else {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index, objs,
+                                                    oit->GetFeat()));
+        }
+        ++index;
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
+}
+
+
+void CSeq_annot_Info::x_InitAlignList(TAlign& objs, const CSeq_annot_Info& info)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    ITERATE ( SAnnotObjectsIndex::TObjectInfos, oit, info.m_ObjectIndex.GetInfos() ) {
+        if ( oit->IsRemoved() ) {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info());
+        }
+        else {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index, objs,
+                                                    oit->GetAlign()));
+        }
+        ++index;
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
+}
+
+
+void CSeq_annot_Info::x_InitGraphList(TGraph& objs, const CSeq_annot_Info& info)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    ITERATE ( SAnnotObjectsIndex::TObjectInfos, oit, info.m_ObjectIndex.GetInfos() ) {
+        if ( oit->IsRemoved() ) {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info());
+        }
+        else {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index, objs,
+                                                    oit->GetGraph()));
+        }
+        ++index;
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
+}
+
+
+void CSeq_annot_Info::x_InitLocsList(TLocs& objs, const CSeq_annot_Info& info)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().empty());
+    TIndex index = 0;
+    ITERATE ( SAnnotObjectsIndex::TObjectInfos, oit, info.m_ObjectIndex.GetInfos() ) {
+        if ( oit->IsRemoved() ) {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info());
+        }
+        else {
+            m_ObjectIndex.AddInfo(CAnnotObject_Info(*this, index, objs,
+                                                    oit->GetLocs()));
+        }
+        ++index;
+    }
+    _ASSERT(size_t(index) == m_ObjectIndex.GetInfos().size());
 }
 
 
@@ -314,27 +490,9 @@ void CSeq_annot_Info::UpdateAnnotIndex(void) const
 
 void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
-    const CSeq_annot::C_Data& data = m_Object->GetData();
-    switch ( data.Which() ) {
-    case CSeq_annot::C_Data::e_Ftable:
-        x_InitFeats(data.GetFtable());
-        break;
-    case CSeq_annot::C_Data::e_Align:
-        x_InitAligns(data.GetAlign());
-        break;
-    case CSeq_annot::C_Data::e_Graph:
-        x_InitGraphs(data.GetGraph());
-        break;
-    case CSeq_annot::C_Data::e_Locs:
-        x_InitLocs(*m_Object);
-        break;
-    default:
-        break;
-    }
-
-    m_ObjectIndex.PackKeys();
+    x_InitAnnotKeys();
     tse.x_MapAnnotObjects(m_ObjectIndex);
-    m_ObjectIndex.DropIndices();
+    //m_ObjectIndex.DropIndices();
 
     if ( m_SNP_Info ) {
         m_SNP_Info->x_UpdateAnnotIndex(tse);
@@ -343,18 +501,38 @@ void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 }
 
 
-void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
+void CSeq_annot_Info::x_InitAnnotKeys(void)
 {
-    if ( !m_ObjectIndex.IsEmpty() ) {
-        _ASSERT(m_ObjectIndex.GetInfos().size() == objs.size());
+    C_Data& data = m_Object->SetData();
+    switch ( data.Which() ) {
+    case C_Data::e_Ftable:
+        x_InitFeatKeys();
+        break;
+    case C_Data::e_Align:
+        x_InitAlignKeys();
+        break;
+    case C_Data::e_Graph:
+        x_InitGraphKeys();
+        break;
+    case C_Data::e_Locs:
+        x_InitLocsKeys();
+        break;
+    default:
+        break;
+    }
+
+    m_ObjectIndex.PackKeys();
+}
+
+
+void CSeq_annot_Info::x_InitFeatKeys(void)
+{
+    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetFtable().size());
+    if ( !m_ObjectIndex.GetKeys().empty() ) {
         return;
     }
 
     m_ObjectIndex.SetName(GetName());
-
-    ITERATE ( CSeq_annot::C_Data::TFtable, oit, objs ) {
-        m_ObjectIndex.AddInfo(CAnnotObject_Info(**oit, *this));
-    }
 
     size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(size_t(object_count*1.1));
@@ -366,6 +544,9 @@ void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
         CAnnotObject_Info& info = *it;
+        if ( info.IsRemoved() ) {
+            continue;
+        }
         key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
@@ -407,17 +588,15 @@ void CSeq_annot_Info::x_InitFeats(const CSeq_annot::C_Data::TFtable& objs)
 }
 
 
-void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs)
+void CSeq_annot_Info::x_InitGraphKeys(void)
 {
-    if ( !m_ObjectIndex.IsEmpty() ) {
-        _ASSERT(m_ObjectIndex.GetInfos().size() == objs.size());
+    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetGraph().size());
+    if ( !m_ObjectIndex.GetKeys().empty() ) {
         return;
     }
 
     m_ObjectIndex.SetName(GetName());
-    ITERATE ( CSeq_annot::C_Data::TGraph, oit, objs ) {
-        m_ObjectIndex.AddInfo(CAnnotObject_Info(**oit, *this));
-    }
+
     size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(object_count);
 
@@ -428,6 +607,9 @@ void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs)
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
         CAnnotObject_Info& info = *it;
+        if ( info.IsRemoved() ) {
+            continue;
+        }
         key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
@@ -454,18 +636,15 @@ void CSeq_annot_Info::x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs)
 }
 
 
-void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs)
+void CSeq_annot_Info::x_InitAlignKeys(void)
 {
-    if ( !m_ObjectIndex.IsEmpty() ) {
-        _ASSERT(m_ObjectIndex.GetInfos().size() == objs.size());
+    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetAlign().size());
+    if ( !m_ObjectIndex.GetKeys().empty() ) {
         return;
     }
 
     m_ObjectIndex.SetName(GetName());
 
-    ITERATE ( CSeq_annot::C_Data::TAlign, oit, objs ) {
-        m_ObjectIndex.AddInfo(CAnnotObject_Info(**oit, *this));
-    }
     size_t object_count = m_ObjectIndex.GetInfos().size();
     m_ObjectIndex.ReserveMapSize(object_count);
 
@@ -476,6 +655,9 @@ void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs)
     NON_CONST_ITERATE ( SAnnotObjectsIndex::TObjectInfos, it,
                         m_ObjectIndex.GetInfos() ) {
         CAnnotObject_Info& info = *it;
+        if ( info.IsRemoved() ) {
+            continue;
+        }
         key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
         info.GetMaps(hrmaps);
@@ -502,27 +684,29 @@ void CSeq_annot_Info::x_InitAligns(const CSeq_annot::C_Data::TAlign& objs)
 }
 
 
-void CSeq_annot_Info::x_InitLocs(const CSeq_annot& annot)
+void CSeq_annot_Info::x_InitLocsKeys(void)
 {
-    if ( !m_ObjectIndex.IsEmpty() ) {
-        _ASSERT(m_ObjectIndex.GetInfos().size() == 1);
+    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetFtable().size());
+    if ( !m_ObjectIndex.GetKeys().empty() ) {
         return;
     }
 
-    _ASSERT(annot.GetData().IsLocs());
     // Only one referenced location per annot is allowed
-    if (annot.GetData().GetLocs().size() != 1) {
+    if ( m_ObjectIndex.GetInfos().size() != 1) {
         return;
     }
-    const CSeq_loc& loc = *annot.GetData().GetLocs().front();
 
-    m_ObjectIndex.AddInfo(CAnnotObject_Info(loc, *this));
-
-    SAnnotObject_Key key;
-    SAnnotObject_Index index;
-    vector<CHandleRangeMap> hrmaps;
+    m_ObjectIndex.SetName(GetName());
 
     CAnnotObject_Info& info = m_ObjectIndex.GetInfos().front();
+    if ( info.IsRemoved() ) {
+        return;
+    }
+
+    SAnnotObject_Key key;
+    SAnnotObject_Index index;
+    vector<CHandleRangeMap> hrmaps;
+
     key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
 
     info.GetMaps(hrmaps);
@@ -541,6 +725,83 @@ void CSeq_annot_Info::x_InitLocs(const CSeq_annot& annot)
                 index.m_HandleRange.Reset();
             }
             m_ObjectIndex.AddMap(key, index);
+        }
+    }
+}
+
+
+void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
+{
+    if ( x_DirtyAnnotIndex() ) {
+        return;
+    }
+
+    CTSE_Info& tse = GetTSE_Info();
+    CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+    CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
+    
+    // remove annotation from TSE index
+    SAnnotObject_Key key;
+    SAnnotObject_Index index;
+    vector<CHandleRangeMap> hrmaps;
+
+    key.m_AnnotObject_Info = index.m_AnnotObject_Info = &info;
+
+    info.GetMaps(hrmaps);
+    index.m_AnnotLocationIndex = 0;
+    ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+        bool multi_id = hrmit->GetMap().size() > 1;
+        ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+            key.m_Handle = hrit->first;
+            const CHandleRange& hr = hrit->second;
+            index.m_Flags = hr.GetStrandsFlag();
+            if ( multi_id ) {
+                index.SetMultiIdFlag();
+            }
+            if ( hr.HasGaps() ) {
+                index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
+                index.m_HandleRange->GetData() = hr;
+                if ( hr.IsCircular() ) {
+                    key.m_Range = hr.GetCircularRangeStart();
+                    m_ObjectIndex.AddMap(key, index);
+                    key.m_Range = hr.GetCircularRangeEnd();
+                }
+                else {
+                    key.m_Range = hr.GetOverlappingRange();
+                }
+            }
+            else {
+                key.m_Range = hr.GetOverlappingRange();
+                index.m_HandleRange.Reset();
+            }
+            tse.x_MapAnnotObject(GetName(), key, index);
+        }
+        ++index.m_AnnotLocationIndex;
+    }
+}
+
+
+void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
+{
+    if ( x_DirtyAnnotIndex() ) {
+        return;
+    }
+
+    CTSE_Info& tse = GetTSE_Info();
+    CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+    CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
+    
+    // remove annotation from TSE index
+    SAnnotObject_Key key;
+    key.m_AnnotObject_Info = &info;
+    vector<CHandleRangeMap> hrmaps;
+    info.GetMaps(hrmaps);
+    ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+        ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+            key.m_Handle = hrit->first;
+            const CHandleRange& hr = hrit->second;
+            key.m_Range = hr.GetOverlappingRange();
+            tse.x_UnmapAnnotObject(GetName(), key);
         }
     }
 }
@@ -565,12 +826,268 @@ void CSeq_annot_Info::x_DropAnnotObjects(CTSE_Info& tse)
 }
 
 
+namespace {
+    void sx_CheckType(CSeq_annot::C_Data& data,
+                      CSeq_annot::C_Data::E_Choice type,
+                      const char* error)
+    {
+        if ( data.Which() != type ) {
+            if ( data.Which() == data.e_not_set ) {
+                data.Select(type);
+            }
+            else {
+                NCBI_THROW(CObjMgrException, eInvalidHandle, error);
+            }
+        }
+    }
+
+    bool sx_SameLocation(const CSeq_feat& obj1, const CSeq_feat& obj2)
+    {
+        if ( !obj1.GetLocation().Equals(obj2.GetLocation()) ) {
+            return false;
+        }
+        if ( obj1.IsSetProduct() ) {
+            return obj2.IsSetProduct() &&
+                obj1.GetProduct().Equals(obj2.GetProduct());
+        }
+        return !obj2.IsSetProduct();
+    }
+
+    inline
+    bool sx_SameLocation(const CSeq_align& obj1, const CSeq_align& obj2)
+    {
+        return obj1.Equals(obj2);
+    }
+
+    inline
+    bool sx_SameLocation(const CSeq_graph& obj1, const CSeq_graph& obj2)
+    {
+        return obj1.GetLoc().Equals(obj2.GetLoc());
+    }
+}
+
+
+void CSeq_annot_Info::Remove(TIndex index)
+{
+    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
+    CAnnotObject_Info& info = m_ObjectIndex.GetInfos()[index];
+    _ASSERT(info.IsRegular());
+    _ASSERT(&info.GetSeq_annot_Info() == this);
+    x_UnmapAnnotObject(info);
+
+    // everything is const here so there are a lot of const_casts :(
+
+    // remove annotation from Seq-annot object
+    C_Data& data = m_Object->SetData();
+    _ASSERT(info.Which() == data.Which());
+    switch ( data.Which() ) {
+    case C_Data::e_Ftable:
+        data.SetFtable().erase(info.x_GetFeatIter());
+        break;
+    case C_Data::e_Align:
+        data.SetAlign().erase(info.x_GetAlignIter());
+        break;
+    case C_Data::e_Graph:
+        data.SetGraph().erase(info.x_GetGraphIter());
+        break;
+    case C_Data::e_Locs:
+        data.SetLocs().erase(info.x_GetLocsIter());
+        break;
+    default:
+        break;
+    }
+
+    // mark CAnnotObject_Info as removed
+    info.Reset();
+    _ASSERT(info.IsRemoved());
+}
+
+
+CSeq_annot_Info::TIndex CSeq_annot_Info::Add(const CSeq_feat& new_obj)
+{
+    C_Data& data = m_Object->SetData();
+    sx_CheckType(data, data.e_Ftable,
+                 "Cannot add Seq-feat: Seq-annot is not ftable");
+    TIndex index = m_ObjectIndex.GetInfos().size();
+    m_ObjectIndex.AddInfo(CAnnotObject_Info(*this,
+                                            index,
+                                            data.SetFtable(),
+                                            new_obj));
+    CAnnotObject_Info& info = m_ObjectIndex.GetInfos().back();
+    _ASSERT(&info == &GetInfo(index));
+    _ASSERT(&info.GetFeat() == &new_obj);
+    x_MapAnnotObject(info);
+    return index;
+}
+
+
+CSeq_annot_Info::TIndex CSeq_annot_Info::Add(const CSeq_align& new_obj)
+{
+    C_Data& data = m_Object->SetData();
+    sx_CheckType(data, data.e_Ftable,
+                 "Cannot add Seq-feat: Seq-annot is not align");
+    TIndex index = m_ObjectIndex.GetInfos().size();
+    m_ObjectIndex.AddInfo(CAnnotObject_Info(*this,
+                                            index,
+                                            data.SetAlign(),
+                                            new_obj));
+    CAnnotObject_Info& info = m_ObjectIndex.GetInfos().back();
+    _ASSERT(&info == &GetInfo(index));
+    _ASSERT(&info.GetAlign() == &new_obj);
+    x_MapAnnotObject(info);
+    return index;
+}
+
+
+CSeq_annot_Info::TIndex CSeq_annot_Info::Add(const CSeq_graph& new_obj)
+{
+    C_Data& data = m_Object->SetData();
+    sx_CheckType(data, data.e_Ftable,
+                 "Cannot add Seq-feat: Seq-annot is not align");
+    TIndex index = m_ObjectIndex.GetInfos().size();
+    m_ObjectIndex.AddInfo(CAnnotObject_Info(*this,
+                                            index,
+                                            data.SetGraph(),
+                                            new_obj));
+    CAnnotObject_Info& info = m_ObjectIndex.GetInfos().back();
+    _ASSERT(&info == &GetInfo(index));
+    _ASSERT(&info.GetGraph() == &new_obj);
+    x_MapAnnotObject(info);
+    return index;
+}
+
+
+void CSeq_annot_Info::Replace(TIndex index, const CSeq_feat& new_obj)
+{
+    C_Data& data = m_Object->SetData();
+    sx_CheckType(data, data.e_Ftable,
+                 "Cannot replace Seq-feat: Seq-annot is not ftable");
+    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
+    SAnnotObjectsIndex::TObjectInfos::iterator info_iter =
+        m_ObjectIndex.GetInfos().begin()+index;
+    CAnnotObject_Info& info = *info_iter;
+    if ( info.IsRemoved() ) {
+        TFtable& cont = data.SetFtable();
+        TFtable::iterator cont_iter = cont.end();
+        SAnnotObjectsIndex::TObjectInfos::const_iterator it = info_iter;
+        SAnnotObjectsIndex::TObjectInfos::const_iterator it_end =
+            m_ObjectIndex.GetInfos().end();
+        for ( ; it != it_end; ++it ) {
+            if ( !it->IsRemoved() ) {
+                cont_iter = it->x_GetFeatIter();
+                break;
+            }
+        }
+        cont_iter =
+            cont.insert(cont_iter, Ref(const_cast<CSeq_feat*>(&new_obj)));
+        info = CAnnotObject_Info(*this, index, cont_iter);
+        _ASSERT(!info.IsRemoved());
+        x_MapAnnotObject(info);
+    }
+    else if ( info.GetFeatSubtype() == new_obj.GetData().GetSubtype() &&
+              sx_SameLocation(info.GetFeat(), new_obj) ) {
+        // same index -> just replace
+        info.x_SetObject(new_obj);
+    }
+    else {
+        // reindex
+        x_UnmapAnnotObject(info);
+        info.x_SetObject(new_obj);
+        x_MapAnnotObject(info);
+    }
+}
+
+
+void CSeq_annot_Info::Replace(TIndex index, const CSeq_align& new_obj)
+{
+    C_Data& data = m_Object->SetData();
+    sx_CheckType(data, data.e_Align,
+                 "Cannot replace Seq-align: Seq-annot is not align");
+    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
+    SAnnotObjectsIndex::TObjectInfos::iterator info_iter =
+        m_ObjectIndex.GetInfos().begin()+index;
+    CAnnotObject_Info& info = *info_iter;
+    if ( info.IsRemoved() ) {
+        TAlign& cont = data.SetAlign();
+        TAlign::iterator cont_iter = cont.end();
+        SAnnotObjectsIndex::TObjectInfos::const_iterator it = info_iter;
+        SAnnotObjectsIndex::TObjectInfos::const_iterator it_end =
+            m_ObjectIndex.GetInfos().end();
+        for ( ; it != it_end; ++it ) {
+            if ( !it->IsRemoved() ) {
+                cont_iter = it->x_GetAlignIter();
+                break;
+            }
+        }
+        cont_iter =
+            cont.insert(cont_iter, Ref(const_cast<CSeq_align*>(&new_obj)));
+        info = CAnnotObject_Info(*this, index, cont_iter);
+        _ASSERT(!info.IsRemoved());
+        x_MapAnnotObject(info);
+    }
+    else if ( sx_SameLocation(info.GetAlign(), new_obj) ) {
+        // same index -> just replace
+        info.x_SetObject(new_obj);
+    }
+    else {
+        // reindex
+        x_UnmapAnnotObject(info);
+        info.x_SetObject(new_obj);
+        x_MapAnnotObject(info);
+    }
+}
+
+
+void CSeq_annot_Info::Replace(TIndex index, const CSeq_graph& new_obj)
+{
+    C_Data& data = m_Object->SetData();
+    sx_CheckType(data, data.e_Graph,
+                 "Cannot replace Seq-graph: Seq-annot is not graph");
+    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
+    SAnnotObjectsIndex::TObjectInfos::iterator info_iter =
+        m_ObjectIndex.GetInfos().begin()+index;
+    CAnnotObject_Info& info = *info_iter;
+    if ( info.IsRemoved() ) {
+        TGraph& cont = data.SetGraph();
+        TGraph::iterator cont_iter = cont.end();
+        SAnnotObjectsIndex::TObjectInfos::const_iterator it = info_iter;
+        SAnnotObjectsIndex::TObjectInfos::const_iterator it_end =
+            m_ObjectIndex.GetInfos().end();
+        for ( ; it != it_end; ++it ) {
+            if ( !it->IsRemoved() ) {
+                cont_iter = it->x_GetGraphIter();
+                break;
+            }
+        }
+        cont_iter =
+            cont.insert(cont_iter, Ref(const_cast<CSeq_graph*>(&new_obj)));
+        info = CAnnotObject_Info(*this, index, cont_iter);
+        _ASSERT(!info.IsRemoved());
+        x_MapAnnotObject(info);
+    }
+    else if ( sx_SameLocation(info.GetGraph(), new_obj) ) {
+        // same index -> just replace
+        info.x_SetObject(new_obj);
+    }
+    else {
+        // reindex
+        x_UnmapAnnotObject(info);
+        info.x_SetObject(new_obj);
+        x_MapAnnotObject(info);
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/09/20 15:45:36  vasilche
+ * Feature editing API.
+ * Annotation handles remember annotations by index.
+ *
  * Revision 1.34  2005/08/23 17:02:57  vasilche
  * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
  * Used deque<> instead of vector<> for storing CAnnotObject_Info set.

@@ -61,7 +61,15 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 {
     typedef CTSE_Info_Object TParent;
 public:
-    explicit CSeq_annot_Info(const CSeq_annot& annot);
+    // typedefs from CSeq_annot
+    typedef CSeq_annot::C_Data  C_Data;
+    typedef C_Data::TFtable     TFtable;
+    typedef C_Data::TAlign      TAlign;
+    typedef C_Data::TGraph      TGraph;
+    typedef C_Data::TLocs       TLocs;
+    typedef Int4                TIndex;
+
+    explicit CSeq_annot_Info(CSeq_annot& annot);
     explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
     explicit CSeq_annot_Info(const CSeq_annot_Info& src,
                              TObjectCopyMap* copy_map);
@@ -97,7 +105,7 @@ public:
 
     const TObject& x_GetObject(void) const;
 
-    void x_SetObject(const TObject& obj);
+    void x_SetObject(TObject& obj);
     void x_SetObject(const CSeq_annot_Info& info, TObjectCopyMap* copy_map);
 
     void x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info);
@@ -109,27 +117,54 @@ public:
     typedef SAnnotObjectsIndex::TObjectInfos TAnnotObjectInfos;
     const TAnnotObjectInfos& GetAnnotObjectInfos(void) const;
 
+    // individual annotation editing API
+    void Remove(TIndex index);
+    void Replace(TIndex index, const CSeq_feat& new_obj);
+    void Replace(TIndex index, const CSeq_align& new_obj);
+    void Replace(TIndex index, const CSeq_graph& new_obj);
+    TIndex Add(const CSeq_feat& new_obj);
+    TIndex Add(const CSeq_align& new_obj);
+    TIndex Add(const CSeq_graph& new_obj);
+
+    const CAnnotObject_Info& GetInfo(TIndex index) const;
+
 protected:
     friend class CDataSource;
     friend class CTSE_Info;
     friend class CSeq_entry_Info;
-    friend class CAnnot_Collector;
 
     void x_UpdateName(void);
 
     void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    void x_InitFeats(const CSeq_annot::C_Data::TFtable& objs);
-    void x_InitAligns(const CSeq_annot::C_Data::TAlign& objs);
-    void x_InitGraphs(const CSeq_annot::C_Data::TGraph& objs);
-    void x_InitLocs(const CSeq_annot& annot); // locs case
+    void x_InitAnnotList(void);
+    void x_InitAnnotList(const CSeq_annot_Info& info);
+
+    void x_InitFeatList(TFtable& objs);
+    void x_InitAlignList(TAlign& objs);
+    void x_InitGraphList(TGraph& objs);
+    void x_InitLocsList(TLocs& annot);
+    void x_InitFeatList(TFtable& objs, const CSeq_annot_Info& info);
+    void x_InitAlignList(TAlign& objs, const CSeq_annot_Info& info);
+    void x_InitGraphList(TGraph& objs, const CSeq_annot_Info& info);
+    void x_InitLocsList(TLocs& annot, const CSeq_annot_Info& info);
+
+    void x_InitAnnotKeys(void);
+
+    void x_InitFeatKeys(void);
+    void x_InitAlignKeys(void);
+    void x_InitGraphKeys(void);
+    void x_InitLocsKeys(void);
 
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
 
+    void x_UnmapAnnotObject(CAnnotObject_Info& info);
+    void x_MapAnnotObject(CAnnotObject_Info& info);
+
     // Seq-annot object
-    CConstRef<TObject>      m_Object;
+    CRef<TObject>           m_Object;
 
     // name of Seq-annot
     CAnnotName              m_Name;
@@ -187,12 +222,24 @@ CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotSkeleton(void) const
     return m_Object;   
 }
 
+inline
+const CAnnotObject_Info& CSeq_annot_Info::GetInfo(TIndex index) const
+{
+    _ASSERT(size_t(index) < GetAnnotObjectInfos().size());
+    return GetAnnotObjectInfos()[index];
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/09/20 15:45:35  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.27  2005/08/25 14:05:36  didenko
 * Restructured TSE loading process
 *

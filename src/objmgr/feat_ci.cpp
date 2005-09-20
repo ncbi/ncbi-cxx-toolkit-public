@@ -253,17 +253,15 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
 
     const CSeq_annot_Info* annot_info;
     if ( feat_ref.IsSNPFeat() ) {
-        annot_info =
-            &feat_ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
-        m_OriginalFeat.m_AnnotInfoType =
-            CSeq_feat_Handle::eType_Seq_annot_SNP_Info;
-        m_OriginalFeat.m_AnnotPtr = &feat_ref.GetSNP_Info();
+        annot_info = &feat_ref.GetSeq_annot_SNP_Info().GetParentSeq_annot_Info();
+        m_OriginalFeat.m_AnnotIndex = feat_ref.GetAnnotIndex();
+        m_OriginalFeat.m_CreatedFeat = collector.m_CreatedOriginal;
+        _ASSERT(m_OriginalFeat.IsTableSNP());
     }
     else {
         annot_info = &feat_ref.GetSeq_annot_Info();
-        m_OriginalFeat.m_AnnotInfoType =
-            CSeq_feat_Handle::eType_Seq_annot_Info;
-        m_OriginalFeat.m_AnnotPtr = &feat_ref.GetAnnotObject_Info();
+        m_OriginalFeat.m_AnnotIndex = feat_ref.GetAnnotIndex();
+        _ASSERT(m_OriginalFeat.IsPlainFeat());
     }
     if ( !m_OriginalFeat.m_Annot ||
          &m_OriginalFeat.m_Annot.x_GetInfo() != annot_info ) {
@@ -272,8 +270,6 @@ CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
         _ASSERT(annot_it != collector.m_AnnotLockMap.end());
         m_OriginalFeat.m_Annot = annot_it->second;
     }
-
-    m_OriginalFeat.m_CreatedFeat = collector.m_CreatedOriginal;
 
     m_MappingInfoPtr = &feat_ref.GetMappingInfo();
     m_MappedFeat.ResetRefs();
@@ -296,6 +292,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/09/20 15:45:36  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.45  2005/08/23 17:03:01  vasilche
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
 *

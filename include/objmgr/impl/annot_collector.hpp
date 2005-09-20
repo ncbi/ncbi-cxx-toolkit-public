@@ -154,29 +154,24 @@ class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
 public:
     typedef CRange<TSeqPos> TRange;
+    typedef Int4            TIndex;
 
     CAnnotObject_Ref(void);
     CAnnotObject_Ref(const CAnnotObject_Info& object);
     CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                      const SSNP_Info& snp_info);
-    ~CAnnotObject_Ref(void);
 
-    enum EObjectType {
-        eType_null,
-        eType_Seq_annot_Info,
-        eType_Seq_annot_SNP_Info
-    };
-
-    EObjectType GetObjectType(void) const;
+    bool IsRegular(void) const;
+    bool IsSNPFeat(void) const;
 
     const CSeq_annot_Info& GetSeq_annot_Info(void) const;
     const CSeq_annot_SNP_Info& GetSeq_annot_SNP_Info(void) const;
+    TIndex GetAnnotIndex(void) const;
 
     const CAnnotObject_Info& GetAnnotObject_Info(void) const;
     const SSNP_Info& GetSNP_Info(void) const;
 
     bool IsFeat(void) const;
-    bool IsSNPFeat(void) const;
     bool IsGraph(void) const;
     bool IsAlign(void) const;
     const CSeq_feat& GetFeat(void) const;
@@ -195,9 +190,16 @@ public:
     void Swap(CAnnotObject_Ref& ref);
 
 private:
+    // states:
+    // A. Regular annot:
+    //    m_Object == CSeq_annot_Info*
+    //    m_AnnotIndex >= 0, index of CAnnotObject_Info within CSeq_annot_Info
+    // B. SNP table annot:
+    //    m_Object == CSeq_annot_SNP_Info*
+    //    m_AnnotIndex < 0, ==  (index of SSNP_Info) + kMin_I4
+
     CConstRef<CObject>         m_Object;
-    const void*                m_AnnotObjectPtr;
-    Int1                       m_ObjectType; // EObjectType
+    TIndex                     m_AnnotIndex;
     mutable CAnnotMapping_Info m_MappingInfo;
 };
 
@@ -630,30 +632,36 @@ void CAnnotMapping_Info::Swap(CAnnotMapping_Info& info)
 
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
-    : m_AnnotObjectPtr(0),
-      m_ObjectType(eType_null),
-      m_MappingInfo(0, CSeq_loc::e_not_set, eNa_strand_unknown)
+    : m_AnnotIndex(0)
 {
 }
 
 
 inline
-CAnnotObject_Ref::~CAnnotObject_Ref(void)
+CAnnotObject_Ref::TIndex CAnnotObject_Ref::GetAnnotIndex(void) const
 {
+    return m_AnnotIndex;
 }
 
 
 inline
-CAnnotObject_Ref::EObjectType CAnnotObject_Ref::GetObjectType(void) const
+bool CAnnotObject_Ref::IsRegular(void) const
 {
-    return EObjectType(m_ObjectType);
+    return m_AnnotIndex >= 0;
+}
+
+
+inline
+bool CAnnotObject_Ref::IsSNPFeat(void) const
+{
+    return m_AnnotIndex < 0;
 }
 
 
 inline
 const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
 {
-    _ASSERT(GetObjectType() == eType_Seq_annot_Info);
+    _ASSERT(IsRegular());
     return reinterpret_cast<const CSeq_annot_Info&>(*m_Object);
 }
 
@@ -661,41 +669,32 @@ const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
 inline
 const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
 {
-    _ASSERT(GetObjectType() == eType_Seq_annot_SNP_Info);
+    _ASSERT(IsSNPFeat());
     return reinterpret_cast<const CSeq_annot_SNP_Info&>(*m_Object);
-}
-
-
-inline
-bool CAnnotObject_Ref::IsSNPFeat(void) const
-{
-    return GetObjectType() == eType_Seq_annot_SNP_Info;
 }
 
 
 inline
 bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 {
-    if ( m_Object != ref.m_Object ) {
-        return m_Object < ref.m_Object;
-    }
-    return m_AnnotObjectPtr < ref.m_AnnotObjectPtr;
+    return (m_Object < ref.m_Object  ||
+            m_Object == ref.m_Object && m_AnnotIndex < ref.m_AnnotIndex);
 }
 
 
 inline
 bool CAnnotObject_Ref::operator==(const CAnnotObject_Ref& ref) const
 {
-    return ( m_Object == ref.m_Object  &&
-             m_AnnotObjectPtr == ref.m_AnnotObjectPtr );
+    return (m_Object == ref.m_Object  &&
+            m_AnnotIndex == ref.m_AnnotIndex);
 }
 
 
 inline
 bool CAnnotObject_Ref::operator!=(const CAnnotObject_Ref& ref) const
 {
-    return ( m_Object != ref.m_Object  ||
-             m_AnnotObjectPtr != ref.m_AnnotObjectPtr );
+    return (m_Object != ref.m_Object  ||
+            m_AnnotIndex != ref.m_AnnotIndex);
 }
 
 
@@ -750,8 +749,7 @@ inline
 void CAnnotObject_Ref::Swap(CAnnotObject_Ref& ref)
 {
     m_Object.Swap(ref.m_Object);
-    swap(m_AnnotObjectPtr, ref.m_AnnotObjectPtr);
-    swap(m_ObjectType, ref.m_ObjectType);
+    swap(m_AnnotIndex, ref.m_AnnotIndex);
     m_MappingInfo.Swap(ref.m_MappingInfo);
 }
 
@@ -780,6 +778,10 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/09/20 15:45:35  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.32  2005/08/23 17:04:02  vasilche
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
 *

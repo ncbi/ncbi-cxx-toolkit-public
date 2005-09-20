@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.h>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 
@@ -67,7 +68,7 @@ public:
 
     void Reset(void);
 
-    DECLARE_OPERATOR_BOOL(m_Annot);
+    DECLARE_OPERATOR_BOOL(m_Annot && m_AnnotIndex != eNull && !IsRemoved());
 
     /// Get scope this handle belongs to
     CScope& GetScope(void) const;
@@ -88,22 +89,35 @@ public:
     bool IsSetBounds(void) const;
     const CSeq_align::TBounds& GetBounds(void) const;
 
+    /// Return true if this Seq-align was removed already
+    bool IsRemoved(void) const;
+    /// Remove the Seq-align from Seq-annot
+    void Remove(void) const;
+    /// Replace the Seq-align with new Seq-align object.
+    /// All indexes are updated correspondingly.
+    void Replace(const CSeq_align& new_obj) const;
+
 private:
     friend class CAlign_CI;
+    friend class CSeq_annot_EditHandle;
+    typedef Int4 TIndex;
+
+    enum {
+        eNull = kMax_I4
+    };
 
     const CSeq_align& x_GetSeq_align(void) const;
 
-    CSeq_align_Handle(const CSeq_annot_Handle& annot,
-                      const CAnnotObject_Info& annot_object);
+    CSeq_align_Handle(const CSeq_annot_Handle& annot, TIndex index);
 
     CSeq_annot_Handle          m_Annot;
-    const CAnnotObject_Info*   m_AnnotObjectPtr;
+    TIndex                     m_AnnotIndex;
 };
 
 
 inline
 CSeq_align_Handle::CSeq_align_Handle(void)
-    : m_AnnotObjectPtr(0)
+    : m_AnnotIndex(eNull)
 {
 }
 
@@ -187,6 +201,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/09/20 15:45:35  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.9  2005/08/23 17:03:01  vasilche
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
 *

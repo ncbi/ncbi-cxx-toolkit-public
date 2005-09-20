@@ -45,15 +45,13 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
-                                   const CAnnotObject_Info& feat_info,
-                                   CCreatedFeat_Ref& created_ref)
+                                   TIndex index)
     : m_Annot(annot),
-      m_AnnotInfoType(eType_Seq_annot_Info),
-      m_AnnotPtr(&feat_info),
-      m_CreatedFeat(&created_ref)
+      m_AnnotIndex(index)
 {
-    _ASSERT(feat_info.IsFeat());
-    _ASSERT(&feat_info.GetSeq_annot_Info() == &annot.x_GetInfo());
+    _ASSERT(IsPlainFeat());
+    _ASSERT(!IsRemoved());
+    _ASSERT(x_GetAnnotObject_Info().IsFeat());
 }
 
 
@@ -61,101 +59,97 @@ CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                                    const SSNP_Info& snp_info,
                                    CCreatedFeat_Ref& created_ref)
     : m_Annot(annot),
-      m_AnnotInfoType(eType_Seq_annot_SNP_Info),
-      m_AnnotPtr(&snp_info),
+      m_AnnotIndex(-1),
       m_CreatedFeat(&created_ref)
 {
     _ASSERT(annot.x_GetInfo().x_HasSNP_annot_Info());
+    m_AnnotIndex = x_GetSNP_annot_Info().GetIndex(snp_info)+kMin_I4;
+    _ASSERT(IsTableSNP());
 }
 
 
 void CSeq_feat_Handle::Reset(void)
 {
     m_CreatedFeat.Reset();
-    m_AnnotPtr = 0;
-    m_AnnotInfoType = eType_null;
+    m_AnnotIndex = eNull;
     m_Annot.Reset();
-}
-
-
-const SSNP_Info& CSeq_feat_Handle::x_GetSNP_Info(void) const
-{
-    if ( m_AnnotInfoType != eType_Seq_annot_SNP_Info ) {
-        NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CSeq_feat_Handle::GetSNP_Info: not SNP info");
-    }
-    const SSNP_Info* snp_info = static_cast<const SSNP_Info*>(m_AnnotPtr);
-    _ASSERT(snp_info);
-    if ( snp_info->IsRemoved() ) {
-        NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CSeq_feat_Handle::GetSNP_Info: SNP was removed");
-    }
-    return *snp_info;
 }
 
 
 const CSeq_annot_SNP_Info& CSeq_feat_Handle::x_GetSNP_annot_Info(void) const
 {
-    if ( m_AnnotInfoType != eType_Seq_annot_SNP_Info ) {
-        NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CSeq_feat_Handle::GetSNP_annot_Info: not SNP info");
-    }
-    return GetAnnot().x_GetInfo().x_GetSNP_annot_Info();
+    return x_GetSeq_annot_Info().x_GetSNP_annot_Info();
 }
 
 
-const CSeq_feat& CSeq_feat_Handle::x_GetSeq_feat(void) const
+const CAnnotObject_Info& CSeq_feat_Handle::x_GetAnnotObject_InfoAny(void) const
 {
-    if ( m_AnnotInfoType != eType_Seq_annot_Info ) {
+    if ( !IsPlainFeat() ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CSeq_feat_Handle::GetSeq_feat: not Seq-feat info");
+                   "CSeq_feat_Handle::x_GetAnnotObject: not Seq-feat info");
     }
-    const CAnnotObject_Info* feat_info =
-        static_cast<const CAnnotObject_Info*>(m_AnnotPtr);
-    _ASSERT(feat_info);
-    if ( feat_info->IsRemoved() ) {
+    return x_GetSeq_annot_Info().GetInfo(m_AnnotIndex);
+}
+
+
+const CAnnotObject_Info& CSeq_feat_Handle::x_GetAnnotObject_Info(void) const
+{
+    const CAnnotObject_Info& info = x_GetAnnotObject_InfoAny();
+    if ( info.IsRemoved() ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CSeq_feat_Handle::GetSeq_feat: Seq-feat was removed");
+                   "CSeq_feat_Handle::x_GetAnnotObject_Info: "
+                   "Seq-feat was removed");
     }
-    return feat_info->GetFeat();
+    return info;
+}
+
+
+const SSNP_Info& CSeq_feat_Handle::x_GetSNP_InfoAny(void) const
+{
+    if ( !IsTableSNP() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_Handle::GetSNP_Info: not SNP info");
+    }
+    return x_GetSNP_annot_Info().GetInfo(m_AnnotIndex-kMin_I4);
+}
+
+
+const SSNP_Info& CSeq_feat_Handle::x_GetSNP_Info(void) const
+{
+    const SSNP_Info& info = x_GetSNP_InfoAny();
+    if ( info.IsRemoved() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CSeq_feat_Handle::GetSNP_Info: SNP was removed");
+    }
+    return info;
+}
+
+
+const CSeq_feat& CSeq_feat_Handle::x_GetPlainSeq_feat(void) const
+{
+    return x_GetAnnotObject_Info().GetFeat();
 }
 
 
 CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
 {
-    switch (m_AnnotInfoType) {
-    case eType_Seq_annot_Info:
-        {
-            return ConstRef(&x_GetSeq_feat());
-        }
-    case eType_Seq_annot_SNP_Info:
-        {
-            return m_CreatedFeat->MakeOriginalFeature(*this);
-        }
-    default:
-        {
-            return CConstRef<CSeq_feat>(0);
-        }
+    if ( IsPlainFeat() ) {
+        return ConstRef(&x_GetPlainSeq_feat());
+    }
+    else {
+        return m_CreatedFeat->MakeOriginalFeature(*this);
     }
 }
 
 
 CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 {
-    switch (m_AnnotInfoType) {
-    case eType_Seq_annot_Info:
-        {
-            return x_GetSeq_feat().GetLocation().GetTotalRange();
-        }
-    case eType_Seq_annot_SNP_Info:
-        {
-            const SSNP_Info& snp_info = x_GetSNP_Info();
-            return TRange(snp_info.GetFrom(), snp_info.GetTo());
-        }
-    default:
-        {
-            return TRange::GetEmpty();
-        }
+    if ( IsPlainFeat() ) {
+        return x_GetPlainSeq_feat().GetLocation().GetTotalRange();
+    }
+    else {
+        const SSNP_Info& info = x_GetSNP_Info();
+        return TRange(info.GetFrom(), info.GetTo());
     }
 }
 
@@ -163,6 +157,12 @@ CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 CSeq_id::TGi CSeq_feat_Handle::GetSNPGi(void) const
 {
     return x_GetSNP_annot_Info().GetGi();
+}
+
+
+const string& CSeq_feat_Handle::GetSNPComment(void) const
+{
+    return x_GetSNP_annot_Info().x_GetComment(x_GetSNP_Info().m_CommentIndex);
 }
 
 
@@ -188,12 +188,54 @@ const string& CSeq_feat_Handle::GetSNPAllele(size_t index) const
 }
 
 
+bool CSeq_feat_Handle::IsRemoved(void) const
+{
+    if ( IsPlainFeat() ) {
+        return x_GetAnnotObject_InfoAny().IsRemoved();
+    }
+    else {
+        return x_GetSNP_InfoAny().IsRemoved();
+    }
+}
+
+
+void CSeq_feat_Handle::Remove(void) const
+{
+    if ( IsPlainFeat() ) {
+        GetAnnot().GetEditHandle().x_GetInfo().Remove(m_AnnotIndex);
+        _ASSERT(IsRemoved());
+    }
+    else {
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "CSeq_feat_Handle::Remove: handle is SNP table");
+    }
+}
+
+
+void CSeq_feat_Handle::Replace(const CSeq_feat& new_feat) const
+{
+    if ( IsPlainFeat() ) {
+        GetAnnot().GetEditHandle().x_GetInfo().
+            Replace(m_AnnotIndex, new_feat);
+        _ASSERT(!IsRemoved());
+    }
+    else {
+        NCBI_THROW(CObjMgrException, eNotImplemented,
+                   "CSeq_feat_Handle::Replace: handle is SNP table");
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/09/20 15:45:36  vasilche
+ * Feature editing API.
+ * Annotation handles remember annotations by index.
+ *
  * Revision 1.11  2005/08/23 17:03:01  vasilche
  * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
  *

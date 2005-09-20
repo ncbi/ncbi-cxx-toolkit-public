@@ -34,6 +34,7 @@
 */
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.h>
 #include <util/range.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -70,7 +71,7 @@ public:
 
     void Reset(void);
 
-    DECLARE_OPERATOR_BOOL(m_Annot);
+    DECLARE_OPERATOR_BOOL(m_Annot && m_AnnotIndex != eNull && !IsRemoved());
 
     bool operator ==(const CSeq_feat_Handle& feat) const;
     bool operator !=(const CSeq_feat_Handle& feat) const;
@@ -85,7 +86,10 @@ public:
     /// Get current seq-feat
     CConstRef<CSeq_feat> GetSeq_feat(void) const;
 
-    /// Check if table is SNP
+    /// Check if this is plain feature
+    bool IsPlainFeat(void) const;
+
+    /// Check if this is SNP table feature
     bool IsTableSNP(void) const;
 
     typedef CRange<TSeqPos> TRange;
@@ -140,14 +144,33 @@ public:
     TWeight GetSNPWeight(void) const;
     size_t GetSNPAllelesCount(void) const;
     const string& GetSNPAllele(size_t index) const;
+    bool IsSetSNPComment(void) const;
+    const string& GetSNPComment(void) const;
+
+    /// Return true if this feature was removed already
+    bool IsRemoved(void) const;
+    /// Remove the feature from Seq-annot
+    void Remove(void) const;
+    /// Replace the feature with new Seq-feat object.
+    /// All indexes are updated correspondingly.
+    void Replace(const CSeq_feat& new_feat) const;
 
 private:
     friend class CMappedFeat;
     friend class CCreatedFeat_Ref;
+    friend class CSeq_annot_EditHandle;
+    typedef Int4 TIndex;
 
-    const SSNP_Info& x_GetSNP_Info(void) const;
+    // Seq-annot retrieval
+    const CSeq_annot_Info& x_GetSeq_annot_Info(void) const;
     const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
-    const CSeq_feat& x_GetSeq_feat(void) const;
+
+    const CAnnotObject_Info& x_GetAnnotObject_InfoAny(void) const;
+    const CAnnotObject_Info& x_GetAnnotObject_Info(void) const;
+    const CSeq_feat& x_GetPlainSeq_feat(void) const;
+
+    const SSNP_Info& x_GetSNP_InfoAny(void) const;
+    const SSNP_Info& x_GetSNP_Info(void) const;
 
     enum EAnnotInfoType {
         eType_null,
@@ -155,23 +178,24 @@ private:
         eType_Seq_annot_SNP_Info
     };
 
-    CSeq_feat_Handle(const CSeq_annot_Handle& annot,
-                     const CAnnotObject_Info& feat_info,
-                     CCreatedFeat_Ref& created_ref);
+    enum {
+        eNull = kMax_I4
+    };
+
+    CSeq_feat_Handle(const CSeq_annot_Handle& annot, TIndex index);
     CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                      const SSNP_Info& snp_info,
                      CCreatedFeat_Ref& created_ref);
 
     CSeq_annot_Handle              m_Annot;
-    EAnnotInfoType                 m_AnnotInfoType;
-    const void*                    m_AnnotPtr;
+    TIndex                         m_AnnotIndex;
     mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
 };
 
 
 inline
 CSeq_feat_Handle::CSeq_feat_Handle(void)
-    : m_AnnotInfoType(eType_null), m_AnnotPtr(0)
+    : m_AnnotIndex(eNull)
 {
 }
 
@@ -180,6 +204,13 @@ inline
 const CSeq_annot_Handle& CSeq_feat_Handle::GetAnnot(void) const
 {
     return m_Annot;
+}
+
+
+inline
+const CSeq_annot_Info& CSeq_feat_Handle::x_GetSeq_annot_Info(void) const
+{
+    return GetAnnot().x_GetInfo();
 }
 
 
@@ -193,9 +224,7 @@ CScope& CSeq_feat_Handle::GetScope(void) const
 inline
 bool CSeq_feat_Handle::operator ==(const CSeq_feat_Handle& feat) const
 {
-    return m_Annot == feat.m_Annot
-        && m_AnnotInfoType == feat.m_AnnotInfoType
-        && m_AnnotPtr == feat.m_AnnotPtr;
+    return m_Annot == feat.m_Annot && m_AnnotIndex == feat.m_AnnotIndex;
 }
 
 
@@ -212,17 +241,21 @@ bool CSeq_feat_Handle::operator <(const CSeq_feat_Handle& feat) const
     if (m_Annot != feat.m_Annot) {
         return m_Annot < feat.m_Annot;
     }
-    if (m_AnnotInfoType != feat.m_AnnotInfoType) {
-        return m_AnnotInfoType < feat.m_AnnotInfoType;
-    }
-    return m_AnnotPtr < feat.m_AnnotPtr;
+    return m_AnnotIndex < feat.m_AnnotIndex;
+}
+
+
+inline
+bool CSeq_feat_Handle::IsPlainFeat(void) const
+{
+    return m_AnnotIndex >= 0;
 }
 
 
 inline
 bool CSeq_feat_Handle::IsTableSNP(void) const
 {
-    return m_AnnotInfoType == eType_Seq_annot_SNP_Info;
+    return m_AnnotIndex < 0;
 }
 
 
@@ -230,6 +263,13 @@ inline
 bool CSeq_feat_Handle::IsSNPMinusStrand(void) const
 {
     return x_GetSNP_Info().MinusStrand();
+}
+
+
+inline
+bool CSeq_feat_Handle::IsSetSNPComment(void) const
+{
+    return x_GetSNP_Info().m_CommentIndex != SSNP_Info::kNo_CommentIndex;
 }
 
 
@@ -250,217 +290,218 @@ CSeq_feat_Handle::TWeight CSeq_feat_Handle::GetSNPWeight(void) const
 inline
 bool CSeq_feat_Handle::IsSetId(void) const
 {
-    return x_GetSeq_feat().IsSetId();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetId();
 }
 
 
 inline
 const CFeat_id& CSeq_feat_Handle::GetId(void) const
 {
-    return x_GetSeq_feat().GetId();
+    return x_GetPlainSeq_feat().GetId();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetData(void) const
 {
-    return x_GetSeq_feat().IsSetData();
+    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetData();
 }
 
 
 inline
 const CSeqFeatData& CSeq_feat_Handle::GetData(void) const
 {
-    return x_GetSeq_feat().GetData();
+    return GetSeq_feat()->GetData();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetPartial(void) const
 {
-    return x_GetSeq_feat().IsSetPartial();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetPartial();
 }
 
 
 inline
 bool CSeq_feat_Handle::GetPartial(void) const
 {
-    return IsSetPartial()  &&  x_GetSeq_feat().GetPartial();
+    return IsSetPartial() && x_GetPlainSeq_feat().GetPartial();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExcept(void) const
 {
-    return x_GetSeq_feat().IsSetExcept();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExcept();
 }
 
 
 inline
 bool CSeq_feat_Handle::GetExcept(void) const
 {
-    return IsSetExcept()  &&  x_GetSeq_feat().GetExcept();
+    return IsSetExcept() && x_GetPlainSeq_feat().GetExcept();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetComment(void) const
 {
-    return x_GetSeq_feat().IsSetComment();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetComment() ||
+        IsTableSNP() && IsSetSNPComment();
 }
 
 
 inline
 const string& CSeq_feat_Handle::GetComment(void) const
 {
-    return x_GetSeq_feat().GetComment();
+    return IsTableSNP()? GetSNPComment(): x_GetPlainSeq_feat().GetComment();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetProduct(void) const
 {
-    return x_GetSeq_feat().IsSetProduct();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetProduct();
 }
 
 
 inline
 const CSeq_loc& CSeq_feat_Handle::GetProduct(void) const
 {
-    return x_GetSeq_feat().GetProduct();
+    return x_GetPlainSeq_feat().GetProduct();
 }
 
 
 inline
 const CSeq_loc& CSeq_feat_Handle::GetLocation(void) const
 {
-    return x_GetSeq_feat().GetLocation();
+    return GetSeq_feat()->GetLocation();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetQual(void) const
 {
-    return x_GetSeq_feat().IsSetQual();
+    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetQual();
 }
 
 
 inline
 const CSeq_feat::TQual& CSeq_feat_Handle::GetQual(void) const
 {
-    return x_GetSeq_feat().GetQual();
+    return GetSeq_feat()->GetQual();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetTitle(void) const
 {
-    return x_GetSeq_feat().IsSetTitle();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetTitle();
 }
 
 
 inline
 const string& CSeq_feat_Handle::GetTitle(void) const
 {
-    return x_GetSeq_feat().GetTitle();
+    return x_GetPlainSeq_feat().GetTitle();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExt(void) const
 {
-    return x_GetSeq_feat().IsSetExt();
+    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetExt();
 }
 
 
 inline
 const CUser_object& CSeq_feat_Handle::GetExt(void) const
 {
-    return x_GetSeq_feat().GetExt();
+    return GetSeq_feat()->GetExt();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetCit(void) const
 {
-    return x_GetSeq_feat().IsSetCit();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetCit();
 }
 
 
 inline
 const CPub_set& CSeq_feat_Handle::GetCit(void) const
 {
-    return x_GetSeq_feat().GetCit();
+    return x_GetPlainSeq_feat().GetCit();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExp_ev(void) const
 {
-    return x_GetSeq_feat().IsSetExp_ev();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExp_ev();
 }
 
 
 inline
 CSeq_feat::EExp_ev CSeq_feat_Handle::GetExp_ev(void) const
 {
-    return x_GetSeq_feat().GetExp_ev();
+    return x_GetPlainSeq_feat().GetExp_ev();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetXref(void) const
 {
-    return x_GetSeq_feat().IsSetXref();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetXref();
 }
 
 
 inline
 const CSeq_feat::TXref& CSeq_feat_Handle::GetXref(void) const
 {
-    return x_GetSeq_feat().GetXref();
+    return x_GetPlainSeq_feat().GetXref();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetDbxref(void) const
 {
-    return x_GetSeq_feat().IsSetDbxref();
+    return IsTableSNP() || IsPlainFeat() && x_GetPlainSeq_feat().IsSetDbxref();
 }
 
 
 inline
 const CSeq_feat::TDbxref& CSeq_feat_Handle::GetDbxref(void) const
 {
-    return x_GetSeq_feat().GetDbxref();
+    return GetSeq_feat()->GetDbxref();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetPseudo(void) const
 {
-    return x_GetSeq_feat().IsSetPseudo();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetPseudo();
 }
 
 
 inline
 bool CSeq_feat_Handle::GetPseudo(void) const
 {
-    return IsSetPseudo()  &&  x_GetSeq_feat().GetPseudo();
+    return IsSetPseudo() && x_GetPlainSeq_feat().GetPseudo();
 }
 
 
 inline
 bool CSeq_feat_Handle::IsSetExcept_text(void) const
 {
-    return x_GetSeq_feat().IsSetExcept_text();
+    return IsPlainFeat() && x_GetPlainSeq_feat().IsSetExcept_text();
 }
 
 
 inline
 const string& CSeq_feat_Handle::GetExcept_text(void) const
 {
-    return x_GetSeq_feat().GetExcept_text();
+    return x_GetPlainSeq_feat().GetExcept_text();
 }
 
 
@@ -469,7 +510,7 @@ CSeqFeatData::E_Choice CSeq_feat_Handle::GetFeatType(void) const
 {
     return IsTableSNP()?
         CSeqFeatData::e_Imp:
-        x_GetSeq_feat().GetData().Which();
+        x_GetPlainSeq_feat().GetData().Which();
 }
 
 
@@ -478,7 +519,7 @@ CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
 {
     return IsTableSNP()?
         CSeqFeatData::eSubtype_variation:
-        x_GetSeq_feat().GetData().GetSubtype();
+        x_GetPlainSeq_feat().GetData().GetSubtype();
 }
 
 
@@ -490,6 +531,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/09/20 15:45:35  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.16  2005/08/23 17:03:01  vasilche
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
 *

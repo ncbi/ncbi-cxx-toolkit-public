@@ -42,18 +42,18 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_align_Handle::CSeq_align_Handle(const CSeq_annot_Handle& annot,
-                                     const CAnnotObject_Info& annot_object)
+                                     TIndex index)
     : m_Annot(annot),
-      m_AnnotObjectPtr(&annot_object)
+      m_AnnotIndex(index)
 {
-    _ASSERT(annot_object.IsAlign());
-    _ASSERT(&annot_object.GetSeq_annot_Info() == &annot.x_GetInfo());
+    _ASSERT(!IsRemoved());
+    _ASSERT(annot.x_GetInfo().GetInfo(index).IsAlign());
 }
 
 
 void CSeq_align_Handle::Reset(void)
 {
-    m_AnnotObjectPtr = 0;
+    m_AnnotIndex = eNull;
     m_Annot.Reset();
 }
 
@@ -61,11 +61,12 @@ void CSeq_align_Handle::Reset(void)
 const CSeq_align& CSeq_align_Handle::x_GetSeq_align(void) const
 {
     _ASSERT(m_Annot);
-    if ( !m_AnnotObjectPtr ) {
+    const CAnnotObject_Info& info = m_Annot.x_GetInfo().GetInfo(m_AnnotIndex);
+    if ( info.IsRemoved() ) {
         NCBI_THROW(CObjMgrException, eInvalidHandle,
-                   "CSeq_align_Handle: null handle");
+                   "CSeq_align_Handle: removed");
     }
-    return m_AnnotObjectPtr->GetAlign();
+    return info.GetAlign();
 }
 
 
@@ -75,12 +76,36 @@ CConstRef<CSeq_align> CSeq_align_Handle::GetSeq_align(void) const
 }
 
 
+bool CSeq_align_Handle::IsRemoved(void) const
+{
+    return m_Annot.x_GetInfo().GetInfo(m_AnnotIndex).IsRemoved();
+}
+
+
+void CSeq_align_Handle::Remove(void) const
+{
+    GetAnnot().GetEditHandle().x_GetInfo().Remove(m_AnnotIndex);
+    _ASSERT(IsRemoved());
+}
+
+
+void CSeq_align_Handle::Replace(const CSeq_align& new_obj) const
+{
+    GetAnnot().GetEditHandle().x_GetInfo().Replace(m_AnnotIndex, new_obj);
+    _ASSERT(!IsRemoved());
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/09/20 15:45:36  vasilche
+ * Feature editing API.
+ * Annotation handles remember annotations by index.
+ *
  * Revision 1.8  2005/08/23 17:03:01  vasilche
  * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
  *

@@ -70,7 +70,7 @@ void SAnnotObjectsIndex::Clear(void)
 {
     m_Indices.clear();
     m_Keys.clear();
-    m_Infos.clear();
+    //m_Infos.clear();
 }
 
 
@@ -122,6 +122,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/09/20 15:45:36  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.5  2005/08/23 17:02:55  vasilche
 * Used typedefs for integral members of SAnnotObject_Index.
 * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.

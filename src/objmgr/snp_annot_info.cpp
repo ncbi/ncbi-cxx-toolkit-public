@@ -565,7 +565,7 @@ CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
 }
 
 
-CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot& annot)
+CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(CSeq_annot& annot)
     : m_Gi(-1), m_Seq_annot(&annot)
 {
 }
@@ -726,6 +726,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.17  2005/09/20 15:45:36  vasilche
+ * Feature editing API.
+ * Annotation handles remember annotations by index.
+ *
  * Revision 1.16  2004/08/12 14:17:18  vasilche
  * Understand "weight" param in qual field.
  *

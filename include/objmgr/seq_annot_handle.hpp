@@ -58,6 +58,9 @@ class CSeq_annot_Handle;
 class CSeq_annot_EditHandle;
 class CSeq_entry_Handle;
 class CSeq_entry_EditHandle;
+class CSeq_feat_Handle;
+class CSeq_align_Handle;
+class CSeq_graph_Handle;
 
 class CSeq_annot_Info;
 
@@ -208,6 +211,15 @@ public:
     /// Eemove current annot
     void Remove(void) const;
 
+    // Individual annotations modifications.
+    // For all AddXxx and ReplaceXxx methods the ownership
+    // of new_obj argument will be taken by CSeq_annot_Handle,
+    // and the object should not be modified after the call.
+
+    CSeq_feat_Handle AddFeat(const CSeq_feat& new_obj) const;
+    CSeq_align_Handle AddAlign(const CSeq_align& new_obj) const;
+    CSeq_graph_Handle AddGraph(const CSeq_graph& new_obj) const;
+
 protected:
     friend class CScope_Impl;
     friend class CBioseq_EditHandle;
@@ -326,6 +338,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/09/20 15:45:35  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.21  2005/07/14 17:04:14  vasilche
 * Fixed detaching from data loader.
 * Implemented 'Removed' handles.

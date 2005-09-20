@@ -43,6 +43,8 @@
 
 #include <objmgr/annot_type_selector.hpp>
 
+#include <serial/serialbase.hpp> // for CUnionBuffer
+
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -65,22 +67,44 @@ class CTSE_Chunk_Info;
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Info
 {
 public:
-    typedef CSeq_annot::C_Data::E_Choice TAnnotType;
+    typedef CSeq_annot::C_Data           C_Data;
+    typedef C_Data::TFtable              TFtable;
+    typedef C_Data::TAlign               TAlign;
+    typedef C_Data::TGraph               TGraph;
+    typedef C_Data::TLocs                TLocs;
+    typedef C_Data::E_Choice             TAnnotType;
     typedef CSeqFeatData::E_Choice       TFeatType;
     typedef CSeqFeatData::ESubtype       TFeatSubtype;
+    typedef Int4                         TIndex;
 
     CAnnotObject_Info(void);
-    CAnnotObject_Info(const CSeq_feat& feat,
-                      CSeq_annot_Info& annot);
-    CAnnotObject_Info(const CSeq_align& align,
-                      CSeq_annot_Info& annot);
-    CAnnotObject_Info(const CSeq_graph& graph,
-                      CSeq_annot_Info& annot);
-    CAnnotObject_Info(const CSeq_loc& loc,
-                      CSeq_annot_Info& annot);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TFtable::iterator iter);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TAlign::iterator iter);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TGraph::iterator iter);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TLocs::iterator iter);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TFtable& cont, const CSeq_feat& obj);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TAlign& cont, const CSeq_align& obj);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TGraph& cont, const CSeq_graph& obj);
+    CAnnotObject_Info(CSeq_annot_Info& annot, TIndex index,
+                      TLocs& cont, const CSeq_loc& obj);
     CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                       const SAnnotTypeSelector& sel);
-    ~CAnnotObject_Info(void);
+
+    // state check
+    bool IsEmpty(void) const;
+    bool IsRemoved(void) const; // same as empty
+    bool IsRegular(void) const;
+    bool IsChunkStub(void) const;
+
+    // reset to empty state
+    void Reset(void);
 
     // Get Seq-annot, containing the element
     const CSeq_annot_Info& GetSeq_annot_Info(void) const;
@@ -95,6 +119,9 @@ public:
 
     // Get CDataSource object
     CDataSource& GetDataSource(void) const;
+
+    // Get index of this annotation within CSeq_annot_Info
+    TIndex GetAnnotIndex(void) const;
 
     const SAnnotTypeSelector& GetTypeSelector(void) const;
     TAnnotType Which(void) const;
@@ -126,13 +153,21 @@ public:
 
     void GetMaps(vector<CHandleRangeMap>& hrmaps) const;
 
-    bool IsRemoved(void) const;
-
     // split support
-    bool IsChunkStub(void) const;
     const CTSE_Chunk_Info& GetChunk_Info(void) const;
 
+    void x_SetObject(const CSeq_feat& new_obj);
+    void x_SetObject(const CSeq_align& new_obj);
+    void x_SetObject(const CSeq_graph& new_obj);
+
+    const TFtable::iterator& x_GetFeatIter(void) const;
+    const TAlign::iterator& x_GetAlignIter(void) const;
+    const TGraph::iterator& x_GetGraphIter(void) const;
+    const TLocs::iterator& x_GetLocsIter(void) const;
+
 private:
+    friend class CSeq_annot_Info;
+
     // Constructors used by CAnnotTypes_CI only to create fake annotations
     // for sequence segments. The annot object points to the seq-annot
     // containing the original annotation object.
@@ -144,9 +179,53 @@ private:
                                int subtype,
                                TTypeIndexSet& idx_set) const;
 
+    // Special values for m_ObjectIndex
+    // regular indexes start from 0 so all special values are negative
+    enum {
+        eEmpty          = -1,
+        eChunkStub      = -2
+    };
+
+    // Possible states:
+    // 0. empty
+    //   all fields are null
+    //   m_ObjectIndex == eEmpty
+    //   m_Iter.m_RawPtr == 0
+    // A. regular annotation (feat, align, graph):
+    //   m_Seq_annot_Info points to containing Seq-annot
+    //   m_Type contains type of the annotation
+    //   m_ObjectIndex contains index of CAnnotObject_Info within CSeq_annot_Info
+    //   m_ObjectIndex >= 0
+    //   m_Iter.m_(Feat|Align|Graph) contains iterator in CSeq_annot's container
+    //   m_Iter.m_RawPtr != 0
+    // B. Seq-locs type of annotation
+    //   m_Seq_annot_Info points to containing Seq-annot
+    //   m_Type == e_Locs
+    //   m_ObjectIndex contains index of CAnnotObject_Info within CSeq_annot_Info
+    //   m_ObjectIndex >= 0
+    //   m_Iter.m_Locs contains iterator in CSeq_annot's container
+    //   m_Iter.m_RawPtr != 0
+    // C. Split chunk annotation info:
+    //   m_Seq_annot_Info == 0
+    //   m_Type contains type of split annotations
+    //   m_ObjectIndex == eChunkStub
+    //   m_Iter.m_RawPtr == 0
+    // D. Removed regular annotation:
+    //   same as empty
+    //   m_ObjectIndex == eEmpty
+    //   m_Iter.m_RawPtr == 0
+
     CSeq_annot_Info*             m_Seq_annot_Info; // owner Seq-annot
-    CConstRef<CObject>           m_Object;         // annot object itself
-    SAnnotTypeSelector           m_Annot_Type;     // annot type
+    union {
+        const void*                        m_RawPtr;
+        CUnionBuffer<TFtable::iterator>    m_Feat;
+        CUnionBuffer<TAlign::iterator>     m_Align;
+        CUnionBuffer<TGraph::iterator>     m_Graph;
+        CUnionBuffer<TLocs::iterator>      m_Locs;
+        CTSE_Chunk_Info*                   m_Chunk;
+    }                            m_Iter;
+    TIndex                       m_ObjectIndex;
+    SAnnotTypeSelector           m_Type;     // annot type
 };
 
 
@@ -158,9 +237,18 @@ private:
 
 
 inline
+CAnnotObject_Info::CAnnotObject_Info(void)
+    : m_Seq_annot_Info(0),
+      m_ObjectIndex(eEmpty)
+{
+    m_Iter.m_RawPtr = 0;
+}
+
+
+inline
 const SAnnotTypeSelector& CAnnotObject_Info::GetTypeSelector(void) const
 {
-    return m_Annot_Type;
+    return m_Type;
 }
 
 
@@ -193,89 +281,165 @@ CAnnotObject_Info::TFeatSubtype CAnnotObject_Info::GetFeatSubtype(void) const
 
 
 inline
+bool CAnnotObject_Info::IsEmpty(void) const
+{
+    return m_ObjectIndex == eEmpty;
+}
+
+
+inline
 bool CAnnotObject_Info::IsRemoved(void) const
 {
-    return !m_Object;
+    return m_ObjectIndex == eEmpty;
+}
+
+
+inline
+bool CAnnotObject_Info::IsRegular(void) const
+{
+    return m_ObjectIndex >= 0;
 }
 
 
 inline
 bool CAnnotObject_Info::IsChunkStub(void) const
 {
-    return !m_Seq_annot_Info;
+    return m_ObjectIndex == eChunkStub;
 }
 
 
 inline
-CConstRef<CObject> CAnnotObject_Info::GetObject(void) const
+CAnnotObject_Info::TIndex CAnnotObject_Info::GetAnnotIndex(void) const
 {
-    return m_Object;
-}
-
-
-inline
-const CObject* CAnnotObject_Info::GetObjectPointer(void) const
-{
-    return m_Object.GetPointer();
+    return m_ObjectIndex;
 }
 
 
 inline
 bool CAnnotObject_Info::IsFeat(void) const
 {
-    return Which() == CSeq_annot::C_Data::e_Ftable;
+    return Which() == C_Data::e_Ftable;
 }
 
 
 inline
 bool CAnnotObject_Info::IsAlign(void) const
 {
-    return Which() == CSeq_annot::C_Data::e_Align;
+    return Which() == C_Data::e_Align;
 }
 
 
 inline
 bool CAnnotObject_Info::IsGraph(void) const
 {
-    return Which() == CSeq_annot::C_Data::e_Graph;
-}
-
-
-inline
-const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
-{
-    _ASSERT(IsFeat() && !IsChunkStub());
-    return static_cast<const CSeq_feat*>(m_Object.GetPointer());
-}
-
-
-inline
-const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
-{
-    _ASSERT(IsGraph() && !IsChunkStub());
-    return static_cast<const CSeq_graph*>(m_Object.GetPointer());
-}
-
-
-inline
-const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
-{
-    _ASSERT(IsAlign() && !IsChunkStub());
-    return static_cast<const CSeq_align*>(m_Object.GetPointer());
+    return Which() == C_Data::e_Graph;
 }
 
 
 inline
 bool CAnnotObject_Info::IsLocs(void) const
 {
-    return Which() == CSeq_annot::C_Data::e_Locs;
+    return Which() == C_Data::e_Locs;
+}
+
+
+inline
+const CSeq_annot::C_Data::TFtable::iterator&
+CAnnotObject_Info::x_GetFeatIter(void) const
+{
+    _ASSERT(IsFeat() && IsRegular() && m_Iter.m_RawPtr);
+    return *m_Iter.m_Feat;
+}
+
+
+inline
+const CSeq_annot::C_Data::TAlign::iterator&
+CAnnotObject_Info::x_GetAlignIter(void) const
+{
+    _ASSERT(IsAlign() && IsRegular() && m_Iter.m_RawPtr);
+    return *m_Iter.m_Align;
+}
+
+
+inline
+const CSeq_annot::C_Data::TGraph::iterator&
+CAnnotObject_Info::x_GetGraphIter(void) const
+{
+    _ASSERT(IsGraph() && IsRegular() && m_Iter.m_RawPtr);
+    return *m_Iter.m_Graph;
+}
+
+
+inline
+const CSeq_annot::C_Data::TLocs::iterator&
+CAnnotObject_Info::x_GetLocsIter(void) const
+{
+    _ASSERT(IsLocs() && IsRegular() && m_Iter.m_RawPtr);
+    return *m_Iter.m_Locs;
+}
+
+
+inline
+const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
+{
+    return *x_GetFeatIter();
+}
+
+
+inline
+const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
+{
+    return *x_GetAlignIter();
+}
+
+
+inline
+const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
+{
+    return *x_GetGraphIter();
+}
+
+
+inline
+const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
+{
+    return *GetFeatFast();
+}
+
+
+inline
+const CSeq_align& CAnnotObject_Info::GetAlign(void) const
+{
+    return *GetAlignFast();
+}
+
+
+inline
+const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
+{
+    return *GetGraphFast();
+}
+
+
+inline
+const CSeq_loc& CAnnotObject_Info::GetLocs(void) const
+{
+    return **x_GetLocsIter();
+}
+
+
+inline
+const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
+{
+    _ASSERT(IsChunkStub() && m_Iter.m_Chunk && !m_Seq_annot_Info);
+    return *m_Iter.m_Chunk;
 }
 
 
 inline
 const CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void) const
 {
-    _ASSERT(!IsChunkStub());
+    _ASSERT(m_Seq_annot_Info);
     return *m_Seq_annot_Info;
 }
 
@@ -283,7 +447,7 @@ const CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void) const
 inline
 CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void)
 {
-    _ASSERT(!IsChunkStub());
+    _ASSERT(m_Seq_annot_Info);
     return *m_Seq_annot_Info;
 }
 
@@ -294,6 +458,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/09/20 15:45:35  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.20  2005/08/23 17:02:29  vasilche
 * Used SAnnotTypeSelector for storing annotation type in CAnnotObject_Info.
 * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.

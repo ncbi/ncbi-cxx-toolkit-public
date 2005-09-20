@@ -114,7 +114,7 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_SNP_Info : public CTSE_Info_Object
     typedef CTSE_Info_Object TParent;
 public:
     CSeq_annot_SNP_Info(void);
-    CSeq_annot_SNP_Info(const CSeq_annot& annot);
+    CSeq_annot_SNP_Info(CSeq_annot& annot);
     CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info);
     ~CSeq_annot_SNP_Info(void);
 
@@ -145,9 +145,10 @@ public:
     int GetGi(void) const;
     const CSeq_id& GetSeq_id(void) const;
 
-    const SSNP_Info& GetSNP_Info(size_t index) const;
+    const SSNP_Info& GetInfo(size_t index) const;
+    size_t GetIndex(const SSNP_Info& info) const;
 
-    const CSeq_annot& GetRemainingSeq_annot(void) const;
+    CSeq_annot& GetRemainingSeq_annot(void);
     void Reset(void);
 
     // filling SNP table from parser
@@ -178,7 +179,7 @@ private:
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
     CIndexedStrings             m_Alleles;
-    CConstRef<CSeq_annot>       m_Seq_annot;
+    CRef<CSeq_annot>            m_Seq_annot;
 };
 
 
@@ -246,7 +247,7 @@ bool CSeq_annot_SNP_Info::x_CheckGi(int gi)
 
 
 inline
-const CSeq_annot& CSeq_annot_SNP_Info::GetRemainingSeq_annot(void) const
+CSeq_annot& CSeq_annot_SNP_Info::GetRemainingSeq_annot(void)
 {
     return *m_Seq_annot;
 }
@@ -286,10 +287,18 @@ void CSeq_annot_SNP_Info::x_AddSNP(const SSNP_Info& snp_info)
 
 
 inline
-const SSNP_Info& CSeq_annot_SNP_Info::GetSNP_Info(size_t index) const
+const SSNP_Info& CSeq_annot_SNP_Info::GetInfo(size_t index) const
 {
     _ASSERT(index < m_SNP_Set.size());
     return m_SNP_Set[index];
+}
+
+
+inline
+size_t CSeq_annot_SNP_Info::GetIndex(const SSNP_Info& info) const
+{
+    _ASSERT(&info >= &m_SNP_Set.front() && &info <= &m_SNP_Set.back());
+    return &info - &m_SNP_Set.front();
 }
 
 
@@ -299,6 +308,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/09/20 15:45:35  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.19  2005/05/17 17:54:06  grichenk
 * Removed StoreTo() and LoadFrom() from members of CIndexedStrings
 *
@@ -381,4 +394,3 @@ END_NCBI_SCOPE
 */
 
 #endif  // SNP_ANNOT_INFO__HPP
-

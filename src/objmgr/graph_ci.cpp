@@ -70,7 +70,7 @@ void CMappedGraph::MakeMappedLoc(void) const
 
 CSeq_graph_Handle CMappedGraph::GetSeq_graph_Handle(void) const
 {
-    return CSeq_graph_Handle(GetAnnot(), m_GraphRef->GetAnnotObject_Info());
+    return CSeq_graph_Handle(GetAnnot(), m_GraphRef->GetAnnotIndex());
 }
 
 
@@ -234,6 +234,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/09/20 15:45:36  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.34  2005/08/23 17:03:01  vasilche
 * Use CAnnotObject_Info pointer instead of annotation index in annot handles.
 *

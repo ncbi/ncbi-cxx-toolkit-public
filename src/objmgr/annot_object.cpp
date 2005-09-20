@@ -70,79 +70,144 @@ BEGIN_SCOPE(objects)
 //
 
 
-CAnnotObject_Info::CAnnotObject_Info(void)
-    : m_Seq_annot_Info(0),
-      m_Object()
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TFtable::iterator iter)
+    : m_Seq_annot_Info(&annot),
+      m_ObjectIndex(index),
+      m_Type((*iter)->GetData().GetSubtype())
 {
+    *m_Iter.m_Feat = iter;
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
 }
 
 
-CAnnotObject_Info::CAnnotObject_Info(const CSeq_feat& feat,
-                                     CSeq_annot_Info& annot)
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TAlign::iterator iter)
     : m_Seq_annot_Info(&annot),
-      m_Object(&feat),
-      m_Annot_Type(feat.GetData().GetSubtype())
+      m_ObjectIndex(index),
+      m_Type(C_Data::e_Align)
 {
-    _ASSERT(!IsChunkStub());
+    *m_Iter.m_Align = iter;
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
 }
 
 
-CAnnotObject_Info::CAnnotObject_Info(const CSeq_align& align,
-                                     CSeq_annot_Info& annot)
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TGraph::iterator iter)
     : m_Seq_annot_Info(&annot),
-      m_Object(&align),
-      m_Annot_Type(CSeq_annot::C_Data::e_Align)
+      m_ObjectIndex(index),
+      m_Type(C_Data::e_Graph)
 {
-    _ASSERT(!IsChunkStub());
+    *m_Iter.m_Graph = iter;
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
 }
 
 
-CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
-                                     CSeq_annot_Info& annot)
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TLocs::iterator iter)
     : m_Seq_annot_Info(&annot),
-      m_Object(&graph),
-      m_Annot_Type(CSeq_annot::C_Data::e_Graph)
+      m_ObjectIndex(index),
+      m_Type(C_Data::e_Locs)
 {
-    _ASSERT(!IsChunkStub());
+    *m_Iter.m_Locs = iter;
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
 }
 
 
-CAnnotObject_Info::CAnnotObject_Info(const CSeq_loc& loc,
-                                     CSeq_annot_Info& annot)
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TFtable& cont,
+                                     const CSeq_feat& obj)
     : m_Seq_annot_Info(&annot),
-      m_Object(&loc),
-      m_Annot_Type(CSeq_annot::C_Data::e_Locs)
+      m_ObjectIndex(index),
+      m_Type(obj.GetData().GetSubtype())
 {
-    _ASSERT(!IsChunkStub());
+    *m_Iter.m_Feat = cont.insert(cont.end(),
+                                 Ref(const_cast<CSeq_feat*>(&obj)));
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TAlign& cont,
+                                     const CSeq_align& obj)
+    : m_Seq_annot_Info(&annot),
+      m_ObjectIndex(index),
+      m_Type(C_Data::e_Align)
+{
+    *m_Iter.m_Align = cont.insert(cont.end(),
+                                  Ref(const_cast<CSeq_align*>(&obj)));
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TGraph& cont,
+                                     const CSeq_graph& obj)
+    : m_Seq_annot_Info(&annot),
+      m_ObjectIndex(index),
+      m_Type(C_Data::e_Graph)
+{
+    *m_Iter.m_Graph = cont.insert(cont.end(),
+                                  Ref(const_cast<CSeq_graph*>(&obj)));
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(CSeq_annot_Info& annot,
+                                     TIndex index,
+                                     TLocs& cont,
+                                     const CSeq_loc& obj)
+    : m_Seq_annot_Info(&annot),
+      m_ObjectIndex(index),
+      m_Type(C_Data::e_Locs)
+{
+    *m_Iter.m_Locs = cont.insert(cont.end(),
+                                 Ref(const_cast<CSeq_loc*>(&obj)));
+    _ASSERT(IsRegular());
+    _ASSERT(m_Iter.m_RawPtr != 0);
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                                      const SAnnotTypeSelector& sel)
     : m_Seq_annot_Info(0),
-      m_Object(&chunk_info),
-      m_Annot_Type(sel)
+      m_ObjectIndex(eChunkStub),
+      m_Type(sel)
 {
+    m_Iter.m_Chunk = &chunk_info;
     _ASSERT(IsChunkStub());
+    _ASSERT(m_Iter.m_RawPtr != 0);
 }
 
 
-CAnnotObject_Info::~CAnnotObject_Info(void)
+void CAnnotObject_Info::Reset(void)
 {
-}
-
-
-const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
-{
-    _ASSERT(IsChunkStub());
-    return *static_cast<const CTSE_Chunk_Info*>(m_Object.GetPointer());
+    m_Type.SetAnnotType(C_Data::e_not_set);
+    m_Iter.m_RawPtr = 0;
+    m_ObjectIndex = eEmpty;
+    m_Seq_annot_Info = 0;
 }
 
 
 void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
 {
+    _ASSERT(IsRegular());
     switch ( Which() ) {
-    case CSeq_annot::C_Data::e_Ftable:
+    case C_Data::e_Ftable:
     {
         const CSeq_feat& feat = *GetFeatFast();
         hrmaps.resize(feat.IsSetProduct()? 2: 1);
@@ -154,7 +219,7 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         }
         break;
     }
-    case CSeq_annot::C_Data::e_Graph:
+    case C_Data::e_Graph:
     {
         const CSeq_graph& graph = *GetGraphFast();
         hrmaps.resize(1);
@@ -162,7 +227,7 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         hrmaps[0].AddLocation(graph.GetLoc());
         break;
     }
-    case CSeq_annot::C_Data::e_Align:
+    case C_Data::e_Align:
     {
         const CSeq_align& align = GetAlign();
         // TODO: separate alignment locations
@@ -170,8 +235,9 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         x_ProcessAlign(hrmaps, align, 0);
         break;
     }
-    case CSeq_annot::C_Data::e_Locs:
+    case C_Data::e_Locs:
     {
+        _ASSERT(!IsRemoved());
         // Index by location in region descriptor, not by referenced one
         const CSeq_annot& annot = *GetSeq_annot_Info().GetCompleteSeq_annot();
         if ( !annot.IsSetDesc() ) {
@@ -221,38 +287,6 @@ CDataSource& CAnnotObject_Info::GetDataSource(void) const
 }
 
 
-const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
-{
-    _ASSERT(!IsChunkStub() && IsFeat());
-    const CObject& obj = *m_Object;
-    return dynamic_cast<const CSeq_feat&>(obj);
-}
-
-
-const CSeq_align& CAnnotObject_Info::GetAlign(void) const
-{
-    _ASSERT(!IsChunkStub() && IsAlign());
-    const CObject& obj = *m_Object;
-    return dynamic_cast<const CSeq_align&>(obj);
-}
-
-
-const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
-{
-    _ASSERT(!IsChunkStub() && IsGraph());
-    const CObject& obj = *m_Object;
-    return dynamic_cast<const CSeq_graph&>(obj);
-}
-
-
-const CSeq_loc& CAnnotObject_Info::GetLocs(void) const
-{
-    _ASSERT(!IsChunkStub() && IsLocs());
-    const CObject& obj = *m_Object;
-    return dynamic_cast<const CSeq_loc&>(obj);
-}
-
-
 const string kAnnotTypePrefix = "Seq-annot.data.";
 
 void CAnnotObject_Info::GetLocsTypes(TTypeIndexSet& idx_set) const
@@ -274,17 +308,17 @@ void CAnnotObject_Info::GetLocsTypes(TTypeIndexSet& idx_set) const
         type.erase(0, kAnnotTypePrefix.size());
         if (type == "align") {
             idx_set.push_back(CAnnotType_Index::GetAnnotTypeRange(
-                CSeq_annot::C_Data::e_Align));
+                C_Data::e_Align));
         }
         else if (type == "graph") {
             idx_set.push_back(CAnnotType_Index::GetAnnotTypeRange(
-                CSeq_annot::C_Data::e_Graph));
+                C_Data::e_Graph));
         }
         else if (type == "ftable") {
             if ( obj.GetData().size() == 0 ) {
                 // Feature type/subtype not set
                 idx_set.push_back(CAnnotType_Index::GetAnnotTypeRange(
-                    CSeq_annot::C_Data::e_Ftable));
+                    C_Data::e_Ftable));
                 continue;
             }
             // Parse feature types and subtypes
@@ -505,12 +539,37 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
 }
 
 
+void CAnnotObject_Info::x_SetObject(const CSeq_feat& new_obj)
+{
+    x_GetFeatIter()->Reset(&const_cast<CSeq_feat&>(new_obj));
+    m_Type.SetFeatSubtype(new_obj.GetData().GetSubtype());
+}
+
+
+void CAnnotObject_Info::x_SetObject(const CSeq_align& new_obj)
+{
+    x_GetAlignIter()->Reset(&const_cast<CSeq_align&>(new_obj));
+    m_Type.SetAnnotType(C_Data::e_Align);
+}
+
+
+void CAnnotObject_Info::x_SetObject(const CSeq_graph& new_obj)
+{
+    x_GetGraphIter()->Reset(&const_cast<CSeq_graph&>(new_obj));
+    m_Type.SetAnnotType(C_Data::e_Graph);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/09/20 15:45:36  vasilche
+* Feature editing API.
+* Annotation handles remember annotations by index.
+*
 * Revision 1.43  2005/08/23 17:02:38  vasilche
 * Used SAnnotTypeSelector for storing annotation type in CAnnotObject_Info.
 * Moved multi id flags from CAnnotObject_Info to SAnnotObject_Index.
