@@ -144,6 +144,8 @@ template <class TDataLoader, class TParam>
 class CParamLoaderMaker : public CLoaderMaker_Base
 {
 public:
+    typedef TParam TParamType;
+public:
     // TParam should have copy method.
     CParamLoaderMaker(TParam param)
         : m_Param(param)
@@ -164,7 +166,7 @@ public:
             info.Set(m_RegisterInfo.GetLoader(), m_RegisterInfo.IsCreated());
             return info;
         }
-private:
+protected:
     TParam m_Param;
 };
 
@@ -378,6 +380,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/09/20 19:16:55  kuznets
+* Added template param typedef to CParamLoaderMaker
+*
 * Revision 1.43  2005/07/21 19:37:17  grichenk
 * Added CScope::GetBioseqHandles() and supporting methods in data source,
 * data loader and readers.
