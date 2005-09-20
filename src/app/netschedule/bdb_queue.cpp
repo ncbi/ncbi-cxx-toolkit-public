@@ -1601,6 +1601,7 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         if (use_db_mutex) {
             m_LQueue.lock.Unlock();
         }
+        throw;
     }
 
 
@@ -2942,6 +2943,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/09/20 14:05:25  kuznets
+ * Minor bug fix
+ *
  * Revision 1.51  2005/08/30 14:19:33  kuznets
  * Added thread-local database for better scalability
  *
