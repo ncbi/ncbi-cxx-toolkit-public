@@ -62,9 +62,7 @@
 #include <algo/blast/core/hspstream_collector.h>
 #include <algo/blast/core/blast_traceback.h>
 
-#ifdef NEW_CXX_APIS
 #include <algo/blast/api/query_data.hpp>
-#endif
 
 /** @addtogroup AlgoBlast
  *
@@ -340,7 +338,6 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src,
     x_InitRPSFields();
 }
 
-#if NEW_CXX_APIS
 CDbBlast::CDbBlast(ILocalQueryData* query_data,
                    BlastSeqSrc* seq_src, 
                    CBlastOptionsHandle& opts,
@@ -365,20 +362,6 @@ CDbBlast::x_SetupQueryDataStructuresFromInterface(void)
     ASSERT(m_iclsQueryInfo.Get());
     ASSERT(m_iclsQueries.Get());
 }
-#else
-CDbBlast::CDbBlast(ILocalQueryData* /*query_data*/,
-                   BlastSeqSrc* /*seq_src*/, 
-                   CBlastOptionsHandle& /*opts*/,
-                   BlastHSPStream* /*hsp_stream*/, int /*nthreads*/)
-{
-    throw runtime_error("Unimplemented");
-}
-void
-CDbBlast::x_SetupQueryDataStructuresFromInterface(void)
-{
-    throw runtime_error("Unimplemented");
-}
-#endif
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* seq_src, 
                    CBlastOptionsHandle& opts, 
@@ -468,34 +451,6 @@ CDbBlast::x_InitHSPStream()
     }
 }
 
-#if 0
-void
-PrintBlastMask(const BlastMaskLoc* mask, EBlastProgramType program, 
-                 ostream& out)
-{
-    out << "Program=" << Blast_ProgramNameFromType(program) << endl;
-    if (!mask) {
-        out << "Empty BlastMaskLoc" << endl;
-        return;
-    }
-    out << "BlastMaskLoc::total_size=" << mask->total_size << endl;
-    for (int i = 0; i < mask->total_size; i++) {
-        out << "BlastMaskLoc::seqloc_array[" << i << "]";
-        if (mask->seqloc_array[i] == NULL) {
-            out << " = NULL" << endl;
-            continue;
-        } else {
-            out << " =" << endl;
-            for (BlastSeqLoc* curr = mask->seqloc_array[i]; 
-                 curr; 
-                 curr = curr->next) {
-                out << "{ " << curr->ssr->left << ", " 
-                    << curr->ssr->right << " } " << endl;
-            }
-        }
-    }
-}
-#endif
 
 void CDbBlast::SetupSearch()
 {
@@ -811,6 +766,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.83  2005/09/21 15:09:04  camacho
+ * Remove dead code, enable use of query retrieval interface
+ *
  * Revision 1.82  2005/09/16 17:03:09  camacho
  * Use new Blast_GetSeqLocInfoVector interface
  *
