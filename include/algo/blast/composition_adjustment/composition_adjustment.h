@@ -62,9 +62,9 @@ Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
 NCBI_XBLAST_EXPORT
 void
 Blast_ApplyPseudocounts(double * probs_with_pseudo, 
-                        int length,
                         double * normalized_probs,
                         const double * observed_freq,
+                        int number_of_observations,
                         const double * background_probs,
                         int pseudocounts);
 
