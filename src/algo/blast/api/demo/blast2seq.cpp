@@ -385,6 +385,8 @@ CBlast2seqApplication::GetOutputFilePtr(void)
     arguments, run the search, and output results. */
 int CBlast2seqApplication::Run(void)
 {
+    int retval(0);
+
     try {
         InitObjMgr();
         int counter = 0;
@@ -451,9 +453,13 @@ int CBlast2seqApplication::Run(void)
 
     } catch (const CException& e) {
         cerr << e.what() << endl;
+        retval = 1;
+    } catch (const std::bad_alloc& e) {
+        cerr << "Out of memory: " << e.what() << endl;
+        retval = 1;
     }
 
-    return 0;
+    return retval;
 }
 
 /** Application teardown. */
