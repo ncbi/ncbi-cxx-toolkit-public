@@ -49,6 +49,7 @@
 class CBlastTraceBackTest; 
 class CBlastSetupTest;
 class CUniformSearchTest; 
+class CTracebackSearchTest;
 
 class CBlastTabularFormatThread;
 
@@ -400,8 +401,6 @@ private:
     friend class CDbBlast;
     friend class CDbBlastTraceback;
     friend class CDbBlastPrelim;
-    friend class CBlastTracebackSearch;
-    friend class SPrelimTracebackMemento;
     
     // Tabular formatting thread needs to calculate parameters structures
     // and hence needs access to individual options structures.
@@ -411,6 +410,7 @@ private:
     friend class ::CBlastTraceBackTest;    // unit test class
     friend class ::CBlastSetupTest;        // unit test class
     friend class ::CUniformSearchTest;     // unit test class
+    friend class ::CTracebackSearchTest;   // unit test class
 };
 
 //#endif /* SKIP_DOXYGEN_PROCESSING */
@@ -592,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.110  2005/09/21 15:13:05  camacho
+* Remove unneeded friend classes
+*
 * Revision 1.109  2005/07/18 19:44:35  bealer
 * - Remove accidental delta.
 *
