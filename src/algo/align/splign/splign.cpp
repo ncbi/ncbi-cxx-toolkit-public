@@ -428,7 +428,7 @@ void CSplign::Run( THitRefs* phitrefs )
     size_t smin = 0, smax = kMax_UInt;
     bool same_strand = false;
 
-    const size_t* box = comps.GetBox(0);
+    const THit::TCoord* box = comps.GetBox(0);
     for(size_t i = 0, dim = comps.GetCount(); i < dim; ++i, box += 4) {
         
         if(i+1 == dim) {
@@ -1608,6 +1608,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/09/21 14:16:52  kapustin
+ * Adjust box pointer type to avoid compilation errors with GCC/64
+ *
  * Revision 1.35  2005/09/12 16:24:00  kapustin
  * Move compartmentization to xalgoalignutil.
  *
