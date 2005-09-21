@@ -690,7 +690,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 // no specific assignments for DF-DM yet
             case 'F': case 'G': case 'H': case 'I': 
             case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
-            case 'N': case 'R': case 'T':           return eAcc_gb_est;
+            case 'N': case 'R': case 'T': case 'V': return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
             case 'S':                               return eAcc_gb_con;
@@ -1605,6 +1605,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.115  2005/09/21 13:51:59  ucko
+ * IdentifyAccession: DV -> eAcc_gb_est.
+ *
  * Revision 6.114  2005/09/07 15:41:12  ucko
  * dbSNP is moving away from extra fields, so don't assume they're always
  * present.
