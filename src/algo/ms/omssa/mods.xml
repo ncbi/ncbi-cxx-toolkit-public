@@ -147,7 +147,7 @@
     <MSModSpec_type>
       <MSModType value="modnaa">2</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-term M removal</MSModSpec_name>
+    <MSModSpec_name>M cleavage from protein n-term</MSModSpec_name>
     <MSModSpec_monomass>-131.04</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -162,7 +162,7 @@
     <MSModSpec_type>
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-term acetylation</MSModSpec_name>
+    <MSModSpec_name>acetylation of protein n-term</MSModSpec_name>
     <MSModSpec_monomass>42.01</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -174,7 +174,7 @@
     <MSModSpec_type>
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-term methylation</MSModSpec_name>
+    <MSModSpec_name>methylation of protein n-term</MSModSpec_name>
     <MSModSpec_monomass>14.02</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -186,7 +186,7 @@
     <MSModSpec_type>
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-term trimethylation</MSModSpec_name>
+    <MSModSpec_name>tri-methylation of protein n-term</MSModSpec_name>
     <MSModSpec_monomass>42.05</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -228,7 +228,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>trimethylation of K</MSModSpec_name>
+    <MSModSpec_name>tri-methylation of K</MSModSpec_name>
     <MSModSpec_monomass>42.05</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -273,7 +273,7 @@
     <MSModSpec_type>
       <MSModType value="modcp">7</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>C-term peptide methylation</MSModSpec_name>
+    <MSModSpec_name>methylation of peptide c-term</MSModSpec_name>
     <MSModSpec_monomass>14.02</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -285,7 +285,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>trideuteromethylation of D</MSModSpec_name>
+    <MSModSpec_name>tri-deuteromethylation of D</MSModSpec_name>
     <MSModSpec_monomass>17.04</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -300,7 +300,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>trideuteromethylation of E</MSModSpec_name>
+    <MSModSpec_name>tri-deuteromethylation of E</MSModSpec_name>
     <MSModSpec_monomass>17.04</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -315,7 +315,7 @@
     <MSModSpec_type>
       <MSModType value="modcp">7</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>C-term peptide trideuteromethylation</MSModSpec_name>
+    <MSModSpec_name>tri-deuteromethylation of peptide c-term</MSModSpec_name>
     <MSModSpec_monomass>17.04</MSModSpec_monomass>
     <MSModSpec_averagemass>0</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -327,7 +327,7 @@
     <MSModSpec_type>
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-formyl met addition</MSModSpec_name>
+    <MSModSpec_name>n-formyl met addition</MSModSpec_name>
     <MSModSpec_monomass>160.043224</MSModSpec_monomass>
     <MSModSpec_averagemass>160.2141</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -354,7 +354,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Acetylation of K</MSModSpec_name>
+    <MSModSpec_name>acetylation of K</MSModSpec_name>
     <MSModSpec_monomass>42.010565</MSModSpec_monomass>
     <MSModSpec_averagemass>42.0367</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -369,7 +369,7 @@
     <MSModSpec_type>
       <MSModType value="modcp">7</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Amidation of peptide Cterm</MSModSpec_name>
+    <MSModSpec_name>amidation of peptide c-term</MSModSpec_name>
     <MSModSpec_monomass>-0.984016</MSModSpec_monomass>
     <MSModSpec_averagemass>-0.9848</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -381,7 +381,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Beta-methylthiolation of D</MSModSpec_name>
+    <MSModSpec_name>beta-methylthiolation of D</MSModSpec_name>
     <MSModSpec_monomass>45.987721</MSModSpec_monomass>
     <MSModSpec_averagemass>46.0916</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -396,7 +396,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Carboxyamidomethylation of K</MSModSpec_name>
+    <MSModSpec_name>carboxyamidomethylation of K</MSModSpec_name>
     <MSModSpec_monomass>57.021464</MSModSpec_monomass>
     <MSModSpec_averagemass>57.0513</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -411,7 +411,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Carboxyamidomethylation of H</MSModSpec_name>
+    <MSModSpec_name>carboxyamidomethylation of H</MSModSpec_name>
     <MSModSpec_monomass>57.021464</MSModSpec_monomass>
     <MSModSpec_averagemass>57.0513</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -426,7 +426,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Carboxyamidomethylation of D</MSModSpec_name>
+    <MSModSpec_name>carboxyamidomethylation of D</MSModSpec_name>
     <MSModSpec_monomass>57.021464</MSModSpec_monomass>
     <MSModSpec_averagemass>57.0513</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -441,7 +441,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Carboxyamidomethylation of E</MSModSpec_name>
+    <MSModSpec_name>carboxyamidomethylation of E</MSModSpec_name>
     <MSModSpec_monomass>57.021464</MSModSpec_monomass>
     <MSModSpec_averagemass>57.0513</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -456,7 +456,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Carbamylation of K</MSModSpec_name>
+    <MSModSpec_name>carbamylation of K</MSModSpec_name>
     <MSModSpec_monomass>43.005814</MSModSpec_monomass>
     <MSModSpec_averagemass>43.0247</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -471,7 +471,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Carbamylation of Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>carbamylation of n-term peptide</MSModSpec_name>
     <MSModSpec_monomass>43.0058140</MSModSpec_monomass>
     <MSModSpec_averagemass>43.02470</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -486,7 +486,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Citrullination of R</MSModSpec_name>
+    <MSModSpec_name>citrullination of R</MSModSpec_name>
     <MSModSpec_monomass>0.984016</MSModSpec_monomass>
     <MSModSpec_averagemass>0.98480</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -501,7 +501,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of C to cysteic acid</MSModSpec_name>
+    <MSModSpec_name>oxidation of C to cysteic acid</MSModSpec_name>
     <MSModSpec_monomass>47.984744</MSModSpec_monomass>
     <MSModSpec_averagemass>47.9982</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -516,7 +516,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>di-Iodination of Y</MSModSpec_name>
+    <MSModSpec_name>di-iodination of Y</MSModSpec_name>
     <MSModSpec_monomass>251.7932960</MSModSpec_monomass>
     <MSModSpec_averagemass>251.79310</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -531,7 +531,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>di-Methylation of K</MSModSpec_name>
+    <MSModSpec_name>di-methylation of K</MSModSpec_name>
     <MSModSpec_monomass>28.0313000</MSModSpec_monomass>
     <MSModSpec_averagemass>28.05320</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -546,7 +546,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>di-Methylation of R</MSModSpec_name>
+    <MSModSpec_name>di-methylation of R</MSModSpec_name>
     <MSModSpec_monomass>28.0313000</MSModSpec_monomass>
     <MSModSpec_averagemass>28.05320</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -561,7 +561,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>di-Methylation of Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>di-methylation of peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>28.0313000</MSModSpec_monomass>
     <MSModSpec_averagemass>28.05320</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -573,7 +573,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of F to dihydroxyphenylalanine</MSModSpec_name>
+    <MSModSpec_name>oxidation of F to dihydroxyphenylalanine</MSModSpec_name>
     <MSModSpec_monomass>31.9898290</MSModSpec_monomass>
     <MSModSpec_averagemass>31.99880</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -603,7 +603,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>thioacylation of Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>thioacylation of peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>87.9982850</MSModSpec_monomass>
     <MSModSpec_averagemass>88.12830</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -615,7 +615,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Farnesylation of C</MSModSpec_name>
+    <MSModSpec_name>farnesylation of C</MSModSpec_name>
     <MSModSpec_monomass>204.1878010</MSModSpec_monomass>
     <MSModSpec_averagemass>204.35110</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -630,7 +630,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Formylation of K</MSModSpec_name>
+    <MSModSpec_name>formylation of K</MSModSpec_name>
     <MSModSpec_monomass>27.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>28.0101</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -645,7 +645,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Formylation of Nterm pep</MSModSpec_name>
+    <MSModSpec_name>formylation of peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>27.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>28.01010</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -657,7 +657,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of W to formylkynurenin</MSModSpec_name>
+    <MSModSpec_name>oxidation of W to formylkynurenin</MSModSpec_name>
     <MSModSpec_monomass>31.9898290</MSModSpec_monomass>
     <MSModSpec_averagemass>31.99880</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -672,7 +672,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Fluorophenylalanine</MSModSpec_name>
+    <MSModSpec_name>fluorophenylalanine</MSModSpec_name>
     <MSModSpec_monomass>17.9905780</MSModSpec_monomass>
     <MSModSpec_averagemass>17.99050</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -687,7 +687,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Gamma-carboxylation of D</MSModSpec_name>
+    <MSModSpec_name>gamma-carboxylation of D</MSModSpec_name>
     <MSModSpec_monomass>43.9898290</MSModSpec_monomass>
     <MSModSpec_averagemass>44.00950</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -702,7 +702,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Gamma-carboxylation of E</MSModSpec_name>
+    <MSModSpec_name>gamma-carboxylation of E</MSModSpec_name>
     <MSModSpec_monomass>43.9898290</MSModSpec_monomass>
     <MSModSpec_averagemass>44.00950</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -717,7 +717,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Geranyl-geranyl</MSModSpec_name>
+    <MSModSpec_name>geranyl-geranyl</MSModSpec_name>
     <MSModSpec_monomass>272.2504010</MSModSpec_monomass>
     <MSModSpec_averagemass>272.46810</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -732,7 +732,7 @@
     <MSModSpec_type>
       <MSModType value="modnaa">2</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-glucuronylation</MSModSpec_name>
+    <MSModSpec_name>glucuronylation of protein n-term</MSModSpec_name>
     <MSModSpec_monomass>176.0320880</MSModSpec_monomass>
     <MSModSpec_averagemass>176.12410</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -747,7 +747,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Glutathione disulfide</MSModSpec_name>
+    <MSModSpec_name>glutathione disulfide</MSModSpec_name>
     <MSModSpec_monomass>305.0681560</MSModSpec_monomass>
     <MSModSpec_averagemass>305.30760</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -762,7 +762,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Ubiquitinylation residue</MSModSpec_name>
+    <MSModSpec_name>ubiquitinylation residue</MSModSpec_name>
     <MSModSpec_monomass>114.0429270</MSModSpec_monomass>
     <MSModSpec_averagemass>114.10260</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -777,7 +777,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Guanidination</MSModSpec_name>
+    <MSModSpec_name>guanidination of K</MSModSpec_name>
     <MSModSpec_monomass>42.0217980</MSModSpec_monomass>
     <MSModSpec_averagemass>42.04000</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -792,7 +792,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>H oxidation to N</MSModSpec_name>
+    <MSModSpec_name>oxidation of H to N</MSModSpec_name>
     <MSModSpec_monomass>-23.015984</MSModSpec_monomass>
     <MSModSpec_averagemass>-23.03660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -807,7 +807,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>H oxidation to D</MSModSpec_name>
+    <MSModSpec_name>oxidation of H to D</MSModSpec_name>
     <MSModSpec_monomass>-23.015984</MSModSpec_monomass>
     <MSModSpec_averagemass>-23.03660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -822,7 +822,7 @@
     <MSModSpec_type>
       <MSModType value="modcpaa">8</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Homoserine</MSModSpec_name>
+    <MSModSpec_name>homoserine</MSModSpec_name>
     <MSModSpec_monomass>-29.992806</MSModSpec_monomass>
     <MSModSpec_averagemass>-30.09220</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -837,7 +837,7 @@
     <MSModSpec_type>
       <MSModType value="modcpaa">8</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Homoserine lactone</MSModSpec_name>
+    <MSModSpec_name>homoserine lactone</MSModSpec_name>
     <MSModSpec_monomass>-48.0033710</MSModSpec_monomass>
     <MSModSpec_averagemass>-48.10750</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -852,7 +852,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of W to hydroxykynurenin</MSModSpec_name>
+    <MSModSpec_name>oxidation of W to hydroxykynurenin</MSModSpec_name>
     <MSModSpec_monomass>19.9898290</MSModSpec_monomass>
     <MSModSpec_averagemass>19.98810</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -867,7 +867,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Hydroxylation of D</MSModSpec_name>
+    <MSModSpec_name>hydroxylation of D</MSModSpec_name>
     <MSModSpec_monomass>15.994915</MSModSpec_monomass>
     <MSModSpec_averagemass>15.9994</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -882,7 +882,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Hydroxylation of K</MSModSpec_name>
+    <MSModSpec_name>hydroxylation of K</MSModSpec_name>
     <MSModSpec_monomass>15.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>15.99940</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -897,7 +897,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Hydroxylation of N</MSModSpec_name>
+    <MSModSpec_name>hydroxylation of N</MSModSpec_name>
     <MSModSpec_monomass>15.99491500</MSModSpec_monomass>
     <MSModSpec_averagemass>15.999400</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -912,7 +912,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Hydroxylation of P</MSModSpec_name>
+    <MSModSpec_name>hydroxylation of P</MSModSpec_name>
     <MSModSpec_monomass>15.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>15.99940</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -927,7 +927,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Hydroxylation of F</MSModSpec_name>
+    <MSModSpec_name>hydroxylation of F</MSModSpec_name>
     <MSModSpec_monomass>15.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>15.99940</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -942,7 +942,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Hydroxylation of  Y</MSModSpec_name>
+    <MSModSpec_name>hydroxylation of  Y</MSModSpec_name>
     <MSModSpec_monomass>15.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>15.99940</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -957,7 +957,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Iodination of Y</MSModSpec_name>
+    <MSModSpec_name>iodination of Y</MSModSpec_name>
     <MSModSpec_monomass>125.8966480</MSModSpec_monomass>
     <MSModSpec_averagemass>125.89650</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -972,7 +972,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of W to kynurenin</MSModSpec_name>
+    <MSModSpec_name>oxidation of W to kynurenin</MSModSpec_name>
     <MSModSpec_monomass>3.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>3.98870</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -987,7 +987,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Lipoyl</MSModSpec_name>
+    <MSModSpec_name>lipoyl K</MSModSpec_name>
     <MSModSpec_monomass>188.0329560</MSModSpec_monomass>
     <MSModSpec_averagemass>188.31030</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1002,7 +1002,7 @@
     <MSModSpec_type>
       <MSModType value="modcp">7</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl ester of Cterm peptide</MSModSpec_name>
+    <MSModSpec_name>methyl ester of peptide c-term</MSModSpec_name>
     <MSModSpec_monomass>14.015650</MSModSpec_monomass>
     <MSModSpec_averagemass>14.0266</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1014,7 +1014,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl ester of D</MSModSpec_name>
+    <MSModSpec_name>methyl ester of D</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1029,7 +1029,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl ester of E</MSModSpec_name>
+    <MSModSpec_name>methyl ester of E</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1044,7 +1044,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl ester of S</MSModSpec_name>
+    <MSModSpec_name>methyl ester of S</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1059,7 +1059,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl ester of Y</MSModSpec_name>
+    <MSModSpec_name>methyl ester of Y</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1074,7 +1074,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl C</MSModSpec_name>
+    <MSModSpec_name>methyl C</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1089,7 +1089,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl H</MSModSpec_name>
+    <MSModSpec_name>methyl H</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1104,7 +1104,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl N</MSModSpec_name>
+    <MSModSpec_name>methyl N</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1119,7 +1119,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methylation of Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>methylation of peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1131,7 +1131,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Methyl R</MSModSpec_name>
+    <MSModSpec_name>methyl R</MSModSpec_name>
     <MSModSpec_monomass>14.0156500</MSModSpec_monomass>
     <MSModSpec_averagemass>14.02660</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1146,7 +1146,7 @@
     <MSModSpec_type>
       <MSModType value="modnaa">2</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Myristoleylation</MSModSpec_name>
+    <MSModSpec_name>myristoleylation of G</MSModSpec_name>
     <MSModSpec_monomass>208.182715</MSModSpec_monomass>
     <MSModSpec_averagemass>208.3398</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1161,7 +1161,7 @@
     <MSModSpec_type>
       <MSModType value="modnaa">2</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Myristoyl-4H</MSModSpec_name>
+    <MSModSpec_name>myristoyl-4H of G</MSModSpec_name>
     <MSModSpec_monomass>206.1670650</MSModSpec_monomass>
     <MSModSpec_averagemass>206.32390</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1176,7 +1176,7 @@
     <MSModSpec_type>
       <MSModType value="modnpaa">6</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Myristoylation of Nterm peptide G</MSModSpec_name>
+    <MSModSpec_name>myristoylation of peptide n-term G</MSModSpec_name>
     <MSModSpec_monomass>210.1983660</MSModSpec_monomass>
     <MSModSpec_averagemass>210.35560</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1191,7 +1191,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Myristoylation of K</MSModSpec_name>
+    <MSModSpec_name>myristoylation of K</MSModSpec_name>
     <MSModSpec_monomass>210.1983660</MSModSpec_monomass>
     <MSModSpec_averagemass>210.35560</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1206,7 +1206,7 @@
     <MSModSpec_type>
       <MSModType value="modn">1</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-Formylation</MSModSpec_name>
+    <MSModSpec_name>formylation of protein n-term</MSModSpec_name>
     <MSModSpec_monomass>27.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>28.01010</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1248,7 +1248,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of W to nitro</MSModSpec_name>
+    <MSModSpec_name>oxidation of W to nitro</MSModSpec_name>
     <MSModSpec_monomass>44.9850780</MSModSpec_monomass>
     <MSModSpec_averagemass>44.99760</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1263,7 +1263,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of Y to nitro</MSModSpec_name>
+    <MSModSpec_name>oxidation of Y to nitro</MSModSpec_name>
     <MSModSpec_monomass>44.9850780</MSModSpec_monomass>
     <MSModSpec_averagemass>44.99760</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1278,7 +1278,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>O18 on Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>O18 on peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>2.004246</MSModSpec_monomass>
     <MSModSpec_averagemass>1.9998</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1290,7 +1290,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Di O18 on Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>di-O18 on peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>4.008490</MSModSpec_monomass>
     <MSModSpec_averagemass>3.99950</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1302,7 +1302,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of H</MSModSpec_name>
+    <MSModSpec_name>oxidation of H</MSModSpec_name>
     <MSModSpec_monomass>15.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>15.99940</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1317,7 +1317,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of W</MSModSpec_name>
+    <MSModSpec_name>oxidation of W</MSModSpec_name>
     <MSModSpec_monomass>15.9949150</MSModSpec_monomass>
     <MSModSpec_averagemass>15.99940</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1332,7 +1332,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Phosphopantetheine</MSModSpec_name>
+    <MSModSpec_name>phosphopantetheine S</MSModSpec_name>
     <MSModSpec_monomass>339.077969</MSModSpec_monomass>
     <MSModSpec_averagemass>339.077969</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1347,7 +1347,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Palmitoylation of C</MSModSpec_name>
+    <MSModSpec_name>palmitoylation of C</MSModSpec_name>
     <MSModSpec_monomass>238.2296660</MSModSpec_monomass>
     <MSModSpec_averagemass>238.40880</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1362,7 +1362,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Palmitoylation of K</MSModSpec_name>
+    <MSModSpec_name>palmitoylation of K</MSModSpec_name>
     <MSModSpec_monomass>238.2296660</MSModSpec_monomass>
     <MSModSpec_averagemass>238.40880</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1377,7 +1377,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Palmitoylation of S</MSModSpec_name>
+    <MSModSpec_name>palmitoylation of S</MSModSpec_name>
     <MSModSpec_monomass>238.2296660</MSModSpec_monomass>
     <MSModSpec_averagemass>238.40880</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1392,7 +1392,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Palmitoylation of T</MSModSpec_name>
+    <MSModSpec_name>palmitoylation of T</MSModSpec_name>
     <MSModSpec_monomass>238.2296660</MSModSpec_monomass>
     <MSModSpec_averagemass>238.40880</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1407,7 +1407,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Phosphorylation with prompt loss on S</MSModSpec_name>
+    <MSModSpec_name>phosphorylation of S with prompt loss</MSModSpec_name>
     <MSModSpec_monomass>-18.0105650</MSModSpec_monomass>
     <MSModSpec_averagemass>-18.01530</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1422,7 +1422,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Phosphorylation with prompt loss on T</MSModSpec_name>
+    <MSModSpec_name>phosphorylation of T with prompt loss</MSModSpec_name>
     <MSModSpec_monomass>-18.0105650</MSModSpec_monomass>
     <MSModSpec_averagemass>-18.01530</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1437,7 +1437,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Phosphorylation with prompt loss on Y</MSModSpec_name>
+    <MSModSpec_name>phosphorylation with prompt loss on Y</MSModSpec_name>
     <MSModSpec_monomass>-18.0105650</MSModSpec_monomass>
     <MSModSpec_averagemass>-18.01530</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1452,7 +1452,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Phosphorylation of C</MSModSpec_name>
+    <MSModSpec_name>phosphorylation of C</MSModSpec_name>
     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1467,7 +1467,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Phosphorylation of D</MSModSpec_name>
+    <MSModSpec_name>phosphorylation of D</MSModSpec_name>
     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1482,7 +1482,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Phosphorylation of H</MSModSpec_name>
+    <MSModSpec_name>phosphorylation of H</MSModSpec_name>
     <MSModSpec_monomass>79.966331</MSModSpec_monomass>
     <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1497,7 +1497,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Propionyl light K</MSModSpec_name>
+    <MSModSpec_name>propionyl light K</MSModSpec_name>
     <MSModSpec_monomass>56.0262150</MSModSpec_monomass>
     <MSModSpec_averagemass>56.06330</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1512,7 +1512,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Propionyl light Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>propionyl light on peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>56.0262150</MSModSpec_monomass>
     <MSModSpec_averagemass>56.06330</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1524,7 +1524,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Propionyl heavy K</MSModSpec_name>
+    <MSModSpec_name>propionyl heavy K</MSModSpec_name>
     <MSModSpec_monomass>59.0362790</MSModSpec_monomass>
     <MSModSpec_averagemass>59.04120</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1539,7 +1539,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Propionyl heavy Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>propionyl heavy peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>59.0362790</MSModSpec_monomass>
     <MSModSpec_averagemass>59.04120</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1551,7 +1551,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Pyridyl K</MSModSpec_name>
+    <MSModSpec_name>pyridyl K</MSModSpec_name>
     <MSModSpec_monomass>119.0371140</MSModSpec_monomass>
     <MSModSpec_averagemass>119.12070</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1566,7 +1566,7 @@
     <MSModSpec_type>
       <MSModType value="modnp">5</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Pyridyl Nterm peptide</MSModSpec_name>
+    <MSModSpec_name>pyridyl peptide n-term</MSModSpec_name>
     <MSModSpec_monomass>119.0371140</MSModSpec_monomass>
     <MSModSpec_averagemass>119.12070</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1578,7 +1578,7 @@
     <MSModSpec_type>
       <MSModType value="modnpaa">6</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Pyro-cmC</MSModSpec_name>
+    <MSModSpec_name>pyro-cmC</MSModSpec_name>
     <MSModSpec_monomass>-17.0265490</MSModSpec_monomass>
     <MSModSpec_averagemass>-17.0265490</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1593,7 +1593,7 @@
     <MSModSpec_type>
       <MSModType value="modnpaa">6</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Pyro-glu from Nterm E</MSModSpec_name>
+    <MSModSpec_name>pyro-glu from n-term E</MSModSpec_name>
     <MSModSpec_monomass>-18.0105650</MSModSpec_monomass>
     <MSModSpec_averagemass>-18.01530</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1608,7 +1608,7 @@
     <MSModSpec_type>
       <MSModType value="modnpaa">6</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Pyro-glu from Nterm Q</MSModSpec_name>
+    <MSModSpec_name>pyro-glu from n-term Q</MSModSpec_name>
     <MSModSpec_monomass>-17.026549</MSModSpec_monomass>
     <MSModSpec_averagemass>-17.03050</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1623,7 +1623,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Oxidation of P to pyroglutamic acid</MSModSpec_name>
+    <MSModSpec_name>oxidation of P to pyroglutamic acid</MSModSpec_name>
     <MSModSpec_monomass>13.979265</MSModSpec_monomass>
     <MSModSpec_averagemass>13.9835</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1638,7 +1638,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>S-pyridylethylation of C</MSModSpec_name>
+    <MSModSpec_name>s-pyridylethylation of C</MSModSpec_name>
     <MSModSpec_monomass>105.0578490</MSModSpec_monomass>
     <MSModSpec_averagemass>105.13720</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1668,7 +1668,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Sulfation of Y</MSModSpec_name>
+    <MSModSpec_name>sulfation of Y</MSModSpec_name>
     <MSModSpec_monomass>79.9568150</MSModSpec_monomass>
     <MSModSpec_averagemass>80.06320</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1683,7 +1683,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>Sulphone of M</MSModSpec_name>
+    <MSModSpec_name>sulphone of M</MSModSpec_name>
     <MSModSpec_monomass>31.9898290</MSModSpec_monomass>
     <MSModSpec_averagemass>31.99880</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1698,7 +1698,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>tri-Iodination of Y</MSModSpec_name>
+    <MSModSpec_name>tri-iodination of Y</MSModSpec_name>
     <MSModSpec_monomass>377.6899440</MSModSpec_monomass>
     <MSModSpec_averagemass>377.68960</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1713,7 +1713,7 @@
     <MSModSpec_type>
       <MSModType value="modaa">0</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>tri-Methylation of R</MSModSpec_name>
+    <MSModSpec_name>tri-methylation of R</MSModSpec_name>
     <MSModSpec_monomass>42.046950</MSModSpec_monomass>
     <MSModSpec_averagemass>42.0797</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1728,7 +1728,7 @@
     <MSModSpec_type>
       <MSModType value="modnpaa">6</MSModType>
     </MSModSpec_type>
-    <MSModSpec_name>N-acyl diglyceride cysteine</MSModSpec_name>
+    <MSModSpec_name>n-acyl diglyceride cysteine</MSModSpec_name>
     <MSModSpec_monomass>788.725777</MSModSpec_monomass>
     <MSModSpec_averagemass>789.3049</MSModSpec_averagemass>
     <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1938,7 +1938,7 @@
      <MSModSpec_type>
        <MSModType value="modaa">0</MSModType>
      </MSModSpec_type>
-     <MSModSpec_name>Phospho S with neutral loss</MSModSpec_name>
+     <MSModSpec_name>phosphorylation of S with neutral loss</MSModSpec_name>
      <MSModSpec_monomass>79.966331</MSModSpec_monomass>
      <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
      <MSModSpec_n15mass>0</MSModSpec_n15mass>
@@ -1960,7 +1960,7 @@
      <MSModSpec_type>
        <MSModType value="modaa">0</MSModType>
      </MSModSpec_type>
-     <MSModSpec_name>Phospho T with neutral loss</MSModSpec_name>
+     <MSModSpec_name>phosphorylation of T with neutral loss</MSModSpec_name>
      <MSModSpec_monomass>79.966331</MSModSpec_monomass>
      <MSModSpec_averagemass>79.9799</MSModSpec_averagemass>
      <MSModSpec_n15mass>0</MSModSpec_n15mass>
