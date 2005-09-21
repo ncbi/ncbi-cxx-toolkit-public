@@ -255,9 +255,9 @@ string CNetCacheClient_LB::PutData(const string& key,
                                    size_t        size,
                                    unsigned int  time_to_live)
 {
-    CNetCache_Key blob_key;
     if (!key.empty()) {
-        CNetCache_ParseBlobKey(&blob_key, key);
+        CNetCache_Key blob_key(key);
+        //CNetCache_ParseBlobKey(&blob_key, key);
     
         if ((blob_key.hostname == m_Host) && 
             (blob_key.port == m_Port)) {
@@ -284,9 +284,9 @@ string CNetCacheClient_LB::PutData(const string& key,
 
 IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
 {
-    CNetCache_Key blob_key;
     if (!key->empty()) {
-        CNetCache_ParseBlobKey(&blob_key, *key);
+        CNetCache_Key blob_key(*key);
+//        CNetCache_ParseBlobKey(&blob_key, *key);
     
         if ((blob_key.hostname == m_Host) && 
             (blob_key.port == m_Port)) {
@@ -340,9 +340,9 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
 IReader* CNetCacheClient_LB::GetData(const string& key, 
                                      size_t*       blob_size)
 {
-    CNetCache_Key blob_key;
     if (!key.empty()) {
-        CNetCache_ParseBlobKey(&blob_key, key);
+        CNetCache_Key blob_key(key);
+        //CNetCache_ParseBlobKey(&blob_key, key);
     
         size_t bsize = 0;
         IReader* rdr;
@@ -387,9 +387,8 @@ CNetCacheClient_LB::GetData(const string& key, SBlobData& blob_to_read)
 
 void CNetCacheClient_LB::Remove(const string& key)
 {
-    CNetCache_Key blob_key;
     if (!key.empty()) {
-        CNetCache_ParseBlobKey(&blob_key, key);
+        CNetCache_Key blob_key(key);
         if ((blob_key.hostname == m_Host) && 
             (blob_key.port == m_Port)) {
 
@@ -411,9 +410,8 @@ CNetCacheClient_LB::GetData(const string&  key,
                     size_t*        n_read,
                     size_t*        blob_size)
 {
-    CNetCache_Key blob_key;
     if (!key.empty()) {
-        CNetCache_ParseBlobKey(&blob_key, key);
+        CNetCache_Key blob_key(key);
 
         if ((blob_key.hostname == m_Host) && 
             (blob_key.port == m_Port)) {
@@ -472,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/09/21 18:21:54  kuznets
+ * Made a class for key manipulation service functions
+ *
  * Revision 1.23  2005/08/29 16:35:01  kuznets
  * Fixed casting zero pointer(BLOB does not exist)
  *

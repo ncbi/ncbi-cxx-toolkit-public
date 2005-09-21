@@ -428,37 +428,37 @@ public:
 ///
 /// @sa CNetCache_ParseBlobKey
 ///
-struct CNetCache_Key
+class NCBI_XCONNECT_EXPORT CNetCache_Key
 {
+public:
+    /// Create the key out of string
+    /// @sa ParseBlobKey()
+    CNetCache_Key(const string& key_str);
+
+    /// Parse blob key string into a CNetCache_Key structure
+    void ParseBlobKey(const string& key_str);
+
+    /// Generate blob key string
+    ///
+    /// Please note that "id" is an integer issued by the NetCache server.
+    /// Clients should not use this function with custom ids.
+    /// Otherwise it may disrupt the interserver communication.
+    static
+    void GenerateBlobKey(string*        key,
+                         unsigned int   id,
+                         const string&  host,
+                         unsigned short port);
+
+    /// Parse blob key, extract id
+    static 
+    unsigned int GetBlobId(const string& key_str);
+public:
     string       prefix;    ///< Key prefix
     unsigned     version;   ///< Key version
     unsigned     id;        ///< BLOB id
     string       hostname;  ///< server name
     unsigned     port;      ///< TCP/IP port number
 };
-
-/// Parse blob key string into a CNetCache_Key structure
-extern NCBI_XCONNECT_EXPORT
-void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str);
-
-
-/// Parse blob key, extract id
-extern NCBI_XCONNECT_EXPORT
-unsigned CNetCache_GetBlobId(const string& key_str);
-
-
-/// Generate blob key string
-///
-/// Please note that "id" is an integer issued by the netcache server.
-/// Clients should not use this function with custom ids. 
-/// Otherwise it may disrupt the interserver communication.
-///
-extern NCBI_XCONNECT_EXPORT
-void CNetCache_GenerateBlobKey(string*        key, 
-                               unsigned       id, 
-                               const string&  host, 
-                               unsigned short port);
-
 
 
 
@@ -528,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/09/21 18:21:08  kuznets
+ * Made a class for key manipulation service functions
+ *
  * Revision 1.40  2005/09/21 16:12:01  kuznets
  * Added comment
  *

@@ -47,32 +47,36 @@ BEGIN_NCBI_SCOPE
 
 const string kNetCache_KeyPrefix = "NCID";
 
-void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
-{
-    _ASSERT(key);
 
+CNetCache_Key::CNetCache_Key(const string& key_str)
+{
+    ParseBlobKey(key_str);
+}
+
+void CNetCache_Key::ParseBlobKey(const string& key_str)
+{
     // NCID_01_1_MYHOST_9000
 
     const char* ch = key_str.c_str();
-    key->hostname = key->prefix = kEmptyStr;
+    hostname = prefix = kEmptyStr;
 
     // prefix
 
     for (;*ch && *ch != '_'; ++ch) {
-        key->prefix += *ch;
+        prefix += *ch;
     }
     if (*ch == 0) {
         NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
     }
     ++ch;
 
-    if (key->prefix != kNetCache_KeyPrefix) {
+    if (prefix != kNetCache_KeyPrefix) {
         NCBI_THROW(CNetCacheException, eKeyFormatError, 
                                        "Key syntax error. Invalid prefix.");
     }
 
     // version
-    key->version = atoi(ch);
+    version = atoi(ch);
     while (*ch && *ch != '_') {
         ++ch;
     }
@@ -82,7 +86,7 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
     ++ch;
 
     // id
-    key->id = atoi(ch);
+    id = atoi(ch);
     while (*ch && *ch != '_') {
         ++ch;
     }
@@ -94,7 +98,7 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
 
     // hostname
     for (;*ch && *ch != '_'; ++ch) {
-        key->hostname += *ch;
+        hostname += *ch;
     }
     if (*ch == 0) {
         NCBI_THROW(CNetCacheException, eKeyFormatError, "Key syntax error.");
@@ -102,11 +106,35 @@ void CNetCache_ParseBlobKey(CNetCache_Key* key, const string& key_str)
     ++ch;
 
     // port
-    key->port = atoi(ch);
+    port = atoi(ch);
 }
 
 
-unsigned CNetCache_GetBlobId(const string& key_str)
+void CNetCache_Key::GenerateBlobKey(string*        key,
+                                    unsigned int   id,
+                                    const string&  host,
+                                    unsigned short port)
+{
+    string tmp;
+    *key = "NCID_01";    // NetCacheId prefix plus version
+
+    NStr::IntToString(tmp, id);
+    *key += "_";
+    *key += tmp;
+
+    *key += "_";
+    *key += host;    
+
+    NStr::IntToString(tmp, port);
+    *key += "_";
+    *key += tmp;
+
+    NStr::IntToString(tmp, time(0));
+    *key += "_";
+    *key += tmp;
+}
+
+unsigned int CNetCache_Key::GetBlobId(const string& key_str)
 {
     unsigned id = 0;
 
@@ -141,33 +169,6 @@ err_throw:
     id = (unsigned) atoi(ch);
     return id;
 }
-
-
-void CNetCache_GenerateBlobKey(string*        key, 
-                               unsigned       id, 
-                               const string&  host, 
-                               unsigned short port)
-{
-    string tmp;
-    *key = "NCID_01";    // NetCacheId prefix plus version
-
-    NStr::IntToString(tmp, id);
-    *key += "_";
-    *key += tmp;
-
-    *key += "_";
-    *key += host;    
-
-    NStr::IntToString(tmp, port);
-    *key += "_";
-    *key += tmp;
-
-    NStr::IntToString(tmp, time(0));
-    *key += "_";
-    *key += tmp;
-}
-
-
 
 
 
@@ -221,8 +222,7 @@ void CNetCacheClient::CheckConnect(const string& key)
            "Cannot establish connection with a server. Unknown host name.");
     }
 
-    CNetCache_Key blob_key;
-    CNetCache_ParseBlobKey(&blob_key, key);
+    CNetCache_Key blob_key(key);
     CreateSocket(blob_key.hostname, blob_key.port);
 }
 
@@ -866,6 +866,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/09/21 18:21:14  kuznets
+ * Made a class for key manipulation service functions
+ *
  * Revision 1.49  2005/08/11 20:45:05  kuznets
  * Improved error processing
  *
