@@ -55,7 +55,7 @@ CLocalBlast::Run()
     // data somehow.
     
     m_PrelimSearch->Run();
-    throw runtime_error(string("CLocalBlast::Run()") + " unimplemented");
+    throw runtime_error("CLocalBlast::Run() unimplemented");
     return m_TbackSearch->Run();
 }
 
