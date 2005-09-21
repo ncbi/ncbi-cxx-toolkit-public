@@ -39,9 +39,7 @@
 #include <algo/blast/api/blast_options.hpp>
 #include "blast_setup.hpp"
 #include "blast_options_local_priv.hpp"
-#ifdef NEW_CXX_APIS
 #include "blast_memento_priv.hpp"
-#endif
 
 #include <algo/blast/core/blast_extend.h>
 
@@ -589,11 +587,7 @@ CBlastOptions::CreateSnapshot() const
                    "Cannot create CBlastOptionsMemento without a local "
                    "CBlastOptions object");
     }
-#ifdef NEW_CXX_APIS
     return new CBlastOptionsMemento(m_Local);
-#else
-    return NULL;
-#endif
 }
 
 bool
@@ -1912,6 +1906,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2005/09/21 15:09:48  camacho
+* Enable use of CBlastOptionsMemento
+*
 * Revision 1.69  2005/07/12 21:19:04  camacho
 * Experimental: added CBlastOptionsMemento
 *
