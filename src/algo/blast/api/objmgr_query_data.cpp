@@ -260,22 +260,13 @@ public:
     
     
     /// Get the number of queries.
-    virtual int GetNumQueries()
-    {
-        return m_QuerySource->Size();
-    }
+    virtual int GetNumQueries();
     
     /// Get the Seq_loc for the sequence indicated by index.
-    virtual CConstRef<CSeq_loc> GetSeq_loc(int index)
-    {
-        return m_QuerySource->GetSeqLoc(index);
-    }
+    virtual CConstRef<CSeq_loc> GetSeq_loc(int index);
     
     /// Get the length of the sequence indicated by index.
-    virtual int GetSeqLength(int index)
-    {
-        return m_QuerySource->GetLength(index);
-    }
+    virtual int GetSeqLength(int index);
     
 private:
     const TSeqLocVector* m_Queries;     ///< Adaptee in adapter design pattern
@@ -326,6 +317,25 @@ CObjMgr_LocalQueryData::GetQueryInfo()
     return m_QueryInfo.Get();
 }
 
+int
+CObjMgr_LocalQueryData::GetNumQueries()
+{
+    int retval = m_QuerySource->Size();
+    ASSERT(retval == GetQueryInfo()->num_queries);
+    return retval;
+}
+
+CConstRef<CSeq_loc> 
+CObjMgr_LocalQueryData::GetSeq_loc(int index)
+{
+    return m_QuerySource->GetSeqLoc(index);
+}
+
+int 
+CObjMgr_LocalQueryData::GetSeqLength(int index)
+{
+    return m_QuerySource->GetLength(index);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

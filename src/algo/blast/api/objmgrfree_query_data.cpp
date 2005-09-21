@@ -407,22 +407,13 @@ public:
     BlastQueryInfo* GetQueryInfo();
     
     /// Get the number of queries.
-    virtual int GetNumQueries()
-    {
-        return m_QuerySource->Size();
-    }
+    virtual int GetNumQueries();
     
     /// Get the Seq_loc for the sequence indicated by index.
-    virtual CConstRef<CSeq_loc> GetSeq_loc(int index)
-    {
-        return m_QuerySource->GetSeqLoc(index);
-    }
+    virtual CConstRef<CSeq_loc> GetSeq_loc(int index);
     
     /// Get the length of the sequence indicated by index.
-    virtual int GetSeqLength(int index)
-    {
-        return m_QuerySource->GetLength(index);
-    }
+    virtual int GetSeqLength(int index);
     
 private:
     const CBlastOptions* m_Options;
@@ -469,6 +460,26 @@ CObjMgrFree_LocalQueryData::GetQueryInfo()
         }
     }
     return m_QueryInfo;
+}
+
+int 
+CObjMgrFree_LocalQueryData::GetNumQueries()
+{
+    int retval = m_QuerySource->Size();
+    ASSERT(retval == GetQueryInfo()->num_queries);
+    return retval;
+}
+
+CConstRef<CSeq_loc> 
+CObjMgrFree_LocalQueryData::GetSeq_loc(int index)
+{
+    return m_QuerySource->GetSeqLoc(index);
+}
+
+int 
+CObjMgrFree_LocalQueryData::GetSeqLength(int index)
+{
+    return m_QuerySource->GetLength(index);
 }
 
 /////////////////////////////////////////////////////////////////////////////
