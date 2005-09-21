@@ -223,13 +223,34 @@ string CLDS_DataLoader::GetLoaderNameFromArgs(CLDS_Database& lds_db)
 }
 
 
+CDataLoader*
+CLDS_DataLoader::CLDS_LoaderMaker::CreateLoader(void) const
+{
+    bool is_created = false;
+    auto_ptr<CLDS_Database> lds_db
+        (CLDS_Management::OpenCreateDB(m_Param, "lds",
+                                        &is_created,
+                                        m_Recurse, m_ControlSum));
+    if ( !is_created ) {
+        CLDS_Management mgmt(*lds_db);
+        mgmt.SyncWithDir(m_Param, m_Recurse, m_ControlSum);
+    }
+    CLDS_DataLoader* dl = new CLDS_DataLoader(m_Name, lds_db.release());
+    return dl;
+}
+
+
 CLDS_DataLoader::TRegisterLoaderInfo CLDS_DataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string& db_path,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority priority)
+    CObjectManager::TPriority priority,
+    CLDS_Management::ERecurse recurse,
+    CLDS_Management::EComputeControlSum csum
+    )
 {
-    TPathMaker maker(db_path);
+    CLDS_LoaderMaker maker(db_path, recurse, csum);
+    //TPathMaker maker(db_path);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -264,6 +285,13 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
 {
 }
 
+CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
+                                 CLDS_Database* lds_db)
+ : CDataLoader(dl_name),
+   m_LDS_db(lds_db),
+   m_OwnDatabase(true)
+{
+}
 
 CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
                                  const string& db_path)
@@ -417,10 +445,30 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
     // Parse params, select constructor
     const string& database_str =
         GetParam(GetDriverName(), params,
-        kCFParam_LDS_Database, false, kEmptyStr);
+                 kCFParam_LDS_Database, false, kEmptyStr);
     const string& db_path =
         GetParam(GetDriverName(), params,
-        kCFParam_LDS_DbPath, false, kEmptyStr);
+                 kCFParam_LDS_DbPath, false, kEmptyStr);
+    const string& recurse_str =
+        GetParam(GetDriverName(), params,
+                 kCFParam_LDS_RecurseSubDir, false, "true");
+    bool recurse = NStr::StringToBool(recurse_str);
+    CLDS_Management::ERecurse recurse_subdir = 
+        recurse ? 
+            CLDS_Management::eRecurseSubDirs : CLDS_Management::eDontRecurse;
+
+    const string& control_sum_str =
+        GetParam(GetDriverName(), params,
+                 kCFParam_LDS_ControlSum, false, "true");
+    bool csum = NStr::StringToBool(control_sum_str);
+    CLDS_Management::EComputeControlSum control_sum =
+       csum ? 
+         CLDS_Management::eComputeControlSum : CLDS_Management::eNoControlSum;
+              
+// commented out...
+// suspicious code, expected somebody will pass database as a stringified pointer
+// (code has a bug in casts which should always give NULL
+/*
     if ( !database_str.empty() ) {
         // Use existing database
         CLDS_Database* db = dynamic_cast<CLDS_Database*>(
@@ -434,6 +482,7 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
                 GetPriority(params)).GetLoader();
         }
     }
+*/
     if ( !db_path.empty() ) {
         // Use db path
         return CLDS_DataLoader::RegisterInObjectManager(
@@ -471,6 +520,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/09/21 13:33:51  kuznets
+ * Implemented database initialization in class factory
+ *
  * Revision 1.29  2005/07/15 19:52:25  vasilche
  * Use blob_id map from CDataSource.
  *
