@@ -37,7 +37,6 @@
 
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/traceback_stage.hpp>
-//#include <algo/blast/api/uniform_search.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -47,12 +46,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-// Forward declarations
-class CSearchDatabase;
-class IBlastSeqSrcAdapter;
-
 /// Class to perform a BLAST search on local BLAST databases
-class NCBI_XBLAST_EXPORT CLocalBlast : public CObject, public CThreadable
+class NCBI_XBLAST_EXPORT CLocalBlast : 
+    public CObject, 
+    public CThreadable
 {
     CLocalBlast(CRef<IQueryFactory> qf,
                 CConstRef<CBlastOptions> opts,
