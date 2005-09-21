@@ -382,13 +382,13 @@ Blast_AdjustComposition(const char *matrixName,
     int constrain_rel_entropy =
         eUnconstrainedRelEntropy != NRrecord->flag;
 
-    Blast_ApplyPseudocounts(NRrecord->first_seq_freq_wpseudo, length1,
-                            NRrecord->first_seq_freq, probArray1,
+    Blast_ApplyPseudocounts(NRrecord->first_seq_freq_wpseudo, 
+                            NRrecord->first_seq_freq, probArray1, length1,
                             NRrecord->first_standard_freq, pseudocounts);
     /* plug in frequencies for second sequence, will be the matching
        sequence in BLAST */
-    Blast_ApplyPseudocounts(NRrecord->second_seq_freq_wpseudo, length2,
-                            NRrecord->second_seq_freq, probArray2,
+    Blast_ApplyPseudocounts(NRrecord->second_seq_freq_wpseudo,
+                            NRrecord->second_seq_freq, probArray2, length2,
                             NRrecord->second_standard_freq, pseudocounts);
     *lambdaComputed = 1.0;
     re_o_newcontext =
@@ -457,12 +457,6 @@ Blast_AdjustComposition(const char *matrixName,
             fprintf(stderr, "%15.12f\n", probArray2[i]);
         fflush(stderr);
         status = 1;
-    }
-    if (NRrecord->flag == eUnconstrainedRelEntropy) {
-        /* Compute the unconstrained relative entropy */
-        double re_free =
-            Blast_CalcLambdaForComposition(NRrecord, 1, lambdaComputed);
-        printf("RE_uncons  = %6.4f\n\n", re_free);
     }
     return status;
 }
