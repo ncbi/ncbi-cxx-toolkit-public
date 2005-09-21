@@ -72,10 +72,10 @@ void CSplignApp::Init()
 {
   HideStdArgs( fHideLogfile | fHideConffile | fHideVersion);
 
-  SetVersion(CVersionInfo(1, 17, 0, "Splign"));  
+  SetVersion(CVersionInfo(1, 18, 0, "Splign"));  
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.17");
+  string program_name ("Splign v.1.18");
 
 #ifdef GENOME_PIPELINE
   program_name += 'p';
@@ -366,28 +366,35 @@ istream* CSplignApp::x_GetPairwiseHitStream ( CSeqLoaderPairwise& seq_loader,
     seqloc_subj->SetWhole().Assign(*(se->GetSeq().GetId().front()));
     }}
 
+    EProgram blast_program (cross_species_mode? eDiscMegablast: eMegablast);
+
     CRef<CBlastOptionsHandle> blast_options_handle
-        (CBlastOptionsFactory::Create(eMegablast));
+        (CBlastOptionsFactory::Create(blast_program));
     
     blast_options_handle->SetDefaults();
     
-    if(cross_species_mode) {
-        
-        CBlastOptions& opt = blast_options_handle->SetOptions();
-        opt.SetGapExtensionCost(2);
-        opt.SetEvalueThreshold(1e-9);
-        opt.SetGapOpeningCost(4);
-        opt.SetMismatchPenalty(-4);
-        opt.SetMatchReward(3);
-        opt.SetWordSize(12);
-        opt.SetXDropoff(20);
+    CBlastOptions& blast_opt = blast_options_handle->SetOptions();
+
+    blast_opt.SetGapOpeningCost(6);
+    blast_opt.SetGapExtensionCost(6);
+    blast_opt.SetMismatchPenalty(-4);
+    blast_opt.SetMatchReward(1);
+
+    if(cross_species_mode == false) {
+
+        blast_opt.SetWordSize(20);
+        blast_opt.SetGapXDropoff(0);
+        blast_opt.SetGapXDropoffFinal(0);
+
+        //blast_opt.SetMaskAtHash(true);
+        //blast_opt.SetUngappedExtension(true);
     }
-    
+
     CBl2Seq Blast( SSeqLoc(seqloc_query.GetNonNullPointer(),
                            scope.GetNonNullPointer()),
                    SSeqLoc(seqloc_subj.GetNonNullPointer(),
                            scope.GetNonNullPointer()),
-                   eMegablast );
+                   blast_program );
     
     Blast.SetOptionsHandle() = *blast_options_handle;
 
@@ -743,6 +750,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/09/21 13:46:45  kapustin
+ * Use gapless blast when computing hits internally
+ *
  * Revision 1.49  2005/09/13 16:02:04  kapustin
  * Flip hit strands when query is in minus strand
  *
