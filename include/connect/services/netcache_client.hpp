@@ -72,6 +72,10 @@ public:
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
     /// BLOB key 
+    ///
+    /// @param client_name
+    ///    local name of the client program 
+    ///    (used for server access logging and authentication)
     CNetCacheClient(const string&  client_name);
 
     /// Construct client, working with the specified server (host and port)
@@ -524,6 +528,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/09/21 16:12:01  kuznets
+ * Added comment
+ *
  * Revision 1.39  2005/08/24 15:57:12  kuznets
  * Improved comments
  *
