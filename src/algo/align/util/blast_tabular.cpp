@@ -49,19 +49,31 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align):
 {
     const CDense_seg &ds = seq_align.GetSegs().GetDenseg();
     const CDense_seg::TLens& lens = ds.GetLens();
+    const CDense_seg::TStarts& starts = ds.GetStarts();
+    TCoord spaces = 0, gaps = 0, aln_len = 0;
+    for(size_t i = 0, dim = lens.size(); i < dim; ++i) {
+        if(starts[2*i] == -1 || starts[2*i+1] == -1) {
+            ++gaps;
+            spaces += lens[i];
+        }
+        aln_len += lens[i];
+    }
 
-    SetLength(accumulate(lens.begin(), lens.end(), 0));
+    SetLength(aln_len);
+    SetGaps(gaps);
 
     double matches;
     seq_align.GetNamedScore("num_ident", matches);
-    SetIdentity(float(matches/m_Length));
+    SetIdentity(float(matches/aln_len));
+
+    SetMismatches(aln_len - spaces - TCoord(matches));
 
     double score;
     seq_align.GetNamedScore("bit_score", score);
     SetScore(float(score));
 
     double evalue;
-    seq_align.GetNamedScore("sum_e", evalue);
+    seq_align.GetNamedScore("e_value", evalue);
     SetEValue(evalue);
 }
 
