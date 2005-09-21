@@ -24,33 +24,23 @@ static char const rcsid[] = "$Id$";
 *
 * ===========================================================================*/
 
-/*****************************************************************************
-
-File name: Newton_procedures.c
-
-Authors: Yi-Kuo Yu, Alejandro Schaffer, E. Michael Gertz
-
-Contents: Highest level functions to solve the optimization problem 
-          for compositional score matrix adjustment
-
-******************************************************************************/
-
-/* Functions that find the new joint probability matrix given 
-   an original joint prob and new set(s) of background frequency(ies)
-   The eta parameter is a lagrangian multiplier to
-   fix the relative entropy between the new target and the new background
-
-   RE_FLAG is used to indicate various choices as encoded in NRdefs.h
-*/
+/** @file composition_adjustment.c
+ *
+ * @author Yi-Kuo Yu, Alejandro Schaffer, E. Michael Gertz
+ *
+ * Highest level functions to solve the optimization problem for
+ * compositional score matrix adjustment.
+ */
 
 #include <math.h>
+#include <string.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <algo/blast/core/blast_toolkit.h>
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
 
-
+/* Joint probabilities for BLOSUM62 */
 static double
 BLOSUM62_JOINT_PROBS[COMPOSITION_ALPHABET_SIZE][COMPOSITION_ALPHABET_SIZE]
 = {
@@ -161,8 +151,15 @@ BLOSUM62_JOINT_PROBS[COMPOSITION_ALPHABET_SIZE][COMPOSITION_ALPHABET_SIZE]
 static const double kProbSumTolerance = 0.000000001;
 
 
-/* read an array of joint probabilities, and store them in fields of
- * NRrecord, including the mat_b field */
+/** 
+ * Get joint probabilites for the named matrix.
+ *
+ * @param probs        the joint probabilities [out]
+ * @param row_sums     sum of the values in each row of probs [out]
+ * @param col_sums     sum of the values in each column of probs [out]
+ * @param matrixName   the name of the matrix sought [in]
+ * @returns 0 if successful; -1 if the named matrix is not known.
+ */
 int
 Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
                              double col_sums[], const char *matrixName)
@@ -205,17 +202,30 @@ Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
     return 0;
 }
 
-
-/* Set up adjusted frequencies of letters in probs_with_pseudo as a
- * weighted average of length X probArray and pseudocounts X
- * background_probs. The array normalized_freq is used in the
- * calculations in case probArray has not been normalized to sum to
- * 1.*/
+/**
+ * Find the weighted average of a set of observed probabilites with a
+ * set of "background" probabilities.  
+ *
+ * All array parameters have length COMPOSITION_ALPHABET_SIZE.
+ * 
+ * @param probs_with_pseudo       an array of weighted averages [out]
+ * @param normalized_probs        observed frequencies, normalized to sum
+ *                                to 1.0 [out]
+ * @param observed_freq           observed frequencies, not necessarily
+ *                                normalized to sum to 1.0. [in]
+ * @param background_probs        the probability of characters in a
+ *                                standard sequence.
+ * @param number_of_observations  the number of characters used to
+ *                                form the observed_freq array
+ * @param pseudocounts            the number of "standard" characters
+ *                                to be added to form the weighted
+ *                                average.
+ */
 void
 Blast_ApplyPseudocounts(double * probs_with_pseudo,
-                        int length,
                         double * normalized_probs,
                         const double * observed_freq,
+                        int number_of_observations,
                         const double * background_probs,
                         int pseudocounts)
 {
@@ -233,7 +243,7 @@ Blast_ApplyPseudocounts(double * probs_with_pseudo,
             normalized_probs[i] = observed_freq[i]/sum;
         }
     }
-    weight = 1.0 * pseudocounts / (length + pseudocounts);
+    weight = 1.0 * pseudocounts / (number_of_observations + pseudocounts);
     for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
         probs_with_pseudo[i] =
             (1.0 - weight) * normalized_probs[i] +
@@ -242,6 +252,17 @@ Blast_ApplyPseudocounts(double * probs_with_pseudo,
 }
 
 
+/**
+ * Create a score matrix from a set of target frequencies.  The scores
+ * are scaled so that the Karlin-Altschul statistical parameter Lambda
+ * equals 1.0.
+ *
+ * @param score        the new score matrix [out]
+ * @param alphasize    the number of rows and columns of score
+ * @param freq         a matrix of target frequencies [in]
+ * @param row_sum      sum of each row of freq [in]
+ * @param col_sum      sum of each column of freq[in]
+ */
 void
 Blast_ScoreMatrixFromFreq(double ** score, int alphsize, double ** freq,
                           const double row_sum[], const double col_sum[])
@@ -263,13 +284,20 @@ Blast_ScoreMatrixFromFreq(double ** score, int alphsize, double ** freq,
 }
 
 
-/*compute the symmetric form of the relative entropy of two
- *probability vectors 
- *In this software relative entropy is expressed in "nats", 
- *meaning that logarithms are base e. In some other scientific 
- *and engineering domains where entropy is used, the logarithms 
- *are taken base 2 and the entropy is expressed in bits.
-*/
+/**
+ * Compute the symmetric form of the relative entropy of two
+ * probability vectors 
+ *
+ * In this software relative entropy is expressed in "nats", 
+ * meaning that logarithms are base e. In some other scientific 
+ * and engineering domains where entropy is used, the logarithms 
+ * are taken base 2 and the entropy is expressed in bits.
+ *
+ * @param A    an array of length COMPOSITION_ALPHABET_SIZE of
+ *             probabilities.
+ * @param B    a second array of length COMPOSITION_ALPHABET_SIZE of
+ *             probabilities.
+ */
 double
 Blast_GetRelativeEntropy(const double A[], const double B[])
 {
