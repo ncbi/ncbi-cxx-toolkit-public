@@ -134,7 +134,7 @@ public:
             CFastMutexGuard guard(x_NetCacheMutex_ID);
 
             if (id == 0) {
-                id = CNetCache_GetBlobId(blob_key);
+                id = CNetCache_Key::GetBlobId(blob_key);
             }
 
             if ((*m_IdSet)[id] == false) {
@@ -825,6 +825,7 @@ void CNetCacheServer::x_PrintStatistics(CNcbiOstream&               ios,
     ios << "blobs_never_read_total = " << cs.blobs_never_read_total << "\n";
     ios << "blobs_read_total = " << cs.blobs_read_total << "\n";
     ios << "blobs_expl_deleted_total = " << cs.blobs_expl_deleted_total << "\n";
+    ios << "blobs_purge_deleted_total = " << cs.blobs_purge_deleted_total << "\n";
     ios << "blobs_size_total = " << unsigned(cs.blobs_size_total) << "\n";
     ios << "blob_size_max_total = " << cs.blob_size_max_total << "\n";
     ios << "blobs_db = " << cs.blobs_db << "\n";
@@ -875,7 +876,7 @@ void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
         return;
     }
 
-    CNetCache_Key blob_id;
+    CNetCache_Key blob_id(req_id);
     if (!x_CheckBlobId(sock, &blob_id, req_id))
         return;
 
@@ -976,7 +977,9 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
     if (ba_descr.blob_size == 0) { // not found
         if (ba_descr.reader == 0) {
 blob_not_found:
-            WriteMsg(sock, "ERR:", "BLOB not found.");
+            string msg = "BLOB not found. ";
+            msg += req_id;
+            WriteMsg(sock, "ERR:", msg);
         } else {
             WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
         }
@@ -1063,7 +1066,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
                                  NetCache_RequestStat& stat)
 {
     string& rid = req.req_id;
-    CNetCache_Key blob_id;
+//    CNetCache_Key blob_id;
 
     CIdBusyGuard guard(&m_UsedIds);
 
@@ -1072,7 +1075,8 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
     } else {
         guard.LockNewId(&m_MaxId, m_InactivityTimeout);
         unsigned int id = guard.GetId();
-        CNetCache_GenerateBlobKey(&rid, id, m_Host, GetPort());
+        CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
+        //CNetCache_GenerateBlobKey(&rid, id, m_Host, GetPort());
     }
 
 
@@ -1153,7 +1157,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
     } else {
         guard.LockNewId(&m_MaxId, m_InactivityTimeout);
         unsigned int id = guard.GetId();
-        CNetCache_GenerateBlobKey(&rid, id, m_Host, GetPort());
+        CNetCache_Key::GenerateBlobKey(&rid, id, m_Host, GetPort());
     }
 
 
@@ -1478,7 +1482,7 @@ void CNetCacheServer::GenerateRequestId(const SNC_Request& req,
     }}
     *transaction_id = id;
 
-    CNetCache_GenerateBlobKey(id_str, id, m_Host, GetPort());
+    CNetCache_Key::GenerateBlobKey(id_str, id, m_Host, GetPort());
 }
 
 
@@ -1487,7 +1491,7 @@ bool CNetCacheServer::x_CheckBlobId(CSocket&       sock,
                                     const string&  blob_key)
 {
     try {
-        CNetCache_ParseBlobKey(blob_id, blob_key);
+        //CNetCache_ParseBlobKey(blob_id, blob_key);
         if (blob_id->version != 1     ||
             blob_id->hostname.empty() ||
             blob_id->id == 0          ||
@@ -1887,6 +1891,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2005/09/21 18:22:21  kuznets
+ * Reflected changes in client API
+ *
  * Revision 1.64  2005/08/10 19:19:14  kuznets
  * Set accept timeout 1sec
  *
