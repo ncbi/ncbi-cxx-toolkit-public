@@ -589,9 +589,8 @@ return 1;
         NcbiCout << key << NcbiEndl;
         assert(!key.empty());
 
-        unsigned id = CNetCache_GetBlobId(key);
-        CNetCache_Key pk;
-        CNetCache_ParseBlobKey(&pk, key);
+        unsigned id = CNetCache_Key::GetBlobId(key);
+        CNetCache_Key pk(key);
         assert(pk.id == id);
 
     }}
@@ -778,6 +777,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/09/21 18:45:33  ucko
+ * Fix for latest API changes.
+ *
  * Revision 1.35  2005/08/09 16:01:21  kuznets
  * Minor tweak
  *
