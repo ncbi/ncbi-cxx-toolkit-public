@@ -270,17 +270,23 @@ CBl2Seq::ScanDB()
         Blast_HSPListCollectorInit(kOptions.GetProgramType(), blasthit_params,
                                    mi_clsQueryInfo->num_queries, FALSE);
                   
-    Blast_RunFullSearch(kOptions.GetProgramType(),
-                       mi_clsQueries, mi_clsQueryInfo, 
-                       mi_pSeqSrc, mi_pScoreBlock, 
-                       kOptions.GetScoringOpts(),
-                       mi_pLookupTable,
-                       kOptions.GetInitWordOpts(),
-                       kOptions.GetExtnOpts(),
-                       kOptions.GetHitSaveOpts(),
-                       kOptions.GetEffLenOpts(),
-                       NULL, kOptions.GetDbOpts(),
-                       hsp_stream, NULL, mi_pDiagnostics, &mi_pResults);
+    Int4 status = Blast_RunFullSearch(kOptions.GetProgramType(),
+                                      mi_clsQueries, mi_clsQueryInfo, 
+                                      mi_pSeqSrc, mi_pScoreBlock, 
+                                      kOptions.GetScoringOpts(),
+                                      mi_pLookupTable,
+                                      kOptions.GetInitWordOpts(),
+                                      kOptions.GetExtnOpts(),
+                                      kOptions.GetHitSaveOpts(),
+                                      kOptions.GetEffLenOpts(),
+                                      NULL, kOptions.GetDbOpts(),
+                                      hsp_stream, NULL, mi_pDiagnostics, 
+                                      &mi_pResults);
+    if (status) {
+        string msg("Blast_RunFullSearch failed with status ");
+        msg += NStr::IntToString(status);
+        NCBI_THROW(CBlastException, eCoreBlastError, msg);
+    }
     hsp_stream = BlastHSPStreamFree(hsp_stream);
 }
 
@@ -371,6 +377,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.83  2005/09/21 16:15:18  camacho
+ * Throw exception if Blast_RunFullSearch fails
+ *
  * Revision 1.82  2005/09/16 18:47:50  camacho
  * Remove dead code
  *
