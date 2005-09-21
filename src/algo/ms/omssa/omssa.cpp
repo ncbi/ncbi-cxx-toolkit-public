@@ -963,18 +963,35 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 		    } //iMod
 		} // iMissed
         if (enzyme->GetNonSpecific()) {
+            int NonSpecificMass(Masses[0] + EndMasses[0]);
             PartialLoop:
 
                 // check that stop is within bounds
-                // upper bound is max precursor mass divided by lightest AA
-                if(enzyme->GetStop() - PepStart[0] < MaxMZ/MonoMass[7]/MSSCALE &&
+                //// upper bound is max precursor mass divided by lightest AA
+                ////      if(enzyme->GetStop() - PepStart[0] < MaxMZ/MonoMass[7]/MSSCALE &&
+                // upper bound redefined so that minimum mass of existing peptide
+                // is less than the max precursor mass minus the mass of glycine
+                // assumes that any mods have positive mass
+
+                // argghh, doesn't work for semi-tryptic, which resets the mass
+                // need to use different criterion if semi-tryptic and  start position was
+                // moved.  otherwise this criterion is OK
+                if( NonSpecificMass < MaxMZ - MonoMass[7]*MSSCALE &&
                    enzyme->GetStop() < Sequence.GetData() + Sequence.GetLength()) {
                     enzyme->SetStop()++;
+                    NonSpecificMass += PrecursorIntMassArray[AA.GetMap()[*(enzyme->GetStop())]];
                 }
+                // reset to new start with minimum size
                 else if ( PepStart[0] < Sequence.GetData() + Sequence.GetLength() - 
                           MyRequest->GetSettings().GetMinnoenzyme()) {
                     PepStart[0]++;
                     enzyme->SetStop() = PepStart[0] + MyRequest->GetSettings().GetMinnoenzyme();
+
+                    // reset mass
+                    NonSpecificMass = 0;
+                    const char *iSeqChar;
+                    for(iSeqChar = PepStart[0]; iSeqChar <= enzyme->GetStop(); iSeqChar++)
+                        PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
                 }
                 else SequenceDone = true;
                 
@@ -1214,6 +1231,7 @@ TaxContinue2:
 		else {
 		    Hit = new CMSHits;
             Hit->SetTheomass(MSHit->GetTheoreticalMass());
+            Hit->SetOid(MSHit->GetSeqIndex());
 		    Hit->SetPepstring(seqstring);
             // set the start AA, if there is one
             if(MSHit->GetStart() > 0) {
@@ -1259,13 +1277,6 @@ TaxContinue2:
 		
 		Pephit = new CMSPepHit;
 
-//list< CRef< CSeq_id > > = (*iDefLine)->GetSeqid()
-
-        // seqid.Which() == CSeq_id::e_Gi
-        // seqid.GetSeqIdString() for best seqid
-      //  Pephit->SetAccession("test");
-       // Pephit->SetGi(123);
-
         if ((*iDefLine)->CanGetSeqid()) {
             // find a gi
             ITERATE(list< CRef<CSeq_id> >, seqid, (*iDefLine)->GetSeqid()) {
@@ -1280,11 +1291,11 @@ TaxContinue2:
                 GetSeqIdString(false));
         }
             
- 
 
 		Pephit->SetStart(MSHit->GetStart());
 		Pephit->SetStop(MSHit->GetStop());;
 		Pephit->SetDefline((*iDefLine)->GetTitle());
+        Pephit->SetProtlength(Sequence.GetLength());
 		CRef<CMSPepHit> pepref(Pephit);
 		Hit->SetPephits().push_back(pepref);
 
@@ -1532,6 +1543,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.63  2005/09/21 18:05:59  lewisg
+speed up non-specific search, add fields to result
+
 Revision 1.62  2005/09/20 21:07:57  lewisg
 get rid of c-toolkit dependencies and nrutil
 

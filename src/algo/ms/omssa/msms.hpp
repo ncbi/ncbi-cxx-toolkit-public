@@ -458,6 +458,8 @@ public:
      * @param PrecursorIntCalcMass integer precursor masses
      * @param Modset list of possible mods
      * @param Maxproductions max number of product ions to calculate
+     * 
+     * @return are we at the end of the sequence?
      */
     bool CalcAndCut(const char *SeqStart, 
                     const char *SeqEnd,  // the end, not beyond the end
@@ -685,9 +687,6 @@ void CCleave::CalcMass(char SeqChar,
 		       const int *IntCalcMass
 		       )
 {
-    //    int j;
-    //  for(i = 0; i < NumMasses; i++)
-    //    for(j = 0; j < NumMod; j++)
     *Masses += IntCalcMass[Reverse[SeqChar]];
 }
 
@@ -1008,6 +1007,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.27  2005/09/21 18:05:59  lewisg
+  speed up non-specific search, add fields to result
+
   Revision 1.26  2005/09/14 17:46:11  lewisg
   treat n-term methionine cut as cleavage
 

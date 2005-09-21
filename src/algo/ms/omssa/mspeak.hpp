@@ -909,7 +909,7 @@ inline int CMSPeak::GetPrecursormz(void)
 inline 
 int CMSPeak::CalcPrecursorMass(int PrecursorCharge)
 {
-    return Precursormz * PrecursorCharge - PrecursorCharge * kProton * MSSCALE;
+    return static_cast <int> (Precursormz * PrecursorCharge - PrecursorCharge * kProton * MSSCALE);
 }
 
 
@@ -1084,6 +1084,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.33  2005/09/21 18:05:59  lewisg
+  speed up non-specific search, add fields to result
+
   Revision 1.32  2005/09/14 18:50:56  lewisg
   add theoretical mass to hit
 

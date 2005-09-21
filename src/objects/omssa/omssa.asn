@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.27 2005/09/14 18:50:56 lewisg Exp $
+-- $Id: omssa.asn,v 1.28 2005/09/21 18:05:59 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -379,7 +379,8 @@ MSPepHit ::= SEQUENCE {
 	stop INTEGER,        -- stop position (inclusive) in sequence
 	gi INTEGER OPTIONAL, -- genbank identifier
 	accession VisibleString OPTIONAL,  -- sequence accession
-	defline VisibleString OPTIONAL     -- sequence description
+	defline VisibleString OPTIONAL,    -- sequence description
+	protlength INTEGER OPTIONAL        -- length of protein
 }	
 
 -- modifications to a hit peptide
@@ -403,8 +404,9 @@ MSHits ::= SEQUENCE {
 	mods SEQUENCE OF MSModHit OPTIONAL,  -- modifications to sequence
 	pepstart VisibleString OPTIONAL,  -- AA before the peptide
         pepstop VisibleString OPTIONAL,   -- AA after the peptide
-        protlength INTEGER OPTIONAL,      -- length of protein hit
-	theomass INTEGER OPTIONAL         -- scaled theoretical mass of peptide hit
+        protlength INTEGER OPTIONAL,      -- length of protein hit (depricated)
+	theomass INTEGER OPTIONAL,        -- scaled theoretical mass of peptide hit
+	oid INTEGER OPTIONAL              -- blast library oid    
 	}
 
 
