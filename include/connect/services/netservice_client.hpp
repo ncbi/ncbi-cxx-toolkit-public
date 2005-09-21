@@ -75,6 +75,28 @@ public:
 
     virtual ~CNetServiceClient();
 
+    /// Client Name composition rules
+    enum EUseName {
+        eUseName_Global, ///< Only global name is used; client_name ignored
+        eUseName_Both,   ///< The name is composed of: "<global>::<local>"
+    };
+
+    /// Set an application-wide name for NetCache clients, and if to use
+    /// instance specific name too    
+    ///
+    /// @note
+    ///   Global name should be established before creating service clients
+    static 
+    void SetGlobalName(const string&  global_name,
+                 EUseName       use_name  = eUseName_Both);
+
+    static
+    const string& GetGlobalName();
+
+    static
+    EUseName GetNameUse();
+
+
     /// Set communication timeout default for all new connections
     static
     void SetDefaultCommunicationTimeout(const STimeout& to);
@@ -193,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/09/21 16:11:18  kuznets
+ * Added support for global application wide client names
+ *
  * Revision 1.9  2005/08/17 15:14:39  kuznets
  * Forget() to Release()
  *

@@ -50,13 +50,38 @@ static
 STimeout s_DefaultCommTimeout = {12, 0};
 
 
+static string  s_GlobalClientName;
+static CNetServiceClient::EUseName  s_UseName = 
+                        CNetServiceClient::eUseName_Both;
+
+void CNetServiceClient::SetGlobalName(const string&  global_name,
+                                      EUseName       use_name)
+{
+    s_GlobalClientName = global_name;
+    s_UseName = use_name;
+}
+
+const string& CNetServiceClient::GetGlobalName()
+{
+    return s_GlobalClientName;
+}
+
+CNetServiceClient::EUseName CNetServiceClient::GetNameUse()
+{
+    return s_UseName;
+}
+
 
 CNetServiceClient::CNetServiceClient(const string& client_name)
     : m_Sock(0),
       m_OwnSocket(eNoOwnership),
-      m_ClientName(client_name),
       m_Timeout(s_DefaultCommTimeout)
 {
+    if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
+        m_ClientName = s_GlobalClientName + "::" + client_name;
+    } else {
+        m_ClientName = client_name;
+    }
 }
 
 CNetServiceClient::CNetServiceClient(const string&  host,
@@ -66,9 +91,13 @@ CNetServiceClient::CNetServiceClient(const string&  host,
       m_Host(host),
       m_Port(port),
       m_OwnSocket(eNoOwnership),
-      m_ClientName(client_name),
       m_Timeout(s_DefaultCommTimeout)
 {
+    if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
+        m_ClientName = s_GlobalClientName + "::" + client_name;
+    } else {
+        m_ClientName = client_name;
+    }
 }
 
 CNetServiceClient::CNetServiceClient(CSocket*      sock,
@@ -80,6 +109,12 @@ CNetServiceClient::CNetServiceClient(CSocket*      sock,
       m_ClientName(client_name),
       m_Timeout(s_DefaultCommTimeout)
 {
+    if ((s_UseName == eUseName_Both) && !s_GlobalClientName.empty()) {
+        m_ClientName = s_GlobalClientName + "::" + client_name;
+    } else {
+        m_ClientName = client_name;
+    }
+
     if (m_Sock) {
         m_Sock->DisableOSSendDelay();
         RestoreHostPort();
@@ -298,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/09/21 16:11:28  kuznets
+ * Added support for global application wide client names
+ *
  * Revision 1.12  2005/08/17 14:28:41  kuznets
  * Close socket if connect return unknown error
  *
