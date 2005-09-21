@@ -36,6 +36,7 @@
 #include <objmgr/data_loader.hpp>
 
 #include <objtools/lds/lds_set.hpp>
+#include <objtools/lds/lds_admin.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -52,6 +53,8 @@ class CLDS_Database;
 
 const string kCFParam_LDS_Database = "Database"; // = CLDS_Database*
 const string kCFParam_LDS_DbPath   = "DbPath";   // = string
+const string kCFParam_LDS_RecurseSubDir  = "RecurseSubDir"; // = bool
+const string kCFParam_LDS_ControlSum     = "ControlSum";    // = bool
 
 
 class NCBI_XLOADER_LDS_EXPORT CLDS_DataLoader : public CDataLoader
@@ -75,7 +78,10 @@ public:
         CObjectManager& om,
         const string& db_path,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet,
+        CLDS_Management::ERecurse recurse = CLDS_Management::eRecurseSubDirs,
+        CLDS_Management::EComputeControlSum csum = 
+                                         CLDS_Management::eComputeControlSum);
     static string GetLoaderNameFromArgs(const string& db_path);
 
     // Public constructor not to break CSimpleClassFactoryImpl code
@@ -100,13 +106,38 @@ private:
     friend class CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&>;
     friend class CParamLoaderMaker<CLDS_DataLoader, const string&>;
 
+private:
+    class CLDS_LoaderMaker : public TPathMaker
+    {
+    public: 
+        typedef TPathMaker TParent;
+    public:
+        CLDS_LoaderMaker(TParamType                          param,
+                         CLDS_Management::ERecurse           recurse,
+                         CLDS_Management::EComputeControlSum csum) 
+            : TParent(param),
+              m_Recurse(recurse),
+              m_ControlSum(csum)
+        {}
+        virtual CDataLoader* CreateLoader(void) const;
+    private:
+        CLDS_Management::ERecurse            m_Recurse;
+        CLDS_Management::EComputeControlSum  m_ControlSum;
+    };
+
+
+private:
     CLDS_DataLoader(const string& dl_name);
 
     // Construct dataloader, attach the external LDS database
     CLDS_DataLoader(const string& dl_name,
                     CLDS_Database& lds_db);
 
-    // Construct dataloader, with opening its own database
+    // Construct dataloader, take ownership of  LDS database
+    CLDS_DataLoader(const string& dl_name,
+                    CLDS_Database* lds_db);
+
+    /// Construct dataloader, with opening its own database
     CLDS_DataLoader(const string& dl_name,
                     const string& db_path);
 
@@ -141,6 +172,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/09/21 13:32:47  kuznets
+ * Addedcvs diff lds_dataloader.hpp
+ *
  * Revision 1.17  2005/07/15 19:52:25  vasilche
  * Use blob_id map from CDataSource.
  *
