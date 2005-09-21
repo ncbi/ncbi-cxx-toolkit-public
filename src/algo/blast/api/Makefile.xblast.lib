@@ -22,6 +22,7 @@ rpstblastn_options \
 phiblast_nucl_options \
 phiblast_prot_options \
 blast_psi_cxx \
+local_blast \
 remote_blast \
 seqinfosrc_seqvec \
 seqinfosrc_seqdb \
@@ -36,7 +37,12 @@ blast_mtlock \
 psi_pssm_input \
 blast_advprot_options \
 version \
-dust_filter
+dust_filter \
+rps_aux \
+setup_factory prelim_stage traceback_stage \
+uniform_search local_search remote_search \
+query_data objmgr_query_data objmgrfree_query_data \
+blast_seqsrc_adapter_priv seqsrc_adapter_seqdb_priv
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
