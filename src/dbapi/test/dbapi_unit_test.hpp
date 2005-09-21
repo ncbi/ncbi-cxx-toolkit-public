@@ -164,6 +164,7 @@ public:
     void Test_GetColumnNo(void);
     void Test_LOB(void);
     void Test_UNIQUE(void);
+    void Test_DateTime(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -218,6 +219,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/09/21 13:48:17  ssikorsk
+ * Added Test_DateTime test to the test-suite.
+ *
  * Revision 1.26  2005/09/16 16:59:11  ssikorsk
  * + Test_UNIQUE test
  *
