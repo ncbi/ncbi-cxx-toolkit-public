@@ -778,19 +778,26 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_SmallDateTime : public CDB_Object
 {
 public:
     CDB_SmallDateTime(CTime::EInitMode mode= CTime::eEmpty)
-	  : m_NCBITime(mode) {
-        m_Status = 0x1;
-        m_Null= (mode == CTime::eEmpty);
+    : m_NCBITime(mode) 
+    , m_Status( 0x1 )
+    {
+        m_DBTime.days = 0;
+        m_DBTime.time = 0;
+        m_Null = (mode == CTime::eEmpty);
     }
-    CDB_SmallDateTime(const CTime& t) {
-        m_NCBITime = t;
-        m_Status   = 0x1;
-        m_Null     = false;
+    CDB_SmallDateTime(const CTime& t) 
+    : m_NCBITime( t )
+    , m_Status( 0x1 )
+    {
+        m_DBTime.days = 0;
+        m_DBTime.time = 0;
+        m_Null = t.IsEmpty();
     }
-    CDB_SmallDateTime(Uint2 days, Uint2 minutes) {
+    CDB_SmallDateTime(Uint2 days, Uint2 minutes) 
+    : m_Status( 0x2 )
+    {
         m_DBTime.days = days;
         m_DBTime.time = minutes;
-        m_Status      = 0x2;
         m_Null        = false;
     }
 
@@ -804,12 +811,14 @@ public:
 
     CDB_SmallDateTime& operator= (const CTime& t) {
         m_NCBITime = t;
+        m_DBTime.days = 0;
+        m_DBTime.time = 0;
         m_Status = 0x1;
-        m_Null= false;
+        m_Null = t.IsEmpty();
         return *this;
     }
 
-    const CTime& Value() const {
+    const CTime& Value(void) const {
         if((m_Status & 0x1) == 0) {
             m_NCBITime.SetTimeDBU(m_DBTime);
             m_Status |= 0x1;
@@ -817,7 +826,7 @@ public:
         return m_NCBITime;
     }
 
-    Uint2 GetDays() const {
+    Uint2 GetDays(void) const {
         if((m_Status & 0x2) == 0) {
             m_DBTime = m_NCBITime.GetTimeDBU();
             m_Status |= 0x2;
@@ -825,7 +834,7 @@ public:
         return m_DBTime.days;
     }
 
-    Uint2 GetMinutes() const {
+    Uint2 GetMinutes(void) const {
         if((m_Status & 0x2) == 0) {
             m_DBTime = m_NCBITime.GetTimeDBU();
             m_Status |= 0x2;
@@ -833,8 +842,8 @@ public:
         return m_DBTime.time;
     }
 
-    virtual EDB_Type    GetType() const;
-    virtual CDB_Object* Clone()   const;
+    virtual EDB_Type    GetType(void) const;
+    virtual CDB_Object* Clone(void)   const;
     virtual void AssignValue(CDB_Object& v);
 
 protected:
@@ -850,26 +859,35 @@ class NCBI_DBAPIDRIVER_EXPORT CDB_DateTime : public CDB_Object
 {
 public:
     CDB_DateTime(CTime::EInitMode mode= CTime::eEmpty)
-	  : m_NCBITime(mode) {
-        m_Status = 0x1;
-        m_Null= (mode == CTime::eEmpty);
+    : m_NCBITime(mode) 
+    , m_Status(0x1)
+    {
+        m_DBTime.days = 0;
+        m_DBTime.time = 0;
+        m_Null = (mode == CTime::eEmpty);
     }
-    CDB_DateTime(const CTime& t) {
-        m_NCBITime = t;
-        m_Status = 0x1;
-        m_Null= false;
+    CDB_DateTime(const CTime& t) 
+    : m_NCBITime( t )
+    , m_Status( 0x1 )
+    {
+        m_DBTime.days = 0;
+        m_DBTime.time = 0;
+        m_Null = t.IsEmpty();
     }
-    CDB_DateTime(Int4 d, Int4 s300) {
+    CDB_DateTime(Int4 d, Int4 s300) 
+    : m_Status( 0x2 )
+    {
         m_DBTime.days = d;
         m_DBTime.time = s300;
-        m_Status = 0x2;
-        m_Null= false;
+        m_Null = false;
     }
 
     CDB_DateTime& operator= (const CTime& t) {
         m_NCBITime = t;
+        m_DBTime.days = 0;
+        m_DBTime.time = 0;
         m_Status = 0x1;
-        m_Null= false;
+        m_Null = t.IsEmpty();
         return *this;
     }
 
@@ -881,7 +899,7 @@ public:
         return *this;
     }
 
-    const CTime& Value() const {
+    const CTime& Value(void) const {
         if((m_Status & 0x1) == 0) {
             m_NCBITime.SetTimeDBI(m_DBTime);
             m_Status |= 0x1;
@@ -889,7 +907,7 @@ public:
         return m_NCBITime;
     }
 
-    Int4 GetDays() const {
+    Int4 GetDays(void) const {
         if((m_Status & 0x2) == 0) {
             m_DBTime = m_NCBITime.GetTimeDBI();
             m_Status |= 0x2;
@@ -897,7 +915,7 @@ public:
         return m_DBTime.days;
     }
 
-    Int4 Get300Secs() const {
+    Int4 Get300Secs(void) const {
         if((m_Status & 0x2) == 0) {
             m_DBTime = m_NCBITime.GetTimeDBI();
             m_Status |= 0x2;
@@ -905,8 +923,8 @@ public:
         return m_DBTime.time;
     }
 
-    virtual EDB_Type    GetType() const;
-    virtual CDB_Object* Clone()   const;
+    virtual EDB_Type    GetType(void) const;
+    virtual CDB_Object* Clone(void)   const;
     virtual void AssignValue(CDB_Object& v);
 
 protected:
@@ -1047,6 +1065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/21 13:54:19  ssikorsk
+ * Set CDB_DateTime and CDB_SmallDateTime to null in case of initialization with empty CTime
+ *
  * Revision 1.19  2005/07/12 19:19:13  soussov
  * fixes bug in CDB_[Small]DateTime constructor
  *
