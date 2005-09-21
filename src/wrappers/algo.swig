@@ -55,6 +55,18 @@ VECTOR_CREF(vector_CRef_CSeq_align, ncbi::objects::CSeq_align);
 // SWIG thinks this is a function
 %ignore ncbi::blast::Version;
 
+// Work-around for private typedef issue
+%extend ncbi::CSymDustMasker {
+    ncbi::CRef<ncbi::objects::CPacked_seqint>
+    GetMaskedInts(ncbi::objects::CSeq_id& seq_id,
+                  const ncbi::objects::CSeqVector& seq ) {
+        return self->GetMaskedInts(seq_id, seq);
+    }
+}
+%ignore ncbi::CSymDustMasker::GetMaskedInts(objects::CSeq_id& seq_id,
+                                            const sequence_type& seq);
+
+
 %%
 
 algo/align/nw/align_exception.hpp
@@ -251,6 +263,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/09/21 21:45:17  jcherry
+ * Work-around for private typedef problem with CSymDustMasker
+ *
  * Revision 1.8  2005/09/13 15:22:34  jcherry
  * Remove splign_compartment_finder.hpp, which no longer exists
  *
