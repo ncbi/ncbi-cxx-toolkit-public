@@ -212,15 +212,16 @@ CBlastSeqVectorFromCSeq_data::x_SetMinusStrand()
     }
 }
 
-inline void 
+void 
 CBlastSeqVectorFromCSeq_data::x_ComplementData()
 {
     TSeqPos nconv = CSeqManip::ReverseComplement(m_SequenceData,
                                                  m_Encoding, 0, size());
     ASSERT(nconv == size());
+    nconv += 0; // eliminate compiler warning
 }
 
-inline CSeqUtil::ECoding 
+CSeqUtil::ECoding 
 CBlastSeqVectorFromCSeq_data::x_Encoding_CSeq_data2CSeqUtil
 (CSeq_data::E_Choice c)
 {
@@ -373,18 +374,20 @@ CBlastQuerySourceBioseqSet::x_BioseqSanityCheck(const CBioseq& bs)
 
 
 static CRef<CBioseq_set>
-s_ConstBioseqSetToBioseqSet(CConstRef<CBioseq_set> bioseq_set)
+s_ConstBioseqSetToBioseqSet(CConstRef<CBioseq_set> /*bioseq_set*/)
 {
     // KB
-    throw runtime_error(string("KB will implement ") + NCBI_CURRENT_FUNCTION);
+    throw runtime_error(string("KB will implement ") +
+                        string(NCBI_CURRENT_FUNCTION));
     return CRef<CBioseq_set>(NULL);
 }
 static IRemoteQueryData::TSeqLocs
-s_ConstBioseqSetToSeqLocs(CConstRef<CBioseq_set> bioseq_set)
+s_ConstBioseqSetToSeqLocs(CConstRef<CBioseq_set> /*bioseq_set*/)
 {
     // KB
     IRemoteQueryData::TSeqLocs retval;
-    throw runtime_error(string("KB will implement ") + NCBI_CURRENT_FUNCTION);
+    throw runtime_error(string("KB will implement ") +
+                        string(NCBI_CURRENT_FUNCTION));
     return retval;
 }
 

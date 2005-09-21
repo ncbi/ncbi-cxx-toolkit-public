@@ -99,7 +99,7 @@ CBlastQuerySourceTSeqLocs::GetStrand(int i) const
 }
 
 inline CConstRef<CSeq_loc> 
-CBlastQuerySourceTSeqLocs::GetMask(int i) const 
+CBlastQuerySourceTSeqLocs::GetMask(int /*i*/) const 
 { 
     return CConstRef<CSeq_loc>(0); 
 }

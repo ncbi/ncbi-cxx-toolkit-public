@@ -294,11 +294,11 @@ CRpsLookupTblFile::CRpsLookupTblFile(const string& filename_no_extn)
 {
     m_Data = (BlastRPSLookupFileHeader*) m_MmappedFile->GetPtr();
     if (m_Data->magic_number != RPS_MAGIC_NUM) {
+        m_Data = NULL;
         NCBI_THROW(CBlastException, eRpsInit,
                "RPS BLAST profile file (" + filename_no_extn + kExtension + 
                ") is either corrupt or constructed for an incompatible "
                "architecture");
-        m_Data = NULL;
     }
 }
 
@@ -340,11 +340,11 @@ CRpsPssmFile::CRpsPssmFile(const string& filename_no_extn)
 {
     m_Data = (BlastRPSProfileHeader*) m_MmappedFile->GetPtr();
     if (m_Data->magic_number != RPS_MAGIC_NUM) {
+        m_Data = NULL;
         NCBI_THROW(CBlastException, eRpsInit,
                "RPS BLAST profile file (" + filename_no_extn + kExtension + 
                ") is either corrupt or constructed for an incompatible "
                "architecture");
-        m_Data = NULL;
     }
 }
 
