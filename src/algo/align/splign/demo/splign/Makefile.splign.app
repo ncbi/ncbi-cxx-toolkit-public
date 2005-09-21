@@ -10,7 +10,7 @@ SRC = seq_loader splign_app
 
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
       xblast xalgodustmask seqdb xnetblastcli blastdb \
-      xnetblast scoremat xobjutil xobjread tables \
+      xnetblast scoremat xobjsimple xobjutil xobjread tables \
       $(OBJMGR_LIBS)
 #      $(OBJMGR_LIBS:%=%$(STATIC))
 
