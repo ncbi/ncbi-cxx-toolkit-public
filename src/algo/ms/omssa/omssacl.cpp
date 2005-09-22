@@ -115,17 +115,18 @@ template <class T> void COMSSA::InsertList(const string& Input, T& ToInsert, str
 ///
 void COMSSA::PrintMods(CRef <CMSModSpecSet> Modset)
 {
-    multimap <string, int> ModMap;
+    typedef multimap <string, int> TModMap;
+    TModMap ModMap;
     int i;
     for(i = 0; i < eMSMod_max; i++) {
         if(Modset->GetModMass(i) != 0.0)
-            ModMap.insert(pair <string,int> (Modset->GetModName(i), i));
+            ModMap.insert(TModMap::value_type(Modset->GetModName(i), i));
     }
 
     cout << " # : Name" << endl;
-    multimap <string, int>::iterator iModMap;
-    for(iModMap = ModMap.begin(); iModMap != ModMap.end(); ++iModMap)
-            cout << setw(3) << iModMap->second << ": " << iModMap->first << endl;
+    ITERATE (TModMap, iModMap, ModMap) {
+        cout << setw(3) << iModMap->second << ": " << iModMap->first << endl;
+    }
 }
 
 
@@ -610,6 +611,10 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.44  2005/09/22 14:58:03  ucko
+  Tweak PrintMods to compile with WorkShop's ultra-strict STL; take
+  advantage of ITERATE along the way.
+
   Revision 1.43  2005/09/21 20:08:50  lewisg
   make PTMs consistent
 
