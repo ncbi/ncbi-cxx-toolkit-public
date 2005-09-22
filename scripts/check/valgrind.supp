@@ -1,0 +1,233 @@
+#
+# Valgrind suppression file (versions 2.2.0, 3.0.1).
+#
+################################################################################
+#
+# Format of this file is:
+# {
+#     name_of_suppression
+#     tool_name:supp_kind
+#     (optional extra info for some suppression types)
+#     caller0 name, or /name/of/so/file.so
+#     caller1 name, or ditto
+#     (optionally: caller2 name)
+#     (optionally: caller3 name)
+#  }
+#
+# For Memcheck, the supp_kinds are:
+#
+#     Param Value1 Value2 Value4 Value8 Value16
+#     Free Addr1 Addr2 Addr4 Addr8 Addr16
+#     Cond (previously known as Value0)
+#
+# and the optional extra info is:
+#     if Param: name of system call param
+#     if Free: name of free-ing fn)
+#
+################################################################################
+
+# Important note: C++ function names must be mangled.
+# Use valgrind`s the --demangle=no option to get the mangled names
+# in error messages.
+
+
+#-------- C++ Toolkit ----------------------------------------------------------
+
+{
+    CObject::InitCounter() UMR
+    Memcheck:Cond
+    fun:_ZN4ncbi7CObject11InitCounterEv
+}
+
+#-------- thirdparty -----------------------------------------------------------
+
+{
+    select/dblib/dbapi
+    Memcheck:Param
+    select(writefds)
+    fun:select
+    fun:syb_tcp_open
+}
+
+{
+    deflate/zlib
+    Memcheck:Cond
+    fun:*
+    fun:deflate_slow
+    fun:deflate
+}
+
+{
+    ftds63/dbapi
+    Memcheck:Cond
+    fun:__underflow
+    fun:getdelim
+    fun:read_conf_file
+}
+
+{
+    ftds63/dbapi
+    Memcheck:Cond
+    fun:add_*
+    fun:read_conf_file
+    fun:__gconv_*
+}
+
+{
+    ftds63/dbapi
+    Memcheck:Cond
+    fun:*
+    fun:add_*
+    fun:read_conf_file
+    fun:__gconv_*
+}
+
+{
+    ftds63/dbapi
+    Memcheck:Cond
+    fun:find_derivation
+    fun:__gconv_*
+    fun:__gconv_*
+}
+
+#-------- libc -----------------------------------------------------------------
+
+{
+    strlen/libc
+    Memcheck:Cond
+    fun:strlen
+}
+
+{
+    strcat/libc
+    Memcheck:Cond
+    fun:strcat
+}
+
+{
+    __uflow/__underflow/libc
+    Memcheck:Cond
+    fun:__u*flow
+}
+
+{
+    index/libc
+    Memcheck:Cond
+    fun:index
+}
+
+{
+    vfprintf/libc
+    Memcheck:Cond
+    fun:vfprintf
+    fun:*printf             
+    fun:*printf
+}
+
+{
+    _IO_vfprintf/libc
+    Memcheck:Cond
+    fun:_IO_vfprintf
+}
+
+{
+    _IO_vfscanf/libc
+    Memcheck:Cond
+    fun:_IO_vfscanf
+    fun:*vsscanf
+}
+
+{
+    _IO_fwrite/libc
+    Memcheck:Cond
+    fun:_IO_fwrite
+}
+
+{
+    _IO_flush_all_lockp/libc
+    Memcheck:Cond
+    fun:_IO_flush_all*
+    fun:_IO_flush_all*
+}
+
+
+#-------- glibc 2.3.2 ----------------------------------------------------------
+
+{
+    ld-2.3.2.so
+    Memcheck:Cond
+    obj:/lib/ld-2.3.2.so
+    obj:/lib/ld-2.3.2.so
+    obj:/lib/ld-2.3.2.so
+    obj:/lib/ld-2.3.2.so
+}
+
+{
+    dl_map_object/dl_open
+    Memcheck:Cond
+    obj:/lib/*-2.3.2.so
+    obj:/lib/*-2.3.2.so
+    fun:_dl_map_object
+    obj:/lib/*-2.3.2.so
+}
+
+{
+    dl_map_object/dl_open
+    Memcheck:Addr4
+    obj:/lib/*-2.3.2.so
+    obj:/lib/*-2.3.2.so
+    fun:_dl_map_object
+    obj:/lib/*-2.3.2.so
+}
+
+{
+    dl_map_object
+    Memcheck:Cond
+    obj:/lib/*-2.3.2.so
+    fun:_dl_map_object
+    obj:/lib/*-2.3.2.so
+}
+
+{
+    dl_map_object
+    Memcheck:Addr4
+    obj:/lib/*-2.3.2.so
+    fun:_dl_map_object
+    obj:/lib/*-2.3.2.so
+}
+
+{
+    dl_lookup_symbol
+    Memcheck:Addr4
+    obj:/lib/*-2.3.2.so
+    obj:/lib/*-2.3.2.so
+    fun:_dl_lookup_symbol
+    obj:/lib/*-2.3.2.so
+}
+
+{
+    dl_catch_error/dl_open
+    Memcheck:Cond
+    obj:/lib/*-2.3.2.so
+    obj:/lib/*-2.3.2.so
+    fun:_dl_catch_error
+    fun:_dl_open
+}
+
+{
+    dl_catch_error/dl_open
+    Memcheck:Addr4
+    obj:/lib/*-2.3.2.so
+    obj:/lib/*-2.3.2.so
+    fun:_dl_catch_error
+    fun:_dl_open
+}
+
+{
+    dl_sym
+    Memcheck:Addr4
+    obj:/lib/*-2.3.2.so
+    fun:_dl_sym
+    obj:/lib/*-2.3.2.so
+    fun:_dl_catch_error
+}
