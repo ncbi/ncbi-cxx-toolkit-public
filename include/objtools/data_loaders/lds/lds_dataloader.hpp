@@ -124,6 +124,7 @@ private:
         CLDS_Management::ERecurse            m_Recurse;
         CLDS_Management::EComputeControlSum  m_ControlSum;
     };
+    friend class CLDS_LoaderMaker;
 
 
 private:
@@ -172,6 +173,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/09/22 01:14:13  ucko
+ * Explicitly declare CLDS_LoaderMaker to be a friend of CLDS_DataLoader,
+ * as not all compilers automatically grant friendship to inner classes.
+ *
  * Revision 1.18  2005/09/21 13:32:47  kuznets
  * Addedcvs diff lds_dataloader.hpp
  *
