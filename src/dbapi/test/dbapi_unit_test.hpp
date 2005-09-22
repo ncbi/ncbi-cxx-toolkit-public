@@ -161,6 +161,7 @@ public:
     void Test_Cursor(void);
     void Test_Procedure(void);
     void Test_Bulk_Writing(void);
+    void Test_Bulk_Overflow(void);
     void Test_GetColumnNo(void);
     void Test_LOB(void);
     void Test_UNIQUE(void);
@@ -219,6 +220,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2005/09/22 10:48:59  ssikorsk
+ * Added Test_Bulk_Overflow test to the test-suite
+ *
  * Revision 1.27  2005/09/21 13:48:17  ssikorsk
  * Added Test_DateTime test to the test-suite.
  *
