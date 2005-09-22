@@ -6,4 +6,4 @@ ulimit -n 1536 > /dev/null 2>&1
 SYBASE="@SYBASE_PATH@"
 export SYBASE
 
-exec "$@"
+exec $NCBI_CHECK_TOOL "$@"
