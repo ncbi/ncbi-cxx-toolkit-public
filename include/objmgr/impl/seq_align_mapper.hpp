@@ -101,7 +101,9 @@ public:
     typedef CSeq_align::C_Segs::TDendiag TDendiag;
     typedef CSeq_align::C_Segs::TStd TStd;
 
-    CSeq_align_Mapper(const CSeq_align& align);
+    CSeq_align_Mapper(const CSeq_align& align,
+                      bool map_widths,
+                      CScope* scope = 0);
     ~CSeq_align_Mapper(void) {}
 
     void Convert(CSeq_loc_Conversion_Set& cvts,
@@ -158,9 +160,11 @@ private:
     void x_GetDstPacked(CRef<CSeq_align>& dst) const;
     void x_GetDstDisc(CRef<CSeq_align>& dst) const;
 
+    int x_GetWidth(const CSeq_id& id) const;
+
     // Used for e_Disc alignments
     typedef vector<CSeq_align_Mapper>  TSubAligns;
-
+    
     // Flags to indicate possible destination alignment types:
     // multi-dim or multi-id alignments can be packed into std-seg
     // or dense-diag only.
@@ -168,15 +172,18 @@ private:
         eAlign_Normal,      // Normal alignment, may be packed into any type
         eAlign_Empty,       // Empty alignment
         eAlign_MultiId,     // A row contains different IDs
-        eAlign_MultiDim     // Segments have different number of rows
+        eAlign_MultiDim,    // Segments have different number of rows
     };
 
+    mutable CRef<CScope>         m_Scope;
     CConstRef<CSeq_align>        m_OrigAlign;
     mutable CRef<CSeq_align>     m_DstAlign;
     TSegments                    m_Segs;
     TSubAligns                   m_SubAligns;
     bool                         m_HaveStrands;
     bool                         m_HaveWidths;
+    bool                         m_MapWidths;
+    bool                         m_OnlyNucs;
     size_t                       m_Dim;
     EAlignFlags                  m_AlignFlags;
 };
@@ -222,6 +229,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/09/22 20:49:33  grichenk
+* Adjust segment length when mapping alignment between nuc and prot.
+*
 * Revision 1.10  2005/03/29 19:21:56  jcherry
 * Added export specifiers
 *

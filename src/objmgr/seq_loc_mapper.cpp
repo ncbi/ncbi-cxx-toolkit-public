@@ -2056,7 +2056,7 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
 
 CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
 {
-    CSeq_align_Mapper aln_mapper(src_align);
+    CSeq_align_Mapper aln_mapper(src_align, m_UseWidth, &m_Scope.GetScope());
     aln_mapper.Convert(*this);
     return aln_mapper.GetDstAlign();
     /*
@@ -2076,6 +2076,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/09/22 20:49:33  grichenk
+* Adjust segment length when mapping alignment between nuc and prot.
+*
 * Revision 1.41  2005/04/13 19:39:27  grichenk
 * Extend partial ranges when mapping prot to nuc.
 *

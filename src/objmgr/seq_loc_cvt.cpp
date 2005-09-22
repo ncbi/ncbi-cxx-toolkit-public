@@ -1565,7 +1565,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
 void CSeq_loc_Conversion_Set::Convert(const CSeq_align& src,
                                       CRef<CSeq_align>* dst)
 {
-    CRef<CSeq_align_Mapper> mapper(new CSeq_align_Mapper(src));
+    CRef<CSeq_align_Mapper> mapper(new CSeq_align_Mapper(src, false));
     mapper->Convert(*this);
     *dst = mapper->GetDstAlign();
 }
@@ -1577,6 +1577,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/09/22 20:49:33  grichenk
+* Adjust segment length when mapping alignment between nuc and prot.
+*
 * Revision 1.53  2005/03/31 18:06:19  grichenk
 * Fixed filtering of duplicate annotations
 *
