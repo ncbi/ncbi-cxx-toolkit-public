@@ -98,7 +98,7 @@ public:
     void SetDatabase(CLDS_Database& lds_db,
                      const string&  dl_name);
 
-private:
+// private:
     typedef CSimpleLoaderMaker<CLDS_DataLoader>                TSimpleMaker;
     typedef CParamLoaderMaker<CLDS_DataLoader, CLDS_Database&> TDbMaker;
     typedef CParamLoaderMaker<CLDS_DataLoader, const string&>  TPathMaker;
@@ -173,6 +173,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/22 01:22:55  ucko
+ * Also make internal typedefs public for the sake of WorkShop, for
+ * which the previous fix proved insufficient.
+ *
  * Revision 1.19  2005/09/22 01:14:13  ucko
  * Explicitly declare CLDS_LoaderMaker to be a friend of CLDS_DataLoader,
  * as not all compilers automatically grant friendship to inner classes.
