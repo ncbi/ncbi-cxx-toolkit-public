@@ -178,8 +178,8 @@ TSeqAlignVector
 CBl2Seq::Run()
 {
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
-    SetupSearch();
     m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
+    SetupSearch();
     ScanDB();
     return x_Results2SeqAlign();
 }
@@ -188,8 +188,8 @@ void
 CBl2Seq::PartialRun()
 {
     //m_OptsHandle->GetOptions().DebugDumpText(cerr, "m_OptsHandle", 1);
-    SetupSearch();
     m_OptsHandle->GetOptions().Validate();  // throws an exception on failure
+    SetupSearch();
     ScanDB();
 }
 
@@ -377,6 +377,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.84  2005/09/22 14:49:58  madden
+ * Validate options before calling SetupSearch
+ *
  * Revision 1.83  2005/09/21 16:15:18  camacho
  * Throw exception if Blast_RunFullSearch fails
  *
