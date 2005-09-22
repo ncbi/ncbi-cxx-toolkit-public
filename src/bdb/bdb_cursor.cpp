@@ -222,7 +222,7 @@ void CBDB_FileCursor::ReOpen(CBDB_Transaction* trans)
     try {
         From.m_Condition.ResetUnassigned();
         To.m_Condition.ResetUnassigned();
-    } catch (exception& ex) {
+    } catch (exception& ) {
         Close();
         throw;
     }
@@ -311,8 +311,62 @@ CBDB_FileCursor::TRecordCount CBDB_FileCursor::KeyDupCount() const
     return TRecordCount(ret);
 }
 
+void CBDB_FileCursor::x_FetchFirst_Prolog(unsigned int& flag)
+{
+    m_FirstFetched = true;
+    ECondition cond_from = m_CondFrom;
+
+    if (m_CondFrom != eFirst && m_CondFrom != eLast) {
+
+        // If cursor from buffer contains not all key fields
+        // (prefix search) we set all remaining fields to max.
+        // possible value for GT condition
+        From.m_Condition.InitUnassignedFields(m_CondFrom == eGT ?
+                                     CBDB_FC_Condition::eAssignMaxVal
+                                     :
+                                     CBDB_FC_Condition::eAssignMinVal);
+
+        m_Dbf.m_KeyBuf->CopyFieldsFrom(From.m_Condition.GetBuffer());
+
+
+        To.m_Condition.InitUnassignedFields(m_CondTo == eLE ?
+                                   CBDB_FC_Condition::eAssignMaxVal
+                                   :
+                                   CBDB_FC_Condition::eAssignMinVal);
+
+        // Incomplete == search transformed into >= search with incomplete
+        // fields set to min
+        if (m_CondFrom == eEQ  &&  !From.m_Condition.IsComplete()) {
+            cond_from = eGE;
+        }
+    }
+
+    switch ( cond_from ) {
+        case eFirst:
+            flag = DB_FIRST;       // first record retrieval
+            break;
+        case eLast:                // last record
+            flag = DB_LAST;
+            break;
+        case eEQ:
+            flag = DB_SET;         // precise shot
+            break;
+        case eGT:
+        case eGE:
+        case eLT:
+        case eLE:
+            flag = DB_SET_RANGE;   // permits partial key and range searches
+            break;
+        default:
+            BDB_THROW(eIdxSearch, "Invalid FROM condition type");
+    }
+}
+
 EBDB_ErrCode CBDB_FileCursor::FetchFirst()
 {
+    unsigned int flag;
+
+/*
     m_FirstFetched = true;
     ECondition cond_from = m_CondFrom;
 
@@ -362,8 +416,58 @@ EBDB_ErrCode CBDB_FileCursor::FetchFirst()
         default:
             BDB_THROW(eIdxSearch, "Invalid FROM condition type");
     }
+*/
+
+    x_FetchFirst_Prolog(flag);
 
     EBDB_ErrCode ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags);
+    if (ret != eBDB_Ok)
+        return ret;
+
+    // Berkeley DB does not support "<" ">" conditions, so we need to scroll
+    // up or down to reach the interval criteria.
+    if (m_CondFrom == eGT) {
+        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, DB_NEXT | m_FetchFlags);
+            if (ret != eBDB_Ok)
+                return ret;
+        }
+    }
+    else
+    if (m_CondFrom == eLT) {
+        while (m_Dbf.m_KeyBuf->Compare(From.m_Condition.m_Buf) == 0) {
+            ret = m_Dbf.ReadCursor(m_DBC, DB_PREV | m_FetchFlags);
+            if (ret != eBDB_Ok)
+                return ret;
+        }
+    }
+    else
+    if (m_CondFrom == eEQ && !From.m_Condition.IsComplete()) {
+        int cmp =
+            m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
+                                    From.m_Condition.GetFieldsAssigned());
+        if (cmp != 0) {
+            return eBDB_NotFound;
+        }
+    }
+
+    if ( !TestTo() ) {
+        ret = eBDB_NotFound;
+    }
+
+    return ret;
+}
+
+EBDB_ErrCode 
+CBDB_FileCursor::FetchFirst(void**       buf, 
+                            size_t       buf_size, 
+                            CBDB_RawFile::EReallocMode allow_realloc)
+{
+    unsigned int flag;
+    x_FetchFirst_Prolog(flag);
+
+    EBDB_ErrCode ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags,
+                                        buf, buf_size, allow_realloc);
     if (ret != eBDB_Ok)
         return ret;
 
@@ -411,7 +515,20 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     if (fdir == eDefault)
         fdir = m_FetchDirection;
 
-    unsigned int flag = (fdir == eForward) ? DB_NEXT : DB_PREV;
+    unsigned int flag;
+    switch (fdir) {
+    case eForward:
+        flag = DB_NEXT;
+        break;
+    case eBackward:
+        flag = DB_PREV;
+        break;
+    case eCurrent:
+        flag = DB_CURRENT;
+        break;
+    default:
+        _ASSERT(0);
+    }
     EBDB_ErrCode ret;
 
     while (1) {
@@ -448,6 +565,68 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     return ret;
 }
 
+EBDB_ErrCode 
+CBDB_FileCursor::Fetch(EFetchDirection fdir,
+                       void**       buf, 
+                       size_t       buf_size, 
+                       CBDB_RawFile::EReallocMode allow_realloc)
+{
+    if ( !m_FirstFetched )
+        return FetchFirst();
+
+    if (fdir == eDefault)
+        fdir = m_FetchDirection;
+
+    unsigned int flag;
+    switch (fdir) {
+    case eForward:
+        flag = DB_NEXT;
+        break;
+    case eBackward:
+        flag = DB_PREV;
+        break;
+    case eCurrent:
+        flag = DB_CURRENT;
+        break;
+    default:
+        _ASSERT(0);
+    }
+    EBDB_ErrCode ret;
+
+    while (1) {
+        ret = m_Dbf.ReadCursor(m_DBC, flag | m_FetchFlags,
+                               buf, buf_size, allow_realloc);
+        if (ret != eBDB_Ok) {
+            ret = eBDB_NotFound;
+            break;
+        }
+
+        if ( !TestTo() ) {
+            ret = eBDB_NotFound;
+            break;
+        }
+
+        // Check if we have fallen out of the FROM range
+        if (m_CondFrom == eEQ) {
+            int cmp =
+                m_Dbf.m_KeyBuf->Compare(From.m_Condition.GetBuffer(),
+                                        From.m_Condition.GetFieldsAssigned());
+            if (cmp != 0) {
+                ret = eBDB_NotFound;
+            }
+        }
+        break;
+
+    } // while
+
+    if (ret != eBDB_Ok)
+    {
+        From.m_Condition.ResetUnassigned();
+        To.m_Condition.ResetUnassigned();
+    }
+
+    return ret;
+}
 
 
 bool CBDB_FileCursor::TestTo() const
@@ -538,6 +717,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/09/22 13:37:44  kuznets
+ * Implemented reading BLOBs in cursors
+ *
  * Revision 1.18  2005/02/23 18:36:05  kuznets
  * Minor tweak for better exception safety in cursors
  *

@@ -109,6 +109,7 @@ public:
     enum EFetchDirection {
         eForward,
         eBackward,
+        eCurrent,
         eDefault
     };
 
@@ -141,8 +142,30 @@ public:
     EFetchDirection GetReverseFetchDirection() const;
     void ReverseFetchDirection();
 
-    EBDB_ErrCode FetchFirst();    
+    EBDB_ErrCode FetchFirst();
+
+    /// Fetch BLOB
+    EBDB_ErrCode FetchFirst(void**       buf, 
+                            size_t       buf_size, 
+                            CBDB_RawFile::EReallocMode allow_realloc);
+
+
+    /// Fetch record
+    ///
+    /// @note When fetching current record (eCurrent) and record has been 
+    /// deleted by other thread or program return code is eBDB_KeyEmpty
+    ///
     EBDB_ErrCode Fetch(EFetchDirection fdir = eDefault);
+
+    /// Fetch BLOB
+    ///
+    /// @note When fetching current record (eCurrent) and record has been 
+    /// deleted by other thread or program return code is eBDB_KeyEmpty
+    ///
+    EBDB_ErrCode Fetch(EFetchDirection fdir,
+                       void**       buf, 
+                       size_t       buf_size, 
+                       CBDB_RawFile::EReallocMode allow_realloc);
 
     EBDB_ErrCode Update(CBDB_File::EAfterWrite write_flag 
                                     = CBDB_File::eDiscardData);
@@ -198,6 +221,8 @@ public:
 private:
     CBDB_FileCursor(const CBDB_FileCursor&);
     CBDB_FileCursor& operator= (const CBDB_FileCursor&);
+private:
+    void x_FetchFirst_Prolog(unsigned int& flag);
 
 private:
     /// Berkeley DB DBC thing
@@ -271,6 +296,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/09/22 13:37:30  kuznets
+ * Implemented reading BLOBs in cursors
+ *
  * Revision 1.15  2005/02/22 14:07:55  kuznets
  * Added cursor reopen functions
  *

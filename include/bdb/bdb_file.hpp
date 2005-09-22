@@ -55,7 +55,8 @@ BEGIN_NCBI_SCOPE
 enum EBDB_ErrCode {
     eBDB_Ok,
     eBDB_NotFound,
-    eBDB_KeyDup
+    eBDB_KeyDup,
+    eBDB_KeyEmpty
 };
 
 
@@ -369,6 +370,12 @@ protected:
     /// Read DB cursor
     EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag);
 
+    /// Read DB cursor (BLOB)
+    EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag,
+                            void**       buf, 
+                            size_t       buf_size, 
+                            EReallocMode allow_realloc);
+
     /// Write DB cursor
     EBDB_ErrCode WriteCursor(DBC* dbc, unsigned int bdb_flag, 
                              EAfterWrite write_flag);
@@ -549,6 +556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/09/22 13:37:30  kuznets
+ * Implemented reading BLOBs in cursors
+ *
  * Revision 1.41  2005/08/24 18:14:56  kuznets
  * Added flag to support dirty reads
  *

@@ -955,8 +955,55 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
                          m_DBT_Data,
                          bdb_flag);
 
-    if (ret == DB_NOTFOUND)
+    switch (ret) {
+    case DB_NOTFOUND:
         return eBDB_NotFound;
+    case DB_KEYEMPTY:
+        // record has been deleted
+        return eBDB_KeyEmpty;
+    }
+
+    BDB_CHECK(ret, FileName().c_str());
+    x_EndRead();
+    return eBDB_Ok;
+}
+
+EBDB_ErrCode CBDB_File::ReadCursor(DBC*         dbc, 
+                                   unsigned int bdb_flag,
+                                   void**       buf, 
+                                   size_t       buf_size, 
+                                   EReallocMode allow_realloc)
+{
+    x_StartRead();
+    m_DBT_Data->data = buf ? *buf : 0;
+    m_DBT_Data->ulen = (unsigned)buf_size;
+    m_DBT_Data->size = 0;
+
+    if (allow_realloc == eReallocForbidden) {
+        m_DBT_Data->flags = DB_DBT_USERMEM;
+    } else {
+        if (m_DBT_Data->data == 0) {
+            m_DBT_Data->flags = DB_DBT_MALLOC;
+        } else {
+            m_DBT_Data->flags = DB_DBT_REALLOC;
+        }
+    }
+
+    int ret = dbc->c_get(dbc,
+                         m_DBT_Key,
+                         m_DBT_Data,
+                         bdb_flag);
+
+    if ( buf )
+        *buf = m_DBT_Data->data;
+
+    switch (ret) {
+    case DB_NOTFOUND:
+        return eBDB_NotFound;
+    case DB_KEYEMPTY:
+        // record has been deleted
+        return eBDB_KeyEmpty;
+    }
 
     BDB_CHECK(ret, FileName().c_str());
     x_EndRead();
@@ -1118,6 +1165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/09/22 13:37:44  kuznets
+ * Implemented reading BLOBs in cursors
+ *
  * Revision 1.54  2005/08/25 15:28:11  kuznets
  * Don't use bt_empty_pg on berkeley db older than 4.3
  *
