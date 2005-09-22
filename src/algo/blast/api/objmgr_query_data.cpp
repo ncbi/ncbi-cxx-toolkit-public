@@ -411,7 +411,7 @@ CObjMgr_QueryFactory::CObjMgr_QueryFactory(const TSeqLocVector& queries)
     }
 }
 
-CObjMgr_QueryFactory::CObjMgr_QueryFactory(CRef<CSeq_loc> seqloc)
+CObjMgr_QueryFactory::CObjMgr_QueryFactory(CRef<objects::CSeq_loc> seqloc)
     : m_SSeqLocVector(0), m_SeqLocs(new TSeqLocs(1, seqloc)),
     m_OwnSeqLocs(true)
 {

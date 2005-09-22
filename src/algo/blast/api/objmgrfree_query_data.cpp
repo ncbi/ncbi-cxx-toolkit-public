@@ -423,7 +423,7 @@ private:
 };
 
 CObjMgrFree_LocalQueryData::CObjMgrFree_LocalQueryData
-    (CConstRef<CBioseq_set> bioseq_set, const CBlastOptions* options)
+    (CConstRef<objects::CBioseq_set> bioseq_set, const CBlastOptions* options)
     : m_Options(options), m_BioseqSet(bioseq_set)
 {
     bool is_prot = Blast_QueryIsProtein(options->GetProgramType());
@@ -501,7 +501,7 @@ private:
 };
 
 CObjMgrFree_RemoteQueryData::CObjMgrFree_RemoteQueryData
-    (CConstRef<CBioseq_set> bioseq_set)
+    (CConstRef<objects::CBioseq_set> bioseq_set)
     : m_ClientBioseqSet(bioseq_set)
 {}
 
@@ -541,7 +541,8 @@ CObjMgrFree_RemoteQueryData::GetSeqLocs()
 //
 /////////////////////////////////////////////////////////////////////////////
 
-CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory(CConstRef<CBioseq> b)
+CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory
+    (CConstRef<objects::CBioseq> b)
     : m_Bioseqs(0)
 {
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
@@ -551,7 +552,8 @@ CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory(CConstRef<CBioseq> b)
     m_Bioseqs = bioseq_set;
 }
 
-CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory(CConstRef<CBioseq_set> b)
+CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory
+    (CConstRef<objects::CBioseq_set> b)
     : m_Bioseqs(b)
 {}
 

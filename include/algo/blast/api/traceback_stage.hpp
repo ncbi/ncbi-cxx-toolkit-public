@@ -27,7 +27,7 @@
  *
  */
 
-/** @file internal_interfaces.hpp
+/** @file traceback_stage.hpp
  * NOTE: This file contains work in progress and the APIs are likely to change,
  * please do not rely on them until this notice is removed.
  */

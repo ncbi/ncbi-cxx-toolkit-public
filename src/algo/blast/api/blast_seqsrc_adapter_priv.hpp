@@ -48,15 +48,25 @@ BEGIN_SCOPE(blast)
 
 class CSearchDatabase;
 
-/// Interface to convert
+/// Interface to create a BlastSeqSrc suitable for use in CORE BLAST from a
+/// BLAST database description
 class NCBI_XBLAST_EXPORT IBlastSeqSrcAdapter : public CObject
 {
 public:
+    /// Constructor
+    /// @param dbinfo description of BLAST database
     IBlastSeqSrcAdapter(const CSearchDatabase& dbinfo);
+    
+    /// Our virtual destructor
     virtual ~IBlastSeqSrcAdapter();
+
+    /// Accessor to the BlastSeqSrc
     BlastSeqSrc* GetBlastSeqSrc();
 
 protected:
+    /// Method for subclasses to override to implement the logic to create the
+    /// BlastSeqSrc
+    /// @param dbinfo description of BLAST database
     virtual BlastSeqSrc* 
     x_CalculateBlastSeqSrc(const CSearchDatabase& dbinfo) = 0;
 
@@ -64,8 +74,9 @@ protected:
     BlastSeqSrc* m_SeqSrc;
     
 private:
-    // Prevent auto methods
+    /// Prohibit copy-constructor
     IBlastSeqSrcAdapter(const IBlastSeqSrcAdapter&);
+    /// Prohibit assignment operator
     IBlastSeqSrcAdapter & operator=(const IBlastSeqSrcAdapter&);
 };
 
