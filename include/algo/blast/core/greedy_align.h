@@ -46,6 +46,9 @@ extern "C" {
     this gives a worst case bound on the number of loop iterations */
 #define GREEDY_MAX_COST_FRACTION 2
 
+/** The largest distance to be examined for an optimal alignment */
+#define GREEDY_MAX_COST 1000
+
 /* ----- pool allocator ----- */
 
 /** Bookkeeping structure for greedy alignment. When aligning

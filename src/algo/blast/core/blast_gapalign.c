@@ -205,7 +205,8 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    if (gap_open == 0 && gap_extend == 0)
       gap_extend = reward / 2 + penalty;
 
-   max_d = (Int4) (max_dbseq_length / GREEDY_MAX_COST_FRACTION + 1);
+   max_d = MIN(GREEDY_MAX_COST,
+               max_dbseq_length / GREEDY_MAX_COST_FRACTION + 1);
 
    gamp = (SGreedyAlignMem*) calloc(1, sizeof(SGreedyAlignMem));
 
