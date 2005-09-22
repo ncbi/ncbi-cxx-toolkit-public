@@ -418,19 +418,20 @@ const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
 
 bool CAnnotObject_Ref::IsFeat(void) const
 {
-    return IsSNPFeat() || GetAnnotObject_Info().IsFeat();
+    return IsSNPFeat() ||
+        (IsRegular()  &&  GetAnnotObject_Info().IsFeat());
 }
 
 
 bool CAnnotObject_Ref::IsGraph(void) const
 {
-    return GetAnnotObject_Info().IsGraph();
+    return IsRegular()  &&  GetAnnotObject_Info().IsGraph();
 }
 
 
 bool CAnnotObject_Ref::IsAlign(void) const
 {
-    return GetAnnotObject_Info().IsAlign();
+    return IsRegular()  &&  GetAnnotObject_Info().IsAlign();
 }
 
 
@@ -2215,6 +2216,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2005/09/22 22:01:58  grichenk
+* Fixed IsRegular() assertion.
+*
 * Revision 1.65  2005/09/20 15:45:36  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.
