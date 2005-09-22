@@ -181,7 +181,11 @@ CBlastSeqVectorFromCSeq_data::x_Size() const
 inline Uint1 
 CBlastSeqVectorFromCSeq_data::operator[] (TSeqPos pos) const 
 {
-    return m_SequenceData.at(pos);
+    if (pos >= x_Size()) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "CBlastSeqVectorFromCSeq_data: position out of range");
+    }
+    return m_SequenceData[pos];
 }
 
 SBlastSequence 
