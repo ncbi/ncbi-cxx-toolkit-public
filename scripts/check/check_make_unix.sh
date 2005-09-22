@@ -238,6 +238,17 @@ case "\$method" in
       ;;
 esac
 
+
+# Include configuration file
+. ${x_build_dir}/check.cfg
+if [ -z "\$NCBI_CHECK_TOOLS" ]; then
+   NCBI_CHECK_TOOLS="regular"
+fi
+
+# Valgrind configuration
+VALGRIND_SUP="${x_root_dir}/scripts/check/valgrind.supp"
+VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"
+
 # Export some global vars
 top_srcdir="$x_root_dir"
 export top_srcdir
@@ -254,6 +265,7 @@ CFG_LIB="${x_conf_dir}/lib"
 export CFG_BIN CFG_LIB
 
 # Define time-guard script to run tests from other scripts
+check_exec="$x_root_dir/scripts/check/check_exec.sh"
 CHECK_EXEC="${x_root_dir}/scripts/check/check_exec_test.sh"
 CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 export CHECK_EXEC
@@ -293,80 +305,133 @@ RunTest() {
    x_test="\$2"
    x_app="\$3"
    x_run="\$4"
-   x_test_out="\$x_work_dir/\$x_test.\$5"
+   x_ext="\$5"
    x_timeout="\$6"
 
    # Check existence of the test's application directory
    if [ -d "\$x_work_dir" ]; then
-      # Write header to output file 
-      echo "\$x_test_out" >> \$res_journal
-      (
-        echo "======================================================================"
-        echo "\$x_run"
-        echo "======================================================================"
-        echo 
-      ) > \$x_test_out 2>&1
-
-      # Remove old core file if it exist (for clarity of the test)
-      corefile="\$x_work_dir/core"
-      rm -f "\$corefile"  > /dev/null 2>&1
 
       # Goto the test's directory 
       cd "\$x_work_dir"
       x_cmd="[\$x_work_dir_tail] \$x_run"
 
-      # And run test if it exist
+      # Run test if it exist
       if [ -f "\$x_app" ]; then
-         # Fix empty parameters (replace "" to \"\", '' to \'\')
-         x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
-         # Run check
+
          CHECK_TIMEOUT="\$x_timeout"
          export CHECK_TIMEOUT
          _RLD_ARGS="-log $x_tmp/\$\$.out"
          export _RLD_ARGS
-         check_exec="$x_root_dir/scripts/check/check_exec.sh"
-         start_time="\`date\`"
-         \$check_exec time -p \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
-         result=\$?
-         stop_time="\`date\`"
 
-         sed -e '/ ["][$][@]["].*\$/ {
-            s/^.*: //
-            s/ ["][$][@]["].*$//
-            }' $x_tmp/\$\$.out >> \$x_test_out
+         # Fix empty parameters (replace "" to \"\", '' to \'\')
+         x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
 
-         # Get application execution time
-         exec_time=\`$x_build_dir/sysdep.sh tl 3 $x_tmp/\$\$.out\`
-         exec_time=\`echo \$exec_time | tr '\n' '?'\`
-         exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
-         rm -f $x_tmp/\$\$.out
+         # Run test under all specified check tools   
+         for tool in \$NCBI_CHECK_TOOLS; do
 
-         # Write result of the test into the his output file
-         echo "Start time: \$start_time" >> \$x_test_out
-         echo "Stop  time: \$stop_time" >> \$x_test_out
-         echo >> \$x_test_out
-         echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
-         echo "@@@ EXIT CODE: \$result" >> \$x_test_out
-
-         if [ -f "\$corefile" ]; then
-            echo "@@@ CORE DUMPED" >> \$x_test_out
-            if [ -d "$x_bin_dir" -a -f "$x_bin_dir/\$x_test" ]; then
-               mv "\$corefile" "$x_bin_dir/\$x_test.core"
+            tool_lo=\`echo \$tool | tr '[:upper:]' '[:lower:]'\`
+            tool_up=\`echo \$tool | tr '[:lower:]' '[:upper:]'\`
+            NCBI_CHECK_TOOL=\`eval echo "\$"NCBI_CHECK_\${tool_up}""\`
+      
+            if [ \$tool_lo = "regular" ] ; then
+               x_cmd="[\$x_work_dir_tail] \$x_run"
+               x_test_out="\$x_work_dir/\$x_test.\$x_ext"
             else
-               rm -f "\$corefile"
+               x_cmd="[\$x_work_dir_tail] \$tool_up \$x_run"
+               x_test_out="\$x_work_dir/\$x_test.\$x_ext.\$tool_lo"
             fi
-         fi
+            case "\$tool_lo" in
+               regular  ) ;;
+               valgrind ) NCBI_CHECK_TOOL="\$NCBI_CHECK_TOOL \$VALGRIND_CMD" ;;
+                      * ) NCBI_CHECK_TOOL="?" ;;
+            esac
+         
+            if [ ".\$NCBI_CHECK_TOOL" = ".?" ] ; then
+               result=255;
+               exec_time="Unknown check tool \$tool_up"
+            else
+               export NCBI_CHECK_TOOL
+         
+               echo \$x_run | grep '.sh' > /dev/null 2>&1 
+               if [ \$? -eq 0 ] ;  then
+                  # Run script without any check tools.
+                  # It will be applied inside script using $CHECK_EXEC.
+                  xx_run="\$x_run_fix"
+               else
+                  # Run under check tool
+                  xx_run="\$NCBI_CHECK_TOOL \$x_run_fix"
+               fi
 
-         # And write result also on the screen and into the log
-         if [ \$result -eq 0 ]; then
-            echo "OK  --  \$x_cmd     (\$exec_time)"
-            echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
-            count_ok=\`expr \$count_ok + 1\`
-         else
-            echo "ERR --  \$x_cmd     (\$exec_time)"
-            echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
-            count_err=\`expr \$count_err + 1\`
-         fi
+               # Write header to output file 
+               echo "\$x_test_out" >> \$res_journal
+               (
+                 echo "======================================================================"
+                 echo "\$x_run"
+                 echo "======================================================================"
+                 echo 
+               ) > \$x_test_out 2>&1
+
+               # Remove old core file if it exist (for clarity of the test)
+               corefile="\$x_work_dir/core"
+               rm -f "\$corefile"  > /dev/null 2>&1
+
+               # Run check
+               start_time="\`date\`"
+               \$check_exec time -p \`eval echo \$xx_run\` >$x_tmp/\$\$.out 2>&1
+               result=\$?
+               stop_time="\`date\`"
+
+               sed -e '/ ["][$][@]["].*\$/ {
+                  s/^.*: //
+                  s/ ["][$][@]["].*$//
+               }' $x_tmp/\$\$.out >> \$x_test_out
+
+               # Get application execution time
+               exec_time=\`$x_build_dir/sysdep.sh tl 3 $x_tmp/\$\$.out\`
+               exec_time=\`echo \$exec_time | tr '\n' '?'\`
+               exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
+               rm -f $x_tmp/\$\$.out
+
+               # Analize check tool output
+               case "\$tool_lo" in
+                  valgrind ) summary_all=\`grep -c 'ERROR SUMMARY:' \$x_test_out\`
+                             summary_ok=\`grep -c 'ERROR SUMMARY: 0 ' \$x_test_out\`
+                             # The number of given lines can be zero.
+                             # In some cases we can lost valgrind's summary.
+                             if [ \$summary_all -ne \$summary_ok ]; then
+                                result=254
+                             fi
+                             ;;
+               esac
+
+               # Write result of the test into the his output file
+               echo "Start time: \$start_time" >> \$x_test_out
+               echo "Stop  time: \$stop_time" >> \$x_test_out
+               echo >> \$x_test_out
+               echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
+               echo "@@@ EXIT CODE: \$result" >> \$x_test_out
+
+               if [ -f "\$corefile" ]; then
+                  echo "@@@ CORE DUMPED" >> \$x_test_out
+                  if [ -d "$x_bin_dir" -a -f "$x_bin_dir/\$x_test" ]; then
+                     mv "\$corefile" "$x_bin_dir/\$x_test.core"
+                  else
+                     rm -f "\$corefile"
+                  fi
+               fi
+            fi
+
+            # Write result also on the screen and into the log
+            if [ \$result -eq 0 ]; then
+               echo "OK  --  \$x_cmd     (\$exec_time)"
+               echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
+               count_ok=\`expr \$count_ok + 1\`
+            else
+               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
+               echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
+               count_err=\`expr \$count_err + 1\`
+            fi
+         done
       else
          echo "ABS --  \$x_cmd"
          echo "ABS --  \$x_cmd" >> \$res_log
