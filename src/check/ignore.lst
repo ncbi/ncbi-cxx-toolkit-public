@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.16 2005/07/29 14:32:28 ucko Exp $
+# $Id: ignore.lst,v 1.17 2005/09/22 11:22:55 ivanov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -14,14 +14,14 @@
 connect/test/test_ncbi_dsock  GCC_340-Debug--x86_64-unknown-linux2.6.7-gnu2.3.3
 
 ;; another known OS issue
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-Debug--sparc-sun-solaris2.10
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-DebugMT--sparc-sun-solaris2.10
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-Debug64--sparc-sun-solaris2.10
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-DebugMT64--sparc-sun-solaris2.10
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-Release--sparc-sun-solaris2.10
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-ReleaseMT--sparc-sun-solaris2.10
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-Release64--sparc-sun-solaris2.10
-connect/test/test_ncbi_namedpipe_connector.sh WorkShop55_550-ReleaseMT64--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Debug--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-DebugMT--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Debug64--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-DebugMT64--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-Release64--sparc-sun-solaris2.10
+connect/test/test_ncbi_namedpipe_connector WorkShop55_550-ReleaseMT64--sparc-sun-solaris2.10
 
 ; OBJMGR
 
