@@ -2189,6 +2189,11 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
    /* Sort the HSP array by score (scores may have changed!) */
    Blast_HSPListSortByScore(hsp_list);
 
+   if (program == eBlastTypeBlastn &&
+                 score_params->options->reward == 2) {
+         Blast_HSPListAdjustOddBlastnScores(hsp_list);
+   }
+
    return status;
 }
 
