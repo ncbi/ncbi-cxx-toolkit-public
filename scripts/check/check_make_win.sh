@@ -361,7 +361,7 @@ RunTest() {
       echo "OK  --  \$x_cmd     (\$exec_time)" >> \$res_log
       count_ok=\`expr \$count_ok + 1\`
    else
-      echo "ERR --  \$x_cmd     (\$exec_time)"
+      echo "ERR [\$result] --  \$x_cmd     (\$exec_time)"
       echo "ERR [\$result] --  \$x_cmd     (\$exec_time)" >> \$res_log
       count_err=\`expr \$count_err + 1\`
    fi
