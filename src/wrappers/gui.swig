@@ -234,7 +234,6 @@ gui/objutils/obj_clipboard.hpp
 gui/objutils/obj_event.hpp
 gui/objutils/object_index.hpp
 gui/objutils/objects.hpp
-gui/objutils/prot_product.hpp
 gui/objutils/pw_alignment.hpp
 gui/objutils/reg_file.hpp
 gui/objutils/registry.hpp
@@ -247,7 +246,8 @@ gui/objutils/vis_range.hpp
 gui/utils/accel_table.hpp
 gui/utils/app_popup.hpp
 gui/utils/browser_utils.hpp
-gui/utils/button.hpp
+// Although still in CVS, this shouldn't be #include'd
+//gui/utils/button.hpp
 gui/utils/clipboard.hpp
 gui/utils/color_dialog.hpp
 gui/utils/command.hpp
@@ -319,6 +319,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/23 15:31:14  jcherry
+ * Dropped obsolete headers
+ *
  * Revision 1.2  2005/09/09 15:05:21  jcherry
  * Removed gui/objutils/used.hpp, which no longer exists
  *
