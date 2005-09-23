@@ -499,9 +499,7 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
     // Nucleotide subject sequences are stored in ncbi2na format, but the
     // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
     // the ambiguities
-    bool subj_is_na = (prog == eBlastTypeBlastn  ||
-                       prog == eBlastTypeTblastn ||
-                       prog == eBlastTypeTblastx);
+    bool subj_is_na = Blast_SubjectIsNucleotide(prog);
 
     ESentinelType sentinels = eSentinels;
     if (prog == eBlastTypeTblastn || prog == eBlastTypeTblastx) {
@@ -512,7 +510,6 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
        
     // TODO: Should strand selection on the subject sequences be allowed?
     //ENa_strand strand = options->GetStrandOption(); 
-    int index = 0; // Needed for lower case masks only.
 
     *max_subjlen = 0;
 
@@ -529,10 +526,19 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
         }
 
         /* Set the lower case mask, if it exists */
-        if (subj->lcase_mask)  /*FIXME?? */
-            subj->lcase_mask->seqloc_array[index] = 
-                CSeqLoc2BlastSeqLoc(subjects.GetMask(i));
-        ++index;
+        if (subjects.GetMask(i).NotEmpty()) {
+            // N.B.: only one BlastMaskLoc structure is needed per subject
+            CBlastMaskLoc mask(BlastMaskLocNew(GetNumberOfContexts(prog)));
+            const int kSubjectMaskIndex(0);
+            const ENa_strand kSubjectStrands2Search(eNa_strand_both);
+            s_AddMask(prog, mask,
+                      kSubjectMaskIndex,
+                      CSeqLoc2BlastSeqLoc(subjects.GetMask(i)),
+                      kSubjectStrands2Search,
+                      subjects.GetLength(i));
+            subj->lcase_mask = mask.Release();
+            subj->lcase_mask_allocated = TRUE;
+        }
 
         if (subj_is_na) {
             BlastSeqBlkSetSequence(subj, sequence.data.release(), 
@@ -1140,6 +1146,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.97  2005/09/23 19:01:08  camacho
+ * Fix non-functional subject sequence filtering
+ *
  * Revision 1.96  2005/09/16 17:03:42  camacho
  * Refactoring of filtering locations code.
  *
