@@ -1634,8 +1634,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.98  2005/09/23 14:02:34  lavr
+* Fix last ChangeLog entry
+*
 * Revision 1.97  2005/09/23 14:01:51  lavr
-* Tracking environment list extendid with CAF_PROXIED_HOST
+* Tracking environment list extended with HTTP_CAF_PROXIED_HOST
 *
 * Revision 1.96  2005/06/30 17:14:26  grichenk
 * Added flag to CCgiCookies to allow storing invalid cookies.
