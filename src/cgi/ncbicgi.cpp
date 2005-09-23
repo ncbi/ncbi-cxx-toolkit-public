@@ -612,13 +612,14 @@ private:
 // library: connext)
 static const char* s_TrackingVars[] = 
 {
-	"HTTP_X_FORWARDED_FOR",
-	"PROXIED_IP",
-	"HTTP_CLIENT_HOST",
-	"REMOTE_HOST",
-	"REMOTE_ADDR",
-	"NI_CLIENT_IPADDR",
-	NULL
+    "HTTP_CAF_PROXIED_HOST",
+    "HTTP_X_FORWARDED_FOR",
+    "PROXIED_IP",
+    "HTTP_CLIENT_HOST",
+    "REMOTE_HOST",
+    "REMOTE_ADDR",
+    "NI_CLIENT_IPADDR",
+    NULL
 };
 
 
@@ -1406,9 +1407,10 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 
 const char* const* CCgiRequest::GetClientTrackingEnv(void) const
 {
-    if (!m_TrackingEnvHolder.get())
+    if (!m_TrackingEnvHolder.get()) {
         m_TrackingEnvHolder.reset(new CTrackingEnvHolder(m_Env));
-	return m_TrackingEnvHolder->GetTrackingEnv();
+    }
+    return m_TrackingEnvHolder->GetTrackingEnv();
 }
 
 
@@ -1632,6 +1634,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.97  2005/09/23 14:01:51  lavr
+* Tracking environment list extendid with CAF_PROXIED_HOST
+*
 * Revision 1.96  2005/06/30 17:14:26  grichenk
 * Added flag to CCgiCookies to allow storing invalid cookies.
 * Added CCgiCookie::IsInvalid(). Throw exception when writing
