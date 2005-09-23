@@ -572,7 +572,7 @@ CBDB_FileCursor::Fetch(EFetchDirection fdir,
                        CBDB_RawFile::EReallocMode allow_realloc)
 {
     if ( !m_FirstFetched )
-        return FetchFirst();
+        return FetchFirst(buf, buf_size, allow_realloc);
 
     if (fdir == eDefault)
         fdir = m_FetchDirection;
@@ -717,6 +717,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/09/23 13:53:42  kuznets
+ * Fixed a bug when fetching a BLOB with cursor
+ *
  * Revision 1.19  2005/09/22 13:37:44  kuznets
  * Implemented reading BLOBs in cursors
  *
