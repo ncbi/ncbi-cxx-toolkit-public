@@ -51,7 +51,7 @@ BEGIN_SCOPE(blast)
 /// Base class for the IPssmInputData and IPssmInputFreqRatios interfaces,
 /// provided to avoid duplicating the methods that are common to both
 /// interfaces
-struct IPssmInput_Base 
+struct IPssmInput_Base : public CObject
 {
     /// virtual destructor
     virtual ~IPssmInput_Base() {}
@@ -131,6 +131,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/09/23 14:07:14  camacho
+ * Use CObject as base class for IPssmInput_Base
+ *
  * Revision 1.13  2005/08/29 14:14:20  camacho
  * + virtual destructor to IPssmInput_Base
  *
