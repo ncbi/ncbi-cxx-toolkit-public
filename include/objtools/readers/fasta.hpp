@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Authors:  Aaron Ucko, NCBI;  Anatoliy Kuznetsov, NCBI.
+* Authors:  Aaron Ucko, NCBI
 *
 * File Description:
 *   Reader for FASTA-format sequences.  (The writer is CFastaOStream, in
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/09/23 12:41:56  kuznets
+* Minor comment change
+*
 * Revision 1.6  2004/11/24 19:27:42  ucko
 * +fReadFasta_RequireID
 *

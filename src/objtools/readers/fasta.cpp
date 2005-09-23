@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Authors:  Aaron Ucko, NCBI;  Anatoliy Kuznetsov, NCBI.
+* Authors:  Aaron Ucko, NCBI
 *
 * File Description:
 *   Reader for FASTA-format sequences.  (The writer is CFastaOStream, in
@@ -580,6 +580,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/09/23 12:43:35  kuznets
+* Minor comment change
+*
 * Revision 1.17  2005/07/21 19:10:01  ucko
 * s_ParseFastaDefline: make NoParseID act like the corresponding C
 * Toolkit option, which uses the whole defline as the title and just
