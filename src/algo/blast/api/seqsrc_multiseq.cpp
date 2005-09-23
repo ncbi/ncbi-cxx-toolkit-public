@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <algo/blast/api/seqsrc_multiseq.hpp>
-#include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_seqsrc_impl.h>
 #include "blast_objmgr_priv.hpp"
 
@@ -446,6 +445,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.36  2005/09/23 14:06:46  camacho
+ * Remove unneeded include
+ *
  * Revision 1.35  2005/06/09 20:35:29  camacho
  * Use new private header blast_objmgr_priv.hpp
  *
