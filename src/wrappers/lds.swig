@@ -32,12 +32,12 @@
 %%
 
 objtools/lds/lds.hpp
-objtools/lds/admin/lds_admin.hpp
-objtools/lds/admin/lds_coreobjreader.hpp
+objtools/lds/lds_admin.hpp
+objtools/lds/lds_coreobjreader.hpp
 objtools/lds/lds_db.hpp
 objtools/lds/lds_expt.hpp
-objtools/lds/admin/lds_files.hpp
-objtools/lds/admin/lds_object.hpp
+objtools/lds/lds_files.hpp
+objtools/lds/lds_object.hpp
 objtools/lds/lds_query.hpp
 objtools/lds/lds_reader.hpp
 objtools/lds/lds_set.hpp
@@ -48,6 +48,9 @@ objtools/lds/lds_util.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/23 19:18:02  jcherry
+ * Reflect merging of directories/libraries
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *
