@@ -30,6 +30,9 @@
  *
  */
 
+%ignore ncbi::objects::CAnnotObject_Info::GetObject;
+%ignore ncbi::objects::CAnnotObject_Info::GetObjectPointer;
+
 %ignore ncbi::objects::SAnnotObjectsIndex::ReserveInfoSize;
 
 %ignore ncbi::objects::CConstSageData::GetMethod() const;
@@ -72,6 +75,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/09/23 19:18:56  jcherry
+ * %ignore CAnnotObject_Info::GetObject and CAnnotObject_Info::GetObjectPointer
+ *
  * Revision 1.10  2005/09/16 15:06:43  jcherry
  * Removed some obsolete %ignore's.
  *
