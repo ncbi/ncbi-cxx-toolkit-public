@@ -437,14 +437,16 @@ int            destlen;
 	                    destlen = -1;
 	                 else
 	                    destlen = curcol->column_bindlen;
-
-        		dbconvert(dbproc,
-					      srctype,			/* srctype  */
-					      src,			/* src      */
-					      srclen,			/* srclen   */
-					      desttype,			/* desttype */
-					      (BYTE *)curcol->varaddr,	/* dest     */
-					      destlen);       	/* destlen  */
+                     
+                    // !!! dbconvert may return -1 as an error.
+                    // !!! Errors are not handler here for some reason.
+            		dbconvert(dbproc,
+    					      srctype,			/* srctype  */
+    					      src,			/* src      */
+    					      srclen,			/* srclen   */
+    					      desttype,			/* desttype */
+    					      (BYTE *)curcol->varaddr,	/* dest     */
+    					      destlen);       	/* destlen  */
 			} /* else not null */
 		}
 	}
@@ -1695,8 +1697,10 @@ RETCODE ret;
 		} else {
 			desttype = _db_get_server_type(STRINGBIND);
 			srctype = tds_get_conversion_type(colinfo->column_type,colinfo->column_size);
-			dbconvert(dbproc, srctype ,dbdata(dbproc,col+1), -1, desttype, (BYTE *)dest, 255);
-
+			ret = dbconvert(dbproc, srctype ,dbdata(dbproc,col+1), -1, desttype, (BYTE *)dest, 255);
+            if (ret == -1) {
+                return (FAIL);
+            }
 		}
 		collen = _get_printable_size(colinfo);
 		namlen = strlen(colinfo->column_name);
@@ -1726,6 +1730,7 @@ TDSSOCKET * tds;
 int i,col,collen,namlen,len;
 char dest[256];
 int desttype, srctype;
+DBINT rc = 0;
 
 	tds = (TDSSOCKET *) dbproc->tds_socket;
 	resinfo = tds->res_info;
@@ -1739,7 +1744,10 @@ int desttype, srctype;
 			} else {
 				desttype = _db_get_server_type(STRINGBIND);
 				srctype = tds_get_conversion_type(colinfo->column_type,colinfo->column_size);
-				dbconvert(dbproc, srctype ,dbdata(dbproc,col+1), -1, desttype, (BYTE *)dest, 255);
+				rc = dbconvert(dbproc, srctype ,dbdata(dbproc,col+1), -1, desttype, (BYTE *)dest, 255);
+                if (rc == -1) {
+                    return (FAIL);
+                }
 
 				/* printf ("some data\t"); */
 			}
@@ -2565,8 +2573,12 @@ int marker;
 TDSSOCKET *tds = (TDSSOCKET *) dbproc->tds_socket;
 
     if (textptrlen > DBTXPLEN) return FAIL;
-    dbconvert(dbproc, SYBBINARY, (TDS_CHAR *)textptr, textptrlen, SYBCHAR, textptr_string, -1);
-    dbconvert(dbproc, SYBBINARY, (TDS_CHAR *)timestamp, 8, SYBCHAR, timestamp_string, -1);
+    if (dbconvert(dbproc, SYBBINARY, (TDS_CHAR *)textptr, textptrlen, SYBCHAR, textptr_string, -1) == -1) {
+        return FAIL;
+    }
+    if (dbconvert(dbproc, SYBBINARY, (TDS_CHAR *)timestamp, 8, SYBCHAR, timestamp_string, -1) == -1) {
+        return FAIL;
+    }
     
 
 	sprintf(query, "writetext bulk %s 0x%s timestamp = 0x%s",
