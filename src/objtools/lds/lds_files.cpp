@@ -38,7 +38,7 @@
 
 #include <bdb/bdb_cursor.hpp>
 
-#include <objtools/lds/admin/lds_files.hpp>
+#include <objtools/lds/lds_files.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
 #include <objtools/lds/lds_query.hpp>
@@ -297,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/26 15:51:22  kuznets
+ * Fixed missing include(s)
+ *
  * Revision 1.1  2005/09/19 14:40:16  kuznets
  * Merjing lds admin and lds libs together
  *

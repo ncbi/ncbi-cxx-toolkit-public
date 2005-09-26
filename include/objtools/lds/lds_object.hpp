@@ -37,7 +37,7 @@
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_expt.hpp>
-#include <objtools/lds/admin/lds_coreobjreader.hpp>
+#include <objtools/lds/lds_coreobjreader.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/26 15:50:55  kuznets
+ * Fixed missing include(s)
+ *
  * Revision 1.2  2005/09/26 15:17:06  kuznets
  * Index all ids in fasta file
  *

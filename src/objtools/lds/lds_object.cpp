@@ -42,7 +42,7 @@
 #include <bdb/bdb_cursor.hpp>
 
 #include <objtools/readers/fasta.hpp>
-#include <objtools/lds/admin/lds_object.hpp>
+#include <objtools/lds/lds_object.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
 
@@ -601,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/26 15:51:22  kuznets
+ * Fixed missing include(s)
+ *
  * Revision 1.2  2005/09/26 15:17:12  kuznets
  * Index all ids in fasta file
  *
