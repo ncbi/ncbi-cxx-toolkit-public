@@ -456,17 +456,12 @@ bool CDBL_BCPInCmd::Cancel()
 bool CDBL_BCPInCmd::CompleteBatch()
 {
     if(m_WasSent) {
-#ifdef FTDS_IN_USE
         DBINT outrow = bcp_batch(m_Cmd);
         if(outrow < 0) {
             m_HasFailed= true;
             DATABASE_DRIVER_ERROR( "bcp_batch failed", 223020 );
         }
         return outrow > 0;
-#else
-    CS_INT outrow = bcp_batch(m_Cmd);
-    return outrow != -1;
-#endif
     }
     return false;
 }
@@ -518,6 +513,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/09/26 14:53:52  ssikorsk
+ * CompleteBatch should always throw an exception if bcp_batch fails.
+ * This was not done in case of the DBLIB driver.
+ *
  * Revision 1.17  2005/09/26 14:40:49  ssikorsk
  * CompleteBCP will always throw an exception if bcp_done failed.
  * This was not done in case of the DBLIB driver.
