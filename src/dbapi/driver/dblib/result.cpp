@@ -39,6 +39,13 @@
 #endif
 #include <dbapi/driver/util/numeric_convert.hpp>
 
+
+// SYBUNIQUE is defined in <tds.h>
+// Unfortunately we cannot include <tds.h> because of conflicts with <sybdb.h>
+#ifdef FTDS_IN_USE
+#define SYBUNIQUE 36
+#endif
+
 BEGIN_NCBI_SCOPE
 
 
@@ -363,6 +370,9 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
     case SYBREAL:      return eDB_Float;
     case SYBTEXT:      return eDB_Text;
     case SYBIMAGE:     return eDB_Image;
+#ifdef FTDS_IN_USE
+    case SYBUNIQUE:    return eDB_VarBinary;
+#endif
     default:           return eDB_UnsupportedType;
     }
 
@@ -907,6 +917,9 @@ static EDB_Type s_RetGetDataType(DBPROCESS* cmd, int n)
     case SYBINT4:      return eDB_Int;
     case SYBFLT8:      return eDB_Double;
     case SYBREAL:      return eDB_Float;
+#ifdef FTDS_IN_USE
+    case SYBUNIQUE:    return eDB_VarBinary;
+#endif
     default:           return eDB_UnsupportedType;
     }
 }
@@ -1054,6 +1067,9 @@ static EDB_Type s_AltGetDataType(DBPROCESS* cmd, int id, int n)
     case SYBINT4:      return eDB_Int;
     case SYBFLT8:      return eDB_Double;
     case SYBREAL:      return eDB_Float;
+#ifdef FTDS_IN_USE
+    case SYBUNIQUE:    return eDB_VarBinary;
+#endif
     default:           return eDB_UnsupportedType;
     }
 }
@@ -1607,6 +1623,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/09/26 12:58:39  ssikorsk
+ * Handle SYBUNIQUE data type as eDB_VarBinary in case of the FDS driver
+ *
  * Revision 1.27  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
