@@ -40,6 +40,8 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/api/blast_exception.hpp>
+
+// Object includes
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seq/Seq_data.hpp>
 
@@ -52,7 +54,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
     class CSeq_loc;
-    class CScope;
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
@@ -99,7 +100,8 @@ enum ESentinelType {
 
 /// Lightweight wrapper around an indexed sequence container. These sequences
 /// are then used to set up internal BLAST data structures for sequence data
-class IBlastQuerySource {
+class IBlastQuerySource : public CObject 
+{
 public:
     /// Our no-op virtual destructor
     virtual ~IBlastQuerySource() {}
@@ -358,6 +360,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2005/09/26 16:22:52  camacho
+* IBlastQuerySource is now a subclass of CObject.
+* Removed unneeded forward declaration.
+*
 * Revision 1.51  2005/09/02 15:58:14  camacho
 * Rename GetNumberOfFrames -> GetNumberOfContexts, delegate to CORE function
 *
