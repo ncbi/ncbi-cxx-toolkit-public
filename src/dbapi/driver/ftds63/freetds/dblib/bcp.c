@@ -2377,7 +2377,8 @@ bcp_batch(DBPROCESS * dbproc)
 	tds->state = TDS_QUERYING;
 
 	if (tds_process_simple_query(tds) != TDS_SUCCEED)
-		return FAIL;
+		/* return FAIL; FAIL is defined as 0 */
+        return -1; /* We are supposed to return number of rows, which is zero or more*/
 
 	rows_copied = tds->rows_affected;
 
