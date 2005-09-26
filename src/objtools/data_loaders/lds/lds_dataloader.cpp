@@ -147,6 +147,7 @@ public:
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
 
         ITERATE (vector<string>, it, seq_id_arr) {
+            seq_id_str = *it;
             CRef<CSeq_id> seq_id_db;
             try {
                 seq_id_db.Reset(new CSeq_id(seq_id_str));
@@ -520,6 +521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/09/26 15:27:39  kuznets
+ * Fixed a bug in searching in alternative ids
+ *
  * Revision 1.30  2005/09/21 13:33:51  kuznets
  * Implemented database initialization in class factory
  *
