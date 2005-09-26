@@ -1517,22 +1517,35 @@ CDBL_CursorResult::~CDBL_CursorResult()
 
 CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
-#if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE) /*Text,Image*/
-    const char* pColName = dbcolname(dblink,col_num);
-
+#if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE)
+    DBCOL dbcol;
+    RETCODE res = dbcolinfo(dblink, CI_REGULAR, col_num, 0, &dbcol );
+    
     CHECK_DRIVER_ERROR( 
-        pColName == NULL, 
-        "dbcolname() returns NULL", 
+        res == FAIL, 
+        "Cannot get the DBCOLINFO*", 
         280000 );
-
-    // We have to use an offset in some undocumented structure
-    // (obtained with the help of a debugger).
-    // It may change in future MS dblib versions...
-    const char* pTabName = *(char**)(pColName+50);
-
-    m_ObjName += pTabName;
+    
+    m_ObjName += dbcol.TableName;
     m_ObjName += ".";
-    m_ObjName += pColName;
+    m_ObjName += dbcol.ActualName;
+    
+// #if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE) /*Text,Image*/
+//     const char* pColName = dbcolname(dblink,col_num);
+//
+//     CHECK_DRIVER_ERROR(
+//         pColName == NULL,
+//         "dbcolname() returns NULL",
+//         280000 );
+//
+//     // We have to use an offset in some undocumented structure
+//     // (obtained with the help of a debugger).
+//     // It may change in future MS dblib versions...
+//     const char* pTabName = *(char**)(pColName+50);
+//
+//     m_ObjName += pTabName;
+//     m_ObjName += ".";
+//     m_ObjName += pColName;
 #else
     DBCOLINFO* col_info = (DBCOLINFO*) dbcolname(dblink, col_num);
 
@@ -1623,6 +1636,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/09/26 15:25:51  ssikorsk
+ * Use dbcolinfo within CDBL_ITDescriptor::CDBL_ITDescriptor in case of MSDBLIB and TreeTDS
+ * instead of an unsafe "offset in some undocumented structure obtained with the help
+ * of a debugger".
+ *
  * Revision 1.28  2005/09/26 12:58:39  ssikorsk
  * Handle SYBUNIQUE data type as eDB_VarBinary in case of the FDS driver
  *
