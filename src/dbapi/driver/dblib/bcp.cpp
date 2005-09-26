@@ -475,7 +475,6 @@ bool CDBL_BCPInCmd::CompleteBatch()
 bool CDBL_BCPInCmd::CompleteBCP()
 {
     if(m_WasSent) {
-#ifdef FTDS_IN_USE
         DBINT outrow = bcp_done(m_Cmd);
         if(outrow < 0) {
             m_HasFailed = true;
@@ -483,11 +482,6 @@ bool CDBL_BCPInCmd::CompleteBCP()
         }
         m_WasSent= false;
         return outrow > 0;
-#else
-    DBINT outrow = bcp_done(m_Cmd);
-    m_WasSent= false;
-    return outrow != -1;
-#endif
     }
     return false;
 }
@@ -524,6 +518,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/09/26 14:40:49  ssikorsk
+ * CompleteBCP will always throw an exception if bcp_done failed.
+ * This was not done in case of the DBLIB driver.
+ *
  * Revision 1.16  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
