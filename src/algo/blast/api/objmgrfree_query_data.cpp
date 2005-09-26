@@ -430,7 +430,7 @@ CObjMgrFree_LocalQueryData::CObjMgrFree_LocalQueryData
     (CConstRef<objects::CBioseq_set> bioseq_set, const CBlastOptions* options)
     : m_Options(options), m_BioseqSet(bioseq_set)
 {
-    bool is_prot = Blast_QueryIsProtein(options->GetProgramType());
+	bool is_prot = Blast_QueryIsProtein(options->GetProgramType()) ? true : false;
     m_QuerySource.reset(new CBlastQuerySourceBioseqSet(bioseq_set, is_prot));
 }
 

@@ -170,7 +170,7 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
     m_OptsMemento = opts->CreateSnapshot();
 
     const bool kIsPhiBlast =
-        Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType);
+		Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType) ? true : false;
 
     // 4. Create the BlastScoreBlk
     BlastSeqLoc* lookup_segments(0);

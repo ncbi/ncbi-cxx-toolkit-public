@@ -126,7 +126,7 @@ s_AdjustFirstContext(BlastQueryInfo* query_info,
     ASSERT(query_info);
 
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
-    bool translate = Blast_QueryIsTranslated(prog);
+	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
     ASSERT(is_na || translate);
 
@@ -155,7 +155,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 
     const unsigned int kNumContexts = GetNumberOfContexts(prog);
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
-    bool translate = Blast_QueryIsTranslated(prog);
+	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
     if (is_na || translate) {
         s_AdjustFirstContext(query_info, prog, strand_opt, queries);
@@ -352,7 +352,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
     }
 
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
-    bool translate = Blast_QueryIsTranslated(prog);
+	bool translate = Blast_QueryIsTranslated(prog) ? true : false;
 
     unsigned int ctx_index = 0;      // index into context_offsets array
     const unsigned int kNumContexts = GetNumberOfContexts(prog);
@@ -499,7 +499,7 @@ SetupSubjects_OMF(const IBlastQuerySource& subjects,
     // Nucleotide subject sequences are stored in ncbi2na format, but the
     // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
     // the ambiguities
-    bool subj_is_na = Blast_SubjectIsNucleotide(prog);
+	bool subj_is_na = Blast_SubjectIsNucleotide(prog) ? true : false;
 
     ESentinelType sentinels = eSentinels;
     if (prog == eBlastTypeTblastn || prog == eBlastTypeTblastx) {
@@ -1146,6 +1146,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.98  2005/09/26 15:36:18  camacho
+ * Eliminate msvc compiler warnings
+ *
  * Revision 1.97  2005/09/23 19:01:08  camacho
  * Fix non-functional subject sequence filtering
  *
