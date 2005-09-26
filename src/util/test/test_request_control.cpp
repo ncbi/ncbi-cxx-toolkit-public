@@ -154,7 +154,7 @@ int CTest::Run(void)
         assert( mgr.Approve() );
         ELAPSED;
         // The StopWatch is more accurate then Sleep methods.
-        assert( e >= 1.9); 
+        assert( e > 1.8); 
     }}
     DONE;
     START(7);
@@ -171,19 +171,19 @@ int CTest::Run(void)
         // sleep 1
         assert( mgr.Approve() );
         ELAPSED;
-        assert (e >= 0.9  &&  e <= 1.1);
+        assert (e > 0.8  &&  e < 1.2);
         // sleep 2
         assert( mgr.Approve() );
         ELAPSED;
-        assert (e >= 2.9  &&  e <= 3.1);
+        assert (e > 2.8  &&  e < 3.2);
         // sleep 1
         assert( mgr.Approve() );
         ELAPSED;
-        assert (e >= 3.9  &&  e <= 4.1);
+        assert (e > 3.8  &&  e < 4.2);
         // sleep 2
         assert( mgr.Approve() );
         ELAPSED;
-        assert (e >= 5.9  &&  e <= 6.1);
+        assert (e > 5.8  &&  e < 6.2);
     }}
     DONE;
 
@@ -202,9 +202,13 @@ int main(int argc, const char* argv[])
     return CTest().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/26 10:58:39  ivanov
+ * Increased checked time intervals for elapsed time
+ *
  * Revision 1.4  2005/03/03 15:03:07  ivanov
  * Fixed a race conditions on fast machines
  *
