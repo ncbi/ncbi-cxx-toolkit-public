@@ -30,7 +30,7 @@ static char const rcsid[] =
  *
  */
 
-/** @file blast_psi_cxx.cpp
+/** @file pssm_engine.cpp
  * Implementation of the C++ API for the PSI-BLAST PSSM generation engine.
  */
 
@@ -38,7 +38,7 @@ static char const rcsid[] =
 #include <sstream>
 
 #include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/blast_psi.hpp>
+#include <algo/blast/api/pssm_engine.hpp>
 #include "blast_setup.hpp"
 
 // Object includes
@@ -252,7 +252,7 @@ CPssmEngine::Run()
     return (m_PssmInput ? x_CreatePssmFromMsa() : x_CreatePssmFromFreqRatios());
 }
 
-/// Auxiliary inner class to convert from a CNcbiMatrix into a double** as
+/// Auxiliary class to convert from a CNcbiMatrix into a double** as
 /// required by the C API. Used only by CPssmEngine::x_CreatePssmFromFreqRatios
 struct SNcbiMatrix2DoubleMatrix 
 {
@@ -601,6 +601,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2005/09/26 14:53:22  camacho
+ * Renamed blast_psi.hpp  -> pssm_engine.hpp
+ *
  * Revision 1.41  2005/07/07 16:32:11  camacho
  * Revamping of BLAST exception classes and error codes
  *
