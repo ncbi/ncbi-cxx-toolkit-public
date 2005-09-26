@@ -280,6 +280,59 @@ public:
                   bool          & simpler);
     
 private:
+    class SIsamKey {
+    public:
+        // If case insensitive string comparisons are desired, the
+        // keys should be upcased before calling these methods.
+        
+        SIsamKey()
+            : m_IsSet(false), m_NKey(-1)
+        {
+        }
+        
+        bool IsSet()
+        {
+            return m_IsSet;
+        }
+        
+        void SetNumeric(int ident)
+        {
+            m_IsSet = true;
+            m_NKey = ident;
+        }
+        
+        void SetString(const string & ident)
+        {
+            m_IsSet = true;
+            m_SKey = ident;
+        }
+        
+        bool OutsideFirstBound(int ident)
+        {
+            return (m_IsSet && (ident < m_NKey));
+        }
+        
+        bool OutsideFirstBound(const string & ident)
+        {
+            return (m_IsSet && (ident < m_SKey));
+        }
+        
+        bool OutsideLastBound(int ident)
+        {
+            return (m_IsSet && (ident > m_NKey));
+        }
+        
+        bool OutsideLastBound(const string & ident)
+        {
+            return (m_IsSet && (ident > m_SKey));
+        }
+        
+    private:
+        bool   m_IsSet;
+        int    m_NKey;
+        string m_SKey;
+    };
+    
     /// Exit conditions occurring in this code.
     enum EErrorCode {
         eNotFound        =  1,   /// The key was not found
@@ -823,6 +876,19 @@ private:
                           int             & key,
                           int             & data);
     
+    void x_FindIndexBounds(CSeqDBLockHold & locked);
+    
+    bool x_OutOfBounds(int key, CSeqDBLockHold & locked);
+    
+    bool x_OutOfBounds(string key, CSeqDBLockHold & locked);
+    
+    static void x_Upper(string & s)
+    {
+        for(size_t i = 0; i < s.size(); i++) {
+            s[i] = toupper(s[i]);
+        }
+    }
+    
     
     // Data
     
@@ -838,7 +904,7 @@ private:
     /// A persistent lease on the ISAM data file.
     CSeqDBMemLease m_DataLease;
     
-    /// The format type of database files found.
+    /// The format type of database files found (eNumeric or eString).
     int m_Type;
     
     /// The filename of the ISAM data file.
@@ -885,6 +951,12 @@ private:
     
     /// First and last offset's of last page.
     Int4 m_LastOffset;
+    
+    /// First volume key
+    SIsamKey m_FirstKey;
+    
+    /// Last volume key
+    SIsamKey m_LastKey;
 };
 
 inline int

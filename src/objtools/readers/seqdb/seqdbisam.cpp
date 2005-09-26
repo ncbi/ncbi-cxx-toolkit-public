@@ -153,6 +153,11 @@ CSeqDBIsam::x_SearchIndexNumeric(int              Number,
         }
     }
     
+    if (x_OutOfBounds(Number, locked)) {
+        done = true;
+        return eNotFound;
+    }
+    
     _ASSERT(m_Type != eNumericNoData);
     
     // Search the sample file.
@@ -250,6 +255,14 @@ CSeqDBIsam::x_SearchIndexNumericMulti(int              vol_start,
     // Index file will remain mapped for the duration.
     
     m_Atlas.Lock(locked);
+    
+    
+    // I don't check for out of bounds here, although I could.  This
+    // particular method does something like a merge sorting algorithm
+    // between ISAM file and GI list, so the overhead for any number
+    // of GIs that are out of range will only cost what it would
+    // normally cost to search for one GI.
+    
     
     // A seperate memory lease is used for the index, to avoid garbage
     // collection issue.
@@ -1094,8 +1107,6 @@ void CSeqDBIsam::x_LoadPage(TIndx             SampleNum1,
 
 CSeqDBIsam::EErrorCode
 CSeqDBIsam::x_StringSearch(const string   & term_in,
-                           //bool             follow_match,
-                           //bool             short_match,
                            vector<string> & terms_out,
                            vector<string> & values_out,
                            vector<TIndx>  & indices_out,
@@ -1115,6 +1126,10 @@ CSeqDBIsam::x_StringSearch(const string   & term_in,
         if(error != eNoError) {
             return error;
         }
+    }
+    
+    if (x_OutOfBounds(term_in, locked)) {
+        return eNotFound;
     }
     
     // We will set this option to avoid more complications
@@ -1764,6 +1779,177 @@ void CSeqDBIsam::GisToOids(int              vol_start,
     gis.InsureOrder(CSeqDBGiList::eGi);
     
     x_SearchIndexNumericMulti(vol_start, vol_end, gis, locked);
+}
+
+void CSeqDBIsam::x_FindIndexBounds(CSeqDBLockHold & locked)
+{
+    Int4 Start (0);
+    Int4 Stop  (m_NumSamples - 1);
+    
+    m_Atlas.Lock(locked);
+    
+    if (m_Type == eNumeric) {
+        //
+        // Get first key from data file
+        
+        int num_elements(0);
+        int start(0);
+        SNumericKeyData * data_page(0);
+        
+        x_MapDataPage(Start,
+                      start,
+                      num_elements,
+                      & data_page,
+                      locked);
+        
+        _ASSERT(num_elements);
+        
+        int elem_index = 0;
+        
+        int data_gi(0);
+        int data_oid(-1);
+        
+        x_GetDataElement(data_page,
+                         elem_index,
+                         data_gi,
+                         data_oid);
+        
+        m_FirstKey.SetNumeric(data_gi);
+        
+        
+        //
+        // Get last key from data file
+        
+        x_MapDataPage(Stop,
+                      start,
+                      num_elements,
+                      & data_page,
+                      locked);
+        
+        _ASSERT(num_elements);
+        
+        elem_index = num_elements - 1;
+        
+        x_GetDataElement(data_page,
+                         elem_index,
+                         data_gi,
+                         data_oid);
+        
+        m_LastKey.SetNumeric(data_gi);
+    } else {
+        //
+        // Load the appropriate page of terms into memory.
+        
+        const char * beginp(0);
+        const char * endp(0);
+        
+        //
+        // Load the first page
+        
+        x_LoadPage(Start, Start + 1, & beginp, & endp, locked);
+        
+        // Get first term
+        
+        vector<string> keys_out;
+        vector<string> data_out; // not used
+        
+        x_ExtractData(beginp,
+                      endp,
+                      keys_out,
+                      data_out);
+        
+        x_Upper(keys_out.front());
+        m_FirstKey.SetString(keys_out.front());
+        
+        
+        //
+        // Load the last page
+        
+        x_LoadPage(Stop, Stop + 1, & beginp, & endp, locked);
+        
+        // Advance to last item
+        
+        const char * lastp(0);
+        const char * indexp(beginp);
+        
+        while (indexp < endp) {
+            // Remember our new "last term" value.
+            
+            lastp = indexp;
+            
+            // Skip remainder of term, and any nulls after it.
+            
+            while((indexp < endp) && s_SeqDBIsam_NullifyEOLs(*indexp)) {
+                indexp++;
+            }
+            while((indexp < endp) && (! s_SeqDBIsam_NullifyEOLs(*indexp))) {
+                indexp++;
+            }
+        }
+        
+        // Get the last key
+        
+        _ASSERT(lastp);
+        
+        keys_out.clear();
+        data_out.clear();
+        
+        x_ExtractData(lastp,
+                      endp,
+                      keys_out,
+                      data_out);
+        
+        x_Upper(keys_out.front());
+        m_LastKey.SetString(keys_out.front());
+    }
+}
+
+bool CSeqDBIsam::x_OutOfBounds(int key, CSeqDBLockHold & locked)
+{
+    if (! m_FirstKey.IsSet()) {
+        x_FindIndexBounds(locked);
+    }
+    
+    if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
+        return false;
+    }
+    
+    _ASSERT(m_Type == eNumeric);
+    
+    if (m_FirstKey.OutsideFirstBound(key)) {
+        return true;
+    }
+    
+    if (m_LastKey.OutsideLastBound(key)) {
+        return true;
+    }
+    
+    return false;
+}
+
+bool CSeqDBIsam::x_OutOfBounds(string key, CSeqDBLockHold & locked)
+{
+    if (! m_FirstKey.IsSet()) {
+        x_FindIndexBounds(locked);
+    }
+    
+    if (! (m_FirstKey.IsSet() && m_LastKey.IsSet())) {
+        return false;
+    }
+    
+    _ASSERT(m_Type == eString);
+    
+    x_Upper(key);
+    
+    if (m_FirstKey.OutsideFirstBound(key)) {
+        return true;
+    }
+    
+    if (m_LastKey.OutsideLastBound(key)) {
+        return true;
+    }
+    
+    return false;
 }
 
 END_NCBI_SCOPE
