@@ -303,7 +303,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
 
-            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs.get() != NULL );
             BOOST_CHECK( rs->Next() );
 
             value = rs->GetVariant(2);
@@ -338,7 +338,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
 
-            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs.get() != NULL );
             BOOST_CHECK( rs->Next() );
 
             const CVariant& value2 = rs->GetVariant(2);
@@ -377,7 +377,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
 
-            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs.get() != NULL );
             BOOST_CHECK( rs->Next() );
 
             const CVariant& value2 = rs->GetVariant(2);
@@ -437,7 +437,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
 
-            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs.get() != NULL );
             BOOST_CHECK( rs->Next() );
 
             const CVariant& value2 = rs->GetVariant(2);
@@ -474,7 +474,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
 
-            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs.get() != NULL );
             BOOST_CHECK( rs->Next() );
 
             const CVariant& value2 = rs->GetVariant(2);
@@ -850,7 +850,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
-            BOOST_CHECK( rs.get() );
+            BOOST_CHECK( rs.get() != NULL );
 
             for(int i = 0; i < num_of_tests; ++i ) {
                 BOOST_CHECK( rs->Next() );
@@ -907,7 +907,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
-                BOOST_CHECK( rs.get() );
+                BOOST_CHECK( rs.get() != NULL );
                 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     BOOST_CHECK( rs->Next() );
@@ -959,7 +959,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
-                BOOST_CHECK( rs.get() );
+                BOOST_CHECK( rs.get() != NULL );
                 
                 for(int i = 0; i < num_of_tests; ++i ) {
                     BOOST_CHECK( rs->Next() );
@@ -3333,6 +3333,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.48  2005/09/26 17:55:34  ssikorsk
+ * Get rid of VC warnings.
+ *
  * Revision 1.47  2005/09/26 16:25:24  ssikorsk
  * Improved and enabled the Test_Bulk_Overflow test.
  * It is still disabled for the CTLIB driver.
