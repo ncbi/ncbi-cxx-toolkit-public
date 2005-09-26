@@ -551,6 +551,18 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
         const CSeq_entry::TSeq& bioseq = se->GetSeq();
         const CSeq_id* sid = bioseq.GetFirstId();
         fasta_entry.seq_id = sid->AsFastaString();
+
+        fasta_entry.all_seq_ids.resize(0);
+        if (bioseq.CanGetId()) {
+            const CBioseq::TId& seq_ids = bioseq.GetId();
+            string id_str;
+            ITERATE(CBioseq::TId, it, seq_ids) {
+                const CBioseq::TId::value_type& vt = *it;
+                id_str = vt->AsFastaString();
+                fasta_entry.all_seq_ids.push_back(id_str);
+            }
+        }
+
         if (bioseq.CanGetDescr()) {
             const CSeq_descr& d = bioseq.GetDescr();
             if (d.CanGet()) {
@@ -580,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/09/26 15:14:59  kuznets
+* Added list of ids to fasta map
+*
 * Revision 1.18  2005/09/23 12:43:35  kuznets
 * Minor comment change
 *

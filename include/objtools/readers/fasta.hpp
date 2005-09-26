@@ -76,9 +76,13 @@ struct SFastaFileMap
 {
     struct SFastaEntry
     {
-        string  seq_id;        // Sequence Id
-        string  description;   // Molecule description
-        size_t  stream_offset; // Molecule offset in file
+        /// List of qll sequence ids
+        typedef list<string>  TFastaSeqIds;
+
+        string        seq_id;        ///< Primary sequence Id
+        string        description;   ///< Molecule description
+        size_t        stream_offset; ///< Molecule offset in file
+        TFastaSeqIds  all_seq_ids;   ///< List of all seq.ids
     };
 
     typedef vector<SFastaEntry>  TMapVector;
@@ -100,6 +104,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/09/26 15:14:54  kuznets
+* Added list of ids to fasta map
+*
 * Revision 1.7  2005/09/23 12:41:56  kuznets
 * Minor comment change
 *
