@@ -676,6 +676,10 @@ int rows_written;
 					buflen = dbconvert(dbproc,
 							   bcpcol->db_type,
 							   bcpcol->data, bcpcol->data_size, hostcol->datatype, outbuf, destlen);
+                    
+                    if (buflen == -1) {
+                        return (FAIL);
+                    }
 				}
 
 				/* FIX ME -- does not handle prefix_len == -1 */
@@ -889,7 +893,7 @@ TDS_INT desttype;
 					dbconvert(dbproc, hostcol->datatype, coldata, collen, desttype, 
 						  bcpcol->data, bcpcol->db_length);
 						  
-				if (converted_data_size == FAIL) 
+				if (converted_data_size == -1) 
 					return (FAIL);
 
 				if (desttype == SYBVARCHAR) {
@@ -2244,7 +2248,8 @@ int rows_copied;
 
 	if (dbproc->bcp_direction == 0) {
         _bcp_err_handler(dbproc, BCPEBCPI);
-        return FAIL;
+        /* return FAIL; */
+        return -1;
 	}
 
 	tds_flush_packet(tds);
@@ -2277,7 +2282,8 @@ int rows_copied = -1;
 
 	if (dbproc->bcp_direction == 0) {
         _bcp_err_handler(dbproc, BCPEBCPI);
-        return FAIL;
+        /* return FAIL; */
+        return -1;
 	}
 	tds_flush_packet(tds);
 
@@ -2503,7 +2509,7 @@ RETCODE _bcp_get_prog_data(DBPROCESS *dbproc)
                     if ((converted_data_size = dbconvert(dbproc, hostcol->datatype, 
                                                          (BYTE *) coldata, collen,
                                                          desttype, bcpcol->data, 
-                                                         bcpcol->db_length)) == FAIL) {
+                                                         bcpcol->db_length)) == -1) {
                         return (FAIL);
                     }
 
@@ -2529,7 +2535,7 @@ RETCODE _bcp_get_prog_data(DBPROCESS *dbproc)
                     if ((converted_data_size = dbconvert(dbproc, hostcol->datatype, 
                                                          (BYTE *) coldata, collen,
                                                          desttype, bcpcol->data, 
-                                                         bcpcol->db_length)) == FAIL) {
+                                                         bcpcol->db_length)) == -1) {
                         return (FAIL);
                     }
 
