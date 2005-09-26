@@ -34,8 +34,6 @@
 #include <objmgr/impl/seq_align_mapper.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/objmgr_exception.hpp>
-#include <objmgr/scope.hpp>
-//#include <objmgr/bioseq_handle.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <algorithm>
 
@@ -168,6 +166,8 @@ SAlignment_Segment& CSeq_align_Mapper::x_InsertSeg(TSegments::iterator& where,
 
 void CSeq_align_Mapper::x_Init(const TDendiag& diags)
 {
+    m_MapWidths &= bool(m_Scope);
+    m_OnlyNucs &= m_MapWidths;
     ITERATE(TDendiag, diag_it, diags) {
         const CDense_diag& diag = **diag_it;
         size_t dim = diag.GetDim();
@@ -199,12 +199,14 @@ void CSeq_align_Mapper::x_Init(const TDendiag& diags)
             if ( m_HaveStrands ) {
                 strand = diag.GetStrands()[row];
             }
-            seg.AddRow(row,
+            SAlignment_Segment::SAlignment_Row& last_row =
+                seg.AddRow(row,
                 *diag.GetIds()[row],
                 diag.GetStarts()[row],
                 m_HaveStrands,
                 strand,
-                0);
+                m_MapWidths ? x_GetWidth(*diag.GetIds()[row]) : 0);
+            m_OnlyNucs &= (last_row.m_Width == 1);
         }
     }
 }
@@ -234,6 +236,7 @@ void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
     }
     m_HaveWidths = denseg.IsSetWidths();
     m_MapWidths &= m_HaveWidths  ||  m_Scope;
+    m_OnlyNucs &= m_MapWidths;
     ENa_strand strand = eNa_strand_unknown;
     for (size_t seg = 0;  seg < numseg;  seg++) {
         SAlignment_Segment& alnseg = x_PushSeg(denseg.GetLens()[seg], m_Dim);
@@ -253,8 +256,9 @@ void CSeq_align_Mapper::x_Init(const CDense_seg& denseg)
                 m_HaveStrands,
                 strand,
                 m_HaveWidths ?
-                denseg.GetWidths()[row] : x_GetWidth(seq_id));
-            m_OnlyNucs &= (m_MapWidths  &&  (last_row.m_Width == 1));
+                denseg.GetWidths()[row] :
+                (m_MapWidths ? x_GetWidth(seq_id) : 0));
+            m_OnlyNucs &= (last_row.m_Width == 1);
         }
     }
 }
@@ -352,6 +356,8 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
 
 void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
 {
+    m_MapWidths &= bool(m_Scope);
+    m_OnlyNucs &= m_MapWidths;
     m_Dim = pseg.GetDim();
     size_t numseg = pseg.GetNumseg();
     // claimed dimension may not be accurate :-/
@@ -383,13 +389,15 @@ void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
             if ( m_HaveStrands ) {
                 strand = pseg.GetStrands()[seg*m_Dim + row];
             }
-            alnseg.AddRow(row, 
+            SAlignment_Segment::SAlignment_Row& last_row =
+                alnseg.AddRow(row, 
                 *pseg.GetIds()[row],
                 (pseg.GetPresent()[seg*m_Dim + row] ?
                 pseg.GetStarts()[seg*m_Dim + row] : kInvalidSeqPos),
                 m_HaveStrands,
                 strand,
-                0);
+                m_MapWidths ? x_GetWidth(*pseg.GetIds()[row]) : 0);
+            m_OnlyNucs &= (last_row.m_Width == 1);
         }
     }
 }
@@ -1017,7 +1025,7 @@ void CSeq_align_Mapper::x_GetDstDendiag(CRef<CSeq_align>& dst) const
         const SAlignment_Segment& seg = *seg_it;
         CRef<CDense_diag> diag(new CDense_diag);
         diag->SetDim(seg.m_Rows.size());
-        diag->SetLen(seg.m_Len);
+        bool have_prots = false;
         ITERATE(SAlignment_Segment::TRows, row, seg.m_Rows) {
             CRef<CSeq_id> id(new CSeq_id);
             id.Reset(&const_cast<CSeq_id&>(*row->m_Id.GetSeqId()));
@@ -1026,7 +1034,18 @@ void CSeq_align_Mapper::x_GetDstDendiag(CRef<CSeq_align>& dst) const
             if (seg.m_HaveStrands) { // per-segment strands
                 diag->SetStrands().push_back(row->m_Strand);
             }
+            have_prots |= row->m_Width == 3;
         }
+        int new_len = seg_it->m_Len;
+        if ( m_MapWidths ) {
+            if ( m_OnlyNucs  &&  have_prots ) {
+                new_len /= 3;
+            }
+            if ( !m_OnlyNucs  &&  !have_prots ) {
+                new_len *= 3;
+            }
+        }
+        diag->SetLen(new_len);
         if ( seg.m_Scores.size() ) {
             diag->SetScores() = seg.m_Scores;
         }
@@ -1127,14 +1146,25 @@ void CSeq_align_Mapper::x_GetDstPacked(CRef<CSeq_align>& dst) const
         pseg.SetIds().push_back(id);
     }
     ITERATE(TSegments, seg_it, m_Segs) {
-        pseg.SetLens().push_back(seg_it->m_Len);
+        bool have_prots = false;
         ITERATE(SAlignment_Segment::TRows, row, seg_it->m_Rows) {
             pseg.SetStarts().push_back(row->GetSegStart());
             pseg.SetPresent().push_back(row->m_Start != kInvalidSeqPos);
             if (m_HaveStrands) {
                 pseg.SetStrands().push_back(row->m_Strand);
             }
+            have_prots |= row->m_Width == 3;
         }
+        int new_len = seg_it->m_Len;
+        if ( m_MapWidths ) {
+            if ( m_OnlyNucs  &&  have_prots ) {
+                new_len /= 3;
+            }
+            if ( !m_OnlyNucs  &&  !have_prots ) {
+                new_len *= 3;
+            }
+        }
+        pseg.SetLens().push_back(new_len);
     }
 }
 
@@ -1235,6 +1265,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/09/26 21:38:42  grichenk
+* Adjust segment length when mapping between nucleotide and protein
+* (den-diag, packed-seg).
+*
 * Revision 1.14  2005/09/26 16:33:24  ucko
 * Pull CSeq_align_Mapper's destructor out of line, as its (implicit)
 * destruction of m_Scope may require a full declaration thereof.

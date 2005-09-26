@@ -38,6 +38,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -229,6 +230,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/09/26 21:38:42  grichenk
+* Adjust segment length when mapping between nucleotide and protein
+* (den-diag, packed-seg).
+*
 * Revision 1.12  2005/09/26 16:33:18  ucko
 * Pull CSeq_align_Mapper's destructor out of line, as its (implicit)
 * destruction of m_Scope may require a full declaration thereof.
