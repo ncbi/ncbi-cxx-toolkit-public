@@ -745,6 +745,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
     
     // Insert data ...
     {
+        bool exception_catched = false;
         auto_ptr<IBulkInsert> bi( m_Conn->GetBulkInsert("#test_bulk_overflow", 1) );
 
         CVariant col1(eDB_VarChar, data_size);
@@ -753,30 +754,51 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
 
         col1 = string(data_size, 'O');
         
-        bi->AddRow();
+        // Either AddRow() or Complete() should throw an exception.
+        try
+        {
+            bi->AddRow();
+        } catch(const CDB_ClientEx&)
+        {
+            exception_catched = true;
+        }
         
-        bi->Complete();
+        try
+        {
+            bi->Complete();
+        } catch(const CDB_ClientEx&)
+        {
+            if ( exception_catched ) {
+                throw;
+            } else {
+                exception_catched = true;
+            }
+        }
+        
+        if ( !exception_catched ) {
+            BOOST_FAIL("Exception CDB_ClientEx is expected.");
+        }
     }
     
     // Retrieve data ...
-    {
-        sql = "SELECT * FROM #test_bulk_overflow";
-
-        auto_stmt->Execute( sql );
-        BOOST_CHECK( auto_stmt->HasMoreResults() );
-        BOOST_CHECK( auto_stmt->HasRows() );
-        auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
-
-        BOOST_CHECK( rs.get() );
-        BOOST_CHECK( rs->Next() );
-
-        const CVariant& value = rs->GetVariant(1);
-
-        BOOST_CHECK( !value.IsNull() );
-
-        string str_value = value.GetString();
-        BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
-    }
+//     {
+//         sql = "SELECT * FROM #test_bulk_overflow";
+//
+//         auto_stmt->Execute( sql );
+//         BOOST_CHECK( auto_stmt->HasMoreResults() );
+//         BOOST_CHECK( !auto_stmt->HasRows() );
+//         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+//
+//         BOOST_CHECK( rs.get() );
+//         BOOST_CHECK( rs->Next() );
+//
+//         const CVariant& value = rs->GetVariant(1);
+//
+//         BOOST_CHECK( !value.IsNull() );
+//
+//         string str_value = value.GetString();
+//         BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
+//     }
 }
 
 void
@@ -995,20 +1017,22 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
         }
         
         // Second test ...
-        {
-            auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
-
-            CVariant col1(eDB_Char,64);
-            CVariant col2(eDB_BigInt);
-
-            blki->Bind(1, &col1);
-            blki->Bind(2, &col2);
-            
-            string name(8000, 'A');
-            col1 = name;
-            col2 = Int8( 123 );
-            blki->AddRow();
-        }
+        // Overflow test.
+        // !!! Current behavior is not defined properly and not consistent between drivers.
+//         {
+//             auto_ptr<IBulkInsert> blki( m_Conn->CreateBulkInsert("#__blki_test", 2) );
+//
+//             CVariant col1(eDB_Char,64);
+//             CVariant col2(eDB_BigInt);
+//
+//             blki->Bind(1, &col1);
+//             blki->Bind(2, &col2);
+//
+//             string name(8000, 'A');
+//             col1 = name;
+//             col2 = Int8( 123 );
+//             blki->AddRow();
+//         }
     }
     
     // VARCHAR ...
@@ -3095,30 +3119,48 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
     
-//     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow, DBAPIInstance);
-//     tc->depends_on(tc_init);
-//     add(tc);
-    
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 
-    boost::unit_test::test_case* tc_parameters = 
-        BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, DBAPIInstance);
-    tc_parameters->depends_on(tc_init);
-    add(tc_parameters);
+    {
+        boost::unit_test::test_case* tc_parameters = 
+            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, DBAPIInstance);
+        tc_parameters->depends_on(tc_init);
+        add(tc_parameters);
 
-    boost::unit_test::test_case* except_safety_tc =
-        BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
-    except_safety_tc->depends_on(tc_init);
-    add(except_safety_tc);
+        // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
+        // !!! It does not work in case of a new FTDS driver.
+        if ((args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eMsSql) ||
+            args.GetDriverName() == "ctlib") {
+            //
+            boost::unit_test::test_case* tc_cursor =
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_parameters);
+            add(tc_cursor);
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler, DBAPIInstance);
-    tc->depends_on(tc_init);
-    tc->depends_on(except_safety_tc);
-    add(tc);
+            // Does not work with all databases and drivers currently ...
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_cursor);
+            add(tc);
+        }
+    }
+
+    {
+        boost::unit_test::test_case* except_safety_tc =
+            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Exception_Safety, DBAPIInstance);
+        except_safety_tc->depends_on(tc_init);
+        add(except_safety_tc);
+
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UserErrorHandler, DBAPIInstance);
+        tc->depends_on(tc_init);
+        tc->depends_on(except_safety_tc);
+        add(tc);
+    }
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -3134,8 +3176,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
     
-    // ctlib/dblib do not work at the moment.
-    // ftds works with MS SQL Server only at the moment. 
+    // !!! ctlib/dblib do not work at the moment.
+    // !!! ftds works with MS SQL Server only at the moment. 
     if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
         CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
@@ -3149,25 +3191,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-
-    // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
-    if ((args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eMsSql) ||
-        args.GetDriverName() == "ctlib") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
-        tc->depends_on(tc_parameters);
-        add(tc);
-
-        // Does not work with all databases and drivers currently ...
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_LOB, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
     
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
     
-    // There are still problems ...
+    // !!! There are still problems ...
+    // !!! It does not work in case of a new FTDS driver.
     if ( args.GetDriverName() != "ctlib" ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
         tc->depends_on(tc_init);
@@ -3177,6 +3207,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
         CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UNIQUE, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+    
+    // !!! There are still problems ...
+    if ( args.GetDriverName() != "ctlib" ) {
+        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
@@ -3268,7 +3305,7 @@ CTestArguments::SetDatabaseParameters(void)
         m_DatabaseParameters["version"] = "42";
     }
 
-    if ( GetDriverName() == "ftds" || GetDriverName() == "dblib" ) {
+    if ( GetDriverName() == "ftds" ) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
     }
 }
@@ -3296,6 +3333,10 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.47  2005/09/26 16:25:24  ssikorsk
+ * Improved and enabled the Test_Bulk_Overflow test.
+ * It is still disabled for the CTLIB driver.
+ *
  * Revision 1.46  2005/09/22 10:51:33  ssikorsk
  * Added implementation for the Test_Bulk_Overflow test.
  * Disabled Test_Bulk_Overflow.
