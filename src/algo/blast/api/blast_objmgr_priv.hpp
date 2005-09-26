@@ -59,13 +59,13 @@ public:
     
     /// Return strand for a sequence
     /// @param i index of the sequence in the sequence container [in]
-    objects::ENa_strand GetStrand(int i) const;
+    virtual objects::ENa_strand GetStrand(int i) const;
     /// Return the filtered (masked) regions for a sequence
     /// @param i index of the sequence in the sequence container [in]
-    CConstRef<objects::CSeq_loc> GetMask(int i) const;
+    virtual CConstRef<objects::CSeq_loc> GetMask(int i) const;
     /// Return the CSeq_loc associated with a sequence
     /// @param i index of the sequence in the sequence container [in]
-    CConstRef<objects::CSeq_loc> GetSeqLoc(int i) const;
+    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int i) const;
     /// Return the sequence data for a sequence
     /// @param i index of the sequence in the sequence container [in]
     /// @param encoding desired encoding [in]
@@ -75,16 +75,16 @@ public:
     /// @param warnings if not NULL, warnings will be returned in this string
     ///        [in|out]
     /// @return SBlastSequence structure containing sequence data requested
-    SBlastSequence GetBlastSequence(int i,
-                                    EBlastEncoding encoding,
-                                    objects::ENa_strand strand,
-                                    ESentinelType sentinel,
-                                    string* warnings = 0) const;
+    virtual SBlastSequence GetBlastSequence(int i,
+                                            EBlastEncoding encoding,
+                                            objects::ENa_strand strand,
+                                            ESentinelType sentinel,
+                                            string* warnings = 0) const;
     /// Return the length of a sequence
     /// @param i index of the sequence in the sequence container [in]
-    TSeqPos GetLength(int i) const;
+    virtual TSeqPos GetLength(int i) const;
     /// Return the number of elements in the sequence container
-    TSeqPos Size() const;
+    virtual TSeqPos Size() const;
     
 private:
     /// Reference to input TSeqLocVector

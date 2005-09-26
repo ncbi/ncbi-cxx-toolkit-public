@@ -66,16 +66,16 @@ BEGIN_SCOPE(blast)
 class CBlastQuerySourceTSeqLocs : public IBlastQuerySource {
 public:
     CBlastQuerySourceTSeqLocs(const CObjMgr_QueryFactory::TSeqLocs& seqlocs);
-    ENa_strand GetStrand(int i) const;
-    CConstRef<CSeq_loc> GetMask(int i) const;
-    CConstRef<CSeq_loc> GetSeqLoc(int i) const;
-    SBlastSequence GetBlastSequence(int i,
-                                     EBlastEncoding encoding,
-                                     ENa_strand strand,
-                                     ESentinelType sentinel,
-                                     string* warnings = 0) const;
-    TSeqPos GetLength(int i) const;
-    TSeqPos Size() const;
+    virtual ENa_strand GetStrand(int i) const;
+    virtual CConstRef<CSeq_loc> GetMask(int i) const;
+    virtual CConstRef<CSeq_loc> GetSeqLoc(int i) const;
+    virtual SBlastSequence GetBlastSequence(int i,
+                                            EBlastEncoding encoding,
+                                            ENa_strand strand,
+                                            ESentinelType sentinel,
+                                            string* warnings = 0) const;
+    virtual TSeqPos GetLength(int i) const;
+    virtual TSeqPos Size() const;
 private:
     vector< CRef<CSeq_loc> > m_SeqLocs;
     mutable CRef<CScope> m_Scope;
