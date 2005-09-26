@@ -237,9 +237,19 @@ void CLDS_Object::UpdateFileObjects(int file_id,
 
         SFastaFileMap::TMapVector::const_iterator it;
         for (it = fmap.file_map.begin(); it < fmap.file_map.end(); ++it) {
+
+            // concatenate all ids
+            string seq_ids;
+            ITERATE(SFastaFileMap::SFastaEntry::TFastaSeqIds, 
+                    it_id, it->all_seq_ids) {
+                seq_ids.append(*it_id);
+                seq_ids.append(" ");
+            }
+
             SaveObject(file_id, 
                        it->seq_id, 
                        it->description, 
+                       seq_ids,
                        it->stream_offset,
                        type_id);
         }
@@ -255,6 +265,7 @@ void CLDS_Object::UpdateFileObjects(int file_id,
 int CLDS_Object::SaveObject(int file_id,
                             const string& seq_id,
                             const string& description,
+                            const string& seq_ids,
                             CNcbiStreamoff offset,
                             int type_id)
 {
@@ -275,7 +286,8 @@ int CLDS_Object::SaveObject(int file_id,
     m_db.object_db.TSE_object_id = 0;
     m_db.object_db.parent_object_id = 0;
     m_db.object_db.object_title = description;
-    
+    m_db.object_db.seq_ids = seq_ids;
+
     string ups = seq_id; 
     NStr::ToUpper(ups);
     m_db.object_db.primary_seqid = ups;
@@ -589,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/26 15:17:12  kuznets
+ * Index all ids in fasta file
+ *
  * Revision 1.1  2005/09/19 14:40:16  kuznets
  * Merjing lds admin and lds libs together
  *

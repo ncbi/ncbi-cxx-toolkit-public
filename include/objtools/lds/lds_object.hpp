@@ -37,7 +37,7 @@
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_expt.hpp>
-#include <objtools/lds/lds_coreobjreader.hpp>
+#include <objtools/lds/admin/lds_coreobjreader.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -93,13 +93,17 @@ protected:
                    CLDS_CoreObjectsReader* sniffer,
                    CLDS_CoreObjectsReader::SObjectDetails* obj_info);
 
-    // Save object information, return record id. This function is specific 
-    // for fasta format.
-    int SaveObject(int file_id,
-                   const string& seq_id,
-                   const string& description,
+    /// Save object information, return record id. This function is specific 
+    /// for fasta format.
+    ///
+    /// @param seq_ids
+    ///    List of all ids (space delimited string)
+    int SaveObject(int            file_id,
+                   const string&  seq_id,
+                   const string&  description,
+                   const string&  seq_ids,
                    CNcbiStreamoff offset,
-                   int type_id);
+                   int            type_id);
 
 private:
     CLDS_Object(const CLDS_Object&);
@@ -123,8 +127,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2005/09/19 14:39:37  kuznets
- * Merjing lds admin and lds libs together
+ * Revision 1.2  2005/09/26 15:17:06  kuznets
+ * Index all ids in fasta file
  *
  * Revision 1.10  2004/08/30 18:16:28  gouriano
  * Use CNcbiStreamoff instead of size_t for stream offset operations
