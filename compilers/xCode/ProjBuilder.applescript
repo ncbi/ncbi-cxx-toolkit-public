@@ -389,7 +389,7 @@ script ProjBuilder
 		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
 		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
 		
-		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", |none|:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
 		copy "SCRIPTPHASE__GBENCH_DISK" to the beginning of |buildPhases| of theTarget
 		addPair(aScriptPhase, "SCRIPTPHASE__GBENCH_DISK")
 		addPair(theTarget, "TARGET__GBENCH_DISK")
@@ -399,11 +399,11 @@ script ProjBuilder
 		
 		(* Target: Build Everything *)
 		copy "TARGET__BUILD_APP" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", |none|:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", none:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
 		copy "TARGET__BUILD_LIB" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", |none|:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", none:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", |none|:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
 		
 		
 		(* add frameworks*)
@@ -600,6 +600,9 @@ script ProjBuilder
 		-- copy Icon file
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench.icns " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources/Genome\\ Workbench.icns" & ret
 		
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench_workspace.icns " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources/gbench_workspace.icns" & ret
+		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench_project.icns " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources/gbench_project.icns" & ret
+		
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/res/etc/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
@@ -616,6 +619,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/09/26 12:53:24  lebedev
+ * Mac OS X icons for saved workspace and project files added
+ *
  * Revision 1.34  2005/08/29 15:34:33  lebedev
  * Minor changes for Xcode 2.2
  *
