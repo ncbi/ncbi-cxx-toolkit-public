@@ -146,6 +146,11 @@ CSeq_align_Mapper::CSeq_align_Mapper(const CSeq_align& align,
 }
 
 
+CSeq_align_Mapper::~CSeq_align_Mapper(void)
+{
+}
+
+
 SAlignment_Segment& CSeq_align_Mapper::x_PushSeg(int len, size_t dim)
 {
     m_Segs.push_back(SAlignment_Segment(len, dim));
@@ -1230,6 +1235,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/09/26 16:33:24  ucko
+* Pull CSeq_align_Mapper's destructor out of line, as its (implicit)
+* destruction of m_Scope may require a full declaration thereof.
+*
 * Revision 1.13  2005/09/22 20:49:33  grichenk
 * Adjust segment length when mapping alignment between nuc and prot.
 *

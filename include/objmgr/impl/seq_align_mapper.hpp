@@ -104,7 +104,7 @@ public:
     CSeq_align_Mapper(const CSeq_align& align,
                       bool map_widths,
                       CScope* scope = 0);
-    ~CSeq_align_Mapper(void) {}
+    ~CSeq_align_Mapper(void);
 
     void Convert(CSeq_loc_Conversion_Set& cvts,
                  unsigned int loc_index_shift = 0);
@@ -229,6 +229,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/09/26 16:33:18  ucko
+* Pull CSeq_align_Mapper's destructor out of line, as its (implicit)
+* destruction of m_Scope may require a full declaration thereof.
+*
 * Revision 1.11  2005/09/22 20:49:33  grichenk
 * Adjust segment length when mapping alignment between nuc and prot.
 *
