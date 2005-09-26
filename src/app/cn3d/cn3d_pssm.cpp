@@ -42,7 +42,7 @@
 #include <serial/objostrasn.hpp>
 
 #include <algo/blast/api/pssm_input.hpp>
-#include <algo/blast/api/blast_psi.hpp>
+#include <algo/blast/api/pssm_engine.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_encoding.h>
 
@@ -591,6 +591,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/09/26 14:42:24  camacho
+* Renamed blast_psi.hpp -> pssm_engine.hpp
+*
 * Revision 1.6  2005/06/07 12:18:52  thiessen
 * add PSSM export
 *

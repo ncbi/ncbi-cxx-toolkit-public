@@ -21,7 +21,7 @@ tblastn_options \
 rpstblastn_options \
 phiblast_nucl_options \
 phiblast_prot_options \
-blast_psi_cxx \
+pssm_engine \
 local_blast \
 remote_blast \
 seqinfosrc_seqvec \

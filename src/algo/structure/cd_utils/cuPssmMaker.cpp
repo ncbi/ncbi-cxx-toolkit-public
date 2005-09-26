@@ -34,8 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
-#include <algo/blast/api/blast_psi.hpp>
-//#include <algo/blast/blast_psi_priv.h>
+#include <algo/blast/api/pssm_engine.hpp>
 #include <algo/structure/cd_utils/cuSequence.hpp>
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
 #include <objects/cdd/Cdd_id.hpp>
@@ -484,6 +483,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/09/26 14:42:34  camacho
+ * Renamed blast_psi.hpp -> pssm_engine.hpp
+ *
  * Revision 1.6  2005/08/25 20:22:22  cliu
  * conditionally skip long insert
  *
