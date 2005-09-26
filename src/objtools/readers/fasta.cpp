@@ -292,7 +292,7 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                         "s_ParseFastaDefline: no ID present", 0);
         }
         CRef<CSeq_id> id(new CSeq_id);
-        id->SetLocal().SetId(++*counter);
+        id->SetLocal().SetId((*counter)++);
         ids.push_back(id);
     }
 
@@ -592,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/09/26 15:18:07  ucko
+* When generating IDs, use the counter *before* incrementing it.
+*
 * Revision 1.19  2005/09/26 15:14:59  kuznets
 * Added list of ids to fasta map
 *
