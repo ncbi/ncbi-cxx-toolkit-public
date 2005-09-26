@@ -271,6 +271,10 @@ CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 export CHECK_EXEC
 export CHECK_EXEC_STDIN
 
+# Avoid possible hangs on Mac OS X.
+DYLD_BIND_AT_LAUNCH=1
+export DYLD_BIND_AT_LAUNCH
+
 EOF
 
 if [ -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib" ];  then
