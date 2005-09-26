@@ -1,5 +1,5 @@
-#ifndef ALGO_BLAST_API__BLAST_PSI__HPP
-#define ALGO_BLAST_API__BLAST_PSI__HPP
+#ifndef ALGO_BLAST_API__PSSM_ENGINE__HPP
+#define ALGO_BLAST_API__PSSM_ENGINE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.27  2005/09/26 15:02:46  camacho
+ * Change include guards to match file name
+ *
  * Revision 1.26  2005/09/26 14:52:23  camacho
  * Make CPssmEngine subclass of CObject
  *
@@ -308,4 +311,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* ALGO_BLAST_API__BLAST_PSI__HPP */
+#endif  /* ALGO_BLAST_API__PSSM_ENGINE__HPP */
