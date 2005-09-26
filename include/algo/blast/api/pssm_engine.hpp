@@ -30,7 +30,7 @@
  *
  */
 
-/** @file blast_psi.hpp
+/** @file pssm_engine.hpp
  * C++ API for the PSI-BLAST PSSM engine. 
  */
  
@@ -93,9 +93,8 @@ public:
 /// CRef<CPssmWithParameters> scoremat = pssm_engine.Run();
 /// ...
 /// @endcode
-/// @todo FIXME: move to pssm_engine.hpp
 
-class NCBI_XBLAST_EXPORT CPssmEngine
+class NCBI_XBLAST_EXPORT CPssmEngine : public CObject
 {
 public:
     /// Constructor to configure the PSSM engine with a PSSM input data
@@ -224,6 +223,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.26  2005/09/26 14:52:23  camacho
+ * Make CPssmEngine subclass of CObject
+ *
  * Revision 1.25  2005/07/07 16:31:56  camacho
  * Revamping of BLAST exception classes and error codes
  *
