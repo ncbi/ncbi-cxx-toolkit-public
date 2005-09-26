@@ -36,7 +36,7 @@
 #define ALGO_BLAST_API___SETUP_FACTORY_HPP
 
 #include <algo/blast/api/query_data.hpp>
-#include <algo/blast/api/rps_aux.hpp>
+#include <algo/blast/api/rps_aux.hpp>           // for CBlastRPSInfo
 #include <algo/blast/core/blast_hspstream.h>
 #include <algo/blast/core/pattern.h>
 
@@ -167,11 +167,10 @@ protected:
 // 4. diags, hspstream
 class CSetupFactory {
 public:
-    /// @note The return value of this function MUST be stored in a CRef<>
     /// @note the options get modified after reading the RPS-BLAST database
     /// files
-    static CBlastRPSInfo* CreateRpsStructures(const string& rps_dbname,
-                                              CRef<CBlastOptions> options);
+    static CRef<CBlastRPSInfo> 
+    CreateRpsStructures(const string& rps_dbname, CRef<CBlastOptions> options);
 
     /// Caller owns the return value
     /// @param lookup_segments query segments to be searched because they were
@@ -219,7 +218,6 @@ typedef CStructWrapper<BlastDiagnostics>        TBlastDiagnostics;
 typedef CStructWrapper<BlastHSPStream>          TBlastHSPStream;
 typedef CStructWrapper<BlastSeqSrc>             TBlastSeqSrc;
 typedef CStructWrapper<SPHIPatternSearchBlk>    TSPHIPatternSearchBlk;
-//typedef CObjectFor< AutoPtr<CBlastRPSInfo> >    TBlastRPSInfo;
 
 /// Lightweight wrapper to enclose C structures needed for running the
 /// preliminary and traceback stages of the BLAST search

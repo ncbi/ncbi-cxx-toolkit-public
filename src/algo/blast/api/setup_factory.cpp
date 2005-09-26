@@ -64,11 +64,11 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CBlastRPSInfo*
+CRef<CBlastRPSInfo>
 CSetupFactory::CreateRpsStructures(const string& rps_dbname,
                                    CRef<CBlastOptions> options)
 {
-    CBlastRPSInfo* retval(new CBlastRPSInfo(rps_dbname));
+    CRef<CBlastRPSInfo> retval(new CBlastRPSInfo(rps_dbname));
     options->SetMatrixName(retval->GetMatrixName());
     options->SetGapOpeningCost(retval->GetGapOpeningCost());
     options->SetGapExtensionCost(retval->GetGapExtensionCost());
