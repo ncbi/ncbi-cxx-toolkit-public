@@ -270,9 +270,12 @@ CRef<CSeq_entry> CGFFReader::Read(CNcbiIstream& in, TFlags flags)
                         } else {
                             /// we agglomerate the old location
                             CRef<CSeq_feat> gene = iter->second;
-                            range += gene->GetLocation().GetTotalRange();
+
+                            TSeqRange r2 = gene->GetLocation().GetTotalRange();
+                            range += r2;
                             gene->SetLocation().SetInt().SetFrom(range.GetFrom());
                             gene->SetLocation().SetInt().SetTo  (range.GetTo());
+                            gene->SetLocation().InvalidateTotalRangeCache();
                         }
                     }}
                     break;
@@ -759,6 +762,10 @@ void CGFFReader::x_ParseV3Attributes(SRecord& record, const vector<string>& v,
 
 void CGFFReader::x_AddAttribute(SRecord& record, vector<string>& attr)
 {
+    if (attr.size() == 0) {
+        return;
+    }
+
     if (x_GetFlags() & fGBQuals) {
         if (attr[0] == "gbkey"  &&  attr.size() == 2) {
             record.key = attr[1];
@@ -847,11 +854,19 @@ void CGFFReader::x_MergeRecords(SRecord& dest, const SRecord& src)
     // XXX - perform sanity checks and warn on mismatch
 
     bool merge_overlaps = false;
-    if ((src.key == "start_codon"  ||  src.key == "stop_codon")  &&
-        dest.key == "CDS") {
+    if (dest.key == "CDS"  &&
+        (src.key == "start_codon"  ||  src.key == "stop_codon")) {
         // start_codon and stop_codon features should be merged into
         // existing CDS locations
         merge_overlaps = true;
+    }
+
+    if ((dest.key == "start_codon"  ||  dest.key == "stop_codon") &&
+        src.key == "CDS") {
+        // start_codon and stop_codon features should be merged into
+        // existing CDS locations
+        merge_overlaps = true;
+        dest.key = "CDS";
     }
 
     // adjust the frame as needed
@@ -1045,7 +1060,7 @@ CRef<CSeq_id> CGFFReader::x_ResolveNewSeqName(const string& name)
 {
     try {
         return CRef<CSeq_id>(new CSeq_id(name));
-    } catch (CSeqIdException& e) {
+    } catch (CSeqIdException&) {
         return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, name));
     }
 }
@@ -1132,6 +1147,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/09/26 18:43:45  dicuccio
+* Fixed bugs in GFF reader:
+*  - Clear total range cache in gene features when expanding gene locations
+*  - Don't add attributes if attribute list is empty
+*  - Handle case in which start_codon / stop_codon is seen *before* the
+*    corresponding CDS exon
+*
 * Revision 1.19  2005/09/16 17:51:10  dicuccio
 * Suppress copious warnings resulting from legal GFF/GTF files that lack trailing
 * semicolons on the last indicated attribute
