@@ -56,9 +56,9 @@ public:
     /// Destructor
     virtual ~CSeqVecSeqInfoSrc();
     /// Retrieve a sequence identifier given its index in the vector.
-    list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
+    virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
     /// Retrieve sequence length given its index in the vector.
-    Uint4 GetLength(Uint4 index) const;
+    virtual Uint4 GetLength(Uint4 index) const;
 private:
     TSeqLocVector m_SeqVec; ///< Vector of subject sequence locations to get 
                             /// information from
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/09/26 21:17:15  camacho
+ * Minor
+ *
  * Revision 1.5  2005/03/31 16:17:26  dondosha
  * Some doxygen fixes
  *

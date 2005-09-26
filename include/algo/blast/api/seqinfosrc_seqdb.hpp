@@ -63,9 +63,9 @@ public:
 
     virtual ~CSeqDbSeqInfoSrc();
     /// Retrieve a sequence identifier given its ordinal number.
-    list< CRef<objects::CSeq_id> > GetId(Uint4 oid) const;
+    virtual list< CRef<objects::CSeq_id> > GetId(Uint4 oid) const;
     /// Retrieve sequence length given its ordinal number.
-    Uint4 GetLength(Uint4 oid) const;
+    virtual Uint4 GetLength(Uint4 oid) const;
 
 private:
     CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/09/26 21:17:15  camacho
+ * Minor
+ *
  * Revision 1.7  2005/08/08 16:29:16  dondosha
  * Added constructor from a CSeqDB instance
  *
