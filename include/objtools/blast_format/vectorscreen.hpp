@@ -94,6 +94,16 @@ public:
     ///@return: the processed seqalign ref
     ///
     CRef<CSeq_align_set> VecscreenDisplay(CNcbiOstream& out);
+
+    ///Process alignment to show    
+    ///@return: the processed seqalign ref
+    /// 
+    CRef<CSeq_align_set> ProcessSeqAlign(void);
+
+    ///show alignment graphic view
+    ///@param out: stream for display    
+    ///
+    void VecscreenPrint(CNcbiOstream& out);
     
 private:
     
@@ -184,6 +194,11 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.3  2005/09/27 16:25:39  zaretska
+*~CVS: ----------------------------------------------------------------------
+*added new functions ProcessSeqAlign() and  VecscreenPrint()
+*~
+*
 *Revision 1.2  2005/06/08 16:12:57  jianye
 *move AlnFromRangeAscendingSort to .cpp
 *
