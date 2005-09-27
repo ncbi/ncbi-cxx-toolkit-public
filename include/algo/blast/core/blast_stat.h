@@ -160,6 +160,7 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
    Uint1*   ambiguous_res; /**< Array of ambiguous res. (e.g, 'X', 'N')*/
    Int2     ambig_size, /**< size of array above. FIXME: not needed here? */
          ambig_occupy;  /**< How many occupied? */
+   Boolean  round_down; /**< Score must be rounded down to nearest even score if odd. */
 } BlastScoreBlk;
 
 /** 
@@ -264,12 +265,15 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
  * @param reward Match reward score [in]
  * @param penalty Mismatch penalty score [in]
  * @param kbp_ungap Karlin block with ungapped Karlin-Altschul parameters [in]
+ * @param round_down specifies that the score should be rounded down to nearest even
+ *      score in some cases [in|out]
  * @param error_return Pointer to error message. [in] [out]
  */
 Int2
 Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, 
                               Int4 gap_extend, Int4 reward, Int4 penalty,
                               Blast_KarlinBlk* kbp_ungap,
+                              Boolean* round_down,
                               Blast_Message** error_return);
 
 
