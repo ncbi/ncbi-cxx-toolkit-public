@@ -485,6 +485,21 @@ CRef<CSeq_align_set> CVecscreen::VecscreenDisplay(CNcbiOstream& out){
     return m_FinalSeqalign;
 }
 
+CRef<CSeq_align_set> CVecscreen::ProcessSeqAlign(void){
+    CSeq_align_set actual_aln_list;
+    CBlastFormatUtil::ExtractSeqalignSetFromDiscSegs(actual_aln_list, 
+                                                     *m_SeqalignSetRef);
+    x_MergeSeqalign(actual_aln_list);  
+    //x_BuildHtmlBar(out);
+    m_FinalSeqalign->Set().sort(AlnScoreDescendingSort);
+    s_RestoreHspPos(*m_FinalSeqalign);
+    return m_FinalSeqalign;
+}
+
+void CVecscreen::VecscreenPrint(CNcbiOstream& out){
+    x_BuildHtmlBar(out);
+}
+
 CVecscreen::AlnInfo* CVecscreen::x_GetAlnInfo(TSeqPos from, TSeqPos to, MatchType type){
     AlnInfo* aln_info = new AlnInfo;
     aln_info->range.Set(from, to);
@@ -662,6 +677,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.6  2005/09/27 16:22:35  zaretska
+*added new functions ProcessSeqAlign() and  VecscreenPrint()
+*
 *Revision 1.5  2005/09/07 20:58:58  jianye
 *fixed typo
 *
