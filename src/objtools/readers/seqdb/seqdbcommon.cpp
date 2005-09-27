@@ -131,6 +131,18 @@ static bool s_SeqDB_DBExists(const string   & dbname,
             atlas.DoesFileExist(dbname + "." + dbtype + "in", locked));
 }
 
+static string s_GetPathSplitter()
+{
+    const char * splitter = 0;
+    
+#if defined(NCBI_OS_UNIX)
+    splitter = ":";
+#else
+    splitter = ";";
+#endif
+    
+    return splitter;
+}
 
 /// Search for a file in a provided set of paths
 /// 
@@ -166,16 +178,8 @@ static string s_SeqDB_TryPaths(const string   & blast_paths,
                                CSeqDBAtlas    & atlas,
                                CSeqDBLockHold & locked)
 {
-    const char * splitter = 0;
-    
-#if defined(NCBI_OS_UNIX)
-    splitter = ":";
-#else
-    splitter = ";";
-#endif
-    
     vector<string> roads;
-    NStr::Tokenize(blast_paths, splitter, roads, NStr::eMergeDelims);
+    NStr::Tokenize(blast_paths, s_GetPathSplitter(), roads, NStr::eMergeDelims);
     
     string result;
     
@@ -207,13 +211,13 @@ string SeqDB_FindBlastDBPath(const string   & dbname,
 {
     // Local directory first;
     
-    string pathology(CDir::GetCwd() + ":");
+    string pathology(CDir::GetCwd() + s_GetPathSplitter());
     
     // Then, BLASTDB;
     
     CNcbiEnvironment env;
     pathology += env.Get("BLASTDB");
-    pathology += ":";
+    pathology += s_GetPathSplitter();
     
     // Finally, the config file.
     
@@ -222,7 +226,7 @@ string SeqDB_FindBlastDBPath(const string   & dbname,
     
     if (sentry.registry) {
         pathology += sentry.registry->Get("BLAST", "BLASTDB");
-        pathology += ":";
+        pathology += s_GetPathSplitter();
     }
     
     // Time to field test this new and terrible weapon.
