@@ -51,6 +51,7 @@ void CleaveOffByTail(CSplign::THitRefs* phitrefs, size_t polya_start)
     for(size_t i = 0; i < hit_dim; ++i) {
 
         CSplign::THitRef& hit = (*phitrefs)[i];
+
         if(hit->GetQueryStart() >= polya_start) {
             (*phitrefs)[i].Reset(NULL);
         }
@@ -61,12 +62,12 @@ void CleaveOffByTail(CSplign::THitRefs* phitrefs, size_t polya_start)
 
     typedef CSplign::THitRefs::iterator TI;
     TI ii0 = phitrefs->begin();
-    for(TI ii = ii0, ie = phitrefs->end(); ii != ie; ++ii, ++ii0) {
-        if(ii->IsNull()) {
-            ii++;
-        }
-        else if(ii0 < ii) {
-            *ii0 = *ii;
+    for(TI ii = ii0, ie = phitrefs->end(); ii != ie; ++ii) {
+        if(ii->NotEmpty()) {
+            if(ii0 < ii) {
+                *ii0 = *ii;
+            }
+            ++ii0;
         }
     }
 
@@ -339,6 +340,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2005/09/27 17:58:34  kapustin
+ * Fix CleaveOffByTail()
+ *
  * Revision 1.14  2005/09/12 16:24:00  kapustin
  * Move compartmentization to xalgoalignutil.
  *
