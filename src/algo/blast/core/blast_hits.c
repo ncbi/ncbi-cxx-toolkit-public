@@ -1599,6 +1599,7 @@ Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
 
       ASSERT(hsp != NULL);
       ASSERT(scaling_factor != 0.0);
+      ASSERT(sbp->round_down == FALSE || (hsp->score & 1) == 0);
 
       /* Divide Lambda by the scaling factor, so e-value is 
          calculated correctly from a scaled score. This is needed only
@@ -1638,6 +1639,7 @@ Int2 Blast_HSPListGetBitScores(BlastHSPList* hsp_list,
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];
       ASSERT(hsp != NULL);
+      ASSERT(sbp->round_down == FALSE || (hsp->score & 1) == 0);
       hsp->bit_score = 
          (hsp->score*kbp[hsp->context]->Lambda - kbp[hsp->context]->logK) / 
          NCBIMATH_LN2;
@@ -2189,10 +2191,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
    /* Sort the HSP array by score (scores may have changed!) */
    Blast_HSPListSortByScore(hsp_list);
 
-   if (program == eBlastTypeBlastn &&
-                 score_params->options->reward == 2) {
-         Blast_HSPListAdjustOddBlastnScores(hsp_list);
-   }
+   Blast_HSPListAdjustOddBlastnScores(hsp_list, gapped, sbp);
 
    return status;
 }
@@ -2445,12 +2444,18 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset)
    }
 }
 
-void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list)
+void Blast_HSPListAdjustOddBlastnScores(BlastHSPList* hsp_list, Boolean gapped_calculation, BlastScoreBlk* sbp)
 {
     int index;
     
     if (!hsp_list || hsp_list->hspcnt == 0)
         return;
+
+    if (gapped_calculation == FALSE)
+      return;
+
+    if (sbp->round_down == FALSE)
+      return;
     
     for (index = 0; index < hsp_list->hspcnt; ++index) {
         hsp_list->hsp_array[index]->score -= 
