@@ -112,7 +112,6 @@ algo/blast/api/blast_nucl_options.hpp
 algo/blast/api/blast_options.hpp
 algo/blast/api/blast_options_handle.hpp
 algo/blast/api/blast_prot_options.hpp
-algo/blast/api/blast_psi.hpp
 algo/blast/api/blast_rps_options.hpp
 algo/blast/api/blast_seqinfosrc.hpp
 algo/blast/api/blast_types.hpp
@@ -136,6 +135,18 @@ algo/blast/api/seqsrc_seqdb.hpp
 algo/blast/api/tblastn_options.hpp
 algo/blast/api/tblastx_options.hpp
 algo/blast/api/version.hpp
+algo/blast/api/local_blast.hpp
+algo/blast/api/local_search.hpp
+algo/blast/api/objmgr_query_data.hpp
+algo/blast/api/objmgrfree_query_data.hpp
+algo/blast/api/prelim_stage.hpp
+algo/blast/api/pssm_engine.hpp
+algo/blast/api/query_data.hpp
+algo/blast/api/remote_search.hpp
+algo/blast/api/rps_aux.hpp
+algo/blast/api/setup_factory.hpp
+algo/blast/api/traceback_stage.hpp
+algo/blast/api/uniform_search.hpp
 
 algo/dustmask/symdust.hpp
 algo/gnomon/gnomon.hpp
@@ -263,6 +274,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/09/27 15:07:07  jcherry
+ * Added some blast headers and removed one
+ *
  * Revision 1.9  2005/09/21 21:45:17  jcherry
  * Work-around for private typedef problem with CSymDustMasker
  *
