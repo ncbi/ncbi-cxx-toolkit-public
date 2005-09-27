@@ -92,7 +92,8 @@ s_GetBlastScore(const container&  scoreList,
                 double& evalue, 
                 int& sum_n, 
                 int& num_ident,
-                list<int>& use_this_gi)
+                list<int>& use_this_gi,
+                int& comp_adj_method)
 {
     bool hasScore = false;
     ITERATE (typename container, iter, scoreList) {
@@ -113,6 +114,8 @@ s_GetBlastScore(const container&  scoreList,
                 sum_n = (*iter)->GetValue().GetInt();          
             } else if (id.GetStr()=="num_ident"){
                 num_ident = (*iter)->GetValue().GetInt();
+            } else if (id.GetStr()=="comp_adjustment_method") {
+                comp_adj_method = (*iter)->GetValue().GetInt();
             }
         }
     }
@@ -438,38 +441,57 @@ void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& num_ident,
                                     list<int>& use_this_gi)
 {
+    int comp_adj_method = 0; // dummy variable
+
+    CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, 
+                                 num_ident, use_this_gi, comp_adj_method);
+}
+
+
+void CBlastFormatUtil::GetAlnScores(const CSeq_align& aln,
+                                    int& score, 
+                                    double& bits, 
+                                    double& evalue,
+                                    int& sum_n,
+                                    int& num_ident,
+                                    list<int>& use_this_gi,
+                                    int& comp_adj_method)
+{
     bool hasScore = false;
     score = -1;
     bits = -1;
     evalue = -1;
     sum_n = -1;
     num_ident = -1;
+    comp_adj_method = 0;
     
     //look for scores at seqalign level first
     hasScore = s_GetBlastScore(aln.GetScore(), score, bits, evalue, 
-                               sum_n, num_ident, use_this_gi);
+                               sum_n, num_ident, use_this_gi, comp_adj_method);
     
     //look at the seg level
     if(!hasScore){
         const CSeq_align::TSegs& seg = aln.GetSegs();
         if(seg.Which() == CSeq_align::C_Segs::e_Std){
             s_GetBlastScore(seg.GetStd().front()->GetScores(),  
-                            score, bits, evalue, sum_n, num_ident, use_this_gi);
+                            score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
         } else if (seg.Which() == CSeq_align::C_Segs::e_Dendiag){
             s_GetBlastScore(seg.GetDendiag().front()->GetScores(), 
-                            score, bits, evalue, sum_n, num_ident, use_this_gi);
+                            score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
         }  else if (seg.Which() == CSeq_align::C_Segs::e_Denseg){
             s_GetBlastScore(seg.GetDenseg().GetScores(),  
-                            score, bits, evalue, sum_n, num_ident, use_this_gi);
+                            score, bits, evalue, sum_n, num_ident, use_this_gi, comp_adj_method);
         }
     }	
 }
 
 void CBlastFormatUtil::AddSpace(CNcbiOstream& out, size_t number)
+
 {
     for(size_t i=0; i<number; i++){
         out<<" ";
     }
+
 }
 
 void CBlastFormatUtil::GetScoreString(double evalue, double bit_score, 
