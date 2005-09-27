@@ -228,15 +228,24 @@ void CBlastTabular::x_PartialDeserialize(const char* m8)
         m_EValue = evalue;
         m_Score = float(score);
 
-        SetQueryStart(a - 1);
-        SetQueryStop(b - 1);
-        SetSubjStart(c - 1);
-        SetSubjStop(d - 1);
+        if(a > 0 && b > 0 && c > 0 && d > 0) {
+
+            SetQueryStart(a - 1);
+            SetQueryStop(b - 1);
+            SetSubjStart(c - 1);
+            SetSubjStop(d - 1);
+        }
+        else {
+            NCBI_THROW(CAlgoAlignUtilException, eFormat,
+                       "Coordinates in m8 string are expected to be one-based: "
+                       + string(m8));
+        }
     }
     else {
         
         NCBI_THROW(CAlgoAlignUtilException, eFormat,
-                   "Failed to init from m8 string");
+                   "Failed to init from m8 string: "
+                   + string(m8));
     }
 }
 
