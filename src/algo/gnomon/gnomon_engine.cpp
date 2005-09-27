@@ -55,8 +55,9 @@ CGnomonEngine::CGnomonEngine(const string& modeldatafilename, const string& seqn
         // compute the GC content of the sequence
         m_data->m_gccontent = 0;
 
-        ITERATE (CEResidueVec, i, m_data->m_ds[ePlus]) {
-            if (*i == enC  ||  *i == enG) {
+        for (TSignedSeqPos i = m_data->m_range.GetFrom();i<=m_data->m_range.GetTo(); ++i) {
+            EResidue c = m_data->m_ds[ePlus][i];
+            if (c == enC  ||  c == enG) {
                 ++m_data->m_gccontent;
             }
         }
@@ -184,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2005/09/27 17:13:59  chetvern
+ * fix gc-content calculation
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *
