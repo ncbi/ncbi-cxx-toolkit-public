@@ -1805,6 +1805,7 @@ BLAST_LinkHsps(EBlastProgramType program_number, BlastHSPList* hsp_list,
         /* The HSP's may be in a different order than they were before, 
            but hsp contains the first one. */
     } else {
+        Blast_HSPListAdjustOddBlastnScores(hsp_list, gapped_calculation, sbp);
         /* Calculate individual HSP e-values first - they'll be needed to
            compare with sum e-values. Use decay rate to compensate for 
            multiple tests. */
