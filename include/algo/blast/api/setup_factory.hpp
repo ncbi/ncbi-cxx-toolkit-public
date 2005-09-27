@@ -167,24 +167,39 @@ protected:
 // 4. diags, hspstream
 class CSetupFactory {
 public:
-    /// @note the options get modified after reading the RPS-BLAST database
-    /// files
+    /// Initializes RPS-BLAST data structures
+    /// @param rps_dbname Name of the RPS-BLAST database [in]
+    /// @param options BLAST options (matrix name and gap costs will be
+    /// modified with data read from the RPS-BLAST auxiliary file) [in|out]
     static CRef<CBlastRPSInfo> 
     CreateRpsStructures(const string& rps_dbname, CRef<CBlastOptions> options);
 
-    /// Caller owns the return value
+    /// Initializes the BlastScoreBlk. Caller owns the return value.
+    /// @param opts_memento Memento options object [in]
+    /// @param query_data source of query sequence data [in]
     /// @param lookup_segments query segments to be searched because they were
     /// not filtered, needed for the lookup table creation (otherwise pass
-    /// NULL)
-    /// FIXME: need to convert the lookup_segments to some kind of c++ object
+    /// NULL) [in|out]
+    /// @param rps_info RPS-BLAST data structures as obtained from
+    /// CreateRpsStructures [in]
+    /// @todo need to convert the lookup_segments to some kind of c++ object
     static BlastScoreBlk* 
     CreateScoreBlock(const CBlastOptionsMemento* opts_memento, 
                      CRef<ILocalQueryData> query_data, 
                      BlastSeqLoc** lookup_segments, 
                      const CBlastRPSInfo* rps_info = NULL);
 
-    /// Caller owns the return value
-    /// FIXME: need to convert the lookup_segments to some kind of c++ object
+    /// Initialize the lookup table. Caller owns the return value.
+    /// @param query_data source of query sequence data [in]
+    /// @param opts_memento Memento options object [in]
+    /// @param score_blk BlastScoreBlk structure, as obtained in
+    /// CreateScoreBlock [in]
+    /// @param lookup_segments query segments to be searched because they were
+    /// not filtered, needed for the lookup table creation (otherwise pass
+    /// NULL) [in|out]
+    /// @todo need to convert the lookup_segments to some kind of c++ object
+    /// @param rps_info RPS-BLAST data structures as obtained from
+    /// CreateRpsStructures [in]
     static LookupTableWrap*
     CreateLookupTable(CRef<ILocalQueryData> query_data,
                       const CBlastOptionsMemento* opts_memento,
@@ -192,20 +207,41 @@ public:
                       BlastSeqLoc* lookup_segments,
                       const CBlastRPSInfo* rps_info = NULL);
 
+    /// Create and initialize the BlastDiagnostics structure for 
+    /// single-threaded applications
     static BlastDiagnostics* CreateDiagnosticsStructure();
+
+    /// Create and initialize the BlastDiagnostics structure for 
+    /// multi-threaded applications
     static BlastDiagnostics* CreateDiagnosticsStructureMT();
 
+    /// Create and initialize the BlastHSPStream structure for single-threaded
+    /// applications
+    /// @param opts_memento Memento options object [in]
+    /// @param number_of_queries number of queries involved in the search [in]
     static BlastHSPStream* 
     CreateHspStream(const CBlastOptionsMemento* opts_memento, 
                     size_t number_of_queries);
+
+    /// Create and initialize the BlastHSPStream structure for multi-threaded
+    /// applications
+    /// @param opts_memento Memento options object [in]
+    /// @param number_of_queries number of queries involved in the search [in]
     static BlastHSPStream* 
     CreateHspStreamMT(const CBlastOptionsMemento* opts_memento, 
                       size_t number_of_queries);
 
+    /// Create a BlastSeqSrc from a CSearchDatabase (uses CSeqDB)
+    /// @param opts_memento Memento options object [in]
+    /// @param number_of_queries number of queries involved in the search [in]
+    /// @param is_multi_threaded true in case of multi-threaded search, else
+    /// false [in]
     static BlastSeqSrc*
     CreateBlastSeqSrc(const CSearchDatabase& db);
 
 private:
+    /// Auxiliary function to create the BlastHSPStream structure
+    /// @param 
     static BlastHSPStream*
     x_CreateHspStream(const CBlastOptionsMemento* opts_memento,
                       size_t number_of_queries,
