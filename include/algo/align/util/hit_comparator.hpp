@@ -43,7 +43,7 @@ class CHitComparator: public CObject
 {
 public:
 
-    typedef CConstRef<THit>   THitRef;
+    typedef CRef<THit>   THitRef;
 
     // sorting criteria
     enum ESortCriterion {
@@ -135,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/09/27 14:38:19  rsmith
+ * Sorting CRefs not CConstRefs
+ *
  * Revision 1.4  2005/09/12 16:21:34  kapustin
  * Add compartmentization algorithm
  *
