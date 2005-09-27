@@ -166,8 +166,16 @@ static string s_SeqDB_TryPaths(const string   & blast_paths,
                                CSeqDBAtlas    & atlas,
                                CSeqDBLockHold & locked)
 {
+    const char * splitter = 0;
+    
+#if defined(NCBI_OS_UNIX)
+    splitter = ":";
+#else
+    splitter = ";";
+#endif
+    
     vector<string> roads;
-    NStr::Tokenize(blast_paths, ":", roads, NStr::eMergeDelims);
+    NStr::Tokenize(blast_paths, splitter, roads, NStr::eMergeDelims);
     
     string result;
     
