@@ -1,4 +1,4 @@
-/*  $Id: main.m,v 1.1 2004/06/23 17:09:52 lebedev Exp $
+/*  $Id: main.m,v 1.2 2005/09/27 18:48:13 lebedev Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -30,25 +30,12 @@
  *
  */
 
-#import <mach-o/dyld.h>
-
+extern void ASKInitialize();
 extern int NSApplicationMain(int argc, const char *argv[]);
 
 int main(int argc, const char *argv[])
 {
-	if (NSIsSymbolNameDefined("_ASKInitialize"))
-	{
-		NSSymbol *symbol = NSLookupAndBindSymbol("_ASKInitialize");
-		if (symbol)
-		{
-			void (*initializeASKFunc)(void) = NSAddressOfSymbol(symbol);
-			if (initializeASKFunc)
-			{
-				initializeASKFunc();
-			}
-		}
-	}
-	
+    ASKInitialize();
     return NSApplicationMain(argc, argv);
 }
 
@@ -56,6 +43,9 @@ int main(int argc, const char *argv[])
 /*
  * ===========================================================================
  * $Log: main.m,v $
+ * Revision 1.2  2005/09/27 18:48:13  lebedev
+ * Startup reworked
+ *
  * Revision 1.1  2004/06/23 17:09:52  lebedev
  * Initial revision
  *
