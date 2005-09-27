@@ -204,12 +204,13 @@ double CSplign::GetCompartmentPenalty( void ) const
 
 
 void CSplign::x_SetPattern(THitRefs* phitrefs)
-{  
+{
     typedef CHitComparator<THit> THitComparator;
     THitComparator sorter (THitComparator::eQueryMin);
     stable_sort(phitrefs->begin(), phitrefs->end(), sorter);
 
     vector<size_t> pattern0;
+    vector<bool> imperfect;
     for(size_t i = 0, n = phitrefs->size(); i < n; ++i) {
 
         const THitRef& h = (*phitrefs)[i];
@@ -219,6 +220,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             pattern0.push_back( h->GetQueryMax() );
             pattern0.push_back( h->GetSubjMin() );
             pattern0.push_back( h->GetSubjMax() );
+            imperfect.push_back( h->GetIdentity() < 1.00);
         }
     }
 
@@ -232,6 +234,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
     size_t dim = pattern0.size();
     const char* err = 0;
     if(dim % 4 == 0) {
+
         for(size_t i = 0; i < dim; i += 4) {
             
             if(pattern0[i] > pattern0[i+1] || pattern0[i+2] > pattern0[i+3]) {
@@ -240,8 +243,8 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             }
             
             if(i > 4) {
-                if(pattern0[i] <= pattern0[i-3] 
-                   || pattern0[i+2] <= pattern0[i-1]){
+                if(pattern0[i] <= pattern0[i-3]
+                   || pattern0[i+2] <= pattern0[i-1]) {
 
                     err = "Pattern hits coordinates must be sorted";
                     break;
@@ -249,11 +252,11 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             }
             
             if(pattern0[i+1] >= SeqLen1 || pattern0[i+3] >= SeqLen2) {
-
                 err = "One or several pattern hits are out of range";
                 break;
             }
         }
+
     }
     else {
         err = "Pattern must have a dimension multiple of four";
@@ -263,58 +266,39 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
         NCBI_THROW( CAlgoAlignException, eBadParameter, err );
     }
     else {
+
         m_alnmap.clear();
         m_pattern.clear();
-        
-        // copy from pattern0 to pattern so that each hit is not too large
-        const size_t max_len = kMax_UInt;// turn this off: sometimes we really
-                                         // need just the longest perf match
-                                         // and there is no direct relationship
-                                         // btw hits and exons
-        vector<size_t> pattern;
-        for(size_t i = 0; i < dim; i += 4) {
-            size_t lenq = 1 + pattern0[i+1] - pattern0[i];
-            if(lenq <= max_len) {
-                copy(pattern0.begin() + i,
-                     pattern0.begin() + i + 4,
-                     back_inserter(pattern));
-            }
-            else {
-                const size_t d = (lenq-1) / max_len + 1;
-                const size_t inc = lenq / d + 1;
-                for(size_t a = pattern0[i], b = a , c = pattern0[i+2], d = c;
-                    a < pattern0[i+1]; (a = b + 1), (c = d + 1) ) {
-                    b = a + inc - 1;
-                    d = c + inc - 1;
-                    if(b > pattern0[i+1] || d > pattern0[i+3]) {
-                        b = pattern0[i+1];
-                        d = pattern0[i+3];
-                    }
-                    pattern.push_back(a);
-                    pattern.push_back(b);
-                    pattern.push_back(c);
-                    pattern.push_back(d);
-                }
-            }
-        }
-        
-        dim = pattern.size();
         
         SAlnMapElem map_elem;
         map_elem.m_box[0] = map_elem.m_box[2] = 0;
         map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
         
-        // realign pattern hits and build the alignment map
+        // build the alignment map
+        CNWAligner nwa;
         for(size_t i = 0; i < dim; i += 4) {    
             
-            CNWAligner nwa ( Seq1 + pattern[i],
-                             pattern[i+1] - pattern[i] + 1,
-                             Seq2 + pattern[i+2],
-                             pattern[i+3] - pattern[i+2] + 1 );
-            nwa.Run();
-            
             size_t L1, R1, L2, R2;
-            const size_t max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
+            size_t max_seg_size = 0;
+
+            if(imperfect[i/4]) {                
+
+                nwa.SetSequences(Seq1 + pattern0[i],
+                                 pattern0[i+1] - pattern0[i] + 1,
+                                 Seq2 + pattern0[i+2],
+                                 pattern0[i+3] - pattern0[i+2] + 1,
+                                 false);
+                nwa.Run();                
+                max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
+            }
+            else {
+                L1 = pattern0[i];
+                R1 = pattern0[i+1];
+                L2 = pattern0[i+2];
+                R2 = pattern0[i+3];
+                max_seg_size = R1 - L1 + 1;
+            }
+
             if(max_seg_size) {
 
                 // make the core shorter
@@ -328,24 +312,24 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                     }
                 }}
 
-                const size_t hitlen_q = pattern[i + 1] - pattern[i] + 1;
+                const size_t hitlen_q = pattern0[i + 1] - pattern0[i] + 1;
                 const size_t hlq4 = hitlen_q/4;
                 const size_t sh = hlq4;
                 
                 size_t delta = sh > L1? sh - L1: 0;
-                size_t q0 = pattern[i] + L1 + delta;
-                size_t s0 = pattern[i+2] + L2 + delta;
+                size_t q0 = pattern0[i] + L1 + delta;
+                size_t s0 = pattern0[i+2] + L2 + delta;
                 
                 const size_t h2s_right = hitlen_q - R1 - 1;
                 delta = sh > h2s_right? sh - h2s_right: 0;
-                size_t q1 = pattern[i] + R1 - delta;
-                size_t s1 = pattern[i+2] + R2 - delta;
+                size_t q1 = pattern0[i] + R1 - delta;
+                size_t s1 = pattern0[i+2] + R2 - delta;
                 
                 if(q0 > q1 || s0 > s1) { // longest seg was probably too short
-                    q0 = pattern[i] + L1;
-                    s0 = pattern[i+2] + L2;
-                    q1 = pattern[i] + R1;
-                    s1 = pattern[i+2] + R2;
+                    q0 = pattern0[i] + L1;
+                    s0 = pattern0[i+2] + L2;
+                    q1 = pattern0[i] + R1;
+                    s1 = pattern0[i+2] + R2;
                 }
 
                 m_pattern.push_back(q0); m_pattern.push_back(q1);
@@ -358,8 +342,8 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 map_elem.m_pattern_end = pattern_dim - 1;
             }
             
-            map_elem.m_box[1] = pattern[i+1];
-            map_elem.m_box[3] = pattern[i+3];
+            map_elem.m_box[1] = pattern0[i+1];
+            map_elem.m_box[3] = pattern0[i+3];
         }
         
         map_elem.m_box[1] = SeqLen1 - 1;
@@ -557,7 +541,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
         smin = max(0, int(smin - extent_right));
         smax += extent_left;
     }
-    
+
     // regardless of hits, all cDNA is aligned (without the tail, if any)
     qmin = 0;
     qmax = m_polya_start < kMax_UInt? m_polya_start - 1: mrna_size - 1;
@@ -595,7 +579,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             h->SetSubjStop(a3);
         }
     }
-    
+
     rv.m_QueryStrand = m_strand;
     rv.m_SubjStrand  = ctg_strand;
     
@@ -607,7 +591,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     
     x_SetPattern(phitrefs);
     x_Run(&m_mrna.front(), &m_genomic.front());
-    
+
     const size_t seg_dim = m_segments.size();
     if(seg_dim == 0) {
         NCBI_THROW( CAlgoAlignException, eNoData,
@@ -682,7 +666,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             break;
         }
     }
-    
+
     if(j >= 0 && j < int(seg_dim - 1)) {
         m_polya_start = m_segments[j].m_box[1] + 1;
     }
@@ -863,10 +847,15 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     // First go from the ends and see if we
     // can improve boundary exons
     size_t k0 = 0;
-    const double min_idty = max(m_MinExonIdty, kMinTermExonIdty);
     while(k0 < seg_dim) {
+
         SSegment& s = segments[k0];
         if(s.m_exon) {
+
+            const size_t len = 1 + s.m_box[1] - s.m_box[0];
+            const double min_idty = len >= kMinTermExonSize?
+                m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
+
             if(s.m_idty < min_idty || m_endgaps) {
                 s.ImproveFromLeft(Seq1, Seq2, m_aligner);
             }
@@ -899,11 +888,15 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
     while(k1 >= int(k0)) {
         SSegment& s = segments[k1];
         if(s.m_exon) {
+
+            const size_t len = 1 + s.m_box[1] - s.m_box[0];
+            const double min_idty = len >= kMinTermExonSize?
+                m_MinExonIdty: max(m_MinExonIdty, kMinTermExonIdty);
             if(s.m_idty < min_idty || m_endgaps) {
-	            s.ImproveFromRight(Seq1, Seq2, m_aligner);
+                s.ImproveFromRight(Seq1, Seq2, m_aligner);
             }
             if(s.m_idty >= min_idty) {
-	            break;
+                break;
             }
         }
         --k1;
@@ -1608,6 +1601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/09/27 18:03:50  kapustin
+ * Fix a bug in term segment identity improvement step (supposedly rare)
+ *
  * Revision 1.36  2005/09/21 14:16:52  kapustin
  * Adjust box pointer type to avoid compilation errors with GCC/64
  *
