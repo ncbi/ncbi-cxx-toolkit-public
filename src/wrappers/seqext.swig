@@ -91,8 +91,8 @@ public:
 %ignore *::operator<<(CFlatItemOStream& os, const IFlatItem* item);
 %extend ncbi::objects::CFlatItemOStream {
     ncbi::objects::CFlatItemOStream&
-    __lshift__(CFlatItemOStream& os, const IFlatItem* item) {
-        return os << item;
+    __lshift__(const IFlatItem* item) {
+        return *self << item;
     }
 };
 
@@ -314,6 +314,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/09/27 18:18:36  jcherry
+ * Fixed wrapping of operator<<(CFlatItemOStream& os, const IFlatItem* item)
+ *
  * Revision 1.10  2005/09/01 16:08:01  jcherry
  * Added objmgr/impl/tse_assigner.hpp (fixes compilation errors)
  *
