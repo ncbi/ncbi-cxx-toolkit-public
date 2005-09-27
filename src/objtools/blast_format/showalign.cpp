@@ -1031,7 +1031,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                        alnvecInfo->evalue, 
                                                        sum_n, 
                                                        num_ident,
-                                                       alnvecInfo->use_this_gi);
+                                                       alnvecInfo->use_this_gi,
+                                                       alnvecInfo->comp_adj_method);
                         alnvecInfo->alnvec = avRef;
                         avList.push_back(alnvecInfo);
                         int gi = s_GetGiForSeqIdList(handle.\
@@ -2199,7 +2200,12 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
             }
             out<<" Score = "<<bit_score_buf<<" ";
             out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
-            out<<"Expect = "<<evalue_buf<<endl;
+            out<<"Expect = "<<evalue_buf;
+            if ((*iterAv)->comp_adj_method == 1)
+                out << ", Method: Composition-based stats.";
+            else if ((*iterAv)->comp_adj_method == 2)
+                out << ", Method: Compositional matrix adjust.";
+            out << endl;
         }
         
         x_DisplayAlnvec(out);
@@ -2448,6 +2454,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.87  2005/09/27 17:10:09  madden
+*Print out compositional adjustment method if appropriate
+*
 *Revision 1.86  2005/08/29 16:10:26  camacho
 *Fix to previous commit
 *
