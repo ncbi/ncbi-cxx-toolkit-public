@@ -1219,39 +1219,6 @@ void CHitParser::x_SyncGroupsByMaxDist(int& nGroupID)
 size_t CHitParser::GetSeqLength(const string& accession)
 {
     return 0;
-
-    /*
-  using namespace objects;
-
-  map<string, size_t>::const_iterator i1 = m_seqsizes.find(accession),
-    i2 = m_seqsizes.end();
-  if(i1 != i2) {
-    size_t s = i1->second;
-    return s;
-  }
-  
-  CObjectManager om;
-  om.RegisterDataLoader ( *new CGBDataLoader("ID", new CId1Reader, 2),
-			  CObjectManager::eDefault );
-  CScope scope(om);
-  scope.AddDefaults();
-    
-  CSeq_id seq_id (accession);
-  
-  CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
-  
-  if ( bioseq_handle ) {
-    const CBioseq& bioseq = bioseq_handle.GetBioseq();
-    const CSeq_inst& inst = bioseq.GetInst();
-    if(inst.IsSetLength()) {
-      size_t s = inst.GetLength();
-      m_seqsizes[accession] = s;
-      return s;
-    }
-  }
-  return 0;
-
-    */
 }
 
 
@@ -1348,6 +1315,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/09/27 17:59:25  kapustin
+* Remove obsolete comment
+*
 * Revision 1.9  2004/12/16 23:12:26  kapustin
 * algo/align rearrangement
 *
