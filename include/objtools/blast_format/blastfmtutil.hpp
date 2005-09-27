@@ -232,6 +232,25 @@ public:
                              int& num_ident,
                              list<int>& use_this_gi);
     
+    ///Extract score info from blast alingment
+    /// Second version that fetches compositional adjustment integer
+    ///@param aln: alignment to extract score info from
+    ///@param score: place to extract the raw score to
+    ///@param bits: place to extract the bit score to
+    ///@param evalue: place to extract the e value to
+    ///@param sum_n: place to extract the sum_n to
+    ///@param num_ident: place to extract the num_ident to
+    ///@param use_this_gi: place to extract use_this_gi to
+    ///
+    static void GetAlnScores(const CSeq_align& aln,
+                             int& score, 
+                             double& bits, 
+                             double& evalue,
+                             int& sum_n,
+                             int& num_ident,
+                             list<int>& use_this_gi,
+                             int& comp_adj_method);
+
     ///Add the specified white space
     ///@param out: ostream to add white space
     ///@param number: the number of white spaces desired
@@ -307,6 +326,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.17  2005/09/27 17:08:29  madden
+Add second GetAlnScores method that also fetches comp_adj_method
+
 Revision 1.16  2005/08/11 15:27:42  jianye
 add gettaxidforseqid
 
