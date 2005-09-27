@@ -322,6 +322,7 @@ private:
         double bits;
         double evalue;
         list<int> use_this_gi;
+        int comp_adj_method;
     };
 
     ///store feature information
@@ -560,6 +561,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.38  2005/09/27 17:09:08  madden
+*Add comp_adj_method to SAlnInfo
+*
 *Revision 1.37  2005/09/08 13:41:03  camacho
 *Doxygen fix
 *
