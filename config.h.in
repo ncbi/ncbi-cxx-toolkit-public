@@ -239,6 +239,9 @@
 /* Define to 1 if libXpm is available. */
 #undef HAVE_LIBXPM
 
+/* Define to 1 if libxslt is available. */
+#undef HAVE_LIBXSLT
+
 /* Define to 1 if libz is available. */
 #undef HAVE_LIBZ
 

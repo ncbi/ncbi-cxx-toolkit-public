@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.390 2005/09/19 20:33:29 ucko Exp $
+#  $Id: configure.ac,v 1.391 2005/09/28 15:12:03 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -264,6 +264,10 @@ AC_ARG_WITH(libxml,
    [ --with-libxml=DIR       use libxml2 installation in DIR])
 AC_ARG_WITH(libxml_,
    [ --without-libxml        do not use libxml2])
+AC_ARG_WITH(libxslt,
+   [ --with-libxslt=DIR      use libxslt installation in DIR])
+AC_ARG_WITH(libxslt2,
+   [ --without-libxslt       do not use libxstl])
 AC_ARG_WITH(xerces,
    [ --with-xerces=DIR       use Xerces-C++ installation in DIR])
 AC_ARG_WITH(xerces2,
@@ -332,7 +336,7 @@ check static-exe bin-release strip version lfs pch caution \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
-sp expat sablot libxml xerces xalan oechem gif jpeg tiff png xpm \
+sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
@@ -370,7 +374,8 @@ for x_arg in "$@" ; do
       | --with-z=* | --with-bz2=* | --with-pcre=* \
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
-      | --with-sqlite=* | --with-expat=* | --with-sablot=* | --with-libxml=* \
+      | --with-sqlite=* | --with-expat=* | --with-sablot=* \
+      | --with-libxml=* | --with-libxslt=* \
       | --with-xerces=* | --with-xalan=* | --with-bdb=* | --with-odbc=* \
       | --with-python=* | --with-icu=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
@@ -4121,8 +4126,7 @@ if test "$with_libxml" = "no"; then
 else
    WithPackages="$WithPackages LIBXML"
    LIBXML_INCLUDE="$LIBXML_INCLUDE"
-   AC_DEFINE([HAVE_LIB]patsubst(LIBXML, [^LIB], []), 1,
-             [Define to 1 if libxml2 is available.])
+   AC_DEFINE(HAVE_LIBXML, 1, [Define to 1 if libxml2 is available.])
 fi
 AC_SUBST(LIBXML_INCLUDE)
 AC_SUBST(LIBXML_LIBS)
@@ -4131,6 +4135,19 @@ if test -f "${LIBXML_LIBPATH_}/libxml2-static.a"; then
    LIBXML_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxml2-static"
 else
    LIBXML_STATIC_LIBS=${LIBXML_LIBS}
+fi
+
+: ${LIBXSLT_PATH=$LIBXML_PATH}
+NCBI_CHECK_THIRD_PARTY_LIB_(libxslt, LIBXSLT, xslt,
+ [AC_LANG_PROGRAM([#include <libxslt/xsltutils.h>],
+                  [xsltSaveResultToFilename("foo.xml.gz", NULL, NULL, 1)])],
+ [], [$LIBXML_LIBS $Z_LIBS], [$LIBXML_INCLUDE])
+
+# XXX - they might be in different directories in some setups
+if test -f "${LIBXML_LIBPATH_}/libxslt-static.a"; then
+   LIBXSLT_STATIC_LIBS="-L${LIBXML_LIBPATH_} -lxslt-static"
+else
+   LIBXSLT_STATIC_LIBS=${LIBXSLT_LIBS}
 fi
 
 : ${XERCES_PATH=$NCBI/xerces}
@@ -4934,6 +4951,7 @@ AC_SUBST(ICU_STATIC_LIBS)
 AC_SUBST(EXPAT_STATIC_LIBS)
 AC_SUBST(SABLOT_STATIC_LIBS)
 AC_SUBST(LIBXML_STATIC_LIBS)
+AC_SUBST(LIBXSLT_STATIC_LIBS)
 AC_SUBST(XERCES_INCLUDE)
 AC_SUBST(XERCES_LIBS)
 AC_SUBST(XERCES_STATIC_LIBS)
