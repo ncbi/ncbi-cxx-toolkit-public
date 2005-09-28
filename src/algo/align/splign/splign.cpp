@@ -220,7 +220,9 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             pattern0.push_back( h->GetQueryMax() );
             pattern0.push_back( h->GetSubjMin() );
             pattern0.push_back( h->GetSubjMax() );
-            imperfect.push_back( h->GetIdentity() < 1.00);
+            bool perfect = h->GetIdentity() < 1.00 &&
+                h->GetQuerySpan() == h->GetSubjSpan();
+            imperfect.push_back(perfect == false);
         }
     }
 
@@ -252,6 +254,7 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             }
             
             if(pattern0[i+1] >= SeqLen1 || pattern0[i+3] >= SeqLen2) {
+
                 err = "One or several pattern hits are out of range";
                 break;
             }
@@ -292,16 +295,16 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
                 max_seg_size = nwa.GetLongestSeg(&L1, &R1, &L2, &R2);
             }
             else {
-                L1 = pattern0[i];
-                R1 = pattern0[i+1];
-                L2 = pattern0[i+2];
-                R2 = pattern0[i+3];
+                L1 = 0;
+                R1 = pattern0[i+1] - pattern0[i];
+                L2 = 0;
+                R2 = pattern0[i+3] - pattern0[i+2];
                 max_seg_size = R1 - L1 + 1;
             }
 
             if(max_seg_size) {
 
-                // make the core shorter
+                // make the core
                 {{
                     const size_t cut = (1 + R1 - L1) / 5;
                     const size_t l1 = L1 + cut, l2 = L2 + cut;
@@ -733,12 +736,12 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
         const SAlnMapElem& zone = m_alnmap[i];
 
         // setup sequences
+        const size_t len1 = zone.m_box[1] - zone.m_box[0] + 1;
+        const size_t len2 = zone.m_box[3] - zone.m_box[2] + 1;
         m_aligner->SetSequences(
-            Seq1 + zone.m_box[0],
-            zone.m_box[1] - zone.m_box[0] + 1,
-            Seq2 + zone.m_box[2],
-            zone.m_box[3] - zone.m_box[2] + 1,
-            false);
+            Seq1 + zone.m_box[0], len1,
+            Seq2 + zone.m_box[2], len2,
+            true);
 
         // prepare the pattern
         vector<size_t> pattern;
@@ -751,7 +754,10 @@ void CSplign::x_Run(const char* Seq1, const char* Seq2)
 
 #ifdef  DBG_DUMP_PATTERN
 	      cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
-		   << pattern[j+2] << '\t' << pattern[j+3] << endl;
+                   << "(len = " << (pattern[j+1] - pattern[j] + 1) << ")\t"
+		   << pattern[j+2] << '\t' << pattern[j+3] 
+                   << "(len = " << (pattern[j+3] - pattern[j+2] + 1) << ")\t"
+                   << endl;
 #endif
                 pattern[j]   -= zone.m_box[0];
                 pattern[j+1] -= zone.m_box[0];
@@ -1601,6 +1607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/09/28 18:04:29  kapustin
+ * Verify that perfect hits actually have equal sides. Use relative coordinates as pattern base
+ *
  * Revision 1.37  2005/09/27 18:03:50  kapustin
  * Fix a bug in term segment identity improvement step (supposedly rare)
  *
