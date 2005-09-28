@@ -41,11 +41,8 @@ static char const rcsid[] =
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 
-#include "blast_memento_priv.hpp"
+#include "prelim_search_runner.hpp"
 #include "blast_seqsrc_adapter_priv.hpp"
-
-// CORE BLAST includes
-#include <algo/blast/core/blast_engine.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -55,56 +52,6 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
-
-/// Functor to run the preliminary stage of the BLAST search
-class CPrelimSearchRunner : public CObject
-{
-public:
-    CPrelimSearchRunner(SInternalData& internal_data,
-                        const CBlastOptionsMemento* opts_memento)
-        : m_InternalData(internal_data), m_OptsMemento(opts_memento)
-    {}
-    ~CPrelimSearchRunner() {}
-    int operator()() {
-        ASSERT(m_OptsMemento);
-        ASSERT(m_InternalData.m_Queries);
-        ASSERT(m_InternalData.m_QueryInfo);
-        ASSERT(m_InternalData.m_SeqSrc);
-        ASSERT(m_InternalData.m_ScoreBlk);
-        ASSERT(m_InternalData.m_LookupTable);
-        ASSERT(m_InternalData.m_HspStream);
-        Int2 retval = Blast_RunPreliminarySearch(m_OptsMemento->m_ProgramType,
-                                 m_InternalData.m_Queries,
-                                 m_InternalData.m_QueryInfo,
-                                 m_InternalData.m_SeqSrc->GetPointer(),
-                                 m_OptsMemento->m_ScoringOpts,
-                                 m_InternalData.m_ScoreBlk->GetPointer(),
-                                 m_InternalData.m_LookupTable->GetPointer(),
-                                 m_OptsMemento->m_InitWordOpts,
-                                 m_OptsMemento->m_ExtnOpts,
-                                 m_OptsMemento->m_HitSaveOpts,
-                                 m_OptsMemento->m_EffLenOpts,
-                                 m_OptsMemento->m_PSIBlastOpts,
-                                 m_OptsMemento->m_DbOpts,
-                                 m_InternalData.m_HspStream->GetPointer(),
-                                 m_InternalData.m_Diagnostics->GetPointer());
-        return static_cast<int>(retval);
-    }
-
-private:
-    /// Data structure containing all the needed C structures for the
-    /// preliminary stage of the BLAST search
-    SInternalData& m_InternalData;
-
-    /// Pointer to memento which this class doesn't own
-    const CBlastOptionsMemento* m_OptsMemento;
-
-
-    /// Prohibit copy constructor
-    CPrelimSearchRunner(const CPrelimSearchRunner& rhs);
-    /// Prohibit assignment operator
-    CPrelimSearchRunner& operator=(const CPrelimSearchRunner& rhs);
-};
 
 /// Thread class to run the preliminary stage of the BLAST search
 class CPrelimSearchThread : public CThread
@@ -121,8 +68,7 @@ private:
 };
 
 CPrelimSearchThread::CPrelimSearchThread(SInternalData& internal_data,
-                                         const CBlastOptionsMemento*
-                                         opts_memento)
+                                         const CBlastOptionsMemento* opts_memento)
     : m_InternalData(internal_data), m_OptsMemento(opts_memento)
 {
     // The following fields need to be copied to ensure MT-safety
