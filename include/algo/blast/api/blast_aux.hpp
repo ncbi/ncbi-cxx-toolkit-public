@@ -41,8 +41,8 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <algo/blast/api/blast_types.hpp>
 // NewBlast includes
+#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h> // Needed for BlastMaskLoc & BlastSeqLoc
@@ -181,22 +181,17 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func)                  \
 /** Wrapper class for struct_name. */                                       \
                                                                             \
-class NCBI_XBLAST_EXPORT C##struct_name : public CDebugDumpable             \
+class NCBI_XBLAST_EXPORT C##struct_name : public CObject                    \
 {                                                                           \
 public:                                                                     \
     C##struct_name() : m_Ptr(NULL) {}                                       \
     C##struct_name(struct_name* p) : m_Ptr(p) {}                            \
+    ~C##struct_name() { Reset(); }                                          \
     void Reset(struct_name* p = NULL) {                                     \
         if (m_Ptr) {                                                        \
             free_func(m_Ptr);                                               \
         }                                                                   \
         m_Ptr = p;                                                          \
-    }                                                                       \
-    ~C##struct_name() {                                                     \
-        if (m_Ptr) {                                                        \
-            free_func(m_Ptr);                                               \
-            m_Ptr = NULL;                                                   \
-        }                                                                   \
     }                                                                       \
     struct_name* Release() {                                                \
         struct_name* retval = m_Ptr;                                        \
@@ -209,7 +204,7 @@ public:                                                                     \
     struct_name* operator->() { return m_Ptr; }                             \
     struct_name* operator->() const { return m_Ptr; }                       \
     struct_name** operator&() { return &m_Ptr; }                            \
-    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;        \
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;\
 private:                                                                    \
     struct_name* m_Ptr;                                                     \
 }
@@ -273,6 +268,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2005/09/28 18:08:55  camacho
+* Make C structure wrappers subclass CObject
+*
 * Revision 1.65  2005/09/16 17:00:39  camacho
 * Changed Blast_GetSeqLocInfoVector interface to consider masked locations in
 * query sequences.
