@@ -52,7 +52,7 @@ BEGIN_SCOPE(blast)
 class CBlastOptions;
 class CBlastPrelimSearch;
 class CBlastTracebackSearch;
-class SPrelimTracebackMemento;
+class CPsiBl2Seq;
 
 /// Class that allows the transfer of data structures from the
 /// CBlastOptionsLocal class to either the BLAST preliminary or 
@@ -87,13 +87,10 @@ private:
     friend class CBlastOptions;
 
     // Recipients of data 
-    friend class CBlastPrelimSearch;
-    friend class CPrelimSearchRunner;   // functor that calls CORE BLAST
-    friend class CBlastTracebackSearch;
-
-    // this should replace (CPrelimSearch, CBlastTracebackSearch,
-    // CBlastPrelimSearchRunner);
     friend class CSetupFactory; 
+    friend class CPrelimSearchRunner;
+    friend class CBlastTracebackSearch;
+    friend class CPsiBl2Seq;
 
     // The data that is being shared (not that this object doesn't own these)
     EBlastProgramType m_ProgramType;
