@@ -33,9 +33,12 @@
 
 #include <ncbi_pch.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/seqloc/Seq_loc_mix.hpp>
 
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
@@ -676,6 +679,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.82  2005/09/28 18:09:09  camacho
+ * Added missing headers
+ *
  * Revision 1.81  2005/09/16 17:01:52  camacho
  * Changed Blast_GetSeqLocInfoVector interface to consider masked locations in
  * query sequences.
