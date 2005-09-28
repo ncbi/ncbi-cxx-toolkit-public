@@ -3212,7 +3212,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     }
     
     // !!! There are still problems ...
-    if ( args.GetDriverName() != "ctlib" ) {
+    if ( args.GetDriverName() == "dblib" || args.GetDriverName() == "ftds") {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -3333,6 +3333,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.49  2005/09/28 18:28:36  ssikorsk
+ * Disable Test_Bulk_Overflow for ODBC and MSDBLIB drivers
+ *
  * Revision 1.48  2005/09/26 17:55:34  ssikorsk
  * Get rid of VC warnings.
  *
