@@ -36,7 +36,7 @@
 #define ALGO_BLAST_API__OBJMGR_QUERY_DATA__HPP
 
 #include <algo/blast/api/query_data.hpp>
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 
 /** @addtogroup AlgoBlast
  *

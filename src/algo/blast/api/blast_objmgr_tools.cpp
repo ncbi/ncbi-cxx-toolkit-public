@@ -194,63 +194,6 @@ GetSequence(const objects::CSeq_loc& sl, EBlastEncoding encoding,
     CBlastSeqVectorOM sv = CBlastSeqVectorOM(sl, *scope);
     return GetSequence_OMF(sv, encoding, strand, sentinel, warnings);
 }
-/** Retrieves subject sequence Seq-id and length.
- * @param seqinfo_src Source of subject sequences information [in]
- * @param oid Ordinal id (index) of the subject sequence [in]
- * @param seqid Subject sequence identifier to fill [out]
- * @param length Subject sequence length [out]
- */
-static void
-x_GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, // [in]
-                         int oid,                    // [in] 
-                         CConstRef<CSeq_id>& seqid,  // [out]
-                         TSeqPos* length)            // [out]
-{
-    ASSERT(length);
-    list<CRef<CSeq_id> > seqid_list = seqinfo_src->GetId(oid);
-
-    seqid.Reset(seqid_list.front());
-    *length = seqinfo_src->GetLength(oid);
-
-    return;
-}
-
-/// Remaps Seq-align offsets relative to the query Seq-loc. 
-/// Since the query strands were already taken into account when CSeq_align 
-/// was created, only start position shifts in the CSeq_loc's are relevant in 
-/// this function. 
-/// @param sar Seq-align for a given query [in] [out]
-/// @param query The query Seq-loc [in]
-static void
-x_RemapToQueryLoc(CRef<CSeq_align> sar, const SSeqLoc* query)
-{
-    _ASSERT(sar);
-    ASSERT(query);
-    const int query_dimension = 0;
-
-    TSeqPos q_shift = 0;
-
-    if (query->seqloc->IsInt()) {
-        q_shift = query->seqloc->GetInt().GetFrom();
-    }
-    if (q_shift > 0) {
-        for (CTypeIterator<CDense_seg> itr(Begin(*sar)); itr; ++itr) {
-            const vector<ENa_strand> strands = itr->GetStrands();
-            // Create temporary CSeq_locs with strands either matching 
-            // (for query and for subject if it is not on a minus strand),
-            // or opposite to those in the segment, to force RemapToLoc to 
-            // behave in the correct way.
-            CSeq_loc q_seqloc;
-            ENa_strand q_strand = strands[0];
-            q_seqloc.SetInt().SetFrom(q_shift);
-            q_seqloc.SetInt().SetTo(query->seqloc->GetInt().GetTo());
-            q_seqloc.SetInt().SetStrand(q_strand);
-            q_seqloc.SetInt().SetId().Assign(sequence::GetId(*query->seqloc, 
-                                                             query->scope));
-            itr->RemapToLoc(query_dimension, q_seqloc, true);
-        }
-    }
-}
 
 void
 Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv, 
@@ -356,8 +299,8 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
         // in Seq-aligns.
         Blast_HSPListSortByEvalue(hsp_list);
 
-        x_GetSequenceLengthAndId(seqinfo_src, hsp_list->oid,
-                                 subject_id, &subj_length);
+        GetSequenceLengthAndId(seqinfo_src, hsp_list->oid, 
+                               subject_id, &subj_length);
 
         // Create a CSeq_align for each matching sequence
         CRef<CSeq_align> hit_align;
@@ -371,7 +314,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
                 BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
                     subject_id, query_length, subj_length);
         }
-        x_RemapToQueryLoc(hit_align, &query);
+        RemapToQueryLoc(hit_align, *query.seqloc);
         seq_aligns->Set().push_back(hit_align);
     }
     return seq_aligns;
@@ -470,7 +413,8 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     TSeqPos subj_length = 0;
 
     // Subject is the same for all queries, so retrieve its id right away
-    x_GetSequenceLengthAndId(seqinfo_src, subject_index, subject_id, &subj_length);
+    GetSequenceLengthAndId(seqinfo_src, subject_index, 
+                           subject_id, &subj_length);
 
     // Process each query's hit list
     for (int index = 0; index < results->num_queries; index++) {
@@ -516,7 +460,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                     BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
                         subject_id, query_length, subj_length);
             }
-            x_RemapToQueryLoc(hit_align, &query[index]);
+            RemapToQueryLoc(hit_align, *query[index].seqloc);
             seq_aligns.Reset(new CSeq_align_set());
             seq_aligns->Set().push_back(hit_align);
         } else {
@@ -571,6 +515,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2005/09/28 18:23:07  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.59  2005/09/16 17:04:13  camacho
 * + TSeqLocVector2Packed_seqint auxiliary function
 *

@@ -35,6 +35,7 @@
 #define ALGO_BLAST_API___BLAST_OBJMGR_PRIV__HPP
 
 #include "blast_setup.hpp"
+#include <algo/blast/api/sseqloc.hpp>
 
 /** @addtogroup AlgoBlast
  *

@@ -52,11 +52,12 @@
 #ifndef ALGO_BLAST_API___DBBLAST__HPP
 #define ALGO_BLAST_API___DBBLAST__HPP
 
-#include <algo/blast/api/blast_options.hpp>
+#include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_engine.h>
-#include <connect/ncbi_core.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -330,6 +331,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2005/09/28 18:21:34  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.38  2005/08/29 14:37:31  camacho
 * From Ilya Dondoshansky:
 * GetFilteredQueryRegions now returns TSeqLocInfoVector

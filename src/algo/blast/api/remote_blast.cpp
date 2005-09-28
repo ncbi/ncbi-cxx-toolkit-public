@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <algo/blast/api/remote_blast.hpp>
+#include <algo/blast/api/blast_types.hpp>
 
 #include <objects/blast/blastclient.hpp>
 #include <objects/blast/blast__.hpp>
@@ -1117,6 +1118,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/09/28 18:23:08  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.30  2005/07/25 14:45:01  bealer
 * - Vector version of error fetching method for RemoteBlast.
 *

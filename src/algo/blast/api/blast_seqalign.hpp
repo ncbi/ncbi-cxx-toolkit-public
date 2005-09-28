@@ -37,6 +37,8 @@
 #include <corelib/ncbistd.hpp>
 
 #include <algo/blast/api/blast_options.hpp>
+#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
@@ -139,6 +141,30 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list
                                Int4 subject_length);
 
 
+TSeqAlignVector 
+PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
+                             EBlastProgramType        prog,
+                             class ILocalQueryData  & query,
+                             const IBlastSeqInfoSrc * seqinfo_src,
+                             const SPHIQueryInfo    * pattern_info);
+
+TSeqAlignVector
+BlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
+                          EBlastProgramType        prog,
+                          class ILocalQueryData  & query,
+                          const IBlastSeqInfoSrc * seqinfo_src,
+                          bool                     is_gapped,
+                          bool                     is_ooframe);
+
+/// Remaps Seq-align offsets relative to the query Seq-loc. 
+/// Since the query strands were already taken into account when CSeq_align 
+/// was created, only start position shifts in the CSeq_loc's are relevant in 
+/// this function. 
+/// @param sar Seq-align for a given query [in] [out]
+/// @param query The query Seq-loc [in]
+void
+RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -148,6 +174,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2005/09/28 18:23:08  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.28  2005/07/21 17:17:28  bealer
 * - OMF version of seqalign generation.
 *

@@ -35,7 +35,7 @@
 #define ALGO_BLAST_API___BLAST_INPUT__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -61,7 +61,7 @@ TSeqLocVector
 BLASTGetSeqLocFromStream(CNcbiIstream& in, objects::CObjectManager& objmgr, 
                          objects::ENa_strand strand,
                          TSeqPos from, TSeqPos to, int* counter,
-                         bool get_lcase_mask = FALSE);
+                         bool get_lcase_mask = false);
 
 
 END_SCOPE(blast)

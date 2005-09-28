@@ -63,6 +63,20 @@ public:
     virtual Uint4 GetLength(Uint4 index) const = 0;
 };
 
+/** Retrieves subject sequence Seq-id and length.
+ * @param seqinfo_src Source of subject sequences information [in]
+ * @param oid Ordinal id (index) of the subject sequence [in]
+ * @param seqid Subject sequence identifier to fill [out]
+ * @param length Subject sequence length [out]
+ * @note implemented in blast_seqalign.cpp
+ */
+void 
+GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, 
+                       int oid,
+                       CConstRef<objects::CSeq_id>& seqid, 
+                       TSeqPos* length);
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -70,6 +84,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/09/28 18:21:34  camacho
+ * Rearrangement of headers/functions to segregate object manager dependencies.
+ *
  * Revision 1.4  2004/11/29 20:08:29  camacho
  * + virtual destructor, as the class is meant to be subclassed
  *

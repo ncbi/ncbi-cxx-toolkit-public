@@ -35,10 +35,10 @@
 #ifndef ALGO_BLAST_API___BLAST_QUERY_DATA_HPP
 #define ALGO_BLAST_API___BLAST_QUERY_DATA_HPP
 
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_def.h>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -46,7 +46,7 @@
  */
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+
 BEGIN_SCOPE(blast)
 
 /// Provides access (not ownership) to the C structures used to configure
@@ -67,7 +67,7 @@ public:
     virtual int GetNumQueries() = 0;
     
     /// Get the Seq_loc for the sequence indicated by index.
-    virtual CConstRef<CSeq_loc> GetSeq_loc(int index) = 0;
+    virtual CConstRef<objects::CSeq_loc> GetSeq_loc(int index) = 0;
     
     /// Get the length of the sequence indicated by index.
     virtual int GetSeqLength(int index) = 0;

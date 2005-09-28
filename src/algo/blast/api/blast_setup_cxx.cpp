@@ -38,6 +38,7 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/metareg.hpp>
+#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_util.h>
 
@@ -1137,6 +1138,56 @@ GetNumberOfContexts(EBlastProgramType p)
     return retval;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+BLAST_SequenceBlk*
+SafeSetupQueries(const IBlastQuerySource& queries,
+                 const CBlastOptions* options,
+                 const BlastQueryInfo* query_info)
+{
+    ASSERT(options);
+    ASSERT(query_info);
+    ASSERT( !queries.Empty() );
+
+    CBLAST_SequenceBlk retval;
+    Blast_Message* blast_msg = NULL;
+    TAutoUint1ArrayPtr gc = FindGeneticCode(options->GetQueryGeneticCode());
+
+    SetupQueries_OMF(queries, query_info, &retval, options->GetProgramType(), 
+                     options->GetStrandOption(), gc.get(), &blast_msg);
+
+    string error_message;
+    if (blast_msg) {
+        error_message = blast_msg->message;
+        Blast_MessageFree(blast_msg);
+    }
+    if (retval.Get() == NULL) {
+        error_message += "\nblast::SetupQueries failure";
+    }
+    if ( !error_message.empty() ) {
+        NCBI_THROW(CBlastException, eInvalidArgument, error_message);
+    }
+
+    return retval.Release();
+}
+
+BlastQueryInfo*
+SafeSetupQueryInfo(const IBlastQuerySource& queries,
+                   const CBlastOptions* options)
+{
+    ASSERT(!queries.Empty());
+    ASSERT(options);
+
+    CBlastQueryInfo retval;
+    SetupQueryInfo_OMF(queries, options->GetProgramType(),
+                       options->GetStrandOption(), &retval);
+
+    if (retval.Get() == NULL) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "blast::SetupQueryInfo failed");
+    }
+    return retval.Release();
+}
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1146,6 +1197,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.99  2005/09/28 18:23:08  camacho
+ * Rearrangement of headers/functions to segregate object manager dependencies.
+ *
  * Revision 1.98  2005/09/26 15:36:18  camacho
  * Eliminate msvc compiler warnings
  *

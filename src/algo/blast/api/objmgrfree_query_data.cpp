@@ -46,6 +46,9 @@ static char const rcsid[] =
 // Serial includes
 #include <serial/iterator.hpp>
 
+// Object includes
+#include <objects/seqset/Seq_entry.hpp>
+
 // Private BLAST API headers
 #include "blast_setup.hpp"
 #include "bioseq_extract_data_priv.hpp"
@@ -59,15 +62,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-/// FIXME: these should go into some private header...
-extern BlastQueryInfo*
-s_SafeSetupQueryInfo(const IBlastQuerySource& queries,
-                     const CBlastOptions* options);
-extern BLAST_SequenceBlk*
-s_SafeSetupQueries(const IBlastQuerySource& queries,
-                   const CBlastOptions* options,
-                   const BlastQueryInfo* query_info);
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // CObjMgrFree_LocalQueryData
@@ -77,11 +71,11 @@ s_SafeSetupQueries(const IBlastQuerySource& queries,
 class CObjMgrFree_LocalQueryData : public ILocalQueryData
 {
 public:
-    CObjMgrFree_LocalQueryData(CConstRef<objects::CBioseq_set> bioseq_set,
+    CObjMgrFree_LocalQueryData(CConstRef<CBioseq_set> bioseq_set,
                                const CBlastOptions* options);
     
-    BLAST_SequenceBlk* GetSequenceBlk();
-    BlastQueryInfo* GetQueryInfo();
+    virtual BLAST_SequenceBlk* GetSequenceBlk();
+    virtual BlastQueryInfo* GetQueryInfo();
     
     /// Get the number of queries.
     virtual int GetNumQueries();
@@ -94,17 +88,17 @@ public:
     
 private:
     const CBlastOptions* m_Options;
-    CConstRef<objects::CBioseq_set> m_BioseqSet;
+    CConstRef<CBioseq_set> m_BioseqSet;
     
-    AutoPtr<IBlastQuerySource> m_QuerySource;
+    CRef<IBlastQuerySource> m_QuerySource;
 };
 
 CObjMgrFree_LocalQueryData::CObjMgrFree_LocalQueryData
-    (CConstRef<objects::CBioseq_set> bioseq_set, const CBlastOptions* options)
+    (CConstRef<CBioseq_set> bioseq_set, const CBlastOptions* options)
     : m_Options(options), m_BioseqSet(bioseq_set)
 {
 	bool is_prot = Blast_QueryIsProtein(options->GetProgramType()) ? true : false;
-    m_QuerySource.reset(new CBlastQuerySourceBioseqSet(bioseq_set, is_prot));
+    m_QuerySource.Reset(new CBlastQuerySourceBioseqSet(*bioseq_set, is_prot));
 }
 
 BLAST_SequenceBlk*
@@ -112,9 +106,9 @@ CObjMgrFree_LocalQueryData::GetSequenceBlk()
 {
     if (m_SeqBlk.Get() == NULL) {
         if (m_BioseqSet.NotEmpty()) {
-            m_SeqBlk.Reset(s_SafeSetupQueries(*m_QuerySource,
-                                              m_Options,
-                                              GetQueryInfo()));
+            m_SeqBlk.Reset(SafeSetupQueries(*m_QuerySource,
+                                            m_Options,
+                                            GetQueryInfo()));
         } else {
             NCBI_THROW(CBlastException, eInvalidArgument,
                        "Missing source data in " +
@@ -129,7 +123,7 @@ CObjMgrFree_LocalQueryData::GetQueryInfo()
 {
     if (m_QueryInfo.Get() == NULL) {
         if (m_BioseqSet.NotEmpty()) {
-            m_QueryInfo.Reset(s_SafeSetupQueryInfo(*m_QuerySource, m_Options));
+            m_QueryInfo.Reset(SafeSetupQueryInfo(*m_QuerySource, m_Options));
         } else {
             NCBI_THROW(CBlastException, eInvalidArgument,
                        "Missing source data in " +
@@ -159,19 +153,19 @@ CObjMgrFree_LocalQueryData::GetSeqLength(int index)
     return m_QuerySource->GetLength(index);
 }
 
-static CRef<objects::CBioseq_set>
-s_ConstBioseqSetToBioseqSet(CConstRef<objects::CBioseq_set> bioseq_set)
+static CRef<CBioseq_set>
+s_ConstBioseqSetToBioseqSet(CConstRef<CBioseq_set> bioseq_set)
 {
-    CRef<objects::CBioseq_set> retval(const_cast<CBioseq_set*>(&*bioseq_set));
+    CRef<CBioseq_set> retval(const_cast<CBioseq_set*>(&*bioseq_set));
     return retval;
 }
 
 static IRemoteQueryData::TSeqLocs
 s_ConstBioseqSetToSeqLocs(CConstRef<CBioseq_set> bioseq_set)
 {
-    CTypeConstIterator<objects::CBioseq> itr(ConstBegin(*bioseq_set, 
+    CTypeConstIterator<CBioseq> itr(ConstBegin(*bioseq_set, 
                                                         eDetectLoops)); 
-    CBlastQuerySourceBioseqSet query_source(bioseq_set, itr->IsAa());
+    CBlastQuerySourceBioseqSet query_source(*bioseq_set, itr->IsAa());
 
     IRemoteQueryData::TSeqLocs retval;
     for (TSeqPos i = 0; i < query_source.Size(); i++) {
@@ -189,17 +183,17 @@ s_ConstBioseqSetToSeqLocs(CConstRef<CBioseq_set> bioseq_set)
 class CObjMgrFree_RemoteQueryData : public IRemoteQueryData
 {
 public:
-    CObjMgrFree_RemoteQueryData(CConstRef<objects::CBioseq_set> bioseq_set);
+    CObjMgrFree_RemoteQueryData(CConstRef<CBioseq_set> bioseq_set);
 
-    CRef<objects::CBioseq_set> GetBioseqSet();
-    TSeqLocs GetSeqLocs();
+    virtual CRef<CBioseq_set> GetBioseqSet();
+    virtual TSeqLocs GetSeqLocs();
 
 private:
-    CConstRef<objects::CBioseq_set> m_ClientBioseqSet;
+    CConstRef<CBioseq_set> m_ClientBioseqSet;
 };
 
 CObjMgrFree_RemoteQueryData::CObjMgrFree_RemoteQueryData
-    (CConstRef<objects::CBioseq_set> bioseq_set)
+    (CConstRef<CBioseq_set> bioseq_set)
     : m_ClientBioseqSet(bioseq_set)
 {}
 
@@ -239,19 +233,24 @@ CObjMgrFree_RemoteQueryData::GetSeqLocs()
 //
 /////////////////////////////////////////////////////////////////////////////
 
-CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory
-    (CConstRef<objects::CBioseq> b)
-    : m_Bioseqs(0)
+/// Auxiliary function to convert a CBioseq into a CRef<CBioseq_set>
+CRef<CBioseq_set>
+x_BioseqSetFromBioseq(const CBioseq& bioseq)
 {
     CRef<CSeq_entry> seq_entry(new CSeq_entry);
-    seq_entry->SetSeq(const_cast<CBioseq&>(*b));
-    CRef<CBioseq_set> bioseq_set(new CBioseq_set);
-    bioseq_set->SetSeq_set().push_back(seq_entry);
-    m_Bioseqs = bioseq_set;
+    seq_entry->SetSeq(const_cast<CBioseq&>(bioseq));
+    CRef<CBioseq_set> retval(new CBioseq_set);
+    retval->SetSeq_set().push_back(seq_entry);
+    return retval;
 }
 
 CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory
-    (CConstRef<objects::CBioseq_set> b)
+    (CConstRef<CBioseq> b)
+    : m_Bioseqs(x_BioseqSetFromBioseq(*b))
+{}
+
+CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory
+    (CConstRef<CBioseq_set> b)
     : m_Bioseqs(b)
 {}
 

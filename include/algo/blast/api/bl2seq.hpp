@@ -33,6 +33,9 @@
 #ifndef ALGO_BLAST_API___BL2SEQ__HPP
 #define ALGO_BLAST_API___BL2SEQ__HPP
 
+#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 
 /** @addtogroup AlgoBlast
@@ -41,12 +44,6 @@
  */
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_SCOPE(objects)
-    class CSeq_loc;
-    class CSeq_align_set;
-END_SCOPE(objects)
-
 BEGIN_SCOPE(blast)
 
 /// Runs the BLAST algorithm between 2 sequences.
@@ -284,6 +281,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2005/09/28 18:21:33  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.43  2005/08/29 14:37:31  camacho
 * From Ilya Dondoshansky:
 * GetFilteredQueryRegions now returns TSeqLocInfoVector

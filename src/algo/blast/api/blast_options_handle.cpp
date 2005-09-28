@@ -32,7 +32,6 @@
 /// CBlastOptionsFactory classes.
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>
@@ -164,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/09/28 18:23:07  camacho
+ * Rearrangement of headers/functions to segregate object manager dependencies.
+ *
  * Revision 1.14  2005/07/07 16:32:11  camacho
  * Revamping of BLAST exception classes and error codes
  *

@@ -37,7 +37,7 @@
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_def.h>
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -63,6 +63,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/09/28 18:21:34  camacho
+ * Rearrangement of headers/functions to segregate object manager dependencies.
+ *
  * Revision 1.15  2005/07/06 16:10:43  camacho
  * Remove out-dated comments
  *

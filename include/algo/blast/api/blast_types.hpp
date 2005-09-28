@@ -35,13 +35,15 @@
 #define ALGO_BLAST_API___BLAST_TYPE__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
-#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_SCOPE(blast)
+
+/// Vector of Seq-align-sets
+typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
 
 /// This enumeration is to evolve into a task/program specific list that 
 /// specifies sets of default parameters to easily conduct searches using
@@ -68,39 +70,6 @@ enum EProgram {
     eBlastProgramMax    ///< Undefined program
 };
 
-/// Structure combining a Seq-loc, scope and masking locations for one sequence
-struct SSeqLoc {
-    /// Seq-loc describing the sequence to use as query/subject to BLAST
-    /// The types of Seq-loc currently supported are: whole, seq-interval...
-    /// @todo FIXME Complete the list of supported seq-locs
-    CConstRef<objects::CSeq_loc>     seqloc;
-
-    /// Scope where the sequence referenced can be found by the toolkit's
-    /// object manager
-    mutable CRef<objects::CScope>    scope;
-
-    /// Seq-loc describing regions to mask in the seqloc field
-    CConstRef<objects::CSeq_loc>     mask;
-
-    SSeqLoc()
-        : seqloc(), scope(), mask() {}
-    SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
-        : seqloc(sl), scope(s), mask(0) {}
-    SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s)
-        : seqloc(&sl), scope(&s), mask(0) {}
-    SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s,
-            const objects::CSeq_loc* m)
-        : seqloc(sl), scope(s), mask(m) {}
-    SSeqLoc(const objects::CSeq_loc& sl, objects::CScope& s,
-            const objects::CSeq_loc& m)
-        : seqloc(&sl), scope(&s), mask(&m) {}
-};
-
-/// Vector of sequence locations
-typedef vector<SSeqLoc>   TSeqLocVector;
-/// Vector of Seq-align-sets
-typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -108,6 +77,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/09/28 18:21:34  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.19  2005/05/26 14:31:29  dondosha
 * Added PHI BLAST programs to EProgram enumeration
 *

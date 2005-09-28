@@ -36,10 +36,7 @@
 #ifndef ALGO_BLAST_API___UNIFORM_SEARCH_HPP
 #define ALGO_BLAST_API___UNIFORM_SEARCH_HPP
 
-#include <corelib/ncbiobj.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
+#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/query_data.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 
@@ -49,6 +46,12 @@
  */
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_id;
+    class CSeq_align_set;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(blast)
 
 
@@ -211,17 +214,17 @@ class CSearchResults : public CObject {
 public:
     typedef vector< CRef<CSearchMessage> > TErrors;
     
-    CSearchResults(CRef<CSeq_align_set> align, const TErrors & errs)
+    CSearchResults(CRef<objects::CSeq_align_set> align, const TErrors & errs)
         : m_Alignment(align), m_Errors(errs)
     {
     }
     
-    CConstRef<CSeq_align_set> GetSeqAlign() const
+    CConstRef<objects::CSeq_align_set> GetSeqAlign() const
     {
         return m_Alignment;
     }
     
-    CConstRef<CSeq_id> GetSeqId() const;
+    CConstRef<objects::CSeq_id> GetSeqId() const;
     
     TErrors GetErrors(int min_severity = eBlastSevError) const;
 
@@ -232,7 +235,7 @@ public:
     // (CVSROOT/individual/dondosha/blast_demo/format_util.cpp).
     
 private:
-    CRef<CSeq_align_set> m_Alignment;
+    CRef<objects::CSeq_align_set> m_Alignment;
     
     TErrors m_Errors;
 };

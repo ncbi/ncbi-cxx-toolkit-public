@@ -137,55 +137,6 @@ CBlastQuerySourceTSeqLocs::Size() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-BLAST_SequenceBlk*
-s_SafeSetupQueries(const IBlastQuerySource& queries,
-                   const CBlastOptions* options,
-                   const BlastQueryInfo* query_info)
-{
-    ASSERT(options);
-    ASSERT(query_info);
-    ASSERT( !queries.Empty() );
-
-    CBLAST_SequenceBlk retval;
-    Blast_Message* blast_msg = NULL;
-    TAutoUint1ArrayPtr gc = FindGeneticCode(options->GetQueryGeneticCode());
-
-    SetupQueries_OMF(queries, query_info, &retval, options->GetProgramType(), 
-                     options->GetStrandOption(), gc.get(), &blast_msg);
-
-    string error_message;
-    if (blast_msg) {
-        error_message = blast_msg->message;
-        Blast_MessageFree(blast_msg);
-    }
-    if (retval.Get() == NULL) {
-        error_message += "\nblast::SetupQueries failure";
-    }
-    if ( !error_message.empty() ) {
-        NCBI_THROW(CBlastException, eInvalidArgument, error_message);
-    }
-
-    return retval.Release();
-}
-
-BlastQueryInfo*
-s_SafeSetupQueryInfo(const IBlastQuerySource& queries,
-                     const CBlastOptions* options)
-{
-    ASSERT(!queries.Empty());
-    ASSERT(options);
-
-    CBlastQueryInfo retval;
-    SetupQueryInfo_OMF(queries, options->GetProgramType(),
-                       options->GetStrandOption(), &retval);
-
-    if (retval.Get() == NULL) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "blast::SetupQueryInfo failed");
-    }
-    return retval.Release();
-}
-
 static CRef<CBioseq_set>
 s_TSeqLocVectorToBioseqSet(const TSeqLocVector* queries)
 {
@@ -294,9 +245,9 @@ CObjMgr_LocalQueryData::GetSequenceBlk()
 {
     if (m_SeqBlk.Get() == NULL) {
         if (m_Queries || m_SeqLocs) {
-            m_SeqBlk.Reset(s_SafeSetupQueries(*m_QuerySource, 
-                                              m_Options, 
-                                              GetQueryInfo()));
+            m_SeqBlk.Reset(SafeSetupQueries(*m_QuerySource, 
+                                            m_Options, 
+                                            GetQueryInfo()));
         } else {
             abort();
         }
@@ -309,7 +260,7 @@ CObjMgr_LocalQueryData::GetQueryInfo()
 {
     if (m_QueryInfo.Get() == NULL) {
         if (m_QuerySource) {
-            m_QueryInfo.Reset(s_SafeSetupQueryInfo(*m_QuerySource, m_Options));
+            m_QueryInfo.Reset(SafeSetupQueryInfo(*m_QuerySource, m_Options));
         } else {
             abort();
         }

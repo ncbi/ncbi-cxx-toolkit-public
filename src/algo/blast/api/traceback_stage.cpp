@@ -42,6 +42,7 @@ static char const rcsid[] =
 
 #include "blast_memento_priv.hpp"
 #include "blast_seqsrc_adapter_priv.hpp"
+#include "blast_seqalign.hpp"
 
 // CORE BLAST includes
 #include <algo/blast/core/blast_setup.h>
@@ -109,8 +110,7 @@ CBlastTracebackSearch::~CBlastTracebackSearch()
 TSeqAlignVector
 LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                            ILocalQueryData   & local_data,
-                           string              db_name,
-                           bool                db_is_prot,
+                           const IBlastSeqInfoSrc& seqinfo_src,
                            EBlastProgramType   program,
                            bool                gapped,
                            bool                oof_mode)
@@ -119,9 +119,6 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
     
     if (! hsp_results)
         return retval;
-    
-    // Create a source for retrieving sequence ids and lengths
-    CSeqDbSeqInfoSrc seqinfo_src(db_name, db_is_prot);
     
     // For PHI BLAST, results need to be split by query pattern
     // occurrence, which is done in a separate function. Results for
@@ -250,12 +247,18 @@ CBlastTracebackSearch::Run()
     
     bool is_prot = BlastSeqSrcGetIsProt
         (m_InternalData->m_SeqSrc->GetPointer()) ? true : false;
+    string db_name;
+    if (const char* seqsrc_name = 
+        BlastSeqSrcGetName(m_InternalData->m_SeqSrc->GetPointer())) {
+        db_name = string(seqsrc_name);
+    }
+    ASSERT(!db_name.empty());
+    CSeqDbSeqInfoSrc seqinfo_src(db_name, is_prot);
     
     TSeqAlignVector aligns =
         LocalBlastResults2SeqAlign(hsp_results,
            *m_QueryFactory->MakeLocalQueryData(m_Options),
-           BlastSeqSrcGetName(m_InternalData->m_SeqSrc->GetPointer()),
-           is_prot,
+           seqinfo_src,
            m_OptsMemento->m_ProgramType,
            m_Options->GetGappedMode(),
            m_Options->GetOutOfFrameMode());

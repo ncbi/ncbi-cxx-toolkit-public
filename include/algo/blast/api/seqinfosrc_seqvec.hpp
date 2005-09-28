@@ -36,7 +36,7 @@
  */
 
 #include <algo/blast/api/blast_seqinfosrc.hpp>
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/09/28 18:21:34  camacho
+ * Rearrangement of headers/functions to segregate object manager dependencies.
+ *
  * Revision 1.6  2005/09/26 21:17:15  camacho
  * Minor
  *

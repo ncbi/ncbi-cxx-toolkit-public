@@ -79,8 +79,8 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
     int index = 0;
     scope->AddTopLevelSeqEntry(*seq_entry);
 
-    from = MAX(from - 1, 0);
-    to = MAX(to - 1, 0);
+    from = max<TSeqPos>(from - 1, 0U);
+    to = max<TSeqPos>(to - 1, 0U);
 
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
 

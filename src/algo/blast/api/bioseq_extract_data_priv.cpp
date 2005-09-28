@@ -50,6 +50,10 @@ static char const rcsid[] =
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>
 
+// Object includes
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_inst.hpp>
+
 // Private BLAST API headers
 #include "blast_setup.hpp"
 #include "bioseq_extract_data_priv.hpp"
@@ -221,11 +225,11 @@ CBlastSeqVectorFromCSeq_data::x_Encoding_CSeq_data2CSeqUtil
 /////////////////////////////////////////////////////////////////////////////
 
 CBlastQuerySourceBioseqSet::CBlastQuerySourceBioseqSet
-    (CConstRef<objects::CBioseq_set> bs, bool is_prot) 
+    (const objects::CBioseq_set& bss, bool is_prot) 
     : m_IsProt(is_prot)
 {
     // sacrifice speed for protection against infinite loops
-    CTypeConstIterator<objects::CBioseq> itr(ConstBegin(*bs, eDetectLoops)); 
+    CTypeConstIterator<objects::CBioseq> itr(ConstBegin(bss, eDetectLoops)); 
     for (; itr; ++itr) {
         x_BioseqSanityCheck(*itr);
         m_Bioseqs.push_back(CConstRef<objects::CBioseq>(&*itr));

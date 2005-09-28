@@ -34,7 +34,6 @@
 #define ALGO_BLAST_API__RPS_AUX___HPP
 
 #include <algo/blast/core/blast_rps.h>
-#include <algo/blast/api/blast_aux.hpp>
 
 /** @addtogroup AlgoBlast
  *

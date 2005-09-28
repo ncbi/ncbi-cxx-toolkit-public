@@ -39,7 +39,7 @@
 #include <objects/blast/Blast4_parameters.hpp>
 #include <objects/blast/Blast4_queue_search_reques.hpp>
 
-#include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
 #include <algo/blast/core/blast_options.h>
@@ -592,6 +592,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.111  2005/09/28 18:21:33  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.110  2005/09/21 15:13:05  camacho
 * Remove unneeded friend classes
 *

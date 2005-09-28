@@ -285,25 +285,6 @@ struct SInternalData : public CObject
     CRef<CBlastRPSInfo> m_RpsData;
 };
 
-// These might eventually be moved (to blast_seqalign.[ch]pp)?
-
-class IBlastSeqInfoSrc;
-
-TSeqAlignVector 
-PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
-                             EBlastProgramType        prog,
-                             class ILocalQueryData  & query,
-                             const IBlastSeqInfoSrc * seqinfo_src,
-                             const SPHIQueryInfo    * pattern_info);
-
-TSeqAlignVector
-BlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
-                          EBlastProgramType        prog,
-                          class ILocalQueryData  & query,
-                          const IBlastSeqInfoSrc * seqinfo_src,
-                          bool                     is_gapped,
-                          bool                     is_ooframe);
-
 inline void
 CThreadable::SetNumberOfThreads(size_t nthreads)
 {

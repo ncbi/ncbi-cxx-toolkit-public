@@ -36,12 +36,12 @@
 #ifndef ALGO_BLAST_API___BLAST_SETUP__HPP
 #define ALGO_BLAST_API___BLAST_SETUP__HPP
 
-#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/api/blast_exception.hpp>
 
 // Object includes
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seq/Seq_data.hpp>
 
@@ -51,10 +51,6 @@
  */
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_SCOPE(objects)
-    class CSeq_loc;
-END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 class CBlastOptions;
@@ -351,6 +347,15 @@ GetQueryEncoding(EBlastProgramType program);
 EBlastEncoding
 GetSubjectEncoding(EBlastProgramType program);
 
+BLAST_SequenceBlk*
+SafeSetupQueries(const IBlastQuerySource& queries,
+                 const CBlastOptions* options,
+                 const BlastQueryInfo* query_info);
+
+BlastQueryInfo*
+SafeSetupQueryInfo(const IBlastQuerySource& queries, 
+                   const CBlastOptions* options);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -360,6 +365,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2005/09/28 18:23:08  camacho
+* Rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.52  2005/09/26 16:22:52  camacho
 * IBlastQuerySource is now a subclass of CObject.
 * Removed unneeded forward declaration.

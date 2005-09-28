@@ -36,7 +36,7 @@
 #define ALGO_BLAST_API__DUST_FILTER_HPP
 
 #include <objects/seqloc/Seq_loc.hpp>
-#include <algo/blast/api/blast_types.hpp>
+#include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 
 /** @addtogroup AlgoBlast
@@ -56,7 +56,8 @@ BEGIN_SCOPE(blast)
  */
 NCBI_XBLAST_EXPORT
 void 
-Blast_FindDustFilterLoc(TSeqLocVector& query, const CBlastNucleotideOptionsHandle* nucl_handle);
+Blast_FindDustFilterLoc(TSeqLocVector& query, 
+                        const CBlastNucleotideOptionsHandle* nucl_handle);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE 
@@ -69,6 +70,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.2  2005/09/28 18:21:34  camacho
+ *  Rearrangement of headers/functions to segregate object manager dependencies.
+ *
  *  Revision 1.1  2005/07/19 14:04:51  madden
  *  Header file for Blast_FindDustFilterLoc
  *

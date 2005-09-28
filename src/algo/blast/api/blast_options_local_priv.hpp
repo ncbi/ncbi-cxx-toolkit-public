@@ -35,6 +35,7 @@
 #define ALGO_BLAST_API___BLAST_OPTIONS_LOCAL_PRIV__HPP
 
 #include <objects/seqloc/Na_strand.hpp>
+#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 
 /** @addtogroup AlgoBlast
