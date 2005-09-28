@@ -107,44 +107,6 @@ CBlastTracebackSearch::~CBlastTracebackSearch()
     delete m_OptsMemento;
 }
 
-TSeqAlignVector
-LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
-                           ILocalQueryData   & local_data,
-                           const IBlastSeqInfoSrc& seqinfo_src,
-                           EBlastProgramType   program,
-                           bool                gapped,
-                           bool                oof_mode)
-{
-    TSeqAlignVector retval;
-    
-    if (! hsp_results)
-        return retval;
-    
-    // For PHI BLAST, results need to be split by query pattern
-    // occurrence, which is done in a separate function. Results for
-    // different pattern occurrences are put in separate discontinuous
-    // Seq_aligns, and linked in a Seq_align_set.
-    
-    BlastQueryInfo * query_info = local_data.GetQueryInfo();
-    
-    if (Blast_ProgramIsPhiBlast(program)) {
-        retval = PhiBlastResults2SeqAlign_OMF(hsp_results,
-                                              program,
-                                              local_data,
-                                              & seqinfo_src,
-                                              query_info->pattern_info);
-    } else {
-        retval = BlastResults2SeqAlign_OMF(hsp_results,
-                                           program,
-                                           local_data,
-                                           & seqinfo_src,
-                                           gapped,
-                                           oof_mode);
-    }
-    
-    return retval;
-}
-
 void
 CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
                               CRef<CBlastOptions> opts,

@@ -36,13 +36,11 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_types.hpp>
-#include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/core/blast_hits.h>
-#include <algo/blast/core/gapinfo.h>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
-#include <objects/seqalign/seqalign__.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -53,105 +51,8 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-
-/** Converts BlastHSPResults structure into a vector of CSeq_align_set classes
- * Returns one vector element per query sequence; all subject matches form a 
- * list of discontinuous CSeq_align's. 
- * @param results results from running the BLAST algorithm [in]
- * @param prog type of BLAST program [in]
- * @param query All query sequences [in]
- * @param seqinfo_src Source of subject sequences information [in]
- * @param is_gapped Is this a gapped search? [in]
- * @param is_ooframe Is it a search with out-of-frame gapping? [in]
- * @return Vector of seqalign sets (one set per query sequence).
- */
-TSeqAlignVector
-BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
-                          EBlastProgramType prog,
-                          TSeqLocVector &query, 
-                          const IBlastSeqInfoSrc* seqinfo_src, 
-                          bool is_gapped=true, bool is_ooframe=false);
-
-/** Extracts from the BlastHSPResults structure results for only one subject 
- * sequence, identified by its index, and converts them into a vector of 
- * CSeq_align_set classes. Returns one vector element per query sequence; 
- * The CSeq_align_set (list of CSeq_align's) consists of exactly one 
- * discontinuous CSeq_align for each vector element.
- * @param results results from running the BLAST algorithm [in]
- * @param prog type of BLAST program [in]
- * @param query All query sequences [in]
- * @param seqinfo_src Source of subject sequences information [in]
- * @param subject_index Index of this subject sequence in a set [in]
- * @param is_gapped Is this a gapped search? [in]
- * @param is_ooframe Is it a search with out-of-frame gapping? [in]
- * @return Vector of seqalign sets (one set per query sequence).
- */
-TSeqAlignVector
-BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results, 
-                          EBlastProgramType prog,
-                          TSeqLocVector &query, 
-                          const IBlastSeqInfoSrc* seqinfo_src, 
-                          Uint4 subject_index,
-                          bool is_gapped=true, bool is_ooframe=false);
-
-/// Remap subject offsets in the vector of Seq-aligns relative to the 
-/// underlying sequences if subject Seq-locs are subsequences.
-/// @param seqalignv Vector of Seq-align lists corresponding to multiple 
-///                  queries. Each list must contain Seq-aligns for each
-///                  subject in the subjects vector. [in] [out]
-/// @param subjectv Vector of subject sequence locations [in]
-void
-Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv, 
-                        const TSeqLocVector& subjectv);
-
-/// Converts PHI BLAST results into a Seq-align form. Results are 
-/// split into separate Seq-align-sets corresponding to different
-/// pattern occurrences in query, which are then wrapped into 
-/// discontinuous Seq-aligns and then put into a top level Seq-align-set.
-/// @param results All PHI BLAST results, with different query pattern
-///                occurrences mixed together. [in]
-/// @param prog Type of BLAST program (phiblastp or phiblastn) [in]
-/// @param query Query Seq-loc, wrapped in a TSeqLocVector [in]
-/// @param seqinfo_src Source of subject sequence information [in]
-/// @param pattern_info Information about query pattern occurrences [in]
-TSeqAlignVector 
-PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results,
-                           EBlastProgramType        prog,
-                           const TSeqLocVector    & query,
-                           const IBlastSeqInfoSrc * seqinfo_src,
-                           const SPHIQueryInfo    * pattern_info);
-
-CSeq_align_set*
-CreateEmptySeq_align_set(CSeq_align_set* sas);
-
-CRef<CSeq_align>
-BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
-                       const CSeq_id *query_id, const CSeq_id *subject_id,
-                       Int4 query_length, Int4 subject_length,
-                       bool is_ooframe);
-
-CRef<CSeq_align>
-BLASTUngappedHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
-                               const CSeq_id *query_id, 
-                               const CSeq_id *subject_id, Int4 query_length, 
-                               Int4 subject_length);
-
-NCBI_XBLAST_EXPORT
-TSeqAlignVector 
-PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
-                             EBlastProgramType        prog,
-                             class ILocalQueryData  & query,
-                             const IBlastSeqInfoSrc * seqinfo_src,
-                             const SPHIQueryInfo    * pattern_info);
-
-NCBI_XBLAST_EXPORT
-TSeqAlignVector
-BlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
-                          EBlastProgramType        prog,
-                          class ILocalQueryData  & query,
-                          const IBlastSeqInfoSrc * seqinfo_src,
-                          bool                     is_gapped,
-                          bool                     is_ooframe);
+/// Forward declaration
+class ILocalQueryData; 
 
 /// Remaps Seq-align offsets relative to the query Seq-loc. 
 /// Since the query strands were already taken into account when CSeq_align 
@@ -162,6 +63,34 @@ BlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
 void
 RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query);
 
+CSeq_align_set*
+CreateEmptySeq_align_set(CSeq_align_set* sas);
+
+CRef<CSeq_align>
+BLASTHspListToSeqAlign(EBlastProgramType program, 
+                       BlastHSPList* hsp_list, 
+                       const CSeq_id *query_id, 
+                       const CSeq_id *subject_id,
+                       Int4 query_length, 
+                       Int4 subject_length,
+                       bool is_ooframe);
+
+CRef<CSeq_align>
+BLASTUngappedHspListToSeqAlign(EBlastProgramType program, 
+                               BlastHSPList* hsp_list, 
+                               const CSeq_id *query_id, 
+                               const CSeq_id *subject_id, 
+                               Int4 query_length, 
+                               Int4 subject_length);
+
+TSeqAlignVector
+LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
+                           ILocalQueryData   & local_data,
+                           const IBlastSeqInfoSrc& seqinfo_src,
+                           EBlastProgramType   program,
+                           bool                gapped,
+                           bool                oof_mode);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -171,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2005/09/28 21:03:28  camacho
+* Further rearrangement of headers/functions to segregate object manager dependencies.
+*
 * Revision 1.30  2005/09/28 20:11:09  camacho
 * Added missing export specifier
 *
