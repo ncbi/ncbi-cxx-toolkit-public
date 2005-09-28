@@ -62,59 +62,65 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 void
-Blast_FindDustFilterLoc(TSeqLocVector& query, const CBlastNucleotideOptionsHandle* nucl_handle)
+Blast_FindDustFilterLoc(TSeqLocVector& queries, 
+                        const CBlastNucleotideOptionsHandle* nucl_handle)
 {
     // Either non-blastn search or dust filtering not desired.
     if (nucl_handle == NULL || nucl_handle->GetDustFiltering() == false)
        return;
 
-    for (unsigned int index = 0; index<query.size(); index++)
+    NON_CONST_ITERATE(TSeqLocVector, query, queries)
     {
-        CSeqVector data(*query[index].seqloc, *query[index].scope, CBioseq_Handle::eCoding_Iupac);
+        CSeqVector data(*query->seqloc, *query->scope, 
+                        CBioseq_Handle::eCoding_Iupac);
 
         CSymDustMasker duster(nucl_handle->GetDustFilteringLevel(),
                           nucl_handle->GetDustFilteringWindow(),
                           nucl_handle->GetDustFilteringLinker());
+        CSeq_id& query_id = const_cast<CSeq_id&>(*query->seqloc->GetId());
 
-        std::vector< CConstRef< objects::CSeq_loc > > locs;
-        duster.GetMaskedLocs(const_cast< objects::CSeq_id & > (*(*query[index].seqloc).GetId()), data, locs);
-
+        CRef<CPacked_seqint> masked_locations =
+            duster.GetMaskedInts(query_id, data);
+        CPacked_seqint::Tdata locs = masked_locations->Get();
 
         if (locs.size() > 0)
         {
            CRef<CSeq_loc> entire_slp(new CSeq_loc);
-           entire_slp->SetWhole().Assign(*(*query[index].seqloc).GetId());
-           CSeq_loc_Mapper mapper(*entire_slp, *query[index].seqloc, query[index].scope);
+           entire_slp->SetWhole().Assign(query_id);
+           CSeq_loc_Mapper mapper(*entire_slp, *query->seqloc, query->scope);
            CRef<CSeq_loc> tmp;
            tmp = NULL;
          
            const int kTopFlags = CSeq_loc::fStrand_Ignore|CSeq_loc::fMerge_All;
-           for (unsigned int loc_index = 0; loc_index<locs.size(); loc_index++)
+           ITERATE(CPacked_seqint::Tdata, masked_loc, locs)
            {
-                CRef<CSeq_loc> tmp1 = mapper.Map(*locs[loc_index]);
+               CRef<CSeq_loc> seq_interval
+                   (new CSeq_loc(query_id,
+                                 (*masked_loc)->GetFrom(), 
+                                 (*masked_loc)->GetTo()));
+               CRef<CSeq_loc> tmp1 = mapper.Map(*seq_interval);
 
-                if (!tmp)
-                {
-                    if (query[index].mask)
-                       tmp = (*query[index].mask).Add(*tmp1, kTopFlags, NULL);
-                    else
-                       tmp = tmp1;
-                }
-                else
-                {
-                   tmp = (*tmp).Add(*tmp1, kTopFlags, NULL);
-                }
+               if (!tmp)
+               {
+                   if (query->mask)
+                      tmp = query->mask->Add(*tmp1, kTopFlags, NULL);
+                   else
+                      tmp = tmp1;
+               }
+               else
+               {
+                  tmp = tmp->Add(*tmp1, kTopFlags, NULL);
+               }
            }
 
            CSeq_loc* tmp2 = new CSeq_loc();
            for(CSeq_loc_CI loc_it(*tmp); loc_it; ++loc_it)
            {
-                 tmp2->SetPacked_int().AddInterval(
-                      *(*query[index].seqloc).GetId(),
-                      loc_it.GetRange().GetFrom(),
-                      loc_it.GetRange().GetTo());
+                 tmp2->SetPacked_int().AddInterval(query_id,
+                                                   loc_it.GetRange().GetFrom(), 
+                                                   loc_it.GetRange().GetTo());
            }
-           query[index].mask.Reset(tmp2);
+           query->mask.Reset(tmp2);
         }
     }
 
@@ -129,6 +135,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.3  2005/09/28 18:53:06  camacho
+ *  Updated to use CSymDustMasker::GetMaskedInts() interface
+ *
  *  Revision 1.2  2005/08/03 18:55:21  jcherry
  *  #include dust_filter.hpp (needed for export specifier to work)
  *
