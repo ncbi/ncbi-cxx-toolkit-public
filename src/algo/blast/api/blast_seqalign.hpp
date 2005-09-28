@@ -50,11 +50,7 @@
  */
 
 BEGIN_NCBI_SCOPE
-
 USING_SCOPE(objects);
-//     class CSeq_align_set;
-// END_SCOPE(objects)
-
 BEGIN_SCOPE(blast)
 
 
@@ -140,7 +136,7 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list
                                const CSeq_id *subject_id, Int4 query_length, 
                                Int4 subject_length);
 
-
+NCBI_XBLAST_EXPORT
 TSeqAlignVector 
 PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                              EBlastProgramType        prog,
@@ -148,6 +144,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                              const IBlastSeqInfoSrc * seqinfo_src,
                              const SPHIQueryInfo    * pattern_info);
 
+NCBI_XBLAST_EXPORT
 TSeqAlignVector
 BlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
                           EBlastProgramType        prog,
@@ -174,6 +171,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/09/28 20:11:09  camacho
+* Added missing export specifier
+*
 * Revision 1.29  2005/09/28 18:23:08  camacho
 * Rearrangement of headers/functions to segregate object manager dependencies.
 *
