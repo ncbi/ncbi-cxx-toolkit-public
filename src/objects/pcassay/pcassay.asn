@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.8 2005/08/02 18:48:08 ywang Exp $
+-- $Id: pcassay.asn,v 1.9 2005/09/29 21:05:52 tkachenk Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -81,7 +81,7 @@ PC-AssayResults ::= SEQUENCE {
                       }               DEFAULT unspecified,
     rank              INTEGER                   DEFAULT 0, -- Numeric Rank of Assay Outcome (for result ordering)
                                                            --   Note: Larger numbers are more active
-    data              SEQUENCE OF PC-AssayData,            -- Assay Data Reported for this SID (vector)
+    data              SEQUENCE OF PC-AssayData OPTIONAL,            -- Assay Data Reported for this SID (vector)
     url               VisibleString              OPTIONAL -- Depositor provided URL for this Result
 }
 
@@ -238,6 +238,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.9  2005/09/29 21:05:52  tkachenk
+-- PC-AssayResults.data is made optional to be able to handle empty data rows
+--
 -- Revision 1.8  2005/08/02 18:48:08  ywang
 -- add PC-AssayResultsSet to ease spec mapping
 --
