@@ -109,6 +109,7 @@ private:
     CLDS_Object(const CLDS_Object&);
     CLDS_Object& operator=(const CLDS_Object&);
 
+    friend class CLDS_FastaScanner;
 private:
     SLDS_TablesCollection&  m_db;
     const map<string, int>& m_ObjTypeMap;
@@ -127,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/09/29 19:39:23  kuznets
+ * Use callback based fasta scanner
+ *
  * Revision 1.3  2005/09/26 15:50:55  kuznets
  * Fixed missing include(s)
  *

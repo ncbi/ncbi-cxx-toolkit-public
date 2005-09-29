@@ -38,6 +38,11 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seqdesc.hpp>
 
 #include <bdb/bdb_cursor.hpp>
 
@@ -53,6 +58,95 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+/// @internal
+class CLDS_FastaScanner : public IFastaEntryScan
+{
+public:
+    CLDS_FastaScanner(CLDS_Object& obj, 
+                      int          file_id, 
+                      int          type_id);
+
+    virtual void EntryFound(CRef<CSeq_entry> se, 
+                            CNcbiStreampos   stream_position);
+private:
+    CLDS_Object& m_Obj;
+    int          m_FileId;
+    int          m_TypeId;
+};
+
+CLDS_FastaScanner::CLDS_FastaScanner(CLDS_Object& obj, 
+                                     int          file_id,
+                                     int          type_id)
+ : m_Obj(obj),
+   m_FileId(file_id),
+   m_TypeId(type_id)
+{}
+
+void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se, 
+                                   CNcbiStreampos   stream_position)
+{
+    if (!se->IsSeq()) 
+        return;
+
+    SFastaFileMap::SFastaEntry  fasta_entry;
+    fasta_entry.stream_offset = stream_position;
+
+    // extract sequence info
+
+    const CSeq_entry::TSeq& bioseq = se->GetSeq();
+    const CSeq_id* sid = bioseq.GetFirstId();
+    fasta_entry.seq_id = sid->AsFastaString();
+
+    fasta_entry.all_seq_ids.resize(0);
+    if (bioseq.CanGetId()) {
+        const CBioseq::TId& seq_ids = bioseq.GetId();
+        string id_str;
+        ITERATE(CBioseq::TId, it, seq_ids) {
+            const CBioseq::TId::value_type& vt = *it;
+            id_str = vt->AsFastaString();
+            fasta_entry.all_seq_ids.push_back(id_str);
+        }
+    }
+
+    if (bioseq.CanGetDescr()) {
+        const CSeq_descr& d = bioseq.GetDescr();
+        if (d.CanGet()) {
+            const CSeq_descr_Base::Tdata& data = d.Get();
+            if (!data.empty()) {
+                CSeq_descr_Base::Tdata::const_iterator it = 
+                                                    data.begin();
+                if (it != data.end()) {
+                    CRef<CSeqdesc> ref_desc = *it;
+                    ref_desc->GetLabel(&fasta_entry.description, 
+                                        CSeqdesc::eContent);
+                }                                
+            }
+        }
+    }
+
+    // store entry record
+
+    // concatenate all ids
+    string seq_ids;
+    ITERATE(SFastaFileMap::SFastaEntry::TFastaSeqIds, 
+            it_id, fasta_entry.all_seq_ids) {
+        seq_ids.append(*it_id);
+        seq_ids.append(" ");
+    }
+
+    m_Obj.SaveObject(m_FileId,
+                     fasta_entry.seq_id,
+                     fasta_entry.description,
+                     seq_ids,
+                     fasta_entry.stream_offset,
+                     m_TypeId);
+    
+}
+
+
+
 
 
 CLDS_Object::CLDS_Object(SLDS_TablesCollection& db, 
@@ -222,11 +316,27 @@ void CLDS_Object::UpdateFileObjects(int file_id,
         }
 
     } else if ( format == CFormatGuess::eFasta ){
+
+        int type_id;
+        {{
+        map<string, int>::const_iterator it = m_ObjTypeMap.find("FastaEntry");
+        _ASSERT(it != m_ObjTypeMap.end());
+        type_id = it->second;
+        }}
+
         CNcbiIfstream input(file_name.c_str(), 
                             IOS_BASE::in | IOS_BASE::binary);
 
+        CLDS_FastaScanner fscan(*this, file_id, type_id);
+        ScanFastaFile(&fscan, 
+                      input, 
+                      fReadFasta_AssumeNuc | 
+                      fReadFasta_AllSeqIds |
+                      fReadFasta_OneSeq    |
+                      fReadFasta_NoSeqData);
+/*
         SFastaFileMap fmap;
-    
+
         ReadFastaFileMap(&fmap, input);
         int type_id;
         {{
@@ -253,7 +363,7 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                        it->stream_offset,
                        type_id);
         }
-        
+*/        
     } else {
         LOG_POST(Info << "Unsupported file format: " << file_name);
     }
@@ -601,6 +711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/09/29 19:39:28  kuznets
+ * Use callback based fasta scanner
+ *
  * Revision 1.3  2005/09/26 15:51:22  kuznets
  * Fixed missing include(s)
  *
