@@ -34,6 +34,7 @@
  * Defines interface for retrieving sequence identifiers.
  */
 
+#include <algo/blast/core/blast_export.h>
 #include <objects/seqloc/Seq_id.hpp>
 
 /** @addtogroup AlgoBlast
@@ -70,7 +71,7 @@ public:
  * @param length Subject sequence length [out]
  * @note implemented in blast_seqalign.cpp
  */
-void 
+NCBI_XBLAST_EXPORT void
 GetSequenceLengthAndId(const IBlastSeqInfoSrc* seqinfo_src, 
                        int oid,
                        CConstRef<objects::CSeq_id>& seqid, 
@@ -84,6 +85,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/09/29 15:32:11  jcherry
+ * Added export specifiers
+ *
  * Revision 1.5  2005/09/28 18:21:34  camacho
  * Rearrangement of headers/functions to segregate object manager dependencies.
  *

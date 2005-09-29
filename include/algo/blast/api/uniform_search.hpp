@@ -103,7 +103,7 @@ public:
 
 
 /// Blast Search Subject
-class CSearchDatabase : public CObject {
+class NCBI_XBLAST_EXPORT CSearchDatabase : public CObject {
 public:
     typedef vector<int> TGiList;
     enum EMoleculeType {
@@ -210,7 +210,7 @@ private:
 /// This class encapsulates all the search results and related data
 /// corresponding to one of the input queries.
 
-class CSearchResults : public CObject {
+class NCBI_XBLAST_EXPORT CSearchResults : public CObject {
 public:
     typedef vector< CRef<CSearchMessage> > TErrors;
     
@@ -246,7 +246,7 @@ private:
 /// This class encapsulates all of the search results and related data
 /// from a search.
 
-class CSearchResultSet {
+class NCBI_XBLAST_EXPORT CSearchResultSet {
 public:
     typedef vector< vector< CRef< CSearchMessage > > > TMessages;
     

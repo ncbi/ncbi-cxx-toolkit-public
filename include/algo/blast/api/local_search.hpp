@@ -50,7 +50,7 @@ BEGIN_SCOPE(blast)
 /// 
 /// The local implementation of the uniform search interface for
 /// sequence queries.
-class CLocalSeqSearch : public ISeqSearch {
+class NCBI_XBLAST_EXPORT CLocalSeqSearch : public ISeqSearch {
 public:
     virtual ~CLocalSeqSearch();
     
@@ -95,7 +95,7 @@ private:
 /// this type but limit their interaction with it to the capabilities
 /// of the ISearch interface.
 
-class CLocalSearchFactory : public ISearchFactory {
+class NCBI_XBLAST_EXPORT CLocalSearchFactory : public ISearchFactory {
 public:
     /// Get an object to manage a local sequence search.
     virtual CRef<ISeqSearch>          GetSeqSearch();

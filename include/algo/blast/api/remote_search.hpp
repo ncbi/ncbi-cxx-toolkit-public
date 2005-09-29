@@ -50,7 +50,7 @@ BEGIN_SCOPE(blast)
 /// The remote implementation of the uniform search interface for
 /// sequence queries.
 
-class CRemoteSeqSearch : public ISeqSearch {
+class NCBI_XBLAST_EXPORT CRemoteSeqSearch : public ISeqSearch {
 public:
     /// Configure the search.
     virtual void SetOptions(CRef<CBlastOptionsHandle> options);
@@ -89,7 +89,7 @@ private:
 /// The remote implementation of the uniform search interface for PSSM
 /// queries.
 
-class CRemotePssmSearch : public IPssmSearch {
+class NCBI_XBLAST_EXPORT CRemotePssmSearch : public IPssmSearch {
 public:
     /// Configure the search.
     virtual void SetOptions(CRef<CBlastOptionsHandle> options);
@@ -130,7 +130,7 @@ private:
 /// this type but limit their interaction with it to the capabilities
 /// of the ISearch interface.
 
-class CRemoteSearchFactory : public ISearchFactory {
+class NCBI_XBLAST_EXPORT CRemoteSearchFactory : public ISearchFactory {
 public:
     /// Get an object to manage a remote sequence search.
     virtual CRef<ISeqSearch> GetSeqSearch();

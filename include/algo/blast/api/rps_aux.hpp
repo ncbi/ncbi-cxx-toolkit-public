@@ -60,7 +60,7 @@ class CRpsPssmFile;
 /// Wrapper class to manage the BlastRPSInfo structure, as currently
 /// there aren't any allocation or deallocation functions for this structure in
 /// the CORE of BLAST. This class is meant to be kept in a CRef<>.
-class CBlastRPSInfo : public CObject {
+class NCBI_XBLAST_EXPORT CBlastRPSInfo : public CObject {
 public:
     /// Parametrized constructor
     /// @param rps_dbname name of the RPS-BLAST database

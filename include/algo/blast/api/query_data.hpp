@@ -51,7 +51,7 @@ BEGIN_SCOPE(blast)
 
 /// Provides access (not ownership) to the C structures used to configure
 /// local BLAST search class implementations
-class ILocalQueryData : public CObject
+class NCBI_XBLAST_EXPORT ILocalQueryData : public CObject
 {
 public:
     virtual ~ILocalQueryData() {}
@@ -111,7 +111,7 @@ class CBlastOptions;
 /// @note Because this class caches the result of the Make*QueryData methods,
 /// the products created by this factory will have the same lifespan as 
 /// the factory.
-class IQueryFactory : public CObject
+class NCBI_XBLAST_EXPORT IQueryFactory : public CObject
 {
 public:
     virtual ~IQueryFactory() {}

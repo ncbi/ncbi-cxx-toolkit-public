@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// NCBI C++ Object Manager free implementation of IQueryFactory
-class CObjMgrFree_QueryFactory : public IQueryFactory
+class NCBI_XBLAST_EXPORT CObjMgrFree_QueryFactory : public IQueryFactory
 {
 public:
     CObjMgrFree_QueryFactory(CConstRef<objects::CBioseq> bioseq);

@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// NCBI C++ Object Manager dependant implementation of IQueryFactory
-class CObjMgr_QueryFactory : public IQueryFactory
+class NCBI_XBLAST_EXPORT CObjMgr_QueryFactory : public IQueryFactory
 {
 public:
     CObjMgr_QueryFactory(const TSeqLocVector& queries);

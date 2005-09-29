@@ -165,7 +165,7 @@ protected:
 // 2. ScoreBlk
 // 3. LookupTable
 // 4. diags, hspstream
-class CSetupFactory {
+class NCBI_XBLAST_EXPORT CSetupFactory {
 public:
     /// Initializes RPS-BLAST data structures
     /// @param rps_dbname Name of the RPS-BLAST database [in]
@@ -257,7 +257,7 @@ typedef CStructWrapper<SPHIPatternSearchBlk>    TSPHIPatternSearchBlk;
 
 /// Lightweight wrapper to enclose C structures needed for running the
 /// preliminary and traceback stages of the BLAST search
-struct SInternalData : public CObject
+struct NCBI_XBLAST_EXPORT SInternalData : public CObject
 {
     SInternalData();
 
