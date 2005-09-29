@@ -132,6 +132,7 @@ algo/blast/api/seqinfosrc_seqdb.hpp
 algo/blast/api/seqinfosrc_seqvec.hpp
 algo/blast/api/seqsrc_multiseq.hpp
 algo/blast/api/seqsrc_seqdb.hpp
+algo/blast/api/sseqloc.hpp
 algo/blast/api/tblastn_options.hpp
 algo/blast/api/tblastx_options.hpp
 algo/blast/api/version.hpp
@@ -274,6 +275,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/09/29 15:40:25  jcherry
+ * Added algo/blast/api/sseqloc.hpp (new header)
+ *
  * Revision 1.10  2005/09/27 15:07:07  jcherry
  * Added some blast headers and removed one
  *
