@@ -234,7 +234,10 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
     do {
         ++start;
         SIZE_TYPE space = line.find_first_of(" \t", start);
-        string    name  = line.substr(start, space - start), local;
+        string    name  = line.substr(start, space - start);
+#if 0
+        string    local;
+#endif
 
         if (flags & fReadFasta_NoParseID) {
 #if 0
@@ -254,7 +257,11 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                                     + name.substr(pos),
                                     pos);
                     } else {
+#if 0
                         local = name;
+#else
+                        space = start - 1;
+#endif
                         break;
                     }
                 }
@@ -273,11 +280,13 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                 pos = end + 1;
             }
         }
-            
+
+#if 0            
         if ( !local.empty() ) {
             ids.push_back(CRef<CSeq_id>
                           (new CSeq_id(CSeq_id::e_Local, local, kEmptyStr)));
         }
+#endif
 
         start = line.find('\1', start);
         if (space != NPOS  &&  title.empty()) {
@@ -592,6 +601,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/09/29 18:38:07  ucko
+* Disable remaining cases of coercing leading defline text into local
+* IDs; in particular, RequireID should work better now.
+*
 * Revision 1.20  2005/09/26 15:18:07  ucko
 * When generating IDs, use the counter *before* incrementing it.
 *
