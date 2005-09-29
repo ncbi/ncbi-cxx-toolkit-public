@@ -305,7 +305,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
             for (unsigned int i = 0; i < m_looParams.lno; ++i) {
                 row = rows[i];
-                (*detailsStream) << "    about to do rowScorer.ComputeBlockScores after LOO for row " << row << endl;
+//                (*detailsStream) << "    about to do rowScorer.ComputeBlockScores after LOO for row " << row << endl;
                 rowScore = rowScorer.ComputeBlockScores(*au, m_finalBlockScores[row], row);
                 seqIdStr = GetSeqIdStringForRowFromAU(au, row);
 
@@ -838,6 +838,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/09/29 19:00:15  lanczyck
+ * comment out debug stmt
+ *
  * Revision 1.5  2005/09/06 19:08:24  lanczyck
  * add Leave-N-out support to DoPhase
  *
