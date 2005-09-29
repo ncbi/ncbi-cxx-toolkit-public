@@ -44,6 +44,7 @@
 #include <util/checksum.hpp>
 #include <typeinfo>
 
+
 BEGIN_NCBI_SCOPE
 
 string CFileCode::m_PchHeader;
@@ -620,7 +621,6 @@ bool CFileCode::GenerateUserCPP(const string& path, string& fileName) const
                          &CFileCode::GenerateUserCPPCode);
 }
 
-
 bool CFileCode::ModifiedByUser(const string& fileName,
                                const list<string>& newLines) const
 {
@@ -852,6 +852,11 @@ void CFileCode::GenerateUserCPPCode(CNcbiOstream& code) const
     WriteLogKeyword(code);
 }
 
+CTypeStrings* CFileCode::GetPrimaryClass(void)
+{
+    m_CurrentClass = &*(m_Classes.begin());
+    return m_CurrentClass->code.get();
+}
 
 bool CFileCode::AddType(const CDataType* type)
 {
@@ -892,6 +897,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.51  2005/09/29 14:45:22  gouriano
+* Added generation of module classes registration code
+*
 * Revision 1.50  2005/08/25 16:00:29  gouriano
 * Corrected doxygen-related code generation
 *

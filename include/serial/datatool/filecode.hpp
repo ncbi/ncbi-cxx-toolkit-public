@@ -108,6 +108,7 @@ public:
     void GenerateCPP(const string& path, string& fileName) const;
     bool GenerateUserHPP(const string& path, string& fileName) const;
     bool GenerateUserCPP(const string& path, string& fileName) const;
+    CTypeStrings* GetPrimaryClass(void);
 
     CNcbiOstream& WriteSourceFile(CNcbiOstream& out) const;
     static CNcbiOstream& WriteCopyrightHeader(CNcbiOstream& out);
@@ -163,6 +164,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2005/09/29 14:45:41  gouriano
+* Added generation of module classes registration code
+*
 * Revision 1.19  2005/08/25 16:00:06  gouriano
 * Corrected doxygen-related code generation
 *

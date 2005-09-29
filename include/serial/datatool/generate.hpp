@@ -122,7 +122,16 @@ public:
 
     bool Check(void) const;
 
+    void CheckFileNames(void);
     void GenerateCode(void);
+    void GenerateDoxygenGroupDescription(map<string, pair<string,string> >& module_names);
+    void GenerateFileList(const list<string>& generated, const list<string>& untouched);
+    void GenerateCombiningFile(const list<string>& module_inc, const list<string>& module_src);
+    void GenerateCvsignore(const string& outdir_cpp, const string& outdir_hpp,
+        const list<string>& generated, map<string, pair<string,string> >& module_names);
+    void GenerateModuleHPP(const string& path, list<string>& generated) const;
+    void GenerateModuleCPP(const string& path, list<string>& generated) const;
+
     void GenerateClientCode(void);
     void GenerateClientCode(const string& name, bool mandatory);
 
@@ -206,6 +215,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/09/29 14:45:41  gouriano
+* Added generation of module classes registration code
+*
 * Revision 1.13  2005/06/29 15:10:16  gouriano
 * Resolve all module dependencies when generating modular DTD or schema
 *
