@@ -668,6 +668,10 @@ void CSeq_annot_Info::x_InitAlignKeys(void)
                 key.m_Handle = hrit->first;
                 const CHandleRange& hr = hrit->second;
                 key.m_Range = hr.GetOverlappingRange();
+                if ( key.m_Range.Empty() ) {
+                    ERR_POST(Error << "Zero length alignment");
+                    continue;
+                }
                 if ( hr.HasGaps() ) {
                     index.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
                     index.m_HandleRange->GetData() = hr;
@@ -1084,6 +1088,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/09/29 19:34:38  grichenk
+ * Report and skip alignments of zero length
+ *
  * Revision 1.35  2005/09/20 15:45:36  vasilche
  * Feature editing API.
  * Annotation handles remember annotations by index.
