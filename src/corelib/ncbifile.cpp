@@ -3339,6 +3339,7 @@ bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
 #endif  /* HAVE_MADVISE */
 
 
+#if defined(NCBI_OS_MSWIN)
 string s_LastErrorMessage(void)
 {
     char* ptr = NULL;
@@ -3352,6 +3353,7 @@ string s_LastErrorMessage(void)
     LocalFree(ptr);
     return errmsg;
 }
+#endif 
 
 CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
                                        SMemoryFileAttrs&  attrs,
@@ -3743,6 +3745,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.125  2005/09/29 13:35:17  ivanov
+ * Define s_LastErrorMessage() only on MS Windows
+ *
  * Revision 1.124  2005/09/29 12:54:56  ivanov
  * MS Windows:
  *   s_TranslateAttrs(), CMemoryFileMap::x_Open():
