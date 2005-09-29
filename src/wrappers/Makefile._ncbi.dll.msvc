@@ -15,5 +15,7 @@ GlobalOptimizations=FALSE
 [Linker]
 
 [Linker.debug]
+# Debug-mode Python on Windows wants a "_d" suffix
+OutputFile = $(OutDir)\\_ncbi_d.dll
 
 [Linker.release]
