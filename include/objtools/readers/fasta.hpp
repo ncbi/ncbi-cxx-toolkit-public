@@ -79,10 +79,10 @@ struct SFastaFileMap
         /// List of qll sequence ids
         typedef list<string>  TFastaSeqIds;
 
-        string        seq_id;        ///< Primary sequence Id
-        string        description;   ///< Molecule description
-        size_t        stream_offset; ///< Molecule offset in file
-        TFastaSeqIds  all_seq_ids;   ///< List of all seq.ids
+        string         seq_id;        ///< Primary sequence Id
+        string         description;   ///< Molecule description
+        CNcbiStreampos stream_offset; ///< Molecule offset in file
+        TFastaSeqIds   all_seq_ids;   ///< List of all seq.ids
     };
 
     typedef vector<SFastaEntry>  TMapVector;
@@ -90,12 +90,31 @@ struct SFastaFileMap
     TMapVector   file_map; // vector keeps list of all molecule entries
 };
 
-// Function reads input stream (assumed that it is FASTA format) one
-// molecule entry after another filling the map structure describing and
-// pointing on molecule entries. Fasta map can be used later for quick
-// CSeq_entry retrival
+/// Callback interface to scan fasta file for entries
+class NCBI_XOBJREAD_EXPORT IFastaEntryScan
+{
+public:
+    virtual ~IFastaEntryScan();
+
+    /// Callback function, called after reading the fasta entry
+    virtual void EntryFound(CRef<CSeq_entry> se, 
+                            CNcbiStreampos stream_position) = 0;
+};
+
+
+/// Function reads input stream (assumed that it is FASTA format) one
+/// molecule entry after another filling the map structure describing and
+/// pointing on molecule entries. Fasta map can be used later for quick
+/// CSeq_entry retrival
 void NCBI_XOBJREAD_EXPORT ReadFastaFileMap(SFastaFileMap* fasta_map, 
                                            CNcbiIfstream& input);
+
+/// Scan FASTA files, call IFastaEntryScan::EntryFound (payload function)
+void NCBI_XOBJREAD_EXPORT ScanFastaFile(IFastaEntryScan* scanner, 
+                                        CNcbiIfstream&   input,
+                                        TReadFastaFlags  fread_flags);
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -104,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/09/29 19:35:51  kuznets
+* Added callback based fasta reader
+*
 * Revision 1.8  2005/09/26 15:14:54  kuznets
 * Added list of ids to fasta map
 *

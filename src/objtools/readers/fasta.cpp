@@ -552,7 +552,11 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
         fasta_entry.stream_offset = input.tellg() - CT_POS_TYPE(0);
 
         CRef<CSeq_entry> se;
-        se = ReadFasta(input, fReadFasta_AssumeNuc | fReadFasta_OneSeq);
+        se = ReadFasta(input, 
+                       fReadFasta_AssumeNuc | 
+                       fReadFasta_AllSeqIds |
+                       fReadFasta_OneSeq    |
+                       fReadFasta_NoSeqData);
 
         if (!se->IsSeq()) 
             continue;
@@ -594,6 +598,34 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
 
 }
 
+
+void ScanFastaFile(IFastaEntryScan* scanner, 
+                   CNcbiIfstream&   input,
+                   TReadFastaFlags  fread_flags)
+{
+    if (!input.is_open()) 
+        return;
+
+    while (!input.eof()) {
+        CNcbiStreampos pos = input.tellg();
+
+        CRef<CSeq_entry> se(ReadFasta(input, fread_flags));
+
+        if (!se->IsSeq()) 
+            continue;
+        scanner->EntryFound(se, pos);
+
+    }
+}
+
+
+IFastaEntryScan::~IFastaEntryScan()
+{
+}
+
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -601,6 +633,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/09/29 19:37:28  kuznets
+* Added callback based fasta reader
+*
 * Revision 1.21  2005/09/29 18:38:07  ucko
 * Disable remaining cases of coercing leading defline text into local
 * IDs; in particular, RequireID should work better now.
