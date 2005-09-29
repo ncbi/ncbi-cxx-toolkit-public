@@ -362,6 +362,17 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
     return false;
 }
 
+void
+CSeqDBGiList::GetGiList(vector<int>& gis) const
+{
+    gis.clear();
+    gis.reserve(Size());
+
+    ITERATE(vector<SGiOid>, itr, m_GisOids) {
+        gis.push_back(itr->gi);
+    }
+}
+
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 {
     CMemoryFile mfile(fname);

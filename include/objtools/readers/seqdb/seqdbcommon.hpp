@@ -175,6 +175,9 @@ public:
     {
         m_GisOids[index].oid = oid;
     }
+
+    /// Get the gi list
+    void GetGiList(vector<int>& gis) const;
     
 protected:
     ESortOrder     m_CurrentOrder;
