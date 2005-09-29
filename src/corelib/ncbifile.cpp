@@ -3218,16 +3218,12 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
     switch (protect_attr) {
         case CMemoryFile_Base::eMMP_Read:
             attrs->map_access  = FILE_MAP_READ;
-            //+++ Like to UNIX: do not lock a file/page in the private mode.
-            //if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
-            // Enable to write to mapped file/page somewhere else...
-            attrs->map_protect = PAGE_READWRITE;
-            attrs->file_access = GENERIC_READ | GENERIC_WRITE;
-            //} else {
-            //    attrs->map_protect = PAGE_READONLY;
-            //    attrs->file_access = GENERIC_READ;
-            //}
-            //---
+            // Next two attributes can be redefined in the x_Open(),
+            // which try to open file in the READWRITE mod first.
+            // This allow do not lock a file/page and write into it from
+            // somewhere else.
+            attrs->map_protect = PAGE_READONLY;
+            attrs->file_access = GENERIC_READ;
             break;
         case CMemoryFile_Base::eMMP_Write:
         case CMemoryFile_Base::eMMP_ReadWrite:
@@ -3248,7 +3244,7 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
     if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
         attrs->file_share = FILE_SHARE_READ | FILE_SHARE_WRITE;
     } else {
-        attrs->file_share = 0;
+        attrs->file_share = FILE_SHARE_READ;
     }
 
 #elif defined(NCBI_OS_UNIX)
@@ -3343,6 +3339,19 @@ bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
 #endif  /* HAVE_MADVISE */
 
 
+string s_LastErrorMessage(void)
+{
+    char* ptr = NULL;
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                FORMAT_MESSAGE_FROM_SYSTEM | 
+                FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL, GetLastError(), 
+                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                (LPTSTR) &ptr, 0, NULL);
+    string errmsg = ptr ? ptr : "unknown reason";
+    LocalFree(ptr);
+    return errmsg;
+}
 
 CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
                                        SMemoryFileAttrs&  attrs,
@@ -3379,15 +3388,7 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
     m_DataPtrReal = MapViewOfFile(handle.hMap, attrs.map_access,
                                   offset_hi, offset_low, m_LengthReal);
     if ( !m_DataPtrReal ) {
-        char* ptr = NULL;
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                    FORMAT_MESSAGE_FROM_SYSTEM | 
-                    FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL, GetLastError(), 
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                    (LPTSTR) &ptr, 0, NULL);
-        errmsg = ptr ? ptr : "unknown reason";
-        LocalFree(ptr);
+        errmsg = s_LastErrorMessage();
     }
 
 #elif defined(NCBI_OS_UNIX)
@@ -3574,29 +3575,60 @@ void CMemoryFileMap::x_Open(void)
     m_Handle->hMap = 0;
     m_Handle->sFileName = m_FileName;
 
+    string errmsg;
+
     for (;;) { // quasi-TRY block
 
 #if defined(NCBI_OS_MSWIN)
         // Name of a file-mapping object cannot contain '\'
         string x_name = NStr::Replace(m_FileName, "\\", "/");
+        errmsg = ": ";
 
         // If failed to attach to an existing file-mapping object then
         // create a new one (based on the specified file)
         m_Handle->hMap = OpenFileMapping(m_Attrs->map_access, false,
                                          x_name.c_str());
         if ( !m_Handle->hMap ) { 
-            HANDLE hFile = CreateFile(x_name.c_str(), m_Attrs->file_access, 
-                                      m_Attrs->file_share, NULL,
-                                      OPEN_EXISTING,
-                                      FILE_ATTRIBUTE_NORMAL, NULL);
-            if ( hFile == INVALID_HANDLE_VALUE )
+
+            // NOTE:
+            //
+            // First, try to open file/mapping in the READWRITE mode,
+            // to prevent locking file by OS. If this fails, try to open
+            // it in the predefined mode (usually READONLY).
+
+            HANDLE hFile;
+            DWORD x_file_access = GENERIC_READ | GENERIC_WRITE;
+            DWORD x_map_protect = PAGE_READWRITE;
+
+            hFile = CreateFile(x_name.c_str(), x_file_access, 
+                               m_Attrs->file_share, NULL,
+                               OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+            if ( (hFile == INVALID_HANDLE_VALUE)  &&
+                 (m_Attrs->file_access != x_file_access) ) {
+                hFile = CreateFile(x_name.c_str(), m_Attrs->file_access, 
+                                   m_Attrs->file_share, NULL,
+                                   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,NULL);
+                x_map_protect = m_Attrs->map_protect;
+            }
+            if ( hFile == INVALID_HANDLE_VALUE ) {
+                errmsg += s_LastErrorMessage();
                 break;
+            }
+
+            // Create mapping
 
             m_Handle->hMap = CreateFileMapping(hFile, NULL,
-                                               m_Attrs->map_protect,
+                                               x_map_protect,
                                                0, 0, x_name.c_str());
+            if ( !m_Handle->hMap  &&
+                 (m_Attrs->map_protect != x_map_protect) ) {
+                m_Handle->hMap = CreateFileMapping(hFile, NULL,
+                                                   m_Attrs->map_protect,
+                                                   0, 0, x_name.c_str());
+            }
             CloseHandle(hFile);
             if ( !m_Handle->hMap ) {
+                errmsg += s_LastErrorMessage();
                 break;
             }
         }
@@ -3614,7 +3646,7 @@ void CMemoryFileMap::x_Open(void)
     // Error: close and cleanup
     x_Close();
     NCBI_THROW(CFileException, eMemoryMap,
-        "CMemoryFile: Unable to map file \"" + m_FileName + "\" into memory");
+        "CMemoryFile: Unable to map file \"" + m_FileName + "\" into memory" + errmsg);
 }
 
 
@@ -3711,6 +3743,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.124  2005/09/29 12:54:56  ivanov
+ * MS Windows:
+ *   s_TranslateAttrs(), CMemoryFileMap::x_Open():
+ *     try to open file/mapping in the READWRITE mode first to prevent
+ *     locking file by OS. If this fails, try to open it in the READONLY mode.
+ *   Improved diagnostic.
+ *
  * Revision 1.123  2005/09/01 15:30:41  lavr
  * Fix adding unknown d_type (in case of NFS) in GetEntries w/CreateObjects
  *
