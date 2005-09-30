@@ -2995,9 +2995,6 @@ Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program,
 Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* results, 
         BlastHSPList* hsp_list, const SBlastHitsParameters* blasthit_params)
 {
-   Int2 status = 0;
-   BlastHSP* hsp;
-
    if (!hsp_list)
       return 0;
 
@@ -3012,46 +3009,59 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
    
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
+      BlastHSP* hsp;
       BlastHSPList** hsp_list_array;
       BlastHSPList* tmp_hsp_list;
       Int4 index;
 
       hsp_list_array = calloc(results->num_queries, sizeof(BlastHSPList*));
+      if (hsp_list_array == NULL)
+         return -1;
 
       for (index = 0; index < hsp_list->hspcnt; index++) {
+         Boolean can_insert = TRUE;
          Int4 query_index;
          hsp = hsp_list->hsp_array[index];
          query_index = Blast_GetQueryIndexFromContext(hsp->context, program);
-         tmp_hsp_list = hsp_list_array[query_index];
 
-         if (!tmp_hsp_list) {
+         if (!(tmp_hsp_list = hsp_list_array[query_index])) {
             hsp_list_array[query_index] = tmp_hsp_list = 
                Blast_HSPListNew(blasthit_params->options->hsp_num_max);
+            if (tmp_hsp_list == NULL)
+            {
+                 sfree(hsp_list_array);
+                 return -1;
+            }
             tmp_hsp_list->oid = hsp_list->oid;
          }
 
-         if (!tmp_hsp_list || tmp_hsp_list->do_not_reallocate) {
-            tmp_hsp_list = NULL;
-         } else if (tmp_hsp_list->hspcnt >= tmp_hsp_list->allocated) {
-            BlastHSP** new_hsp_array;
-            Int4 new_size = 
-               MIN(2*tmp_hsp_list->allocated, tmp_hsp_list->hsp_max);
-            if (new_size == tmp_hsp_list->hsp_max)
-               tmp_hsp_list->do_not_reallocate = TRUE;
+         if (tmp_hsp_list->hspcnt >= tmp_hsp_list->allocated) {
+            if (tmp_hsp_list->do_not_reallocate == FALSE) {
+               BlastHSP** new_hsp_array;
+               Int4 new_size = 
+                  MIN(2*tmp_hsp_list->allocated, tmp_hsp_list->hsp_max);
+               if (new_size == tmp_hsp_list->hsp_max)
+                  tmp_hsp_list->do_not_reallocate = TRUE;
             
-            new_hsp_array = realloc(tmp_hsp_list->hsp_array, 
+               new_hsp_array = realloc(tmp_hsp_list->hsp_array, 
                                     new_size*sizeof(BlastHSP*));
-            if (!new_hsp_array) {
-               tmp_hsp_list->do_not_reallocate = TRUE;
-               tmp_hsp_list = NULL;
-            } else {
-               tmp_hsp_list->hsp_array = new_hsp_array;
-               tmp_hsp_list->allocated = new_size;
+               if (!new_hsp_array) {
+                  tmp_hsp_list->do_not_reallocate = TRUE;
+                  can_insert = FALSE;
+               } else {
+                  tmp_hsp_list->hsp_array = new_hsp_array;
+                  tmp_hsp_list->allocated = new_size;
+               }
+            }
+            else
+            {
+               can_insert = FALSE;
             }
          }
-         if (tmp_hsp_list) {
+         if (can_insert) {
             tmp_hsp_list->hsp_array[tmp_hsp_list->hspcnt++] = hsp;
          } else {
+            /* FIXME: what if this is not the least significant HSP?? */
             /* Cannot add more HSPs; free the memory */
             hsp_list->hsp_array[index] = Blast_HSPFree(hsp);
          }
@@ -3087,7 +3097,7 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
        Blast_HSPListFree(hsp_list);
    }
        
-   return status; 
+   return 0; 
 }
 
 Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
