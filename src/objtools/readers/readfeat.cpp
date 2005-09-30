@@ -1494,7 +1494,6 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
     CRef<CSeq_feat> sfp;
     CSeq_loc_mix *mix = 0;
-    CT_POS_TYPE pos(0);
 
     if (! annotname.empty ()) {
       CAnnot_descr& descr = sap->SetDesc ();
@@ -1505,18 +1504,15 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
     while (ifs.good ()) {
 
-        pos = ifs.tellg ();
+        if (CT_EQ_INT_TYPE(ifs.peek(), CT_TO_INT_TYPE('>'))) {
+            // if next feature table, return current sap
+            return sap;
+        }
+
         NcbiGetlineEOL (ifs, line);
 
         if (! line.empty ()) {
-            if (line [0] == '>') {
-
-                // if next feature table, reposition and return current sap
-
-                ifs.seekg (pos);
-                return sap;
-
-            } else if (line [0] == '[') {
+            if (line [0] == '[') {
 
                 // set offset !!!!!!!!
 
@@ -1849,13 +1845,11 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
 {
     string line, fst, scd, seqid, annotname;
-    CT_POS_TYPE pos(0);
 
     // first look for >Feature line, extract seqid and optional annotname
 
     while (seqid.empty () && ifs.good ()) {
 
-        pos = ifs.tellg ();
         NcbiGetlineEOL (ifs, line);
 
         if (! line.empty ()) {
