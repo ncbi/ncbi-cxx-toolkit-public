@@ -154,6 +154,7 @@ static int
 s_BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream, 
                            BlastHSPList** hsp_list)
 {
+   Int2 status = 0;
    BlastHSPListCollectorData* stream_data = 
       (BlastHSPListCollectorData*) GetData(hsp_stream);
 
@@ -166,17 +167,23 @@ s_BlastHSPListCollectorWrite(BlastHSPStream* hsp_stream,
     *  every read after a write. 
     */
    if (stream_data->results_sorted) {
+      MT_LOCK_Do(stream_data->x_lock, eMT_Unlock);
       return kBlastHSPStream_Error;
    }
 
    /* For RPS BLAST saving procedure is different, because HSPs from different
       subjects are bundled in one HSP list */
    if (Blast_ProgramIsRpsBlast(stream_data->program)) {
-      Blast_HSPResultsSaveRPSHSPList(stream_data->program, 
+      status = Blast_HSPResultsSaveRPSHSPList(stream_data->program, 
          stream_data->results, *hsp_list, stream_data->blasthit_params);
    } else {
-      Blast_HSPResultsSaveHSPList(stream_data->program, stream_data->results, 
+      status = Blast_HSPResultsSaveHSPList(stream_data->program, stream_data->results, 
                                   *hsp_list, stream_data->blasthit_params);
+   }
+   if (status != 0)
+   {
+      MT_LOCK_Do(stream_data->x_lock, eMT_Unlock);
+      return kBlastHSPStream_Error;
    }
    /* Results structure is no longer sorted, even if it was before. 
       The following assignment is only necessary if the logic to prohibit
