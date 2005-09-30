@@ -841,7 +841,9 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          } 
          
          /* Save the results. */
-         BlastHSPStreamWrite(hsp_stream, &hsp_list);
+         status = BlastHSPStreamWrite(hsp_stream, &hsp_list);
+         if (status != 0)
+            break;
       }
       
       BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
