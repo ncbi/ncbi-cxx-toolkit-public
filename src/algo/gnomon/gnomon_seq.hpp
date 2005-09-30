@@ -107,6 +107,14 @@ inline EResidue Complement(EResidue c)
     return k_toMinus[c];
 }
 
+template <class VecIt>
+void Complement(const VecIt& b, const VecIt& e)
+{
+    for (VecIt i = b; i != e; ++i)
+        *i = Complement(*i);
+    reverse(b, e);
+}
+
 inline TResidue toACGT(EResidue c)
 {
     switch(c) {
@@ -131,6 +139,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/30 19:08:34  chetvern
+ * added in-place sequence Complement function
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *
