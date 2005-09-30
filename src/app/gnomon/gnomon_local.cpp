@@ -68,7 +68,6 @@ void CGnomon_localApplication::Init(void)
 	arg_desc->AddDefaultKey("from", "from","Start point",CArgDescriptions::eInteger,"0");
 	arg_desc->AddDefaultKey("to", "to","End point",CArgDescriptions::eInteger,"1000000000");
 	arg_desc->AddOptionalKey("align","align","Alignments for model hints",CArgDescriptions::eInputFile);
-	arg_desc->AddOptionalKey("fshifts", "fshifts","Frame shifts",CArgDescriptions::eInputFile);
     arg_desc->AddFlag("norep","DO NOT mask lower case letters");
     arg_desc->AddFlag("debug","Run in debug mode");
     arg_desc->AddFlag("open","Allow partial predictions");
@@ -107,36 +106,6 @@ int CGnomon_localApplication::Run(void)
         }
     }
 
-    TFrameShifts fshifts;
-    if(args["fshifts"])
-    {
-        CNcbiIstream& shifts = args["fshifts"].AsInputFile();
-        int loc;
-        while(shifts >> loc)
-        {
-            char type;
-            shifts >> type;
-            if(type == 'D')
-            {
-                string del_v;
-                shifts >> del_v;
-                fshifts.push_back(CFrameShiftInfo(loc,del_v.size(),false,del_v));
-            }
-            else if(type == 'I')
-            {
-                int len;
-                shifts >> len;
-                fshifts.push_back(CFrameShiftInfo(loc,len,true));
-            }
-            else
-            {
-                cerr << "Wrong format of frameshift file\n";
-                exit(1);
-            }
-        }
-    }
-
-
     CResidueVec seq;
     string line;
     char c;
@@ -150,15 +119,14 @@ int CGnomon_localApplication::Run(void)
 
     gettimeofday(&t1, NULL);
     
-    CGnomonEngine gnomon(modeldata, line.substr(1), seq, TSeqRange(left, right));
+    CGnomonEngine gnomon(modeldata, line.substr(1), seq, TSignedSeqRange(left, right));
         
     gettimeofday(&t2, NULL);
     if(debug) cerr << "Init time: " << diff(t2,t1) << '\n';
 
     gettimeofday(&t1, NULL);
 
-    gnomon.Run(cls, fshifts, repeats, 
-	       leftwall, rightwall, mpp);
+    gnomon.Run(cls, repeats, leftwall, rightwall, mpp);
 
     gettimeofday(&t2, NULL);
     if(debug) cerr << "Scoring time: " << diff(t2,t1) << '\n';
@@ -194,6 +162,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/30 19:20:01  chetvern
+ * removed use of a priori frameshifts
+ *
  * Revision 1.2  2005/09/16 14:24:07  chetvern
  * Added header and trailer comments
  *
