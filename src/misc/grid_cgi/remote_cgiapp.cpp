@@ -188,10 +188,10 @@ int CRemoteCgiApp::RunJob(CNcbiIstream& is, CNcbiOstream& os,
     return ret;
 }
 
-void  CRemoteCgiApp::PutProgressMessage(const string& msg)
+void  CRemoteCgiApp::PutProgressMessage(const string& msg, bool send_immediately)
 {
     if (m_WorkerNodeContext)
-        m_WorkerNodeContext->PutProgressMessage(msg);
+        m_WorkerNodeContext->PutProgressMessage(msg, send_immediately);
 }
 
 
@@ -203,6 +203,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/09/30 14:58:56  didenko
+ * Added optional parameter to PutProgressMessage methods which allows
+ * sending progress messages regardless of the rate control.
+ *
  * Revision 1.2  2005/07/27 14:30:52  didenko
  * Changed the logging system
  *

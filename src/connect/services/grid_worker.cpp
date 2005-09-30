@@ -136,10 +136,11 @@ CNcbiOstream& CWorkerNodeJobContext::GetOStream()
     return m_ThreadContext->GetOStream();
 }
 
-void CWorkerNodeJobContext::PutProgressMessage(const string& msg)
+void CWorkerNodeJobContext::PutProgressMessage(const string& msg, 
+                                               bool send_immediately)
 {
     _ASSERT(m_ThreadContext);
-    m_ThreadContext->PutProgressMessage(msg);
+    m_ThreadContext->PutProgressMessage(msg, send_immediately);
 }
 
 void CWorkerNodeJobContext::SetThreadContext(CGridThreadContext* thr_context)
@@ -568,6 +569,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/09/30 14:58:56  didenko
+ * Added optional parameter to PutProgressMessage methods which allows
+ * sending progress messages regardless of the rate control.
+ *
  * Revision 1.32  2005/08/10 15:51:22  didenko
  * Don't forget to close thread's streams then an execption is thrown from a job
  *

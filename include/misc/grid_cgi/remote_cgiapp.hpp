@@ -70,7 +70,8 @@ protected:
 
     virtual void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
-    void         PutProgressMessage(const string& msg);
+    void         PutProgressMessage(const string& msg, 
+                                    bool send_immediately = false);
 
 private:
     CWorkerNodeJobContext* m_WorkerNodeContext;
@@ -91,6 +92,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/30 14:58:56  didenko
+ * Added optional parameter to PutProgressMessage methods which allows
+ * sending progress messages regardless of the rate control.
+ *
  * Revision 1.1  2005/06/07 20:14:16  didenko
  * CGridWorkerCgiApp class renamed to CRemoteCgiApp
  *

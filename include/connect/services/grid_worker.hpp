@@ -170,7 +170,8 @@ public:
 
     /// Put progress message
     ///
-    void          PutProgressMessage(const string& msg);
+    void          PutProgressMessage(const string& msg, 
+                                     bool send_immediately = false);
 
     /// Get a stream where a job can write its result
     ///
@@ -510,6 +511,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/09/30 14:58:56  didenko
+ * Added optional parameter to PutProgressMessage methods which allows
+ * sending progress messages regardless of the rate control.
+ *
  * Revision 1.27  2005/07/19 20:10:54  ucko
  * Predeclare CGridThreadContext for the sake of G++ 4.
  *

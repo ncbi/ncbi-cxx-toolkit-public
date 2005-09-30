@@ -96,10 +96,10 @@ CNcbiOstream& CGridThreadContext::GetOStream()
                eWriter, "Writer is not set.");
 }
 /// @internal
-void CGridThreadContext::PutProgressMessage(const string& msg)
+void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immediately)
 {
     _ASSERT(m_JobContext);
-    if (!m_RateControl.Approve(CRequestRateControl::eErrCode))
+    if ( !send_immediately || !m_RateControl.Approve(CRequestRateControl::eErrCode))
         return;
     try {
         CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
@@ -265,6 +265,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2005/09/30 14:58:56  didenko
+ * Added optional parameter to PutProgressMessage methods which allows
+ * sending progress messages regardless of the rate control.
+ *
  * Revision 6.8  2005/05/27 14:46:06  didenko
  * Fixed a worker node statistics
  *

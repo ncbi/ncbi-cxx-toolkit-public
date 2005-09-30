@@ -55,7 +55,7 @@ public:
 
     CNcbiIstream& GetIStream();
     CNcbiOstream& GetOStream();
-    void PutProgressMessage(const string& msg);
+    void PutProgressMessage(const string& msg, bool send_immediately);
 
     void SetJobRunTimeout(unsigned time_to_run);
 
@@ -83,6 +83,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2005/09/30 14:58:56  didenko
+ * Added optional parameter to PutProgressMessage methods which allows
+ * sending progress messages regardless of the rate control.
+ *
  * Revision 6.3  2005/05/10 14:13:10  didenko
  * Added CloseStreams method
  *
