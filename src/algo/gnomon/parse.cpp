@@ -458,6 +458,9 @@ void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) co
     int gene_start = -1;
     int gene_stop = 0;
 
+    const TFrameShifts& fshifts(FrameShifts());
+    TFrameShifts::const_iterator fsi = fshifts.begin(); 
+
     for(int i = 0; i < (int)size(); ++i)
     {
         const CExonData& exon((*this)[i]);
@@ -467,8 +470,6 @@ void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) co
         to << exon.Type() << '\t';
         to << ((Strand() == ePlus) ? '+' : '-') << '\t';
         
-        const TFrameShifts& fshifts(exon.ExonFrameShifts());
-        TFrameShifts::const_iterator fsi = fshifts.begin(); 
         TSignedSeqPos estart = exon.GetFrom();
         TSignedSeqPos estop = exon.GetTo();
         int len = estop-estart+1;
@@ -633,7 +634,7 @@ list<CGene> CParse::GetGenes() const
         gene_cds_limits.SetTo( m_seqscr.SeqMap(gene_cds_limits.GetTo(),CSeqScores::eMoveLeft) );
         
         const TAlignList& align_list = m_seqscr.Alignments();
-        CClusterSet cls(m_seqscr.Contig());
+        CClusterSet cls;
         for(TAlignListConstIt it = align_list.begin(); it != align_list.end(); ++it)
         {
             const CAlignVec& algn(*it);
@@ -918,20 +919,20 @@ list<CGene> CParse::GetGenes() const
                     {
                         int dl = min(cfs.Len(),a_deletion);
                         string del_v = cfs.DeletedValue().substr(cfs.Len()-dl);
-                        exon.ExonFrameShifts().push_back(CFrameShiftInfo(cfs.Loc(),dl,false,del_v));
+                        curgen.FrameShifts().push_back(CFrameShiftInfo(cfs.Loc(),dl,false,del_v));
                         a_deletion -= dl;
                         if(cfs.Len() > dl) break;
                     }
                     else
                     {
-                        exon.ExonFrameShifts().push_back(cfs);
+                        curgen.FrameShifts().push_back(cfs);
                         aa = cfs.Loc();
                     }
                 }
                 
                 for(; ifs < (int)fs.size() && fs[ifs].Loc() <= exon.GetTo() && fs[ifs].Loc() > exon.GetFrom(); ++ifs)
                 {
-                    exon.ExonFrameShifts().push_back(fs[ifs]);
+                    curgen.FrameShifts().push_back(fs[ifs]);
                 }
                 
                 TSignedSeqPos bb = exon.GetTo();
@@ -942,18 +943,18 @@ list<CGene> CParse::GetGenes() const
                     {
                         int dl = min(cfs.Len(),b_deletion);
                         string del_v = cfs.DeletedValue().substr(0,dl);
-                        exon.ExonFrameShifts().push_back(CFrameShiftInfo(cfs.Loc(),dl,false,del_v));
+                        curgen.FrameShifts().push_back(CFrameShiftInfo(cfs.Loc(),dl,false,del_v));
                         b_deletion -= dl;
                         if(cfs.Len() > dl) break;
                     }
                     else
                     {
-                        exon.ExonFrameShifts().push_back(cfs);
+                        curgen.FrameShifts().push_back(cfs);
                         bb = cfs.Loc()+cfs.Len()-1;
                     }
                 }
                 
-                sort(exon.ExonFrameShifts().begin(),exon.ExonFrameShifts().end());
+                sort(curgen.FrameShifts().begin(),curgen.FrameShifts().end());
             }
 
             if(startcodon && stopcodon)   // maybe Single
@@ -1142,6 +1143,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2005/09/30 19:09:32  chetvern
+ * moved frameshifts from CExonData to CGene
+ *
  * Revision 1.7  2005/09/16 18:03:26  ucko
  * kBadScore has been replaced with an inline BadScore function that
  * always returns the same value to avoid lossage in optimized WorkShop
