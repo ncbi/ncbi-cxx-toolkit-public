@@ -131,15 +131,36 @@ private:
 
 class NCBI_XALGOGNOMON_EXPORT CAlignVec : public vector<CAlignExon>
 {
-    public:
-        typedef vector<CAlignExon>::iterator TIt;
-        typedef vector<CAlignExon>::const_iterator TConstIt;
+public:
+    typedef vector<CAlignExon>::iterator TIt;
+    typedef vector<CAlignExon>::const_iterator TConstIt;
+    
+    enum {eWall, eNested, eEST, emRNA, eProt};
 
-        enum {eWall, eNested, eEST, emRNA, eProt};
-        CAlignVec(EStrand s = ePlus, int i = 0, int t = eEST, TSignedSeqRange cdl = TSignedSeqRange::GetEmpty()) :
-	    m_type(t), m_strand(s), m_id(i), 
-	    m_cds_limits(cdl),
-	    m_score(BadScore()), m_open_cds(false), m_pstop(false) {}
+    enum EStatus {
+        eOK,
+        eSkipped,
+        eAcceptedChain,
+        eRejectedChain
+    };
+
+    string StatusString()
+    {
+        switch (m_status) {
+        case eOK:            return "OK";
+        case eSkipped:       return "eSkipped";
+        case eAcceptedChain: return "AcceptedChain";
+        case eRejectedChain: return "RejectedChain";
+        default:             return "unknown";
+        }
+    }
+
+    CAlignVec(EStrand s = ePlus, int i = 0, int t = eEST, TSignedSeqRange cdl = TSignedSeqRange::GetEmpty()) :
+        m_cds_limits(cdl),
+        m_type(t), m_strand(s), m_id(i), m_status(eOK),
+        m_score(BadScore()), m_open_cds(false), m_pstop(false) {}
+
+
         void Insert(const CAlignExon& p);
         TSignedSeqRange Limits() const { return front().Limits().CombinationWith(back().Limits()); }
     //        void SetLimits(SIPair p) { m_limits = p; }
@@ -158,6 +179,10 @@ class NCBI_XALGOGNOMON_EXPORT CAlignVec : public vector<CAlignExon>
         int Type() const { return m_type; }
         void SetID(int i) { m_id = i; }
         int ID() const { return m_id; }
+    void SetName(const string& name) { m_name = name; }
+    const string& Name() const { return m_name; }
+    void ChangeStatus(EStatus status) { m_status = status; }
+    EStatus Status() const { return m_status; }
         bool operator<(const CAlignVec& a) const { return Precede(Limits(),a.Limits()); }
         void Init();
         void SetScore(double s) { m_score = s; }
@@ -217,11 +242,15 @@ class NCBI_XALGOGNOMON_EXPORT CAlignVec : public vector<CAlignExon>
         TFrameShifts& FrameShifts() { return m_fshifts; }
         const TFrameShifts& FrameShifts() const { return m_fshifts; }
 
+protected:
+    TSignedSeqRange m_cds_limits, m_max_cds_limits;
+
 private:
     int m_type;
     EStrand m_strand;
     int m_id;
-    TSignedSeqRange m_cds_limits, m_max_cds_limits;
+    string m_name;
+    EStatus m_status;
     double m_score;
     bool m_open_cds, m_pstop;
     TFrameShifts m_fshifts;
@@ -263,19 +292,10 @@ class NCBI_XALGOGNOMON_EXPORT CClusterSet : public set<CCluster>
         typedef set<CCluster>::iterator TIt;
         typedef set<CCluster>::const_iterator TConstIt;
         CClusterSet() {}
-        CClusterSet(const string& c) : m_contig(c) {}
         void InsertAlignment(const CAlignVec& a);
         void InsertCluster(CCluster c);
-        string Contig() const { return m_contig; }
-        void Init(string cnt);
-    
-    private:
-        string m_contig;
+        void Init();
 };
-
-NCBI_XALGOGNOMON_EXPORT CNcbiIstream& operator>>(CNcbiIstream& s, CClusterSet& cls);
-NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const CClusterSet& cls);
-
 
 class CGene;
 
@@ -302,8 +322,6 @@ public:
     void AddSupportedLen(int len) { m_supported_len += len; }
     set<int>& ChainID() { return m_chain_id; }
     const set<int>& ChainID() const { return m_chain_id; }
-          TFrameShifts& ExonFrameShifts()       { return m_fshifts; }
-    const TFrameShifts& ExonFrameShifts() const { return m_fshifts; }
     bool Identical(const CExonData& ed) const { return (ed.m_limits == m_limits); }
     bool operator<(const CExonData& ed) const { return Precede(m_limits, ed.m_limits); }
 private:
@@ -312,7 +330,6 @@ private:
     int m_supported_len;
     string m_type;
     set<int> m_chain_id;
-    TFrameShifts m_fshifts;
     double m_score;
 };
 
@@ -338,12 +355,15 @@ public:
 
     void Print(int gnum, int mnum, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout) const;
 
+          TFrameShifts& FrameShifts()       { return m_fshifts; }
+    const TFrameShifts& FrameShifts() const { return m_fshifts; }
 private:
     EStrand m_strand;
     int m_cds_shift;
     bool m_leftend, m_rightend;
     CResidueVec m_cds;
     string m_contig;
+    TFrameShifts m_fshifts;
 };
 
 
@@ -354,6 +374,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/09/30 18:57:53  chetvern
+ * added m_status and m_name to CAlignVec
+ * removed m_contig from CClusterSet
+ * moved frameshifts from CExonData to CGene
+ *
  * Revision 1.3  2005/09/16 20:22:28  ucko
  * Whoops, MIPSpro also needs operator!= for CFrameShiftInfo.
  *
