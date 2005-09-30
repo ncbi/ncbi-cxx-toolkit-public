@@ -36,8 +36,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-// void CAlignVec::GetScore(const TCVec* seq, const CTerminal& acceptor, const CTerminal& donor, const CTerminal& stt, const CTerminal& stp, 
-//                                    const CCodingRegion& cdr, const CNonCodingRegion& ncdr, bool uselims)
 int CAlignVec::FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const
 {
         unsigned int i;
@@ -65,8 +63,6 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
 {
     TSignedSeqRange lim = (cdsonly ? RealCdsLimits() : Limits());
     int len = (cdsonly ? CdsLen() : AlignLen());
-    int num = size();
-    const vector<CAlignExon>& exons = *this;
     
     mrna.clear();
     mrna.reserve(len);
@@ -77,10 +73,10 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
     }
     
     TFrameShifts::const_iterator fsi = FrameShifts().begin();
-    for(int i = 0; i < num; ++i)
+    ITERATE(CAlignVec, i, *this)
     {
-        TSignedSeqPos start = exons[i].GetFrom();
-        TSignedSeqPos stop = exons[i].GetTo();
+        TSignedSeqPos start = i->GetFrom();
+        TSignedSeqPos stop = i->GetTo();
         
         if(stop < lim.GetFrom()) continue;
         if(start > lim.GetTo()) break;
@@ -89,26 +85,19 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
         stop = min(stop,lim.GetTo());
         
         while(fsi != FrameShifts().end() && fsi->Loc() < start) ++fsi;    // skipping possible insertions before right exon boundary
-        for(TSignedSeqPos k = start; k <= stop; ++k)
-        {
-            if(fsi != FrameShifts().end() && fsi->IsInsertion() && k == fsi->Loc())
-            {
-                k = fsi->Loc()+fsi->Len()-1;
+        for(TSignedSeqPos k = start; k <= stop; ++k) {
+            if (fsi != FrameShifts().end() && fsi->IsInsertion() && k == fsi->Loc()) {
+                k += fsi->Len()-1;
                 ++fsi;
-            }
-            else if(fsi != FrameShifts().end() && fsi->IsDeletion() && k == fsi->Loc())
-            {
-                for(int j = 0; j < fsi->Len(); ++j)
-                {
+            } else if (fsi != FrameShifts().end() && fsi->IsDeletion() && k == fsi->Loc()) {
+                for(int j = 0; j < fsi->Len(); ++j) {
                     mrna.push_back(fromACGT(fsi->DeletedValue()[j]));
                     if(mrnamap != 0) mrnamap->push_back(-1);
                 }
 
                 --k;          // this position will be reconsidered next time (it still could be an insertion)
                 ++fsi;
-            }
-            else
-            {
+            } else {
                 mrna.push_back(seq[k]);
                 if(mrnamap != 0) mrnamap->push_back(k);
             }
@@ -123,10 +112,8 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
         }
     }
     
-    if(Strand() == eMinus)
-    {
-        reverse(mrna.begin(),mrna.end());
-        for(TSignedSeqPos i = 0; i < (TSignedSeqPos)mrna.size(); ++i) mrna[i] = Complement(mrna[i]);
+    if(Strand() == eMinus) {
+        Complement(mrna.begin(), mrna.end());
         if(mrnamap != 0) reverse(mrnamap->begin(),mrnamap->end());
     }
 }
@@ -180,8 +167,11 @@ TSignedSeqRange CAlignVec::RealCdsLimits() const
 
 int CAlignVec::MutualExtension(const CAlignVec& a) const
 {
-    if(Strand() != a.Strand() || !Limits().IntersectingWith(a.Limits()) || 
-       Include(Limits(),a.Limits()) || Include(a.Limits(),Limits())) return 0;
+    if(Strand() != a.Strand()) return 0;
+    TSignedSeqRange limits = Limits();
+    TSignedSeqRange alimits = a.Limits();
+    if(!limits.IntersectingWith(alimits) || 
+       Include(limits,alimits) || Include(alimits,limits)) return 0;
     
     return isCompatible(a);
 }
@@ -222,19 +212,20 @@ bool CAlignVec::Similar(const CAlignVec& a, int tolerance) const
 int CAlignVec::isCompatible(const CAlignVec& a) const
 {
     const CAlignVec& b = *this;  // shortcut to this alignment
-    
-    TSignedSeqRange intersect(a.Limits().IntersectionWith(b.Limits()));
-    if(b.Strand() != a.Strand() || intersect.Empty()) return 0;
+
+    if(b.Strand() != a.Strand()) return 0;
+    TSignedSeqRange intersect(a.Limits() & b.Limits());
+    if(intersect.Empty()) return 0;
     
     int anum = a.size()-1;   // exon containing left point or first exon on the left 
-    for(; a[anum].GetFrom() > intersect.GetFrom(); --anum);
-    bool aexon = (a[anum].GetTo() >= intersect.GetFrom());
-    if(!aexon && a[anum+1].GetFrom() > intersect.GetTo()) return 0;    // b is in intron
+    for(; intersect.GetFrom() < a[anum].GetFrom() ; --anum);
+    bool aexon = intersect.GetFrom() <= a[anum].GetTo();
+    if(!aexon && intersect.GetTo() < a[anum+1].GetFrom()) return 0;    // b is in intron
     
     int bnum = b.size()-1;   // exon containing left point or first exon on the left 
-    for(; b[bnum].GetFrom() > intersect.GetFrom(); --bnum);
-    bool bexon = (b[bnum].GetTo() >= intersect.GetFrom());
-    if(!bexon && b[bnum+1].GetFrom() > intersect.GetTo()) return 0;    // a is in intron
+    for(; intersect.GetFrom() < b[bnum].GetFrom(); --bnum);
+    bool bexon = intersect.GetFrom() <= b[bnum].GetTo();
+    if(!bexon && intersect.GetTo() < b[bnum+1].GetFrom()) return 0;    // a is in intron
     
     TSignedSeqPos left = intersect.GetFrom();
     int commonspl = 0;
@@ -722,42 +713,11 @@ void CClusterSet::InsertCluster(CCluster clust)
     insert(lim.second,clust);
 }
 
-void CClusterSet::Init(string cnt)
+void CClusterSet::Init()
 {
     clear();
-    m_contig = cnt;
 }
 
-
-CNcbiIstream& operator>>(CNcbiIstream& s, CClusterSet& cls)
-{
-    CT_POS_TYPE pos = s.tellg();
-    
-    string contig;
-    s >> contig;
-    if(contig != "Contig") return InputError(s,pos);
-    int num;
-    s >> contig >> num;
-    
-    cls.Init(contig);
-    for(int i = 0; i < num; ++i)
-    {
-        CCluster c;
-        if(!(s >> c)) return InputError(s,pos);
-        cls.InsertCluster(c);
-    }
-        
-    return s;
-}
-
-CNcbiOstream& operator<<(CNcbiOstream& s, const CClusterSet& cls)
-{
-    int num = (int)cls.size();
-    if(num) s << "Contig " << cls.Contig() << ' ' << num << '\n';
-    for(CClusterSet::TConstIt it = cls.begin(); it != cls.end(); ++it) s << *it;
-    
-    return s;
-}
 
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
@@ -767,6 +727,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/09/30 19:07:15  chetvern
+ * removed m_contig from CClusterSet
+ * styling changes
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *
