@@ -76,7 +76,10 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
 
     switch (obj_descr.format) {
     case CFormatGuess::eFasta:
-        return ReadFasta(in, fReadFasta_AssumeNuc);
+        in.seekg(obj_descr.offset);
+        return ReadFasta(in, 
+                         fReadFasta_AssumeNuc |
+                         fReadFasta_OneSeq);
     case CFormatGuess::eTextASN:
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
@@ -175,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/09/30 13:55:21  kuznets
+ * Load only one entry from fasta file, not all sequences
+ *
  * Revision 1.8  2005/01/13 17:38:20  kuznets
  * LoadTSE added trace to top level entry option
  *
