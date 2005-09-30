@@ -301,92 +301,129 @@ CSeqFeatData::ESubtype CSeqFeatData::GetSubtype(void) const
 }
 
 
-CSeqFeatData::TSubtypesTable CSeqFeatData::sm_SubtypesTable;
-static bool s_SubtypesTableInitialized = false;
+DEFINE_STATIC_MUTEX(sx_InitTablesMutex);
 
 
-void CSeqFeatData::x_InitSubtypesTable(void)
-{
-    if ( s_SubtypesTableInitialized ) {
-        return;
-    }
-    sm_SubtypesTable.resize(eSubtype_any, e_not_set);
+typedef vector<CSeqFeatData::E_Choice> TSubtypesTable;
+static AutoPtr<TSubtypesTable> sx_SubtypesTable;
 
-    sm_SubtypesTable[eSubtype_gene] = e_Gene;
-    sm_SubtypesTable[eSubtype_org] = e_Org;
-    sm_SubtypesTable[eSubtype_cdregion] = e_Cdregion;
-    sm_SubtypesTable[eSubtype_pub] = e_Pub;
-    sm_SubtypesTable[eSubtype_seq] = e_Seq;
-    sm_SubtypesTable[eSubtype_region] = e_Region;
-    sm_SubtypesTable[eSubtype_comment] = e_Comment;
-    sm_SubtypesTable[eSubtype_bond] = e_Bond;
-    sm_SubtypesTable[eSubtype_site] = e_Site;
-    sm_SubtypesTable[eSubtype_rsite] = e_Rsite;
-    sm_SubtypesTable[eSubtype_user] = e_User;
-    sm_SubtypesTable[eSubtype_txinit] = e_Txinit;
-    sm_SubtypesTable[eSubtype_num] = e_Num;
-    sm_SubtypesTable[eSubtype_psec_str] = e_Psec_str;
-    sm_SubtypesTable[eSubtype_non_std_residue] = e_Non_std_residue;
-    sm_SubtypesTable[eSubtype_het] = e_Het;
-    sm_SubtypesTable[eSubtype_biosrc] = e_Biosrc;
-    for (int sub = eSubtype_prot; sub <= eSubtype_transit_peptide_aa; ++sub) {
-        sm_SubtypesTable[ESubtype(sub)] = e_Prot;
-    }
-    for (int sub = eSubtype_preRNA; sub <= eSubtype_otherRNA; ++sub) {
-        sm_SubtypesTable[ESubtype(sub)] = e_Rna;
-    }
-    for (int sub = eSubtype_imp; sub <= eSubtype_site_ref; ++sub) {
-        sm_SubtypesTable[ESubtype(sub)] = e_Imp;
-    }
-    s_SubtypesTableInitialized = true;
-}
+typedef map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> TFeatQuals;
+// these maps contain sorted vectors for faster lookup
+static AutoPtr<TFeatQuals> sx_LegalQuals;
+static AutoPtr<TFeatQuals> sx_MandatoryQuals;
+static AutoPtr<CSeqFeatData::TQualifiers> sx_EmptyQuals;
 
 
 CSeqFeatData::E_Choice CSeqFeatData::GetTypeFromSubtype(ESubtype subtype)
 {
-    if ( !s_SubtypesTableInitialized ) {
-        x_InitSubtypesTable();
+    if ( !sx_SubtypesTable ) {
+        s_InitSubtypesTable();
     }
-    return sm_SubtypesTable[subtype];
+    return (*sx_SubtypesTable)[subtype];
 }
-
-
-map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> CSeqFeatData::sm_LegalQuals;
-map<CSeqFeatData::ESubtype, CSeqFeatData::TQualifiers> CSeqFeatData::sm_MandatoryQuals;
-
 
 bool CSeqFeatData::IsLegalQualifier(ESubtype subtype, EQualifier qual)
 {
-    x_InitQuals();  // does nothing if already intialized
-    const TQualifiers& legal = sm_LegalQuals[subtype];
-    return (find(legal.begin(), legal.end(), qual) != legal.end());
+    if ( !sx_LegalQuals ) {
+        s_InitLegalQuals();  // does nothing if already intialized
+    }
+    TFeatQuals::const_iterator iter = sx_LegalQuals->find(subtype);
+    if ( iter == sx_LegalQuals->end() ) {
+        return false;
+    }
+    const TQualifiers& legal = iter->second;
+    return binary_search(legal.begin(), legal.end(), qual);
 }
 
 
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(ESubtype subtype)
 {
-    x_InitQuals();  // does nothing if already intialized
-    return sm_LegalQuals[subtype];
+    if ( !sx_LegalQuals ) {
+        s_InitLegalQuals();  // does nothing if already intialized
+    }
+    TFeatQuals::const_iterator iter = sx_LegalQuals->find(subtype);
+    if ( iter == sx_LegalQuals->end() ) {
+        return *sx_EmptyQuals;
+    }
+    return iter->second;
 }
 
 
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(ESubtype subtype)
 {
-    static const TQualifiers empty_vec;
-
-    x_InitQuals();  // does nothing if already intialized
-    if ( sm_MandatoryQuals.find(subtype) != sm_MandatoryQuals.end() ) {
-        return sm_MandatoryQuals[subtype];
+    if ( !sx_MandatoryQuals ) {
+        s_InitMandatoryQuals();  // does nothing if already intialized
     }
-    return empty_vec;
+    TFeatQuals::const_iterator iter = sx_MandatoryQuals->find(subtype);
+    if ( iter == sx_MandatoryQuals->end() ) {
+        return *sx_EmptyQuals;
+    }
+    return iter->second;
 }
 
 
-
-void CSeqFeatData::x_InitLegalQuals(void)
+void CSeqFeatData::s_InitSubtypesTable(void)
 {
+    if ( sx_SubtypesTable ) {
+        return;
+    }
+    CMutexGuard guard(sx_InitTablesMutex);
+    if ( sx_SubtypesTable ) {
+        return;
+    }
+    AutoPtr<TSubtypesTable> ptr(new TSubtypesTable(eSubtype_any+1, e_not_set));
+    TSubtypesTable& table = *ptr;
+
+    table[eSubtype_gene] = e_Gene;
+    table[eSubtype_org] = e_Org;
+    table[eSubtype_cdregion] = e_Cdregion;
+    table[eSubtype_pub] = e_Pub;
+    table[eSubtype_seq] = e_Seq;
+    table[eSubtype_region] = e_Region;
+    table[eSubtype_comment] = e_Comment;
+    table[eSubtype_bond] = e_Bond;
+    table[eSubtype_site] = e_Site;
+    table[eSubtype_rsite] = e_Rsite;
+    table[eSubtype_user] = e_User;
+    table[eSubtype_txinit] = e_Txinit;
+    table[eSubtype_num] = e_Num;
+    table[eSubtype_psec_str] = e_Psec_str;
+    table[eSubtype_non_std_residue] = e_Non_std_residue;
+    table[eSubtype_het] = e_Het;
+    table[eSubtype_biosrc] = e_Biosrc;
+    for (int sub = eSubtype_prot; sub <= eSubtype_transit_peptide_aa; ++sub) {
+        table[ESubtype(sub)] = e_Prot;
+    }
+    for (int sub = eSubtype_preRNA; sub <= eSubtype_otherRNA; ++sub) {
+        table[ESubtype(sub)] = e_Rna;
+    }
+    for (int sub = eSubtype_imp; sub <= eSubtype_site_ref; ++sub) {
+        table[ESubtype(sub)] = e_Imp;
+    }
+
+    sx_SubtypesTable = ptr;
+}
+
+
+void CSeqFeatData::s_InitLegalQuals(void)
+{
+    if ( sx_LegalQuals ) {
+        return;
+    }
+    CMutexGuard guard(sx_InitTablesMutex);
+    if ( sx_LegalQuals ) {
+        return;
+    }
+
+    if ( !sx_EmptyQuals ) {
+        sx_EmptyQuals.reset(new TQualifiers);
+    }
+    
+    AutoPtr<TFeatQuals> ptr(new TFeatQuals);
+    TFeatQuals& table = *ptr;
+
 #define START_SUBTYPE(x) { \
-    TQualifiers& quals = sm_LegalQuals[eSubtype_##x];
+    TQualifiers& quals = table[eSubtype_##x];
 #define ADD_QUAL(y) quals.push_back(eQual_##y)
 #define END_SUBTYPE }
 
@@ -1852,33 +1889,49 @@ END_SUBTYPE
 #undef START_SUBTYPE
 #undef ADD_QUAL
 #undef END_SYBTYPE
+
+    // sort for binary_search
+    NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
+        sort(iter->second.begin(), iter->second.end());
+    }
+
+    sx_LegalQuals = ptr;
 }
 
 
-void CSeqFeatData::x_InitMandatoryQuals(void)
+void CSeqFeatData::s_InitMandatoryQuals(void)
 {
-    sm_MandatoryQuals[eSubtype_conflict].push_back(eQual_citation);
-    sm_MandatoryQuals[eSubtype_gap].push_back(eQual_estimated_length);
-    sm_MandatoryQuals[eSubtype_misc_binding].push_back(eQual_bound_moiety);
-    sm_MandatoryQuals[eSubtype_protein_bind].push_back(eQual_bound_moiety);
-    sm_MandatoryQuals[eSubtype_modified_base].push_back(eQual_mod_base);
-    sm_MandatoryQuals[eSubtype_old_sequence].push_back(eQual_citation);
-    sm_MandatoryQuals[eSubtype_operon].push_back(eQual_operon);
-}
-
-
-void CSeqFeatData::x_InitQuals(void)
-{
-    static bool initialized = false;
-    
-    if ( initialized ) {
+    if ( sx_MandatoryQuals ) {
         return;
     }
-    x_InitLegalQuals();
-    x_InitMandatoryQuals();
+    CMutexGuard guard(sx_InitTablesMutex);
+    if ( sx_MandatoryQuals ) {
+        return;
+    }
 
-    initialized = true;
+    if ( !sx_EmptyQuals ) {
+        sx_EmptyQuals.reset(new TQualifiers);
+    }
+    
+    AutoPtr<TFeatQuals> ptr(new TFeatQuals);
+    TFeatQuals& table = *ptr;
+
+    table[eSubtype_conflict].push_back(eQual_citation);
+    table[eSubtype_gap].push_back(eQual_estimated_length);
+    table[eSubtype_misc_binding].push_back(eQual_bound_moiety);
+    table[eSubtype_protein_bind].push_back(eQual_bound_moiety);
+    table[eSubtype_modified_base].push_back(eQual_mod_base);
+    table[eSubtype_old_sequence].push_back(eQual_citation);
+    table[eSubtype_operon].push_back(eQual_operon);
+
+    // sort for binary_search
+    NON_CONST_ITERATE ( TFeatQuals, iter, table ) {
+        sort(iter->second.begin(), iter->second.end());
+    }
+
+    sx_MandatoryQuals = ptr;
 }
+
 
 typedef pair<CSeqFeatData::EQualifier, string> TQualPair;
 static const TQualPair kQualPairs[] = {
@@ -1984,6 +2037,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.24  2005/09/30 19:12:38  vasilche
+* Fixed MT-safety of tables initialization.
+*
 * Revision 6.23  2005/05/18 15:30:18  shomrat
 * Added db_xref as legal for preRNA
 *

@@ -281,21 +281,13 @@ public:
 private:
     mutable ESubtype m_Subtype; // cached
 
+    static void s_InitSubtypesTable(void);
+    static void s_InitLegalQuals(void);
+    static void s_InitMandatoryQuals(void);
+
     // Prohibit copy constructor and assignment operator
     CSeqFeatData(const CSeqFeatData& value);
     CSeqFeatData& operator=(const CSeqFeatData& value);
-
-    typedef map<ESubtype, TQualifiers> TFeatQuals;
-    typedef vector<E_Choice> TSubtypesTable;
-
-    static void x_InitQuals(void);
-    static void x_InitLegalQuals(void);
-    static void x_InitMandatoryQuals(void);
-    static void x_InitSubtypesTable(void);
-
-    static TFeatQuals sm_LegalQuals;
-    static TFeatQuals sm_MandatoryQuals;
-    static TSubtypesTable sm_SubtypesTable;
 };
 
 
@@ -319,7 +311,6 @@ void CSeqFeatData::InvalidateSubtype(void)
 inline
 bool CSeqFeatData::IsLegalQualifier(EQualifier qual) const
 {
-    x_InitQuals();  // does nothing if already intialized
     return IsLegalQualifier(GetSubtype(), qual);
 }
 
@@ -327,7 +318,6 @@ bool CSeqFeatData::IsLegalQualifier(EQualifier qual) const
 inline
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(void) const
 {
-    x_InitQuals();  // does nothing if already intialized
     return GetLegalQualifiers(GetSubtype());
 }
 
@@ -335,7 +325,6 @@ const CSeqFeatData::TQualifiers& CSeqFeatData::GetLegalQualifiers(void) const
 inline
 const CSeqFeatData::TQualifiers& CSeqFeatData::GetMandatoryQualifiers(void) const
 {
-    x_InitQuals();  // does nothing if already intialized
     return GetMandatoryQualifiers(GetSubtype());
 }
 
@@ -353,6 +342,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/09/30 19:12:37  vasilche
+* Fixed MT-safety of tables initialization.
+*
 * Revision 1.8  2005/05/10 17:02:30  grichenk
 * Optimized GetTypeFromSubtype().
 *
