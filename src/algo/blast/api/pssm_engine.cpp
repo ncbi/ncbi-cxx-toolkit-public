@@ -257,19 +257,29 @@ CPssmEngine::Run()
 struct SNcbiMatrix2DoubleMatrix 
 {
     SNcbiMatrix2DoubleMatrix(const CNcbiMatrix<double>& m) 
+        : m_NumCols(m.GetCols())
     {
         m_Data = new double*[m.GetCols()];
-        for (size_t i = 0; i < m.GetCols(); i++) {
-            m_Data[i] = const_cast<double*>(&m[i*m.GetRows()]);
+        for (size_t c = 0; c < m.GetCols(); c++) {
+            m_Data[c] = new double[m.GetRows()];
+            for (size_t r = 0; r < m.GetRows(); r++) {
+                m_Data[c][r] = m(r, c);
+            }
         }
     }
 
-    ~SNcbiMatrix2DoubleMatrix() { delete [] m_Data; }
+    ~SNcbiMatrix2DoubleMatrix() { 
+        for (size_t c = 0; c < m_NumCols; c++) {
+            delete [] m_Data[c];
+        }
+        delete [] m_Data; 
+    }
 
     operator double**() { return m_Data; }
     
 private:
     double** m_Data;
+    size_t m_NumCols;
 };
 
 CRef<CPssmWithParameters>
@@ -601,6 +611,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.43  2005/10/03 21:00:35  camacho
+ * Fix to auxiliary class to convert CNcbiMatrix to double**
+ *
  * Revision 1.42  2005/09/26 14:53:22  camacho
  * Renamed blast_psi.hpp  -> pssm_engine.hpp
  *
