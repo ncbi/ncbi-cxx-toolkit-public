@@ -678,7 +678,7 @@ void CObjectOStreamXml::WriteString(const string& str, EStringType type)
         if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
             m_Encoding = eEncoding_ISO8859_1;
         } else {
-            string tmp = (static_cast<const CStringUTF8&>(str)).AsAscii();
+            string tmp = (static_cast<const CStringUTF8&>(str)).AsLatin1();
             WriteString( tmp, eStringTypeVisible);
             return;
         }
@@ -1374,6 +1374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2005/10/03 14:15:04  gouriano
+* Corrected to work with the updated CStringUTF8 class
+*
 * Revision 1.84  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method
