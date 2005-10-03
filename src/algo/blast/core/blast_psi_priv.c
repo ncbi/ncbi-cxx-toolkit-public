@@ -454,7 +454,7 @@ _PSISequenceWeightsFree(_PSISequenceWeights* seq_weights)
 }
 
 #ifdef _DEBUG
-static char getRes(char input)
+char GetResidue(char input)
 {
     switch (input) {
     case 0: return ('-');
@@ -502,7 +502,7 @@ __printMsa(const char* filename, const _PSIMsa* msa)
         /*fprintf(fp, "%3d\t", i);*/
         for (j = 0; j < msa->dimensions->query_length; j++) {
             if (msa->cell[i][j].is_aligned) {
-                fprintf(fp, "%c", getRes(msa->cell[i][j].letter));
+                fprintf(fp, "%c", GetResidue(msa->cell[i][j].letter));
             } else {
                 fprintf(fp, ".");
             }
@@ -2358,6 +2358,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/10/03 20:42:41  camacho
+ * Minor
+ *
  * Revision 1.53  2005/04/21 20:26:57  camacho
  * Relax validation in s_PSIValidateAlignedColumns so that query sequence can be
  * the only aligned sequence for a given column of the multiple sequence
