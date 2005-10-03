@@ -3263,8 +3263,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     
     // !!! There are still problems ...
     // !!! It does not work in case of a new FTDS driver.
-    if ( args.GetDriverName() != "ctlib" && 
-         !( args.GetDriverName() == "dblib" && args.GetServerName() == "MOZART" ) ) {
+    if ( args.GetDriverName() != "ctlib" && args.GetDriverName() != "dblib" ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -3401,6 +3400,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.51  2005/10/03 16:49:44  ssikorsk
+ * Disable Test_DateTime for the dblib driver
+ *
  * Revision 1.50  2005/10/03 12:19:59  ssikorsk
  * Implemented the Test_Insert test.
  *
