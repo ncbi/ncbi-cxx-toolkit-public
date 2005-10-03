@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/10/03 14:14:11  gouriano
+* Register class module in addition to class name
+*
 * Revision 1.28  2005/02/24 14:39:04  gouriano
 * Added PreRead/PostWrite hooks
 *
@@ -172,7 +175,9 @@ static const string& GetModuleName(const char* moduleName)
 {
     CFastMutexGuard GUARD(s_ModuleNameMutex);
     static CSafeStaticPtr< set<string> > s_ModuleNames;
-    return *s_ModuleNames.Get().insert(moduleName).first;
+    const string& s = *s_ModuleNames.Get().insert(moduleName).first;
+    CClassTypeInfoBase::RegisterModule(s);
+    return s;
 }
 
 void SetModuleName(CTypeInfo* info, const char* moduleName)
