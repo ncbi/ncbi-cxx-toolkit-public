@@ -1393,7 +1393,9 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
                 _TRACE( "N=" << HitList[iHitList].GetN() << " M=" << HitList[iHitList].GetM() <<
                      " Sum=" << HitList[iHitList].GetSum() << " Ave=" << Average << " SD=" << StdDev <<
                      " erf=" << Perf );
-                pval *= Perf;
+                pval *= (1 - Perf)/1000.0;
+//                pval *= Perf;
+
             }
             else ERR_POST(Info << "M is zero");
     }
@@ -1543,6 +1545,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.64  2005/10/03 18:05:03  lewisg
+reverse rank score
+
 Revision 1.63  2005/09/21 18:05:59  lewisg
 speed up non-specific search, add fields to result
 
