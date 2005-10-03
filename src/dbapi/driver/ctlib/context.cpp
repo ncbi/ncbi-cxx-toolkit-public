@@ -985,6 +985,12 @@ CDbapiCtlibCF2::CreateInstance(
                     int value = NStr::StringToInt( v.value );
                     if ( value == 100 ) {
                         db_version = CS_VERSION_100;
+                    } else if ( value == 110 ) {
+                        db_version = CS_VERSION_110;
+                    } else if ( value == 120 ) {
+                        db_version = CS_VERSION_120;
+                    } else if ( value == 125 ) {
+                        db_version = CS_VERSION_125;
                     }
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
@@ -1058,6 +1064,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/10/03 12:17:53  ssikorsk
+ * Handle versions 11.0, 12.0 and 12.5 of the TDS protocol.
+ *
  * Revision 1.43  2005/09/19 14:19:02  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
