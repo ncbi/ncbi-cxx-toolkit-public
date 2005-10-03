@@ -1899,7 +1899,12 @@ public:
 ///
 /// CStringUTF8 --
 ///
-/// Define a UTF-8 String class.
+///   An UTF-8 string.
+///   Supports transformations:
+///    - Latin1 character set (ISO 8859-1) to  UTF-8
+///    - UTF-8 to Latin1 character set (ISO 8859-1)
+///    - "wide string" (UCS-2/UTF-16) to UTF-8
+///    - UTF-8 to UCS-2 (UTF-16 with no surrogates)
 ///
 /// UTF-8 stands for Unicode Transformation Format-8, and is an 8-bit
 /// lossless encoding of Unicode characters.
@@ -1909,7 +1914,7 @@ public:
 class NCBI_XNCBI_EXPORT CStringUTF8 : public string
 {
 public:
-    /// Constructor.
+    /// Default constructor.
     CStringUTF8(void)
     {
     }
@@ -1925,14 +1930,14 @@ public:
     {
     }
 
-    /// Constructor from a string argument.
+    /// Constructor from a string (Latin1) argument.
     CStringUTF8(const string& src)
         : string()
     {
         x_Append(src.c_str());
     }
 
-    /// Constructor from a char* argument.
+    /// Constructor from a char* (Latin1) argument.
     CStringUTF8(const char* src)
         : string()
     {
@@ -1940,18 +1945,18 @@ public:
     }
 
 #if defined(HAVE_WSTRING)
-    /// Constructor from a wstring argument.
+    /// Constructor from a wstring (UTF-16) argument.
     ///
-    /// Defined only if HAVE_STRING is defined.
+    /// Defined only if wstring is supported by the compiler.
     CStringUTF8(const wstring& src)
         : string()
     {
         x_Append( src.c_str());
     }
 
-    /// Constructor from a whcar_t* argument.
+    /// Constructor from a whcar_t* (UTF-16) argument.
     ///
-    /// Defined only if HAVE_STRING is defined.
+    /// Defined only if wstring is supported by the compiler.
     CStringUTF8(const wchar_t* src)
         : string()
     {
@@ -1966,7 +1971,7 @@ public:
         return *this;
     }
 
-    /// Assignment operator -- rhs is a string.
+    /// Assignment operator -- rhs is a string (Latin1).
     CStringUTF8& operator= (const string& src)
     {
         erase();
@@ -1974,7 +1979,7 @@ public:
         return *this;
     }
 
-    /// Assignment operator -- rhs is a char*.
+    /// Assignment operator -- rhs is a char* (Latin1).
     CStringUTF8& operator= (const char* src)
     {
         erase();
@@ -1983,9 +1988,9 @@ public:
     }
 
 #if defined(HAVE_WSTRING)
-    /// Assignment operator -- rhs is a wstring.
+    /// Assignment operator -- rhs is a wstring (UTF-16).
     ///
-    /// Defined only if HAVE_STRING is defined.
+    /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator= (const wstring& src)
     {
         erase();
@@ -1993,9 +1998,9 @@ public:
         return *this;
     }
 
-    /// Assignment operator -- rhs is a wchar_t*.
+    /// Assignment operator -- rhs is a wchar_t* (UTF-16).
     ///
-    /// Defined only if HAVE_STRING is defined.
+    /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator= (const wchar_t* src)
     {
         erase();
@@ -2011,14 +2016,14 @@ public:
         return *this;
     }
 
-    /// Append to string operator+= -- rhs is string.
+    /// Append to string operator+= -- rhs is string (Latin1).
     CStringUTF8& operator+= (const string& src)
     {
         x_Append(src.c_str());
         return *this;
     }
 
-    /// Append to string operator+= -- rhs is char*.
+    /// Append to string operator+= -- rhs is char* (Latin1).
     CStringUTF8& operator+= (const char* src)
     {
         x_Append(src);
@@ -2026,18 +2031,18 @@ public:
     }
 
 #if defined(HAVE_WSTRING)
-    /// Append to string operator+=  -- rhs is a wstring.
+    /// Append to string operator+=  -- rhs is a wstring (UTF-16).
     ///
-    /// Defined only if HAVE_STRING is defined.
+    /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator+= (const wstring& src)
     {
         x_Append(src.c_str());
         return *this;
     }
 
-    /// Append to string operator+=  -- rhs is a wchar_t*.
+    /// Append to string operator+=  -- rhs is a wchar_t* (UTF-16).
     ///
-    /// Defined only if HAVE_STRING is defined.
+    /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator+= (const wchar_t* src)
     {
         x_Append(src);
@@ -2045,29 +2050,35 @@ public:
     }
 #endif // HAVE_WSTRING
 
-    /// Convert to ASCII.
+    /// Convert to Latin1 character set (ISO 8859-1)
     ///
     /// Can throw a StringException with error codes "eFormat" or "eConvert"
-    /// if string has a wrong UTF-8 format or cannot be converted to ASCII.
-    string AsAscii(void) const;
+    /// if string has a wrong UTF-8 format or cannot be converted to Latin1.
+    string AsLatin1(void) const;
 
 #if defined(HAVE_WSTRING)
-    /// Convert to Unicode.
+    /// Convert to Unicode (UTF-16 with no surrogates).
     ///
-    /// Defined only if HAVE_STRING is defined.
     /// Can throw a StringException with error code "eFormat" if string has
     /// a wrong UTF-8 format.
+    /// Defined only if wstring is supported by the compiler.
     wstring AsUnicode(void) const;
 #endif // HAVE_WSTRING
 
 private:
-    /// Helper method to append necessary characters for UTF-8 format.
+    /// Function AsAscii is deprecated - use AsLatin1() instead
+    string AsAscii(void) const
+    {
+        return AsLatin1();
+    }
+
+    /// Helper method to append a Latin1 (ISO 8859-1) string.
     void x_Append(const char* src);
 
 #if defined(HAVE_WSTRING)
-    /// Helper method to append necessary characters for UTF-8 format.
+    /// Helper method to append an Unicode string.
     ///
-    /// Defined only if HAVE_STRING is defined.
+    /// Defined only if wstring is supported by the compiler.
     void x_Append(const wchar_t* src);
 #endif // HAVE_WSTRING
 };
@@ -2918,6 +2929,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.93  2005/10/03 14:10:10  gouriano
+ * Corrected CStringUTF8 class
+ *
  * Revision 1.92  2005/08/25 18:57:00  ivanov
  * Moved JavaScriptEncode() from CHTMLHelper:: to NStr::.
  * Changed \" processing.

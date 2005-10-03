@@ -2153,7 +2153,7 @@ void CStringUTF8::x_Append(const wchar_t* src)
 #endif // HAVE_WSTRING
 
 
-string CStringUTF8::AsAscii(void) const
+string CStringUTF8::AsLatin1(void) const
 {
     string result;
     const char* srcBuf;
@@ -2275,6 +2275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.162  2005/10/03 14:10:37  gouriano
+ * Corrected CStringUTF8 class
+ *
  * Revision 1.161  2005/08/25 18:57:25  ivanov
  * Moved JavaScriptEncode() from CHTMLHelper:: to NStr::.
  * Changed \" processing.
