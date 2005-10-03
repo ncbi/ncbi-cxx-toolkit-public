@@ -166,6 +166,7 @@ public:
     void Test_LOB(void);
     void Test_UNIQUE(void);
     void Test_DateTime(void);
+    void Test_Insert(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -220,6 +221,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2005/10/03 12:19:06  ssikorsk
+ * Added a Test_Insert test to the test-suite.
+ *
  * Revision 1.28  2005/09/22 10:48:59  ssikorsk
  * Added Test_Bulk_Overflow test to the test-suite
  *
