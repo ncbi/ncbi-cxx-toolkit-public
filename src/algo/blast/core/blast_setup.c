@@ -472,11 +472,8 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     status = BlastSetup_ScoreBlkInit(query_blk, query_info, scoring_options, 
                                      program_number, sbpp, scale_factor, 
                                      blast_message);
-    if (status > 0) {
-        return status;
-    }
 
-    return 0;
+    return status;
 }
 
 
