@@ -90,10 +90,10 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 
 /* Special "type" bit values that may be combined with server types */
 typedef enum {
-    /* Allows to get even dead services (not off ones!) */
-    fSERV_Promiscuous = 0x80000000,
     /* Do reverse DNS translation of the resulting info */
-    fSERV_ReverseDns  = 0x40000000
+    fSERV_ReverseDns  = 0x40000000,
+    /* Allows to get even dead services (not off ones!) */
+    fSERV_Promiscuous = 0x20000000
 } ESERV_SpecialType;
 
 
@@ -207,6 +207,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2005/10/03 15:55:22  lavr
+ * Change ESERV_SpecialType::fSERV_Promiscuous to fit "signed int"
+ *
  * Revision 6.40  2005/09/02 14:28:18  lavr
  * Bump client revision number to 6.200 for use with patched PubFetch
  *
