@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/10/03 14:13:12  gouriano
+* Added methods to access registered module names, and classes
+*
 * Revision 1.22  2005/08/25 13:11:56  gouriano
 * Protect MayContainType by mutex
 *
@@ -217,6 +220,7 @@ void CClassTypeInfoBase::InitClassTypeInfoBase(const type_info& id)
 CClassTypeInfoBase::TClasses* CClassTypeInfoBase::sm_Classes = 0;
 CClassTypeInfoBase::TClassesById* CClassTypeInfoBase::sm_ClassesById = 0;
 CClassTypeInfoBase::TClassesByName* CClassTypeInfoBase::sm_ClassesByName = 0;
+set<string>* CClassTypeInfoBase::sm_Modules = 0;
 
 inline
 CClassTypeInfoBase::TClasses& CClassTypeInfoBase::Classes(void)
@@ -333,6 +337,39 @@ TTypeInfo CClassTypeInfoBase::GetClassInfoByName(const string& name)
         NCBI_THROW(CSerialException,eInvalidData, msg);
     }
     return i->second;
+}
+
+void CClassTypeInfoBase::GetRegisteredModuleNames(
+    CClassTypeInfoBase::TRegModules& modules)
+{
+    modules.clear();
+    CMutexGuard GUARD(s_ClassInfoMutex);
+    if (sm_Modules) {
+        modules.insert(sm_Modules->begin(), sm_Modules->end());
+    }
+}
+
+void CClassTypeInfoBase::GetRegisteredClassNames(
+    const string& module, CClassTypeInfoBase::TRegClasses& names)
+{
+    names.clear();
+    CMutexGuard GUARD(s_ClassInfoMutex);
+    TClasses& cc = Classes();
+    ITERATE ( TClasses, i , cc ) {
+        const CClassTypeInfoBase* info = *i;
+        if (info->GetModuleName() == module) {
+            names.insert( info->GetName());
+        }
+    }
+}
+
+void CClassTypeInfoBase::RegisterModule(const string& module)
+{
+    CMutexGuard GUARD(s_ClassInfoMutex);
+    if (!sm_Modules) {
+        sm_Modules = new set<string>;
+    }
+    sm_Modules->insert(module);
 }
 
 const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) const

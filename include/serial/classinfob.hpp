@@ -100,6 +100,12 @@ public:
     static TTypeInfo GetClassInfoByName(const string& name);
     static TTypeInfo GetClassInfoById(const type_info& id);
 
+    typedef set<string> TRegModules;
+    typedef set<string> TRegClasses;
+    static void RegisterModule(const string& module);
+    static void GetRegisteredModuleNames(TRegModules& modules);
+    static void GetRegisteredClassNames(const string& module, TRegClasses& names);
+
     const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
 
     // iterators interface
@@ -136,6 +142,7 @@ private:
     static TClasses* sm_Classes;
     static TClassesById* sm_ClassesById;
     static TClassesByName* sm_ClassesByName;
+    static set<string>* sm_Modules;
 
     void InitClassTypeInfoBase(const type_info& id);
     void Register(void);
@@ -157,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/10/03 14:12:11  gouriano
+* Added methods to access registered module names, and classes
+*
 * Revision 1.16  2005/02/24 14:38:44  gouriano
 * Added PreRead/PostWrite hooks
 *
