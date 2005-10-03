@@ -266,6 +266,58 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
+CDBAPIUnitTest::Test_Insert(void)
+{
+    string sql;
+    const string test_msg(300, 'A');
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // Clean table ...
+    auto_stmt->ExecuteUpdate( "DELETE FROM " + GetTableName() );
+
+    // Insert data ...
+    {
+        // Pure SQL ...
+        auto_stmt->ExecuteUpdate(
+            "INSERT INTO " + GetTableName() + "(int_field, vc1000_field) "
+            "VALUES(1, '" + test_msg + "')"
+            );
+        
+        // Using parameters ...
+        auto_stmt->SetParam( CVariant::LongChar(test_msg.c_str(), test_msg.size()), "@vc_val" );
+        auto_stmt->ExecuteUpdate( 
+            "INSERT INTO " + GetTableName() + "(int_field, vc1000_field) "
+            "VALUES(2, @vc_val)" 
+            );
+    }
+    
+    // Retrieve data ...
+    {
+        enum { num_of_tests = 2 };
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+        sql  = " SELECT int_field, vc1000_field FROM " + GetTableName();
+        sql += " ORDER BY int_field";
+
+        auto_stmt->Execute( sql );
+
+        BOOST_CHECK( auto_stmt->HasMoreResults() );
+        BOOST_CHECK( auto_stmt->HasRows() );
+        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+        BOOST_CHECK( rs.get() != NULL );
+
+        for(int i = 0; i < num_of_tests; ++i ) {
+            BOOST_CHECK( rs->Next() );
+
+            string vc1000_value = rs->GetVariant(2).GetString(); 
+
+            BOOST_CHECK_EQUAL( test_msg.size(), vc1000_value.size() );
+        }
+    }
+};
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void 
 CDBAPIUnitTest::Test_DateTime(void)
 {
     string sql;
@@ -3162,9 +3214,29 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
+    {
+        boost::unit_test::test_case* select_stmt_tc =
+            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(select_stmt_tc);
+
+        if ( args.GetServerType() == CTestArguments::eMsSql && 
+             args.GetDriverName() != "msdblib") {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML, DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(select_stmt_tc);
+            add(tc);
+        }
+
+        // ctlib will work in case of protocol version 12.5 only
+        // ftds + Sybase.and dblib won't work because of the early protocol versions.
+        if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
+            CTestArguments::eMsSql ) {
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert, DBAPIInstance);
+            tc->depends_on(tc_init);
+            add(tc);
+        }
+    }
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Procedure, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -3184,13 +3256,6 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-
-    if ( args.GetServerType() == CTestArguments::eMsSql && 
-         args.GetDriverName() != "msdblib") {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
     
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -3198,7 +3263,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     
     // !!! There are still problems ...
     // !!! It does not work in case of a new FTDS driver.
-    if ( args.GetDriverName() != "ctlib" ) {
+    if ( args.GetDriverName() != "ctlib" && 
+         !( args.GetDriverName() == "dblib" && args.GetServerName() == "MOZART" ) ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -3296,7 +3362,9 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
+    if ( GetDriverName() == "ctlib" ) {
+        // m_DatabaseParameters["version"] = "125";
+    } else if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "100";
@@ -3333,6 +3401,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2005/10/03 12:19:59  ssikorsk
+ * Implemented the Test_Insert test.
+ *
  * Revision 1.49  2005/09/28 18:28:36  ssikorsk
  * Disable Test_Bulk_Overflow for ODBC and MSDBLIB drivers
  *
