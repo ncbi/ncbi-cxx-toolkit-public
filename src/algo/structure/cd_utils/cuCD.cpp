@@ -610,6 +610,152 @@ void calcDiversityRanking(CCdCore* cd, list<int>& rankList)
 	delete seqTree;
 }
 
+bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
+{
+	if (Row == 0)
+		return true;
+	list<CRef< CSeq_align > >& seqAlignList = cd->GetSeqAligns();
+	const CRef< CSeq_align >& guide = cd->GetSeqAlign(Row);
+	BlockModelPair guideBmp(guide);
+	int i = 1;
+	list<CRef< CSeq_align > >::iterator lit = seqAlignList.begin();
+	list<CRef< CSeq_align > >::iterator guideIt;
+	for (; lit != seqAlignList.end(); lit++)
+	{
+		if ( i != Row)
+		{
+			BlockModelPair bmp (*lit);
+			bmp.remaster(guideBmp);
+			*lit = bmp.toSeqAlign();
+		}
+		else
+			guideIt = lit;
+		i++;
+	}
+	guideBmp.reverse();
+	*guideIt = guideBmp.toSeqAlign();
+	// if there's a master3d
+	if (cd->IsSetMaster3d()) {
+	 // get rid of it
+		cd->SetMaster3d().clear();
+	}
+	// if the new master has a pdb-id
+	CRef< CSeq_id >  SeqID(new CSeq_id);
+	if (cd->GetSeqIDForRow(0, 0, SeqID)) {
+		if (SeqID->IsPdb()) {
+		// make it the master3d
+		// (the ref-counter for SeqID should have been incremented in GetSeqID)
+		cd->SetMaster3d().push_back(SeqID);
+		}
+	}
+	return remasterAlignannot(*cd, Row);
+}
+
+bool remasterAlignannot(CCdCore& cd, unsigned int oldMasterRow) 
+{
+    //  Exit if invalid row number or the old master is same as current master.
+    if (oldMasterRow >= cd.GetNumRows() || oldMasterRow == 0) return false;
+
+    bool ok = true;
+    int From, To, NewFrom, NewTo;
+    CAlign_annot_set::Tdata::iterator  alignAnnotIt, alignAnnotEnd;
+    CPacked_seqint::Tdata::iterator intervalIt, intervalEnd;
+    BlockModelPair guideAlignment(cd.GetSeqAlign(oldMasterRow));
+    CRef< CSeq_id > seqIdMaster(guideAlignment.getMaster().getSeqId());
+    CRef< CSeq_id > seqIdOldMaster(guideAlignment.getSlave().getSeqId());
+
+    // if there's an align-annot set
+    if (cd.IsSetAlignannot()) {
+        // for each alignannot
+        alignAnnotEnd = cd.SetAlignannot().Set().end();
+        for (alignAnnotIt = cd.SetAlignannot().Set().begin(); alignAnnotIt != alignAnnotEnd; alignAnnotIt++) {
+            // if it's a from-to; make sure current seq id matches
+            if ((*alignAnnotIt)->SetLocation().IsInt()) {
+                // update from and to with new master
+                From = (int) (*alignAnnotIt)->SetLocation().GetInt().GetFrom();
+                To = (int) (*alignAnnotIt)->SetLocation().GetInt().GetTo();
+                NewFrom = guideAlignment.mapToMaster(From);
+                NewTo   = guideAlignment.mapToMaster(To);
+
+                if (!seqIdOldMaster->Match((*alignAnnotIt)->SetLocation().SetInt().GetId()) || NewFrom < 0 || NewTo < 0)
+                {
+                    //  If somehow already have alignannot mapped to the current master, don't flag an error.
+                    //  Second condition is to deal with case of old/new masters being different footprints on
+                    //  the same sequence ==> would only be here if there was a problem in NewFrom or NewTo
+                    //  in that case if seqIdMaster == seqIdOldMaster and first condition passed.
+                    if (seqIdMaster->Match((*alignAnnotIt)->SetLocation().SetInt().GetId()) && !seqIdMaster->Match(*seqIdOldMaster)) {
+                        continue;
+                    }
+                    ok = false;
+                    continue;
+                }
+                (*alignAnnotIt)->SetLocation().SetInt().SetFrom(NewFrom);
+                (*alignAnnotIt)->SetLocation().SetInt().SetTo(NewTo);
+                (*alignAnnotIt)->SetLocation().SetInt().SetId(*seqIdMaster);
+            }
+            // if it's a set of from-to's
+            else if ((*alignAnnotIt)->SetLocation().IsPacked_int()) {
+                // for each from-to
+                intervalIt = (*alignAnnotIt)->SetLocation().SetPacked_int().Set().begin();
+                intervalEnd = (*alignAnnotIt)->SetLocation().SetPacked_int().Set().end();
+                for (; intervalIt != intervalEnd; ++intervalIt) {
+                    // update from and to with new master
+                    From = (int) (*intervalIt)->GetFrom();
+                    To = (int) (*intervalIt)->GetTo();
+                    NewFrom = guideAlignment.mapToMaster(From);
+                    NewTo   = guideAlignment.mapToMaster(To);
+                    if (!seqIdOldMaster->Match((*intervalIt)->GetId()) || NewFrom < 0 || NewTo < 0)
+                    {
+                        //  If somehow already have alignannot mapped to the current master, don't flag an error.
+                        //  Second condition is to deal with case of old/new masters being different footprints on
+                        //  the same sequence ==> would only be here if there was a problem in NewFrom or NewTo
+                        //  in that case if seqIdMaster == seqIdOldMaster and first condition passed.
+                        if (seqIdMaster->Match((*intervalIt)->GetId()) && !seqIdMaster->Match(*seqIdOldMaster)) {
+                            continue;
+                        }
+                        ok = false;
+                        continue;
+                    }
+                    (*intervalIt)->SetFrom(NewFrom);
+                    (*intervalIt)->SetTo(NewTo);
+                    (*intervalIt)->SetId(*seqIdMaster);
+                }
+            }
+        }
+    }
+    return ok;
+}
+
+int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields) 
+{
+    int nPurged = 0;
+    vector<int> consensusRows, consensusSeqListIds;
+
+    if (pCD) {
+        //  First see if the master is a consensus; if so, remaster to 2nd row
+        if (pCD->UsesConsensusSequenceAsMaster()) {
+            ReMasterCdWithoutUnifiedBlocks(pCD, 1,true);
+        }
+
+        //  Next, find all rows using 'consensus' as a seq_id and remove them.
+
+        nPurged = pCD->GetRowsWithConsensus(consensusRows);
+        if (nPurged) {
+            pCD->EraseTheseRows(consensusRows);
+            if (pCD->FindConsensusInSequenceList(&consensusSeqListIds)) {
+                for (int i = consensusSeqListIds.size() - 1; i >= 0 ; --i) {
+                    pCD->EraseSequence(consensusSeqListIds[i]);
+                }
+            }
+              if (resetFields) {
+                ResetFields(pCD);
+              }
+        }
+    }
+
+    return nPurged;
+}
+
 /*
 string layoutSeqTree(vector<CCdCore*>& cds, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
 {
@@ -639,6 +785,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2005/10/03 21:14:11  cliu
+ * added remaster and purge consensus functions
+ *
  * Revision 1.9  2005/07/20 20:05:08  cliu
  * redesign SeqTreeAPI
  *

@@ -59,7 +59,12 @@ bool Reorder(CCdCore* pCD, const vector<int> positions);
 //   'positions' contains the new order of all NON-MASTER rows, as in Reorder
 bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions);
 
-
+//  Assumes cd has been remastered and the alignannot field still
+    //  is indexed to the oldMasterRow's sequence.  Does nothing if oldMasterRow = 0,
+    //  or out of range, and returns false.  Returns false if seqId of oldMasterRow
+    //  does not match the seqId of every annotation in the alignannot, or if any
+    //  mapping of from/to has an error.
+bool remasterAlignannot(CCdCore& cd, unsigned int oldMasterRow = 1);
 
 //   Resets a variety of fields that need to be wiped out on remastering, or
 //   when removing a consensus.
@@ -118,6 +123,12 @@ bool obeysParentTypeConstraints(const CCdCore* pCD);
 void calcDiversityRanking(CCdCore* pCD, list<int>& rankList);
 
 
+//   Remove consensus sequence from alignment and sequence list.
+//   If the master was a consensus sequence, remaster to the 2nd alignment row first.
+int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields = true);
+
+bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = true);
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -128,6 +139,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/10/03 21:13:18  cliu
+ * added remaster and purge consensus functions
+ *
  * Revision 1.5  2005/07/20 20:04:32  cliu
  * redesign SeqTreeAPI
  *
