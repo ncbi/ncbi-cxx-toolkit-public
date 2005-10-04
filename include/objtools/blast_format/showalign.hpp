@@ -50,12 +50,14 @@ BEGIN_SCOPE(objects)
 /**
  * Example:
  * @code
- * int option = 0;
- * option += CDisplaySeqalign::eShowGi;
- * option += CDisplaySeqalign::eHtml;
+ * CRef<objects::CSeq_align_set> aln_set = ...
+ * CRef<objects::CScope> scope = ...
+ * int display_option = 0;
+ * display_option += CDisplaySeqalign::eShowGi;
+ * display_option += CDisplaySeqalign::eHtml;
  * .......
- * CDisplaySeqalign ds(aln_set, scope);   
- * ds.SetOption(defline_option);
+ * CDisplaySeqalign ds(*aln_set, *scope);   
+ * ds.SetAlignOption(display_option);
  * ds.DisplaySeqalign(stdout);
  * @endcode
  */
@@ -561,6 +563,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.39  2005/10/04 15:32:08  camacho
+*Fix errors in sample code
+*
 *Revision 1.38  2005/09/27 17:09:08  madden
 *Add comp_adj_method to SAlnInfo
 *
