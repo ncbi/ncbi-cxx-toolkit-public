@@ -381,7 +381,7 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
 CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    const SSNP_Info& snp_info)
     : m_Object(&snp_annot),
-      m_AnnotIndex(snp_annot.GetIndex(snp_info)+kMin_I4)
+      m_AnnotIndex(-1 - snp_annot.GetIndex(snp_info))
 {
     _ASSERT(IsSNPFeat());
 }
@@ -412,14 +412,13 @@ const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
 const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
 {
     _ASSERT(IsSNPFeat());
-    return GetSeq_annot_SNP_Info().GetInfo(m_AnnotIndex);
+    return GetSeq_annot_SNP_Info().GetInfo(-1 - m_AnnotIndex);
 }
 
 
 bool CAnnotObject_Ref::IsFeat(void) const
 {
-    return IsSNPFeat() ||
-        (IsRegular()  &&  GetAnnotObject_Info().IsFeat());
+    return IsSNPFeat() || GetAnnotObject_Info().IsFeat();
 }
 
 
@@ -2216,6 +2215,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2005/10/04 15:54:44  vasilche
+* Workaround icc 9 optimizer bug.
+*
 * Revision 1.66  2005/09/22 22:01:58  grichenk
 * Fixed IsRegular() assertion.
 *

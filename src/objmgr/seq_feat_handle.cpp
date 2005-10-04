@@ -63,7 +63,7 @@ CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
       m_CreatedFeat(&created_ref)
 {
     _ASSERT(annot.x_GetInfo().x_HasSNP_annot_Info());
-    m_AnnotIndex = x_GetSNP_annot_Info().GetIndex(snp_info)+kMin_I4;
+    m_AnnotIndex = -1 - x_GetSNP_annot_Info().GetIndex(snp_info);
     _ASSERT(IsTableSNP());
 }
 
@@ -110,7 +110,7 @@ const SSNP_Info& CSeq_feat_Handle::x_GetSNP_InfoAny(void) const
         NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "CSeq_feat_Handle::GetSNP_Info: not SNP info");
     }
-    return x_GetSNP_annot_Info().GetInfo(m_AnnotIndex-kMin_I4);
+    return x_GetSNP_annot_Info().GetInfo(-1 - m_AnnotIndex);
 }
 
 
@@ -232,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/10/04 15:54:44  vasilche
+ * Workaround icc 9 optimizer bug.
+ *
  * Revision 1.12  2005/09/20 15:45:36  vasilche
  * Feature editing API.
  * Annotation handles remember annotations by index.
