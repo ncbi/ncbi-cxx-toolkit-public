@@ -499,10 +499,7 @@ size_t CCompartmentFinder<THit>::Run()
             }}
             
             // check if good for closing and opening
-            if(li->m_hit == -1 ||
-                 phcbox[3] < hbox[2] && 
-                 hbox[2] - phcbox[3] > hbox[0] &&
-                 hbox[2] - phcbox[3] >= phcbox[3] - li->m_LeftBound) {
+            if(li->m_hit == -1 || hbox[2] > hbox[0] + phcbox[3]) {
 
                 const double identity = h->GetIdentity();
                 const double li_score = li->m_score;
@@ -784,6 +781,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/04 19:33:53  kapustin
+ * Limit min distance btw compartments by unaligned term query space only.
+ *
  * Revision 1.4  2005/09/21 14:14:16  kapustin
  * Fix the problem with initial (dummy) score. Replace size_t => TCoord.
  *
