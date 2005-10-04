@@ -440,7 +440,7 @@ bool AlignmentUtility::DoLeaveNOut(
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     m_currentMultiple->GetUngappedAlignedBlocks(&blocks);
     nRows = m_currentMultiple->NRows();
-    if (nToRealign < nRows - LNO_MIN_NROWS_REMAINING) {
+    if (nToRealign > nRows - LNO_MIN_NROWS_REMAINING) {
         ERROR_MESSAGE("need at least " << nRows - LNO_MIN_NROWS_REMAINING << " alignment rows to leave out " << nToRealign << " rows.");
         return false;
     }
@@ -742,6 +742,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/10/04 21:36:03  lanczyck
+* bug fix in DoLeaveNOut
+*
 * Revision 1.19  2005/09/06 18:47:31  lanczyck
 * add method DoLeaveNOut:  faster than DoLeaveOneOut run N times, at possible cost of a lower alignment score
 *
