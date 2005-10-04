@@ -183,10 +183,11 @@ void SeqTreeAsnizer::fillSeqItem(const CSeqTree_node& node, SeqItem& seqItem)
 		//use rowID for now
 		if (node.GetChildren().GetFootprint().IsSetRowId())
 			seqItem.rowID = node.GetChildren().GetFootprint().GetRowId();
-		//keep a map of seqLoc and seqItem so it can be used to resolve rowId later.
-		
-		/*liMap.insert(SeqLocToSeqItemMap::value_type(&(node.GetChildren().GetFootprint().GetSeqRange()),
-			&seqItem));*/
+		/* can't use what's stored because the child accession may be something like "loc-1"
+		if (node.CanGetAnnotation())
+		{
+			seqItem.membership = node.GetAnnotation().GetPresentInChildCD();
+		}*/
 	}
 }
 
@@ -224,6 +225,9 @@ bool SeqTreeAsnizer::resolveRowId(const AlignmentCollection& ac, SeqLocToSeqItem
 		if (row < 0)
 			return false;
 		sit->second->rowID = row;
+		CCdCore* cd = ac.GetScopedLeafCD(row);
+		if (cd)
+			sit->second->membership = cd->GetAccession();
 	}
 	return true;
 }

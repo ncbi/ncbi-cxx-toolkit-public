@@ -192,7 +192,19 @@ void SeqTreeAPI::getEgesFromSubTree(const SeqTree::iterator& cursor, vector<SeqT
 void SeqTreeAPI::annotateLeafNode(const SeqItem& nodeData, SeqTreeNode& node)
 {
 	if (m_useMembership)
-		node.annotation = nodeData.membership;
+	{
+		if (nodeData.membership.empty())
+		{
+			CCdCore* cd = m_ma.GetScopedLeafCD(nodeData.rowID);
+			if (cd)
+			{
+				//nodeData.membership = cd->GetAccession();
+				node.annotation = cd->GetAccession();
+			}
+		}
+		else
+			node.annotation = nodeData.membership;
+	}
 	else
 	{
 		if (!m_taxTree)
@@ -249,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/10/04 20:10:47  cliu
+ * membership annotation when loading tree.
+ *
  * Revision 1.6  2005/08/04 21:33:40  cliu
  * annotate with Tax work
  *
