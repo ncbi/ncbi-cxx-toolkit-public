@@ -532,8 +532,12 @@ CSeq_entry_Handle CBioseq_Handle::GetTopLevelEntry(void) const
 
 CSeq_entry_Handle CBioseq_Handle::GetParentEntry(void) const
 {
-    return CSeq_entry_Handle(x_GetInfo().GetParentSeq_entry_Info(),
-                             GetTSE_Handle());
+    CSeq_entry_Handle ret;
+    if ( *this ) {
+        ret = CSeq_entry_Handle(x_GetInfo().GetParentSeq_entry_Info(),
+                                GetTSE_Handle());
+    }
+    return ret;
 }
 
 
@@ -647,8 +651,12 @@ CBioseq_EditHandle::CBioseq_EditHandle(const CSeq_id_Handle& id,
 
 CSeq_entry_EditHandle CBioseq_EditHandle::GetParentEntry(void) const
 {
-    return CSeq_entry_EditHandle(x_GetInfo().GetParentSeq_entry_Info(),
-                                 GetTSE_Handle());
+    CSeq_entry_EditHandle ret;
+    if ( *this ) {
+        ret = CSeq_entry_EditHandle(x_GetInfo().GetParentSeq_entry_Info(),
+                                    GetTSE_Handle());
+    }
+    return ret;
 }
 
 
@@ -878,6 +886,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2005/10/04 14:15:38  vasilche
+* Correctly deal with null handles in GetParentEntry().
+*
 * Revision 1.93  2005/09/20 15:42:16  vasilche
 * AttachAnnot takes non-const object.
 *
