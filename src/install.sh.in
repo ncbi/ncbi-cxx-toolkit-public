@@ -202,11 +202,12 @@ status/config.cache"
 install_builddir="$install_dir/build"
 
 mkdir "$install_builddir"  ||  Usage "Failed to create dir:  $install_builddir"
-(cd $script_dir  &&  for f in Makefile.* *.sh ; do
+(cd $script_dir  &&  for f in Makefile.* *.sh *.cfg; do
    case $f in
       reconfigure.sh) continue      ;; # skip (inappropriate)
       Makefile.*)     type=makefile ;;
       *.sh)           type=script   ;;
+      *.cfg)          type=config   ;;
    esac
    cp -p $f "$install_builddir/"  ||  \
      Usage "Failed to copy $type to $install_builddir/$f"
