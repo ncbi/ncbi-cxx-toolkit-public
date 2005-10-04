@@ -37,7 +37,7 @@ global AllConsoleTools -- All console tools (tests and demos) to build
 global AllApplications -- All GUI applications to build
 
 (* Libraries for linking (note the extra space before the lib name! )*)
-property Z_LIBS : "bz2 z"
+property Z_LIBS : "z"
 property IMG_LIBS : " jpeg png tiff gif z"
 property FLTK_LIBS : " fltk_images fltk_gl fltk"
 property BDB_LIBS : " db"
@@ -78,6 +78,7 @@ property xsqlite : {name:"xsqlite", path:"sqlite"}
 property xregexp : {name:"xregexp", path:"util:regexp", exc:{"pcreposix.c"}}
 property ximage : {name:"ximage", path:"util:image"}
 property xcompress : {name:"xcompress", path:"util:compress"}
+property xbz2 : {name:"xbz2", path:"util:compress:bzip2", inc:{"blocksort.c", "compress.c", "huffman.c", "decompress.c", "crctable.c", "randtable.c", "bzlib.c"}}
 property tables : {name:"tables", path:"util:tables", inc:{"raw_scoremat.c"}}
 property sequtil : {name:"sequtil", path:"util:sequtil"}
 property creaders : {name:"creaders", path:"util:creaders"}
@@ -260,7 +261,7 @@ property gui_view_validator : {name:"gui_view_validator", path:"gui:plugins:view
 (*****************************************************************************************)
 -- Organize everything into convinient packs --
 (*****************************************************************************************)
-property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, tables, sequtil, creaders, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, req:true}
+property ncbi_core : {name:"ncbi_core", libs:{xncbi, xcompress, xbz2, tables, sequtil, creaders, xregexp, xutil, xconnect, xser}, dep:Z_LIBS, req:true}
 property ncbi_web : {name:"ncbi_web", libs:{xhtml, xcgi}, dep:"ncbi_core", req:true}
 property ncbi_bdb : {name:"ncbi_bdb", libs:{bdb}, dep:"ncbi_core" & BDB_LIBS, req:true}
 property ncbi_xcache_bdb : {name:"ncbi_xcache_bdb", libs:{xcache_bdb}, dep:"ncbi_core ncbi_bdb", req:true}
@@ -412,6 +413,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2005/10/04 13:14:41  lebedev
+ * Workaround libbz2 issue (static in 10.3, dynamic in 10.4)
+ *
  * Revision 1.71  2005/09/22 17:24:53  lebedev
  * Rearrange build order ncbi_algo after objmgr_simple
  *
