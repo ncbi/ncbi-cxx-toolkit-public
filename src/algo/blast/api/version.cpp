@@ -79,7 +79,7 @@ John L. Spouge, Yuri I. Wolf, Eugene V. Koonin, and Stephen F. Altschul \
 with composition-based statistics and other refinements\", Nucleic Acids \
 Res. 29:2994-3005.",
     // eCompAdjustedMatrices
-    "John C. Wootton, E. Michael Gertz, Richa Agarwala, Aleksandr Morgulis, \
+    "Stephen F. Altschul, John C. Wootton, E. Michael Gertz, Richa Agarwala, Aleksandr Morgulis, \
 Alejandro A. Schäffer, and Yi-Kuo Yu \"Protein database searches using \
 compositionally adjusted substitution matrices\", FEBS J., in press.",
     // eMaxPublications
