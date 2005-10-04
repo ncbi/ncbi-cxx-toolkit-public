@@ -987,10 +987,14 @@ CDbapiCtlibCF2::CreateInstance(
                         db_version = CS_VERSION_100;
                     } else if ( value == 110 ) {
                         db_version = CS_VERSION_110;
+#ifdef CS_VERSION_120
                     } else if ( value == 120 ) {
                         db_version = CS_VERSION_120;
+#endif
+#ifdef CS_VERSION_125
                     } else if ( value == 125 ) {
                         db_version = CS_VERSION_125;
+#endif
                     }
                 } else if ( v.id == "packet" ) {
                     page_size = NStr::StringToInt( v.value );
@@ -1064,6 +1068,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/10/04 13:44:35  ucko
+ * Conditionalize uses of CS_VERSION_12x, as some configurations may be
+ * using older client libraries that don't define them.
+ *
  * Revision 1.44  2005/10/03 12:17:53  ssikorsk
  * Handle versions 11.0, 12.0 and 12.5 of the TDS protocol.
  *
