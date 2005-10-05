@@ -289,7 +289,8 @@ int CAlignmentRefiner::Run(void)
     nBlocksFromAU = bma->NAlignedBlocks();
     alWidth       = bma->AlignmentWidth();
 
-    INFO_MESSAGE_CL("Alignment width:  " << alWidth);
+    INFO_MESSAGE_CL("\nRows in alignment:  " << bma->NRows());
+    INFO_MESSAGE_CL("Alignment width  :  " << alWidth);
     INFO_MESSAGE_CL("Number of Aligned Blocks after IBM:  " << nBlocksFromAU << "\n");
 
     
@@ -599,6 +600,8 @@ RefinerResultCode CAlignmentRefiner::ExtractBEArgs(string& msg) {
 
 void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool echoBE) {
 
+    static string yes = "Yes", no = "No";
+
     if ((!echoLOO && !echoBE) || (echoLOO && echoBE)) {
         echoStream << "Global Refinement Parameters:" << endl;
         echoStream << "=================================" << endl;
@@ -614,11 +617,11 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
     if (echoLOO) {
         echoStream << "Leave-One_Out parameters:" << endl;
         echoStream << "=================================" << endl;
-        echoStream << "LOO on?  " << m_loo.doLOO << endl;
+        echoStream << "LOO on?  " << ((m_loo.doLOO) ? yes : no) << endl;
         echoStream << "Number left out between score recomputation = " << m_loo.lno << endl;
-        echoStream << "Fix alignment of structures?  " << m_loo.fixStructures << endl;
-        echoStream << "Use full sequence (true) or aligned footprint (false)?  " << m_loo.fullSequence << endl;
-        echoStream << "Extra arguments refer to rows (true) or blocks (false)?  " << m_loo.extrasAreRows << endl;
+        echoStream << "Freeze alignment of rows with structure?  " << ((m_loo.fixStructures) ? yes : no) << endl;
+        echoStream << "Use full sequence or aligned footprint?  " << ((m_loo.fullSequence) ? "Full" : "Aligned") << endl;
+        echoStream << "Extra arguments refer to rows or blocks?  " << ((m_loo.extrasAreRows) ? "Rows" : "Blocks") << endl;
         echoStream << "N-terminal extension allowed = " << m_loo.nExt << endl;
         echoStream << "C-terminal extension allowed = " << m_loo.cExt << endl;
 
@@ -678,23 +681,28 @@ void CAlignmentRefiner::EchoSettings(ostream& echoStream, bool echoLOO, bool ech
 
         echoStream << "Block editing parameters:" << endl;
         echoStream << "=================================" << endl;
-        echoStream << "block editing on?         " << m_blockEdit.editBlocks << endl;
-        echoStream << "block shrinking on?       " << m_blockEdit.canShrink << endl;
-        echoStream << "extend first?             " << m_blockEdit.extendFirst << endl;
-        echoStream << endl;
-        echoStream << "block editing method    = " << algMethod << endl;
-        echoStream << "column scoring method   = " << columnMethod << endl;
-        echoStream << endl;
-        echoStream << "minimum block size      = " << m_blockEdit.minBlockSize << endl;
-        echoStream << "column-scorer threshold = " << m_blockEdit.columnScorerThreshold << endl;
-        echoStream << "extension threshold     = " << m_blockEdit.extensionThreshold << endl;
-        echoStream << "shrinkage threshold     = " << m_blockEdit.shrinkageThreshold << endl;
+        echoStream << "block editing on?         " << ((m_blockEdit.editBlocks) ? yes : no) << endl;
+        if (m_blockEdit.editBlocks) {
+            echoStream << "block shrinking on?       " << ((m_blockEdit.canShrink) ? yes : no) << endl;
+            echoStream << "extend first?             " << ((m_blockEdit.extendFirst) ? yes : no) << endl;
+            echoStream << endl;
+            echoStream << "block editing method    = " << algMethod << endl;
+            echoStream << "column scoring method   = " << columnMethod << endl;
+            echoStream << endl;
 //        echoStream << "not used:  column meth2 = " << m_blockEdit.columnMethod2 << endl << endl; 
-        echoStream << endl;
-        echoStream << "(used for 3.3.3 scoring only):" << endl;
-        echoStream << "    median threshold        = " << m_blockEdit.median << endl;
-        echoStream << "    negative score fraction = " << m_blockEdit.negScoreFraction << endl;
-        echoStream << "    negative row   fraction = " << m_blockEdit.negRowsFraction << endl;
+            if (GetArgs()["be_score"].AsString() == "3.3.3") {
+                echoStream << "(used for 3.3.3 scoring only):" << endl;
+                echoStream << "    median threshold        = " << m_blockEdit.median << endl;
+                echoStream << "    negative score fraction = " << m_blockEdit.negScoreFraction << endl;
+                echoStream << "    negative row   fraction = " << m_blockEdit.negRowsFraction << endl;
+            } else {
+                echoStream << "minimum block size      = " << m_blockEdit.minBlockSize << endl;
+                echoStream << "column-scorer threshold = " << m_blockEdit.columnScorerThreshold << endl;
+                echoStream << "extension threshold     = " << m_blockEdit.extensionThreshold << endl;
+                echoStream << "shrinkage threshold     = " << m_blockEdit.shrinkageThreshold << endl;
+            }
+
+        }
         echoStream << endl;
     }
 }
@@ -752,6 +760,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/05 13:24:35  lanczyck
+ * handle case where lno is not a factor of # of rows; output modifications
+ *
  * Revision 1.5  2005/09/06 19:09:48  lanczyck
  * add Leave-N-out support
  *

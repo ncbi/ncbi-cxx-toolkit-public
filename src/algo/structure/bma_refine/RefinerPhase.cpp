@@ -174,13 +174,14 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
     vector<unsigned int> rows, froms, tos;
 
-    string noChange = " no score change ", accepted = " accepted ";
-    string lnoString = (m_looParams.lno > 1) ? "DoLeaveNOut" : "DoLeaveOneOut";
+    string noChange = " no score change", accepted = " accepted";
+    string lnoMethod = (m_looParams.lno > 1) ? "DoLeaveNOut" : "DoLeaveOneOut";
+    string lnoString = (m_looParams.lno > 1) ? "LNO" : "LOO";
 
     const BlockMultipleAlignment* bma;
     BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
     BlockMultipleAlignment::UngappedAlignedBlockList::iterator blockIt;
-    Ranges rangesBeforeLOO, rangesAfterLOO;
+//    Ranges rangesBeforeLOO, rangesAfterLOO;
     map<unsigned int, Ranges> rangesBeforeLOOMap, rangesAfterLOOMap;
 
     //  In past we tried to accept only score-improving moves; preserve that capability.
@@ -209,7 +210,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
     if (m_shuffleRowsAtStart) {
         if (writeDetails) {
-            (*detailsStream) << "    (Reshuffle the row selection order for this LOO phase...)\n";
+            (*detailsStream) << "    (Reshuffle the row selection order for this " << lnoString << " phase...)\n";
         }
         m_rowSelector->Shuffle();
     }
@@ -222,7 +223,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         row = m_rowSelector->GetNext();
 
         if (row == 0) {
-            WARNING_MESSAGE_CL("Cannot run '" << lnoString << "' for the master (row = 0).  Continuing.");
+            WARNING_MESSAGE_CL("Cannot run '" << lnoMethod << "' for the master (row = 0).  Continuing.");
             continue;
         }
 
@@ -238,8 +239,8 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             m_initialScore = score;
         }
 
-        rangesBeforeLOO.clear();
-        rangesAfterLOO.clear();
+//        rangesBeforeLOOMap.clear();
+//        rangesAfterLOOMap.clear();
         bma = au->GetBlockMultipleAlignment();
         if (bma) {
             bma->GetUngappedAlignedBlocks(&alignedBlocks);
@@ -250,7 +251,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 }
             }
         } else {
-            ERROR_MESSAGE_CL("Null BlockMultipleAlignment found when starting " << nRowsTried + 1 << "-th LOO for row " << row + 1 << ".  Exiting LOO phase.");
+            ERROR_MESSAGE_CL("Null BlockMultipleAlignment found when starting " << nRowsTried + 1 << "-th LOO for row " << row + 1 << ".  Exiting " << lnoString << " phase.");
             return eRefinerResultAlignmentUtilityError;
         }
 
@@ -283,17 +284,17 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 //                               m_looParams.cutoff, m_looParams.froms[row], m_looParams.tos[row])) {
 
         //  Accummulate enough rows...
-        if (rows.size() < m_looParams.lno) continue;
+        if (rows.size() < m_looParams.lno && m_rowSelector->HasNext()) continue;
 
         if (!au->DoLeaveNOut(rows, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
                                m_looParams.cutoff, froms, tos)) {
             if (!acceptAll) {
                 delete au;  //  DoLeaveOneOut likely has modified 'au' 
                 au = auRollbackCopy;
-                ERROR_MESSAGE_CL(lnoString << " failed for " << seqIdStr << " at row " << row+1 << ".\nRollback & continue.");
+                ERROR_MESSAGE_CL(lnoMethod << " failed for " << seqIdStr << " at row " << row+1 << ".\nRollback & continue.");
                 continue;
             } else {
-                ERROR_MESSAGE_CL(lnoString << " failed during call involving " << seqIdStr << " at row " << row+1 << ".\nTerminating phase at processing of " << nRowsTried << "-th row.");
+                ERROR_MESSAGE_CL(lnoMethod << " failed during call involving " << seqIdStr << " at row " << row+1 << ".\nTerminating phase at processing of " << nRowsTried << "-th row.");
                 return (m_looParams.lno > 1) ? eRefinerResultLeaveNOutExecutionError : eRefinerResultLeaveOneOutExecutionError;
             }
 
@@ -303,18 +304,18 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             //(*detailsStream) << "    about to do rowScorer.ComputeScore after LOO for row " << row << endl;
             score    = (TScoreType) rowScorer.ComputeScore(*au);  //GetScore(*au);
 
-            for (unsigned int i = 0; i < m_looParams.lno; ++i) {
+            for (unsigned int i = 0; i < rows.size(); ++i) {
                 row = rows[i];
 //                (*detailsStream) << "    about to do rowScorer.ComputeBlockScores after LOO for row " << row << endl;
                 rowScore = rowScorer.ComputeBlockScores(*au, m_finalBlockScores[row], row);
                 seqIdStr = GetSeqIdStringForRowFromAU(au, row);
 
                 if (writeDetails) {
-                    (*detailsStream) << lnoString << " for " << seqIdStr << " at row " << row+1 << " (before LOO rowScore = " << beforeLOORowScores[row] << "; ";
-                    (*detailsStream) << "after LOO rowScore = " << rowScore << ")" << endl; 
+                    (*detailsStream) << lnoMethod << " for " << seqIdStr << " at row " << row+1 << " (before " << lnoString << " rowScore = " << beforeLOORowScores[row] << "; ";
+                    (*detailsStream) << "after " << lnoString << " rowScore = " << rowScore << ")" << endl; 
                 } else {
-                    TRACE_MESSAGE_CL(lnoString << " for " << seqIdStr << " at row " << row+1 << " (before LOO rowScore = " << beforeLOORowScores[row] << ")"); 
-                    TRACE_MESSAGE_CL("              (after LOO rowScore = " << rowScore << ")"); 
+                    TRACE_MESSAGE_CL(lnoMethod << " for " << seqIdStr << " at row " << row+1 << " (before " << lnoString << " rowScore = " << beforeLOORowScores[row] << ")"); 
+                    TRACE_MESSAGE_CL("              (after " << lnoString << " rowScore = " << rowScore << ")"); 
                 }
 
 
@@ -335,7 +336,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
                 //  Output individual block scores
                 if (writeDetails) {
-                    (*detailsStream) << "    Block scores on row " << row+1 << " (row, block number, block size, before LOO, after LOO): " << endl;
+                    (*detailsStream) << "    Block scores on row " << row+1 << " (row, block number, block size, before " << lnoString << ", after " << lnoString << "): " << endl;
                     for (unsigned int bnum = 0; bnum < m_initialBlockScores[row].size(); ++bnum) {
                         detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
                         (*detailsStream) << "    row " << setw(5) << row+1 << " BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum];
@@ -356,7 +357,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 if (writeDetails) {
                     string& msg = (score == oldScore) ? noChange : accepted;
 //                    (*detailsStream) << "LOO move" << msg << "for " << seqIdStr << " at row " << row+1 << ".  oldScore = " << oldScore << "; new score = " << score;
-                    (*detailsStream) << "LOO move" << msg << ".  oldScore = " << oldScore << "; new score = " << score;
+                    (*detailsStream) << lnoString << " move" << msg << ".  oldScore = " << oldScore << "; new score = " << score << endl;
                 }
                 if (score == oldScore) {
                     ++scoreSame;
@@ -366,7 +367,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 }
 
             } else {
-                TRACE_MESSAGE_CL(lnoString << " NOT accepted.  oldScore = " << oldScore << "; rejected new score = " << score);
+                TRACE_MESSAGE_CL(lnoMethod << " NOT accepted.  oldScore = " << oldScore << "; rejected new score = " << score);
                 if (score < oldScore) ++scoreDrop; // use if to not depend on Accept implementation
 
                 delete au;
@@ -374,7 +375,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 score = oldScore;
             }
 		
-            tries += m_looParams.lno;
+            tries += rows.size(); //m_looParams.lno;
             rows.clear();
             froms.clear();
             tos.clear();
@@ -838,6 +839,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/05 13:24:35  lanczyck
+ * handle case where lno is not a factor of # of rows; output modifications
+ *
  * Revision 1.6  2005/09/29 19:00:15  lanczyck
  * comment out debug stmt
  *
