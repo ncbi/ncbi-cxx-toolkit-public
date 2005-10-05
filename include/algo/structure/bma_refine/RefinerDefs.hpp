@@ -185,9 +185,9 @@ struct BlockEditingParams {
         extensionThreshold = 0;
         shrinkageThreshold = 0;
         minBlockSize = 1;
-        negScoreFraction = 0;
-        negRowsFraction = 0;
-        median = 0;
+        negScoreFraction = 0.3;
+        negRowsFraction = 0.3;
+        median = 3;
         extendFirst = true;
         columnMethod2 = eInvalidColumnScorerMethod;
     }
@@ -270,6 +270,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/05 13:55:08  lanczyck
+ * new defaults for 3.3.3 parameters
+ *
  * Revision 1.3  2005/09/06 18:49:44  lanczyck
  * add leave-N-out variable to LOO param struct; add LNO error codes
  *
