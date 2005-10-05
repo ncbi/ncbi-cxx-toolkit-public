@@ -137,6 +137,14 @@ static SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
 }
 
 
+static bool s_IsValidLocalID(const string& s)
+{
+    static const char* const kLegal =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.";
+    return (!s.empty()  &&  s.find_first_not_of(kLegal) == NPOS);
+}
+
+
 static void s_FixSeqData(CBioseq* seq)
 {
     _ASSERT(seq);
@@ -182,7 +190,7 @@ static void s_FixSeqData(CBioseq* seq)
 }
 
 
-void s_AddData(CSeq_inst& inst, const string& residues)
+static void s_AddData(CSeq_inst& inst, const string& residues)
 {
     CRef<CSeq_data> data;
     if (inst.IsSetExt()  &&  inst.GetExt().IsDelta()) {
@@ -235,16 +243,14 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
         ++start;
         SIZE_TYPE space = line.find_first_of(" \t", start);
         string    name  = line.substr(start, space - start);
-#if 0
         string    local;
-#endif
 
         if (flags & fReadFasta_NoParseID) {
-#if 0
-            local = name;
-#else
-            space = start - 1;
-#endif
+            if (s_IsValidLocalID(name)) {
+                local = name;
+            } else {
+                space = start - 1;
+            }
         } else {
             // try to parse out IDs
             SIZE_TYPE pos = 0;
@@ -256,14 +262,12 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
                                     "s_ParseFastaDefline: Bad ID "
                                     + name.substr(pos),
                                     pos);
-                    } else {
-#if 0
+                    } else if (s_IsValidLocalID(name)) {
                         local = name;
-#else
+                    } else {
                         space = start - 1;
-#endif
-                        break;
                     }
+                    break;
                 }
 
                 CRef<CSeq_id> id(new CSeq_id(name.substr(pos, end - pos)));
@@ -281,12 +285,10 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
             }
         }
 
-#if 0            
         if ( !local.empty() ) {
             ids.push_back(CRef<CSeq_id>
                           (new CSeq_id(CSeq_id::e_Local, local, kEmptyStr)));
         }
-#endif
 
         start = line.find('\1', start);
         if (space != NPOS  &&  title.empty()) {
@@ -633,6 +635,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/10/05 15:38:45  ucko
+* Go back to allowing unidentified bare accessions to be treated as
+* local IDs, but only on the condition that they pass a sanity check.
+* Actually make s_AddData static (forgotten originally).
+*
 * Revision 1.22  2005/09/29 19:37:28  kuznets
 * Added callback based fasta reader
 *
