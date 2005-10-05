@@ -246,11 +246,7 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
         string    local;
 
         if (flags & fReadFasta_NoParseID) {
-            if (s_IsValidLocalID(name)) {
-                local = name;
-            } else {
-                space = start - 1;
-            }
+            space = start - 1;
         } else {
             // try to parse out IDs
             SIZE_TYPE pos = 0;
@@ -635,6 +631,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/10/05 17:51:59  ucko
+* Restore previous NoParseID behavior.
+*
 * Revision 1.23  2005/10/05 15:38:45  ucko
 * Go back to allowing unidentified bare accessions to be treated as
 * local IDs, but only on the condition that they pass a sanity check.
