@@ -73,6 +73,10 @@ CBMARefinerEngine::~CBMARefinerEngine() {
     delete m_trial;
 }
 
+unsigned int CBMARefinerEngine::NumCycles() const {
+ return (m_trial) ? m_trial->NumCycles() : 0;
+}
+
 TScoreType CBMARefinerEngine::GetInitialScore() const {
     return (m_trial) ? m_trial->GetInitialScore() : REFINER_INVALID_SCORE;
 }

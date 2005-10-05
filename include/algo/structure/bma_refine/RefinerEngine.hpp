@@ -65,6 +65,7 @@ public:
     const RefinedAlignments& GetAllResults() const {return m_perTrialResults;}
 
     unsigned int NumTrials() const {return m_nTrials;}
+    unsigned int NumCycles() const;
 
     //  The first two wrap calls for the most recent trial.
     //  The third allows to specify a specific trial (initial alignment is same
