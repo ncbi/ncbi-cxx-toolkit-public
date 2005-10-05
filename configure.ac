@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.391 2005/09/28 15:12:03 ucko Exp $
+#  $Id: configure.ac,v 1.392 2005/10/05 14:45:35 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2713,6 +2713,7 @@ if test "$with_sybase" != "no" ; then
       linux*) sybtcl=-lsybtcl$syb_sfx; sybtli="" ;;
       *)      sybtcl=-ltcl$syb_sfx;    sybtli=-ltli$syb_sfx ;;
    esac
+   test -f "$SYBASE_LIBPATH/libtli.so" || sybtli=
 
    # quick-patch for the bad "tli" lib (Solaris8/Intel specific)
    case "$host_os:$host_vendor" in
@@ -4313,7 +4314,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(png,
       = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
  ]), $Z_LIBS, [], $Z_INCLUDE)
 
-: ${TIFF_PATH=/usr/sfw}
+# : ${TIFF_PATH=/usr/sfw}
 NCBI_CHECK_THIRD_PARTY_LIB(tiff,
  AC_LANG_PROGRAM([#include <tiffio.h>],
     [TIFF* tiff = TIFFOpen("foo", "r");]), $Z_LIBS)

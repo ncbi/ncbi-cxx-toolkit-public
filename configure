@@ -17847,6 +17847,7 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6
       linux*) sybtcl=-lsybtcl$syb_sfx; sybtli="" ;;
       *)      sybtcl=-ltcl$syb_sfx;    sybtli=-ltli$syb_sfx ;;
    esac
+   test -f "$SYBASE_LIBPATH/libtli.so" || sybtli=
 
    # quick-patch for the bad "tli" lib (Solaris8/Intel specific)
    case "$host_os:$host_vendor" in
@@ -23331,7 +23332,7 @@ _ACEOF
 
 
 
-: ${TIFF_PATH=/usr/sfw}
+# : ${TIFF_PATH=/usr/sfw}
 if test "$with_tiff" != "no"; then
     case "$with_tiff" in
        yes | "" ) ;;
