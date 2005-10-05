@@ -384,7 +384,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
       hsp = hsp_array[index];
       if (program_number == eBlastTypeBlastx && kIsOutOfFrame) {
           Int4 context = hsp->context - hsp->context % 3;
-          Int4 context_offset = query_info->contexts[hsp->context].query_offset;
+          Int4 context_offset = query_info->contexts[context].query_offset;
          
           query = query_blk->oof_sequence + CODON_LENGTH + context_offset;
           query_length = query_info->contexts[context+2].query_offset +
