@@ -1923,7 +1923,7 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
 
                 internal_pssm->pssm[i][j] = sbp->matrix->data[kResidue][j];
 
-                if (sbp->matrix->data[kResidue][j] != BLAST_SCORE_MIN) {
+                if (freq_ratios->data[kResidue][j] != 0.0) {
                     double tmp = 
                         kPSIScaleFactor * freq_ratios->bit_scale_factor *
                         log(freq_ratios->data[kResidue][j])/NCBIMATH_LN2;
@@ -2358,6 +2358,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/10/05 14:09:30  camacho
+ * Port change in revision 6.76 of posit.c
+ *
  * Revision 1.54  2005/10/03 20:42:41  camacho
  * Minor
  *
