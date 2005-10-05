@@ -547,6 +547,13 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const bool & v)
     case eBlastOpt_OutOfFrameMode:
         x_SetParam("OutOfFrameMode", v);
         return;
+
+    case eBlastOpt_SegFiltering:
+        {
+            const char* filter_string = v ? "T" : "F";
+            x_SetParam("FilterString", filter_string);
+            return;
+        }
         
     default:
         break;
@@ -1906,6 +1913,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2005/10/05 14:59:23  camacho
+* Fix handling of eBlastOpt_SegFiltering in CBlastOptionsRemote
+*
 * Revision 1.70  2005/09/21 15:09:48  camacho
 * Enable use of CBlastOptionsMemento
 *
