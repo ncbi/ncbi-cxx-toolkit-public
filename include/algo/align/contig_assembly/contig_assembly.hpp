@@ -48,7 +48,7 @@ END_objects_SCOPE
 class NCBI_XALGOCONTIG_ASSEMBLY_EXPORT CContigAssembly
 {
 public:
-    class CAlnStats : public CObject
+    class NCBI_XALGOCONTIG_ASSEMBLY_EXPORT CAlnStats : public CObject
     {
     public:
         CAlnStats(unsigned int adjusted_len,
@@ -58,7 +58,6 @@ public:
         CAlnStats(const objects::CDense_seg& ds, objects::CScope& scope);
 
         unsigned int GetAdjustedLength() const {return m_AdjustedLen;}
-        unsigned int GetFullLength() const;
         /// Returns a fraction between 0 and 1, not a percentage
         double       GetFracIdentity() const;
         unsigned int GetNumMismatches() const {return m_MM;}
@@ -153,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/05 19:06:19  jcherry
+ * Added export specifier.  Removed a method declaration.
+ *
  * Revision 1.4  2005/10/05 17:53:18  jcherry
  * Added CContigAssembly::CAlnStats for alignment statistics.  Use this
  * for calculting fraction identities (this changes the meaning).
