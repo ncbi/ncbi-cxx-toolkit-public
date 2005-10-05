@@ -6,7 +6,7 @@ export NCBI_ABORT_ON_NULL
 
 for args in "" "-fromgi 30240900 -togi 30241000"; do
     echo "Testing: test_objmgr_data $args"
-    if $CHECK_EXEC time test_objmgr_data $args; then
+    if time $CHECK_EXEC test_objmgr_data $args; then
         echo "Done."
     else
         exit 1
