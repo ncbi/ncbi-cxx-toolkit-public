@@ -48,6 +48,27 @@ END_objects_SCOPE
 class NCBI_XALGOCONTIG_ASSEMBLY_EXPORT CContigAssembly
 {
 public:
+    class CAlnStats : public CObject
+    {
+    public:
+        CAlnStats(unsigned int adjusted_len,
+                  unsigned int mm,
+                  unsigned int gaps) :
+            m_AdjustedLen(adjusted_len), m_MM(mm), m_Gaps(gaps) {}
+        CAlnStats(const objects::CDense_seg& ds, objects::CScope& scope);
+
+        unsigned int GetAdjustedLength() const {return m_AdjustedLen;}
+        unsigned int GetFullLength() const;
+        /// Returns a fraction between 0 and 1, not a percentage
+        double       GetFracIdentity() const;
+        unsigned int GetNumMismatches() const {return m_MM;}
+        unsigned int GetNumGaps() const {return m_Gaps;}
+    private:
+        unsigned int m_AdjustedLen;
+        unsigned int m_MM;
+        unsigned int m_Gaps;
+    };
+
     /// Most users of the class need only to call this function.
     /// It runs blastn and, if the results are not satisfactory,
     /// tries a banded dynamic-programming alignment, using a band
@@ -119,11 +140,23 @@ public:
                             objects::CScope& scope);
 };
 
+
+inline
+double CContigAssembly::CAlnStats::GetFracIdentity() const 
+{
+    return 1.0 - double(m_MM + m_Gaps) / m_AdjustedLen;
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/05 17:53:18  jcherry
+ * Added CContigAssembly::CAlnStats for alignment statistics.  Use this
+ * for calculting fraction identities (this changes the meaning).
+ *
  * Revision 1.3  2005/09/19 15:32:43  jcherry
  * Take a vector of (increasing) widths for alignment band, to be tried
  * in succession.  Catch some exceptions thrown by banded alignment

@@ -54,7 +54,8 @@ USING_SCOPE(blast);
 // "-W 28 -r 1 -q -3 -e 1e-5 -Z 200 -F 'm L; R -d rodents.lib'"
 // into ["-W", "28",..."-F", "m L; R -d rodents.lib"]
 // (i.e., respect single quotes)
-static void s_SplitCommandLine(string s, vector<string>& result) {
+static void s_SplitCommandLine(string s, vector<string>& result)
+{
     bool in_quotes = false;
     bool in_space = true;
     // tack on a space so we can deal with end generically
@@ -457,26 +458,7 @@ bool CContigAssembly::IsContained(const CDense_seg& ds,
 
 double CContigAssembly::FracIdent(const CDense_seg& ds, CScope& scope)
 {
-    CAlnVec avec(ds, scope);
-    avec.SetGapChar('-');
-    avec.SetEndChar('-');
-    string row0, row1;
-    avec.GetAlnSeqString(row0, 0, CRange<TSignedSeqPos>(0, avec.GetAlnStop()));
-    avec.GetAlnSeqString(row1, 1, CRange<TSignedSeqPos>(0, avec.GetAlnStop()));
-
-    TSeqPos nongap_len = 0;
-    TSeqPos ident_count = 0;
-    for (unsigned int i = 0; i < row0.size(); ++i) {
-        char res0 = row0[i];
-        char res1 = row1[i];
-        if (res0 != '-' && res1 != '-') {
-            if (res0 == res1) {
-                ident_count += 1;
-            }
-            nongap_len += 1;
-        }
-    }
-    return double(ident_count) / nongap_len;
+    return CAlnStats(ds, scope).GetFracIdentity();
 }
 
 
@@ -714,11 +696,49 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
 }
 
 
+CContigAssembly::CAlnStats::CAlnStats(const objects::CDense_seg& ds,
+                                      objects::CScope& scope)
+{
+    // Largely stolen from CCOPair::CAln
+    string row1, row2;
+    CAlnVec vec(ds, scope);
+    vec.SetGapChar('-');
+    vec.GetAlnSeqString(row1, 0, CAlnMap::TSignedRange
+                          (0, vec.GetAlnStop()));
+    vec.GetAlnSeqString(row2, 1, CAlnMap::TSignedRange
+                          (0, vec.GetAlnStop()));
+    _ASSERT(row1.size() == row2.size());
+
+    m_AdjustedLen = m_MM = m_Gaps = 0;
+    for (unsigned int i = 0;  i < row1.size();  ++i) {
+        if (row1[i] != 'N'  &&  row2[i] != 'N') {
+            ++m_AdjustedLen;
+
+            if (row1[i] != row2[i]) {
+                if (row1[i] == '-') {
+                    ++m_Gaps;
+                    while (i+1 < row1.size()  &&  row1[i+1] == '-') ++i;
+                } else if (row2[i] == '-') {
+                    ++m_Gaps;
+                    while (i+1 < row1.size()  &&  row2[i+1] == '-') ++i;
+                } else {
+                    ++m_MM;
+                }
+            }
+        }
+    }
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/05 17:53:18  jcherry
+ * Added CContigAssembly::CAlnStats for alignment statistics.  Use this
+ * for calculting fraction identities (this changes the meaning).
+ *
  * Revision 1.5  2005/09/19 15:32:43  jcherry
  * Take a vector of (increasing) widths for alignment band, to be tried
  * in succession.  Catch some exceptions thrown by banded alignment
