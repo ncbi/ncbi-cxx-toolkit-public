@@ -563,8 +563,8 @@ CContigAssembly::Align(const CSeq_id& id0, const CSeq_id& id1,
     }
 
     if (ostr) {
-        *ostr << "Running blast for " << id0.GetSeqIdString()
-              << " and " << id1.GetSeqIdString() << endl;
+        *ostr << "Running blast for " << id0.GetSeqIdString(true)
+              << " and " << id1.GetSeqIdString(true) << endl;
     }
     CRef<CSeq_align_set> alns;
     try {
@@ -735,6 +735,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/06 19:02:59  jcherry
+ * Use version numbers when printing accessions to diagnostic output
+ *
  * Revision 1.6  2005/10/05 17:53:18  jcherry
  * Added CContigAssembly::CAlnStats for alignment statistics.  Use this
  * for calculting fraction identities (this changes the meaning).
