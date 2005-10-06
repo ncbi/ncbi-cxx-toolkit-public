@@ -32,16 +32,21 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <util/bitset/ncbi_bitset.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-typedef set<int>   CLDS_Set;
+typedef bm::bvector<>   CLDS_Set;
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/06 16:17:15  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.1  2003/05/22 13:24:45  kuznets
  * Initial revision
  *

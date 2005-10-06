@@ -112,6 +112,25 @@ struct NCBI_LDS_EXPORT SLDS_Annot2ObjectDB : public CBDB_File
     SLDS_Annot2ObjectDB();
 };
 
+/// Persistent index for text based ids (like GenBank id)
+struct NCBI_LDS_EXPORT SLDS_TxtIdIDX : public CBDB_File
+{
+    CBDB_FieldString  id;      ///< accession in most cases
+    CBDB_FieldInt4    row_id;  ///< Object id (raw id)
+
+    SLDS_TxtIdIDX();
+};
+
+
+/// Persistent index for numeric ids (like GI)
+struct NCBI_LDS_EXPORT SLDS_IntIdIDX : public CBDB_File
+{
+    CBDB_FieldInt4    id;      ///< molecule id
+    CBDB_FieldInt4    row_id;  ///< Object id (raw id)
+
+    SLDS_IntIdIDX();
+};
+
 
 //////////////////////////////////////////////////////////////////
 //
@@ -126,6 +145,10 @@ struct NCBI_LDS_EXPORT SLDS_TablesCollection
     SLDS_AnnotDB         annot_db;
     SLDS_Annot2ObjectDB  annot2obj_db;
     SLDS_SeqId_List      seq_id_list;
+
+    /// object_db index for seq id
+    SLDS_TxtIdIDX        obj_seqid_txt_idx; 
+    SLDS_IntIdIDX        obj_seqid_int_idx;
 };
 
 
@@ -207,12 +230,36 @@ SLDS_Annot2ObjectDB::SLDS_Annot2ObjectDB()
 }
 
 
+inline
+SLDS_TxtIdIDX::SLDS_TxtIdIDX() 
+    : CBDB_File(CBDB_RawFile::eDuplicatesEnable)
+{
+    BindKey("id", &id, 256);
+    BindData("row_id", &row_id, 0, eNotNullable);
+
+    DisableNull();
+}
+
+inline
+SLDS_IntIdIDX::SLDS_IntIdIDX()
+    : CBDB_File(CBDB_RawFile::eDuplicatesEnable)
+{
+    BindKey("id", &id);
+    BindData("row_id", &row_id, 0, eNotNullable);
+
+    DisableNull();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2005/10/06 16:17:15  kuznets
+* Implemented SeqId index
+*
 * Revision 1.15  2005/01/13 17:36:44  kuznets
 * Added parent object reference to annotations
 *

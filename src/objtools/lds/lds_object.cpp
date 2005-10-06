@@ -43,8 +43,10 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <bdb/bdb_cursor.hpp>
+#include <bdb/bdb_util.hpp>
 
 #include <objtools/readers/fasta.hpp>
 #include <objtools/lds/lds_object.hpp>
@@ -165,7 +167,7 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
                                      CLDS_Set* objects_deleted,
                                      CLDS_Set* annotations_deleted)
 {
-    if (file_ids.empty())
+    if (file_ids.count())
         return;
 
     //
@@ -187,7 +189,7 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
 */
             int object_id = m_db.object_db.object_id;
 
-            objects_deleted->insert(object_id);
+            objects_deleted->set(object_id);
             m_db.object_db.Delete();
         }
     }
@@ -219,7 +221,7 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
         int fid = m_db.object_db.file_id;
         if (fid && LDS_SetTest(file_ids, fid)) {
             int annot_id = m_db.annot_db.annot_id;
-            annotations_deleted->insert(annot_id);
+            annotations_deleted->set(annot_id);
             m_db.annot_db.Delete();
         }
     }
@@ -231,14 +233,18 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
     //
     {{
 
-    ITERATE(CLDS_Set, it, *objects_deleted) {
-        int id = *it;
+    {{
+    CLDS_Set::enumerator en = objects_deleted->first();
+    for ( ; en.valid(); ++en) {
+        int id = *en;
         m_db.seq_id_list.object_id = id;
         m_db.seq_id_list.Delete();
     }
+    }}
 
-    ITERATE(CLDS_Set, it, *annotations_deleted) {
-        int id = *it;
+    CLDS_Set::enumerator en = annotations_deleted->first();
+    for ( ; en.valid(); ++en) {
+        int id = *en;
         m_db.seq_id_list.object_id = id;
         m_db.seq_id_list.Delete();
     }
@@ -249,7 +255,7 @@ void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids,
 
 void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
 {
-    if (file_ids.empty())
+    if (file_ids.none())
         return;
 
     CLDS_Set objects_deleted;
@@ -257,8 +263,9 @@ void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
     DeleteCascadeFiles(file_ids, &objects_deleted, &annotations_deleted);
 
 
-    ITERATE(CLDS_Set, it, file_ids) {
-        int fid = *it;
+    CLDS_Set::enumerator en(file_ids.first());
+    for ( ; en.valid(); ++en) {
+        int fid = *en;
         m_db.file_db.file_id = fid;
 
         if (m_db.file_db.Fetch() == eBDB_Ok) {
@@ -271,6 +278,12 @@ void CLDS_Object::UpdateCascadeFiles(const CLDS_Set& file_ids)
             UpdateFileObjects(fid, fname, format);
         }
     } // ITERATE
+
+    // re-index
+
+    if (file_ids.any()) {
+        BuildSeqIdIdx();
+    }
 }
 
 
@@ -334,36 +347,6 @@ void CLDS_Object::UpdateFileObjects(int file_id,
                       fReadFasta_AllSeqIds |
                       fReadFasta_OneSeq    |
                       fReadFasta_NoSeqData);
-/*
-        SFastaFileMap fmap;
-
-        ReadFastaFileMap(&fmap, input);
-        int type_id;
-        {{
-        map<string, int>::const_iterator it = m_ObjTypeMap.find("FastaEntry");
-        _ASSERT(it != m_ObjTypeMap.end());
-        type_id = it->second;
-        }}
-
-        SFastaFileMap::TMapVector::const_iterator it;
-        for (it = fmap.file_map.begin(); it < fmap.file_map.end(); ++it) {
-
-            // concatenate all ids
-            string seq_ids;
-            ITERATE(SFastaFileMap::SFastaEntry::TFastaSeqIds, 
-                    it_id, it->all_seq_ids) {
-                seq_ids.append(*it_id);
-                seq_ids.append(" ");
-            }
-
-            SaveObject(file_id, 
-                       it->seq_id, 
-                       it->description, 
-                       seq_ids,
-                       it->stream_offset,
-                       type_id);
-        }
-*/        
     } else {
         LOG_POST(Info << "Unsupported file format: " << file_name);
     }
@@ -705,12 +688,257 @@ int CLDS_Object::FindMaxObjRecId()
 }
 
 
+void LDS_GetSequenceBase(const CSeq_id&   seq_id, 
+                         SLDS_SeqIdBase*  seqid_base)
+{
+    _ASSERT(seqid_base);
+
+    const CObject_id* obj_id_ptr = 0;
+    int   obj_id_int = 0;
+    const CTextseq_id* obj_id_txt = 0;
+    const CGiimport_id* obj_id_gii = 0;
+    const CPatent_seq_id* obj_id_patent = 0;
+    const CDbtag*         obj_id_dbtag = 0;
+    const CPDB_seq_id*    obj_id_pdb = 0;
+
+    switch (seq_id.Which()) {
+    case CSeq_id::e_Local:
+        obj_id_ptr = &seq_id.GetLocal();
+        break;
+    case CSeq_id::e_Gibbsq:
+        obj_id_int = seq_id.GetGibbsq();
+        break;
+    case CSeq_id::e_Gibbmt:
+        obj_id_int = seq_id.GetGibbmt();
+        break;
+    case CSeq_id::e_Giim:
+        obj_id_gii = &seq_id.GetGiim();
+        break;
+    case CSeq_id::e_Genbank:
+        obj_id_txt = &seq_id.GetGenbank();
+        break;
+    case CSeq_id::e_Embl:
+        obj_id_txt = &seq_id.GetEmbl();
+        break;
+    case CSeq_id::e_Pir:
+        obj_id_txt = &seq_id.GetPir();
+        break;
+    case CSeq_id::e_Swissprot:
+        obj_id_txt = &seq_id.GetSwissprot();
+        break;
+    case CSeq_id::e_Patent:
+        obj_id_patent = &seq_id.GetPatent();
+        break;
+    case CSeq_id::e_Other:
+        obj_id_txt = &seq_id.GetOther();
+        break;
+    case CSeq_id::e_General:
+        obj_id_dbtag = &seq_id.GetGeneral();
+        break;
+    case CSeq_id::e_Gi:
+        obj_id_int = seq_id.GetGi();
+        break;
+    case CSeq_id::e_Ddbj:
+        obj_id_txt = &seq_id.GetDdbj();
+        break;
+    case CSeq_id::e_Prf:
+        obj_id_txt = &seq_id.GetPrf();
+        break;
+    case CSeq_id::e_Pdb:
+        obj_id_pdb = &seq_id.GetPdb();
+        break;
+    case CSeq_id::e_Tpg:
+        obj_id_txt = &seq_id.GetTpg();
+        break;
+    case CSeq_id::e_Tpe:
+        obj_id_txt = &seq_id.GetTpe();
+        break;
+    case CSeq_id::e_Tpd:
+        obj_id_txt = &seq_id.GetTpd();
+        break;
+    case CSeq_id::e_Gpipe:
+        obj_id_txt = &seq_id.GetGpipe();
+        break;
+    default:
+        _ASSERT(0);
+        break;
+    }
+
+    const string* id_str = 0;
+
+    if (obj_id_ptr) {
+        switch (obj_id_ptr->Which()) {
+        case CObject_id::e_Id:
+            obj_id_int = obj_id_ptr->GetId();
+            break;
+        case CObject_id::e_Str:
+            id_str = &obj_id_ptr->GetStr();
+            break;
+        case CObject_id::e_not_set:
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (obj_id_int) {
+        seqid_base->int_id = obj_id_int;
+        seqid_base->str_id.erase();
+        return;
+    }
+
+    if (obj_id_txt) {
+        if (obj_id_txt->CanGetAccession()) {
+            const CTextseq_id::TAccession& acc = 
+                                obj_id_txt->GetAccession();
+            id_str = &acc;
+        } else {
+            if (obj_id_txt->CanGetName()) {
+                const CTextseq_id::TName& name =
+                    obj_id_txt->GetName();
+                id_str = &name;
+            }
+        }
+    }
+    if (id_str) {
+        seqid_base->int_id = 0;
+        seqid_base->str_id = *id_str;
+        return;
+    }
+
+
+    LOG_POST(Warning 
+             << "SeqId indexer: unsupported type " 
+             << seq_id.AsFastaString());
+
+    seqid_base->Init();
+
+}
+
+bool LDS_GetSequenceBase(const string&   seq_id_str, 
+                         SLDS_SeqIdBase* seqid_base,
+                         CSeq_id*        conv_seq_id)
+{
+    _ASSERT(seqid_base);
+
+    CRef<CSeq_id> tmp_seq_id;
+
+    if (conv_seq_id == 0) {
+        tmp_seq_id.Reset((conv_seq_id = new CSeq_id));
+
+    }
+
+    bool can_convert = true;
+
+    try {
+        conv_seq_id->Set(seq_id_str);
+    } catch (CSeqIdException&) {
+        try {
+            conv_seq_id->Set(CSeq_id::e_Local, 
+                                seq_id_str);
+        } catch (CSeqIdException&) {
+            can_convert = false;
+            LOG_POST(Error 
+                << "Cannot convert seq id string: "
+                << seq_id_str);
+            seqid_base->Init();
+        }
+    }
+
+    if (can_convert) {
+        LDS_GetSequenceBase(*conv_seq_id, seqid_base);
+    }
+
+    return can_convert;
+}
+
+
+/// Scanner functor to build id index
+///
+/// @internal
+///
+class CLDS_BuildIdIdx
+{
+public:
+    CLDS_BuildIdIdx(SLDS_TablesCollection& db)
+        : m_db(db),
+          m_SeqId(new CSeq_id)
+    {}
+
+    void operator()(SLDS_ObjectDB& dbf)
+    {
+        int object_id = dbf.object_id; // PK
+
+        if (!dbf.primary_seqid.IsNull()) {
+            dbf.primary_seqid.ToString(m_SeqId_Str);
+
+            x_AddToIdx(m_SeqId_Str, object_id);
+
+            dbf.seq_ids.ToString(m_SeqId_Str);
+            vector<string> seq_id_arr;
+            NStr::Tokenize(m_SeqId_Str, " ", seq_id_arr, NStr::eMergeDelims);
+            ITERATE (vector<string>, it, seq_id_arr) {
+                const string& seq_id_str = *it;
+                x_AddToIdx(seq_id_str, object_id);
+            }
+        }
+    }
+
+private:
+    void x_AddToIdx(const string& seq_id_str, int rec_id)
+    {
+        SLDS_SeqIdBase sbase;
+        bool can_convert = 
+            LDS_GetSequenceBase(seq_id_str, &sbase, &*m_SeqId);
+        if (can_convert) {
+            x_AddToIdx(sbase, rec_id);
+        }
+    }
+
+    void x_AddToIdx(const SLDS_SeqIdBase& sbase, int rec_id)
+    {
+        if (sbase.int_id) {
+            m_db.obj_seqid_int_idx.id = sbase.int_id;
+            m_db.obj_seqid_int_idx.row_id = rec_id;
+            m_db.obj_seqid_int_idx.Insert();
+        } 
+        else if (!sbase.str_id.empty()) {
+            m_db.obj_seqid_txt_idx.id = sbase.str_id;
+            m_db.obj_seqid_txt_idx.row_id = rec_id;
+            m_db.obj_seqid_txt_idx.Insert();
+        }
+    }
+private:
+    CLDS_BuildIdIdx(const CLDS_BuildIdIdx&);
+    CLDS_BuildIdIdx& operator=(const CLDS_BuildIdIdx&);
+
+private:
+    SLDS_TablesCollection& m_db;
+    string                 m_SeqId_Str;
+    CRef<CSeq_id>          m_SeqId;
+};
+
+void CLDS_Object::BuildSeqIdIdx()
+{
+    m_db.obj_seqid_int_idx.Truncate();
+    m_db.obj_seqid_txt_idx.Truncate();
+
+    LOG_POST(Info << "Building sequence id index on objects...");
+
+    CLDS_BuildIdIdx func(m_db);
+    BDB_iterate_file(m_db.object_db, func);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/06 16:17:27  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.4  2005/09/29 19:39:28  kuznets
  * Use callback based fasta scanner
  *

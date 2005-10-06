@@ -140,7 +140,7 @@ public:
         //
         ITERATE (vector<string>, it, m_SeqIds) {
             if (MatchSeqId(*seq_id_db, *it)) {
-                m_ResultSet->insert(tse_id ? tse_id : object_id);
+                m_ResultSet->set(tse_id ? tse_id : object_id);
                 return;
             }
         }
@@ -174,7 +174,7 @@ public:
 
             ITERATE (vector<string>, it2, m_SeqIds) {
                 if (MatchSeqId(*seq_id_db, *it2)) {
-                    m_ResultSet->insert(tse_id ? tse_id : object_id);
+                    m_ResultSet->set(tse_id ? tse_id : object_id);
                     return;
                 }
             }
@@ -219,7 +219,7 @@ public:
 
         ITERATE (vector<string>, it, m_SeqIds) {
             if (MatchSeqId(*seq_id_db, *it)) {
-                m_ResultSet->insert(object_id);
+                m_ResultSet->set(object_id);
                 return;
             }
         }
@@ -254,7 +254,7 @@ public:
     {
         int rowid = BDB_get_rowid(m_File);
         if (rowid) {
-            m_ResultSet.insert(rowid);
+            m_ResultSet.set(rowid);
         }
         return eContinue;
     }
@@ -284,8 +284,43 @@ bool CLDS_Query::FindFile(const string& path)
 void CLDS_Query::FindSequences(const vector<string>& seqids, 
                                CLDS_Set* obj_ids)
 {
-    CLDS_FindSeqIdFunctor search_func(m_db, seqids, obj_ids);
-    BDB_iterate_file(m_db.object_db, search_func);
+    CLDS_Set cand_set;
+
+    // pre-screening
+    {{
+    SLDS_SeqIdBase sbase;
+    CRef<CSeq_id> seq_id(new CSeq_id);
+
+    CBDB_FileCursor cur_int_idx(m_db.obj_seqid_int_idx);
+    cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
+
+    CBDB_FileCursor cur_txt_idx(m_db.obj_seqid_txt_idx);
+    cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
+
+    ITERATE(vector<string>, it, seqids) {
+        const string& seq_id_str = *it;
+        bool can_convert = 
+            LDS_GetSequenceBase(seq_id_str,
+                                &sbase,
+                                &*seq_id);
+        if (can_convert) {
+            ScreenSequence(sbase, &cand_set, cur_int_idx, cur_txt_idx);
+        }
+    }
+
+    }}
+
+    // search in pre-screened items
+
+    if (cand_set.any()) {
+        CLDS_FindSeqIdFunctor search_func(m_db, seqids, obj_ids);
+
+        CLDS_Set::enumerator en(cand_set.first());
+        CLDS_Set::enumerator en_end(cand_set.end());
+
+        BDB_iterate_file(m_db.object_db, en, en_end, search_func);
+    }
+
 }
 
 void CLDS_Query::FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids)
@@ -307,6 +342,45 @@ void CLDS_Query::FindSequences(const string& query_str, CLDS_Set* obj_ids)
 
     scanner.Scan(query); 
 }
+
+
+void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase& sbase, 
+                                CLDS_Set*             obj_ids)
+{
+    CBDB_FileCursor cur_int_idx(m_db.obj_seqid_int_idx);
+    cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
+
+    CBDB_FileCursor cur_txt_idx(m_db.obj_seqid_txt_idx);
+    cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
+
+    ScreenSequence(sbase, obj_ids, cur_int_idx, cur_txt_idx);
+}
+
+void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase&    sbase,
+                                CLDS_Set*                obj_ids,
+                                CBDB_FileCursor&         cur_int_idx,
+                                CBDB_FileCursor&         cur_txt_idx)
+{
+    _ASSERT(obj_ids);
+
+    int rec_id = 0;
+    if (sbase.int_id) {
+        cur_int_idx.From << sbase.int_id;
+        while (cur_int_idx.Fetch() == eBDB_Ok) {
+            rec_id = m_db.obj_seqid_int_idx.row_id;
+        }
+    } else if (!sbase.str_id.empty()) {
+        cur_txt_idx.From << sbase.str_id;
+        while (cur_txt_idx.Fetch() == eBDB_Ok) {
+            rec_id = m_db.obj_seqid_txt_idx.row_id;
+        }
+    }
+
+    if (rec_id) {
+        obj_ids->set(rec_id);
+    }
+}
+
 
 CLDS_Query::SObjectDescr 
 CLDS_Query::GetObjectDescr(const map<string, int>& type_map, 
@@ -474,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/06 16:17:27  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.14  2005/07/01 16:40:37  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *

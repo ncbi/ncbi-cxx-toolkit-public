@@ -146,6 +146,16 @@ void CLDS_Database::Create()
     m_db.seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                           CBDB_RawFile::eCreate);
+
+    LOG_POST(Info << "Creating LDS index: " << "obj_seqid_txt.idx");
+    fname = m_LDS_DirName + "obj_seqid_txt.idx"; 
+    m_db.obj_seqid_txt_idx.Open(fname.c_str(), 
+                                CBDB_RawFile::eCreate);
+
+    LOG_POST(Info << "Creating LDS index: " << "obj_seqid_int.idx");
+    fname = m_LDS_DirName + "obj_seqid_int.idx"; 
+    m_db.obj_seqid_int_idx.Open(fname.c_str(), 
+                                CBDB_RawFile::eCreate);
 }
 
 
@@ -157,7 +167,10 @@ void CLDS_Database::Sync()
 //    m_db.object_attr_db.Sync();
     m_db.object_db.Sync();
     m_db.object_type_db.Sync();
-    m_db.seq_id_list.Sync();    
+    m_db.seq_id_list.Sync();  
+
+    m_db.obj_seqid_txt_idx.Sync();
+    m_db.obj_seqid_int_idx.Sync();
 }
 
 
@@ -208,6 +221,14 @@ void CLDS_Database::Open()
     m_db.seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
                            CBDB_RawFile::eReadWrite);
+
+    fname = m_LDS_DirName + "obj_seqid_txt.idx"; 
+    m_db.obj_seqid_txt_idx.Open(fname.c_str(),
+                                CBDB_RawFile::eReadWrite);
+
+    fname = m_LDS_DirName + "obj_seqid_int.idx"; 
+    m_db.obj_seqid_int_idx.Open(fname.c_str(),
+                                CBDB_RawFile::eReadWrite);
 }
 
 void CLDS_Database::LoadTypeMap()
@@ -267,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/10/06 16:17:27  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.19  2005/09/19 14:40:16  kuznets
  * Merjing lds admin and lds libs together
  *

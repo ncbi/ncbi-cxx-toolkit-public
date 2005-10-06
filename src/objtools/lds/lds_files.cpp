@@ -82,7 +82,7 @@ void CLDS_File::SyncWithDir(const string& path,
         string fname(m_FileDB.file_name);
         set<string>::const_iterator fit = files.find(fname);
         if (fit == files.end()) { // not found
-            deleted->insert(m_FileDB.file_id);
+            deleted->set(m_FileDB.file_id);
 
             LOG_POST(Info << "LDS: File removed: " << fname);
         }
@@ -166,7 +166,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
             m_FileDB.Insert();
 
-            updated->insert(m_MaxRecId);
+            updated->set(m_MaxRecId);
 
             LOG_POST(Info << "New LDS file found: " << entry);
 
@@ -174,7 +174,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
         }
 
         if (tm != m_FileDB.time_stamp || file_size != m_FileDB.file_size) {
-            updated->insert(m_FileDB.file_id);
+            updated->set(m_FileDB.file_id);
             UpdateEntry(m_FileDB.file_id, 
                         entry, 
                         0, 
@@ -190,7 +190,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
                 crc = checksum.GetChecksum();
 
                 if (crc != m_FileDB.CRC) {
-                    updated->insert(m_FileDB.file_id);
+                    updated->set(m_FileDB.file_id);
                     UpdateEntry(m_FileDB.file_id, 
                                 entry, 
                                 crc, 
@@ -239,8 +239,9 @@ void CLDS_File::x_SyncWithDir(const string& path,
 
 void CLDS_File::Delete(const CLDS_Set& record_set)
 {
-    ITERATE(CLDS_Set, it, record_set) {
-        m_FileDB.file_id = *it;
+    CLDS_Set::enumerator en(record_set.first());
+    for ( ; en.valid(); ++en) {
+        m_FileDB.file_id = *en;
         m_FileDB.Delete();
     }
 
@@ -297,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/06 16:17:27  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.2  2005/09/26 15:51:22  kuznets
  * Fixed missing include(s)
  *

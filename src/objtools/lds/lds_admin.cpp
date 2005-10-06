@@ -62,6 +62,8 @@ void CLDS_Management::SyncWithDir(const string& dir_name,
     obj.DeleteCascadeFiles(files_deleted, 
                            &objects_deleted, &annotations_deleted);
     obj.UpdateCascadeFiles(files_updated);
+
+
     m_lds_db.Sync();
 }
 
@@ -138,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/06 16:17:27  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.1  2005/09/19 14:40:16  kuznets
  * Merjing lds admin and lds libs together
  *

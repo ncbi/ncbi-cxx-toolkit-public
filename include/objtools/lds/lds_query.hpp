@@ -33,6 +33,7 @@
 
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
+#include <objtools/lds/lds_object.hpp>
 #include <objmgr/util/obj_sniff.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -57,6 +58,15 @@ public:
     /// Scan the objects database, search for sequences.
     /// All found ids are added to the obj_ids set.
     void FindSequences(const vector<string>& seqids, CLDS_Set* obj_ids);
+
+    /// Non-exact search using sequence id index.
+    /// All found ids are added to the result set
+    void ScreenSequence(const SLDS_SeqIdBase& sbase, CLDS_Set* obj_ids);
+
+    void ScreenSequence(const SLDS_SeqIdBase&    sbase, 
+                        CLDS_Set*                obj_ids,
+                        CBDB_FileCursor&         cur_int_idx,
+                        CBDB_FileCursor&         cur_txt_idx);
 
     /// Scan seq_id_list, search for referred sequence ids .
     void FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids);
@@ -103,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/06 16:17:15  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.7  2005/01/13 17:37:21  kuznets
  * +GetTopSeqEntry
  *

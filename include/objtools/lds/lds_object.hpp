@@ -105,6 +105,9 @@ protected:
                    CNcbiStreamoff offset,
                    int            type_id);
 
+    /// Rebuild sequence id index
+    void BuildSeqIdIdx();
+
 private:
     CLDS_Object(const CLDS_Object&);
     CLDS_Object& operator=(const CLDS_Object&);
@@ -120,6 +123,33 @@ private:
     CRef<CScope>            m_Scope;        // OM Scope
 };
 
+/// Indexing base for sequence id, (accession or integer)
+///
+struct SLDS_SeqIdBase
+{
+    int      int_id;
+    string   str_id;
+
+    SLDS_SeqIdBase() : int_id(0) {}
+
+    void Init() { int_id = 0; str_id.erase(); }
+};
+
+class CSeq_id;
+
+/// Extract indexing base out of sequence id
+void LDS_GetSequenceBase(const CSeq_id& seq_id, SLDS_SeqIdBase* seqid_base);
+
+/// Extract indexing base out of sequence id
+///
+/// @return 
+///    TRUE if string conversion successful
+///
+bool LDS_GetSequenceBase(const string&   seq_id_str, 
+                         SLDS_SeqIdBase* seqid_base,
+                         CSeq_id*        conv_seq_id = 0);
+
+
 
 
 END_SCOPE(objects)
@@ -128,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/06 16:17:15  kuznets
+ * Implemented SeqId index
+ *
  * Revision 1.4  2005/09/29 19:39:23  kuznets
  * Use callback based fasta scanner
  *
