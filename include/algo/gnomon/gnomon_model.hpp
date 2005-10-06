@@ -162,8 +162,8 @@ public:
 
 
         void Insert(const CAlignExon& p);
-        TSignedSeqRange Limits() const { return front().Limits().CombinationWith(back().Limits()); }
-    //        void SetLimits(SIPair p) { m_limits = p; }
+        TSignedSeqRange Limits() const { return m_limits; }
+        void RecalculateLimits() { m_limits = empty()?TSignedSeqRange::GetEmpty():TSignedSeqRange(front().GetFrom(),back().GetTo()); }
         TSignedSeqRange CdsLimits() const { return m_cds_limits; }   // notincluding start/stop (shows frame)
         void SetCdsLimits(TSignedSeqRange p) { m_cds_limits = p; }
         TSignedSeqRange RealCdsLimits() const;     // including start/stop
@@ -230,7 +230,7 @@ public:
     template <class Vec>
         void GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap = 0, bool cdsonly = false) const;                     
         
-        // Below comparisons ignore CDS completely
+        // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
         
         int isCompatible(const CAlignVec& a) const;  // returns 0 for notcompatible or (number of common splices)+1
         bool SubAlign(const CAlignVec& a) const { return (Include(a.Limits(),Limits()) && isCompatible(a) > 0); }
@@ -248,6 +248,7 @@ protected:
 private:
     int m_type;
     EStrand m_strand;
+    TSignedSeqRange m_limits;
     int m_id;
     string m_name;
     EStatus m_status;
@@ -374,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/06 15:49:21  chetvern
+ * added precomputed limits to CAlignVec
+ *
  * Revision 1.5  2005/10/06 14:36:03  souvorov
  * Editorial corrections
  *
