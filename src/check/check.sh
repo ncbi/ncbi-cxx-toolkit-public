@@ -55,6 +55,18 @@ else
     sendmail="/usr/lib/sendmail -oi"
 fi
 
+# MIME headers intended to keep Outlook from mangling the body.
+# Perhaps we should hardcode UTF-8 rather than ISO 8859-1, but it's a
+# moot point since we'll generally just encounter ASCII.
+DoMime()
+{
+    cat <<EOF
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: 8bit
+EOF
+}
+
 ####  ERROR REPORT
 
 Error()
@@ -225,6 +237,7 @@ if test -n "$mail_list_full" ; then
       {
         echo "To: $mailto"
         echo "Subject: [C++ CHECK]  $subject"
+        DoMime
         echo
         echo "$subject"; echo
         cat $tmp_dst
@@ -239,6 +252,7 @@ if test -n "$mail_list"  -a  -s "$error_res" ; then
       {
         echo "To: $mailto"
         echo "Subject: [C++ ERRORS]  $subject"
+        DoMime
         echo
         echo "$subject"; echo
         cat $tmp_dst
@@ -254,6 +268,8 @@ if test -n "$stat_list" ; then
       {
         echo "To: $mailto"
         echo "Subject: [`date '+%Y-%m-%d %H:%M'`]  $subject"
+        DoMime
+        echo
         cat $tmp_dst
       } | $sendmail $mailto  ||  err_list="$err_list STAT_ERR:\"$loc\""
    done
@@ -265,6 +281,7 @@ if test -n "$watch_list" ; then
       {
         echo "To: $watch_list"
         echo "Subject: [C++ WATCH]  $signature"
+        DoMime
         echo
         echo "$err_list"
         echo
