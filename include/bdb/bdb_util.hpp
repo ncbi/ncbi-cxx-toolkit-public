@@ -57,6 +57,22 @@ void BDB_iterate_file(FL& dbf, Func& func)
     }
 }
 
+template<class FL, class IT, class Func>
+void BDB_iterate_file(FL& dbf, IT start, IT finish, Func& func)
+{
+    CBDB_BufferManager& kbuf = *dbf.GetKeyBuffer();
+    _ASSERT(kbuf.FieldCount() == 1);
+    CBDB_Field& fld = kbuf.GetField(0);
+
+    for( ;start != finish; ++start) {
+        unsigned id = *start;
+        fld.SetInt((int)id);
+        if (dbf.Fetch() == eBDB_Ok) {
+            func(dbf);
+        }
+    } // for
+}
+
 
 class CBoyerMooreMatcher;
 
@@ -94,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/06 15:27:03  kuznets
+ * + BDB_iterate_file() (can iterate file using result set iterators
+ *
  * Revision 1.5  2004/06/28 12:14:05  kuznets
  * BDB_find_field improved to search in non text fields too
  *
