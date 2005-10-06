@@ -40,6 +40,331 @@ BEGIN_SCOPE(gnomon)
 const double kLnHalf = log(0.5);
 const double kLnThree = log(3.);
 
+/* inline */ double CLorentz::ClosingScore(int l) const
+{
+    if(l == MaxLen()) return BadScore();
+    int i = (l-1)/m_step;
+    int delx = min((i+1)*m_step,MaxLen())-l;
+    double dely = (i == 0 ? 1 : m_clscore[i-1])-m_clscore[i];
+    return log(dely/m_step*delx+m_clscore[i]);
+}
+
+/* inline */ CHMM_State::CHMM_State(EStrand strn, int point) : m_stop(point), m_strand(strn), 
+                                      m_score(BadScore()), m_leftstate(0), m_terminal(0) 
+{
+    if(sm_seqscr == 0) 
+    {
+        NCBI_THROW(CGnomonException, eGenericError, "sm_seqscr is not initialised in HMM_State");
+    }
+}
+
+/* inline */ int CHMM_State::MinLen() const
+{
+    int minlen = 1;
+
+    if(!NoLeftEnd())
+    {
+        if(isPlus()) minlen += m_leftstate->m_terminal->Right();
+        else minlen += m_leftstate->m_terminal->Left();
+    }
+
+    if(!NoRightEnd())
+    {
+        if(isPlus()) minlen += m_terminal->Left();
+        else  minlen += m_terminal->Right();
+    }
+
+    return minlen;
+}
+
+/* inline */ int CHMM_State::RegionStart() const
+{
+    if(NoLeftEnd())  return 0;
+    else
+    {
+        int a = m_leftstate->m_stop+1;
+        if(isPlus()) a += m_leftstate->m_terminal->Right();
+        else a += m_leftstate->m_terminal->Left();
+        return a;
+    }
+}
+
+/* inline */ int CHMM_State::RegionStop() const
+{
+    if(NoRightEnd()) return sm_seqscr->SeqLen()-1;
+    else 
+    {
+        int b = m_stop;
+        if(isPlus()) b -= m_terminal->Left();
+        else  b -= m_terminal->Right();
+        return b;
+    }
+}
+
+/* inline */ bool CExon::StopInside() const
+{
+    int frame;
+    if(isPlus())
+    {
+        frame = (Phase()-Stop())%3;    // Stop()-Phase() is left codon end
+        if(frame < 0) frame += 3;
+    }
+    else
+    {
+        frame = (Phase()+Stop())%3;    // Stop()+Phase() is right codon end
+    }
+    
+    return sm_seqscr->StopInside(Start(),Stop(),Strand(),frame);
+}
+
+/* inline */ bool CExon::OpenRgn() const
+{
+    int frame;
+    if(isPlus())
+    {
+        frame = (Phase()-Stop())%3;    // Stop()-Phase() is left codon end
+        if(frame < 0) frame += 3;
+    }
+    else
+    {
+        frame = (Phase()+Stop())%3;    // Stop()+Phase() is right codon end
+    }
+    
+    return sm_seqscr->OpenCodingRegion(Start(),Stop(),Strand(),frame);
+}
+
+/* inline */ double CExon::RgnScore() const
+{
+    int frame;
+    if(isPlus())
+    {
+        frame = (Phase()-Stop())%3;
+        if(frame < 0) frame += 3;
+    }
+    else
+    {
+        frame = (Phase()+Stop())%3;
+    }
+    
+    return sm_seqscr->CodingScore(RegionStart(),RegionStop(),Strand(),frame);
+}
+
+/* inline */ void CExon::UpdatePrevExon(const CExon& e)
+{
+    m_mscore = max(Score(),e.MScore());
+    m_prevexon = &e;
+    while(m_prevexon != 0 && m_prevexon->Score() <= Score()) m_prevexon = m_prevexon->m_prevexon;
+}
+    
+/* inline */ CSingleExon::CSingleExon(EStrand strn, int point) : CExon(strn,point,2)
+{
+    if(!sm_initialised) Error("CExon is not initialised\n");
+    m_terminal = isPlus() ? &sm_seqscr->Stop() : &sm_seqscr->Start();
+    if(isMinus()) m_phase = 0;
+            
+    EvaluateInitialScore(*this);
+}
+        
+/* inline */ double CSingleExon::LengthScore() const 
+{
+    return sm_singlelen.Score(Stop()-Start()+1)+kLnThree;
+}
+
+/* inline */ double CSingleExon::TermScore() const
+{
+    if(isPlus()) return sm_seqscr->StopScore(Stop(),Strand());
+    else return sm_seqscr->StartScore(Stop(),Strand());
+}
+
+/* inline */ double CSingleExon::BranchScore(const CIntergenic& next) const 
+{ 
+    if(isPlus() || (Stop()-Start())%3 == 2) return kLnHalf;
+    else return BadScore();
+}
+
+/* inline */ CFirstExon::CFirstExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
+{
+    if(!sm_initialised) Error("CExon is not initialised\n");
+    if(isPlus())
+    {
+        m_terminal = &sm_seqscr->Donor();
+    }
+    else
+    {
+        m_phase = 0;
+        m_terminal = &sm_seqscr->Start();
+    }
+
+    EvaluateInitialScore(*this);
+}
+
+/* inline */ double CFirstExon::LengthScore() const
+{
+    int last = Stop()-Start();
+    return sm_firstlen.Score(last+1)+kLnThree+sm_firstphase[last%3];
+} 
+
+/* inline */ double CFirstExon::TermScore() const
+{
+    if(isPlus()) return sm_seqscr->DonorScore(Stop(),Strand());
+    else return sm_seqscr->StartScore(Stop(),Strand());
+}
+
+/* inline */ double CFirstExon::BranchScore(const CIntron& next) const
+{
+    if(Strand() != next.Strand()) return BadScore();
+
+    int ph = isPlus() ? Phase() : Phase()+Stop()-Start();
+
+    if((ph+1)%3 == next.Phase()) return 0;
+    else return BadScore();
+}
+
+/* inline */ CInternalExon::CInternalExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
+{
+    if(!sm_initialised) Error("CExon is not initialised\n");
+    m_terminal = isPlus() ? &sm_seqscr->Donor() : &sm_seqscr->Acceptor();
+            
+    EvaluateInitialScore(*this);
+}
+
+/* inline */ double CInternalExon::LengthScore() const 
+{
+    int ph0,ph1;
+    int last = Stop()-Start();
+    if(isPlus())
+    {
+        ph1 = Phase();
+        ph0 = (ph1-last)%3;
+        if(ph0 < 0) ph0 += 3;
+    }
+    else
+    {
+        ph0 = Phase();
+        ph1 = (ph0+last)%3;
+    }
+
+    return sm_internallen.Score(last+1)+kLnThree+sm_internalphase[ph0][ph1];
+}
+
+/* inline */ double CInternalExon::TermScore() const
+{
+    if(isPlus()) return sm_seqscr->DonorScore(Stop(),Strand());
+    else return sm_seqscr->AcceptorScore(Stop(),Strand());
+}
+
+/* inline */ CLastExon::CLastExon(EStrand strn, int ph, int point) : CExon(strn,point,ph)
+{
+    if(!sm_initialised) Error("CExon is not initialised\n");
+    if(isPlus())
+    {
+        m_phase = 2;
+        m_terminal = &sm_seqscr->Stop();
+    }
+    else
+    {
+        m_terminal = &sm_seqscr->Acceptor();
+    }
+
+    EvaluateInitialScore(*this);
+}
+
+/* inline */ double CLastExon::LengthScore() const 
+{
+    int last = Stop()-Start();
+    return sm_lastlen.Score(last+1)+kLnThree;
+}
+
+/* inline */ double CLastExon::TermScore() const
+{
+    if(isPlus()) return sm_seqscr->StopScore(Stop(),Strand());
+    else return sm_seqscr->AcceptorScore(Stop(),Strand());
+}
+
+/* inline */ double CLastExon::BranchScore(const CIntergenic& next) const 
+{ 
+    if(isPlus() || (Phase()+Stop()-Start())%3 == 2) return kLnHalf;
+    else return BadScore(); 
+}
+
+/* inline */ CIntron::CIntron(EStrand strn, int ph, int point) : CHMM_State(strn,point), m_phase(ph)
+{
+    if(!sm_initialised) Error("Intron is not initialised\n");
+    m_terminal = isPlus() ? &sm_seqscr->Acceptor() : &sm_seqscr->Donor();
+            
+    EvaluateInitialScore(*this);
+}
+
+/* inline */ double CIntron::ClosingLengthScore() const 
+{ 
+    return sm_intronlen.ClosingScore(Stop()-Start()+1); 
+}
+
+/* inline */ double CIntron::BranchScore(const CLastExon& next) const
+{
+    if(Strand() != next.Strand()) return BadScore();
+
+    if(isPlus())
+    {
+        int shift = next.Stop()-next.Start();
+        if((Phase()+shift)%3 == next.Phase()) return sm_lnTerminal;
+    }
+    else if(Phase() == next.Phase()) return sm_lnTerminal;
+            
+    return BadScore();
+}
+
+/* inline */ CIntergenic::CIntergenic(EStrand strn, int point) : CHMM_State(strn,point)
+{
+    if(!sm_initialised) Error("Intergenic is not initialised\n");
+    m_terminal = isPlus() ? &sm_seqscr->Start() : &sm_seqscr->Stop();
+            
+    EvaluateInitialScore(*this);
+}
+
+/* inline */ bool CIntergenic::OpenRgn() const
+{
+    return sm_seqscr->OpenIntergenicRegion(Start(),Stop());
+}
+
+/* inline */ double CIntergenic::RgnScore() const
+{
+    return sm_seqscr->IntergenicScore(RegionStart(),RegionStop(),Strand());
+}
+
+/* inline */ double CIntergenic::TermScore() const
+{
+    if(isPlus()) return sm_seqscr->StartScore(Stop(),Strand());
+    else return sm_seqscr->StopScore(Stop(),Strand());
+}
+
+/* inline */ double CIntergenic::BranchScore(const CFirstExon& next) const 
+{
+    if(&next == m_leftstate)
+    {
+        if(next.isMinus()) return sm_lnMulti;
+        else return BadScore();
+    }
+    else if(isPlus() && next.isPlus()) 
+    {
+        if((next.Stop()-next.Start())%3 == next.Phase()) return sm_lnMulti;
+        else return BadScore();
+    }
+    else return BadScore();
+}
+
+/* inline */ double CIntergenic::BranchScore(const CSingleExon& next) const 
+{
+    if(&next == m_leftstate)
+    {
+        if(next.isMinus()) return sm_lnSingle;
+        else return BadScore();
+    }
+    else if(isPlus() && next.isPlus() && 
+              (next.Stop()-next.Start())%3 == 2) return sm_lnSingle;
+    else return BadScore();
+}
+
 void CMarkovChain<0>::InitScore(CNcbiIfstream& from)
 {
     Init(from);
@@ -444,6 +769,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/10/06 15:51:20  chetvern
+ * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
+ *
  * Revision 1.2  2005/09/16 18:04:16  ucko
  * kBadScore has been replaced with an inline BadScore function that
  * always returns the same value to avoid lossage in optimized WorkShop
