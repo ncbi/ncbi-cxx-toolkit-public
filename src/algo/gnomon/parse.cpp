@@ -195,12 +195,11 @@ template<class L, class R> // template for all exons
 inline void s_MakeStep(vector<L>& lvec, vector<R>& rvec, int leftprot, int rightprot)
 {
     if(lvec.empty()) return;
-    int i = lvec.size()-1;
-    if(lvec[i].Stop() == rvec.back().Stop()) --i;
-    while(i >= 0 && s_ForwardStep(lvec[i--],rvec.back(),leftprot,rightprot));
+    typename vector<L>::reverse_iterator i = lvec.rbegin();
+    if(i->Stop() == rvec.back().Stop()) ++i;
+    for(;i != lvec.rend() && s_ForwardStep(*i,rvec.back(),leftprot,rightprot);++i);
     
-    if(rvec.size() > 1) 
-    {
+    if(rvec.size() > 1) {
         rvec.back().UpdatePrevExon(rvec[rvec.size()-2]);
     }
 }
@@ -210,16 +209,18 @@ inline void s_MakeStep(vector<L>& lvec, vector<CIntron>& rvec)
 {
     if(lvec.empty()) return;
     CIntron& right = rvec.back();
-    int i = lvec.size()-1;
+    typename vector<L>::reverse_iterator i = lvec.rbegin();
+
     int rlimit = right.Stop();
-    if(lvec[i].Stop() == rlimit) --i;
+    if(i->Stop() == rlimit) ++i;
     int nearlimit = max(0,rlimit-kTooFarLen);
-    while(i >= 0 && lvec[i].Stop() >= nearlimit) 
+    while(i != lvec.rend() && i->Stop() >= nearlimit) 
     {
-        if(!s_ForwardStep(lvec[i--],right)) return; 
+        if(!s_ForwardStep(*i,right)) return; 
+        ++i;
     }
-    if(i < 0) return; 
-    for(const L* p = &lvec[i]; p !=0; p = p->PrevExon())
+    if(i == lvec.rend()) return; 
+    for(const L* p = &*i; p !=0; p = p->PrevExon())
     {
         if(!s_ForwardStep(*p,right)) return; 
     }
@@ -316,6 +317,14 @@ inline void s_MakeStep(EStrand strand, int point, vector<L1> lvec1[][3], vector<
             if(rvec[k][phr].back().Score() == BadScore()) rvec[k][phr].pop_back();
         }
     }
+}
+
+double AddProbabilities(double scr1, double scr2)
+{
+    if(scr1 == BadScore()) return scr2;
+    else if(scr2 == BadScore()) return scr1;
+    else if(scr1 >= scr2)  return scr1+log(1+exp(scr2-scr1));
+    else return scr2+log(1+exp(scr1-scr2));
 }
 
 CParse::CParse(const CSeqScores& ss) : m_seqscr(ss)
@@ -461,9 +470,9 @@ void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) co
     const TFrameShifts& fshifts(FrameShifts());
     TFrameShifts::const_iterator fsi = fshifts.begin(); 
 
-    for(int i = 0; i < (int)size(); ++i)
+    ITERATE(CGene, i, *this)
     {
-        const CExonData& exon((*this)[i]);
+        const CExonData& exon(*i);
 
         to << m_contig << '\t';
         to << gnum << '\t' << mnum << '\t';
@@ -1143,6 +1152,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2005/10/06 15:52:41  chetvern
+ * replaced index loops thru vectors with iterator loops
+ *
  * Revision 1.8  2005/09/30 19:09:32  chetvern
  * moved frameshifts from CExonData to CGene
  *
