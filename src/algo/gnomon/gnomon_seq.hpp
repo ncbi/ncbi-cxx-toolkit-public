@@ -39,6 +39,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
+typedef vector<double> TDVec;
+
 enum EResidue { enA, enC, enG, enT, enN };
 class CEResidueVec : public vector<EResidue> {};
 
@@ -107,12 +109,12 @@ inline EResidue Complement(EResidue c)
     return k_toMinus[c];
 }
 
-template <class VecIt>
-void Complement(const VecIt& b, const VecIt& e)
+template <class BidirectionalIterator>
+void Complement(const BidirectionalIterator& first, const BidirectionalIterator& last)
 {
-    for (VecIt i = b; i != e; ++i)
+    for (BidirectionalIterator i( first ); i != last; ++i)
         *i = Complement(*i);
-    reverse(b, e);
+    reverse(first, last);
 }
 
 inline TResidue toACGT(EResidue c)
@@ -139,6 +141,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/06 15:50:42  chetvern
+ * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
+ * renamed template parameter VecIt to more exact BidirectionalIterator
+ *
  * Revision 1.2  2005/09/30 19:08:34  chetvern
  * added in-place sequence Complement function
  *
