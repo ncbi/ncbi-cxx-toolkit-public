@@ -40,7 +40,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-/* inline */ bool CSeqScores::isStart(int i, int strand) const
+bool CSeqScores::isStart(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
     int ii = (strand == ePlus) ? i : SeqLen()-1-i;
@@ -49,7 +49,7 @@ BEGIN_SCOPE(gnomon)
     else return true;
 }
 
-/* inline */ bool CSeqScores::isStop(int i, int strand) const
+bool CSeqScores::isStop(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
     int ii = (strand == ePlus) ? i : SeqLen()-1-i;
@@ -60,7 +60,7 @@ BEGIN_SCOPE(gnomon)
     else return true;
 }
 
-/* inline */ bool CSeqScores::isAG(int i, int strand) const
+bool CSeqScores::isAG(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
     int ii = (strand == ePlus) ? i : SeqLen()-1-i;
@@ -69,7 +69,7 @@ BEGIN_SCOPE(gnomon)
     else return true;
 }
 
-/* inline */ bool CSeqScores::isGT(int i, int strand) const
+bool CSeqScores::isGT(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
     int ii = (strand == ePlus) ? i : SeqLen()-1-i;
@@ -78,7 +78,7 @@ BEGIN_SCOPE(gnomon)
     else return true;
 }
 
-/* inline */ bool CSeqScores::isConsensusIntron(int i, int j, int strand) const
+bool CSeqScores::isConsensusIntron(int i, int j, int strand) const
 {
     if(strand == ePlus) return (m_dscr[ePlus][i-1] != BadScore()) && (m_ascr[ePlus][j] != BadScore());
     else                return (m_ascr[eMinus][i-1] != BadScore()) && (m_dscr[eMinus][j] != BadScore());
@@ -86,24 +86,24 @@ BEGIN_SCOPE(gnomon)
 //    else return isAG(i,strand) && isGT(j,strand);
 }
 
-/* inline */ const EResidue* CSeqScores::SeqPtr(int i, int strand) const
+const EResidue* CSeqScores::SeqPtr(int i, int strand) const
 {
     const CEResidueVec& ss = m_seq[strand];
     int ii = (strand == ePlus) ? i : SeqLen()-1-i;
     return &ss.front()+ii;
 }
 
-/* inline */ bool CSeqScores::StopInside(int a, int b, int strand, int frame) const
+bool CSeqScores::StopInside(int a, int b, int strand, int frame) const
 {
     return (a <= m_laststop[strand][frame][b]);
 }
 
-/* inline */ bool CSeqScores::OpenCodingRegion(int a, int b, int strand, int frame) const
+bool CSeqScores::OpenCodingRegion(int a, int b, int strand, int frame) const
 {
     return (a > m_notinexon[strand][frame][b]);
 }
 
-/* inline */ double CSeqScores::CodingScore(int a, int b, int strand, int frame) const
+double CSeqScores::CodingScore(int a, int b, int strand, int frame) const
 {
     if(a > b) return 0; // for splitted start/stop
     double score = m_cdrscr[strand][frame][b];
@@ -111,26 +111,26 @@ BEGIN_SCOPE(gnomon)
     return score;
 }
 
-/* inline */ double CSeqScores::NonCodingScore(int a, int b, int strand) const
+double CSeqScores::NonCodingScore(int a, int b, int strand) const
 {
     double score = m_ncdrscr[strand][b];
     if(a > 0) score -= m_ncdrscr[strand][a-1];
     return score;
 }
 
-/* inline */ bool CSeqScores::OpenIntergenicRegion(int a, int b) const
+bool CSeqScores::OpenIntergenicRegion(int a, int b) const
 {
     return (a > m_notining[b]);
 } 
 
-/* inline */ double CSeqScores::IntergenicScore(int a, int b, int strand) const
+double CSeqScores::IntergenicScore(int a, int b, int strand) const
 {
     double score = m_ingscr[strand][b];
     if(a > 0) score -= m_ingscr[strand][a-1];
     return score;
 }
 
-/* inline */ int CSeqScores::SeqMap(int i, EMove move, int* dellenp) const 
+int CSeqScores::SeqMap(int i, EMove move, int* dellenp) const 
 {
     if(dellenp != 0) *dellenp = 0;
     int l = m_seq_map[i];
@@ -165,7 +165,7 @@ BEGIN_SCOPE(gnomon)
     }
 }
 
-/* inline */ TSignedSeqPos CSeqScores::RevSeqMap(TSignedSeqPos i) const 
+TSignedSeqPos CSeqScores::RevSeqMap(TSignedSeqPos i) const 
 {
     int l = m_rev_seq_map[i-From()];
     if(l >= 0) 
@@ -178,7 +178,7 @@ BEGIN_SCOPE(gnomon)
     }
 }
 
-/* inline */ double AddScores(double scr1, double scr2)
+double AddScores(double scr1, double scr2)
 {
     if(scr1 == BadScore() || scr2 == BadScore()) return BadScore();
     else return scr1+scr2;
@@ -971,7 +971,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
     int len = m_data->m_seq.size();
     int num = model.size();
     EStrand strand = model.Strand();
-    const CAlignVec& exons = model;
+    const vector<CAlignExon>& exons = model;
 
     const CDoubleStrandSeq& ds = m_data->m_ds;
     CEResidueVec cds, cds_extra;
@@ -1369,6 +1369,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2005/10/06 16:00:20  chetvern
+ * removed commented out word 'inline'
+ *
  * Revision 1.4  2005/10/06 15:52:13  chetvern
  * moved methods that compiler doesn't make inline anyway from hmm_inlines.hpp to hmm.cpp and score.cpp
  *
