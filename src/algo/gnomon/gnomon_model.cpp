@@ -58,6 +58,21 @@ int CAlignVec::FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const
         return len;
 }
 
+template <typename Vec>
+class vec_traits {
+public:
+    typedef typename Vec::value_type value_type;
+    static value_type _fromACGT(TResidue x)
+    { return x; }
+};
+template<>
+class vec_traits<CEResidueVec> {
+public:
+    typedef CEResidueVec::value_type value_type;
+    static value_type _fromACGT(TResidue x)
+    { return fromACGT(x); }
+};
+
 template <class Vec>
 void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdsonly) const
 {
@@ -91,7 +106,7 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
                 ++fsi;
             } else if (fsi != FrameShifts().end() && fsi->IsDeletion() && k == fsi->Loc()) {
                 for(int j = 0; j < fsi->Len(); ++j) {
-                    mrna.push_back(fromACGT(fsi->DeletedValue()[j]));
+                    mrna.push_back(vec_traits<Vec>::_fromACGT(fsi->DeletedValue()[j]));
                     if(mrnamap != 0) mrnamap->push_back(-1);
                 }
 
@@ -106,7 +121,7 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
         {
             for(int j = 0; j < fsi->Len(); ++j)
             {
-                mrna.push_back(fromACGT(fsi->DeletedValue()[j]));
+                mrna.push_back(vec_traits<Vec>::_fromACGT(fsi->DeletedValue()[j]));
                 if(mrnamap != 0) mrnamap->push_back(-1);
             }
         }
@@ -167,11 +182,12 @@ TSignedSeqRange CAlignVec::RealCdsLimits() const
 
 int CAlignVec::MutualExtension(const CAlignVec& a) const
 {
-    if(Strand() != a.Strand()) return 0;
-    TSignedSeqRange limits = Limits();
-    TSignedSeqRange alimits = a.Limits();
-    if(!limits.IntersectingWith(alimits) || 
-       Include(limits,alimits) || Include(alimits,limits)) return 0;
+    //    if(Strand() != a.Strand()) return 0;
+    const TSignedSeqRange limits = Limits();
+    const TSignedSeqRange alimits = a.Limits();
+
+    const int intersection = (limits & alimits).GetLength();
+    if (intersection==0 || intersection==limits.GetLength() || intersection==alimits.GetLength()) return 0;
     
     return isCompatible(a);
 }
@@ -213,7 +229,7 @@ int CAlignVec::isCompatible(const CAlignVec& a) const
 {
     const CAlignVec& b = *this;  // shortcut to this alignment
 
-    if(b.Strand() != a.Strand()) return 0;
+    //    if(b.Strand() != a.Strand()) return 0;
     TSignedSeqRange intersect(a.Limits() & b.Limits());
     if(intersect.Empty()) return 0;
     
@@ -286,16 +302,14 @@ int CAlignVec::isCompatible(const CAlignVec& a) const
 
 void CAlignVec::Insert(const CAlignExon& p)
 {
-//     m_limits.GetFrom() = min(m_limits.GetFrom(),p.GetFrom());
-//     m_limits.GetTo() = max(m_limits.GetTo(),p.GetTo());
+    m_limits += p.Limits();
     push_back(p);
 }
 
 void CAlignVec::Init()
 {
     clear();
-//     m_limits.GetFrom() = numeric_limits<int>::max();
-//     m_limits.GetTo() = 0;
+    m_limits = TSignedSeqRange::GetEmpty();
     m_cds_limits = TSignedSeqRange::GetEmpty();
     m_max_cds_limits = TSignedSeqRange::GetEmpty();
     m_open_cds = false;
@@ -311,13 +325,13 @@ void CAlignVec::Extend(const CAlignVec& a)
     m_max_cds_limits = tmp.m_max_cds_limits.CombinationWith(a.m_max_cds_limits);
     
     int i;
-    for(i = 0; a[i].GetTo() < tmp.front().GetFrom(); ++i) Insert(a[i]);
+    for(i = 0; a[i].GetTo() < tmp.front().GetFrom(); ++i) push_back(a[i]);
     if(a[i].GetFrom() <= tmp.front().GetFrom())
     {
         tmp.front().Limits().SetFrom( a[i].GetFrom() );
         tmp.front().m_fsplice = a[i].m_fsplice;
     }
-    for(i = 0; i < (int)tmp.size(); ++i) Insert(tmp[i]);
+    for(i = 0; i < (int)tmp.size(); ++i) push_back(tmp[i]);
     
     if(a.Limits().GetTo() > back().GetTo())
     {
@@ -327,11 +341,10 @@ void CAlignVec::Extend(const CAlignVec& a)
             back().Limits().SetTo( a[i].GetTo() );
             back().m_ssplice = a[i].m_ssplice;
         }
-        for(++i; i < (int)a.size(); ++i) Insert(a[i]);
+        for(++i; i < (int)a.size(); ++i) push_back(a[i]);
     }
     
-//     m_limits.GetFrom() = front().GetFrom();
-//     m_limits.GetTo() = back().GetTo();
+    RecalculateLimits();
     
     m_fshifts.swap(tmp.m_fshifts);
     m_fshifts.insert(m_fshifts.end(),a.m_fshifts.begin(),a.m_fshifts.end());
@@ -727,6 +740,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/06 15:50:07  chetvern
+ * fixed unnecessary Residue conversion in GetSequence
+ * removed strand comparison from CAlignVec's MutualExtension and isCompatible methods
+ * added precomputed limits to CAlignVec
+ *
  * Revision 1.2  2005/09/30 19:07:15  chetvern
  * removed m_contig from CClusterSet
  * styling changes
