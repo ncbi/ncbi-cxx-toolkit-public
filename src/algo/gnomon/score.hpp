@@ -34,12 +34,14 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include "hmm.hpp"
+#include "gnomon_seq.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
 
-
+class CTerminal;
+class CCodingRegion;
+class CNonCodingRegion;
 
 class CSeqScores
 {
@@ -72,7 +74,7 @@ class CSeqScores
         double CodingScore(int a, int b, int strand, int frame) const;
         int ProtNumber(int a, int b) const { return (m_protnum[b]-m_protnum[a]); }
         double MultiProtPenalty() const { return m_mpp; }
-        bool OpenNonCodingRegion(int a, int b, int strand) const;
+        bool OpenNonCodingRegion(int a, int b, int strand) const { return (a > m_notinintron[strand][b]); }
         double NonCodingScore(int a, int b, int strand) const;
         bool OpenIntergenicRegion(int a, int b) const;
         int LeftAlignmentBoundary(int b) const { return m_inalign[b]; }
@@ -120,6 +122,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/06 15:53:02  chetvern
+ * removed dependency on hmm.hpp
+ * moved CSeqScores::OpenNonCodingRegion implementation into the class definition to make it inline
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *
