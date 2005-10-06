@@ -138,6 +138,7 @@ struct SLDS_SeqIdBase
 class CSeq_id;
 
 /// Extract indexing base out of sequence id
+NCBI_LDS_EXPORT
 void LDS_GetSequenceBase(const CSeq_id& seq_id, SLDS_SeqIdBase* seqid_base);
 
 /// Extract indexing base out of sequence id
@@ -145,6 +146,7 @@ void LDS_GetSequenceBase(const CSeq_id& seq_id, SLDS_SeqIdBase* seqid_base);
 /// @return 
 ///    TRUE if string conversion successful
 ///
+NCBI_LDS_EXPORT
 bool LDS_GetSequenceBase(const string&   seq_id_str, 
                          SLDS_SeqIdBase* seqid_base,
                          CSeq_id*        conv_seq_id = 0);
@@ -158,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/06 18:45:08  kuznets
+ * + dll export specs
+ *
  * Revision 1.5  2005/10/06 16:17:15  kuznets
  * Implemented SeqId index
  *
