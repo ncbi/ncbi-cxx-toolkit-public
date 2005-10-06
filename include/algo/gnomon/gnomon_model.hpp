@@ -163,7 +163,14 @@ public:
 
         void Insert(const CAlignExon& p);
         TSignedSeqRange Limits() const { return m_limits; }
-        void RecalculateLimits() { m_limits = empty()?TSignedSeqRange::GetEmpty():TSignedSeqRange(front().GetFrom(),back().GetTo()); }
+        void RecalculateLimits()
+        {
+            if (empty()) {
+                m_limits = TSignedSeqRange::GetEmpty();
+            } else {
+                m_limits = TSignedSeqRange(front().GetFrom(),back().GetTo());
+            }
+        }
         TSignedSeqRange CdsLimits() const { return m_cds_limits; }   // notincluding start/stop (shows frame)
         void SetCdsLimits(TSignedSeqRange p) { m_cds_limits = p; }
         TSignedSeqRange RealCdsLimits() const;     // including start/stop
@@ -375,6 +382,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/06 18:08:39  ucko
+ * Tweak RecalculateLimits, as some compiler versions took issue with
+ * its use of ?:.
+ *
  * Revision 1.6  2005/10/06 15:49:21  chetvern
  * added precomputed limits to CAlignVec
  *
