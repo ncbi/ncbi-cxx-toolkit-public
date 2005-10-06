@@ -117,6 +117,11 @@ int CGnomonEngine::GetGCcontent() const
     return m_data->m_gccontent;
 }
 
+string CGnomonEngine::GetSeqName() const
+{
+    return m_data->m_seqname;
+}
+
 double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mpp)
 {
     static TAlignList cls;
@@ -185,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/10/06 14:34:25  souvorov
+ * CGnomonEngine::GetSeqName() introduced
+ *
  * Revision 1.2  2005/09/27 17:13:59  chetvern
  * fix gc-content calculation
  *

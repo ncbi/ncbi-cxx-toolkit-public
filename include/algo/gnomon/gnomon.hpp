@@ -67,6 +67,7 @@ public:
     void ResetRange(TSignedSeqPos from, TSignedSeqPos to) { ResetRange(TSignedSeqRange(from,to)); }
 
     int GetGCcontent() const;
+    string GetSeqName() const;
     static int GetMinIntronLen();
 
     // calculate gnomon score for a gene model
@@ -122,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/06 14:34:25  souvorov
+ * CGnomonEngine::GetSeqName() introduced
+ *
  * Revision 1.3  2005/09/15 21:16:01  chetvern
  * redesigned API
  *
