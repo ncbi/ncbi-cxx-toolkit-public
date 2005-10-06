@@ -31,19 +31,23 @@
 
 
 #include <ncbi_pch.hpp>
+
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 #include <objtools/lds/lds_reader.hpp>
 #include <objtools/lds/lds_util.hpp>
+#include <objtools/lds/lds.hpp>
+#include <objtools/lds/lds_object.hpp>
 
 #include <objects/general/Object_id.hpp>
 
 #include <bdb/bdb_util.hpp>
-#include <objtools/lds/lds.hpp>
+
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/data_loader_factory.hpp>
+
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
@@ -326,7 +330,112 @@ void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
     SetName(dl_name);
 }
 
+CDataLoader::TTSE_LockSet
+CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
+                            EChoice /* choice */)
+{
+    TTSE_LockSet locks;
+    CHandleRangeMap hrmap;
+    hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
 
+    SLDS_TablesCollection& db = m_LDS_db->GetTables();
+    CLDS_Query lds_query(db);
+
+    // index screening
+    CLDS_Set       cand_set;
+    {{
+    CBDB_FileCursor cur_int_idx(db.obj_seqid_int_idx);
+    cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
+
+    CBDB_FileCursor cur_txt_idx(db.obj_seqid_txt_idx);
+    cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
+
+    SLDS_SeqIdBase sbase;
+
+    ITERATE (CHandleRangeMap, it, hrmap) {
+        CSeq_id_Handle seq_id_hnd = it->first;
+        CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
+
+        LDS_GetSequenceBase(*seq_id, &sbase);
+
+        lds_query.ScreenSequence(sbase, 
+                                 &cand_set, 
+                                 cur_int_idx, 
+                                 cur_txt_idx);
+
+
+    } // ITER
+
+    }}
+
+    // finding matching sequences using pre-screened result set
+
+    CLDS_FindSeqIdFunc search_func(m_LDS_db->GetTables(), hrmap);
+    if (cand_set.any()) {
+
+        BDB_iterate_file(db.object_db, 
+                         cand_set.first(), cand_set.end(), 
+                         search_func);        
+    }
+
+
+    // load objects
+
+    const CLDS_FindSeqIdFunc::TDisposition& disposition = 
+                                        search_func.GetResultDisposition();
+
+    CDataSource* data_source = GetDataSource();
+    _ASSERT(data_source);
+
+    CLDS_FindSeqIdFunc::TDisposition::const_iterator it;
+    for (it = disposition.begin(); it != disposition.end(); ++it) {
+        const SLDS_ObjectDisposition& obj_disp = *it;
+        int object_id = 
+            obj_disp.tse_id ? obj_disp.tse_id : obj_disp.object_id;
+
+        // check if we can extract seq-entry out of binary bioseq-set file
+        //
+        //   (this trick has been added by kuznets (Jan-12-2005) to read 
+        //    molecules out of huge refseq files)
+        {
+            CLDS_Query query(db);
+            CLDS_Query::SObjectDescr obj_descr = 
+                query.GetObjectDescr(
+                                 m_LDS_db->GetObjTypeMap(),
+                                 obj_disp.tse_id, false/*do not trace to top*/);
+            if ((obj_descr.is_object && obj_descr.id > 0)      &&
+                (obj_descr.format == CFormatGuess::eBinaryASN) &&
+                (obj_descr.type_str == "Bioseq-set")
+               ) {
+               obj_descr = 
+                    query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
+                                         obj_disp.object_id);
+               object_id = obj_descr.id;
+            }
+        }
+
+        CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
+        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
+        if ( !load_lock.IsLoaded() ) {
+            CRef<CSeq_entry> seq_entry = 
+                LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), 
+                            object_id, false/*dont trace to top*/);
+            if ( !seq_entry ) {
+                NCBI_THROW2(CBlobStateException, eBlobStateError,
+                            "cannot load blob",
+                            CBioseq_Handle::fState_no_data);
+            }
+            load_lock->SetSeq_entry(*seq_entry);
+            load_lock.SetLoaded();
+        }
+        locks.insert(load_lock);
+    }
+
+
+    return locks;
+}
+
+#if 0
 CDataLoader::TTSE_LockSet
 CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
                             EChoice /* choice */)
@@ -391,6 +500,8 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
     }
     return locks;
 }
+#endif
+
 
 bool CLDS_DataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
 {
@@ -521,6 +632,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/10/06 16:23:55  kuznets
+ * Search using LDS SeqId index
+ *
  * Revision 1.31  2005/09/26 15:27:39  kuznets
  * Fixed a bug in searching in alternative ids
  *
