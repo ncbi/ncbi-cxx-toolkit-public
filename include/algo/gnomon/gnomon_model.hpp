@@ -179,10 +179,10 @@ public:
         int Type() const { return m_type; }
         void SetID(int i) { m_id = i; }
         int ID() const { return m_id; }
-    void SetName(const string& name) { m_name = name; }
-    const string& Name() const { return m_name; }
-    void ChangeStatus(EStatus status) { m_status = status; }
-    EStatus Status() const { return m_status; }
+        void SetName(const string& name) { m_name = name; }
+        const string& Name() const { return m_name; }
+        void ChangeStatus(EStatus status) { m_status = status; }
+        EStatus Status() const { return m_status; }
         bool operator<(const CAlignVec& a) const { return Precede(Limits(),a.Limits()); }
         void Init();
         void SetScore(double s) { m_score = s; }
@@ -374,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/06 14:36:03  souvorov
+ * Editorial corrections
+ *
  * Revision 1.4  2005/09/30 18:57:53  chetvern
  * added m_status and m_name to CAlignVec
  * removed m_contig from CClusterSet
