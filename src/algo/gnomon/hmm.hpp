@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
 #include "gnomon_seq.hpp"
+#include "score.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -43,8 +44,6 @@ extern const double          kLnHalf;
 extern const double          kLnThree;
        const int             kTooFarLen = 500;
 
-
-typedef vector<double> TDVec;
 
 template<int order> class CMarkovChain
 {
@@ -279,7 +278,7 @@ class CHMM_State : public CInputModel
         int Start() const { return m_leftstate ? m_leftstate->m_stop+1 : 0; }
         bool NoRightEnd() const { return m_stop < 0; }
         bool NoLeftEnd() const { return m_leftstate == 0; }
-    int Stop() const;
+    int Stop() const { return NoRightEnd() ? sm_seqscr->SeqLen()-1 : m_stop; }
         int RegionStart() const;
         int RegionStop() const;
         virtual SStateScores GetStateScores() const = 0;
@@ -403,18 +402,35 @@ class CIntron : public CHMM_State
         int MinLen() const { return sm_intronlen.MinLen(); }
         int MaxLen() const { return sm_intronlen.MaxLen(); }
         int Phase() const { return m_phase; }
-        bool OpenRgn() const;
+        bool OpenRgn() const { return sm_seqscr->OpenNonCodingRegion(Start(),Stop(),Strand()); }
         double RgnScore() const { return 0; }   // Intron scores are substructed from all others
-        double TermScore() const;
+    double TermScore() const
+    {
+        if(isPlus()) return sm_seqscr->AcceptorScore(Stop(),Strand());
+        else return sm_seqscr->DonorScore(Stop(),Strand());
+    }
         double DenScore() const { return sm_lnDen[Phase()]; }
-        double LengthScore() const;
+    double LengthScore() const
+    {
+        if(SplittedStop()) return BadScore();
+        else return sm_intronlen.Score(Stop()-Start()+1);
+    }
         double ClosingLengthScore() const;
         double ThroughLengthScore() const  { return sm_lnThrough[Phase()]; }
         double InitialLengthScore() const { return sm_lnDen[Phase()]+ClosingLengthScore(); }  // theoretically we should substract log(AvLen) but it gives to much penalty to the first element
         double BranchScore(const CHMM_State& next) const { return BadScore(); }
         double BranchScore(const CLastExon& next) const;
         double BranchScore(const CInternalExon& next) const;
-        bool SplittedStop() const;
+    bool SplittedStop() const
+    {
+        if(Phase() == 0 || NoLeftEnd() || NoRightEnd())
+            return false;
+        else if (isPlus())
+            return sm_seqscr->SplittedStop(LeftState()->Stop(),Stop(),Strand(),Phase()-1);
+        else
+            return sm_seqscr->SplittedStop(Stop(),LeftState()->Stop(),Strand(),Phase()-1);
+    }
+
 
         SStateScores GetStateScores() const { return CalcStateScores(*this); }
         string GetStateName() const { return "Intron"; }
@@ -426,6 +442,30 @@ class CIntron : public CHMM_State
         static CLorentz sm_intronlen;
         static bool sm_initialised;
 };
+
+inline double CIntron::BranchScore(const CInternalExon& next) const
+{
+    if(Strand() != next.Strand()) return BadScore();
+
+    if(isPlus())
+    {
+        int shift = next.Stop()-next.Start();
+        if((Phase()+shift)%3 == next.Phase()) return sm_lnInternal;
+    }
+    else if(Phase() == next.Phase()) return sm_lnInternal;
+            
+    return BadScore();
+}
+
+inline double CInternalExon::BranchScore(const CIntron& next) const
+{
+    if(Strand() != next.Strand()) return BadScore();
+
+    int ph = isPlus() ? Phase() : Phase()+Stop()-Start();
+
+    if((ph+1)%3 == next.Phase()) return 0;
+    else return BadScore();
+}
 
 class CIntergenic : public CHMM_State
 {
@@ -462,6 +502,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/06 15:51:43  chetvern
+ * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
+ * moved several most frequently called methods implementations into class definitions to make them inline
+ *
  * Revision 1.2  2005/09/16 18:04:16  ucko
  * kBadScore has been replaced with an inline BadScore function that
  * always returns the same value to avoid lossage in optimized WorkShop
