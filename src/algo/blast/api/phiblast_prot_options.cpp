@@ -46,9 +46,6 @@ BEGIN_SCOPE(blast)
 CPHIBlastProtOptionsHandle::CPHIBlastProtOptionsHandle(EAPILocality locality)
     : CBlastProteinOptionsHandle(locality)
 {
-    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
-        return;
-    }
     SetDefaults();
     m_Opts->SetProgram(ePHIBlastp);
 }
@@ -63,6 +60,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/06 19:43:08  camacho
+ * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
+ * Fixes problem with uninitializes program and service name for CRemoteBlast.
+ *
  * Revision 1.2  2005/06/16 19:36:44  dondosha
  * Derive PHI BLAST protein options handle directly from general protein options handle
  *

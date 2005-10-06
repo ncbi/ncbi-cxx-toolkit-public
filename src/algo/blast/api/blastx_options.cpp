@@ -47,9 +47,6 @@ BEGIN_SCOPE(blast)
 CBlastxOptionsHandle::CBlastxOptionsHandle(EAPILocality locality)
     : CBlastProteinOptionsHandle(locality)
 {
-    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
-        return;
-    }
     SetDefaults();
     m_Opts->SetProgram(eBlastx);
 }
@@ -92,6 +89,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/06 19:43:07  camacho
+ * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
+ * Fixes problem with uninitializes program and service name for CRemoteBlast.
+ *
  * Revision 1.4  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

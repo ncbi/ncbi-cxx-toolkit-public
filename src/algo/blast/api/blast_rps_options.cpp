@@ -48,9 +48,6 @@ BEGIN_SCOPE(blast)
 CBlastRPSOptionsHandle::CBlastRPSOptionsHandle(EAPILocality locality)
     : CBlastOptionsHandle(locality)
 {
-    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
-        return;
-    }
     SetDefaults();
     m_Opts->SetProgram(eRPSBlast);
 }
@@ -139,6 +136,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/10/06 19:43:07  camacho
+ * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
+ * Fixes problem with uninitializes program and service name for CRemoteBlast.
+ *
  * Revision 1.13  2005/05/16 12:24:37  madden
  * Remove references to [GS]etPrelimHitlistSize
  *

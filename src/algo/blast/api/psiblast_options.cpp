@@ -46,12 +46,12 @@ BEGIN_SCOPE(blast)
 CPSIBlastOptionsHandle::CPSIBlastOptionsHandle(EAPILocality locality)
     : CBlastAdvancedProteinOptionsHandle(locality)
 {
+    SetDefaults();
+    m_Opts->SetProgram(ePSIBlast);
     if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
         return;
     }
-    SetDefaults();
     SetPSIBlastDefaults();
-    m_Opts->SetProgram(ePSIBlast);
 }
 
 void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
@@ -70,6 +70,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/06 19:43:08  camacho
+ * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
+ * Fixes problem with uninitializes program and service name for CRemoteBlast.
+ *
  * Revision 1.6  2005/06/02 16:19:01  camacho
  * Remove LookupTableOptions::use_pssm
  *

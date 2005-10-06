@@ -47,9 +47,6 @@ BEGIN_SCOPE(blast)
 CDiscNucleotideOptionsHandle::CDiscNucleotideOptionsHandle(EAPILocality locality)
     : CBlastNucleotideOptionsHandle(locality)
 {
-    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
-        return;
-    }
     SetDefaults();
     m_Opts->SetProgram(eBlastn);
 }
@@ -106,6 +103,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/10/06 19:43:07  camacho
+ * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
+ * Fixes problem with uninitializes program and service name for CRemoteBlast.
+ *
  * Revision 1.11  2005/01/10 13:37:53  madden
  * Removed call to SetSeedExtensionMethod as it no longer exists
  *
