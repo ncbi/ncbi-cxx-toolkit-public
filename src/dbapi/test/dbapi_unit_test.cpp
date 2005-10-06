@@ -35,6 +35,7 @@
 
 #include <boost/test/unit_test_result.hpp>
 
+#include <ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
 
 #include "dbapi_unit_test.hpp"
@@ -3248,6 +3249,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
     
+#if NCBI_DEVELOPMENT_VER > 20051016
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment. 
     if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
@@ -3256,6 +3258,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+#endif
     
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -3400,6 +3403,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.52  2005/10/06 16:34:53  ssikorsk
+ * Disable Test_Bulk_Writing untill 10/16/05
+ *
  * Revision 1.51  2005/10/03 16:49:44  ssikorsk
  * Disable Test_DateTime for the dblib driver
  *
