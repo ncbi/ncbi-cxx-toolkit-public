@@ -55,7 +55,7 @@ else
     sendmail="/usr/lib/sendmail -oi"
 fi
 
-# MIME headers intended to keep Outlook from mangling the body.
+# MIME headers intended to keep Outlook Exchange from mangling the body.
 # Perhaps we should hardcode UTF-8 rather than ISO 8859-1, but it's a
 # moot point since we'll generally just encounter ASCII.
 DoMime()
@@ -63,7 +63,7 @@ DoMime()
     cat <<EOF
 MIME-Version: 1.0
 Content-Type: text/plain; charset="iso-8859-1"
-Content-Transfer-Encoding: 8bit
+Content-Transfer-Encoding: binary
 EOF
 }
 
