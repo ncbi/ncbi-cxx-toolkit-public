@@ -189,7 +189,9 @@ public:
                      BlastSeqLoc** lookup_segments, 
                      const CBlastRPSInfo* rps_info = NULL);
 
-    /// Initialize the lookup table. Caller owns the return value.
+    /// Initialize the lookup table. Note that for the case of PSI-BLAST the
+    /// PSSM must be initialized in the BlastScoreBlk for it to be recognized
+    /// properly by the lookup table code. Caller owns the return value.
     /// @param query_data source of query sequence data [in]
     /// @param opts_memento Memento options object [in]
     /// @param score_blk BlastScoreBlk structure, as obtained in
