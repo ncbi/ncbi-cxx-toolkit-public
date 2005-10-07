@@ -29,6 +29,9 @@
  *
  */
 
+// Hide util/bitset/bm.h from SWIG
+#define BM__H__INCLUDED__
+
 // Data member whose type is an enum of the enclosing class.
 %ignore *::CEventHandler_SPostRequest::m_DispHow;
 
@@ -117,6 +120,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/07 17:12:31  jcherry
+ * Hide util/bitset/bm.h from SWIG
+ *
  * Revision 1.7  2005/09/13 15:23:24  jcherry
  * Remove %ignore's related to CCompartmentFinder, which no longer exists
  *
