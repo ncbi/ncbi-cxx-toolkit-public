@@ -1487,10 +1487,10 @@ static bool s_IsCDD(const CSeq_feat_Handle& feat)
 }
 
 
-SAnnotSelector& s_GetCdsProductSel(CBioseqContext& ctx)
+SAnnotSelector s_GetCdsProductSel(CBioseqContext& ctx)
 {
-    static SAnnotSelector sel;
-    static bool initialized = false;
+    SAnnotSelector sel;
+    bool initialized = false;
 
     if (!initialized) {
         sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_region)
@@ -1624,6 +1624,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2005/10/07 15:39:36  vasilche
+* Fixed MT-safety - removed static SAnnotSelector.
+*
 * Revision 1.50  2005/09/15 20:27:49  shomrat
 * Fix check for duplicate features
 *
