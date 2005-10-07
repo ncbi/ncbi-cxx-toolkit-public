@@ -169,7 +169,7 @@ void* SwapPointers(void * volatile * location, void* new_value)
         tmp = NCBICORE_asm_casx(tmp, nv_loc, old_value);
 #      else
         asm volatile("casx [%3], %2, %1" : "=m" (*nv_loc), "+r" (tmp)
-                     : "r" (old_value), "r" (nv_loc), m (*nv_loc));
+                     : "r" (old_value), "r" (nv_loc), "m" (*nv_loc));
 #      endif
         if (tmp == old_value) {
             // swap was successful
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/10/07 15:26:10  ssikorsk
+ * Fixed typo with m constraint
+ *
  * Revision 1.10  2004/04/26 14:31:11  ucko
  * Split up "+m" constraints for GCC assembly, as versions 3.4 and up
  * complain about them.
