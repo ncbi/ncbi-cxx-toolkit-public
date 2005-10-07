@@ -1452,9 +1452,9 @@ void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier s
             continue;
         }
         
-        const CSeq_id& id = *(it->GetSeqId());
-        if (!id.IsGeneral()) {
-            x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(id, id.IsGi()));
+        CConstRef<CSeq_id> id = it->GetSeqId();
+        if (!id->IsGeneral()) {
+            x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*id, id->IsGi()));
         }
     }
 }
@@ -3711,6 +3711,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2005/10/07 15:38:54  vasilche
+* Fixed MT-safety with CSeq_id_Handle.
+*
 * Revision 1.57  2005/09/07 16:07:05  shomrat
 * Keep the Seq-feat object
 *
