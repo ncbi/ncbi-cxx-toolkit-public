@@ -124,7 +124,9 @@ public:
     }
     
 private:
+    /// Prohibit copy constructor
     CStructWrapper(CStructWrapper<TData> & x);
+    /// Prohibit assignment operator
     CStructWrapper & operator=(CStructWrapper<TData> & x);
     
     TData   * m_Data;
@@ -234,16 +236,15 @@ public:
                       size_t number_of_queries);
 
     /// Create a BlastSeqSrc from a CSearchDatabase (uses CSeqDB)
-    /// @param opts_memento Memento options object [in]
-    /// @param number_of_queries number of queries involved in the search [in]
-    /// @param is_multi_threaded true in case of multi-threaded search, else
-    /// false [in]
+    /// @param db description of BLAST database to search [in]
     static BlastSeqSrc*
     CreateBlastSeqSrc(const CSearchDatabase& db);
 
 private:
     /// Auxiliary function to create the BlastHSPStream structure
-    /// @param 
+    /// @param opts_memento Memento options object [in]
+    /// @param number_of_queries number of queries involved in the search [in]
+    /// @param is_multi_threaded true in case of multi-threaded search, else
     static BlastHSPStream*
     x_CreateHspStream(const CBlastOptionsMemento* opts_memento,
                       size_t number_of_queries,

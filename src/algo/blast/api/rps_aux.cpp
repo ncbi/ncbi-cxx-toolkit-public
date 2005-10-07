@@ -65,7 +65,7 @@ public:
     /// @param matrix name of the scoring matrix used to build the RPS-BLAST
     /// database
     /// @param gap_open gap opening cost
-    /// @param gap_exten gap extension cost
+    /// @param gap_extend gap extension cost
     /// @param scale_factor scaling factor
     /// @param karlin_k statistical K parameter calculated when building the
     /// RPS-BLAST database

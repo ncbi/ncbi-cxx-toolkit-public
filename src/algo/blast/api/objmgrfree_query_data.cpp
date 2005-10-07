@@ -245,12 +245,12 @@ x_BioseqSetFromBioseq(const CBioseq& bioseq)
 }
 
 CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory
-    (CConstRef<CBioseq> b)
+    (CConstRef<objects::CBioseq> b)
     : m_Bioseqs(x_BioseqSetFromBioseq(*b))
 {}
 
 CObjMgrFree_QueryFactory::CObjMgrFree_QueryFactory
-    (CConstRef<CBioseq_set> b)
+    (CConstRef<objects::CBioseq_set> b)
     : m_Bioseqs(b)
 {}
 

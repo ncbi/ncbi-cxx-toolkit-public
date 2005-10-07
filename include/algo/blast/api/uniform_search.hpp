@@ -196,7 +196,9 @@ public:
     }
     
 private:
+    /// Prohibit assignment operator
     CSearchMessage & operator =(const CSearchMessage &);
+    /// Prohibit copy constructor 
     CSearchMessage(CSearchMessage&);
     
     EBlastSeverity m_Severity;
@@ -333,6 +335,9 @@ public:
 /// PSI-BLAST)
 class IPssmSearch : public ISearch {
 public:
+
+    /// Set the queries to search
+    /// @param pssm PSSM [in]
     virtual void SetQuery(CRef<objects::CPssmWithParameters> pssm) = 0;
 };
 

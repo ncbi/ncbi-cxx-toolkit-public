@@ -63,19 +63,47 @@ BEGIN_SCOPE(blast)
 //
 /////////////////////////////////////////////////////////////////////////////
 
+/// Implements the IBlastQuerySource interface using a list of Seq-locs as data
+/// source
 class CBlastQuerySourceTSeqLocs : public IBlastQuerySource {
 public:
+    /// Parametrized constructor
     CBlastQuerySourceTSeqLocs(const CObjMgr_QueryFactory::TSeqLocs& seqlocs);
+
+    /// Return strand for a sequence
+    /// @param i of the sequence in the sequence container [in]
     virtual ENa_strand GetStrand(int i) const;
+
+    /// Return the filtered (masked) regions for a sequence
+    /// @param i index of the sequence in the sequence container [in]
     virtual CConstRef<CSeq_loc> GetMask(int i) const;
+
+    /// Return the CSeq_loc associated with a sequence
+    /// @param index i of the sequence in the sequence container [in]
     virtual CConstRef<CSeq_loc> GetSeqLoc(int i) const;
+
+    /// Return the sequence data for a sequence
+    /// @param i index of the sequence in the sequence container [in]
+    /// @param encoding desired encoding [in]
+    /// @param strand strand to fetch [in]
+    /// @param sentinel specifies to use or not to use sentinel bytes around
+    ///        sequence data [in]
+    /// @param warnings if not NULL, warnings will be returned in this string
+    ///        [in|out]
+    /// @return SBlastSequence structure containing sequence data requested
     virtual SBlastSequence GetBlastSequence(int i,
                                             EBlastEncoding encoding,
                                             ENa_strand strand,
                                             ESentinelType sentinel,
                                             string* warnings = 0) const;
+
+    /// Return the length of a sequence
+    /// @param i index of the sequence in the sequence container [in]
     virtual TSeqPos GetLength(int i) const;
+
+    /// Return the number of elements in the sequence container
     virtual TSeqPos Size() const;
+
 private:
     vector< CRef<CSeq_loc> > m_SeqLocs;
     mutable CRef<CScope> m_Scope;

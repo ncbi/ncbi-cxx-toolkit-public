@@ -50,7 +50,12 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CObjMgrFree_QueryFactory : public IQueryFactory
 {
 public:
+    /// Parametrized constructor taking a single Bioseq
+    /// @param bioseq Bioseq from which to obtain sequence data [in]
     CObjMgrFree_QueryFactory(CConstRef<objects::CBioseq> bioseq);
+
+    /// Parametrized constructor taking a Bioseq-set
+    /// @param bioseq Bioseq-set from which to obtain sequence data [in]
     CObjMgrFree_QueryFactory(CConstRef<objects::CBioseq_set> bioseq_set);
 
 protected:

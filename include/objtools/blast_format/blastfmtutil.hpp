@@ -241,6 +241,7 @@ public:
     ///@param sum_n: place to extract the sum_n to
     ///@param num_ident: place to extract the num_ident to
     ///@param use_this_gi: place to extract use_this_gi to
+    ///@param comp_adj_method: composition based statistics method [out]
     ///
     static void GetAlnScores(const CSeq_align& aln,
                              int& score, 
@@ -326,6 +327,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.18  2005/10/07 17:30:08  camacho
+Doxygen fixes
+
 Revision 1.17  2005/09/27 17:08:29  madden
 Add second GetAlnScores method that also fetches comp_adj_method
 

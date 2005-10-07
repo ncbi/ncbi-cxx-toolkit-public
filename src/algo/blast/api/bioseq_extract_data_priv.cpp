@@ -74,7 +74,7 @@ BEGIN_SCOPE(blast)
 /////////////////////////////////////////////////////////////////////////////
 
 CBlastSeqVectorFromCSeq_data::CBlastSeqVectorFromCSeq_data
-    (const CSeq_data& seq_data, TSeqPos length)
+    (const objects::CSeq_data& seq_data, TSeqPos length)
 {
     m_SequenceData.reserve(length);
     m_Strand = eNa_strand_plus;
@@ -126,7 +126,7 @@ CBlastSeqVectorFromCSeq_data::CBlastSeqVectorFromCSeq_data
 }
 
 void 
-CBlastSeqVectorFromCSeq_data::SetCoding(CSeq_data::E_Choice c)
+CBlastSeqVectorFromCSeq_data::SetCoding(objects::CSeq_data::E_Choice c)
 {
     if (c != CSeq_data::e_Ncbi2na && c != CSeq_data::e_Ncbi4na && 
         c != CSeq_data::e_Ncbistdaa) {
@@ -205,7 +205,7 @@ CBlastSeqVectorFromCSeq_data::x_ComplementData()
 
 CSeqUtil::ECoding 
 CBlastSeqVectorFromCSeq_data::x_Encoding_CSeq_data2CSeqUtil
-(CSeq_data::E_Choice c)
+(objects::CSeq_data::E_Choice c)
 {
     switch (c) {
     case CSeq_data::e_Ncbi2na: return CSeqUtil::e_Ncbi2na_expand;

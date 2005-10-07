@@ -61,13 +61,27 @@ BEGIN_SCOPE(blast)
 //
 /////////////////////////////////////////////////////////////////////////////
 
+/// Implementation of the IBlastSeqVector interface which obtains data from a
+/// CSeq_data object
 class CBlastSeqVectorFromCSeq_data : public IBlastSeqVector
 {
 public:
+    /// Parametrized constructor
+    /// @param seq_data sequence data [in]
+    /// @param length length of the sequence data (not of the buffer containing
+    /// the data!) [in]
     CBlastSeqVectorFromCSeq_data(const objects::CSeq_data& seq_data, 
                                  TSeqPos length);
+
+    /// Sets the encoding for the sequence data.
+    /// @param c coding to set [in]
     virtual void SetCoding(objects::CSeq_data::E_Choice c);
+
+    /// Allows index-based access to the sequence data
     virtual Uint1 operator[] (TSeqPos pos) const;
+
+    /// Returns the compressed nucleotide data for the plus strand, still
+    /// occupying one base per byte.
     virtual SBlastSequence GetCompressedPlusStrand();
 
 protected:
@@ -80,6 +94,7 @@ private:
     CSeqUtil::ECoding m_Encoding;
 
     void x_ComplementData();
+
     CSeqUtil::ECoding 
     x_Encoding_CSeq_data2CSeqUtil(objects::CSeq_data::E_Choice c);
 };

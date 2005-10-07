@@ -30,7 +30,7 @@ static char const rcsid[] =
  *
  */
 
-/** @file internal_interfaces.cpp
+/** @file prelim_stage.cpp
  * NOTE: This file contains work in progress and the APIs are likely to change,
  * please do not rely on them until this notice is removed.
  */
