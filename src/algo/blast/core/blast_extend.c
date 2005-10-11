@@ -89,6 +89,7 @@ score_compare_match(const void* v1, const void* v2)
 
 {
     BlastInitHSP* h1,* h2;
+    int result = 0;
 
     h1 = (BlastInitHSP*) v1;
     h2 = (BlastInitHSP*) v2;
@@ -102,32 +103,19 @@ score_compare_match(const void* v1, const void* v2)
     else if (h2->ungapped_data == NULL)
         return -1;
 
-    if (h1->ungapped_data->score < h2->ungapped_data->score) 
-        return 1;
-    if (h1->ungapped_data->score > h2->ungapped_data->score)
-        return -1;
-    
-    
-    /* Tie breaks: starting offset in subject; then length
-     * (equivalent to ending offset in subject), then starting
-     * offset in query.
-     */
-    if (h1->ungapped_data->s_start < h2->ungapped_data->s_start)
-        return 1;
-    if (h1->ungapped_data->s_start > h2->ungapped_data->s_start )
-        return -1;
+    if (0 == (result = BLAST_CMP(h2->ungapped_data->score,
+                                 h1->ungapped_data->score)) &&
+        0 == (result = BLAST_CMP(h1->ungapped_data->s_start,
+                                 h2->ungapped_data->s_start)) &&
+        0 == (result = BLAST_CMP(h2->ungapped_data->length,
+                                 h1->ungapped_data->length)) &&
+        0 == (result = BLAST_CMP(h1->ungapped_data->q_start,
+                                 h2->ungapped_data->q_start))) {
+        result = BLAST_CMP(h2->ungapped_data->length,
+                           h1->ungapped_data->length);
+    }
 
-    if (h1->ungapped_data->length < h2->ungapped_data->length)
-        return 1;
-    if (h1->ungapped_data->length > h2->ungapped_data->length)
-        return -1;
-
-    if( h1->ungapped_data->q_start < h2->ungapped_data->q_start )
-        return 1;
-    if( h1->ungapped_data->q_start > h2->ungapped_data->q_start )
-        return -1;
-   
-    return 0;
+    return result;
 }
 
 void Blast_InitHitListSortByScore(BlastInitHitList* init_hitlist) 
