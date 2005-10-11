@@ -259,7 +259,7 @@ CPsiBl2Seq::Run()
     // if they have not been returned or reported yet.
     
     ASSERT(aligns.size() == 1);
-    CSearchResults::TErrors no_errors(aligns.size());
+    CSearchResults::TErrors no_errors;
     return CRef<CSearchResults>(new CSearchResults(aligns[0], no_errors));
 }
 
