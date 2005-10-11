@@ -97,7 +97,8 @@ CObjMgrFree_LocalQueryData::CObjMgrFree_LocalQueryData
     (CConstRef<CBioseq_set> bioseq_set, const CBlastOptions* options)
     : m_Options(options), m_BioseqSet(bioseq_set)
 {
-	bool is_prot = Blast_QueryIsProtein(options->GetProgramType()) ? true : false;
+    bool is_prot = 
+        Blast_QueryIsProtein(options->GetProgramType()) ? true : false;
     m_QuerySource.Reset(new CBlastQuerySourceBioseqSet(*bioseq_set, is_prot));
 }
 
@@ -163,8 +164,7 @@ s_ConstBioseqSetToBioseqSet(CConstRef<CBioseq_set> bioseq_set)
 static IRemoteQueryData::TSeqLocs
 s_ConstBioseqSetToSeqLocs(CConstRef<CBioseq_set> bioseq_set)
 {
-    CTypeConstIterator<CBioseq> itr(ConstBegin(*bioseq_set, 
-                                                        eDetectLoops)); 
+    CTypeConstIterator<CBioseq> itr(ConstBegin(*bioseq_set, eDetectLoops)); 
     CBlastQuerySourceBioseqSet query_source(*bioseq_set, itr->IsAa());
 
     IRemoteQueryData::TSeqLocs retval;
