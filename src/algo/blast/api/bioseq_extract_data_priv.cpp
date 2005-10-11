@@ -236,7 +236,7 @@ CBlastQuerySourceBioseqSet::CBlastQuerySourceBioseqSet
     }
 }
 
-inline objects::ENa_strand 
+objects::ENa_strand 
 CBlastQuerySourceBioseqSet::GetStrand(int /*index*/) const 
 {
     // Although the strand represented in the Bioseq is always the plus
@@ -245,19 +245,19 @@ CBlastQuerySourceBioseqSet::GetStrand(int /*index*/) const
     return m_IsProt ? objects::eNa_strand_unknown : objects::eNa_strand_both;
 }
 
-inline TSeqPos 
+TSeqPos 
 CBlastQuerySourceBioseqSet::Size() const 
 { 
     return m_Bioseqs.size(); 
 }
 
-inline CConstRef<objects::CSeq_loc> 
+CConstRef<objects::CSeq_loc> 
 CBlastQuerySourceBioseqSet::GetMask(int /*index*/) const 
 {
     return CConstRef<objects::CSeq_loc>(0);
 }
 
-inline CConstRef<objects::CSeq_loc> 
+CConstRef<objects::CSeq_loc> 
 CBlastQuerySourceBioseqSet::GetSeqLoc(int index) const 
 { 
     CRef<objects::CSeq_loc> retval(new objects::CSeq_loc);
