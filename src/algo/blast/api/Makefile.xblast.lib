@@ -26,26 +26,36 @@ local_blast \
 remote_blast \
 seqinfosrc_seqvec \
 seqinfosrc_seqdb \
+seqinfosrc_bioseq \
 seqsrc_multiseq \
 seqsrc_seqdb \
+seqsrc_query_factory \
 bl2seq \
 db_blast \
 blast_objmgr_tools \
 hspstream_queue \
 repeats_filter_cxx \
 blast_mtlock \
+psibl2seq \
 psi_pssm_input \
+psiblast_aux_priv \
+bioseq_extract_data_priv \
 blast_advprot_options \
 version \
 dust_filter \
 rps_aux \
-setup_factory prelim_stage traceback_stage \
-uniform_search local_search remote_search \
+setup_factory \
+prelim_stage \
+traceback_stage \
+uniform_search \
+local_search \
+remote_search \
 query_data \
 objmgr_query_data \
 objmgrfree_query_data \
 bioseq_extract_data_priv \
-blast_seqsrc_adapter_priv seqsrc_adapter_seqdb_priv
+blast_seqsrc_adapter_priv \
+seqsrc_adapter_seqdb_priv
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
