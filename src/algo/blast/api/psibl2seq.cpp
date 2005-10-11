@@ -43,8 +43,6 @@ static char const rcsid[] =
 #include "prelim_search_runner.hpp"
 #include "seqinfosrc_bioseq.hpp"
 #include "psiblast_aux_priv.hpp"
-#include "/home/camacho/work/debug_lib/new_blast_debug.h"
-#include "/home/camacho/work/debug_lib/current_function.hpp"
 
 // Object includes
 #include <objects/scoremat/Pssm.hpp>
