@@ -801,7 +801,6 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
             seq_arg.seq, lookup_wrap, gap_align, score_params, word_params, 
             ext_params, hit_params, db_options, diagnostics, aux_struct, 
             &hsp_list);
- 
       if (status)
          break;
 
@@ -865,15 +864,20 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 
 Int2 
 Blast_RunPreliminarySearch(EBlastProgramType program, 
-   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-   const BlastSeqSrc* seq_src, const BlastScoringOptions* score_options,
-   BlastScoreBlk* sbp, LookupTableWrap* lookup_wrap,
+   BLAST_SequenceBlk* query, 
+   BlastQueryInfo* query_info, 
+   const BlastSeqSrc* seq_src, 
+   const BlastScoringOptions* score_options,
+   BlastScoreBlk* sbp, 
+   LookupTableWrap* lookup_wrap,
    const BlastInitialWordOptions* word_options, 
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingOptions* hit_options,
    const BlastEffectiveLengthsOptions* eff_len_options,
-   const PSIBlastOptions* psi_options, const BlastDatabaseOptions* db_options, 
-   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics)
+   const PSIBlastOptions* psi_options, 
+   const BlastDatabaseOptions* db_options, 
+   BlastHSPStream* hsp_stream, 
+   BlastDiagnostics* diagnostics)
 {
    Int2 status = 0;
    BlastScoringParameters* score_params = NULL;/**< Scoring parameters */
