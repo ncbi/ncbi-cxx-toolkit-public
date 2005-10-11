@@ -39,7 +39,6 @@ blast_mtlock \
 psibl2seq \
 psi_pssm_input \
 psiblast_aux_priv \
-bioseq_extract_data_priv \
 blast_advprot_options \
 version \
 dust_filter \
