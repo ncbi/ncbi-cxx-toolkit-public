@@ -1,0 +1,125 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Christiam Camacho
+ *
+ */
+
+/// @file psibl2seq.hpp
+/// Declares CPsiBl2Seq, the C++ API for the PSI-BLAST 2 Sequences engine.
+
+#ifndef ALGO_BLAST_API___PSIBL2SEQ__HPP
+#define ALGO_BLAST_API___PSIBL2SEQ__HPP
+
+#include <algo/blast/api/uniform_search.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
+
+/** @addtogroup AlgoBlast
+ *
+ * @{
+ */
+
+BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CPssmWithParameters;
+END_SCOPE(objects)
+
+BEGIN_SCOPE(blast)
+
+// Forward declarations
+class IQueryFactory;
+
+/// Runs the PSI-BLAST algorithm between 2 sequences.
+
+class NCBI_XBLAST_EXPORT CPsiBl2Seq : public CObject
+{
+public:
+    /// Constructor to compare a PSSM against protein sequences
+    /// @param pssm PSSM to use as query. Might be modified by PSSM engine if
+    /// scores are not provided [in|out]
+    /// @todo how should scaled PSSM scores be handled?
+    CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
+               CRef<IQueryFactory> subject,
+               CConstRef<CPSIBlastOptionsHandle> options);
+
+    /// Run the PSI-BLAST 2 Sequences engine
+    CRef<CSearchResults> Run();
+
+    /// Retrieves the diagnostics information returned from the engine
+    //BlastDiagnostics* GetDiagnostics() const;
+
+private:
+    /// PSSM to be used as query
+    CRef<objects::CPssmWithParameters> m_Pssm; 
+
+    /// Subject sequences
+    CRef<IQueryFactory> m_Subject;  
+
+    /// Options to use 
+    CConstRef<CPSIBlastOptionsHandle> m_OptsHandle;
+
+    /// Query factory built from the query CBioseq
+    CRef<IQueryFactory> m_QueryFactory;
+
+    /// Prohibit copy constructor
+    CPsiBl2Seq(const CPsiBl2Seq& rhs);
+
+    /// Prohibit assignment operator
+    CPsiBl2Seq& operator=(const CPsiBl2Seq& rhs);
+
+    /// Perform sanity checks on input parameters
+    void x_Validate() const;
+
+    /// Computes the PSSM scores in case these are not available in the PSSM
+    void x_CreatePssmScoresFromFrequencyRatios();
+
+    /// Auxiliary function to get the query sequence data from the ASN.1 PSSM
+    /// Post-condition: (m_Query.Empty() == false)
+    void x_ExtractQueryFromPssm();
+};
+
+//inline BlastDiagnostics* CPsiBl2Seq::GetDiagnostics() const
+//{
+//    return mi_pDiagnostics;
+//}
+
+END_SCOPE(blast)
+END_NCBI_SCOPE
+
+/* @} */
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.1  2005/10/11 12:19:53  camacho
+* Initial revision
+*
+*
+* ===========================================================================
+*/
+
+#endif  /* ALGO_BLAST_API___PSIBL2SEQ__HPP */
