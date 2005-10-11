@@ -79,7 +79,7 @@ public:
     virtual CConstRef<CSeq_loc> GetMask(int i) const;
 
     /// Return the CSeq_loc associated with a sequence
-    /// @param index i of the sequence in the sequence container [in]
+    /// @param i index of the sequence in the sequence container [in]
     virtual CConstRef<CSeq_loc> GetSeqLoc(int i) const;
 
     /// Return the sequence data for a sequence

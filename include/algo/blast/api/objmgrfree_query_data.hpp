@@ -55,7 +55,7 @@ public:
     CObjMgrFree_QueryFactory(CConstRef<objects::CBioseq> bioseq);
 
     /// Parametrized constructor taking a Bioseq-set
-    /// @param bioseq Bioseq-set from which to obtain sequence data [in]
+    /// @param bioseq_set Bioseq-set from which to obtain sequence data [in]
     CObjMgrFree_QueryFactory(CConstRef<objects::CBioseq_set> bioseq_set);
 
 protected:
