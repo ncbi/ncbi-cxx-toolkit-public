@@ -78,7 +78,7 @@ private:
 /// Constructor
 CQueryFactoryInfo::CQueryFactoryInfo(CRef<IQueryFactory> query_factory, 
                                      EBlastProgramType program)
-    : m_IsProt(Blast_SubjectIsProtein(program)), m_MaxLength(0),
+: m_IsProt(Blast_SubjectIsProtein(program) ? true : false), m_MaxLength(0),
       m_AvgLength(0), m_QuerySource(0)
 {
     CRef<IRemoteQueryData> query_data(query_factory->MakeRemoteQueryData());
