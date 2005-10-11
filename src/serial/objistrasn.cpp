@@ -742,6 +742,7 @@ void CObjectIStreamAsn::ReadStringValue(string& s, EFixNonPrint fix_method)
         }
     }
     catch ( CEofException& ) {
+        SetFailFlags(fEOF);
         UnendedString(startLine);
         throw;
     }
@@ -892,6 +893,7 @@ void CObjectIStreamAsn::SkipString(EStringType type)
         }
     }
     catch ( CEofException& ) {
+        SetFailFlags(fEOF);
         UnendedString(startLine);
         throw;
     }
@@ -1309,6 +1311,7 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
         }
     }
     catch ( CEofException& ) {
+        SetFailFlags(fEOF);
         UnendedString(m_Input.GetLine());
         throw;
     }
@@ -1361,6 +1364,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2005/10/11 18:08:31  gouriano
+* Corrected handling CEofException
+*
 * Revision 1.100  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

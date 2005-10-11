@@ -283,6 +283,7 @@ public:
     TFailFlags SetFailFlags(TFailFlags flags, const char* message);
     TFailFlags ClearFailFlags(TFailFlags flags);
     bool InGoodState(void);
+    void HandleEOF(CEofException&);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
     CNcbiStreamoff GetStreamOffset(void) const;
@@ -540,6 +541,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2005/10/11 18:08:12  gouriano
+* Corrected handling CEofException
+*
 * Revision 1.91  2005/08/17 18:17:03  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

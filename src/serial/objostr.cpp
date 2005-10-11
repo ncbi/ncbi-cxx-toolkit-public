@@ -285,6 +285,12 @@ bool CObjectOStream::InGoodState(void)
     }
 }
 
+void CObjectOStream::HandleEOF(CEofException&)
+{
+    PopFrame();
+    throw;
+}
+
 void CObjectOStream::Unended(const string& msg)
 {
     if ( InGoodState() )
@@ -1014,6 +1020,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2005/10/11 18:08:31  gouriano
+* Corrected handling CEofException
+*
 * Revision 1.101  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

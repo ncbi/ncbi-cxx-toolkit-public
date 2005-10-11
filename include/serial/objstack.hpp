@@ -169,6 +169,8 @@ private:
         (Stream).PopErrorFrame(); \
         s_expt.AddFrameInfo(msg); \
         throw; \
+    } catch ( CEofException& e_expt ) { \
+        (Stream).HandleEOF(e_expt); \
     } catch (CException& expt) { \
         std::string msg((Stream).TopFrame().GetFrameInfo()); \
         (Stream).PopFrame(); \
@@ -222,6 +224,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/10/11 18:08:12  gouriano
+* Corrected handling CEofException
+*
 * Revision 1.24  2005/08/09 16:31:51  gouriano
 * Corrected behavior when catching CException
 *

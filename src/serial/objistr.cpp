@@ -411,6 +411,17 @@ bool CObjectIStream::EndOfData(void)
     return false;
 }
 
+void CObjectIStream::HandleEOF(CEofException& expt)
+{
+    string msg(TopFrame().GetFrameInfo());
+    PopFrame();
+    if (GetStackDepth() < 2) {
+        NCBI_RETHROW_SAME(expt,msg);
+    } else {
+        ThrowError(fEOF, msg);
+    }
+}
+
 void CObjectIStream::Unended(const string& msg)
 {
     if ( InGoodState() )
@@ -1559,6 +1570,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.138  2005/10/11 18:08:31  gouriano
+* Corrected handling CEofException
+*
 * Revision 1.137  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method
