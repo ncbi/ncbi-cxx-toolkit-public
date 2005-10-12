@@ -2830,7 +2830,7 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
         }
     }
     if (split)
-        *array_size--;
+        (*array_size)--;
 
     *normal = kValues;
     *non_affine = kValues_non_affine;
@@ -4147,6 +4147,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.131  2005/10/12 19:15:47  madden
+ * Fix bug in s_GetNuclValuesArray
+ *
  * Revision 1.130  2005/09/27 14:43:56  madden
  * Centralize round_down decision in s_GetNuclValuesArray
  *
