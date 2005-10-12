@@ -325,6 +325,10 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry()
         // seq-id(s)
         CBioseq::TId& ids = seq_entry->SetSeq().SetId();
         CSeq_id::ParseFastaIds(ids, m_Ids[row_i], true);
+        if (ids.empty()) {
+            ids.push_back(CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local,
+                                                    m_Ids[row_i])));
+        }
 
         // mol
         CSeq_inst::EMol mol   = CSeq_inst::eMol_not_set;
@@ -376,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/12 16:05:26  jcherry
+ * When building a Seq-entry, create a local id if id parse fails
+ *
  * Revision 1.14  2005/07/01 16:40:37  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *
