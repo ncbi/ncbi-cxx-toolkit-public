@@ -41,17 +41,25 @@ BEGIN_NCBI_SCOPE
 
 Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos)
 {
+#ifdef _WIN32
     fpos_t fp(stream_pos.seekpos());
     return (Int8)fp;
+#else
+	return (CT_OFF_TYPE) stream_pos;
+#endif
 }
 
 CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
 {
+#ifdef _WIN32
     fpos_t fp(pos);
     mbstate_t mbs;
     memset (&mbs, '\0', sizeof (mbs));
     CT_POS_TYPE p(mbs, fp);
     return p;
+#else
+    return CT_POS_TYPE(0) + CT_OFF_TYPE(pos);
+#endif
 }
 
 
@@ -392,6 +400,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/10/12 13:33:14  kuznets
+ * streampos converter: conditional code for WIN32
+ *
  * Revision 1.39  2005/10/12 12:53:30  kuznets
  * Added streampos converterion funcions
  *
