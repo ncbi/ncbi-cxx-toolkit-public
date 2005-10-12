@@ -188,7 +188,7 @@ property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "plugin__.cpp", "plugin___.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "plugin__.cpp", "plugin___.cpp"}}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
 property xgbplugin : {name:"xgbplugin", path:"gui:core", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true, asn1Name:"plugin"}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
@@ -413,6 +413,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2005/10/12 19:31:57  kans
+ * exclude NCBI_GUI_Project_module.cpp and NCBI_Plugin_module.cpp from gui_core
+ *
  * Revision 1.72  2005/10/04 13:14:41  lebedev
  * Workaround libbz2 issue (static in 10.3, dynamic in 10.4)
  *
