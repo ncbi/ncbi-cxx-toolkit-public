@@ -295,7 +295,12 @@ public:
                        streamsize buf_size = kConn_DefaultBufSize);
     virtual ~CConn_MemoryStream();
 
-    string& ToString(string&); ///< fill in the data, return the argument
+    string& ToString(string&)  ///< fill in the data, return the argument
+#ifdef __GNUG__
+        __attribute__ ((deprecated)) ///< please use the other method below
+#endif
+        ;
+    void    ToString(string*); ///< fill in the data, NULL is not accepted
     char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
 
 protected:
@@ -400,6 +405,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.38  2005/10/12 21:06:33  lavr
+ * Deprecating CConn_MemoryStream::ToString(string&)
+ * Introducing CConn_MemoryStream::ToString(string*)
+ *
  * Revision 6.37  2005/05/18 18:14:29  lavr
  * Add flag parameter to FTP download stream ctor
  *

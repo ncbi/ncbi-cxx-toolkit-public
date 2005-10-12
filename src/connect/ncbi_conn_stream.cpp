@@ -34,8 +34,10 @@
 
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
+#include "ncbi_assert.h"
 #include "ncbi_conn_streambuf.hpp"
 #include "ncbi_core_cxxp.hpp"
+#include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
 
@@ -288,19 +290,30 @@ CConn_MemoryStream::~CConn_MemoryStream()
 }
 
 
+/// This method is deprecated and will be removed!!!
 string& CConn_MemoryStream::ToString(string& str)
 {
+    ToString(&str);
+    return str;
+}
+
+
+void CConn_MemoryStream::ToString(string* str)
+{
     flush();
+    if (!str) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_MemoryStream::ToString(NULL) is not allowed");
+    }
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
     size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
-    str.resize(size);
+    str->resize(size);
     if (sb) {
-        if (CONN_Read(sb->GetCONN(), &str[0], size, &size, eIO_ReadPersist)
-            != eIO_Success) {
-            str.resize(size);
-        }
+        size_t s;
+        verify(CONN_Read(sb->GetCONN(), &(*str)[0], size, &s, eIO_ReadPersist)
+               == eIO_Success);
+        assert(size == s);
     }
-    return str;
 }
 
 
@@ -380,6 +393,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2005/10/12 21:05:15  lavr
+ * Deprecating CConn_MemoryStream::ToString(string&)
+ * Introducing CConn_MemoryStream::ToString(string*)
+ *
  * Revision 6.47  2005/05/18 20:39:57  lavr
  * Fix MS-Win operator<<(char*) selection in FTP stream ctor
  *
