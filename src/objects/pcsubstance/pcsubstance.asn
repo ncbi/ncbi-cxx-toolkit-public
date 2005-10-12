@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.15 2005/08/22 17:38:07 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.16 2005/10/12 12:33:48 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -563,9 +563,10 @@ PC-StereoSquarePlanar ::= SEQUENCE {
     rabove         INTEGER,                      -- Atom ID of Right Above Plane Atom
                                                  --   Note: Atom ID's must be greater than "0"
     parity         INTEGER {                     -- StereoCenter Type
-                       same             (1),
-                       opposite         (2),
-                       any              (3),
+                       u-shape          (1),     --   U shaped isomer (labove-lbelow-rbelow-rabove)
+                       z-shape          (2),     --   Z shaped isomer (labove-rabove-lbelow-rbelow)
+                       x-shape          (3),     --   X shaped isomer (labove-rbelow-rabove-lbelow)
+                       any              (4),     --   Nonspecific mixture of isomers
                        unknown        (255)
                    }                  OPTIONAL
 }
@@ -652,6 +653,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.16  2005/10/12 12:33:48  bolton
+-- Modified the parity flags for square planar (SP4) stereogenic center.
+--
 -- Revision 1.15  2005/08/22 17:38:07  bolton
 -- Added MIM Number Xref in the PC-Xref object container.
 --
@@ -741,6 +745,7 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
 
 
