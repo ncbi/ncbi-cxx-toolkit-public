@@ -58,18 +58,24 @@ class NCBI_XBLAST_EXPORT CPsiBl2Seq : public CObject
 {
 public:
     /// Constructor to compare a PSSM against protein sequences
-    /// @param pssm PSSM to use as query. Might be modified by PSSM engine if
-    /// scores are not provided [in|out]
+    ///
+    /// @param pssm PSSM to use as query. This must contain the query sequence
+    /// which represents the master sequence for the PSSM. PSSM data might be
+    /// provided as scores or as frequency ratios, in which case the PSSM 
+    /// engine will be invoked to convert them to scores (and save them as a
+    /// effect). If both the scores and frequency ratios are provided, the 
+    /// scores are given priority and are used in the search. [in|out]
     /// @todo how should scaled PSSM scores be handled?
+    ///
+    /// @param subject Subject sequence(s) to search [in]
+    ///
+    /// @param options PSI-BLAST options [in]
     CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
                CRef<IQueryFactory> subject,
                CConstRef<CPSIBlastOptionsHandle> options);
 
     /// Run the PSI-BLAST 2 Sequences engine
     CRef<CSearchResults> Run();
-
-    /// Retrieves the diagnostics information returned from the engine
-    //BlastDiagnostics* GetDiagnostics() const;
 
 private:
     /// PSSM to be used as query
@@ -101,11 +107,6 @@ private:
     void x_ExtractQueryFromPssm();
 };
 
-//inline BlastDiagnostics* CPsiBl2Seq::GetDiagnostics() const
-//{
-//    return mi_pDiagnostics;
-//}
-
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -115,9 +116,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/10/12 13:52:45  camacho
+* Doxygen fixes
+*
 * Revision 1.1  2005/10/11 12:19:53  camacho
 * Initial revision
-*
 *
 * ===========================================================================
 */

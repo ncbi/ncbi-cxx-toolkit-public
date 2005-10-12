@@ -54,11 +54,12 @@ BEGIN_SCOPE(blast)
 // Defined in objmgrfree_query_data.cpp
 extern CRef<CBioseq_set> x_BioseqSetFromBioseq(const CBioseq& bioseq);
 
-CBioseqSeqInfoSrc::CBioseqSeqInfoSrc(const CBioseq& bs, bool is_prot)
+CBioseqSeqInfoSrc::CBioseqSeqInfoSrc(const objects::CBioseq& bs, bool is_prot)
     : m_DataSource(*x_BioseqSetFromBioseq(bs), is_prot)
 {}
 
-CBioseqSeqInfoSrc::CBioseqSeqInfoSrc(const CBioseq_set& bss, bool is_prot)
+CBioseqSeqInfoSrc::CBioseqSeqInfoSrc(const objects::CBioseq_set& bss, 
+                                     bool is_prot)
     : m_DataSource(bss, is_prot)
 {}
 
