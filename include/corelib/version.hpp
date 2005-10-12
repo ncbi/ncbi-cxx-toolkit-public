@@ -59,17 +59,20 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT CVersionInfo
 {
 public:
-    /// Constructor.
+    /// Default constructor
+    CVersionInfo(void) ;
+
+    /// Constructor
     CVersionInfo(int  ver_major,
                  int  ver_minor,
                  int  patch_level = 0,
-                 const string& name        = kEmptyStr);
+                 const string& name = kEmptyStr);
 
     /// @param version
     ///    version string in rcs format (like 1.2.4)
     ///
     CVersionInfo(const string& version,
-                 const string& name        = kEmptyStr);
+                 const string& name = kEmptyStr);
 
     /// Constructor.
     CVersionInfo(const CVersionInfo& version);
@@ -146,11 +149,12 @@ public:
     }
 
 protected:
-    int           m_Major;       ///< Major number
-    int           m_Minor;       ///< Minor number
-    int           m_PatchLevel;  ///< Patch level
-    const  string m_Name;        ///< Name
+    int          m_Major;       ///< Major number
+    int          m_Minor;       ///< Minor number
+    int          m_PatchLevel;  ///< Patch level
+    const string m_Name;        ///< Name
 };
+
 
 /// Return true if one version info is matches another better than
 /// the best variant.
@@ -166,7 +170,6 @@ protected:
 ///    Best minor version found (reference)
 /// @param best_patch_level
 ///    Best patch levelfound (reference)
-
 bool NCBI_XNCBI_EXPORT IsBetterVersion(const CVersionInfo& info, 
                                        const CVersionInfo& cinfo,
                                        int&  best_major, 
@@ -263,11 +266,12 @@ void ParseVersionString(const string&  vstr,
 END_NCBI_SCOPE
 
 
-
-
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/10/12 18:12:02  ivanov
+ * CVersionInfo:: added default constructor
+ *
  * Revision 1.17  2005/07/26 12:09:22  ssikorsk
  * Added operators == and < for convenience.
  *

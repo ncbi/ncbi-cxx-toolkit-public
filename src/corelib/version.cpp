@@ -40,6 +40,15 @@ const CVersionInfo CVersionInfo::kAny(0, 0, 0);
 const CVersionInfo CVersionInfo::kLatest(-1, -1, -1);
 
 
+CVersionInfo::CVersionInfo(void) 
+    : m_Major(-1),
+      m_Minor(-1),
+      m_PatchLevel(-1),
+      m_Name(kEmptyStr)
+
+{
+}
+
 CVersionInfo::CVersionInfo(int ver_major,
                            int  ver_minor,
                            int  patch_level, 
@@ -390,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/10/12 18:12:12  ivanov
+ * CVersionInfo:: added default constructor
+ *
  * Revision 1.18  2005/07/26 12:12:50  ssikorsk
  * Fixed Match and IsBetterVersion functions.
  *
