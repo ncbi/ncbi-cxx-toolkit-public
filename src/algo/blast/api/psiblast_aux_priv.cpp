@@ -257,6 +257,42 @@ void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
         pssm_with_scores->GetPssm().GetFinalData().GetH();
 }
 
+void ValidatePssm(const CPssmWithParameters& pssm)
+{
+    if ( !pssm.CanGetPssm() ) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Missing PSSM data");
+    }
+
+    bool missing_scores(false);
+    if ( !pssm.GetPssm().CanGetFinalData() || 
+         !pssm.GetPssm().GetFinalData().CanGetScores() || 
+         pssm.GetPssm().GetFinalData().GetScores().empty() ) {
+        missing_scores = true;
+    }
+
+    bool missing_freq_ratios(false);
+    if ( !pssm.GetPssm().CanGetIntermediateData() || 
+         !pssm.GetPssm().GetIntermediateData().CanGetFreqRatios() || 
+         pssm.GetPssm().GetIntermediateData().GetFreqRatios().empty() ) {
+        missing_freq_ratios = true;
+    }
+
+    if (missing_freq_ratios && missing_scores) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "PSSM data must contain either scores or frequency ratios");
+    }
+
+    if ( !pssm.GetPssm().CanGetQuery() ) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Missing query sequence in PSSM");
+    }
+    if ( !pssm.GetPssm().GetQuery().IsSeq() ) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Query sequence in ASN.1 PSSM is not a single Bioseq");
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

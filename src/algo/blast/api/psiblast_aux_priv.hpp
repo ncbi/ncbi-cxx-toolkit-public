@@ -28,7 +28,7 @@
  */
 
 /** @file psiblast_aux_priv.hpp
- * Auxiliary setup functions for Blast objects interface
+ * Auxiliary functions for PSI-BLAST
  */
 
 #ifndef ALGO_BLAST_API___PSIBLAST_AUX_PRIV__HPP
@@ -69,6 +69,12 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
  */
 void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts);
+
+/** Perform validation on the PSSM
+ * @param pssm PSSM as specified in scoremat.asn [in]
+ * @throws CBlastException on failure when validating data
+ */
+void ValidatePssm(const objects::CPssmWithParameters& pssm);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

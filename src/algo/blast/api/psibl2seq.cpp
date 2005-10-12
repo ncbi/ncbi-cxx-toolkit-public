@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CPsiBl2Seq::CPsiBl2Seq(CRef<CPssmWithParameters> pssm,
+CPsiBl2Seq::CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
                        CRef<IQueryFactory> subject,
                        CConstRef<CPSIBlastOptionsHandle> options)
 : m_Pssm(pssm), m_Subject(subject), m_OptsHandle(options), m_QueryFactory(0)
@@ -80,44 +80,12 @@ CPsiBl2Seq::x_Validate() const
     if (m_Pssm.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Missing PSSM");
     }
-    if ( !m_Pssm->CanGetPssm() ) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Missing PSSM data");
-    }
-
-    bool missing_scores(false);
-    if ( !m_Pssm->GetPssm().CanGetFinalData() || 
-         !m_Pssm->GetPssm().GetFinalData().CanGetScores() || 
-         m_Pssm->GetPssm().GetFinalData().GetScores().empty() ) {
-        missing_scores = true;
-    }
-
-    bool missing_freq_ratios(false);
-    if ( !m_Pssm->GetPssm().CanGetIntermediateData() || 
-         !m_Pssm->GetPssm().GetIntermediateData().CanGetFreqRatios() || 
-         m_Pssm->GetPssm().GetIntermediateData().GetFreqRatios().empty() ) {
-        missing_freq_ratios = true;
-    }
-
-    if (missing_freq_ratios && missing_scores) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "PSSM data must contain either scores or frequency ratios");
-    }
-
-    if ( !m_Pssm->GetPssm().CanGetQuery() ) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Missing query sequence in PSSM");
-    }
-    if ( !m_Pssm->GetPssm().GetQuery().IsSeq() ) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Query sequence in ASN.1 PSSM is not a single Bioseq");
-    }
+    ValidatePssm(*m_Pssm);
 
     // Options validation
     if (m_OptsHandle.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Missing options");
     }
-
     m_OptsHandle->Validate();
 
     // Subject sequence(s) sanity checks
