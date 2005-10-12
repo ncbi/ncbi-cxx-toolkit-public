@@ -439,6 +439,35 @@ s_ReportBlockLengthError
 }
 
 
+/* This function creates and sends an error message regarding a block of
+ * sequence data that contains duplicate IDs.
+ */
+static void 
+s_ReportDuplicateIDError 
+(char *               id,
+ int                  line_num,
+ FReportErrorFunction report_error,
+ void *              report_error_userdata)
+{
+    TErrorInfoPtr eip;
+    const char *  err_format = "Duplicate ID!  Sequences will be concatenated!";
+
+    if (report_error == NULL) {
+        return;
+    }
+
+    eip = ErrorInfoNew (NULL);
+    if (eip == NULL) {
+        return;
+    }
+    eip->category = eAlnErr_BadData;
+    eip->id = strdup (id);
+    eip->line_num = line_num;
+    eip->message = strdup (err_format);
+    report_error (eip, report_error_userdata);
+}
+
+
 /* This function creates and sends an error message regarding missing
  * sequence data.
  */
@@ -3778,14 +3807,15 @@ s_ProcessBlockLines
  int              num_lines_in_block,
  EBool            first_block)
 {
-    TLineInfoPtr  lip;
-    char *        linestring;
-    char *        cp;
-    char *        this_id;
-    int           len;
-    int           line_number;
-    EBool         this_block_has_ids;
-    int           pos;
+    TLineInfoPtr    lip;
+    char *          linestring;
+    char *          cp;
+    char *          this_id;
+    int             len;
+    int             line_number;
+    EBool           this_block_has_ids;
+    int             pos;
+    TAlignRawSeqPtr arsp;
 
     this_block_has_ids = s_DoesBlockHaveIds (afrp, lines, num_lines_in_block);
     s_BlockIsConsistent (afrp, lines, num_lines_in_block, this_block_has_ids,
@@ -3810,6 +3840,17 @@ s_ProcessBlockLines
                 len = strspn (linestring, " \t\r");
                 cp += len;
                 pos += len;
+                /* Check for duplicate IDs in the first block */
+                if (first_block)
+                {
+                  arsp = s_FindAlignRawSeqById (afrp->sequences, this_id);
+                  if (arsp != NULL)
+                  {
+                    s_ReportDuplicateIDError (this_id, lip->line_num,
+                                              afrp->report_error,
+                                              afrp->report_error_userdata);
+                  }
+                }
                 afrp->sequences = s_AddAlignRawSeqById (afrp->sequences,
                                                       this_id, cp,
                                                       lip->line_num,
@@ -5858,6 +5899,10 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/10/12 20:12:28  bollin
+ * when reading an interleaved block alignment, generate errors if duplicate IDs
+ * are found.
+ *
  * Revision 1.24  2005/06/20 14:59:17  bollin
  * when creating an ordered organism name, stop when the next organism comment
  * is found
