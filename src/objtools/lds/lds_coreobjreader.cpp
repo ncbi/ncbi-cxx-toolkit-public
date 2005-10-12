@@ -74,7 +74,7 @@ void CLDS_CoreObjectsReader::OnTopObjectFoundPost(const CObjectInfo& object)
     SObjectParseDescr pdescr = m_Stack.top();
 
     SObjectDetails od(*pdescr.object_info, 
-                      pdescr.stream_offset,
+                      pdescr.stream_pos,
                       0,
                       0,
                       true);
@@ -112,9 +112,9 @@ void CLDS_CoreObjectsReader::OnObjectFoundPost(const CObjectInfo& object)
     _ASSERT(object_descr.stream_offset); // non-top object must have an offset
 
     SObjectDetails od(object, 
-                      object_descr.stream_offset,
-                      parent_descr.stream_offset,
-                      m_TopDescr.stream_offset,
+                      object_descr.stream_pos,
+                      parent_descr.stream_pos,
+                      m_TopDescr.stream_pos,
                       false);
     m_Objects.push_back(od);
 }
@@ -129,19 +129,19 @@ void CLDS_CoreObjectsReader::Reset()
 
 
 CLDS_CoreObjectsReader::SObjectDetails* 
-CLDS_CoreObjectsReader::FindObjectInfo(CNcbiStreamoff stream_offset)
+CLDS_CoreObjectsReader::FindObjectInfo(CNcbiStreampos pos)
 {
-    int idx = FindObject(stream_offset);
+    int idx = FindObject(pos);
     if (idx < 0)
         return 0;
     return &m_Objects[idx];
 }
 
-int CLDS_CoreObjectsReader::FindObject(CNcbiStreamoff stream_offset)
+int CLDS_CoreObjectsReader::FindObject(CNcbiStreampos stream_pos)
 {
     int idx = 0;
     ITERATE(TObjectVector, it, m_Objects) {
-        if (it->offset == stream_offset) {
+        if (it->offset == stream_pos) {
             return idx;
         }
         ++idx;
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/12 12:18:15  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.1  2005/09/19 14:40:16  kuznets
  * Merjing lds admin and lds libs together
  *

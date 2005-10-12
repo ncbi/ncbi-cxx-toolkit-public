@@ -76,7 +76,7 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
 
     switch (obj_descr.format) {
     case CFormatGuess::eFasta:
-        in.seekg(obj_descr.offset);
+        in.seekg(obj_descr.pos);
         return ReadFasta(in, 
                          fReadFasta_AssumeNuc |
                          fReadFasta_OneSeq);
@@ -84,7 +84,7 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
         {
-        in.seekg(obj_descr.offset);
+        in.seekg(obj_descr.pos);
         auto_ptr<CObjectIStream> 
           is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Bioseq") {
@@ -141,7 +141,7 @@ CRef<CSeq_annot> LDS_LoadAnnot(SLDS_TablesCollection& lds_db,
     case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
         {
-        in.seekg(obj_descr.offset);
+        in.seekg(obj_descr.pos);
         auto_ptr<CObjectIStream> 
           is(CObjectIStream::Open(FormatGuess2Serial(obj_descr.format), in));
         if (obj_descr.type_str == "Seq-annot") {
@@ -178,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/12 12:18:15  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.9  2005/09/30 13:55:21  kuznets
  * Load only one entry from fasta file, not all sequences
  *

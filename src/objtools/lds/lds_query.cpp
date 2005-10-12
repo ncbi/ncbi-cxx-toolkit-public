@@ -510,7 +510,8 @@ void CLDS_Query::x_FillDescrObj(SObjectDescr* descr,
     }
     descr->format = (CFormatGuess::EFormat)(int)m_db.file_db.format;
     descr->file_name = m_db.file_db.file_name;
-    descr->offset = m_db.object_db.file_offset;
+    Int8 pos = m_db.object_db.file_pos;
+    descr->pos = NcbiInt8ToStreampos(pos);
     descr->title = m_db.object_db.object_title;
 /*
         m_db.object_attr_db.object_attr_id = id;
@@ -538,7 +539,8 @@ void CLDS_Query::x_FillDescrAnnot(SObjectDescr* descr,
 
     descr->format    = (CFormatGuess::EFormat)(int)m_db.file_db.format;
     descr->file_name = m_db.file_db.file_name;
-    descr->offset    = m_db.annot_db.file_offset;
+    Int8 pos = m_db.annot_db.file_pos;
+    descr->pos = NcbiInt8ToStreampos(pos);
 }
 
 
@@ -548,6 +550,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/10/12 12:18:15  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.15  2005/10/06 16:17:27  kuznets
  * Implemented SeqId index
  *

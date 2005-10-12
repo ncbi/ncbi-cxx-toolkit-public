@@ -73,7 +73,7 @@ public:
                      const  string& file_name,
                      Uint4  crc,
                      int    timestamp,
-                     size_t file_size,
+                     Int8   file_size,
                      bool   compute_check_sum);
 
     // Return max record id. 0 if no record found.
@@ -103,6 +103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/12 12:18:04  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.1  2005/09/19 14:39:37  kuznets
  * Merjing lds admin and lds libs together
  *

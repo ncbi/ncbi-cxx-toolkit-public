@@ -70,16 +70,16 @@ public:
     struct SObjectDetails
     {
         CObjectInfo    info;
-        CNcbiStreamoff offset;
-        CNcbiStreamoff parent_offset;
-        CNcbiStreamoff top_level_offset;
+        CNcbiStreampos offset;
+        CNcbiStreampos parent_offset;
+        CNcbiStreampos top_level_offset;
         bool           is_top_level;
         int            ext_id;  // Database id or any other external id
 
         SObjectDetails(const  CObjectInfo& object_info,
-                       CNcbiStreamoff stream_offset,
-                       CNcbiStreamoff p_offset,
-                       CNcbiStreamoff top_offset,
+                       CNcbiStreampos stream_offset,
+                       CNcbiStreampos p_offset,
+                       CNcbiStreampos top_offset,
                        bool   is_top)
         : info(object_info),
           offset(stream_offset),
@@ -94,7 +94,7 @@ public:
 
     // Find object information based on the stream offset.
     // Return NULL if not found.
-    SObjectDetails* FindObjectInfo(CNcbiStreamoff stream_offset);
+    SObjectDetails* FindObjectInfo(CNcbiStreampos pos);
 
     TObjectVector& GetObjectsVector() { return m_Objects; }
 
@@ -105,16 +105,16 @@ protected:
     struct SObjectParseDescr
     {
         const CObjectInfo*  object_info;
-        CNcbiStreamoff      stream_offset;
+        CNcbiStreampos      stream_pos;
 
         SObjectParseDescr(const CObjectInfo* oi,
-                          CNcbiStreamoff offset)
+                          CNcbiStreampos     pos)
         : object_info(oi),
-          stream_offset(offset)
+          stream_pos(pos)
         {}
         SObjectParseDescr() 
         : object_info(0),
-          stream_offset(0)
+          stream_pos(0)
         {}
     };
 
@@ -126,7 +126,7 @@ protected:
     // This function works on the fact that only one object can 
     // be found in one particular offset, and offset udentifies any
     // object unqiely in its file.
-    int FindObject(CNcbiStreamoff stream_offset);
+    int FindObject(CNcbiStreampos stream_pos);
 
 private:
     TParseStack         m_Stack;
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/12 12:18:04  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.1  2005/09/19 14:39:37  kuznets
  * Merjing lds admin and lds libs together
  *

@@ -359,7 +359,7 @@ int CLDS_Object::SaveObject(int file_id,
                             const string& seq_id,
                             const string& description,
                             const string& seq_ids,
-                            CNcbiStreamoff offset,
+                            CNcbiStreampos pos,
                             int type_id)
 {
     ++m_MaxObjRecId;
@@ -374,7 +374,8 @@ int CLDS_Object::SaveObject(int file_id,
     m_db.object_db.file_id = file_id;
     m_db.object_db.seqlist_id = 0;
     m_db.object_db.object_type = type_id;
-    m_db.object_db.file_offset = offset;
+    Int8 ipos = NcbiStreamposToInt8(pos);
+    m_db.object_db.file_pos = ipos;
 //    m_db.object_db.object_attr_id = m_MaxObjRecId;
     m_db.object_db.TSE_object_id = 0;
     m_db.object_db.parent_object_id = 0;
@@ -482,7 +483,8 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.object_db.file_id = file_id;
         m_db.object_db.seqlist_id = 0;  // TODO:
         m_db.object_db.object_type = type_id;
-        m_db.object_db.file_offset = obj_info->offset;
+        Int8 i8 = NcbiStreamposToInt8(obj_info->offset);
+        m_db.object_db.file_pos = i8;
 //        m_db.object_db.object_attr_id = m_MaxObjRecId; 
         m_db.object_db.TSE_object_id = top_level_id;
         m_db.object_db.parent_object_id = parent_id;
@@ -569,7 +571,8 @@ int CLDS_Object::SaveObject(int file_id,
         m_db.annot_db.annot_id = m_MaxObjRecId;
         m_db.annot_db.file_id = file_id;
         m_db.annot_db.annot_type = type_id;
-        m_db.annot_db.file_offset = obj_info->offset;
+        Int8 i8 = NcbiStreamposToInt8(obj_info->offset);
+        m_db.annot_db.file_pos = i8;
         m_db.annot_db.TSE_object_id = top_level_id;
         m_db.annot_db.parent_object_id = parent_id;
 /*
@@ -936,6 +939,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/12 12:18:15  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.5  2005/10/06 16:17:27  kuznets
  * Implemented SeqId index
  *

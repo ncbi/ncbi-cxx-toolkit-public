@@ -45,7 +45,7 @@ struct NCBI_LDS_EXPORT SLDS_FileDB : public CBDB_File
     CBDB_FieldInt4     format;
     CBDB_FieldInt4     time_stamp;
     CBDB_FieldInt4     CRC;
-    CBDB_FieldInt4     file_size;   
+    CBDB_FieldInt8     file_size;   
 
     SLDS_FileDB();
 };
@@ -57,7 +57,7 @@ struct NCBI_LDS_EXPORT SLDS_AnnotDB : public CBDB_File
     CBDB_FieldInt4    annot_id;
     CBDB_FieldInt4    file_id;
     CBDB_FieldInt4    annot_type;
-    CBDB_FieldInt4    file_offset;
+    CBDB_FieldInt8    file_pos;
     CBDB_FieldInt4    TSE_object_id;     // TOP level seq entry object id;
     CBDB_FieldInt4    parent_object_id;  // Parent SeqEntry object id
 
@@ -90,7 +90,7 @@ struct NCBI_LDS_EXPORT SLDS_ObjectDB : public CBDB_File
     CBDB_FieldString  primary_seqid;
     CBDB_FieldInt4    seqlist_id; 
     CBDB_FieldInt4    object_type;
-    CBDB_FieldInt4    file_offset;
+    CBDB_FieldInt8    file_pos;
     CBDB_FieldInt4    TSE_object_id;     // TOP level seq entry object id
     CBDB_FieldInt4    parent_object_id;  // Parent SeqEntry object id
 
@@ -178,7 +178,7 @@ SLDS_AnnotDB::SLDS_AnnotDB()
 
     BindData("file_id", &file_id);
     BindData("annot_type", &annot_type);
-    BindData("file_offset", &file_offset);
+    BindData("file_pos", &file_pos);
     BindData("TSE_object_id", &TSE_object_id);
     BindData("parent_object_id", &parent_object_id);
 }
@@ -210,7 +210,7 @@ SLDS_ObjectDB::SLDS_ObjectDB()
     BindData("primary_seqid", &primary_seqid);
     BindData("seqlist_id", &seqlist_id);
     BindData("object_type", &object_type);
-    BindData("file_offset", &file_offset);
+    BindData("file_pos", &file_pos);
     BindData("TSE_object_id", &TSE_object_id);
     BindData("parent_object_id", &parent_object_id);
 
@@ -257,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2005/10/12 12:18:04  kuznets
+* Use 64-bit file sizes and offsets
+*
 * Revision 1.16  2005/10/06 16:17:15  kuznets
 * Implemented SeqId index
 *

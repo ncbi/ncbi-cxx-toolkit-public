@@ -83,7 +83,7 @@ public:
         string                  type_str;
         CFormatGuess::EFormat   format;
         string                  file_name;
-        size_t                  offset;
+        CNcbiStreampos          pos;
         string                  title;
     };
 
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/12 12:18:04  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.8  2005/10/06 16:17:15  kuznets
  * Implemented SeqId index
  *

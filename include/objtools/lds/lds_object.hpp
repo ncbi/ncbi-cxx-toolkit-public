@@ -102,7 +102,7 @@ protected:
                    const string&  seq_id,
                    const string&  description,
                    const string&  seq_ids,
-                   CNcbiStreamoff offset,
+                   CNcbiStreampos pos,
                    int            type_id);
 
     /// Rebuild sequence id index
@@ -160,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/12 12:18:04  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.6  2005/10/06 18:45:08  kuznets
  * + dll export specs
  *

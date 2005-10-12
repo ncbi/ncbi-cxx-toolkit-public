@@ -131,7 +131,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
         (*i)->GetTime(&modification);
         time_t tm = modification.GetTimeT();
         CFile aFile(entry);
-        size_t file_size = (size_t)aFile.GetLength();
+        Int8 file_size = aFile.GetLength();
 
         if (ext == ".db") {
             continue; // Berkeley DB file, no need to index it.
@@ -252,7 +252,7 @@ void CLDS_File::UpdateEntry(int    file_id,
                             const  string& file_name,
                             Uint4  crc,
                             int    time_stamp,
-                            size_t file_size,
+                            Int8   file_size,
                             bool   compute_check_sum)
 {
     if (!crc && compute_check_sum) {
@@ -298,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/12 12:18:15  kuznets
+ * Use 64-bit file sizes and offsets
+ *
  * Revision 1.3  2005/10/06 16:17:27  kuznets
  * Implemented SeqId index
  *
