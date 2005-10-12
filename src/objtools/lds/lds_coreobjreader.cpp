@@ -109,7 +109,7 @@ void CLDS_CoreObjectsReader::OnObjectFoundPost(const CObjectInfo& object)
     _ASSERT(!m_Stack.empty());
 
     SObjectParseDescr parent_descr = m_Stack.top();
-    _ASSERT(object_descr.stream_offset); // non-top object must have an offset
+    _ASSERT(object_descr.stream_pos); // non-top object must have an offset
 
     SObjectDetails od(object, 
                       object_descr.stream_pos,
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/12 13:46:22  kuznets
+ * Fixed minor compilation bug
+ *
  * Revision 1.2  2005/10/12 12:18:15  kuznets
  * Use 64-bit file sizes and offsets
  *
