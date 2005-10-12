@@ -81,7 +81,7 @@ Res. 29:2994-3005.",
     // eCompAdjustedMatrices
     "Stephen F. Altschul, John C. Wootton, E. Michael Gertz, Richa Agarwala, Aleksandr Morgulis, \
 Alejandro A. Schäffer, and Yi-Kuo Yu \"Protein database searches using \
-compositionally adjusted substitution matrices\", FEBS J., in press.",
+compositionally adjusted substitution matrices\", FEBS J. 272:5101-5109.",
     // eMaxPublications
     kEmptyStr
 };
