@@ -723,6 +723,19 @@ static void TestException_AuxTrace(void)
     }
 }
 
+static void TestStreamposConvert(void)
+{
+    Int8 p1(1);
+    p1 <<= 45;
+
+    CT_POS_TYPE pos = NcbiInt8ToStreampos(p1);
+    Int8 p2 = NcbiStreamposToInt8(pos);
+
+    assert(p1 == p2);
+    assert(p1 && p2);
+}
+
+
 
 static void TestException(void)
 {
@@ -731,6 +744,7 @@ static void TestException(void)
     TestException_Features();
     TestException_Std();
     TestException_Aux();
+    TestStreamposConvert();
 }
 
 
@@ -951,6 +965,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.97  2005/10/12 13:25:08  kuznets
+ * Test for streampos converters
+ *
  * Revision 1.96  2005/08/12 17:56:46  ucko
  * Adjust usage of STD_CATCH[_ALL], whose argument must now be a single string.
  *
