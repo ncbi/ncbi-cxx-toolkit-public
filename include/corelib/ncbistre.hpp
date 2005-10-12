@@ -37,6 +37,7 @@
 
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbitype.h>
 
 
 /// Determine which iostream library to use, include appropriate
@@ -566,6 +567,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/10/12 13:34:12  kuznets
+ * include ncbitypes.h for Int8 definition
+ *
  * Revision 1.46  2005/10/12 12:52:31  kuznets
  * Added streampos converterion funcions
  *
