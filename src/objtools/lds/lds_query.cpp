@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbistre.hpp>
 
 #include <bdb/bdb_cursor.hpp>
 #include <bdb/bdb_util.hpp>
@@ -550,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/10/12 13:47:30  kuznets
+ * #include ncbistre.hpp
+ *
  * Revision 1.16  2005/10/12 12:18:15  kuznets
  * Use 64-bit file sizes and offsets
  *
