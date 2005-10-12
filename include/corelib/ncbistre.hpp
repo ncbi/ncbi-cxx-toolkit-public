@@ -371,6 +371,25 @@ inline bool ct_eq_int_type(CT_INT_TYPE i1, CT_INT_TYPE i2) {
 #  define CT_EQ_INT_TYPE   NCBI_NS_STD::char_traits<char>::eq_int_type
 #endif /* HAVE_NO_CHAR_TRAITS */
 
+
+/// Convert stream position to 64-bit int
+///
+/// On some systems stream position is a structure, this function
+/// converts it to plain numeric value.
+///
+/// @sa NcbiInt8ToStreampos
+///
+NCBI_XNCBI_EXPORT extern
+Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos);
+
+/// Convert plain numeric stream postion into stream position in terms 
+/// of streams library.
+///
+/// @sa NcbiStreamposToInt8
+NCBI_XNCBI_EXPORT
+CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos);
+
+
 // CNcbiOstrstreamToString class helps to convert CNcbiOstream buffer to string
 // Sample usage:
 /*
@@ -547,6 +566,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/10/12 12:52:31  kuznets
+ * Added streampos converterion funcions
+ *
  * Revision 1.45  2005/07/29 14:12:52  ucko
  * Expose a more general version of NcbiGetline that can be used when
  * unsure what ending to expect.

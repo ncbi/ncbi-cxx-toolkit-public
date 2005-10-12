@@ -39,6 +39,22 @@
 
 BEGIN_NCBI_SCOPE
 
+Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos)
+{
+    fpos_t fp(stream_pos.seekpos());
+    return (Int8)fp;
+}
+
+CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
+{
+    fpos_t fp(pos);
+    mbstate_t mbs;
+    memset (&mbs, '\0', sizeof (mbs));
+    CT_POS_TYPE p(mbs, fp);
+    return p;
+}
+
+
 
 CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
 {
@@ -369,12 +385,16 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 }
 
 
+
 #endif  /* NCBI_USE_OLD_IOSTREAM */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/10/12 12:53:30  kuznets
+ * Added streampos converterion funcions
+ *
  * Revision 1.38  2005/07/29 14:13:34  ucko
  * Expose a more general version of NcbiGetline (the old s_NcbiGetline,
  * with a small interface tweak) that can be used when unsure what ending
