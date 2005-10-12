@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/10/12 17:00:19  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
 * Revision 1.36  2005/08/05 15:11:40  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -167,6 +171,7 @@
 #include <serial/datatool/stlstr.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/reftype.hpp>
+#include <serial/datatool/srcutil.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -350,7 +355,23 @@ void CUniSequenceDataType::PrintXMLSchemaExtra(CNcbiOstream& out) const
 void CUniSequenceDataType::FixTypeTree(void) const
 {
     CParent::FixTypeTree();
-    m_ElementType->SetParent(this, "E");
+    string name("E");
+    const CDataMemberContainerType* elem =
+        dynamic_cast<const CDataMemberContainerType*>(m_ElementType.get());
+    if (elem) {
+        const CDataMemberContainerType* par =
+            dynamic_cast<const CDataMemberContainerType*>(GetParentType());
+        if (par) {
+#if 1
+            name = string("E_") + Identifier(GetMemberName());
+#else
+            if (par->UniElementNameExists(name)) {
+                name = string("E_") + Identifier(GetMemberName());
+            }
+#endif
+        }
+    }
+    m_ElementType->SetParent(this, name);
     m_ElementType->SetInSet(this);
 }
 

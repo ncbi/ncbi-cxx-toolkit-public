@@ -33,6 +33,7 @@
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/type.hpp>
 #include <serial/datatool/blocktype.hpp>
+#include <serial/datatool/unitype.hpp>
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/stdstr.hpp>
 #include <serial/datatool/code.hpp>
@@ -332,7 +333,21 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     {
         code.ClassPublic() <<
             "    // types\n";
+        bool ce_defined = false;
         ITERATE ( TMembers, i, m_Members ) {
+            if (!ce_defined && i->dataType) {
+                const CUniSequenceDataType* mem =
+                    dynamic_cast<const CUniSequenceDataType*>(i->dataType);
+                if (mem != 0) {
+                    const CDataMemberContainerType* elem =
+                        dynamic_cast<const CDataMemberContainerType*>(mem->GetElementType());
+                    if (elem != 0 && NStr::StartsWith(elem->GetMemberName(),"E_")) {
+                        code.ClassPublic() <<
+                            "    typedef C_"<< elem->GetMemberName() <<" "<< "C_E;\n";
+                        ce_defined = true;
+                    }
+                }
+            }
             string cType = i->type->GetCType(code.GetNamespace());
             if (!x_IsNullType(i)) {
                 code.ClassPublic() <<
@@ -1483,6 +1498,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2005/10/12 17:00:19  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
 * Revision 1.71  2005/08/25 16:00:29  gouriano
 * Corrected doxygen-related code generation
 *

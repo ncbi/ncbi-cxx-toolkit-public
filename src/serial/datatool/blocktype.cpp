@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2005/10/12 17:00:19  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
 * Revision 1.60  2005/08/05 15:11:40  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -719,6 +723,22 @@ TObjectPtr CDataMemberContainerType::CreateDefault(const CDataValue& ) const
 {
     NCBI_THROW(CDatatoolException,eNotImplemented,
                  GetASNKeyword() + string(" default not implemented"));
+}
+
+bool CDataMemberContainerType::UniElementNameExists(const string& name) const
+{
+    bool res = false;
+    for (TMembers::const_iterator i = m_Members.begin();
+        !res && i != m_Members.end(); ++i) {
+        const CUniSequenceDataType* mem =
+            dynamic_cast<const CUniSequenceDataType*>((*i)->GetType());
+        if (mem != 0) {
+            const CDataMemberContainerType* elem =
+                dynamic_cast<const CDataMemberContainerType*>(mem->GetElementType());
+            res = (elem != 0 && elem->GetMemberName() == name);
+        }
+    }
+    return res;
 }
 
 const char* CDataContainerType::XmlMemberSeparator(void) const

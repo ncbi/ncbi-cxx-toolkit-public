@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/10/12 17:00:46  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
 * Revision 1.15  2005/08/05 15:12:02  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -212,6 +216,7 @@ public:
         {
             return m_LastComments;
         }
+    bool UniElementNameExists(const string& name) const;
 
 private:
     TMembers m_Members;

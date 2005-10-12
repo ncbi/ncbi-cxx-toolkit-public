@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/10/12 17:00:46  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
 * Revision 1.26  2005/08/05 15:12:02  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -374,6 +378,10 @@ public:
     }
 
     virtual const char* GetDEFKeyword(void) const;
+    const string& GetMemberName(void) const
+    {
+        return m_MemberName;
+    }
 
 protected:
     static bool x_IsSavedName(const string& name);

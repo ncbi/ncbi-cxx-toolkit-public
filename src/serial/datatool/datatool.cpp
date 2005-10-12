@@ -70,7 +70,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(1,2,1) );
+    SetVersion( CVersionInfo(1,2,2) );
 }
 
 void CDataTool::Init(void)
@@ -625,6 +625,10 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.86  2005/10/12 17:00:19  gouriano
+* Replace C_E class name in unisequence types by something more unique
+* Add typedef in generated code to provide backward compatibility
+*
 * Revision 1.85  2005/09/16 13:04:23  gouriano
 * Corrected DTD for boolean type
 *
