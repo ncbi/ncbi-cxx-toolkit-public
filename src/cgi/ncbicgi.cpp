@@ -723,65 +723,6 @@ const string& CCgiRequest::GetPropertyName(ECgiProp prop)
 }
 
 
-// Return integer (0..15) corresponding to the "ch" as a hex digit
-// Return -1 on error
-static int s_HexChar(char ch) THROWS_NONE
-{
-    if ('0' <= ch  &&  ch <= '9')
-        return ch - '0';
-    if ('a' <= ch  &&  ch <= 'f')
-        return 10 + (ch - 'a');
-    if ('A' <= ch  &&  ch <= 'F')
-        return 10 + (ch - 'A');
-    return -1;
-}
-
-
-// URL-decode string "str" into itself
-// Return 0 on success;  otherwise, return 1-based error position
-static SIZE_TYPE s_URL_Decode(string& str, bool percent_only = false)
-{
-    SIZE_TYPE len = str.length();
-    if ( !len )
-        return 0;
-
-    SIZE_TYPE p = 0;
-    for (SIZE_TYPE pos = 0;  pos < len;  p++) {
-        switch ( str[pos] ) {
-        case '%': {
-            if (pos + 2 > len)
-                return (pos + 1);
-            int i1 = s_HexChar(str[pos+1]);
-            if (i1 < 0  ||  15 < i1)
-                return (pos + 2);
-            int i2 = s_HexChar(str[pos+2]);
-            if (i2 < 0  ||  15 < i2)
-                return (pos + 3);
-            str[p] = s_HexChar(str[pos+1]) * 16 + s_HexChar(str[pos+2]);
-            pos += 3;
-            break;
-        }
-        case '+': {
-            if ( !percent_only ) {
-                str[p] = ' ';
-            }
-            pos++;
-            break;
-        }
-        default:
-            str[p] = str[pos++];
-        }
-    }
-
-    if (p < len) {
-        str[p] = '\0';
-        str.resize(p);
-    }
-
-    return 0;
-}
-
-
 // Add another entry to the container of entries
 void s_AddEntry(TCgiEntries& entries, const string& name,
                 const string& value, unsigned int position,
@@ -821,7 +762,7 @@ static SIZE_TYPE s_ParseIsIndex(const string& str,
             end = len;
 
         string name = str.substr(beg, end - beg);
-        if ((err_pos = s_URL_Decode(name)) != 0)
+        if ((err_pos = URL_DecodeInPlace(name)) != 0)
             return beg + err_pos;  // error
 
         // store
@@ -1369,7 +1310,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
             mid = len;
 
         string name = str.substr(beg, mid - beg);
-        if ((err_pos = s_URL_Decode(name)) != 0)
+        if ((err_pos = URL_DecodeInPlace(name)) != 0)
             return beg + err_pos;  // error
 
         // parse and URL-decode value(if any)
@@ -1383,7 +1324,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
                 end = len;
 
             value = str.substr(mid, end - mid);
-            if ((err_pos = s_URL_Decode(value)) != 0)
+            if ((err_pos = URL_DecodeInPlace(value)) != 0)
                 return mid + err_pos;  // error
 
             beg = end + 1;
@@ -1450,182 +1391,6 @@ void CCgiRequest::Deserialize(CNcbiIstream& is, TFlags flags)
         x_ProcessInputStream(flags, &is, -1);
 }
 
-extern string URL_DecodeString(const string& str,
-                               EUrlEncode    encode_flag)
-{
-    if (encode_flag == eUrlEncode_None) {
-        return str;
-    }
-    string    x_str   = str;
-    SIZE_TYPE err_pos =
-        s_URL_Decode(x_str, encode_flag == eUrlEncode_PercentOnly);
-    if (err_pos != 0) {
-        NCBI_THROW2(CCgiParseException, eFormat,
-                    "URL_DecodeString(\"" + NStr::PrintableString(str) + "\")",
-                    err_pos);
-    }
-    return x_str;
-}
-
-
-extern string URL_EncodeString(const string& str,
-                               EUrlEncode encode_flag)
-{
-    static const char s_Encode[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "+",   "!",   "%22", "%23", "$",   "%25", "%26", "'",
-        "(",   ")",   "*",   "%2B", ",",   "-",   ".",   "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "_",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    static const char s_EncodeMarkChars[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "+",   "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    static const char s_EncodePercentOnly[256][4] = {
-        "%00", "%01", "%02", "%03", "%04", "%05", "%06", "%07",
-        "%08", "%09", "%0A", "%0B", "%0C", "%0D", "%0E", "%0F",
-        "%10", "%11", "%12", "%13", "%14", "%15", "%16", "%17",
-        "%18", "%19", "%1A", "%1B", "%1C", "%1D", "%1E", "%1F",
-        "%20", "%21", "%22", "%23", "%24", "%25", "%26", "%27",
-        "%28", "%29", "%2A", "%2B", "%2C", "%2D", "%2E", "%2F",
-        "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
-        "8",   "9",   "%3A", "%3B", "%3C", "%3D", "%3E", "%3F",
-        "%40", "A",   "B",   "C",   "D",   "E",   "F",   "G",
-        "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
-        "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
-        "X",   "Y",   "Z",   "%5B", "%5C", "%5D", "%5E", "%5F",
-        "%60", "a",   "b",   "c",   "d",   "e",   "f",   "g",
-        "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
-        "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
-        "x",   "y",   "z",   "%7B", "%7C", "%7D", "%7E", "%7F",
-        "%80", "%81", "%82", "%83", "%84", "%85", "%86", "%87",
-        "%88", "%89", "%8A", "%8B", "%8C", "%8D", "%8E", "%8F",
-        "%90", "%91", "%92", "%93", "%94", "%95", "%96", "%97",
-        "%98", "%99", "%9A", "%9B", "%9C", "%9D", "%9E", "%9F",
-        "%A0", "%A1", "%A2", "%A3", "%A4", "%A5", "%A6", "%A7",
-        "%A8", "%A9", "%AA", "%AB", "%AC", "%AD", "%AE", "%AF",
-        "%B0", "%B1", "%B2", "%B3", "%B4", "%B5", "%B6", "%B7",
-        "%B8", "%B9", "%BA", "%BB", "%BC", "%BD", "%BE", "%BF",
-        "%C0", "%C1", "%C2", "%C3", "%C4", "%C5", "%C6", "%C7",
-        "%C8", "%C9", "%CA", "%CB", "%CC", "%CD", "%CE", "%CF",
-        "%D0", "%D1", "%D2", "%D3", "%D4", "%D5", "%D6", "%D7",
-        "%D8", "%D9", "%DA", "%DB", "%DC", "%DD", "%DE", "%DF",
-        "%E0", "%E1", "%E2", "%E3", "%E4", "%E5", "%E6", "%E7",
-        "%E8", "%E9", "%EA", "%EB", "%EC", "%ED", "%EE", "%EF",
-        "%F0", "%F1", "%F2", "%F3", "%F4", "%F5", "%F6", "%F7",
-        "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
-    };
-
-    if (encode_flag == eUrlEncode_None) {
-        return str;
-    }
-
-    string url_str;
-
-    SIZE_TYPE len = str.length();
-    if ( !len )
-        return url_str;
-
-    const char (*encode_table)[4];
-    switch (encode_flag) {
-    case eUrlEncode_SkipMarkChars:
-        encode_table = s_Encode;
-        break;
-    case eUrlEncode_ProcessMarkChars:
-        encode_table = s_EncodeMarkChars;
-        break;
-    case eUrlEncode_PercentOnly:
-        encode_table = s_EncodePercentOnly;
-        break;
-    }
-
-    SIZE_TYPE pos;
-    SIZE_TYPE url_len = len;
-    const unsigned char* cstr = (const unsigned char*)str.c_str();
-    for (pos = 0;  pos < len;  pos++) {
-        if (encode_table[cstr[pos]][0] == '%')
-            url_len += 2;
-    }
-    url_str.reserve(url_len + 1);
-    url_str.resize(url_len);
-
-    SIZE_TYPE p = 0;
-    for (pos = 0;  pos < len;  pos++, p++) {
-        const char* subst = encode_table[cstr[pos]];
-        if (*subst != '%') {
-            url_str[p] = *subst;
-        } else {
-            url_str[  p] = '%';
-            url_str[++p] = *(++subst);
-            url_str[++p] = *(++subst);
-        }
-    }
-
-    _ASSERT( p == url_len );
-    url_str[url_len] = '\0';
-    return url_str;
-}
-
 
 END_NCBI_SCOPE
 
@@ -1634,6 +1399,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.99  2005/10/13 18:30:15  grichenk
+* Added cgi_util with CCgiArgs and CUrl.
+* Moved URL encoding/decoding functions to cgi_util.
+* Added CUrlException.
+*
 * Revision 1.98  2005/09/23 14:02:34  lavr
 * Fix last ChangeLog entry
 *

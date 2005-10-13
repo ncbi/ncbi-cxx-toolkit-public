@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <cgi/cgi_util.hpp>
 #include <list>
 #include <map>
 #include <set>
@@ -63,17 +64,6 @@ class CTime;
 ///
 /// The CGI send-cookie class
 ///
-
-
-/// URL encode flags
-enum EUrlEncode {
-    eUrlEncode_None,             ///< Do not encode/decode string
-    eUrlEncode_SkipMarkChars,    ///< Do not convert chars like '!', '(' etc.
-    eUrlEncode_ProcessMarkChars, ///< Convert all non-alphanum chars,
-                                 ///< spaces are converted to '+'
-    eUrlEncode_PercentOnly       ///< Convert all non-alphanum chars including
-                                 ///< space and '%' to %## format
-};
 
 
 class NCBI_XCGI_EXPORT CCgiCookie
@@ -755,22 +745,6 @@ private:
 };  // CCgiRequest
 
 
-/// Decode the URL-encoded string "str";  return the result of decoding
-/// If "str" format is invalid then throw CParseException
-NCBI_XCGI_EXPORT
-extern string
-URL_DecodeString(const string& str,
-                 EUrlEncode    encode_flag = eUrlEncode_SkipMarkChars);
-
-
-/// URL-encode a string "str" to the "x-www-form-urlencoded" form;
-/// return the result of encoding. If 
-NCBI_XCGI_EXPORT
-extern string
-URL_EncodeString(const      string& str,
-                 EUrlEncode encode_flag = eUrlEncode_SkipMarkChars);
-
-
 /* @} */
 
 
@@ -938,6 +912,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.80  2005/10/13 18:30:15  grichenk
+* Added cgi_util with CCgiArgs and CUrl.
+* Moved URL encoding/decoding functions to cgi_util.
+* Added CUrlException.
+*
 * Revision 1.79  2005/08/04 11:12:49  ivanov
 * Added CCgiEntry::operator CTempString
 *

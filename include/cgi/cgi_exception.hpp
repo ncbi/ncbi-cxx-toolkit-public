@@ -160,6 +160,36 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CUrlException --
+///
+///   Exceptions used when the error has occured while parsing an URL
+
+class CUrlException : public CParseTemplException<CCgiException>
+{
+public:
+    /// @sa CCgiException
+    enum EErrCode {
+        eBadChar,
+        eBadFormat
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eBadChar:   return "BadChar";
+        case eBadFormat: return "BadFormat";
+        default:         return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT2
+    (CUrlException, CParseTemplException<CCgiException>,
+     std::string::size_type);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CCgiErrnoException --
 ///
 ///   Exceptions used by CGI framework when the error is more system-related
@@ -194,6 +224,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/13 18:30:15  grichenk
+ * Added cgi_util with CCgiArgs and CUrl.
+ * Moved URL encoding/decoding functions to cgi_util.
+ * Added CUrlException.
+ *
  * Revision 1.4  2004/09/07 19:14:09  vakatov
  * Better structurize (and use) CGI exceptions to distinguish between user-
  * and server- errors
