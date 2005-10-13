@@ -278,8 +278,10 @@ class NCBI_XALGOGNOMON_EXPORT CCluster : public list<CAlignVec>
         typedef list<CAlignVec>::iterator TIt;
         typedef list<CAlignVec>::const_iterator TConstIt;
         CCluster(int f = numeric_limits<int>::max(), int s = 0, int t = CAlignVec::eWall) : m_limits(f,s), m_type(t) {}
+        CCluster(TSignedSeqRange limits) : m_limits(limits), m_type(CAlignVec::eWall) {}
         void Insert(const CAlignVec& a);
         void Insert(const CCluster& c);
+        void Splice(CCluster& c); // elements removed from c and inserted into *this
         TSignedSeqRange Limits() const { return m_limits; }
         int Type() const { return m_type; }
         bool operator<(const CCluster& c) const { return Precede(m_limits, c.m_limits); }
@@ -296,13 +298,14 @@ NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const CCluster
 
 class NCBI_XALGOGNOMON_EXPORT CClusterSet : public set<CCluster>
 {
-    public:
-        typedef set<CCluster>::iterator TIt;
-        typedef set<CCluster>::const_iterator TConstIt;
-        CClusterSet() {}
-        void InsertAlignment(const CAlignVec& a);
-        void InsertCluster(CCluster c);
-        void Init();
+ public:
+    typedef set<CCluster>::iterator TIt;
+    typedef set<CCluster>::const_iterator TConstIt;
+
+    CClusterSet() {}
+    void InsertAlignment(const CAlignVec& a);
+    void InsertCluster(CCluster c);
+    void Init();
 };
 
 class CGene;
@@ -382,6 +385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/13 19:04:37  chetvern
+ * added CCluster::Splice method
+ *
  * Revision 1.7  2005/10/06 18:08:39  ucko
  * Tweak RecalculateLimits, as some compiler versions took issue with
  * its use of ?:.
