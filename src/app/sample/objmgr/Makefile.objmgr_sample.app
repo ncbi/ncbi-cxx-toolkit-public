@@ -16,3 +16,8 @@ LIB = xobjmgr $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
+
+CHECK_CMD = objmgr_sample -gi 178614
+CHECK_CMD = objmgr_sample -gi 18565551
+CHECK_CMD = objmgr_sample -gi 19550966
+CHECK_CMD = objmgr_sample -gi 455025
