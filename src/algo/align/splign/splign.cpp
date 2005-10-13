@@ -220,9 +220,9 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             pattern0.push_back( h->GetQueryMax() );
             pattern0.push_back( h->GetSubjMin() );
             pattern0.push_back( h->GetSubjMax() );
-            bool perfect = h->GetIdentity() < 1.00 &&
-                h->GetQuerySpan() == h->GetSubjSpan();
-            imperfect.push_back(perfect == false);
+            bool imprf = h->GetIdentity() < 1.00 ||
+                h->GetQuerySpan() != h->GetSubjSpan();
+            imperfect.push_back(imprf);
         }
     }
 
@@ -1607,6 +1607,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/10/13 21:23:58  kapustin
+ * Fix a typo - reverse the perfect hit flag
+ *
  * Revision 1.38  2005/09/28 18:04:29  kapustin
  * Verify that perfect hits actually have equal sides. Use relative coordinates as pattern base
  *
