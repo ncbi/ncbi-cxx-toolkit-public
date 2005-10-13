@@ -648,6 +648,12 @@ void CCluster::Insert(const CCluster& c)
     for(TConstIt it = c.begin(); it != c.end(); ++it) Insert(*it);
 }
 
+void CCluster::Splice(CCluster& c)
+{
+    m_limits.CombineWith(c.Limits());
+    splice(end(),c);
+}
+
 void CCluster::Init(TSignedSeqPos first, TSignedSeqPos second, int t)
 {
     clear();
@@ -718,12 +724,11 @@ void CClusterSet::InsertAlignment(const CAlignVec& a)
 void CClusterSet::InsertCluster(CCluster clust)
 {
     pair<TIt,TIt> lim = equal_range(clust);
-    for(TIt it = lim.first; it != lim.second;)
-    {
-        clust.Insert(*it);
+    for(TIt it = lim.first; it != lim.second;) {
+        clust.Splice(const_cast<CCluster&>(*it));
         erase(it++);
     }
-    insert(lim.second,clust);
+    const_cast<CCluster&>(*insert(lim.second,CCluster(clust.Limits()))).Splice(clust);
 }
 
 void CClusterSet::Init()
@@ -740,6 +745,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/13 19:05:53  chetvern
+ * added CCluster::Splice method and used it in CClusterSet::InsertCluster
+ *
  * Revision 1.3  2005/10/06 15:50:07  chetvern
  * fixed unnecessary Residue conversion in GetSequence
  * removed strand comparison from CAlignVec's MutualExtension and isCompatible methods
