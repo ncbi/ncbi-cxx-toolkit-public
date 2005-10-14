@@ -331,8 +331,11 @@ public:
 };
 
 
-/// Experimental inteface (since this does not provide a full interface to
+/// Experimental interface (since this does not provide a full interface to
 /// PSI-BLAST)
+/// @note the ISearch::TResults that are returned from the Run method will
+/// always contain 0 or 1 CSearchResults objects, as PSI-BLAST cannot do
+/// multiple-PSSM searches
 class IPssmSearch : public ISearch {
 public:
 
