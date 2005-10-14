@@ -564,6 +564,11 @@ BLAST_MATRIX_NOMINAL
  */
 
 /** Karlin-Altschul parameter values for substitution scores 1 and -4. */
+static const array_of_8 blastn_values_1_5[] = {
+    { 3, 3, 1.39, 0.747, 1.38, 1.02,  0, 100 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 1 and -4. */
 static const array_of_8 blastn_values_1_4[] = {
     { 0, 0, 1.383, 0.738, 1.36, 1.02,  0, 100 },
     { 1, 2,  1.36,  0.67,  1.2,  1.1,  0,  98 }, 
@@ -2754,7 +2759,14 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
 
     *array_size = 0;
 
-    if (reward == 1 && penalty == -4) {
+    if (reward == 1 && penalty == -5) {
+        if ((status=s_SplitArrayOf8(blastn_values_1_5, &kValues, &kValues_non_affine, &split)))
+           return status;
+        
+        *array_size = sizeof(blastn_values_1_5)/sizeof(array_of_8);
+        *gap_open_max = 3;
+        *gap_extend_max = 3;
+    } else if (reward == 1 && penalty == -4) {
         if ((status=s_SplitArrayOf8(blastn_values_1_4, &kValues, &kValues_non_affine, &split)))
            return status;
         
@@ -4147,6 +4159,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.132  2005/10/14 17:29:22  madden
+ * Add preliminary support for vecscreen parameters
+ *
  * Revision 1.131  2005/10/12 19:15:47  madden
  * Fix bug in s_GetNuclValuesArray
  *
