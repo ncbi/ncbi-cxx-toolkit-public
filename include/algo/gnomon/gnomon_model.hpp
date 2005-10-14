@@ -176,6 +176,11 @@ public:
         TSignedSeqRange RealCdsLimits() const;     // including start/stop
         TSignedSeqRange MaxCdsLimits() const { return m_max_cds_limits; }   // longest cds including start/stop (doesn't show frame)
         void SetMaxCdsLimits(TSignedSeqRange p) { m_max_cds_limits = p; }
+    void SetCdsInfo(const CAlignVec& a)
+    {
+        SetCdsLimits(a.CdsLimits()); SetMaxCdsLimits(a.MaxCdsLimits());
+        SetScore(a.Score()); SetPStop(a.PStop()); SetOpenCds(OpenCds());
+    }
         bool Intersect(const CAlignVec& a) const 
         {
             return Limits().IntersectingWith(a.Limits()); 
@@ -385,6 +390,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/14 20:09:53  chetvern
+ * added CAlignVec::SetCdsInfo method
+ *
  * Revision 1.8  2005/10/13 19:04:37  chetvern
  * added CCluster::Splice method
  *
