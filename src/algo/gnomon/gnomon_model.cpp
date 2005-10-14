@@ -651,6 +651,7 @@ void CCluster::Insert(const CCluster& c)
 void CCluster::Splice(CCluster& c)
 {
     m_limits.CombineWith(c.Limits());
+    m_type = max(m_type,c.Type());
     splice(end(),c);
 }
 
@@ -728,6 +729,7 @@ void CClusterSet::InsertCluster(CCluster clust)
         clust.Splice(const_cast<CCluster&>(*it));
         erase(it++);
     }
+
     const_cast<CCluster&>(*insert(lim.second,CCluster(clust.Limits()))).Splice(clust);
 }
 
@@ -745,6 +747,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/14 21:59:54  souvorov
+ * Set Cluster type in Splice
+ *
  * Revision 1.4  2005/10/13 19:05:53  chetvern
  * added CCluster::Splice method and used it in CClusterSet::InsertCluster
  *
