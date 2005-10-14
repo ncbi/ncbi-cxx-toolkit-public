@@ -45,7 +45,7 @@ Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos)
     fpos_t fp(stream_pos.seekpos());
     return (Int8)fp;
 #else
-	return (CT_OFF_TYPE) stream_pos;
+    return (CT_OFF_TYPE) (stream_pos - CT_POS_TYPE(0));
 #endif
 }
 
@@ -400,6 +400,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/10/14 18:51:49  ucko
+ * Clean NcbiStreamposToInt8 up slightly.
+ *
  * Revision 1.40  2005/10/12 13:33:14  kuznets
  * streampos converter: conditional code for WIN32
  *
