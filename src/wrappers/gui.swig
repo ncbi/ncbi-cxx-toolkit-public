@@ -279,7 +279,7 @@ gui/utils/worker_thread.hpp
 %%
 
 // Need this for return value of __Make*
-%template(CRef_CPluginInfoSet) ncbi::CRef<ncbi::objects::CPluginInfoSet>;
+%template() ncbi::CRef<ncbi::objects::CPluginInfoSet>;
 %inline %{
 // for creating scripting language objects from C++
 inline
@@ -319,6 +319,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/14 18:25:18  jcherry
+ * Treat CRef<CPluginInfoSet> like other CRef's (don't wrap, use typemaps)
+ *
  * Revision 1.3  2005/09/23 15:31:14  jcherry
  * Dropped obsolete headers
  *
