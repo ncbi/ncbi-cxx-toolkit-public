@@ -68,23 +68,24 @@ void CDbapiTest::Init()
 
 
 #ifdef WIN32
+
    argList->AddDefaultKey("s", "string",
                            "Server name",
                            CArgDescriptions::eString, "MS_DEV1");
-
    argList->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds|odbc>",
                            CArgDescriptions::eString, 
                            "odbc");
 #else
-    argList->AddDefaultKey("s", "string",
+
+	argList->AddDefaultKey("s", "string",
                            "Server name",
                            CArgDescriptions::eString, "STRAUSS");
 
-    argList->AddDefaultKey("d", "string",
+	argList->AddDefaultKey("d", "string",
                            "Driver <ctlib|dblib|ftds>",
                            CArgDescriptions::eString, 
-                           "ctlib");
+                           "ftds");
 #endif
 
     SetupArgDescriptions(argList);
@@ -108,7 +109,7 @@ int CDbapiTest::Run()
 
         // Register driver explicitly for static linkage if needed
 #ifdef WIN32
-        DBAPI_RegisterDriver_ODBC();
+       // DBAPI_RegisterDriver_ODBC();
 #endif
         //DBAPI_RegisterDriver_DBLIB(dm);
 
@@ -116,9 +117,10 @@ int CDbapiTest::Run()
         // objects in the library.
         //
         // set TDS version for STRAUSS
-        if( NStr::CompareNocase(server, "STRAUSS") == 0 ) {
+        if( NStr::CompareNocase(server, "STRAUSS") == 0 
+			&& NStr::CompareNocase(driver, "ftds") == 0) {
             map<string,string> attr;
-            attr["version"] = "100";
+            attr["version"] = "46";
             ds = dm.CreateDs(driver, &attr);
         }
         else
@@ -166,11 +168,35 @@ int CDbapiTest::Run()
             NcbiCout << "Begin transaction, count: " << tc->GetVariant(1).GetString();
         }
 #endif
-        try {
+        try 
+		{
+			NcbiCout << "Creating SelectSample table...";
+			sql = "if exists( select * from sysobjects \
+where name = 'SelectSample' \
+AND type = 'U') \
+begin \
+	drop table SelectSample \
+end";
+			stmt->ExecuteUpdate(sql);
 
 
-            sql = "select int_val, fl_val, date_val, str_val \
-                    from SelectSample ";
+        sql = "create table SelectSample (\
+	int_val int not null, \
+	fl_val real not null, \
+    date_val smalldatetime not null, \
+	str_val varchar(255) not null, \
+	text_val text not null)";
+			stmt->ExecuteUpdate(sql);
+
+			sql = "insert SelectSample values (1, 2.5, '11/05/2005', 'Test string1', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+				  insert SelectSample values (2, 3.3, '11/06/2005', 'Test string2', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+				  insert SelectSample values (3, 4.4, '11/07/2005', 'Test string3', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+				  insert SelectSample values (4, 5.5, '11/08/2005', 'Test string4', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
+				  insert SelectSample values (5, 6.6, '11/09/2005', 'Test string5', 'TextBlobTextBlobTextBlobTextBlobTextBlob')";
+			stmt->ExecuteUpdate(sql);
+
+
+            sql = "select int_val, fl_val, date_val, str_val from SelectSample";
             NcbiCout << endl << "Testing simple select..." << endl
                     << sql << endl;
 
@@ -200,12 +226,11 @@ int CDbapiTest::Run()
                             if( rsMeta->GetType(i) == eDB_Text
                                 || rsMeta->GetType(i) == eDB_Image ) {
 
-                                CDB_Stream *b = dynamic_cast<CDB_Stream*>(rs->GetVariant(i).GetData());
-                                _ASSERT(b);
+                                const CVariant& b = rs->GetVariant(i);
 
-                                char *buf = new char[b->Size() + 1];
-                                b->Read(buf, b->Size());
-                                buf[b->Size()] = '\0';
+                                char *buf = new char[b.GetBlobSize() + 1];
+                                b.Read(buf, b.GetBlobSize());
+                                buf[b.GetBlobSize()] = '\0';
                                 NcbiCout << buf << "|";
                                 delete buf;
                                 
@@ -361,8 +386,23 @@ begin \
 end";
         stmt->ExecuteUpdate(sql);
 
-
+	if( NStr::CompareNocase(server, "STRAUSS") == 0 )
         sql = "create procedure SampleProc \
+	@id int, \
+	@f float, \
+    @o int output \
+as \
+begin \
+  select int_val, fl_val, date_val from SelectSample \
+  where int_val < @id and fl_val <= @f \
+  select @o = 555 \
+  select 2121, 'Parameter @id:', @id, 'Parameter @f:', @f, 'Parameter @o:', @o  \
+  print 'Print test output' \
+   /* raiserror 20000  'Raise Error test output' */ \
+  return @id \
+end";
+	else
+		sql = "create procedure SampleProc \
 	@id int, \
 	@f float, \
     @o int output \
@@ -569,11 +609,6 @@ from SelectSample where int_val = 1");
             }
         }
 
-        IStatement *stmt2 = conn->CreateStatement();
-        NcbiCout << stmt2->GetParentConn()->GetDataSource()->GetErrorInfo() << endl;
-        NcbiCout << stmt2->GetParentConn()->GetDataSource()->GetErrorInfo() << endl;
-        NcbiCout << stmt2->GetParentConn()->GetDataSource()->GetErrorInfo() << endl;
-    
         // create a table
         NcbiCout << endl << "Creating BlobSample table..." << endl;
         sql = "if exists( select * from sysobjects \
@@ -614,6 +649,8 @@ end";
         for(int i = 0; i < COUNT; ++i ) {
             string im = "BLOB data " + NStr::IntToString(i);
             col1 = i;
+            col2.Truncate();
+            col2.Append(im.c_str(), im.size());
             col3.Truncate();
             col3.Append(im.c_str(), im.size());
             bi->AddRow();
@@ -700,21 +737,21 @@ from BlobSample where id = 1");
         // Reading text blobs
         NcbiCout << "Reading text BLOB..." << endl;
         IResultSet *brs = stmt->ExecuteQuery("select id, blob2, blob from BlobSample");
-        //brs->BindBlobToVariant(true);
+        brs->BindBlobToVariant(true);
         char *bbuf = new char[50000];
         while(brs->Next()) {
             NcbiCout << brs->GetVariant(1).GetString() << "|";
-            CNcbiIstream &is = brs->GetBlobIStream();
-            while( !is.eof() ) {
-                NcbiCout << is.get();
-            }
-            NcbiCout << "|";
-            CNcbiIstream &is2 = brs->GetBlobIStream();
-            while( !is2.eof() ) {
-                NcbiCout << (char)is2.get();
-            }
-            NcbiCout << endl;
-/*
+            //CNcbiIstream &is = brs->GetBlobIStream();
+            //while( !is.eof() ) {
+            //    NcbiCout << is.get();
+            //}
+            //NcbiCout << "|";
+            //CNcbiIstream &is2 = brs->GetBlobIStream();
+            //while( !is2.eof() ) {
+            //    NcbiCout << (char)is2.get();
+            //}
+            //NcbiCout << endl;
+
             if( brs->GetVariant(2).IsNull() ) {
                 NcbiCout << " null ";
             }
@@ -722,7 +759,7 @@ from BlobSample where id = 1");
             v.Read(bbuf, v.GetBlobSize());
             bbuf[v.GetBlobSize()] = '\0';
             NcbiCout << bbuf << endl;
-*/
+
         }
         delete[] bbuf;
 
@@ -780,6 +817,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/10/14 16:26:05  kholodov
+* Fixed: raiserror format for Sybase
+*
 * Revision 1.17  2005/07/26 15:02:45  ssikorsk
 * Use new-stile DBAPI_RegisterDriver.
 *
