@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <map>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -364,6 +365,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/10/14 16:15:36  ucko
+* +<memory> for auto_ptr<>
+*
 * Revision 1.1  2005/10/13 15:42:47  grichenk
 * Initial revision
 *
