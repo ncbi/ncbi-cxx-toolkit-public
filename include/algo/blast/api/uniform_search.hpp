@@ -230,11 +230,11 @@ public:
     
     TErrors GetErrors(int min_severity = eBlastSevError) const;
 
-    // FIXME: add list of query masked regions with frame information for
-    // translated searches. To do this one might need to create (or move) some
-    // type similar to CDisplaySeqalign::SeqlocInfo as well as some function
-    // like Blast_GetSeqLocInfoVector
-    // (CVSROOT/individual/dondosha/blast_demo/format_util.cpp).
+#if 0
+    /// Retrieve the query regions which were masked by BLAST
+    /// @param flt_query_regions the return value [in|out]
+    void GetFilteredQueryRegions(TSeqLocInfoVector& flt_query_regions);
+#endif
     
 private:
     CRef<objects::CSeq_align_set> m_Alignment;

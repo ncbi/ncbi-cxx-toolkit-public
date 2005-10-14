@@ -120,6 +120,14 @@ CSearchDatabase::GetGiListLimitation() const
     return m_GiListLimitation; 
 }
 
+#if 0
+void
+CSearchResults::GetFilteredQueryRegions(TSeqLocInfoVector& flt_query_regions)
+{
+    throw runtime_error("CSearchResults::GetFilteredQueryRegions "
+                        "unimplemented");
+}
+#endif
 
 CSearchResults::TErrors CSearchResults::GetErrors(int min_severity) const
 {
