@@ -43,12 +43,6 @@
  */
 
 BEGIN_NCBI_SCOPE
-
-// Forward declarations in objects scope
-BEGIN_SCOPE(objects)
-    class CSeq_id;
-END_SCOPE(objects)
-
 BEGIN_SCOPE(blast)
 
 /// Abstract base class to encapsulate retrieval of sequence identifiers. 
@@ -85,6 +79,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/10/14 13:44:53  camacho
+ * Remove unneeded forward declaration
+ *
  * Revision 1.6  2005/09/29 15:32:11  jcherry
  * Added export specifiers
  *
