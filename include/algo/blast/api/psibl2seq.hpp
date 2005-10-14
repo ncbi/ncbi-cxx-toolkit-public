@@ -90,6 +90,9 @@ private:
     /// Query factory built from the query CBioseq
     CRef<IQueryFactory> m_QueryFactory;
 
+    /// Holds a reference to the results
+    ISearch::TResults m_Results;
+
     /// Prohibit copy constructor
     CPsiBl2Seq(const CPsiBl2Seq& rhs);
 
@@ -116,6 +119,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/10/14 12:18:58  camacho
+* Make CPsiBl2Seq use CBlastTracebackSearch
+*
 * Revision 1.2  2005/10/12 13:52:45  camacho
 * Doxygen fixes
 *

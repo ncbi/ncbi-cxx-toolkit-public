@@ -90,7 +90,6 @@ private:
     friend class CSetupFactory; 
     friend class CPrelimSearchRunner;
     friend class CBlastTracebackSearch;
-    friend class CPsiBl2Seq;
 
     // The data that is being shared (not that this object doesn't own these)
     EBlastProgramType m_ProgramType;

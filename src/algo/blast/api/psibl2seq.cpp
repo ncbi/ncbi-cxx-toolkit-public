@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/seqsrc_query_factory.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
+#include <algo/blast/api/traceback_stage.hpp>
 #include "blast_seqalign.hpp"
 #include "prelim_search_runner.hpp"
 #include "seqinfosrc_bioseq.hpp"
@@ -50,9 +51,6 @@ static char const rcsid[] =
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <objects/scoremat/PssmIntermediateData.hpp>
 #include <objects/seqset/Seq_entry.hpp>
-
-// Core BLAST includes
-#include <algo/blast/core/blast_traceback.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -184,51 +182,15 @@ CPsiBl2Seq::Run()
         NCBI_THROW(CBlastException, eCoreBlastError, msg);
     }
 
-    CBlastHSPResults hsp_results;
-    status = Blast_RunTracebackSearch(opts_memento->m_ProgramType, 
-                                      core_data->m_Queries, 
-                                      core_data->m_QueryInfo, 
-                                      core_data->m_SeqSrc->GetPointer(), 
-                                      opts_memento->m_ScoringOpts, 
-                                      opts_memento->m_ExtnOpts, 
-                                      opts_memento->m_HitSaveOpts, 
-                                      opts_memento->m_EffLenOpts, 
-                                      opts_memento->m_DbOpts, 
-                                      opts_memento->m_PSIBlastOpts, 
-                                      core_data->m_ScoreBlk->GetPointer(), 
-                                      core_data->m_HspStream->GetPointer(), 
-                                      0, /* RPS-BLAST data */ 
-                                      0, /* PHI-BLAST data */
-                                      &hsp_results);
-    if (status) {
-        string msg("Traceback search failed with status ");
-        msg += NStr::IntToString(status);
-        NCBI_THROW(CBlastException, eCoreBlastError, msg);
-    }
-    
     bool is_prot = BlastSeqSrcGetIsProt
         (core_data->m_SeqSrc->GetPointer()) ? true : false;
-
     CRef<IRemoteQueryData> subject_data(m_Subject->MakeRemoteQueryData());
     CRef<CBioseq_set> subject_bioseqs(subject_data->GetBioseqSet());
-    
     CBioseqSeqInfoSrc seqinfo_src(*subject_bioseqs, is_prot);
-    TSeqAlignVector aligns =
-        LocalBlastResults2SeqAlign(hsp_results,
-           *m_QueryFactory->MakeLocalQueryData(&opts),
-           seqinfo_src,
-           opts_memento->m_ProgramType,
-           opts.GetGappedMode(),
-           opts.GetOutOfFrameMode());
-    
-    // The code should probably capture and return errors here; the
-    // traceback stage does not seem to produce messages, but the
-    // preliminary stage does; they should be saved and returned here
-    // if they have not been returned or reported yet.
-    
-    ASSERT(aligns.size() == 1);
-    CSearchResults::TErrors no_errors;
-    return CRef<CSearchResults>(new CSearchResults(aligns[0], no_errors));
+
+    CBlastTracebackSearch tback(m_QueryFactory, core_data, opts, seqinfo_src);
+    m_Results = tback.Run();
+    return CRef<CSearchResults>(&m_Results[0]);
 }
 
 END_SCOPE(blast)

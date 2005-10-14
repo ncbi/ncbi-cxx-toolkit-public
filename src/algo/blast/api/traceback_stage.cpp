@@ -63,10 +63,15 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
                                              CRef<TBlastHSPStream>   hsps)
     : m_QueryFactory (qf),
       m_Options      (opts),
-      m_InternalData (new SInternalData)
+      m_InternalData (new SInternalData),
+      m_OptsMemento  (0),
+      m_HspResults   (0),
+      m_SeqInfoSrc   (0),
+      m_OwnSeqInfoSrc(false)
 {
     x_Init(qf, opts, db.GetDatabaseName());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
+    x_InitSeqInfoSrc(seqsrc);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
     m_InternalData->m_HspStream.Reset(hsps);
 }
@@ -77,9 +82,14 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>    qf,
                                              CRef<TBlastHSPStream>  hsps)
     : m_QueryFactory (qf),
       m_Options      (opts),
-      m_InternalData (new SInternalData)
+      m_InternalData (new SInternalData),
+      m_OptsMemento  (0),
+      m_HspResults   (0),
+      m_SeqInfoSrc   (0),
+      m_OwnSeqInfoSrc(false)
 {
     BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
+    x_InitSeqInfoSrc(seqsrc);
     x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
     m_InternalData->m_HspStream.Reset(hsps);
@@ -91,21 +101,51 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
                                              CRef<TBlastHSPStream> hsps)
     : m_QueryFactory (qf),
       m_Options      (opts),
-      m_InternalData (new SInternalData)
+      m_InternalData (new SInternalData),
+      m_OptsMemento  (0),
+      m_HspResults   (0),
+      m_SeqInfoSrc   (0),
+      m_OwnSeqInfoSrc(false)
 {
+    x_InitSeqInfoSrc(seqsrc);
     x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
     m_InternalData->m_HspStream.Reset(hsps);
 }
 
-CBlastTracebackSearch::CBlastTracebackSearch(CRef<SInternalData> internal_data)
-    : m_InternalData(internal_data)
+CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
+                                             CRef<SInternalData> internal_data, 
+                                             const CBlastOptions& opts, 
+                                             const IBlastSeqInfoSrc& seqinfosrc)
+    : m_QueryFactory (qf),
+      m_Options      (const_cast<CBlastOptions*>(&opts)),
+      m_InternalData (internal_data),
+      m_OptsMemento  (opts.CreateSnapshot()),
+      m_HspResults   (0),
+      m_SeqInfoSrc   (const_cast<IBlastSeqInfoSrc*>(&seqinfosrc)),
+      m_OwnSeqInfoSrc(false)
 {}
 
 CBlastTracebackSearch::~CBlastTracebackSearch()
 {
     delete m_OptsMemento;
+    if (m_OwnSeqInfoSrc) {
+        delete m_SeqInfoSrc;
+    }
 }
+
+void
+CBlastTracebackSearch::x_InitSeqInfoSrc(const BlastSeqSrc* seqsrc)
+{
+    string db_name;
+    if (const char* seqsrc_name = BlastSeqSrcGetName(seqsrc)) {
+        db_name = string(seqsrc_name);
+    }
+    ASSERT(!db_name.empty());
+    bool is_prot = BlastSeqSrcGetIsProt(seqsrc) ? true : false;
+    m_SeqInfoSrc = new CSeqDbSeqInfoSrc(db_name, is_prot);
+    m_OwnSeqInfoSrc = true;
+} 
 
 void
 CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
@@ -168,6 +208,7 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
 ISeqSearch::TResults
 CBlastTracebackSearch::Run()
 {
+    ASSERT(m_OptsMemento);
     SPHIPatternSearchBlk* phi_lookup_table(0);
 
     // For PHI BLAST we need to pass the pattern search items structure to the
@@ -207,20 +248,13 @@ CBlastTracebackSearch::Run()
     
     m_HspResults.Reset(WrapStruct(hsp_results, Blast_HSPResultsFree));
     
-    bool is_prot = BlastSeqSrcGetIsProt
-        (m_InternalData->m_SeqSrc->GetPointer()) ? true : false;
-    string db_name;
-    if (const char* seqsrc_name = 
-        BlastSeqSrcGetName(m_InternalData->m_SeqSrc->GetPointer())) {
-        db_name = string(seqsrc_name);
-    }
-    ASSERT(!db_name.empty());
-    CSeqDbSeqInfoSrc seqinfo_src(db_name, is_prot);
-    
+    ASSERT(m_SeqInfoSrc);
+    ASSERT(m_QueryFactory);
+
     TSeqAlignVector aligns =
         LocalBlastResults2SeqAlign(hsp_results,
            *m_QueryFactory->MakeLocalQueryData(m_Options),
-           seqinfo_src,
+           *m_SeqInfoSrc,
            m_OptsMemento->m_ProgramType,
            m_Options->GetGappedMode(),
            m_Options->GetOutOfFrameMode());

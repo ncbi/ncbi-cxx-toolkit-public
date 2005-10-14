@@ -49,6 +49,7 @@ BEGIN_SCOPE(blast)
 
 // Forward declaration
 class IBlastSeqSrcAdapter;
+class IBlastSeqInfoSrc;
 
 class NCBI_XBLAST_EXPORT CBlastTracebackSearch : public CObject
 {
@@ -71,9 +72,12 @@ public:
                           BlastSeqSrc         * seqsrc,
                           CRef<TBlastHSPStream> hsps);
     
-    // Use the internal data and return value of the preliminary search to
-    // proceed with the traceback.
-    CBlastTracebackSearch(CRef<SInternalData> internal_data);
+    /// Use the internal data and return value of the preliminary search to
+    /// proceed with the traceback.
+    CBlastTracebackSearch(CRef<IQueryFactory> query_factory,
+                          CRef<SInternalData> internal_data,
+                          const CBlastOptions& opts,
+                          const IBlastSeqInfoSrc& seqinfo_src);
     
     // is this enough? 
     virtual ~CBlastTracebackSearch();
@@ -85,6 +89,10 @@ private:
     void x_Init(CRef<IQueryFactory> qf, 
                 CRef<CBlastOptions> opts,
                 const string& dbname);
+
+    /// Initializes the IBlastSeqInfoSrc from data obtained from the
+    /// BlastSeqSrc (works for database searches only)
+    void x_InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
 
     // Auto method generation prevention
     CBlastTracebackSearch(CBlastTracebackSearch &);
@@ -101,6 +109,12 @@ private:
     
     // The output of traceback, I think...
     CRef< CStructWrapper<BlastHSPResults> > m_HspResults;
+
+    /// Pointer to the IBlastSeqInfoSrc object to use to generate the
+    /// Seq-aligns
+    IBlastSeqInfoSrc* m_SeqInfoSrc;
+    /// True if the field above must be deleted by this class, false otherwise
+    bool m_OwnSeqInfoSrc;
 };
 
 END_SCOPE(BLAST)
