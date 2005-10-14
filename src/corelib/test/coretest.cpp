@@ -744,7 +744,7 @@ static void TestException(void)
     TestException_Features();
     TestException_Std();
     TestException_Aux();
-    TestStreamposConvert();
+    // TestStreamposConvert();
 }
 
 
@@ -965,6 +965,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.98  2005/10/14 19:02:47  ucko
+ * Comment out call to TestStreamposConvert because not all
+ * configurations support large files. :-/
+ *
  * Revision 1.97  2005/10/12 13:25:08  kuznets
  * Test for streampos converters
  *
