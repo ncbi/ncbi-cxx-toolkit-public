@@ -101,7 +101,7 @@ entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=10890397&dopt=Citation",
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=11452024&dopt=Citation",
     // eCompAdjustedMatrices
     "http://www.ncbi.nlm.nih.gov/\
-entrez/query.fcgi",
+entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=16218944&dopt=Citation",
     // eMaxPublications
     kEmptyStr
 };
