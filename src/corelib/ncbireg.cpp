@@ -1431,23 +1431,21 @@ bool CNcbiRegistry::x_Set(const string& section, const string& name,
                           const string& value, TFlags flags,
                           const string& comment)
 {
-    if ( !(flags & fPersistent) ) {
-        flags |= fTransient;
-    }
-    bool was_empty = Get(section, name, flags).empty();
+    TFlags flags2 = (flags & fPersistent) ? flags : (flags | fTransient);
+    bool was_empty = Get(section, name, flags2).empty();
     _TRACE('[' << section << ']' << name << " = " << value << ':' << flags);
     if ((flags & fNoOverride)  &&  !was_empty) {
         return false;
     }
     if (value.empty()) {
         m_MainRegistry->Set(section, name, value, flags, comment);
-        m_ClearedEntries[s_FlatKey(section, name)] |= flags;
+        m_ClearedEntries[s_FlatKey(section, name)] |= flags2;
         return !was_empty;
     } else {
         TClearedEntries::iterator it
             = m_ClearedEntries.find(s_FlatKey(section, name));
         if (it != m_ClearedEntries.end()) {
-            if ((it->second &= ~flags) == 0) {
+            if ((it->second &= ~flags2) == 0) {
                 m_ClearedEntries.erase(it);
             }
         }
@@ -1484,6 +1482,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/10/17 17:01:55  ucko
+ * Tweak CNcbiRegistry::x_Set to pass the original value of flags to
+ * recursive invocations of Set.
+ *
  * Revision 1.54  2005/05/12 15:15:32  ucko
  * Fix some (meta)registry buglets and add support for reloading.
  *
