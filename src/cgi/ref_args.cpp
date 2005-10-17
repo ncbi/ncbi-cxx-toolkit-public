@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <cgi/ref_args.hpp>
 #include <cgi/ncbicgi.hpp>
+#include <cgi/cgi_util.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -93,6 +94,16 @@ void CRefArgs::AddDefinitions(const string& host_mask,
 
 string CRefArgs::GetQueryString(const string& referrer) const
 {
+    CUrl url(referrer);
+    ITERATE(THostMap, it, m_HostMap) {
+        if (NStr::FindNoCase(url.GetHost(), it->first) == NPOS) {
+            continue;
+        }
+        if ( url.HaveArgs()  &&  url.GetArgs().IsSetValue(it->second) ) {
+            return url.GetArgs().GetValue(it->second);
+        }
+    }
+/*
     // Remove http:// prefix
     SIZE_TYPE pos = NStr::Find(referrer, "://");
     string host =  (pos != NPOS) ?
@@ -124,6 +135,7 @@ string CRefArgs::GetQueryString(const string& referrer) const
             return string(query->second);
         }
     }
+*/
     return kEmptyStr;
 }
 
@@ -157,6 +169,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2005/10/17 20:47:31  grichenk
+* Use CUrl to parse referrer
+*
 * Revision 1.5  2005/02/18 17:45:53  grichenk
 * IsListedHost() accepts referrer string rather than host name.
 *
