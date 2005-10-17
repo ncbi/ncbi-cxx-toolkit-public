@@ -78,6 +78,7 @@ public:
     /// Structure describes the indexed object
     struct SObjectDescr
     {
+        SObjectDescr() : pos(0) {}
         int                     id;
         bool                    is_object;
         string                  type_str;
@@ -113,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/17 12:19:35  rsmith
+ * initialize streampos members.
+ *
  * Revision 1.9  2005/10/12 12:18:04  kuznets
  * Use 64-bit file sizes and offsets
  *

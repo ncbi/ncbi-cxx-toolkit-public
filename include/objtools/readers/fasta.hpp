@@ -76,6 +76,7 @@ struct SFastaFileMap
 {
     struct SFastaEntry
     {
+        SFastaEntry() : stream_offset(0) {}
         /// List of qll sequence ids
         typedef list<string>  TFastaSeqIds;
 
@@ -123,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/10/17 12:19:35  rsmith
+* initialize streampos members.
+*
 * Revision 1.9  2005/09/29 19:35:51  kuznets
 * Added callback based fasta reader
 *
