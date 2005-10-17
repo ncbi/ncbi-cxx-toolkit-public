@@ -594,7 +594,8 @@ bool Cn3DApp::OnInit(void)
     }
 
     // optionally show alignment window
-    structureWindow->glCanvas->structureSet->alignmentManager->ShowSequenceViewer(!commandLine.Found("n"));
+	if (structureWindow->glCanvas->structureSet)
+		structureWindow->glCanvas->structureSet->alignmentManager->ShowSequenceViewer(!commandLine.Found("n"));
 
     // optionally open imports window, but only if any imports present
     if (commandLine.Found("i") && structureWindow->glCanvas->structureSet &&
@@ -650,6 +651,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/10/17 22:11:34  thiessen
+* fix init bug
+*
 * Revision 1.26  2005/09/06 20:57:12  thiessen
 * fix -n option
 *
