@@ -91,7 +91,7 @@ static char const rcsid[] = "$Id$";
  * Stephen F. Altschul, John C. Wootton, E. Michael Gertz, Richa
  * Agarwala, Aleksandr Morgulis, Alejandro Schaffer and Yi-Kuo Yu
  * (2005) Protein Database Searches Using Compositionally Adjusted
- * Substitution Matrices.  FEBS Journal, in press.
+ * Substitution Matrices.  FEBS Journal, 272,5101-9.
  */
 
 
