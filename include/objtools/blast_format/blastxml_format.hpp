@@ -54,6 +54,8 @@ BEGIN_NCBI_SCOPE
 class IBlastXMLReportData
 {
 public:
+    /// Our virtual destructor
+    virtual ~IBlastXMLReportData() {}
     /// Returns BLAST program name as string.
     virtual string GetBlastProgramName(void) const = 0;
     /// Returns BLAST task as an enumerated value.
@@ -123,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/10/17 19:35:39  camacho
+* Fix compiler warning
+*
 * Revision 1.4  2005/08/29 16:10:14  camacho
 * Fix to previous commit
 *
