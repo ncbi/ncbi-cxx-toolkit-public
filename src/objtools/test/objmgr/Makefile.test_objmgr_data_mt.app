@@ -15,4 +15,4 @@ CHECK_CMD = test_objmgr_loaders_id2.sh test_objmgr_data_ids.sh test_objmgr_data_
 CHECK_CMD = test_objmgr_loaders_id1.sh test_objmgr_data_mt.sh
 CHECK_CMD = test_objmgr_loaders_id2.sh test_objmgr_data_mt.sh
 CHECK_CMD = test_objmgr_loaders_pubseqos.sh test_objmgr_data_mt.sh
-CHECK_TIMEOUT = 1000
+CHECK_TIMEOUT = 1800
