@@ -913,15 +913,21 @@ Uint8 NStr::StringToUInt8_DataSize(
 
 // Set base value accordngly specified flags
 # define SET_BASE_VALUE                                                     \
-    unsigned char base = 10;                                                \
-    switch (flags  &  (fOctal | fHex)) {                                    \
+    unsigned char base;                                                     \
+    switch (flags  &  (fBinary | fOctal | fHex)) {                          \
+        case 0:  /* default base */                                         \
+            base = 10;                                                      \
+            break;                                                          \
+        case fBinary:                                                       \
+            base = 2;                                                       \
+            break;                                                          \
         case fOctal:                                                        \
             base = 8;                                                       \
             break;                                                          \
         case fHex:                                                          \
             base = 16;                                                      \
             break;                                                          \
-        case (fOctal | fHex):                                               \
+        default:                                                            \
             out_str = kEmptyStr;                                            \
             return;                                                         \
     }
@@ -938,7 +944,7 @@ void NStr::IntToString(string& out_str, long svalue, TNumToStringFlags flags)
         value = static_cast<unsigned long>(svalue);
     }
     
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
@@ -977,7 +983,7 @@ void NStr::UIntToString(string&           out_str,
 {
     SET_BASE_VALUE;
 
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
@@ -1107,7 +1113,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue, TNumToStringFlags flags)
         value = static_cast<Uint8>(svalue);
     }
 
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
     char  buffer[kBufSize];
 
     char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
@@ -1134,7 +1140,7 @@ void NStr::UInt8ToString(string& out_str, Uint8 value, TNumToStringFlags flags)
 {
     SET_BASE_VALUE;
 
-    const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
+    const size_t kBufSize = (sizeof(value) * CHAR_BIT);
     char  buffer[kBufSize];
 
     char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
@@ -2312,6 +2318,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.164  2005/10/17 18:24:38  ivanov
+ * Allow NStr::*ToString() convert numbers using fBinary format
+ *
  * Revision 1.163  2005/10/17 13:49:11  ivanov
  * Allow NStr::*ToString() convert numbers using octal and hex formats.
  *
