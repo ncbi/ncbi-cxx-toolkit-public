@@ -1376,6 +1376,24 @@ int CTestApplication::Run(void)
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
+char buf[100];
+string str;
+
+    //int num = -1;
+    int num = -12345678;
+    //Int8 num = 123456789012345;
+
+    _ui64toa(num,buf,8);
+    cout << buf << endl;
+    NStr::UInt8ToString(str,num,NStr::fOctal);
+    cout << str.c_str() << endl;
+
+    _ui64toa(num,buf,16);
+    cout << buf << endl;
+    NStr::UInt8ToString(str,num,NStr::fHex);
+    cout << str.c_str() << endl;
+
+    return 0;
     CTestApplication theTestApplication;
     return theTestApplication.AppMain(argc, argv, 0 /*envp*/, eDS_ToMemory);
 }
@@ -1384,6 +1402,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.49  2005/10/17 13:27:19  ivanov
+ * Allow NStr::*ToString() convert numbers using octal and hex formats.
+ *
  * Revision 6.48  2005/10/04 19:44:22  gouriano
  * Added test CStringUTF8
  *
