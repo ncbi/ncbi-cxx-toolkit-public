@@ -629,7 +629,7 @@ static void s_StringToNumRadix()
     assert(str == "FFFFFFFFFFFFFFFF");
 #endif
 
-    NStr::UInt8ToString(str, 12345678901234567, NStr::fHex);
+    NStr::UInt8ToString(str, NCBI_CONST_UINT8(12345678901234567), NStr::fHex);
     assert(str == "2BDC545D6B4B87");
 
     OK;
@@ -1510,6 +1510,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.52  2005/10/17 18:38:40  ucko
+ * s_StringToNumRadix(): add a missing call to NCBI_CONST_UINT8.
+ *
  * Revision 6.51  2005/10/17 18:25:46  ivanov
  * Improved NStr::StringTo*() radix test.
  * Added tests for fBinary, fOctal and fHex flags.
