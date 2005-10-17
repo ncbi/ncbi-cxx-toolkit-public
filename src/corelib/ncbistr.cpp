@@ -356,26 +356,25 @@ int NStr::StringToNumeric(const string& str)
     }
 
 # define CHECK_COMMAS                                                       \
-        /* Check on possible commas */                                      \
-        if (flags & NStr::fAllowCommas) {                                   \
-            if (ch == ',') {                                                \
-                if ((numpos == pos)  ||                                     \
-                    ((comma >= 0)  &&  (comma != 3)) ) {                    \
-                    /* Not first comma, sitting on incorrect place */       \
-                    break;                                                  \
-                }                                                           \
-                /* Skip it */                                               \
-                comma = 0;                                                  \
-                pos++;                                                      \
-                continue;                                                   \
-            } else {                                                        \
-                if (comma >= 0) {                                           \
-                    /* Count symbols between commas */                      \
-                    comma++;                                                \
-                }                                                           \
+    /* Check on possible commas */                                          \
+    if (flags & NStr::fAllowCommas) {                                       \
+        if (ch == ',') {                                                    \
+            if ((numpos == pos)  ||                                         \
+                ((comma >= 0)  &&  (comma != 3)) ) {                        \
+                /* Not first comma, sitting on incorrect place */           \
+                break;                                                      \
             }                                                               \
-        }
-
+            /* Skip it */                                                   \
+            comma = 0;                                                      \
+            pos++;                                                          \
+            continue;                                                       \
+        } else {                                                            \
+            if (comma >= 0) {                                               \
+                /* Count symbols between commas */                          \
+                comma++;                                                    \
+            }                                                               \
+        }                                                                   \
+    }
 
 
 int NStr::StringToInt(const CTempString& str, TStringToNumFlags flags,int base)
@@ -912,38 +911,61 @@ Uint8 NStr::StringToUInt8_DataSize(
 ///////////////////////////////////////////
 
 
+// Set base value accordngly specified flags
+# define SET_BASE_VALUE                                                     \
+    unsigned char base = 10;                                                \
+    switch (flags  &  (fOctal | fHex)) {                                    \
+        case fOctal:                                                        \
+            base = 8;                                                       \
+            break;                                                          \
+        case fHex:                                                          \
+            base = 16;                                                      \
+            break;                                                          \
+        case (fOctal | fHex):                                               \
+            out_str = kEmptyStr;                                            \
+            return;                                                         \
+    }
+
 
 void NStr::IntToString(string& out_str, long svalue, TNumToStringFlags flags)
 {
-    unsigned long value =
-        static_cast<unsigned long>(svalue<0?-svalue:svalue);
+    SET_BASE_VALUE;
+
+    unsigned long value;
+    if (base == 10) {
+        value = static_cast<unsigned long>(svalue<0?-svalue:svalue);
+    } else {
+        value = static_cast<unsigned long>(svalue);
+    }
     
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
-    if (flags & NStr::fWithCommas) {
+    if ( (base == 10) && (flags & fWithCommas) ) {
         int cnt = -1;
         do {
             if (++cnt == 3) {
                 *--pos = ',';
                 cnt = 0;
             }
-            *--pos = char('0' + (value % 10));
-            value /= 10;
+            *--pos = s_Hex[value % base];
+            value /= base;
         } while ( value );
     }
     else {
         do {
-            *--pos = char('0' + (value % 10));
-            value /= 10;
+            *--pos = s_Hex[value % base];
+            value /= base;
         } while ( value );
     }
-    
-    if (svalue < 0)
-        *--pos = '-';
-    else if (flags & NStr::fWithSign)
-        *--pos = '+';
+
+    if (base == 10) {
+        if (svalue < 0)
+            *--pos = '-';
+        else if (flags & fWithSign)
+            *--pos = '+';
+    }
 
     out_str.assign(pos, buffer + kBufSize - pos);
 }
@@ -953,31 +975,33 @@ void NStr::UIntToString(string&           out_str,
                         unsigned long     value,
                         TNumToStringFlags flags)
 {
+    SET_BASE_VALUE;
+
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
     char* pos = buffer + kBufSize;
 
-    if (flags & NStr::fWithCommas) {
+    if ( (base == 10) && (flags & fWithCommas) ) {
         int cnt = -1;
         do {
             if (++cnt == 3) {
                 *--pos = ',';
                 cnt = 0;
             }
-            *--pos = char('0' + (value % 10));
-            value /= 10;
+            *--pos = s_Hex[value % base];
+            value /= base;
         } while ( value );
     }
     else {
         do {
-            *--pos = char('0' + (value % 10));
-            value /= 10;
+            *--pos = s_Hex[value % base];
+            value /= base;
         } while ( value );
     }
     
-    if (flags & NStr::fWithSign)
+    if ( (base == 10)  &&  (flags & fWithSign) ) {
         *--pos = '+';
-
+    }
     out_str.assign(pos, buffer + kBufSize - pos);
 }
 
@@ -992,6 +1016,7 @@ string NStr::Int8ToString(Int8 value, TNumToStringFlags flags)
 
 // On some platforms division of Int8 is very slow,
 // so will try to optimize it working with chunks.
+// Works only for radix base == 10.
 
 #define PRINT_INT8_CHUNK 1000000000
 #define PRINT_INT8_CHUNK_SIZE 9
@@ -999,9 +1024,10 @@ string NStr::Int8ToString(Int8 value, TNumToStringFlags flags)
 /// @internal
 static char* s_PrintUint8(char*                   pos,
                           Uint8                   value,
-                          NStr::TNumToStringFlags flags)
+                          NStr::TNumToStringFlags flags,
+                          unsigned char           base = 10)
 {
-    if (flags & NStr::fWithCommas) {
+    if ( (base == 10) && (flags & NStr::fWithCommas) ) {
         int cnt = -1;
 #ifdef PRINT_INT8_CHUNK
         for ( ;; ) {
@@ -1013,8 +1039,8 @@ static char* s_PrintUint8(char*                   pos,
                         *--pos = ',';
                         cnt = 0;
                     }
-                    *--pos = char('0' + (chunk % 10));
-                    chunk /= 10;
+                    *--pos = s_Hex[chunk % base];
+                    chunk /= base;
                 }
             }
             else {
@@ -1023,8 +1049,8 @@ static char* s_PrintUint8(char*                   pos,
                         *--pos = ',';
                         cnt = 0;
                     }
-                    *--pos = char('0' + (chunk % 10));
-                    chunk /= 10;
+                    *--pos = s_Hex[chunk % base];
+                    chunk /= base;
                 } while ( chunk );
                 break;
             }
@@ -1035,54 +1061,63 @@ static char* s_PrintUint8(char*                   pos,
                 *--pos = ',';
                 cnt = 0;
             }
-            *--pos = char('0' + (value % 10));
-            value /= 10;
+            *--pos = s_Hex[value % base];
+            value /= base;
         } while ( value );
 #endif
     }
     else {
-#ifdef PRINT_INT8_CHUNK
-        for ( ;; ) {
-            Uint4 chunk = Uint4(value % PRINT_INT8_CHUNK);
-            value /= PRINT_INT8_CHUNK;
-            if ( value ) {
-                for ( int i = 0; i < PRINT_INT8_CHUNK_SIZE; ++i ) {
-                    *--pos = char('0' + (chunk % 10));
-                    chunk /= 10;
+        if ( PRINT_INT8_CHUNK  &&  (base == 10) ) {
+            for ( ;; ) {
+                Uint4 chunk = Uint4(value % PRINT_INT8_CHUNK);
+                value /= PRINT_INT8_CHUNK;
+                if ( value ) {
+                    for ( int i = 0; i < PRINT_INT8_CHUNK_SIZE; ++i ) {
+                        *--pos = s_Hex[chunk % base];
+                        chunk /= base;
+                    }
+                }
+                else {
+                    do {
+                        *--pos = s_Hex[chunk % base];
+                        chunk /= base;
+                    } while ( chunk );
+                    break;
                 }
             }
-            else {
-                do {
-                    *--pos = char('0' + (chunk % 10));
-                    chunk /= 10;
-                } while ( chunk );
-                break;
-            }
+        } else {
+            do {
+                *--pos = s_Hex[value % base];
+                value /= base;
+            } while ( value );
         }
-#else
-        do {
-            *--pos = char('0' + (value % 10));
-            value /= 10;
-        } while ( value );
-#endif
     }
     return pos;
 }
 
 
-void NStr::Int8ToString(string& out_str, Int8 value, TNumToStringFlags flags)
+void NStr::Int8ToString(string& out_str, Int8 svalue, TNumToStringFlags flags)
 {
+    SET_BASE_VALUE;
+
+    Uint8 value;
+    if (base == 10) {
+        value = static_cast<Uint8>(svalue<0?-svalue:svalue);
+    } else {
+        value = static_cast<Uint8>(svalue);
+    }
+
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
 
-    char* pos = s_PrintUint8(buffer + kBufSize,
-                             value < 0 ? -value : value, flags);
+    char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
 
-    if (value < 0)
-        *--pos = '-';
-    else if (flags & fWithSign)
-        *--pos = '+';
-
+    if (base == 10) {
+        if (svalue < 0)
+            *--pos = '-';
+        else if (flags & fWithSign)
+            *--pos = '+';
+    }
     out_str.assign(pos, buffer + kBufSize - pos);
 }
 
@@ -1097,14 +1132,16 @@ string NStr::UInt8ToString(Uint8 value, TNumToStringFlags flags)
 
 void NStr::UInt8ToString(string& out_str, Uint8 value, TNumToStringFlags flags)
 {
+    SET_BASE_VALUE;
+
     const size_t kBufSize = (sizeof(value) * CHAR_BIT) / 2;
     char  buffer[kBufSize];
 
-    char* pos = s_PrintUint8(buffer + kBufSize, value, flags);
+    char* pos = s_PrintUint8(buffer + kBufSize, value, flags, base);
 
-    if (flags & fWithSign)
+    if ( (base == 10)  &&  (flags & fWithSign) ) {
         *--pos = '+';
-
+    }
     out_str.assign(pos, buffer + kBufSize - pos);
 }
 
@@ -2275,6 +2312,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.163  2005/10/17 13:49:11  ivanov
+ * Allow NStr::*ToString() convert numbers using octal and hex formats.
+ *
  * Revision 1.162  2005/10/03 14:10:37  gouriano
  * Corrected CStringUTF8 class
  *
