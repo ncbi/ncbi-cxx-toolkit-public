@@ -13,3 +13,6 @@ SRC = dbapi_sample
 LIB  = dbapi dbapi_driver xncbi
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
+
+CHECK_COPY = dbapi_sample.sh
+CHECK_CMD = dbapi_sample.sh
