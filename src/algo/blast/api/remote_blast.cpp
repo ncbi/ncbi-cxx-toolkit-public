@@ -701,19 +701,6 @@ void CRemoteBlast::x_SetOneParam(const char * name, const char ** x)
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(const char * name,
-                                 objects::CPssmWithParameters * matrix)
-{
-    CRef<CBlast4_value> v(new CBlast4_value);
-    v->SetMatrix(*matrix);
-        
-    CRef<CBlast4_parameter> p(new CBlast4_parameter);
-    p->SetName(name);
-    p->SetValue(*v);
-        
-    m_QSR->SetProgram_options().Set().push_back(p);
-}
-
 void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
 {
     if (bioseqs.Empty()) {
@@ -937,15 +924,6 @@ void CRemoteBlast::SetEntrezQuery(const char * x)
     }
 }
 
-void CRemoteBlast::SetMatrixTable(CRef<objects::CPssmWithParameters> matrix)
-{
-    if (matrix.Empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                   "Empty reference for matrix.");
-    }
-    x_SetOneParam("MatrixTable", matrix);
-}
-
 bool CRemoteBlast::SubmitSync(void)
 {
     return SubmitSync( x_DefaultTimeout() );
@@ -1118,6 +1096,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/10/17 13:48:06  camacho
+* Remove deprecated CRemoteBlast::SetMatrixTable method
+*
 * Revision 1.31  2005/09/28 18:23:08  camacho
 * Rearrangement of headers/functions to segregate object manager dependencies.
 *

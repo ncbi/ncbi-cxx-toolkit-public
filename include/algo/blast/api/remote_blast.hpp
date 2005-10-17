@@ -146,16 +146,6 @@ public:
     void SetQueries(CRef<objects::CPssmWithParameters> pssm);
     
     
-    /// Set the PSSM matrix for a PSI-Blast search.
-    /// 
-    /// A PSI-Blast search can be configured by specifying the PSSM (including
-    /// an internal query) in SetQueries, or by using this option to set the
-    /// matrix and using a Bioseq_set with SetQueries().  The former method is
-    /// newer and this option may be removed in the future.
-    /// @deprecated
-    
-    void SetMatrixTable(CRef<objects::CPssmWithParameters> matrix);
-    
     /* Getting Results */
     
     
@@ -407,12 +397,6 @@ private:
     /// @param value Pointer to pointer to null delimited string.
     void x_SetOneParam(const char * name, const char ** value);
     
-    /// Set a matrix parameter.
-    /// @param name Name of option (probably MatrixTable).
-    /// @param matrix Pointer to Score-matrix-parameters object.
-    void x_SetOneParam(const char * name, 
-                       objects::CPssmWithParameters * matrix);
-    
     /// Determine what state the search is in.
     EState x_GetState(void);
     
@@ -536,6 +520,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/10/17 13:47:58  camacho
+ * Remove deprecated CRemoteBlast::SetMatrixTable method
+ *
  * Revision 1.24  2005/07/25 14:45:01  bealer
  * - Vector version of error fetching method for RemoteBlast.
  *
