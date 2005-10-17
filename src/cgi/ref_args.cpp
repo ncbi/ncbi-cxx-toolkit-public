@@ -103,39 +103,6 @@ string CRefArgs::GetQueryString(const string& referrer) const
             return url.GetArgs().GetValue(it->second);
         }
     }
-/*
-    // Remove http:// prefix
-    SIZE_TYPE pos = NStr::Find(referrer, "://");
-    string host =  (pos != NPOS) ?
-        referrer.substr(pos+3, referrer.size()) : referrer;
-
-    // Find end of host name
-    pos = NStr::Find(host, "/");
-    if (pos == NPOS) {
-        return kEmptyStr;
-    }
-
-    string args = host.substr(pos + 1, host.size());
-    host = host.substr(0, pos);
-    // Find arguments if any
-    pos = NStr::Find(args, "?");
-    if (pos == NPOS) {
-        // No arguments - nothing to process
-        return kEmptyStr;
-    }
-    args = args.substr(pos + 1, args.size());
-    ITERATE(THostMap, it, m_HostMap) {
-        if (NStr::FindNoCase(host, it->first) == NPOS) {
-            continue;
-        }
-        TCgiEntries entries;
-        CCgiRequest::ParseEntries(args, entries);
-        TCgiEntriesCI query = entries.find(it->second);
-        if (query != entries.end()) {
-            return string(query->second);
-        }
-    }
-*/
     return kEmptyStr;
 }
 
@@ -169,6 +136,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2005/10/17 21:22:49  grichenk
+* Removed commented code
+*
 * Revision 1.6  2005/10/17 20:47:31  grichenk
 * Use CUrl to parse referrer
 *
