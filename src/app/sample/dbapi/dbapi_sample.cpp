@@ -136,6 +136,9 @@ int CDbapiTest::Run()
 
         // Create connection. 
         IConnection* conn = ds->CreateConnection();
+        if ( conn == NULL) {
+            return 1;
+        }
 
         // Set this mode to be able to use bulk insert
         conn->SetMode(IConnection::eBulkInsert);
@@ -479,6 +482,8 @@ end";
                     }
                 }
                 break;
+            default:
+                break;
             }
             // Delete object to get rid of it completely. All child objects will be also deleted
             // There is no need to close object before deleting. All objects close automatically
@@ -544,6 +549,8 @@ end";
                                  << endl;
                     }
                 }
+                break;
+            default:
                 break;
             }
         }
@@ -793,10 +800,12 @@ from BlobSample where id = 1");
     }
     catch(out_of_range) {
         NcbiCout << "Exception: Out of range" << endl;
+        return 1;
     }
     catch(exception& e) {
         NcbiCout << "Exception: " << e.what() << endl;
         NcbiCout << ds->GetErrorInfo();
+        return 1;
     }
 
     return 0;
@@ -817,6 +826,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/10/17 12:07:56  ssikorsk
+* Return an appropriate error code in case of an error
+*
 * Revision 1.18  2005/10/14 16:26:05  kholodov
 * Fixed: raiserror format for Sybase
 *
