@@ -4585,7 +4585,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         fi
         ;;
       MIPSpro* )
-        DEF_FAST_FLAGS="-O3 -Ofast"
+        DEF_FAST_FLAGS="-O3 -Ofast -IPA:inline=off"
         ;;
       Compaq:* )
         DEF_FAST_FLAGS="-fast"

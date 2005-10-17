@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.392 2005/10/05 14:45:35 ucko Exp $
+#  $Id: configure.ac,v 1.393 2005/10/17 15:30:08 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1073,7 +1073,7 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         fi
         ;;
       MIPSpro* )
-        DEF_FAST_FLAGS="-O3 -Ofast"
+        DEF_FAST_FLAGS="-O3 -Ofast -IPA:inline=off"
         ;;
       Compaq:* )
         DEF_FAST_FLAGS="-fast"
