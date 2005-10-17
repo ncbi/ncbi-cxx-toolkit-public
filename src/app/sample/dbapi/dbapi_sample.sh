@@ -58,7 +58,7 @@ EOF
 
   if $CHECK_EXEC dbapi_driver_check  $driver ; then
     for server in $server_list ; do
-      if test \( $driver = "ctlib" -o $driver = "dblib" \) -a  \( $server = $server_mssql -o $server = "MOZART" \) ; then
+      if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
          continue
       fi
       if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then

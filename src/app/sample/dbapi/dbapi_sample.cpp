@@ -117,7 +117,8 @@ int CDbapiTest::Run()
         // objects in the library.
         //
         // set TDS version for STRAUSS
-        if( NStr::CompareNocase(server, "STRAUSS") == 0 
+        if( (NStr::CompareNocase(server, "STRAUSS") == 0 ||
+             NStr::CompareNocase(server, "MOZART") == 0)
 			&& NStr::CompareNocase(driver, "ftds") == 0) {
             map<string,string> attr;
             attr["version"] = "46";
@@ -389,7 +390,8 @@ begin \
 end";
         stmt->ExecuteUpdate(sql);
 
-	if( NStr::CompareNocase(server, "STRAUSS") == 0 )
+	if( NStr::CompareNocase(server, "STRAUSS") == 0 || 
+        NStr::CompareNocase(server, "MOZART") == 0 )
         sql = "create procedure SampleProc \
 	@id int, \
 	@f float, \
@@ -826,6 +828,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/10/17 12:26:33  ssikorsk
+* Enable dbapi_sample with MOZART
+*
 * Revision 1.19  2005/10/17 12:07:56  ssikorsk
 * Return an appropriate error code in case of an error
 *
