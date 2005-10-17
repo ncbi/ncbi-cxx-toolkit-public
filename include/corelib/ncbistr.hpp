@@ -162,8 +162,8 @@ public:
     /// Number to string conversion flags.
     ///
     /// NOTE: 
-    ///   - if fOctal or fHex formats are specified, that fWithSign,
-    ///     fWithCommas will be ignored;
+    ///   - if fBinary, fOctal or fHex formats are specified,
+    ///     that flags fWithSign and fWithCommas will be ignored;
     ///   - fOctal and fHex formats do not add leading '0' and '0x'.
     ///     If necessary you should add it yourself.
     enum ENumToStringFlags {
@@ -172,8 +172,9 @@ public:
         fDoubleFixed      = (1 << 2), ///< Use n.nnnn format for double
         fDoubleScientific = (1 << 3), ///< Use scientific format for double
         fDoubleGeneral    = fDoubleFixed | fDoubleScientific,
-        fOctal            = (1 << 4), ///< Use octal output format
-        fHex              = (1 << 5)  ///< Use hex output format
+        fBinary           = (1 << 4), ///< Use binary output format
+        fOctal            = (1 << 5), ///< Use octal output format
+        fHex              = (1 << 6)  ///< Use hex output format
     };
     typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
 
@@ -2937,6 +2938,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.95  2005/10/17 18:24:22  ivanov
+ * Added fBinary flag to NStr::ENumToStringFlags enum
+ *
  * Revision 1.94  2005/10/17 13:27:03  ivanov
  * Added fOctal and fHex flags to NStr::ENumToStringFlags enum.
  *
