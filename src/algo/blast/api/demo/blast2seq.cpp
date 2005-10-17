@@ -168,9 +168,9 @@ void CBlast2seqApplication::Init(void)
         "Use greedy algorithm for gapped extensions: 0 no, 1 one-step, 2 two-step, 3 two-step with ungapped",
         CArgDescriptions::eInteger, "0");
     arg_desc->AddDefaultKey("gopen", "gapopen", "Penalty for opening a gap",
-                            CArgDescriptions::eInteger, "0");
+                            CArgDescriptions::eInteger, "-1");
     arg_desc->AddDefaultKey("gext", "gapext", "Penalty for extending a gap",
-                            CArgDescriptions::eInteger, "0");
+                            CArgDescriptions::eInteger, "-1");
     arg_desc->AddDefaultKey("xgap", "xdrop", 
         "X-dropoff value for preliminary gapped extensions",
         CArgDescriptions::eDouble, "0");
@@ -301,10 +301,10 @@ CBlast2seqApplication::ProcessCommandLineArgs()
         opt.SetGappedMode(false);
     }
 
-    if (args["gopen"].AsInteger()) {
+    if (args["gopen"].AsInteger() >= 0) {
         opt.SetGapOpeningCost(args["gopen"].AsInteger());
     }
-    if (args["gext"].AsInteger()) {
+    if (args["gext"].AsInteger() >= 0) {
         opt.SetGapExtensionCost(args["gext"].AsInteger());
     }
 
