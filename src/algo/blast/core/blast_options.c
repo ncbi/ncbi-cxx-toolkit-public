@@ -552,9 +552,9 @@ BLAST_FillScoringOptions(BlastScoringOptions* options,
          options->gap_extend = BLAST_GAP_EXTN_NUCL;
       }
    }
-   if (gap_open)
+   if (gap_open >= 0)
       options->gap_open = gap_open;
-   if (gap_extend)
+   if (gap_extend >= 0)
       options->gap_extend = gap_extend;
 
    return 0;
@@ -589,7 +589,7 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
                             "BLASTN penalty must be negative");
 			return (Int2) code;
 		}
-                if (options->gap_open > 0 && options->gap_extend == 0) 
+                if (options->gapped_calculation && options->gap_open > 0 && options->gap_extend == 0) 
                 {
                         Int4 code=2;
                         Int4 subcode=1;
@@ -603,7 +603,8 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 	{
 		Int2 status=0;
 
-		if ((status=Blast_KarlinBlkGappedLoadFromTables(NULL, options->gap_open, 
+		if (options->gapped_calculation &&
+                    (status=Blast_KarlinBlkGappedLoadFromTables(NULL, options->gap_open, 
                      options->gap_extend, options->decline_align, 
                      options->matrix)) != 0)
 		{
@@ -1264,6 +1265,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.173  2005/10/17 14:03:34  madden
+ * Change convention for unset gap parameters from zero to negative number
+ *
  * Revision 1.172  2005/08/29 13:51:44  madden
  * Add functions BLAST_GetSuggestedThreshold and BLAST_GetSuggestedWindowSize
  *
