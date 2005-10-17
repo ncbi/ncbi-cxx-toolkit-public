@@ -56,7 +56,6 @@ static const int kBad = 555;
 struct SStringNumericValues
 {
     const char* str;
-//    NStr::TStringToNumFlags flags;
     int         flags;
     Int8        num;
     Int8        i;
@@ -234,7 +233,7 @@ static const SStringNumericValues s_Str2NumTests[] = {
 
 static void s_StringToNum()
 {
-    NcbiCout << "Test NCBISTR:" << NcbiEndl;
+    NcbiCout << NcbiEndl << "NStr::StringTo*() tests...";
 
     const size_t count = sizeof(s_Str2NumTests) / sizeof(s_Str2NumTests[0]);
 
@@ -441,71 +440,198 @@ static void s_StringToNum()
 // need to test for different radix values such as 2, 8, and 16.
 
 struct SRadixTest {
-    const char* str;       // String input
-    int         base;      // Radix base 
-    Uint8       expected;  // Expected value
+    const char* str;      // String input
+    int         base;     // Radix base 
+    Uint8       value;    // Expected value
+    int         flags;    // Reverse check flags
+
+    bool Same(const string& s) const {
+        if ( s.empty() ) {
+            return true;
+        }
+        const char* s1 = str;
+        const char* s2 = s.c_str();
+        
+        while (*s1 == '0') s1++;
+        if ( *s1 == 'x' )  s1++;
+        while (*s2 == '0') s2++;
+
+        return (NStr::strcmp(s1, s2) == 0);
+    }
 };
 
 static const SRadixTest s_RadixTests[] = {
-    { "A",         16, 10 },
-    { "0xA",       16, 10 },
-    { "B9",        16, 185 },
-    { "C5D",       16, 3165 },
-    { "FFFF",      16, 65535 },
-    { "17ABCDEF",  16, 397135343 },
-    { "BADBADBA",  16, 3134959034U },
-    { "7",          8, 7  },
-    { "17",         8, 15 },
-    { "177",        8, 127},
-    { "0123",       8, 83 },
-    { "01234567",   8, 342391},
-    { "0",          2, 0 },
-    { "1",          2, 1 },
-    { "10",         2, 2 },
-    { "11",         2, 3 },
-    { "100",        2, 4 },
-    { "101",        2, 5 }, 
-    { "110",        2, 6 },
-    { "111",        2, 7 },
+    { "A",         16, 10,          NStr::fHex },
+    { "0xA",       16, 10,          NStr::fHex },
+    { "B9",        16, 185,         NStr::fHex },
+    { "C5D",       16, 3165,        NStr::fHex },
+    { "FFFF",      16, 65535,       NStr::fHex },
+    { "17ABCDEF",  16, 397135343,   NStr::fHex },
+    { "BADBADBA",  16, 3134959034U, NStr::fHex },
+    { "7",          8, 7,           NStr::fOctal },
+    { "17",         8, 15,          NStr::fOctal },
+    { "177",        8, 127,         NStr::fOctal },
+    { "0123",       8, 83,          NStr::fOctal },
+    { "01234567",   8, 342391,      NStr::fOctal },
+    { "0",          2, 0,           NStr::fBinary },
+    { "1",          2, 1,           NStr::fBinary },
+    { "10",         2, 2,           NStr::fBinary },
+    { "11",         2, 3,           NStr::fBinary },
+    { "100",        2, 4,           NStr::fBinary },
+    { "101",        2, 5,           NStr::fBinary }, 
+    { "110",        2, 6,           NStr::fBinary },
+    { "111",        2, 7,           NStr::fBinary },
 
     // Autodetect radix base
-    { "0xC5D",      0, 3165 },  // 16
-    { "0123",       0, 83 },    // 8
-    { "123",        0, 123 },   // 10
-    { "111",        0, 111 },   // 10
+    { "0xC5D",      0, 3165,        NStr::fHex },    // base 16
+    { "0123",       0, 83,          NStr::fOctal },  // base 8
+    { "123",        0, 123,         0 },             // base 10
+    { "111",        0, 111,         0 },             // base 10
 
     // Invalid values come next
-    { "10ABCDEFGH",16, 0 },
-    { "12345A",    10, 0 },
-    { "012345678",  8, 0 },
-    { "012",        2, 0 }
+    { "10ABCDEFGH",16, kBad, 0 },
+    { "12345A",    10, kBad, 0 },
+    { "012345678",  8, kBad, 0 },
+    { "012",        2, kBad, 0 }
 };
 
 
 static void s_StringToNumRadix()
 {
-    NcbiCout << "Test NCBISTR:" << NcbiEndl;
+    NcbiCout << NcbiEndl << "NStr::StringTo*() radix tests...";
 
     const size_t count = sizeof(s_RadixTests)/sizeof(s_RadixTests[0]);
     for (size_t i = 0;  i < count;  ++i) 
     {
-        const string& str      = s_RadixTests[i].str;
-        int           base     = s_RadixTests[i].base;
-        Uint8         expected = s_RadixTests[i].expected;
+        const SRadixTest* test = &s_RadixTests[i];
+        NcbiCout << NcbiEndl 
+                 << "Checking numeric string: '" << test->str 
+                 << "': with base " << test->base << NcbiEndl;
 
-        NcbiCout << "Checking numeric string: '" << str 
-                 << "': with base " << base << NcbiEndl;
+        // Int
         try {
-            Uint8 value = NStr::StringToUInt8(str, 
-                                              NStr::fStringToNumDefault,
-                                              base);
-            NcbiCout << "Uint8 value: " << ((unsigned)value)
-                     << ", Expected: " << (unsigned)expected << NcbiEndl;
+            if ( test->value <= (Uint8)kMax_Int ) {
+                int val = NStr::StringToInt(test->str, 
+                                            NStr::fStringToNumDefault,
+                                            test->base);
+                string str;
+                if ( test->base  &&  test->flags ) {
+                    NStr::IntToString(str, val, test->flags);
+                }
+                NcbiCout << "Int value: " << val 
+                        << ", toString: '" << str << "'" 
+                        << NcbiEndl;
+                assert((Uint8)val == test->value);
+                assert(test->Same(str));
+            }
         }
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
+            assert(test->value == (Uint8)kBad);
+        }
+
+
+        // UInt
+        try {
+            if ( test->value <= kMax_UInt ) {
+                unsigned int val = NStr::StringToUInt(
+                                        test->str, 
+                                        NStr::fStringToNumDefault,
+                                        test->base);
+                string str;
+                if ( test->base  &&  test->flags ) {
+                    NStr::UIntToString(str, val, test->flags);
+                }
+                NcbiCout << "UInt value: " << val 
+                        << ", toString: '" << str << "'" 
+                        << NcbiEndl;
+                assert(val == test->value);
+                assert(test->Same(str));
+            }
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
+            assert(test->value == (Uint8)kBad);
+        }
+
+        // Int8
+        try {
+            if ( test->value <= (Uint8)kMax_I8 ) {
+                Int8 val = NStr::StringToInt8(test->str, 
+                                              NStr::fStringToNumDefault,
+                                              test->base);
+                string str;
+                if ( test->base  &&  test->flags ) {
+                    NStr::Int8ToString(str, val, test->flags);
+                }
+                NcbiCout << "Int8 value: " << val 
+                        << ", toString: '" << str << "'" 
+                        << NcbiEndl;
+                assert((Uint8)val == test->value);
+                assert(test->Same(str));
+            }
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
+            assert(test->value == (Uint8)kBad);
+        }
+
+        // Uint8
+        try {
+            Uint8 val = NStr::StringToUInt8(test->str, 
+                                            NStr::fStringToNumDefault,
+                                            test->base);
+            string str;
+            if ( test->base  &&  test->flags ) {
+                NStr::UInt8ToString(str, val, test->flags);
+            }
+            NcbiCout << "Uint8 value: " << (unsigned)val 
+                     << ", toString: '" << str << "'" 
+                     << NcbiEndl;
+            assert(val == test->value);
+            assert(test->Same(str));
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
+            assert(test->value == (Uint8)kBad);
         }
     } 
+
+    // Some additional tests
+
+    string str;
+
+    NStr::IntToString(str, kMax_Long, NStr::fBinary);
+#if (SIZEOF_LONG == 4)
+    assert(str == "1111111111111111111111111111111");
+#elif (SIZEOF_LONG == 8)
+    assert(str == "111111111111111111111111111111111111111111111111111111111111111");
+#endif
+
+    NStr::UIntToString(str, kMax_ULong, NStr::fBinary);
+#if (SIZEOF_LONG == 4)
+    assert(str == "11111111111111111111111111111111");
+#elif (SIZEOF_LONG == 8)
+    assert(str == "1111111111111111111111111111111111111111111111111111111111111111");
+#endif
+
+    NStr::IntToString(str, -1, NStr::fOctal);
+#if (SIZEOF_LONG == 4)
+    assert(str == "37777777777");
+#elif (SIZEOF_LONG == 8)
+    assert(str == "1777777777777777777777");
+#endif
+
+    NStr::IntToString(str, -1, NStr::fHex);
+#if (SIZEOF_LONG == 4)
+    assert(str == "FFFFFFFF");
+#elif (SIZEOF_LONG == 8)
+    assert(str == "FFFFFFFFFFFFFFFF");
+#endif
+
+    NStr::UInt8ToString(str, 12345678901234567, NStr::fHex);
+    assert(str == "2BDC545D6B4B87");
+
     OK;
 }
 
@@ -1373,8 +1499,6 @@ int CTestApplication::Run(void)
 /////////////////////////////////
 // APPLICATION OBJECT and MAIN
 //
-#include <stdlib.h>
-#include <stdio.h>
 
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
@@ -1386,6 +1510,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.51  2005/10/17 18:25:46  ivanov
+ * Improved NStr::StringTo*() radix test.
+ * Added tests for fBinary, fOctal and fHex flags.
+ *
  * Revision 6.50  2005/10/17 13:53:34  ivanov
  * Wrong commit. Rollback R6.48
  *
