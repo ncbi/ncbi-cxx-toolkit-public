@@ -1,681 +1,346 @@
--- $Id: docsum.asn,v 1.51 2005/08/15 17:54:22 kholodov Exp $
-
 NSE DEFINITIONS ::=
 BEGIN
 
-EXPORTS NSE-BaseURLSet, NSE-SubmitterList, NSE-AssayList, NSE-PopList, NSE-ExchangeSet;
+EXPORTS ExchangeSet, Rs, Ss, MapLoc, FxnSet, Assembly, Assay, BaseURL, PrimarySequence, RsStruct, RsLinkout, Component;
 
 
-NSE-BaseURLSet ::= SEQUENCE {
-	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
-	dbSNP-build-number INTEGER,		-- build number of database for this export
-	generated NSE-Date OPTIONAL ,		-- Date set-list generated
-	query VisibleString OPTIONAL ,		-- Query terms or search constraints
-	set-type INTEGER {
-       		full-dump (1),			-- Complete set of records in dbSNP
-        	from-query (2),			-- Set that satisfies query
-        	single     (3) } ,		-- A single record
-	url-set SET OF NSE-BaseURL    		-- Set of URLs for resource integration
-}
+ExchangeSet ::= SEQUENCE {
+    setType VisibleString OPTIONAL, -- set-type: full dump; from query; single refSNP
+    setDepth VisibleString OPTIONAL, -- content depth: brief XML (only refSNP properties and summary subSNP element content); full XML (full refSNP, full subSNP content; all flanking sequences)
+    specVersion VisibleString OPTIONAL, -- version number of docsum.asn/docsum.dtd specification
+    dbSnpBuild INTEGER OPTIONAL, -- build number of database for this export
+    generated VisibleString OPTIONAL, -- Generated date
 
-NSE-BaseURL ::= SEQUENCE {			-- list of base URLs for queries to other integrated resources
-	resource-id INTEGER,			-- integer pointer to base URL 					BaseURLList.url_id
-	resource VisibleString OPTIONAL,	-- name of the resource 					BaseURLList.resource
-	field-id VisibleString OPTIONAL,	-- name of the data object used to link 			BaseURLList.resource_id
-	base-url VisibleString OPTIONAL 	-- Base URL to which identifier is appended to form full URL 	BaseURLList.base_url
-}
+    sourceDatabase SEQUENCE {
+        taxId INTEGER, -- NCBI taxonomy ID for variation
+        organism VisibleString, -- common name for species used as part of database name.
+        dbSnpOrgAbbr VisibleString OPTIONAL, -- organism abbreviation used in dbSNP.
+        gpipeOrgAbbr VisibleString OPTIONAL -- organism abbreviation used within NCBI genome pipeline data dumps.
+    },
+    rs SEQUENCE OF Rs OPTIONAL,
+    assay Assay OPTIONAL,
 
+    query SEQUENCE {
+        date VisibleString OPTIONAL, -- yyyy-mm-dd
+        string VisibleString OPTIONAL -- Query terms or search constraints
+    } OPTIONAL,
 
-NSE-SubmitterList ::= SEQUENCE {		-- set of contact information for all handles defined in dbSNP
-	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
-	dbSNP-build-number INTEGER,		-- build number of database for this export
-	generated NSE-Date OPTIONAL ,		-- Date set-list generated
-	query VisibleString OPTIONAL ,		-- Query terms or search constraints
-	set-type INTEGER {
-       		full-dump (1),			-- Complete set of records in dbSNP
-        	from-query (2),			-- Set that satisfies query
-        	single     (3) } ,		-- A single record
-	submitter-list SET OF NSE-Submitter 
-}
-
-NSE-Submitter ::= SEQUENCE {
-	handle VisibleString,			-- Short name, or handle as supplied by NCBI
-	name VisibleString,			-- Name of Principal Investigator for lab or submitting group
-	fax VisibleString OPTIONAL,		-- FAX number for submitter
-	tel VisibleString OPTIONAL,		-- telephone number for submitter
-	email VisibleString OPTIONAL,		-- email for submitter
-	lab VisibleString OPTIONAL,		-- Laboratory providing SNP
-	inst VisibleString OPTIONAL,		-- Institution Name
-	addr SEQUENCE OF VisibleString OPTIONAL	-- Address strings
-}
-
-NSE-AssayList ::= SEQUENCE {			-- Table of batch characteristics for all SNP batches in dbSNP
-	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
-	dbSNP-build-number INTEGER,		-- build number of database for this export
-	generated NSE-Date OPTIONAL ,		-- Date set-list generated
-	query VisibleString OPTIONAL ,		-- Query terms or search constraints
-	set-type INTEGER {
-       		full-dump (1),			-- Complete set of records in dbSNP
-        	from-query (2),			-- Set that satisfies query
-        	single     (3) } ,		-- A single record
-	assay-list SET OF NSE-Assay 
-}
-
-NSE-Assay ::= SEQUENCE {
-	handle VisibleString,
-	batch VisibleString,			-- Submitter (local) batch id
-	batch-id INTEGER,			-- dbSNP batch_id. Use to join assay to subsnp and validation data (NSE-ss, NSE-ss, below).
-	batch-type ENUMERATED {			-- distinguishes submission batches from follow-up confirmation of refSNPs. 
-									-- Join to appropriate object by batch-id.
-		snpassay (1),				-- detailed assay conditions for NSE-ss.
-		validation (2),				-- refSNPs confirmed by subsequent experimental data. Data for NSE-rs.validated-in-other-pop
-		doublehit (3) },			-- refSNPs with both alleles seen twice. Data for NSE-rs.validated-by-2hit-2allele
-	moltype ENUMERATED {
-		genomic (1),
-		cDNA (2),
-		mito (3),
-		chloro (4)
-	},
-	method VisibleString,						-- local method id
-	method-ex SEQUENCE OF VisibleString OPTIONAL,			-- description of deviation from/addition to given method
-	samplesize INTEGER OPTIONAL,					-- number of chromosomes examined during ascertainment
-	organism VisibleString OPTIONAL,				-- Scientific Name
-	taxid INTEGER OPTIONAL,							-- taxonomy ID for organism from NCBI taxonomy database
-	population VisibleString OPTIONAL,				-- Population surveyed for variation
-	strains SEQUENCE OF VisibleString OPTIONAL,			-- Strains used in survey for variation
-	citation SEQUENCE OF VisibleString OPTIONAL,
-	linkout-url VisibleString OPTIONAL,
-	comment SEQUENCE OF VisibleString OPTIONAL
-}
-
-NSE-PopList ::= SEQUENCE {			-- Table of batch characteristics for all allele frequency batches in dbSNP
-	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
-	dbSNP-build-number INTEGER,		-- build number of database for this export
-	generated NSE-Date OPTIONAL ,		-- Date set-list generated
-	query VisibleString OPTIONAL ,		-- Query terms or search constraints
-	set-type INTEGER {
-       		full-dump (1),			-- Complete set of records in dbSNP
-        	from-query (2),			-- Set that satisfies query
-        	single     (3) } ,		-- A single record
-	pop-list SET OF NSE-Pop
-}
-
-NSE-Pop ::= SEQUENCE {
-	handle VisibleString,
-	batch VisibleString,				-- Submitter (local) batch id
-	batch-id INTEGER,				-- dbSNP batch_id. Use to join population allele data to subsnp data
-	method VisibleString,				-- local method id
-	method-ex SEQUENCE OF VisibleString OPTIONAL,	-- description of deviation from/addition to given method
-	citation SEQUENCE OF VisibleString OPTIONAL,
-	comment SEQUENCE OF VisibleString OPTIONAL
-}
-
-NSE-ExchangeSet ::= SEQUENCE {
-	copyright SEQUENCE OF VisibleString OPTIONAL,
-	version VisibleString,			-- version number of docsum.asn/docsum.dtd specification
-	dbSNP-build-number INTEGER,		-- build number of database for this export
-	generated NSE-Date OPTIONAL ,		-- Date set-list generated
-	query VisibleString OPTIONAL ,		-- Query terms or search constraints
-	source-dbs SET OF VisibleString OPTIONAL ,	-- List of source databases
-	set-type INTEGER {
-       		full-dump (1),			-- Complete set of records in dbSNP
-        	from-query (2),			-- Set that satisfies query
-        	single     (3) } ,		-- A single record
-	set-depth INTEGER {
-		brief-set (1),			-- only summary information included in NSE-rs objects
-		full-set (2) } ,		-- all information included in NSE-rs objects (data on subsnps in rs group)
-	rs-set SET OF NSE-rs,  			-- Set of Reference SNP docsums and grouped subSNP members
-	num-refsnp-ids INTEGER OPTIONAL ,	-- Total number of refsnp-ids
-	total-seq-length INTEGER OPTIONAL ,	-- Total length of exemplar flanking sequences
-	num-contig-locs INTEGER OPTIONAL ,	-- Total number of contig locations from SNPContigLoc
-	num-locus-ids INTEGER OPTIONAL ,	-- Total number of locus ids from SNPContigLocusId
-	num-gi-hits INTEGER OPTIONAL ,		-- Total number of gi hits from MapLink
-	num-3d-structs INTEGER OPTIONAL ,	-- Total number of 3D structures from SNP3D
-	num-allele-freqs INTEGER OPTIONAL ,	-- Total number of allele frequences from SubPopAllele
-	num-sts-hits INTEGER OPTIONAL ,		-- Total number of STS hits from SnpInSts
-	num-unigene-cids INTEGER OPTIONAL 	-- Total number of unigene cluster ids from UnigeneSnp
-}
+    summary SEQUENCE {
+        numRsIds INTEGER OPTIONAL, -- Total number of refsnp-ids in this exchange set
+        totalSeqLength INTEGER OPTIONAL, -- Total length of exemplar flanking sequences
+        numContigHits INTEGER OPTIONAL, -- Total number of contig locations from SNPContigLoc
+        numGeneHits INTEGER OPTIONAL, -- Total number of locus ids from SNPContigLocusId
+        numGiHits INTEGER OPTIONAL, -- Total number of gi hits from MapLink
+        num3dStructs INTEGER OPTIONAL, -- Total number of 3D structures from SNP3D
+        numAlleleFreqs INTEGER OPTIONAL, -- Total number of allele frequences from SubPopAllele
+        numStsHits INTEGER OPTIONAL, -- Total number of STS hits from SnpInSts
+        numUnigeneCids INTEGER OPTIONAL -- Total number of unigene cluster ids from UnigeneSnp
+    },
+    baseURL SEQUENCE OF BaseURL
+} -- Set of dbSNP refSNP docsums
 
 
+Rs ::= SEQUENCE {
+    rsId INTEGER, -- refSNP (rs) number
+    snpClass ENUMERATED {
+        snp (1),
+        in-del (2),
+        heterozygous (3),
+        microsatellite (4),
+        named-locus (5),
+        no-variation (6),
+        mixed (7),
+        multinucleotide-polymorphism (8)
+    },
+    snpType ENUMERATED {
+        notwithdrawn (1),
+        artifact (2),
+        gene-duplication (3),
+        duplicate-submission (4),
+        notspecified (5),
+        ambiguous-location (6),
+        low-map-quality (7)
+    },
+    molType ENUMERATED {
+        genomic (1),
+        cDNA (2),
+        mito (3),
+        chloro (4),
+        unknown (5)
+    },
+    validProbMin INTEGER OPTIONAL, -- minimum reported success rate of all submissions in cluster
+    validProbMax INTEGER OPTIONAL, -- maximum reported success rate of all submissions in cluster
+    genotype BOOLEAN OPTIONAL, -- at least one genotype reported for this refSNP
 
-NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, where a refSNP cluster (rs) is
-						-- a grouping of individual dbSNP submissions that all refer to the same variation.
-						-- The refsnp provides a single unified record for annotation of NCBI resources such
-						-- as reference genome sequence.
-	
-						-- #######################################################
-						-- ######
-						-- ######   Data defined for both brief-sets and full-sets   
-						-- ######
-						-- #######################################################
+    het SEQUENCE {
+        type ENUMERATED {
+            est (1),
+            obs (2)
+        }, -- Est=Estimated average het from allele frequencies, Obs=Observed from genotype data
+        value REAL, -- Heterozygosity
+        stdError REAL OPTIONAL -- Standard error of Het estimate
+    } OPTIONAL,
 
-	refsnp-id INTEGER,			-- refSNP (rs) number
-	taxid INTEGER,				-- NCBI Taxonomy Database ID. 9606 for Homo sapiens
-	organism VisibleString OPTIONAL,	-- species abbreviation
-	snp-class ENUMERATED {		
-		snp         (1),		-- single nucleotide variation: alleles of length=1 and from set of {A,T,C,G}
-		in-del      (2),		-- insertion / deletion variation: alleles of different length or include '-' character
-		het         (3),		-- heterozygous (undetermined) variation: allele contains string '(heterozygous)'
-		microsat    (4),		-- microsatellite variation: allele string contains numbers and '(motif)' pattern
-		named       (5),		-- insertion/deletion of named object (length unknown)
-		no-variation (6),		-- novariation asserted for sequence
-		mixed       (7),                -- mixed class
-		mnp         (8)},               -- Multiple Nucleotide Polymorphism. All alleles of same length > 1
+    validation SEQUENCE {
+        byCluster BOOLEAN OPTIONAL, -- at least one subsnp in cluster has frequency data submitted
+        byFrequency BOOLEAN OPTIONAL, -- cluster has 2+ submissions, with 1+ submissions assayed with a non-computational method
+        byOtherPop BOOLEAN OPTIONAL,
+        by2Hit2Allele BOOLEAN OPTIONAL, -- cluster has 2+ submissions, with 1+ submissions assayed with a non-computational method
+        byHapMap BOOLEAN OPTIONAL, -- TBD
+        otherPopBatchId SEQUENCE OF INTEGER OPTIONAL, -- dbSNP batch-id's for other pop snp validation data.
+        twoHit2AlleleBatchId SEQUENCE OF INTEGER OPTIONAL -- dbSNP batch-id's for double-hit snp validation data. Use batch-id to get methods, etc.
+    },
 
-	snp-type ENUMERATED {			
-		notwithdrawn (1),		-- variation is OK, default case
-		artifact     (2),		-- variation determined to be experimental artifact
-		gene-dup      (3),		-- variation artifact of duplicated gene region
-		duplicatesub  (4),		-- variation was duplicate submission
-		notspecified  (5),		-- no reason specified for withdrawal	
-		ambiguousloc  (6),		-- variation has excessive number of potional locations in genome
-		lowmapquality (7)		-- evidence for calling variation deemed insufficient
-				},
-	moltype ENUMERATED {			-- moltype from exemplar ss
-		genomic (1),
-		cDNA (2),
-		mito (3),
-		chloro (4)
-	},
-	create-date NSE-Date,       -- date the refsnp cluster was instantiated
-	update-date NSE-Date OPTIONAL, -- most recent date the cluster was updated (member added or deleted)
-	create-build INTEGER,			-- build number when the cluster was created
-	update-build INTEGER,			-- latest build number when the cluster was updated
-	merge-history SET OF NSE-rsMerge OPTIONAL,  -- RefSNPs previously defined by dbSNP, but determined to be a single variation
-	observed VisibleString,			-- list of all alleles observed in ss-list members, correcting for reverse
-						-- complementation of memebers reported in reverse orientation
-	seq-5 SEQUENCE OF VisibleString OPTIONAL,	-- 5' sequence that flanks the variation
-	seq-3 SEQUENCE OF VisibleString OPTIONAL,	-- 3' sequence that flanks the variation
-						-- all sequences are in forward orientation, complete sequence
-						-- lower case letters indicate repetetitive or low-complexity sequence by RepeatMasker
-						-- flanking sequence is reported in strings of 255 b.p. and multiple strings
-						-- should be concatenated in order to reconstruct the complete flanking sequence.
-						-- Sequence should be assembled as seq-5 + observed + seq-3
-	seq-ss-exemplar INTEGER,		-- dbSNP ss# selected as source of refSNP flanking sequence, ss# part of ss-list below 
-	ncbi-build-id INTEGER OPTIONAL,		-- NCBI build number for data on genome mapping to synchronize with NCBI MapViewer
-	ncbi-num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in contig-mapset
-	ncbi-num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in contig-mapset
-	ncbi-num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in contig-mapset
-	ncbi-mapweight INTEGER OPTIONAL,		-- location quality score for NCBI map display
+    create SEQUENCE {
+        build INTEGER OPTIONAL, -- build number when the cluster was created
+        date VisibleString OPTIONAL -- yyyy-mm-dd
+    }, -- date the refsnp cluster was instantiated
 
-	het REAL OPTIONAL,			-- average heterozygosity 
-	het-SE REAL OPTIONAL,			-- standard error of heterozygosity 
-	valid-prob-min INTEGER OPTIONAL,	-- minimum reported success rate of all submissions in cluster
-	valid-prob-max INTEGER OPTIONAL,	-- maximum reported success rate of all submissions in cluster
-	validated-other-pop BOOLEAN OPTIONAL, -- at least one ss in cluster was validated by independent assay
-	val-other-pop-batches SET OF INTEGER OPTIONAL, -- dbSNP batch-id's for independent assay validation data. Use batch-ids to get methods etc.
-	validated-by-frequency BOOLEAN OPTIONAL, -- at least one subsnp in cluster has frequency data submitted
-	validated-by-cluster   BOOLEAN OPTIONAL, -- cluster has 2+ submissions, with 1+ submissions assayed with a non-computational method
-	validated-by-2hit-2allele BOOLEAN OPTIONAL, --all alleles have been observed in 2+ chromosomes
-	val-2hit-2allele SET OF INTEGER OPTIONAL, -- dbSNP batch-id's for double-hit snp validation data. Use batch-id to get methods, etc.
-	validated-by-hapmap BOOLEAN OPTIONAL,	-- validated by HapMap project
-	genotype BOOLEAN OPTIONAL,		-- at least one genotype reported for this refSNP
-	linkout BOOLEAN OPTIONAL,		-- YES if linkout to at least one submitter website
-	last-action NSE-Date OPTIONAL,		-- Date of update or create
-	link-data SET OF NSE-rslink OPTIONAL, 	-- link data for external resources
-	ss-list SET OF NSE-ss,			-- set of all subsnp id's in the refSNP cluster	
-	contig-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates and functional relationships
-						-- between variations and genes as annotated on contig sequence
-						-- data from SNPContigLoc & ContigInfo tables
-	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates from MapLink and MapLinkArchive
-	gene-info SET OF NSE-rsLocusID OPTIONAL, -- set of gene information inferred by blast similarity of variation and GenBank sequences.
-						-- analysis is independent of annotation of genome sequence (contig-mapset, above) and
-						-- includes variations mapped to mRNAs or genomic sequences that do not yet have a reference contig.
-	sts-info SET OF INTEGER OPTIONAL,	-- set of STS ids from SnpInSts
-	unigene-info SET OF NSE-rsUnigene OPTIONAL, -- Unigene info from UnigeneSnp
- 	structure-data SET OF NSE-rsStruct OPTIONAL -- set of snp to protein structure data based on map coordinates 
-                                                -- and protein structure neighbors
+    update SEQUENCE {
+        build INTEGER OPTIONAL, -- build number when the cluster was updated
+        date VisibleString OPTIONAL -- yyyy-mm-dd
+    } OPTIONAL, -- most recent date the cluster was updated (member added or deleted)
 
-}
-
-NSE-rsMerge ::= SEQUENCE {
-     rs-id INTEGER,                -- previously issued rs-id whose member assays have now been merged
-                                   -- into a single common set (ss-list) for the parent object (NSE-rs)
-     build-id INTEGER,             -- build when rs-id was merged into parent NSE-rs
-     orient-flip BOOLEAN OPTIONAL   -- TRUE if strand of rs-id is reverse to parent object’s current strand
-}
+    sequence SEQUENCE {
+        exemplarSs INTEGER, -- dbSNP ss# selected as source of refSNP flanking sequence, ss# part of ss-list below
+        seq5 VisibleString OPTIONAL, -- 5' sequence that flanks the variation
+        observed VisibleString, -- list of all nucleotide alleles observed in ss-list members, correcting for reverse complementation of memebers reported in reverse orientation
+        seq3 VisibleString OPTIONAL -- 3' sequence that flanks the variation
+    },
+    ss SEQUENCE OF Ss,
+    assembly SEQUENCE OF Assembly OPTIONAL,
+    primarySequence SEQUENCE OF PrimarySequence OPTIONAL,
+    rsStruct SEQUENCE OF RsStruct OPTIONAL,
+    rsLinkout SEQUENCE OF RsLinkout OPTIONAL
+} -- defines the docsum structure for refSNP clusters, where a refSNP cluster (rs) is a grouping of individual dbSNP submissions that all refer to the same variation. The refsnp provides a single unified record for annotation of NCBI resources such as reference genome sequence.
 
 
-
-NSE-rslink ::= SEQUENCE {			-- link data for anther resource
-	resource-id INTEGER,			-- BaseURLList.url_id
-	link-value VisibleString 		-- value to append to NSE-ResourceURL.base-url for complete link
-}
-
-
-NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All submssions (subsnps, ss#) are
-						-- grouped into reference SNP clusters (rs) above.
-
-						-- #######################################################
-						-- ######
-						-- ######   Data defined in both NSE-rs.brief-sets and full-sets   
-						-- ######
-						-- #######################################################
-	handle VisibleString,			-- Tag for the submitting laboratory
-	batch-id INTEGER,			-- dbSNP number for batch submission
-	subsnp-id INTEGER,			-- dbSNP accession number for submission (ss#)
-	loc-snp-id VisibleString OPTIONAL,	-- submitter (local) subsnp ID
-	subsnp-class ENUMERATED {		-- SubSNP classification by type of variation			SubSNP.subsnp_class
-		snp         (1),		--   true single nucleotide polymorphism
-		in-del      (2),		--   insertion deletion polymorophism, deletions represented by '-' in allele string
-		het         (3),		--   variation has unknown sequence composition, but is observed to be heterozygous
-		microsat    (4),		--   microsatellite / simple sequence repeat
-		named       (5),		--   allele sequences defined by name tag instead of raw sequence, e.g. (Alu)/- 
-		no-variation (6), 		--   submission reports invariant region in surveyed sequence
-		mixed       (7),        -- mixed class
-		mnp         (8)},		--   multiple nucleotide polymorphism (all alleles same length where length>1)
-	orient ENUMERATED {			-- orientation of refsnp cluster members to refsnp cluster sequence
-		forward	    (1),		-- ss flanking sequence is in same orientation as seq-ss-exemplar (above) 
-		reversed    (2) },		-- flanking sequence and alleles are reverse complement of refSNP as defined
-								-- by seq-ss-exemplar. 
-	strand ENUMERATED {			-- strand is defined as TOP/BOTTOM by nature of flanking nucleotide sequence itself
-		top			(1),		-- 
-		bottom		(2) } OPTIONAL,
-	moltype ENUMERATED {			-- moltype from Batch table
-		genomic (1),
-		cDNA (2),
-		mito (3),
-		chloro (4)
-	},
-	build-id INTEGER,			-- dbSNP build number when ss# was added to a refSNP (rs#) cluster
-	method-class ENUMERATED {	-- class of method used to assay for the variation
-		dhplc        (1),		-- Denaturing High Pressure Liquid Chromatography used to detect SNP
-		hybridize    (2),		-- a hybridization method (e.g. chip) was used to assay for variation
-		computed     (3),		-- variation was mined from sequence alignment with software
-		sscp         (5),		-- single stranded conformational polymorphism used to detect variation
-		other  		 (6), 		-- other method used to detect variation
-		unknown		 (7), 		-- unknown method used to detect variation (not reported)
-		rflp		 (8),		-- variation in enzyme restriction site used to detect variation
-		sequence	 (9)} OPTIONAL,	-- samples were sequenced and resulting alignment used to define variation
+Ss ::= SEQUENCE {
+    ssId INTEGER, -- dbSNP accession number for submission
+    handle VisibleString, -- Tag for the submitting laboratory
+    batchId INTEGER, -- dbSNP number for batch submission
+    locSnpId VisibleString OPTIONAL, -- submission (ss#) submitter ID
+    subSnpClass ENUMERATED {
+        snp (1),
+        in-del (2),
+        heterozygous (3),
+        microsatellite (4),
+        named-locus (5),
+        no-variation (6),
+        mixed (7),
+        multinucleotide-polymorphism (8)
+    } OPTIONAL, -- SubSNP classification by type of variation
+    orient ENUMERATED {
+        forward (1), -- ss flanking sequence is in same orientation as seq-ss-exemplar
+        reverse (2) -- lanking sequence and alleles are reverse complement of refSNP as defined by ss exemplar
+    } OPTIONAL, -- orientation of refsnp cluster members to refsnp cluster sequence
+    strand ENUMERATED {
+        top (1),
+        bottom (2)
+    } OPTIONAL, -- strand is defined as TOP/BOTTOM by nature of flanking nucleotide sequence
+    molType ENUMERATED {
+        genomic (1),
+        cDNA (2),
+        mito (3),
+        chloro (4)
+    } OPTIONAL, -- moltype from Batch table
+    buildId INTEGER OPTIONAL, -- dbSNP build number when ss# was added to a refSNP (rs#) cluster
+    methodClass ENUMERATED {
+        dHPLC (1), -- Denaturing High Pressure Liquid Chromatography used to detect SNP
+        hybridize (2), -- a hybridization method (e.g. chip) was used to assay for variation
+        computed (3), -- variation was mined from sequence alignment with software
+        sSCP (4),
+        other (5),
+        unknown (6),
+        rFLP (7),
+        sequence (8) -- samples were sequenced and resulting alignment used to define variation
+    } OPTIONAL, -- class of method used to assay for the variation
     validated ENUMERATED {
-        by-submitter (1),       -- subsnp has been experimentally validated by submitter
-        by-frequency (2),       -- subsnp has frequency data submitted
-        by-cluster   (3),       -- has 2+ submissions, with 1+ submission assayed with a non-computational method.
-        no-info      (4)        -- subsnp is not validated
-                } OPTIONAL,
-		linkout-url VisibleString OPTIONAL, -- append loc-snp-id to this base URL to construct a pointer to submitter data.
+        by-submitter (1), -- subsnp has been experimentally validated by submitter
+        by-frequency (2), -- subsnp has frequency data submitted
+        by-cluster (3) -- has 2+ submissions, with 1+ submission assayed with a non-computational method
+    } OPTIONAL,
+    linkoutUrl VisibleString OPTIONAL, -- append loc-snp-id to this base URL to construct a pointer to submitter data.
+
+    sequence SEQUENCE {
+        seq5 VisibleString OPTIONAL, -- 5' sequence that flanks the variation
+        observed VisibleString, -- list of all nucleotide alleles observed in ss-list members, correcting for reverse complementation of memebers reported in reverse orientation
+        seq3 VisibleString OPTIONAL -- 3' sequence that flanks the variation
+    }
+} -- data for an individual submission to dbSNP
 
 
+MapLoc ::= SEQUENCE {
+    asnFrom INTEGER, -- beginning of variation as feature on contig
+    asnTo INTEGER, -- end position of variation as feature on contig
+    locType ENUMERATED {
+        insertion (1), -- insertion on contig
+        exact (2), -- asn-from = asn-to write as 'asn-from'
+        deletion (3), -- deletion on contig
+        range-ins (4),
+        range-exact (5),
+        range-del (6)
+    }, -- defines the seq-loc symbol if asn_from != asn_to
+    alnQuality REAL OPTIONAL, -- alignment qualiity
+    orient ENUMERATED {
+        forward (1),
+        reverse (2)
+    } OPTIONAL, -- orientation of refSNP sequence to contig sequence
+    physMapStr VisibleString OPTIONAL, -- chromosome position of var as seq-loc in # of bases
+    physMapInt INTEGER OPTIONAL, -- chromosome position as integer for sorting
+    leftFlankNeighborPos INTEGER OPTIONAL, -- nearest aligned position in 5' flanking sequence of snp
+    rightFlankNeighborPos INTEGER OPTIONAL, -- nearest aligned position in 3' flanking sequence of snp
+    leftContigNeighborPos INTEGER OPTIONAL, -- nearest aligned position in 5' contig alignment of snp
+    rightContigNeighborPos INTEGER OPTIONAL, -- nearest aligned position in 3' contig alignment of snp
+    numberOfMismatches INTEGER OPTIONAL, -- number of Mismatched positions in this alignment
+    numberOfDeletions INTEGER OPTIONAL, -- number of deletions in this alignment
+    numberOfInsertions INTEGER OPTIONAL, -- number of insetions in this alignment
+    fxnSet SEQUENCE OF FxnSet OPTIONAL
+} -- Position of a single hit of a variation on a contig
 
-				
 
-						-- #######################################################
-						-- ######
-						-- ######   Additional data supplied in full-set
-						-- ######
-						-- #######################################################
+FxnSet ::= SEQUENCE {
+    geneId INTEGER OPTIONAL, -- gene-id of gene as aligned to contig
+    symbol VisibleString OPTIONAL, -- symbol (official if present in Entrez Gene) of gene
+    mrnaAcc VisibleString OPTIONAL, -- mRNA accession if variation in transcript
+    mrnaVer INTEGER OPTIONAL, -- mRNA sequence version if variation is in transcripot
+    protAcc VisibleString OPTIONAL, -- protein accession if variation in protein
+    protVer INTEGER OPTIONAL, -- protein version if variation is in protein
+    fxnClass ENUMERATED {
+        locus-region (1), -- variation in region of gene, but not in transcript
+        coding-unknown (2),
+        coding-synonymous (3),
+        coding-nonsynonymous (4),
+        mrna-utr (5),
+        intron (6),
+        splice-site (7),
+        reference (8),
+        coding-exception (9)
+    } OPTIONAL,
+    readingFrame INTEGER OPTIONAL,
+    allele VisibleString OPTIONAL, -- variation allele: * suffix indicates allele of contig at this location
+    residue VisibleString OPTIONAL, -- translated amino acid residue for allele
+    aaPosition INTEGER OPTIONAL -- position of the variant residue in peptide sequence
+} -- functional relationship of SNP (and possibly alleles) to genes at contig location as defined in organism-specific bxxx_SNPContigLocusId_xxx tables.
 
-	snp-link VisibleString OPTIONAL,		-- submission includes reference to another ss# (snp-link value) in dbSNP
-	accession SEQUENCE OF VisibleString OPTIONAL,	-- GenBank or dbSTS sequence accessions used to define local sequence context
-	comment SEQUENCE OF VisibleString OPTIONAL,	-- submitter notes on discovery protocol or measure of evidence for the submission
-	meth-failure SEQUENCE OF VisibleString OPTIONAL,-- notes if submitter reports failure to detect or confirm snp with specific methods
-	genename VisibleString OPTIONAL,		-- gene snp was associated with by submitter
-	locus-id VisibleString OPTIONAL,		-- NCBI LocusLink ID for gene
-	flank-5 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence not surveyed, but appended for minimum length requirements
-	assay-5 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence surveyedd in [NSE-Assay.samplesize] chromosomes
-	observed VisibleString OPTIONAL,		-- /-delimited string of alleles observed by submitter
-	assay-3 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence surveyed in [NSE-Assay.samplesize] chromosomes
-	flank-3 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence not surveyed, but appended for minimum length requirements
-							-- n.b. the complete 5' flanking sequence for a submission is constructed as
-							--             flank-5 strings in order + assay-5 strings in order 
-							--      the complete 3' flanking sequence is constructed as
-							--             assay-3 strings in order + flank-3 strings in order
-	pop-info SET OF NSE-ss-popinfo OPTIONAL 
+
+Assembly ::= SEQUENCE {
+    dbSnpBuild INTEGER, -- dbSNP build number defining the rsid set aligned to this assembly
+    genomeBuild VisibleString, -- assembly build number with possible 'subbuild' version numbers to reflect updates in gene annotation (human e.g. 34_3, 35_1, 36_1)
+    groupLabel VisibleString OPTIONAL, -- High-level classification of the assembly to distinguish reference projects from alternate solutions. GroupLabel field from organism/build-specific ContigInfo tables. "reference" is occasionally used as the preferred assembly; standards will converge as additional organism genome projects are finished. Note that some organism assembly names include extended characters like '~' and '/' that may be incompatible with OS filename conventions.
+    assemblySource VisibleString OPTIONAL, -- Name of the group(s) or organization(s) that generated the assembly
+    current BOOLEAN OPTIONAL, -- Marks the current genomic assembly
+    component SEQUENCE OF Component OPTIONAL,
+
+    snpStat SEQUENCE {
+        mapWeight ENUMERATED {
+            unmapped (1),
+            unique-in-contig (2),
+            two-hits-in-contig (3),
+            less-10-hits (4),
+            multiple-hits (5)
+        }, -- summary measure of placement precision in the assembly
+        chromCount INTEGER OPTIONAL, -- number of distinct chromosomes in the mapset
+        placedContigCount INTEGER OPTIONAL, -- number of distinct contigs [ gi | accession[.version] ] in the mapset
+        unplacedContigCount INTEGER OPTIONAL, -- number of sequence postions to a contig with unknown chromosomal assignment
+        seqlocCount INTEGER OPTIONAL, -- total number of sequence positions in the mapset
+        hapCount INTEGER OPTIONAL -- Number of hits to alternative genomic haplotypes (e.g. HLA DR region, KIR, or pseudo-autosomal regions like PAR) within the assembly mapset. Note that positions on haplotypes defined in other assemblies (a different assembly_group_label value) will not be counted in this value.
+    }
+} -- A collection of genome sequence records (curated gene regions (NG's), contigs (NWNT's)  and chromosomes (NC/AC's) produced by a genome sequence project. Structure is populated from ContigInfo tables.
+
+
+Assay ::= SEQUENCE {
+    handle VisibleString OPTIONAL,
+    batch VisibleString OPTIONAL,
+    batchId INTEGER OPTIONAL,
+    batchType ENUMERATED {
+        snpassay (1),
+        validation (2),
+        doublehit (3)
+    } OPTIONAL,
+    molType ENUMERATED {
+        genomic (1),
+        cDNA (2),
+        mito (3),
+        chloro (4)
+    } OPTIONAL,
+    sampleSize INTEGER OPTIONAL,
+    population VisibleString OPTIONAL,
+    linkoutUrl VisibleString OPTIONAL,
+
+    method SEQUENCE {
+        name VisibleString OPTIONAL, -- Submitters method identifier
+        id VisibleString OPTIONAL, -- dbSNP method identifier
+        exception VisibleString -- description of deviation from/addition to given method
+    } OPTIONAL,
+
+    taxonomy SEQUENCE {
+        id INTEGER, -- NCBI taxonomy ID for variation
+        organism VisibleString OPTIONAL
+    },
+    strains SEQUENCE OF VisibleString OPTIONAL,
+    comment VisibleString OPTIONAL,
+    citation SEQUENCE OF VisibleString OPTIONAL
 }
 
 
+BaseURL ::= SEQUENCE {
+    urlId INTEGER OPTIONAL, -- Resource identifier from dbSNP_main.baseURL.
+    resourceName VisibleString OPTIONAL, -- Name of linked resource
+    resourceId VisibleString OPTIONAL, -- identifier expected by resource for URL
+    baseURL VisibleString
+} -- URL value from dbSNP_main.BaseURL links table. attributes provide context information and URL id that is referenced within individual refSNP objects.
 
 
-NSE-rsContigHit ::= SEQUENCE {		-- data from SNPContigLoc, ContigInfo tables, & SNPContigLocusId tables
-	contig-id VisibleString,		-- Id of contig when naming files for refSNPs x contig		
-	locations SET OF NSE-rsMaploc,		-- set of all valid locations for variation on contig
-	accession VisibleString OPTIONAL,	-- Accession number of the contig
-	version INTEGER OPTIONAL,		-- version number of the contig	
-	chromosome VisibleString OPTIONAL,	-- Chromosome number
-	assembly VisibleString OPTIONAL,     -- Genomic assembly
-	build-id VisibleString OPTIONAL      -- Genomic build id
-}
-	
-
-NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a contig
-	asn-from INTEGER,		-- beginning of variation as feature on contig			SNPContigLoc.asn_from
-	asn-to INTEGER,		-- end of variation as feature on contig			SNPContigLoc.asn_to
-	loc-type ENUMERATED {			-- defines the seq-loc symbol if asn_from != asn_to		SNPContigLoc.loc_type
-		range (1),			-- asn-from < asn-to  write as "asn-from..asn-to"		
-		exact (2),			-- asn-from = asn-to write as "asn-from"
-		between (3),			-- asn-to = asn-from+1 write as "asn-from^asn-to"		
-		range-insertion (4),		-- 
-		range-substitution (5),		-- 
-		range-deletion (6) },		-- 
-	hit-quality ENUMERATED {
-		high (1),			-- if SNPContigLoc.proc_status = 0 (high quality hit)
-		loose (2), 			-- if SNPContigLoc.proc_status = 1 (lower quality hit admits dirty flanks)
-		dense (3) } OPTIONAL, 		-- if SNPContigLoc.proc_status = 8 (region of high SNP density like HLA)
-
-	orient ENUMERATED {			-- orientation of refSNP sequence to contig sequence
-		forward (1),			-- if SNPContigLoc.orientation = 0
-		reverse (2) } OPTIONAL,		-- if SNPContigLoc.orientation = 1
-	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
-	physmap-int INTEGER OPTIONAL,		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
-	-- contig-allele VisibleString OPTIONAL,     contig allele string for interval [asn-from, asn-to]    SNPContigLoc.contig_allele
-    fxn-set SET OF NSE-FxnSet OPTIONAL	-- functional relationship of SNP (and possibly alleles) to genes at contig location
-										-- fxn-set analysis is only available for NCBI contig-set
-}
-
-NSE-FxnSet ::= SEQUENCE {
-	locusid INTEGER,			-- locus-id of gene as aligned to contig			SNPContigLocusId.locus_id
-	symbol VisibleString OPTIONAL,		-- symbol (official if present in LocusLink) of gene		SNPContigLocusId.locus_symbol
-	mrna-acc VisibleString OPTIONAL,	-- mRNA accession if variation in transcript			SNPContigLocusId.mrna_acc
-	prot-acc VisibleString OPTIONAL,	-- protein accession if variation in coding region interval	SNPContigLocusId.protein_acc
-	fxn-class-contig ENUMERATED {
-		locus-region (1),		-- variation in region of gene, but not in transcript		SNPContigLocusId.fxn_class
-		coding (2),				-- variation in coding region of gene, assigned if allele-specific class unknown 
-		coding-synon (3),		-- no change in peptide for allele with respect to contig seq 	**allele-specific class**
-		coding-nonsynon (4),	-- change in peptide with respect to contig sequence 			**allele-specific class**
-		mrna-utr (5),			-- variation in transcript, but not in coding region interval
-		intron (6),				-- variation in intron, but not in first 2 or last 2 bases of intron
-		splice-site (7), 		-- variation in first 2 or last to bases of intron
-		reference (8), 			-- allele observed in reference contig sequence 				**allele-specific class**
-		exception (9)			-- variation in coding region with exception raised on
-								-- alignment. This occurs when protein with gap in sequence
-								-- is aligned back to contig sequence. variations 3' of
-								-- the gap have undefined functional inference.
-	} ,
-	reading-frame INTEGER OPTIONAL,		-- position of variation in reading frame of transcript		SNPContigLocusId.reading_Frame
-	allele VisibleString OPTIONAL,		-- allele, * denotes allele observed in contig sequence		SNPContigLocusId.allele
-	residue VisibleString OPTIONAL,		-- translated amino acid residue for allele			SNPContigLocusId.residue
-	aa-position INTEGER OPTIONAL		-- position of the variant residue in peptide sequence	SNPContigLocusId.aa_position
+PrimarySequence ::= SEQUENCE {
+    dbSnpBuild INTEGER,
+    gi INTEGER,
+    source ENUMERATED {
+        submitter (1),
+        blastmb (2),
+        xm (3)
+    } OPTIONAL,
+    mapLoc SEQUENCE OF MapLoc
 }
 
 
-NSE-rsSeqHit ::= SEQUENCE {			-- Properties of individual mapping result from finished & draft sequences
-	accession VisibleString,		-- Accession of the sequence 
-	version INTEGER OPTIONAL,		-- version number of the sequence (reports most recent ver.) 
-	loc SET OF NSE-SeqLoc			-- set of all valid locations on accession
+RsStruct ::= SEQUENCE {
+    protAcc VisibleString OPTIONAL, -- accession of the protein with variation
+    protGi INTEGER OPTIONAL, -- GI of the protein with variation
+    protLoc INTEGER OPTIONAL, -- position of the residue for the protein GI
+    protResidue VisibleString OPTIONAL, -- residue specified for protein at prot-loc location
+    rsResidue VisibleString OPTIONAL, -- alternative residue specified by variation sequence
+    structGi INTEGER OPTIONAL, -- GI of the structure neighbor
+    structLoc INTEGER OPTIONAL, -- position of the residue for the structure GI
+    structResidue VisibleString OPTIONAL -- residue specified for protein at struct-loc location
+} -- structure information for SNP
+
+
+RsLinkout ::= SEQUENCE {
+    resourceId VisibleString, -- BaseURLList.url_id
+    linkValue VisibleString -- value to append to ResourceURL.base-url for complete link
+} -- link data for another resource
+
+
+Component ::= SEQUENCE {
+    componentType ENUMERATED {
+        contig (1),
+        mrna (2)
+    } OPTIONAL, -- type of component: chromosome, contig, gene_region, etc.
+    ctgId INTEGER OPTIONAL, -- dbSNP contig_id used to join on contig hit / mapset data to these assembly properties
+    accession VisibleString OPTIONAL, -- Accession[.version] for the sequence component
+    name VisibleString OPTIONAL, -- contig name defined as either a submitter local id, element of a whole genome assembly set, or internal NCBI local id
+    chromosome VisibleString OPTIONAL, -- Organism appropriate chromosome tag, 'Un' reserved for default case of unplaced components
+    start INTEGER OPTIONAL, -- component starting position on the chromosome (base 0 inclusive)
+    end INTEGER OPTIONAL, -- component ending position on the chromosome (base 0 inclusive)
+    orientation ENUMERATED {
+        fwd (1),
+        rev (2),
+        unknown (3)
+    } OPTIONAL, -- orientation of this component to chromosome, forward (fwd) = 0, reverse (rev) = 1, unknown = NULL in ContigInfo.orient.
+    gi VisibleString OPTIONAL, -- NCBI gi for component sequence (equivalent to accession.version) for nucleotide sequence.
+    groupTerm VisibleString OPTIONAL, -- Identifier label for the genome assembly that defines the contigs in this mapset and their placement within the organism genome.
+    contigLabel VisibleString OPTIONAL, -- Display label for component
+    mapLoc SEQUENCE OF MapLoc
 }
-
-
-
-NSE-SeqLoc ::= SEQUENCE {
-	asn-from INTEGER,			-- beginning position of variation on sequence
-	asn-to INTEGER OPTIONAL,		-- end position of variation on sequence
-	loc-type ENUMERATED {
-		range 	(1),			-- asn-from < asn-to: write as "asn-from..asn-to"
-		exact	(2),			-- asn-from = asn-to: write as "asn-from"
-		between	(3), 			-- asn-from = asn-to - 1: write as "asn-from^asn-to"
-		range-insertion (4),		-- 
-		range-substitution (5),		-- 
-		range-deletion (6) 		-- 
-	} OPTIONAL,
-	source-db ENUMERATED {
-		ref-mrna (1),			-- NCBI RefSeq mRNA
-		gb-sts (2),			-- GenBank STS division
-		gb-mrna (4),			-- Genbank mrna
-		ref-genome(5),			-- NCBI RefSeq genomic
-		gb-small (6),			-- Genbank genomic < 30kb in length
-		hgs-finish (10),		-- genome sequence, finished
-		hgs-draft (11),			-- genome sequence, draft
-		bes (12), 			-- BAC-end sequence
-		wgs (13)
-	} OPTIONAL,
-        orient ENUMERATED {
-                forward (1),                    -- if MapLink.orientation = 0
-                reverse (2) } OPTIONAL          -- if MapLink.orientation = 1
-}
-
-
-NSE-rsLocusID ::= SEQUENCE {
-	locus-id INTEGER,
-	url-id INTEGER DEFAULT 3,
-	symbol VisibleString OPTIONAL,
-	fxn-class-mrna ENUMERATED {			-- these values are the same encoding as Fxn-Set.fxn-class (above)
-		locus-region	(1),
-		coding		(2),
-		coding-synon	(3),
-		coding-nonsynon	(4),
-		mrna-UTR	(5),
-		intron		(6),
-		splice-site	(7),
-		reference	(8),
-		exception       (9) 
-	} OPTIONAL
-}
-
-NSE-rsStruct ::= SEQUENCE {
-	prot-acc VisibleString,             -- accession of the protein with variation (SNP3D.protein_acc)
-	prot-gi INTEGER,                    -- GI of the protein with variation (SNP3D.master_gi)
-    	prot-loc INTEGER,                   -- position of the residue for the protein GI (SNP3D.aa_position)
-    	prot-res VisibleString,             -- residue specified for protein at prot-loc location (SNP3D.contig_res)
-    	rs-res VisibleString,               -- alternative residue specified by variation sequence (SNP3D.var_res)
-	struct-gi INTEGER,                  -- GI of the structure neighbor (SNP3D.neighbor_gi)
-	struct-loc INTEGER,                 -- position of the residue for the structure GI (SNP3D.neighbor_pos)
-	struct-res VisibleString            -- residue specified for protein at struct-loc location (SNP3D.neighbor_res)
-}
-	
-   
-NSE-rsUnigene ::= SEQUENCE {
-	cluster-id INTEGER,		   -- unigene_cid from UnigeneSnp
-	gi-set SET OF INTEGER		   -- list of gi's per unigene cluster
-} 
-
-
-
-NSE-ss-popinfo ::= SEQUENCE {
- 	type VisibleString, 			-- batch type (HET, ALLE)		SubPop.type
-	handle VisibleString,               -- submitter’s handle
-	batch-id INTEGER,
-	pop-name VisibleString,			-- submitter population ID		SubPop.loc_pop_id
-	pop-id INTEGER,				-- dbSNP population ID			SubPop.pop_id
-	pop-class VisibleString OPTIONAL,  --dbSNP population class
-	samplesize INTEGER OPTIONAL,		-- sample size				SubPop.samplesize                    
- 	sub-het REAL OPTIONAL,			-- submitted heterozygosity		SubPop.sub_heterozygosity
-	est-het REAL OPTIONAL,			-- estimated heterogygosity		SubPop.est_heterozygosity
- 	est-het-se-sq REAL OPTIONAL,		-- est het std. error
-	sub-het-se-sq REAL OPTIONAL,		-- submitted het std. error
-	allele-info SET OF NSE-alleleinfo OPTIONAL  -- allele frequency data, genotype frequency data 
-                                                     -- available in Genotype Report
-}
-
-
-
-NSE-alleleinfo ::= SEQUENCE {
-	snp-allele  VisibleString OPTIONAL,	-- allele if ACTG			                       
-	other-allele VisibleString OPTIONAL,	-- all other cases	
- 	freq REAL OPTIONAL,			-- frequency as percentage		
-	count REAL OPTIONAL			-- frequency as count
-}
-
-
-NSE-Date ::= CHOICE {
-    str VisibleString ,        			-- for those unparsed dates
-    std NSE-Date-std }             		-- use this if you can
-
-NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
-    year INTEGER ,             			-- full year (including 1900)
-    month INTEGER OPTIONAL ,   			-- month (1-12)
-    day INTEGER OPTIONAL ,     			-- day of month (1-31)
-    season VisibleString OPTIONAL }  		-- for "spring", "may-june", etc
-
 END
-
--- $Log: docsum.asn,v $
--- Revision 1.51  2005/08/15 17:54:22  kholodov
--- Removed contig-allele for backward compatibility
---
--- Revision 1.50  2005/07/26 14:52:25  kholodov
--- Added: loc-types 4, 5, 6
---
--- Revision 1.49  2005/03/02 19:08:14  kholodov
--- Rolled back to 1.47 for old Entrez docsum files
---
--- Revision 1.48  2005/02/24 19:39:31  kholodov
--- Added: contig-allele
---
--- Revision 1.47  2004/10/28 21:16:55  kholodov
--- Added: rs merge history
---
--- Revision 1.46  2004/10/08 19:48:03  kholodov
--- Added: mixed(7) subsnp_class
---
--- Revision 1.45  2004/09/30 19:16:39  kholodov
--- Added: genomic build id
---
--- Revision 1.44  2004/08/16 14:15:14  kholodov
--- Added: wgs source-db code
---
--- Revision 1.43  2004/08/09 20:42:18  kholodov
--- Added: assembly field
---
--- Revision 1.42  2004/05/27 18:15:35  kholodov
--- Modified: allele info moved to popinfo structure
---
--- Revision 1.41  2004/05/24 18:38:34  kholodov
--- Changed val-hapmap to validated-by-hapmap
---
--- Revision 1.40  2004/05/24 14:07:44  kholodov
--- Added: val-hapmap field
---
--- Revision 1.39  2003/10/15 14:24:33  kholodov
--- Modified: sequences now optional for NSE-rs
---
--- Revision 1.38  2003/09/22 20:14:58  kholodov
--- Added: copyright notice
---
--- Revision 1.37  2003/07/09 19:36:33  kholodov
--- Syntax error fixed
---
--- Revision 1.36  2003/07/09 18:10:39  sherry
--- *** empty log message ***
---
--- Revision 1.35  2002/12/03 20:18:51  kholodov
--- Modified: validation status is represented by 4 boolean values
---
--- Revision 1.34  2002/09/03 20:09:59  kholodov
--- Added moltype for rs and ss, create-build, update-build for rs
---
--- Revision 1.33  2002/06/12 14:02:54  kholodov
--- sts-info and unigene-info added
---
--- Revision 1.32  2002/04/12 13:53:14  kholodov
--- Fixed wrong type name NSE-date to NSE-Date
---
--- Revision 1.31  2002/04/11 20:40:41  sherry
--- added NSE-ss linkout-url, validation status; NSE-rs create-date, update-date; NSE-popinfo pop-class, and new section NSE-rsStruct with 3D structure data
---
--- Revision 1.30  2002/03/15 16:39:58  sherry
--- added subsnp method-class and dbSNP-build-id
---
--- Revision 1.29  2002/01/22 16:27:16  kholodov
--- Fixed syntax bug
---
--- Revision 1.27  2002/01/18 19:20:29  sherry
--- added dense option to hit-quality for SNPs mapped to dense regions like HLA
---
--- Revision 1.26  2001/11/28 21:41:42  sherry
--- correction to golden path (UCSC) contig hits
---
--- Revision 1.25  2001/11/28 20:58:42  sherry
--- added UCSC mapping coordinates, and added amino-acid position to function-set
---
--- Revision 1.24  2001/08/21 14:52:56  sherry
--- added subsnp-class (8) = mnp for multiple nucleotide polymorphisms with alleles of common length > 1 bp
---
--- Revision 1.23  2001/08/20 20:27:57  sherry
--- added source-db (5) for RefSeq-genomic and ncbi-build-id for build number of genome mapping data
---
--- Revision 1.22  2001/08/20 20:19:45  sherry
--- source-db (2) defined for GenBank STS division
---
--- Revision 1.21  2001/08/03 14:29:11  sherry
--- added snp-class 'mnp' for variants with allele length > 1
---
--- Revision 1.20  2001/07/11 13:08:05  sherry
--- typo correction and clarification of fxn-class names to fxn-class-contig and fxn-class-mrna
---
--- Revision 1.19  2001/06/08 14:18:59  sherry
---  added exception value (9) to fxn-set
---
--- Revision 1.18  2001/05/02 15:11:19  kholodov
--- Fixed: NSE-ss::orient: refersed -> reversed.
---
--- Revision 1.17  2001/05/01 14:23:44  sherry
--- added seq-ss-exemplar and NSE-ss.orient to report orientation of cluster members to NSE-rs and its exemplar sequence, NSE-rs.seq-ss-exemplar.
---
--- Revision 1.16  2001/04/30 15:21:21  sherry
--- added reference fxn-class if SNP allele is observed on reference contig sequence
---
--- Revision 1.15  2001/04/09 14:21:31  sherry
--- additional documentation regarding refSNP flanking sequence: lowercase for repetititve regions and segmentation of long flanking sequences
---
--- Revision 1.14  2001/03/23 16:17:44  sherry
--- removed unnecessary samplesize from NSE-Pop.. data in NSE-ss-popinfo
---
--- Revision 1.13  2001/03/23 14:10:22  sherry
--- added samplesize to NSE-Pop
---
--- Revision 1.12  2001/03/22 14:04:54  sherry
--- strain added to NSE-Assay
---
--- Revision 1.11  2001/02/01 17:53:01  sherry
--- added MapLinkArchive to Table Source for sequence-mapset
---
--- Revision 1.10  2001/02/01 14:30:45  sherry
--- added orientation to NSE-SeqLoc
---
--- Revision 1.9  2000/12/19 22:32:11  sherry
--- added orientation/hit quality to contig hits, added source database to genbank hits
---
--- Revision 1.8  2000/12/19 22:19:48  sherry
--- added subsnp frequency data and refsnp function via contig annotation
---
--- Revision 1.7  2000/12/05 19:19:57  kholodov
--- Minor errors fixed
---
--- Revision 1.6  2000/12/05 17:06:35  sherry
--- merged docsum.asn and export.asn in this version for a single data structure that can be populated as a brief-set (to emulate docsum.asn) or as a full-set for data exchange (to emulate exchange.asn)
---
---
--- ###
--- ### Revisions to earlier versions of exchange.asn
--- ###
---
--- Revision exchange.asn 1.10  2000/11/03 15:26:41  sherry
--- added subsnp-id to export.asn and made loc-snp-id optional in both export.asn and docsum.asn
---
--- Revision exchange.asn 1.9  2000/11/02 20:58:14  kholodov
--- fixed incorrect field name
---
--- Revision exchange.asn 1.8  2000/10/18 22:07:11  sherry
--- added XML version number and dbSNP_build number to ExchangeSet
---
--- Revision exchange.asn 1.7  2000/10/13 16:08:20  kholodov
--- added commented CVS log
---
--- ###
--- ### Revisions to earlier versions of docsum.asn
--- ###
---
--- Revision docsum.asn 1.5  2000/11/03 15:26:41  sherry
--- added subsnp-id to export.asn and made loc-snp-id optional in both export.asn and docsum.asn
---
--- Revision docsum.asn 1.4  2000/10/20 19:21:41  sherry
--- added ambiguousloc and lowmapquality to legal withdrawn reasons
---
--- Revision docsum.asn 1.3  2000/08/24 14:47:53  sherry
--- added subsnp-class and mixed snp-class type
---
---08/23/00:	changed source of NCBI-RefSNPDocsum.taxid to new taxid column in SNP table
---		added NCBI-RefSNPDocsum.snp-class type (7) for cases of mixed subsnp-class in single refSNP (none currently in database)
---		added NCBI-subsnp-id.subsnp-class to define allele class for subSNP as well as SNP
---06/20/00:	Added 'duplicatesub' and 'NotSpecified' as WITHDRAWN reason for snp-type
---05/22/00:	Added splice to fxn-class, 
---		added map coordinates in contig component coordinates (RefSNPSeqHit),
---		changed RefSNPMaphit to RefSNPContigHit
---04/18/00:	Added subsnp set membership, flanking sequence
---03/22/00:	Added changes to fxn-class and validated
---03/01/00:	Added het-SE for standard error of mean heterozygosity
---02/09/00:     Added unigene/UID/loc_cnt
---02/08/00:	Added mapping, fixed taxid, mapstring definitions
---02/03/00: 	Added RefSNP Docsum definitions
---		Short version of ASN1 for development of genome annotation code
-
