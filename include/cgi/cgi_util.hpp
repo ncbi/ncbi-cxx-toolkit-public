@@ -195,6 +195,7 @@ public:
     typedef SCgiArg    TArg;
     typedef list<TArg> TArgs;
 
+    bool IsSetValue(const string& name) const;
     const string& GetValue(const string& name) const;
     void SetValue(const string& name, const string value);
     const TArgs& GetArgs(void) const;
@@ -315,6 +316,13 @@ private:
 //
 
 inline
+bool CCgiArgs::IsSetValue(const string& name) const
+{
+    return x_Find(name) != m_Args.end();
+}
+
+
+inline
 const string& CCgiArgs::GetValue(const string& name) const
 {
     return x_Find(name)->value;
@@ -421,6 +429,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/10/17 20:47:01  grichenk
+* +CCgiArgs::IsSetValue()
+*
 * Revision 1.3  2005/10/17 16:46:40  grichenk
 * Added CCgiArgs_Parser base class.
 * Redesigned CCgiRequest to use CCgiArgs_Parser.
