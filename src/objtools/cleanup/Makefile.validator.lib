@@ -1,0 +1,7 @@
+# $Id$
+
+# Build library "xcleanup"
+###############################
+
+SRC = cleanup 
+LIB    = xcleanup
