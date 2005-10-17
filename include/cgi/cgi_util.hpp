@@ -61,11 +61,15 @@ extern string
 URL_DecodeString(const string& str,
                  EUrlEncode    encode_flag = eUrlEncode_SkipMarkChars);
 
+enum EUrlDecode {
+    eUrlDecode_All,
+    eUrlDecode_Percent
+};
 /// URL-decode string "str" into itself
 /// Return 0 on success;  otherwise, return 1-based error position
 NCBI_XCGI_EXPORT
 extern SIZE_TYPE
-URL_DecodeInPlace(string& str, bool percent_only = false);
+URL_DecodeInPlace(string& str, EUrlDecode decode_flag = eUrlDecode_All);
 
 /// URL-encode a string "str" to the "x-www-form-urlencoded" form;
 /// return the result of encoding. If 
@@ -121,7 +125,7 @@ public:
     /// Default encoder uses the selected encoding for argument names/values
     /// and eUrlEncode_Path for document path. Other parts of the URL are
     /// not encoded.
-    CDefaultUrlEncoder(EUrlEncode encode);
+    CDefaultUrlEncoder(EUrlEncode encode = eUrlEncode_SkipMarkChars);
     virtual string EncodePath(const string& path) const;
     virtual string DecodePath(const string& path) const;
     virtual string EncodeArgName(const string& name) const;
@@ -135,21 +139,48 @@ private:
 
 ///////////////////////////////////////////////////////
 ///
-/// CCgiArgs::
+/// CCgiArgs_Parser::
 ///
-/// CGI arguments parser.
+/// CGI base class for arguments parsers.
 ///
 
-class NCBI_XCGI_EXPORT CCgiArgs
+class NCBI_XCGI_EXPORT CCgiArgs_Parser
+{
+public:
+    virtual ~CCgiArgs_Parser(void) {}
+
+    void SetQueryString(const string& query, EUrlEncode encode);
+    void SetQueryString(const string& query,
+                        const IUrlEncoder* encoder = 0);
+
+protected:
+    enum EArgType {
+        eArg_Value,
+        eArg_Index
+    };
+    virtual void AddArgument(unsigned int position,
+                             const string& name,
+                             const string& value,
+                             EArgType arg_type = eArg_Index) = 0;
+private:
+    void x_SetIndexString(const string& query,
+                          const IUrlEncoder& encoder);
+};
+
+
+///////////////////////////////////////////////////////
+///
+/// CCgiArgs::
+///
+/// CGI arguments list.
+///
+
+class NCBI_XCGI_EXPORT CCgiArgs : public CCgiArgs_Parser
 {
 public:
     CCgiArgs(void);
     CCgiArgs(const string& query, EUrlEncode decode);
     CCgiArgs(const string& query, const IUrlEncoder* encoder = 0);
-
-    void SetQueryString(const string& query, EUrlEncode encode);
-    void SetQueryString(const string& query,
-                        const IUrlEncoder* encoder = 0);
 
     string GetQueryString(EUrlEncode encode) const;
     string GetQueryString(const IUrlEncoder* encoder = 0) const;
@@ -164,17 +195,26 @@ public:
     typedef SCgiArg    TArg;
     typedef list<TArg> TArgs;
 
-    string GetValue(const string& name) const;
+    const string& GetValue(const string& name) const;
     void SetValue(const string& name, const string value);
+    const TArgs& GetArgs(void) const;
     TArgs& GetArgs(void);
 
-private:
-    void x_SetIndexString(const string& query,
-                          const IUrlEncoder& encoder);
-    TArgs::iterator x_Find(const string& name);
+    void SetCase(NStr::ECase name_case);
 
-    bool  m_IsIndex;
-    TArgs m_Args;
+protected:
+    virtual void AddArgument(unsigned int position,
+                             const string& name,
+                             const string& value,
+                             EArgType arg_type);
+
+private:
+    TArgs::iterator x_Find(const string& name);
+    TArgs::const_iterator x_Find(const string& name) const;
+
+    NStr::ECase m_Case;
+    bool        m_IsIndex;
+    TArgs       m_Args;
 };
 
 
@@ -242,6 +282,8 @@ public:
     CUrl(const CUrl& url);
     CUrl& operator=(const CUrl& url);
 
+    static IUrlEncoder* GetDefaultEncoder(void);
+
 private:
     // Set values with verification
     void x_SetScheme(const string& scheme, const IUrlEncoder& encoder);
@@ -273,9 +315,9 @@ private:
 //
 
 inline
-string CCgiArgs::GetValue(const string& name) const
+const string& CCgiArgs::GetValue(const string& name) const
 {
-    return const_cast<CCgiArgs&>(*this).x_Find(name)->value;
+    return x_Find(name)->value;
 }
 
 
@@ -287,16 +329,16 @@ CCgiArgs::TArgs& CCgiArgs::GetArgs(void)
 
 
 inline
-const CCgiArgs& CUrl::GetArgs(void) const
+const CCgiArgs::TArgs& CCgiArgs::GetArgs(void) const
 {
-    return *m_ArgsList;
+    return m_Args;
 }
 
 
 inline
-CCgiArgs& CUrl::GetArgs(void)
+void CCgiArgs::SetCase(NStr::ECase name_case)
 {
-    return *m_ArgsList;
+    m_Case = name_case;
 }
 
 
@@ -360,11 +402,30 @@ string CUrl::GetOriginalArgsString(void) const
 }
 
 
+inline
+const CCgiArgs& CUrl::GetArgs(void) const
+{
+    return *m_ArgsList;
+}
+
+
+inline
+CCgiArgs& CUrl::GetArgs(void)
+{
+    return *m_ArgsList;
+}
+
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/10/17 16:46:40  grichenk
+* Added CCgiArgs_Parser base class.
+* Redesigned CCgiRequest to use CCgiArgs_Parser.
+* Replaced CUrlException with CCgiParseException.
+*
 * Revision 1.2  2005/10/14 16:15:36  ucko
 * +<memory> for auto_ptr<>
 *

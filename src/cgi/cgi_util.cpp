@@ -149,42 +149,20 @@ string CDefaultUrlEncoder::DecodeArgValue(const string& value) const
 
 
 ///////////////////////////////////////////////////////
-//  CCgiArgs::
+//  CCgiArgs_Parser::
 //
 
-CCgiArgs::CCgiArgs(void)
-    : m_IsIndex(false)
-{
-    return;
-}
-
-
-CCgiArgs::CCgiArgs(const string& query, EUrlEncode decode)
-    : m_IsIndex(false)
-{
-    SetQueryString(query, decode);
-}
-
-
-CCgiArgs::CCgiArgs(const string& query, const IUrlEncoder* encoder)
-    : m_IsIndex(false)
-{
-    SetQueryString(query, encoder);
-}
-
-
-void CCgiArgs::SetQueryString(const string& query, EUrlEncode encode)
+void CCgiArgs_Parser::SetQueryString(const string& query,
+                                     EUrlEncode encode)
 {
     CDefaultUrlEncoder encoder(encode);
     SetQueryString(query, &encoder);
 }
 
 
-void CCgiArgs::x_SetIndexString(const string& query,
-                                const IUrlEncoder& encoder)
+void CCgiArgs_Parser::x_SetIndexString(const string& query,
+                                       const IUrlEncoder& encoder)
 {
-    m_IsIndex = true;
-
     SIZE_TYPE len = query.size();
     if ( !len ) {
         return;
@@ -194,30 +172,32 @@ void CCgiArgs::x_SetIndexString(const string& query,
     _ASSERT(query.find_first_of("=& \t\r\n") == NPOS);
 
     // Parse into indexes
+    unsigned int position = 1;
     for (SIZE_TYPE beg = 0; beg < len; ) {
         SIZE_TYPE end = query.find('+', beg);
         if (end == beg  ||  end == len-1) {
-            NCBI_THROW2(CUrlException, eBadChar,
+            NCBI_THROW2(CCgiParseException, eFormat,
                 "Invalid delimiter: \"" + query + "\"", end+1);
         }
         if (end == NPOS) {
             end = len;
         }
 
-        string name = query.substr(beg, end - beg);
-        m_Args.push_back(TArg(encoder.DecodeArgName(name), ""));
+        AddArgument(position++,
+                    encoder.DecodeArgName(query.substr(beg, end - beg)),
+                    kEmptyStr,
+                    eArg_Index);
 
         beg = end + 1;
     }
 }
 
 
-void CCgiArgs::SetQueryString(const string& query,
-                              const IUrlEncoder* encoder)
+void CCgiArgs_Parser::SetQueryString(const string& query,
+                                     const IUrlEncoder* encoder)
 {
-    static CEmptyUrlEncoder s_EmptyEncoder;
     if ( !encoder ) {
-        encoder = &s_EmptyEncoder;
+        encoder = CUrl::GetDefaultEncoder();
     }
     // Parse and decode query string
     SIZE_TYPE len = query.length();
@@ -229,7 +209,7 @@ void CCgiArgs::SetQueryString(const string& query,
         // No spaces are allowed in the parsed string
         SIZE_TYPE err_pos = query.find_first_of(" \t\r\n");
         if (err_pos != NPOS) {
-            NCBI_THROW2(CUrlException, eBadChar,
+            NCBI_THROW2(CCgiParseException, eFormat,
                 "Space character in query: \"" + query + "\"",
                 err_pos+1);
         }
@@ -242,6 +222,7 @@ void CCgiArgs::SetQueryString(const string& query,
     }
 
     // Parse into entries
+    unsigned int position = 1;
     for (SIZE_TYPE beg = 0; beg < len; ) {
         // ignore 1st ampersand (it is just a temp. slack to some biz. clients)
         if (beg == 0  &&  query[0] == '&') {
@@ -259,7 +240,7 @@ void CCgiArgs::SetQueryString(const string& query,
         SIZE_TYPE mid = query.find_first_of("=&", beg);
         if (mid == beg  ||
             (mid != NPOS  &&  query[mid] == '&'  &&  mid == len-1)) {
-            NCBI_THROW2(CUrlException, eBadChar,
+            NCBI_THROW2(CCgiParseException, eFormat,
                 "Invalid delimiter: \"" + query + "\"", mid+1);
         }
         if (mid == NPOS) {
@@ -274,7 +255,7 @@ void CCgiArgs::SetQueryString(const string& query,
             mid++;
             SIZE_TYPE end = query.find_first_of(" &", mid);
             if (end != NPOS  &&  (query[end] != '&'  ||  end == len-1)) {
-            NCBI_THROW2(CUrlException, eBadChar,
+            NCBI_THROW2(CCgiParseException, eFormat,
                 "Invalid delimiter: \"" + query + "\"", end+1);
             }
             if (end == NPOS) {
@@ -289,8 +270,51 @@ void CCgiArgs::SetQueryString(const string& query,
         }
 
         // store the name-value pair
-        m_Args.push_back(TArg(name, value));
+        AddArgument(position++, name, value, eArg_Value);
     }
+}
+
+
+///////////////////////////////////////////////////////
+//  CCgiArgs::
+//
+
+CCgiArgs::CCgiArgs(void)
+    : m_Case(NStr::eNocase),
+      m_IsIndex(false)
+{
+    return;
+}
+
+
+CCgiArgs::CCgiArgs(const string& query, EUrlEncode decode)
+    : m_Case(NStr::eNocase),
+      m_IsIndex(false)
+{
+    SetQueryString(query, decode);
+}
+
+
+CCgiArgs::CCgiArgs(const string& query, const IUrlEncoder* encoder)
+    : m_Case(NStr::eNocase),
+      m_IsIndex(false)
+{
+    SetQueryString(query, encoder);
+}
+
+
+void CCgiArgs::AddArgument(unsigned int /* position */,
+                           const string& name,
+                           const string& value,
+                           EArgType arg_type)
+{
+    if (arg_type == eArg_Index) {
+        m_IsIndex = true;
+    }
+    else {
+        _ASSERT(!m_IsIndex);
+    }
+    m_Args.push_back(TArg(name, value));
 }
 
 
@@ -303,9 +327,8 @@ string CCgiArgs::GetQueryString(EUrlEncode encode) const
 
 string CCgiArgs::GetQueryString(const IUrlEncoder* encoder) const
 {
-    static CEmptyUrlEncoder s_EmptyEncoder;
     if ( !encoder ) {
-        encoder = &s_EmptyEncoder;
+        encoder = CUrl::GetDefaultEncoder();
     }
     // Encode and construct query string
     string query;
@@ -336,10 +359,21 @@ void CCgiArgs::SetValue(const string& name, const string value)
 }
 
 
+CCgiArgs::TArgs::const_iterator CCgiArgs::x_Find(const string& name) const
+{
+    ITERATE(TArgs, it, m_Args) {
+        if ( NStr::Equal(it->name, name, m_Case) ) {
+            return it;
+        }
+    }
+    return m_Args.end();
+}
+
+
 CCgiArgs::TArgs::iterator CCgiArgs::x_Find(const string& name)
 {
     NON_CONST_ITERATE(TArgs, it, m_Args) {
-        if (it->name == name) {
+        if ( NStr::Equal(it->name, name, m_Case) ) {
             return it;
         }
     }
@@ -453,9 +487,8 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
     m_OrigArgs = kEmptyStr;
     m_ArgsList.reset();
 
-    static CEmptyUrlEncoder s_EmptyEncoder;
     if ( !encoder ) {
-        encoder = &s_EmptyEncoder;
+        encoder = GetDefaultEncoder();
     }
 
     bool skip_host = false;
@@ -515,7 +548,7 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
                         continue;
                     }
                     else {
-                        NCBI_THROW2(CUrlException, eBadFormat,
+                        NCBI_THROW2(CCgiParseException, eFormat,
                             "Invalid port value: \"" + url + "\"", beg+1);
                     }
                 }
@@ -568,9 +601,8 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
 
 string CUrl::ComposeUrl(const IUrlEncoder* encoder) const
 {
-    static CEmptyUrlEncoder s_EmptyEncoder;
     if ( !encoder ) {
-        encoder = &s_EmptyEncoder;
+        encoder = GetDefaultEncoder();
     }
     string url;
     if ( !m_Scheme.empty() ) {
@@ -647,7 +679,7 @@ int s_HexChar(char ch) THROWS_NONE
 }
 
 
-extern SIZE_TYPE URL_DecodeInPlace(string& str, bool percent_only)
+extern SIZE_TYPE URL_DecodeInPlace(string& str, EUrlDecode decode_flag)
 {
     SIZE_TYPE len = str.length();
     if ( !len )
@@ -670,7 +702,7 @@ extern SIZE_TYPE URL_DecodeInPlace(string& str, bool percent_only)
             break;
         }
         case '+': {
-            if ( !percent_only ) {
+            if ( decode_flag == eUrlDecode_All ) {
                 str[p] = ' ';
             }
             pos++;
@@ -698,7 +730,9 @@ extern string URL_DecodeString(const string& str,
     }
     string    x_str   = str;
     SIZE_TYPE err_pos =
-        URL_DecodeInPlace(x_str, encode_flag == eUrlEncode_PercentOnly);
+        URL_DecodeInPlace(x_str,
+        (encode_flag == eUrlEncode_PercentOnly)
+        ? eUrlDecode_Percent : eUrlDecode_All);
     if (err_pos != 0) {
         NCBI_THROW2(CCgiParseException, eFormat,
                     "URL_DecodeString(\"" + NStr::PrintableString(str) + "\")",
@@ -905,6 +939,13 @@ extern string URL_EncodeString(const string& str,
 }
 
 
+IUrlEncoder* CUrl::GetDefaultEncoder(void)
+{
+    static CDefaultUrlEncoder s_DefaultEncoder;
+    return &s_DefaultEncoder;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -912,6 +953,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/10/17 16:46:43  grichenk
+* Added CCgiArgs_Parser base class.
+* Redesigned CCgiRequest to use CCgiArgs_Parser.
+* Replaced CUrlException with CCgiParseException.
+*
 * Revision 1.1  2005/10/13 15:42:47  grichenk
 * Initial revision
 *
