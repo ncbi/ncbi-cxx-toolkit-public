@@ -601,13 +601,13 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 	}
 	else
 	{
-		Int2 status=0;
-
-		if (options->gapped_calculation &&
-                    (status=Blast_KarlinBlkGappedLoadFromTables(NULL, options->gap_open, 
-                     options->gap_extend, options->decline_align, 
+                if (options->gapped_calculation && !Blast_ProgramIsRpsBlast(program_number))
+                {
+                    Int2 status=0;
+                    if ((status=Blast_KarlinBlkGappedLoadFromTables(NULL, options->gap_open,
+                     options->gap_extend, options->decline_align,
                      options->matrix)) != 0)
-		{
+                     {
 			if (status == 1)
 			{
 				char* buffer;
@@ -635,8 +635,8 @@ BlastScoringOptionsValidate(EBlastProgramType program_number,
 				sfree(buffer);
 				return (Int2) code;
 			}
-		}
-		
+                    }
+	       }
 	}
 
 	if (program_number != eBlastTypeBlastx && 
@@ -1265,6 +1265,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.174  2005/10/18 15:19:04  madden
+ * Exclude rpsblast from validation of gap parameters
+ *
  * Revision 1.173  2005/10/17 14:03:34  madden
  * Change convention for unset gap parameters from zero to negative number
  *
