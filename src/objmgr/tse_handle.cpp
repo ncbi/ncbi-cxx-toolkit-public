@@ -453,7 +453,7 @@ void CScopeInfo_Base::x_SetLock(const CTSE_ScopeUserLock& tse,
     _ASSERT(tse);
     _ASSERT(&*tse == m_TSE_ScopeInfo);
     _ASSERT(!m_TSE_Handle || &m_TSE_Handle.x_GetScopeInfo() == &*tse);
-    _ASSERT(!m_ObjectInfo || m_ObjectInfo == &info);
+    _ASSERT(!m_ObjectInfo || &GetObjectInfo_Base() == &info);
     m_TSE_Handle = tse;
     m_ObjectInfo = &reinterpret_cast<const CObject&>(info);
     _ASSERT(x_Check(fAllowZero|fForceInfo));
