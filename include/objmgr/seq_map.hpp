@@ -169,6 +169,8 @@ public:
                                                      CScope* scope);
     static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                                                     ENa_strand strand);
+    // copy map for editing
+    CSeqMap(const CSeqMap& sm);
 
     void SetRegionInChunk(CTSE_Chunk_Info& chunk, TSeqPos pos, TSeqPos length);
     void LoadSeq_data(TSeqPos pos, TSeqPos len, const CSeq_data& data);
@@ -251,8 +253,7 @@ private:
     void ResolveAll(void) const;
     
 private:
-    // Prohibit copy operator and constructor
-    CSeqMap(const CSeqMap&);
+    // Prohibit copy operator
     CSeqMap& operator= (const CSeqMap&);
     
 protected:    

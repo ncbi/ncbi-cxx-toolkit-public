@@ -232,7 +232,9 @@ void CBioseq_Info::x_SetObject(const CBioseq_Info& info,
         x_DSMapObject(m_Object, GetDataSource());
     }
     m_Id = info.m_Id;
-    m_SeqMap = info.m_SeqMap;
+    if ( info.m_SeqMap ) {
+        m_SeqMap = new CSeqMap(*info.m_SeqMap);
+    }
     if ( info.IsSetAnnot() ) {
         x_SetAnnot(info, copy_map);
     }
@@ -1029,6 +1031,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/10/18 15:34:16  vasilche
+* Copy CSeqMap when editing bioseq.
+*
 * Revision 1.31  2005/06/22 14:23:48  vasilche
 * Added support for original->edited map.
 *

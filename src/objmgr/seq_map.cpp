@@ -138,6 +138,24 @@ CSeqMap::CSeqMap(TSeqPos length)
 }
 
 
+CSeqMap::CSeqMap(const CSeqMap& sm)
+    : m_Segments(sm.m_Segments),
+      m_Resolved(sm.m_Resolved),
+      m_Delta(sm.m_Delta),
+      m_Mol(sm.m_Mol),
+      m_HasSegments(sm.m_HasSegments),
+      m_SeqLength(sm.m_SeqLength)
+{
+    NON_CONST_ITERATE ( TSegments, it, m_Segments ) {
+        if ( it->m_ObjType == eSeqChunk ) {
+            it->m_SegType = eSeqGap;
+            it->m_ObjType = eSeqGap;
+            it->m_RefObject = null;
+        }
+    }
+}
+
+
 CSeqMap::~CSeqMap(void)
 {
     m_Resolved = 0;
