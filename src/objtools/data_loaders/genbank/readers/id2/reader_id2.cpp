@@ -1064,6 +1064,10 @@ CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
     case CID2_Error::eSeverity_warning:
         severity = "warning: ";
         error_flags |= fError_warning;
+        if ( error.IsSetMessage() &&
+             error.GetMessage() == "Information in this blob is obsolete" ) {
+            error_flags |= fError_warning_dead;
+        }
         break;
     case CID2_Error::eSeverity_failed_command:
         severity = "request error: ";
@@ -1097,6 +1101,7 @@ CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
         error_flags |= fError_bad_command;
         break;
     }
+    /*
     const char* message;
     if ( error.IsSetMessage() ) {
         message = error.GetMessage().c_str();
@@ -1104,7 +1109,6 @@ CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
     else {
         message = "<empty>";
     }
-    /*
     if ( (error_flags & ~fError_warning) ) {
         ERR_POST(message);
     }
@@ -1398,7 +1402,10 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
         loaded_set.m_Skeletons[blob_id] = &reply.GetData();
         return;
     }
-
+    if ( errors & fError_warning_dead ) {
+        //ERR_POST("blob.SetBlobState(CBioseq_Handle::fState_dead)");
+        blob.SetBlobState(CBioseq_Handle::fState_dead);
+    }
     if ( reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp ) {
         m_Dispatcher->GetProcessor(CProcessor::eType_Seq_entry_SNP)
             .ProcessBlobFromID2Data(result, blob_id, chunk_id,

@@ -143,7 +143,8 @@ protected:
         fError_warning          = 1 << 0,
         fError_no_data          = 1 << 1,
         fError_bad_command      = 1 << 2,
-        fError_bad_connection   = 1 << 3
+        fError_bad_connection   = 1 << 3,
+        fError_warning_dead     = 1 << 4
     };
     typedef int TErrorFlags;
     TErrorFlags x_ProcessError(CReaderRequestResult& result,
