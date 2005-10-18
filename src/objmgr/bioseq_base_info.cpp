@@ -209,7 +209,8 @@ void CBioseq_Base_Info::x_DoUpdate(TNeedUpdateFlags flags)
 
 void CBioseq_Base_Info::x_SetNeedUpdateParent(TNeedUpdateFlags flags)
 {
-    GetParentSeq_entry_Info().x_SetNeedUpdateContents(flags);
+    TParent::x_SetNeedUpdateParent(flags);
+    //GetParentSeq_entry_Info().x_SetNeedUpdateContents(flags);
 }
 
 
@@ -463,6 +464,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/18 15:35:10  vasilche
+* Do not pass need update flag to parent to avoid infinite recursion.
+*
 * Revision 1.13  2005/09/20 15:42:16  vasilche
 * AttachAnnot takes non-const object.
 *
