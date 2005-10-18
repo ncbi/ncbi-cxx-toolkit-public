@@ -40,9 +40,46 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_entry;
+class CBioseq;
+class CBioseq_set;
+class CSeq_annot;
+class CSeq_feat;
 
 class CCleanupChange;
 
+class NCBI_CLEANUP_EXPORT CCleanup : public CObject 
+{
+public:
+
+    enum EValidOptions {};
+
+    // Construtor / Destructor
+    CCleanup();
+    ~CCleanup();
+
+    /// Cleanup a Seq-entry. 
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se,  Uint4 options = 0);
+    /// Cleanup a Bioseq. 
+    CConstRef<CCleanupChange> BasicCleanup(CBioseq& bs,     Uint4 options = 0);
+    /// Cleanup a Bioseq_set.
+    CConstRef<CCleanupChange> BasicCleanup(CBioseq_set& bss, Uint4 options = 0);
+    /// Cleanup a Seq-Annot 
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_annot& sa,  Uint4 options = 0);
+    /// Cleanup a Seq-feat. 
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_feat& sf,   Uint4 options = 0);
+
+
+private:
+    // Prohibit copy constructor & assignment operator
+    CCleanup(const CCleanup&);
+    CCleanup& operator= (const CCleanup&);
+
+};
+
+
+/**
+     Report about one thing that got changed during cleanup.
+*/
 class NCBI_CLEANUP_EXPORT CCleanupChangeItem : public CObject 
 {
 public:
@@ -100,6 +137,10 @@ private:
 };
 
 
+/**
+    All the changes made during cleanup.
+    A container of CCleanupChangeItem's.
+*/
 class NCBI_CLEANUP_EXPORT CCleanupChange : public CObject
 {
 public:
@@ -139,6 +180,9 @@ private:
 };
 
 
+/**
+    Iterate through CCleanupChangeItems in a CCleanupChange object.
+*/
 class NCBI_CLEANUP_EXPORT CCleanupChange_CI
 {
 public:
@@ -170,29 +214,6 @@ private:
 };
 
 
-class NCBI_CLEANUP_EXPORT CCleanup : public CObject 
-{
-public:
-
-    enum EValidOptions {};
-
-    // Construtor / Destructor
-    CCleanup();
-    ~CCleanup();
-
-    // Validate Seq-entry. 
-    // If provding a scope the Seq-entry must be a 
-    // top-level Seq-entry in that scope.
-    CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se, Uint4 options = 0);
-
-private:
-    // Prohibit copy constructor & assignment operator
-    CCleanup(const CCleanup&);
-    CCleanup& operator= (const CCleanup&);
-
-};
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -201,6 +222,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/10/18 14:22:18  rsmith
+* BasicCleanup entry points for more classes.
+*
 * Revision 1.2  2005/10/18 13:34:09  rsmith
 * add change reporting classes
 *

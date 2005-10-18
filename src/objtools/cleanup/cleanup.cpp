@@ -32,7 +32,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+
+
 #include <objmgr/util/sequence.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
@@ -65,6 +71,39 @@ CConstRef<CCleanupChange> CCleanup::BasicCleanup
 {
     CRef<CCleanupChange> errors(new CCleanupChange(&se));
     se.BasicCleanup();
+    return errors;
+}
+
+
+/// Cleanup a Bioseq. 
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq& bs, Uint4 options)
+{
+    CRef<CCleanupChange> errors(new CCleanupChange(&bs));
+    bs.BasicCleanup();
+    return errors;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CBioseq_set& bss, Uint4 options)
+{
+    CRef<CCleanupChange> errors(new CCleanupChange(&bss));
+    bss.BasicCleanup();
+    return errors;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_annot& sa, Uint4 options)
+{
+    CRef<CCleanupChange> errors(new CCleanupChange(&sa));
+    sa.BasicCleanup();
+    return errors;
+}
+
+
+CConstRef<CCleanupChange> CCleanup::BasicCleanup(CSeq_feat& sf, Uint4 options)
+{
+    CRef<CCleanupChange> errors(new CCleanupChange(&sf));
+    sf.BasicCleanup();
     return errors;
 }
 
@@ -292,6 +331,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/10/18 14:22:25  rsmith
+* BasicCleanup entry points for more classes.
+*
 * Revision 1.2  2005/10/18 13:34:15  rsmith
 * add change reporting classes
 *
