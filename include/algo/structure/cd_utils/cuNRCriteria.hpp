@@ -53,11 +53,16 @@ public:
     //  Return value is the number of redundant elements removed.
     virtual unsigned int ApplyAndRemove(CBaseClusterer::TCluster*& cluster, string* report = NULL) = 0;
 
+    //  Return true if the criteria will work as intended in it's current state.
+    //  Return false otherwise (e.g., if a network data source is unavailable, ...)
+    virtual bool CanBeApplied() const {return true;}
+    string GetCriteriaError() const {return m_criteriaError;}
+
     string GetName() const {return m_name;}
 
 protected:
-
     string   m_name;
+    string   m_criteriaError;
 };
 
 
@@ -174,6 +179,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/10/18 17:06:51  lanczyck
+* make TaxClient a virtual base class;
+* add methods CanBeApplied and GetCriteriaError in base criteria
+*
 * Revision 1.2  2005/07/18 19:05:07  lanczyck
 * add IsItemKept method
 *

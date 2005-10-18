@@ -52,31 +52,31 @@ class TaxClient
 public: 
 
     TaxClient(bool refresh = REFRESH_DEFAULT);
-    ~TaxClient();
+    virtual ~TaxClient();
 
-	bool init();
+	virtual bool init();
     //  return true is the CTaxon1 object is alive
-    bool IsAlive();
+    virtual bool IsAlive();
 
     //  return 0 if Get*TaxID*(...) fails
-    int GetTaxIDForSeqId(const CRef< CSeq_id >& sid);  // was GetTaxIDForSequence
-    int GetTaxIDForGI(int gi);
+    virtual int GetTaxIDForSeqId(const CRef< CSeq_id >& sid);  // was GetTaxIDForSequence
+    virtual int GetTaxIDForGI(int gi);
 
-    bool GetOrgRef(int taxId, CRef< COrg_ref >& orgRef);
+    virtual bool GetOrgRef(int taxId, CRef< COrg_ref >& orgRef);
 
-	short GetRankID(int taxId, string& rankName);
+	virtual short GetRankID(int taxId, string& rankName);
 
     //  Look through the bioseq for a COrg object, and use it to get taxid.
     //  Use tax server by default, unless server fails and lookInBioseq is true.
-    int GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq);
-    string GetTaxNameForTaxID(int taxid);
-    string GetSuperKingdom(int taxid);
+    virtual int GetTaxIDFromBioseq(const CBioseq& bioseq, bool lookInBioseq);
+    virtual string GetTaxNameForTaxID(int taxid);
+    virtual string GetSuperKingdom(int taxid);
 
-    int GetParentTaxID(int taxid);
+    virtual int GetParentTaxID(int taxid);
 	//is tax2 the descendant of tax1?
-    bool IsTaxDescendant(int tax1, int tax2);
+    virtual bool IsTaxDescendant(int tax1, int tax2);
 
-    bool ConnectToTaxServer();  
+    virtual bool ConnectToTaxServer();  
 
 private:
 
@@ -93,6 +93,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2005/10/18 17:06:51  lanczyck
+ * make TaxClient a virtual base class;
+ * add methods CanBeApplied and GetCriteriaError in base criteria
+ *
  * Revision 1.3  2005/07/07 17:29:54  lanczyck
  * add GetOrgRef method
  *

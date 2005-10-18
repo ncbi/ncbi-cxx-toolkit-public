@@ -137,6 +137,8 @@ public:
 
     virtual ~CTaxNRCriteria();
 
+    virtual bool CanBeApplied() const {return m_isTaxConnected;}
+
     //  Don't allow this class to remove items from a cluster; always use 'Apply' instead.
     virtual unsigned int ApplyAndRemove(CBaseClusterer::TCluster*& cluster, string* report = NULL) {return 0;}
 
@@ -195,6 +197,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/10/18 17:06:51  lanczyck
+* make TaxClient a virtual base class;
+* add methods CanBeApplied and GetCriteriaError in base criteria
+*
 * Revision 1.4  2005/08/23 20:53:08  lanczyck
 * add a ConnectToServer method
 *
