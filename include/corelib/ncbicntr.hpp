@@ -138,7 +138,7 @@ extern "C" {
 #  ifdef NCBI_verify_save
 #    undef verify
 #    if defined(NDEBUG) || !defined(_DEBUG)
-#      define verify(expr) (void) expr
+#      define verify(expr)  (void)(expr)
 #    else
 #      define verify(expr) assert(expr)
 #    endif
@@ -369,6 +369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/10/18 16:36:03  rsmith
+* fix verify def under DARWIN
+*
 * Revision 1.24  2004/05/14 16:15:41  dicuccio
 * Remove unneeded export specifier for CAtomicCounter - the class is entirely
 * inline for MSVC
