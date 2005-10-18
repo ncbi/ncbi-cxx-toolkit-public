@@ -226,7 +226,6 @@ gui/objutils/feature_edit.hpp
 gui/objutils/filter.hpp
 gui/objutils/graph.hpp
 gui/objutils/histogram.hpp
-gui/objutils/iselection.hpp
 gui/objutils/label.hpp
 gui/objutils/layout.hpp
 gui/objutils/mate_pair.hpp
@@ -319,6 +318,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/18 15:53:37  jcherry
+ * Don't included gui/objutils/iselection.hpp, which has been removed
+ *
  * Revision 1.4  2005/10/14 18:25:18  jcherry
  * Treat CRef<CPluginInfoSet> like other CRef's (don't wrap, use typemaps)
  *
