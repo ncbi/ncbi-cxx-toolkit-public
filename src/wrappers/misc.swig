@@ -33,56 +33,31 @@
 
 objects/access/Link_set.hpp
 objects/access/Link_set_.hpp
-objects/docsum/NSE_Assay.hpp
-objects/docsum/NSE_Assay_.hpp
-objects/docsum/NSE_AssayList.hpp
-objects/docsum/NSE_AssayList_.hpp
-objects/docsum/NSE_BaseURL.hpp
-objects/docsum/NSE_BaseURL_.hpp
-objects/docsum/NSE_BaseURLSet.hpp
-objects/docsum/NSE_BaseURLSet_.hpp
-objects/docsum/NSE_Date.hpp
-objects/docsum/NSE_Date_.hpp
-objects/docsum/NSE_Date_std.hpp
-objects/docsum/NSE_Date_std_.hpp
-objects/docsum/NSE_ExchangeSet.hpp
-objects/docsum/NSE_ExchangeSet_.hpp
-objects/docsum/NSE_FxnSet.hpp
-objects/docsum/NSE_FxnSet_.hpp
-objects/docsum/NSE_Pop.hpp
-objects/docsum/NSE_Pop_.hpp
-objects/docsum/NSE_PopList.hpp
-objects/docsum/NSE_PopList_.hpp
-objects/docsum/NSE_alleleinfo.hpp
-objects/docsum/NSE_alleleinfo_.hpp
-objects/docsum/NSE_rs.hpp
-objects/docsum/NSE_rs_.hpp
-objects/docsum/NSE_rsContigHit.hpp
-objects/docsum/NSE_rsContigHit_.hpp
-objects/docsum/NSE_rslink.hpp
-objects/docsum/NSE_rslink_.hpp
-objects/docsum/NSE_rsLocusID.hpp
-objects/docsum/NSE_rsLocusID_.hpp
-objects/docsum/NSE_rsMaploc.hpp
-objects/docsum/NSE_rsMaploc_.hpp
-objects/docsum/NSE_rsMerge.hpp
-objects/docsum/NSE_rsMerge_.hpp
-objects/docsum/NSE_rsSeqHit.hpp
-objects/docsum/NSE_rsSeqHit_.hpp
-objects/docsum/NSE_rsStruct.hpp
-objects/docsum/NSE_rsStruct_.hpp
-objects/docsum/NSE_rsUnigene.hpp
-objects/docsum/NSE_rsUnigene_.hpp
-objects/docsum/NSE_SeqLoc.hpp
-objects/docsum/NSE_SeqLoc_.hpp
-objects/docsum/NSE_ss.hpp
-objects/docsum/NSE_ss_.hpp
-objects/docsum/NSE_ss_popinfo.hpp
-objects/docsum/NSE_ss_popinfo_.hpp
-objects/docsum/NSE_Submitter.hpp
-objects/docsum/NSE_Submitter_.hpp
-objects/docsum/NSE_SubmitterList.hpp
-objects/docsum/NSE_SubmitterList_.hpp
+objects/docsum/Assay.hpp
+objects/docsum/Assay_.hpp
+objects/docsum/Assembly.hpp
+objects/docsum/Assembly_.hpp
+objects/docsum/BaseURL.hpp
+objects/docsum/BaseURL_.hpp
+objects/docsum/Component.hpp
+objects/docsum/Component_.hpp
+objects/docsum/ExchangeSet.hpp
+objects/docsum/ExchangeSet_.hpp
+objects/docsum/FxnSet.hpp
+objects/docsum/FxnSet_.hpp
+objects/docsum/MapLoc.hpp
+objects/docsum/MapLoc_.hpp
+objects/docsum/NSE_module.hpp
+objects/docsum/PrimarySequence.hpp
+objects/docsum/PrimarySequence_.hpp
+objects/docsum/Rs.hpp
+objects/docsum/RsLinkout.hpp
+objects/docsum/RsLinkout_.hpp
+objects/docsum/RsStruct.hpp
+objects/docsum/RsStruct_.hpp
+objects/docsum/Rs_.hpp
+objects/docsum/Ss.hpp
+objects/docsum/Ss_.hpp
 objects/entrez2/E2Reply.hpp
 objects/entrez2/E2Reply_.hpp
 objects/entrez2/E2Request.hpp
@@ -337,6 +312,9 @@ objects/insdseq/INSDSet_.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/18 15:52:58  jcherry
+ * Reflect big change to docsum ASN.1 spec
+ *
  * Revision 1.2  2005/08/03 14:57:10  jcherry
  * Added headers
  *
