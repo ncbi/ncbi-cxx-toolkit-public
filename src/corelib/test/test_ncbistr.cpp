@@ -452,11 +452,17 @@ struct SRadixTest {
         const char* s1 = str;
         const char* s2 = s.c_str();
         
+        // Workaround for ICC 8.0. It have an optimizer bug.
+        // c_str() can return non-null-terminated string.
+        // So we will use strncmp() here instead of strcmp().
+        
+        size_t n = s.length();
+        
         while (*s1 == '0') s1++;
         if ( *s1 == 'x' )  s1++;
-        while (*s2 == '0') s2++;
+        while (*s2 == '0') { s2++; n--; };
 
-        return (NStr::strcmp(s1, s2) == 0);
+        return (NStr::strncmp(s1, s2, n) == 0);
     }
 };
 
@@ -1510,6 +1516,11 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.53  2005/10/18 18:09:49  ivanov
+ * SRadixTest::Same() --
+ *     Workaround for ICC 8.0. It have an optimizer bug.
+ *     The string::c_str() can return non-null-terminated C-string.
+ *
  * Revision 6.52  2005/10/17 18:38:40  ucko
  * s_StringToNumRadix(): add a missing call to NCBI_CONST_UINT8.
  *
