@@ -254,7 +254,8 @@ bool CTaxNRCriteria::ConnectToServer() {
     if (m_taxClient && !m_taxClient->IsAlive()) {
         m_taxClient->ConnectToTaxServer();
     }
-    return (m_taxClient) ? m_taxClient->IsAlive() : false;
+    m_isTaxConnected = (m_taxClient) ? m_taxClient->IsAlive() : false;
+    return m_isTaxConnected;
 }
 
 END_SCOPE(cd_utils)
@@ -264,6 +265,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/10/18 17:05:46  lanczyck
+* update isTaxConnected flag when connect to server
+*
 * Revision 1.5  2005/08/23 20:53:47  lanczyck
 * add a ConnectToServer method; accompanying changes when initializing m_taxClient
 *
