@@ -52,6 +52,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+static const int kBioseqChunkId = kMax_Int;
+
+
 CSeq_entry_Info::CSeq_entry_Info(void)
     : m_Which(CSeq_entry::e_not_set)
 {
@@ -237,11 +240,12 @@ CBioseq_Info& CSeq_entry_Info::SelectSeq(CBioseq& seq)
 
 void CSeq_entry_Info::x_DoUpdate(TNeedUpdateFlags flags)
 {
+    if ( flags & fNeedUpdate_bioseq ) {
+        x_LoadChunk(kBioseqChunkId);
+    }
     if ( m_Contents ) {
         m_Contents->x_Update(flags);
         _ASSERT(Which()==m_Object->Which());
-        _ASSERT(!IsSet()||GetSet().GetBioseq_setCore() == &m_Object->GetSet());
-        _ASSERT(!IsSeq()||GetSeq().GetBioseqCore() == &m_Object->GetSeq());
     }
     TParent::x_DoUpdate(flags);
 }
@@ -515,8 +519,9 @@ void CSeq_entry_Info::RemoveAnnot(CRef<CSeq_annot_Info> annot)
 }
 
 
-void CSeq_entry_Info::x_SetBioseqChunkId(TChunkId /* chunk_id */)
+void CSeq_entry_Info::x_SetBioseqChunkId(TChunkId _DEBUG_ARG(chunk_id))
 {
+    _ASSERT(chunk_id == kBioseqChunkId);
     x_CheckWhich(CSeq_entry::e_not_set);
     x_SetNeedUpdate(CTSE_Info::fNeedUpdate_bioseq);
     m_Which = CSeq_entry::e_Seq;
@@ -551,6 +556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/10/18 15:35:48  vasilche
+ * Update bioseq if needed.
+ *
  * Revision 1.27  2005/09/20 15:42:16  vasilche
  * AttachAnnot takes non-const object.
  *
