@@ -1401,7 +1401,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         _ASSERT(!eeh);
         _ASSERT(eeh.IsRemoved());
         _ASSERT(!handle);
-        handle = scope.GetBioseqHandle(id);
+        //handle = scope.GetBioseqHandle(id);
         if ( trace && pent ) {
             NcbiCout << "New " <<
                 MSerial_AsnText << *pent << NcbiEndl;
@@ -1414,15 +1414,17 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             _ASSERT(tseh.CanBeEdited() == (peh == peh.GetEditHandle()));
             peh.GetEditHandle().AttachEntry(eeh);
             //peh.GetEditHandle().AttachEntry(const_cast<CSeq_entry&>(*ent));
+            //handle = scope.GetBioseqHandle(id);
+            _ASSERT(handle);
         }
         else {
             _ASSERT(!peh);
             _ASSERT(!tseh);
             // TSE
             scope.AddTopLevelSeqEntry(*ent);
+            handle = scope.GetBioseqHandle(id);
+            _ASSERT(handle);
         }
-        handle = scope.GetBioseqHandle(id);
-        _ASSERT(handle);
         CHECK_END_ALWAYS("remove/attach seq-entry");
     }
 }
@@ -1474,6 +1476,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2005/10/18 15:38:54  vasilche
+* Check restoring handles to inner objects.
+*
 * Revision 1.66  2005/08/05 15:44:54  vasilche
 * Now edit handle always the same as original.
 *
