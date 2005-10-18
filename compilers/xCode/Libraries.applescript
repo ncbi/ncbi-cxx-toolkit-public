@@ -226,6 +226,7 @@ property w_taxtree : {name:"w_taxtree", path:"gui:widgets:tax_tree"}
 property w_taxplot3d : {name:"w_taxplot3d", path:"gui:widgets:taxplot3d"}
 property w_workspace : {name:"w_workspace", path:"gui:widgets:workspace"}
 property w_phylo_tree : {name:"w_phylo_tree", path:"gui:widgets:phylo_tree"}
+property w_object_list : {name:"w_object_list", path:"gui:widgets:object_list"}
 property w_serial_browse : {name:"w_serial_browse", path:"gui:widgets:serial_browse"}
 property w_feat_compare : {name:"w_feat_compare", path:"gui:widgets:feat_compare"}
 property w_feat_table : {name:"w_feat_table", path:"gui:widgets:feat_table"}
@@ -298,7 +299,7 @@ property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_c
 property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_html, w_serial_browse}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
-property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
+property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d, w_object_list}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_compare, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_data, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 -- PLUG-INS
@@ -378,7 +379,7 @@ property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_co
 property demo_wcontrols : {name:"demo_wcontrols", path:"gui:widgets:controls:demo", exc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 property demo_wizard : {name:"demo_wizard", path:"gui:widgets:controls:demo", inc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 
-property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
+property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils", req:true}
 (* ====================================================================================================== *)
 
@@ -413,6 +414,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2005/10/18 12:59:49  lebedev
+ * w_object_list added
+ *
  * Revision 1.73  2005/10/12 19:31:57  kans
  * exclude NCBI_GUI_Project_module.cpp and NCBI_Plugin_module.cpp from gui_core
  *
