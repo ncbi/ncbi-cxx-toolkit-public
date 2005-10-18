@@ -323,6 +323,17 @@ const CSerialObject& CCleanupChangeItem::GetObject(void) const
 }
 
 
+// External terse error type explanation
+const string CCleanupChangeItem::sm_Terse [] = {
+    "UNKNOWN"
+};
+
+// External verbose error type explanation
+const string CCleanupChangeItem::sm_Verbose [] = {
+"UNKNOWN"
+};
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -331,6 +342,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/10/18 14:40:50  rsmith
+* define sm_Terse and sm_Verbose
+*
 * Revision 1.3  2005/10/18 14:22:25  rsmith
 * BasicCleanup entry points for more classes.
 *
