@@ -359,7 +359,9 @@ public:
     void SelectSet(CSeq_entry_ScopeInfo& entry,
                    CBioseq_set_ScopeInfo& info);
 
-    void x_CleanRemovedObjects(void);
+    void x_SaveRemoved(CScopeInfo_Base& info);
+    void x_CheckAdded(CScopeInfo_Base& parent, CScopeInfo_Base& child);
+    void x_RestoreAdded(CScopeInfo_Base& parent, CScopeInfo_Base& child);
 
     void RemoveLastInfoLock(CScopeInfo_Base& info);
 
@@ -628,6 +630,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/10/18 15:38:12  vasilche
+* Restore handles to inner objects when adding removed objects.
+*
 * Revision 1.23  2005/08/05 15:42:30  vasilche
 * Redirect all open handles to new TSE when detaching from data loader.
 *

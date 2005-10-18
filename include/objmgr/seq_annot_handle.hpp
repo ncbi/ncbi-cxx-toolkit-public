@@ -71,7 +71,7 @@ public:
     typedef CSeq_annot_Info TObjectInfo;
 
     CSeq_annot_ScopeInfo(const CTSE_Handle& tse, const TObjectInfo& info)
-        : CScopeInfo_Base(tse, reinterpret_cast<const CObject&>(info))
+        : CScopeInfo_Base(tse, reinterpret_cast<const CTSE_Info_Object&>(info))
         {
         }
 
@@ -338,6 +338,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/10/18 15:38:12  vasilche
+* Restore handles to inner objects when adding removed objects.
+*
 * Revision 1.22  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

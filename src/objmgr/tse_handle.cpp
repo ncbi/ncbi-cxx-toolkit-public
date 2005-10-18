@@ -371,20 +371,21 @@ CScopeInfo_Base::CScopeInfo_Base(void)
 
 
 CScopeInfo_Base::CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
-                                 const CObject& info)
+                                 const CTSE_Info_Object& info)
     : m_TSE_ScopeInfo(tse.GetNonNullNCPointer()),
       m_TSE_Handle(tse),
-      m_ObjectInfo(&info)
+      m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
 {
     m_LockCounter.Set(0);
     _ASSERT(x_Check(fForceZero | fForceInfo));
 }
 
 
-CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse, const CObject& info)
+CScopeInfo_Base::CScopeInfo_Base(const CTSE_Handle& tse,
+                                 const CTSE_Info_Object& info)
     : m_TSE_ScopeInfo(&tse.x_GetScopeInfo()),
       m_TSE_Handle(tse),
-      m_ObjectInfo(&info)
+      m_ObjectInfo(&reinterpret_cast<const CObject&>(info))
 {
     m_LockCounter.Set(0);
     _ASSERT(x_Check(fForceZero | fForceInfo));
@@ -445,7 +446,7 @@ bool CScopeInfo_Base::x_Check(TCheckFlags zero_counter_mode) const
 
 
 void CScopeInfo_Base::x_SetLock(const CTSE_ScopeUserLock& tse,
-                                const CObject& info)
+                                const CTSE_Info_Object& info)
 {
     _ASSERT(x_Check(fAllowZero|fAllowInfo));
     _ASSERT(!IsDetached());
@@ -454,7 +455,7 @@ void CScopeInfo_Base::x_SetLock(const CTSE_ScopeUserLock& tse,
     _ASSERT(!m_TSE_Handle || &m_TSE_Handle.x_GetScopeInfo() == &*tse);
     _ASSERT(!m_ObjectInfo || m_ObjectInfo == &info);
     m_TSE_Handle = tse;
-    m_ObjectInfo = &info;
+    m_ObjectInfo = &reinterpret_cast<const CObject&>(info);
     _ASSERT(x_Check(fAllowZero|fForceInfo));
 }
 

@@ -45,6 +45,7 @@ BEGIN_SCOPE(objects)
 class CScope;
 class CTSE_ScopeInfo;
 class CTSE_Info;
+class CTSE_Info_Object;
 class CTSE_Lock;
 class CBioseq_Handle;
 class CSeq_entry;
@@ -207,9 +208,9 @@ public:
     // creates object with one reference
     NCBI_XOBJMGR_EXPORT CScopeInfo_Base(void);
     NCBI_XOBJMGR_EXPORT CScopeInfo_Base(const CTSE_ScopeUserLock& tse,
-                                        const CObject& info);
+                                        const CTSE_Info_Object& info);
     NCBI_XOBJMGR_EXPORT CScopeInfo_Base(const CTSE_Handle& tse,
-                                        const CObject& info);
+                                        const CTSE_Info_Object& info);
     NCBI_XOBJMGR_EXPORT ~CScopeInfo_Base(void);
     
     bool IsDetached(void) const
@@ -257,9 +258,9 @@ public:
 
     NCBI_XOBJMGR_EXPORT CScope_Impl& x_GetScopeImpl(void) const;
 
-    const CObject& GetObjectInfo_Base(void) const
+    const CTSE_Info_Object& GetObjectInfo_Base(void) const
         {
-            return *m_ObjectInfo;
+            return reinterpret_cast<const CTSE_Info_Object&>(*m_ObjectInfo);
         }
 
 protected:
@@ -355,7 +356,7 @@ protected:
 
     // attached new tse and object info
     virtual NCBI_XOBJMGR_EXPORT void x_SetLock(const CTSE_ScopeUserLock& tse,
-                                               const CObject& info);
+                                               const CTSE_Info_Object& info);
     virtual NCBI_XOBJMGR_EXPORT void x_ResetLock(void);
 
     // disconnect from TSE
@@ -398,6 +399,7 @@ private: // data members
     // and not removed.
     CTSE_Handle             m_TSE_Handle; // locks TSE from releasing.
     CConstRef<CObject>      m_ObjectInfo; // current object info.
+    CRef<CObject>           m_DetachedInfo;
 
 private: // to prevent copying
     CScopeInfo_Base(const CScopeInfo_Base&);

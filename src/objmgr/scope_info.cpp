@@ -1378,83 +1378,75 @@ void CTSE_ScopeInfo::x_UnindexBioseq(const CSeq_id_Handle& id,
 // Action A2.
 void CTSE_ScopeInfo::ResetEntry(CSeq_entry_ScopeInfo& info)
 {
-    _ASSERT(info.IsAttached());
     CMutexGuard guard(m_TSE_LockMutex);
+    _ASSERT(info.IsAttached());
+    CScopeInfo_Ref<CScopeInfo_Base> child;
+    if ( info.GetObjectInfo().Which() == CSeq_entry::e_Set ) {
+        child.Reset(&*GetScopeLock(info.m_TSE_Handle,
+                                   info.GetObjectInfo().GetSet()));
+    }
+    else if ( info.GetObjectInfo().Which() == CSeq_entry::e_Seq ) {
+        CConstRef<CBioseq_Info> bioseq(&info.GetObjectInfo().GetSeq());
+        child.Reset(&GetBioseqLock(null, bioseq).GetNCObject());
+    }
+    else {
+        // nothing to do
+        return;
+    }
     info.GetNCObjectInfo().Reset();
-    x_CleanRemovedObjects();
+    x_SaveRemoved(*child);
+    _ASSERT(child->IsDetached());
 }
 
 // Action A2.
 void CTSE_ScopeInfo::RemoveEntry(CSeq_entry_ScopeInfo& info)
 {
-    _ASSERT(info.IsAttached());
     CMutexGuard guard(m_TSE_LockMutex);
+    _ASSERT(info.IsAttached());
     CSeq_entry_Info& entry = info.GetNCObjectInfo();
     entry.GetParentBioseq_set_Info().RemoveEntry(Ref(&entry));
-    x_CleanRemovedObjects();
+    x_SaveRemoved(info);
     _ASSERT(info.IsDetached());
 }
 
 // Action A2.
 void CTSE_ScopeInfo::RemoveAnnot(CSeq_annot_ScopeInfo& info)
 {
-    _ASSERT(info.IsAttached());
     CMutexGuard guard(m_TSE_LockMutex);
+    _ASSERT(info.IsAttached());
     CSeq_annot_Info& annot = info.GetNCObjectInfo();
     annot.GetParentBioseq_Base_Info().RemoveAnnot(Ref(&annot));
-    x_CleanRemovedObjects();
+    x_SaveRemoved(info);
     _ASSERT(info.IsDetached());
 }
 
-// Action A3.
-void CTSE_ScopeInfo::x_CleanRemovedObjects(void)
+
+// Action A7.
+void CTSE_ScopeInfo::x_CheckAdded(CScopeInfo_Base& parent,
+                                  CScopeInfo_Base& child)
 {
-    _ASSERT(!m_UnloadedInfo);
-    _ASSERT(m_TSE_Lock);
-    for ( TScopeInfoMap::iterator it = m_ScopeInfoMap.begin();
-          it != m_ScopeInfoMap.end(); ) {
-        if ( !it->first->BelongsToTSE_Info(*m_TSE_Lock) ) {
-            it->second->m_TSE_Handle.Reset();
-            it->second->x_DetachTSE(this);
-            m_ScopeInfoMap.erase(it++);
-        }
-        else {
-            ++it;
-        }
-    }
-    _ASSERT(m_TSE_Lock);
-#ifdef _DEBUG
-    ITERATE ( TBioseqById, it, m_BioseqById ) {
-        _ASSERT(!it->second->IsDetached());
-        _ASSERT(&it->second->x_GetTSE_ScopeInfo() == this);
-        _ASSERT(!it->second->HasObject() || dynamic_cast<const CTSE_Info_Object&>(it->second->GetObjectInfo_Base()).BelongsToTSE_Info(*m_TSE_Lock));
-    }
-#endif
+    _ASSERT(parent.IsAttached());
+    _ASSERT(parent.HasObject());
+    _ASSERT(parent.m_LockCounter.Get() > 0);
+    _ASSERT(child.IsDetached());
+    _ASSERT(child.m_DetachedInfo);
+    _ASSERT(child.HasObject());
+    _ASSERT(!child.GetObjectInfo_Base().HasParent_Info());
+    _ASSERT(child.m_LockCounter.Get() > 0);
+    _ASSERT(x_SameTSE(parent.GetTSE_Handle().x_GetTSE_Info()));
 }
+
 
 // Action A7.
 void CTSE_ScopeInfo::AddEntry(CBioseq_set_ScopeInfo& parent,
                               CSeq_entry_ScopeInfo& child,
                               int index)
 {
-    _ASSERT(parent.IsAttached());
-    _ASSERT(parent.m_LockCounter.Get() > 0);
-    _ASSERT(child.IsDetached());
-    _ASSERT(child.HasObject());
-    _ASSERT(child.m_LockCounter.Get() > 0);
-    _ASSERT(x_SameTSE(parent.GetTSE_Handle().x_GetTSE_Info()));
-
     CMutexGuard guard(m_TSE_LockMutex);
+    x_CheckAdded(parent, child);
     parent.GetNCObjectInfo().AddEntry(Ref(&child.GetNCObjectInfo()), index);
-    child.x_AttachTSE(this);
-    TScopeInfoMapKey key(&child.GetObjectInfo());
-    TScopeInfoMapValue value(&child);
-    _VERIFY(m_ScopeInfoMap.insert(TScopeInfoMap::value_type(key, value)).second);
-    child.m_TSE_Handle = parent.m_TSE_Handle;
-
+    x_RestoreAdded(parent, child);
     _ASSERT(child.IsAttached());
-    _ASSERT(child.m_TSE_Handle.m_TSE);
-    _ASSERT(child.HasObject());
 }
 
 
@@ -1462,24 +1454,11 @@ void CTSE_ScopeInfo::AddEntry(CBioseq_set_ScopeInfo& parent,
 void CTSE_ScopeInfo::AddAnnot(CSeq_entry_ScopeInfo& parent,
                               CSeq_annot_ScopeInfo& child)
 {
-    _ASSERT(parent.IsAttached());
-    _ASSERT(parent.m_LockCounter.Get() > 0);
-    _ASSERT(child.IsDetached());
-    _ASSERT(child.HasObject());
-    _ASSERT(child.m_LockCounter.Get() > 0);
-    _ASSERT(x_SameTSE(parent.GetTSE_Handle().x_GetTSE_Info()));
-
     CMutexGuard guard(m_TSE_LockMutex);
+    x_CheckAdded(parent, child);
     parent.GetNCObjectInfo().AddAnnot(Ref(&child.GetNCObjectInfo()));
-    child.x_AttachTSE(this);
-    TScopeInfoMapKey key(&child.GetObjectInfo());
-    TScopeInfoMapValue value(&child);
-    _VERIFY(m_ScopeInfoMap.insert(TScopeInfoMap::value_type(key, value)).second);
-    child.m_TSE_Handle = parent.m_TSE_Handle;
-
+    x_RestoreAdded(parent, child);
     _ASSERT(child.IsAttached());
-    _ASSERT(child.m_TSE_Handle.m_TSE);
-    _ASSERT(child.HasObject());
 }
 
 
@@ -1487,25 +1466,12 @@ void CTSE_ScopeInfo::AddAnnot(CSeq_entry_ScopeInfo& parent,
 void CTSE_ScopeInfo::SelectSet(CSeq_entry_ScopeInfo& parent,
                                CBioseq_set_ScopeInfo& child)
 {
-    _ASSERT(parent.IsAttached());
-    _ASSERT(parent.m_LockCounter.Get() > 0);
-    _ASSERT(parent.GetObjectInfo().Which() == CSeq_entry::e_not_set);
-    _ASSERT(child.IsDetached());
-    _ASSERT(child.HasObject());
-    _ASSERT(child.m_LockCounter.Get() > 0);
-    _ASSERT(x_SameTSE(parent.GetTSE_Handle().x_GetTSE_Info()));
-
     CMutexGuard guard(m_TSE_LockMutex);
+    x_CheckAdded(parent, child);
+    _ASSERT(parent.GetObjectInfo().Which() == CSeq_entry::e_not_set);
     parent.GetNCObjectInfo().SelectSet(child.GetNCObjectInfo());
-    child.x_AttachTSE(this);
-    TScopeInfoMapKey key(&child.GetObjectInfo());
-    TScopeInfoMapValue value(&child);
-    _VERIFY(m_ScopeInfoMap.insert(TScopeInfoMap::value_type(key, value)).second);
-    child.m_TSE_Handle = parent.m_TSE_Handle;
-
+    x_RestoreAdded(parent, child);
     _ASSERT(child.IsAttached());
-    _ASSERT(child.m_TSE_Handle.m_TSE);
-    _ASSERT(child.HasObject());
 }
 
 
@@ -1513,27 +1479,102 @@ void CTSE_ScopeInfo::SelectSet(CSeq_entry_ScopeInfo& parent,
 void CTSE_ScopeInfo::SelectSeq(CSeq_entry_ScopeInfo& parent,
                                CBioseq_ScopeInfo& child)
 {
-    _ASSERT(parent.IsAttached());
-    _ASSERT(parent.m_LockCounter.Get() > 0);
-    _ASSERT(parent.GetObjectInfo().Which() == CSeq_entry::e_not_set);
-    _ASSERT(child.IsDetached());
-    _ASSERT(child.HasObject());
-    _ASSERT(child.m_LockCounter.Get() > 0);
-    _ASSERT(x_SameTSE(parent.GetTSE_Handle().x_GetTSE_Info()));
-
     CMutexGuard guard(m_TSE_LockMutex);
+    x_CheckAdded(parent, child);
+    _ASSERT(parent.GetObjectInfo().Which() == CSeq_entry::e_not_set);
     parent.GetNCObjectInfo().SelectSeq(child.GetNCObjectInfo());
-    child.x_AttachTSE(this);
-    TScopeInfoMapKey key(&child.GetObjectInfo());
-    TScopeInfoMapValue value(&child);
-    _VERIFY(m_ScopeInfoMap.insert(TScopeInfoMap::value_type(key, value)).second);
-    child.m_TSE_Handle = parent.m_TSE_Handle;
+    x_RestoreAdded(parent, child);
+    _ASSERT(child.IsAttached());
+}
 
+
+// Save and restore scope info objects.
+
+typedef pair<CConstRef<CTSE_Info_Object>,
+             CRef<CScopeInfo_Base> > TDetachedInfoElement;
+typedef vector<TDetachedInfoElement> TDetachedInfo;
+
+// Action A3.
+void CTSE_ScopeInfo::x_SaveRemoved(CScopeInfo_Base& info)
+{
+    _ASSERT(info.IsAttached()); // info is not yet detached
+    _ASSERT(!info.m_DetachedInfo); // and doesn't contain m_DetachedInfo yet
+    _ASSERT(info.HasObject()); // it contains pointer to removed object
+    _ASSERT(!info.GetObjectInfo_Base().HasParent_Info()); //and is root of tree
+    CRef<CObjectFor<TDetachedInfo> > save(new CObjectFor<TDetachedInfo>);
+    _ASSERT(!m_UnloadedInfo); // this TSE cannot be unloaded
+    _ASSERT(m_TSE_Lock); // and TSE is locked
+    _TRACE("x_SaveRemoved("<<&info<<") TSE: "<<this);
+    for ( TScopeInfoMap::iterator it = m_ScopeInfoMap.begin();
+          it != m_ScopeInfoMap.end(); ) {
+        if ( !it->first->BelongsToTSE_Info(*m_TSE_Lock) ) {
+            _TRACE(" "<<it->second<<" " << it->first);
+            it->second->m_TSE_Handle.Reset();
+            it->second->x_DetachTSE(this);
+            if ( &*it->second != &info ) {
+                _ASSERT(it->first->HasParent_Info());
+                save->GetData().push_back(TDetachedInfoElement(it->first,
+                                                               it->second));
+            }
+            m_ScopeInfoMap.erase(it++);
+        }
+        else {
+            ++it;
+        }
+    }
+    _ASSERT(info.IsDetached()); // info is already detached
+    _ASSERT(m_TSE_Lock);
+    info.m_DetachedInfo.Reset(save); // save m_DetachedInfo
+#ifdef _DEBUG
+    ITERATE ( TBioseqById, it, m_BioseqById ) {
+        _ASSERT(!it->second->IsDetached());
+        _ASSERT(&it->second->x_GetTSE_ScopeInfo() == this);
+        _ASSERT(!it->second->HasObject() || it->second->GetObjectInfo_Base().BelongsToTSE_Info(*m_TSE_Lock));
+    }
+#endif
+    // post checks
+    _ASSERT(info.IsDetached());
+    _ASSERT(info.m_DetachedInfo);
+    _ASSERT(info.HasObject()); // it contains pointer to removed object
+    _ASSERT(!info.GetObjectInfo_Base().HasParent_Info());//and is root of tree
+}
+
+// Action A7
+void CTSE_ScopeInfo::x_RestoreAdded(CScopeInfo_Base& parent,
+                                    CScopeInfo_Base& child)
+{
+    _ASSERT(parent.IsAttached()); // parent is attached
+    _ASSERT(parent.m_TSE_Handle); // and locked
+    _ASSERT(parent.m_LockCounter.Get() > 0);
+    _ASSERT(child.IsDetached()); // child is detached
+    _ASSERT(child.m_DetachedInfo); // and contain m_DetachedInfo
+    _ASSERT(child.HasObject()); // it contains pointer to removed object
+    _ASSERT(child.GetObjectInfo_Base().HasParent_Info());//and is connected
+    _ASSERT(child.m_LockCounter.Get() > 0);
+
+    _TRACE("x_RestoreAdded("<<&child<<") TSE: "<<this);
+
+    CRef<CObjectFor<TDetachedInfo> > infos
+        (&dynamic_cast<CObjectFor<TDetachedInfo>&>(*child.m_DetachedInfo));
+    child.m_DetachedInfo.Reset();
+    infos->GetData().push_back
+        (TDetachedInfoElement(ConstRef(&child.GetObjectInfo_Base()),
+                              Ref(&child)));
+    
+    ITERATE ( TDetachedInfo, it, infos->GetData() ) {
+        _TRACE(" "<<it->second<<" " << it->first);
+        CScopeInfo_Base& info = it->second.GetNCObject();
+        if ( info.m_LockCounter.Get() > 0 ) {
+            info.x_AttachTSE(this);
+            _VERIFY(m_ScopeInfoMap.insert
+                    (TScopeInfoMap::value_type(it->first, it->second)).second);
+            info.m_TSE_Handle = parent.m_TSE_Handle;
+        }
+    }
     _ASSERT(child.IsAttached());
     _ASSERT(child.m_TSE_Handle.m_TSE);
     _ASSERT(child.HasObject());
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CBioseq_ScopeInfo
@@ -1747,6 +1788,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/10/18 15:38:12  vasilche
+* Restore handles to inner objects when adding removed objects.
+*
 * Revision 1.26  2005/09/07 15:17:19  vasilche
 * Save and restore Bioseq map also.
 *
