@@ -271,10 +271,13 @@ CCleanupChangeItem::~CCleanupChangeItem(void)
 
 const string& CCleanupChangeItem::ConvertChangeCode(unsigned int err)
 {
+    static const string s_Terse [] = {
+        "UNKNOWN"
+    };
     if (err <= eChange_UNKNOWN) {
-        return sm_Terse [err];
+        return s_Terse [err];
     }
-    return sm_Terse [eChange_UNKNOWN];
+    return s_Terse [eChange_UNKNOWN];
 }
 
 
@@ -310,10 +313,13 @@ const string& CCleanupChangeItem::GetObjDesc(void) const
 
 const string& CCleanupChangeItem::GetVerbose(void) const
 {
+    static const string s_Verbose [] = {
+        "UNKNOWN"
+    };
     if (m_ChangeIndex <= eChange_UNKNOWN) {
-        return sm_Verbose [m_ChangeIndex];
+        return s_Verbose [m_ChangeIndex];
     }
-    return sm_Verbose [eChange_UNKNOWN];
+    return s_Verbose [eChange_UNKNOWN];
 }
 
 
@@ -321,17 +327,6 @@ const CSerialObject& CCleanupChangeItem::GetObject(void) const
 {
     return *m_Object;
 }
-
-
-// External terse error type explanation
-const string CCleanupChangeItem::sm_Terse [] = {
-    "UNKNOWN"
-};
-
-// External verbose error type explanation
-const string CCleanupChangeItem::sm_Verbose [] = {
-"UNKNOWN"
-};
 
 
 END_SCOPE(objects)
@@ -342,6 +337,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/10/18 22:46:34  vakatov
+* Static class members sm_Verbose[] and sm_Terse[] to become static
+* in-function s_Verbose[] and s_Terse[], respectively (didn't work on
+* MSVC otherwise; didn't have time to try EXPORT'ing them)
+*
 * Revision 1.4  2005/10/18 14:40:50  rsmith
 * define sm_Terse and sm_Verbose
 *

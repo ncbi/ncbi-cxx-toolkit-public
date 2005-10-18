@@ -131,9 +131,6 @@ private:
 
     // currently used for Seqdesc objects only
     CConstRef<CSeq_entry> m_Ctx;
-
-    static const string sm_Terse[];
-    static const string sm_Verbose[];
 };
 
 
@@ -148,10 +145,10 @@ public:
     CCleanupChange(const CSerialObject* obj = NULL);
     
     void AddChangedItem(unsigned int         ec,      // error code
-                         const string&        msg,     // specific error message
-                         const string&        desc,    // offending object's description
-                         const CSerialObject& obj,     // offending object
-                         CScope&              scope);  // scope
+                        const string&        msg,     // specific error message
+                        const string&        desc,    // offending object's description
+                        const CSerialObject& obj,     // offending object
+                        CScope&              scope);  // scope
 
     // Statistics
     SIZE_TYPE Size(void)    const;
@@ -222,6 +219,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/10/18 22:47:12  vakatov
+* Static class members sm_Verbose[] and sm_Terse[] to become static
+* in-function s_Verbose[] and s_Terse[], respectively (didn't work on
+* MSVC otherwise; didn't have time to try EXPORT'ing them)
+*
 * Revision 1.3  2005/10/18 14:22:18  rsmith
 * BasicCleanup entry points for more classes.
 *
