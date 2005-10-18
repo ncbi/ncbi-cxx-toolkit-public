@@ -121,6 +121,7 @@
 #  define NCBI_XOBJMANIP_EXPORTS
 #  define NCBI_FORMAT_EXPORTS
 #  define NCBI_XOBJEDIT_EXPORTS
+#  define NCBI_CLEANUP_EXPORTS
 #endif
 
 
@@ -1163,6 +1164,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.104  2005/10/18 20:33:56  ucko
+ * Add NCBI_CLEANUP_EXPORTS to NCBI_SEQEXT_EXPORTS.
+ *
  * Revision 1.103  2005/10/18 16:30:10  rsmith
  * add NCBI_CLEANUP_EXPORT
  *
