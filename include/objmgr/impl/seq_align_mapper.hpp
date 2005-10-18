@@ -173,7 +173,7 @@ private:
         eAlign_Normal,      // Normal alignment, may be packed into any type
         eAlign_Empty,       // Empty alignment
         eAlign_MultiId,     // A row contains different IDs
-        eAlign_MultiDim,    // Segments have different number of rows
+        eAlign_MultiDim     // Segments have different number of rows
     };
 
     mutable CRef<CScope>         m_Scope;
@@ -230,6 +230,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/18 15:36:47  vasilche
+* Removed trailing comma.
+*
 * Revision 1.13  2005/09/26 21:38:42  grichenk
 * Adjust segment length when mapping between nucleotide and protein
 * (den-diag, packed-seg).
