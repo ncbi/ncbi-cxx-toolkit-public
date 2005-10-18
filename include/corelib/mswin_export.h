@@ -699,6 +699,14 @@
 #  define NCBI_VALIDATOR_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library cleanup
+ */
+#ifdef NCBI_CLEANUP_EXPORTS
+#  define NCBI_CLEANUP_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_CLEANUP_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xalgoalign
  */
 #ifdef NCBI_XALGOALIGN_EXPORTS
@@ -1091,6 +1099,7 @@
 #  define NCBI_TAXON1_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
+#  define NCBI_CLEANUP_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
 #  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORT
 #  define NCBI_XALGOGNOMON_EXPORT
@@ -1154,6 +1163,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.103  2005/10/18 16:30:10  rsmith
+ * add NCBI_CLEANUP_EXPORT
+ *
  * Revision 1.102  2005/08/25 14:06:43  didenko
  * Added data loader patcher
  *
