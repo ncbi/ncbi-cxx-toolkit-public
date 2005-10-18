@@ -400,6 +400,10 @@
 /* This is the NCBI C++ Toolkit. */
 #define NCBI_CXX_TOOLKIT 1
 
+/* Define to whatever syntax, if any, your compiler supports for marking
+   functions as deprecated. */
+#define NCBI_DEPRECATED
+
 /* Define to 1 if `string::compare()' is non-standard. */
 #define NCBI_OBSOLETE_STR_COMPARE 1
 
