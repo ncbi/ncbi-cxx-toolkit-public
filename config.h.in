@@ -492,6 +492,10 @@
 /* This is the NCBI C++ Toolkit. */
 #undef NCBI_CXX_TOOLKIT
 
+/* Define to whatever syntax, if any, your compiler supports for marking
+   functions as deprecated. */
+#undef NCBI_DEPRECATED
+
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #undef NCBI_FTDS_RENAME_SYBDB
 

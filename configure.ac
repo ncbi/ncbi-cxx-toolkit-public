@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.393 2005/10/17 15:30:08 ucko Exp $
+#  $Id: configure.ac,v 1.394 2005/10/18 15:11:05 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2374,6 +2374,18 @@ if test "$ncbi_cv_cpp_gnu_varargs" = yes; then
       [Define to 1 if the preprocessor supports GNU-style variadic macros.])
 fi
 
+AC_CACHE_CHECK([syntax for marking deprecated functions],
+   ncbi_cv_c_deprecation_syntax,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM(
+       [[void f(void) __attribute__((__deprecated__)); void f(void) { }]],
+       [[f();]])],
+      [ncbi_cv_c_deprecation_syntax='__attribute__((__deprecated__))'],
+      [ncbi_cv_c_deprecation_syntax=none])])
+depr=$ncbi_cv_c_deprecation_syntax
+test "$depr" = "none"  &&  depr=""
+AC_DEFINE_UNQUOTED(NCBI_DEPRECATED, $depr,
+   [Define to whatever syntax, if any, your compiler supports for marking
+    functions as deprecated.])
 
 # for FreeTDS
 AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],
