@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/10/18 15:29:40  vasilche
+* Use correct mutex to avoid deadlock.
+*
 * Revision 1.23  2005/10/03 14:13:12  gouriano
 * Added methods to access registered module names, and classes
 *
@@ -133,6 +136,7 @@
 #include <serial/classinfob.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/objhook.hpp>
+#include <serial/serialimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -382,7 +386,7 @@ const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) cons
 
 bool CClassTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
 {
-    CMutexGuard GUARD(s_ClassInfoMutex);
+    CMutexGuard GUARD(GetTypeInfoMutex());
     TContainedTypes* cache = m_ContainedTypes.get();
     if ( cache ) {
         TContainedTypes::const_iterator found = cache->find(typeInfo);
