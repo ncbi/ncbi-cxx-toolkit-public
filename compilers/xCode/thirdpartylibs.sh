@@ -63,11 +63,8 @@ for lib in $LIBS; do
 	if [ $name = "fltk-1.1.6-source" ]; then
 		name="fltk-1.1.6"
 		cd $name
-		echo Appling NCBI FLTK patches
-		for patch_file in `ls $NCBICPP/src/gui/patches/fltk/*1.1.6.patch`; do
-		   echo "Applying patch: $patch_file"
-		   patch -p1 <$patch_file
-		done
+		echo "Applying patch: level 4"
+		patch -p1 <$NCBICPP/src/gui/patches/fltk/fltk-1.1.6-ncbi4.patch
 		
 		conf="--prefix="$DEST" --enable-shared --enable-threads --disable-localpng --disable-localjpeg --disable-localzlib"
 		CPPFLAGS="-I$DEST/include"
