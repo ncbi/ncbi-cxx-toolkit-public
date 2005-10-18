@@ -34,9 +34,6 @@
  *
  */
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbidiag.hpp>
-#include <serial/objectinfo.hpp>
-#include <serial/serialbase.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -44,7 +41,134 @@ BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 
-class validator::CValidError;
+class CCleanupChange;
+
+class NCBI_CLEANUP_EXPORT CCleanupChangeItem : public CObject 
+{
+public:
+    
+
+    // destructor
+    ~CCleanupChangeItem(void);
+
+    // Change code
+    const string&           GetChangeCode  (void) const;
+    unsigned int            GetChangeIndex (void) const;
+    static unsigned int     GetChangeCount(void);
+    // Change message
+    const string&           GetMsg      (void) const;
+    // Verbose message
+    const string&           GetVerbose  (void) const;
+    // Offending object description
+    const string&           GetObjDesc  (void) const;
+    // Offending object
+    const CSerialObject&    GetObject   (void) const;
+
+    // Convert change code from enum to a string representation
+    static const string& ConvertChangeCode(unsigned int);
+    
+private:
+    friend class CCleanupChange;
+
+    typedef CConstRef<CSerialObject>    TObject;
+
+    // constructor
+    CCleanupChangeItem(unsigned int         ec,        // change code
+                  const string&        msg,       // message
+                  const string&        obj_desc,  // object description
+                  const CSerialObject& obj,       // offending object
+                  CScope&              scope);    // scope
+    
+    CCleanupChangeItem(void);
+    CCleanupChangeItem(const CCleanupChangeItem&);
+
+    void x_SetAcc(void);
+    void x_SetAcc(const CBioseq& seq);
+
+    // member data values
+    unsigned int  m_ChangeIndex; // error code index
+    string        m_Message;    // specific error message
+    string        m_Desc;       // changed object's description
+    TObject       m_Object;     // changed object
+    CRef<CScope>  m_Scope;      // scope
+
+    // currently used for Seqdesc objects only
+    CConstRef<CSeq_entry> m_Ctx;
+
+    static const string sm_Terse[];
+    static const string sm_Verbose[];
+};
+
+
+class NCBI_CLEANUP_EXPORT CCleanupChange : public CObject
+{
+public:
+    // constructors
+    CCleanupChange(const CSerialObject* obj = NULL);
+    
+    void AddChangedItem(unsigned int         ec,      // error code
+                         const string&        msg,     // specific error message
+                         const string&        desc,    // offending object's description
+                         const CSerialObject& obj,     // offending object
+                         CScope&              scope);  // scope
+
+    // Statistics
+    SIZE_TYPE Size(void)    const;
+
+    // Get the cleaned object (Seq-entry, Seq-submit or Seq-align)
+    const CSerialObject* GetCleaned(void) const;  // was GetValidated()
+
+    // destructor
+    ~CCleanupChange(void);
+
+private:
+
+    friend class CCleanupChange_CI;
+
+    typedef vector < CConstRef < CCleanupChangeItem > > TChanges;
+    typedef CConstRef<CSerialObject>               TValidated;
+    typedef CConstRef<CSeq_entry>                  TContext;
+
+    // Prohibit copy constructor & assignment operator
+    CCleanupChange(const CCleanupChange&);
+    CCleanupChange& operator= (const CCleanupChange&);
+
+    // data
+    TChanges    m_ChangeItems;  // Change list
+    TValidated  m_Cleaned;      // the cleaned object
+};
+
+
+class NCBI_CLEANUP_EXPORT CCleanupChange_CI
+{
+public:
+    CCleanupChange_CI(void);
+    CCleanupChange_CI(const CCleanupChange& ve,
+                   const string& errcode = kEmptyStr);
+    CCleanupChange_CI(const CCleanupChange_CI& iter);
+    virtual ~CCleanupChange_CI(void);
+
+    CCleanupChange_CI& operator=(const CCleanupChange_CI& iter);
+    CCleanupChange_CI& operator++(void);
+
+    bool IsValid(void) const;
+    DECLARE_OPERATOR_BOOL(IsValid());
+
+    const CCleanupChangeItem& operator* (void) const;
+    const CCleanupChangeItem* operator->(void) const;
+
+private:
+    bool Filter(const CCleanupChangeItem& item) const;
+    bool AtEnd(void) const;
+    void Next(void);
+
+    CConstRef<CCleanupChange>                  m_Changes;
+    CCleanupChange::TChanges::const_iterator   m_Current;
+
+    // filters:
+    string                               m_ChangeCodeFilter;
+};
+
 
 class NCBI_CLEANUP_EXPORT CCleanup : public CObject 
 {
@@ -59,7 +183,7 @@ public:
     // Validate Seq-entry. 
     // If provding a scope the Seq-entry must be a 
     // top-level Seq-entry in that scope.
-    CConstRef<CValidError> Cleanup(CSeq_entry& se, Uint4 options = 0);
+    CConstRef<CCleanupChange> BasicCleanup(CSeq_entry& se, Uint4 options = 0);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -67,9 +191,6 @@ private:
     CCleanup& operator= (const CCleanup&);
 
 };
-
-
-// Inline Functions:
 
 
 END_SCOPE(objects)
@@ -80,6 +201,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/10/18 13:34:09  rsmith
+* add change reporting classes
+*
 * Revision 1.1  2005/10/17 12:21:07  rsmith
 * initial checkin
 *
