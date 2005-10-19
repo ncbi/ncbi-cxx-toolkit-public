@@ -83,7 +83,8 @@ enum EStatementType {
     estCreate,
     estDrop,
     estAlter,
-    estFunction
+    estFunction,
+    estTransaction
     };
 
 EStatementType
@@ -789,6 +790,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/10/19 15:37:27  ssikorsk
+* Added estTransaction value to the EStatementType enum
+*
 * Revision 1.8  2005/05/31 14:56:27  ssikorsk
 * Added get_proc_return_status to the cursor class in the Python DBAPI
 *
