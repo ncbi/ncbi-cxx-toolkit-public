@@ -443,7 +443,6 @@ struct SRadixTest {
     const char* str;      // String input
     int         base;     // Radix base 
     Uint8       value;    // Expected value
-    int         flags;    // Reverse check flags
 
     bool Same(const string& s) const {
         if ( s.empty() ) {
@@ -467,38 +466,38 @@ struct SRadixTest {
 };
 
 static const SRadixTest s_RadixTests[] = {
-    { "A",         16, 10,          NStr::fHex },
-    { "0xA",       16, 10,          NStr::fHex },
-    { "B9",        16, 185,         NStr::fHex },
-    { "C5D",       16, 3165,        NStr::fHex },
-    { "FFFF",      16, 65535,       NStr::fHex },
-    { "17ABCDEF",  16, 397135343,   NStr::fHex },
-    { "BADBADBA",  16, 3134959034U, NStr::fHex },
-    { "7",          8, 7,           NStr::fOctal },
-    { "17",         8, 15,          NStr::fOctal },
-    { "177",        8, 127,         NStr::fOctal },
-    { "0123",       8, 83,          NStr::fOctal },
-    { "01234567",   8, 342391,      NStr::fOctal },
-    { "0",          2, 0,           NStr::fBinary },
-    { "1",          2, 1,           NStr::fBinary },
-    { "10",         2, 2,           NStr::fBinary },
-    { "11",         2, 3,           NStr::fBinary },
-    { "100",        2, 4,           NStr::fBinary },
-    { "101",        2, 5,           NStr::fBinary }, 
-    { "110",        2, 6,           NStr::fBinary },
-    { "111",        2, 7,           NStr::fBinary },
+    { "A",         16, 10 },
+    { "0xA",       16, 10 },
+    { "B9",        16, 185 },
+    { "C5D",       16, 3165 },
+    { "FFFF",      16, 65535 },
+    { "17ABCDEF",  16, 397135343 },
+    { "BADBADBA",  16, 3134959034U },
+    { "7",          8, 7 },
+    { "17",         8, 15 },
+    { "177",        8, 127 },
+    { "0123",       8, 83 },
+    { "01234567",   8, 342391 },
+    { "0",          2, 0 },
+    { "1",          2, 1 },
+    { "10",         2, 2 },
+    { "11",         2, 3 },
+    { "100",        2, 4 },
+    { "101",        2, 5 }, 
+    { "110",        2, 6 },
+    { "111",        2, 7 },
 
     // Autodetect radix base
-    { "0xC5D",      0, 3165,        NStr::fHex },    // base 16
-    { "0123",       0, 83,          NStr::fOctal },  // base 8
-    { "123",        0, 123,         0 },             // base 10
-    { "111",        0, 111,         0 },             // base 10
+    { "0xC5D",      0, 3165 },    // base 16
+    { "0123",       0, 83   },    // base 8
+    { "123",        0, 123  },    // base 10
+    { "111",        0, 111  },    // base 10
 
     // Invalid values come next
-    { "10ABCDEFGH",16, kBad, 0 },
-    { "12345A",    10, kBad, 0 },
-    { "012345678",  8, kBad, 0 },
-    { "012",        2, kBad, 0 }
+    { "10ABCDEFGH",16, kBad },
+    { "12345A",    10, kBad },
+    { "012345678",  8, kBad },
+    { "012",        2, kBad }
 };
 
 
@@ -521,8 +520,8 @@ static void s_StringToNumRadix()
                                             NStr::fStringToNumDefault,
                                             test->base);
                 string str;
-                if ( test->base  &&  test->flags ) {
-                    NStr::IntToString(str, val, test->flags);
+                if ( test->base ) {
+                    NStr::IntToString(str, val, 0, test->base);
                 }
                 NcbiCout << "Int value: " << val 
                         << ", toString: '" << str << "'" 
@@ -545,8 +544,8 @@ static void s_StringToNumRadix()
                                         NStr::fStringToNumDefault,
                                         test->base);
                 string str;
-                if ( test->base  &&  test->flags ) {
-                    NStr::UIntToString(str, val, test->flags);
+                if ( test->base ) {
+                    NStr::UIntToString(str, val, 0, test->base);
                 }
                 NcbiCout << "UInt value: " << val 
                         << ", toString: '" << str << "'" 
@@ -567,8 +566,8 @@ static void s_StringToNumRadix()
                                               NStr::fStringToNumDefault,
                                               test->base);
                 string str;
-                if ( test->base  &&  test->flags ) {
-                    NStr::Int8ToString(str, val, test->flags);
+                if ( test->base ) {
+                    NStr::Int8ToString(str, val, 0, test->base);
                 }
                 NcbiCout << "Int8 value: " << val 
                         << ", toString: '" << str << "'" 
@@ -588,8 +587,8 @@ static void s_StringToNumRadix()
                                             NStr::fStringToNumDefault,
                                             test->base);
             string str;
-            if ( test->base  &&  test->flags ) {
-                NStr::UInt8ToString(str, val, test->flags);
+            if ( test->base ) {
+                NStr::UInt8ToString(str, val, 0, test->base);
             }
             NcbiCout << "Uint8 value: " << (unsigned)val 
                      << ", toString: '" << str << "'" 
@@ -607,35 +606,35 @@ static void s_StringToNumRadix()
 
     string str;
 
-    NStr::IntToString(str, kMax_Long, NStr::fBinary);
+    NStr::IntToString(str, kMax_Long, 0, 2);
 #if (SIZEOF_LONG == 4)
     assert(str == "1111111111111111111111111111111");
 #elif (SIZEOF_LONG == 8)
     assert(str == "111111111111111111111111111111111111111111111111111111111111111");
 #endif
 
-    NStr::UIntToString(str, kMax_ULong, NStr::fBinary);
+    NStr::UIntToString(str, kMax_ULong, 0, 2);
 #if (SIZEOF_LONG == 4)
     assert(str == "11111111111111111111111111111111");
 #elif (SIZEOF_LONG == 8)
     assert(str == "1111111111111111111111111111111111111111111111111111111111111111");
 #endif
 
-    NStr::IntToString(str, -1, NStr::fOctal);
-#if (SIZEOF_LONG == 4)
+    NStr::IntToString(str, -1, 0, 8);
+#if (SIZEOF_LONG == 4) 
     assert(str == "37777777777");
 #elif (SIZEOF_LONG == 8)
     assert(str == "1777777777777777777777");
 #endif
 
-    NStr::IntToString(str, -1, NStr::fHex);
+    NStr::IntToString(str, -1, 0, 16);
 #if (SIZEOF_LONG == 4)
     assert(str == "FFFFFFFF");
 #elif (SIZEOF_LONG == 8)
     assert(str == "FFFFFFFFFFFFFFFF");
 #endif
 
-    NStr::UInt8ToString(str, NCBI_CONST_UINT8(12345678901234567), NStr::fHex);
+    NStr::UInt8ToString(str, NCBI_CONST_UINT8(12345678901234567), 0, 16);
     assert(str == "2BDC545D6B4B87");
 
     OK;
@@ -1516,6 +1515,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.54  2005/10/19 12:42:17  ivanov
+ * Use changed NStr::*ToString() with additional adix base parameter
+ *
  * Revision 6.53  2005/10/18 18:09:49  ivanov
  * SRadixTest::Same() --
  *     Workaround for ICC 8.0. It have an optimizer bug.
