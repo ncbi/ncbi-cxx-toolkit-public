@@ -860,7 +860,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     if (index == len1 || index == len2) {
         if (edit_block != NULL)
             GapPrelimEditBlockAdd(edit_block, eGapAlignSub, index);
-        return best_dist;
+       return (index*match_score);
     }
 
     /* set up the memory pool */
