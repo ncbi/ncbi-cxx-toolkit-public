@@ -160,6 +160,7 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
     }
 
     //(*detailsStream) << "start cycles loop in DoTrial\n";
+    CBMARefinerCycle::ResetCycleId();
     for (unsigned int i = 0; i < nCycles; ++i) {
 
         //  Stop the trial if no change in previous cycle or some error condition
@@ -259,6 +260,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/19 18:39:59  lanczyck
+ * reset cycle number in new trials
+ *
  * Revision 1.3  2005/10/19 16:43:52  lanczyck
  * promote the cyclesCreated local variable to be a class member
  *
