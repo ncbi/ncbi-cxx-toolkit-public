@@ -82,12 +82,15 @@ CPythonDBAPITest::MakeTestPreparation(void)
         ExecuteStr("cursor_simple = conn_simple.cursor() \n");
         ExecuteStr("cursor_simple.execute('CREATE TABLE #t ( vkey int )') \n");
         
-        ExecuteStr("cursor_simple.execute("
-            "'CREATE TABLE #t2 ( "
-            "   int_val int null, "
-            "   varchar_val varchar(255) null, "
-            "   text_val text null)') \n"
-            );
+        if ( m_args.GetServerName() != "MOZART" ) {
+            ExecuteStr("cursor_simple.execute("
+                "'CREATE TABLE #t2 ( "
+                "   int_val int null, "
+                // "   vc1900_field varchar(255) null, "
+                "   vc1900_field varchar(1900) null, "
+                "   text_val text null)') \n"
+                );
+        }
     }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -206,30 +209,32 @@ CPythonDBAPITest::TestParameters(void)
         {
             ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
             ExecuteStr("seq_align = 254 * '-' + 'X' \n");
-            ExecuteStr("cursor.execute('INSERT INTO #t2(varchar_val) VALUES(@tv)', {'@tv':seq_align})\n");
-            ExecuteStr("cursor.execute('SELECT varchar_val FROM #t2') \n");
+            ExecuteStr("cursor.execute('INSERT INTO #t2(vc1900_field) VALUES(@tv)', {'@tv':seq_align})\n");
+            ExecuteStr("cursor.execute('SELECT vc1900_field FROM #t2') \n");
             ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
         }
 
         // Test for text strings ...
-//         {
-//             ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
-//             // ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
-//             ExecuteStr("seq_align = 254 * '-' + 'X' \n");
-//             ExecuteStr("if len(seq_align) != 255 : raise StandardError('Invalid string length.') \n");
-//             ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
-//             ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
-//             ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
-//
-//             ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
-//             ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
-//             ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
-//             ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
-//             ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
-//             ExecuteStr("record = cursor.fetchone() \n");
+        {
+            ExecuteSQL("DELETE FROM #t2");
+            ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
+            ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
+            ExecuteStr("cursor.execute('INSERT INTO #t2(vc1900_field) VALUES(@tv)', {'@tv':seq_align})\n");
+            ExecuteSQL("SELECT vc1900_field FROM #t2");
+            ExecuteStr("record = cursor.fetchone()");
+//             ExecuteStr("print record");
+//             ExecuteStr("print len(record[0])");
+            ExecuteStr("if len(record[0]) != 355 : raise StandardError('Invalid string length.') \n");
+
+            ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
+            ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
+            ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
+            ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
+            ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
+            ExecuteStr("record = cursor.fetchone() \n");
 //             ExecuteStr("print record \n");
-//             ExecuteStr("if len(record[0]) != 355 : raise StandardError('Invalid string length.') \n");
-//         }
+            ExecuteStr("if len(record[0]) != 355 : raise StandardError('Invalid string length.') \n");
+        }
    }
     catch( const string& ex ) {
         BOOST_FAIL( ex );
@@ -484,17 +489,23 @@ CPythonDBAPITest::Test_LOB(void)
             sql  = "long_str = '"+ long_string + "' \n";
             ExecuteStr( sql.c_str() );
             
-            sql  = "INSERT INTO #t2(text_val) VALUES('" + long_string + "')";
-            ExecuteSQL( sql );
+            sql  = "cursor.execute('INSERT INTO #t2(vc1900_field, text_val) VALUES(@vcv, @tv)', ";
+            sql += " {'@vcv':long_str, '@tv':long_str} ) \n";
+            ExecuteStr( sql.c_str() );
         }
         
         // Check ...
         {
-            sql = "SELECT text_val FROM #t2";
+            sql = "SELECT vc1900_field, text_val FROM #t2";
             ExecuteSQL(sql);
             ExecuteStr("record = cursor.fetchone() \n");
-            // ExecuteStr("print len(record[12]) \n");
+            ExecuteStr("print record[0] \n");
+//             ExecuteStr("print len(record[0]) \n");
+//             ExecuteStr("print long_str \n");
             ExecuteStr("if len(record[0]) != len(long_str) : "
+                       "raise StandardError('Invalid string size: ') \n"
+            );
+            ExecuteStr("if len(record[1]) != len(long_str) : "
                        "raise StandardError('Invalid string size: ') \n"
             );
         }
@@ -503,6 +514,58 @@ CPythonDBAPITest::Test_LOB(void)
         BOOST_FAIL( ex );
     }
            
+}
+
+// From example8.py
+void 
+CPythonDBAPITest::TestScenario_1(void)
+{
+    string sql;
+    
+    try {
+        // Prepare ...
+        {
+            ExecuteStr( "cursor = conn_simple.cursor()\n" );
+        }
+        
+        // Create a table ...
+        {
+            sql = " CREATE TABLE #sale_stat ( \n"
+                        " year INT NOT NULL, \n"
+                        " month VARCHAR(255) NOT NULL, \n"
+                        " stat INT NOT NULL \n"
+                " ) ";
+            ExecuteSQL(sql);
+        }
+        
+        // Insert data ..
+        {
+            ExecuteStr("month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']");
+            ExecuteStr("sql = \"insert into #sale_stat(year, month, stat) values (@year, @month, @stat)\"");
+            ExecuteSQL("select * from #sale_stat");
+            ExecuteStr("print \"Empty table contains\", len( cursor.fetchall() ), \"records\"");
+            ExecuteSQL("BEGIN TRANSACTION");
+            ExecuteStr("cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])");
+            ExecuteSQL("select * from #sale_stat");
+            ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+            ExecuteStr("conn_simple.rollback();");
+            ExecuteSQL("select * from #sale_stat");
+            ExecuteStr("print \"After a 'standard' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+            ExecuteSQL("ROLLBACK TRANSACTION");
+            ExecuteSQL("BEGIN TRANSACTION");
+            ExecuteSQL("select * from #sale_stat");
+            ExecuteStr("print \"After a 'manual' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+            ExecuteStr("cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])");
+            ExecuteSQL("select * from #sale_stat");
+            ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+            ExecuteSQL("COMMIT TRANSACTION");
+            ExecuteSQL("select * from #sale_stat");
+            ExecuteStr("print \"After a 'manual' commit command the table contains\", len( cursor.fetchall() ), \"records\"");
+        }
+    }
+    catch( const string& ex ) {
+        BOOST_FAIL( ex );
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -517,11 +580,23 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
-    // This test doen't work with the dblib driver currently ...
-//     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_LOB, DBAPIInstance);
-//     tc->depends_on(tc_init);
-//     add(tc);
+    if ( ( args.GetDriverName() == "ctlib" && 
+           args.GetServerName() != "MOZART"
+         ) ||
+         ( args.GetDriverName() == "ftds" && 
+           args.GetServerType() == CTestArguments::eMsSql )
+         ) {
+        // This test doen't work with the dblib driver currently ...
+        tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_LOB, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
 
+        tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestParameters, DBAPIInstance);
+        tc->depends_on(tc_init);
+        add(tc);
+    }
+    
+    
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::Test_SelectStmt, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
@@ -535,10 +610,6 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     add(tc);
 
     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFetch, DBAPIInstance);
-    tc->depends_on(tc_init);
-    add(tc);
-
-    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestParameters, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 
@@ -558,6 +629,10 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
+    
+    tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestScenario_1, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
     
 //     tc = BOOST_CLASS_TEST_CASE(&CPythonDBAPITest::TestFromFile, DBAPIInstance);
 //     tc->depends_on(tc_init);
@@ -642,7 +717,9 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
+    if ( GetDriverName() == "ctlib" && GetServerName() != "MOZART" ) {
+      m_DatabaseParameters["version"] = "125";
+    } else if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "100";
@@ -694,6 +771,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/10/19 15:53:33  ssikorsk
+* Implemented the TestScenario_1 test
+*
 * Revision 1.18  2005/09/14 17:50:55  ssikorsk
 * 	  Do not use named constraints with a temporary table
 *
