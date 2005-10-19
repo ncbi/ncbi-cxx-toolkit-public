@@ -66,7 +66,7 @@ public:
 
     TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
 
-    virtual bool MayContainType(TTypeInfo type) const;
+    virtual EMayContainType GetMayContainType(TTypeInfo type) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2,
@@ -127,6 +127,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.30  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

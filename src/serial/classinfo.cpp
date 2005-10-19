@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.75  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -781,11 +784,22 @@ bool CClassTypeInfo::IsParentClassOf(const CClassTypeInfo* typeInfo) const
     return false;
 }
 
-bool CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
+CTypeInfo::EMayContainType
+CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
 {
     const CClassTypeInfoBase* parentClass = m_ParentClassInfo;
-    return parentClass && parentClass->MayContainType(typeInfo) ||
-        CParent::CalcMayContainType(typeInfo);
+    EMayContainType ret = eMayContainType_no;
+    if ( parentClass ) {
+        ret = parentClass->GetMayContainType(typeInfo);
+        if ( ret == eMayContainType_yes ) {
+            return ret;
+        }
+    }
+    EMayContainType ret2 = CParent::CalcMayContainType(typeInfo);
+    if ( ret2 != eMayContainType_no ) {
+        ret = ret2;
+    }
+    return ret;
 }
 
 END_NCBI_SCOPE

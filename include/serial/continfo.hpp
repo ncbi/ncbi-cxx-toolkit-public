@@ -71,7 +71,7 @@ public:
 
     bool RandomElementsOrder(void) const;
     
-    virtual bool MayContainType(TTypeInfo type) const;
+    virtual EMayContainType GetMayContainType(TTypeInfo type) const;
 
     void Assign(TObjectPtr dst, TConstObjectPtr src,
                 ESerialRecursionMode how = eRecursive) const;
@@ -281,6 +281,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.11  2004/07/27 15:02:59  ucko
 * Add GetElementCount and ReserveElements operations.
 *

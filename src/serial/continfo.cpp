@@ -190,7 +190,8 @@ void CContainerTypeInfo::SetIteratorFunctions(TInitIterator init,
     m_EraseAllElements = erase_all;
 }
 
-bool CContainerTypeInfo::MayContainType(TTypeInfo type) const
+CTypeInfo::EMayContainType
+CContainerTypeInfo::GetMayContainType(TTypeInfo type) const
 {
     return GetElementType()->IsOrMayContainType(type);
 }
@@ -301,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.13  2004/07/27 15:03:28  ucko
 * Add GetElementCount and ReserveElements operations.
 * Move CVS log to end.

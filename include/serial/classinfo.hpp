@@ -122,7 +122,7 @@ protected:
     
     virtual bool IsType(TTypeInfo typeInfo) const;
     virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
-    virtual bool CalcMayContainType(TTypeInfo typeInfo) const;
+    virtual EMayContainType CalcMayContainType(TTypeInfo typeInfo) const;
 
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
     void RegisterSubClasses(void) const;
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.45  2004/03/25 15:56:27  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

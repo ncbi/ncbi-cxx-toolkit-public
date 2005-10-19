@@ -141,8 +141,17 @@ public:
 
     virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
     virtual bool IsType(TTypeInfo type) const;
-    virtual bool MayContainType(TTypeInfo type) const;
-    bool IsOrMayContainType(TTypeInfo type) const;
+
+    bool MayContainType(TTypeInfo type) const;
+
+    enum EMayContainType
+    {
+        eMayContainType_no,
+        eMayContainType_recursion, // real value may be yes or no, no caching
+        eMayContainType_yes
+    };
+    EMayContainType IsOrMayContainType(TTypeInfo type) const;
+    virtual EMayContainType GetMayContainType(TTypeInfo type) const;
 
     // hooks
     void SetGlobalReadHook(CReadObjectHook* hook);
@@ -228,6 +237,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.47  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

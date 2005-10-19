@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.24  2005/10/18 15:29:40  vasilche
 * Use correct mutex to avoid deadlock.
 *
@@ -384,35 +387,64 @@ const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) cons
     return 0;
 }
 
-bool CClassTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
+CTypeInfo::EMayContainType
+CClassTypeInfoBase::GetMayContainType(TTypeInfo typeInfo) const
 {
     CMutexGuard GUARD(GetTypeInfoMutex());
     TContainedTypes* cache = m_ContainedTypes.get();
-    if ( cache ) {
-        TContainedTypes::const_iterator found = cache->find(typeInfo);
-        if ( found != cache->end() )
-            return found->second;
-    }
-    else {
+    if ( !cache ) {
         m_ContainedTypes.reset(cache = new TContainedTypes);
     }
-    bool& contains = (*cache)[typeInfo];
-    // initialize by false to avoid recursion
-    contains = false;
-    // check parent
-    return contains = CalcMayContainType(typeInfo);
+    pair<TContainedTypes::iterator, bool> ins =
+        cache->insert(TContainedTypes::value_type(typeInfo,
+                                                  eMayContainType_recursion));
+    if ( !ins.second ) {
+        return ins.first->second;
+    }
+
+    static int recursion_level = 0;
+    ++recursion_level;
+    EMayContainType ret;
+    try {
+        ret = CalcMayContainType(typeInfo);
+        --recursion_level;
+        if ( ret == eMayContainType_recursion ) {
+            if ( recursion_level == 0 ) {
+                ins.first->second = ret = eMayContainType_no;
+            }
+            else {
+                cache->erase(ins.first);
+            }
+        }
+        else {
+            ins.first->second = ret;
+        }
+    }
+    catch ( ... ) {
+        --recursion_level;
+        cache->erase(ins.first);
+        throw;
+    }
+    return ret;
 }
 
-bool CClassTypeInfoBase::CalcMayContainType(TTypeInfo typeInfo) const
+CTypeInfo::EMayContainType
+CClassTypeInfoBase::CalcMayContainType(TTypeInfo typeInfo) const
 {
+    EMayContainType ret = eMayContainType_no;
     // check members
     for ( TMemberIndex i = GetItems().FirstIndex(),
               last = GetItems().LastIndex(); i <= last; ++i ) {
-        if ( GetItems().GetItemInfo(i)->GetTypeInfo()->IsOrMayContainType(typeInfo) ) {
-            return true;
+        EMayContainType contains = GetItems().GetItemInfo(i)->GetTypeInfo()->
+            IsOrMayContainType(typeInfo);
+        if ( contains == eMayContainType_yes ) {
+            return contains;
+        }
+        if ( contains == eMayContainType_recursion ) {
+            ret = contains;
         }
     }
-    return false;
+    return ret;
 }
 
 class CPreReadHook : public CReadObjectHook

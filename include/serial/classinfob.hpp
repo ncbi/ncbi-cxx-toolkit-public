@@ -55,7 +55,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XSERIAL_EXPORT CClassTypeInfoBase : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
-    typedef map<TTypeInfo, bool> TContainedTypes;
+    typedef map<TTypeInfo, EMayContainType> TContainedTypes;
 
 protected:
     CClassTypeInfoBase(ETypeFamily typeFamily, size_t size, const char* name,
@@ -109,7 +109,7 @@ public:
     const CObject* GetCObjectPtr(TConstObjectPtr objectPtr) const;
 
     // iterators interface
-    virtual bool MayContainType(TTypeInfo type) const;
+    virtual EMayContainType GetMayContainType(TTypeInfo type) const;
 
     // helping member iterator class (internal use)
     class CIterator : public CItemsInfo::CIterator
@@ -124,7 +124,7 @@ protected:
     friend class CIterator;
     CItemsInfo& GetItems(void);
 
-    virtual bool CalcMayContainType(TTypeInfo typeInfo) const;
+    virtual EMayContainType CalcMayContainType(TTypeInfo typeInfo) const;
 
 private:
     const type_info* m_Id;
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.17  2005/10/03 14:12:11  gouriano
 * Added methods to access registered module names, and classes
 *

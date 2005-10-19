@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.36  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -249,7 +252,8 @@ TTypeInfo CPointerTypeInfo::GetTypeInfo(TTypeInfo base)
     return new CPointerTypeInfo(base);
 }
 
-bool CPointerTypeInfo::MayContainType(TTypeInfo type) const
+CTypeInfo::EMayContainType
+CPointerTypeInfo::GetMayContainType(TTypeInfo type) const
 {
     return GetPointedType()->IsOrMayContainType(type);
 }

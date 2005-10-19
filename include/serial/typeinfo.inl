@@ -51,9 +51,16 @@ size_t CTypeInfo::GetSize(void) const
 }
 
 inline
-bool CTypeInfo::IsOrMayContainType(TTypeInfo typeInfo) const
+bool CTypeInfo::MayContainType(TTypeInfo typeInfo) const
 {
-    return IsType(typeInfo) || MayContainType(typeInfo);
+    return GetMayContainType(typeInfo) == eMayContainType_yes;
+}
+
+inline
+CTypeInfo::EMayContainType
+CTypeInfo::IsOrMayContainType(TTypeInfo typeInfo) const
+{
+    return IsType(typeInfo)? eMayContainType_yes: GetMayContainType(typeInfo);
 }
 
 inline
@@ -125,6 +132,9 @@ bool CTypeInfo::IsCObject(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/10/19 13:49:37  vasilche
+* Fixed MayContainType() for type graph with cycles.
+*
 * Revision 1.12  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
