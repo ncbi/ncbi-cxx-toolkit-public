@@ -44,6 +44,7 @@
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/blast/blastclient.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include "psiblast_aux_priv.hpp"    // For ValidatePssm()
 
 #if defined(NCBI_OS_UNIX)
 #include <unistd.h>
@@ -736,10 +737,7 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
                    "Empty reference for query pssm.");
     }
     
-    if (! pssm->GetPssm().CanGetQuery()) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                   "Empty reference for pssm component pssm.matrix.query.");
-    }
+    ValidatePssm(*pssm);
     
     string psi_program("blastp");
     string old_service("plain");
@@ -1096,6 +1094,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/10/19 17:25:50  camacho
+* Perform more extensive PSSM validation using PSI-BLAST auxiliary function
+*
 * Revision 1.32  2005/10/17 13:48:06  camacho
 * Remove deprecated CRemoteBlast::SetMatrixTable method
 *
