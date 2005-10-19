@@ -159,13 +159,16 @@ CConnParam::CConnParam(
         m_ServerType = eMsSql;
     }
 
-    if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
+    if ( GetDriverName() == "ctlib" ) {
+        m_DatabaseParameters["version"] = "125";
+    } else if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
-        m_DatabaseParameters["version"] = "100";
+        m_DatabaseParameters["version"] = "125";
     } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
-        m_DatabaseParameters["version"] = "42";
+        // m_DatabaseParameters["version"] = "42";
+        m_DatabaseParameters["version"] = "46";
     }
 
 }
@@ -355,6 +358,7 @@ CConnection::MakeDBConnection(void) const
 {
     // !!! eTakeOwnership !!!
     IConnection* connection = m_DS->CreateConnection( eTakeOwnership );
+//     connection->SetMode(IConnection::eBulkInsert);
     connection->Connect(
         m_ConnParam.GetUserName(),
         m_ConnParam.GetUserPswd(),
@@ -747,6 +751,15 @@ RetrieveStatementType(const string& stmt, EStatementType default_type)
         } else if (NStr::EqualNocase(stmt, pos, sizeof("ALTER") - 1, "ALTER"))
         {
             stmtType = estAlter;
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("BEGIN") - 1, "BEGIN"))
+        {
+            stmtType = estTransaction;
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("COMMIT") - 1, "COMMIT"))
+        {
+            stmtType = estTransaction;
+        } else if (NStr::EqualNocase(stmt, pos, sizeof("ROLLBACK") - 1, "ROLLBACK"))
+        {
+            stmtType = estTransaction;
         // } else if (NStr::EqualNocase(stmt, pos, sizeof("EXEC") - 1, "EXEC"))
         // {
         //    stmtType = estFunction;
@@ -916,7 +929,9 @@ CStmtHelper::Execute(void)
         switch ( m_StmtStr.GetType() ) {
         case estSelect :
             m_RS.reset( m_Stmt->ExecuteQuery ( m_StmtStr.GetStr() ) );
-            m_RS->BindBlobToVariant(true);
+            if (m_RS.get()) {
+                m_RS->BindBlobToVariant(true);
+            }
             break;
         default:
             m_RS.release();
@@ -1287,7 +1302,12 @@ MakeTupleFromResult(IResultSet& rs)
         case eDB_VarChar :
         case eDB_Char :
         case eDB_LongChar :
-            tuple[i] = pythonpp::CString( value.GetString() );
+            {
+                string str = value.GetString();
+                size_t str_size = str.size();
+                tuple[i] = pythonpp::CString( str );
+            }
+            // tuple[i] = pythonpp::CString( value.GetString() );
             break;
         case eDB_LongBinary :
         case eDB_VarBinary :
@@ -1295,10 +1315,6 @@ MakeTupleFromResult(IResultSet& rs)
         case eDB_Numeric :
             tuple[i] = pythonpp::CString( value.GetString() );
             break;
-        /* Future development
-            case eDB_Text :
-            case eDB_Image :
-        */
         case eDB_Text :
         case eDB_Image :
             {
@@ -1538,17 +1554,17 @@ CCursor::GetCVariant(const pythonpp::CObject& obj) const
     } else if ( pythonpp::CFloat::HasSameType(obj) ) {
         return CVariant( pythonpp::CFloat(obj) );
     } else if ( pythonpp::CString::HasSameType(obj) ) {
-        return CVariant( static_cast<string>(pythonpp::CString(obj)) );
+        const pythonpp::CString python_str(obj);
+        string std_str(python_str);
 
-        /* Future development ...
-        const pythonpp::CString str(obj);
-
-        if ( str.GetSize() <= 255 ) {
-            return CVariant( static_cast<string>(pythonpp::CString(obj)) );
+        if ( std_str.size() <= 255 ) {
+            return CVariant( std_str );
         } else {
-            // BLOB
+            return CVariant::LongChar(
+                std_str.c_str(),
+                std_str.size()
+                );
         }
-        */
     }
 
     return CVariant(eDB_UnsupportedType);
@@ -2566,6 +2582,11 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/10/19 15:48:16  ssikorsk
+* Connect to Sybase using protocol version 12.5;
+* Improved reading of Text and Image data types;
+* Fixed a bug with processing of COMMIT/ROLLBACK statements;
+*
 * Revision 1.24  2005/09/13 14:42:37  ssikorsk
 * Improved reading of LOB (Text/Image) data types
 *
