@@ -37,13 +37,24 @@ static char const rcsid[] =
  */
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/api/local_search.hpp>
+
+// Object includes
+#include <objects/scoremat/Pssm.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+
+// CDbBlast and its object manager dependencies
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+
+// BLAST includes
+#include <algo/blast/api/local_search.hpp>
+//#include <algo/blast/api/psiblast.hpp>
+#include <algo/blast/api/objmgrfree_query_data.hpp>
+#include "psiblast_aux_priv.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -65,6 +76,12 @@ CLocalSearchFactory::GetSeqSearch()
     return CRef<ISeqSearch>(new CLocalSeqSearch());
 }
 
+CRef<IPssmSearch>
+CLocalSearchFactory::GetPssmSearch()
+{
+    return CRef<IPssmSearch>(new CLocalPssmSearch());
+}
+
 CRef<CBlastOptionsHandle>
 CLocalSearchFactory::GetOptions(EProgram program)
 {
@@ -83,7 +100,8 @@ CLocalSeqSearch::~CLocalSeqSearch()
 }
 
 // NOTE: Local search object is re-created every time it is run.
-ISearch::TResults CLocalSeqSearch::Run()
+ISearch::TResults 
+CLocalSeqSearch::Run()
 {
     if ( m_QueryFactory.Empty() ) {
         NCBI_THROW(CSearchException, eConfigErr, "No queries specified");
@@ -116,18 +134,21 @@ ISearch::TResults CLocalSeqSearch::Run()
     return ISearch::TResults();
 }
 
-void CLocalSeqSearch::SetOptions(CRef<CBlastOptionsHandle> opts)
+void 
+CLocalSeqSearch::SetOptions(CRef<CBlastOptionsHandle> opts)
 {
     m_SearchOpts = opts;
 }
 
-void CLocalSeqSearch::SetSubject(CConstRef<CSearchDatabase> subject)
+void 
+CLocalSeqSearch::SetSubject(CConstRef<CSearchDatabase> subject)
 {
     m_SeqSrc = SeqDbBlastSeqSrcInit(subject->GetDatabaseName(),
         (subject->GetMoleculeType() == CSearchDatabase::eBlastDbIsProtein));
 }
 
-void CLocalSeqSearch::SetQueryFactory(CRef<IQueryFactory> query_factory)
+void 
+CLocalSeqSearch::SetQueryFactory(CRef<IQueryFactory> query_factory)
 {
     if (query_factory.Empty()) {
         NCBI_THROW(CSearchException, eConfigErr, "No query factory specified");
@@ -135,6 +156,56 @@ void CLocalSeqSearch::SetQueryFactory(CRef<IQueryFactory> query_factory)
     m_QueryFactory.Reset(query_factory);
 }
 
+//
+// Psi Search
+//
+
+void 
+CLocalPssmSearch::SetOptions(CRef<CBlastOptionsHandle> opts)
+{
+    m_SearchOpts = opts;
+}
+
+void 
+CLocalPssmSearch::SetSubject(CConstRef<CSearchDatabase> subject)
+{
+    m_Subject = subject;
+}
+
+void 
+CLocalPssmSearch::SetQuery(CRef<CPssmWithParameters> pssm)
+{
+    ValidatePssm(*pssm);
+    m_Pssm = pssm;
+}
+
+ISeqSearch::TResults 
+CLocalPssmSearch::Run()
+{
+    ISeqSearch::TResults retval;
+
+#if 0
+    CConstRef<CPSIBlastOptionsHandle> psi_opts;
+    psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*m_SearchOpts));
+    if (psi_opts.Empty()) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Options for CLocalPssmSearch are not PSI-BLAST");
+    }
+#endif
+
+    CConstRef<CBioseq> query(&m_Pssm->GetPssm().GetQuery().GetSeq());
+    CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(query));
+
+    CRef<CSearchResults> psi_results;
+#if 0
+    CPsiBlast psiblast(query_factory, *m_Subject, psi_opts);
+    psi_results = psiblast.Run();
+#endif
+
+    retval.AddResult(psi_results);
+    ASSERT(retval.GetNumResults() == 1);
+    return retval;
+}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
