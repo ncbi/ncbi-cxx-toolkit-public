@@ -90,10 +90,6 @@ private:
                 CRef<CBlastOptions> opts,
                 const string& dbname);
 
-    /// Initializes the IBlastSeqInfoSrc from data obtained from the
-    /// BlastSeqSrc (works for database searches only)
-    void x_InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
-
     // Auto method generation prevention
     CBlastTracebackSearch(CBlastTracebackSearch &);
     CBlastTracebackSearch & operator =(CBlastTracebackSearch &);

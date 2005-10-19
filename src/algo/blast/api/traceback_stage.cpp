@@ -43,6 +43,7 @@ static char const rcsid[] =
 #include "blast_memento_priv.hpp"
 #include "blast_seqsrc_adapter_priv.hpp"
 #include "blast_seqalign.hpp"
+#include "blast_aux_priv.hpp"
 
 // CORE BLAST includes
 #include <algo/blast/core/blast_setup.h>
@@ -71,7 +72,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
 {
     x_Init(qf, opts, db.GetDatabaseName());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
-    x_InitSeqInfoSrc(seqsrc);
+    m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
+    m_OwnSeqInfoSrc = true;
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
     m_InternalData->m_HspStream.Reset(hsps);
 }
@@ -89,7 +91,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>    qf,
       m_OwnSeqInfoSrc(false)
 {
     BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
-    x_InitSeqInfoSrc(seqsrc);
+    m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
+    m_OwnSeqInfoSrc = true;
     x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
     m_InternalData->m_HspStream.Reset(hsps);
@@ -104,10 +107,9 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
       m_InternalData (new SInternalData),
       m_OptsMemento  (0),
       m_HspResults   (0),
-      m_SeqInfoSrc   (0),
-      m_OwnSeqInfoSrc(false)
+      m_SeqInfoSrc   (InitSeqInfoSrc(seqsrc)),
+      m_OwnSeqInfoSrc(true)
 {
-    x_InitSeqInfoSrc(seqsrc);
     x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
     m_InternalData->m_HspStream.Reset(hsps);
@@ -133,19 +135,6 @@ CBlastTracebackSearch::~CBlastTracebackSearch()
         delete m_SeqInfoSrc;
     }
 }
-
-void
-CBlastTracebackSearch::x_InitSeqInfoSrc(const BlastSeqSrc* seqsrc)
-{
-    string db_name;
-    if (const char* seqsrc_name = BlastSeqSrcGetName(seqsrc)) {
-        db_name = string(seqsrc_name);
-    }
-    ASSERT(!db_name.empty());
-    bool is_prot = BlastSeqSrcGetIsProt(seqsrc) ? true : false;
-    m_SeqInfoSrc = new CSeqDbSeqInfoSrc(db_name, is_prot);
-    m_OwnSeqInfoSrc = true;
-} 
 
 void
 CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
