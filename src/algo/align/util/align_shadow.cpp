@@ -34,6 +34,8 @@
 
 #include <numeric>
 
+#include <math.h>
+
 BEGIN_NCBI_SCOPE
 
 const CAlignShadow::TCoord g_UndefCoord 
@@ -529,6 +531,12 @@ void CAlignShadow::Shift(Int4 shift_query, Int4 shift_subj)
     m_Box[3] += shift_subj;
 }
 
+Int4 Round(const double& d)
+{
+    const double fd = floor(d);
+    const double rv = d - fd < .5? fd: fd + 1;
+    return Int4(rv);
+}
 
 void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
 {
@@ -571,7 +579,7 @@ void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
         }
 
         delta_q = new_pos - qmin;
-        delta_s = Int4( delta_q / k);
+        delta_s = Round(delta_q / k);
 
         SetQueryMin(qmin + delta_q);
         if(qstrand == sstrand) {
@@ -590,7 +598,7 @@ void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
         }
 
         delta_q = new_pos - qmax;
-        delta_s = Int4(delta_q / k);
+        delta_s = Round(delta_q / k);
 
         SetQueryMax(qmax + delta_q);
         if(qstrand == sstrand) {
@@ -609,7 +617,7 @@ void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
         }
 
         delta_s = new_pos - smin;
-        delta_q = Int4(delta_s * k);
+        delta_q = Round(delta_s * k);
 
         SetSubjMin(smin + delta_s);
         if(qstrand == sstrand) {
@@ -628,7 +636,7 @@ void CAlignShadow::Modify(Uint1 where, TCoord new_pos)
         }
 
         delta_s = new_pos - smax;
-        delta_q = Int4(delta_s * k);
+        delta_q = Round(delta_s * k);
 
         SetSubjMax(smax + delta_s);
         if(qstrand == sstrand) {
@@ -658,6 +666,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.14  2005/10/19 17:53:40  kapustin
+ * Use rounded coordinates when adjusting hit boundaries in Modify()
+ *
  * Revision 1.13  2005/09/13 15:56:31  kapustin
  * +FlipStrand()
  *
