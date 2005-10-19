@@ -2,8 +2,8 @@
 # $Id$
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds odbc msdblib" # mysql
-server_list="MS_DEV1 STRAUSS MOZART"
+driver_list="ctlib dblib ftds ftds63 odbc msdblib" # mysql
+server_list="MS_DEV1 STRAUSS"
 server_mssql="MS_DEV1"
 
 # DBLIB does not work (on Linux at least) when this limit is > 1024
