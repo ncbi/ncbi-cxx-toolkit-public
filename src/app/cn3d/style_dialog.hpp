@@ -42,6 +42,7 @@
 #include <wx/msw/winundef.h>
 #endif
 #include <wx/wx.h>
+#include <wx/spinbutt.h>
 
 #include <map>
 #include <string>
@@ -102,6 +103,7 @@ private:
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnChange(wxCommandEvent& event);
+    void OnSpin(wxSpinEvent& event);
 
     DECLARE_EVENT_TABLE()
 };
@@ -113,6 +115,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.13  2004/05/28 21:01:45  thiessen
 * namespace/typename fixes for GCC 3.4
 *

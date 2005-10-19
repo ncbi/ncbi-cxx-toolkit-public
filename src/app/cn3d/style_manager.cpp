@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -1483,13 +1479,13 @@ static bool CreateObjectLocation(
         (*l)->SetResidues().push_back(molecule);
 
         // check if covers whole molecule; if so, leave 'residues' field of Cn3d_molecule_location blank
-        int i;
+        unsigned int i;
         for (i=0; i<r->second.size(); ++i)
             if (!r->second[i]) break;
 
         // else break list down into individual contiguous residue ranges
         if (i != r->second.size()) {
-            int first = 0, last = 0;
+            unsigned int first = 0, last = 0;
             while (first < r->second.size()) {
                 // find first included residue
                 while (first < r->second.size() && !r->second[first]) ++first;
@@ -1569,7 +1565,6 @@ static bool ExtractObjectLocation(
             }
 
             // set residue ranges
-            int i;
             vector < bool >& residueFlags = (*residueMap)[identifier];
             if (residueFlags.size() == 0)
                 residueFlags.resize(identifier->nResidues, false);
@@ -1578,8 +1573,8 @@ static bool ExtractObjectLocation(
                 // parse individual ranges
                 CCn3d_molecule_location::TResidues::const_iterator r, re = (*m)->GetResidues().end();
                 for (r=(*m)->GetResidues().begin(); r!=re; ++r) {
-                    for (i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); ++i) {
-                        if (i > 0 && i <= residueFlags.size()) {
+                    for (int i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); ++i) {
+                        if (i > 0 && i <= (int)residueFlags.size()) {
                             residueFlags[i - 1] = true;     // assume index = residue id - 1
                         } else {
                             ERRORMSG("ExtractObjectLocation() - residue from/to out of range");
@@ -1589,7 +1584,7 @@ static bool ExtractObjectLocation(
                 }
             } else {
                 // assume all residues are included if none specified
-                for (i=0; i<residueFlags.size(); ++i) residueFlags[i] = true;
+                for (unsigned int i=0; i<residueFlags.size(); ++i) residueFlags[i] = true;
             }
         }
     }
@@ -1649,6 +1644,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.86  2005/05/19 20:38:16  thiessen
 * check that user style exists before returning reference to it
 *

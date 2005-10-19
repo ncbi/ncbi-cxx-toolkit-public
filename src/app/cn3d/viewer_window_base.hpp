@@ -238,7 +238,7 @@ public:
 
     bool SelectBlocksIsOn(void) const { return (viewerWidget->GetMouseMode() == SequenceViewerWidget::eSelectBlocks); }
 
-    void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
+    void SyncStructures(void) { ProcessCommand(MID_SYNC_STRUCS); }
     bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
 };
 
@@ -249,6 +249,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/10/19 17:28:20  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.30  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

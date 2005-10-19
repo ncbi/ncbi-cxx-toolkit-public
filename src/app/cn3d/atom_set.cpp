@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -293,6 +289,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.20  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *

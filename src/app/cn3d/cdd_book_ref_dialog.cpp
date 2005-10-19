@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -109,7 +105,7 @@ static TypeStringAssociator < CCdd_book_ref::ETextelement > enum2str;
 
 CDDBookRefDialog::CDDBookRefDialog(StructureSet *structureSet, CDDBookRefDialog **handle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
-        wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+        wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
         sSet(structureSet), dialogHandle(handle), selectedItem(-1), editOn(false)
 {
     if (enum2str.Size() == 0) {
@@ -511,6 +507,9 @@ wxSizer *SetupBookRefDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.7  2004/05/28 21:01:45  thiessen
 * namespace/typename fixes for GCC 3.4
 *

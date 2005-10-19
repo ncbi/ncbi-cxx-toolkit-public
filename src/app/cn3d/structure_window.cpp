@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
@@ -383,7 +379,7 @@ void StructureWindow::OnCloseWindow(wxCloseEvent& event)
 {
     animationTimer.Stop();
     fileMessagingTimer.Stop();
-    Command(MID_EXIT);
+    ProcessCommand(MID_EXIT);
 }
 
 void StructureWindow::OnExit(wxCommandEvent& event)
@@ -560,7 +556,7 @@ void StructureWindow::OnSelect(wxCommandEvent& event)
         ChemicalGraph::MoleculeMap::const_iterator m, me =
             glCanvas->structureSet->objects.front()->graph->molecules.end();
         for (m=glCanvas->structureSet->objects.front()->graph->molecules.begin(); m!=me; ++m) {
-            if ((isNum && m->second->id == (int) num) ||
+            if ((isNum && m->second->id == (int)num) ||
                 (!isNum && (
                     ((m->second->type == Molecule::eDNA || m->second->type == Molecule::eRNA ||
                       m->second->type == Molecule::eProtein || m->second->type == Molecule::eBiopolymer)
@@ -666,7 +662,7 @@ void StructureWindow::OnAnimate(wxCommandEvent& event)
         // restart timer to pick up new settings
         if (animationTimer.IsRunning()) {
             animationTimer.Stop();
-            Command((animationMode == ANIM_SPIN) ? MID_SPIN : MID_PLAY);
+            ProcessCommand((animationMode == ANIM_SPIN) ? MID_SPIN : MID_PLAY);
         }
     }
 }
@@ -675,7 +671,7 @@ void StructureWindow::OnAnimationTimer(wxTimerEvent& event)
 {
     if (animationMode == ANIM_FRAMES) {
         // simply pretend the user selected "next frame"
-        Command(MID_NEXT_FRAME);
+        ProcessCommand(MID_NEXT_FRAME);
     }
 
     else if (animationMode == ANIM_SPIN) {
@@ -709,11 +705,7 @@ void StructureWindow::OnSetFont(wxCommandEvent& event)
     initialFontData.SetInitialFont(*initialFont);
 
     // bring up font chooser dialog
-#if wxCHECK_VERSION(2,3,3)
     wxFontDialog dialog(this, initialFontData);
-#else
-    wxFontDialog dialog(this, &initialFontData);
-#endif
     int result = dialog.ShowModal();
 
     // if user selected a font
@@ -841,7 +833,7 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
             choices[i++] = (*f)->GetName().c_str();
         int picked = wxGetSingleChoiceIndex("Choose a style to remove from the Favorites list:",
             "Select for removal", favoriteStyles.Set().size(), choices, this);
-        if (picked < 0 || picked >= favoriteStyles.Set().size()) return;
+        if (picked < 0 || picked >= (int)favoriteStyles.Set().size()) return;
         for (f=favoriteStyles.Set().begin(), i=0; f!=fe; ++f, ++i) {
             if (i == picked) {
                 favoriteStyles.Set().erase(f);
@@ -1127,7 +1119,7 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
             // user dialogs for selection and reason
             wxString *choices = new wxString[seqsDescrs.size()];
             int choice;
-            for (choice=0; choice<seqsDescrs.size(); ++choice) choices[choice] = seqsDescrs[choice].second;
+            for (choice=0; choice<(int)seqsDescrs.size(); ++choice) choices[choice] = seqsDescrs[choice].second;
             choice = wxGetSingleChoiceIndex("Reject which sequence?", "Reject Sequence",
                 seqsDescrs.size(), choices, this);
             if (choice >= 0) {
@@ -1183,7 +1175,7 @@ void StructureWindow::OnShowHide(wxCommandEvent& event)
             vector < bool > structureVisibilities;
             glCanvas->structureSet->showHideManager->GetShowHideInfo(&structureNames, &structureVisibilities);
             wxString *titles = new wxString[structureNames.size()];
-            for (int i=0; i<structureNames.size(); ++i) titles[i] = structureNames[i].c_str();
+            for (unsigned int i=0; i<structureNames.size(); ++i) titles[i] = structureNames[i].c_str();
 
             ShowHideDialog dialog(
                 titles, &structureVisibilities, glCanvas->structureSet->showHideManager, false,
@@ -1232,7 +1224,7 @@ void StructureWindow::OnAlignStructures(wxCommandEvent& event)
         for (b=blocks.begin(); b!=be; ++b) {
             nAligned += (*b)->width;
             const Block::Range *range = (*b)->GetRangeOfRow(0);
-            for (int i=0; i<(*b)->width; ++i)
+            for (unsigned int i=0; i<(*b)->width; ++i)
                 if (GlobalMessenger()->IsHighlighted(master, range->from + i))
                     ++nHighlighted;
         }
@@ -1354,7 +1346,9 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
     }
 
     // clear old data
+    bool hadData = false;
     if (glCanvas->structureSet) {
+        hadData = true;
         DestroyNonModalDialogs();
         GlobalMessenger()->RemoveAllHighlights(false);
         GlobalMessenger()->CacheHighlights();   // copy empty highlights list, e.g. clear cache
@@ -1513,7 +1507,8 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
     if (!glCanvas->renderer->HasASNViewSettings())
         glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
-//    glCanvas->structureSet->alignmentManager->ShowSequenceViewer();
+    if (hadData)
+        glCanvas->structureSet->alignmentManager->ShowSequenceViewer(true);
     SetCursor(wxNullCursor);
 
     return true;
@@ -1666,6 +1661,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.41  2005/09/06 20:57:12  thiessen
 * fix -n option
 *

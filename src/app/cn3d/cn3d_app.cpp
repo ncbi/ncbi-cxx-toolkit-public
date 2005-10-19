@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
@@ -230,11 +226,11 @@ void RaiseLogWindow(void)
 }
 
 
-BEGIN_EVENT_TABLE(Cn3DApp, wxGLApp)
+BEGIN_EVENT_TABLE(Cn3DApp, wxApp /*wxGLApp*/)
     EVT_IDLE(Cn3DApp::OnIdle)
 END_EVENT_TABLE()
 
-Cn3DApp::Cn3DApp() : wxGLApp()
+Cn3DApp::Cn3DApp() : wxApp() /*wxGLApp()*/
 {
     // setup the diagnostic stream
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
@@ -254,8 +250,8 @@ Cn3DApp::Cn3DApp() : wxGLApp()
     CObjectIStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
     CObjectOStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
 
-    if (!InitGLVisual(NULL))
-        FATALMSG("InitGLVisual failed");
+//    if (!InitGLVisual(NULL))
+//        FATALMSG("InitGLVisual failed");
 }
 
 void Cn3DApp::InitRegistry(void)
@@ -402,7 +398,7 @@ static CNcbi_mime_asn1 * CreateMimeFromBiostruc(const wxString& filename, EModel
     strucseq->SetSequences().push_back(seqs);
     CRef < CBioseq_set > seqset(new CBioseq_set());
     seqs->SetSet(*seqset);
-    for (int i=0; i<gis.size(); ++i) {
+    for (unsigned int i=0; i<gis.size(); ++i) {
         wxString id;
         id.Printf("%i", gis[i]);
         CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
@@ -651,6 +647,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.27  2005/10/17 22:11:34  thiessen
 * fix init bug
 *

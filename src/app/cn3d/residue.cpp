@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -399,7 +395,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
             if (settings.proteinLabels.type == StyleSettings::eOneLetter) {
                 oss << code;
             } else if (settings.proteinLabels.type == StyleSettings::eThreeLetter) {
-                for (int i=0; i<nameGraph.size() && i<3; ++i)
+                for (unsigned int i=0; i<nameGraph.size() && i<3; ++i)
                     oss << ((i == 0) ? (char) toupper((unsigned char) nameGraph[0]) : (char) tolower((unsigned char) nameGraph[i]));
             }
             // add number if necessary
@@ -424,7 +420,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
             if (settings.nucleotideLabels.type == StyleSettings::eOneLetter) {
                 oss << code;
             } else if (settings.nucleotideLabels.type == StyleSettings::eThreeLetter) {
-                for (int i=0; i<3; ++i)
+                for (unsigned int i=0; i<3; ++i)
                     if (nameGraph.size() > i && nameGraph[i] != ' ')
                         oss << nameGraph[i];
             }
@@ -460,6 +456,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.36  2005/06/03 16:26:28  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

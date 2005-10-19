@@ -100,7 +100,7 @@ public:
 
     // check for highlight
     bool IsHighlighted(const Molecule *molecule, int residueID) const;
-    bool IsHighlighted(const Sequence *sequence, int seqIndex) const;
+    bool IsHighlighted(const Sequence *sequence, unsigned int seqIndex) const;
     bool IsHighlightedAnywhere(const MoleculeIdentifier *identifier) const;
 
     // clear all highlight stores - and optionally post redraws. Returns 'true'
@@ -108,10 +108,10 @@ public:
     bool RemoveAllHighlights(bool postRedraws);
 
     // add/remove highlights based on sequence
-    void AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
-    void RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
+    void AddHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo);
+    void RemoveHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo);
     // toggle highlights on each individual residue in given region
-    void ToggleHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo);
+    void ToggleHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo);
 
     // highlight any 'ole residue, regardless of molecule type
     void ToggleHighlight(const Molecule *molecule, int residueID, bool scrollViewersTo = false);
@@ -153,8 +153,8 @@ private:
     // To store lists of highlighted entities
     MoleculeHighlightMap highlights, highlightCache;
 
-    bool IsHighlighted(const MoleculeIdentifier *identifier, int index) const;
-    void ToggleHighlights(const MoleculeIdentifier *identifier, int indexFrom, int indexTo,
+    bool IsHighlighted(const MoleculeIdentifier *identifier, unsigned int index) const;
+    void ToggleHighlights(const MoleculeIdentifier *identifier, unsigned int indexFrom, unsigned int indexTo,
         const StructureSet *set);
 
     void RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifier, const StructureSet *set);
@@ -202,6 +202,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.29  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *

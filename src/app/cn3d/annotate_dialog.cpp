@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -78,14 +74,14 @@
 #define ID_B_MOVE 10013
 #define ID_B_DELETE 10014
 #define ID_B_DONE 10015
-wxSizer *SetupAnnotationControlDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *SetupAnnotationControlDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 #define ID_T_NAME 10016
 #define ID_B_EDIT_STYLE 10017
 #define ID_T_DESCR 10018
 #define ID_B_EDIT_DONE 10019
 #define ID_B_EDIT_CANCEL 10020
-wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *SetupAnnotationEditorDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -113,16 +109,14 @@ BEGIN_EVENT_TABLE(AnnotateDialog, wxDialog)
 END_EVENT_TABLE()
 
 AnnotateDialog::AnnotateDialog(wxWindow *parent, StyleManager *manager, const StructureSet *set) :
-    wxDialog(parent, -1, "User Annotations", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU), // not resizable
+    wxDialog(parent, -1, "User Annotations", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     styleManager(manager), structureSet(set)
 {
     // get the structure highlights present when this dialog is created
     GlobalMessenger()->GetHighlightedResiduesWithStructure(&highlightedResidues);
 
     // construct the panel
-    wxPanel *panel = new wxPanel(this, -1);
-    wxSizer *topSizer = SetupAnnotationControlDialog(panel, false);
+    wxSizer *topSizer = SetupAnnotationControlDialog(this, false);
 
     // fill in list boxes with available and displayed styles
     ResetListBoxes();
@@ -132,7 +126,6 @@ AnnotateDialog::AnnotateDialog(wxWindow *parent, StyleManager *manager, const St
 
     // call sizer stuff
     topSizer->Fit(this);
-    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 }
 
@@ -444,13 +437,11 @@ END_EVENT_TABLE()
 AnnotationEditorDialog::AnnotationEditorDialog(wxWindow *parent,
         StyleSettings *settings, const StructureSet *set,
         const StyleManager::UserAnnotation& initialText) :
-    wxDialog(parent, -1, "Edit Annotation", wxPoint(450, 200), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU), // not resizable
+    wxDialog(parent, -1, "Edit Annotation", wxPoint(450, 200), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     styleSettings(settings), structureSet(set)
 {
     // construct the panel
-    wxPanel *panel = new wxPanel(this, -1);
-    wxSizer *topSizer = SetupAnnotationEditorDialog(panel, false);
+    wxSizer *topSizer = SetupAnnotationEditorDialog(this, false);
 
     // set initial state
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tName, ID_T_NAME, wxTextCtrl)
@@ -460,7 +451,6 @@ AnnotationEditorDialog::AnnotationEditorDialog(wxWindow *parent,
 
     // call sizer stuff
     topSizer->Fit(this);
-    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 
     // select name, so user can quickly change it
@@ -507,7 +497,7 @@ END_SCOPE(Cn3D)
 // annotate_dialog.wdr.
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-wxSizer *SetupAnnotationControlDialog( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *SetupAnnotationControlDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
@@ -636,7 +626,7 @@ wxSizer *SetupAnnotationControlDialog( wxPanel *parent, bool call_fit, bool set_
     return item0;
 }
 
-wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *SetupAnnotationEditorDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
@@ -704,6 +694,9 @@ wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit, bool set_s
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.16  2004/06/02 21:33:13  thiessen
 * reorganize user annotation storage so that reordering is saved
 *

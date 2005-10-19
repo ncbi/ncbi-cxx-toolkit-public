@@ -93,10 +93,10 @@ public:
     bool UpdateBlockMapAndColors(bool clearRowInfo = true);
 
     // find out if a residue is aligned, by row
-    bool IsAligned(int row, int seqIndex) const;
+    bool IsAligned(unsigned int row, unsigned int seqIndex) const;
 
     // find out if a residue is aligned, by Sequence - only works for non-repeated Sequences!
-    bool IsAligned(const Sequence *sequence, int seqIndex) const
+    bool IsAligned(const Sequence *sequence, unsigned int seqIndex) const
     {
         int row = GetRowForSequence(sequence);
         if (row < 0) return false;
@@ -108,9 +108,9 @@ public:
     bool IsMaster(const Sequence *sequence) const { return (sequence == (*sequences)[0]); }
 
     // return sequence for given row
-    const Sequence * GetSequenceOfRow(int row) const
+    const Sequence * GetSequenceOfRow(unsigned int row) const
     {
-        if (row >= 0 && row < sequences->size())
+        if (row < sequences->size())
             return (*sequences)[row];
         else
             return NULL;
@@ -121,9 +121,9 @@ public:
 
     // get a color for an aligned residue that's dependent on the entire alignment
     // (e.g., for coloring by sequence conservation)
-    const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex,
+    const Vector * GetAlignmentColor(const Sequence *sequence, unsigned int seqIndex,
         StyleSettings::eColorScheme colorScheme) const;
-    const Vector * GetAlignmentColor(int row, int seqIndex,
+    const Vector * GetAlignmentColor(unsigned int row, unsigned int seqIndex,
         StyleSettings::eColorScheme colorScheme) const;
 
     // will be used to control padding of unaligned blocks
@@ -141,20 +141,21 @@ public:
     BlockMultipleAlignment * Clone(void) const;
 
     // character query interface - "column" must be in alignment range [0 .. totalWidth-1]
-    bool GetCharacterTraitsAt(int alignmentColumn, int row, eUnalignedJustification justification,
+    bool GetCharacterTraitsAt(unsigned int alignmentColumn, unsigned int row, eUnalignedJustification justification,
         char *character, Vector *color, bool *isHighlighted,
         bool *drawBackground, Vector *cellBackgroundColor) const;
 
     // get sequence and index (if any) at given position, and whether that residue is aligned
-    bool GetSequenceAndIndexAt(int alignmentColumn, int row, eUnalignedJustification justification,
+    bool GetSequenceAndIndexAt(unsigned int alignmentColumn, unsigned int row, eUnalignedJustification justification,
         const Sequence **sequence, int *index, bool *isAligned) const;
 
     // given row and sequence index, return alignment index; not the most efficient function - use sparingly
-    int GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification) const;
+    int GetAlignmentIndex(unsigned int row, unsigned int seqIndex, eUnalignedJustification justification) const;
 
     // called when user selects some part of a row
-    void SelectedRange(int row, int alnIndexFrom, int alnIndexTo, eUnalignedJustification justification, bool toggle) const;
-    void SelectBlocks(int alnIndexFrom, int alnIndexTo, bool toggle) const;
+    void SelectedRange(unsigned int row, unsigned int alnIndexFrom, unsigned int alnIndexTo,
+        eUnalignedJustification justification, bool toggle) const;
+    void SelectBlocks(unsigned int alnIndexFrom, unsigned int alnIndexTo, bool toggle) const;
 
     // fill in a vector of Blocks
     typedef std::vector < const Block * > ConstBlockList;
@@ -169,7 +170,7 @@ public:
 
     // highlight aligned columns based on master indexes (mainly for alignment annotations);
     // returns false if any residue in the range is unaligned (or out of range), true on success
-    bool HighlightAlignedColumnsOfMasterRange(int from, int to) const;
+    bool HighlightAlignedColumnsOfMasterRange(unsigned int from, unsigned int to) const;
 
     // PSSM for this alignment (cached)
     const BLAST_Matrix * GetPSSM(void) const;
@@ -179,48 +180,48 @@ public:
     ///// editing functions /////
 
     // if in an aligned block, give block column and width of that position; otherwise, -1
-    void GetAlignedBlockPosition(int alignmentIndex, int *blockColumn, int *blockWidth) const;
+    void GetAlignedBlockPosition(unsigned int alignmentIndex, int *blockColumn, int *blockWidth) const;
 
     // get seqIndex of slave aligned to the given master seqIndex; -1 if master residue unaligned
-    int GetAlignedSlaveIndex(int masterSeqIndex, int slaveRow) const;
+    int GetAlignedSlaveIndex(unsigned int masterSeqIndex, unsigned int slaveRow) const;
 
     // returns true if any boundary shift actually occurred
-    bool MoveBlockBoundary(int columnFrom, int columnTo);
+    bool MoveBlockBoundary(unsigned int columnFrom, unsigned int columnTo);
 
     // splits a block such that alignmentIndex is the first column of the new block;
     // returns false if no split occurred (e.g. if index is not inside aligned block)
-    bool SplitBlock(int alignmentIndex);
+    bool SplitBlock(unsigned int alignmentIndex);
 
     // merges all blocks that overlap specified range - assuming no unaligned blocks
     // in that range. Returns true if any merge(s) occurred, false otherwise.
-    bool MergeBlocks(int fromAlignmentIndex, int toAlignmentIndex);
+    bool MergeBlocks(unsigned int fromAlignmentIndex, unsigned int toAlignmentIndex);
 
     // creates a block, if given region of an unaligned block in which no gaps
     // are present. Returns true if a block is created.
-    bool CreateBlock(int fromAlignmentIndex, int toAlignmentIndex, eUnalignedJustification justification);
+    bool CreateBlock(unsigned int fromAlignmentIndex, unsigned int toAlignmentIndex, eUnalignedJustification justification);
 
     // deletes the block containing this index; returns true if deletion occurred.
-    bool DeleteBlock(int alignmentIndex);
+    bool DeleteBlock(unsigned int alignmentIndex);
 
     // deletes all blocks; returns true if there were any blocks to delete
     bool DeleteAllBlocks(void);
 
     // shifts (horizontally) the residues in and immediately surrounding an
     // aligned block; returns true if any shift occurs.
-    bool ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex, eUnalignedJustification justification);
+    bool ShiftRow(unsigned int row, unsigned int fromAlignmentIndex, unsigned int toAlignmentIndex, eUnalignedJustification justification);
 
     // only if the residue is unaligned, move it into the first aligned position of the adjacent aligned block
-    bool ZipAlignResidue(int row, int alignmentIndex, bool moveRight, eUnalignedJustification justification);
+    bool ZipAlignResidue(unsigned int row, unsigned int alignmentIndex, bool moveRight, eUnalignedJustification justification);
 
     // scans for the best position of a particular block; returns true if the block moved
-    bool OptimizeBlock(int row, int alignmentIndex, eUnalignedJustification justification);
+    bool OptimizeBlock(unsigned int row, unsigned int alignmentIndex, eUnalignedJustification justification);
 
     // delete a row; returns true if successful
-    bool DeleteRow(int row);
+    bool DeleteRow(unsigned int row);
 
     // flag an aligned block for realignment - block will be removed upon ExtractRows; returns true if
     // column is in fact an aligned block
-    bool MarkBlock(int column);
+    bool MarkBlock(unsigned int column);
     bool ClearMarks(void);  // remove all block flags
 
     // this function does two things: it extracts from a multiple alignment all slave rows listed for
@@ -228,7 +229,7 @@ public:
     // that contains the alignment of just that slave with the master, as it was in the original multiple
     // (i.e., not according to the corresponding pre-IBM MasterSlaveAlignment)
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
-    bool ExtractRows(const std::vector < int >& slavesToRemove, AlignmentList *pairwiseAlignments);
+    bool ExtractRows(const std::vector < unsigned int >& slavesToRemove, AlignmentList *pairwiseAlignments);
 
     // merge in the contents of the given alignment (assuming same master, compatible block structure),
     // addings its rows to the end of this alignment; returns true if merge successful. Does not change
@@ -237,7 +238,7 @@ public:
     bool MergeAlignment(const BlockMultipleAlignment *newAlignment);
 
     // turn on/off geometry violations; if param is true, will return # violations found
-    int ShowGeometryViolations(bool showGeometryViolations);
+    unsigned int ShowGeometryViolations(bool showGeometryViolations);
 
 private:
     SequenceList *sequences;
@@ -247,7 +248,7 @@ private:
     typedef std::list < Block * > BlockList;
     BlockList blocks;
 
-    int totalWidth;
+    unsigned int totalWidth;
 
     typedef struct {
         Block *block;
@@ -269,13 +270,13 @@ private:
     void RemoveBlock(Block *block);
 
     // for cacheing of residue->block lookups
-    mutable int cachePrevRow;
+    mutable unsigned int cachePrevRow;
     mutable const Block *cachePrevBlock;
     mutable BlockList::const_iterator cacheBlockIterator;
     void InitCache(void);
 
     // given a row and seqIndex, find block that contains that residue
-    const Block * GetBlock(int row, int seqIndex) const;
+    const Block * GetBlock(unsigned int row, unsigned int seqIndex) const;
 
     // intended for volatile storage of row-associated info (e.g. for alignment scores, etc.)
     mutable std::vector < double > rowDoubles;
@@ -293,25 +294,25 @@ public:
     // NULL if block after is aligned; if NULL passed, retrieves first block (if unaligned; else NULL)
     const UnalignedBlock * GetUnalignedBlockAfter(const UngappedAlignedBlock *aBlock) const;
 
-    int NBlocks(void) const { return blocks.size(); }
+    unsigned int NBlocks(void) const { return blocks.size(); }
     bool HasNoAlignedBlocks(void) const;
-    int NAlignedBlocks(void) const;
-    int NRows(void) const { return sequences->size(); }
-    int AlignmentWidth(void) const { return totalWidth; }
+    unsigned int NAlignedBlocks(void) const;
+    unsigned int NRows(void) const { return sequences->size(); }
+    unsigned int AlignmentWidth(void) const { return totalWidth; }
 
     // return a number from 1..n for aligned blocks, -1 for unaligned
-    int GetAlignedBlockNumber(int alignmentIndex) const { return blockMap[alignmentIndex].alignedBlockNum; }
+    int GetAlignedBlockNumber(unsigned int alignmentIndex) const { return blockMap[alignmentIndex].alignedBlockNum; }
 
     // for storing/querying info
-    double GetRowDouble(int row) const { return rowDoubles[row]; }
-    void SetRowDouble(int row, double value) const { rowDoubles[row] = value; }
-    const std::string& GetRowStatusLine(int row) const { return rowStrings[row]; }
-    void SetRowStatusLine(int row, const std::string& value) const { rowStrings[row] = value; }
+    double GetRowDouble(unsigned int row) const { return rowDoubles[row]; }
+    void SetRowDouble(unsigned int row, double value) const { rowDoubles[row] = value; }
+    const std::string& GetRowStatusLine(unsigned int row) const { return rowStrings[row]; }
+    void SetRowStatusLine(unsigned int row, const std::string& value) const { rowStrings[row] = value; }
 
     // empties all rows' infos
     void ClearRowInfo(void) const
     {
-        for (int r=0; r<NRows(); ++r) {
+        for (unsigned int r=0; r<NRows(); ++r) {
             rowDoubles[r] = 0.0;
             rowStrings[r].erase();
         }
@@ -319,34 +320,34 @@ public:
 
     // kludge for now for storing allowed alignment regions, e.g. when demoted from multiple.
     // (only two ranges for now, since this is used only with pairwise alignments)
-    int alignMasterFrom, alignMasterTo, alignSlaveFrom, alignSlaveTo;
+    unsigned int alignMasterFrom, alignMasterTo, alignSlaveFrom, alignSlaveTo;
 };
 
 
 // static function to create Seq-aligns out of multiple
 ncbi::objects::CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
-    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, int slaveRow);
+    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int slaveRow);
 
 
 // base class for Block - BlockMultipleAlignment is made up of a list of these
 class Block
 {
 public:
-    int width;
+    unsigned int width;
 
     virtual bool IsAligned(void) const = 0;
 
     typedef struct {
-        int from, to;
+        int from, to;   // signed because 'to' may be -1 (zero-width block starting at index zero)
     } Range;
 
     // get sequence index for a column, which must be in block range (0 ... width-1)
-    virtual int GetIndexAt(int blockColumn, int row,
+    virtual int GetIndexAt(unsigned int blockColumn, unsigned int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const = 0;
 
     // delete a row
-    virtual void DeleteRow(int row) = 0;
-    virtual void DeleteRows(std::vector < bool >& removeRows, int nToRemove) = 0;
+    virtual void DeleteRow(unsigned int row) = 0;
+    virtual void DeleteRows(std::vector < bool >& removeRows, unsigned int nToRemove) = 0;
 
     // makes a new copy of itself
     virtual Block * Clone(const BlockMultipleAlignment *newMultiple) const = 0;
@@ -366,19 +367,19 @@ public:
     bool IsFrom(const BlockMultipleAlignment *alignment) const { return (alignment == parentAlignment); }
 
     // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
-    const Range* GetRangeOfRow(int row) const { return &(ranges[row]); }
+    const Range* GetRangeOfRow(unsigned int row) const { return &(ranges[row]); }
 
     // set range
-    void SetRangeOfRow(int row, int from, int to)
+    void SetRangeOfRow(unsigned int row, unsigned int from, unsigned int to)
     {
         ranges[row].from = from;
         ranges[row].to = to;
     }
 
     // resize - add new (empty) rows at end
-    void AddRows(int nNewRows) { ranges.resize(ranges.size() + nNewRows); }
+    void AddRows(unsigned int nNewRows) { ranges.resize(ranges.size() + nNewRows); }
 
-    int NSequences(void) const { return ranges.size(); }
+    unsigned int NSequences(void) const { return ranges.size(); }
 };
 
 
@@ -390,15 +391,15 @@ public:
 
     bool IsAligned(void) const { return true; }
 
-    int GetIndexAt(int blockColumn, int row,
+    int GetIndexAt(unsigned int blockColumn, unsigned int row,
         BlockMultipleAlignment::eUnalignedJustification justification =
             BlockMultipleAlignment::eCenter) const  // justification ignored for aligned block
         { return (GetRangeOfRow(row)->from + blockColumn); }
 
-    char GetCharacterAt(int blockColumn, int row) const;
+    char GetCharacterAt(unsigned int blockColumn, unsigned int row) const;
 
-    void DeleteRow(int row);
-    void DeleteRows(std::vector < bool >& removeRows, int nToRemove);
+    void DeleteRow(unsigned int row);
+    void DeleteRows(std::vector < bool >& removeRows, unsigned int nToRemove);
 
     Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 };
@@ -416,16 +417,16 @@ public:
 
     bool IsAligned(void) const { return false; }
 
-    int GetIndexAt(int blockColumn, int row,
+    int GetIndexAt(unsigned int blockColumn, unsigned int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const;
 
-    void DeleteRow(int row);
-    void DeleteRows(std::vector < bool >& removeRows, int nToRemove);
+    void DeleteRow(unsigned int row);
+    void DeleteRows(std::vector < bool >& removeRows, unsigned int nToRemove);
 
     Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 
     // return the length of the shortest region that any row contributes to this block
-    int MinResidues(void) const;
+    unsigned int MinResidues(void) const;
 };
 
 END_SCOPE(Cn3D)
@@ -435,6 +436,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.49  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

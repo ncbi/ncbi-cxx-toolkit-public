@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -277,7 +273,7 @@ void ViewerBase::MakeResidueVisible(const Molecule *molecule, int seqIndex)
 {
     if (!(*viewerWindow) || !currentDisplay) return;
 
-    int column, row;
+    unsigned int column, row;
     if (currentDisplay->GetDisplayCoordinates(molecule, seqIndex,
             (*viewerWindow)->GetCurrentJustification(), &column, &row))
         (*viewerWindow)->MakeCellVisible(column, row);
@@ -314,6 +310,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/10/19 17:28:20  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.22  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

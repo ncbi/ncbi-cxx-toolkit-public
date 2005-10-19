@@ -72,7 +72,7 @@ bool ExtractBiostrucAndBioseqs(ncbi::objects::CNcbi_mime_asn1& mime,
 
 // Remove older entries until the cache is <= the given size (in MB).
 
-void TruncateCache(int maxSize);
+void TruncateCache(unsigned int maxSize);
 
 END_SCOPE(Cn3D)
 
@@ -81,6 +81,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.6  2004/01/17 00:17:29  thiessen
 * add Biostruc and network structure load
 *

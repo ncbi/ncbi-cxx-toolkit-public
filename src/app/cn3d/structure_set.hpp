@@ -85,8 +85,8 @@ class ASNDataManager;
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime, int structureLimit, OpenGLRenderer *r);
-    StructureSet(ncbi::objects::CCdd *cdd, int structureLimit, OpenGLRenderer *r);
+    StructureSet(ncbi::objects::CNcbi_mime_asn1 *mime, unsigned int structureLimit, OpenGLRenderer *r);
+    StructureSet(ncbi::objects::CCdd *cdd, unsigned int structureLimit, OpenGLRenderer *r);
     ~StructureSet(void);
 
     // public data
@@ -229,9 +229,9 @@ private:
     ASNDataManager *dataManager;
 
     // data preparation methods
-    void Load(int structureLimit);
+    void Load(unsigned int structureLimit);
     void LoadSequencesForSingleStructure(void);             // for single structures
-    void LoadAlignmentsAndStructures(int structureLimit);   // for alignments
+    void LoadAlignmentsAndStructures(unsigned int structureLimit);   // for alignments
     std::map < const ncbi::objects::CBiostruc * , bool > usedStructures;
     bool MatchSequenceToMoleculeInObject(const Sequence *seq,
         const StructureObject *obj, const Sequence **seqHandle = NULL);
@@ -311,6 +311,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.81  2005/04/21 14:31:19  thiessen
 * add MonitorAlignments()
 *

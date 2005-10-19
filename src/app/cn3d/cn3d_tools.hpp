@@ -53,8 +53,8 @@ class wxFrame;
 #include <wx/platform.h>
 #include <wx/version.h>
 
-#if !wxCHECK_VERSION(2,3,2)
-#error Cn3D requires wxWindows version 2.3.2 or higher!
+#if !wxCHECK_VERSION(2,6,2)
+#error Cn3D requires wxWindows version 2.6.2 or higher!
 #endif
 
 #if !defined(__WXMSW__) && !defined(__WXGTK__) && !defined(__WXMAC__)
@@ -198,7 +198,7 @@ void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remo
     }
 
     std::vector < T > copy(v.size() - nToRemove);
-    int i, nRemoved = 0;
+    unsigned int i, nRemoved = 0;
     for (i=0; i<v.size(); ++i) {
         if (remove[i])
             ++nRemoved;
@@ -271,6 +271,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.38  2005/03/25 15:10:45  thiessen
 * matched self-hit E-values with CDTree2
 *

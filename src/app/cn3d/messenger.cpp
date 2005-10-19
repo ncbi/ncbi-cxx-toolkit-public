@@ -32,10 +32,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -199,7 +195,7 @@ void Messenger::NewSequenceViewerFont(void)
 
 ///// highlighting functions /////
 
-bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, int index) const
+bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, unsigned int index) const
 {
     if (highlightingSuspended) return false;
 
@@ -220,7 +216,7 @@ bool Messenger::IsHighlighted(const Molecule *molecule, int residueID) const
     return IsHighlighted(molecule->identifier, residueID - 1);  // assume index = id - 1
 }
 
-bool Messenger::IsHighlighted(const Sequence *sequence, int seqIndex) const
+bool Messenger::IsHighlighted(const Sequence *sequence, unsigned int seqIndex) const
 {
     return IsHighlighted(sequence->identifier, seqIndex);
 }
@@ -243,7 +239,7 @@ void Messenger::RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifi
     }
 }
 
-void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
+void Messenger::AddHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
         seqIndexFrom >= sequence->Length() ||
@@ -258,7 +254,7 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
         h = highlights.find(sequence->identifier);
     }
 
-    for (int i=seqIndexFrom; i<=seqIndexTo; ++i) h->second[i] = true;
+    for (unsigned int i=seqIndexFrom; i<=seqIndexTo; ++i) h->second[i] = true;
 
     PostRedrawAllSequenceViewers();
     RedrawMoleculesWithIdentifier(sequence->identifier, sequence->parentSet);
@@ -297,7 +293,7 @@ void Messenger::KeepHighlightsOnlyOnSequence(const Sequence *sequence)
     PostRedrawAllSequenceViewers();
 }
 
-void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
+void Messenger::RemoveHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo)
 {
     if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
         seqIndexFrom >= sequence->Length() ||
@@ -308,7 +304,7 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
 
     MoleculeHighlightMap::iterator h = highlights.find(sequence->identifier);
     if (h != highlights.end()) {
-        int i;
+        unsigned int i;
         for (i=seqIndexFrom; i<=seqIndexTo; ++i) h->second[i] = false;
 
         // remove sequence from store if no highlights left
@@ -322,7 +318,7 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
     }
 }
 
-void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, int indexFrom, int indexTo,
+void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, unsigned int indexFrom, unsigned int indexTo,
     const StructureSet *set)
 {
     if (indexFrom < 0 || indexTo < 0 || indexFrom > indexTo ||
@@ -337,7 +333,7 @@ void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, int index
         h = highlights.find(identifier);
     }
 
-    int i;
+    unsigned int i;
     for (i=indexFrom; i<=indexTo; ++i) h->second[i] = !h->second[i];
 
     // remove sequence from store if no highlights left
@@ -350,7 +346,7 @@ void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, int index
     RedrawMoleculesWithIdentifier(identifier, set);
 }
 
-void Messenger::ToggleHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)
+void Messenger::ToggleHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo)
 {
     ToggleHighlights(sequence->identifier, seqIndexFrom, seqIndexTo, sequence->parentSet);
 }
@@ -482,7 +478,7 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
 
     // add all residue intervals
     for (h=highlights.begin(); h!=he; ++h) {
-        int first = 0, last = 0;
+        unsigned int first = 0, last = 0;
         while (first < h->second.size()) {
 
             // find first highlighted residue
@@ -531,7 +527,7 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
         }
 
         // add range(s)
-        int first = 0, last = 0;
+        unsigned int first = 0, last = 0;
         while (first < h->second.size()) {
 
             // find first highlighted residue
@@ -584,6 +580,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.45  2004/10/04 17:00:54  thiessen
 * add expand/restrict highlights, delete all blocks/all rows in updates
 *

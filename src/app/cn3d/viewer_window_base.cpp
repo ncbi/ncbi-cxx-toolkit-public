@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -230,7 +226,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                 EnableBaseEditorMenuItems(true);
                 viewer->GetCurrentDisplay()->AddBlockBoundaryRows();    // add before push!
                 viewer->EnableStacks();     // start up undo/redo stack system
-                Command(MID_DRAG_HORIZ);    // switch to drag mode
+                ProcessCommand(MID_DRAG_HORIZ);    // switch to drag mode
             } else {
                 TRACEMSG("turning off editor");
                 if (!RequestEditorEnable(false)) {   // cancelled
@@ -241,7 +237,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
                 viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
                 if (!(menuBar->IsChecked(MID_SELECT_COLS) || menuBar->IsChecked(MID_SELECT_ROWS) ||
                         menuBar->IsChecked(MID_SELECT_BLOCKS)))
-                    Command(MID_SELECT_RECT);
+                    ProcessCommand(MID_SELECT_RECT);
             }
             break;
 
@@ -304,7 +300,7 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
 void ViewerWindowBase::OnMouseMode(wxCommandEvent& event)
 {
     const wxMenuItemList& items = mouseModeMenu->GetMenuItems();
-    for (int i=0; i<items.GetCount(); ++i)
+    for (unsigned int i=0; i<items.GetCount(); ++i)
         items.Item(i)->GetData()->Check(
             (items.Item(i)->GetData()->GetId() == event.GetId()) ? true : false);
 
@@ -386,7 +382,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
     map < const Sequence * , bool > usedSequences;
     const SequenceDisplay *display = viewer->GetCurrentDisplay();
 
-    for (int i=0; i<display->NRows(); ++i) {
+    for (unsigned int i=0; i<display->NRows(); ++i) {
 
         const Sequence *sequence = display->GetSequenceForRow(i);
         if (!sequence || usedSequences.find(sequence) != usedSequences.end()) continue;
@@ -399,7 +395,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
 void ViewerWindowBase::MakeSequenceVisible(const MoleculeIdentifier *identifier)
 {
     const SequenceDisplay *display = viewer->GetCurrentDisplay();
-    for (int i=0; i<display->NRows(); ++i) {
+    for (unsigned int i=0; i<display->NRows(); ++i) {
         const Sequence *sequence = display->GetSequenceForRow(i);
         if (sequence && sequence->identifier == identifier) {
             viewerWidget->MakeCharacterVisible(-1, i);
@@ -422,6 +418,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2005/10/19 17:28:20  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.55  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

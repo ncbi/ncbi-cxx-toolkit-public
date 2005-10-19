@@ -65,7 +65,7 @@ public:
   PeriodicTableClass(void);
   ~PeriodicTableClass(void);
 
-  const Element * GetElement(int) const;
+  const Element * GetElement(int Z) const;
   void AddElement(int Z, const char * name,
                   const char * symbol,
                   double r, double g, double b,
@@ -97,6 +97,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.6  2004/02/19 17:05:02  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

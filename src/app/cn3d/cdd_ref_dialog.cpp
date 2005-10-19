@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -97,7 +93,7 @@ END_EVENT_TABLE()
 
 CDDRefDialog::CDDRefDialog(StructureSet *structureSet, CDDRefDialog **handle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
-        wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+        wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
         sSet(structureSet), dialogHandle(handle), selectItem(0)
 {
     if (!structureSet || !(descrSet = structureSet->GetCDDDescrSet())) {
@@ -329,6 +325,9 @@ wxSizer *SetupReferencesDialog( wxWindow *parent, bool call_fit, bool set_sizer 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.13  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *

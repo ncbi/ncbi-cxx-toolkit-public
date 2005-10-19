@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -234,7 +230,7 @@ bool SequenceViewerWindow::SaveDialog(bool prompt, bool canCancel)
         overrideCanCancel = true;
         prevPrompt = prompt;
         prevCanCancel = canCancel;
-        Command(MID_ENABLE_EDIT);
+        ProcessCommand(MID_ENABLE_EDIT);
         return true;
     }
 
@@ -271,7 +267,7 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
     vector < const Sequence * > slaveSequences;
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveSequences(&slaveSequences);
     wxString *titleStrs = new wxString[slaveSequences.size()];
-    for (int i=0; i<slaveSequences.size(); ++i)
+    for (unsigned int i=0; i<slaveSequences.size(); ++i)
         titleStrs[i] = slaveSequences[i]->identifier->ToString().c_str();
 
     vector < bool > visibilities;
@@ -291,7 +287,7 @@ bool SequenceViewerWindow::QueryShowAllRows(void)
     vector < bool > visibilities;
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
 
-    int i;
+    unsigned int i;
     for (i=0; i<visibilities.size(); ++i) if (!visibilities[i]) break;
     if (i == visibilities.size()) return true;  // we're okay if all rows already visible
 
@@ -337,7 +333,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     SequenceDisplay::SequenceList sequences;
     sequenceViewer->GetCurrentDisplay()->GetSequences(alignment, &sequences);
     wxString *titleStrs = new wxString[sequences.size() - 1];
-    int i;
+    unsigned int i;
     for (i=1; i<sequences.size(); ++i)  // assuming master is first sequence
         titleStrs[i - 1] = sequences[i]->identifier->ToString().c_str();
 
@@ -352,7 +348,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     dialog.ShowModal();
 
     // make list of slave rows to be realigned
-    vector < int > rowOrder, realignSlaves;
+    vector < unsigned int > rowOrder, realignSlaves;
     sequenceViewer->GetCurrentDisplay()->GetRowOrder(alignment, &rowOrder);
     for (i=0; i<selectedSlaves.size(); ++i)
         if (selectedSlaves[i])
@@ -452,7 +448,7 @@ void SequenceViewerWindow::OnMarkBlock(wxCommandEvent& event)
 void SequenceViewerWindow::TurnOnEditor(void)
 {
     if (!menuBar->IsChecked(MID_ENABLE_EDIT))
-        Command(SequenceViewerWindow::MID_ENABLE_EDIT);
+        ProcessCommand(SequenceViewerWindow::MID_ENABLE_EDIT);
 }
 
 void SequenceViewerWindow::OnExport(wxCommandEvent& event)
@@ -497,7 +493,7 @@ void SequenceViewerWindow::OnHighlight(wxCommandEvent& event)
         BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
         const Sequence *seq;
         const Block::Range *range;
-        for (int row=0; row<multiple->NRows(); ++row) {
+        for (unsigned int row=0; row<multiple->NRows(); ++row) {
             seq = multiple->GetSequenceOfRow(row);
             for (b = blocks.begin(); b!=be; ++b) {
                 range = (*b)->GetRangeOfRow(row);
@@ -517,7 +513,7 @@ void SequenceViewerWindow::OnHighlight(wxCommandEvent& event)
 
         // first find all alignment indexes (columns) that have highlights in any row
         BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-        int row, blockColumn, seqIndex;
+        unsigned int row, blockColumn, seqIndex;
         typedef list < pair < int, int > > IntPairList;     // pair is < start, len >
         IntPairList alignmentIndexesWithHighlights;
         bool inHighlightedRange;
@@ -572,6 +568,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.58  2005/06/07 12:18:52  thiessen
 * add PSSM export
 *

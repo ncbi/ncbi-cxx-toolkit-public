@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -126,7 +122,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             if (masterSeqInt->from < 0)
                 masterSeqInt->from = 0;
             masterSeqInt->to = uaBlocks.back()->GetRangeOfRow(0)->to + excess;
-            if (masterSeqInt->to >= multiple->GetMaster()->Length())
+            if (masterSeqInt->to >= (int)multiple->GetMaster()->Length())
                 masterSeqInt->to = multiple->GetMaster()->Length() - 1;
         } else {
             masterSeqInt->from = 0;
@@ -375,7 +371,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     masterSeqInt->from = uaBlocks.front()->GetRangeOfRow(0)->from - excess;
     if (masterSeqInt->from < 0) masterSeqInt->from = 0;
     masterSeqInt->to = uaBlocks.back()->GetRangeOfRow(0)->to + excess;
-    if (masterSeqInt->to >= masterSeq->Length()) masterSeqInt->to = masterSeq->Length() - 1;
+    if (masterSeqInt->to >= (int)masterSeq->Length()) masterSeqInt->to = masterSeq->Length() - 1;
 
 #ifdef DEBUG_BLAST
     CNcbiOfstream ofs("blast.txt", IOS_BASE::out);
@@ -395,7 +391,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     const BLAST_Matrix *BLASTmatrix = multiple->GetPSSM();
 
     string err;
-    int row;
+    unsigned int row;
     for (row=0; row<multiple->NRows(); ++row) {
 
         // get C Bioseq for each slave
@@ -407,7 +403,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         slaveSeqInt->from = uaBlocks.front()->GetRangeOfRow(row)->from - excess;
         if (slaveSeqInt->from < 0) slaveSeqInt->from = 0;
         slaveSeqInt->to = uaBlocks.back()->GetRangeOfRow(row)->to + excess;
-        if (slaveSeqInt->to >= slaveSeq->Length()) slaveSeqInt->to = slaveSeq->Length() - 1;
+        if (slaveSeqInt->to >= (int)slaveSeq->Length()) slaveSeqInt->to = slaveSeq->Length() - 1;
 //        TESTMSG("for BLAST: master range " <<
 //                (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
 //                (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
@@ -498,6 +494,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.37  2005/03/25 15:10:45  thiessen
 * matched self-hit E-values with CDTree2
 *

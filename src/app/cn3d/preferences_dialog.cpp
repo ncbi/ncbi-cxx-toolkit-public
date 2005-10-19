@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
@@ -167,8 +163,7 @@ END_EVENT_TABLE()
 
 
 PreferencesDialog::PreferencesDialog(wxWindow *parent) :
-    wxDialog(parent, -1, "Preferences", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU) // not resizable
+    wxDialog(parent, -1, "Preferences", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
 {
     // construct the panel
     wxSizer *topSizer = SetupPreferencesNotebook(this, false);
@@ -443,7 +438,6 @@ wxSizer *SetupPreferencesNotebook( wxWindow *parent, bool call_fit, bool set_siz
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
     wxNotebook *item2 = new wxNotebook( parent, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
-    wxNotebookSizer *item1 = new wxNotebookSizer( item2 );
 
     wxPanel *item3 = new wxPanel( item2, -1 );
     SetupQualityPage( item3, FALSE );
@@ -457,7 +451,7 @@ wxSizer *SetupPreferencesNotebook( wxWindow *parent, bool call_fit, bool set_siz
     SetupAdvancedPage( item5, FALSE );
     item2->AddPage( item5, "Advanced" );
 
-    item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item2, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxBoxSizer *item6 = new wxBoxSizer( wxHORIZONTAL );
 
@@ -779,6 +773,9 @@ wxSizer *SetupCachePage( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.20  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

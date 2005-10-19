@@ -61,7 +61,7 @@ public:
 
     // constructs a new AlignmentSet from a multiple alignment
     static AlignmentSet * CreateFromMultiple(StructureBase *parent,
-        const BlockMultipleAlignment *multiple, const std::vector < int >& rowOrder);
+        const BlockMultipleAlignment *multiple, const std::vector < unsigned int >& rowOrder);
 
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
     AlignmentList alignments;
@@ -105,6 +105,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.16  2004/02/19 17:04:40  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

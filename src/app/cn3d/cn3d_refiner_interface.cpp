@@ -107,7 +107,7 @@ public:
     };
 
 
-    BMARefinerOptionsDialog(wxWindow* parent, const GeneralRefinerParams& current_genl, const align_refine::LeaveOneOutParams& current_loo, const align_refine::BlockEditingParams& current_be);  
+    BMARefinerOptionsDialog(wxWindow* parent, const GeneralRefinerParams& current_genl, const align_refine::LeaveOneOutParams& current_loo, const align_refine::BlockEditingParams& current_be);
     ~BMARefinerOptionsDialog(void);
 
     bool GetParameters(GeneralRefinerParams* genl_params, align_refine::LeaveOneOutParams* loo_params, align_refine::BlockEditingParams* be_params);
@@ -129,22 +129,22 @@ private:
 };
 
 
-//  
+//
 //  BMARefiner class declarations
 //
 
-BMARefiner::BMARefiner(void) 
+BMARefiner::BMARefiner(void)
 {
     m_refinerEngine = NULL;
 }
 
-BMARefiner::~BMARefiner(void) 
+BMARefiner::~BMARefiner(void)
 {
     delete m_refinerEngine;
 }
 
 bool BMARefiner::RefineMultipleAlignment(Cn3D::BlockMultipleAlignment *originalMultiple,
-    Cn3DBMAList *refinedMultiples, SequenceViewer *sequenceViewer, StructureSet *structureSet) 
+    Cn3DBMAList *refinedMultiples, SequenceViewer *sequenceViewer, StructureSet *structureSet)
 {
     unsigned int count = 1;
     AlignmentUtilityList refinedAUs;
@@ -156,7 +156,7 @@ bool BMARefiner::RefineMultipleAlignment(Cn3D::BlockMultipleAlignment *originalM
 
     bool result = RefineMultipleAlignment(originalAlignmentUtilily, &refinedAUs, sequenceViewer);
 
-    //  In general, may have multiple trials.  Keep all of them and let the caller decide 
+    //  In general, may have multiple trials.  Keep all of them and let the caller decide
     //  what to do.  Ordered by decreasing score (i.e., best scoring to worst scoring).
     if (refinedAUs.size() > 0) {
         auEnd = refinedAUs.end();
@@ -260,7 +260,7 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks)
 
     //  Use a fixed column scoring method & block boundary alg for now.
     //  (the '3.3.3' method when using defaults for median, negRows & negScore)
-    be.columnMethod = align_refine::eCompoundScorer;  
+    be.columnMethod = align_refine::eCompoundScorer;
     be.algMethod = align_refine::eSimpleExtend;
     be.columnScorerThreshold = 0;  //  this is the 'magic' PSSM score in the compound scorer
 
@@ -298,7 +298,7 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks)
     A structure set is in a Cn3DGLCanvas....
 */
 
-Cn3D::BlockMultipleAlignment*  BMARefiner::AlignmentUtility_To_Cn3DBMA(struct_util::AlignmentUtility* au, StructureSet *structureSet) 
+Cn3D::BlockMultipleAlignment*  BMARefiner::AlignmentUtility_To_Cn3DBMA(struct_util::AlignmentUtility* au, StructureSet *structureSet)
 {
 //    typedef std::vector < const Sequence * > SequenceList;
     // list will be owned/freed by this object
@@ -323,7 +323,7 @@ Cn3D::BlockMultipleAlignment*  BMARefiner::AlignmentUtility_To_Cn3DBMA(struct_ut
         list < CRef < CSeq_align > > seqAligns;
         AlignmentUtility::SeqAnnotList::const_iterator seqAnnotIt = auAnnots.begin(), seqAnnotEnd = auAnnots.end();
 
-        //  Fill in 'pairwiseList' with MasterSlaveAlignments generated from 
+        //  Fill in 'pairwiseList' with MasterSlaveAlignments generated from
         //  the AlignmentUtility's SeqAnnots.
         for (; seqAnnotIt != seqAnnotEnd; ++seqAnnotIt) {
 
@@ -378,11 +378,11 @@ Cn3D::BlockMultipleAlignment*  BMARefiner::AlignmentUtility_To_Cn3DBMA(struct_ut
         }
     }
 */
-//        if (bmaSeqList.size() > 0) 
+//        if (bmaSeqList.size() > 0)
 //            bma = new Cn3D::BlockMultipleAlignment(&bmaSeqList, structureSet->alignmentManager);
 
 
-struct_util::AlignmentUtility* BMARefiner::Cn3DBMA_To_AlignmentUtility(Cn3D::BlockMultipleAlignment* bma, StructureSet *structureSet) 
+struct_util::AlignmentUtility* BMARefiner::Cn3DBMA_To_AlignmentUtility(Cn3D::BlockMultipleAlignment* bma, StructureSet *structureSet)
 {
     //  ASNDataManager typedefs
     //typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
@@ -396,7 +396,7 @@ struct_util::AlignmentUtility* BMARefiner::Cn3DBMA_To_AlignmentUtility(Cn3D::Blo
     struct_util::AlignmentUtility* au = NULL;
     StructureSet::SeqEntryList* asnSequences;
     StructureSet::SeqAnnotList* asnAlignment;
-    
+
     if (structureSet) {
         asnSequences = structureSet->GetASNSequences();
         asnAlignment = structureSet->GetASNAlignment();
@@ -439,8 +439,7 @@ END_EVENT_TABLE()
 
 BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     wxWindow* parent,  const GeneralRefinerParams& current_genl, const align_refine::LeaveOneOutParams& current_loo, const align_refine::BlockEditingParams& current_be) :
-        wxDialog(parent, -1, "Set Alignment Refiner Options", wxPoint(100,100), wxDefaultSize,
-            wxCAPTION | wxSYSTEM_MENU) // not resizable
+        wxDialog(parent, -1, "Set Alignment Refiner Options", wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
 {
 
     wxPanel *panel = new wxPanel(this, -1);
@@ -677,7 +676,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item0->Fit(this);
     item0->Fit(panel);
     item0->SetSizeHints(this);
-    
+
 //    return item0;
 }
 
@@ -703,7 +702,7 @@ BMARefinerOptionsDialog::~BMARefinerOptionsDialog(void)
 
 unsigned int BMARefinerOptionsDialog::GetNCycles() {
     int c;
-    if (nCyclesSpin->GetInteger(&c) && c >= 1) 
+    if (nCyclesSpin->GetInteger(&c) && c >= 1)
         return (unsigned int) c;
     else {
         nCyclesSpin->SetInteger(1);
@@ -713,7 +712,7 @@ unsigned int BMARefinerOptionsDialog::GetNCycles() {
 
 unsigned int BMARefinerOptionsDialog::GetNTrials() {
     int t;
-    if (nTrialsSpin->GetInteger(&t) && t >= 1) 
+    if (nTrialsSpin->GetInteger(&t) && t >= 1)
         return (unsigned int) t;
     else {
         nTrialsSpin->SetInteger(1);
@@ -812,6 +811,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.1  2005/10/18 21:38:33  lanczyck
 * initial versions (still containing CJL hacks incompatible w/ official cn3d)
 *

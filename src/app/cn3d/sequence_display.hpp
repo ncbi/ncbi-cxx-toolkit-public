@@ -56,13 +56,13 @@ typedef std::map < BlockMultipleAlignment *, BlockMultipleAlignment * > Old2NewA
 class DisplayRow
 {
 public:
-    virtual int Width(void) const = 0;
-    virtual bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    virtual unsigned int Width(void) const = 0;
+    virtual bool GetCharacterTraitsAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const = 0;
-    virtual bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    virtual bool GetSequenceAndIndexAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequence, int *index) const = 0;
     virtual const Sequence * GetSequence(void) const = 0;
-    virtual void SelectedRange(int from, int to,
+    virtual void SelectedRange(unsigned int from, unsigned int to,
         BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const = 0;
 
     virtual DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const = 0;
@@ -71,21 +71,21 @@ public:
 class DisplayRowFromAlignment : public DisplayRow
 {
 public:
-    int row;
+    unsigned int row;
     BlockMultipleAlignment * const alignment;
 
-    DisplayRowFromAlignment(int r, BlockMultipleAlignment *a) :
+    DisplayRowFromAlignment(unsigned int r, BlockMultipleAlignment *a) :
         row(r), alignment(a) { }
 
-    int Width(void) const { return alignment->AlignmentWidth(); }
+    unsigned int Width(void) const { return alignment->AlignmentWidth(); }
 
     DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
         { return new DisplayRowFromAlignment(row, newAlignments.find(alignment)->second); }
 
-    bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    bool GetCharacterTraitsAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
 
-    bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    bool GetSequenceAndIndexAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequence, int *index) const
     {
 		bool ignore;
@@ -97,7 +97,7 @@ public:
         return alignment->GetSequenceOfRow(row);
     }
 
-    void SelectedRange(int from, int to,
+    void SelectedRange(unsigned int from, unsigned int to,
         BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const
     {
         alignment->SelectedRange(row, from, to, justification, toggle);
@@ -108,25 +108,25 @@ class DisplayRowFromSequence : public DisplayRow
 {
 public:
     const Sequence * const sequence;
-    const int fromIndex, toIndex;
+    const unsigned int fromIndex, toIndex;
 
-    DisplayRowFromSequence(const Sequence *s, int from, int to);
+    DisplayRowFromSequence(const Sequence *s, unsigned int from, unsigned int to);
 
-    int Width(void) const { return toIndex - fromIndex + 1; }
+    unsigned int Width(void) const { return toIndex - fromIndex + 1; }
 
     DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
         { return new DisplayRowFromSequence(sequence, fromIndex, toIndex); }
 
-    bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    bool GetCharacterTraitsAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
 
-    bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    bool GetSequenceAndIndexAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequenceHandle, int *index) const;
 
     const Sequence * GetSequence(void) const
         { return sequence; }
 
-    void SelectedRange(int from, int to,
+    void SelectedRange(unsigned int from, unsigned int to,
         BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const;
 };
 
@@ -145,22 +145,22 @@ public:
         theString(s), stringColor(color), title(t),
         hasBackgroundColor(hasBG), backgroundColor(bgColor), alignment(a) { }
 
-    int Width(void) const { return theString.size(); }
+    unsigned int Width(void) const { return theString.size(); }
 
     DisplayRow * Clone(const Old2NewAlignmentMap& newAlignments) const
         { return new DisplayRowFromString(
             theString, stringColor, title, hasBackgroundColor, backgroundColor,
             alignment ? newAlignments.find(alignment)->second : NULL); }
 
-    bool GetCharacterTraitsAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    bool GetCharacterTraitsAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const;
 
-    bool GetSequenceAndIndexAt(int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    bool GetSequenceAndIndexAt(unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
         const Sequence **sequenceHandle, int *index) const { return false; }
 
     const Sequence * GetSequence(void) const { return NULL; }
 
-    void SelectedRange(int from, int to,
+    void SelectedRange(unsigned int from, unsigned int to,
         BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const
         { } // do nothing
 };
@@ -187,8 +187,8 @@ public:
     ~SequenceDisplay(void);
 
     // these functions add a row to the end of the display, from various sources
-    void AddRowFromAlignment(int row, BlockMultipleAlignment *fromAlignment);
-    void AddRowFromSequence(const Sequence *sequence, int from, int to);
+    void AddRowFromAlignment(unsigned int row, BlockMultipleAlignment *fromAlignment);
+    void AddRowFromSequence(const Sequence *sequence, unsigned int from, unsigned int to);
     void AddRowFromString(const std::string& anyString);
 
     // adds a string row to the alignment, that contains block boundary indicators
@@ -206,11 +206,11 @@ public:
     void GetProteinSequences(SequenceList *seqs) const;
 
     // fills the vector with the current row ordering for the given alignment
-    void GetRowOrder(const BlockMultipleAlignment *forAlignment, std::vector < int > *slaveRowOrder) const;
+    void GetRowOrder(const BlockMultipleAlignment *forAlignment, std::vector < unsigned int > *slaveRowOrder) const;
 
     // to inform the display that new rows have been added to or removed from the multiple
-    void RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple, int where = -1);
-    void RowsRemoved(const std::vector < int >& rowsRemoved, const BlockMultipleAlignment *multiple);
+    void RowsAdded(unsigned int nRowsAddedToMultiple, BlockMultipleAlignment *multiple, int where = -1);
+    void RowsRemoved(const std::vector < unsigned int >& rowsRemoved, const BlockMultipleAlignment *multiple);
 
     // row scoring and sorting functions - only for single-alignment displays!
     // sorting necessarily always leaves master at the top
@@ -223,7 +223,7 @@ public:
     void FloatGVToTop(void);
 
     // a sort of clustering of similar sequences around a particular row
-    bool ProximitySort(int displayRow);
+    bool ProximitySort(unsigned int displayRow);
 
     // create a new copy of this object
     SequenceDisplay * Clone(const Old2NewAlignmentMap& newAlignments) const;
@@ -236,16 +236,16 @@ private:
 
     // generic row manipulation functions
     void AddRow(DisplayRow *row);
-    BlockMultipleAlignment * GetAlignmentForRow(int row) const;
+    BlockMultipleAlignment * GetAlignmentForRow(unsigned int row) const;
     void UpdateBlockBoundaryRow(DisplayRowFromString *blockBoundaryRow) const;
 
     ViewerWindowBase* const *viewerWindow;
 
-    int startingColumn;
+    unsigned int startingColumn;
     typedef std::vector < DisplayRow * > RowVector;
     RowVector rows;
 
-    int maxRowWidth;
+    unsigned int maxRowWidth;
     void UpdateMaxRowWidth(void);
     void UpdateAfterEdit(const BlockMultipleAlignment *forAlignment);
 
@@ -255,9 +255,9 @@ private:
 
 public:
 
-    int NRows(void) const { return rows.size(); }
+    unsigned int NRows(void) const { return rows.size(); }
     bool IsEditable(void) const { return isEditable; }
-    const Sequence * GetSequenceForRow(int row) const
+    const Sequence * GetSequenceForRow(unsigned int row) const
     {
         if (row >= 0 && row < NRows())
             return rows[row]->GetSequence();
@@ -269,18 +269,18 @@ public:
     void RedrawAlignedMolecules(void) const;
 
     // find coordinates of this residue in the display; returns false if not found
-    bool GetDisplayCoordinates(const Molecule *molecule, int seqIndex,
-        BlockMultipleAlignment::eUnalignedJustification justification, int *column, int *row);
+    bool GetDisplayCoordinates(const Molecule *molecule, unsigned int seqIndex,
+        BlockMultipleAlignment::eUnalignedJustification justification, unsigned int *column, unsigned int *row);
 
     // column to scroll to when this display is first shown
-    void SetStartingColumn(int column) { startingColumn = column; }
-    int GetStartingColumn(void) const { return startingColumn; }
+    void SetStartingColumn(unsigned int column) { startingColumn = column; }
+    unsigned int GetStartingColumn(void) const { return startingColumn; }
 
     // methods required by ViewableAlignment base class
-    void GetSize(int *setColumns, int *setRows) const
+    void GetSize(unsigned int *setColumns, unsigned int *setRows) const
         { *setColumns = maxRowWidth; *setRows = rows.size(); }
-    bool GetRowTitle(int row, wxString *title, wxColour *color) const;
-    bool GetCharacterTraitsAt(int column, int row,              // location
+    bool GetRowTitle(unsigned int row, wxString *title, wxColour *color) const;
+    bool GetCharacterTraitsAt(unsigned int column, unsigned int row,              // location
         char *character,										// character to draw
         wxColour *color,                                        // color of this character
         bool *drawBackground,                                   // special background color?
@@ -301,6 +301,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.28  2004/02/19 17:05:06  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

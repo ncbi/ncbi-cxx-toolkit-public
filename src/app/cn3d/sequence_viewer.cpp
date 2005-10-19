@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -92,9 +88,9 @@ void SequenceViewer::SaveAlignment(void)
 
     // go back into the original pairwise alignment data and save according to the
     // current edited BlockMultipleAlignment and display row order
-    vector < int > rowOrder;
+    vector < unsigned int > rowOrder;
     const SequenceDisplay *display = GetCurrentDisplay();
-    for (int i=0; i<display->rows.size(); ++i) {
+    for (unsigned int i=0; i<display->rows.size(); ++i) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
         if (alnRow) rowOrder.push_back(alnRow->row);
     }
@@ -104,7 +100,7 @@ void SequenceViewer::SaveAlignment(void)
 void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 {
     SequenceDisplay *display = new SequenceDisplay(true, viewerWindow);
-    for (int row=0; row<alignment->NRows(); ++row)
+    for (unsigned int row=0; row<alignment->NRows(); ++row)
         display->AddRowFromAlignment(row, alignment);
 
     // set starting scroll to a few residues left of the first aligned block
@@ -155,7 +151,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
     BlockMultipleAlignment::eUnalignedJustification justification, CNcbiOstream& os)
 {
     // do whole alignment for now
-    int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 70;
+    unsigned int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 70;
     if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
         ERRORMSG("DumpFASTA() - nonsensical display region parameters");
         return;
@@ -164,7 +160,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
     // first fill out ids
     typedef map < const MoleculeIdentifier * , list < string > > IDMap;
     IDMap idMap;
-    int row;
+    unsigned int row;
     bool anyRepeat = false;
 
     for (row=0; row<alignment->NRows(); ++row) {
@@ -227,7 +223,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
     }
 
     // output each alignment row (in order of the display)
-    int paragraphStart, nParags = 0, i;
+    unsigned int paragraphStart, nParags = 0, i;
     char ch;
     Vector color, bgColor;
     bool highlighted, drawBG;
@@ -289,9 +285,9 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 #define RIGHT_JUSTIFY resetiosflags(IOS_BASE::left) << setiosflags(IOS_BASE::right)
 
     // do whole alignment for now
-    int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 60;
+    unsigned int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 60;
 
-    if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
+    if (lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
         ERRORMSG("DumpText() - nonsensical display region parameters");
         return;
     }
@@ -302,7 +298,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 
     // set up the titles and uids, figure out how much space any seqLoc string will take
     vector < string > titles(alignment->NRows()), uids(doHTML ? alignment->NRows() : 0);
-    int alnRow, row, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
+    unsigned int alnRow, row, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
     for (alnRow=0; alnRow<alignment->NRows(); ++alnRow) {
         row = rowOrder[alnRow]; // translate display row -> data row
         const Sequence *sequence = alignment->GetSequenceOfRow(row);
@@ -337,7 +333,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     // need to keep track of first, last seqLocs for each row in each paragraph;
     // find seqLoc of first residue >= firstCol
     vector < int > lastShownSeqLocs(alignment->NRows());
-    int alnLoc, i;
+    unsigned int alnLoc, i;
     char ch;
     Vector color, bgCol;
     bool highlighted, drawBG;
@@ -369,7 +365,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
             if (paragraphStart > 0) os << '\n';
 
         // do ruler
-        int nMarkers = 0, width;
+        unsigned int nMarkers = 0, width;
         if (doHTML) os << "<font color=" << rulerColor << '>';
         for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
             if ((paragraphStart+i+1)%10 == 0) {
@@ -526,7 +522,7 @@ void SequenceViewer::ExportAlignment(eExportType type)
         // map display row order to rows in BlockMultipleAlignment
         vector < int > rowOrder;
         const SequenceDisplay *display = GetCurrentDisplay();
-        for (int i=0; i<display->rows.size(); ++i) {
+        for (unsigned int i=0; i<display->rows.size(); ++i) {
             DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
             if (alnRow) rowOrder.push_back(alnRow->row);
         }
@@ -553,6 +549,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.71  2005/06/07 12:18:52  thiessen
 * add PSSM export
 *

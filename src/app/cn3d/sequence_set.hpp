@@ -83,7 +83,7 @@ public:
     const Molecule *molecule;
     bool isProtein;
 
-    int Length(void) const { return sequenceString.size(); }
+    unsigned int Length(void) const { return sequenceString.size(); }
     int GetOrSetMMDBLink(void) const;
     void AddMMDBAnnotTag(int mmdbID) const;
 
@@ -107,6 +107,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.32  2004/05/21 17:29:51  thiessen
 * allow conversion of mime to cdd data
 *

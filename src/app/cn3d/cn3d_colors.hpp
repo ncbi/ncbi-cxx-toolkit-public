@@ -89,8 +89,8 @@ public:
 
         eNumColorCycles
     };
-    static const int nCycle1;
-    const Vector& Get(eColorCycle which, int n) const;
+    static const unsigned int nCycle1;
+    const Vector& Get(eColorCycle which, unsigned int n) const;
 
     // color maps
     enum eColorMap {
@@ -101,9 +101,9 @@ public:
 
         eNumColorMaps
     };
-    static const int nTemperatureMap, nHydrophobicityMap, nConservationMap, nRainbowMap;
+    static const unsigned int nTemperatureMap, nHydrophobicityMap, nConservationMap, nRainbowMap;
     Vector Get(eColorMap which, double f) const;
-    const Vector* Get(eColorMap which, int index) const;
+    const Vector* Get(eColorMap which, unsigned int index) const;
 
     // light or dark color?
     static bool IsLightColor(const Vector& color)
@@ -129,6 +129,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.14  2004/02/19 17:04:50  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

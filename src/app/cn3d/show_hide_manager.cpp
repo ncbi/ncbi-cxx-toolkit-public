@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include "show_hide_manager.hpp"
 #include "structure_set.hpp"
@@ -139,7 +135,7 @@ public:
 
 ShowHideManager::~ShowHideManager()
 {
-    for (int i=0; i<structureInfo.size(); ++i) delete structureInfo[i];
+    for (unsigned int i=0; i<structureInfo.size(); ++i) delete structureInfo[i];
 }
 
 static void PostRedrawEntity(const StructureObject *object, const Molecule *molecule, const Residue *residue)
@@ -311,7 +307,7 @@ void ShowHideManager::GetShowHideInfo(
 {
     names->resize(structureInfo.size());
     visibilities->resize(structureInfo.size());
-    for (int i=0; i<structureInfo.size(); ++i) {
+    for (unsigned int i=0; i<structureInfo.size(); ++i) {
         structureInfo[i]->GetLabel(&((*names)[i]));
         (*visibilities)[i] = structureInfo[i]->IsVisible(this);
     }
@@ -324,7 +320,7 @@ void ShowHideManager::ShowHideCallbackFunction(const vector < bool >& itemsEnabl
         return;
     }
 
-    for (int i=0; i<itemsEnabled.size(); ++i)
+    for (unsigned int i=0; i<itemsEnabled.size(); ++i)
         structureInfo[i]->Show(this, itemsEnabled[i]);
     TRACEMSG("entities hidden: " << entitiesHidden.size());
 }
@@ -333,7 +329,7 @@ bool ShowHideManager::SelectionChangedCallback(
     const vector < bool >& original, vector < bool >& itemsEnabled)
 {
     // count number of changes
-    int i, nChanges = 0, itemChanged, nEnabled = 0, itemEnabled;
+    unsigned int i, nChanges = 0, itemChanged, nEnabled = 0, itemEnabled;
     for (i=0; i<itemsEnabled.size(); ++i) {
         if (itemsEnabled[i] != original[i]) {
             ++nChanges;
@@ -350,7 +346,7 @@ bool ShowHideManager::SelectionChangedCallback(
     if (nChanges == 1 || nEnabled == 1) {
         int item = (nChanges == 1) ? itemChanged : itemEnabled;
         for (i=item+1; i<structureInfo.size(); ++i) {
-            for (int j=0; j<structureInfo[i]->parentIndexes.size(); ++j) {
+            for (unsigned int j=0; j<structureInfo[i]->parentIndexes.size(); ++j) {
                 if (structureInfo[i]->parentIndexes[j] == item) {
                     if (itemsEnabled[i] != itemsEnabled[item]) {
                         itemsEnabled[i] = itemsEnabled[item];
@@ -364,7 +360,7 @@ bool ShowHideManager::SelectionChangedCallback(
     // check all items to make sure that when an object is on, its parents are also on
     for (i=0; i<itemsEnabled.size(); ++i) {
         if (itemsEnabled[i]) {
-            for (int j=0; j<structureInfo[i]->parentIndexes.size(); ++j) {
+            for (unsigned int j=0; j<structureInfo[i]->parentIndexes.size(); ++j) {
                 if (!itemsEnabled[structureInfo[i]->parentIndexes[j]]) {
                     itemsEnabled[structureInfo[i]->parentIndexes[j]] = true;
                     anyChange = true;
@@ -529,6 +525,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.23  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

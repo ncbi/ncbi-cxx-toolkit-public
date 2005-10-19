@@ -48,10 +48,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -79,7 +75,7 @@ static void SplitString(const string& inStr, list<string> *outList)
     outList->clear();
 
     int firstPos = 0, size = 0;
-    for (int i=0; i<inStr.size(); ++i) {
+    for (unsigned int i=0; i<inStr.size(); ++i) {
         if (inStr[i] == '\n') {
             outList->resize(outList->size() + 1);
             outList->back() = inStr.substr(firstPos, size);
@@ -247,7 +243,7 @@ IMPLEMENT_COMMAND_FUNCTION(Exit)
     *status = MessageResponder::REPLY_OKAY;
     dataOut->erase();
 
-    structureWindow->Command(StructureWindow::MID_EXIT);
+    structureWindow->ProcessCommand(StructureWindow::MID_EXIT);
 }
 
 END_SCOPE(Cn3D)
@@ -255,6 +251,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.11  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

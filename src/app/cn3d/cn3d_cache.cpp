@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -241,7 +237,7 @@ bool LoadStructureViaCache(const std::string& uid, ncbi::objects::EModel_type mo
     return (mime.NotEmpty() && ExtractBiostrucAndBioseqs(*mime, biostruc, sequences));
 }
 
-void TruncateCache(int maxSize)
+void TruncateCache(unsigned int maxSize)
 {
     string cacheFolder;
     if (!RegistryGetString(REG_CACHE_SECTION, REG_CACHE_FOLDER, &cacheFolder) ||
@@ -302,6 +298,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.16  2005/06/03 16:25:16  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

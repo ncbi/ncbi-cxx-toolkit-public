@@ -82,7 +82,7 @@ public:
     // to provide a ViewableAlignment to show. It is passed as a pointer, but
     // is not "owned" by the SequenceViewerWidget, and will not be deconstructed
     // even if the SequenceViewerWidget is destroyed. Returns false on error.
-    bool AttachAlignment(ViewableAlignment *newAlignment, int initX = 0, int initY = 0);
+    bool AttachAlignment(ViewableAlignment *newAlignment, unsigned int initX = 0, unsigned int initY = 0);
 
     // sets mouse mode. If eSelect, dragging the mouse with the left button
     // down will cause a rubberband to be drawn around a block of characters,
@@ -136,7 +136,7 @@ private:
     SequenceViewerWidget_SequenceArea *sequenceArea;
     SequenceViewerWidget_TitleArea *titleArea;
 
-    void OnDoubleClickSash(int x, int y);
+    void OnDoubleClickSash(unsigned int x, unsigned int y);
 };
 
 #endif // WX_SEQUENCE_VIEWER_WIDGET__HPP
@@ -144,6 +144,9 @@ private:
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.21  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

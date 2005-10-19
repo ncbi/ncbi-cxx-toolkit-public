@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbireg.hpp>
@@ -104,8 +100,7 @@ BEGIN_EVENT_TABLE(AnimationControls, wxDialog)
 END_EVENT_TABLE()
 
 AnimationControls::AnimationControls(wxWindow *parent) :
-    wxDialog(parent, -1, "Animation Controls", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU) // not resizable
+    wxDialog(parent, -1, "Animation Controls", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
 {
     // construct the panel
     wxSizer *topSizer = SetupAnimationDialog(this, false);
@@ -272,6 +267,9 @@ wxSizer *SetupAnimationDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.4  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *

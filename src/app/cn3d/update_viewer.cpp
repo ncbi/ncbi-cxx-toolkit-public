@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
@@ -299,7 +295,7 @@ const Sequence * UpdateViewer::GetMasterSequence(void) const
             } else {
                 wxString *titles = new wxString[chains.size()];
                 int choice;
-                for (choice=0; choice<chains.size(); ++choice)
+                for (choice=0; choice<(int)chains.size(); ++choice)
                     titles[choice] = chains[choice]->identifier->ToString().c_str();
                 choice = wxGetSingleChoiceIndex("Align to which protein chain?",
                     "Select Chain", chains.size(), titles);
@@ -446,7 +442,7 @@ void UpdateViewer::ImportSequences(void)
 void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
     const Sequence *master, AlignmentList *newAlignments,
     PendingStructureAlignments *structureAlignments,
-    int masterFrom, int masterTo) const
+    unsigned int masterFrom, unsigned int masterTo) const
 {
     if (master->identifier->pdbID.size() == 0) {
         WARNINGMSG("UpdateViewer::GetVASTAlignments() - "
@@ -471,8 +467,7 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
         CNcbiOstrstream argstr;
         argstr << "master=" << master->identifier->ToString()
             << "&slave=" << (*s)->identifier->ToString();
-        if (masterFrom >= 0 && masterTo >= 0 && masterFrom <= masterTo &&
-            masterFrom < master->Length() && masterTo < master->Length())
+        if (masterFrom <= masterTo && masterFrom < master->Length() && masterTo < master->Length())
             argstr << "&from=" << (masterFrom+1) << "&to=" << (masterTo+1); // URL #'s are 1-based
         argstr << '\0';
         auto_ptr<char> args(argstr.str());
@@ -718,7 +713,7 @@ void UpdateViewer::ImportStructure(void)
     } else {
         wxString *choices = new wxString[chains.size()];
         int choice;
-        for (choice=0; choice<chains.size(); ++choice)
+        for (choice=0; choice<(int)chains.size(); ++choice)
             choices[choice].Printf("%s_%c %s",
                 pdbID.c_str(), chains[choice].second, chains[choice].first->GetSeqIdString().c_str());
         wxArrayInt selections;
@@ -732,7 +727,7 @@ void UpdateViewer::ImportStructure(void)
     SequenceList newSequences;
     SequenceSet::SequenceList::const_iterator s, se = master->parentSet->sequenceSet->sequences.end();
     map < const Sequence * , const CSeq_id * > seq2id;
-    for (int j=0; j<sids.size(); ++j) {
+    for (unsigned int j=0; j<sids.size(); ++j) {
 
         // first check to see if this sequence is already present
         for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; ++s) {
@@ -935,7 +930,7 @@ static void MapSlaveToMaster(const BlockMultipleAlignment *alignment,
         const Block::Range
             *masterRange = (*b)->GetRangeOfRow(0),
             *slaveRange = (*b)->GetRangeOfRow(slaveRow);
-        for (int i=0; i<(*b)->width; ++i)
+        for (unsigned int i=0; i<(*b)->width; ++i)
             (*slave2master)[slaveRange->from + i] = masterRange->from + i;
     }
 }
@@ -986,11 +981,12 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
         new BlockMultipleAlignment(seqs, importSeq->parentSet->alignmentManager);
 
     // create maximally sized blocks
-    int masterStart=-1, importStart, importLoc, slaveLoc, masterLoc, len=0;
+    int masterStart=-1;
+	unsigned int importStart, importLoc, slaveLoc, masterLoc, len=0;
     for (importStart=-1, importLoc=0; importLoc<=importSeq->Length(); ++importLoc) {
 
         // map import -> slave -> master
-        slaveLoc = (importLoc<importSeq->Length()) ? import2slave[importLoc] : -1;
+        slaveLoc = (importLoc < importSeq->Length()) ? import2slave[importLoc] : -1;
         masterLoc = (slaveLoc >= 0) ? slave2master[slaveLoc] : -1;
 
         // if we're currently inside a block..
@@ -1055,7 +1051,7 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
 
     // set up BLAST-2-sequences between update slave and each sequence from the multiple
     BLASTer::AlignmentList toRealign;
-    for (int row=0; row<multiple->NRows(); ++row) {
+    for (unsigned int row=0; row<multiple->NRows(); ++row) {
         BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
         (*seqs)[0] = multiple->GetSequenceOfRow(row);
         (*seqs)[1] = updateSeq;
@@ -1143,7 +1139,7 @@ void UpdateViewer::SortUpdates(void)
     if (currentAlignments.size() < 2) return;
     vector < BlockMultipleAlignment * > sortedVector(currentAlignments.size());
     AlignmentList::const_iterator a, ae = currentAlignments.end();
-    int i = 0;
+    unsigned int i = 0;
     for (a=currentAlignments.begin(); a!=ae; ++a) sortedVector[i++] = *a;
 
     // sort them
@@ -1165,6 +1161,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.78  2005/03/07 11:47:00  thiessen
 * fix workshop warnings
 *

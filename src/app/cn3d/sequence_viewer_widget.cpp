@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -64,7 +60,7 @@ public:
     ~SequenceViewerWidget_TitleArea(void);
 
     void ShowTitles(ViewableAlignment *newAlignment);
-    void SetCharacterFont(wxFont *font, int newCellHeight);
+    void SetCharacterFont(wxFont *font, unsigned int newCellHeight);
     void SetBackgroundColor(const wxColor& backgroundColor);
 
 private:
@@ -74,16 +70,16 @@ private:
     const SequenceViewerWidget_SequenceArea *sequenceArea;
 
     ViewableAlignment *alignment;
-    int highlightedTitleRow;
+    unsigned int highlightedTitleRow;
 
     wxColor currentBackgroundColor;
     wxFont *titleFont;
-    int cellHeight, nTitles, maxTitleWidth;
+    unsigned int cellHeight, nTitles, maxTitleWidth;
 
     DECLARE_EVENT_TABLE()
 
 public:
-    int GetMaxTitleWidth(void) const { return maxTitleWidth; }
+    unsigned int GetMaxTitleWidth(void) const { return maxTitleWidth; }
     void SetSequenceArea(const SequenceViewerWidget_SequenceArea *seqA)
         { sequenceArea = seqA; }
 
@@ -108,7 +104,7 @@ public:
     ~SequenceViewerWidget_SequenceArea(void);
 
     // stuff from parent widget
-    bool AttachAlignment(ViewableAlignment *newAlignment, int initX, int initY);
+    bool AttachAlignment(ViewableAlignment *newAlignment, unsigned int initX, unsigned int initY);
     void SetMouseMode(SequenceViewerWidget::eMouseMode mode);
     void SetBackgroundColor(const wxColor& backgroundColor);
     void SetCharacterFont(wxFont *font);
@@ -130,29 +126,29 @@ private:
     wxColor currentBackgroundColor; // background for whole window
     wxColor currentRubberbandColor; // color of rubber band
     SequenceViewerWidget::eMouseMode mouseMode;           // mouse mode
-    int cellWidth, cellHeight;      // dimensions of cells in pixels
-    int areaWidth, areaHeight;      // dimensions of the alignment (virtual area) in cells
+    unsigned int cellWidth, cellHeight;      // dimensions of cells in pixels
+    unsigned int areaWidth, areaHeight;      // dimensions of the alignment (virtual area) in cells
 
-    void DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground); // draw a single cell
+    void DrawCell(wxDC& dc, unsigned int x, unsigned int y, unsigned int vsX, unsigned int vsY, bool redrawBackground); // draw a single cell
 
     enum eRubberbandType {
         eSolid,
         eDot
     };
     eRubberbandType currentRubberbandType;
-    void DrawLine(wxDC& dc, int x1, int y1, int x2, int y2);
+    void DrawLine(wxDC& dc, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2);
     void DrawRubberband(wxDC& dc,                           // draw rubber band around cells
-        int fromX, int fromY, int toX, int toY, int vsX, int vsY);
-    void MoveRubberband(wxDC &dc, int fromX, int fromY,     // change rubber band
-        int prevToX, int prevToY, int toX, int toY, int vsX, int vsY);
-    void RemoveRubberband(wxDC& dc, int fromX, int fromY,   // remove rubber band
-        int toX, int toY, int vsX, int vsY);
+        unsigned int fromX, unsigned int fromY, unsigned int toX, unsigned int toY, unsigned int vsX, unsigned int vsY);
+    void MoveRubberband(wxDC &dc, unsigned int fromX, unsigned int fromY,     // change rubber band
+        unsigned int prevToX, unsigned int prevToY, unsigned int toX, unsigned int toY, unsigned int vsX, unsigned int vsY);
+    void RemoveRubberband(wxDC& dc, unsigned int fromX, unsigned int fromY,   // remove rubber band
+        unsigned int toX, unsigned int toY, unsigned int vsX, unsigned int vsY);
 
     DECLARE_EVENT_TABLE()
 
 public:
-    int GetCellHeight(void) const { return cellHeight; }
-    int GetAreaHeight(void) const { return areaHeight; }
+    unsigned int GetCellHeight(void) const { return cellHeight; }
+    unsigned int GetAreaHeight(void) const { return areaHeight; }
     void SetTitleArea(SequenceViewerWidget_TitleArea *titleA)
         { titleArea = titleA; }
     SequenceViewerWidget::eMouseMode GetMouseMode(void) const { return mouseMode; }
@@ -197,7 +193,7 @@ SequenceViewerWidget_SequenceArea::~SequenceViewerWidget_SequenceArea(void)
 }
 
 bool SequenceViewerWidget_SequenceArea::AttachAlignment(
-    ViewableAlignment *newAlignment, int initX, int initY)
+    ViewableAlignment *newAlignment, unsigned int initX, unsigned int initY)
 {
     alignment = newAlignment;
 
@@ -274,7 +270,7 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
     memDC.SelectObject(*bitmap);
 
     int vsX, vsY,
-        updLeft, updRight, updTop, updBottom,
+		updLeft, updRight, updTop, updBottom,
         firstCellX, firstCellY,
         lastCellX, lastCellY,
         x, y;
@@ -337,8 +333,8 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 
         // restrict to size of virtual area, if visible area is larger
         // than the virtual area
-        if (lastCellX >= areaWidth) lastCellX = areaWidth - 1;
-        if (lastCellY >= areaHeight) lastCellY = areaHeight - 1;
+        if (lastCellX >= (int)areaWidth) lastCellX = areaWidth - 1;
+        if (lastCellY >= (int)areaHeight) lastCellY = areaHeight - 1;
 
         // draw cells
 //        TESTMSG("drawing cells " << firstCellX << ',' << firstCellY
@@ -358,7 +354,8 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
 //    TRACEMSG("Blit 0, 0, " << GetClientSize().GetWidth() << ", " << GetClientSize().GetHeight());
 }
 
-void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc, int x, int y, int vsX, int vsY, bool redrawBackground)
+void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc,
+    unsigned int x, unsigned int y, unsigned int vsX, unsigned int vsY, bool redrawBackground)
 {
 	char character;
     wxColor color, cellBackgroundColor;
@@ -399,7 +396,8 @@ void SequenceViewerWidget_SequenceArea::DrawCell(wxDC& dc, int x, int y, int vsX
     );
 }
 
-static inline void min_max(int a, int b, int *c, int *d)
+template < class I >
+void min_max(I a,I b, I *c, I *d)
 {
     if (a <= b) {
         *c = a;
@@ -410,20 +408,20 @@ static inline void min_max(int a, int b, int *c, int *d)
     }
 }
 
-void SequenceViewerWidget_SequenceArea::DrawLine(wxDC& dc, int x1, int y1, int x2, int y2)
+void SequenceViewerWidget_SequenceArea::DrawLine(wxDC& dc, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2)
 {
     if (currentRubberbandType == eSolid) {
         dc.DrawLine(x1, y1, x2, y2);
     } else { // short-dashed line
-        int i, ie;
+        unsigned int i, ie;
         if (x1 == x2) { // vertical line
             min_max(y1, y2, &i, &ie);
-            ie -= 1;
+            --ie;
             for (; i<=ie; ++i)
                 if (i%4 == 0) dc.DrawLine(x1, i, x1, i + 2);
         } else {        // horizontal line
             min_max(x1, x2, &i, &ie);
-            ie -= 1;
+            --ie;
             for (; i<=ie; ++i)
                 if (i%4 == 0) dc.DrawLine(i, y1, i + 2, y1);
         }
@@ -431,18 +429,21 @@ void SequenceViewerWidget_SequenceArea::DrawLine(wxDC& dc, int x1, int y1, int x
 }
 
 // draw a rubberband around the cells
-void SequenceViewerWidget_SequenceArea::DrawRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
+void SequenceViewerWidget_SequenceArea::DrawRubberband(wxDC& dc, unsigned int fromX, unsigned int fromY,
+    unsigned int toX, unsigned int toY, unsigned int vsX, unsigned int vsY)
 {
     // find upper-left and lower-right corners
     int minX, minY, maxX, maxY;
-    min_max(fromX, toX, &minX, &maxX);
-    min_max(fromY, toY, &minY, &maxY);
+    min_max((int)fromX, (int)toX, &minX, &maxX);
+    min_max((int)fromY, (int)toY, &minY, &maxY);
 
     // convert to pixel coordinates of corners
     minX = (minX - vsX) * cellWidth;
     minY = (minY - vsY) * cellHeight;
     maxX = (maxX - vsX) * cellWidth + cellWidth - 1;
     maxY = (maxY - vsY) * cellHeight + cellHeight - 1;
+    if (maxX < minX || maxY < minY)
+        return;
 
     // set color
     dc.SetPen(*(wxThePenList->FindOrCreatePen(currentRubberbandColor, 1, wxSOLID)));
@@ -460,10 +461,10 @@ void SequenceViewerWidget_SequenceArea::DrawRubberband(wxDC& dc, int fromX, int 
 
 // move the rubber band to a new rectangle, erasing only the side(s) of the
 // rectangle that is changing
-void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int fromY,
-    int prevToX, int prevToY, int toX, int toY, int vsX, int vsY)
+void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, unsigned int fromX, unsigned int fromY,
+    unsigned int prevToX, unsigned int prevToY, unsigned int toX, unsigned int toY, unsigned int vsX, unsigned int vsY)
 {
-    int i;
+    unsigned int i;
 
     if ((prevToX >= fromX && toX < fromX) ||
         (prevToX < fromX && toX >= fromX) ||
@@ -473,7 +474,7 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
         RemoveRubberband(dc, fromX, fromY, prevToX, prevToY, vsX, vsY);
 
     } else {
-        int a, b;
+        unsigned int a, b;
 
         // erase moving bottom/top side if dragging up/down
         if (toY != prevToY) {
@@ -482,7 +483,7 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
         }
 
         // erase partial top and bottom if dragging left by more than one
-        a = -1; b = -2;
+        a = kMax_UInt; b = a - 1;
         if (fromX <= toX && toX < prevToX) {
             a = toX + 1;
             b = prevToX - 1;
@@ -502,7 +503,7 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
         }
 
         // erase partial left and right sides if dragging up/down by more than one
-        a = -1; b = -2;
+        a = kMax_UInt; b = a - 1;
         if (fromY <= toY && toY < prevToY) {
             a = toY + 1;
             b = prevToY - 1;
@@ -521,9 +522,10 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
 }
 
 // redraw only those cells necessary to remove rubber band
-void SequenceViewerWidget_SequenceArea::RemoveRubberband(wxDC& dc, int fromX, int fromY, int toX, int toY, int vsX, int vsY)
+void SequenceViewerWidget_SequenceArea::RemoveRubberband(wxDC& dc, unsigned int fromX, unsigned int fromY,
+    unsigned int toX, unsigned int toY, unsigned int vsX, unsigned int vsY)
 {
-    int i, min, max;
+    unsigned int i, min, max;
 
     // remove top and bottom
     min_max(fromX, toX, &min, &max);
@@ -533,9 +535,11 @@ void SequenceViewerWidget_SequenceArea::RemoveRubberband(wxDC& dc, int fromX, in
     }
     // remove left and right
     min_max(fromY, toY, &min, &max);
-    for (i=min+1; i<=max-1; ++i) {
-        DrawCell(dc, fromX, i, vsX, vsY, true);
-        DrawCell(dc, toX, i, vsX, vsY, true);
+    if (max - min > 1) {
+        for (i=min+1; i<=max-1; ++i) {
+            DrawCell(dc, fromX, i, vsX, vsY, true);
+            DrawCell(dc, toX, i, vsX, vsY, true);
+        }
     }
 }
 
@@ -594,7 +598,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             int toY = vsY + nDeltas * event.GetLinesPerAction();
             if (toY < 0)
                 toY = 0;
-            else if (toY >= areaHeight)
+            else if (toY >= (int)areaHeight)
                 toY = areaHeight - 1;
             Scroll(-1, toY);
             GetViewStart(&vsX, &vsY);   // update vsY so that MouseOver is called on new position
@@ -618,7 +622,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
     }
 
     // do MouseOver if not in the same cell (or outside area) as last time
-    if (MOX >= areaWidth || MOY >= areaHeight)
+    if (MOX >= (int)areaWidth || MOY >= (int)areaHeight)
         MOX = MOY = -1;
     if (MOX != prevMOX || MOY != prevMOY)
         alignment->MouseOver(MOX, MOY);
@@ -636,14 +640,14 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
 
     // limit coordinates of selection to virtual area
     if (cellX < 0) cellX = 0;
-    else if (cellX >= areaWidth) cellX = areaWidth - 1;
+    else if (cellX >= (int)areaWidth) cellX = areaWidth - 1;
     if (cellY < 0) cellY = 0;
-    else if (cellY >= areaHeight) cellY = areaHeight - 1;
+    else if (cellY >= (int)areaHeight) cellY = areaHeight - 1;
 
 
     // keep track of position of selection start, as well as last
     // cell dragged to during selection
-    static int fromX, fromY, prevToX, prevToY;
+    static unsigned int fromX, fromY, prevToX, prevToY;
 
     // limit dragging movement if necessary
     if (dragging) {
@@ -738,10 +742,10 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             mouseMode == SequenceViewerWidget::eSelectBlocks)
         {
             alignment->SelectedRectangle(
-                (fromX < cellX) ? fromX : cellX,
-                (fromY < cellY) ? fromY : cellY,
-                (cellX > fromX) ? cellX : fromX,
-                (cellY > fromY) ? cellY : fromY);
+                ((int)fromX < cellX) ? fromX : cellX,
+                ((int)fromY < cellY) ? fromY : cellY,
+                (cellX > (int)fromX) ? cellX : fromX,
+                (cellY > (int)fromY) ? cellY : fromY);
         } else {
             alignment->DraggedCell(fromX, fromY, cellX, cellY);
         }
@@ -811,7 +815,7 @@ void SequenceViewerWidget_TitleArea::ShowTitles(ViewableAlignment *newAlignment)
     dc.SetFont(*titleFont);
     dc.SetMapMode(wxMM_TEXT);
 
-    int i;
+    unsigned int i;
     wxString title;
     wxColor color;
     wxCoord tW, tH;
@@ -824,11 +828,11 @@ void SequenceViewerWidget_TitleArea::ShowTitles(ViewableAlignment *newAlignment)
         if (!alignment->GetRowTitle(i, &title, &color)) continue;
         // measure title size
         dc.GetTextExtent(title, &tW, &tH);
-        if (tW > maxTitleWidth) maxTitleWidth = tW;
+        if (tW > (wxCoord)maxTitleWidth) maxTitleWidth = tW;
     }
 }
 
-void SequenceViewerWidget_TitleArea::SetCharacterFont(wxFont *font, int newCellHeight)
+void SequenceViewerWidget_TitleArea::SetCharacterFont(wxFont *font, unsigned int newCellHeight)
 {
     if (!font) return;
 
@@ -848,9 +852,8 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
 {
     wxPaintDC dc(this);
 
-    int vsX, vsY,
-        updTop, updBottom,
-        firstRow, lastRow, row;
+    int vsX, vsY;
+    int updTop, updBottom, firstRow, lastRow, row;
 
     dc.BeginDrawing();
 
@@ -895,7 +898,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
 
         // restrict to size of virtual area, if visible area is larger
         // than the virtual area
-        if (lastRow >= nTitles) lastRow = nTitles - 1;
+        if (lastRow >= (int)nTitles) lastRow = nTitles - 1;
 
         // draw titles
         wxString title;
@@ -945,7 +948,7 @@ void SequenceViewerWidget_TitleArea::OnMouseEvent(wxMouseEvent& event)
     MOY = vsY + mY / cellHeight;
 
     // if the mouse is leaving the window or is outside area
-    if (event.Leaving() || MOY >= sequenceArea->GetAreaHeight())
+    if (event.Leaving() || MOY >= (int)sequenceArea->GetAreaHeight())
         MOY = -1;
 
     // do MouseOver if not in the same cell as last time
@@ -999,7 +1002,7 @@ SequenceViewerWidget::~SequenceViewerWidget(void)
 {
 }
 
-void SequenceViewerWidget::OnDoubleClickSash(int x, int y)
+void SequenceViewerWidget::OnDoubleClickSash(unsigned int x, unsigned int y)
 {
     Unsplit(titleArea);
 }
@@ -1028,7 +1031,7 @@ void SequenceViewerWidget::TitleAreaToggle(void)
     }
 }
 
-bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment, int initX, int initY)
+bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment, unsigned int initX, unsigned int initY)
 {
     // do titles first, since on Mac sequence area update causes title redraw
     titleArea->ShowTitles(newAlignment);
@@ -1087,13 +1090,14 @@ void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
 
 void SequenceViewerWidget::MakeCharacterVisible(int column, int row) const
 {
-    int vsX, vsY, nCells;
+    int vsX, vsY;
+    unsigned int nCells;
     sequenceArea->GetViewStart(&vsX, &vsY);
 
     // scroll horizontally if necessary
     if (column >= 0) {
         nCells = sequenceArea->GetClientSize().GetWidth() / sequenceArea->cellWidth;
-        if (column < vsX || column >= vsX + nCells) {
+        if (column < vsX || column >= vsX + (int)nCells) {
             vsX = column - nCells / 2;
             if (vsX < 0) vsX = 0;
         }
@@ -1102,7 +1106,7 @@ void SequenceViewerWidget::MakeCharacterVisible(int column, int row) const
     // scroll vertically if necessary
     if (row >= 0) {
         nCells = sequenceArea->GetClientSize().GetHeight() / sequenceArea->cellHeight;
-        if (row < vsY || row >= vsY + nCells) {
+        if (row < vsY || row >= vsY + (int)nCells) {
             vsY = row - nCells / 2;
             if (vsY < 0) vsY = 0;
         }
@@ -1120,6 +1124,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.43  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

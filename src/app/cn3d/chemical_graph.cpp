@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -247,7 +243,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     moleculeIDs.sort();    // assign in order of ID
     list < int >::const_iterator id, ide = moleculeIDs.end();
     for (id=moleculeIDs.begin(); id!=ide; ++id) {
-        int r;
+        unsigned int r;
         Molecule *molecule = const_cast<Molecule*>(molecules[*id]);
         for (r=0; r<molecule->residues.size(); ++r)
             if (molecule->residueDomains[r] != Molecule::NO_DOMAIN_SET) break;
@@ -291,7 +287,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                 }
                 molecule = const_cast<Molecule*>(m->second);
                 for (int r=i->GetObject().GetFrom().Get()-1; r<=i->GetObject().GetTo().Get()-1; ++r) {
-                    if (r < 0 || r >= molecule->residues.size()) {
+                    if (r < 0 || r >= (int)molecule->residues.size()) {
                         ERRORMSG("Bad residue range in domain feature for moleculeID "
                             << molecule->id << " residueID " << r+1);
                         break;
@@ -343,7 +339,7 @@ void ChemicalGraph::UnpackSecondaryStructureFeatures(const CBiostruc_feature_set
             }
             Molecule *molecule = const_cast<Molecule*>(m->second);
             for (int r=interval.GetFrom().Get()-1; r<=interval.GetTo().Get()-1; ++r) {
-                if (r < 0 || r >= molecule->residues.size()) {
+                if (r < 0 || r >= (int)molecule->residues.size()) {
                     ERRORMSG("Bad residue range in sec. struc. feature for moleculeID "
                         << molecule->id << " residueID " << r+1);
                     break;
@@ -529,6 +525,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.40  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

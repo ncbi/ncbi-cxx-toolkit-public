@@ -31,12 +31,9 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <serial/iterator.hpp>
 
 #include <objects/ncbimime/Entrez_general.hpp>
 #include <objects/ncbimime/Biostruc_align.hpp>
@@ -53,6 +50,7 @@
 #include <objects/cdd/Global_id.hpp>
 #include <objects/cdd/Cdd_id_set.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include "asn_reader.hpp"
 #include "data_manager.hpp"
@@ -251,6 +249,51 @@ void ASNDataManager::Load(void)
             sequenceAlignments->front()->SetData().SetAlign() = validAlignments;
         }
     }
+
+    // remove consensus sequence, then do a check over the whole tree to make sure any reference to it is gone
+/*
+    if (GetInternalCDDData()) {
+        RemoveConsensusFromCDD();
+        for (CTypeConstIterator < CSeq_id > i(ConstBegin(*(GetInternalCDDData()))); i; ++i) {
+            if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
+                ERRORMSG("ASNDataManager::Load() - consensus still referenced in the data: " << i.GetContext());
+                break;
+            }
+        }
+    }
+*/
+}
+
+void AddBioseq(CBioseq_set& seqSet, CBioseq& bioseq)
+{
+    seqSet.SetSeq_set().push_back(CRef < CSeq_entry > (new CSeq_entry));
+    seqSet.SetSeq_set().back()->SetSeq(bioseq);
+}
+
+void AddBioseqs(CBioseq_set& seqSet, ASNDataManager::SeqEntryList& seqEntries)
+{
+    ASNDataManager::SeqEntryList::iterator s, se = seqEntries.end();
+    for (s=seqEntries.begin(); s!=se; ++s)
+        if ((*s)->IsSeq())
+            AddBioseq(seqSet, (*s)->SetSeq());
+        else
+            AddBioseqs(seqSet, (*s)->SetSet().SetSeq_set());
+}
+
+void ASNDataManager::RemoveConsensusFromCDD(void)
+{
+    CCdd *cdd = GetInternalCDDData();
+    if (!cdd)
+        return;
+
+    // flatten the sequence list for simplicity
+    if (!seqEntryList) {
+        ERRORMSG("ASNDataManager::RemoveConsensusFromCDD() - Cdd has no Seq-entry records");
+        return;
+    }
+    SeqEntryList flatSeqEntry;
+    flatSeqEntry.push_back(CRef < CSeq_entry > (new CSeq_entry));
+    AddBioseqs(flatSeqEntry.back()->SetSet(), *seqEntryList);
 }
 
 bool ASNDataManager::ConvertMimeDataToCDD(const std::string& cddName)
@@ -746,7 +789,7 @@ bool ASNDataManager::SetCDDNotes(const TextLines& lines)
 
     // fill out scrapbook lines
     scrapbook->clear();
-    for (int i=0; i<lines.size(); ++i)
+    for (unsigned int i=0; i<lines.size(); ++i)
         scrapbook->push_back(lines[i]);
     SetDataChanged(StructureSet::eCDDData);
 
@@ -982,6 +1025,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.24  2005/04/21 14:31:19  thiessen
 * add MonitorAlignments()
 *

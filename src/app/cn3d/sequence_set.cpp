@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
@@ -134,7 +130,7 @@ static void StringFrom4na(const vector< char >& vec, string *str, bool isDNA)
         str->resize(vec.size() * 2 - 1);
 
     // first, extract 4-bit values
-    int i;
+    unsigned int i;
     for (i=0; i<vec.size(); ++i) {
         str->at(2*i) = FIRSTOF2(vec[i]);
         if (SECONDOF2(vec[i]) > 0) str->at(2*i + 1) = SECONDOF2(vec[i]);
@@ -163,7 +159,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
     str->resize(vec.size() * 4);
 
     // first, extract 4-bit values
-    int i;
+    unsigned int i;
     for (i=0; i<vec.size(); ++i) {
         str->at(4*i) = FIRSTOF4(vec[i]);
         str->at(4*i + 1) = SECONDOF4(vec[i]);
@@ -187,7 +183,7 @@ static void StringFromStdaa(const vector < char >& vec, string *str)
     static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
     str->resize(vec.size());
-    for (int i=0; i<vec.size(); ++i)
+    for (unsigned int i=0; i<vec.size(); ++i)
         str->at(i) = stdaaMap[vec[i]];
 }
 
@@ -305,7 +301,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
             // convert 'T' to 'U' for RNA
             if (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
-                for (int i=0; i<sequenceString.size(); ++i) {
+                for (unsigned int i=0; i<sequenceString.size(); ++i) {
                     if (sequenceString[i] == 'T')
                         sequenceString[i] = 'U';
                 }
@@ -336,7 +332,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
         }
 
         // force uppercase
-        for (int i=0; i<sequenceString.length(); ++i)
+        for (unsigned int i=0; i<sequenceString.length(); ++i)
             sequenceString[i] = toupper((unsigned char) sequenceString[i]);
 
     } else {
@@ -491,7 +487,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
     try {
         // check allowed characters
         static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
-        int i;
+        unsigned int i;
         for (i=0; i<prosite.size(); ++i)
             if (allowed.find(toupper((unsigned char) prosite[i])) == string::npos) break;
         if (i != prosite.size()) throw "invalid ProSite character";
@@ -502,7 +498,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
         *nGroups = 0;
 
         bool inGroup = false;
-        for (int i=0; i<prosite.size(); ++i) {
+        for (unsigned int i=0; i<prosite.size(); ++i) {
 
             // handle grouping and termini
             bool characterHandled = true;
@@ -588,7 +584,7 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
         // update pattern buffer if not the same pattern as before
         static string previousPrositePattern;
         static int nGroups;
-        int i;
+        unsigned int i;
         if (prositePattern != previousPrositePattern) {
 
             // convert from ProSite syntax
@@ -609,7 +605,7 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
         }
 
         // do the search, finding all non-overlapping matches
-        int start = 0;
+        unsigned int start = 0;
         while (start < Length()) {
 
             int result = re_search(patternBuffer, sequenceString.c_str(),
@@ -623,7 +619,7 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
             // shortest hit within the hit already found by limiting the length of the string
             // allowed to be included in the search. (This isn't very efficient! but
             // the regex API doesn't have an option for finding the shortest hit...)
-            int stringSize = start + 1;
+            unsigned int stringSize = start + 1;
             while (stringSize <= Length()) {
                 result = re_search(patternBuffer, sequenceString.c_str(),
                     stringSize, start, stringSize, registers);
@@ -664,6 +660,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.70  2005/06/03 16:26:44  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

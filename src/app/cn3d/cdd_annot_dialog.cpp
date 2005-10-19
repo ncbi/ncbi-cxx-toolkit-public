@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -103,7 +99,7 @@
 #define ID_B_EDIT_EVID 10011
 #define ID_B_DEL_EVID 10012
 #define ID_B_EVID_DOWN 10013
-wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 #define ID_R_COMMENT 10014
 #define ID_ST_COMMENT 10015
@@ -118,7 +114,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit = TRUE, bool set_si
 #define ID_B_RERANGE 10024
 #define ID_B_EDIT_OK 10025
 #define ID_B_EDIT_CANCEL 10026
-wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
+wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -166,8 +162,7 @@ BEGIN_EVENT_TABLE(CDDAnnotateDialog, wxDialog)
 END_EVENT_TABLE()
 
 CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handle, StructureSet *set) :
-    wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR),    // not resizable
+    wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     dialogHandle(handle), structureSet(set), annotSet(set->GetCDDAnnotSet())
 {
     if (annotSet.Empty()) {
@@ -176,11 +171,11 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handl
     }
 
     // construct the panel
-    wxPanel *panel = new wxPanel(this, -1);
-    wxSizer *topSizer = SetupCDDAnnotDialog(panel, false);
+    wxSizer *topSizer = SetupCDDAnnotDialog(this, false);
 
     // call sizer stuff
-    topSizer->Fit(panel);
+    topSizer->Fit(this);
+    topSizer->SetSizeHints(this);
     SetClientSize(topSizer->GetMinSize());
 
     // set initial GUI state
@@ -206,20 +201,20 @@ void CDDAnnotateDialog::GetCurrentHighlightedIntervals(IntervalList *intervals)
 
     // find intervals of aligned residues of the master sequence that are currently highlighted
     intervals->clear();
-    int first = 0, last = 0;
+    unsigned int first = 0, last = 0;
     while (first < master->Length()) {
 
         // find first highlighted residue
         while (first < master->Length() &&
                !(GlobalMessenger()->IsHighlighted(master, first) &&
-                 alignment->IsAligned(0, first))) ++first;
+                 alignment->IsAligned(0U, first))) ++first;
         if (first >= master->Length()) break;
 
         // find last in contiguous stretch of highlighted residues
         last = first;
         while (last + 1 < master->Length() &&
                GlobalMessenger()->IsHighlighted(master, last + 1) &&
-               alignment->IsAligned(0, last + 1)) ++last;
+               alignment->IsAligned(0U, last + 1)) ++last;
 
         // create Seq-interval
         CRef < CSeq_interval > interval(new CSeq_interval());
@@ -696,7 +691,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
         BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
         alignment->GetUngappedAlignedBlocks(&alignedBlocks);
         if (alignedBlocks.size() == 0) throw "no aligned blocks";
-        for (int row=0; row<alignment->NRows(); ++row) {
+        for (unsigned int row=0; row<alignment->NRows(); ++row) {
             const StructureObject *object;
             const Sequence *seq = alignment->GetSequenceOfRow(row);
             if (!seq->molecule || seq->molecule->identifier->mmdbID != mmdbID ||
@@ -836,7 +831,7 @@ void CDDAnnotateDialog::ShowEvidence(void)
 
             // now show the frame containing the "best" object (get display list from first molecule)
             unsigned int displayList = bestObject->graph->molecules.find(1)->second->displayLists.front();
-            for (int frame=0; frame<structureSet->frameMap.size(); ++frame) {
+            for (unsigned int frame=0; frame<structureSet->frameMap.size(); ++frame) {
                 StructureSet::DisplayLists::const_iterator d, de = structureSet->frameMap[frame].end();
                 for (d=structureSet->frameMap[frame].begin(); d!=de; ++d) {
                     if (*d == displayList) { // is display list in this frame?
@@ -922,17 +917,14 @@ BEGIN_EVENT_TABLE(CDDEvidenceDialog, wxDialog)
 END_EVENT_TABLE()
 
 CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFeature_evidence& initial) :
-    wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU), // not resizable
+    wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     changed(false), rerange(false)
 {
     // construct the panel
-    wxPanel *panel = new wxPanel(this, -1);
-    wxSizer *topSizer = SetupEvidenceDialog(panel, false);
+    wxSizer *topSizer = SetupEvidenceDialog(this, false);
 
     // call sizer stuff
     topSizer->Fit(this);
-    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 
     // set initial states
@@ -1079,7 +1071,7 @@ END_SCOPE(Cn3D)
 // The following is taken unmodified from wxDesigner's C++ code from cdd_annot_dialog.wdr
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *SetupCDDAnnotDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
@@ -1163,7 +1155,7 @@ wxSizer *SetupCDDAnnotDialog( wxPanel *parent, bool call_fit, bool set_sizer )
     return item0;
 }
 
-wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
+wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 {
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
@@ -1254,6 +1246,9 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.39  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *

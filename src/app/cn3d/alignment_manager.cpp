@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -168,18 +164,18 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet
 
     // all slaves start out visible
     slavesVisible.resize(alignmentSet->alignments.size());
-    for (int i=0; i<slavesVisible.size(); ++i)
+    for (unsigned int i=0; i<slavesVisible.size(); ++i)
         slavesVisible[i] = true;
 
     NewMultipleWithRows(slavesVisible);
     originalMultiple = GetCurrentMultipleAlignment()->Clone();
     originalRowOrder.resize(originalMultiple->NRows());
-    for (int r=0; r<originalMultiple->NRows(); ++r)
+    for (unsigned int r=0; r<originalMultiple->NRows(); ++r)
         originalRowOrder[r] = r;
 }
 
 void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
-    const vector < int >& rowOrder)
+    const vector < unsigned int >& rowOrder)
 {
     // create new AlignmentSet based on this multiple alignment, feed back into StructureSet
     AlignmentSet *newAlignmentSet =
@@ -207,7 +203,7 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
             TRACEMSG("row order changed");
             alignmentSet->parentSet->SetDataChanged(StructureSet::eRowOrderData);
         } else {
-            for (int row=0; row<originalMultiple->NRows(); ++row) {
+            for (unsigned int row=0; row<originalMultiple->NRows(); ++row) {
                 if (originalMultiple->GetSequenceOfRow(originalRowOrder[row]) !=
                         multiple->GetSequenceOfRow(rowOrder[row]) ||
                     originalRowOrder[row] != rowOrder[row])
@@ -317,7 +313,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
     // each block is a continuous region on the master, over which each master
     // residue is aligned to a residue of each slave, and where there are no
     // insertions relative to the master in any of the slaves
-    int masterFrom = 0, masterTo, row;
+    unsigned int masterFrom = 0, masterTo, row;
     UngappedAlignedBlock *newBlock;
 
     while (masterFrom < multipleAlignment->GetMaster()->Length()) {
@@ -374,7 +370,7 @@ static int GetAlignedResidueIndexes(
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator& be,
     int row, int *seqIndexes, bool countHighlights = false, const BlockMultipleAlignment *multiple = NULL)
 {
-    int i = 0, c, highlighted = 0;
+    unsigned int i = 0, c, highlighted = 0;
     const Block::Range *range;
     for (; b!=be; ++b) {
         range = (*b)->GetRangeOfRow(row);
@@ -436,8 +432,8 @@ void AlignmentManager::RealignAllSlaveStructures(bool highlightedOnly) const
 
         masterMol->parentSet->InitStructureAlignments(masterSeq->identifier->mmdbID);
 
-        int nStructureAlignments = 0;
-        for (int i=1; i<multiple->NRows(); ++i) {
+        unsigned int nStructureAlignments = 0;
+        for (unsigned int i=1; i<multiple->NRows(); ++i) {
             slaveSeq = multiple->GetSequenceOfRow(i);
             if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
 
@@ -559,7 +555,7 @@ void AlignmentManager::NewMultipleWithRows(const vector < bool >& visibilities)
     sequenceViewer->DisplayAlignment(CreateMultipleFromPairwiseWithIBM(alignments));
 }
 
-bool AlignmentManager::IsAligned(const Sequence *sequence, int seqIndex) const
+bool AlignmentManager::IsAligned(const Sequence *sequence, unsigned int seqIndex) const
 {
     const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
     if (currentAlignment)
@@ -573,7 +569,7 @@ bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
     if (!sequence) return false;
     const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
     if (currentAlignment) {
-        for (int i=0; i<currentAlignment->GetSequences()->size(); ++i) {
+        for (unsigned int i=0; i<currentAlignment->GetSequences()->size(); ++i) {
             if ((*(currentAlignment->GetSequences()))[i] == sequence)
                 return true;
         }
@@ -581,7 +577,7 @@ bool AlignmentManager::IsInAlignment(const Sequence *sequence) const
     return false;
 }
 
-const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, int seqIndex,
+const Vector * AlignmentManager::GetAlignmentColor(const Sequence *sequence, unsigned int seqIndex,
     StyleSettings::eColorScheme colorScheme) const
 {
     const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
@@ -602,7 +598,7 @@ void AlignmentManager::ShowUpdateWindow(void) const
 }
 
 void AlignmentManager::RealignSlaveSequences(
-    BlockMultipleAlignment *multiple, const vector < int >& slavesToRealign)
+    BlockMultipleAlignment *multiple, const vector < unsigned int >& slavesToRealign)
 {
     if (!multiple || sequenceViewer->GetCurrentAlignments().size() == 0 ||
             multiple != sequenceViewer->GetCurrentAlignments().front()) {
@@ -634,7 +630,7 @@ void AlignmentManager::ThreadUpdate(const ThreaderOptions& options, BlockMultipl
     // run the threader on the given alignment
     UpdateViewer::AlignmentList singleList, replacedList;
     Threader::AlignmentList newAlignments;
-    int nRowsAddedToMultiple;
+    unsigned int nRowsAddedToMultiple;
     bool foundSingle = false;   // sanity check
 
     singleList.push_back(single);
@@ -669,7 +665,7 @@ void AlignmentManager::ThreadAllUpdates(const ThreaderOptions& options)
 
     // run the threader on update pairwise alignments
     Threader::AlignmentList newAlignments;
-    int nRowsAddedToMultiple;
+    unsigned int nRowsAddedToMultiple;
     if (threader->Realign(
             options, currentAlignments.front(), &(updateViewer->GetCurrentAlignments()),
             &newAlignments, &nRowsAddedToMultiple, sequenceViewer)) {
@@ -702,8 +698,8 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
                 // create new alignment, then call SavePairwiseFromMultiple to create
                 // an AlignmentSet and the initial ASN data
                 sequenceViewer->DisplayAlignment(newMultiple->Clone());
-                vector < int > rowOrder(newMultiple->NRows());
-                for (int i=0; i<newMultiple->NRows(); ++i) rowOrder[i] = i;
+                vector < unsigned int > rowOrder(newMultiple->NRows());
+                for (unsigned int i=0; i<newMultiple->NRows(); ++i) rowOrder[i] = i;
                 SavePairwiseFromMultiple(newMultiple, rowOrder);
 
                 // editor needs to be on if >1 update is to be merged in
@@ -742,7 +738,7 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
             if (merged) {
                 nSuccessfulMerges += (*u)->NRows() - 1;
             } else {
-                for (int i=0; i<(*u)->NRows(); ++i) {
+                for (unsigned int i=0; i<(*u)->NRows(); ++i) {
                     string status = (*u)->GetRowStatusLine(i);
                     if (status.size() > 0)
                         status += "; merge failed!";
@@ -767,7 +763,7 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
             BlockMultipleAlignment::UngappedAlignedBlockList blocks;
             multiple->GetUngappedAlignedBlocks(&blocks);
             BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-            int col, row, rowScore, bestScore, lastRow = multiple->NRows() - 1;
+            unsigned int col, row, rowScore, bestScore, lastRow = multiple->NRows() - 1;
             const Sequence *mergeSeq = multiple->GetSequenceOfRow(lastRow);
             for (row=0; row<lastRow; ++row) {
                 const Sequence *otherSeq = multiple->GetSequenceOfRow(row);
@@ -800,7 +796,7 @@ void AlignmentManager::CalculateRowScoresWithThreader(double weightPSSM)
     threader->CalculateScores(GetCurrentMultipleAlignment(), weightPSSM);
 }
 
-int AlignmentManager::NUpdates(void) const
+unsigned int AlignmentManager::NUpdates(void) const
 {
     return updateViewer->GetCurrentAlignments().size();
 }
@@ -840,9 +836,8 @@ void AlignmentManager::PurgeSequence(const MoleculeIdentifier *identifier)
     if (!multiple) return;
 
     // remove matching rows from multiple alignment
-    vector < int > rowsToRemove;
-    int i;
-    for (i=1; i<multiple->NRows(); ++i)
+    vector < unsigned int > rowsToRemove;
+    for (unsigned int i=1; i<multiple->NRows(); ++i)
         if (multiple->GetSequenceOfRow(i)->identifier == identifier)
             rowsToRemove.push_back(i);
 
@@ -1074,7 +1069,7 @@ static bool CreateNewPairwiseAlignmentsByBlockExtension(const BlockMultipleAlign
         vector < int > mergeIndexes;
         for (unsigned int pb=0; pb<pairBlocks.size(); ++pb) {
             const Block::Range *pairRange = pairBlocks[pb]->GetRangeOfRow(0);
-            if (prevRange && prevRange->to == pairRange->from - 1 && multiple.IsAligned(0, prevRange->to)) {
+            if (prevRange && prevRange->to == pairRange->from - 1 && multiple.IsAligned(0U, prevRange->to)) {
                 // justification is irrelevant since this is an aligned block
                 int mAlnIdx1 = multiple.GetAlignmentIndex(0, prevRange->to, BlockMultipleAlignment::eLeft),
                     mAlnIdx2 = multiple.GetAlignmentIndex(0, pairRange->from, BlockMultipleAlignment::eLeft),
@@ -1158,6 +1153,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.102  2005/09/06 20:57:12  thiessen
 * fix -n option
 *

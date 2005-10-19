@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -181,7 +177,7 @@ void ShowHideDialog::OnButton(wxCommandEvent& event)
 
     if (event.GetId() == B_CANCEL) {
         // restore item list to original state
-        for (int i=0; i<originalItemsEnabled.size(); ++i) (*itemsEnabled)[i] = originalItemsEnabled[i];
+        for (unsigned int i=0; i<originalItemsEnabled.size(); ++i) (*itemsEnabled)[i] = originalItemsEnabled[i];
         doCallback = haveApplied;
     }
 
@@ -212,6 +208,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.14  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

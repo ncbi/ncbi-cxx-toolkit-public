@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
@@ -56,14 +52,9 @@
 #include <OpenGL/glu.h>
 #endif
 
-#include <wx/platform.h>
-#if defined(__WXGTK__) && defined(__LINUX__)
-// use system headers/libs for linux builds
 #include <png.h>
-#else
-// otherwise, use libs built into wxWindows
-#include "../cn3d/png.h"
-#endif
+
+#include <wx/platform.h>
 
 #include "cn3d_png.hpp"
 #include "cn3d_glcanvas.hpp"
@@ -165,8 +156,7 @@ BEGIN_EVENT_TABLE(PNGOptionsDialog, wxDialog)
 END_EVENT_TABLE()
 
 PNGOptionsDialog::PNGOptionsDialog(wxWindow *parent) :
-    wxDialog(parent, -1, "Export Options", wxPoint(50, 50), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU | wxFRAME_NO_TASKBAR), // not resizable
+    wxDialog(parent, -1, "Export Options", wxPoint(50, 50), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     dontProcessChange(false)
 {
     // construct the panel
@@ -878,6 +868,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.21  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

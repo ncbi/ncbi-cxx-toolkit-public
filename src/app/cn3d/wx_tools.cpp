@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
@@ -301,8 +297,7 @@ END_EVENT_TABLE()
 GetFloatingPointDialog::GetFloatingPointDialog(wxWindow* parent,
     const wxString& message, const wxString& title,
     double min, double max, double increment, double initial) :
-        wxDialog(parent, -1, title, wxDefaultPosition, wxDefaultSize,
-            wxCAPTION | wxSYSTEM_MENU) // not resizable
+        wxDialog(parent, -1, title, wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
 {
     // code modified (heavily) from wxDesigner C++ output of fp_dialog.wdr
     wxPanel *panel = new wxPanel(this, -1);
@@ -365,6 +360,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/10/19 17:28:20  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.18  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

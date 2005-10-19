@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
 #include <corelib/ncbistl.hpp>
@@ -89,13 +85,13 @@ ThreaderOptions::ThreaderOptions(void) :
 ThreaderOptions globalThreaderOptions;
 
 // gives threader residue number for a character (-1 if non-standard aa)
-static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
+static unsigned int LookupThreaderResidueNumberFromCharacterAbbrev(unsigned char r)
 {
-    typedef map < char, int > Char2Int;
+    typedef map < char, unsigned int > Char2Int;
     static Char2Int charMap;
 
     if (charMap.size() == 0) {
-        for (int i=0; i<Threader::ThreaderResidues.size(); ++i)
+        for (unsigned int i=0; i<Threader::ThreaderResidues.size(); ++i)
             charMap[Threader::ThreaderResidues[i]] = i;
     }
 
@@ -103,12 +99,12 @@ static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
     return ((c != charMap.end()) ? c->second : -1);
 }
 
-const int Threader::SCALING_FACTOR = 1000000;
+const unsigned int Threader::SCALING_FACTOR = 1000000;
 
 const string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 
 // gives NCBIStdaa residue number for a threader residue number (or # for 'X' if char == -1)
-int LookupNCBIStdaaNumberFromThreaderResidueNumber(char r)
+unsigned int LookupNCBIStdaaNumberFromThreaderResidueNumber(unsigned char r)
 {
     r = toupper((unsigned char) r);
     return LookupNCBIStdaaNumberFromCharacter(
@@ -131,8 +127,8 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
     // special case for "PSSM" of single-row "alignment" - just use BLOSUM62 score
     if (multiple->NRows() == 1) {
         Seq_Mtf *seqMtf = NewSeqMtf(multiple->GetMaster()->Length(), ThreaderResidues.size());
-        for (int res=0; res<multiple->GetMaster()->Length(); ++res)
-            for (int aa=0; aa<ThreaderResidues.size(); ++aa)
+        for (unsigned int res=0; res<multiple->GetMaster()->Length(); ++res)
+            for (unsigned int aa=0; aa<ThreaderResidues.size(); ++aa)
                 seqMtf->ww[res][aa] = ThrdRound(
                     weightPSSM * SCALING_FACTOR *
                         GetBLOSUM62Score(multiple->GetMaster()->sequenceString[res],
@@ -168,7 +164,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
     CddDegapSeqAlign(seqAlign);
 
     Seq_Mtf *seqMtf = NULL;
-    for (int i=11; i>=1; --i) {
+    for (unsigned int i=11; i>=1; --i) {
         // first try auto-determined pseudocount (-1); if fails, find higest <= 10 that works
         int pseudocount = (i == 11) ? -1 : i;
         seqMtf = CddDenDiagCposComp2KBP(
@@ -200,8 +196,8 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
 
 Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier)
 {
-    static const int MIN_LOOP_MAX = 2;
-    static const int EXTENSION_MAX = 10;
+    static const unsigned int MIN_LOOP_MAX = 2;
+    static const unsigned int EXTENSION_MAX = 10;
 
     BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
     multiple->GetUngappedAlignedBlocks(&alignedBlocks);
@@ -215,7 +211,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     // loop constraints for unaligned regions between aligned blocks
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
         b = alignedBlocks.begin(), be = alignedBlocks.end();
-    int n, max;
+    unsigned int n, max;
     for (n=1, ++b; b!=be; ++n, ++b) {
         const UnalignedBlock *uaBlock = multiple->GetUnalignedBlockBefore(*b);
         if (uaBlock) {
@@ -230,7 +226,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
 
     // minimum block sizes (in coordinates of master)
     const Block::Range *range;
-    int mid;
+    unsigned int mid;
     for (n=0, b=alignedBlocks.begin(); b!=be; ++b, ++n) {
         range = (*b)->GetRangeOfRow(0);
         mid = (range->from + range->to) / 2;
@@ -247,13 +243,13 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     // right extension - trim to available residues
     corDef->sll.comx[alignedBlocks.size() - 1] = corDef->sll.comn[alignedBlocks.size() - 1] + EXTENSION_MAX;
     if (corDef->sll.rfpt[alignedBlocks.size() - 1] + corDef->sll.comx[alignedBlocks.size() - 1] >=
-            multiple->GetMaster()->Length())
+            (int)multiple->GetMaster()->Length())
         corDef->sll.comx[alignedBlocks.size() - 1] =
             multiple->GetMaster()->Length() - corDef->sll.rfpt[alignedBlocks.size() - 1] - 1;
 
     // extensions into unaligned areas between blocks
     const Block::Range *prevRange = NULL;
-    int nUnaligned, extN;
+    unsigned int nUnaligned, extN;
     for (n=0, b=alignedBlocks.begin(); b!=be; ++b, ++n) {
         range = (*b)->GetRangeOfRow(0);
         if (n > 0) {
@@ -272,7 +268,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
 }
 
 Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
-        const BlockMultipleAlignment *pairwise, int terminalCutoff)
+        const BlockMultipleAlignment *pairwise, unsigned int terminalCutoff)
 {
     const Sequence *slaveSeq = pairwise->GetSequenceOfRow(1);
     BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
@@ -283,7 +279,7 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
     Qry_Seq *qrySeq = NewQrySeq(slaveSeq->Length(), multipleABlocks.size());
 
     // fill in residue numbers
-    int i;
+    unsigned int i;
     for (i=0; i<slaveSeq->Length(); ++i)
         qrySeq->sq[i] = LookupThreaderResidueNumberFromCharacterAbbrev(slaveSeq->sequenceString[i]);
 
@@ -343,8 +339,8 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
 /*----------------------------------------------------------------------------
  *  stuff to read in the contact potential. (code swiped from DDV)
  *---------------------------------------------------------------------------*/
-static Int4 CountWords(char* Str) {
-    Int4     i, Count=0;
+static unsigned int CountWords(char* Str) {
+    unsigned int     i, Count=0;
     Boolean  InsideStr;
     InsideStr = FALSE;
     for (i=0; i<StrLen(Str); ++i) {
@@ -358,7 +354,7 @@ static Int4 CountWords(char* Str) {
     }
     return(Count);
 }
-static void ReadToRowOfEnergies(ifstream& InFile, int NumResTypes) {
+static void ReadToRowOfEnergies(ifstream& InFile, unsigned int NumResTypes) {
     char  Str[1024];
     while (!InFile.eof()) {
         InFile.getline(Str, sizeof(Str));
@@ -368,7 +364,7 @@ static void ReadToRowOfEnergies(ifstream& InFile, int NumResTypes) {
     }
 }
 
-static const int NUM_RES_TYPES = 21;
+static const unsigned int NUM_RES_TYPES = 21;
 
 Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
 {
@@ -379,8 +375,8 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     Int4      i, j, k;
     double    temp;
 
-    static const int kNumDistances = 6;
-    static const int kPeptideIndex = 20;
+    static const unsigned int kNumDistances = 6;
+    static const unsigned int kPeptideIndex = 20;
 
     /* open the contact potential for reading */
     StrCpy(Path, GetDataDir().c_str());
@@ -441,12 +437,12 @@ error:
  *  set up the annealing parameters. (more code swiped from DDV)
  *  hard-coded for now.  later we can move these parameters to a file.
  *---------------------------------------------------------------------------*/
-Gib_Scd * Threader::CreateGibScd(bool fast, int nRandomStarts)
+Gib_Scd * Threader::CreateGibScd(bool fast, unsigned int nRandomStarts)
 {
     Gib_Scd*  gsp;
-    int       NumTrajectoryPoints;
+    unsigned int       NumTrajectoryPoints;
 
-    static const int kNumTempSteps = 3;
+    static const unsigned int kNumTempSteps = 3;
 
     gsp = NewGibScd(kNumTempSteps);
 
@@ -518,7 +514,7 @@ Gib_Scd * Threader::CreateGibScd(bool fast, int nRandomStarts)
         NumTrajectoryPoints = 1;
     } else {
         NumTrajectoryPoints = 0;
-        for (int i=0; i<kNumTempSteps; ++i) {
+        for (unsigned int i=0; i<kNumTempSteps; ++i) {
             NumTrajectoryPoints += gsp->nti[i] * (gsp->nac[i] + gsp->nlc[i]);
         }
         NumTrajectoryPoints *= gsp->nrs;
@@ -612,7 +608,7 @@ static void GetVirtualCoordinates(const Molecule *mol, const AtomSet *atomSet,
     virtualCoordinates->resize(2 * mol->residues.size() - 1);
     Molecule::ResidueMap::const_iterator r, re = mol->residues.end();
     const Residue *prevResidue = NULL;
-    int i = 0;
+    unsigned int i = 0;
     for (r=mol->residues.begin(); r!=re; ++r) {
         if (prevResidue)
             GetVirtualPeptide(atomSet, mol,
@@ -623,11 +619,11 @@ static void GetVirtualCoordinates(const Molecule *mol, const AtomSet *atomSet,
     }
 }
 
-static const int MAX_DISTANCE_BIN = 5;
-static int BinDistance(const Vector& p1, const Vector& p2)
+static const unsigned int MAX_DISTANCE_BIN = 5;
+static unsigned int BinDistance(const Vector& p1, const Vector& p2)
 {
     double dist = (p2 - p1).length();
-    int bin;
+    unsigned int bin;
 
     if (dist > 10.0)
         bin = MAX_DISTANCE_BIN + 1;
@@ -650,7 +646,7 @@ static int BinDistance(const Vector& p1, const Vector& p2)
 static void GetContacts(const Threader::VirtualCoordinateList& coords,
     Threader::ContactList *resResContacts, Threader::ContactList *resPepContacts)
 {
-    int i, j, bin;
+    unsigned int i, j, bin;
 
     // loop i through whole chain, just to report all missing coords
     for (i=0; i<coords.size(); ++i) {
@@ -701,7 +697,7 @@ static void GetContacts(const Threader::VirtualCoordinateList& coords,
 static void TranslateContacts(const Threader::ContactList& resResContacts,
     const Threader::ContactList& resPepContacts, Fld_Mtf *fldMtf)
 {
-    int i;
+    unsigned int i;
     Threader::ContactList::const_iterator c;
     for (i=0, c=resResContacts.begin(); i<resResContacts.size(); ++i, ++c) {
         fldMtf->rrc.r1[i] = c->vc1 / 2;  // threader coord points to (res,pep) pair
@@ -723,7 +719,7 @@ inline bool operator < (const Threader::Contact& c1, const Threader::Contact& c2
 
 static void GetMinimumLoopLengths(const Molecule *mol, const AtomSet *atomSet, Fld_Mtf *fldMtf)
 {
-    int i, j;
+    unsigned int i, j;
     const AtomCoord *a1, *a2;
     Molecule::ResidueMap::const_iterator r1, r2, re = mol->residues.end();
     for (r1=mol->residues.begin(), i=0; r1!=re; ++r1, ++i) {
@@ -798,10 +794,10 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
     return fldMtf;
 }
 
-static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl, int nResult,
+static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl, unsigned int nResult,
     const Cor_Def *corDef, BlockMultipleAlignment::SequenceList *sequences, AlignmentManager *alnMgr)
 {
-    if (corDef->sll.n != thdTbl->nsc || nResult >= thdTbl->n) {
+    if (corDef->sll.n != thdTbl->nsc || (int)nResult >= thdTbl->n) {
         ERRORMSG("CreateAlignmentFromThdTbl() - inconsistent Thd_Tbl");
         return NULL;
     }
@@ -874,14 +870,14 @@ static bool FreezeIsolatedBlocks(Cor_Def *corDef, const Cor_Def *masterCorDef, c
 
 bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
     const AlignmentList *originalAlignments, AlignmentList *newAlignments,
-    int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer)
+    unsigned int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer)
 {
     *nRowsAddedToMultiple = 0;
     if (!masterMultiple || !originalAlignments || !newAlignments || originalAlignments->size() == 0)
         return false;
 
     // either calculate no z-scores (0), or calculate z-score for best result (1)
-    static const int zscs = 0;
+    static const unsigned int zscs = 0;
 
     Seq_Mtf *seqMtf = NULL;
     Cor_Def *corDef = NULL, *masterCorDef = NULL;
@@ -938,7 +934,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
 
         Qry_Seq *qrySeq = NULL;
         Thd_Tbl *thdTbl = NULL;
-        int success;
+        unsigned int success;
 
         // create query sequence
         if (!(qrySeq = CreateQrySeq(masterMultiple, *p, options.terminalResidueCutoff))) goto cleanup2;
@@ -1048,12 +1044,12 @@ cleanup:
 }
 
 static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBlockList& aBlocks,
-    int row, const vector < int >& residueNumbers, const Seq_Mtf *seqMtf)
+    unsigned int row, const vector < unsigned int >& residueNumbers, const Seq_Mtf *seqMtf)
 {
     double score = 0.0;
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks.end();
     const Block::Range *masterRange, *slaveRange;
-    int i;
+    unsigned int i;
 
     for (b=aBlocks.begin(); b!=be; ++b) {
         masterRange = (*b)->GetRangeOfRow(0);
@@ -1068,10 +1064,11 @@ static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBl
 }
 
 static double CalculateContactScore(const BlockMultipleAlignment *multiple,
-    int row, const vector < int >& residueNumbers, const Fld_Mtf *fldMtf, const Rcx_Ptl *rcxPtl)
+    unsigned int row, const vector < unsigned int >& residueNumbers, const Fld_Mtf *fldMtf, const Rcx_Ptl *rcxPtl)
 {
     double score = 0.0;
-    int i, seqIndex1, seqIndex2, resNum1, resNum2, dist;
+    int seqIndex1, seqIndex2, resNum1, resNum2, dist;
+	int i;
 
     // for each res-res contact, convert seqIndexes of master into corresponding seqIndexes
     // of slave if they're aligned; add contact energies if so
@@ -1095,9 +1092,9 @@ static double CalculateContactScore(const BlockMultipleAlignment *multiple,
         if (seqIndex1 < 0) continue;
 
         // peptides are only counted if both contributing master residues are aligned
-        if (fldMtf->rpc.p2[i] >= multiple->GetMaster()->Length() - 1 ||
-            !multiple->IsAligned(0, fldMtf->rpc.p2[i]) ||
-            !multiple->IsAligned(0, fldMtf->rpc.p2[i] + 1)) continue;
+        if (fldMtf->rpc.p2[i] >= (int)multiple->GetMaster()->Length() - 1 ||
+            !multiple->IsAligned(0U, fldMtf->rpc.p2[i]) ||
+            !multiple->IsAligned(0U, fldMtf->rpc.p2[i] + 1)) continue;
 
         resNum1 = residueNumbers[seqIndex1];
         if (resNum1 < 0) continue;
@@ -1117,9 +1114,9 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     Rcx_Ptl *rcxPtl = NULL;
     Fld_Mtf *fldMtf = NULL;
     BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
-    vector < int > residueNumbers;
+    vector < unsigned int > residueNumbers;
     bool retval = false;
-    int row;
+    unsigned int row;
 
     // create contact lists
     if (weightPSSM < 1.0 && (!multiple->GetMaster()->molecule ||
@@ -1143,7 +1140,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
         // get sequence's residue numbers
         const Sequence *seq = multiple->GetSequenceOfRow(row);
         residueNumbers.resize(seq->Length());
-        for (int i=0; i<seq->Length(); ++i)
+        for (unsigned int i=0; i<seq->Length(); ++i)
             residueNumbers[i] = LookupThreaderResidueNumberFromCharacterAbbrev(seq->sequenceString[i]);
 
         // sum score types (weightPSSM already built into seqMtf & rcxPtl)
@@ -1170,7 +1167,7 @@ cleanup:
     return retval;
 }
 
-int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
+unsigned int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
     GeometryViolationsForRow *violations)
 {
     Fld_Mtf *fldMtf = NULL;
@@ -1189,7 +1186,7 @@ int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
     BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
     multiple->GetUngappedAlignedBlocks(&aBlocks);
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks.end(), n;
-    int nViolations = 0;
+    unsigned int nViolations = 0;
     const Block::Range *thisRange, *nextRange, *thisMaster, *nextMaster;
     for (b=aBlocks.begin(); b!=be; ++b) {
         n = b;
@@ -1198,7 +1195,7 @@ int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
         thisMaster = (*b)->GetRangeOfRow(0);
         nextMaster = (*n)->GetRangeOfRow(0);
 
-        for (int row=1; row<multiple->NRows(); ++row) {
+        for (unsigned int row=1; row<multiple->NRows(); ++row) {
             thisRange = (*b)->GetRangeOfRow(row);
             nextRange = (*n)->GetRangeOfRow(row);
 
@@ -1214,10 +1211,10 @@ int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
     return nViolations;
 }
 
-int Threader::EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
+unsigned int Threader::EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
     const BlockMultipleAlignment *toBeThreaded)
 {
-    int nBlocksToAlign = 0;
+    unsigned int nBlocksToAlign = 0;
     BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
     coreAlignment->GetUngappedAlignedBlocks(&multipleABlocks);
     toBeThreaded->GetUngappedAlignedBlocks(&pairwiseABlocks);
@@ -1252,6 +1249,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.47  2005/06/03 16:25:34  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

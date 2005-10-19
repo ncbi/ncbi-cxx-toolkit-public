@@ -78,6 +78,7 @@ private:
     ncbi::objects::CCdd * GetInternalCDDData(void);
     const ncbi::objects::CCdd * GetInternalCDDData(void) const;
     bool ConvertMimeToGeneral(void);
+    void RemoveConsensusFromCDD(void);
 
     // pointers to lower-level data, filled in by Load
     void Load(void);
@@ -179,6 +180,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.15  2005/04/21 14:31:19  thiessen
 * add MonitorAlignments()
 *

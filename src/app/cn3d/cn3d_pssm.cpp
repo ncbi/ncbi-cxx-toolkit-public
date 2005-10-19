@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
@@ -49,6 +45,8 @@
 #include <objects/scoremat/scoremat__.hpp>
 
 // conflicts between algo/blast stuff and C-toolkit stuff
+#undef INT1_MIN
+#undef INT1_MAX
 #undef INT2_MIN
 #undef INT2_MAX
 
@@ -112,7 +110,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
 
         seq = bma->GetSequenceOfRow(0);
         range = block.GetRangeOfRow(0);
-        if (range->from < 0 || range->from > seq->Length() || range->to < -1 || range->to >= seq->Length() ||
+        if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
                 range->to < range->from - 1 ||
                 range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(0)->to + 1)) ||
                 (b == blocks.size() - 1 && range->to != seq->Length() - 1))
@@ -123,7 +121,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
         for (row=0; row<bma->NRows(); row++) {
             seq = bma->GetSequenceOfRow(row);
             range = block.GetRangeOfRow(row);
-            if (range->from < 0 || range->from > seq->Length() || range->to < -1 || range->to >= seq->Length() ||
+            if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
                     range->to < range->from - 1 ||
                     range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(row)->to + 1)) ||
                     (b == blocks.size() - 1 && range->to != seq->Length() - 1))
@@ -413,7 +411,7 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
     // allocate matrix
     matrix->matrix = (Int4Ptr *) MemNew(matrix->rows * sizeof(Int4Ptr));
     unsigned int i;
-    for (i=0; i<matrix->rows; ++i)
+    for (i=0; (int)i<matrix->rows; ++i)
         matrix->matrix[i] = (Int4Ptr) MemNew(matrix->columns * sizeof(Int4));
 
     // convert matrix
@@ -440,7 +438,7 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
     }
 
     // Set the last row to BLAST_SCORE_MIN
-    for (i=0; i<matrix->columns; i++)
+    for (i=0; (int)i<matrix->columns; i++)
         matrix->matrix[matrix->rows - 1][i] = BLAST_SCORE_MIN;
 
 #ifdef DEBUG_PSSM
@@ -591,6 +589,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.7  2005/09/26 14:42:24  camacho
 * Renamed blast_psi.hpp -> pssm_engine.hpp
 *

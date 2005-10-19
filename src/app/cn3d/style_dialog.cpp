@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -152,15 +148,14 @@ BEGIN_EVENT_TABLE(StyleDialog, wxDialog)
     EVT_CLOSE       (       StyleDialog::OnCloseWindow)
     EVT_CHOICE      (-1,    StyleDialog::OnChange)
     EVT_CHECKBOX    (-1,    StyleDialog::OnChange)
-    EVT_SPINCTRL    (-1,    StyleDialog::OnChange)
+    EVT_SPINCTRL    (-1,    StyleDialog::OnSpin)
     EVT_BUTTON      (-1,    StyleDialog::OnButton)
     // generated when {Integer,FloatingPoint}SpinCtrl changes
     EVT_COMMAND     (-1, WX_TOOLS_NOTIFY_CHANGED, StyleDialog::OnChange)
 END_EVENT_TABLE()
 
 StyleDialog::StyleDialog(wxWindow* parent, StyleSettings *settingsToEdit, const StructureSet *set) :
-    wxDialog(parent, -1, "Style Options", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU), // not resizable
+    wxDialog(parent, -1, "Style Options", wxPoint(400, 100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
     editedSettings(settingsToEdit), originalSettings(*settingsToEdit),
     structureSet(set), changedSinceApply(false), changedEver(false)
 {
@@ -635,6 +630,12 @@ void StyleDialog::OnChange(wxCommandEvent& event)
     }
 }
 
+void StyleDialog::OnSpin(wxSpinEvent& event)
+{
+    wxCommandEvent fake;
+    OnChange(fake);
+}
+
 END_SCOPE(Cn3D)
 
 
@@ -649,7 +650,7 @@ wxSizer *LayoutNotebook( wxPanel *parent, bool call_fit, bool set_sizer )
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
 
     wxNotebook *item2 = new wxNotebook( parent, ID_NOTEBOOK, wxDefaultPosition, wxDefaultSize, 0 );
-    wxNotebookSizer *item1 = new wxNotebookSizer( item2 );
+//    wxNotebookSizer *item1 = new wxNotebookSizer( item2 );
 
     wxPanel *item3 = new wxPanel( item2, -1 );
     LayoutSettingsPage( item3, FALSE );
@@ -663,7 +664,7 @@ wxSizer *LayoutNotebook( wxPanel *parent, bool call_fit, bool set_sizer )
     LayoutDetailsPage( item5, FALSE );
     item2->AddPage( item5, "Details" );
 
-    item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item0->Add( item2, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxBoxSizer *item6 = new wxBoxSizer( wxHORIZONTAL );
 
@@ -1318,6 +1319,9 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.27  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

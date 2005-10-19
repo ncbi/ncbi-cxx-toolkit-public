@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -58,11 +54,11 @@ const Colors * GlobalColors(void)
 
 
 // # colors for color cycles
-const int
+const unsigned int
     Colors::nCycle1 = 10;
 
 // # colors for color maps (must be >1)
-const int
+const unsigned int
     Colors::nTemperatureMap = 5,
     Colors::nHydrophobicityMap = 3,
     Colors::nConservationMap = 2,
@@ -145,7 +141,7 @@ const Vector& Colors::Get(eColor which) const
     return colors[0];
 }
 
-const Vector& Colors::Get(eColorCycle which, int n) const
+const Vector& Colors::Get(eColorCycle which, unsigned int n) const
 {
     if (which >= 0 && which < eNumColorCycles && n >= 0)
         return cycleColors[which][n % cycleColors[which].size()];
@@ -159,7 +155,7 @@ Vector Colors::Get(eColorMap which, double f) const
         const vector < Vector >& colorMap = mapColors[which];
         if (f == 1.0) return colorMap[colorMap.size() - 1];
         double bin = 1.0 / (colorMap.size() - 1);
-        int low = (int) (f / bin);
+        unsigned int low = (unsigned int) (f / bin);
         double fraction = fmod(f, bin) / bin;
         const Vector &color1 = colorMap[low], &color2 = colorMap[low + 1];
         return (color1 + fraction * (color2 - color1));
@@ -168,9 +164,9 @@ Vector Colors::Get(eColorMap which, double f) const
     return mapColors[0][0];
 }
 
-const Vector* Colors::Get(eColorMap which, int index) const
+const Vector* Colors::Get(eColorMap which, unsigned int index) const
 {
-    if (which >= 0 && which < eNumColorMaps && index >= 0 && index < mapColors[which].size())
+    if (which < eNumColorMaps && index >= 0 && index < mapColors[which].size())
         return &(mapColors[which][index]);
     else
         return NULL;
@@ -181,6 +177,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.19  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

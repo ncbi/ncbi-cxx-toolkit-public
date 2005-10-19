@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
@@ -150,7 +146,7 @@ int dpScoreFunction(unsigned int block, unsigned int queryPos)
         return DP_NEGATIVE_INFINITY;
     }
 
-    int i, masterPos = dpBlocks->blockPositions[block], score = 0;
+    unsigned int i, masterPos = dpBlocks->blockPositions[block], score = 0;
     for (i=0; i<dpBlocks->blockSizes[block]; ++i)
         score += dpPSSM->matrix[masterPos + i]
             [LookupNCBIStdaaNumberFromCharacter(dpQuery->sequenceString[queryPos + i])];
@@ -227,7 +223,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         return false;
     }
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-    int i;
+    unsigned int i;
 
     // set up block info
     dpBlocks = DP_CreateBlockInfo(blocks.size());
@@ -243,7 +239,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         if (i < blocks.size() - 1) {
             n = b;
             ++n;
-            for (int r=0; r<multiple->NRows(); ++r) {
+            for (unsigned int r=0; r<multiple->NRows(); ++r) {
                 range = (*b)->GetRangeOfRow(r);
                 nextRange = (*n)->GetRangeOfRow(r);
                 loopLengths[r] = nextRange->from - range->to - 1;
@@ -394,8 +390,7 @@ END_EVENT_TABLE()
 
 BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxWindow* parent, const BlockAligner::BlockAlignerOptions& init) :
-        wxDialog(parent, -1, "Set Block Aligner Options", wxPoint(100,100), wxDefaultSize,
-            wxCAPTION | wxSYSTEM_MENU) // not resizable
+        wxDialog(parent, -1, "Set Block Aligner Options", wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
 {
     wxPanel *panel = new wxPanel(this, -1);
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
@@ -517,6 +512,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.37  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

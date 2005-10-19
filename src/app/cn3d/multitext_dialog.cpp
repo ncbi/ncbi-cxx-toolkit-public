@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -56,7 +52,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
         const TextLines& initialText,
         wxWindow* parent, wxWindowID id, const wxString& title) :
     wxDialog(parent, id, title, wxDefaultPosition, wxDefaultSize,
-        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxDIALOG_MODELESS | wxFRAME_NO_TASKBAR),
+        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
     myOwner(owner)
 {
     // set size/position from registry
@@ -91,7 +87,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
 
     // set initial text - if single line, break up into smaller lines, otherwise leave as-is
     if (initialText.size() == 1) {
-        int i, j;
+        unsigned int i, j;
         for (i=j=0; i<initialText[0].size(); ++i, ++j) {
             if (j > 60 && initialText[0][i] == ' ') {
                 *textCtrl << '\n';
@@ -100,7 +96,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
                 *textCtrl << initialText[0][i];
         }
     } else {
-        for (int i=0; i<initialText.size(); ++i)
+        for (unsigned int i=0; i<initialText.size(); ++i)
             *textCtrl << initialText[i].c_str() << '\n';
     }
 
@@ -187,6 +183,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.13  2005/01/04 16:06:59  thiessen
 * make MultiTextDialog remember its position+size
 *

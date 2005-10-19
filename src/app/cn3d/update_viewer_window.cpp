@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -402,8 +398,7 @@ BEGIN_EVENT_TABLE(ThreaderOptionsDialog, wxDialog)
 END_EVENT_TABLE()
 
 ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOptions& initialOptions) :
-    wxDialog(parent, -1, "Set Threader Options", wxDefaultPosition, wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU) // not resizable
+    wxDialog(parent, -1, "Set Threader Options", wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
 {
     // the following code is modified (heavily) from wxDesigner C++ output from threader_dialog.wdr
     wxPanel *panel = new wxPanel(this, -1);
@@ -558,8 +553,7 @@ END_EVENT_TABLE()
 
 RegionDialog::RegionDialog(wxWindow* parentFrame,
         const Sequence* sequence, int initialFrom, int initialTo) :
-    wxDialog(parentFrame, -1, "Set Alignment Region", wxDefaultPosition, wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU) // not resizable
+    wxDialog(parentFrame, -1, "Set Alignment Region", wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
 {
     wxPanel *parent = new wxPanel(this, -1);
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
@@ -660,6 +654,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.64  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

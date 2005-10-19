@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -84,7 +80,7 @@ BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, Align
 
 void BlockMultipleAlignment::InitCache(void)
 {
-    cachePrevRow = -1;
+    cachePrevRow = kMax_UInt;
     cachePrevBlock = NULL;
     cacheBlockIterator = blocks.begin();
 }
@@ -161,7 +157,7 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
     }
 
     // make sure ranges are reasonable for each sequence
-    int row;
+    unsigned int row;
     const Block
         *prevBlock = GetBlockBefore(block),
         *nextBlock = GetBlockAfter(block);
@@ -171,11 +167,11 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
         range = block->GetRangeOfRow(row);
         if (prevBlock) prevRange = prevBlock->GetRangeOfRow(row);
         if (nextBlock) nextRange = nextBlock->GetRangeOfRow(row);
-        if (range->to - range->from + 1 != block->width ||       // check block width
+        if (range->to - range->from + 1 != block->width ||          // check block width
             (prevRange && range->from <= prevRange->to) ||          // check for range overlap
             (nextRange && range->to >= nextRange->from) ||          // check for range overlap
             range->from > range->to ||                              // check range values
-            range->to >= (*sequence)->Length()) {                   // check bounds of end
+            range->to >= (int)(*sequence)->Length()) {              // check bounds of end
             ERRORMSG("MultipleAlignment::CheckAlignedBlock() - range error");
             return false;
         }
@@ -201,7 +197,7 @@ UnalignedBlock * BlockMultipleAlignment::
         return NULL;
     }
 
-    int row, from, to, length;
+    unsigned int row, from, to, length;
     SequenceList::const_iterator s, se = sequences->end();
 
     UnalignedBlock *newBlock = new UnalignedBlock(this);
@@ -221,11 +217,11 @@ UnalignedBlock * BlockMultipleAlignment::
 
         newBlock->SetRangeOfRow(row, from, to);
 
-        length = to - from + 1;
-        if (length < 0) { // just to make sure...
+        if (to + 1 < from) { // just to make sure...
             ERRORMSG("CreateNewUnalignedBlockBetween() - unaligned length < 0");
             return NULL;
         }
+        length = to - from + 1;
         if (length > newBlock->width) newBlock->width = length;
     }
 
@@ -261,7 +257,7 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
 
 bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
 {
-    int i = 0, j, n = 0;
+    unsigned int i = 0, j, n = 0;
     BlockList::iterator b, be = blocks.end();
 
     // reset old stuff, recalculate width
@@ -295,7 +291,7 @@ bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
 }
 
 bool BlockMultipleAlignment::GetCharacterTraitsAt(
-    int alignmentColumn, int row, eUnalignedJustification justification,
+    unsigned int alignmentColumn, unsigned int row, eUnalignedJustification justification,
     char *character, Vector *color, bool *isHighlighted,
     bool *drawBackground, Vector *cellBackgroundColor) const
 {
@@ -391,13 +387,13 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
 
                     // get corresponding block of multiple
                     const Block::Range *masterRange = block->GetRangeOfRow(0);
-                    int masterIndex = masterRange->from + seqIndex - range->from;
+                    unsigned int masterIndex = masterRange->from + seqIndex - range->from;
                     const Block *multipleBlock = referenceAlignment->GetBlock(0, masterIndex);
                     masterRange = multipleBlock->GetRangeOfRow(0);
 
                     if (multipleBlock->IsAligned() &&
-                        ((isLeftEdge && masterIndex > masterRange->from) ||
-                         (isRightEdge && masterIndex < masterRange->to)))
+                        ((isLeftEdge && (int)masterIndex > masterRange->from) ||
+                         (isRightEdge && (int)masterIndex < masterRange->to)))
                         unmergeable = true;
                 }
             }
@@ -427,7 +423,7 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
 }
 
 bool BlockMultipleAlignment::GetSequenceAndIndexAt(
-    int alignmentColumn, int row, eUnalignedJustification requestedJustification,
+    unsigned int alignmentColumn, unsigned int row, eUnalignedJustification requestedJustification,
     const Sequence **sequence, int *index, bool *isAligned) const
 {
     if (sequence) *sequence = (*sequences)[row];
@@ -460,8 +456,8 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
         return -1;
     }
 
-    if (cachePrevRow < 0 || cachePrevRow >= NRows() || sequence != (*sequences)[cachePrevRow]) {
-        int row;
+    if (cachePrevRow >= NRows() || sequence != (*sequences)[cachePrevRow]) {
+        unsigned int row;
         for (row=0; row<NRows(); ++row) if ((*sequences)[row] == sequence) break;
         if (row == NRows()) {
 //            ERRORMSG("BlockMultipleAlignment::GetRowForSequence() - can't find given Sequence");
@@ -473,7 +469,7 @@ int BlockMultipleAlignment::GetRowForSequence(const Sequence *sequence) const
 }
 
 const Vector * BlockMultipleAlignment::GetAlignmentColor(
-    int row, int seqIndex, StyleSettings::eColorScheme colorScheme) const
+    unsigned int row, unsigned int seqIndex, StyleSettings::eColorScheme colorScheme) const
 {
      const UngappedAlignedBlock *block = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(row, seqIndex));
      if (!block || !block->IsAligned()) {
@@ -524,23 +520,23 @@ const Vector * BlockMultipleAlignment::GetAlignmentColor(
 }
 
 const Vector * BlockMultipleAlignment::GetAlignmentColor(
-    const Sequence *sequence, int seqIndex, StyleSettings::eColorScheme colorScheme) const
+    const Sequence *sequence, unsigned int seqIndex, StyleSettings::eColorScheme colorScheme) const
 {
     int row = GetRowForSequence(sequence);
     if (row < 0) return NULL;
     return GetAlignmentColor(row, seqIndex, colorScheme);
 }
 
-bool BlockMultipleAlignment::IsAligned(int row, int seqIndex) const
+bool BlockMultipleAlignment::IsAligned(unsigned int row, unsigned int seqIndex) const
 {
     const Block *block = GetBlock(row, seqIndex);
     return (block && block->IsAligned());
 }
 
-const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
+const Block * BlockMultipleAlignment::GetBlock(unsigned int row, unsigned int seqIndex) const
 {
     // make sure we're in range for this sequence
-    if (row < 0 || seqIndex < 0 || row >= NRows() || seqIndex >= (*sequences)[row]->Length()) {
+    if (row >= NRows() || seqIndex >= (*sequences)[row]->Length()) {
         ERRORMSG("BlockMultipleAlignment::GetBlock() - coordinate out of range");
         return NULL;
     }
@@ -550,7 +546,7 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
     // first check to see if it's in the same block as last time.
     if (cachePrevBlock) {
         range = cachePrevBlock->GetRangeOfRow(row);
-        if (seqIndex >= range->from && seqIndex <= range->to) return cachePrevBlock;
+        if ((int)seqIndex >= range->from && (int)seqIndex <= range->to) return cachePrevBlock;
         ++cacheBlockIterator; // start search at next block
     } else {
         cacheBlockIterator = blocks.begin();
@@ -561,7 +557,7 @@ const Block * BlockMultipleAlignment::GetBlock(int row, int seqIndex) const
     do {
         if (cacheBlockIterator == blocks.end()) cacheBlockIterator = blocks.begin();
         range = (*cacheBlockIterator)->GetRangeOfRow(row);
-        if (seqIndex >= range->from && seqIndex <= range->to) {
+        if ((int)seqIndex >= range->from && (int)seqIndex <= range->to) {
             cachePrevBlock = *cacheBlockIterator; // cache this block
             return cachePrevBlock;
         }
@@ -580,7 +576,7 @@ int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
         return -1;
 }
 
-int BlockMultipleAlignment::GetAlignedSlaveIndex(int masterSeqIndex, int slaveRow) const
+int BlockMultipleAlignment::GetAlignedSlaveIndex(unsigned int masterSeqIndex, unsigned int slaveRow) const
 {
     const UngappedAlignedBlock
         *aBlock = dynamic_cast<const UngappedAlignedBlock*>(GetBlock(0, masterSeqIndex));
@@ -592,7 +588,7 @@ int BlockMultipleAlignment::GetAlignedSlaveIndex(int masterSeqIndex, int slaveRo
     return (slaveRange->from + masterSeqIndex - masterRange->from);
 }
 
-void BlockMultipleAlignment::SelectedRange(int row, int alnIndexFrom, int alnIndexTo,
+void BlockMultipleAlignment::SelectedRange(unsigned int row, unsigned int alnIndexFrom, unsigned int alnIndexTo,
     eUnalignedJustification justification, bool toggle) const
 {
     // translate from,to (alignment columns) into sequence indexes
@@ -624,13 +620,13 @@ void BlockMultipleAlignment::SelectedRange(int row, int alnIndexFrom, int alnInd
         GlobalMessenger()->AddHighlights(sequence, fromSeqIndex, toSeqIndex);
 }
 
-void BlockMultipleAlignment::SelectBlocks(int alnIndexFrom, int alnIndexTo, bool toggle) const
+void BlockMultipleAlignment::SelectBlocks(unsigned int alnIndexFrom, unsigned int alnIndexTo, bool toggle) const
 {
-    typedef vector < pair < int, int > > VecPair;
+    typedef vector < pair < unsigned int, unsigned int > > VecPair;
     VecPair highlightRanges;
 
     BlockList::const_iterator b, be = blocks.end();
-    int start = 0, from, to;
+    unsigned int start = 0, from, to;
     for (b=blocks.begin(); b!=be; ++b) {
         if ((*b)->IsAligned()) {
             from = start;
@@ -647,14 +643,14 @@ void BlockMultipleAlignment::SelectBlocks(int alnIndexFrom, int alnIndexTo, bool
         return;
 
     // select all ranges in each row; justification is irrelevant since we're in aligned blocks only
-    for (int row=0; row<NRows(); ++row) {
+    for (unsigned int row=0; row<NRows(); ++row) {
         VecPair::const_iterator p, pe = highlightRanges.end();
         for (p=highlightRanges.begin(); p!=pe; ++p)
             SelectedRange(row, p->first, p->second, eLeft, toggle);
     }
 }
 
-void BlockMultipleAlignment::GetAlignedBlockPosition(int alignmentIndex,
+void BlockMultipleAlignment::GetAlignedBlockPosition(unsigned int alignmentIndex,
     int *blockColumn, int *blockWidth) const
 {
     *blockColumn = *blockWidth = -1;
@@ -750,7 +746,7 @@ void BlockMultipleAlignment::RemoveBlock(Block *block)
     WARNINGMSG("BlockMultipleAlignment::RemoveBlock() - couldn't find block");
 }
 
-bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
+bool BlockMultipleAlignment::MoveBlockBoundary(unsigned int columnFrom, unsigned int columnTo)
 {
     int blockColumn, blockWidth;
     GetAlignedBlockPosition(columnFrom, &blockColumn, &blockWidth);
@@ -759,11 +755,12 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
     TRACEMSG("trying to move block boundary from " << columnFrom << " to " << columnTo);
 
     const BlockInfo& info = blockMap[columnFrom];
-    int row, requestedShift = columnTo - columnFrom, actualShift = 0;
+    unsigned int row;
+    int requestedShift = columnTo - columnFrom, actualShift = 0;
     const Block::Range *range;
 
     // shrink block from left
-    if (blockColumn == 0 && requestedShift > 0 && requestedShift < info.block->width) {
+    if (blockColumn == 0 && requestedShift > 0 && requestedShift < (int)info.block->width) {
         actualShift = requestedShift;
         TRACEMSG("shrinking block from left");
         for (row=0; row<NRows(); ++row) {
@@ -787,7 +784,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
 
     // shrink block from right (requestedShift < 0)
     else if (blockColumn == info.block->width - 1 &&
-                requestedShift < 0 && requestedShift > -info.block->width) {
+                requestedShift < 0 && -requestedShift < (int)info.block->width) {
         actualShift = requestedShift;
         TRACEMSG("shrinking block from right");
         for (row=0; row<NRows(); ++row) {
@@ -874,7 +871,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(int columnFrom, int columnTo)
         return false;
 }
 
-bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAlignmentIndex,
+bool BlockMultipleAlignment::ShiftRow(unsigned int row, unsigned int fromAlignmentIndex, unsigned int toAlignmentIndex,
     eUnalignedJustification justification)
 {
     if (fromAlignmentIndex == toAlignmentIndex) return false;
@@ -938,11 +935,11 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     if (prevUABlock) {
         prevUABlock->SetRangeOfRow(row, prevRange->from, prevRange->to - actualShift);
         prevUABlock->width = 0;
-        for (int i=0; i<NRows(); ++i) {
+        for (unsigned int i=0; i<NRows(); ++i) {
             prevRange = prevUABlock->GetRangeOfRow(i);
             width = prevRange->to - prevRange->from + 1;
             if (width < 0) ERRORMSG("BlockMultipleAlignment::ShiftRow() - negative width on left");
-            if (width > prevUABlock->width) prevUABlock->width = width;
+            if (width > (int)prevUABlock->width) prevUABlock->width = width;
         }
         if (prevUABlock->width == 0) {
             TRACEMSG("removing zero-width unaligned block on left");
@@ -957,11 +954,11 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     if (nextUABlock) {
         nextUABlock->SetRangeOfRow(row, nextRange->from - actualShift, nextRange->to);
         nextUABlock->width = 0;
-        for (int i=0; i<NRows(); ++i) {
+        for (unsigned int i=0; i<NRows(); ++i) {
             nextRange = nextUABlock->GetRangeOfRow(i);
             width = nextRange->to - nextRange->from + 1;
             if (width < 0) ERRORMSG("BlockMultipleAlignment::ShiftRow() - negative width on right");
-            if (width > nextUABlock->width) nextUABlock->width = width;
+            if (width > (int)nextUABlock->width) nextUABlock->width = width;
         }
         if (nextUABlock->width == 0) {
             TRACEMSG("removing zero-width unaligned block on right");
@@ -980,7 +977,7 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     return true;
 }
 
-bool BlockMultipleAlignment::ZipAlignResidue(int row, int alignmentIndex, bool moveRight, eUnalignedJustification justification)
+bool BlockMultipleAlignment::ZipAlignResidue(unsigned int row, unsigned int alignmentIndex, bool moveRight, eUnalignedJustification justification)
 {
     if (blockMap[alignmentIndex].block->IsAligned()) {
         TRACEMSG("residue is already aligned");
@@ -1001,7 +998,7 @@ bool BlockMultipleAlignment::ZipAlignResidue(int row, int alignmentIndex, bool m
         justification);
 }
 
-bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalignedJustification justification)
+bool BlockMultipleAlignment::OptimizeBlock(unsigned int row, unsigned int alignmentIndex, eUnalignedJustification justification)
 {
     // is this an aligned block?
     UngappedAlignedBlock *block = dynamic_cast<UngappedAlignedBlock*>(blockMap[alignmentIndex].block);
@@ -1012,7 +1009,7 @@ bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalign
 
     // see if there's any room to shift
     const UnalignedBlock *prevBlock = GetUnalignedBlockBefore(block), *nextBlock = GetUnalignedBlockAfter(block);
-    int maxShiftRight = 0, maxShiftLeft = 0;
+    unsigned int maxShiftRight = 0, maxShiftLeft = 0;
     const Block::Range *range;
     if (prevBlock) {
         range = prevBlock->GetRangeOfRow(row);
@@ -1030,20 +1027,20 @@ bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalign
 
     // scan all possible block positions, find max information content
     range = block->GetRangeOfRow(row);
-    int bestSeqIndexStart = range->from;
+    unsigned int bestSeqIndexStart = range->from;
     float score, maxScore = kMin_Float;
-    for (int seqIndexStart = range->from - maxShiftRight; seqIndexStart <= range->from + maxShiftLeft; ++seqIndexStart) {
+    for (unsigned int seqIndexStart = range->from - maxShiftRight; seqIndexStart <= range->from + maxShiftLeft; ++seqIndexStart) {
 
         // calculate block's info content given each position of this row
         score = 0.0f;
-        for (int blockColumn=0; blockColumn<block->width; ++blockColumn) {
+        for (unsigned int blockColumn=0; blockColumn<block->width; ++blockColumn) {
 
             // create profile for this column
-            typedef std::map < char, int > ColumnProfile;
+            typedef std::map < char, unsigned int > ColumnProfile;
             ColumnProfile profile;
             ColumnProfile::iterator p, pe;
-            for (int r=0; r<NRows(); ++r) {
-                int seqIndex = (r == row) ? (seqIndexStart + blockColumn) : (block->GetRangeOfRow(r)->from + blockColumn);
+            for (unsigned int r=0; r<NRows(); ++r) {
+                unsigned int seqIndex = (r == row) ? (seqIndexStart + blockColumn) : (block->GetRangeOfRow(r)->from + blockColumn);
                 char ch = ScreenResidueCharacter(GetSequenceOfRow(r)->sequenceString[seqIndex]);
                 if ((p=profile.find(ch)) != profile.end())
                     ++(p->second);
@@ -1074,12 +1071,12 @@ bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalign
     // if the best position is other than the current, then shift the block accordingly
     bool moved = (bestSeqIndexStart != range->from);
     if (moved) {
-        if (bestSeqIndexStart < range->from)
+        if ((int)bestSeqIndexStart < range->from)
             TRACEMSG("shifting block right by " << (range->from - bestSeqIndexStart));
         else
             TRACEMSG("shifting block left by " << (bestSeqIndexStart - range->from));
         alignmentIndex = GetAlignmentIndex(row, range->from, justification);
-        int alnIdx2 = GetAlignmentIndex(row, bestSeqIndexStart, justification);
+        unsigned int alnIdx2 = GetAlignmentIndex(row, bestSeqIndexStart, justification);
         moved = ShiftRow(row, alnIdx2, alignmentIndex, justification);
         if (!moved)
             ERRORMSG("ShiftRow() failed!");
@@ -1089,7 +1086,7 @@ bool BlockMultipleAlignment::OptimizeBlock(int row, int alignmentIndex, eUnalign
     return moved;
 }
 
-bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
+bool BlockMultipleAlignment::SplitBlock(unsigned int alignmentIndex)
 {
     const BlockInfo& info = blockMap[alignmentIndex];
     if (!info.block->IsAligned() || info.block->width < 2 || info.blockColumn == 0)
@@ -1101,8 +1098,8 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
     info.block->width = info.blockColumn;
 
     const Block::Range *range;
-    int oldTo;
-    for (int row=0; row<NRows(); ++row) {
+    unsigned int oldTo;
+    for (unsigned int row=0; row<NRows(); ++row) {
         range = info.block->GetRangeOfRow(row);
         oldTo = range->to;
         info.block->SetRangeOfRow(row, range->from, range->from + info.block->width - 1);
@@ -1117,13 +1114,13 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
     return true;
 }
 
-bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignmentIndex)
+bool BlockMultipleAlignment::MergeBlocks(unsigned int fromAlignmentIndex, unsigned int toAlignmentIndex)
 {
     Block
         *expandedBlock = blockMap[fromAlignmentIndex].block,
         *lastBlock = blockMap[toAlignmentIndex].block;
     if (expandedBlock == lastBlock) return false;
-    int i;
+    unsigned int i;
     for (i=fromAlignmentIndex; i<=toAlignmentIndex; ++i)
         if (!blockMap[i].block->IsAligned()) return false;
 
@@ -1150,16 +1147,17 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
     return true;
 }
 
-bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignmentIndex,
+bool BlockMultipleAlignment::CreateBlock(unsigned int fromAlignmentIndex, unsigned int toAlignmentIndex,
     eUnalignedJustification justification)
 {
     const BlockInfo& info = blockMap[fromAlignmentIndex];
     UnalignedBlock *prevUABlock = dynamic_cast<UnalignedBlock*>(info.block);
     if (!prevUABlock || info.block != blockMap[toAlignmentIndex].block) return false;
-    int row, seqIndexFrom, seqIndexTo,
+    int seqIndexFrom, seqIndexTo;
+    unsigned int row,
         newBlockWidth = toAlignmentIndex - fromAlignmentIndex + 1,
         origWidth = prevUABlock->width;
-    vector < int > seqIndexesFrom(NRows()), seqIndexesTo(NRows());
+    vector < unsigned int > seqIndexesFrom(NRows()), seqIndexesTo(NRows());
     const Sequence *seq;
 	bool ignored;
     for (row=0; row<NRows(); ++row) {
@@ -1188,7 +1186,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
         if (rangeWidth < 0)
             ERRORMSG("BlockMultipleAlignment::CreateBlock() - negative nextRange width");
         else if (rangeWidth > 0) {
-            if (rangeWidth > nextUABlock->width) nextUABlock->width = rangeWidth;
+            if (rangeWidth > (int)nextUABlock->width) nextUABlock->width = rangeWidth;
             deleteNextUABlock = false;
         }
 
@@ -1197,7 +1195,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
         if (rangeWidth < 0)
             ERRORMSG("BlockMultipleAlignment::CreateBlock() - negative prevRange width");
         else if (rangeWidth > 0) {
-            if (rangeWidth > prevUABlock->width) prevUABlock->width = rangeWidth;
+            if (rangeWidth > (int)prevUABlock->width) prevUABlock->width = rangeWidth;
             deletePrevUABlock = false;
         }
 
@@ -1226,7 +1224,7 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
     return true;
 }
 
-bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
+bool BlockMultipleAlignment::DeleteBlock(unsigned int alignmentIndex)
 {
     Block *block = blockMap[alignmentIndex].block;
     if (!block || !block->IsAligned()) return false;
@@ -1239,8 +1237,8 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     // unaligned blocks on both sides - note that total alignment width can change!
     if (prevBlock && !prevBlock->IsAligned() && nextBlock && !nextBlock->IsAligned()) {
         const Block::Range *prevRange, *nextRange;
-        int maxWidth = 0, width;
-        for (int row=0; row<NRows(); ++row) {
+        unsigned int maxWidth = 0, width;
+        for (unsigned int row=0; row<NRows(); ++row) {
             prevRange = prevBlock->GetRangeOfRow(row);
             nextRange = nextBlock->GetRangeOfRow(row);
             width = nextRange->to - prevRange->from + 1;
@@ -1255,7 +1253,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     // unaligned block on left only
     else if (prevBlock && !prevBlock->IsAligned()) {
         const Block::Range *prevRange, *range;
-        for (int row=0; row<NRows(); ++row) {
+        for (unsigned int row=0; row<NRows(); ++row) {
             prevRange = prevBlock->GetRangeOfRow(row);
             range = block->GetRangeOfRow(row);
             prevBlock->SetRangeOfRow(row, prevRange->from, range->to);
@@ -1266,7 +1264,7 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
     // unaligned block on right only
     else if (nextBlock && !nextBlock->IsAligned()) {
         const Block::Range *range, *nextRange;
-        for (int row=0; row<NRows(); ++row) {
+        for (unsigned int row=0; row<NRows(); ++row) {
             range = block->GetRangeOfRow(row);
             nextRange = nextBlock->GetRangeOfRow(row);
             nextBlock->SetRangeOfRow(row, range->from, nextRange->to);
@@ -1302,7 +1300,7 @@ bool BlockMultipleAlignment::DeleteAllBlocks(void)
     return true;
 }
 
-bool BlockMultipleAlignment::DeleteRow(int row)
+bool BlockMultipleAlignment::DeleteRow(unsigned int row)
 {
     if (row < 0 || row >= NRows()) {
         ERRORMSG("BlockMultipleAlignment::DeleteRow() - row out of range");
@@ -1359,12 +1357,12 @@ void BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *
 }
 
 bool BlockMultipleAlignment::ExtractRows(
-    const vector < int >& slavesToRemove, AlignmentList *pairwiseAlignments)
+    const vector < unsigned int >& slavesToRemove, AlignmentList *pairwiseAlignments)
 {
     if (slavesToRemove.size() == 0) return false;
 
     // make a bool list of rows to remove, also checking to make sure slave list items are in range
-    int i;
+    unsigned int i;
     vector < bool > removeRows(NRows(), false);
     for (i=0; i<slavesToRemove.size(); ++i) {
         if (slavesToRemove[i] > 0 && slavesToRemove[i] < NRows()) {
@@ -1493,13 +1491,13 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     }
 
     // add slave sequences from new alignment; also copy other row-associated info
-    int i, nNewRows = newAlignment->sequences->size() - 1;
+    unsigned int i, nNewRows = newAlignment->sequences->size() - 1;
     sequences->resize(sequences->size() + nNewRows);
     rowDoubles.resize(rowDoubles.size() + nNewRows);
     rowStrings.resize(rowStrings.size() + nNewRows);
     geometryViolations.resize(geometryViolations.size() + nNewRows);
     for (i=0; i<nNewRows; ++i) {
-        int j = NRows() + i - nNewRows;
+        unsigned int j = NRows() + i - nNewRows;
         (*sequences)[j] = (*(newAlignment->sequences))[i + 1];
         SetRowDouble(j, newAlignment->GetRowDouble(i + 1));
         SetRowStatusLine(j, newAlignment->GetRowStatusLine(i + 1));
@@ -1550,7 +1548,7 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     return true;
 }
 
-int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
+unsigned int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
 {
     geometryViolations.clear();
     geometryViolations.resize(NRows());
@@ -1561,18 +1559,18 @@ int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
     }
 
     Threader::GeometryViolationsForRow violations;
-    int nViolations = alignmentManager->threader->GetGeometryViolations(this, &violations);
+    unsigned int nViolations = alignmentManager->threader->GetGeometryViolations(this, &violations);
     if (violations.size() != NRows()) {
         ERRORMSG("BlockMultipleAlignment::ShowGeometryViolations() - wrong size list");
         showGeometryViolations = false;
         return 0;
     }
 
-    for (int row=0; row<NRows(); ++row) {
+    for (unsigned int row=0; row<NRows(); ++row) {
         geometryViolations[row].resize(GetSequenceOfRow(row)->Length(), false);
         Threader::IntervalList::const_iterator i, ie = violations[row].end();
         for (i=violations[row].begin(); i!=ie; ++i)
-            for (int l=i->first; l<=i->second; ++l)
+            for (unsigned int l=i->first; l<=i->second; ++l)
                 geometryViolations[row][l] = true;
     }
 
@@ -1581,7 +1579,7 @@ int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
 }
 
 CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
-    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, int slaveRow)
+    const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int slaveRow)
 {
     if (!multiple || slaveRow < 0 || slaveRow >= multiple->NRows()) {
         ERRORMSG("CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
@@ -1628,9 +1626,9 @@ CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment 
     return seqAlign;
 }
 
-bool BlockMultipleAlignment::MarkBlock(int column)
+bool BlockMultipleAlignment::MarkBlock(unsigned int column)
 {
-    if (column >= 0 && column < blockMap.size() && blockMap[column].block->IsAligned()) {
+    if (column < blockMap.size() && blockMap[column].block->IsAligned()) {
         TRACEMSG("marked block for realignment");
         markBlocks[blockMap[column].block] = true;
         return true;
@@ -1645,16 +1643,16 @@ bool BlockMultipleAlignment::ClearMarks(void)
     return true;
 }
 
-bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int to) const
+bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(unsigned int from, unsigned int to) const
 {
     const Sequence *master = GetMaster();
 
     // must do one column at a time, rather than range, in case there are inserts wrt the master
     bool anyError = false;
-    for (int i=from; i<=to; ++i) {
+    for (unsigned int i=from; i<=to; ++i) {
 
         // sanity check
-        if (i < 0 || i >= master->Length() || !IsAligned(0, i)) {
+        if (i >= master->Length() || !IsAligned(0U, i)) {
             WARNINGMSG("Can't highlight alignment at master residue " << (i+1));
             anyError = true;
             // highlight unaligned residues, but master only
@@ -1665,11 +1663,11 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
 
         // get block and offset
         const Block *block = GetBlock(0, i);
-        int blockOffset = i - block->GetRangeOfRow(0)->from;
+        unsigned int blockOffset = i - block->GetRangeOfRow(0)->from;
 
         // highlight aligned residue in each row
-        for (int row=0; row<NRows(); ++row) {
-            int slaveIndex = block->GetRangeOfRow(row)->from + blockOffset;
+        for (unsigned int row=0; row<NRows(); ++row) {
+            unsigned int slaveIndex = block->GetRangeOfRow(row)->from + blockOffset;
             GlobalMessenger()->AddHighlights(GetSequenceOfRow(row), slaveIndex, slaveIndex);
         }
     }
@@ -1677,9 +1675,9 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
     return !anyError;
 }
 
-int BlockMultipleAlignment::NAlignedBlocks(void) const
+unsigned int BlockMultipleAlignment::NAlignedBlocks(void) const
 {
-    int n = 0;
+    unsigned int n = 0;
     BlockList::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; ++b) if ((*b)->IsAligned()) ++n;
     return n;
@@ -1690,14 +1688,14 @@ bool BlockMultipleAlignment::HasNoAlignedBlocks(void) const
     return (blocks.size() == 0 || (blocks.size() == 1 && !blocks.front()->IsAligned()));
 }
 
-int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJustification justification) const
+int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigned int seqIndex, eUnalignedJustification justification) const
 {
-    if (row < 0 || row >= NRows() || seqIndex < 0 || seqIndex >= GetSequenceOfRow(row)->Length()) {
+    if (row >= NRows() || seqIndex >= GetSequenceOfRow(row)->Length()) {
         ERRORMSG("BlockMultipleAlignment::GetAlignmentIndex() - coordinate out of range");
         return -1;
     }
 
-    int alignmentIndex, blockColumn;
+    unsigned int alignmentIndex, blockColumn;
     const Block *block = NULL;
     const Block::Range *range;
 
@@ -1708,7 +1706,7 @@ int BlockMultipleAlignment::GetAlignmentIndex(int row, int seqIndex, eUnalignedJ
             block = blockMap[alignmentIndex].block;
 
             range = block->GetRangeOfRow(row);
-            if (seqIndex >= range->from && seqIndex <= range->to) {
+            if ((int)seqIndex >= range->from && (int)seqIndex <= range->to) {
 
                 // override requested justification for end blocks
                 if (block == blocks.back()) // also true if there's a single aligned block
@@ -1738,7 +1736,7 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
 {
     // one SeqAlign (chained into a linked list) for each slave row
     SeqAlignPtr prevSap = NULL, firstSap = NULL;
-    for (int row=1; row<NRows(); ++row) {
+    for (unsigned int row=1; row<NRows(); ++row) {
 
         SeqAlignPtr sap = SeqAlignNew();
         if (prevSap) prevSap->next = sap;
@@ -1779,7 +1777,7 @@ SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
 
 ///// UngappedAlignedBlock methods /////
 
-char UngappedAlignedBlock::GetCharacterAt(int blockColumn, int row) const
+char UngappedAlignedBlock::GetCharacterAt(unsigned int blockColumn, unsigned int row) const
 {
     return (*(parentAlignment->GetSequences()))[row]->sequenceString[GetIndexAt(blockColumn, row)];
 }
@@ -1788,7 +1786,7 @@ Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) c
 {
     UngappedAlignedBlock *copy = new UngappedAlignedBlock(newMultiple);
     const Block::Range *range;
-    for (int row=0; row<NSequences(); ++row) {
+    for (unsigned int row=0; row<NSequences(); ++row) {
         range = GetRangeOfRow(row);
         copy->SetRangeOfRow(row, range->from, range->to);
     }
@@ -1796,14 +1794,14 @@ Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) c
     return copy;
 }
 
-void UngappedAlignedBlock::DeleteRow(int row)
+void UngappedAlignedBlock::DeleteRow(unsigned int row)
 {
     RangeList::iterator r = ranges.begin();
-    for (int i=0; i<row; ++i) ++r;
+    for (unsigned int i=0; i<row; ++i) ++r;
     ranges.erase(r);
 }
 
-void UngappedAlignedBlock::DeleteRows(vector < bool >& removeRows, int nToRemove)
+void UngappedAlignedBlock::DeleteRows(vector < bool >& removeRows, unsigned int nToRemove)
 {
     VectorRemoveElements(ranges, removeRows, nToRemove);
 }
@@ -1811,11 +1809,12 @@ void UngappedAlignedBlock::DeleteRows(vector < bool >& removeRows, int nToRemove
 
 ///// UnalignedBlock methods /////
 
-int UnalignedBlock::GetIndexAt(int blockColumn, int row,
+int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const
 {
     const Block::Range *range = GetRangeOfRow(row);
-    int seqIndex, rangeWidth, rangeMiddle, extraSpace;
+    int seqIndex;
+    unsigned int rangeWidth, rangeMiddle, extraSpace;
 
     switch (justification) {
         case BlockMultipleAlignment::eLeft:
@@ -1844,7 +1843,7 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
                 seqIndex = -1;
             break;
     }
-    if (seqIndex < range->from || seqIndex > range->to) seqIndex = -1;
+    if (seqIndex < (int)range->from || seqIndex > (int)range->to) seqIndex = -1;
 
     return seqIndex;
 }
@@ -1852,21 +1851,21 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
 void UnalignedBlock::Resize(void)
 {
     width = 0;
-    for (int i=0; i<NSequences(); ++i) {
-        int blockWidth = ranges[i].to - ranges[i].from + 1;
+    for (unsigned int i=0; i<NSequences(); ++i) {
+        unsigned int blockWidth = ranges[i].to - ranges[i].from + 1;
         if (blockWidth > width) width = blockWidth;
     }
 }
 
-void UnalignedBlock::DeleteRow(int row)
+void UnalignedBlock::DeleteRow(unsigned int row)
 {
     RangeList::iterator r = ranges.begin();
-    for (int i=0; i<row; ++i) ++r;
+    for (unsigned int i=0; i<row; ++i) ++r;
     ranges.erase(r);
     Resize();
 }
 
-void UnalignedBlock::DeleteRows(vector < bool >& removeRows, int nToRemove)
+void UnalignedBlock::DeleteRows(vector < bool >& removeRows, unsigned int nToRemove)
 {
     VectorRemoveElements(ranges, removeRows, nToRemove);
     Resize();
@@ -1876,7 +1875,7 @@ Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
 {
     UnalignedBlock *copy = new UnalignedBlock(newMultiple);
     const Block::Range *range;
-    for (int row=0; row<NSequences(); ++row) {
+    for (unsigned int row=0; row<NSequences(); ++row) {
         range = GetRangeOfRow(row);
         copy->SetRangeOfRow(row, range->from, range->to);
     }
@@ -1884,11 +1883,11 @@ Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
     return copy;
 }
 
-int UnalignedBlock::MinResidues(void) const
+unsigned int UnalignedBlock::MinResidues(void) const
 {
-    int min = -1, m;
+    int min = 0, m;
     const Block::Range *range;
-    for (int row=0; row<NSequences(); ++row) {
+    for (unsigned int row=0; row<NSequences(); ++row) {
         range = GetRangeOfRow(row);
         m = range->to - range->from + 1;
         if (row == 0 || m < min)
@@ -1903,6 +1902,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.69  2005/06/03 16:25:01  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
@@ -121,14 +117,14 @@ const unsigned int
     StructureSet::eSelectSolvent              = 0x08,
     StructureSet::eSelectOtherMoleculesOnly   = 0x10;
 
-StructureSet::StructureSet(CNcbi_mime_asn1 *mime, int structureLimit, OpenGLRenderer *r) :
+StructureSet::StructureSet(CNcbi_mime_asn1 *mime, unsigned int structureLimit, OpenGLRenderer *r) :
     StructureBase(NULL), renderer(r)
 {
     dataManager = new ASNDataManager(mime);
     Load(structureLimit);
 }
 
-StructureSet::StructureSet(CCdd *cdd, int structureLimit, OpenGLRenderer *r) :
+StructureSet::StructureSet(CCdd *cdd, unsigned int structureLimit, OpenGLRenderer *r) :
     StructureBase(NULL), renderer(r)
 {
     dataManager = new ASNDataManager(cdd);
@@ -253,15 +249,15 @@ bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
     return (m != me);
 }
 
-static void SetStructureRowFlags(const AlignmentSet *alignmentSet, int *structureLimit,
+static void SetStructureRowFlags(const AlignmentSet *alignmentSet, unsigned int *structureLimit,
     vector < bool > *dontLoadRowStructure)
 {
     vector < string > titles;
-    vector < int > rows;
+    vector < unsigned int > rows;
 
     // find slave rows with associated structure
     AlignmentSet::AlignmentList::const_iterator l, le = alignmentSet->alignments.end();
-    int row;
+    unsigned int row;
     for (l=alignmentSet->alignments.begin(), row=0; l!=le; ++l, ++row) {
         if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
             titles.push_back((*l)->slave->identifier->ToString());
@@ -295,7 +291,7 @@ static void SetStructureRowFlags(const AlignmentSet *alignmentSet, int *structur
     delete[] items;
 }
 
-void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
+void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
 {
     // try to determine the master structure
     int masterMMDBID = MoleculeIdentifier::VALUE_NOT_SET;
@@ -519,7 +515,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
     }
 }
 
-void StructureSet::Load(int structureLimit)
+void StructureSet::Load(unsigned int structureLimit)
 {
     // member data initialization
     lastAtomName = OpenGLRenderer::NO_NAME;
@@ -643,7 +639,7 @@ BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
 
 void StructureSet::CreateAllBioseqs(const BlockMultipleAlignment *multiple)
 {
-    for (int row=0; row<multiple->NRows(); ++row)
+    for (unsigned int row=0; row<multiple->NRows(); ++row)
         GetOrCreateBioseq(multiple->GetSequenceOfRow(row));
 }
 
@@ -902,7 +898,7 @@ void StructureSet::CenterViewOnAlignedResidues(void)
     deque < Vector > coords;
     Molecule::ResidueMap::const_iterator r, re = masterMolecule->residues.end();
     for (r=masterMolecule->residues.begin(); r!=re; ++r) {
-        if (!alignment->IsAligned(0, r->first - 1)) continue;
+        if (!alignment->IsAligned(0U, r->first - 1)) continue;
         if (r->second->alphaID == Residue::NO_ALPHA_ID) continue;
         AtomPntr ap(masterMolecule->id, r->first, r->second->alphaID);
         const AtomCoord* atom = masterObject->coordSets.front()->atomSet->GetAtom(ap, true, true);
@@ -910,7 +906,7 @@ void StructureSet::CenterViewOnAlignedResidues(void)
     }
 
     // calculate center
-    int i;
+    unsigned int i;
     Vector alignedCenter;
     for (i=0; i<coords.size(); ++i) alignedCenter += coords[i];
     alignedCenter /= coords.size();
@@ -1520,6 +1516,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.148  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.147  2005/04/22 13:43:01  thiessen
 * add block highlighting and structure alignment based on highlighted positions only
 *

@@ -46,18 +46,18 @@ class ViewableAlignment
 {
 public:
     // should set the overall size of the display, in columns (width) and rows (height)
-    virtual void GetSize(int *columns, int *rows) const = 0;
+    virtual void GetSize(unsigned int *columns, unsigned int *rows) const = 0;
 
     // should set a title string and color for a row; if the return value is false,
     // the title area will be left blank.
-    virtual bool GetRowTitle(int row, wxString *title, wxColour *color) const = 0;
+    virtual bool GetRowTitle(unsigned int row, wxString *title, wxColour *color) const = 0;
 
     // should set the character and its traits to display at the given location;
     // both columns and rows are numbered from zero. If the return value is false,
     // the cell for this character will be left blank. If drawBackground is true,
     // then the cell's background will be redrawn with the given color (e.g.,
     // for highlights).
-    virtual bool GetCharacterTraitsAt(int column, int row,      // location
+    virtual bool GetCharacterTraitsAt(unsigned int column, unsigned int row,      // location
         char *character,                                        // character to draw
         wxColour *color,                                        // color of this character
         bool *drawBackground,                                   // special background color?
@@ -107,6 +107,9 @@ public:
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/10/19 17:28:20  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.2  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -86,7 +86,7 @@ public:
 
     // change the underlying pairwise alignments to match the given multiple and row order
     void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
-        const std::vector < int >& rowOrder);
+        const std::vector < unsigned int >& rowOrder);
 
     // recomputes structure alignments for all slave structures in the current
     // sequence alignment; uses only highlighted aligned residues (on master) if highlightedOnly == true
@@ -99,7 +99,7 @@ public:
     void NewMultipleWithRows(const std::vector < bool >& visibilities);
 
     // find out if a residue is aligned - only works for non-repeated sequences!
-    bool IsAligned(const Sequence *sequence, int seqIndex) const;
+    bool IsAligned(const Sequence *sequence, unsigned int seqIndex) const;
 
     // find out if a Sequence is part of the current alignment
     bool IsInAlignment(const Sequence *sequence) const;
@@ -107,10 +107,10 @@ public:
     // get a color for an aligned residue that's dependent on the entire alignment
     // (e.g., for coloring by sequence conservation)
     const Vector * GetAlignmentColor(const Sequence *sequence,
-        int seqIndex, StyleSettings::eColorScheme colorScheme) const;
+        unsigned int seqIndex, StyleSettings::eColorScheme colorScheme) const;
 
     // sequence alignment algorithm functions
-    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
+    void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < unsigned int >& slavesToRealign);
     void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
     void ThreadAllUpdates(const ThreaderOptions& options);
     void BlockAlignAllUpdates(void);
@@ -132,7 +132,7 @@ public:
     bool GetStructureProteins(std::vector < const Sequence * > *chains) const;
 
     // get a list of (slave) sequences present in the updates
-    int NUpdates(void) const;
+    unsigned int NUpdates(void) const;
     void GetUpdateSequences(std::list < const Sequence * > *updateSequences) const;
 
     // remove sequence from both multiple alignment and updates
@@ -159,7 +159,7 @@ private:
 
     // for change-type comparison
     BlockMultipleAlignment *originalMultiple;
-    std::vector < int > originalRowOrder;
+    std::vector < unsigned int > originalRowOrder;
 };
 
 END_SCOPE(Cn3D)
@@ -169,6 +169,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.52  2005/09/06 20:57:12  thiessen
 * fix -n option
 *

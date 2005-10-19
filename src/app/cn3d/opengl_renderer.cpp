@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
@@ -772,7 +768,7 @@ void OpenGLRenderer::ShowPreviousFrame(void)
 void OpenGLRenderer::ShowFrameNumber(int frame)
 {
     if (!structureSet) return;
-    if (frame >= 0 && frame < structureSet->frameMap.size() && !IsFrameEmpty(frame))
+    if (frame >= 0 && frame < (int)structureSet->frameMap.size() && !IsFrameEmpty(frame))
         currentFrame = frame;
     else
         currentFrame = ALL_FRAMES;
@@ -1953,6 +1949,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.84  2004/08/19 16:23:04  thiessen
 * improve strand arrow rendering on mac
 *

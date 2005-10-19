@@ -58,7 +58,7 @@ public:
     double weightPSSM;
     double loopLengthMultiplier;
     int nRandomStarts;
-	int nResultAlignments;
+    int nResultAlignments;
     int terminalResidueCutoff;
 
     ThreaderOptions(void);
@@ -77,7 +77,7 @@ public:
     Threader(void);
     ~Threader(void);
 
-    static const int SCALING_FACTOR;
+    static const unsigned int SCALING_FACTOR;
     static const std::string ThreaderResidues;
 
     // create new BlockMultipleAlignments from the given multiple and master/slave pairs; returns
@@ -86,21 +86,21 @@ public:
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
     bool Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
         const AlignmentList *originalAlignments, AlignmentList *newAlignments,
-        int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer);
+        unsigned int *nRowsAddedToMultiple, SequenceViewer *sequenceViewer);
 
     // calculate scores for each row in the alignment (and store them in the alignment itself)
     bool CalculateScores(const BlockMultipleAlignment *multiple, double weightPSSM);
 
     // geometry violations - for each row of an alignment, get a list of seqIndex
     // (from, to) pairs for offending regions; return total number of violations
-    typedef std::list < std::pair < int, int > > IntervalList;
+    typedef std::list < std::pair < unsigned int, unsigned int > > IntervalList;
     typedef std::vector < IntervalList > GeometryViolationsForRow;
-    int GetGeometryViolations(const BlockMultipleAlignment *multiple,
+    unsigned int GetGeometryViolations(const BlockMultipleAlignment *multiple,
         GeometryViolationsForRow *violations);
 
     // estimate the number of random starts needed to thread an alignment based on
     // the number of blocks to be aligned
-    static int EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
+    static unsigned int EstimateNRandomStarts(const BlockMultipleAlignment *coreAlignment,
         const BlockMultipleAlignment *toBeThreaded);
 
     // to hold virtual residue, sidechain positions
@@ -108,7 +108,7 @@ public:
     typedef struct {
         unsigned char type;
         Vector coord;
-        int disulfideWith;    // if Cysteine, virtual coord index of any disulfide-bound Cys; -1 otherwise
+        unsigned int disulfideWith;    // if Cysteine, virtual coord index of any disulfide-bound Cys; -1 otherwise
     } VirtualCoordinate;
     typedef std::vector < VirtualCoordinate > VirtualCoordinateList;
 
@@ -128,9 +128,9 @@ private:
     // threading structure setups
     Cor_Def * CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier);
     Qry_Seq * CreateQrySeq(const BlockMultipleAlignment *multiple,
-        const BlockMultipleAlignment *pairwise, int terminalCutoff);
+        const BlockMultipleAlignment *pairwise, unsigned int terminalCutoff);
     Rcx_Ptl * CreateRcxPtl(double weightContacts);
-    Gib_Scd * CreateGibScd(bool fast, int nRandomStarts);
+    Gib_Scd * CreateGibScd(bool fast, unsigned int nRandomStarts);
     Fld_Mtf * CreateFldMtf(const Sequence *masterSequence);
 public:
     // also used by blast module
@@ -145,6 +145,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.20  2004/09/28 14:18:28  thiessen
 * turn on editor automatically on merge
 *

@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -129,7 +125,7 @@ static void ExpandAll(wxTreeCtrl& tree, const wxTreeItemId& id, bool shouldExpan
         tree.Collapse(id);
 
     // descend tree and shouldExpand/collapse all children
-    long cookie = (long) (&tree);
+    wxTreeItemIdValue cookie = &tree;
     for (wxTreeItemId child=tree.GetFirstChild(id, cookie); child.IsOk(); child=tree.GetNextChild(id, cookie))
         ExpandAll(tree, child, shouldExpand, toLevel - 1);
 }
@@ -273,9 +269,9 @@ void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent,
     TaxonomyTreeMap taxTree;
 
     // build a tree of all sequences with known taxonomy
-    int row, taxid, parent;
+    int taxid, parent;
     const CTaxon2_data *taxData;
-    for (row=0; row<alignment->NRows(); ++row) {
+    for (unsigned int row=0; row<alignment->NRows(); ++row) {
         const Sequence *seq = alignment->GetSequenceOfRow(row);
         taxid = GetTaxIDForSequence(seq);
         taxData = (taxid != 0) ? GetTaxInfoForTaxID(taxid) : NULL;
@@ -410,6 +406,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.13  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *

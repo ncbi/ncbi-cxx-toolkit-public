@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
@@ -92,7 +88,7 @@ static inline void Vector2wxColor(const Vector& colorVec, wxColor *colorWX)
 ////////////////////////////////////////////////////////////////////////////////
 
 bool DisplayRowFromAlignment::GetCharacterTraitsAt(
-    int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color,
     bool *drawBackground, Vector *cellBackgroundColor) const
 {
@@ -110,7 +106,7 @@ bool DisplayRowFromAlignment::GetCharacterTraitsAt(
     return result;
 }
 
-DisplayRowFromSequence::DisplayRowFromSequence(const Sequence *s, int from, int to) :
+DisplayRowFromSequence::DisplayRowFromSequence(const Sequence *s, unsigned int from, unsigned int to) :
     sequence(s), fromIndex(from), toIndex(to)
 {
     if (from < 0 || from >= sequence->Length() || from > to || to < 0 || to >= sequence->Length())
@@ -118,10 +114,10 @@ DisplayRowFromSequence::DisplayRowFromSequence(const Sequence *s, int from, int 
 }
 
 bool DisplayRowFromSequence::GetCharacterTraitsAt(
-	int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const
 {
-    int index = column + fromIndex;
+    unsigned int index = column + fromIndex;
     if (index > toIndex)
         return false;
 
@@ -141,10 +137,10 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(
 }
 
 bool DisplayRowFromSequence::GetSequenceAndIndexAt(
-    int column, BlockMultipleAlignment::eUnalignedJustification justification,
+    unsigned int column, BlockMultipleAlignment::eUnalignedJustification justification,
     const Sequence **sequenceHandle, int *seqIndex) const
 {
-    int index = column + fromIndex;
+    unsigned int index = column + fromIndex;
     if (index > toIndex)
         return false;
 
@@ -153,7 +149,7 @@ bool DisplayRowFromSequence::GetSequenceAndIndexAt(
     return true;
 }
 
-void DisplayRowFromSequence::SelectedRange(int from, int to,
+void DisplayRowFromSequence::SelectedRange(unsigned int from, unsigned int to,
     BlockMultipleAlignment::eUnalignedJustification justification, bool toggle) const
 {
     from += fromIndex;
@@ -175,7 +171,7 @@ void DisplayRowFromSequence::SelectedRange(int from, int to,
         GlobalMessenger()->AddHighlights(sequence, from, to);
 }
 
-bool DisplayRowFromString::GetCharacterTraitsAt(int column,
+bool DisplayRowFromString::GetCharacterTraitsAt(unsigned int column,
 	BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color, bool *drawBackground, Vector *cellBackgroundColor) const
 {
@@ -207,12 +203,12 @@ SequenceDisplay::SequenceDisplay(bool editable, ViewerWindowBase* const *parentV
 
 SequenceDisplay::~SequenceDisplay(void)
 {
-    for (int i=0; i<rows.size(); ++i) delete rows[i];
+    for (unsigned int i=0; i<rows.size(); ++i) delete rows[i];
 }
 
 void SequenceDisplay::Empty(void)
 {
-    for (int i=0; i<rows.size(); ++i) delete rows[i];
+    for (unsigned int i=0; i<rows.size(); ++i) delete rows[i];
     rows.clear();
     startingColumn = maxRowWidth = 0;
 }
@@ -221,7 +217,7 @@ void SequenceDisplay::Empty(void)
 SequenceDisplay * SequenceDisplay::Clone(const Old2NewAlignmentMap& newAlignments) const
 {
     SequenceDisplay *copy = new SequenceDisplay(isEditable, viewerWindow);
-    for (int row=0; row<rows.size(); ++row)
+    for (unsigned int row=0; row<rows.size(); ++row)
         copy->rows.push_back(rows[row]->Clone(newAlignments));
     copy->startingColumn = startingColumn;
     copy->maxRowWidth = maxRowWidth;
@@ -234,7 +230,7 @@ void SequenceDisplay::AddRow(DisplayRow *row)
     if (row->Width() > maxRowWidth) maxRowWidth = row->Width();
 }
 
-BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(int row) const
+BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(unsigned int row) const
 {
     if (row < 0 || row >= rows.size()) return NULL;
     const DisplayRowFromAlignment *displayRow = dynamic_cast<const DisplayRowFromAlignment*>(rows[row]);
@@ -252,7 +248,7 @@ void SequenceDisplay::UpdateMaxRowWidth(void)
         if ((*r)->Width() > maxRowWidth) maxRowWidth = (*r)->Width();
 }
 
-void SequenceDisplay::AddRowFromAlignment(int row, BlockMultipleAlignment *fromAlignment)
+void SequenceDisplay::AddRowFromAlignment(unsigned int row, BlockMultipleAlignment *fromAlignment)
 {
     if (!fromAlignment || row < 0 || row >= fromAlignment->NRows()) {
         ERRORMSG("SequenceDisplay::AddRowFromAlignment() failed");
@@ -262,7 +258,7 @@ void SequenceDisplay::AddRowFromAlignment(int row, BlockMultipleAlignment *fromA
     AddRow(new DisplayRowFromAlignment(row, fromAlignment));
 }
 
-void SequenceDisplay::AddRowFromSequence(const Sequence *sequence, int from, int to)
+void SequenceDisplay::AddRowFromSequence(const Sequence *sequence, unsigned int from, unsigned int to)
 {
     if (!sequence) {
         ERRORMSG("SequenceDisplay::AddRowFromSequence() failed");
@@ -277,7 +273,7 @@ void SequenceDisplay::AddRowFromString(const string& anyString)
     AddRow(new DisplayRowFromString(anyString));
 }
 
-bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) const
+bool SequenceDisplay::GetRowTitle(unsigned int row, wxString *title, wxColour *color) const
 {
     const DisplayRow *displayRow = rows[row];
 
@@ -305,11 +301,11 @@ bool SequenceDisplay::GetRowTitle(int row, wxString *title, wxColour *color) con
     return true;
 }
 
-bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
+bool SequenceDisplay::GetCharacterTraitsAt(unsigned int column, unsigned int row,
         char *character, wxColour *color, bool *drawBackground,
         wxColour *cellBackgroundColor) const
 {
-    if (row < 0 || row > rows.size()) {
+    if (row >= rows.size()) {
         WARNINGMSG("SequenceDisplay::GetCharacterTraitsAt() - row out of range");
         return false;
     }
@@ -335,12 +331,12 @@ void SequenceDisplay::MouseOver(int column, int row) const
     if (*viewerWindow) {
         wxString idLoc, status;
 
-        if (row >= 0 && row < rows.size()) {
+        if (row >= 0 && row < (int)rows.size()) {
             const DisplayRow *displayRow = rows[row];
             const Sequence *sequence = NULL;
 
             // show id if we're in sequence area
-            if (column >= 0 && column < displayRow->Width()) {
+            if (column >= 0 && column < (int)displayRow->Width()) {
 
                 // show title and seqloc
                 int index = -1;
@@ -418,7 +414,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
     TRACEMSG("got MouseDown at col:" << column << " row:" << row);
 
     // process events in title area (launch of browser for entrez page on a sequence)
-    if (column < 0 && row >= 0 && row < NRows()) {
+    if (column < 0 && row >= 0 && row < (int)NRows()) {
         const Sequence *seq = rows[row]->GetSequence();
         if (seq) seq->LaunchWebBrowserWithInfo();
         return false;
@@ -497,7 +493,7 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 }
 
                 if (sequenceWindow->DoRealignRow()) {
-                    vector < int > selectedSlaves(1);
+                    vector < unsigned int > selectedSlaves(1);
                     selectedSlaves[0] = selectedRow->row;
                     sequenceWindow->sequenceViewer->alignmentManager->RealignSlaveSequences(alignment, selectedSlaves);
                     if (!controlDown) sequenceWindow->RealignRowOff();
@@ -710,7 +706,7 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
                 // operations on aligned blocks
                 if (shiftDown && !controlDown && columnTo > 0)                  // shift left
                     --columnTo;
-                else if (controlDown && !shiftDown && columnTo < maxRowWidth-1) // shift right
+                else if (controlDown && !shiftDown && columnTo < (int)maxRowWidth-1) // shift right
                     ++columnTo;
                 else if (shiftDown && controlDown) {                            // optimize block
                     DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
@@ -781,7 +777,7 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
 
     // make sure that the master row of an alignment is still first
     bool masterOK = true;
-    for (i=0; i<newRows.size(); ++i) {
+    for (i=0; i<(int)newRows.size(); ++i) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(newRows[i]);
         if (alnRow) {
             if (alnRow->row != 0) {
@@ -801,7 +797,7 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
 
 void SequenceDisplay::RedrawAlignedMolecules(void) const
 {
-    for (int i=0; i<rows.size(); ++i) {
+    for (unsigned int i=0; i<rows.size(); ++i) {
         const Sequence *sequence = rows[i]->GetSequence();
         if (sequence && sequence->molecule)
             GlobalMessenger()->PostRedrawMolecule(sequence->molecule);
@@ -811,7 +807,7 @@ void SequenceDisplay::RedrawAlignedMolecules(void) const
 DisplayRowFromString * SequenceDisplay::FindBlockBoundaryRow(const BlockMultipleAlignment *forAlignment) const
 {
     DisplayRowFromString *blockBoundaryRow = NULL;
-    for (int row=0; row<rows.size(); ++row) {
+    for (unsigned int row=0; row<rows.size(); ++row) {
         if ((blockBoundaryRow = dynamic_cast<DisplayRowFromString*>(rows[row])) != NULL) {
             if (blockBoundaryRow->alignment == forAlignment &&
                 blockBoundaryRow->title == blockBoundaryStringTitle)
@@ -834,7 +830,7 @@ void SequenceDisplay::AddBlockBoundaryRows(void)
     if (!IsEditable()) return;
 
     // find alignment master rows
-    int i = 0;
+    unsigned int i = 0;
     map < const BlockMultipleAlignment * , bool > doneForAlignment;
     do {
         RowVector::iterator r;
@@ -874,12 +870,12 @@ void SequenceDisplay::UpdateBlockBoundaryRow(DisplayRowFromString *blockBoundary
 {
     if (!IsEditable() || !blockBoundaryRow || !blockBoundaryRow->alignment) return;
 
-    int alignmentWidth = blockBoundaryRow->alignment->AlignmentWidth();
+    unsigned int alignmentWidth = blockBoundaryRow->alignment->AlignmentWidth();
     blockBoundaryRow->theString.resize(alignmentWidth);
 
     // fill out block boundary marker string
     int blockColumn, blockWidth;
-    for (int i=0; i<alignmentWidth; ++i) {
+    for (unsigned int i=0; i<alignmentWidth; ++i) {
         blockBoundaryRow->alignment->GetAlignedBlockPosition(i, &blockColumn, &blockWidth);
         if (blockColumn >= 0 && blockWidth > 0) {
             if (blockWidth == 1)
@@ -899,8 +895,8 @@ void SequenceDisplay::UpdateBlockBoundaryRow(DisplayRowFromString *blockBoundary
 void SequenceDisplay::RemoveBlockBoundaryRows(void)
 {
     vector < bool > toRemove(rows.size(), false);
-    int nToRemove = 0;
-    for (int row=0; row<rows.size(); ++row) {
+    unsigned int nToRemove = 0;
+    for (unsigned int row=0; row<rows.size(); ++row) {
         DisplayRowFromString *blockBoundaryRow = dynamic_cast<DisplayRowFromString*>(rows[row]);
         if (blockBoundaryRow && blockBoundaryRow->title == blockBoundaryStringTitle) {
             delete blockBoundaryRow;
@@ -916,7 +912,7 @@ void SequenceDisplay::RemoveBlockBoundaryRows(void)
 void SequenceDisplay::GetProteinSequences(SequenceList *seqs) const
 {
     seqs->clear();
-    for (int row=0; row<rows.size(); ++row) {
+    for (unsigned int row=0; row<rows.size(); ++row) {
         const Sequence *seq = rows[row]->GetSequence();
         if (seq && seq->isProtein)
             seqs->push_back(seq);
@@ -926,7 +922,7 @@ void SequenceDisplay::GetProteinSequences(SequenceList *seqs) const
 void SequenceDisplay::GetSequences(const BlockMultipleAlignment *forAlignment, SequenceList *seqs) const
 {
     seqs->clear();
-    for (int row=0; row<rows.size(); ++row) {
+    for (unsigned int row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow && alnRow->alignment == forAlignment)
             seqs->push_back(alnRow->alignment->GetSequenceOfRow(alnRow->row));
@@ -934,10 +930,10 @@ void SequenceDisplay::GetSequences(const BlockMultipleAlignment *forAlignment, S
 }
 
 void SequenceDisplay::GetRowOrder(
-    const BlockMultipleAlignment *forAlignment, vector < int > *slaveRowOrder) const
+    const BlockMultipleAlignment *forAlignment, vector < unsigned int > *slaveRowOrder) const
 {
     slaveRowOrder->clear();
-    for (int row=0; row<rows.size(); ++row) {
+    for (unsigned int row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow && alnRow->alignment == forAlignment)
             slaveRowOrder->push_back(alnRow->row);
@@ -1023,7 +1019,7 @@ void SequenceDisplay::FloatHighlightsToTop(void)
 void SequenceDisplay::FloatGVToTop(void)
 {
     DisplayRowFromAlignment *alnRow = NULL;
-    for (int row=0; row<rows.size(); ++row) {
+    for (unsigned int row=0; row<rows.size(); ++row) {
         alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow)
             break;
@@ -1037,7 +1033,7 @@ void SequenceDisplay::FloatGVToTop(void)
             GetGeometryViolations(alnRow->alignment, &violations) == 0)
         return;
     if (!(*viewerWindow)->menuBar->IsChecked(ViewerWindowBase::MID_SHOW_GEOM_VLTNS))
-        (*viewerWindow)->Command(ViewerWindowBase::MID_SHOW_GEOM_VLTNS);
+        (*viewerWindow)->ProcessCommand(ViewerWindowBase::MID_SHOW_GEOM_VLTNS);
 
     rowComparisonFunction = CompareRowsFloatGV;
     SortRows();
@@ -1048,7 +1044,7 @@ void SequenceDisplay::FloatGVToTop(void)
 void SequenceDisplay::SortRowsBySelfHit(void)
 {
     // get alignment
-    for (int row=0; row<rows.size(); ++row) {
+    for (unsigned int row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow) {
             // do self-hit calculation
@@ -1073,7 +1069,7 @@ void SequenceDisplay::SortRows(void)
 
     // to simplify sorting, construct list of slave rows only
     vector < DisplayRowFromAlignment * > slaves;
-    int row;
+    unsigned int row;
     for (row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow && alnRow->row > 0)
@@ -1086,7 +1082,7 @@ void SequenceDisplay::SortRows(void)
 
     // recreate the row list with new order
     RowVector newRows(rows.size());
-    int nSlaves = 0;
+    unsigned int nSlaves = 0;
     for (row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow && alnRow->row > 0)
@@ -1100,14 +1096,14 @@ void SequenceDisplay::SortRows(void)
         ERRORMSG("SequenceDisplay::SortRows() - internal inconsistency");
 }
 
-bool SequenceDisplay::ProximitySort(int displayRow)
+bool SequenceDisplay::ProximitySort(unsigned int displayRow)
 {
     DisplayRowFromAlignment *keyRow = dynamic_cast<DisplayRowFromAlignment*>(rows[displayRow]);
     if (!keyRow || keyRow->row == 0) return false;
     if (keyRow->alignment->NRows() < 3) return true;
 
     TRACEMSG("doing Proximity Sort on alignment row " << keyRow->row);
-    int row;
+    unsigned int row;
     BlockMultipleAlignment::UngappedAlignedBlockList blocks;
     keyRow->alignment->GetUngappedAlignedBlocks(&blocks);
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
@@ -1130,7 +1126,7 @@ bool SequenceDisplay::ProximitySort(int displayRow)
                 const Block::Range
                     *r1 = (*b)->GetRangeOfRow(keyRow->row),
                     *r2 = (*b)->GetRangeOfRow(alnRow->row);
-                for (int i=0; i<(*b)->width; ++i)
+                for (unsigned int i=0; i<(*b)->width; ++i)
                     score += GetBLOSUM62Score(
                         seq1->sequenceString[r1->from + i], seq2->sequenceString[r2->from + i]);
             }
@@ -1149,7 +1145,7 @@ bool SequenceDisplay::ProximitySort(int displayRow)
     stable_sort(sortedByScore.begin(), sortedByScore.end(), CompareRowsByScore);
 
     // find where the master row is in sorted list
-    int M;
+    unsigned int M;
     for (M=0; M<sortedByScore.size(); ++M) if (sortedByScore[M]->row == 0) break;
 
     // arrange by proximity to key row
@@ -1164,18 +1160,19 @@ bool SequenceDisplay::ProximitySort(int displayRow)
     VectorRemoveElements(sortedByScore, toRemove, 2);
 
     // add the rest of the sequences in the sorted list to the arranged list
-    int i = 1, j = 1, N, R = 0;
+    int i = 1, j = 1, N;
+    unsigned int R = 0;
     while (R < sortedByScore.size()) {
         N = M + i*j;    // iterate N = M+1, M-1, M+2, M-2, ...
         j = -j;
         if (j > 0) ++i;
-        if (N > 0 && N < arrangedByProximity.size())
+        if (N > 0 && N < (int)arrangedByProximity.size())
             arrangedByProximity[N] = sortedByScore[R++];
     }
 
     // recreate the row list with new order
     RowVector newRows(rows.size());
-    int nNewRows = 0;
+    unsigned int nNewRows = 0;
     for (row=0; row<rows.size(); ++row) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[row]);
         if (alnRow)
@@ -1210,12 +1207,13 @@ bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
     return false;
 }
 
-void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple, int alnWhere)
+void SequenceDisplay::RowsAdded(unsigned int nRowsAddedToMultiple, BlockMultipleAlignment *multiple, int alnWhere)
 {
-    if (nRowsAddedToMultiple <= 0) return;
+    if (nRowsAddedToMultiple == 0) return;
 
     // find the last row that's from this multiple
-    int r, nRows = 0, lastAlnRowIndex, displayWhere = -1;
+    unsigned int r, nRows = 0, lastAlnRowIndex;
+    int displayWhere = -1;
     DisplayRowFromAlignment *lastAlnRow = NULL;
     for (r=0; r<rows.size(); ++r) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[r]);
@@ -1235,7 +1233,7 @@ void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment
     INFOMSG("adding new row after display row #" << (rowToMergeAfter+1));
 
     // move higher rows up to leave space for new rows
-    int nRowsToMove = rows.size() - 1 - rowToMergeAfter;
+    unsigned int nRowsToMove = rows.size() - 1 - rowToMergeAfter;
     rows.resize(rows.size() + nRowsAddedToMultiple);
     for (r=0; r<nRowsToMove; ++r)
         rows[rows.size() - 1 - r] = rows[rows.size() - 1 - r - nRowsAddedToMultiple];
@@ -1248,14 +1246,14 @@ void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment
     UpdateAfterEdit(multiple);
 }
 
-void SequenceDisplay::RowsRemoved(const vector < int >& rowsRemoved,
+void SequenceDisplay::RowsRemoved(const vector < unsigned int >& rowsRemoved,
     const BlockMultipleAlignment *multiple)
 {
     if (rowsRemoved.size() == 0) return;
 
     // first, construct a map of old alignment row numbers -> new row numbers; also do sanity checks
-    int i;
-    vector < int > alnRowNumbers(multiple->NRows() + rowsRemoved.size());
+    unsigned int i;
+    vector < unsigned int > alnRowNumbers(multiple->NRows() + rowsRemoved.size());
     vector < bool > removedAlnRows(alnRowNumbers.size(), false);
     for (i=0; i<alnRowNumbers.size(); ++i) alnRowNumbers[i] = i;
     for (i=0; i<rowsRemoved.size(); ++i) {
@@ -1266,7 +1264,7 @@ void SequenceDisplay::RowsRemoved(const vector < int >& rowsRemoved,
             removedAlnRows[rowsRemoved[i]] = true;
     }
     VectorRemoveElements(alnRowNumbers, removedAlnRows, rowsRemoved.size());
-    map < int, int > oldRowToNewRow;
+    map < unsigned int, unsigned int > oldRowToNewRow;
     for (i=0; i<alnRowNumbers.size(); ++i) oldRowToNewRow[alnRowNumbers[i]] = i;
 
     // then tag rows to remove from display, and update row numbers for rows not removed
@@ -1286,12 +1284,12 @@ void SequenceDisplay::RowsRemoved(const vector < int >& rowsRemoved,
     UpdateAfterEdit(multiple);
 }
 
-bool SequenceDisplay::GetDisplayCoordinates(const Molecule *molecule, int seqIndex,
-    BlockMultipleAlignment::eUnalignedJustification justification, int *column, int *row)
+bool SequenceDisplay::GetDisplayCoordinates(const Molecule *molecule, unsigned int seqIndex,
+    BlockMultipleAlignment::eUnalignedJustification justification, unsigned int *column, unsigned int *row)
 {
     if (!molecule || seqIndex < 0) return false;
 
-    int displayRow;
+    unsigned int displayRow;
     const Sequence *seq;
 
     // search by Molecule*
@@ -1322,6 +1320,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.80  2005/06/06 15:28:03  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

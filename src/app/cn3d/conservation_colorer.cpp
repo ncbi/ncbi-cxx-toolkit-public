@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>  // must come before C-toolkit stuff
 #include <corelib/ncbi_limits.h>
@@ -109,7 +105,7 @@ void ConservationColorer::AddBlock(const UngappedAlignedBlock *block)
     blocks[block].resize(block->width);
 
     // map block column position to profile position
-    for (int i=0; i<block->width; ++i) blocks[block][i] = nColumns + i;
+    for (unsigned int i=0; i<block->width; ++i) blocks[block][i] = nColumns + i;
     nColumns += block->width;
 
     basicColorsCurrent = fitColorsCurrent = false;
@@ -139,7 +135,7 @@ void ConservationColorer::CalculateBasicConservationColors(void)
     BlockMap::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; ++b) {
 
-        for (int blockColumn=0; blockColumn<b->first->width; ++blockColumn) {
+        for (unsigned int blockColumn=0; blockColumn<b->first->width; ++blockColumn) {
             profileColumn = b->second[blockColumn];
             ColumnProfile& profile = alignmentProfile[profileColumn];
 
@@ -271,7 +267,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
     for (b=blocks.begin(); b!=be; ++b) {
         blockFitScores[b->first].resize(nRows, 0.0f);
 
-        for (int blockColumn=0; blockColumn<b->first->width; ++blockColumn) {
+        for (unsigned int blockColumn=0; blockColumn<b->first->width; ++blockColumn) {
             profileColumn = b->second[blockColumn];
             ColumnProfile& profile = alignmentProfile[profileColumn];
             pe = profile.end();
@@ -473,6 +469,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.40  2005/06/03 16:26:00  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

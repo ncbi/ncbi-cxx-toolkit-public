@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
@@ -81,11 +77,11 @@ AlignmentSet::~AlignmentSet(void)
 }
 
 AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
-    const BlockMultipleAlignment *multiple, const vector < int >& rowOrder)
+    const BlockMultipleAlignment *multiple, const vector < unsigned int >& rowOrder)
 {
     // sanity check on the row order map
-    map < int, int > rowCheck;
-    for (int i=0; i<rowOrder.size(); ++i) rowCheck[rowOrder[i]] = i;
+    map < unsigned int, unsigned int > rowCheck;
+    for (unsigned int i=0; i<rowOrder.size(); ++i) rowCheck[rowOrder[i]] = i;
     if (rowOrder.size() != multiple->NRows() || rowCheck.size() != multiple->NRows() || rowOrder[0] != 0) {
         ERRORMSG("AlignmentSet::CreateFromMultiple() - bad row order vector");
         return NULL;
@@ -106,8 +102,8 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
     // create Seq-aligns; if there's only one row (the master), then cheat and create an alignment
     // of the master with itself, because asn data doesn't take well to single-row "alignment"
     if (multiple->NRows() > 1) {
-        int newRow;
-        for (int row=1; row<multiple->NRows(); ++row, ++sa) {
+        unsigned int newRow;
+        for (unsigned int row=1; row<multiple->NRows(); ++row, ++sa) {
           newRow = rowOrder[row];
           CSeq_align *seqAlign = CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, newRow);
           sa->Reset(seqAlign);
@@ -170,7 +166,7 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         slave = *s;
     }
 
-    int i, masterRes, slaveRes, blockNum = 0;
+    unsigned int i, masterRes, slaveRes, blockNum = 0;
 
     // unpack dendiag alignment
     if (seqAlign.GetSegs().IsDendiag()) {
@@ -279,6 +275,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/10/19 17:28:17  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.32  2004/05/21 21:41:38  gorelenk
 * Added PCH ncbi_pch.hpp
 *

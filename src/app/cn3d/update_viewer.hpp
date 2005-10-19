@@ -124,7 +124,7 @@ private:
     void GetVASTAlignments(const SequenceList& newSequences,
         const Sequence *master, AlignmentList *newAlignments,
 		PendingStructureAlignments *structureAlignments,
-        int masterFrom = -1, int masterTo = -1) const;  // -1 means unrestricted
+        unsigned int masterFrom = kMax_UInt, unsigned int masterTo = kMax_UInt) const;  // kMax_UInt means unrestricted
 };
 
 END_SCOPE(Cn3D)
@@ -134,6 +134,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/10/19 17:28:19  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.25  2004/02/19 17:05:21  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

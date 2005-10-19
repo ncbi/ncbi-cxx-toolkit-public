@@ -52,7 +52,7 @@ BEGIN_SCOPE(Cn3D)
 class StructureWindow;
 
 // Define a new application type
-class Cn3DApp: public wxGLApp
+class Cn3DApp: public wxApp /*wxGLApp*/
 {
 public:
     Cn3DApp();
@@ -85,6 +85,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

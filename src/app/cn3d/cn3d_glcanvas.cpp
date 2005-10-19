@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -99,10 +95,8 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
         ERRORMSG("Cn3DGLCanvas::SetGLFontFromRegistry() - can't set wxNativeFontInfo fron native font string");
         return;
     }
-#if wxCHECK_VERSION(2,3,4)
     if (fontScale != 1.0 && fontScale > 0.0)
         fontInfo.SetPointSize(fontScale * fontInfo.GetPointSize());
-#endif
     auto_ptr<wxFont> newFont(wxFont::New(fontInfo));
     if (!newFont.get() || !newFont->Ok()) {
         ERRORMSG("Cn3DGLCanvas::SetGLFontFromRegistry() - can't get wxFont from wxNativeFontInfo");
@@ -269,6 +263,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.5  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

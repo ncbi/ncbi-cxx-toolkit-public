@@ -32,10 +32,6 @@
 */
 #include <ncbi_pch.hpp>
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #if defined(__WXMSW__)
 #include <windows.h>
 #include <shellapi.h>   // for ShellExecute, needed to launch browser
@@ -350,6 +346,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.11  2005/06/03 16:25:51  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

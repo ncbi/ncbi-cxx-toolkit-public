@@ -31,10 +31,6 @@
 * ===========================================================================
 */
 
-#ifdef _MSC_VER
-#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -117,8 +113,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
     }
 
     // construct the panel
-    wxPanel *panel = new wxPanel(this, -1);
-    wxSizer *topSizer = SetupCDDSplashDialog(panel, false);
+    wxSizer *topSizer = SetupCDDSplashDialog(this, false);
 
     // fill in info
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tName, ID_ST_NAME, wxStaticText)
@@ -132,7 +127,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
 
     const string& cddDescr = structureSet->GetCDDDescription();
     if (cddDescr.size() > 0) {
-        int i, j;
+        unsigned int i, j;
         for (i=j=0; i<cddDescr.size(); ++i, ++j) {
             if (j > 60 && cddDescr[i] == ' ') {
                 *tDescr << '\n';
@@ -264,7 +259,6 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
 
     // call sizer stuff
     topSizer->Fit(this);
-    topSizer->Fit(panel);
     topSizer->SetSizeHints(this);
 }
 
@@ -352,6 +346,9 @@ wxSizer *SetupCDDSplashDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.12  2004/05/21 21:41:39  gorelenk
 * Added PCH ncbi_pch.hpp
 *

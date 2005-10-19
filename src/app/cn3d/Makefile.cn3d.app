@@ -4,7 +4,7 @@
 # Build application "cn3d"
 #################################
 
-REQUIRES = objects wxWindows ctools OpenGL C-Toolkit
+REQUIRES = objects wxWidgets ctools OpenGL C-Toolkit Z PNG
 
 APP = cn3d
 
@@ -71,12 +71,24 @@ SRC =	aaa_dummy_pch \
 LIB =	xstruct_dp xblast \
 	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
-	xser xutil xctools xconnect xncbi
+	xser xutil xctools xconnect xncbi \
+	$(Z_LIB)
+
+WXWIDGETS_INSTALL = /net/frosty/vol/export1/pubchem/Libraries/wxWidgets-2.6.2/install
+ifeq ($(DEBUG_SFX),Debug)
+	WXWIDGETS_CONFIG_DEBUG = --debug=yes
+else
+	WXWIDGETS_CONFIG_DEBUG = --debug=no
+endif
+WXWIDGETS_CONFIG_FLAGS = $(WXWIDGETS_CONFIG_DEBUG) --static=yes --unicode=no
+WXWIDGETS_INCLUDE := $(shell $(WXWIDGETS_INSTALL)/bin/wx-config $(WXWIDGETS_CONFIG_FLAGS) --cxxflags)
+WXWIDGETS_LIBS := $(shell $(WXWIDGETS_INSTALL)/bin/wx-config $(WXWIDGETS_CONFIG_FLAGS) --libs std,gl)
 
 CPPFLAGS = \
 	$(ORIG_CPPFLAGS) \
-	$(WXWIN_INCLUDE) \
-	$(NCBI_C_INCLUDE)
+	$(WXWIDGETS_INCLUDE) \
+	$(NCBI_C_INCLUDE) \
+	$(Z_INCLUDE) $(PNG_INCLUDE)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 
@@ -85,9 +97,11 @@ LDFLAGS = $(FAST_LDFLAGS)
 NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj \
               -lncbiobj -lncbi
 
-LIBS =	$(WXWIN_LIBS) $(WXWIN_GL_LIBS) \
+LIBS = \
+	$(WXWIDGETS_LIBS) \
 	$(NCBI_C_LIBPATH) \
 	$(NCBI_C_LIBS) \
+	$(Z_LIBS) $(PNG_LIBS) \
 	$(ORIG_LIBS)
 
 

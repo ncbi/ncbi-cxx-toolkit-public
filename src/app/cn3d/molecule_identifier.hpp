@@ -58,7 +58,7 @@ public:
     std::string pdbID, accession;
 
     // # residues (1 for non-biopolymers - hets, solvents)
-    int nResidues;
+    unsigned int nResidues;
 
     // get title string based on identifiers present
     std::string ToString(void) const;
@@ -105,6 +105,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/10/19 17:28:18  thiessen
+* migrate to wxWidgets 2.6.2; handle signed/unsigned issue
+*
 * Revision 1.6  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
