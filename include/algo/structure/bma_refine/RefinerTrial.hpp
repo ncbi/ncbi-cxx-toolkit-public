@@ -49,6 +49,7 @@ class CBMARefinerTrial
 {
 
     static const unsigned int NCYCLES_DEFAULT;
+    static bool m_cyclesCreated;
 
 public:
 
@@ -113,6 +114,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/19 16:44:04  lanczyck
+ * promote the cyclesCreated local variable to be a class member
+ *
  * Revision 1.1  2005/06/28 13:45:25  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *

@@ -45,6 +45,7 @@ USING_SCOPE(struct_util);
 BEGIN_SCOPE(align_refine)
 
 const unsigned int CBMARefinerTrial::NCYCLES_DEFAULT = 1;
+bool CBMARefinerTrial::m_cyclesCreated = false;
 
 CBMARefinerTrial::CBMARefinerTrial(unsigned int nCycles, bool verbose) : m_saveIntermediateAlignments(false), m_loo(NULL), m_blockEdit(NULL)
 {
@@ -61,6 +62,8 @@ CBMARefinerTrial::~CBMARefinerTrial() {
     for (unsigned int i = 0; i < m_cycles.size(); ++i) {
         delete m_cycles[i];
     }
+    m_cyclesCreated = false;
+
     delete m_loo;
     delete m_blockEdit;
 }
@@ -215,11 +218,11 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
 //  Default implementation of virtual function:  LOO phase + BE phase
 bool CBMARefinerTrial::CreateCycles() {
 
-    static bool cyclesCreated = false;
+//    static bool cyclesCreated = false;
 
     //  If we've already successfully done this, return.  Otherwise, remove
     //  objects created in failed attempt.
-    if (cyclesCreated) return true;
+    if (m_cyclesCreated) return true;
 
     bool result = (m_loo && m_blockEdit);
     CBMARefinerCycle* cycle = NULL;
@@ -246,7 +249,7 @@ bool CBMARefinerTrial::CreateCycles() {
         }
 
     }
-    cyclesCreated = result;
+    m_cyclesCreated = result;
     return result;
 }
 
@@ -256,6 +259,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/19 16:43:52  lanczyck
+ * promote the cyclesCreated local variable to be a class member
+ *
  * Revision 1.2  2005/09/06 19:07:14  lanczyck
  * modify error message
  *
