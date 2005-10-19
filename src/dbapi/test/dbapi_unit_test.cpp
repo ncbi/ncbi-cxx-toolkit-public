@@ -3187,7 +3187,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
         // !!! It does not work in case of a new FTDS driver.
         if ((args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eMsSql) ||
-            args.GetDriverName() == "ctlib") {
+            args.GetDriverName() == "ctlib" ||
+            args.GetDriverName() == "ftds63" ) {
             //
             boost::unit_test::test_case* tc_cursor =
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Cursor, DBAPIInstance);
@@ -3231,8 +3232,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
         // ctlib will work in case of protocol version 12.5 only
         // ftds + Sybase.and dblib won't work because of the early protocol versions.
-        if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
-            CTestArguments::eMsSql ) {
+        if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) && 
+             args.GetServerType() == CTestArguments::eMsSql ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert, DBAPIInstance);
             tc->depends_on(tc_init);
             add(tc);
@@ -3252,8 +3253,8 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 #if NCBI_DEVELOPMENT_VER > 20051016
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment. 
-    if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
-        CTestArguments::eMsSql ) {
+    if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) && 
+         args.GetServerType() == CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -3266,14 +3267,16 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     
     // !!! There are still problems ...
     // !!! It does not work in case of a new FTDS driver.
-    if ( args.GetDriverName() != "ctlib" && args.GetDriverName() != "dblib" ) {
+    if ( args.GetDriverName() != "ctlib" && 
+         args.GetDriverName() != "dblib" &&
+         args.GetDriverName() != "ftds63" ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
     
-    if ( args.GetDriverName() == "ftds" && args.GetServerType() ==
-        CTestArguments::eMsSql ) {
+    if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) && 
+         args.GetServerType() == CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UNIQUE, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -3306,11 +3309,11 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "msdblib", "odbc", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
 #else
 #define DEF_SERVER    "STRAUSS"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -3370,12 +3373,13 @@ CTestArguments::SetDatabaseParameters(void)
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "100";
-    } else if ( GetDriverName() == "ftds" && GetServerType() == eSybase ) {
+    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") && 
+                GetServerType() == eSybase ) {
         // ftds work with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "42";
     }
 
-    if ( GetDriverName() == "ftds" ) {
+    if ( GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) {
         m_DatabaseParameters["client_charset"] = "UTF-8";
     }
 }
@@ -3403,6 +3407,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2005/10/19 16:05:38  ssikorsk
+ * Handle ftds63 driver
+ *
  * Revision 1.52  2005/10/06 16:34:53  ssikorsk
  * Disable Test_Bulk_Writing untill 10/16/05
  *

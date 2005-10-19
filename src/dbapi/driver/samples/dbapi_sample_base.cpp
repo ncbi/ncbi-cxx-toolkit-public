@@ -128,11 +128,11 @@ CDbapiSampleApp::Init()
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV2"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "msdblib", "odbc", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
 #else
 #define DEF_SERVER    "STRAUSS"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -180,7 +180,8 @@ CDbapiSampleApp::Run()
         SetDatabaseParameter("version", "100");
 //     } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
 //         SetDatabaseParameter("version", "100");
-    } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eSybase ) {
+    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) &&  
+                GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
         SetDatabaseParameter("version", "42");
     }
@@ -471,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/19 16:04:46  ssikorsk
+ * Handle ftds63 driver
+ *
  * Revision 1.7  2005/08/25 18:07:17  ucko
  * Revert previous (ineffective) change; instead, remember to include <algorithm>.
  *
