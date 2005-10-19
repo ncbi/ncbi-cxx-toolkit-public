@@ -88,6 +88,31 @@ private:
     vector<string> m_Warnings;
 };
 
+class NCBI_XBLAST_EXPORT CLocalPssmSearch : public IPssmSearch {
+public:
+    /// Configure this search
+    virtual void SetOptions(CRef<CBlastOptionsHandle> options);
+
+    /// Set the databases to search
+    virtual void SetSubject(CConstRef<CSearchDatabase> subject);
+
+    /// Set the PSSM with which to search the database
+    virtual void SetQuery(CRef<objects::CPssmWithParameters> pssm);
+
+    /// Run a single iteration of the search
+    virtual TResults Run();
+
+private:
+    /// Search configuration
+    CRef<CBlastOptionsHandle> m_SearchOpts;
+
+    /// Search queries
+    CRef<objects::CPssmWithParameters> m_Pssm;
+
+    CConstRef<CSearchDatabase> m_Subject;
+
+};
+
 /// Factory for CLocalSearch.
 /// 
 /// This class is a concrete implementation of the ISearch factory.
@@ -100,11 +125,8 @@ public:
     /// Get an object to manage a local sequence search.
     virtual CRef<ISeqSearch>          GetSeqSearch();
 
-    /// Get an object to manage a remote PSSM search (unimplemented)
-    virtual CRef<IPssmSearch>          GetPssmSearch() {
-        NCBI_THROW(CSearchException, eInternal, 
-                   "Local PSSM search unimplemented");
-    }
+    /// Get an object to manage a remote PSSM search.
+    virtual CRef<IPssmSearch>          GetPssmSearch();
 
     /// Get an options handle for a search of the specified type.
     virtual CRef<CBlastOptionsHandle> GetOptions(EProgram);
