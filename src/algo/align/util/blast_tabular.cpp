@@ -85,23 +85,38 @@ CBlastTabular::CBlastTabular(const char* m8)
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
     for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
-        string id1 (p0, p - p0);
-        try {
-            m_Id.first.Reset(new CSeq_id(id1));
-        } catch (CSeqIdException&) {
-            m_Id.first.Reset(new CSeq_id(CSeq_id::e_Local, id1));
+
+        const string id1 (p0, p - p0);
+        CBioseq::TId ids;
+        CSeq_id::ParseFastaIds(ids, id1);
+        if(ids.size()) {
+            m_Id.first = ids.back();
+        }
+        else {
+            m_Id.first.Reset(NULL);
         }
     }
 
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
     for(p0 = p; *p && !isspace((unsigned char)(*p)); ++p); // get token
     if(*p) {
-        string id2 (p0, p - p0);
-        try {
-            m_Id.second.Reset(new CSeq_id(id2));
-        } catch (CSeqIdException&) {
-            m_Id.second.Reset(new CSeq_id(CSeq_id::e_Local, id2));
+
+        const string id2 (p0, p - p0);
+        CBioseq::TId ids;
+        CSeq_id::ParseFastaIds(ids, id2);
+        if(ids.size()) {
+            m_Id.second = ids.back();
         }
+        else {
+            m_Id.second.Reset(NULL);
+        }
+    }
+
+    if(m_Id.first.IsNull() || m_Id.second.IsNull()) {
+        NCBI_THROW(CAlgoAlignUtilException,
+                   eFormat,
+                   "Unable to recognize sequence IDs in "
+                   + string(m8));
     }
 
     for(; *p && isspace((unsigned char)(*p)); ++p); // skip spaces
@@ -237,7 +252,7 @@ void CBlastTabular::x_PartialDeserialize(const char* m8)
         }
         else {
             NCBI_THROW(CAlgoAlignUtilException, eFormat,
-                       "Coordinates in m8 string are expected to be one-based: "
+                      "Coordinates in m8 string are expected to be one-based: "
                        + string(m8));
         }
     }
