@@ -132,6 +132,7 @@ public:
 
     // Test scenarios.
     void TestTransaction(void);
+    void TestScenario_1(void);
 
     // Run a Python script from a file
     void TestFromFile(void);
@@ -159,6 +160,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/10/19 15:52:46  ssikorsk
+ * Added TestScenario_1 test to the test-suite
+ *
  * Revision 1.11  2005/09/13 14:44:58  ssikorsk
  * Added a Test_LOB test to the test-suite
  *
