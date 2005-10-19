@@ -38,6 +38,8 @@ static char const rcsid[] =
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/local_blast.hpp>
 #include <algo/blast/api/uniform_search.hpp>
+#include <algo/blast/api/blast_seqinfosrc.hpp>
+#include "blast_aux_priv.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -47,15 +49,60 @@ static char const rcsid[] =
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
+CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
+                         CRef<CBlastOptionsHandle> opts_handle,
+                         //CConstRef<CBlastOptionsHandle> opts_handle,
+                         const CSearchDatabase& dbinfo)
+: m_QueryFactory    (qf),
+  m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
+  m_InternalData    (0),
+  m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, dbinfo)),
+  m_TbackSearch     (0)
+{}
+
+CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
+                         CRef<CBlastOptionsHandle> opts_handle,
+                         //CConstRef<CBlastOptionsHandle> opts_handle,
+                         IBlastSeqSrcAdapter& db)
+: m_QueryFactory    (qf),
+  m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
+  m_InternalData    (0),
+  m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, db)),
+  m_TbackSearch     (0)
+{}
+
+CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
+                         CRef<CBlastOptionsHandle> opts_handle,
+                         //CConstRef<CBlastOptionsHandle> opts_handle,
+                         BlastSeqSrc* seqsrc)
+: m_QueryFactory    (qf),
+  m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
+  m_InternalData    (0),
+  m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, seqsrc)),
+  m_TbackSearch     (0)
+{}
+
 ISearch::TResults
 CLocalBlast::Run()
 {
+    ASSERT(m_QueryFactory);
+    ASSERT(m_PrelimSearch);
+    ASSERT(m_Opts);
+
     // For now I assume that whatever warnings and other data are
     // needed from the preliminary stage can be passed via the memento
     // data somehow.
     
-    m_PrelimSearch->Run();
-    throw runtime_error("CLocalBlast::Run() unimplemented");
+    m_InternalData = m_PrelimSearch->Run();
+    ASSERT(m_InternalData);
+
+    auto_ptr<IBlastSeqInfoSrc>
+        seqinfo_src(InitSeqInfoSrc(m_InternalData->m_SeqSrc->GetPointer()));
+
+    m_TbackSearch.Reset(new CBlastTracebackSearch(m_QueryFactory,
+                                                  m_InternalData,
+                                                  *m_Opts,
+                                                  *seqinfo_src));
     return m_TbackSearch->Run();
 }
 

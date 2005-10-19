@@ -47,24 +47,40 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Class to perform a BLAST search on local BLAST databases
-class NCBI_XBLAST_EXPORT CLocalBlast : 
-    public CObject, 
-    public CThreadable
+class NCBI_XBLAST_EXPORT CLocalBlast : public CObject, public CThreadable
 {
-    CLocalBlast(CRef<IQueryFactory> qf,
-                CConstRef<CBlastOptions> opts,
+public:
+    CLocalBlast(CRef<IQueryFactory> query_factory,
+                //CConstRef<CBlastOptionsHandle> opts_handle,
+                CRef<CBlastOptionsHandle> opts_handle,
                 const CSearchDatabase& dbinfo);
-    CLocalBlast(CRef<IQueryFactory> qf,
-                CConstRef<CBlastOptions> opts,
+    CLocalBlast(CRef<IQueryFactory> query_factory,
+                //CConstRef<CBlastOptionsHandle> opts_handle,
+                CRef<CBlastOptionsHandle> opts_handle,
                 IBlastSeqSrcAdapter& db);
-    CLocalBlast(CRef<IQueryFactory> qf,
-                CConstRef<CBlastOptions> opts,
+    CLocalBlast(CRef<IQueryFactory> query_factory,
+                //CConstRef<CBlastOptionsHandle> opts_handle,
+                CRef<CBlastOptionsHandle> opts_handle,
                 BlastSeqSrc* seqsrc);
     
     ISearch::TResults Run();
     
 private:
+    /// Query factory from which to obtain the query sequence data
+    CRef<IQueryFactory> m_QueryFactory;
+
+    /// Options to use
+    CRef<CBlastOptions> m_Opts;
+    //CConstRef<CBlastOptionsHandle> m_OptsHandle;
+
+    /// Internal core data structures which are used in the preliminary and
+    /// traceback stages of the search
+    CRef<SInternalData> m_InternalData;
+
+    /// Object which runs the preliminary stage of the search
     CRef<CBlastPrelimSearch> m_PrelimSearch;
+
+    /// Object which runs the traceback stage of the search
     CRef<CBlastTracebackSearch> m_TbackSearch;
 };
 
