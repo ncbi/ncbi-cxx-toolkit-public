@@ -803,139 +803,13 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 }
 
 
-////////////////////////////////////////////
-//
-//
-// OBSOLETE methods; will be removed soon
-//
-//
-///////////////////////////////////////////
-
-
-#define OBSOLETE_FLAGS(func) \
-    ERR_POST_ONCE(Warning << \
-                  "This version of function" #func "is obsolete and will " \
-                  "be removed soon! " \
-                  "Please use version of this function with flags.");     \
-    TStringToNumFlags flags = fStringToNumDefault;  \
-    if ( check == eCheck_Skip )                     \
-        flags |= fAllowTrailingSymbols;             \
-    if ( on_error == eConvErr_NoThrow )             \
-        flags |= fConvErr_NoThrow
-
-
-int NStr::StringToInt(
-                        const string&  str,
-                        int            base,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
+void NStr::IntToString(string& out_str, long svalue,
+                       TNumToStringFlags flags, int base)
 {
-    OBSOLETE_FLAGS(NStr::StringToInt);
-    return StringToInt(str, flags, base);
-}
-
-unsigned int NStr::StringToUInt(
-                        const string&  str,
-                        int            base,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
-{
-    OBSOLETE_FLAGS(NStr::StringToUInt);
-    return StringToUInt(str, flags, base);
-}
-
-
-long NStr::StringToLong(
-                        const string&  str,
-                        int            base,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
-{
-    OBSOLETE_FLAGS(NStr::StringToLong);
-    return StringToLong(str, flags, base);
-
-}
-
-unsigned long NStr::StringToULong(
-                        const string&  str,
-                        int            base,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
-{
-    OBSOLETE_FLAGS(NStr::StringToULong);
-    return StringToULong(str, flags, base);
-
-}
-
-double NStr::StringToDouble(
-                        const string&  str,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
-{
-    OBSOLETE_FLAGS(NStr::StringToDouble);
-    return StringToDouble(str, flags);
-}
-
-Int8 NStr::StringToInt8(
-                        const string&  str,
-                        int            base,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
-{
-    OBSOLETE_FLAGS(NStr::StringToInt8);
-    return StringToInt8(str, flags, base);
-}
-
-Uint8 NStr::StringToUInt8(
-                        const string&  str,
-                        int            base,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
-{
-    OBSOLETE_FLAGS(NStr::StringToUInt8);
-    return StringToUInt8(str, flags, base);
-}
-
-Uint8 NStr::StringToUInt8_DataSize(
-                        const string&  str, 
-                        int            base,
-                        ECheckEndPtr   check,
-                        EConvErrAction on_error)
-{
-    OBSOLETE_FLAGS(NStr::StringToUInt8_DataSize);
-    return StringToUInt8_DataSize(str, flags, base);
-}
-
-//
-// end of OBSOLETE
-///////////////////////////////////////////
-
-
-// Set base value accordngly specified flags
-# define SET_BASE_VALUE                                                     \
-    unsigned char base;                                                     \
-    switch (flags  &  (fBinary | fOctal | fHex)) {                          \
-        case 0:  /* default base */                                         \
-            base = 10;                                                      \
-            break;                                                          \
-        case fBinary:                                                       \
-            base = 2;                                                       \
-            break;                                                          \
-        case fOctal:                                                        \
-            base = 8;                                                       \
-            break;                                                          \
-        case fHex:                                                          \
-            base = 16;                                                      \
-            break;                                                          \
-        default:                                                            \
-            out_str = kEmptyStr;                                            \
-            return;                                                         \
+    _ASSERT(flags == 0  ||  flags > 32);
+    if ( base < 1  ||  base > 36 ) {
+        return;
     }
-
-
-void NStr::IntToString(string& out_str, long svalue, TNumToStringFlags flags)
-{
-    SET_BASE_VALUE;
 
     unsigned long value;
     if (base == 10) {
@@ -979,9 +853,13 @@ void NStr::IntToString(string& out_str, long svalue, TNumToStringFlags flags)
 
 void NStr::UIntToString(string&           out_str,
                         unsigned long     value,
-                        TNumToStringFlags flags)
+                        TNumToStringFlags flags,
+                        int               base)
 {
-    SET_BASE_VALUE;
+    _ASSERT(flags == 0  ||  flags > 32);
+    if ( base < 1  ||  base > 36 ) {
+        return;
+    }
 
     const size_t kBufSize = (sizeof(value) * CHAR_BIT);
     char  buffer[kBufSize];
@@ -1012,7 +890,7 @@ void NStr::UIntToString(string&           out_str,
 }
 
 
-string NStr::Int8ToString(Int8 value, TNumToStringFlags flags)
+string NStr::Int8ToString(Int8 value, TNumToStringFlags flags, int base)
 {
     string ret;
     NStr::Int8ToString(ret, value, flags);
@@ -1031,7 +909,7 @@ string NStr::Int8ToString(Int8 value, TNumToStringFlags flags)
 static char* s_PrintUint8(char*                   pos,
                           Uint8                   value,
                           NStr::TNumToStringFlags flags,
-                          unsigned char           base = 10)
+                          int                     base)
 {
     if ( (base == 10) && (flags & NStr::fWithCommas) ) {
         int cnt = -1;
@@ -1102,9 +980,13 @@ static char* s_PrintUint8(char*                   pos,
 }
 
 
-void NStr::Int8ToString(string& out_str, Int8 svalue, TNumToStringFlags flags)
+void NStr::Int8ToString(string& out_str, Int8 svalue,
+                        TNumToStringFlags flags, int base)
 {
-    SET_BASE_VALUE;
+    _ASSERT(flags == 0  ||  flags > 32);
+    if ( base < 1  ||  base > 36 ) {
+        return;
+    }
 
     Uint8 value;
     if (base == 10) {
@@ -1128,7 +1010,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue, TNumToStringFlags flags)
 }
 
 
-string NStr::UInt8ToString(Uint8 value, TNumToStringFlags flags)
+string NStr::UInt8ToString(Uint8 value, TNumToStringFlags flags, int base)
 {
     string ret;
     NStr::UInt8ToString(ret, value, flags);
@@ -1136,9 +1018,13 @@ string NStr::UInt8ToString(Uint8 value, TNumToStringFlags flags)
 }
 
 
-void NStr::UInt8ToString(string& out_str, Uint8 value, TNumToStringFlags flags)
+void NStr::UInt8ToString(string& out_str, Uint8 value,
+                         TNumToStringFlags flags, int base)
 {
-    SET_BASE_VALUE;
+    _ASSERT(flags == 0  ||  flags > 32);
+    if ( base < 1  ||  base > 36 ) {
+        return;
+    }
 
     const size_t kBufSize = (sizeof(value) * CHAR_BIT);
     char  buffer[kBufSize];
@@ -2318,6 +2204,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.165  2005/10/19 12:04:07  ivanov
+ * Removed obsolete NStr::StringTo*() methods.
+ * NStr::*ToString() -- added new radix base parameter instead of flags.
+ *
  * Revision 1.164  2005/10/17 18:24:38  ivanov
  * Allow NStr::*ToString() convert numbers using fBinary format
  *

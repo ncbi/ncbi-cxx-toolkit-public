@@ -162,19 +162,14 @@ public:
     /// Number to string conversion flags.
     ///
     /// NOTE: 
-    ///   - if fBinary, fOctal or fHex formats are specified,
-    ///     that flags fWithSign and fWithCommas will be ignored;
-    ///   - fOctal and fHex formats do not add leading '0' and '0x'.
-    ///     If necessary you should add it yourself.
+    ///   If specified base in the *ToString() methods is not default 10,
+    ///   that some flags like fWithSign and fWithCommas will be ignored.
     enum ENumToStringFlags {
-        fWithSign         = (1 << 0), ///< Prefix the output value with a sign
-        fWithCommas       = (1 << 1), ///< Use commas as thousands separator
-        fDoubleFixed      = (1 << 2), ///< Use n.nnnn format for double
-        fDoubleScientific = (1 << 3), ///< Use scientific format for double
-        fDoubleGeneral    = fDoubleFixed | fDoubleScientific,
-        fBinary           = (1 << 4), ///< Use binary output format
-        fOctal            = (1 << 5), ///< Use octal output format
-        fHex              = (1 << 6)  ///< Use hex output format
+        fWithSign        = (1 <<  9), ///< Prefix the output value with a sign
+        fWithCommas      = (1 << 10), ///< Use commas as thousands separator
+        fDoubleFixed     = (1 << 11), ///< Use n.nnnn format for double
+        fDoubleScientific= (1 << 12), ///< Use scientific format for double
+        fDoubleGeneral   = fDoubleFixed | fDoubleScientific
     };
     typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
 
@@ -238,10 +233,10 @@ public:
     ///
     /// @param str
     ///   String to be converted.
-    /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @param flags
     ///   How to convert string to value.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @return
     ///   - Convert "str" to "int" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
@@ -255,10 +250,10 @@ public:
     ///
     /// @param str
     ///   String to be converted.
-    /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @param flags
     ///   How to convert string to value.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @return
     ///   - Convert "str" to "unsigned int" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
@@ -272,10 +267,10 @@ public:
     ///
     /// @param str
     ///   String to be converted.
-    /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @param flags
     ///   How to convert string to value.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @return
     ///   - Convert "str" to "long" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
@@ -289,10 +284,10 @@ public:
     ///
     /// @param str
     ///   String to be converted.
-    /// @param base
-    ///   Numeric base of the number symbols (default = 10).
     /// @param flags
     ///   How to convert string to value.
+    /// @param base
+    ///   Numeric base of the number symbols (default = 10).
     /// @return
     ///   - Convert "str" to "unsigned long" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
@@ -320,10 +315,10 @@ public:
     ///
     /// @param str
     ///   String to be converted.
-    /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @param flags
     ///   How to convert string to value.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @return
     ///   - Convert "str" to "Int8" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
@@ -337,10 +332,10 @@ public:
     ///
     /// @param str
     ///   String to be converted.
-    /// @param base
-    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @param flags
     ///   How to convert string to value.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 0, 2..32.
     /// @return
     ///   - Convert "str" to "UInt8" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
@@ -387,20 +382,30 @@ public:
     ///   Integer value (long) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     /// @return
     ///   Converted string value.
-    static string IntToString(long value, TNumToStringFlags flags = 0);
+    static string IntToString(long value, TNumToStringFlags flags = 0,
+                              int  base = 10);
 
     /// Convert Int to String.
     ///
     /// @param out_str
-    ///   Output string variable
+    ///   Output string variable.
     /// @param value
     ///   Integer value (long) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     static void IntToString(string& out_str, long value, 
-                            TNumToStringFlags flags = 0);
+                            TNumToStringFlags flags = 0,
+                            int               base  = 10);
 
     /// Convert UInt to string.
     ///
@@ -408,10 +413,15 @@ public:
     ///   Integer value (unsigned long) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     /// @return
     ///   Converted string value.
     static string UIntToString(unsigned long value,
-                               TNumToStringFlags flags = 0);
+                               TNumToStringFlags flags = 0,
+                               int               base  = 10);
 
     /// Convert UInt to string.
     ///
@@ -421,8 +431,13 @@ public:
     ///   Integer value (unsigned long) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     static void UIntToString(string& out_str, unsigned long value,
-                             TNumToStringFlags flags = 0);
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
 
     /// Convert Int8 to string.
     ///
@@ -430,10 +445,15 @@ public:
     ///   Integer value (Int8) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     /// @return
     ///   Converted string value.
     static string Int8ToString(Int8 value,
-                               TNumToStringFlags flags = 0);
+                               TNumToStringFlags flags = 0,
+                               int               base  = 10);
 
     /// Convert Int8 to string.
     ///
@@ -443,8 +463,13 @@ public:
     ///   Integer value (Int8) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     static void Int8ToString(string& out_str, Int8 value,
-                             TNumToStringFlags flags = 0);
+                             TNumToStringFlags flags = 0,
+                             int               base  = 10);
 
     /// Convert UInt8 to string.
     ///
@@ -452,10 +477,15 @@ public:
     ///   Integer value (UInt8) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     /// @return
     ///   Converted string value.
     static string UInt8ToString(Uint8 value,
-                                TNumToStringFlags flags = 0);
+                                TNumToStringFlags flags = 0,
+                                int               base  = 10);
 
     /// Convert UInt8 to string.
     ///
@@ -465,8 +495,13 @@ public:
     ///   Integer value (UInt8) to be converted.
     /// @param flags
     ///   How to convert value to string.
+    /// @param base
+    ///   Radix base. Default is 10. Allowed values are 2..32.
+    ///   Bases 8 and 16 do not add leading '0' and '0x' accordingly.
+    ///   If necessary you should add it yourself.
     static void UInt8ToString(string& out_str, Uint8 value,
-                              TNumToStringFlags flags = 0);
+                              TNumToStringFlags flags = 0,
+                              int               base  = 10);
 
     /// Convert double to string.
     ///
@@ -532,66 +567,6 @@ public:
                                     TNumToStringFlags flags = 0);
 
 public:
-    /// Obsolete methods; will be removed soon!
-    /// Use one of the StringTo*() with flag parameter.
-
-    enum ECheckEndPtr {
-        eCheck_Need,
-        eCheck_Skip
-    };
-    enum EConvErrAction {
-        eConvErr_Throw,
-        eConvErr_NoThrow
-    };
-    static int StringToInt( const string&  str,
-                            int            base,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-    static unsigned int StringToUInt(
-                            const string&  str,
-                            int            base,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-    static long StringToLong(
-                            const string&  str,
-                            int            base,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-    static unsigned long StringToULong(
-                            const string&  str,
-                            int            base,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-    static double StringToDouble(
-                            const string&  str,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-    static Int8 StringToInt8(
-                            const string&  str,
-                            int            base,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-    static Uint8 StringToUInt8(
-                            const string&  str,
-                            int            base,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-    static 
-    Uint8 StringToUInt8_DataSize(
-                            const string&  str, 
-                            int            base,
-                            ECheckEndPtr   check    /* = eCheck_Skip */,
-                            EConvErrAction on_error /* = eConvErr_Throw*/);
-
-public:
-
     /// Convert pointer to string.
     ///
     /// @param out_str
@@ -2467,18 +2442,20 @@ CTempString::operator string(void) const
 //
 
 inline
-string NStr::IntToString(long value, TNumToStringFlags flags)
+string NStr::IntToString(long value,
+                         TNumToStringFlags flags, int base)
 {
     string ret;
-    IntToString(ret, value, flags);
+    IntToString(ret, value, flags, base);
     return ret;
 }
 
 inline
-string NStr::UIntToString(unsigned long value, TNumToStringFlags flags)
+string NStr::UIntToString(unsigned long value,
+                          TNumToStringFlags flags, int base)
 {
     string ret;
-    UIntToString(ret, value, flags);
+    UIntToString(ret, value, flags, base);
     return ret;
 }
 
@@ -2938,6 +2915,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.96  2005/10/19 12:03:53  ivanov
+ * Removed obsolete NStr::StringTo*() methods.
+ * NStr::*ToString() -- added new radix base parameter instead of flags.
+ *
  * Revision 1.95  2005/10/17 18:24:22  ivanov
  * Added fBinary flag to NStr::ENumToStringFlags enum
  *
