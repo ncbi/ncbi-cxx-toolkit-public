@@ -241,9 +241,9 @@ unsigned int CBlockedAlignmentEditor::MoveBlockBoundaries(BlockBoundaryAlgorithm
     for (mapIt = localChangedBlocks.begin(); mapIt != localChangedBlocks.end(); ++mapIt) {
         thisBlock = mapIt->second;
         if (thisBlock.from > thisBlock.to) {  // delete the block!
-            INFO_MESSAGE_CL("MoveBlockBoundaries:  Deleting block " << thisBlock.blockNum+1);
+            INFO_MESSAGE_CL("        MoveBlockBoundaries:  Deleting block " << thisBlock.blockNum+1);
             if (!m_bma->DeleteBlock(thisBlock.to)) {
-                WARNING_MESSAGE_CL("MoveBlockBoundaries:  Problem trying to delete block " << thisBlock.blockNum+1);
+                WARNING_MESSAGE_CL("        MoveBlockBoundaries:  Problem trying to delete block " << thisBlock.blockNum+1);
             } else {
                 ++nDeleted;
             }
@@ -259,30 +259,30 @@ unsigned int CBlockedAlignmentEditor::MoveBlockBoundaries(BlockBoundaryAlgorithm
             }
 
             if (!moved) {
-                WARNING_MESSAGE_CL("MoveBlockBoundaries:  Problem trying to move block " << thisBlock.blockNum+1
-                                   << "\n    while attempting N/C terminal shifts of " << nShift << "/"
+                WARNING_MESSAGE_CL("        MoveBlockBoundaries:  Problem trying to move block " << thisBlock.blockNum+1
+                                   << "\n            while attempting N/C terminal shifts of " << nShift << "/"
                                    << cShift);
             } else {
                 ++nMoved;
                 if (nShift > 0) {
-                    INFO_MESSAGE_CL("MoveBlockBoundaries:  Extended N-terminal of block " << 
+                    TRACE_MESSAGE_CL("        MoveBlockBoundaries:  Extended N-terminal of block " << 
                                     thisBlock.blockNum+1 << " by " << nShift << " residues.");
                 } else if (nShift < 0) {
-                    INFO_MESSAGE_CL("MoveBlockBoundaries:  Shrunk N-terminal of block " << 
+                    TRACE_MESSAGE_CL("        MoveBlockBoundaries:  Shrunk N-terminal of block " << 
                                     thisBlock.blockNum+1 << " by " << -nShift << " residues.");
                 }
                 if (cShift > 0) {
-                    INFO_MESSAGE_CL("MoveBlockBoundaries:  Extended C-terminal of block " << 
+                    TRACE_MESSAGE_CL("        MoveBlockBoundaries:  Extended C-terminal of block " << 
                                     thisBlock.blockNum+1 << " by " << cShift << " residues.");
                 } else if (cShift < 0) {
-                    INFO_MESSAGE_CL("MoveBlockBoundaries:  Shrunk C-terminal of block " << 
+                    TRACE_MESSAGE_CL("        MoveBlockBoundaries:  Shrunk C-terminal of block " << 
                                     thisBlock.blockNum+1 << " by " << -cShift << " residues.");
                 }
             }
         }
     }
 
-    INFO_MESSAGE_CL("MoveBlockBoundaries:  Attempt to change bounds of " << nChanged << " blocks; moved bounds for " << nMoved << " of them");
+    INFO_MESSAGE_CL("        MoveBlockBoundaries:  Attempt to change bounds of " << nChanged << " blocks; moved bounds for " << nMoved << " of them");
     if (nDeleted > 0) {
         INFO_MESSAGE_CL("                      and deleted " << nDeleted << " blocks.");
     }
@@ -296,7 +296,7 @@ bool CBlockedAlignmentEditor::MoveBlockBoundary(unsigned blockNum, ExtensionLoc 
 
     if (!m_bma || blockNum >= m_extBound.size() || shift == 0 ||
         eloc == eEither || eloc == eNeither || eloc == eAny) {
-        WARNING_MESSAGE_CL("aborting move in MoveBlockBoundary for shift " << shift << " at block " << blockNum + 1);
+        WARNING_MESSAGE_CL("unexpected parameters:  overriding move in MoveBlockBoundary for shift " << shift << " at block " << blockNum + 1);
         return result;
     }
 
@@ -443,6 +443,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/19 18:40:19  lanczyck
+* output formatting changes
+*
 * Revision 1.1  2005/06/28 13:44:23  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *

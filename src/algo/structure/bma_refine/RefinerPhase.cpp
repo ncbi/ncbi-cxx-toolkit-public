@@ -275,7 +275,9 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             }
         }
             
-        if (!m_verbose) SetDiagPostLevel(eDiag_Error);
+        //  Change diag level just for the LOO/LNO call.
+        //if (!m_verbose) SetDiagPostLevel(eDiag_Error);
+        EDiagSev originalPostLevel = SetDiagPostLevel(eDiag_Error);
         //                cout << "##### row: " << row+1 << " perc " << percentileLOO << "; ext " << extensionLOO << " cut " << cutoffLOO << " from/to " << queryFrom[row] << " " << queryTo[row] << endl;
 
         //  If LOO failed continue to the next row (rollbacks first, if created a copy earlier)
@@ -288,6 +290,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
         if (!au->DoLeaveNOut(rows, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
                                m_looParams.cutoff, froms, tos)) {
+            SetDiagPostLevel(originalPostLevel);
             if (!acceptAll) {
                 delete au;  //  DoLeaveOneOut likely has modified 'au' 
                 au = auRollbackCopy;
@@ -300,6 +303,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
         } else {
 
+            SetDiagPostLevel(originalPostLevel);
             oldScore = score;
             //(*detailsStream) << "    about to do rowScorer.ComputeScore after LOO for row " << row << endl;
             score    = (TScoreType) rowScorer.ComputeScore(*au);  //GetScore(*au);
@@ -561,10 +565,10 @@ unsigned int CBMARefinerLOOPhase::AnalyzeRowShifts(const Ranges& before, const R
 
     if (writeDetails) {
         if (totalShift > 0) {
-            (*details) << "    Shift detected on row " << row+1 << ":  block-width-weighted shift = " << totalShift;
+            (*details) << "        Shift detected on row " << row+1 << ":  block-width-weighted shift = " << totalShift;
             (*details) << "; block-width-normalized shift = " << totalNormShift << endl;
         } else if (nBlocks > 0) {
-            (*details) << "    No Shift detected on row " << row+1 << endl;
+            (*details) << "        No Shift detected on row " << row+1 << endl;
         } 
         (*details) << endl;
     }
@@ -642,7 +646,7 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
                 detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
                 (*detailsStream) << setw(4) << eb[j].nExt << ";  max C-extension = " << setw(4) << eb[j].cExt << endl;
             }
-            (*detailsStream) << "        **************************************************\n";
+            (*detailsStream) << "        **************************************************\n\n";
             detailsStream->setf(initFlags, IOS_BASE::adjustfield);
 
         }
@@ -839,6 +843,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/19 18:40:19  lanczyck
+ * output formatting changes
+ *
  * Revision 1.7  2005/10/05 13:24:35  lanczyck
  * handle case where lno is not a factor of # of rows; output modifications
  *
