@@ -227,6 +227,9 @@ CHTMLListElement* CHTMLListElement::AppendItem(CNCBINode* node)
 inline
 CHTML_tc* CHTML_table::NextCell(ECellType type)
 {
+    if ( m_CurrentRow == TIndex(-1) ) {
+        m_CurrentRow = 0;
+    }
     return Cell(m_CurrentRow, m_CurrentCol + 1, type);
 }
 
@@ -900,6 +903,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/10/19 15:09:41  ivanov
+ * CHTML_table -- init current row with -1 value, markink it as undefined
+ *
  * Revision 1.39  2005/08/22 12:12:32  ivanov
  * Move some code from html.cpp to html.inl
  *

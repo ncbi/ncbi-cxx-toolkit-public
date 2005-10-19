@@ -1203,7 +1203,8 @@ CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
 }
 
 CHTML_table::CHTML_table(void)
-    : CParent("table"), m_CurrentRow(0), m_CurrentCol(TIndex(-1)),
+    : CParent("table"),
+      m_CurrentRow(TIndex(-1)), m_CurrentCol(TIndex(-1)),
       m_ColSepL(kEmptyStr), m_ColSepM(" "), m_ColSepR(kEmptyStr),
       m_RowSepChar('-'), m_IsRowSep(eSkipRowSep)
 {
@@ -2316,6 +2317,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.123  2005/10/19 15:09:26  ivanov
+ * CHTML_table -- init current row with -1 value, markink it as undefined
+ *
  * Revision 1.122  2005/08/22 12:12:45  ivanov
  * CHTMLOpenElement::PrintBegin() -- added parsing <@TAG@> for attributes.
  * Renamed x_PrintBegin() -> PrintString()
