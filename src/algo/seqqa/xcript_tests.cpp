@@ -314,8 +314,6 @@ static void s_CodingPropensity(const CSeq_id& id, const CSeqTestContext* ctx,
                                CFeat_CI feat_iter, CSeq_test_result& result)
 {
     const CSeq_loc& cds = feat_iter->GetLocation();
-    const CSeq_id* idp = &id;
-    cds.CheckId(idp);
 
     if (!ctx->HasKey("gnomon_model_file")) {
         return;
@@ -702,6 +700,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/19 18:27:13  jcherry
+ * Don't call CSeq_loc::CheckId on cds location in s_CodingPropensity; this
+ * is unaware of equivalence of identifiers
+ *
  * Revision 1.14  2005/09/15 21:29:32  chetvern
  * Updated to match new gnomon API
  *
