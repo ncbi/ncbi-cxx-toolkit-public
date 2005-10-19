@@ -34,29 +34,19 @@
 */
 
 #include <corelib/ncbistd.hpp>
+
 #include <algo/align/nw/nw_spliced_aligner.hpp>
+#include <algo/align/util/blast_tabular.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 class CBlastTabular;
 
-// Abstract base for splign sequence accessors
-class NCBI_XALGOALIGN_EXPORT CSplignSeqAccessor: public CObject
-{
-public:
-
-    // start and finish are zero-based;
-    // must return full sequence when start == 0 and finish == kMax_UInt;
-    // sequence characters are expected to be in upper case.
-    // If keep == true, sequence will be retained in memory.
-
-    virtual void Load(const string& id, 
-                      vector<char> *seq,
-                      size_t start, 
-                      size_t finish,
-                      bool keep) = 0;
-};
+BEGIN_SCOPE(objects)
+    class CScope;
+    class CSeq_id;
+END_SCOPE(objects)
 
 
 class NCBI_XALGOALIGN_EXPORT CSplign: public CObject
@@ -71,9 +61,8 @@ public:
     CRef<TAligner>&     SetAligner(void);
     CConstRef<TAligner> GetAligner(void) const;
 
-    typedef CSplignSeqAccessor TSeqAccessor;
-    CRef<TSeqAccessor>&      SetSeqAccessor(void);
-    CConstRef<TSeqAccessor>  GetSeqAccessor(void) const;
+    CRef<objects::CScope>  GetScope(void) const;
+    CRef<objects::CScope>& SetScope(void);
 
     void   SetEndGapDetection(bool on);
     bool   GetEndGapDetection(void) const;
@@ -87,9 +76,6 @@ public:
     void   SetMaxGenomicExtent(size_t mge);
     static size_t s_GetDefaultMaxGenomicExtent(void);
     size_t GetMaxGenomicExtent(void) const;
-
-    void   SetMinQueryCoverage(double cov);
-    double GetMinQueryCoverage(void) const;
 
     void   SetCompartmentPenalty(double penalty);
     double GetCompartmentPenalty(void) const;
@@ -186,14 +172,13 @@ protected:
     CRef<TAligner> m_aligner;
 
     // access to sequence data
-    CRef<TSeqAccessor> m_sa;
+    CRef<objects::CScope> m_Scope;
 
     // alignment pattern
     vector<size_t> m_pattern;
 
     // min exon idty - others will be marked as gaps
     double m_MinExonIdty;
-
 
     // min compartment idty - others will be skipped
     double m_MinCompartmentIdty;
@@ -203,9 +188,6 @@ protected:
 
     // mandatory end gap detection flag
     bool m_endgaps;
-
-    // min query hit coverage
-    double m_min_query_coverage;
 
     // alignment map
     struct SAlnMapElem {
@@ -241,6 +223,11 @@ protected:
     void   x_SetPattern(THitRefs* hitrefs);
     void   x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent) const;
+    void   x_LoadSequence(vector<char>* seq, 
+                          const objects::CSeq_id& seqid,
+                          THit::TCoord start,
+                          THit::TCoord finish,
+                          bool retain);
 };
 
 
@@ -250,6 +237,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2005/10/19 17:55:38  kapustin
+ * Switch to using ObjMgr+LDS to load sequence data
+ *
  * Revision 1.27  2005/09/12 16:22:31  kapustin
  * Move compartmentization to xalgoutil
  *

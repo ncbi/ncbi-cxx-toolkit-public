@@ -51,7 +51,6 @@ void CleaveOffByTail(CSplign::THitRefs* phitrefs, size_t polya_start)
     for(size_t i = 0; i < hit_dim; ++i) {
 
         CSplign::THitRef& hit = (*phitrefs)[i];
-
         if(hit->GetQueryStart() >= polya_start) {
             (*phitrefs)[i].Reset(NULL);
         }
@@ -340,6 +339,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2005/10/19 17:56:35  kapustin
+ * Switch to using ObjMgr+LDS to load sequence data
+ *
  * Revision 1.15  2005/09/27 17:58:34  kapustin
  * Fix CleaveOffByTail()
  *

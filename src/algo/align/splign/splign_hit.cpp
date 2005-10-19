@@ -263,6 +263,14 @@ void CHit::SetEnvelop()
 }
 
 
+int Round_lcl(const double& d)
+{
+    const double fd = floor(d);
+    const double rv = d - fd < .5? fd: fd + 1;
+    return int(rv);
+}
+
+
 void CHit::Move(unsigned char i, int pos_new, bool prot2nucl)
 {
     bool strand_plus = IsStraight();
@@ -312,13 +320,13 @@ void CHit::Move(unsigned char i, int pos_new, bool prot2nucl)
         if(n < 2) {
             double D = double(shift_abs) / (m_ai[1] - m_ai[0] + 1);
             shiftQ = shift;
-            shiftS = int(ceil(D*(m_ai[3] - m_ai[2] + 1)));
+            shiftS = Round_lcl(D*(m_ai[3] - m_ai[2] + 1));
             if(!plus) shiftS = -shiftS;
         }
         else {
             double D = double(shift_abs) / (m_ai[3] - m_ai[2] + 1);
             shiftS = shift;
-            shiftQ = int(ceil(D*(m_ai[1] - m_ai[0] + 1)));
+            shiftQ = Round_lcl(D*(m_ai[1] - m_ai[0] + 1));
             if(!plus) shiftQ = -shiftQ;
         }
     }
@@ -475,6 +483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/10/19 17:56:35  kapustin
+* Switch to using ObjMgr+LDS to load sequence data
+*
 * Revision 1.10  2005/09/12 16:24:00  kapustin
 * Move compartmentization to xalgoalignutil.
 *

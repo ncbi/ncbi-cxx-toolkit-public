@@ -57,66 +57,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-class CSplignObjMgrAccessor : public CSplignSeqAccessor {
-public:
-    CSplignObjMgrAccessor(const CSeq_id &id1, const CSeq_id &id2,
-                          CScope& scope) :
-        m_Handle1(scope.GetBioseqHandle(id1)),
-        m_Handle2(scope.GetBioseqHandle(id2)),
-        m_SeqVector1(m_Handle1.GetSeqVector(CBioseq_Handle::eCoding_Iupac)),
-        m_SeqVector2(m_Handle2.GetSeqVector(CBioseq_Handle::eCoding_Iupac))
-    {
-    }
-
-    virtual void Load(const string& id, 
-                      vector<char> *seq,
-                      size_t start, 
-                      size_t finish,
-                      bool)
-    {
-        if (!seq) {
-            NCBI_THROW(CAlgoAlignException, eNotInitialized,
-                       string(g_msg_NullPointerPassed) + " in " + 
-                       "CSplignObjMgrAccessor::Load");
-        }
-
-        CRef<CSeq_id> seqId;
-        try {
-            seqId.Reset(new CSeq_id(id));
-        }
-        catch(CSeqIdException&) {
-            seqId.Reset(new CSeq_id(CSeq_id::e_Local, id));
-        }
-
-        CSeqVector *sv = NULL;
-        if (m_Handle1.IsSynonym(*seqId)  ||
-            m_Handle1.GetSeqId()->GetSeqIdString(true) == id) {
-            sv = &m_SeqVector1;
-        } else if (m_Handle2.IsSynonym(*seqId)  ||
-                   m_Handle2.GetSeqId()->GetSeqIdString(true) == id) {
-            sv = &m_SeqVector2;
-        } else {
-            NCBI_THROW(CAlgoAlignException, eInternal,
-                       string(g_msg_SequenceNotFound) + " for " + id);
-        }
-
-        if (finish == kMax_UInt  ||  finish >= sv->size()) {
-            //flag to return everything
-            finish = sv->size() - 1;
-        }
-
-        seq->reserve(finish - start + 1);
-        for (size_t i = start;  i <= finish;  ++i) {
-            seq->push_back((*sv)[i]);
-        }
-    }
-
-protected:
-    CBioseq_Handle m_Handle1;
-    CBioseq_Handle m_Handle2;
-    CSeqVector m_SeqVector1;
-    CSeqVector m_SeqVector2;
-};
 
 /*---------------------------------------------------------------------------*/
 // PRE : transcript location, genomic location (maximum span), scope in
@@ -134,12 +74,9 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
 {    
     CRef<CSplicedAligner> aligner(new CSplicedAligner16);
     m_Splign->SetAligner() = aligner;
-
-    CRef<CSplignSeqAccessor> accessor
-        (new CSplignObjMgrAccessor(*m_TranscriptId, *m_GenomicId, scope));
-
-    m_Splign->SetSeqAccessor() = accessor;
+    m_Splign->SetScope().Reset(&scope);
 }
+
 
 CRef<CSplign>& CSplignSimple::SetSplign(void) 
 {
@@ -166,26 +103,28 @@ CConstRef<blast::CBl2Seq> CSplignSimple::GetBlast(void) const
 // POST: split results
 const CSplign::TResults& CSplignSimple::Run(void)
 {
-    string res;
-    blast::TSeqAlignVector blastRes(m_Blast->Run());
+    USING_SCOPE(blast);
 
-    if (!blastRes.empty()  &&
-        blastRes.front().NotEmpty()  &&
-        !blastRes.front()->Get().empty()  &&
-        !blastRes.front()->Get().front()->GetSegs().GetDisc().Get().empty()) {
-        
-        CSplign::THitRefs hitrefs;
-
-        const CSeq_align_set::Tdata &sas =
-            blastRes.front()->Get().front()->GetSegs().GetDisc().Get();
-        ITERATE(CSeq_align_set::Tdata, saI, sas) {
-
-            CSplign::THitRef hitref (new CSplign::THit (**saI));
-            if(hitref->GetQueryStrand() == false) {
-                hitref->FlipStrands();
+    TSeqAlignVector sav (m_Blast->Run());
+    CSplign::THitRefs hitrefs;
+    ITERATE(TSeqAlignVector, ii, sav) {
+        if((*ii)->IsSet()) {
+            const CSeq_align_set::Tdata &sas0 = (*ii)->Get();
+            ITERATE(CSeq_align_set::Tdata, sa_iter0, sas0) {
+                const CSeq_align_set::Tdata &sas = 
+                    (*sa_iter0)->GetSegs().GetDisc().Get();
+                ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
+                    CSplign::THitRef hitref (new CSplign::THit(**sa_iter));
+                    if(hitref->GetQueryStrand() == false) {
+                        hitref->FlipStrands();
+                    }
+                    hitrefs.push_back(hitref);
+                }
             }
-            hitrefs.push_back(hitref);
         }
+    }
+
+    if(hitrefs.size()) {
 
         m_Splign->Run(&hitrefs);
 
@@ -231,6 +170,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.18  2005/10/19 17:56:35  kapustin
+* Switch to using ObjMgr+LDS to load sequence data
+*
 * Revision 1.17  2005/09/13 18:44:37  kapustin
 * Flip hit strands if query is in minus
 *

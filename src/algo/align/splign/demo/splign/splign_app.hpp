@@ -33,16 +33,25 @@
 * ===========================================================================
 */
 
-#include "seq_loader.hpp"
-
-#include <algo/align/util/blast_tabular.hpp>
-#include <algo/align/splign/splign.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
-BEGIN_NCBI_SCOPE
+#include <algo/align/util/blast_tabular.hpp>
+#include <algo/align/splign/splign.hpp>
+#include <algo/align/splign/splign_formatter.hpp>
 
+#include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/bl2seq.hpp>
+
+#include <objmgr/scope.hpp>
+
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
+#include <objtools/lds/lds.hpp>
+
+BEGIN_NCBI_SCOPE
 
 class CSplignApp: public CNcbiApplication
 {
@@ -56,40 +65,38 @@ protected:
     typedef CSplign::THitRef  THitRef;
     typedef CSplign::THitRefs THitRefs;
 
-    string    x_RunOnPair(THitRefs* hits, 
-                          int model_id,
-                          size_t range_left, size_t range_right);
-    bool      x_GetNextPair(istream* ifs, THitRefs* hits);
-    istream*  x_GetPairwiseHitStream(CSeqLoaderPairwise& seq_loader_pw,
-                                     bool cross_species_mode,
-                                     string* strbuf) const;
+    void x_ProcessPair(THitRefs& hitrefs, const CArgs& args);
 
-    // status log
-    ofstream m_logstream;
-    void   x_LogStatus(size_t model_id,
-                       bool query_strand,
-                       const CAlignShadow::TId& query,
-                       const CAlignShadow::TId& subj,
-                       bool error,
-                       const string& msg);
+    blast::EProgram                  m_BlastProgram;
+    CRef<blast::CBlastOptionsHandle> m_BlastOptionsHandle;
+    CRef<CSplign>                    m_Splign;
+    CRef<CSplignFormatter>           m_Formatter;
 
-private:
+    CRef<blast::CBlastOptionsHandle> x_SetupBlastOptions(bool cross);
 
-    string          m_firstline;
-    THitRefs        m_pending; 
+    void x_GetBl2SeqHits(CRef<objects::CSeq_id> seqid_query,
+                         CRef<objects::CSeq_id> seqid_subj, 
+                         CRef<objects::CScope>  scope,
+                         THitRefs* phitrefs);
 
-#ifdef GENOME_PIPELINE
+    CNcbiOstream*                    m_AsnOut;
 
-    CNWAligner::TScore m_Wm;
-    CNWAligner::TScore m_Wms;
-    CNWAligner::TScore m_Wg;
-    CNWAligner::TScore m_Ws;
-    CNWAligner::TScore m_Wi [4];
-    size_t             m_IntronMinSize;
+    CNcbiOstream*    m_logstream;
+    void x_LogStatus(size_t model_id,
+                     bool query_strand,
+                     const CAlignShadow::TId& query,
+                     const CAlignShadow::TId& subj,
+                     bool error,
+                     const string& msg);
 
-#endif
+    bool x_GetNextPair(istream& ifs, THitRefs* hitrefs);
 
+    string                          m_firstline;
+    THitRefs                        m_PendingHits;
+
+    auto_ptr<objects::CLDS_Database>    m_LDS_db;
 };
+
 
 END_NCBI_SCOPE
 
@@ -97,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/10/19 17:56:35  kapustin
+ * Switch to using ObjMgr+LDS to load sequence data
+ *
  * Revision 1.13  2005/09/12 16:24:01  kapustin
  * Move compartmentization to xalgoalignutil.
  *
