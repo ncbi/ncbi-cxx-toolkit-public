@@ -74,6 +74,15 @@ public:
                CRef<IQueryFactory> subject,
                CConstRef<CPSIBlastOptionsHandle> options);
 
+    /// Constructor to compare two protein sequences in an object manager-free
+    /// manner.
+    /// @query Protein query sequence to search (only 1 is allowed!) [in]
+    /// @subject Protein nucleotide sequence to search [in]
+    /// @options Protein options [in]
+    CPsiBl2Seq(CRef<IQueryFactory> query,
+               CRef<IQueryFactory> subject,
+               CConstRef<CBlastProteinOptionsHandle> options);
+
     /// Run the PSI-BLAST 2 Sequences engine
     CRef<CSearchResults> Run();
 
@@ -81,17 +90,17 @@ private:
     /// PSSM to be used as query
     CRef<objects::CPssmWithParameters> m_Pssm; 
 
+    /// Query sequence (either extracted from PSSM or provided in constructor
+    CRef<IQueryFactory> m_Query;
+
     /// Subject sequences
     CRef<IQueryFactory> m_Subject;  
 
     /// Options to use 
-    CConstRef<CPSIBlastOptionsHandle> m_OptsHandle;
-
-    /// Query factory built from the query CBioseq
-    CRef<IQueryFactory> m_QueryFactory;
+    CConstRef<CBlastOptionsHandle> m_OptsHandle;
 
     /// Holds a reference to the results
-    ISearch::TResults m_Results;
+    CSearchResultSet m_Results;
 
     /// Prohibit copy constructor
     CPsiBl2Seq(const CPsiBl2Seq& rhs);
@@ -100,7 +109,7 @@ private:
     CPsiBl2Seq& operator=(const CPsiBl2Seq& rhs);
 
     /// Perform sanity checks on input parameters
-    void x_Validate() const;
+    void x_Validate();
 
     /// Computes the PSSM scores in case these are not available in the PSSM
     void x_CreatePssmScoresFromFrequencyRatios();
@@ -119,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/10/20 00:08:19  camacho
+* + protein bl2seq interface (in progress)
+*
 * Revision 1.3  2005/10/14 12:18:58  camacho
 * Make CPsiBl2Seq use CBlastTracebackSearch
 *
