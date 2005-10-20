@@ -161,16 +161,17 @@ public:
         m_score(BadScore()), m_open_cds(false), m_pstop(false) {}
 
 
-        void Insert(const CAlignExon& p);
-        TSignedSeqRange Limits() const { return m_limits; }
-        void RecalculateLimits()
-        {
-            if (empty()) {
-                m_limits = TSignedSeqRange::GetEmpty();
-            } else {
-                m_limits = TSignedSeqRange(front().GetFrom(),back().GetTo());
-            }
+    void Insert(const CAlignExon& p);
+    TSignedSeqRange Limits() const { return m_limits; }
+    void SetLimits(TSignedSeqRange p) { m_limits = p; }
+    void RecalculateLimits()
+    {
+        if (empty()) {
+            m_limits = TSignedSeqRange::GetEmpty(); 
+        } else {
+            m_limits = TSignedSeqRange(front().GetFrom(),back().GetTo());
         }
+    }
         TSignedSeqRange CdsLimits() const { return m_cds_limits; }   // notincluding start/stop (shows frame)
         void SetCdsLimits(TSignedSeqRange p) { m_cds_limits = p; }
         TSignedSeqRange RealCdsLimits() const;     // including start/stop
@@ -394,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/10/20 19:24:50  souvorov
+ * SetLimits for CAlignVec
+ *
  * Revision 1.10  2005/10/20 18:10:02  chetvern
  * Fixed CAlignVec::IdenticalAlign method
  *
