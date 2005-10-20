@@ -147,6 +147,182 @@ inline T SeqDB_GetBroken(const T * stdord_obj)
 
 #endif
 
+
+/// Higher Performance String Assignment
+/// 
+/// It looks like the default assignments and modifiers (ie insert,
+/// operator = and operator +=) for strings do not use the capacity
+/// doubling algorithm such as vector::push_back() uses.  For our
+/// purposes, they sometimes should.  The following assignment
+/// function provides this.
+
+inline void
+s_SeqDB_QuickAssign(string & dst, const char * bp, const char * ep)
+{
+    size_t length = ep - bp;
+    
+    if (dst.capacity() < length) {
+        size_t increment = 16;
+        size_t newcap = dst.capacity() ? dst.capacity() : increment;
+        
+        while(length > newcap) {
+            newcap <<= 1;
+        }
+        
+        dst.reserve(newcap);
+    }
+    
+    dst.assign(bp, ep);
+}
+
+
+/// Higher Performance String Assignment
+/// 
+/// String to string version, using the above function.  I use the
+/// (char*,char*) version of string::assign() since I've found that it
+/// does not discard excess capacity.
+
+inline void
+s_SeqDB_QuickAssign(string & dst, const string & src)
+{
+    s_SeqDB_QuickAssign(dst, src.data(), src.data() + src.size());
+}
+
+
+/// String slicing
+///
+/// This class describes part of an existing (C++ or C) string as a
+/// memory range, and provides a limited set of read-only string
+/// operations over it.  In the common case where parts of several
+/// string are found and spliced together, this class represents the
+/// temporary sub-strings.  It does not deal with ownership or
+/// lifetime issues, so it should not be stored in a structure that
+/// will outlast the original string.  It never allocates and never
+/// frees.  In writing this, I only implemented the features that are
+/// used somewhere in SeqDB; adding new features is fairly trivial.
+
+class CSeqDB_Substring {
+public:
+    CSeqDB_Substring()
+        : m_Begin(0), m_End(0)
+    {
+    }
+    
+    explicit CSeqDB_Substring(const char * s)
+        : m_Begin(s)
+    {
+        m_End = s + strlen(s);
+    }
+    
+    explicit CSeqDB_Substring(const string & s)
+        : m_Begin(s.data()), m_End(s.data() + s.size())
+    {
+    }
+    
+    CSeqDB_Substring(const char * b, const char * e)
+        : m_Begin(b), m_End(e)
+    {
+    }
+    
+    void GetString(string & s) const
+    {
+        if (m_Begin != m_End) {
+            s.assign(m_Begin, m_End);
+        } else {
+            s.clear();
+        }
+    }
+    
+    void GetStringQuick(string & s) const
+    {
+        if (m_Begin != m_End) {
+            s_SeqDB_QuickAssign(s, m_Begin, m_End);
+        } else {
+            s.clear();
+        }
+    }
+    
+    int FindLastOf(char ch) const
+    {
+        const char * p = (char*) memrchr(m_Begin, ch, m_End-m_Begin);
+        
+        if (p) {
+            return p - m_Begin;
+        }
+        
+        return -1;
+    }
+    
+    void EraseFront(int n)
+    {
+        m_Begin += n;
+        
+        if (m_End <= m_Begin) {
+            m_End = m_Begin = 0;
+        }
+    }
+    
+    void EraseBack(int n)
+    {
+        m_End -= n;
+        
+        if (m_End <= m_Begin) {
+            m_End = m_Begin = 0;
+        }
+    }
+    
+    void Resize(int n)
+    {
+        m_End = m_Begin + n;
+    }
+    
+    void Clear()
+    {
+        m_End = m_Begin = 0;
+    }
+    
+    int Size() const
+    {
+        return m_End-m_Begin;
+    }
+    
+    const char & operator[](int n) const
+    {
+        return m_Begin[n];
+    }
+    
+    const char * GetBegin() const
+    {
+        return m_Begin;
+    }
+    
+    const char * GetEnd() const
+    {
+        return m_End;
+    }
+    
+    bool Empty() const
+    {
+        return m_Begin == m_End;
+    }
+    
+    bool operator ==(const CSeqDB_Substring & other)
+    {
+        int sz = Size();
+        
+        if (other.Size() == sz) {
+            return 0 == memcmp(other.m_Begin, m_Begin, sz);
+        }
+        
+        return false;
+    }
+    
+private:
+    const char * m_Begin;
+    const char * m_End;
+};
+
+
 /// Combine a filesystem path and file name
 ///
 /// Combine a provided filesystem path and a file name.  This function
@@ -158,36 +334,46 @@ inline T SeqDB_GetBroken(const T * stdord_obj)
 /// path ends with the delimiter character, another delimiter will not
 /// be added between the strings.  The delimiter used will vary from
 /// operating system to operating system, and is adjusted accordingly.
+/// If a file extension is specified, it will also be appended.
 ///
 /// @param path
 ///   The filesystem path to use
 /// @param file
 ///   The name of the file (may include path components)
-/// @return
-///   A combination of the path and the file name
-string SeqDB_CombinePath(const string & path, const string & file);
+/// @param extn
+///   The file extension (without the "."), or NULL if none.
+/// @param outp
+///   A returned string containing the combined path and file name
+void SeqDB_CombinePath(const CSeqDB_Substring & path,
+                       const CSeqDB_Substring & file,
+                       const CSeqDB_Substring * extn,
+                       string                 & outp);
+
 
 /// Returns a path minus filename.
 ///
-/// This returns the part of a file path before the last path
-/// delimiter, or the whole path if no delimiter was found.
+/// Substring version of the above.  This returns the part of a file
+/// path before the last path delimiter, or the whole path if no
+/// delimiter was found.
 ///
 /// @param s
 ///   Input path
 /// @return
 ///   Path minus file extension
-string SeqDB_GetDirName(string s);
+CSeqDB_Substring SeqDB_GetDirName(CSeqDB_Substring s);
+
 
 /// Returns a filename minus greedy path.
 ///
-/// This returns the part of a file name after the last path
-/// delimiter, or the whole path if no delimiter was found.
+/// Substring version.  This returns the part of a file name after the
+/// last path delimiter, or the whole path if no delimiter was found.
 ///
 /// @param s
 ///   Input path
 /// @return
 ///   Filename portion of path
-string SeqDB_GetFileName(string s);
+CSeqDB_Substring SeqDB_GetFileName(CSeqDB_Substring s);
+
 
 /// Returns a filename minus greedy path.
 ///
@@ -198,7 +384,8 @@ string SeqDB_GetFileName(string s);
 ///   Input path
 /// @return
 ///   Path minus file extension
-string SeqDB_GetBasePath(string s);
+CSeqDB_Substring SeqDB_GetBasePath(CSeqDB_Substring s);
+
 
 /// Returns a filename minus greedy path.
 ///
@@ -210,10 +397,373 @@ string SeqDB_GetBasePath(string s);
 ///   Input path
 /// @return
 ///   Filename portion of path, minus extension
-string SeqDB_GetBaseName(string s);
+CSeqDB_Substring SeqDB_GetBaseName(CSeqDB_Substring s);
 
-// Find the full name, minus extension, of a ".?al" or ".?in" file,
-// and return it.  If not found, return null.
+
+// File and directory path classes.  This should be used across all
+// CSeqDB functionality.  Phasing it in might work in this order:
+//
+// 1. Get this alias deal working.
+// 2. Move classes to seqdbcommon.cpp.
+// 3. De-alias-ify it - make the functionality work for non-alias filenames.
+// 4. Use classes as types in map<> and vector<> containers here.
+// 5. Start removing the GetFooS() calls from this code by passing
+//    the new type to all points of interaction.
+//
+// DFE (dir, file, ext)
+//
+// 000 <n/a>
+// 001 <n/a>
+// 010 BaseName
+// 011 FileName
+// 100 DirName
+// 101 <n/a>
+// 110 BasePath
+// 111 PathName
+//
+// Design uses constructors (composition) and getters (seperation).
+
+
+/// CSeqDB_BaseName
+/// 
+/// Name of a file without extension or directories.
+
+class CSeqDB_BaseName {
+public:
+    explicit CSeqDB_BaseName(const string & n)
+        : m_Value(n)
+    {
+    }
+    
+    explicit CSeqDB_BaseName(const CSeqDB_Substring & n)
+    {
+        n.GetString(m_Value);
+    }
+    
+    const string & GetBaseNameS() const
+    {
+        return m_Value;
+    }
+    
+    CSeqDB_Substring GetBaseNameSub() const
+    {
+        return CSeqDB_Substring(m_Value);
+    }
+    
+    bool operator ==(const CSeqDB_BaseName & other)
+    {
+        return m_Value == other.m_Value;
+    }
+    
+private:
+    string m_Value;
+};
+
+
+/// CSeqDB_FileName
+/// 
+/// Name of a file with extension but without directories.
+
+class CSeqDB_FileName {
+public:
+    CSeqDB_FileName()
+    {
+    }
+    
+    explicit CSeqDB_FileName(const string & n)
+        : m_Value(n)
+    {
+    }
+    
+    const string & GetFileNameS() const
+    {
+        return m_Value;
+    }
+    
+    CSeqDB_Substring GetFileNameSub() const
+    {
+        return CSeqDB_Substring(m_Value);
+    }
+    
+    void Assign(const CSeqDB_Substring & sub)
+    {
+        sub.GetStringQuick(m_Value);
+    }
+    
+private:
+    string m_Value;
+};
+
+
+/// CSeqDB_DirName
+/// 
+/// Directory name without a filename.
+
+class CSeqDB_DirName {
+public:
+    explicit CSeqDB_DirName(const string & n)
+        : m_Value(n)
+    {
+    }
+    
+    explicit CSeqDB_DirName(const CSeqDB_Substring & n)
+    {
+        n.GetString(m_Value);
+    }
+    
+    const string & GetDirNameS() const
+    {
+        return m_Value;
+    }
+    
+    CSeqDB_Substring GetDirNameSub() const
+    {
+        return CSeqDB_Substring(m_Value);
+    }
+    
+    CSeqDB_DirName & operator =(const CSeqDB_DirName & other)
+    {
+        s_SeqDB_QuickAssign(m_Value, other.GetDirNameS());
+        return *this;
+    }
+    
+    void Assign(const CSeqDB_Substring & sub)
+    {
+        sub.GetStringQuick(m_Value);
+    }
+    
+private:
+    string m_Value;
+};
+
+
+/// CSeqDB_BasePath
+/// 
+/// Directory and filename without extension.
+
+class CSeqDB_BasePath {
+public:
+    CSeqDB_BasePath()
+    {
+    }
+    
+    explicit CSeqDB_BasePath(const string & bp)
+        : m_Value(bp)
+    {
+    }
+    
+    explicit CSeqDB_BasePath(const CSeqDB_Substring & bp)
+    {
+        bp.GetString(m_Value);
+    }
+    
+    CSeqDB_BasePath(const CSeqDB_DirName  & d,
+                    const CSeqDB_BaseName & b)
+    {
+        SeqDB_CombinePath(d.GetDirNameSub(),
+                          b.GetBaseNameSub(),
+                          0,
+                          m_Value);
+    }
+    
+    // Join a directory and a path, for example, "/public/blast/dbs"
+    // and "primates/baboon.nal".  If the second element starts with a
+    // "/", the directory argument will be discarded.
+    
+    CSeqDB_BasePath(const CSeqDB_DirName  & d,
+                    const CSeqDB_BasePath & b)
+    {
+        SeqDB_CombinePath(d.GetDirNameSub(),
+                          b.GetBasePathSub(),
+                          0,
+                          m_Value);
+    }
+    
+    CSeqDB_Substring FindDirName() const
+    {
+        _ASSERT(Valid());
+        return SeqDB_GetDirName( CSeqDB_Substring(m_Value) );
+    }
+    
+    CSeqDB_Substring FindBaseName() const
+    {
+        _ASSERT(Valid());
+        return SeqDB_GetBaseName( CSeqDB_Substring( m_Value) );
+    }
+    
+    const string & GetBasePathS() const
+    {
+        return m_Value;
+    }
+    
+    CSeqDB_Substring GetBasePathSub() const
+    {
+        return CSeqDB_Substring( m_Value );
+    }
+    
+    bool operator ==(const CSeqDB_BasePath & other)
+    {
+        return m_Value == other.m_Value;
+    }
+    
+    // Methods like this should be put in class of the "most complete"
+    // of the two arguments.
+    
+    bool Valid() const
+    {
+        //_ASSERT(m_Value == SeqDB_GetBasePath(m_Value));
+        return ! m_Value.empty();
+    }
+    
+    CSeqDB_BasePath & operator =(const CSeqDB_BasePath & other)
+    {
+        s_SeqDB_QuickAssign(m_Value, other.GetBasePathS());
+        return *this;
+    }
+    
+    void Assign(const CSeqDB_Substring & sub)
+    {
+        sub.GetStringQuick(m_Value);
+    }
+    
+    void Assign(const string & path)
+    {
+        s_SeqDB_QuickAssign(m_Value, path);
+    }
+    
+private:
+    string m_Value;
+};
+
+
+/// CSeqDB_Path
+/// 
+/// Directory and filename (with extension).  Note that the directory
+/// may be empty or incomplete, if the name is a relative name.  The
+/// idea is that the name is as complete as we have.  The filename
+/// should probably not be trimmed off another path to build one of
+/// these objects.
+
+class CSeqDB_Path {
+public:
+    CSeqDB_Path()
+    {
+    }
+    
+    explicit CSeqDB_Path(const string & n)
+        : m_Value(n)
+    {
+    }
+    
+    CSeqDB_Path(const CSeqDB_Substring & dir,
+                const CSeqDB_Substring & file)
+    {
+        SeqDB_CombinePath(dir, file, 0, m_Value);
+    }
+    
+    CSeqDB_Path(const CSeqDB_DirName  & dir,
+                const CSeqDB_FileName & file)
+    {
+        SeqDB_CombinePath(dir.GetDirNameSub(),
+                          file.GetFileNameSub(),
+                          0,
+                          m_Value);
+    }
+    
+    CSeqDB_Path(const CSeqDB_BasePath & bp, char ext1, char ext2, char ext3)
+    {
+        const string & base = bp.GetBasePathS();
+        
+        m_Value.reserve(base.size() + 4);
+        m_Value.assign(base.data(), base.data() + base.size());
+        m_Value += '.';
+        m_Value += ext1;
+        m_Value += ext2;
+        m_Value += ext3;
+    }
+    
+    CSeqDB_Path(const CSeqDB_DirName  & d,
+                const CSeqDB_BaseName & b,
+                char                    ext1,
+                char                    ext2,
+                char                    ext3)
+    {
+        char extn[3];
+        extn[0] = ext1;
+        extn[1] = ext2;
+        extn[2] = ext3;
+        
+        CSeqDB_Substring extn1(& extn[0], & extn[3]);
+        
+        SeqDB_CombinePath(CSeqDB_Substring(d.GetDirNameS()),
+                          CSeqDB_Substring(b.GetBaseNameS()),
+                          & extn1,
+                          m_Value);
+    }
+    
+    bool Valid() const
+    {
+        return ! m_Value.empty();
+    }
+    
+    const string & GetPathS() const
+    {
+        _ASSERT(Valid());
+        return m_Value;
+    }
+    
+    CSeqDB_Substring FindDirName() const
+    {
+        _ASSERT(Valid());
+        return SeqDB_GetDirName( CSeqDB_Substring(m_Value) );
+    }
+    
+    CSeqDB_Substring FindBasePath() const
+    {
+        _ASSERT(Valid());
+        return SeqDB_GetBasePath( CSeqDB_Substring(m_Value) );
+    }
+    
+    CSeqDB_Substring FindBaseName() const
+    {
+        _ASSERT(Valid());
+        return SeqDB_GetBaseName( CSeqDB_Substring(m_Value) );
+    }
+    
+    CSeqDB_Substring FindFileName() const
+    {
+        _ASSERT(Valid());
+        return SeqDB_GetFileName( CSeqDB_Substring( m_Value ) );
+    }
+    
+    bool operator ==(const CSeqDB_Path & other)
+    {
+        return m_Value == other.m_Value;
+    }
+    
+    CSeqDB_Path & operator =(const CSeqDB_Path & other)
+    {
+        s_SeqDB_QuickAssign(m_Value, other.GetPathS());
+        return *this;
+    }
+    
+    void Assign(const string & path)
+    {
+        s_SeqDB_QuickAssign(m_Value, path);
+    }
+    
+    // Combines the directory from a path with a filename.
+    
+    void ReplaceFilename(const CSeqDB_Path      & dir_src,
+                         const CSeqDB_Substring & fname)
+    {
+        SeqDB_CombinePath(dir_src.FindDirName(), fname, 0, m_Value);
+    }
+    
+private:
+    string m_Value;
+};
+
 
 /// Finds a file in the search path.
 ///
@@ -261,6 +811,7 @@ string SeqDB_FindBlastDBPath(const string   & file_name,
                              CSeqDBAtlas    & atlas,
                              CSeqDBLockHold & locked);
 
+
 /// Join two strings with a delimiter
 ///
 /// This function returns whichever of two provided strings is
@@ -278,11 +829,13 @@ string SeqDB_FindBlastDBPath(const string   & file_name,
 ///   The delimiter to use when joining elements
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
 
+
 /// Thow a SeqDB exception; this is seperated into a function
 /// primarily to allow a breakpoint to be set.
 void SeqDB_ThrowException(CSeqDBException::EErrCode code, const string & msg);
 
-/// Range type to simplify interfaces.
+
+/// OID-Range type to simplify interfaces.
 struct SSeqDBSlice {
     /// Default constructor
     SSeqDBSlice()
@@ -300,6 +853,7 @@ struct SSeqDBSlice {
     int begin;
     int end;
 };
+
 
 /// Simple "Copy Collector" Like Cache
 ///

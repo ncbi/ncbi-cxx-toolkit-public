@@ -52,6 +52,20 @@
 
 BEGIN_NCBI_SCOPE
 
+
+void CSeqDBAliasNode::x_Tokenize(const string & dbnames)
+{
+    vector<string> dbs;
+    NStr::Tokenize(dbnames, " ", dbs, NStr::eMergeDelims);
+    
+    m_DBList.resize(dbs.size());
+    
+    for(size_t i = 0; i<dbs.size(); i++) {
+        m_DBList[i].Assign(dbs[i]);
+    }
+}
+
+
 /// Public Constructor
 ///
 /// This is the user-visible constructor, which builds the top level
@@ -61,25 +75,29 @@ BEGIN_NCBI_SCOPE
 
 CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                                  const string   & dbname_list,
-                                 char             prot_nucl)
+                                 char             prot_nucl,
+                                 CSeqDBAliasSets & alias_sets)
     : m_Atlas    (atlas),
-      m_ThisName ("-")
+      m_DBPath   ("."),
+      m_ThisName ("-"),
+      m_AliasSets(alias_sets)
 {
     CSeqDBLockHold locked(atlas);
     
     m_Values["DBLIST"] = dbname_list;
     
-    NStr::Tokenize(dbname_list, " ", m_DBList, NStr::eMergeDelims);
+    x_Tokenize(dbname_list);
     x_ResolveNames(prot_nucl, locked);
     
     CSeqDBAliasStack recurse;
     
-    x_ExpandAliases("-", prot_nucl, recurse, locked);
+    x_ExpandAliases(CSeqDB_BasePath("-"), prot_nucl, recurse, locked);
     
     m_Atlas.Unlock(locked);
     
     _ASSERT(recurse.Size() == 0);
 }
+
 
 // Private Constructor
 // 
@@ -92,42 +110,123 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
 // recursive loop, each file adds its full path to a stack of strings
 // and will not create a subnode for any path already in that set.
 
-CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas      & atlas,
-                                 const string     & dbpath,
-                                 const string     & dbname,
-                                 char               prot_nucl,
-                                 CSeqDBAliasStack & recurse,
-                                 CSeqDBLockHold   & locked)
-    : m_Atlas(atlas),
-      m_DBPath(dbpath),
-      m_ThisName(x_MkPath(m_DBPath, dbname, prot_nucl))
+CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas           & atlas,
+                                 const CSeqDB_DirName  & dbpath,
+                                 const CSeqDB_BaseName & dbname,
+                                 char                    prot_nucl,
+                                 CSeqDBAliasStack      & recurse,
+                                 CSeqDBLockHold        & locked,
+                                 CSeqDBAliasSets       & alias_sets)
+    : m_Atlas     (atlas),
+      m_DBPath    (dbpath),
+      m_ThisName  (m_DBPath, dbname, prot_nucl, 'a', 'l'),
+      m_AliasSets (alias_sets)
 {
     recurse.Push(m_ThisName);
     
     x_ReadValues(m_ThisName, locked);
-    NStr::Tokenize(m_Values["DBLIST"], " ", m_DBList, NStr::eMergeDelims);
-    x_ExpandAliases(dbname, prot_nucl, recurse, locked);
+    x_Tokenize(m_Values["DBLIST"]);
+    
+    CSeqDB_BasePath basepath(m_ThisName.FindBasePath());
+    
+    x_ExpandAliases(basepath, prot_nucl, recurse, locked);
     
     recurse.Pop();
 }
 
+bool
+CSeqDBAliasSets::x_FindBlastDBPath(const string   & dbname,
+                                   char             dbtype,
+                                   bool             exact,
+                                   string         & resolved,
+                                   CSeqDBLockHold & locked)
+{
+    map<string,string>::iterator i = m_PathLookup.find(dbname);
+    
+    if (i == m_PathLookup.end()) {
+        resolved = SeqDB_FindBlastDBPath(dbname,
+                                         dbtype,
+                                         0,
+                                         exact,
+                                         m_Atlas,
+                                         locked);
+        
+        m_PathLookup[dbname] = resolved;
+    } else {
+        resolved = (*i).second;
+    }
+    
+    return ! resolved.empty();
+}
+
+
+bool
+CSeqDBAliasSets::FindAliasPath(const CSeqDB_Path & dbpath,
+                               CSeqDB_Path       * resolved,
+                               CSeqDBLockHold    & locked)
+{
+    CSeqDB_Path     aset_path;
+    CSeqDB_FileName alias_fname;
+    
+    x_DbToIndexName(dbpath, aset_path, alias_fname);
+    
+    CSeqDB_Path resolved_aset;
+    
+    if (! FindBlastDBPath(aset_path, resolved_aset, locked)) {
+        return false;
+    }
+    
+    CSeqDB_Path afpath(resolved_aset.FindDirName(),
+                       alias_fname.GetFileNameSub());
+    
+    // This is not ideal.  If the alias file is found, but does not
+    // contain the alias in question, we punt, allowing normal alias
+    // file reading to take over.  The correct technique would be to
+    // try the next location in the database search path.
+    //
+    // Solving this correctly means cracking FindBlastDBPath() into
+    // three pieces, one that builds a list of paths, one that tries a
+    // specified path, and a third that calls the first, then iterates
+    // over the list, calling the second.
+    //
+    // This can be done later - punting could be inefficient in some
+    // cases but should work correctly.
+    
+    if (! ReadAliasFile(afpath, 0, 0, locked)) {
+        return false;
+    }
+    
+    if (resolved) {
+        *resolved = afpath;
+    }
+    
+    return true;
+}
+
+
 void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
 {
-    m_DBPath = ".";
+    m_DBPath = CSeqDB_DirName(".");
     
     size_t i = 0;
     
     for(i = 0; i < m_DBList.size(); i++) {
-        string resolved_name =
-            SeqDB_FindBlastDBPath(m_DBList[i],
-                                  prot_nucl,
-                                  0,
-                                  false,
-                                  m_Atlas,
-                                  locked);
+        const CSeqDB_Path db_path( CSeqDB_BasePath(m_DBList[i]), prot_nucl, 'a', 'l' );
         
-        if (resolved_name.empty()) {
+        CSeqDB_Path resolved_path;
+        
+        if (! m_AliasSets.FindAliasPath(db_path, & resolved_path, locked)) {
+            CSeqDB_BasePath base(db_path.FindBasePath());
+            CSeqDB_BasePath resolved_bp;
+            
+            if (m_AliasSets.FindBlastDBPath(base, prot_nucl, resolved_bp, locked)) {
+                resolved_path = CSeqDB_Path(resolved_bp, prot_nucl, 'a', 'l');
+            }
+        }
+        
+        if (! resolved_path.Valid()) {
             string p_or_n;
+            
             switch(prot_nucl) {
             case 'p':
                 p_or_n = "protein";
@@ -139,32 +238,40 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
                 
             default:
                 string msg("SeqDB: Internal error: bad sequence type for database [");
-                msg += m_DBList[i] + "]";
+                msg += m_DBList[i].GetBasePathS() + "]";
                 
                 NCBI_THROW(CSeqDBException,
                            eFileErr,
                            msg);
             }
             
-            // Do over (to get the search path)
+            // Do over (to get the search path).  This doesnt use the
+            // resolution map, since speed is not of the essence.
             
             string search_path;
-            SeqDB_FindBlastDBPath(m_DBList[i],
+            string input_path;
+            
+            db_path.FindBasePath().GetString(input_path);
+            
+            SeqDB_FindBlastDBPath(input_path,
                                   prot_nucl,
                                   & search_path,
                                   false,
                                   m_Atlas,
                                   locked);
             
-            string msg("No alias or index file found for component [");
-            msg += m_DBList[i] + "], type [" + p_or_n +
-                "] in search path [" + search_path + "]";
+            ostringstream oss;
+            oss << "No alias or index file found for component ["
+                << m_DBList[i].GetBasePathS() << "], type [" << p_or_n
+                << "] in search path [" << search_path << "]";
+            
+            string msg(oss.str());
             
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        msg);
         } else {
-            m_DBList[i].swap(resolved_name);
+            m_DBList[i].Assign( resolved_path.FindBasePath() );
         }
     }
     
@@ -172,13 +279,13 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     if (m_DBList.empty())
         return;
     
-    size_t common = m_DBList[0].size();
+    size_t common = m_DBList[0].GetBasePathS().size();
     
     // Reduce common length to length of min db path.
     
     for(i = 1; common && (i < m_DBList.size()); i++) {
-        if (m_DBList[i].size() < common) {
-            common = m_DBList.size();
+        if (m_DBList[i].GetBasePathS().size() < common) {
+            common = m_DBList[i].GetBasePathS().size();
         }
     }
     
@@ -188,12 +295,14 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     
     // Reduce common length to largest universal prefix.
     
-    string & first = m_DBList[0];
+    const string & first = m_DBList[0].GetBasePathS();
     
     for(i = 1; common && (i < m_DBList.size()); i++) {
         // Reduce common prefix length until match is found.
         
-        while(memcmp(first.c_str(), m_DBList[i].c_str(), common)) {
+        while(memcmp(first.c_str(),
+                     m_DBList[i].GetBasePathS().c_str(),
+                     common)) {
             --common;
         }
     }
@@ -207,17 +316,26 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     if (common) {
         // Factor out common path components.
         
-        m_DBPath.assign(first, 0, common);
+        m_DBPath.Assign( CSeqDB_Substring(first.data(), first.data() + common) );
         
         for(i = 0; i < m_DBList.size(); i++) {
-            m_DBList[i].erase(0, common+1);
+            CSeqDB_Substring sub(m_DBList[i].GetBasePathS());
+            sub.EraseFront(common + 1);
+            
+            m_DBList[i].Assign(sub);
         }
     }
 }
 
-void CSeqDBAliasNode::x_ReadLine(const char * bp,
-                                 const char * ep)
+
+static void s_SeqDB_ReadLine(const char       * bp,
+                             const char       * ep,
+                             string           & name,
+                             string           & value)
 {
+    name.clear();
+    value.clear();
+    
     const char * p = bp;
     
     // If first nonspace char is '#', line is a comment, so skip.
@@ -231,7 +349,7 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
     while((spacep < ep) && ((*spacep != ' ') && (*spacep != '\t')))
         spacep ++;
     
-    string name(p, spacep);
+    s_SeqDB_QuickAssign(name, p, spacep);
     
     // Skip spaces, tabs, to find value
     while((spacep < ep) && ((*spacep == ' ') || (*spacep == '\t')))
@@ -241,31 +359,234 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
     while((spacep < ep) && ((ep[-1] == ' ') || (ep[-1] == '\t')))
         ep --;
     
-    string value(spacep, ep);
+    s_SeqDB_QuickAssign(value, spacep, ep);
     
     for(size_t i = 0; i<value.size(); i++) {
         if (value[i] == '\t') {
             value[i] = ' ';
         }
     }
-    
-    // Store in this nodes' dictionary.
-    m_Values[name] = value;
 }
 
-void CSeqDBAliasNode::x_ReadValues(const string   & fname,
-                                   CSeqDBLockHold & locked)
+
+void CSeqDBAliasNode::x_ReadLine(const char * bp,
+                                 const char * ep,
+                                 string     & name,
+                                 string     & value)
+{
+    s_SeqDB_ReadLine(bp, ep, name, value);
+    
+    if (name.size()) {
+        // Store in this nodes' dictionary.
+        m_Values[name].swap(value);
+    }
+}
+
+
+void CSeqDBAliasSets::x_DbToIndexName(const CSeqDB_Path & dbpath,
+                                      CSeqDB_Path       & index_path,
+                                      CSeqDB_FileName   & alias_fname)
+{
+    index_path.ReplaceFilename(dbpath, CSeqDB_Substring("index.alx"));
+    alias_fname.Assign(dbpath.FindFileName());
+}
+
+
+static void
+s_SeqDB_FindOffsets(const char   * bp,
+                    const char   * ep,
+                    const string & key,
+                    vector<const char *> & offsets)
+{
+    size_t keylen = key.size();
+    
+    const char * last_keyp = ep - keylen;
+    
+    for(const char * p = bp; p < last_keyp; p++) {
+        bool found = true;
+        
+        for(size_t i = 0; i < keylen; i++) {
+            if (p[i] != key[i]) {
+                found = false;
+                break;
+            }
+        }
+        
+        if (found) {
+            const char * p2 = p - 1;
+            
+            while((p2 >= bp) && *p2 != '\n') {
+                if ((*p2) != ' ' && (*p2) != '\t') {
+                    found = false;
+                    break;
+                }
+                
+                p2 --;
+            }
+            
+            if (found) {
+                // Push back start of "ALIAS_FILE" string.
+                
+                offsets.push_back(p);
+                
+                for(p2 = p + keylen; p2 < ep && *p2 != '\n'; p2++)
+                    ;
+                
+                // And end of that line (or of the file).
+                offsets.push_back(p2);
+                
+                p = p2;
+            }
+        }
+    }
+    
+    // As with ISAM files, we append an additional pointer, to
+    // indicate the end of the last entry's contents.
+    
+    offsets.push_back(ep);
+}
+
+
+void CSeqDBAliasSets::x_ReadAliasSetFile(const CSeqDB_Path & aset_path,
+                                         CSeqDBLockHold    & locked)
+{
+    string key("ALIAS_FILE");
+    
+    CSeqDBMemLease lease(m_Atlas);
+    
+    CSeqDBAtlas::TIndx length(0);
+    m_Atlas.GetFile(lease, aset_path.GetPathS(), length, locked);
+    
+    const char * bp = lease.GetPtr(0);
+    const char * ep = bp + (size_t) length;
+    
+    vector<const char *> offsets;
+    
+    s_SeqDB_FindOffsets(bp, ep, key, offsets);
+    
+    // Now, for each offset, read the "ALIAS_FILE" line and store the
+    // contents of that (virtual) file in the alias set.
+    
+    size_t last_start = offsets.size() - 2;
+    
+    string name, value;
+    
+    TAliasGroup & group = m_Groups[aset_path.GetPathS()];
+    
+    for(size_t i = 0; i < last_start; i += 2) {
+        s_SeqDB_ReadLine(offsets[i],
+                         offsets[i+1],
+                         name,
+                         value);
+        
+        if (name != key || value.empty()) {
+            string msg("Alias set file: syntax error near offset "
+                       + NStr::IntToString(offsets[i] - bp) + ".");
+            
+            NCBI_THROW(CSeqDBException, eFileErr, msg);
+        }
+        
+        group[value].assign(offsets[i+1], offsets[i+2]);
+    }
+    
+    m_Atlas.RetRegion(lease);
+}
+
+
+bool CSeqDBAliasSets::ReadAliasFile(const CSeqDB_Path  & dbpath,
+                                    const char        ** bp,
+                                    const char        ** ep,
+                                    CSeqDBLockHold     & locked)
+{
+    // Compute name of combined alias file.
+    
+    CSeqDB_Path     aset_path;
+    CSeqDB_FileName alias_fname;
+    
+    x_DbToIndexName(dbpath, aset_path, alias_fname);
+    
+    // Check whether we already have this combined alias file.
+    
+    if (m_Groups.find(aset_path.GetPathS()) == m_Groups.end()) {
+        if (! m_Atlas.DoesFileExist(aset_path.GetPathS(), locked)) {
+            return false;
+        }
+        
+        x_ReadAliasSetFile(aset_path, locked);
+    }
+    
+    // Find and read the specific, included, alias file.
+    
+    TAliasGroup & group = m_Groups[aset_path.GetPathS()];
+    
+    if (group.find(alias_fname.GetFileNameS()) == group.end()) {
+        return false;
+    }
+        
+    // It would be simpler to move the if (bp||ep) test out to here,
+    // and instead just not add any empty files to the map.  In fact,
+    // it may already avoid adding empty files...
+    
+    // Also, it would probably be a good idea to trim whitespace from
+    // the top and bottom of alias file contents, since it is nearly
+    // free to do so before the strings are actually constructed.
+    
+    const string & file_data = group[alias_fname.GetFileNameS()];
+    
+    if (file_data.empty()) {
+        return false;
+    }
+    
+    if (bp || ep) {
+        _ASSERT(bp && ep);
+        
+        *bp = file_data.data();
+        *ep = file_data.data() + file_data.size();
+    }
+    
+    return true;
+}
+
+
+void CSeqDBAliasNode::x_ReadAliasFile(CSeqDBMemLease    & lease,
+                                      const CSeqDB_Path & path,
+                                      const char       ** bp,
+                                      const char       ** ep,
+                                      CSeqDBLockHold    & locked)
+{
+    bool have_group_file = false;
+    
+    have_group_file = m_AliasSets.ReadAliasFile(path, bp, ep, locked);
+    
+    if (! have_group_file) {
+        CSeqDBAtlas::TIndx length(0);
+        m_Atlas.GetFile(lease, path.GetPathS(), length, locked);
+        
+        *bp = lease.GetPtr(0);
+        *ep = (*bp) + length;
+    }
+}
+
+
+void CSeqDBAliasNode::x_ReadValues(const CSeqDB_Path & path,
+                                   CSeqDBLockHold    & locked)
 {
     m_Atlas.Lock(locked);
     
-    CSeqDBAtlas::TIndx file_length(0);
+    CSeqDBMemLease lease(m_Atlas);
     
-    const char * bp = m_Atlas.GetFile(fname, file_length, locked);
-    const char * ep = bp + file_length;
+    const char * bp(0);
+    const char * ep(0);
+    
+    x_ReadAliasFile(lease, path, & bp, & ep, locked);
+    
     const char * p  = bp;
     
     // Existence should already be verified.
     _ASSERT(bp);
+    
+    // These are kept here to reduce allocations.
+    string name_s, value_s;
     
     while(p < ep) {
         // Skip spaces
@@ -281,27 +602,29 @@ void CSeqDBAliasNode::x_ReadValues(const string   & fname,
         
         // Non-empty line, so read it.
         if (eolp != p) {
-            x_ReadLine(p, eolp);
+            x_ReadLine(p, eolp, name_s, value_s);
         }
         
         p = eolp + 1;
     }
     
-    m_Atlas.RetRegion(bp);
+    m_Atlas.RetRegion(lease);
 }
 
-void CSeqDBAliasNode::x_ExpandAliases(const string     & this_name,
-                                      char               prot_nucl,
-                                      CSeqDBAliasStack & recurse,
-                                      CSeqDBLockHold   & locked)
+
+void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
+                                      char                    prot_nucl,
+                                      CSeqDBAliasStack      & recurse,
+                                      CSeqDBLockHold        & locked)
 {
     if (m_DBList.empty()) {
         string situation;
         
-        if (this_name == "-") {
+        if (this_name.GetBasePathS() == "-") {
             situation = "passed to CSeqDB::CSeqDB().";
         } else {
-            situation = string("found in alias file [") + this_name + "].";
+            situation = string("found in alias file [")
+                + this_name.GetBasePathS() + "].";
         }
         
         NCBI_THROW(CSeqDBException,
@@ -309,45 +632,72 @@ void CSeqDBAliasNode::x_ExpandAliases(const string     & this_name,
                    string("No database names were ") + situation);
     }
     
-    for(size_t i = 0; i<m_DBList.size(); i++) {
-        if (m_DBList[i] == SeqDB_GetBaseName(this_name)) {
-            // If the base name of the alias file is also listed in
-            // "dblist", it is assumed to refer to a volume instead of
-            // to itself.
-            
-            m_VolNames.push_back(this_name);
-            continue;
+    for(size_t i = 0; i < m_DBList.size(); i++) {
+        // Inquiry: Is the following comparison correct for all
+        // combinations of alias file and database name and path?
+        // Which is to say, does it correctly deal with names of alias
+        // files and names of volumes that collide?
+        
+        // If there is a directory on the mentioned name, we assume
+        // this is NOT an overriding alias file, and skip the test
+        // that treats it as a volume name.
+
+        // If this an alias file refers to a volume of the same name
+        // using "../<cwd>", it will detect and fail with an alias
+        // file cyclicality message at this point.
+        
+        if (m_DBList[i].FindDirName().Empty()) {
+            if (m_DBList[i].FindBaseName() == this_name.FindBaseName()) {
+                // If the base name of the alias file is also listed in
+                // "dblist", it is assumed to refer to a volume instead of
+                // to itself.
+                
+                m_VolNames.push_back(this_name);
+                continue;
+            }
         }
         
-        string new_db_loc( x_MkPath(m_DBPath, m_DBList[i], prot_nucl) );
+        // Join the "current" directory (location of this alias node)
+        // to the path specified in the alias file.
         
-        if (recurse.Exists(new_db_loc)) {
+        CSeqDB_BasePath base(m_DBPath, m_DBList[i]);
+        CSeqDB_Path new_db_path( base, prot_nucl, 'a', 'l' );
+        
+        if ( recurse.Exists(new_db_path) ) {
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        "Illegal configuration: DB alias files are mutually recursive.");
         }
         
-        if ( m_Atlas.DoesFileExist(new_db_loc, locked) ) {
-            string newpath = SeqDB_GetDirName(new_db_loc);
-            string newfile = SeqDB_GetBaseName(new_db_loc);
+        // If we find the new name in the combined alias file or one
+        // of the individual ones, build a subnode.
+        
+        if ( m_AliasSets.FindAliasPath(new_db_path, 0, locked) ||
+             m_Atlas.DoesFileExist(new_db_path.GetPathS(), locked) ) {
+            
+            CSeqDB_DirName  dirname (new_db_path.FindDirName());
+            CSeqDB_BaseName basename(new_db_path.FindBaseName());
             
             CRef<CSeqDBAliasNode>
                 subnode( new CSeqDBAliasNode(m_Atlas,
-                                             newpath,
-                                             newfile,
+                                             dirname,
+                                             basename,
                                              prot_nucl,
                                              recurse,
-                                             locked) );
+                                             locked,
+                                             m_AliasSets) );
             
             m_SubNodes.push_back(subnode);
         } else {
             // If the name is not found as an alias file, it is
-            // considered to be a volume.
+            // assumed to be a volume name.
             
-            m_VolNames.push_back( SeqDB_GetBasePath(new_db_loc) );
+            CSeqDB_BasePath bp( new_db_path.FindBasePath() );
+            m_VolNames.push_back( bp );
         }
     }
 }
+
 
 void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols) const
 {
@@ -357,16 +707,18 @@ void CSeqDBAliasNode::GetVolumeNames(vector<string> & vols) const
     vols.clear();
     ITERATE(set<string>, iter, volset) {
         vols.push_back(*iter);
-
     }
     
     // Sort to insure deterministic order.
     sort(vols.begin(), vols.end());
 }
 
+
 void CSeqDBAliasNode::x_GetVolumeNames(set<string> & vols) const
 {
-    vols.insert(m_VolNames.begin(), m_VolNames.end());
+    ITERATE(TVolNames, iter, m_VolNames) {
+        vols.insert(iter->GetBasePathS());
+    }
     
     ITERATE(TSubNodeList, iter, m_SubNodes) {
         (*iter)->x_GetVolumeNames(vols);
@@ -427,16 +779,6 @@ private:
 };
 
 
-// A slightly more clever approach (might) track the contributions
-// from each volume or alias file and trim the final total by the
-// amount of provable overcounting detected.
-// 
-// Since this is probably impossible in most cases, it is not done.
-// The working assumption then is that the specified databases are
-// disjoint.  This design should prevent undercounting but allows
-// overcounting in some cases.
-
-
 /// Walker for MAX_SEQ_LENGTH field of alias file
 ///
 /// This functor encapsulates the specifics of the MAX_SEQ_LENGTH
@@ -444,6 +786,7 @@ private:
 /// sequences to use when reporting information via the
 /// "CSeqDB::GetNumSeqs()" method.  It is not the same as the number
 /// of OIDs unless there are no filtering mechanisms in use.
+/// (Note: this seems to be unused.)
 
 class CSeqDB_MaxLengthWalker : public CSeqDB_AliasWalker {
 public:
@@ -635,6 +978,7 @@ private:
 /// The volume length should be like total length, but without the
 /// value adjustments made by alias files.  To preserve this
 /// relationship, this class inherits from CSeqDB_TotalLengthWalker.
+/// (Note: this seems to be unused.)
 
 class CSeqDB_VolumeLengthWalker : public CSeqDB_TotalLengthWalker {
 public:
@@ -796,11 +1140,12 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
     }
     
     ITERATE(TVolNames, volname, m_VolNames) {
-        if (const CSeqDBVol * vptr = volset.GetVol(*volname)) {
+        if (const CSeqDBVol * vptr = volset.GetVol(volname->GetBasePathS())) {
             walker->Accumulate( *vptr );
         }
     }
 }
+
 
 void
 CSeqDBAliasNode::WalkNodes(CSeqDB_AliasExplorer * explorer,
@@ -815,73 +1160,76 @@ CSeqDBAliasNode::WalkNodes(CSeqDB_AliasExplorer * explorer,
     }
     
     ITERATE(TVolNames, volname, m_VolNames) {
-        if (const CSeqDBVol * vptr = volset.GetVol(*volname)) {
+        if (const CSeqDBVol * vptr = volset.GetVol(volname->GetBasePathS())) {
             explorer->Accumulate( *vptr );
         }
     }
 }
 
-void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset,
-                                   int            begin,
-                                   int            end,
-                                   const string & oidfile)
+
+void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet          & volset,
+                                   int                     begin,
+                                   int                     end,
+                                   const CSeqDB_BaseName & oidfile)
 {
     if (m_DBList.size() != 1) {
         ostringstream oss;
         
-        oss << "Alias file (" << m_DBPath << ") uses oid list ("
-            << m_Values["OIDLIST"] << ") but has " << m_DBList.size()
-            << " volumes (" << NStr::Join(m_DBList, " ") << ").";
+        oss << "Alias file (" << m_DBPath.GetDirNameS()
+            << ") uses oid list (" << m_Values["OIDLIST"]
+            << ") but has " << m_DBList.size()
+            << " volumes (";
+        
+        for(size_t i = 0; i < m_DBList.size(); i++) {
+            if (i) {
+                oss << " ";
+            }
+            
+            oss << m_DBList[i].GetBasePathS() << " ";
+        }
+        
+        oss << ").";
         
         NCBI_THROW(CSeqDBException, eFileErr, oss.str());
     }
     
-    string vol_path(SeqDB_CombinePath(m_DBPath, m_DBList[0]));
-    string mask_path(SeqDB_CombinePath(m_DBPath, oidfile));
+    CSeqDB_BasePath vol_path(m_DBPath, m_DBList[0]);
+    CSeqDB_BasePath mask_path(m_DBPath, oidfile);
     
-    volset.AddMaskedVolume(vol_path, mask_path, begin, end);
+    volset.AddMaskedVolume(vol_path.GetBasePathS(),
+                           mask_path.GetBasePathS(),
+                           begin,
+                           end);
 }
 
-void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset,
-                                      int            begin,
-                                      int            end,
-                                      const string & gilist)
+
+void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet          & volset,
+                                      int                     begin,
+                                      int                     end,
+                                      const CSeqDB_FileName & gilist)
 {
-    string resolved_gilist;
-    
-    vector<string> gils;
-    NStr::Tokenize(gilist, " ", gils, NStr::eMergeDelims);
-    
-    // This enforces our restriction that only one GILIST may be
-    // applied to any particular volume.  We do not check if the
-    // existing one is the same as what we have...
-    
-    if (gils.size() != 1) {
-        string msg =
-            string("Alias file (") + m_DBPath +
-            ") has multiple GI lists (" + m_Values["GILIST"] + ").";
-        
-        NCBI_THROW(CSeqDBException, eFileErr, msg);
-    }
-    
-    ITERATE(vector<string>, iter, gils) {
-        SeqDB_JoinDelim(resolved_gilist,
-                        SeqDB_CombinePath(m_DBPath, *iter),
-                        " ");
-    }
+    CSeqDB_Path gipath(m_DBPath, gilist);
     
     ITERATE(TVolNames, vn, m_VolNames) {
-        volset.AddGiListVolume(*vn, resolved_gilist, begin, end);
+        volset.AddGiListVolume(vn->GetBasePathS(),
+                               gipath.GetPathS(),
+                               begin,
+                               end);
     }
     
-    // This "join" should not be needed - an assignment would be just
-    // as good - as long as the multi-gilist exception above is
-    // in force.
-    
     NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
-        SeqDB_JoinDelim((**an).m_Values["GILIST"],
-                        resolved_gilist,
-                        " ");
+        string & current = (**an).m_Values["GILIST"];
+        
+        if (! current.empty()) {
+            string msg =
+                string("Alias file (") + m_DBPath.GetDirNameS() +
+                ") has multiple GI lists (" +
+                current + "," + gipath.GetPathS() + ").";
+            
+            NCBI_THROW(CSeqDBException, eFileErr, msg);
+        }
+        
+        current = gipath.GetPathS();
     }
     
     NON_CONST_ITERATE(TSubNodeList, an, m_SubNodes) {
@@ -889,23 +1237,35 @@ void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset,
     }
 }
 
+
 void CSeqDBAliasNode::x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end)
 {
     if (m_DBList.size() != 1) {
         ostringstream oss;
         
-        oss << "Alias file (" << m_DBPath
+        oss << "Alias file (" << m_DBPath.GetDirNameS()
             << ") uses oid range (" << (begin + 1) << "," << end
             << ") but has " << m_DBList.size()
-            << " volumes (" << NStr::Join(m_DBList, " ") << ").";
+            << " volumes (";
+        
+        for(size_t i = 0; i < m_DBList.size(); i++) {
+            if (i) {
+                oss << " ";
+            }
+            
+            oss << m_DBList[i].GetBasePathS() << " ";
+        }
+        
+        oss << ").";
         
         NCBI_THROW(CSeqDBException, eFileErr, oss.str());
     }
     
-    string vol_path(SeqDB_CombinePath(m_DBPath, m_DBList[0]));
+    CSeqDB_BasePath volpath(m_DBPath, m_DBList[0]);
     
-    volset.AddRangedVolume(vol_path, begin, end);
+    volset.AddRangedVolume(volpath.GetBasePathS(), begin, end);
 }
+
 
 void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
@@ -939,12 +1299,25 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
             }
             
             if (oid_iter != m_Values.end()) {
-                x_SetOIDMask(volset, first_oid, last_oid, oid_iter->second);
+                CSeqDB_BaseName oidlist(oid_iter->second);
+                x_SetOIDMask(volset, first_oid, last_oid, oidlist);
                 filtered = true;
             }
             
             if (gil_iter != m_Values.end()) {
-                x_SetGiListMask(volset, first_oid, last_oid, gil_iter->second);
+                const string & gilname(gil_iter->second);
+                
+                if (gilname.find(" ") != gilname.npos) {
+                    string msg =
+                        string("Alias file (") + m_DBPath.GetDirNameS() +
+                        ") has multiple GI lists (" + gilname + ").";
+                    
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+                
+                CSeqDB_FileName gilist(gilname);
+                
+                x_SetGiListMask(volset, first_oid, last_oid, gilist);
                 filtered = true;
             }
             
@@ -964,7 +1337,7 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
     }
     
     ITERATE(TVolNames, vn, m_VolNames) {
-        if (CSeqDBVol * vptr = volset.GetVol(*vn)) {
+        if (CSeqDBVol * vptr = volset.GetVol(vn->GetBasePathS())) {
             // We did NOT find an OIDLIST entry; therefore, any db
             // volumes mentioned here are included unfiltered.
             
@@ -973,6 +1346,7 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
     }
 }
 
+
 string CSeqDBAliasNode::GetTitle(const CSeqDBVolSet & volset) const
 {
     CSeqDB_TitleWalker walk;
@@ -980,6 +1354,7 @@ string CSeqDBAliasNode::GetTitle(const CSeqDBVolSet & volset) const
     
     return walk.GetTitle();
 }
+
 
 int CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
 {
@@ -1005,6 +1380,7 @@ Uint8 CSeqDBAliasNode::GetTotalLength(const CSeqDBVolSet & volset) const
     return walk.GetLength();
 }
 
+// (Note: this seems to be unused.)
 Uint8 CSeqDBAliasNode::GetVolumeLength(const CSeqDBVolSet & volset) const
 {
     CSeqDB_VolumeLengthWalker walk;
@@ -1021,6 +1397,7 @@ int CSeqDBAliasNode::GetMembBit(const CSeqDBVolSet & volset) const
     return walk.GetMembBit();
 }
 
+
 bool CSeqDBAliasNode::NeedTotalsScan(const CSeqDBVolSet & volset) const
 {
     CSeqDB_GiListValuesTest explore;
@@ -1029,17 +1406,19 @@ bool CSeqDBAliasNode::NeedTotalsScan(const CSeqDBVolSet & volset) const
     return explore.NeedScan();
 }
 
+
 void CSeqDBAliasNode::
 GetAliasFileValues(TAliasFileValues & afv) const
 {
-    _ASSERT(! m_ThisName.empty());
+    _ASSERT(m_ThisName.Valid());
     
-    afv[m_ThisName].push_back(m_Values);
+    afv[m_ThisName.GetPathS()].push_back(m_Values);
     
     ITERATE(TSubNodeList, node, m_SubNodes) {
         (**node).GetAliasFileValues(afv);
     }
 }
+
 
 END_NCBI_SCOPE
 

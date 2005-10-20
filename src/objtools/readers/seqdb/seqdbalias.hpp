@@ -43,6 +43,7 @@
 #include <iostream>
 
 #include <objtools/readers/seqdb/seqdb.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include "seqdboidlist.hpp"
 #include "seqdbfile.hpp"
 #include "seqdbvol.hpp"
@@ -127,7 +128,7 @@ public:
     CSeqDBAliasStack()
         : m_Count(0)
     {
-        m_NodeNames.resize(1);
+        m_NodeNames.resize(4);
     }
     
     /// Check whether the stack contains the specified string.
@@ -139,7 +140,7 @@ public:
     ///   The alias file base name to add.
     /// @return
     ///   True if the string was found in the stack.
-    bool Exists(const string & name)
+    bool Exists(const CSeqDB_Path & name)
     {
         for(unsigned i=0; i<m_Count; i++) {
             if (m_NodeNames[i] == name) {
@@ -155,7 +156,7 @@ public:
     ///
     /// @param name
     ///   The alias file base name to add.
-    void Push(const string & name)
+    void Push(const CSeqDB_Path & name)
     {
         // This design aims at efficiency (cycles, not memory).
         // Specifically, it tries to accomplish the following:
@@ -165,42 +166,29 @@ public:
         //
         // 2. Strings are not deallocated on return from lower depths,
         //    instead they are left in place as buffers for future
-        //    allocations.
+        //    assignments.
         //
         // 3. A particular element of the string array should be
         //    reallocated at most ln2(M/16) times, where M is the
         //    maximal length of the string, regardless of the number
         //    of traversals through that node-depth.
         //
-        // The vector is always resize()d, whereas string data is
-        // reserve()d.  We want vector.size == vector.capacity at all
-        // times.  If vector.size fluctuated with each adding and
-        // removing of an element, the strings between old-size and
-        // new-size might be allocated and freed.  With strings, the
+        // The vector size is increased with resize(), in a doubling
+        // pattern, and string data is reserve()d.  This code will
+        // maintain vector.size == vector.capacity at all times.  If
+        // vector.size fluctuated with each adding and removing of an
+        // element, the strings between old-size and new-size would be
+        // destructed, losing existing allocations.  With strings, the
         // resize method might cause blanking of memory, but the
         // reserve method should not.  In either case, the string size
-        // will be set by operator=.
+        // will be set by the assign() method, and the true vector
+        // usage is tracked via the m_Count field.
         
         if (m_NodeNames.size() == m_Count) {
             m_NodeNames.resize(m_NodeNames.size() * 2);
         }
         
-        string & cur_node = m_NodeNames[m_Count++];
-        
-        // The following should not affect results, but may serve to
-        // accomplish efficiency goal #3 above.
-        
-        if (cur_node.size() < name.size()) {
-            if (name.size() <= 8) {
-                cur_node.reserve(16);
-            } else {
-                cur_node.reserve(name.size() * 2);
-            }
-        }
-        
-        // This should preserve capacity (and never allocate).
-        
-        cur_node.assign(name.data(), name.length());
+        m_NodeNames[m_Count++].Assign(name.GetPathS());
     }
     
     /// Remove the top element of the stack
@@ -218,10 +206,116 @@ public:
     
 private:
     /// List of node names.
-    vector<string> m_NodeNames;
+    vector<CSeqDB_Path> m_NodeNames;
     
     /// Number of in-use node names.
     unsigned m_Count;
+    
+    /// Disable copy operator.
+    CSeqDBAliasStack & operator =(const CSeqDBAliasStack &);
+    
+    /// Disable copy constructor.
+    CSeqDBAliasStack(const CSeqDBAliasStack &);
+};
+
+
+/// CSeqDBAliasSets class
+///
+/// This acts as a layer between the alias processing code and the
+/// atlas code in the case where a combined alias is used.  It
+/// intercepts calls to find and use individual alias files and uses
+/// combined alias files instead.
+
+class CSeqDBAliasSets {
+public:
+    /// Constructor
+    CSeqDBAliasSets(CSeqDBAtlas & atlas)
+        : m_Atlas(atlas)
+    {
+    }
+    
+    bool ReadAliasFile(const CSeqDB_Path  & dbpath,
+                       const char        ** bp,
+                       const char        ** ep,
+                       CSeqDBLockHold     & locked);
+    
+    bool FindAliasPath(const CSeqDB_Path & dbpath,
+                       CSeqDB_Path       * resolved,
+                       CSeqDBLockHold    & locked);
+    
+    bool FindBlastDBPath(const CSeqDB_Path & dbname,
+                         CSeqDB_Path       & resolved,
+                         CSeqDBLockHold    & locked)
+    {
+        string resolved_str;
+        
+        if (x_FindBlastDBPath(dbname.GetPathS(),
+                              '-',
+                              true,
+                              resolved_str,
+                              locked)) {
+            
+            resolved.Assign(resolved_str);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    bool FindBlastDBPath(const CSeqDB_BasePath & dbname,
+                         char                    dbtype,
+                         CSeqDB_BasePath       & resolved,
+                         CSeqDBLockHold        & locked)
+    {
+        string resolved_str;
+        
+        if (x_FindBlastDBPath(dbname.GetBasePathS(),
+                              dbtype,
+                              false,
+                              resolved_str,
+                              locked)) {
+            
+            resolved.Assign(resolved_str);
+            return true;
+        }
+        
+        return false;
+    }
+    
+private:
+    bool x_FindBlastDBPath(const string   & dbname,
+                           char             dbtype,
+                           bool             exact,
+                           string         & resolved,
+                           CSeqDBLockHold & locked);
+    
+    void x_DbToIndexName(const CSeqDB_Path & fname,
+                         CSeqDB_Path       & index_name,
+                         CSeqDB_FileName   & alias_name);
+    
+    void x_ReadAliasSetFile(const CSeqDB_Path & group_fname,
+                            CSeqDBLockHold    & locked);
+    
+    /// Reference to the memory management layer.
+    CSeqDBAtlas & m_Atlas;
+    
+    /// Aggregated alias file - maps filename to file contents.
+    typedef map<string, string> TAliasGroup;
+    
+    /// Full index filename to aggregated alias file.
+    typedef map< string, TAliasGroup > TAliasGroupMap;
+    
+    /// Alias groups
+    TAliasGroupMap m_Groups;
+    
+    /// Caches results of FindBlastDBPath
+    map<string, string> m_PathLookup;
+    
+    /// Disable copy operator.
+    CSeqDBAliasSets & operator =(const CSeqDBAliasSets &);
+    
+    /// Disable copy constructor.
+    CSeqDBAliasSets(const CSeqDBAliasSets &);
 };
 
 
@@ -271,9 +365,10 @@ public:
     ///   The space delimited list of database names.
     /// @param prot_nucl
     ///   The type of sequences stored here.
-    CSeqDBAliasNode(CSeqDBAtlas    & atlas,
-                    const string   & name_list,
-                    char             prot_nucl);
+    CSeqDBAliasNode(CSeqDBAtlas     & atlas,
+                    const string    & name_list,
+                    char              prot_nucl,
+                    CSeqDBAliasSets & alias_sets);
     
     /// Get the list of volume names
     ///
@@ -493,12 +588,13 @@ private:
     ///   Node history for cycle detection
     /// @param locked
     ///   The lock holder object for this thread
-    CSeqDBAliasNode(CSeqDBAtlas      & atlas,
-                    const string     & dbpath,
-                    const string     & dbname,
-                    char               prot_nucl,
-                    CSeqDBAliasStack & recurse,
-                    CSeqDBLockHold   & locked);
+    CSeqDBAliasNode(CSeqDBAtlas           & atlas,
+                    const CSeqDB_DirName  & dbpath,
+                    const CSeqDB_BaseName & dbname,
+                    char                    prot_nucl,
+                    CSeqDBAliasStack      & recurse,
+                    CSeqDBLockHold        & locked,
+                    CSeqDBAliasSets       & alias_sets);
     
     /// Read the alias file
     ///
@@ -511,7 +607,7 @@ private:
     ///   The name of the alias file
     /// @param locked
     ///   The lock holder object for this thread
-    void x_ReadValues(const string & fn, CSeqDBLockHold & locked);
+    void x_ReadValues(const CSeqDB_Path & fn, CSeqDBLockHold & locked);
     
     /// Read one line of the alias file
     ///
@@ -529,7 +625,14 @@ private:
     ///   A pointer to the first character of the line
     /// @param ep
     ///   A pointer to (one past) the last character of the line
-    void x_ReadLine(const char * bp, const char * ep);
+    /// @param name_s
+    ///   The variable name from the file
+    /// @param value_s
+    ///   The value from the file
+    void x_ReadLine(const char * bp,
+                    const char * ep,
+                    string     & name_s,
+                    string     & value_s);
     
     /// Expand a node of the alias node tree recursively
     ///
@@ -550,29 +653,10 @@ private:
     ///   Set of all ancestor nodes for this node.
     /// @param locked
     ///   The lock holder object for this thread
-    void x_ExpandAliases(const string     & this_name,
-                         char               prot_nucl,
-                         CSeqDBAliasStack & recurse,
-                         CSeqDBLockHold   & locked);
-    
-    /// Build a resolved path from components
-    ///
-    /// This takes a directory, base name, and indication of protein
-    /// or nucleotide to build an alias file name.  It combines the
-    /// filename and path using the standard delimiter for this OS.
-    /// 
-    /// @param dir
-    ///   The directory name
-    /// @param name
-    ///   A filename, possibly including directory components
-    /// @param prot_nucl
-    ///   Indicates whether this is a protein or nucleotide database
-    /// @return
-    ///   The combined path
-    static string x_MkPath(const string & dir, const string & name, char prot_nucl)
-    {
-        return SeqDB_CombinePath(dir, name) + "." + prot_nucl + "al";
-    }
+    void x_ExpandAliases(const CSeqDB_BasePath & this_name,
+                         char                    prot_nucl,
+                         CSeqDBAliasStack      & recurse,
+                         CSeqDBLockHold        & locked);
     
     /// Build a list of volume names used by the alias node tree
     /// 
@@ -618,10 +702,10 @@ private:
     ///   The OID after the last OID in the range.
     /// @param oidfile
     ///   The name of the OID mask file.
-    void x_SetOIDMask(CSeqDBVolSet & volset,
-                      int            begin,
-                      int            end,
-                      const string & oidfile);
+    void x_SetOIDMask(CSeqDBVolSet          & volset,
+                      int                     begin,
+                      int                     end,
+                      const CSeqDB_BaseName & oidfile);
 
     /// Add a GI list filter to a volume
     /// 
@@ -639,10 +723,10 @@ private:
     ///   The OID after the last OID in the range.
     /// @param gilist
     ///   The name of the GI list file.
-    void x_SetGiListMask(CSeqDBVolSet & volset,
-                         int            begin,
-                         int            end,
-                         const string & gilist);
+    void x_SetGiListMask(CSeqDBVolSet          & volset,
+                         int                     begin,
+                         int                     end,
+                         const CSeqDB_FileName & gilist);
     
     /// Add an OID range to a volume
     /// 
@@ -658,9 +742,20 @@ private:
     ///   The OID after the last OID in the range.
     void x_SetOIDRange(CSeqDBVolSet & volset, int begin, int end);
     
+    /// Get the contents of an alias file.
+    ///
+    /// Fetches the lines belonging to an alias file, either directly
+    /// or via a combined alias file.
+    void x_ReadAliasFile(CSeqDBMemLease    & lease,
+                         const CSeqDB_Path & fname,
+                         const char       ** bp,
+                         const char       ** ep,
+                         CSeqDBLockHold    & locked);
+    
+    void x_Tokenize(const string & dbnames);
     
     /// Type used to store a set of volume names for each node
-    typedef vector<string> TVolNames;
+    typedef vector<CSeqDB_BasePath> TVolNames;
     
     /// Type used to store the set of subnodes for this node
     typedef vector< CRef<CSeqDBAliasNode> > TSubNodeList;
@@ -670,7 +765,7 @@ private:
     CSeqDBAtlas & m_Atlas;
     
     /// The common prefix for the DB paths.
-    string m_DBPath;
+    CSeqDB_DirName m_DBPath;
     
     /// List of KEY/VALUE pairs from this alias file
     TVarList m_Values;
@@ -682,10 +777,19 @@ private:
     TSubNodeList m_SubNodes;
     
     /// Filename of this alias file
-    string m_ThisName;
+    CSeqDB_Path m_ThisName;
     
     /// Tokenized version of DBLIST
-    vector<string> m_DBList;
+    vector<CSeqDB_BasePath> m_DBList;
+    
+    /// Combined alias files.
+    CSeqDBAliasSets & m_AliasSets;
+    
+    /// Disable copy operator.
+    CSeqDBAliasNode & operator =(const CSeqDBAliasNode &);
+    
+    /// Disable copy constructor.
+    CSeqDBAliasNode(const CSeqDBAliasNode &);
 };
 
 
@@ -716,10 +820,11 @@ public:
     ///   A space seperated list of database names.
     /// @param prot_nucl
     ///   Indicates whether the database is protein or nucleotide.
-    CSeqDBAliasFile(CSeqDBAtlas    & atlas,
-                    const string   & name_list,
-                    char             prot_nucl)
-        : m_Node (atlas, name_list, prot_nucl)
+    CSeqDBAliasFile(CSeqDBAtlas     & atlas,
+                    const string    & name_list,
+                    char              prot_nucl)
+        : m_AliasSets (atlas),
+          m_Node      (atlas, name_list, prot_nucl, m_AliasSets)
     {
         m_Node.GetVolumeNames(m_VolumeNames);
     }
@@ -897,12 +1002,21 @@ public:
     }
     
 private:
+    /// Combined alias files.
+    CSeqDBAliasSets m_AliasSets;
+
     /// This is the alias node tree's "artificial" topmost node, which
     /// aggregates the user provided database names.
     CSeqDBAliasNode m_Node;
     
     /// The cached output of the topmost node's GetVolumeNames().
     vector<string> m_VolumeNames;
+    
+    /// Disable copy operator.
+    CSeqDBAliasFile & operator =(const CSeqDBAliasFile &);
+    
+    /// Disable copy constructor.
+    CSeqDBAliasFile(const CSeqDBAliasFile &);
 };
 
 

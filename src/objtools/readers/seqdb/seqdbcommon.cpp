@@ -41,69 +41,108 @@
 
 BEGIN_NCBI_SCOPE
 
-string SeqDB_GetFileName(string s)
+CSeqDB_Substring SeqDB_GetFileName(CSeqDB_Substring s)
 {
-    size_t off = s.find_last_of(CFile::GetPathSeparator());
+    int off = s.FindLastOf(CFile::GetPathSeparator());
     
-    if (off != s.npos) {
-        s.erase(0, off + 1);
+    if (off != -1) {
+        s.EraseFront(off + 1);
     }
     
     return s;
 }
 
-string SeqDB_GetDirName(string s)
+
+CSeqDB_Substring SeqDB_GetDirName(CSeqDB_Substring s)
 {
-    size_t off = s.find_last_of(CFile::GetPathSeparator());
+    int off = s.FindLastOf(CFile::GetPathSeparator());
     
-    if (off != s.npos) {
-        s.erase(off);
+    if (off != -1) {
+        s.Resize(off);
+    } else {
+        s.Clear();
     }
     
     return s;
 }
 
-string SeqDB_GetBasePath(string s)
+
+CSeqDB_Substring SeqDB_GetBasePath(CSeqDB_Substring s)
 {
-    size_t off = s.find_last_of(".");
+    // This used to remove anything after the last "." it could find.
+    // Then it was changed to only remove the part after the ".", if
+    // it did not contain a "/" character.
     
-    if (off != s.npos) {
-        s.erase(off);
+    // Now it has been made even stricter, it looks for something like
+    // "(.*)([.][a-zA-Z]{3})" and removes the second sub-expression if
+    // there is a match.  This is because of mismatches like "1234.00"
+    // that are not real "file extensions" in the way that SeqDB wants
+    // to process them.
+    
+    int slen = s.Size();
+    
+    if (slen > 4) {
+        if (s[slen-4] == '.'     &&
+            isalpha( s[slen-3] ) &&
+            isalpha( s[slen-2] ) &&
+            isalpha( s[slen-1] )) {
+            
+            s.Resize(slen - 4);
+        }
     }
     
     return s;
 }
 
-string SeqDB_GetBaseName(string s)
+
+CSeqDB_Substring SeqDB_GetBaseName(CSeqDB_Substring s)
 {
     return SeqDB_GetBasePath( SeqDB_GetFileName(s) );
 }
 
-string SeqDB_CombinePath(const string & one, const string & two)
+
+void SeqDB_CombinePath(const CSeqDB_Substring & one,
+                       const CSeqDB_Substring & two,
+                       const CSeqDB_Substring * extn,
+                       string                 & outp)
 {
     char delim = CFile::GetPathSeparator();
     
-    if (two.empty()) {
-        return one;
+    int extn_amt = extn ? (extn->Size()+1) : 0;
+    
+    if (two.Empty()) {
+        // We only use the extension if there is a filename.
+        one.GetString(outp);
+        return;
     }
     
-    if (one.empty() || two[0] == delim) {
-        return two;
+    if (one.Empty() || two[0] == delim) {
+        outp.reserve(two.Size() + extn_amt);
+        two.GetString(outp);
+        
+        if (extn) {
+            outp.append(".");
+            outp.append(extn->GetBegin(), extn->GetEnd());
+        }
+        return;
     }
     
-    string result;
-    result.reserve(one.size() + two.size() + 1);
+    outp.reserve(one.Size() + two.Size() + 1 + extn_amt);
     
-    result += one;
+    one.GetString(outp);
     
-    if (result[one.size() - 1] != delim) {
-        result += delim;
+    if (outp[outp.size() - 1] != delim) {
+        outp += delim;
     }
     
-    result += two;
+    outp.append(two.GetBegin(), two.GetEnd());
     
-    return result;
+    if (extn) {
+        outp.append(".");
+        outp.append(extn->GetBegin(), extn->GetEnd());
+    }
 }
+
 
 /// Test whether an index or alias file exists
 ///
@@ -127,9 +166,27 @@ static bool s_SeqDB_DBExists(const string   & dbname,
                              CSeqDBAtlas    & atlas,
                              CSeqDBLockHold & locked)
 {
-    return (atlas.DoesFileExist(dbname + "." + dbtype + "al", locked) ||
-            atlas.DoesFileExist(dbname + "." + dbtype + "in", locked));
+    string path;
+    path.reserve(dbname.size() + 4);
+    path.assign(dbname.data(), dbname.data() + dbname.size());
+    path.append(".-al");
+    
+    path[path.size()-3] = dbtype;
+    
+    if (atlas.DoesFileExist(path, locked)) {
+        return true;
+    }
+    
+    path[path.size()-2] = 'i';
+    path[path.size()-1] = 'n';
+    
+    if (atlas.DoesFileExist(path, locked)) {
+        return true;
+    }
+    
+    return false;
 }
+
 
 static string s_GetPathSplitter()
 {
@@ -143,6 +200,7 @@ static string s_GetPathSplitter()
     
     return splitter;
 }
+
 
 /// Search for a file in a provided set of paths
 /// 
@@ -178,13 +236,27 @@ static string s_SeqDB_TryPaths(const string   & blast_paths,
                                CSeqDBAtlas    & atlas,
                                CSeqDBLockHold & locked)
 {
+    // 1. If this was a vector<CSeqDB_Substring>, the tokenize would
+    //    not need to do any allocations (but would need rewriting).
+    //
+    // 2. If this was split into several functions, and/or a stateful
+    //    class was used, this would perform better here, and would
+    //    allow improvement of the search routine for combined group
+    //    indices (see comments in CSeqDBAliasSets::FindAliasPath).
+    
     vector<string> roads;
     NStr::Tokenize(blast_paths, s_GetPathSplitter(), roads, NStr::eMergeDelims);
     
     string result;
+    string attempt;
     
     ITERATE(vector<string>, road, roads) {
-        string attempt = SeqDB_CombinePath(*road, dbname);
+        attempt.clear();
+        
+        SeqDB_CombinePath(CSeqDB_Substring(*road),
+                          CSeqDB_Substring(dbname),
+                          0,
+                          attempt);
         
         if (exact) {
             if (atlas.DoesFileExist(attempt, locked)) {
@@ -201,6 +273,7 @@ static string s_SeqDB_TryPaths(const string   & blast_paths,
     
     return result;
 }
+
 
 string SeqDB_FindBlastDBPath(const string   & dbname,
                              char             dbtype,
@@ -238,6 +311,7 @@ string SeqDB_FindBlastDBPath(const string   & dbname,
     return s_SeqDB_TryPaths(pathology, dbname, dbtype, exact, atlas, locked);
 }
 
+
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
 {
     if (b.empty()) {
@@ -245,11 +319,23 @@ void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
     }
     
     if (a.empty()) {
-        a = b;
+        // a has no size - but might have capacity
+        s_SeqDB_QuickAssign(a, b);
         return;
     }
     
-    a.reserve(a.length() + b.length() + delim.length());
+    size_t newlen = a.length() + b.length() + delim.length();
+    
+    if (a.capacity() < newlen) {
+        size_t newcap = 16;
+        
+        while(newcap < newlen) {
+            newcap <<= 1;
+        }
+        
+        a.reserve(newcap);
+    }
+    
     a += delim;
     a += b;
 }
@@ -260,6 +346,7 @@ CSeqDBGiList::CSeqDBGiList()
 {
 }
 
+
 class CSeqDB_SortOidLessThan {
 public:
     int operator()(const CSeqDBGiList::SGiOid & lhs,
@@ -269,6 +356,7 @@ public:
     }
 };
 
+
 class CSeqDB_SortGiLessThan {
 public:
     int operator()(const CSeqDBGiList::SGiOid & lhs,
@@ -277,6 +365,7 @@ public:
         return lhs.gi < rhs.gi;
     }
 };
+
 
 void CSeqDBGiList::InsureOrder(ESortOrder order)
 {
@@ -325,17 +414,20 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
     }
 }
 
+
 bool CSeqDBGiList::FindGi(int gi)
 {
     int oid(0), index(0);
     return GiToOid(gi, oid, index);
 }
 
+
 bool CSeqDBGiList::GiToOid(int gi, int & oid)
 {
     int index(0);
     return GiToOid(gi, oid, index);
 }
+
 
 bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 {
@@ -362,6 +454,7 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
     return false;
 }
 
+
 void
 CSeqDBGiList::GetGiList(vector<int>& gis) const
 {
@@ -372,6 +465,7 @@ CSeqDBGiList::GetGiList(vector<int>& gis) const
         gis.push_back(itr->gi);
     }
 }
+
 
 void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
 {
@@ -398,6 +492,7 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
         gis.push_back((int) SeqDB_GetStdOrd(elem));
     }
 }
+
 
 void SeqDB_ReadMemoryGiList(const char * fbeginp,
                             const char * fendp,
@@ -545,6 +640,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
     }
 }
 
+
 void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, bool * in_order)
 {
     CMemoryFile mfile(fname);
@@ -555,6 +651,7 @@ void SeqDB_ReadGiList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis, 
     
     SeqDB_ReadMemoryGiList(fbeginp, fendp, gis, in_order);
 }
+
 
 void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
 {
@@ -576,6 +673,7 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname)
     SeqDB_ReadGiList(fname, m_GisOids, & in_order);
     m_CurrentOrder = in_order ? eGi : eNone;
 }
+
 
 END_NCBI_SCOPE
 

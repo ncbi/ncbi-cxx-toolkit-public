@@ -695,7 +695,7 @@ int test1(int argc, char ** argv)
                  "Microbial/98360  Microbial/985  Microbial/99287 "
                  "Microbial/99883 ");
             
-            string & nm1(s == "-perf2" ? name2 : name1);
+            string & nm1(s == "-micro-perf2" ? name2 : name1);
             
             CSeqDB db(nm1, CSeqDB::eNucleotide);
             
