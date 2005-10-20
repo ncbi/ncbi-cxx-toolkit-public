@@ -133,7 +133,7 @@ double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mp
 }
 
 double CGnomonEngine::Run(const TAlignList& cls, //  const TFrameShifts& initial_fshifts,
-                          bool repeats, bool leftwall, bool rightwall, double mpp)
+                          bool repeats, bool leftwall, bool rightwall, double mpp, double consensuspenalty)
 {
     m_Annot.Reset();
     m_data->m_parse.reset();
@@ -154,7 +154,7 @@ double CGnomonEngine::Run(const TAlignList& cls, //  const TFrameShifts& initial
                                m_data->m_seq, m_data->m_range.GetFrom(),  m_data->m_range.GetTo(),
                                cls, initial_fshifts, repeats,
                                leftwall, rightwall, m_data->m_seqname,
-                               mpp
+                               mpp, consensuspenalty
                                )
                 );
     //seqscr->CodingScore(RegionStart(),RegionStop(),Strand(),frame);
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2005/10/20 19:29:31  souvorov
+ * Penalty for nonconsensus starts/stops/splices
+ *
  * Revision 1.3  2005/10/06 14:34:25  souvorov
  * CGnomonEngine::GetSeqName() introduced
  *

@@ -196,7 +196,7 @@ struct SAlignOrder
 CSeqScores::CSeqScores (CTerminal& a, CTerminal& d, CTerminal& stt, CTerminal& stp, 
 CCodingRegion& cr, CNonCodingRegion& ncr, CNonCodingRegion& ing, CResidueVec& original_sequence, 
 TSignedSeqPos from, TSignedSeqPos to, const TAlignList& cls, const TFrameShifts& initial_fshifts, bool repeats, bool leftwall, 
-bool rightwall, string cntg, double mpp)
+bool rightwall, string cntg, double mpp, double consensuspenalty)
 : m_acceptor(a), m_donor(d), m_start(stt), m_stop(stp), m_cdr(cr), m_ncdr(ncr), m_intrg(ing), 
   m_align_list(cls), m_fshifts(initial_fshifts), m_chunk_start(from), m_chunk_stop(to), m_contig(cntg), m_mpp(mpp)
 {
@@ -957,6 +957,151 @@ bool rightwall, string cntg, double mpp)
             }
         }
     }
+    
+    const int NonConsensusMargin = 500;
+    for(set<CAlignVec,SAlignOrder>::iterator it = allaligns.begin(); consensuspenalty != BadScore() && it != allaligns.end(); ++it)
+    {
+        const CAlignVec& algn(*it);
+        if(algn.Type() != CAlignVec::eProt) continue;
+        
+        int strand = algn.Strand();
+        TSignedSeqRange lim = algn.Limits();
+        
+        for(unsigned int k = 1; k < algn.size(); ++k)
+        {
+            if(algn[k-1].m_ssplice && algn[k].m_fsplice) continue;
+            
+            int a = algn[k-1].GetTo();
+            int b = algn[k].GetFrom();
+            for(TSignedSeqPos i = a; i <= b; ++i)
+            {
+                if(i <= a+NonConsensusMargin || i >= b-NonConsensusMargin)
+                {
+                    if(m_dscr[strand][i] == BadScore())
+                    {
+                        m_dscr[strand][i] = consensuspenalty;
+                        ++m_dnum[strand];
+                    }
+                    
+                    if(m_ascr[strand][i] == BadScore())
+                    {
+                        m_ascr[strand][i] = consensuspenalty;
+                        ++m_anum[strand];
+                    }
+                }
+            }
+        }
+        
+        if(strand == ePlus)
+        {
+            if(!algn.FullFiveP())
+            {
+                int a = max(2,lim.GetFrom()-NonConsensusMargin);
+                int b = lim.GetFrom()-1;
+                for(TSignedSeqPos i = a; i <= b; ++i)
+                {
+                    if(m_sttscr[strand][i] == BadScore())
+                    {
+                        m_sttscr[strand][i] = consensuspenalty;
+                        ++m_sttnum[strand];
+                    }
+                    
+                    if(m_dscr[strand][i] == BadScore())
+                    {
+                        m_dscr[strand][i] = consensuspenalty;
+                        ++m_dnum[strand];
+                    }
+                    
+                    if(m_ascr[strand][i] == BadScore())
+                    {
+                        m_ascr[strand][i] = consensuspenalty;
+                        ++m_anum[strand];
+                    }
+                }
+            }
+            
+            if(!algn.FullThreeP())
+            {
+                int a = lim.GetTo();
+                int b = min(len-4,lim.GetTo()+NonConsensusMargin);
+                for(TSignedSeqPos i = a; i <= b; ++i)
+                {
+                    if(m_stpscr[strand][i] == BadScore())
+                    {
+                        m_stpscr[strand][i] = consensuspenalty;
+                        ++m_stpnum[strand];
+                    }
+                    
+                    if(m_dscr[strand][i] == BadScore())
+                    {
+                        m_dscr[strand][i] = consensuspenalty;
+                        ++m_dnum[strand];
+                    }
+                    
+                    if(m_ascr[strand][i] == BadScore())
+                    {
+                        m_ascr[strand][i] = consensuspenalty;
+                        ++m_anum[strand];
+                    }
+                }
+            }
+        }
+        else
+        {
+            if(!algn.FullFiveP())
+            {
+                int a = lim.GetTo();
+                int b = min(len-4,lim.GetTo()+NonConsensusMargin);
+                for(TSignedSeqPos i = a; i <= b; ++i)
+                {
+                    if(m_sttscr[strand][i] == BadScore())
+                    {
+                        m_sttscr[strand][i] = consensuspenalty;
+                        ++m_sttnum[strand];
+                    }
+                    
+                    if(m_dscr[strand][i] == BadScore())
+                    {
+                        m_dscr[strand][i] = consensuspenalty;
+                        ++m_dnum[strand];
+                    }
+                    
+                    if(m_ascr[strand][i] == BadScore())
+                    {
+                        m_ascr[strand][i] = consensuspenalty;
+                        ++m_anum[strand];
+                    }
+                }
+            }
+            
+            if(!algn.FullThreeP())
+            {
+                int a = max(2,lim.GetFrom()-NonConsensusMargin);
+                int b = lim.GetFrom()-1;
+                for(TSignedSeqPos i = a; i <= b; ++i)
+                {
+                    if(m_stpscr[strand][i] == BadScore())
+                    {
+                        m_stpscr[strand][i] = consensuspenalty;
+                        ++m_stpnum[strand];
+                    }
+                    
+                    if(m_dscr[strand][i] == BadScore())
+                    {
+                        m_dscr[strand][i] = consensuspenalty;
+                        ++m_dnum[strand];
+                    }
+                    
+                    if(m_ascr[strand][i] == BadScore())
+                    {
+                        m_ascr[strand][i] = consensuspenalty;
+                        ++m_anum[strand];
+                    }
+                }
+            }
+        }
+    }
+    
 }
 
 void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
@@ -1369,6 +1514,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2005/10/20 19:34:12  souvorov
+ * Penalty for nonconsensus starts/stops/splices
+ *
  * Revision 1.5  2005/10/06 16:00:20  chetvern
  * removed commented out word 'inline'
  *

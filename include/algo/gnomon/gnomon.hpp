@@ -77,7 +77,7 @@ public:
     double Run(bool repeats = true, bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
 
     double Run(const TAlignList& cls,
-	       bool repeats, bool leftwall, bool rightwall, double mpp);
+	       bool repeats, bool leftwall, bool rightwall, double mpp, double consensuspenalty = BadScore());
 
     CRef<objects::CSeq_annot> GetAnnot(void);
 
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/20 19:34:46  souvorov
+ * Penalty for nonconsensus starts/stops/splices
+ *
  * Revision 1.4  2005/10/06 14:34:25  souvorov
  * CGnomonEngine::GetSeqName() introduced
  *

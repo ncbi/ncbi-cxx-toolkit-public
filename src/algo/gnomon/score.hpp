@@ -50,7 +50,7 @@ class CSeqScores
             CCodingRegion& cr, CNonCodingRegion& ncr, CNonCodingRegion& ing, 
             CResidueVec& sequence, TSignedSeqPos from, TSignedSeqPos to, const TAlignList& cls, 
             const TFrameShifts& initial_fshifts, bool repeats, bool leftwall, 
-            bool rightwall, string cntg, double mpp);
+            bool rightwall, string cntg, double mpp, double consensuspenalty);
         
         TSignedSeqPos From() const { return m_chunk_start; }
         TSignedSeqPos To() const { return m_chunk_stop; }
@@ -122,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/20 19:34:12  souvorov
+ * Penalty for nonconsensus starts/stops/splices
+ *
  * Revision 1.2  2005/10/06 15:53:02  chetvern
  * removed dependency on hmm.hpp
  * moved CSeqScores::OpenNonCodingRegion implementation into the class definition to make it inline
