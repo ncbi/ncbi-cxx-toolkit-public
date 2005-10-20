@@ -86,21 +86,17 @@ class CDB_ResultProcessor;
 class NCBI_DBAPIDRIVER_EXPORT I_ITDescriptor
 {
 public:
-    virtual int DescriptorType() const = 0;
-    virtual ~I_ITDescriptor();
+    virtual int DescriptorType(void) const = 0;
+    virtual ~I_ITDescriptor(void);
 };
 
 
 class NCBI_DBAPIDRIVER_EXPORT C_ITDescriptorGuard
 {
 public:
-    C_ITDescriptorGuard(I_ITDescriptor* d) {
-        m_D = d;
-    }
-    ~C_ITDescriptorGuard() {
-        if ( m_D )
-            delete m_D;
-    }
+    C_ITDescriptorGuard(I_ITDescriptor* d);
+    ~C_ITDescriptorGuard(void);
+    
 private:
     I_ITDescriptor* m_D;
 };
@@ -136,14 +132,14 @@ enum EDB_ResType {
 class NCBI_DBAPIDRIVER_EXPORT CDB_BaseEnt
 {
 public:
-    CDB_BaseEnt() {
-        m_BR = 0;
-    }
+    CDB_BaseEnt(void);
+    virtual ~CDB_BaseEnt(void);
+    
+public:
     void Acquire(CDB_BaseEnt** br) {
         m_BR = br;
     }
-    virtual void Release();
-    virtual ~CDB_BaseEnt();
+    virtual void Release(void);
 
 protected:
     CDB_BaseEnt** m_BR;  // double-reference to itself
@@ -164,33 +160,35 @@ protected:
 class NCBI_DBAPIDRIVER_EXPORT I_BaseCmd : public CDB_BaseEnt
 {
 public:
+    I_BaseCmd(void);
+    // Destructor
+    virtual ~I_BaseCmd(void);
+    
+public:
     // Send command to the server
-    virtual bool Send() = 0;
-    virtual bool WasSent() const = 0;
+    virtual bool Send(void) = 0;
+    virtual bool WasSent(void) const = 0;
 
     // Cancel the command execution
-    virtual bool Cancel() = 0;
-    virtual bool WasCanceled() const = 0;
+    virtual bool Cancel(void) = 0;
+    virtual bool WasCanceled(void) const = 0;
 
     // Get result set
-    virtual CDB_Result* Result() = 0;
-    virtual bool HasMoreResults() const = 0;
+    virtual CDB_Result* Result(void) = 0;
+    virtual bool HasMoreResults(void) const = 0;
 
     // Check if command has failed
-    virtual bool HasFailed() const = 0;
+    virtual bool HasFailed(void) const = 0;
 
     // Get the number of rows affected by the command
     // Special case:  negative on error or if there is no way that this
     //                command could ever affect any rows (like PRINT).
-    virtual int RowCount() const = 0;
+    virtual int RowCount(void) const = 0;
 
     // Dump the results of the command
     // if result processor is installed for this connection, it will be called for
     // each result set
-    virtual void DumpResults()= 0;
-
-    // Destructor
-    virtual ~I_BaseCmd();
+    virtual void DumpResults(void)= 0;
 };
 
 
@@ -209,6 +207,12 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT I_LangCmd : public I_BaseCmd
 {
+    friend class CDB_LangCmd;
+    
+public:
+    I_LangCmd(void);
+    virtual ~I_LangCmd(void);
+    
 protected:
     // Add more text to the language command
     virtual bool More(const string& query_text) = 0;
@@ -218,17 +222,18 @@ protected:
 
     // Set cmd parameter with name "name" to the object pointed by "value"
     virtual bool SetParam(const string& name, CDB_Object* param_ptr) = 0;
-
-public:
-    virtual ~I_LangCmd();
-
-    friend class CDB_LangCmd;
 };
 
 
 
 class NCBI_DBAPIDRIVER_EXPORT I_RPCCmd : public I_BaseCmd
 {
+    friend class CDB_RPCCmd;
+    
+public:
+    I_RPCCmd(void);
+    virtual ~I_RPCCmd(void);
+
 protected:
     // Binding
     virtual bool BindParam(const string& name, CDB_Object* param_ptr,
@@ -240,45 +245,47 @@ protected:
 
     // Set the "recompile before execute" flag for the stored proc
     virtual void SetRecompile(bool recompile = true) = 0;
-
-public:
-    virtual ~I_RPCCmd();
-
-    friend class CDB_RPCCmd;
 };
 
 
 
 class NCBI_DBAPIDRIVER_EXPORT I_BCPInCmd : public CDB_BaseEnt
 {
+    friend class CDB_BCPInCmd;
+
+public:
+    I_BCPInCmd(void);
+    virtual ~I_BCPInCmd(void);
+
 protected:
     // Binding
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr) = 0;
 
     // Send row to the server
-    virtual bool SendRow() = 0;
+    virtual bool SendRow(void) = 0;
 
     // Complete batch -- to store all rows transferred by far in this batch
     // into the table
-    virtual bool CompleteBatch() = 0;
+    virtual bool CompleteBatch(void) = 0;
 
     // Cancel the BCP command
-    virtual bool Cancel() = 0;
+    virtual bool Cancel(void) = 0;
 
     // Complete the BCP and store all rows transferred in last batch into
     // the table
-    virtual bool CompleteBCP() = 0;
-
-public:
-    virtual ~I_BCPInCmd();
-
-    friend class CDB_BCPInCmd;
+    virtual bool CompleteBCP(void) = 0;
 };
 
 
 
 class NCBI_DBAPIDRIVER_EXPORT I_CursorCmd : public CDB_BaseEnt
 {
+    friend class CDB_CursorCmd;
+
+public:
+    I_CursorCmd(void);
+    virtual ~I_CursorCmd(void);
+
 protected:
     // Binding
     virtual bool BindParam(const string& name, CDB_Object* param_ptr) = 0;
@@ -286,7 +293,7 @@ protected:
     // Open the cursor.
     // Return NULL if cursor resulted in no data.
     // Throw exception on error.
-    virtual CDB_Result* Open() = 0;
+    virtual CDB_Result* Open(void) = 0;
 
     // Update the last fetched row.
     // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
@@ -304,31 +311,27 @@ protected:
     // Get the number of fetched rows
     // Special case:  negative on error or if there is no way that this
     //                command could ever affect any rows (like PRINT).
-    virtual int RowCount() const = 0;
+    virtual int RowCount(void) const = 0;
 
     // Close the cursor.
     // Return FALSE if the cursor is closed already (or not opened yet)
-    virtual bool Close() = 0;
-
-public:
-    virtual ~I_CursorCmd();
-
-    friend class CDB_CursorCmd;
+    virtual bool Close(void) = 0;
 };
 
 
 
 class NCBI_DBAPIDRIVER_EXPORT I_SendDataCmd : public CDB_BaseEnt
 {
+    friend class CDB_SendDataCmd;
+
+public:
+    I_SendDataCmd(void);
+    virtual ~I_SendDataCmd(void);
+
 protected:
     // Send chunk of data to the server.
     // Return number of bytes actually transferred to server.
     virtual size_t SendChunk(const void* pChunk, size_t nofBytes) = 0;
-
-public:
-    virtual ~I_SendDataCmd();
-
-    friend class CDB_SendDataCmd;
 };
 
 
@@ -340,12 +343,18 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT I_Result : public CDB_BaseEnt
 {
+    friend class CDB_Result;
+
+public:
+    I_Result(void);
+    virtual ~I_Result(void);
+
 public:
     // Get type of the result
-    virtual EDB_ResType ResultType() const = 0;
+    virtual EDB_ResType ResultType(void) const = 0;
 
     // Get # of items (columns) in the result
-    virtual unsigned int NofItems() const = 0;
+    virtual unsigned int NofItems(void) const = 0;
 
     // Get name of a result item.
     // Return NULL if "item_num" >= NofItems().
@@ -360,11 +369,11 @@ public:
     virtual EDB_Type ItemDataType(unsigned int item_num) const = 0;
 
     // Fetch next row
-    virtual bool Fetch() = 0;
+    virtual bool Fetch(void) = 0;
 
     // Return current item number we can retrieve (0,1,...)
     // Return "-1" if no more items left (or available) to read.
-    virtual int CurrentItemNo() const = 0;
+    virtual int CurrentItemNo(void) const = 0;
 
     // Return number of columns in the recordset.
     virtual int GetColumnNum(void) const = 0;
@@ -386,15 +395,10 @@ public:
     // Return NULL if this result doesn't (or can't) have img/text descriptor.
     // NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
     //       before calling this method!
-    virtual I_ITDescriptor* GetImageOrTextDescriptor() = 0;
+    virtual I_ITDescriptor* GetImageOrTextDescriptor(void) = 0;
 
     // Skip result item
-    virtual bool SkipItem() = 0;
-
-public:
-    virtual ~I_Result();
-
-    friend class CDB_Result;
+    virtual bool SkipItem(void) = 0;
 };
 
 
@@ -406,6 +410,12 @@ public:
 
 class NCBI_DBAPIDRIVER_EXPORT I_DriverContext
 {
+protected:
+    I_DriverContext(void);
+    
+public:
+    virtual ~I_DriverContext(void);
+    
 public:
     // Connection mode
     enum EConnectionMode {
@@ -469,11 +479,16 @@ public:
     void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
                                 const string& pool_name = kEmptyStr);
 
-    virtual ~I_DriverContext();
+public:
+    // app_name defines the application name that a connection will use when 
+    // connecting to a server.
+    void SetApplicationName(const string& app_name);
+    const string& GetApplicationName(void) const;
+
+    void SetHostName(const string& host_name);
+    const string& GetHostName(void) const;
 
 protected:
-    I_DriverContext();
-
     // To allow children of I_DriverContext to create CDB_Connection
     static CDB_Connection* Create_Connection(I_Connection& connection);
 
@@ -492,6 +507,10 @@ private:
     // reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(I_Connection* conn, bool conn_reusable);
     friend class CDB_Connection;
+    
+private:
+    string  m_AppName;
+    string  m_HostName;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -502,11 +521,17 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT I_Connection : public CDB_BaseEnt
 {
     friend class I_DriverContext;
+    friend class CDB_Connection;
+
+public:
+    I_Connection(void);
+    virtual ~I_Connection(void);
+
 protected:
     // Check out if connection is alive (this function doesn't ping the server,
     // it just checks the status of connection which was set by the last
     // i/o operation)
-    virtual bool IsAlive() = 0;
+    virtual bool IsAlive(void) = 0;
 
     // These methods:  LangCmd(), RPC(), BCPIn(), Cursor() and SendDataCmd()
     // create and return a "command" object, register it for later use with
@@ -541,24 +566,24 @@ protected:
                           bool log_it = true) = 0;
 
     // Reset the connection to the "ready" state (cancel all active commands)
-    virtual bool Refresh() = 0;
+    virtual bool Refresh(void) = 0;
 
     // Get the server name, user login name, and password
-    virtual const string& ServerName() const = 0;
-    virtual const string& UserName() const = 0;
-    virtual const string& Password() const = 0;
+    virtual const string& ServerName(void) const = 0;
+    virtual const string& UserName(void) const = 0;
+    virtual const string& Password(void) const = 0;
 
     // Get the bitmask for the connection mode (BCP, secure login, ...)
-    virtual I_DriverContext::TConnectionMode ConnectMode() const = 0;
+    virtual I_DriverContext::TConnectionMode ConnectMode(void) const = 0;
 
     // Check if this connection is a reusable one
-    virtual bool IsReusable() const = 0;
+    virtual bool IsReusable(void) const = 0;
 
     // Find out which connection pool this connection belongs to
-    virtual const string& PoolName() const = 0;
+    virtual const string& PoolName(void) const = 0;
 
     // Get pointer to the driver context
-    virtual I_DriverContext* Context() const = 0;
+    virtual I_DriverContext* Context(void) const = 0;
 
     // Put the message handler into message handler stack
     virtual void PushMsgHandler(CDB_UserHandler* h) = 0;
@@ -582,12 +607,7 @@ protected:
     // destroing any objects associated with a connection.
     // Returns: true - if succeed
     //          false - if not
-    virtual bool Abort()= 0;
-
-public:
-    virtual ~I_Connection();
-
-    friend class CDB_Connection;
+    virtual bool Abort(void)= 0;
 };
 
 
@@ -597,9 +617,12 @@ attr);
 class NCBI_DBAPIDRIVER_EXPORT I_DriverMgr
 {
 public:
+    I_DriverMgr(void);
+    virtual ~I_DriverMgr(void);
+    
+public:
     virtual void RegisterDriver(const string& driver_name,
                                 FDBAPI_CreateContext driver_ctx_func) = 0;
-    virtual ~I_DriverMgr(void);
 };
 
 
@@ -613,6 +636,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/10/20 12:53:01  ssikorsk
+ * + I_DriverContext::SetApplicationName
+ * + I_DriverContext::GetApplicationName
+ * + I_DriverContext::SetHostName
+ * + I_DriverContext::GetHostName
+ *
  * Revision 1.36  2005/09/07 10:55:37  ssikorsk
  * Added GetColumnNum method to CDB_BaseEnt
  *
