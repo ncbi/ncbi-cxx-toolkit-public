@@ -211,7 +211,7 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
     size_t i = 0;
     
     for(i = 0; i < m_DBList.size(); i++) {
-        const CSeqDB_Path db_path( CSeqDB_BasePath(m_DBList[i]), prot_nucl, 'a', 'l' );
+        const CSeqDB_Path db_path( (CSeqDB_BasePath(m_DBList[i])), prot_nucl, 'a', 'l' );
         
         CSeqDB_Path resolved_path;
         
