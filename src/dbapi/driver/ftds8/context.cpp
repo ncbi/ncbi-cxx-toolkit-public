@@ -85,9 +85,12 @@ extern "C" {
 static CTDSContext* g_pTDSContext = NULL;
 
 
-CTDSContext::CTDSContext(DBINT version) :
-    m_AppName("TDSDriver"), m_HostName(""), m_PacketSize(0), m_TDSVersion(version)
+CTDSContext::CTDSContext(DBINT version) 
+: m_PacketSize(0)
+, m_TDSVersion(version)
 {
+    SetApplicationName("TDSDriver");
+
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
@@ -99,7 +102,7 @@ CTDSContext::CTDSContext(DBINT version) :
     char hostname[256];
     if(gethostname(hostname, 256) == 0) {
         hostname[255]= '\0';
-        m_HostName= hostname;
+        SetHostName( hostname );
     }
 
 #if defined(NCBI_OS_MSWIN)
@@ -276,13 +279,13 @@ CTDSContext::~CTDSContext()
 
 void CTDSContext::TDS_SetApplicationName(const string& app_name)
 {
-    m_AppName = app_name;
+    SetApplicationName( app_name );
 }
 
 
 void CTDSContext::TDS_SetHostName(const string& host_name)
 {
-    m_HostName = host_name;
+    SetHostName( host_name );
 }
 
 
@@ -442,11 +445,11 @@ DBPROCESS* CTDSContext::x_ConnectToServer(const string&   srv_name,
                                           const string&   passwd,
                                           TConnectionMode mode)
 {
-    if (!m_HostName.empty())
-        DBSETLHOST(m_Login, (char*) m_HostName.c_str());
+    if (!GetHostName().empty())
+        DBSETLHOST(m_Login, (char*) GetHostName().c_str());
     if (m_PacketSize > 0)
         DBSETLPACKET(m_Login, m_PacketSize);
-    if (DBSETLAPP (m_Login, (char*) m_AppName.c_str())
+    if (DBSETLAPP (m_Login, (char*) GetApplicationName().c_str())
         != SUCCEED ||
         DBSETLUSER(m_Login, (char*) user_name.c_str())
         != SUCCEED ||
@@ -690,6 +693,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/10/20 13:08:16  ssikorsk
+ * Fixed:
+ * CTDSContext::TDS_SetApplicationName
+ * CTDSContext::TDS_SetHostName
+ *
  * Revision 1.45  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
