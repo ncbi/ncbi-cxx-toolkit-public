@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 2, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 2, 1, 0);
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
@@ -497,6 +497,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/10/20 13:23:14  ssikorsk
+ * Changed interface version from 2.0.0 to 2.1.0
+ *
  * Revision 1.16  2005/09/07 16:09:26  ssikorsk
  * Replaced interface version 1.2.0 with 2.0.0
  *
