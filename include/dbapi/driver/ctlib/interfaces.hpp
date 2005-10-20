@@ -67,7 +67,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTLibContext : public I_DriverContext
 
 public:
     CTLibContext(bool reuse_context = true, CS_INT version = CS_VERSION_110);
+    virtual ~CTLibContext(void);
 
+public:
     //
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
     //
@@ -83,8 +85,6 @@ public:
                                     bool            reusable  = false,
                                     const string&   pool_name = kEmptyStr);
 
-    virtual ~CTLibContext();
-
 
     //
     // CTLIB specific functionality
@@ -93,7 +93,9 @@ public:
     // the following methods are optional (driver will use the default values
     // if not called), the values will affect the new connections only
 
+    // Deprecated. Use SetApplicationName instead.
     virtual void CTLIB_SetApplicationName(const string& a_name);
+    // Deprecated. Use SetHostName instead.
     virtual void CTLIB_SetHostName(const string& host_name);
     virtual void CTLIB_SetPacketSize(CS_INT packet_size);
     virtual void CTLIB_SetLoginRetryCount(CS_INT n);
@@ -101,7 +103,7 @@ public:
 
     virtual bool IsAbleTo(ECapability cpb) const;
 
-    virtual CS_CONTEXT* CTLIB_GetContext() const;
+    virtual CS_CONTEXT* CTLIB_GetContext(void) const;
 
     static bool CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg);
     static bool CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
@@ -111,8 +113,6 @@ public:
 
 private:
     CS_CONTEXT* m_Context;
-    string      m_AppName;
-    string      m_HostName;
     CS_INT      m_PacketSize;
     CS_INT      m_LoginRetryCount;
     CS_INT      m_LoginLoopDelay;
@@ -143,8 +143,10 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public I_Connection
 protected:
     CTL_Connection(CTLibContext* cntx, CS_CONNECTION* con,
                    bool reusable, const string& pool_name);
+    virtual ~CTL_Connection(void);
 
-    virtual bool IsAlive();
+protected:
+    virtual bool IsAlive(void);
 
     virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,
                                           unsigned int    nof_params = 0);
@@ -164,20 +166,18 @@ protected:
                           bool log_it = true);
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
                           bool log_it = true);
-    virtual bool Refresh();
-    virtual const string& ServerName() const;
-    virtual const string& UserName()   const;
-    virtual const string& Password()   const;
-    virtual I_DriverContext::TConnectionMode ConnectMode() const;
-    virtual bool IsReusable() const;
-    virtual const string& PoolName() const;
-    virtual I_DriverContext* Context() const;
+    virtual bool Refresh(void);
+    virtual const string& ServerName(void) const;
+    virtual const string& UserName(void)   const;
+    virtual const string& Password(void)   const;
+    virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
+    virtual bool IsReusable(void) const;
+    virtual const string& PoolName(void) const;
+    virtual I_DriverContext* Context(void) const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
-    virtual void Release();
-
-    virtual ~CTL_Connection();
+    virtual void Release(void);
 
     void DropCmd(CDB_BaseEnt& cmd);
 
@@ -187,7 +187,7 @@ protected:
     // destroing any objects associated with a connection.
     // Returns: true - if succeed
     //          false - if not
-    virtual bool Abort();
+    virtual bool Abort(void);
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
@@ -217,28 +217,29 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_LangCmd : public I_LangCmd
 {
     friend class CTL_Connection;
+    
 protected:
     CTL_LangCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                 const string& lang_query, unsigned int nof_params);
+    virtual ~CTL_LangCmd(void);
 
+protected:
     virtual bool More(const string& query_text);
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
     virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
-    virtual bool Send();
-    virtual bool WasSent() const;
-    virtual bool Cancel();
-    virtual bool WasCanceled() const;
-    virtual CDB_Result* Result();
-    virtual bool HasMoreResults() const;
-    virtual bool HasFailed() const;
-    virtual int  RowCount() const;
-    virtual void DumpResults();
-    virtual void Release();
-
-    virtual ~CTL_LangCmd();
+    virtual bool Send(void);
+    virtual bool WasSent(void) const;
+    virtual bool Cancel(void);
+    virtual bool WasCanceled(void) const;
+    virtual CDB_Result* Result(void);
+    virtual bool HasMoreResults(void) const;
+    virtual bool HasFailed(void) const;
+    virtual int  RowCount(void) const;
+    virtual void DumpResults(void);
+    virtual void Release(void);
 
 private:
-    bool x_AssignParams();
+    bool x_AssignParams(void);
 
     CTL_Connection* m_Connect;
     CS_COMMAND*     m_Cmd;
@@ -260,30 +261,31 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RPCCmd : public I_RPCCmd
 {
     friend class CTL_Connection;
+    
 protected:
     CTL_RPCCmd(CTL_Connection* con, CS_COMMAND* cmd,
                const string& proc_name, unsigned int nof_params);
+    virtual ~CTL_RPCCmd(void);
 
+protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
                            bool out_param = false);
     virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
                           bool out_param = false);
-    virtual bool Send();
-    virtual bool WasSent() const;
-    virtual bool Cancel();
-    virtual bool WasCanceled() const;
-    virtual CDB_Result* Result();
-    virtual bool HasMoreResults() const;
-    virtual bool HasFailed() const;
-    virtual int  RowCount() const;
-    virtual void DumpResults();
+    virtual bool Send(void);
+    virtual bool WasSent(void) const;
+    virtual bool Cancel(void);
+    virtual bool WasCanceled(void) const;
+    virtual CDB_Result* Result(void);
+    virtual bool HasMoreResults(void) const;
+    virtual bool HasFailed(void) const;
+    virtual int  RowCount(void) const;
+    virtual void DumpResults(void);
     virtual void SetRecompile(bool recompile = true);
-    virtual void Release();
-
-    virtual ~CTL_RPCCmd();
+    virtual void Release(void);
 
 private:
-    bool x_AssignParams();
+    bool x_AssignParams(void);
 
     CTL_Connection* m_Connect;
     CS_COMMAND*     m_Cmd;
@@ -306,24 +308,25 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd : public I_CursorCmd
 {
     friend class CTL_Connection;
+    
 protected:
     CTL_CursorCmd(CTL_Connection* conn, CS_COMMAND* cmd,
                   const string& cursor_name, const string& query,
                   unsigned int nof_params, unsigned int fetch_size);
+    virtual ~CTL_CursorCmd(void);
 
+protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-    virtual CDB_Result* Open();
+    virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 				 bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
 					 bool log_it = true);
     virtual bool Delete(const string& table_name);
-    virtual int  RowCount() const;
-    virtual bool Close();
-    virtual void Release();
-
-    virtual ~CTL_CursorCmd();
+    virtual int  RowCount(void) const;
+    virtual bool Close(void);
+    virtual void Release(void);
 
 private:
     bool x_AssignParams(bool just_declare = false);
@@ -351,21 +354,22 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd : public I_BCPInCmd
 {
     friend class CTL_Connection;
+    
 protected:
     CTL_BCPInCmd(CTL_Connection* con, CS_BLKDESC* cmd,
                  const string& table_name, unsigned int nof_columns);
+    virtual ~CTL_BCPInCmd(void);
 
+protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
-    virtual bool SendRow();
-    virtual bool CompleteBatch();
-    virtual bool Cancel();
-    virtual bool CompleteBCP();
-    virtual void Release();
-
-    virtual ~CTL_BCPInCmd();
+    virtual bool SendRow(void);
+    virtual bool CompleteBatch(void);
+    virtual bool Cancel(void);
+    virtual bool CompleteBCP(void);
+    virtual void Release(void);
 
 private:
-    bool x_AssignParams();
+    bool x_AssignParams(void);
 
     CTL_Connection* m_Connect;
     CS_BLKDESC*     m_Cmd;
@@ -392,13 +396,14 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_SendDataCmd : public I_SendDataCmd
 {
     friend class CTL_Connection;
+    
 protected:
     CTL_SendDataCmd(CTL_Connection* con, CS_COMMAND* cmd, size_t nof_bytes);
+    virtual ~CTL_SendDataCmd(void);
 
+protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
-    virtual void   Release();
-
-    virtual ~CTL_SendDataCmd();
+    virtual void   Release(void);
 
 private:
     CTL_Connection* m_Connect;
@@ -420,30 +425,31 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_RowResult : public I_Result
     friend class CTL_CursorCmd;
     friend class CTL_Connection;
     friend class CTL_SendDataCmd;
+    
 protected:
     CTL_RowResult(CS_COMMAND* cmd);
+    virtual ~CTL_RowResult(void);
 
-    virtual EDB_ResType     ResultType() const;
-    virtual unsigned int    NofItems() const;
+protected:
+    virtual EDB_ResType     ResultType(void) const;
+    virtual unsigned int    NofItems(void) const;
     virtual const char*     ItemName    (unsigned int item_num) const;
     virtual size_t          ItemMaxSize (unsigned int item_num) const;
     virtual EDB_Type        ItemDataType(unsigned int item_num) const;
-    virtual bool            Fetch();
-    virtual int             CurrentItemNo() const;
+    virtual bool            Fetch(void);
+    virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor();
-    virtual bool            SkipItem();
+    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual bool            SkipItem(void);
 
     CS_RETCODE my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
 							  CS_VOID* buffer,
 							  CS_INT buflen, CS_INT *outlen);
     CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
 						  CDB_Object* item_buf);
-    virtual ~CTL_RowResult();
-
     // data
     CS_COMMAND*  m_Cmd;
     int          m_CurrItem;
@@ -475,9 +481,12 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ParamResult : public CTL_RowResult
     friend class CTL_Connection;
     friend class CTL_SendDataCmd;
     friend class CTL_CursorCmd;
+    
 protected:
     CTL_ParamResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-    virtual EDB_ResType ResultType() const;
+    
+protected:
+    virtual EDB_ResType ResultType(void) const;
 };
 
 
@@ -488,9 +497,12 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ComputeResult : public CTL_RowResult
     friend class CTL_Connection;
     friend class CTL_SendDataCmd;
     friend class CTL_CursorCmd;
+    
 protected:
     CTL_ComputeResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-    virtual EDB_ResType ResultType() const;
+    
+protected:
+    virtual EDB_ResType ResultType(void) const;
 };
 
 
@@ -501,20 +513,26 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_StatusResult :  public CTL_RowResult
     friend class CTL_Connection;
     friend class CTL_SendDataCmd;
     friend class CTL_CursorCmd;
+    
 protected:
     CTL_StatusResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-    virtual EDB_ResType ResultType() const;
+    
+protected:
+    virtual EDB_ResType ResultType(void) const;
 };
 
 
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorResult :  public CTL_RowResult
 {
     friend class CTL_CursorCmd;
+    
 protected:
     CTL_CursorResult(CS_COMMAND* pCmd) : CTL_RowResult(pCmd) {}
-    virtual EDB_ResType ResultType() const;
-    virtual bool        SkipItem();
-    virtual ~CTL_CursorResult();
+    virtual ~CTL_CursorResult(void);
+    
+protected:
+    virtual EDB_ResType ResultType(void) const;
+    virtual bool        SkipItem(void);
 };
 
 
@@ -533,11 +551,11 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_ITDescriptor : public I_ITDescriptor
     friend class CTL_CursorCmd;
 
 public:
-    virtual int DescriptorType() const;
-    virtual ~CTL_ITDescriptor();
+    virtual int DescriptorType(void) const;
+    virtual ~CTL_ITDescriptor(void);
 
 protected:
-    CTL_ITDescriptor();
+    CTL_ITDescriptor(void);
 
     CS_IODESC m_Desc;
 };
@@ -589,6 +607,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/10/20 13:01:04  ssikorsk
+ * - CTLibContext::m_AppName
+ * - CTLibContext::m_HostName
+ *
  * Revision 1.19  2005/09/07 11:00:07  ssikorsk
  * Added GetColumnNum method
  *
