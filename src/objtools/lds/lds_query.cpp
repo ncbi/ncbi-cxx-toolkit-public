@@ -67,6 +67,8 @@ public:
 
     bool MatchSeqId(const CSeq_id& seq_id_db, const string& candidate_str)
     {
+        if (candidate_str.empty())
+            return false;
         CRef<CSeq_id> seq_id;
         try {
             seq_id.Reset(new CSeq_id(candidate_str));
@@ -107,6 +109,7 @@ protected:
 /// objects(molecules) satisfying the the given set of ids.
 ///
 /// @internal
+///
 class CLDS_FindSeqIdFunctor : public CLDS_FindSeqIdBase
 {
 public:
@@ -115,8 +118,7 @@ public:
                           CLDS_Set*              obj_ids)
     : CLDS_FindSeqIdBase(seqids, obj_ids),
       m_db(db)
-    {
-    }
+    {}
 
     void operator()(SLDS_ObjectDB& dbf)
     {
@@ -140,7 +142,11 @@ public:
         // Check the seqids vector against the primary seq id
         //
         ITERATE (vector<string>, it, m_SeqIds) {
-            if (MatchSeqId(*seq_id_db, *it)) {
+            const string& s = *it;
+            if (s.empty()) { 
+                continue;
+            }
+            if (MatchSeqId(*seq_id_db, s)) {
                 m_ResultSet->set(tse_id ? tse_id : object_id);
                 return;
             }
@@ -166,11 +172,15 @@ public:
         NStr::Tokenize(attr_seq_ids, " ", seq_id_arr, NStr::eMergeDelims);
 
         ITERATE (vector<string>, it, seq_id_arr) {
+            const string& s = *it;
+            if (s.empty()) {
+                continue;
+            }
             CRef<CSeq_id> seq_id_db;
             try {
-                seq_id_db.Reset(new CSeq_id(seq_id_str));
+                seq_id_db.Reset(new CSeq_id(s));
             } catch (CSeqIdException&) {
-                seq_id_db.Reset(new CSeq_id(CSeq_id::e_Local, seq_id_str));
+                seq_id_db.Reset(new CSeq_id(CSeq_id::e_Local, s));
             }
 
             ITERATE (vector<string>, it2, m_SeqIds) {
@@ -269,6 +279,12 @@ protected:
 //
 // CLDS_Query
 
+CLDS_Query::CLDS_Query(CLDS_Database& db)
+: m_DataBase(db),
+  m_db(db.GetTables())
+{}
+
+
 bool CLDS_Query::FindFile(const string& path)
 {
     CBDB_FileCursor cur(m_db.file_db);
@@ -282,46 +298,98 @@ bool CLDS_Query::FindFile(const string& path)
     return false;
 }
 
-void CLDS_Query::FindSequences(const vector<string>& seqids, 
-                               CLDS_Set* obj_ids)
+void CLDS_Query::FindSequence(const string&   seqid, 
+                              CLDS_Set*       obj_ids,
+                              CLDS_Set*       cand_ids,
+                              CSeq_id*        tmp_seqid,
+                              SLDS_SeqIdBase* sbase)
 {
-    CLDS_Set cand_set;
+    auto_ptr<CLDS_Set> tmp_set;
 
-    // pre-screening
-    {{
-    SLDS_SeqIdBase sbase;
-    CRef<CSeq_id> seq_id(new CSeq_id);
+    if (cand_ids == 0) {
+        tmp_set.reset(cand_ids = (new CLDS_Set));
+    }
 
-    CBDB_FileCursor cur_int_idx(m_db.obj_seqid_int_idx);
-    cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
+    CRef<CSeq_id> local_seq_id;
+}
 
-    CBDB_FileCursor cur_txt_idx(m_db.obj_seqid_txt_idx);
-    cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
+
+CLDS_Query::CSequenceFinder::CSequenceFinder(CLDS_Query& query)
+: m_Query(query),
+  m_CurInt_idx(m_Query.m_db.obj_seqid_int_idx),
+  m_CurTxt_idx(m_Query.m_db.obj_seqid_txt_idx),
+  m_SeqId(new CSeq_id),
+  m_CandidateSet(bm::BM_GAP)
+{
+    m_CurInt_idx.SetCondition(CBDB_FileCursor::eEQ);
+    m_CurTxt_idx.SetCondition(CBDB_FileCursor::eEQ);
+}
+
+void CLDS_Query::CSequenceFinder::Find(const string&   seqid, 
+                                       CLDS_Set*       obj_ids)
+{
+    m_CandidateSet.clear();
+    Screen(seqid);
+
+    if (m_CandidateSet.any()) {
+        vector<string> seqids(1);
+        seqids.push_back(seqid);
+        
+        FindInCandidates(seqids, obj_ids);
+    }
+}
+
+void CLDS_Query::CSequenceFinder::Screen(const string&  seqid)
+{
+    bool can_convert = LDS_GetSequenceBase(seqid, &m_SBase, &*m_SeqId);
+    if (can_convert) {
+        Screen(m_SBase);
+    }
+}
+
+void CLDS_Query::CSequenceFinder::Screen(const SLDS_SeqIdBase& sbase)
+{
+    m_Query.ScreenSequence(sbase, &m_CandidateSet, 
+                           m_CurInt_idx, m_CurTxt_idx);
+}
+
+void CLDS_Query::CSequenceFinder::FindInCandidates(
+                                        const vector<string>& seqids, 
+                                        CLDS_Set*             obj_ids)
+{
+    if (m_CandidateSet.any()) {
+        CLDS_FindSeqIdFunctor search_func(m_Query.m_db, seqids, obj_ids);
+
+        CLDS_Set::enumerator en(m_CandidateSet.first());
+        CLDS_Set::enumerator en_end(m_CandidateSet.end());
+
+        BDB_iterate_file(m_Query.m_db.object_db, en, en_end, search_func);
+    }
+}
+
+void CLDS_Query::CSequenceFinder::FindInCandidates(const string& seqid, 
+                                                   CLDS_Set*     obj_ids)
+{
+    if (m_CandidateSet.any()) {
+        vector<string> seqids(1); // ugly and slow... 
+        seqids.push_back(seqid);
+
+        FindInCandidates(seqids, obj_ids);
+    }
+}
+
+
+void CLDS_Query::FindSequences(const vector<string>& seqids, 
+                               CLDS_Set*             obj_ids)
+{
+    CSequenceFinder sfinder(*this);
 
     ITERATE(vector<string>, it, seqids) {
-        const string& seq_id_str = *it;
-        bool can_convert = 
-            LDS_GetSequenceBase(seq_id_str,
-                                &sbase,
-                                &*seq_id);
-        if (can_convert) {
-            ScreenSequence(sbase, &cand_set, cur_int_idx, cur_txt_idx);
-        }
+        const string& seqid = *it;
+        sfinder.Screen(seqid);
     }
 
-    }}
-
-    // search in pre-screened items
-
-    if (cand_set.any()) {
-        CLDS_FindSeqIdFunctor search_func(m_db, seqids, obj_ids);
-
-        CLDS_Set::enumerator en(cand_set.first());
-        CLDS_Set::enumerator en_end(cand_set.end());
-
-        BDB_iterate_file(m_db.object_db, en, en_end, search_func);
-    }
-
+    sfinder.FindInCandidates(seqids, obj_ids);
 }
 
 void CLDS_Query::FindSeqIdList(const vector<string>& seqids, CLDS_Set* obj_ids)
@@ -366,11 +434,13 @@ void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase&    sbase,
 
     int rec_id = 0;
     if (sbase.int_id) {
+        cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
         cur_int_idx.From << sbase.int_id;
         while (cur_int_idx.Fetch() == eBDB_Ok) {
             rec_id = m_db.obj_seqid_int_idx.row_id;
         }
     } else if (!sbase.str_id.empty()) {
+        cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
         cur_txt_idx.From << sbase.str_id;
         while (cur_txt_idx.Fetch() == eBDB_Ok) {
             rec_id = m_db.obj_seqid_txt_idx.row_id;
@@ -380,6 +450,13 @@ void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase&    sbase,
     if (rec_id) {
         obj_ids->set(rec_id);
     }
+}
+
+CLDS_Query::SObjectDescr 
+CLDS_Query::GetObjectDescr(int  id,
+                           bool trace_to_top)
+{ 
+    return GetObjectDescr(m_DataBase.GetObjTypeMap(), id, trace_to_top); 
 }
 
 
@@ -496,6 +573,26 @@ CLDS_Query::GetTopSeqEntry(const map<string, int>& type_map,
 
 }
 
+
+void 
+CLDS_Query::ReportDuplicateObjectSeqId(const string& seqid, 
+                                       int           old_rec_id,
+                                       int           new_rec_id)
+{
+    SObjectDescr old_rec = GetObjectDescr(old_rec_id);
+    SObjectDescr new_rec = GetObjectDescr(new_rec_id);
+
+    string err_msg = 
+        "Duplicate sequence id '" + seqid + "'.";
+    err_msg.append(" Conflicting files: " + old_rec.file_name);
+    err_msg.append("  " + new_rec.file_name);
+
+    ERR_POST(err_msg);
+
+    LDS_THROW(eDuplicateId, err_msg);
+}
+
+
 void CLDS_Query::x_FillDescrObj(SObjectDescr* descr,
                                 const map<string, int>& type_map)
 {
@@ -551,6 +648,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/10/20 15:34:08  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.17  2005/10/12 13:47:30  kuznets
  * #include ncbistre.hpp
  *

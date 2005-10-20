@@ -35,6 +35,7 @@
 #include <objects/seq/Seq_annot.hpp>
 
 #include <objtools/lds/lds.hpp>
+#include <objtools/lds/lds_query.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -42,8 +43,7 @@ BEGIN_SCOPE(objects)
 
 
 // Load top level seq entry.
-CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(SLDS_TablesCollection& lds_db, 
-                                             const map<string, int>& type_map,
+CRef<CSeq_entry> NCBI_LDS_EXPORT LDS_LoadTSE(CLDS_Database&         lds_db,
                                              int object_id,
                                              bool trace_to_top = true);
 
@@ -58,6 +58,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/20 15:33:46  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.5  2005/01/13 17:38:00  kuznets
  * LoadTSE added trace to top level entry option
  *

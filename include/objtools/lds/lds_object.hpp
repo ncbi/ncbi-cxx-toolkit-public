@@ -34,6 +34,7 @@
 #include <corelib/ncbistd.hpp>
 #include <util/format_guess.hpp>
 
+#include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_expt.hpp>
@@ -45,50 +46,57 @@ BEGIN_SCOPE(objects)
 
 class CObjectManager;
 class CScope;
+class CLDS_Database;
 
 //////////////////////////////////////////////////////////////////
-//
-// SLDS_ObjectDB and SLDS_AnnotDB related methods.
-//
+///
+/// SLDS_ObjectDB and SLDS_AnnotDB related methods.
+///
 
 class NCBI_LDS_EXPORT CLDS_Object
 {
 public:
-    CLDS_Object(SLDS_TablesCollection& db, const map<string, int>& obj_map);
+    CLDS_Object(CLDS_Database& db, const map<string, int>& obj_map);
     ~CLDS_Object();
 
-    // Delete all objects living in the specified set of files.
-    // All deleted ids are added to deleted set.
+
+    /// Turn id duplication control.
+    /// When turned ON LDS will throw an excaption if files 
+    /// contain sequences with duplicate ids
+    void ControlDuplicateIds(bool flag = true) { m_ControlDupIds = flag; }
+
+    /// Delete all objects living in the specified set of files.
+    /// All deleted ids are added to deleted set.
     void DeleteCascadeFiles(const CLDS_Set& file_ids, 
                             CLDS_Set* objects_deleted,
                             CLDS_Set* annotations_deleted);
 
-    // Reload all objects in given set of files
+    /// Reload all objects in given set of files
     void UpdateCascadeFiles(const CLDS_Set& file_ids);
 
     void UpdateFileObjects(int file_id,
                            const string& file_name,
                            CFormatGuess::EFormat format);
 
-    // Return max record id in "object" and "annotation" tables. 
-    // Both tables share the same objects sequence numbering.
-    // Function returns 0 if no record were found.
+    /// Return max record id in "object" and "annotation" tables. 
+    /// Both tables share the same objects sequence numbering.
+    /// Function returns 0 if no record were found.
     int FindMaxObjRecId();
 
 protected:
 
-    // Checks if parsed object is a "bio object" (returns TRUE) 
-    // or an annotation. if applicable object_str_id parameter receives
-    // objject or annotation id. (fasta format).
-    // If possible function extracts objects' title and molecule type
-    // (0 - unknown, 1 - NA, 2 - protein)
+    /// Checks if parsed object is a "bio object" (returns TRUE) 
+    /// or an annotation. if applicable object_str_id parameter receives
+    /// objject or annotation id. (fasta format).
+    /// If possible function extracts objects' title and molecule type
+    /// (0 - unknown, 1 - NA, 2 - protein)
     bool IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_info,
                   string* object_str_id, 
                   string* object_title);
 
-    // Save object to the database, return record id.
-    // NOTE: This function recursively finds all objects' parents and saves
-    // the whole genealogy tree (not only the immediate argument).
+    /// Save object to the database, return record id.
+    /// NOTE: This function recursively finds all objects' parents and saves
+    /// the whole genealogy tree (not only the immediate argument).
     int SaveObject(int file_id, 
                    CLDS_CoreObjectsReader* sniffer,
                    CLDS_CoreObjectsReader::SObjectDetails* obj_info);
@@ -114,32 +122,27 @@ private:
 
     friend class CLDS_FastaScanner;
 private:
+    CLDS_Database&          m_DataBase;
     SLDS_TablesCollection&  m_db;
     const map<string, int>& m_ObjTypeMap;
 
-    // Max. id in "object" and "annotation" table
+    /// Max. id in "object" and "annotation" table
     int                     m_MaxObjRecId;
-    CRef<CObjectManager>    m_TSE_Manager;  // OM for top level seq entry
-    CRef<CScope>            m_Scope;        // OM Scope
+    CRef<CObjectManager>    m_TSE_Manager;   ///< OM for top level seq entry
+    CRef<CScope>            m_Scope;         ///< OM Scope
+    bool                    m_ControlDupIds; ///< Control duplicates
 };
 
-/// Indexing base for sequence id, (accession or integer)
-///
-struct SLDS_SeqIdBase
-{
-    int      int_id;
-    string   str_id;
-
-    SLDS_SeqIdBase() : int_id(0) {}
-
-    void Init() { int_id = 0; str_id.erase(); }
-};
 
 class CSeq_id;
 
+struct SLDS_SeqIdBase;
+
+
 /// Extract indexing base out of sequence id
 NCBI_LDS_EXPORT
-void LDS_GetSequenceBase(const CSeq_id& seq_id, SLDS_SeqIdBase* seqid_base);
+void LDS_GetSequenceBase(const CSeq_id&   seq_id, 
+                         SLDS_SeqIdBase*  seqid_base);
 
 /// Extract indexing base out of sequence id
 ///
@@ -160,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/20 15:33:46  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.7  2005/10/12 12:18:04  kuznets
  * Use 64-bit file sizes and offsets
  *

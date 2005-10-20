@@ -42,19 +42,17 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CLDS_Database;
+
 //////////////////////////////////////////////////////////////////
-//
-// SLDS_FileDB related methods.
-//
+///
+/// SLDS_FileDB related methods.
+///
 
 class NCBI_LDS_EXPORT CLDS_File
 {
 public:
-    CLDS_File(SLDS_TablesCollection& lds_tables)
-    : m_db(lds_tables),
-      m_FileDB(lds_tables.file_db),
-      m_MaxRecId(0)
-    {}
+    CLDS_File(CLDS_Database& db);
 
     /// Scan the given directory, calculate timestamp and control sums for 
     /// every file, update "File" database table.
@@ -91,6 +89,7 @@ private:
     CLDS_File& operator=(const CLDS_File&);
 
 private:
+    CLDS_Database&         m_DataBase;
     SLDS_TablesCollection& m_db;
     SLDS_FileDB&           m_FileDB;
     int                    m_MaxRecId;
@@ -103,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/20 15:33:46  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.2  2005/10/12 12:18:04  kuznets
  * Use 64-bit file sizes and offsets
  *

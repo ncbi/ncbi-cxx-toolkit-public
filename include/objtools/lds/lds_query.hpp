@@ -31,6 +31,9 @@
  *
  */
 
+#include <bdb/bdb_cursor.hpp>
+
+#include <objtools/lds/lds.hpp>
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_object.hpp>
@@ -38,6 +41,9 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+struct SLDS_SeqIdBase;
+class CLDS_Database;
 
 //////////////////////////////////////////////////////////////////
 ///
@@ -47,17 +53,79 @@ BEGIN_SCOPE(objects)
 class NCBI_LDS_EXPORT CLDS_Query
 {
 public:
-    CLDS_Query(SLDS_TablesCollection& lds_tables)
-    : m_db(lds_tables)
-    {}
+    CLDS_Query(CLDS_Database& db);
 
     /// Scan the database, find the file, return TRUE if file exists.
     /// Linear scan, no idx optimization.
     bool FindFile(const string& path);
 
+
+    /// Utility class to search sequences
+    class CSequenceFinder
+    {
+    public:
+        CSequenceFinder(CLDS_Query& query);
+
+        /// Find sequence
+        void Find(const string&   seqid, 
+                  CLDS_Set*       obj_ids);
+
+        /// Do sequence screening, new candidates are added(sic!)
+        /// to the internal candidate set
+        ///
+        /// @sa GetCandidates()
+        ///
+        void Screen(const string&   seqid);
+
+        void Screen(const SLDS_SeqIdBase& sbase);
+
+        /// Find sequences using pre-screened candidates
+        void FindInCandidates(const vector<string>& seqids, 
+                              CLDS_Set*             obj_ids);
+
+        void FindInCandidates(const string& seqid, 
+                              CLDS_Set*     obj_ids);
+
+        const CLDS_Set& GetCandidates() const { return m_CandidateSet; }
+        CLDS_Set& GetCandidates() { return m_CandidateSet; }
+
+    private:
+        CSequenceFinder(const CSequenceFinder& finder);
+        CSequenceFinder& operator=(const CSequenceFinder& finder);
+    private:
+        CLDS_Query&     m_Query;
+        CBDB_FileCursor m_CurInt_idx;
+        CBDB_FileCursor m_CurTxt_idx;
+        CRef<CSeq_id>   m_SeqId;
+        CLDS_Set        m_CandidateSet;
+        SLDS_SeqIdBase  m_SBase;
+    };
+
+
+    /// Scan objects database, find sequence, add found ids to
+    /// the result set
+    ///
+    /// @param seqid
+    ///    Sequence id to search for
+    /// @param obj_ids
+    ///    Result set
+    /// @param cand_ids
+    ///    Candidate result set, based on screening
+    ///    (can be NULL)
+    /// @param tmp_seqid
+    ///    Temporary sequence id used for seqid parsing
+    ///    (optional)
+    ///
+    void FindSequence(const string&   seqid, 
+                      CLDS_Set*       obj_ids,
+                      CLDS_Set*       cand_ids = 0,
+                      CSeq_id*        tmp_seqid = 0,
+                      SLDS_SeqIdBase* sbase = 0);
+
     /// Scan the objects database, search for sequences.
     /// All found ids are added to the obj_ids set.
-    void FindSequences(const vector<string>& seqids, CLDS_Set* obj_ids);
+    void FindSequences(const vector<string>& seqids, 
+                       CLDS_Set*             obj_ids);
 
     /// Non-exact search using sequence id index.
     /// All found ids are added to the result set
@@ -94,10 +162,20 @@ public:
                                 int id,
                                 bool trace_to_top = false);
 
+    SObjectDescr GetObjectDescr(int id,
+                                bool trace_to_top = false);
+
+
     /// For a given object scans all parents to find the topmost SeqEntry
     /// (top level bioseq-sets are not taken into account)
     SObjectDescr GetTopSeqEntry(const map<string, int>& type_map, 
                                 int id);
+
+
+    void ReportDuplicateObjectSeqId(const string& seqid, 
+                                    int           old_rec_id,
+                                    int           new_rec_id);
+
 private:
     /// Fills descr based on current fetched m_db.object_db
     void x_FillDescrObj(SObjectDescr* descr, const map<string, int>& type_map);
@@ -105,6 +183,10 @@ private:
     void x_FillDescrAnnot(SObjectDescr* descr, const map<string, int>& type_map);
 
 private:
+    friend class CSequenceQuery;
+
+private:
+    CLDS_Database&         m_DataBase;
     SLDS_TablesCollection& m_db;
 };
 
@@ -114,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/10/20 15:33:46  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.10  2005/10/17 12:19:35  rsmith
  * initialize streampos members.
  *

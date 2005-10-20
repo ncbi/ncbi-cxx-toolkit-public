@@ -42,15 +42,16 @@ CLDS_Management::CLDS_Management(CLDS_Database& db)
 {}
 
 
-void CLDS_Management::SyncWithDir(const string& dir_name, 
-                                  ERecurse recurse,
-                                  EComputeControlSum control_sum)
+void CLDS_Management::SyncWithDir(const string&      dir_name, 
+                                  ERecurse           recurse,
+                                  EComputeControlSum control_sum,
+                                  EDuplicateId       dup_control)
 {
     CLDS_Set files_deleted;
     CLDS_Set files_updated;
     SLDS_TablesCollection& db = m_lds_db.GetTables();
 
-    CLDS_File aFile(db);
+    CLDS_File aFile(m_lds_db);
     bool rec = (recurse == eRecurseSubDirs);
     bool control = (control_sum == eComputeControlSum);
     aFile.SyncWithDir(dir_name, &files_deleted, &files_updated, rec, control);
@@ -58,7 +59,8 @@ void CLDS_Management::SyncWithDir(const string& dir_name,
     CLDS_Set objects_deleted;
     CLDS_Set annotations_deleted;
 
-    CLDS_Object obj(db, m_lds_db.GetObjTypeMap());
+    CLDS_Object obj(m_lds_db, m_lds_db.GetObjTypeMap());
+    obj.ControlDuplicateIds(dup_control == eCheckDuplicates);
     obj.DeleteCascadeFiles(files_deleted, 
                            &objects_deleted, &annotations_deleted);
     obj.UpdateCascadeFiles(files_updated);
@@ -73,7 +75,8 @@ CLDS_Management::OpenCreateDB(const string&      dir_name,
                               const string&      db_name,
                               bool*              is_created,
                               ERecurse           recurse,
-                              EComputeControlSum control_sum)
+                              EComputeControlSum control_sum,
+                              EDuplicateId       dup_control)
 {
     CLDS_Database* db = new CLDS_Database(dir_name, db_name);
     try {
@@ -88,11 +91,21 @@ CLDS_Management::OpenCreateDB(const string&      dir_name,
 
         CLDS_Management admin(*db);
         admin.Create();
-        admin.SyncWithDir(dir_name, recurse, control_sum);
+        admin.SyncWithDir(dir_name, recurse, control_sum, dup_control);
         *is_created = true;
     }
     return db;
 }
+
+CLDS_Database* 
+CLDS_Management::OpenDB(const string& dir_name,
+                        const string& db_name)
+{
+    CLDS_Database* db = new CLDS_Database(dir_name, db_name);
+    db->Open();
+    return db;
+}
+
 
 void CLDS_Management::Create() 
 { 
@@ -140,6 +153,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/20 15:34:08  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.2  2005/10/06 16:17:27  kuznets
  * Implemented SeqId index
  *

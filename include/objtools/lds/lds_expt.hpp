@@ -50,7 +50,8 @@ public:
         eNotImplemented,
         eInvalidDataType,
         eCannotCreateDir,
-        eNull
+        eNull,
+        eDuplicateId
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -63,6 +64,7 @@ public:
         case eWrongEntry:        return "eWrongEntry";
         case eInvalidDataType:   return "eInvalidDataType";
         case eCannotCreateDir:   return "eCannotCreateDir";
+        case eDuplicateId:       return "eDuplicateId";
         default:                 return  CException::GetErrCodeString();
         }
     }
@@ -82,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/20 15:33:46  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.6  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()

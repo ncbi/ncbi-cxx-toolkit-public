@@ -42,9 +42,17 @@
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
 #include <objtools/lds/lds_query.hpp>
+#include <objtools/lds/lds.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+CLDS_File::CLDS_File(CLDS_Database& db)
+: m_DataBase(db), 
+  m_db(db.GetTables()),
+  m_FileDB(m_db.file_db),
+  m_MaxRecId(0)
+{}
 
 
 void CLDS_File::SyncWithDir(const string& path, 
@@ -107,7 +115,7 @@ void CLDS_File::x_SyncWithDir(const string& path,
         LOG_POST(Info << "LDS: scanning " << path);
     }
 
-    CLDS_Query lds_query(m_db);
+    CLDS_Query lds_query(m_DataBase);
     CChecksum checksum(CChecksum::eCRC32);
 
 
@@ -298,6 +306,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/20 15:34:08  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.4  2005/10/12 12:18:15  kuznets
  * Use 64-bit file sizes and offsets
  *

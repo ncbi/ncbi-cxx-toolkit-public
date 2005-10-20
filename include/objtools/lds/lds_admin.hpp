@@ -64,6 +64,13 @@ public:
         eComputeControlSum
     };
 
+    /// Duplicate ids handling
+    enum EDuplicateId {
+        eCheckDuplicates,
+        eIgnoreDuplicates
+    };
+
+
     /// Syncronize LDS database content with directory. 
     /// The main workhorse function.
     /// Function will do format guessing, files parsing, etc
@@ -77,23 +84,31 @@ public:
     ///   control sum computation
     void SyncWithDir(const string&      dir_name, 
                      ERecurse           recurse = eRecurseSubDirs,
-                     EComputeControlSum control_sum = eComputeControlSum);
+                     EComputeControlSum control_sum = eComputeControlSum,
+                     EDuplicateId       dup_control = eIgnoreDuplicates);
 
-    // Function tries to open the database, if the database does not exist
-    // creates it and loads all the data.
-    // Return pointer on new CLDS_Database object 
-    // (caller is responsible for the destruction).
-    // is_created parameter receives TRUE if the database was created by 
-    // the method.
+
+    /// Function tries to open the database, if the database does not exist
+    /// creates it and loads all the data.
+    /// Return pointer on new CLDS_Database object 
+    /// (caller is responsible for the destruction).
+    /// is_created parameter receives TRUE if the database was created by 
+    /// the method.
     static CLDS_Database* 
-        OpenCreateDB(const string& dir_name,
-                     const string& db_name,
-                     bool*         is_created,
-                     ERecurse recurse = eRecurseSubDirs,
-                     EComputeControlSum control_sum = eComputeControlSum);
+        OpenCreateDB(const string&      dir_name,
+                     const string&      db_name,
+                     bool*              is_created,
+                     ERecurse           recurse = eRecurseSubDirs,
+                     EComputeControlSum control_sum = eComputeControlSum,
+                     EDuplicateId       dup_control = eIgnoreDuplicates);
+
+    /// Open the database. Throws an exception if the database cannot be open
+    static CLDS_Database* 
+        OpenDB(const string& dir_name,
+               const string& db_name);
 
 private:
-    CLDS_Database&   m_lds_db; // LDS database object
+    CLDS_Database&   m_lds_db;        // LDS database object
 };
 
 END_SCOPE(objects)
@@ -103,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/20 15:33:46  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.1  2005/09/19 14:39:37  kuznets
  * Merjing lds admin and lds libs together
  *

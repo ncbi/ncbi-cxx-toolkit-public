@@ -243,6 +243,10 @@ void CLDS_Database::LoadTypeMap()
 }
 
 
+
+
+
+
 CLDS_DatabaseHolder::CLDS_DatabaseHolder(CLDS_Database* db) 
 {
     if (db) {
@@ -288,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/10/20 15:34:08  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.20  2005/10/06 16:17:27  kuznets
  * Implemented SeqId index
  *

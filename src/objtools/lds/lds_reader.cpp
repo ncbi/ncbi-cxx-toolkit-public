@@ -53,12 +53,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db, 
-                             const map<string, int>& type_map,
-                             int object_id,
-                             bool trace_to_top)
+CRef<CSeq_entry> 
+LDS_LoadTSE(CLDS_Database& lds_db, 
+            int            object_id,
+            bool           trace_to_top)
 {
-    CLDS_Query query(db);
+    const map<string, int>& type_map = lds_db.GetObjTypeMap();
+
+    CLDS_Query query(lds_db);
     CLDS_Query::SObjectDescr obj_descr = 
         query.GetObjectDescr(type_map, object_id, trace_to_top);
 
@@ -178,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/10/20 15:34:08  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.10  2005/10/12 12:18:15  kuznets
  * Use 64-bit file sizes and offsets
  *

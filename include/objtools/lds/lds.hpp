@@ -34,7 +34,6 @@
 #include <corelib/ncbiobj.hpp>
 #include <objtools/lds/lds_db.hpp>
 #include <objtools/lds/lds_expt.hpp>
-#include <objtools/lds/lds_query.hpp>
 
 
 #include <map>
@@ -43,9 +42,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 //////////////////////////////////////////////////////////////////
-//
-// LDS database.
-//
+///
+/// LDS database.
+///
 
 class NCBI_LDS_EXPORT CLDS_Database
 {
@@ -88,6 +87,7 @@ public:
 
     const string& GetDirName(void) const { return m_LDS_DirName; }
     const string& GetDbName(void) const { return m_LDS_DbName; }
+
 private:
     CLDS_Database(const CLDS_Database&);
     CLDS_Database& operator=(const CLDS_Database&);
@@ -102,9 +102,9 @@ private:
 };
 
 //////////////////////////////////////////////////////////////////
-//
-// LDS database incapsulated into CObject compatible container
-//
+///
+/// LDS database incapsulated into CObject compatible container
+///
 
 class NCBI_LDS_EXPORT CLDS_DatabaseHolder : public CObject
 {
@@ -138,6 +138,18 @@ private:
     vector<CLDS_Database*> m_DataBases;
 };
 
+/// Indexing base for sequence id, (accession or integer)
+///
+struct SLDS_SeqIdBase
+{
+    int      int_id;
+    string   str_id;
+
+    SLDS_SeqIdBase() : int_id(0) {}
+
+    void Init() { int_id = 0; str_id.erase(); }
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -145,6 +157,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/10/20 15:33:46  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.22  2004/07/21 15:51:24  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added

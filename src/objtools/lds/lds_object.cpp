@@ -49,9 +49,12 @@
 #include <bdb/bdb_util.hpp>
 
 #include <objtools/readers/fasta.hpp>
+
 #include <objtools/lds/lds_object.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
+#include <objtools/lds/lds.hpp>
+#include <objtools/lds/lds_query.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -151,11 +154,13 @@ void CLDS_FastaScanner::EntryFound(CRef<CSeq_entry> se,
 
 
 
-CLDS_Object::CLDS_Object(SLDS_TablesCollection& db, 
+CLDS_Object::CLDS_Object(CLDS_Database& db, 
                          const map<string, int>& obj_map)
-: m_db(db),
+: m_DataBase(db),
+  m_db(db.GetTables()),
   m_ObjTypeMap(obj_map),
-  m_MaxObjRecId(0)
+  m_MaxObjRecId(0),
+  m_ControlDupIds(false)
 {}
 
 
@@ -863,25 +868,36 @@ bool LDS_GetSequenceBase(const string&   seq_id_str,
 class CLDS_BuildIdIdx
 {
 public:
-    CLDS_BuildIdIdx(SLDS_TablesCollection& db)
-        : m_db(db),
-          m_SeqId(new CSeq_id)
-    {}
+    CLDS_BuildIdIdx(CLDS_Database& db, bool control_dups)
+    : m_db(db),
+        m_coll(db.GetTables()),
+        m_SeqId(new CSeq_id),
+        m_ControlDups(control_dups),
+        m_Query(new CLDS_Query(db)),
+        m_ObjIds(bm::BM_GAP)
+    {
+        if (m_ControlDups) {
+            m_SequenceFind.reset(new CLDS_Query::CSequenceFinder(*m_Query));
+        }
+    }
 
     void operator()(SLDS_ObjectDB& dbf)
     {
         int object_id = dbf.object_id; // PK
 
         if (!dbf.primary_seqid.IsNull()) {
-            dbf.primary_seqid.ToString(m_SeqId_Str);
+            dbf.primary_seqid.ToString(m_PriSeqId_Str);
 
-            x_AddToIdx(m_SeqId_Str, object_id);
+            x_AddToIdx(m_PriSeqId_Str, object_id);
 
             dbf.seq_ids.ToString(m_SeqId_Str);
             vector<string> seq_id_arr;
             NStr::Tokenize(m_SeqId_Str, " ", seq_id_arr, NStr::eMergeDelims);
             ITERATE (vector<string>, it, seq_id_arr) {
                 const string& seq_id_str = *it;
+                if (NStr::CompareNocase(seq_id_str,m_PriSeqId_Str)==0) {
+                    continue;
+                }
                 x_AddToIdx(seq_id_str, object_id);
             }
         }
@@ -890,35 +906,60 @@ public:
 private:
     void x_AddToIdx(const string& seq_id_str, int rec_id)
     {
-        SLDS_SeqIdBase sbase;
         bool can_convert = 
-            LDS_GetSequenceBase(seq_id_str, &sbase, &*m_SeqId);
+            LDS_GetSequenceBase(seq_id_str, &m_SBase, &*m_SeqId);
         if (can_convert) {
-            x_AddToIdx(sbase, rec_id);
+            if (m_ControlDups) {
+                _ASSERT(m_SequenceFind.get());
+                CLDS_Set& cand = m_SequenceFind->GetCandidates();
+                cand.clear();
+                m_SequenceFind->Screen(m_SBase);
+                if (cand.any()) {
+                    CLDS_Set dup_ids(bm::BM_GAP);
+                    m_SequenceFind->FindInCandidates(seq_id_str, &dup_ids);
+
+                    if (dup_ids.any()) {
+                        unsigned id = dup_ids.get_first();
+                        m_Query->ReportDuplicateObjectSeqId(seq_id_str,
+                                                            id, 
+                                                            rec_id);
+                    }
+                }
+            }
+
+            x_AddToIdx(m_SBase, rec_id);
         }
     }
 
     void x_AddToIdx(const SLDS_SeqIdBase& sbase, int rec_id)
     {
         if (sbase.int_id) {
-            m_db.obj_seqid_int_idx.id = sbase.int_id;
-            m_db.obj_seqid_int_idx.row_id = rec_id;
-            m_db.obj_seqid_int_idx.Insert();
+            m_coll.obj_seqid_int_idx.id = sbase.int_id;
+            m_coll.obj_seqid_int_idx.row_id = rec_id;
+            m_coll.obj_seqid_int_idx.Insert();
         } 
         else if (!sbase.str_id.empty()) {
-            m_db.obj_seqid_txt_idx.id = sbase.str_id;
-            m_db.obj_seqid_txt_idx.row_id = rec_id;
-            m_db.obj_seqid_txt_idx.Insert();
+            m_coll.obj_seqid_txt_idx.id = sbase.str_id;
+            m_coll.obj_seqid_txt_idx.row_id = rec_id;
+            m_coll.obj_seqid_txt_idx.Insert();
         }
     }
+
 private:
     CLDS_BuildIdIdx(const CLDS_BuildIdIdx&);
     CLDS_BuildIdIdx& operator=(const CLDS_BuildIdIdx&);
 
 private:
-    SLDS_TablesCollection& m_db;
+    CLDS_Database&         m_db;
+    SLDS_TablesCollection& m_coll;
+    string                 m_PriSeqId_Str;
     string                 m_SeqId_Str;
     CRef<CSeq_id>          m_SeqId;
+    SLDS_SeqIdBase         m_SBase;
+    bool                   m_ControlDups; ///< Control id duplicates
+    auto_ptr<CLDS_Query>                  m_Query;
+    auto_ptr<CLDS_Query::CSequenceFinder> m_SequenceFind;
+    CLDS_Set               m_ObjIds;  ///< id set for duplicate search
 };
 
 void CLDS_Object::BuildSeqIdIdx()
@@ -928,7 +969,7 @@ void CLDS_Object::BuildSeqIdIdx()
 
     LOG_POST(Info << "Building sequence id index on objects...");
 
-    CLDS_BuildIdIdx func(m_db);
+    CLDS_BuildIdIdx func(m_DataBase, m_ControlDupIds);
     BDB_iterate_file(m_db.object_db, func);
 }
 
@@ -939,6 +980,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/20 15:34:08  kuznets
+ * Implemented duplicate id check
+ *
  * Revision 1.6  2005/10/12 12:18:15  kuznets
  * Use 64-bit file sizes and offsets
  *
