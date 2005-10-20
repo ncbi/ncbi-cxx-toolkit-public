@@ -93,8 +93,18 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
     for (ch = is.rdbuf()->sbumpc();  !CT_EQ_INT_TYPE(ch, CT_EOF);
          ch = is.rdbuf()->sbumpc()) {
         i++;
-        if (delims.find(CT_TO_CHAR_TYPE(ch)) != NPOS)
+        if (delims.find(CT_TO_CHAR_TYPE(ch)) != NPOS) {
+            // Special case -- if two different delimiters are back to
+            // back, treat them as a single delimiter (necessary for
+            // correct handling of DOS-style CRLF endings).
+            CT_INT_TYPE next = is.rdbuf()->sgetc();
+            if ( !CT_EQ_INT_TYPE(next, CT_EOF)
+                &&  delims.find(CT_TO_CHAR_TYPE(next)) != NPOS
+                &&  !CT_EQ_INT_TYPE(next, ch) ) {
+                is.rdbuf()->sbumpc();
+            }
             break;
+        }
         if (i == end) {
             is.clear(NcbiFailbit | is.rdstate());      
             break;
@@ -400,6 +410,11 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/10/20 17:33:19  ucko
+ * Add a special case to the multidelimiter version of NcbiGetline:
+ * if two different delimiters are back to back, treat them as a single
+ * delimiter (necessary for correct handling of DOS-style CRLF endings).
+ *
  * Revision 1.41  2005/10/14 18:51:49  ucko
  * Clean NcbiStreamposToInt8 up slightly.
  *
