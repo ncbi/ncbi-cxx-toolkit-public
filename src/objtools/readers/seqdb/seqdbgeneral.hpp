@@ -244,10 +244,10 @@ public:
     
     int FindLastOf(char ch) const
     {
-        const char * p = (char*) memrchr(m_Begin, ch, m_End-m_Begin);
-        
-        if (p) {
-            return p - m_Begin;
+        for (const char * p = m_End - 1;  p >= m_Begin;  --p) {
+            if (*p == ch) {
+                return p - m_Begin;
+            }
         }
         
         return -1;
