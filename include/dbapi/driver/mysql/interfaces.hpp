@@ -62,7 +62,9 @@ class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQLContext : public I_DriverContext
 
 public:
     CMySQLContext();
+    virtual ~CMySQLContext();
 
+public:
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
@@ -75,8 +77,6 @@ public:
                                     const string&   pool_name = kEmptyStr);
 
     virtual bool IsAbleTo(ECapability cpb) const;
-
-    virtual ~CMySQLContext();
 };
 
 
@@ -95,9 +95,9 @@ protected:
                       const string&  srv_name,
                       const string&  user_name,
                       const string&  passwd);
-
     virtual ~CMySQL_Connection();
 
+protected:
     virtual bool IsAlive();
 
     virtual CDB_LangCmd*     LangCmd(const string& lang_query,
@@ -169,6 +169,7 @@ protected:
                    unsigned int       nof_params);
     virtual ~CMySQL_LangCmd();
 
+protected:
     virtual bool        More(const string& query_text);
     virtual bool        BindParam(const string& param_name,
                                   CDB_Object*   param_ptr);
@@ -224,6 +225,7 @@ protected:
     CMySQL_RowResult(CMySQL_Connection* conn);
     virtual ~CMySQL_RowResult();
 
+protected:
     virtual EDB_ResType     ResultType() const;
     virtual unsigned int    NofItems() const;
     virtual const char*     ItemName(unsigned int item_num) const;
@@ -273,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/20 12:58:14  ssikorsk
+ * Code reformatting
+ *
  * Revision 1.14  2005/09/07 11:00:07  ssikorsk
  * Added GetColumnNum method
  *

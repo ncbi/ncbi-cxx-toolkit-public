@@ -66,7 +66,9 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Reporter
 public:
     CODBC_Reporter(CDBHandlerStack* hs, SQLSMALLINT ht, SQLHANDLE h) :
         m_HStack(hs), m_HType(ht), m_Handle(h) {}
-    void ReportErrors();
+    
+public:
+    void ReportErrors(void);
     void SetHandlerStack(CDBHandlerStack* hs) {
         m_HStack= hs;
     }
@@ -76,8 +78,11 @@ public:
 	void SetHandleType(SQLSMALLINT ht) {
 		m_HType= ht;
 	}
+    
 private:
-    CODBC_Reporter();
+    CODBC_Reporter(void);
+    
+private:
     CDBHandlerStack* m_HStack;
     SQLHANDLE m_Handle;
     SQLSMALLINT m_HType;
@@ -95,7 +100,9 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public I_DriverContext
 
 public:
     CODBCContext(SQLINTEGER version = SQL_OV_ODBC3, bool use_dsn= false);
+    virtual ~CODBCContext(void);
 
+public:
     //
     // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
     //
@@ -113,8 +120,6 @@ public:
 
     virtual bool IsAbleTo(ECapability cpb) const {return false;}
 
-    virtual ~CODBCContext();
-
 
     //
     // ODBC specific functionality
@@ -125,8 +130,7 @@ public:
 
     virtual void ODBC_SetPacketSize(SQLUINTEGER packet_size);
 
-    virtual SQLHENV ODBC_GetContext() const;
-
+    virtual SQLHENV ODBC_GetContext(void) const;
 
 private:
     SQLHENV     m_Context;
@@ -164,8 +168,10 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
 protected:
     CODBC_Connection(CODBCContext* cntx, SQLHDBC con,
 		     bool reusable, const string& pool_name);
+    virtual ~CODBC_Connection(void);
 
-    virtual bool IsAlive();
+protected:
+    virtual bool IsAlive(void);
 
     virtual CDB_LangCmd*     LangCmd     (const string&   lang_query,
                                           unsigned int    nof_params = 0);
@@ -185,20 +191,18 @@ protected:
                           bool log_it = true);
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text&  txt,
                           bool log_it = true);
-    virtual bool Refresh();
-    virtual const string& ServerName() const;
-    virtual const string& UserName()   const;
-    virtual const string& Password()   const;
-    virtual I_DriverContext::TConnectionMode ConnectMode() const;
-    virtual bool IsReusable() const;
-    virtual const string& PoolName() const;
-    virtual I_DriverContext* Context() const;
+    virtual bool Refresh(void);
+    virtual const string& ServerName(void) const;
+    virtual const string& UserName(void)   const;
+    virtual const string& Password(void)   const;
+    virtual I_DriverContext::TConnectionMode ConnectMode(void) const;
+    virtual bool IsReusable(void) const;
+    virtual const string& PoolName(void) const;
+    virtual I_DriverContext* Context(void) const;
     virtual void PushMsgHandler(CDB_UserHandler* h);
     virtual void PopMsgHandler (CDB_UserHandler* h);
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp);
-    virtual void Release();
-
-    virtual ~CODBC_Connection();
+    virtual void Release(void);
 
     void ODBC_SetTimeout(SQLUINTEGER nof_secs);
     void ODBC_SetTextImageSize(SQLUINTEGER nof_bytes);
@@ -214,7 +218,7 @@ protected:
     // destroing any objects associated with a connection.
     // Returns: true - if succeed
     //          false - if not
-    virtual bool Abort();
+    virtual bool Abort(void);
 
 private:
     bool x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Reporter& rep);
@@ -255,26 +259,26 @@ protected:
         const string& lang_query,
         unsigned int nof_params
         );
+    virtual ~CODBC_LangCmd(void);
 
+protected:
     virtual bool More(const string& query_text);
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
     virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
-    virtual bool Send();
-    virtual bool WasSent() const;
-    virtual bool Cancel();
-    virtual bool WasCanceled() const;
-    virtual CDB_Result* Result();
-    virtual bool HasMoreResults() const;
-    virtual bool HasFailed() const;
-    virtual int  RowCount() const;
-    virtual void DumpResults();
-    virtual void Release();
-
-    virtual ~CODBC_LangCmd();
+    virtual bool Send(void);
+    virtual bool WasSent(void) const;
+    virtual bool Cancel(void);
+    virtual bool WasCanceled(void) const;
+    virtual CDB_Result* Result(void);
+    virtual bool HasMoreResults(void) const;
+    virtual bool HasFailed(void) const;
+    virtual int  RowCount(void) const;
+    virtual void DumpResults(void);
+    virtual void Release(void);
 
 private:
     bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER* indicator);
-    bool xCheck4MoreResults();
+    bool xCheck4MoreResults(void);
 
     CODBC_Connection* m_Connect;
     SQLHSTMT          m_Cmd;
@@ -297,32 +301,33 @@ private:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd : public I_RPCCmd
 {
     friend class CODBC_Connection;
+    
 protected:
     CODBC_RPCCmd(CODBC_Connection* con, SQLHSTMT cmd,
                const string& proc_name, unsigned int nof_params);
+    virtual ~CODBC_RPCCmd(void);
 
+protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr,
                            bool out_param = false);
     virtual bool SetParam(const string& param_name, CDB_Object* param_ptr,
                           bool out_param = false);
-    virtual bool Send();
-    virtual bool WasSent() const;
-    virtual bool Cancel();
-    virtual bool WasCanceled() const;
-    virtual CDB_Result* Result();
-    virtual bool HasMoreResults() const;
-    virtual bool HasFailed() const;
-    virtual int  RowCount() const;
-    virtual void DumpResults();
+    virtual bool Send(void);
+    virtual bool WasSent(void) const;
+    virtual bool Cancel(void);
+    virtual bool WasCanceled(void) const;
+    virtual CDB_Result* Result(void);
+    virtual bool HasMoreResults(void) const;
+    virtual bool HasFailed(void) const;
+    virtual int  RowCount(void) const;
+    virtual void DumpResults(void);
     virtual void SetRecompile(bool recompile = true);
-    virtual void Release();
-
-    virtual ~CODBC_RPCCmd();
+    virtual void Release(void);
 
 private:
     bool x_AssignParams(string& cmd, string& q_exec, string& q_select,
 		CMemPot& bind_guard, SQLINTEGER* indicator);
-    bool xCheck4MoreResults();
+    bool xCheck4MoreResults(void);
 
     CODBC_Connection* m_Connect;
     SQLHSTMT          m_Cmd;
@@ -347,24 +352,25 @@ private:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd : public I_CursorCmd
 {
     friend class CODBC_Connection;
+    
 protected:
     CODBC_CursorCmd(CODBC_Connection* conn, SQLHSTMT cmd,
                   const string& cursor_name, const string& query,
                   unsigned int nof_params);
+    virtual ~CODBC_CursorCmd(void);
 
+protected:
     virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
-    virtual CDB_Result* Open();
+    virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
 				 bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
 					 bool log_it = true);
     virtual bool Delete(const string& table_name);
-    virtual int  RowCount() const;
-    virtual bool Close();
-    virtual void Release();
-
-    virtual ~CODBC_CursorCmd();
+    virtual int  RowCount(void) const;
+    virtual bool Close(void);
+    virtual void Release(void);
 
 private:
     bool x_AssignParams(bool just_declare = false);
@@ -394,18 +400,19 @@ private:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd : public I_BCPInCmd
 {
     friend class CODBC_Connection;
+    
 protected:
     CODBC_BCPInCmd(CODBC_Connection* con, SQLHDBC cmd,
                  const string& table_name, unsigned int nof_columns);
+    virtual ~CODBC_BCPInCmd(void);
 
+protected:
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
-    virtual bool SendRow();
-    virtual bool CompleteBatch();
-    virtual bool Cancel();
-    virtual bool CompleteBCP();
-    virtual void Release();
-
-    virtual ~CODBC_BCPInCmd();
+    virtual bool SendRow(void);
+    virtual bool CompleteBatch(void);
+    virtual bool Cancel(void);
+    virtual bool CompleteBCP(void);
+    virtual void Release(void);
 
 private:
     bool x_AssignParams(void* p);
@@ -431,17 +438,19 @@ private:
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd : public I_SendDataCmd
 {
     friend class CODBC_Connection;
+    
 protected:
     CODBC_SendDataCmd(CODBC_Connection* con, SQLHSTMT cmd, CDB_ITDescriptor& descr,
                       size_t nof_bytes, bool logit);
+    virtual ~CODBC_SendDataCmd(void);
 
+protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
-    virtual void   Release();
+    virtual void   Release(void);
 
-    virtual ~CODBC_SendDataCmd();
 
 private:
-    void xCancel();
+    void xCancel(void);
     CODBC_Connection* m_Connect;
     SQLHSTMT          m_Cmd;
     CODBC_Reporter    m_Reporter;
@@ -461,6 +470,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public I_Result
     friend class CODBC_RPCCmd;
     friend class CODBC_CursorCmd;
     friend class CODBC_Connection;
+    
 protected:
     CODBC_RowResult(
         SQLSMALLINT nof_cols,
@@ -468,29 +478,29 @@ protected:
         CODBC_Reporter& r,
         int* row_count
         );
+    virtual ~CODBC_RowResult(void);
 
-    virtual EDB_ResType     ResultType() const;
-    virtual unsigned int    NofItems() const;
+protected:
+    virtual EDB_ResType     ResultType(void) const;
+    virtual unsigned int    NofItems(void) const;
     virtual const char*     ItemName    (unsigned int item_num) const;
     virtual size_t          ItemMaxSize (unsigned int item_num) const;
     virtual EDB_Type        ItemDataType(unsigned int item_num) const;
-    virtual bool            Fetch();
-    virtual int             CurrentItemNo() const;
+    virtual bool            Fetch(void);
+    virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buf = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor();
+    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
     CDB_ITDescriptor* GetImageOrTextDescriptor(int item_no,
                                                const string& cond);
-    virtual bool            SkipItem();
-
-    virtual ~CODBC_RowResult();
+    virtual bool            SkipItem(void);
 
 	int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
 		SQLINTEGER buffer_size);
     CDB_Object* xLoadItem(CDB_Object* item_buf);
-    CDB_Object* xMakeItem();
+    CDB_Object* xMakeItem(void);
 
 private:
     // data
@@ -527,6 +537,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_StatusResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
     friend class CODBC_Connection;
+    
 protected:
     CODBC_StatusResult(
         SQLHSTMT cmd,
@@ -535,14 +546,17 @@ protected:
         : CODBC_RowResult(1, cmd, r, NULL)
     {
     }
-    virtual EDB_ResType ResultType() const;
-    virtual ~CODBC_StatusResult();
+    virtual ~CODBC_StatusResult(void);
+    
+protected:
+    virtual EDB_ResType ResultType(void) const;
 };
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_ParamResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
     friend class CODBC_Connection;
+    
 protected:
     CODBC_ParamResult(
         SQLSMALLINT nof_cols,
@@ -552,30 +566,34 @@ protected:
         : CODBC_RowResult(nof_cols, cmd, r, NULL)
     {
     }
-    virtual EDB_ResType ResultType() const;
-    virtual ~CODBC_ParamResult();
+    virtual ~CODBC_ParamResult(void);
+    
+protected:
+    virtual EDB_ResType ResultType(void) const;
 };
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorResult : public I_Result
 {
     friend class CODBC_CursorCmd;
+    
 protected:
     CODBC_CursorResult(CODBC_LangCmd* cmd);
-    virtual EDB_ResType     ResultType() const;
-    virtual unsigned int    NofItems() const;
+    virtual ~CODBC_CursorResult(void);
+
+protected:
+    virtual EDB_ResType     ResultType(void) const;
+    virtual unsigned int    NofItems(void) const;
     virtual const char*     ItemName    (unsigned int item_num) const;
     virtual size_t          ItemMaxSize (unsigned int item_num) const;
     virtual EDB_Type        ItemDataType(unsigned int item_num) const;
-    virtual bool            Fetch();
-    virtual int             CurrentItemNo() const;
+    virtual bool            Fetch(void);
+    virtual int             CurrentItemNo(void) const;
     virtual int             GetColumnNum(void) const;
     virtual CDB_Object*     GetItem(CDB_Object* item_buff = 0);
     virtual size_t          ReadItem(void* buffer, size_t buffer_size,
                                      bool* is_null = 0);
-    virtual I_ITDescriptor* GetImageOrTextDescriptor();
-    virtual bool            SkipItem();
-
-    virtual ~CODBC_CursorResult();
+    virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
+    virtual bool            SkipItem(void);
 
     // data
     CODBC_LangCmd* m_Cmd;
@@ -608,6 +626,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/10/20 12:58:47  ssikorsk
+ * Code reformatting
+ *
  * Revision 1.12  2005/09/07 11:00:08  ssikorsk
  * Added GetColumnNum method
  *

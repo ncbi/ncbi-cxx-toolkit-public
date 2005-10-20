@@ -57,15 +57,18 @@ class C_GWLib_MsgCallback;
 class CGW_Base
 {
   friend class CGW_Connection;
+  
+protected:
+    ~CGW_Base(void)
+    {
+      comprot_void("GWLib:Base:delete",remoteObj);
+    }
+    
 protected:
   int remoteObj;
-  virtual void Release()
+  virtual void Release(void)
   {
     comprot_void("GWLib:Base:Release",remoteObj);
-  }
-  ~CGW_Base()
-  {
-    comprot_void("GWLib:Base:delete",remoteObj);
   }
 
   int xSend(const char* rpc_name, CRLObjPairs* boundObjects);
@@ -76,9 +79,16 @@ protected:
 class CGWContext : public I_DriverContext
 {
   int remoteObj;
+  
 public:
   CGWContext(CSSSConnection& sssConnection);
+  virtual ~CGWContext(void)
+  {
+    // cerr << "~CGWContext()\n";
+    comprot_void( "GWLib:Context:delete", remoteObj );
+  }
 
+public:
   virtual bool IsAbleTo(ECapability cpb) const
   {
     return comprot_bool1( "GWLib:Context:IsAbleTo", remoteObj, (int*)&cpb );
@@ -100,12 +110,6 @@ public:
   virtual unsigned int NofConnections(const string& srv_name = kEmptyStr) const
   {
     return (unsigned int)(comprot_int1( "GWLib:Context:NofConnections", remoteObj, srv_name.c_str() ));
-  }
-
-  virtual ~CGWContext()
-  {
-    // cerr << "~CGWContext()\n";
-    comprot_void( "GWLib:Context:delete", remoteObj );
   }
 
 
@@ -135,26 +139,27 @@ class CGW_Connection : public I_Connection, CGW_Base
   friend class C_GWLib_MsgCallback;
 
 protected:
+    CGW_Connection(CGWContext* localContext_arg, int remoteObj_arg)
+    {
+      localContext = localContext_arg;
+      remoteObj    = remoteObj_arg;
+      vars = new SConnectionVars;
+    }
+
+    // virtual
+    ~CGW_Connection(void)
+    {
+      delete vars;
+
+      // Free server-side MsgHandler
+      comprot_void("GWLib:Connection:delete",remoteObj);
+    }
+
+protected:
   CGWContext* localContext;
   SConnectionVars* vars;
 
-  CGW_Connection(CGWContext* localContext_arg, int remoteObj_arg)
-  {
-    localContext = localContext_arg;
-    remoteObj    = remoteObj_arg;
-    vars = new SConnectionVars;
-  }
-
-  // virtual
-  ~CGW_Connection()
-  {
-    delete vars;
-
-    // Free server-side MsgHandler
-    comprot_void("GWLib:Connection:delete",remoteObj);
-  }
-
-  virtual bool IsAlive()
+  virtual bool IsAlive(void)
   {
     return comprot_bool( "GWLib:Connection:IsAlive", remoteObj );
   }
@@ -174,27 +179,27 @@ protected:
     size_t          data_size,
     bool            log_it = true);
 
-  virtual bool Refresh()
+  virtual bool Refresh(void)
   {
     return comprot_bool("GWLib:Connection:Refresh", remoteObj);
   }
 
-  virtual const string& ServerName() const;
-  virtual const string& UserName()   const;
-  virtual const string& Password()   const;
-  virtual const string& PoolName()   const;
+  virtual const string& ServerName(void) const;
+  virtual const string& UserName(void)   const;
+  virtual const string& Password(void)   const;
+  virtual const string& PoolName(void)   const;
 
-  virtual I_DriverContext::TConnectionMode ConnectMode() const
+  virtual I_DriverContext::TConnectionMode ConnectMode(void) const
   {
     return (I_DriverContext::TConnectionMode)
       comprot_int("GWLib:Connection:ConnectMode", remoteObj);
   }
-  virtual bool IsReusable() const
+  virtual bool IsReusable(void) const
   {
     return comprot_bool("GWLib:Connection:IsReusable", remoteObj);
   }
 
-  virtual I_DriverContext* Context() const
+  virtual I_DriverContext* Context(void) const
   {
     return localContext;
   }
@@ -218,7 +223,7 @@ protected:
     // destroing any objects associated with a connection.
     // Returns: true - if succeed
     //          false - if not
-    virtual bool Abort();
+    virtual bool Abort(void);
 
 };
 
@@ -229,33 +234,36 @@ protected:
   CRLObjPairs* boundObjects;
 
 public:
-  CGW_BaseCmd()
+  CGW_BaseCmd(void)
   {
     boundObjects=NULL;
   }
+  // Destructor
+  virtual ~CGW_BaseCmd(void);
 
-  virtual bool Send();
-  virtual bool WasSent() const
+public:
+  virtual bool Send(void);
+  virtual bool WasSent(void) const
   {
     return comprot_bool("GWLib:BaseCmd:WasSent", remoteObj);
   }
 
   // Cancel the command execution
-  virtual bool Cancel();
-  virtual bool WasCanceled() const
+  virtual bool Cancel(void);
+  virtual bool WasCanceled(void) const
   {
     return comprot_bool("GWLib:BaseCmd:WasCanceled", remoteObj);
   }
 
   // Get result set
-  virtual CDB_Result* Result();
-  virtual bool HasMoreResults() const
+  virtual CDB_Result* Result(void);
+  virtual bool HasMoreResults(void) const
   {
     return comprot_bool( "GWLib:BaseCmd:HasMoreResults", remoteObj );
   }
 
   // Check if command has failed
-  virtual bool HasFailed() const
+  virtual bool HasFailed(void) const
   {
     return comprot_bool("GWLib:BaseCmd:HasFailed", remoteObj );
   }
@@ -263,26 +271,25 @@ public:
   // Get the number of rows affected by the command
   // Special case:  negative on error or if there is no way that this
   //                command could ever affect any rows (like PRINT).
-  virtual int RowCount() const
+  virtual int RowCount(void) const
   {
     return comprot_int("GWLib:BaseCmd:RowCount", remoteObj );
   }
-
-  // Destructor
-  virtual ~CGW_BaseCmd();
 };
 
 class CGW_LangCmd : public I_LangCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
+  
+protected:
+    CGW_LangCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    {
+      con       = con_arg;
+      remoteObj = remoteObj_arg;
+    }
+
 protected:
   CGW_Connection* con;
-
-  CGW_LangCmd(CGW_Connection* con_arg, int remoteObj_arg)
-  {
-    con       = con_arg;
-    remoteObj = remoteObj_arg;
-  }
 
   virtual bool More(const string& query_text)
   {
@@ -292,45 +299,45 @@ protected:
   virtual bool BindParam(const string& param_name, CDB_Object* param_ptr);
   virtual bool SetParam(const string& param_name, CDB_Object* param_ptr);
 
-  virtual bool Send()
+  virtual bool Send(void)
   {
     // ?? send bound params ??
     return CGW_BaseCmd::Send();
   }
 
-  virtual bool WasSent() const
+  virtual bool WasSent(void) const
   {
     return CGW_BaseCmd::WasSent();
   }
-  virtual bool Cancel();
+  virtual bool Cancel(void);
   /*
   {
     return CGW_BaseCmd::Cancel();
   }
   */
-  virtual bool WasCanceled() const
+  virtual bool WasCanceled(void) const
   {
     return CGW_BaseCmd::WasCanceled();
   }
 
-  virtual CDB_Result* Result()
+  virtual CDB_Result* Result(void)
   {
     return CGW_BaseCmd::Result();
   }
-  virtual bool HasMoreResults() const
+  virtual bool HasMoreResults(void) const
   {
     return CGW_BaseCmd::HasMoreResults();
   }
 
-  virtual bool HasFailed() const
+  virtual bool HasFailed(void) const
   {
     return CGW_BaseCmd::HasFailed();
   }
-  virtual int  RowCount() const
+  virtual int  RowCount(void) const
   {
     return CGW_BaseCmd::RowCount();
   }
-  virtual void DumpResults()
+  virtual void DumpResults(void)
   {
     comprot_void("GWLib:LangCmd:DumpResults",remoteObj);
   }
@@ -340,53 +347,55 @@ protected:
 class CGW_RPCCmd : public I_RPCCmd, CGW_BaseCmd
 {
   friend class CGW_Connection;
+  
+protected:
+    CGW_RPCCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    {
+      con       = con_arg;
+      remoteObj = remoteObj_arg;
+    }
+
 protected:
   CGW_Connection* con;
-
-  CGW_RPCCmd(CGW_Connection* con_arg, int remoteObj_arg)
-  {
-    con       = con_arg;
-    remoteObj = remoteObj_arg;
-  }
 
 
   virtual bool BindParam(const string& param_name, CDB_Object* param_ptr, bool out_param = false);
   virtual bool SetParam(const string& param_name, CDB_Object* param_ptr, bool out_param = false);
 
-  virtual bool Send()
+  virtual bool Send(void)
   {
     // ?? send bound params ??
     return CGW_BaseCmd::Send();
   }
 
 
-  virtual bool WasSent() const
+  virtual bool WasSent(void) const
   {
     return CGW_BaseCmd::WasSent();
   }
-  virtual bool Cancel()
+  virtual bool Cancel(void)
   {
     return CGW_BaseCmd::Cancel();
   }
-  virtual bool WasCanceled() const
+  virtual bool WasCanceled(void) const
   {
     return CGW_BaseCmd::WasCanceled();
   }
 
-  virtual CDB_Result* Result()
+  virtual CDB_Result* Result(void)
   {
     return CGW_BaseCmd::Result();
   }
-  virtual bool HasMoreResults() const
+  virtual bool HasMoreResults(void) const
   {
     return CGW_BaseCmd::HasMoreResults();
   }
 
-  virtual bool HasFailed() const
+  virtual bool HasFailed(void) const
   {
     return CGW_BaseCmd::HasFailed();
   }
-  virtual int  RowCount() const
+  virtual int  RowCount(void) const
   {
     return CGW_BaseCmd::RowCount();
   }
@@ -397,7 +406,7 @@ protected:
     int i = (int)recompile;
     comprot_void1("GWLib:RPCCmd:SetRecompile", remoteObj, &i );
   }
-  virtual void DumpResults()
+  virtual void DumpResults(void)
   {
     comprot_void("GWLib:RPCCmd:DumpResults",remoteObj);
   }
@@ -406,55 +415,59 @@ protected:
 class CGW_BCPInCmd : public I_BCPInCmd, CGW_Base
 {
   friend class CGW_Connection;
+  
+protected:
+    CGW_BCPInCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    {
+      con       = con_arg;
+      remoteObj = remoteObj_arg;
+      boundObjects=NULL;
+    }
+    ~CGW_BCPInCmd(void);
+
 protected:
   CGW_Connection* con;
   CRLObjPairs* boundObjects;
-
-  CGW_BCPInCmd(CGW_Connection* con_arg, int remoteObj_arg)
-  {
-    con       = con_arg;
-    remoteObj = remoteObj_arg;
-    boundObjects=NULL;
-  }
 
 
   // Binding
   virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr);
 
   // Send row to the server
-  virtual bool SendRow();
+  virtual bool SendRow(void);
 
   // Complete batch -- to store all rows transferred so far in this batch
   // into the table
-  virtual bool CompleteBatch()
+  virtual bool CompleteBatch(void)
   {
     return comprot_bool( "GWLib:BCPInCmd:CompleteBatch", remoteObj );
   }
 
   // Cancel the BCP command
-  virtual bool Cancel();
+  virtual bool Cancel(void);
 
   // Complete the BCP and store all rows transferred in last batch
   // into the table
-  virtual bool CompleteBCP();
-
-  ~CGW_BCPInCmd();
+  virtual bool CompleteBCP(void);
 
 };
 
 class CGW_CursorCmd : public I_CursorCmd, CGW_Base
 {
   friend class CGW_Connection;
+  
+protected:
+    CGW_CursorCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    {
+      con       = con_arg;
+      remoteObj = remoteObj_arg;
+      boundObjects = NULL;
+    }
+    ~CGW_CursorCmd(void);
+
 protected:
   CGW_Connection* con;
   CRLObjPairs* boundObjects;
-
-  CGW_CursorCmd(CGW_Connection* con_arg, int remoteObj_arg)
-  {
-    con       = con_arg;
-    remoteObj = remoteObj_arg;
-    boundObjects = NULL;
-  }
 
   // Not implemented
   virtual bool BindParam(const string& name, CDB_Object* param_ptr);
@@ -462,7 +475,7 @@ protected:
   // Open the cursor.
   // Return NULL if cursor resulted in no data.
   // Throw exception on error.
-  virtual CDB_Result* Open();
+  virtual CDB_Result* Open(void);
 
   // Update the last fetched row.
   // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
@@ -489,29 +502,30 @@ protected:
   // Get the number of fetched rows
   // Special case:  negative on error or if there is no way that this
   //                command could ever affect any rows (like PRINT).
-  virtual int RowCount() const
+  virtual int RowCount(void) const
   {
     return comprot_int("GWLib:CursorCmd:RowCount", remoteObj);
   }
 
   // Close the cursor.
   // Return FALSE if the cursor is closed already (or not opened yet)
-  virtual bool Close();
-  ~CGW_CursorCmd();
+  virtual bool Close(void);
 };
 
 class CGW_SendDataCmd : public I_SendDataCmd, CGW_Base
 {
   friend class CGW_Connection;
   friend class CGW_CursorCmd;
+  
+protected:
+    CGW_SendDataCmd(CGW_Connection* con_arg, int remoteObj_arg)
+    {
+      con       = con_arg;
+      remoteObj = remoteObj_arg;
+    }
+
 protected:
   CGW_Connection* con;
-
-  CGW_SendDataCmd(CGW_Connection* con_arg, int remoteObj_arg)
-  {
-    con       = con_arg;
-    remoteObj = remoteObj_arg;
-  }
 
   // Send chunk of data to the server.
   // Return number of bytes actually transferred to server.
@@ -522,18 +536,21 @@ protected:
 
 class CGW_ITDescriptor : public I_ITDescriptor
 {
+public:
+    CGW_ITDescriptor(int remoteObj_arg)
+    {
+      remoteObj = remoteObj_arg;
+    }
+    
 private:
   int remoteObj;
+  
 public:
-  CGW_ITDescriptor(int remoteObj_arg)
-  {
-    remoteObj = remoteObj_arg;
-  }
-  int getRemoteObj()
+  int getRemoteObj(void)
   {
     return remoteObj;
   }
-  int DescriptorType() const
+  int DescriptorType(void) const
   {
     return comprot_int("GWLib:ITDescriptor:DescriptorType", remoteObj);
   }
@@ -541,10 +558,6 @@ public:
 
 class CGW_Result : public I_Result, CGW_Base
 {
-protected:
-  typedef map<unsigned,string> MapUnsignedToString;
-  MapUnsignedToString mapItemNames;
-
 public:
 
   CGW_Result(int remoteObj_arg)
@@ -552,16 +565,21 @@ public:
     remoteObj = remoteObj_arg;
   }
 
+protected:
+  typedef map<unsigned,string> MapUnsignedToString;
+  MapUnsignedToString mapItemNames;
+
+public:
   // ~CGW_Result() { mapItemNames.clear(); }
 
-  virtual EDB_ResType ResultType() const
+  virtual EDB_ResType ResultType(void) const
   {
     return (EDB_ResType)comprot_int("GWLib:Result:ResultType",remoteObj);
   }
 
 
   // Get # of columns in the result
-  virtual unsigned int NofItems() const
+  virtual unsigned int NofItems(void) const
   {
     return comprot_int("GWLib:Result:NofItems",remoteObj);
   }
@@ -585,14 +603,14 @@ public:
 
   // Fetch next row.
   // Return FALSE if no more rows to fetch. Throw exception on any error.
-  virtual bool Fetch()
+  virtual bool Fetch(void)
   {
     return comprot_bool( "GWLib:Result:Fetch", remoteObj );
   }
 
   // Return current item number we can retrieve (0,1,...)
   // Return "-1" if no more items left (or available) to read.
-  virtual int CurrentItemNo() const
+  virtual int CurrentItemNo(void) const
   {
     return comprot_int( "GWLib:Result:CurrentItemNo", remoteObj );
   }
@@ -614,7 +632,7 @@ public:
   // Return NULL if this result does not (or cannot) have img/text descriptor.
   // NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
   //       before calling this method!
-  virtual I_ITDescriptor* GetImageOrTextDescriptor()
+  virtual I_ITDescriptor* GetImageOrTextDescriptor(void)
   {
     int res = comprot_int( "GWLib:Result:GetImageOrTextDescriptor", remoteObj );
     if(res) {
@@ -626,7 +644,7 @@ public:
   }
 
   // Skip result item
-  virtual bool SkipItem()
+  virtual bool SkipItem(void)
   {
     return comprot_bool( "GWLib:Result:SkipItem", remoteObj );
   }
@@ -644,6 +662,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/20 12:56:49  ssikorsk
+ * Code reformatting
+ *
  * Revision 1.8  2005/02/23 21:32:35  soussov
  * Adds Abort() method to connection
  *
