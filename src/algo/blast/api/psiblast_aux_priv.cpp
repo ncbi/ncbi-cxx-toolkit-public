@@ -291,6 +291,11 @@ void ValidatePssm(const CPssmWithParameters& pssm)
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Query sequence in ASN.1 PSSM is not a single Bioseq");
     }
+
+    if ( !pssm.GetPssm().GetIsProtein() ) {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   "PSSM does not represent protein scoring matrix");
+    }
 }
 
 END_SCOPE(blast)
