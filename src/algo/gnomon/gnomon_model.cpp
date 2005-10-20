@@ -78,7 +78,6 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
 {
     TSignedSeqRange lim = (cdsonly ? RealCdsLimits() : Limits());
     int len = (cdsonly ? CdsLen() : AlignLen());
-    
     mrna.clear();
     mrna.reserve(len);
     if(mrnamap != 0)
@@ -98,7 +97,6 @@ void CAlignVec::GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap, bool cdso
         
         start = max(start,lim.GetFrom());
         stop = min(stop,lim.GetTo());
-        
         while(fsi != FrameShifts().end() && fsi->Loc() < start) ++fsi;    // skipping possible insertions before right exon boundary
         for(TSignedSeqPos k = start; k <= stop; ++k) {
             if (fsi != FrameShifts().end() && fsi->IsInsertion() && k == fsi->Loc()) {
@@ -143,40 +141,51 @@ TSignedSeqRange CAlignVec::RealCdsLimits() const
 {
     TSignedSeqRange cds_lim = CdsLimits();
     
-    for(int i = 0; i < (int)size(); ++i)
-    {
-        if (Include((*this)[i].Limits(),cds_lim.GetFrom()))
-        {
-            if((*this)[i].GetFrom()+3 <= cds_lim.GetFrom())
-            {
+    for(int i = 0; i < (int)size(); ++i) {
+        if (Include((*this)[i].Limits(),cds_lim.GetFrom())) {
+            if((*this)[i].GetFrom()+3 <= cds_lim.GetFrom()) {
                 cds_lim.SetFrom(cds_lim.GetFrom() - 3);
             }
-            else if(i > 0)
-            {
+            else{
                 int remain = 3-(cds_lim.GetFrom()-(*this)[i].GetFrom());
-                cds_lim.SetFrom( (*this)[i-1].GetTo()-remain+1 );
+                while(remain > 0 && i > 0) {
+                    int exon_len = (*this)[i-1].GetTo()-(*this)[i-1].GetFrom()+1;
+                    if(exon_len >= remain) {
+                        cds_lim.SetFrom( (*this)[i-1].GetTo()-remain+1 );
+                        remain = 0;
+                    }
+                    else{
+                        remain -= exon_len;
+                        --i;
+                    }
+                }
+                break;
             }
-            break;
         }
     }
     
-    for(int i = (int)size()-1; i >= 0; --i)
-    {
-        if(Include((*this)[i].Limits(),cds_lim.GetTo()))
-        {
-            if((*this)[i].GetTo() >= cds_lim.GetTo()+3)
-            {
+    for(int i = (int)size()-1; i >= 0; --i) {
+        if(Include((*this)[i].Limits(),cds_lim.GetTo())) {
+            if((*this)[i].GetTo() >= cds_lim.GetTo()+3) {
                 cds_lim.SetTo(cds_lim.GetTo() + 3);
             }
-            else if(i < (int)size()-1)
-            {
+            else {
                 int remain = 3-((*this)[i].GetTo()-cds_lim.GetTo());
-                cds_lim.SetTo( (*this)[i+1].GetFrom()+remain-1 );
+                while(remain > 0 && i < (int)size()-1) {
+                    int exon_len = (*this)[i+1].GetTo() -(*this)[i+1].GetFrom() + 1;
+                    if(exon_len >= remain) {
+                        cds_lim.SetTo( (*this)[i+1].GetFrom()+remain-1 );
+                        remain = 0;
+                    }
+                    else {
+                        remain -= exon_len;
+                        ++i;
+                    }
+                }
+                break;
             }
-            break;
         }
     }
-    
     return cds_lim;
 }
 
@@ -747,6 +756,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/20 19:31:08  souvorov
+ * Formatting
+ *
  * Revision 1.5  2005/10/14 21:59:54  souvorov
  * Set Cluster type in Splice
  *
