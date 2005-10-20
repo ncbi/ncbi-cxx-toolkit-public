@@ -38,10 +38,23 @@ BEGIN_NCBI_SCOPE
 
 
 ////////////////////////////////////////////////////////////////////////////
+// C_ITDescriptorGuard
+C_ITDescriptorGuard::C_ITDescriptorGuard(I_ITDescriptor* d) 
+{
+    m_D = d;
+}
+
+C_ITDescriptorGuard::~C_ITDescriptorGuard(void) 
+{
+    if ( m_D )
+        delete m_D;
+}
+    
+////////////////////////////////////////////////////////////////////////////
 //  I_ITDescriptor::
 //
 
-I_ITDescriptor::~I_ITDescriptor()
+I_ITDescriptor::~I_ITDescriptor(void)
 {
     return;
 }
@@ -51,12 +64,17 @@ I_ITDescriptor::~I_ITDescriptor()
 //  CDB_BaseEnt::
 //
 
-void CDB_BaseEnt::Release()
+CDB_BaseEnt::CDB_BaseEnt(void) 
 {
     m_BR = 0;
 }
 
-CDB_BaseEnt::~CDB_BaseEnt()
+void CDB_BaseEnt::Release(void)
+{
+    m_BR = 0;
+}
+
+CDB_BaseEnt::~CDB_BaseEnt(void)
 {
     if (m_BR)
         *m_BR = 0;
@@ -77,32 +95,56 @@ CDB_Result* CDB_BaseEnt::Create_Result(I_Result& result)
 //  I_SendDataCmd::
 //
 
-I_BaseCmd::~I_BaseCmd()
+I_BaseCmd::I_BaseCmd(void)
+{
+}
+
+I_BaseCmd::~I_BaseCmd(void)
 {
     return;
 }
 
-I_LangCmd::~I_LangCmd()
+I_LangCmd::I_LangCmd(void)
+{
+}
+
+I_LangCmd::~I_LangCmd(void)
 {
     return;
 }
 
-I_RPCCmd::~I_RPCCmd()
+I_RPCCmd::I_RPCCmd(void)
+{
+}
+
+I_RPCCmd::~I_RPCCmd(void)
 {
     return;
 }
 
-I_BCPInCmd::~I_BCPInCmd()
+I_BCPInCmd::I_BCPInCmd(void)
+{
+}
+
+I_BCPInCmd::~I_BCPInCmd(void)
 {
     return;
 }
 
-I_CursorCmd::~I_CursorCmd()
+I_CursorCmd::I_CursorCmd(void)
+{
+}
+
+I_CursorCmd::~I_CursorCmd(void)
 {
     return;
 }
 
-I_SendDataCmd::~I_SendDataCmd()
+I_SendDataCmd::I_SendDataCmd(void)
+{
+}
+
+I_SendDataCmd::~I_SendDataCmd(void)
 {
     return;
 }
@@ -112,7 +154,11 @@ I_SendDataCmd::~I_SendDataCmd()
 //  I_Result::
 //
 
-I_Result::~I_Result()
+I_Result::I_Result(void)
+{
+}
+
+I_Result::~I_Result(void)
 {
     return;
 }
@@ -122,7 +168,7 @@ I_Result::~I_Result()
 //  I_DriverContext::
 //
 
-I_DriverContext::I_DriverContext()
+I_DriverContext::I_DriverContext(void)
 {
     PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault() );
     PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault() );
@@ -217,11 +263,34 @@ CDB_Connection* I_DriverContext::Create_Connection(I_Connection& connection)
     return new CDB_Connection(&connection);
 }
 
-I_DriverContext::~I_DriverContext()
+I_DriverContext::~I_DriverContext(void)
 {
     return;
 }
 
+void 
+I_DriverContext::SetApplicationName(const string& app_name)
+{
+    m_AppName = app_name;
+}
+
+const string& 
+I_DriverContext::GetApplicationName(void) const
+{
+    return m_AppName;
+}
+
+void 
+I_DriverContext::SetHostName(const string& host_name)
+{
+    m_HostName = host_name;
+}
+
+const string& 
+I_DriverContext::GetHostName(void) const
+{
+    return m_HostName;
+}
 
 ////////////////////////////////////////////////////////////////////////////
 //  I_Connection::
@@ -253,7 +322,11 @@ CDB_SendDataCmd* I_Connection::Create_SendDataCmd(I_SendDataCmd& senddata_cmd)
 }
 
 
-I_Connection::~I_Connection()
+I_Connection::I_Connection(void)
+{
+}
+
+I_Connection::~I_Connection(void)
 {
     return;
 }
@@ -262,6 +335,10 @@ I_Connection::~I_Connection()
 ////////////////////////////////////////////////////////////////////////////
 //  I_DriverMgr::
 //
+
+I_DriverMgr::I_DriverMgr(void)
+{
+}
 
 I_DriverMgr::~I_DriverMgr(void)
 {
@@ -276,6 +353,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/20 13:03:20  ssikorsk
+ * Implemented:
+ * I_DriverContext::SetApplicationName
+ * I_DriverContext::GetApplicationName
+ * I_DriverContext::SetHostName
+ * I_DriverContext::GetHostName
+ *
  * Revision 1.9  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
