@@ -115,7 +115,9 @@ public:
     // values if not called)
     // the values will affect the new connections only
 
+    // Deprecated. Use SetApplicationName instead.
     virtual void DBLIB_SetApplicationName(const string& a_name);
+    // Deprecated. Use SetHostName instead.
     virtual void DBLIB_SetHostName(const string& host_name);
     virtual void DBLIB_SetPacketSize(int p_size);
     virtual bool DBLIB_SetMaxNofConns(int n);
@@ -138,11 +140,9 @@ public:
 
 private:
     static CMSDBLibContext* m_pDBLibContext;
-    string                m_AppName;
-    string                m_HostName;
-    short                m_PacketSize;
-    LOGINREC*         m_Login;
-    int                    m_TDSVersion;
+    short                   m_PacketSize;
+    LOGINREC*               m_Login;
+    int                     m_TDSVersion;
 
     DBPROCESS* x_ConnectToServer(const string&   srv_name,
                                  const string&   user_name,
@@ -695,6 +695,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/10/20 12:57:33  ssikorsk
+ * - CMSDBLibContext::m_AppName
+ * - CMSDBLibContext::m_HostName
+ *
  * Revision 1.12  2005/09/14 14:32:39  ssikorsk
  * Add ConnectedToMSSQLServer and GetTDSVersion methods to
  * the CMSDBLibContext class
