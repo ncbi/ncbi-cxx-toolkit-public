@@ -722,7 +722,7 @@ CTestArguments::SetDatabaseParameters(void)
     } else if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
-        m_DatabaseParameters["version"] = "100";
+        m_DatabaseParameters["version"] = "125";
     } else if ( GetDriverName() == "ftds" && GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "42";
@@ -771,6 +771,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/10/20 13:11:19  ssikorsk
+* Use TDS protocol 12.5 with the dblib driver
+*
 * Revision 1.19  2005/10/19 15:53:33  ssikorsk
 * Implemented the TestScenario_1 test
 *
