@@ -69,6 +69,8 @@ public:
     }
 
     virtual I_DriverContext* GetDriverContext();
+    virtual const I_DriverContext* GetDriverContext() const;
+
 
     void UsePool(bool use) {
         m_poolUsed = use;
@@ -96,6 +98,9 @@ private:
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.10  2005/10/20 15:49:53  kholodov
+* Added: set and get application name
+*
 * Revision 1.9  2005/04/04 13:03:56  ssikorsk
 * Revamp of DBAPI exception class CDB_Exception
 *

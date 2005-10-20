@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2005/10/20 15:49:52  kholodov
+* Added: set and get application name
+*
 * Revision 1.4  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -56,6 +59,17 @@ USING_NCBI_SCOPE;
 IDataSource::~IDataSource()
 {
 }
+
+void IDataSource::SetApplicationName(const string& app_name)
+{
+	GetDriverContext()->SetApplicationName(app_name);
+}
+
+const string& IDataSource::GetApplicationName(void) const
+{
+	return GetDriverContext()->GetApplicationName();
+}
+
 
 IConnection::~IConnection()
 {

@@ -139,7 +139,18 @@ I_DriverContext* CDataSource::GetDriverContext() {
         );
 
     return m_context;
-  }
+}
+
+const I_DriverContext* CDataSource::GetDriverContext() const
+{
+    //CHECK_NCBI_DBAPI(
+    //    m_context == 0, 
+    //    "CDataSource::GetDriverContext(): no valid context"
+    //    );
+
+    //return m_context;
+	return const_cast<CDataSource*>(this)->GetDriverContext();
+}
 
 IConnection* CDataSource::CreateConnection(EOwnership ownership)
 {
@@ -167,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/10/20 15:49:52  kholodov
+ * Added: set and get application name
+ *
  * Revision 1.18  2005/04/04 13:03:56  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

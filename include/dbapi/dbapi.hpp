@@ -758,6 +758,12 @@ public:
 
     /// Returns the pointer to the general driver interface.
     virtual I_DriverContext* GetDriverContext() = 0;
+    virtual const I_DriverContext* GetDriverContext() const = 0;
+
+	// app_name defines the application name that a connection will use when 
+    // connecting to a server.
+    void SetApplicationName(const string& app_name);
+    const string& GetApplicationName(void) const;
 };
 
 
@@ -770,6 +776,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/10/20 15:50:23  kholodov
+ * Added: set and get application name
+ *
  * Revision 1.40  2005/05/25 21:10:26  kholodov
  * Added: select ownership for IResultSetMetaData object
  *
