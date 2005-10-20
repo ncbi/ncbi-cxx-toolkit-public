@@ -162,8 +162,8 @@ C_xDriverMgr::GetDriverContext(
             attr
             );
     }
-    catch( const CPluginManagerException& e ) {
-        DATABASE_DRIVER_FATAL( e.GetMsg(), 300 );
+    catch( const CPluginManagerException& ) {
+        throw;
     }
     catch ( const exception& e ) {
         DATABASE_DRIVER_FATAL( driver_name + " is not available :: " + e.what(), 300 );
@@ -363,8 +363,8 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
             nd
             );
     }
-    catch( const CPluginManagerException& e ) {
-        DATABASE_DRIVER_FATAL( e.GetMsg(), 300 );
+    catch( const CPluginManagerException& ) {
+        throw;
     }
     catch ( const exception& e ) {
         DATABASE_DRIVER_FATAL( driver_name + " is not available :: " + e.what(), 300 );
@@ -383,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/10/20 14:58:44  ssikorsk
+ * Do not hide CPluginManagerException exception during driver loading
+ *
  * Revision 1.28  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *
