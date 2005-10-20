@@ -62,7 +62,20 @@ int main(int argc, char* argv[])
             return 1;
         }
         
-    } catch (exception&) {
+    } 
+    catch( const CPluginManagerException& ) {
+        return 5;
+    } 
+    catch( const CDB_Exception& ) {
+        return 4;
+    } 
+    catch( const CException& ) {
+        return 3;
+    } 
+    catch ( const exception& ) {
+        return 2;
+    }
+    catch ( ... ) {
         return 1;
     }
     return 0;
@@ -73,6 +86,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/20 15:00:16  ssikorsk
+ * Return more detailed error code if there is any
+ *
  * Revision 1.5  2005/02/23 13:46:55  ivanov
  * Disable system popup messages
  *
