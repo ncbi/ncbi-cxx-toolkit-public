@@ -182,7 +182,7 @@ public:
         return m_Disposition;
     }
 private:
-    const CHandleRangeMap&  m_HrMap;        ///< Range map of seq ids to search
+    const CHandleRangeMap&  m_HrMap;       ///< Range map of seq ids to search
     SLDS_TablesCollection&  m_db;          ///< The LDS database
     TDisposition            m_Disposition; ///< Search result (found objects)
 };
@@ -339,7 +339,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
     hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
 
     SLDS_TablesCollection& db = m_LDS_db->GetTables();
-    CLDS_Query lds_query(db);
+    CLDS_Query lds_query(*m_LDS_db);
 
     // index screening
     CLDS_Set       cand_set;
@@ -398,7 +398,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
         //   (this trick has been added by kuznets (Jan-12-2005) to read 
         //    molecules out of huge refseq files)
         {
-            CLDS_Query query(db);
+            CLDS_Query query(*m_LDS_db);
             CLDS_Query::SObjectDescr obj_descr = 
                 query.GetObjectDescr(
                                  m_LDS_db->GetObjTypeMap(),
@@ -418,8 +418,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
         if ( !load_lock.IsLoaded() ) {
             CRef<CSeq_entry> seq_entry = 
-                LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), 
-                            object_id, false/*dont trace to top*/);
+                LDS_LoadTSE(*m_LDS_db, object_id, false/*dont trace to top*/);
             if ( !seq_entry ) {
                 NCBI_THROW2(CBlobStateException, eBlobStateError,
                             "cannot load blob",
@@ -434,73 +433,6 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 
     return locks;
 }
-
-#if 0
-CDataLoader::TTSE_LockSet
-CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
-                            EChoice /* choice */)
-{
-    TTSE_LockSet locks;
-    CHandleRangeMap hrmap;
-    hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
-    CLDS_FindSeqIdFunc search_func(m_LDS_db->GetTables(), hrmap);
-    
-    SLDS_TablesCollection& db = m_LDS_db->GetTables();
-
-    BDB_iterate_file(db.object_db, search_func);
-
-    const CLDS_FindSeqIdFunc::TDisposition& disposition = 
-                                        search_func.GetResultDisposition();
-
-    CDataSource* data_source = GetDataSource();
-    _ASSERT(data_source);
-
-    CLDS_FindSeqIdFunc::TDisposition::const_iterator it;
-    for (it = disposition.begin(); it != disposition.end(); ++it) {
-        const SLDS_ObjectDisposition& obj_disp = *it;
-        int object_id = 
-            obj_disp.tse_id ? obj_disp.tse_id : obj_disp.object_id;
-
-        // check if we can extract seq-entry out of binary bioseq-set file
-        //
-        //   (this trick has been added by kuznets (Jan-12-2005) to read 
-        //    molecules out of huge refseq files)
-        {
-            CLDS_Query query(db);
-            CLDS_Query::SObjectDescr obj_descr = 
-                query.GetObjectDescr(
-                                 m_LDS_db->GetObjTypeMap(),
-                                 obj_disp.tse_id, false/*do not trace to top*/);
-            if ((obj_descr.is_object && obj_descr.id > 0)      &&
-                (obj_descr.format == CFormatGuess::eBinaryASN) &&
-                (obj_descr.type_str == "Bioseq-set")
-               ) {
-               obj_descr = 
-                    query.GetTopSeqEntry(m_LDS_db->GetObjTypeMap(),
-                                         obj_disp.object_id);
-               object_id = obj_descr.id;
-            }
-        }
-
-        CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
-        CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
-        if ( !load_lock.IsLoaded() ) {
-            CRef<CSeq_entry> seq_entry = 
-                LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), 
-                            object_id, false/*dont trace to top*/);
-            if ( !seq_entry ) {
-                NCBI_THROW2(CBlobStateException, eBlobStateError,
-                            "cannot load blob",
-                            CBioseq_Handle::fState_no_data);
-            }
-            load_lock->SetSeq_entry(*seq_entry);
-            load_lock.SetLoaded();
-        }
-        locks.insert(load_lock);
-    }
-    return locks;
-}
-#endif
 
 
 bool CLDS_DataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
@@ -632,6 +564,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/10/20 15:35:03  kuznets
+ * Code cleanup
+ *
  * Revision 1.32  2005/10/06 16:23:55  kuznets
  * Search using LDS SeqId index
  *
