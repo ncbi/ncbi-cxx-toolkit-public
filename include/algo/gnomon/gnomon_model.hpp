@@ -76,27 +76,27 @@ inline bool Include(TSignedSeqRange r, TSignedSeqPos p) { return (r.GetFrom()<=p
 
 class NCBI_XALGOGNOMON_EXPORT CFrameShiftInfo
 {
-    public:
-        CFrameShiftInfo(TSignedSeqPos l = 0, int len = 0, bool is_i = true, const string& d_v = kEmptyStr) : m_loc(l), m_len(len), 
-                  m_is_insert(is_i), m_delet_value(d_v) { if(!is_i && d_v == kEmptyStr) m_delet_value = string(len,'N'); }
-        TSignedSeqPos Loc() const { return m_loc; }
-        int Len() const { return m_len; }
-        bool IsInsertion() const { return m_is_insert; }
-        bool IsDeletion() const { return !m_is_insert; }
-        const string& DeletedValue() const { return m_delet_value; }
-        bool operator<(const CFrameShiftInfo& fsi) const { return ((m_loc == fsi.m_loc && IsDeletion() != fsi.IsDeletion()) ? IsDeletion() : m_loc < fsi.m_loc); } // if location is same deletion first
-        bool operator==(const CFrameShiftInfo& fsi) const 
-        { return (m_loc == fsi.m_loc) && (m_len == fsi.m_len) && (m_is_insert == fsi.m_is_insert) && (m_delet_value == fsi.m_delet_value); }
-        bool operator!=(const CFrameShiftInfo& fsi) const
-        {
-            return !(*this == fsi);
-        }
-    private:
-        TSignedSeqPos m_loc;  // left location for insertion, deletion is before m_loc
-                    // insertion - when there are extra bases in the genome
-        int m_len;
-        bool m_is_insert;
-        string m_delet_value;
+public:
+    CFrameShiftInfo(TSignedSeqPos l = 0, int len = 0, bool is_i = true, const string& d_v = kEmptyStr) :
+        m_loc(l), m_len(len), m_is_insert(is_i), m_delet_value(d_v)
+    { if(!is_i && d_v == kEmptyStr) m_delet_value = string(len,'N'); }
+    TSignedSeqPos Loc() const { return m_loc; }
+    int Len() const { return m_len; }
+    bool IsInsertion() const { return m_is_insert; }
+    bool IsDeletion() const { return !m_is_insert; }
+    const string& DeletedValue() const { return m_delet_value; }
+    bool operator<(const CFrameShiftInfo& fsi) const
+    { return ((m_loc == fsi.m_loc && IsDeletion() != fsi.IsDeletion()) ? IsDeletion() : m_loc < fsi.m_loc); } // if location is same deletion first
+    bool operator==(const CFrameShiftInfo& fsi) const 
+    { return (m_loc == fsi.m_loc) && (m_len == fsi.m_len) && (m_is_insert == fsi.m_is_insert) && (m_delet_value == fsi.m_delet_value); }
+    bool operator!=(const CFrameShiftInfo& fsi) const
+    { return !(*this == fsi); }
+private:
+    TSignedSeqPos m_loc;  // left location for insertion, deletion is before m_loc
+                          // insertion - when there are extra bases in the genome
+    int m_len;
+    bool m_is_insert;
+    string m_delet_value;
 };
 
 typedef vector<CFrameShiftInfo> TFrameShifts;
@@ -248,7 +248,9 @@ public:
         bool SubAlign(const CAlignVec& a) const { return (Include(a.Limits(),Limits()) && isCompatible(a) > 0); }
         int MutualExtension(const CAlignVec& a) const;  // returns 0 for notcompatible or (number of introns) + 1
         
-        bool IdenticalAlign(const CAlignVec& a) const { return (Strand() == a.Strand() && *this == a); }
+    bool IdenticalAlign(const CAlignVec& a) const
+    { return Strand()==a.Strand() && Limits()==a.Limits() && Type()==a.Type() &&
+             static_cast<const vector<CAlignExon>& >(*this) == a && FrameShifts()==a.FrameShifts(); }
         bool Similar(const CAlignVec& a, int tolerance) const;
         
         TFrameShifts& FrameShifts() { return m_fshifts; }
@@ -267,6 +269,8 @@ private:
     double m_score;
     bool m_open_cds, m_pstop;
     TFrameShifts m_fshifts;
+
+    bool operator==(const CAlignVec&) const;
 };
 
 typedef list<CAlignVec> TAlignList;
@@ -390,6 +394,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/20 18:10:02  chetvern
+ * Fixed CAlignVec::IdenticalAlign method
+ *
  * Revision 1.9  2005/10/14 20:09:53  chetvern
  * added CAlignVec::SetCdsInfo method
  *
