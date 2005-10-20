@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Clifford Clausen
+ * Authors:  Vladimir Ivanov, Clifford Clausen
  *
  */
 
@@ -577,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/20 19:33:49  vakatov
+ * Authors += Vladimir Ivanov
+ *
  * Revision 1.14  2005/04/25 18:51:51  ivanov
  * Using size_t instead TSeqPos
  *
