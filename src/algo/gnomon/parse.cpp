@@ -572,11 +572,11 @@ void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) co
 int CParse::PrintGenes(CUniqNumber& unumber, CNcbiOstream& to, CNcbiOstream& toprot, bool complete) const
 {
     list<CGene> genes = GetGenes();
-    for(list<CGene>::iterator it = genes.begin(); it != genes.end();)
-    {
-        if(it->CDS().size() < 6) it = genes.erase(it);
-        else ++it;
-    }
+//    for(list<CGene>::iterator it = genes.begin(); it != genes.end();)
+//    {
+//        if(it->CDS().size() < 6) it = genes.erase(it);
+//        else ++it;
+//    }
 
     TSignedSeqPos right = m_seqscr.SeqMap(m_seqscr.SeqLen()-1,CSeqScores::eNoMove);
     if(complete && !genes.empty() && !genes.back().RightComplete())
@@ -734,7 +734,7 @@ list<CGene> CParse::GetGenes() const
             {
                 curgen.SetCdsShift((3-rframe)%3);
             }
-            
+/*            
             if(pe->isMinus() && startcodon)
             {
                 curgen.CDS().push_back('T');
@@ -748,7 +748,7 @@ list<CGene> CParse::GetGenes() const
                 curgen.CDS().push_back('T');
                 curgen.CDS().push_back('A');
             }
-
+*/
             
             // a is first point on the original sequence which is not insertion
             // b is last point on the original sequence which is not insertion
@@ -813,6 +813,8 @@ list<CGene> CParse::GetGenes() const
                     margin = 0;
                 }
             }
+            
+            bool splitted_start = false;
             if(margin > 0)
             {
                 curgen.push_back(CExonData(b+1,b+margin,-1,-1,right_utr)); 
@@ -831,6 +833,7 @@ list<CGene> CParse::GetGenes() const
                     lf = remaina-1;
                     rf = 0;
                     etype = "First_Cds";
+                    if(startcodon) splitted_start = true;
                 }
                 else
                 {
@@ -850,6 +853,23 @@ list<CGene> CParse::GetGenes() const
                     e = er;     // nothing left of e
                 }
             }
+            
+            if(pe->isMinus() && startcodon)
+            {
+                if(splitted_start)
+                {
+                    curgen.CDS().push_back('T');
+                    curgen.CDS().push_back('A');
+                    curgen.CDS().push_back('C');
+                }
+                else
+                {
+                    curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(estop+3,ePlus)));
+                    curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(estop+2,ePlus)));
+                    curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(estop+1,ePlus)));
+                }
+            }
+            for(int i = estop; i >= estart; --i) curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(i,ePlus)));
             
             curgen.push_back(CExonData(a,b,lframe,rframe,"Internal_Cds"));
             CExonData& exon = curgen.back();
@@ -1023,6 +1043,7 @@ list<CGene> CParse::GetGenes() const
                                     lf = 0;
                                     rf = remainb-1;
                                     etype = "First_Cds";
+                                    if(startcodon) splitted_start = true;
                                 }
                                 else
                                 {
@@ -1044,6 +1065,24 @@ list<CGene> CParse::GetGenes() const
                     }
                 }
             }
+            
+            if(pe->isPlus() && startcodon)
+            {
+                if(splitted_start)
+                {
+                    curgen.CDS().push_back('G');
+                    curgen.CDS().push_back('T');
+                    curgen.CDS().push_back('A');
+                }
+                else
+                {
+                    curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(estart-1,ePlus)));
+                    curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(estart-2,ePlus)));
+                    curgen.CDS().push_back(toACGT(*m_seqscr.SeqPtr(estart-3,ePlus)));
+                }
+            }
+            
+            
         }
         
         CGene& curgen = genes.front();
@@ -1152,6 +1191,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2005/10/20 19:33:16  souvorov
+ * Nonconsensus starts/stops
+ *
  * Revision 1.9  2005/10/06 15:52:41  chetvern
  * replaced index loops thru vectors with iterator loops
  *
