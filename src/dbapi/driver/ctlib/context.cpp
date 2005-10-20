@@ -83,10 +83,11 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
     CFastMutexGuard mg(xMutex);
 
     m_Context         = 0;
-    m_AppName         = "CTLibDriver";
     m_LoginRetryCount = 0;
     m_LoginLoopDelay  = 0;
     m_PacketSize      = 2048;
+
+    SetApplicationName("CTLibDriver");
 
     CS_RETCODE r = reuse_context ? cs_ctx_global(version, &m_Context) :
         cs_ctx_alloc(version, &m_Context);
@@ -322,13 +323,13 @@ CTLibContext::~CTLibContext()
 
 void CTLibContext::CTLIB_SetApplicationName(const string& a_name)
 {
-    m_AppName = a_name;
+    SetApplicationName( a_name );
 }
 
 
 void CTLibContext::CTLIB_SetHostName(const string& host_name)
 {
-    m_HostName = host_name;
+    SetHostName( host_name );
 }
 
 
@@ -593,7 +594,7 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
                      CS_NULLTERM, NULL) != CS_SUCCEED  ||
         ct_con_props(con, CS_SET, CS_PASSWORD, (void*) passwd.c_str(),
                      CS_NULLTERM, NULL) != CS_SUCCEED  ||
-        ct_con_props(con, CS_SET, CS_APPNAME, (void*) m_AppName.c_str(),
+        ct_con_props(con, CS_SET, CS_APPNAME, (void*) GetApplicationName().c_str(),
                      CS_NULLTERM, NULL) != CS_SUCCEED ||
         ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
                      CS_NULLTERM, NULL) != CS_SUCCEED) {
@@ -601,9 +602,9 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
         return 0;
     }
 
-    if ( !m_HostName.empty() ) {
+    if ( !GetHostName().empty() ) {
         ct_con_props(con, CS_SET, CS_HOSTNAME,
-                     (void*) m_HostName.c_str(), CS_NULLTERM, NULL);
+                     (void*) GetHostName().c_str(), CS_NULLTERM, NULL);
     }
 
     if (m_PacketSize > 0) {
@@ -876,7 +877,17 @@ I_DriverContext* CTLIB_CreateContext(const map<string,string>* attr = 0)
         }
 
         if ( vers.find("100") != string::npos ) {
-            version= CS_VERSION_100;
+            version = CS_VERSION_100;
+        } else if ( vers.find("110") != string::npos ) {
+            version = CS_VERSION_110;
+#ifdef CS_VERSION_120
+        } else if ( vers.find("120") != string::npos ) {
+            version = CS_VERSION_120;
+#endif            
+#ifdef CS_VERSION_125
+        } else if ( vers.find("125") != string::npos ) {
+            version = CS_VERSION_125;
+#endif            
         } else {
             char* e;
             long v= strtol(vers.c_str(), &e, 10);
@@ -1068,6 +1079,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/10/20 13:04:49  ssikorsk
+ * Fixed:
+ * CTLibContext::CTLIB_SetApplicationName
+ * CTLibContext::CTLIB_SetHostName
+ *
  * Revision 1.45  2005/10/04 13:44:35  ucko
  * Conditionalize uses of CS_VERSION_12x, as some configurations may be
  * using older client libraries that don't define them.
