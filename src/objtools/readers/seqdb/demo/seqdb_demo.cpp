@@ -265,7 +265,7 @@ public:
     {
         CSeqDB sp("swissprot", CSeqDB::eProtein);
         
-        string str("gi|129295|");
+        string str("gi|129295");
         
         CSeq_id seqid(str);
         CRef<CBioseq> bs = sp.SeqidToBioseq(seqid);
