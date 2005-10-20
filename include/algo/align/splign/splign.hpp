@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <objmgr/scope.hpp>
 #include <algo/align/nw/nw_spliced_aligner.hpp>
 #include <algo/align/util/blast_tabular.hpp>
 
@@ -237,6 +238,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2005/10/20 17:57:13  ivanov
+ * + #include <objmgr/scope.hpp>
+ *
  * Revision 1.28  2005/10/19 17:55:38  kapustin
  * Switch to using ObjMgr+LDS to load sequence data
  *
