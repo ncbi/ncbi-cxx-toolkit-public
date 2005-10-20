@@ -119,11 +119,11 @@ static CDBLibContext* g_pContext = NULL;
 
 
 CDBLibContext::CDBLibContext(DBINT version) 
-: m_AppName( "DBLibDriver" )
-, m_HostName( "" )
-, m_PacketSize( 0 )
+: m_PacketSize( 0 )
 , m_TDSVersion( version )
 {
+    SetApplicationName("DBLibDriver");
+
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
@@ -136,7 +136,7 @@ CDBLibContext::CDBLibContext(DBINT version)
     char hostname[256];
     if(gethostname(hostname, 256) == 0) {
         hostname[255] = '\0';
-        m_HostName = hostname;
+        SetHostName( hostname );
     }
 
 #if defined(NCBI_OS_MSWIN)
@@ -344,13 +344,13 @@ CDBLibContext::~CDBLibContext()
 
 void CDBLibContext::DBLIB_SetApplicationName(const string& app_name)
 {
-    m_AppName = app_name;
+    SetApplicationName( app_name );
 }
 
 
 void CDBLibContext::DBLIB_SetHostName(const string& host_name)
 {
-    m_HostName = host_name;
+    SetHostName( host_name );
 }
 
 
@@ -513,11 +513,11 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
                                             const string&   passwd,
                                             TConnectionMode mode)
 {
-    if (!m_HostName.empty())
-        DBSETLHOST(m_Login, (char*) m_HostName.c_str());
+    if (!GetHostName().empty())
+        DBSETLHOST(m_Login, (char*) GetHostName().c_str());
     if (m_PacketSize > 0)
         DBSETLPACKET(m_Login, m_PacketSize);
-    if (DBSETLAPP (m_Login, (char*) m_AppName.c_str())
+    if (DBSETLAPP (m_Login, (char*) GetApplicationName().c_str())
         != SUCCEED ||
         DBSETLUSER(m_Login, (char*) user_name.c_str())
         != SUCCEED ||
@@ -545,7 +545,7 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 
 I_DriverContext* MSDBLIB_CreateContext(const map<string,string>* attr = 0)
 {
-    DBINT version= DBVERSION_46;
+    DBINT version = DBVERSION_46;
 
     return new CDBLibContext(version);
 }
@@ -786,14 +786,14 @@ extern "C" {
 
 const string kDBAPI_FTDS_DriverName("ftds");
 
-class CDbapiFtdsCF2 : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
+class CDbapiFtdsCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext>
 {
 public:
     typedef CSimpleClassFactoryImpl<I_DriverContext, CDBLibContext> TParent;
 
 public:
-    CDbapiFtdsCF2(void);
-    ~CDbapiFtdsCF2(void);
+    CDbapiFtdsCFBase(const string& driver_name);
+    ~CDbapiFtdsCFBase(void);
 
 public:
     virtual TInterface*
@@ -805,19 +805,19 @@ public:
 
 };
 
-CDbapiFtdsCF2::CDbapiFtdsCF2(void)
+CDbapiFtdsCFBase::CDbapiFtdsCFBase(const string& driver_name)
     : TParent(kDBAPI_FTDS_DriverName, 1)
 {
     return ;
 }
 
-CDbapiFtdsCF2::~CDbapiFtdsCF2(void)
+CDbapiFtdsCFBase::~CDbapiFtdsCFBase(void)
 {
     return ;
 }
 
-CDbapiFtdsCF2::TInterface*
-CDbapiFtdsCF2::CreateInstance(
+CDbapiFtdsCFBase::TInterface*
+CDbapiFtdsCFBase::CreateInstance(
     const string& driver,
     CVersionInfo version,
     const TPluginManagerParamTree* params) const
@@ -893,13 +893,39 @@ CDbapiFtdsCF2::CreateInstance(
     return drv;
 }
 
+class CDbapiFtdsCF : public CDbapiFtdsCFBase
+{
+public:
+    CDbapiFtdsCF(void)
+    : CDbapiFtdsCFBase(kDBAPI_FTDS_DriverName)
+    {
+    }
+};
+
+class CDbapiFtdsCF63 : public CDbapiFtdsCFBase
+{
+public:
+    CDbapiFtdsCF63(void)
+    : CDbapiFtdsCFBase("ftds63")
+    {
+    }
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 void
 NCBI_EntryPoint_xdbapi_ftds(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<CDbapiFtdsCF2>::NCBI_EntryPointImpl( info_list, method );
+    CHostEntryPointImpl<CDbapiFtdsCF>::NCBI_EntryPointImpl( info_list, method );
+}
+
+void
+NCBI_EntryPoint_xdbapi_ftds63(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CDbapiFtdsCF63>::NCBI_EntryPointImpl( info_list, method );
 }
 
 NCBI_DBAPIDRIVER_DBLIB_EXPORT
@@ -907,6 +933,7 @@ void
 DBAPI_RegisterDriver_FTDS(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds );
+    RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_ftds63 );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -926,6 +953,7 @@ void DBAPI_RegisterDriver_FTDS_old(I_DriverMgr& mgr)
 {
     DBAPI_RegisterDriver_FTDS(mgr);
 }
+
 extern "C" {
     void* NCBI_FTDS_ENTRY_POINT()
     {
@@ -1089,6 +1117,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/10/20 13:07:20  ssikorsk
+ * Fixed:
+ * CDBLibContext::DBLIB_SetApplicationName
+ * CDBLibContext::DBLIB_SetHostName
+ * An attempt to register two entry points within one driver
+ * for the ftds63 driver
+ *
  * Revision 1.50  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
