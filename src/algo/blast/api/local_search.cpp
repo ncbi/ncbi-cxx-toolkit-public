@@ -173,7 +173,7 @@ CLocalPssmSearch::SetSubject(CConstRef<CSearchDatabase> subject)
 }
 
 void 
-CLocalPssmSearch::SetQuery(CRef<CPssmWithParameters> pssm)
+CLocalPssmSearch::SetQuery(CRef<objects::CPssmWithParameters> pssm)
 {
     ValidatePssm(*pssm);
     m_Pssm = pssm;

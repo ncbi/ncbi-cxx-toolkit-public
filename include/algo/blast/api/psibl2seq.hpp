@@ -76,9 +76,9 @@ public:
 
     /// Constructor to compare two protein sequences in an object manager-free
     /// manner.
-    /// @query Protein query sequence to search (only 1 is allowed!) [in]
-    /// @subject Protein nucleotide sequence to search [in]
-    /// @options Protein options [in]
+    /// @param query Protein query sequence to search (only 1 is allowed!) [in]
+    /// @param subject Protein nucleotide sequence to search [in]
+    /// @param options Protein options [in]
     CPsiBl2Seq(CRef<IQueryFactory> query,
                CRef<IQueryFactory> subject,
                CConstRef<CBlastProteinOptionsHandle> options);
@@ -128,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/10/20 12:48:29  camacho
+* Doxygen fix
+*
 * Revision 1.4  2005/10/20 00:08:19  camacho
 * + protein bl2seq interface (in progress)
 *
