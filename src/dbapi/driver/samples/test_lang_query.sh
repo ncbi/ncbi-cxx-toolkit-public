@@ -6,7 +6,7 @@
 ulimit -n 1536 > /dev/null 2>&1
 
 
-driver_list="ctlib dblib ftds ftds63"
+driver_list="ctlib dblib ftds ftds63" # to add: odbc msdblib
 # server_list="MS_DEV2 BARTOK BARTOK_12"
 server_list="MS_DEV1 STRAUSS MOZART"
 # server_mssql="MS_DEV2"
@@ -18,6 +18,7 @@ trap 'rm -f $res_file' 1 2 15
 n_ok=0
 n_err=0
 sum_list=""
+driver_status=0
 
 # Run one test
 RunSimpleTest()
@@ -81,58 +82,91 @@ fi
 for driver in $driver_list ; do
   cat <<EOF
 
-
-
 ******************* DRIVER:  $driver ************************
-
 EOF
-  if $CHECK_EXEC dbapi_driver_check $driver ; then
-    for server in $server_list ; do
-      if test $driver = "ctlib"  -a  $server = $server_mssql ; then
-         continue
-      fi
-
-      cat <<EOF
 
 
-~~~~~~ SERVER:  $server ~~~~~~~~~~~~~~~~~~~~~~~~
-EOF
-# lang_query
-      cmd="lang_query -d $driver -S $server -Q"
-      RunTest 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
-      RunTest 'select qq = 57 + 33' '<ROW><qq>90<'
-      RunTest 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
-      RunTest 'select name, type from sysobjects' '<ROW><name>'
-# simple tests
-      if test $driver = "dblib"  -a  $server = $server_mssql ; then
-         continue
-      fi
-      # do not run tests wit a boolk copy operations 
-      # on Sybase databases with the "ftds" driver
-      if test \( $driver = "ftds" -a $server = $server_mssql \) \
-            -o $driver != "ftds" ; then
-          cmd="dbapi_bcp -d $driver -S $server"
-          RunSimpleTest "dbapi_bcp"
-          cmd="dbapi_testspeed -d $driver -S $server"
-          RunSimpleTest "dbapi_testspeed"
-      fi
-      # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
-      if test $driver != "ftds" -a $server != $server_mssql ; then
-          cmd="dbapi_cursor -d $driver -S $server"
-          RunSimpleTest "dbapi_cursor"
-      fi
-      cmd="dbapi_query -d $driver -S $server"
-      RunSimpleTest "dbapi_query"
-      cmd="dbapi_send_data -d $driver -S $server"
-      RunSimpleTest "dbapi_send_data"
-    done
+    $CHECK_EXEC dbapi_driver_check $driver
+    driver_status=$?
 
-  else
-    cat <<EOF
+    if test $driver_status -eq 5; then 
+        cat <<EOF
 
 Driver not found.
 EOF
-  fi
+    elif test $driver_status -eq 4; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (Database-related driver initialization error)"
+        cat <<EOF
+    
+Database-related driver initialization error.
+EOF
+    elif test $driver_status -eq 3; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (Corelib-related driver initialization error)"
+        cat <<EOF
+
+Corelib-related driver initialization error.
+EOF
+    elif test $driver_status -eq 2; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (C++-related driver initialization error)"
+        cat <<EOF
+
+C++-related driver initialization error.
+EOF
+    elif test $driver_status -eq 1; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (Unknown driver initialization error)"
+        cat <<EOF
+
+Unknown driver initialization error.
+EOF
+
+    else
+        for server in $server_list ; do
+            if test $driver = "ctlib"  -a  $server = $server_mssql ; then
+                continue
+            fi
+
+            cat <<EOF
+
+~~~~~~ SERVER:  $server ~~~~~~~~~~~~~~~~~~~~~~~~
+EOF
+
+        # lang_query
+            cmd="lang_query -d $driver -S $server -Q"
+            RunTest 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
+            RunTest 'select qq = 57 + 33' '<ROW><qq>90<'
+            RunTest 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
+            RunTest 'select name, type from sysobjects' '<ROW><name>'
+        # simple tests
+            if test $driver = "dblib"  -a  $server = $server_mssql ; then
+                continue
+            fi
+            # do not run tests wit a boolk copy operations 
+            # on Sybase databases with the "ftds" driver
+            if test \( $driver = "ftds" -a $server = $server_mssql \) \
+                    -o $driver != "ftds" ; then
+                cmd="dbapi_bcp -d $driver -S $server"
+                RunSimpleTest "dbapi_bcp"
+                cmd="dbapi_testspeed -d $driver -S $server"
+                RunSimpleTest "dbapi_testspeed"
+            fi
+            # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
+            if test $driver != "ftds" -a $server != $server_mssql ; then
+                cmd="dbapi_cursor -d $driver -S $server"
+                RunSimpleTest "dbapi_cursor"
+            fi
+            cmd="dbapi_query -d $driver -S $server"
+            RunSimpleTest "dbapi_query"
+            cmd="dbapi_send_data -d $driver -S $server"
+            RunSimpleTest "dbapi_send_data"
+
+        done
+
+    fi
+
 done
 
 rm -f $res_file
