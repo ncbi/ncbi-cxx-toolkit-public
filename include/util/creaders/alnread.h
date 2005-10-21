@@ -136,6 +136,27 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile (
                                        */
 );
 
+extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx (
+  FReadLineFunction    readfunc,      /* function for reading lines of 
+                                       * alignment file
+                                       */
+  void *               fileuserdata,  /* data to be passed back each time
+                                       * readfunc is invoked
+                                       */
+  FReportErrorFunction errfunc,       /* function for reporting errors */
+  void *               erroruserdata, /* data to be passed back each time
+                                       * errfunc is invoked
+                                       */
+  TSequenceInfoPtr     sequence_info, /* structure containing sequence
+                                       * alphabet and special characters
+                                       */
+  int                  use_nexus_file_info /* set to nonzero to replace data in 
+                                            * sequence_info with characters
+                                            * read from NEXUS comment in file,
+                                            * set to 0 otherwise.
+                                            */
+);
+
 #ifdef __cplusplus
 }
 #endif
@@ -144,6 +165,10 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile (
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/10/21 15:18:36  bollin
+ * added function to allow the gap, missing, and match characters to be read
+ * from NEXUS comments for an alignment
+ *
  * Revision 1.4  2004/11/24 15:26:18  dicuccio
  * Swap extern and export specifier; white space changes
  *
