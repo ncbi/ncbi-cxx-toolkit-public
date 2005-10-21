@@ -229,7 +229,7 @@ public:
         if (m_Begin != m_End) {
             s.assign(m_Begin, m_End);
         } else {
-            s.clear();
+            s.erase();
         }
     }
     
@@ -238,7 +238,7 @@ public:
         if (m_Begin != m_End) {
             s_SeqDB_QuickAssign(s, m_Begin, m_End);
         } else {
-            s.clear();
+            s.erase();
         }
     }
     

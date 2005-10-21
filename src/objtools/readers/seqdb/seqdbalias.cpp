@@ -333,8 +333,8 @@ static void s_SeqDB_ReadLine(const char       * bp,
                              string           & name,
                              string           & value)
 {
-    name.clear();
-    value.clear();
+    name.erase();
+    value.erase();
     
     const char * p = bp;
     
