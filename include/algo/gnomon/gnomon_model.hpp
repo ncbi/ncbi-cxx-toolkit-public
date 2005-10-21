@@ -172,90 +172,94 @@ public:
             m_limits = TSignedSeqRange(front().GetFrom(),back().GetTo());
         }
     }
-        TSignedSeqRange CdsLimits() const { return m_cds_limits; }   // notincluding start/stop (shows frame)
-        void SetCdsLimits(TSignedSeqRange p) { m_cds_limits = p; }
-        TSignedSeqRange RealCdsLimits() const;     // including start/stop
-        TSignedSeqRange MaxCdsLimits() const { return m_max_cds_limits; }   // longest cds including start/stop (doesn't show frame)
-        void SetMaxCdsLimits(TSignedSeqRange p) { m_max_cds_limits = p; }
+    TSignedSeqRange CdsLimits() const { return m_cds_limits; }   // notincluding start/stop (shows frame)
+    void SetCdsLimits(TSignedSeqRange p) { m_cds_limits = p; }
+    TSignedSeqRange RealCdsLimits() const;     // including start/stop
+    TSignedSeqRange MaxCdsLimits() const { return m_max_cds_limits; }   // longest cds including start/stop (doesn't show frame)
+    void SetMaxCdsLimits(TSignedSeqRange p) { m_max_cds_limits = p; }
     void SetCdsInfo(const CAlignVec& a)
     {
         SetCdsLimits(a.CdsLimits()); SetMaxCdsLimits(a.MaxCdsLimits());
         SetScore(a.Score()); SetPStop(a.PStop()); SetOpenCds(OpenCds());
     }
-        bool Intersect(const CAlignVec& a) const 
-        {
-            return Limits().IntersectingWith(a.Limits()); 
-        }
-        void SetStrand(EStrand s) { m_strand = s; }
-        EStrand Strand() const { return m_strand; }
-        void SetType(int t) { m_type = t; }
-        int Type() const { return m_type; }
-        void SetID(int i) { m_id = i; }
-        int ID() const { return m_id; }
-        void SetName(const string& name) { m_name = name; }
-        const string& Name() const { return m_name; }
-        void ChangeStatus(EStatus status) { m_status = status; }
-        EStatus Status() const { return m_status; }
-        bool operator<(const CAlignVec& a) const { return Precede(Limits(),a.Limits()); }
-        void Init();
-        void SetScore(double s) { m_score = s; }
-        double Score() const { return m_score; }
-        void Extend(const CAlignVec& a);
-        int AlignLen() const ;
-        int CdsLen() const ;              // with start/stop
-        int MaxCdsLen() const ;
-        bool Continious() const           //  no "holes" in alignment
-        {
-            for(unsigned int i = 1; i < size(); ++i)
+    bool Intersect(const CAlignVec& a) const 
+    {
+        return Limits().IntersectingWith(a.Limits()); 
+    }
+    void SetStrand(EStrand s) { m_strand = s; }
+    EStrand Strand() const { return m_strand; }
+    void SetType(int t) { m_type = t; }
+    int Type() const { return m_type; }
+    void SetID(int i) { m_id = i; }
+    int ID() const { return m_id; }
+    void SetName(const string& name) { m_name = name; }
+    const string& Name() const { return m_name; }
+    void ChangeStatus(EStatus status) { m_status = status; }
+    EStatus Status() const { return m_status; }
+    bool operator<(const CAlignVec& a) const { return Precede(Limits(),a.Limits()); }
+    void Init();
+    void SetScore(double s) { m_score = s; }
+    double Score() const { return m_score; }
+    void Extend(const CAlignVec& a);
+    int AlignLen() const ;
+    int CdsLen() const ;              // with start/stop
+    int MaxCdsLen() const ;
+    bool Continious() const           //  no "holes" in alignment
+    {
+        for(unsigned int i = 1; i < size(); ++i)
             {
                 if(!(*this)[i-1].m_ssplice || !(*this)[i].m_fsplice) return false;
             }
-            return true;
-        }
-        bool FullFiveP() const // start present
-        {
-            return m_cds_limits.NotEmpty() && (Strand() == ePlus ? m_cds_limits.GetFrom() > Limits().GetFrom()+2 : m_cds_limits.GetTo() < Limits().GetTo()-2);
-        }
-        bool FullThreeP() const // stop present
-        {
-            return m_cds_limits.NotEmpty() && (Strand() == ePlus ? m_cds_limits.GetTo() < Limits().GetTo()-2 : m_cds_limits.GetFrom() > Limits().GetFrom()+2);
-        }
-        bool FullCds() const   // both start and stop present and no "holes" 
-        { 
-            return (m_cds_limits.NotEmpty() && m_cds_limits.GetFrom() > Limits().GetFrom()+2 && 
-                                     m_cds_limits.GetTo() < Limits().GetTo()-2 && Continious()); 
-        }
-        bool CompleteCds() const   // start, stop and upstream 5' stop present 
-        {
-            if(m_max_cds_limits.Empty() || !Continious()) return false;
-            else if(Strand() == ePlus && m_max_cds_limits.GetFrom() > Limits().GetFrom() && m_cds_limits.GetTo() < Limits().GetTo()-2) return true;
-            else if(Strand() == eMinus && m_cds_limits.GetFrom() > Limits().GetFrom()+2 && m_max_cds_limits.GetTo() < Limits().GetTo()) return true;
-            else return false;  
-        }
-        bool OpenCds() const { return m_open_cds; }  // "optimal" CDS is not internal
-        void SetOpenCds(bool op) { m_open_cds = op; }
-        bool PStop() const { return m_pstop; }  // has premature stop(s)
-        void SetPStop(bool ps) { m_pstop = ps; }
-
-        int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const;
-
-        void GetScore(const CGnomonEngine& engine, bool uselims = false);
+        return true;
+    }
+    bool FullFiveP() const // start present
+    {
+        return m_cds_limits.NotEmpty() && (Strand() == ePlus ? m_cds_limits.GetFrom() > Limits().GetFrom()+2 : m_cds_limits.GetTo() < Limits().GetTo()-2);
+    }
+    bool FullThreeP() const // stop present
+    {
+        return m_cds_limits.NotEmpty() && (Strand() == ePlus ? m_cds_limits.GetTo() < Limits().GetTo()-2 : m_cds_limits.GetFrom() > Limits().GetFrom()+2);
+    }
+    bool FullCds() const   // both start and stop present and no "holes" 
+    { 
+        return (m_cds_limits.NotEmpty() && m_cds_limits.GetFrom() > Limits().GetFrom()+2 && 
+                m_cds_limits.GetTo() < Limits().GetTo()-2 && Continious()); 
+    }
+    bool CompleteCds() const   // start, stop and upstream 5' stop present 
+    {
+        if(m_max_cds_limits.Empty() || !Continious()) return false;
+        else if(Strand() == ePlus && m_max_cds_limits.GetFrom() > Limits().GetFrom() && m_cds_limits.GetTo() < Limits().GetTo()-2) return true;
+        else if(Strand() == eMinus && m_cds_limits.GetFrom() > Limits().GetFrom()+2 && m_max_cds_limits.GetTo() < Limits().GetTo()) return true;
+        else return false;  
+    }
+    bool OpenCds() const { return m_open_cds; }  // "optimal" CDS is not internal
+    void SetOpenCds(bool op) { m_open_cds = op; }
+    bool PStop() const { return m_pstop; }  // has premature stop(s)
+    void SetPStop(bool ps) { m_pstop = ps; }
+    
+    int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const;
+    
+    void GetScore(const CGnomonEngine& engine, bool uselims = false);
     template <class Vec>
-        void GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap = 0, bool cdsonly = false) const;                     
-        
-        // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
-        
-        int isCompatible(const CAlignVec& a) const;  // returns 0 for notcompatible or (number of common splices)+1
-        bool SubAlign(const CAlignVec& a) const { return (Include(a.Limits(),Limits()) && isCompatible(a) > 0); }
-        int MutualExtension(const CAlignVec& a) const;  // returns 0 for notcompatible or (number of introns) + 1
-        
+    void GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap = 0, bool cdsonly = false) const;                     
+    
+    // Below comparisons ignore CDS completely, first 3 assume that alignments are the same strand
+    
+    int isCompatible(const CAlignVec& a) const;  // returns 0 for notcompatible or (number of common splices)+1
+    bool SubAlign(const CAlignVec& a) const { return (Include(a.Limits(),Limits()) && isCompatible(a) > 0); }
+    int MutualExtension(const CAlignVec& a) const;  // returns 0 for notcompatible or (number of introns) + 1
+    
     bool IdenticalAlign(const CAlignVec& a) const
     { return Strand()==a.Strand() && Limits()==a.Limits() && Type()==a.Type() &&
-             static_cast<const vector<CAlignExon>& >(*this) == a && FrameShifts()==a.FrameShifts(); }
-        bool Similar(const CAlignVec& a, int tolerance) const;
-        
-        TFrameShifts& FrameShifts() { return m_fshifts; }
-        const TFrameShifts& FrameShifts() const { return m_fshifts; }
+            static_cast<const vector<CAlignExon>& >(*this) == a && FrameShifts()==a.FrameShifts(); }
+    bool operator==(const CAlignVec& a) const
+    {
+        return IdenticalAlign(a) && ID()==a.ID() && Name()==a.Name();
+    }
+    bool Similar(const CAlignVec& a, int tolerance) const;
+    
+    TFrameShifts& FrameShifts() { return m_fshifts; }
+    const TFrameShifts& FrameShifts() const { return m_fshifts; }
 
 protected:
     TSignedSeqRange m_cds_limits, m_max_cds_limits;
@@ -270,8 +274,6 @@ private:
     double m_score;
     bool m_open_cds, m_pstop;
     TFrameShifts m_fshifts;
-
-    bool operator==(const CAlignVec&) const;
 };
 
 typedef list<CAlignVec> TAlignList;
@@ -395,6 +397,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/10/21 13:35:19  chetvern
+ * Implemented CAlignVec::operator==
+ *
  * Revision 1.11  2005/10/20 19:24:50  souvorov
  * SetLimits for CAlignVec
  *
