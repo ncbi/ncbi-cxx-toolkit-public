@@ -276,7 +276,7 @@ CSymDustMasker::operator()( const sequence_type & seq,
                 {
                     TMaskedInterval last = res->back();
 
-                    if( last.second < b1.first )
+                    if( last.second + linker_ < b1.first )
                         res->push_back( b1 );
                     else if( last.second < b1.second )
                         res->back().second = b1.second;
@@ -328,6 +328,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.15  2005/10/21 17:25:54  morgulis
+ * Fixed a problem of linker usage in the last window of the sequence.
+ *
  * Revision 1.14  2005/09/19 14:37:09  morgulis
  * Added API to return masked intervals as CRef< CPacked_seqint >.
  *
