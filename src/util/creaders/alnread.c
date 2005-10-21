@@ -2426,6 +2426,73 @@ static EBool s_CheckNexusCharInfo
 } 
 
 
+static char * s_ReplaceNexusTypeChar (char *str, char c)
+{
+    if (str == NULL
+        || c != *str 
+        || *(str + 1) != 0)
+    {
+        if (str != NULL)
+        {
+          free (str);
+        }
+        str = malloc (2 * sizeof (char));
+        if (str != NULL)
+        {
+          str [0] = c;
+          str [1] = 0;
+        }
+    }
+    return str;
+}
+
+/* This function reads a Nexus-style comment line for the characters 
+ * specified for missing, match, and gap and sets those values in sequence_info.
+ * The function returns eTrue if a Nexus comment was found, eFalse otherwise.
+ */ 
+static EBool s_UpdateNexusCharInfo 
+(char *               str,
+ TSequenceInfoPtr     sequence_info)
+{
+    char * cp;
+    char   c;
+
+    if (str == NULL  ||  sequence_info == NULL) {
+        return eFalse;
+    }
+
+    cp = strstr (str, "format ");
+    if (cp == NULL) {
+        cp = strstr (str, "FORMAT ");
+    }
+    if (cp == NULL) {
+        return eFalse;
+    }
+
+    c = GetNexusTypechar (cp + 7, "missing");
+    if (c == 0) {
+        c = GetNexusTypechar (cp + 7, "MISSING");
+    }
+    sequence_info->missing = s_ReplaceNexusTypeChar (sequence_info->missing, c);
+    
+    c = GetNexusTypechar (cp + 7, "gap");
+    if (c == 0) {
+        c = GetNexusTypechar (cp + 7, "GAP");
+    }
+    sequence_info->beginning_gap = s_ReplaceNexusTypeChar (sequence_info->beginning_gap, c);
+    sequence_info->middle_gap = s_ReplaceNexusTypeChar (sequence_info->middle_gap, c);
+    sequence_info->end_gap = s_ReplaceNexusTypeChar (sequence_info->end_gap, c);
+ 
+    c = GetNexusTypechar (cp + 7, "match");
+    if (c == 0) {
+        c = GetNexusTypechar (cp + 7, "MATCH");
+    }
+    sequence_info->match = s_ReplaceNexusTypeChar (sequence_info->match, c);
+
+    return eTrue;
+} 
+
+
 /* This function examines the string str to see if it consists entirely of
  * asterisks, colons, periods, and whitespace.  If so, this line is assumed
  * to be a Clustal-style consensus line and the function returns eTrue.
@@ -3447,10 +3514,11 @@ static void s_TrimEndSpace (char *linestring)
 static SAlignRawFilePtr
 s_ReadAlignFileRaw
 (FReadLineFunction    readfunc,
- void *             userdata,
+ void *               userdata,
  TSequenceInfoPtr     sequence_info,
+ EBool                use_nexus_file_info,
  FReportErrorFunction errfunc,
- void *             errdata)
+ void *               errdata)
 {
     char *                   linestring;
     SAlignRawFilePtr         afrp;
@@ -3523,9 +3591,13 @@ s_ReadAlignFileRaw
                 }
             }
             if (! found_char_comment) {
+              if (use_nexus_file_info) {
+                found_char_comment = s_UpdateNexusCharInfo (tmp, sequence_info);
+              } else {
                 found_char_comment = s_CheckNexusCharInfo (tmp, sequence_info, 
-                                                   afrp->report_error,
-                                                   afrp->report_error_userdata);
+                                                           afrp->report_error,
+                                                           afrp->report_error_userdata);
+              }
             }
             
             if (in_taxa_comment) {
@@ -5851,21 +5923,30 @@ s_ConvertDataToOutput
  * match, and gap characters to use in interpreting the sequence data.
  */
 extern TAlignmentFilePtr 
-ReadAlignmentFile 
+ReadAlignmentFileEx 
 (FReadLineFunction readfunc,
  void * fileuserdata,
  FReportErrorFunction errfunc,
  void * erroruserdata,
- TSequenceInfoPtr sequence_info)
+ TSequenceInfoPtr sequence_info,
+ int              use_nexus_file_info)
 {
     SAlignRawFilePtr afrp;
     TAlignmentFilePtr afp;
+    EBool             use_file = eFalse;
 
     if (sequence_info == NULL  ||  sequence_info->alphabet == NULL) {
         return NULL;
     }
+    
+    if (use_nexus_file_info != 0)
+    {
+      use_file = eTrue;
+    }
+    
     afrp = s_ReadAlignFileRaw ( readfunc, fileuserdata, sequence_info,
-                              errfunc, erroruserdata);
+                                use_file,
+                                errfunc, erroruserdata);
     if (afrp == NULL) {
         return NULL;
     }
@@ -5896,9 +5977,27 @@ ReadAlignmentFile
     return afp;
 }
 
+
+extern TAlignmentFilePtr 
+ReadAlignmentFile 
+(FReadLineFunction readfunc,
+ void * fileuserdata,
+ FReportErrorFunction errfunc,
+ void * erroruserdata,
+ TSequenceInfoPtr sequence_info)
+{
+    return ReadAlignmentFileEx (readfunc, fileuserdata, errfunc, erroruserdata,
+                                sequence_info, eFalse);
+}
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/10/21 15:19:13  bollin
+ * added a function to allow the missing, match, and gap characters to be
+ * specified in a NEXUS comment for an alignment file
+ *
  * Revision 1.25  2005/10/12 20:12:28  bollin
  * when reading an interleaved block alignment, generate errors if duplicate IDs
  * are found.
