@@ -183,7 +183,7 @@ private:
     void x_FillDescrAnnot(SObjectDescr* descr, const map<string, int>& type_map);
 
 private:
-    friend class CSequenceQuery;
+    friend class CSequenceFinder;
 
 private:
     CLDS_Database&         m_DataBase;
@@ -196,6 +196,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/10/21 14:37:57  ucko
+ * Fix friend declaration to refer to CSequenceFinder (which needs it
+ * when built with some compilers) rather than CSequenceQuery (which
+ * appears not to exist).
+ *
  * Revision 1.11  2005/10/20 15:33:46  kuznets
  * Implemented duplicate id check
  *
