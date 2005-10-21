@@ -3250,16 +3250,14 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         add(tc);
     }
     
-#if NCBI_DEVELOPMENT_VER > 20051016
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment. 
-    if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) && 
-         args.GetServerType() == CTestArguments::eMsSql ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
-#endif
+//     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
+//          args.GetServerType() == CTestArguments::eMsSql ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
     
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -3407,6 +3405,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2005/10/21 11:49:12  ssikorsk
+ * Disable Test_Bulk_Writing temporarily
+ *
  * Revision 1.53  2005/10/19 16:05:38  ssikorsk
  * Handle ftds63 driver
  *
