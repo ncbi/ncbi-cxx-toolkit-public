@@ -163,7 +163,6 @@ public:
 
     void Insert(const CAlignExon& p);
     TSignedSeqRange Limits() const { return m_limits; }
-    void SetLimits(TSignedSeqRange p) { m_limits = p; }
     void RecalculateLimits()
     {
         if (empty()) {
@@ -397,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/10/21 15:21:46  souvorov
+ * CAlignVec::SetLimits deleted
+ *
  * Revision 1.12  2005/10/21 13:35:19  chetvern
  * Implemented CAlignVec::operator==
  *
