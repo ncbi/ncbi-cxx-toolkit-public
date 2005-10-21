@@ -2013,32 +2013,221 @@ extern char* strdup(const char* str)
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8
 
-void CStringUTF8::x_Append(const char* src)
+size_t CStringUTF8::GetSymbolCount(void) const
 {
-    const char* srcBuf;
-    size_t needed = 0;
-
-    for (srcBuf = src; *srcBuf; ++srcBuf) {
-        Uint1 ch = *srcBuf;
-        if (ch < 0x80) {
-            ++needed;
-        } else {
-            needed += 2;
+    size_t count = 0;
+    for (const char* src = c_str(); *src; ++src, ++count) {
+        size_t more=0;
+        bool good = x_EvalFirst(*src, more);
+        while (more-- && good) {
+            good = x_EvalNext(*(++src));
+        }
+        if ( !good ) {
+            NCBI_THROW2(CStringException, eFormat,
+                        "Wrong UTF8 format", s_DiffPtr(src,c_str()));
         }
     }
+    return count;
+}
 
-    if ( !needed )
+string CStringUTF8::AsSingleByteString(EEncoding encoding) const
+{
+    string result;
+    result.reserve( GetSymbolCount()+1 );
+    for ( const char* src = c_str(); *src; ++src ) {
+        Uint2 ch = SymbolToChar( x_DecodeChar( src ), encoding);
+        if (ch > 0xFF) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "Cannot convert UTF8 string to a single-byte string",
+                        s_DiffPtr(src,c_str()));
+        }
+        result.append(1, (Uint1)ch);
+    }
+    return result;
+}
+
+#if defined(HAVE_WSTRING)
+wstring CStringUTF8::AsUnicode(void) const
+{
+    wstring result;
+    result.reserve( GetSymbolCount()+1 );
+    for (const char* src = c_str(); *src; ++src) {
+        result.append(1, x_DecodeChar(src));
+    }
+    return result;
+}
+#endif // HAVE_WSTRING
+
+CStringUTF8::EEncoding CStringUTF8::GuessEncoding( const char* src)
+{
+    size_t more=0;
+    bool cp1252, iso1, ascii, utf8;
+    for (cp1252 = iso1 = ascii = utf8 = true; *src; ++src) {
+        Uint1 ch = *src;
+        bool skip = false;
+        if (more != 0) {
+            if (x_EvalNext(ch)) {
+                --more;
+                if (more == 0) {
+                    ascii = cp1252 = iso1 = false;
+                }
+                skip = true;
+            } else {
+                more = 0;
+                utf8 = false;
+            }
+        }
+        if (ch > 0x7F) {
+            ascii = false;
+            if (ch < 0xA0) {
+                iso1 = false;
+                if (ch == 0x81 || ch == 0x8D || ch == 0x8F ||
+                    ch == 0x90 || ch == 0x9D) {
+                    cp1252 = false;
+                }
+            }
+            if (!skip && utf8 && !x_EvalFirst(ch, more)) {
+                utf8 = false;
+            }
+        }
+    }
+    if (more != 0) {
+        utf8 = false;
+    }
+    if (ascii) {
+        return eEncoding_Ascii;
+    } else if (cp1252) {
+        return iso1 ? eEncoding_ISO8859_1 : eEncoding_Windows_1252;
+    } else if (utf8) {
+        return eEncoding_UTF8;
+    }
+    return eEncoding_Unknown;
+ }
+
+bool CStringUTF8::MatchEncoding( const char* src, CStringUTF8::EEncoding encoding)
+{
+    bool matches = false;
+    EEncoding enc_src = GuessEncoding(src);
+    switch ( enc_src ) {
+    default:
+    case eEncoding_Unknown:
+        matches = false;
+        break;
+    case eEncoding_Ascii:
+        matches = true;
+        break;
+    case eEncoding_UTF8:
+    case eEncoding_Windows_1252:
+        matches = (encoding == enc_src);
+        break;
+    case eEncoding_ISO8859_1:
+        matches = (encoding == enc_src || encoding == eEncoding_Windows_1252);
+        break;
+    }
+    return matches;
+}
+
+// cp1252, codepoints for chars 0x80 to 0x9F
+static const Uint2 s_cp1252_table[] = {
+    0x20AC, 0x003F, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
+    0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x003F, 0x017D, 0x003F,
+    0x003F, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
+    0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x003F, 0x017E, 0x0178
+};
+
+Uint2 CStringUTF8::CharToSymbol(Uint1 ch, CStringUTF8::EEncoding encoding)
+{
+    if( encoding == eEncoding_UTF8 || encoding == eEncoding_Unknown) {
+        NCBI_THROW2(CStringException, eBadArgs, "Invalid encoding", 0);
+    }
+    if (encoding == eEncoding_ISO8859_1) {
+        return (Uint2)ch;
+    }
+    if ( encoding == eEncoding_Windows_1252 ) {
+        if (ch > 0x7F && ch < 0xA0) {
+            return s_cp1252_table[ ch - 0x80 ];
+        }
+    }
+    return (Uint2)ch;
+}
+
+Uint2 CStringUTF8::SymbolToChar(Uint2 cp, EEncoding encoding)
+{
+    if( encoding == eEncoding_UTF8 || encoding == eEncoding_Unknown) {
+        NCBI_THROW2(CStringException, eBadArgs, "Invalid encoding", 0);
+    }
+    if ( cp <= 0xFF) {
+        return cp;
+    }
+    if ( encoding == eEncoding_Windows_1252 ) {
+        for (Uint2 ch = 0x80; ch <= 0x9F; ++ch) {
+            if (s_cp1252_table[ ch - 0x80 ] == cp) {
+                return ch;
+            }
+        }
+    }
+    return cp;
+}
+
+void CStringUTF8::x_Validate(void) const
+{
+    if (!IsValid()) {
+        NCBI_THROW2(CStringException, eBadArgs,
+            "Source string is not in UTF8 format", 0);
+    }
+}
+
+void CStringUTF8::x_AppendChar(Uint2 ch)
+{
+    if (ch < 0x80) {
+        append(1, Uint1(ch));
+    }
+    else if (ch < 0x800) {
+        append(1, Uint1( (ch >>  6)         | 0xC0));
+        append(1, Uint1( (ch        & 0x3F) | 0x80));
+    } else if (ch < 0x10000) {
+        append(1, Uint1( (ch >> 12)         | 0xE0));
+        append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
+        append(1, Uint1(( ch        & 0x3F) | 0x80));
+    } else {
+        append(1, Uint1( (ch >> 18)         | 0xF0));
+        append(1, Uint1(((ch >> 12) & 0x3F) | 0x80));
+        append(1, Uint1(((ch >>  6) & 0x3F) | 0x80));
+        append(1, Uint1( (ch        & 0x3F) | 0x80));
+    }
+}
+
+void CStringUTF8::x_Append(const char* src,
+                           EEncoding encoding, EValidate validate)
+{
+    if (encoding == eEncoding_Unknown) {
+        encoding = GuessEncoding(src);
+        if (encoding == eEncoding_Unknown) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "Unable to guess the source string encoding", 0);
+        }
+    } else if (validate == eValidate) {
+        if ( !MatchEncoding( src,encoding ) ) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "Source string does not match the declared encoding", 0);
+        }
+    }
+    if (encoding == eEncoding_UTF8 || encoding == eEncoding_Ascii) {
+        append(src);
         return;
+    }
 
+    const char* srcBuf;
+    size_t needed = 0;
+    for (srcBuf = src; *srcBuf; ++srcBuf) {
+        needed += x_BytesNeeded( CharToSymbol( *srcBuf,encoding ) );
+    }
+    if ( !needed ) {
+        return;
+    }
     reserve(length()+needed+1);
     for (srcBuf = src; *srcBuf; ++srcBuf) {
-        Uint1 ch = *srcBuf;
-        if (ch < 0x80) {
-            append(1, ch);
-        } else {
-            append(1, Uint1((ch >> 6) | 0xC0));
-            append(1, Uint1((ch & 0x3F) | 0x80));
-        }
+        x_AppendChar( CharToSymbol( *srcBuf, encoding ) );
     }
 }
 
@@ -2050,153 +2239,76 @@ void CStringUTF8::x_Append(const wchar_t* src)
     size_t needed = 0;
 
     for (srcBuf = src; *srcBuf; ++srcBuf) {
-        Uint2 ch = *srcBuf;
-        if (ch < 0x80) {
-            ++needed;
-        } else if (ch < 0x800) {
-            needed += 2;
-        } else {
-            needed += 3;
-        }
+        needed += x_BytesNeeded( *srcBuf );
     }
-
-    if ( !needed )
+    if ( !needed ) {
         return;
-
+    }
     reserve(length()+needed+1);
     for (srcBuf = src; *srcBuf; ++srcBuf) {
-        Uint2 ch = *srcBuf;
-        if (ch < 0x80) {
-            append(1, Uint1(ch));
-        }
-        else if (ch < 0x800) {
-            append(1, Uint1((ch >> 6) | 0xC0));
-            append(1, Uint1((ch & 0x3F) | 0x80));
-        } else {
-            append(1, Uint1((ch >> 12) | 0xE0));
-            append(1, Uint1(((ch >> 6) & 0x3F) | 0x80));
-            append(1, Uint1((ch & 0x3F) | 0x80));
-        }
+        x_AppendChar( *srcBuf );
     }
 }
 #endif // HAVE_WSTRING
 
-
-string CStringUTF8::AsLatin1(void) const
+size_t CStringUTF8::x_BytesNeeded(Uint2 ch)
 {
-    string result;
-    const char* srcBuf;
-    size_t needed = 0;
-    bool bad = false;
-    bool enough = true;
-
-    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
-        Uint1 ch = *srcBuf;
-        if ((ch & 0x80) == 0) {
-            ++needed;
-        } else if ((ch & 0xE0) == 0xC0) {
-            enough = (ch & 0x1F) <= 0x03;
-            if ( enough ) {
-                ++needed;
-                ch = *(++srcBuf);
-                bad = (ch & 0xC0) != 0x80;
-            }
-        } else if ((ch & 0xF0) == 0xE0) {
-            enough = false;
-        } else {
-            bad = true;
-        }
-        if ( !enough ) {
-            NCBI_THROW2(CStringException, eConvert,
-                        "Cannot convert UTF8 string to single-byte string",
-                        s_DiffPtr(srcBuf,c_str()));
-        }
-        if ( bad ) {
-            NCBI_THROW2(CStringException, eFormat,
-                        "Wrong UTF8 format",
-                        s_DiffPtr(srcBuf,c_str()));
-        }
+    if (ch < 0x80) {
+        return 1;
+    } else if (ch < 0x800) {
+        return 2;
+    } else if (ch < 0x10000) {
+        return 3;
     }
-    result.reserve( needed+1);
-
-    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
-        Uint1 chRes;
-        size_t more;
-        Uint1 ch = *srcBuf;
-        if ((ch & 0x80) == 0) {
-            chRes = ch;
-            more = 0;
-        } else {
-            chRes = (ch & 0x1F);
-            more = 1;
-        }
-        while (more--) {
-            ch = *(++srcBuf);
-            chRes = (chRes << 6) | (ch & 0x3F);
-        }
-        result += chRes;
-    }
-    return result;
+    return 4;
 }
 
-
-#if defined(HAVE_WSTRING)
-wstring CStringUTF8::AsUnicode(void) const
+bool CStringUTF8::x_EvalFirst(Uint1 ch, size_t& more)
 {
-    wstring result;
-    const char* srcBuf;
-    size_t needed = 0;
-    bool bad = false;
-    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
-        Uint1 ch = *srcBuf;
-        if ((ch & 0x80) == 0) {
-            ++needed;
-        } else if ((ch & 0xE0) == 0xC0) {
-            ++needed;
-            ch = *(++srcBuf);
-            bad = (ch & 0xC0) != 0x80;
-        } else if ((ch & 0xF0) == 0xE0) {
-            ++needed;
-            ch = *(++srcBuf);
-            bad = (ch & 0xC0) != 0x80;
-            if ( !bad ) {
-                ch = *(++srcBuf);
-                bad = (ch & 0xC0) != 0x80;
-            }
-        } else {
-            bad = true;
-        }
-        if ( bad ) {
-            NCBI_THROW2(CStringException, eFormat,
-                        "Wrong UTF8 format",
-                        s_DiffPtr(srcBuf,c_str()));
-        }
-    }
-    result.reserve( needed+1);
-    for (srcBuf = c_str(); *srcBuf; ++srcBuf) {
-        Uint2 chRes;
-        size_t more;
-        Uint1 ch = *srcBuf;
-        if ((ch & 0x80) == 0) {
-            chRes = ch;
-            more = 0;
-        } else if ((ch & 0xE0) == 0xC0) {
-            chRes = (ch & 0x1F);
+    more = 0;
+    if (ch > 0x7F) {
+        if ((ch & 0xE0) == 0xC0) {
             more = 1;
-        } else {
-            chRes = (ch & 0x0F);
+        } else if ((ch & 0xF0) == 0xE0) {
             more = 2;
+        } else if ((ch & 0xF8) == 0xF0) {
+            more = 3;
+        } else {
+            return false;
         }
-        while (more--) {
-            ch = *(++srcBuf);
-            chRes = (chRes << 6) | (ch & 0x3F);
-        }
-        result += chRes;
     }
-    return result;
+    return true;
 }
-#endif // HAVE_WSTRING
 
+bool CStringUTF8::x_EvalNext(Uint1 ch)
+{
+    return (ch & 0xC0) == 0x80;
+}
+
+Uint2 CStringUTF8::x_DecodeChar(const char*& src)
+{
+    Uint2 chRes;
+    size_t more;
+    Uint1 ch = *src;
+    if ((ch & 0x80) == 0) {
+        chRes = ch;
+        more = 0;
+    } else if ((ch & 0xE0) == 0xC0) {
+        chRes = (ch & 0x1F);
+        more = 1;
+    } else if ((ch & 0xF0) == 0xE0) {
+        chRes = (ch & 0x0F);
+        more = 2;
+    } else {
+        chRes = (ch & 0x07);
+        more = 3;
+    }
+    while (more--) {
+        ch = *(++src);
+        chRes = (chRes << 6) | (ch & 0x3F);
+    }
+    return chRes;
+}
 
 END_NCBI_SCOPE
 
@@ -2204,6 +2316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.166  2005/10/21 17:35:33  gouriano
+ * Enhanced CStringUTF8
+ *
  * Revision 1.165  2005/10/19 12:04:07  ivanov
  * Removed obsolete NStr::StringTo*() methods.
  * NStr::*ToString() -- added new radix base parameter instead of flags.

@@ -1884,20 +1884,29 @@ public:
 /// CStringUTF8 --
 ///
 ///   An UTF-8 string.
-///   Supports transformations:
-///    - Latin1 character set (ISO 8859-1) to  UTF-8
-///    - UTF-8 to Latin1 character set (ISO 8859-1)
-///    - "wide string" (UCS-2/UTF-16) to UTF-8
-///    - UTF-8 to UCS-2 (UTF-16 with no surrogates)
-///
-/// UTF-8 stands for Unicode Transformation Format-8, and is an 8-bit
-/// lossless encoding of Unicode characters.
-/// @sa
-///   RFC 2279
+///   Stores character data in UTF-8 encoding form.
+///   Being initialized, converts source characters into UTF-8.
+///   Can convert data back into a particular encoding form (non-UTF8)
+///   Supported encodings:
+///      ISO 8859-1 (Latin1)
+///      Microsoft Windows code page 1252
+///      UCS-2/UTF-16 (no surrogates)
 
 class NCBI_XNCBI_EXPORT CStringUTF8 : public string
 {
 public:
+    enum EEncoding {
+        eEncoding_Unknown,
+        eEncoding_UTF8,
+        eEncoding_Ascii,
+        eEncoding_ISO8859_1,
+        eEncoding_Windows_1252
+    };
+    enum EValidate {
+        eNoValidate,
+        eValidate
+    };
+
     /// Default constructor.
     CStringUTF8(void)
     {
@@ -1909,27 +1918,53 @@ public:
     }
 
     /// Copy constructor.
-    CStringUTF8(const CStringUTF8& src)
+    ///
+    /// @param src
+    ///   Source UTF-8 string
+    /// @param validate
+    ///   Verify that the source character encoding is really UTF-8
+    CStringUTF8(const CStringUTF8& src, EValidate validate = eNoValidate)
         : string(src)
     {
+        if (validate == eValidate) {
+            x_Validate();
+        }
     }
 
-    /// Constructor from a string (Latin1) argument.
-    CStringUTF8(const string& src)
+    /// Constructor from a C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    CStringUTF8(const string& src,
+                EEncoding encoding = eEncoding_ISO8859_1,
+                EValidate validate = eNoValidate)
         : string()
     {
-        x_Append(src.c_str());
+        x_Append(src.c_str(), encoding, validate);
     }
 
-    /// Constructor from a char* (Latin1) argument.
-    CStringUTF8(const char* src)
+    /// Constructor from a C string
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    CStringUTF8(const char* src,
+                EEncoding encoding = eEncoding_ISO8859_1,
+                EValidate validate = eNoValidate)
         : string()
     {
-        x_Append(src);
+        x_Append(src, encoding, validate);
     }
 
 #if defined(HAVE_WSTRING)
-    /// Constructor from a wstring (UTF-16) argument.
+    /// Constructor from a wstring (UTF-16).
     ///
     /// Defined only if wstring is supported by the compiler.
     CStringUTF8(const wstring& src)
@@ -1938,7 +1973,7 @@ public:
         x_Append( src.c_str());
     }
 
-    /// Constructor from a whcar_t* (UTF-16) argument.
+    /// Constructor from a whcar_t* (UTF-16).
     ///
     /// Defined only if wstring is supported by the compiler.
     CStringUTF8(const wchar_t* src)
@@ -1948,14 +1983,14 @@ public:
     }
 #endif // HAVE_WSTRING
 
-    /// Assignment operator -- rhs is a CStringUTF8.
+    /// Assign to UTF8 string
     CStringUTF8& operator= (const CStringUTF8& src)
     {
         string::operator= (src);
         return *this;
     }
 
-    /// Assignment operator -- rhs is a string (Latin1).
+    /// Assign to C++ string in Latin1 encoding.
     CStringUTF8& operator= (const string& src)
     {
         erase();
@@ -1963,7 +1998,7 @@ public:
         return *this;
     }
 
-    /// Assignment operator -- rhs is a char* (Latin1).
+    /// Assign to C string in Latin1 encoding.
     CStringUTF8& operator= (const char* src)
     {
         erase();
@@ -1972,7 +2007,7 @@ public:
     }
 
 #if defined(HAVE_WSTRING)
-    /// Assignment operator -- rhs is a wstring (UTF-16).
+    /// Assign to C++ wstring in UTF16 encoding
     ///
     /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator= (const wstring& src)
@@ -1982,7 +2017,7 @@ public:
         return *this;
     }
 
-    /// Assignment operator -- rhs is a wchar_t* (UTF-16).
+    /// Assign to wide-char C string in UTF16 encoding
     ///
     /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator= (const wchar_t* src)
@@ -1993,21 +2028,21 @@ public:
     }
 #endif // HAVE_WSTRING
 
-    /// Append to string operator+= -- rhs is CStringUTF8.
+    /// Append a string in UTF8 encoding
     CStringUTF8& operator+= (const CStringUTF8& src)
     {
         string::operator+= (src);
         return *this;
     }
 
-    /// Append to string operator+= -- rhs is string (Latin1).
+    /// Append a C++ string in Latin1 encoding
     CStringUTF8& operator+= (const string& src)
     {
         x_Append(src.c_str());
         return *this;
     }
 
-    /// Append to string operator+= -- rhs is char* (Latin1).
+    /// Append a C string in Latin1 encoding
     CStringUTF8& operator+= (const char* src)
     {
         x_Append(src);
@@ -2015,7 +2050,7 @@ public:
     }
 
 #if defined(HAVE_WSTRING)
-    /// Append to string operator+=  -- rhs is a wstring (UTF-16).
+    /// Append a C++ wstring in UTF-16 encoding
     ///
     /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator+= (const wstring& src)
@@ -2024,7 +2059,7 @@ public:
         return *this;
     }
 
-    /// Append to string operator+=  -- rhs is a wchar_t* (UTF-16).
+    /// Append a wide-char C string in UTF-16 encoding
     ///
     /// Defined only if wstring is supported by the compiler.
     CStringUTF8& operator+= (const wchar_t* src)
@@ -2033,21 +2068,181 @@ public:
         return *this;
     }
 #endif // HAVE_WSTRING
-
-    /// Convert to Latin1 character set (ISO 8859-1)
+    
+    /// Assign to C++ string
     ///
-    /// Can throw a StringException with error codes "eFormat" or "eConvert"
-    /// if string has a wrong UTF-8 format or cannot be converted to Latin1.
-    string AsLatin1(void) const;
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    CStringUTF8& Assign(const string& src,
+                        EEncoding encoding,
+                        EValidate validate = eNoValidate)
+    {
+        erase();
+        x_Append(src.c_str(), encoding, validate);
+        return *this;
+    }
+
+    /// Assign to C string
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    CStringUTF8& Assign(const char* src,
+                        EEncoding encoding,
+                        EValidate validate = eNoValidate)
+    {
+        erase();
+        x_Append(src, encoding, validate);
+        return *this;
+    }
+
+    /// Append a C++ string
+    ///
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    CStringUTF8& Append(const string& src,
+                        EEncoding encoding,
+                        EValidate validate = eNoValidate)
+    {
+        x_Append(src.c_str(), encoding, validate);
+        return *this;
+    }
+
+    /// Append a C string
+    ///
+    /// @param src
+    ///   Source zero-terminated character buffer
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    CStringUTF8& Append(const char* src,
+                        EEncoding encoding,
+                        EValidate validate = eNoValidate)
+    {
+        x_Append(src, encoding, validate);
+        return *this;
+    }
+
+    /// Get the number of symbols (code points) in the string
+    ///
+    /// @return
+    ///   Number of symbols (code points)
+    size_t GetSymbolCount(void) const;
+
+    /// Check that the character encoding of the string is valid UTF-8
+    ///
+    /// @return
+    ///   Result of the check
+    bool IsValid(void) const
+    {
+        return MatchEncoding(c_str(), eEncoding_UTF8);
+    }
+    /// Convert to ISO 8859-1 (Latin1) character representation
+    ///
+    /// Can throw a CStringException if the conversion is impossible
+    /// or the string has invalid UTF-8 format.
+    string AsLatin1(void) const
+    {
+        return AsSingleByteString(eEncoding_ISO8859_1);
+    }
+    
+    /// Convert the string to a single-byte character representation
+    ///
+    /// Can throw a CStringException if the conversion is impossible
+    /// or the string has invalid UTF-8 format.
+    /// @param encoding
+    ///   Desired encoding
+    /// @return
+    ///   C++ string
+    string AsSingleByteString(EEncoding encoding) const;
 
 #if defined(HAVE_WSTRING)
     /// Convert to Unicode (UTF-16 with no surrogates).
     ///
-    /// Can throw a StringException with error code "eFormat" if string has
-    /// a wrong UTF-8 format.
+    /// Can throw a CStringException if the string has invalid UTF-8 format.
     /// Defined only if wstring is supported by the compiler.
     wstring AsUnicode(void) const;
 #endif // HAVE_WSTRING
+
+    /// Guess the encoding of the C string
+    ///
+    /// It can distinguish between UTF-8, Latin1, and Win1252 only
+    /// @param src
+    ///   Source zero-terminated character buffer
+    /// @return
+    ///   Encoding
+    static EEncoding GuessEncoding( const char* src);
+
+    /// Guess the encoding of the C++ string
+    ///
+    /// It can distinguish between UTF-8, Latin1, and Win1252 only
+    /// @param src
+    ///   Source string
+    /// @return
+    ///   Encoding
+    static EEncoding GuessEncoding( const string& src)
+    {
+        return GuessEncoding( src.c_str());
+    }
+
+    /// Check the encoding of the C string
+    ///
+    /// Check that the encoding of the source is the same, or
+    /// is compatible with the specified one
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding form to check against
+    /// @return
+    ///   Boolean result: encoding is same or compatible
+    static bool MatchEncoding( const char* src, EEncoding encoding);
+
+    /// Check the encoding of the C++ string
+    ///
+    /// Check that the encoding of the source is the same, or
+    /// is compatible with the specified one
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding form to check against
+    /// @return
+    ///   Boolean result: encoding is same or compatible
+    static bool MatchEncoding( const string& src, EEncoding encoding)
+    {
+        return MatchEncoding( src.c_str(), encoding);
+    }
+    
+    /// Convert encoded character into UTF16
+    ///
+    /// @param ch
+    ///   Encoded character
+    /// @param encoding
+    ///   Character encoding
+    /// @return
+    ///   Code point
+    static Uint2 CharToSymbol(Uint1 ch, EEncoding encoding);
+    
+    /// Convert Unicode code point into encoded character
+    ///
+    /// @param ch
+    ///   Code point
+    /// @param encoding
+    ///   Character encoding
+    /// @return
+    ///   Encoded character
+    static Uint2 SymbolToChar(Uint2 sym, EEncoding encoding);
 
 private:
     /// Function AsAscii is deprecated - use AsLatin1() instead
@@ -2056,15 +2251,25 @@ private:
         return AsLatin1();
     }
 
-    /// Helper method to append a Latin1 (ISO 8859-1) string.
-    void x_Append(const char* src);
-
+    void   x_Validate(void) const;
+    /// Convert Unicode code point into UTF8 and append
+    void   x_AppendChar(Uint2 ch);
+    /// Convert coded character sequence into UTF8 and append
+    void   x_Append(const char* src,
+                    EEncoding encoding = eEncoding_ISO8859_1,
+                    EValidate validate = eNoValidate);
 #if defined(HAVE_WSTRING)
-    /// Helper method to append an Unicode string.
-    ///
-    /// Defined only if wstring is supported by the compiler.
+    /// Convert Unicode character sequence into UTF8 and append
     void x_Append(const wchar_t* src);
 #endif // HAVE_WSTRING
+    /// Check how many bytes is needed to represent the code point in UTF8
+    static size_t x_BytesNeeded(Uint2 ch);
+    /// Check if the character is valid first code unit of UTF8
+    static bool   x_EvalFirst(Uint1 ch, size_t& more);
+    /// Check if the character is valid non-first code unit of UTF8
+    static bool   x_EvalNext(Uint1 ch);
+    /// Convert sequence of UTF8 code units into Unicode code point
+    static Uint2  x_DecodeChar(const char*& src);
 };
 
 
@@ -2915,6 +3120,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.97  2005/10/21 17:35:52  gouriano
+ * Enhanced CStringUTF8
+ *
  * Revision 1.96  2005/10/19 12:03:53  ivanov
  * Removed obsolete NStr::StringTo*() methods.
  * NStr::*ToString() -- added new radix base parameter instead of flags.
