@@ -31,13 +31,12 @@
 * ===========================================================================
 */
 
-//#ifdef _MSC_VER
-//#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
-//#endif
-
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
+
+#include <algo/structure/struct_util/struct_util.hpp>
+#include <algo/structure/bma_refine/RefinerEngine.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -51,19 +50,9 @@
 #endif
 #include <wx/wx.h>
 
-#include "structure_set.hpp"
 #include "cn3d_refiner_interface.hpp"
-#include "block_multiple_alignment.hpp"
-#include "sequence_set.hpp"
-#include "alignment_set.hpp"
-#include "alignment_manager.hpp"
 #include "wx_tools.hpp"
 #include "cn3d_tools.hpp"
-#include "sequence_viewer.hpp"
-#include <algo/structure/struct_util/struct_util.hpp>
-#include <algo/structure/bma_refine/RefinerEngine.hpp>
-
-//USING_SCOPE(align_refine);
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -143,57 +132,15 @@ BMARefiner::~BMARefiner(void)
     delete m_refinerEngine;
 }
 
-bool BMARefiner::RefineMultipleAlignment(Cn3D::BlockMultipleAlignment *originalMultiple,
-    Cn3DBMAList *refinedMultiples, SequenceViewer *sequenceViewer, StructureSet *structureSet)
-{
-    unsigned int count = 1;
-    AlignmentUtilityList refinedAUs;
-    AlignmentUtilityListIt auIt, auEnd;
-    Cn3D::BlockMultipleAlignment* refinedBMA;
-
-    //  Use the structure set to get the extra info needed to build an AlignmentUtility.
-    struct_util::AlignmentUtility* originalAlignmentUtilily = Cn3DBMA_To_AlignmentUtility(originalMultiple, structureSet);
-
-    bool result = RefineMultipleAlignment(originalAlignmentUtilily, &refinedAUs, sequenceViewer);
-
-    //  In general, may have multiple trials.  Keep all of them and let the caller decide
-    //  what to do.  Ordered by decreasing score (i.e., best scoring to worst scoring).
-    if (refinedAUs.size() > 0) {
-        auEnd = refinedAUs.end();
-        for (auIt = refinedAUs.begin(); auIt != auEnd; ++auIt, ++count) {
-            refinedBMA = AlignmentUtility_To_Cn3DBMA(*auIt, structureSet);
-            if (refinedBMA) {
-                if (refinedMultiples) refinedMultiples->push_back(refinedBMA);
-            } else {
-                ERRORMSG("Error converting refined alignment " << count << " into Cn3D format.");
-                result = false;
-            }
-//            delete *auIt;  // dtor of refiner engine cleans this up
-        }
-    }
-
-    delete originalAlignmentUtilily;
-
-    return result;
-}
-
 
 bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
-    AlignmentUtilityList *refinedMultiples, SequenceViewer *sequenceViewer)
+    AlignmentUtilityList *refinedMultiples, wxWindow *parent)
 {
     if (!originalMultiple) return false;
 
     unsigned int nAlignedBlocks = originalMultiple->GetBlockMultipleAlignment()->NAlignedBlocks();
     if (nAlignedBlocks == 0) {
         ERRORMSG("Must have at least one aligned block to use the block aligner");
-        return false;
-    }
-
-    // show options dialog each time block aligner is run; initializes the refiner engine
-    // By default, no blocks are frozen.  If wish to freeze blocks, will require changes to ConfigureRefiner
-    if (!ConfigureRefiner(NULL, nAlignedBlocks)) return false;
-    if (!m_refinerEngine) {
-        ERRORMSG("Error initializing alignment refinement engine");
         return false;
     }
 
@@ -204,6 +151,14 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
             delete *it;
         }
         refinedMultiples->clear();
+    }
+
+    // show options dialog each time block aligner is run; initializes the refiner engine
+    // By default, no blocks are frozen.  If wish to freeze blocks, will require changes to ConfigureRefiner
+    if (!ConfigureRefiner(parent, nAlignedBlocks)) return true;
+    if (!m_refinerEngine) {
+        ERRORMSG("Error initializing alignment refinement engine");
+        return false;
     }
 
     SetDialogSevereErrors(true);
@@ -277,143 +232,6 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks)
         m_refinerEngine = new align_refine::CBMARefinerEngine(loo, be, genl.nCycles, genl.nTrials, genl.verbose, genl.trialConvThold);
     }
     return ok;
-}
-
-//  need a ncbi::objects::CSeq_entry (as from CCdd::GetSequences()) or list<cref<cseq_entry>>  and
-//  a list<cref<cseq_annot>> as returned from CCdd::GetSeqannot()
-/*
-    AlignmentSet::newAsnAlignmentData is what I want; where can I get an alignment set??
-    static AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
-        const BlockMultipleAlignment *multiple, const std::vector < int >& rowOrder);
-    or...
-        ASNDataManager::GetSequenceAlignments or ASNDataManager::GetOrCreateSequenceAlignments
-
-    for the latter, ASNDataManager::GetSequences() is what I want.
-
-        where do I get an ASNDataManager??????   StructureSet seems to be the only class
-        with an instance, but I have to go through a StructureSet's methods....
-        e.g., void ReplaceAlignmentSet(AlignmentSet *newAlignmentSet);  it also has public
-        data     const SequenceSet *sequenceSet;  const AlignmentSet *alignmentSet;  AlignmentManager *alignmentManager;
-
-    A structure set is in a Cn3DGLCanvas....
-*/
-
-Cn3D::BlockMultipleAlignment*  BMARefiner::AlignmentUtility_To_Cn3DBMA(struct_util::AlignmentUtility* au, StructureSet *structureSet)
-{
-//    typedef std::vector < const Sequence * > SequenceList;
-    // list will be owned/freed by this object
-//    BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr);
-
-    //  This is the 'hackier' conversion:  need the master Sequence object from the StructureSet,
-    //  and to create MasterSlaveAlignment objects.  Also need it to access the alignment manager
-    //  in order to create the new Cn3D::BMA object.
-
-    if (!au || !structureSet) return NULL;
-
-    Cn3D::BlockMultipleAlignment* bma = NULL;
-    Cn3D::BlockMultipleAlignment::SequenceList bmaSeqList;
-    SequenceSet::SequenceList::const_iterator seqIt, seqItEnd;
-    const Sequence* masterSeq = structureSet->alignmentSet->master;
-
-    AlignmentManager::PairwiseAlignmentList pairwiseList;
-    AlignmentManager::PairwiseAlignmentList::iterator pairwiseListIt, pairwiseListEnd;
-
-    const AlignmentUtility::SeqAnnotList& auAnnots = au->GetSeqAnnots();
-    if (auAnnots.size() > 0) {
-        list < CRef < CSeq_align > > seqAligns;
-        AlignmentUtility::SeqAnnotList::const_iterator seqAnnotIt = auAnnots.begin(), seqAnnotEnd = auAnnots.end();
-
-        //  Fill in 'pairwiseList' with MasterSlaveAlignments generated from
-        //  the AlignmentUtility's SeqAnnots.
-        for (; seqAnnotIt != seqAnnotEnd; ++seqAnnotIt) {
-
-            if (!seqAnnotIt->GetObject().GetData().IsAlign()) {
-                ERRORMSG("Warning - confused by seqannot data format in refiner output");
-                continue;
-            }
-            if (seqAnnotIt != auAnnots.begin()) TRACEMSG("multiple Seq-annots");
-
-            CSeq_annot::C_Data::TAlign::const_iterator alignIt, alignEnd = seqAnnotIt->GetObject().GetData().GetAlign().end();
-            for (alignIt = seqAnnotIt->GetObject().GetData().GetAlign().begin(); alignIt != alignEnd; ++alignIt) {
-
-                // verify this is a type of alignment we can deal with
-                if (!(alignIt->GetObject().GetType() != CSeq_align::eType_partial ||
-                    alignIt->GetObject().GetType() != CSeq_align::eType_diags) ||
-                    !alignIt->GetObject().IsSetDim() || alignIt->GetObject().GetDim() != 2 ||
-                    (!alignIt->GetObject().GetSegs().IsDendiag() && !alignIt->GetObject().GetSegs().IsDenseg())) {
-                    ERRORMSG("Warning - confused by alignment type in refiner output");
-                    continue;
-                }
-                CRef< ncbi::objects::CSeq_align > align(*alignIt);  // will clean itself up
-//                align.Reset(*alignIt);
-                MasterSlaveAlignment* msAlignment = new MasterSlaveAlignment(structureSet, masterSeq, *align);
-                if (msAlignment) pairwiseList.push_back(msAlignment);
-            }
-        }
-
-        //  Create a new Cn3D::BMA <this will likely need to be changed>
-        try {
-            bma = structureSet->alignmentManager->CreateMultipleFromPairwiseWithIBM(pairwiseList);
-        } catch (...) {
-            ERRORMSG("Error building BlockMultipleAlignment object from PairwiseAlignmentList.");
-        }
-
-        //  Clean up the MasterSlaveAlignment objects.
-        pairwiseListEnd = pairwiseList.end();
-        for (pairwiseListIt = pairwiseList.begin(); pairwiseListIt != pairwiseListEnd; ++ pairwiseListIt) {
-            delete *pairwiseListIt;
-        }
-    }
-
-    return bma;
-}
-/*
-    const SequenceSet* constSeqSet = structureSet->sequenceSet;
-    SequenceSet::SequenceList::const_iterator seqIt, seqItEnd;
-    if (constSeqSet) {
-        seqIt    = constSeqSet->sequences.begin();
-        seqItEnd = constSeqSet->sequences.end();
-        for (; seqIt != seqItEnd; ++seqIt) {
-            bmaSeqList.push_back(*seqIt);
-        }
-    }
-*/
-//        if (bmaSeqList.size() > 0)
-//            bma = new Cn3D::BlockMultipleAlignment(&bmaSeqList, structureSet->alignmentManager);
-
-
-struct_util::AlignmentUtility* BMARefiner::Cn3DBMA_To_AlignmentUtility(Cn3D::BlockMultipleAlignment* bma, StructureSet *structureSet)
-{
-    //  ASNDataManager typedefs
-    //typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
-    //typedef std::list < ncbi::CRef < ncbi::objects::CSeq_annot > > SeqAnnotList;
-//    AlignmentUtility(const ncbi::objects::CSeq_entry& seqEntry, const SeqAnnotList& seqAnnots);
-//    AlignmentUtility(const SeqEntryList& seqEntries, const SeqAnnotList& seqAnnots);
-//    return new AlignmentUtility();
-
-
-    //  This is the easier conversion once 'GetASN*()' methods are available.
-    struct_util::AlignmentUtility* au = NULL;
-    StructureSet::SeqEntryList* asnSequences;
-    StructureSet::SeqAnnotList* asnAlignment;
-
-    if (structureSet) {
-        asnSequences = structureSet->GetASNSequences();
-        asnAlignment = structureSet->GetASNAlignment();
-        if (asnSequences && asnAlignment) {
-            try {
-                au = new AlignmentUtility(*asnSequences, *asnAlignment);
-            } catch (...) {
-                ERRORMSG("Error extracting ASN data from ASNDataManager object.");
-                delete au;
-                au = NULL;
-            }
-        } else {
-            ERRORMSG("Error extracting ASN data from ASNDataManager object.");
-        }
-    }
-
-    return au;
 }
 
 
@@ -811,6 +629,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.2  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

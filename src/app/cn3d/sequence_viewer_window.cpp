@@ -75,6 +75,7 @@ BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_MENU      (MID_SELF_HIT,                        SequenceViewerWindow::OnSelfHit)
     EVT_MENU_RANGE(MID_TAXONOMY_FULL, MID_TAXONOMY_ABBR,            SequenceViewerWindow::OnTaxonomy)
     EVT_MENU_RANGE(MID_HIGHLIGHT_BLOCKS, MID_RESTRICT_HIGHLIGHTS,   SequenceViewerWindow::OnHighlight)
+    EVT_MENU      (MID_SQ_REFINER,                      SequenceViewerWindow::OnRefineAlignment)
 END_EVENT_TABLE()
 
 SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer) :
@@ -114,6 +115,8 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);
     editMenu->Append(MID_DELETE_ROW, "De&lete Row", "", true);
+    editMenu->AppendSeparator();
+    editMenu->Append(MID_SQ_REFINER, "Alignment Re&finer...");
 
     mouseModeMenu->Append(MID_MOVE_ROW, "&Move Row", "", true);
 
@@ -167,11 +170,11 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
             menuBar->Enable(MID_SHOW_HIDE_ROWS, !enabled);  // can't show/hide when editor is on
         else
             menuBar->Enable(MID_SHOW_HIDE_ROWS, false);     // can't show/hide in non-alignment display
-        menuBar->Enable(MID_DELETE_ROW, enabled);           // can only delete row when editor is on
+        menuBar->Enable(MID_DELETE_ROW, enabled);
         menuBar->Enable(MID_SORT_ROWS, enabled);
-        menuBar->Enable(MID_MOVE_ROW, enabled);             // can only move row when editor is on
-        menuBar->Enable(MID_REALIGN_ROW, enabled);          // can only realign rows when editor is on
-        menuBar->Enable(MID_REALIGN_ROWS, enabled);         // can only realign rows when editor is on
+        menuBar->Enable(MID_MOVE_ROW, enabled);
+        menuBar->Enable(MID_REALIGN_ROW, enabled);
+        menuBar->Enable(MID_REALIGN_ROWS, enabled);
         menuBar->Enable(MID_MARK_BLOCK, enabled);
         menuBar->Enable(MID_CLEAR_MARKS, enabled);
         menuBar->Enable(MID_SELF_HIT, editable);
@@ -181,6 +184,7 @@ void SequenceViewerWindow::EnableDerivedEditorMenuItems(bool enabled)
         menuBar->Enable(MID_EXPORT, editable);
         menuBar->Enable(MID_EXPAND_HIGHLIGHTS, editable);
         menuBar->Enable(MID_RESTRICT_HIGHLIGHTS, editable);
+        menuBar->Enable(MID_SQ_REFINER, enabled);
         if (!enabled) CancelDerivedSpecialModesExcept(-1);
     }
 }
@@ -562,12 +566,24 @@ void SequenceViewerWindow::OnHighlight(wxCommandEvent& event)
     }
 }
 
+void SequenceViewerWindow::OnRefineAlignment(wxCommandEvent& event)
+{
+    if (sequenceViewer->GetCurrentAlignments().size() == 0) {
+        ERRORMSG("SequenceViewerWindow::OnRefineAlignment() - no alignment!");
+        return;
+    }
+    sequenceViewer->alignmentManager->RefineAlignment();
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.59  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

@@ -370,7 +370,7 @@ public:
     const Range* GetRangeOfRow(unsigned int row) const { return &(ranges[row]); }
 
     // set range
-    void SetRangeOfRow(unsigned int row, unsigned int from, unsigned int to)
+    void SetRangeOfRow(unsigned int row, int from, int to)
     {
         ranges[row].from = from;
         ranges[row].to = to;
@@ -436,6 +436,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.50  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

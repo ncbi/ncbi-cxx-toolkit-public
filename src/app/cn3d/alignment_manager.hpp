@@ -63,6 +63,7 @@ class BLASTer;
 class StructureSet;
 class MoleculeIdentifier;
 class BlockAligner;
+class BMARefiner;
 
 class AlignmentManager : public ShowHideCallbackObject
 {
@@ -75,6 +76,7 @@ public:
     Threader *threader; // made public so viewers have access to it
     BLASTer *blaster;
     BlockAligner *blockAligner;
+    BMARefiner *bmaRefiner;
 
     void ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const;
 
@@ -138,6 +140,9 @@ public:
     // remove sequence from both multiple alignment and updates
     void PurgeSequence(const MoleculeIdentifier *identifier);
 
+    // run the alignment refiner
+    void RefineAlignment(void);
+
     // show sequence/alignment/update viewer
     void ShowSequenceViewer(bool showNow) const;
     void ShowUpdateWindow(void) const;
@@ -169,6 +174,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.53  2005/10/19 17:28:17  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

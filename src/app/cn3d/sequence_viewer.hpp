@@ -68,6 +68,9 @@ public:
     // turn on the editor (if not already on)
     void TurnOnEditor(void);
 
+    // put in a new alignment (undoable)
+    bool ReplaceAlignment(const BlockMultipleAlignment *origAln, BlockMultipleAlignment *newAln);
+
     // functions to save edited data
     void SaveDialog(void);
     void SaveAlignment(void);
@@ -96,6 +99,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.34  2005/06/07 12:18:52  thiessen
 * add PSSM export
 *

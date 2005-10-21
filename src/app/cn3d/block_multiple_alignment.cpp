@@ -191,13 +191,13 @@ bool BlockMultipleAlignment::AddAlignedBlockAtEnd(UngappedAlignedBlock *newBlock
 UnalignedBlock * BlockMultipleAlignment::
     CreateNewUnalignedBlockBetween(const Block *leftBlock, const Block *rightBlock)
 {
-    if ((leftBlock && !leftBlock->IsAligned()) ||
-        (rightBlock && !rightBlock->IsAligned())) {
+    if ((leftBlock && !leftBlock->IsAligned()) || (rightBlock && !rightBlock->IsAligned())) {
         ERRORMSG("CreateNewUnalignedBlockBetween() - passed an unaligned block");
         return NULL;
     }
 
-    unsigned int row, from, to, length;
+    unsigned int row, length;
+    int from, to;
     SequenceList::const_iterator s, se = sequences->end();
 
     UnalignedBlock *newBlock = new UnalignedBlock(this);
@@ -222,7 +222,8 @@ UnalignedBlock * BlockMultipleAlignment::
             return NULL;
         }
         length = to - from + 1;
-        if (length > newBlock->width) newBlock->width = length;
+        if (length > newBlock->width)
+            newBlock->width = length;
     }
 
     if (newBlock->width == 0) {
@@ -248,9 +249,8 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
 
     // right tail
     newUnalignedBlock = CreateNewUnalignedBlockBetween(alignedBlock, NULL);
-    if (newUnalignedBlock) {
+    if (newUnalignedBlock)
         blocks.insert(a, newUnalignedBlock);
-    }
 
     return true;
 }
@@ -1581,7 +1581,7 @@ unsigned int BlockMultipleAlignment::ShowGeometryViolations(bool showGV)
 CSeq_align * CreatePairwiseSeqAlignFromMultipleRow(const BlockMultipleAlignment *multiple,
     const BlockMultipleAlignment::UngappedAlignedBlockList& blocks, unsigned int slaveRow)
 {
-    if (!multiple || slaveRow < 0 || slaveRow >= multiple->NRows()) {
+    if (!multiple || slaveRow >= multiple->NRows()) {
         ERRORMSG("CreatePairwiseSeqAlignFromMultipleRow() - bad parameters");
         return NULL;
     }
@@ -1902,6 +1902,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.70  2005/10/19 17:28:17  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

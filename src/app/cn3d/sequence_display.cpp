@@ -938,6 +938,8 @@ void SequenceDisplay::GetRowOrder(
         if (alnRow && alnRow->alignment == forAlignment)
             slaveRowOrder->push_back(alnRow->row);
     }
+    if (slaveRowOrder->size() != forAlignment->NRows() || slaveRowOrder->front() != 0)
+        ERRORMSG("SequenceDisplay::GetRowOrder() - row order vector problem");
 }
 
 // comparison function: if CompareRows(a, b) == true, then row a moves up
@@ -1320,6 +1322,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.81  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

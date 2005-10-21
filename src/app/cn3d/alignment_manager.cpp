@@ -34,8 +34,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
+#include <algo/structure/struct_util/struct_util.hpp>
+
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include "alignment_manager.hpp"
 #include "sequence_set.hpp"
@@ -54,6 +57,7 @@
 #include "cn3d_blast.hpp"
 #include "style_manager.hpp"
 #include "cn3d_ba_interface.hpp"
+#include "cn3d_refiner_interface.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -74,6 +78,8 @@ void AlignmentManager::Init(void)
     threader = new Threader();
     blaster = new BLASTer();
     blockAligner = new BlockAligner();
+    bmaRefiner = new BMARefiner();
+
     originalMultiple = NULL;
 }
 
@@ -149,6 +155,7 @@ AlignmentManager::~AlignmentManager(void)
     delete threader;
     delete blaster;
     delete blockAligner;
+    delete bmaRefiner;
     if (originalMultiple) delete originalMultiple;
 }
 
@@ -273,8 +280,8 @@ static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
 {
     AlignmentManager::PairwiseAlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; ++a) {
-        if (((*a)->masterToSlave[masterTo] - (*a)->masterToSlave[masterFrom]) !=
-            (masterTo - masterFrom)) return false;
+        if (((*a)->masterToSlave[masterTo] - (*a)->masterToSlave[masterFrom]) != (masterTo - masterFrom))
+            return false;
     }
     return true;
 }
@@ -313,10 +320,11 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
     // each block is a continuous region on the master, over which each master
     // residue is aligned to a residue of each slave, and where there are no
     // insertions relative to the master in any of the slaves
-    unsigned int masterFrom = 0, masterTo, row;
+    int masterFrom = 0, masterTo;
+    unsigned int row;
     UngappedAlignedBlock *newBlock;
 
-    while (masterFrom < multipleAlignment->GetMaster()->Length()) {
+    while (masterFrom < (int)multipleAlignment->GetMaster()->Length()) {
 
         // look for first all-aligned residue
         if (!AlignedToAllSlaves(masterFrom, alignments)) {
@@ -328,7 +336,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
         // block boundaries from the original master-slave pairs, so that
         // blocks don't get merged
         for (masterTo=masterFrom+1;
-                masterTo < multipleAlignment->GetMaster()->Length() &&
+                masterTo < (int)multipleAlignment->GetMaster()->Length() &&
                 AlignedToAllSlaves(masterTo, alignments) &&
                 NoSlaveInsertionsBetween(masterFrom, masterTo, alignments) &&
                 NoBlockBoundariesBetween(masterFrom, masterTo, alignments);
@@ -357,8 +365,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const PairwiseAlignmentList&
 
     if (!multipleAlignment->AddUnalignedBlocks() ||
         !multipleAlignment->UpdateBlockMapAndColors()) {
-        ERRORMSG("AlignmentManager::CreateMultipleFromPairwiseWithIBM() - "
-            "error finalizing alignment");
+        ERRORMSG("AlignmentManager::CreateMultipleFromPairwiseWithIBM() - error finalizing alignment");
         return NULL;
     }
 
@@ -1131,7 +1138,7 @@ void AlignmentManager::ExtendUpdate(BlockMultipleAlignment *single)
             return;
         }
 
-        // replace threaded alignment with new one
+        // replace original alignment with extended one
         UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
         bool foundSingle = false;   // sanity check
         for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; ++a) {
@@ -1147,12 +1154,95 @@ void AlignmentManager::ExtendUpdate(BlockMultipleAlignment *single)
     }
 }
 
+void AlignmentManager::RefineAlignment(void)
+{
+    // TODO:  selection dialog for realigning specific rows
+    // <can add this afterwards; refiner supports this sort of thing but need to improve api>
+//    wxString *titleStrs = new wxString[multiple->NRows() - 1];
+//    for (unsigned int i=1; i<multiple->NRows(); ++i)
+//        titleStrs[i - 1] = multiple->GetSequenceOfRow(i)->identifier->ToString().c_str();
+
+    // get info on current multiple alignment
+    const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
+    if (multiple->NRows() < 2) {
+        ERRORMSG("AlignmentManager::RefineAlignment() - can't refine alignments with < 2 rows");
+        return;
+    }
+
+    // construct Seq-entry from sequences in current alignment
+    struct_util::AlignmentUtility::SeqEntryList seqEntries;
+    seqEntries.push_back(CRef<CSeq_entry>(new CSeq_entry));
+    CRef < CSeq_entry > seq(new CSeq_entry);
+    seq->SetSeq().Assign(multiple->GetMaster()->bioseqASN.GetObject());
+    seqEntries.back()->SetSet().SetSeq_set().push_back(seq);
+
+    // construct Seq-annot from rows in the alignment
+    struct_util::AlignmentUtility::SeqAnnotList seqAnnots;
+    seqAnnots.push_back(CRef<CSeq_annot>(new CSeq_annot));
+    BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+    multiple->GetUngappedAlignedBlocks(&blocks);
+    vector < unsigned int > rowOrder;
+    sequenceViewer->GetCurrentDisplay()->GetRowOrder(multiple, &rowOrder);
+
+    // fill out Seq-entry and Seq-annot based on current row ordering of the display (which may be different from BMA)
+    for (unsigned int i=1; i<multiple->NRows(); ++i) {
+        seq.Reset(new CSeq_entry);
+        seq->SetSeq().Assign(multiple->GetSequenceOfRow(rowOrder[i])->bioseqASN.GetObject());
+        seqEntries.back()->SetSet().SetSeq_set().push_back(seq);
+        CRef < CSeq_align > seqAlign(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, rowOrder[i]));
+        seqAnnots.back()->SetData().SetAlign().push_back(seqAlign);
+    }
+
+    // create AlignmentUtility
+    auto_ptr < struct_util::AlignmentUtility > au(new struct_util::AlignmentUtility(seqEntries, seqAnnots));
+
+    // actually run the refiner
+    BMARefiner::AlignmentUtilityList resultAUs;
+    bool okay = bmaRefiner->RefineMultipleAlignment(au.get(), &resultAUs, NULL);
+
+    if (okay) {
+
+        if (resultAUs.size() > 0) {
+
+            // just use first returned alignment for now; convert asn data into BlockMultipleAlignment
+            PairwiseAlignmentList pairs;
+            struct_util::AlignmentUtility::SeqAnnotList::const_iterator a, ae = resultAUs.front()->GetSeqAnnots().end();
+            for (a=resultAUs.front()->GetSeqAnnots().begin(); a!=ae; ++a) {
+                if (!(*a)->IsSetData() || !(*a)->GetData().IsAlign()) {
+                    WARNINGMSG("AlignmentManager::RefineAlignment() - got result Seq-annot in unexpected format");
+                    continue;
+                }
+                CSeq_annot::C_Data::TAlign::const_iterator l, le = (*a)->GetData().GetAlign().end();
+                for (l=(*a)->GetData().GetAlign().begin(); l!=le; ++l)
+                    pairs.push_back(new MasterSlaveAlignment(NULL, multiple->GetMaster(), **l));
+            }
+            auto_ptr < BlockMultipleAlignment > refined(CreateMultipleFromPairwiseWithIBM(pairs));
+            DELETE_ALL_AND_CLEAR(pairs, PairwiseAlignmentList);
+
+            // feed result back into alignment window
+            if (refined.get() && refined->NRows() == multiple->NRows())
+                sequenceViewer->ReplaceAlignment(multiple, refined.release());
+            else
+                ERRORMSG("AlignmentManager::RefineAlignment() - problem converting refinement result");
+        }
+        // else cancelled
+
+    } else {
+        ERRORMSG("AlignmentManager::RefineAlignment() - refinement failed. Alignment unchanged.");
+    }
+
+//    DELETE_ALL_AND_CLEAR(resultAUs, BMARefiner::AlignmentUtilityList);    // apparently deleted by the refiner engine
+}
+
 END_SCOPE(Cn3D)
 
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.103  2005/10/19 17:28:17  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

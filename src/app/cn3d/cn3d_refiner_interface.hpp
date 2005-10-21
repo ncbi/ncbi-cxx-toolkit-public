@@ -49,15 +49,8 @@ BEGIN_SCOPE(struct_util)
 class AlignmentUtility;
 END_SCOPE(struct_util)
 
+
 BEGIN_SCOPE(Cn3D)
-
-class SequenceViewer;
-class StructureSet;
-class BlockMultipleAlignment;
-
-//  Note:  the underlying refiner engine works in terms of a struct_util::AlignmentUtility
-//         object.  Private methods AlignmentUtility_To_Cn3DBMA and Cn3DBMA_To_AlignmentUtility
-//         exist to encapsulate the conversion to/from Cn3D's BlockMultipleAlignment objects.
 
 class BMARefiner
 {
@@ -67,26 +60,15 @@ public:
 
     typedef std::list < struct_util::AlignmentUtility * > AlignmentUtilityList;
     typedef AlignmentUtilityList::iterator AlignmentUtilityListIt;
-    typedef std::list < Cn3D::BlockMultipleAlignment *  > Cn3DBMAList;
-    typedef Cn3DBMAList::iterator Cn3DBMAListIt;
-
-    // Note:  SequenceViewer* is passed only in analogy w/ BlockAligner calls; 
-    // not directly used and may not be needed.
 
     // Refines an initial blocked multiple alignment according to parameters in
     // a dialog filled in by user.  All non-master rows are refined unless user
     // declares otherwise.  The output AlignmentList contains the results
-    // ordered from best to worst refined score (refiner engine 'owns' the alignments). 
+    // ordered from best to worst refined score (refiner engine 'owns' the alignments).
     // If the refinement alignment algorithm fails, a null element is appended
     // to the list.  Return 'false' only if all trials fail.
     bool RefineMultipleAlignment(struct_util::AlignmentUtility *originalMultiple,
-        AlignmentUtilityList *refinedMultiples, SequenceViewer *sequenceViewer);
-
-    // This inputs & outputs an alignment in a more cn3d-friendly object.  Conversions
-    // handled internally to the method; StructureSet required to perform the conversion.
-    /*  Current CJL hack:  If can't pass a structure set, needs real indoor plumbing. */
-    bool RefineMultipleAlignment(Cn3D::BlockMultipleAlignment *originalMultiple,
-        Cn3DBMAList *refinedMultiples, SequenceViewer *sequenceViewer, StructureSet *structureSet);
+        AlignmentUtilityList *refinedMultiples, wxWindow *parent);
 
     //  In case it's desired to get info results/settings directly from the refiner engine.
     const align_refine::CBMARefinerEngine* GetRefiner() {return m_refinerEngine;}
@@ -98,15 +80,6 @@ private:
     // brings up a dialog that lets the user set refinement parameters; returns false if cancelled
     // initializes the refiner engine w/ values found in the dialog.
     bool ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks);
-
-    // Conversion functions between struct_util::AlignmentUtility and Cn3D::BlockMultipleAlignment.
-    // Assumes a 'StructureSet' is available, and contains the underlying alignment referenced by
-    // the rest of Cn3D.
-    /*  Current CJL hack:  Needs real indoor plumbing. */
-    Cn3D::BlockMultipleAlignment*  AlignmentUtility_To_Cn3DBMA(struct_util::AlignmentUtility* au, StructureSet *structureSet);
-    /*  Current CJL hack:  Needs real indoor plumbing. */
-    struct_util::AlignmentUtility* Cn3DBMA_To_AlignmentUtility(Cn3D::BlockMultipleAlignment* bma, StructureSet *structureSet);
-
 };
 
 END_SCOPE(Cn3D)
@@ -116,6 +89,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.1  2005/10/18 21:38:33  lanczyck
 * initial versions (still containing CJL hacks incompatible w/ official cn3d)
 *

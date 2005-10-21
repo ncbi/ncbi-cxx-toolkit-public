@@ -88,6 +88,7 @@ private:
             MID_FLOAT_G_V,
             MID_SORT_SELF_HIT,
             MID_PROXIMITY_SORT,
+        MID_SQ_REFINER,
         // mouse mode
         MID_MOVE_ROW,
         // update menu
@@ -110,6 +111,7 @@ private:
     void OnSelfHit(wxCommandEvent& event);
     void OnTaxonomy(wxCommandEvent& event);
     void OnHighlight(wxCommandEvent& event);
+    void OnRefineAlignment(wxCommandEvent& event);
 
     // called before an operation (e.g., alignment editor enable) that requires
     // all rows of an alignment to be visible; 'false' return should abort that operation
@@ -179,6 +181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.32  2005/06/07 12:18:52  thiessen
 * add PSSM export
 *

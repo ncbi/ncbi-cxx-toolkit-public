@@ -115,6 +115,34 @@ void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
         CreateSequenceWindow(false);
 }
 
+bool SequenceViewer::ReplaceAlignment(const BlockMultipleAlignment *origAln, BlockMultipleAlignment *newAln)
+{
+    AlignmentList& alignments = GetCurrentAlignments();
+    SequenceDisplay *display = GetCurrentDisplay();
+
+    // sanity checks
+    if (alignments.size() != 1 || alignments.front() != origAln || !sequenceWindow || !sequenceWindow->EditorIsOn()) {
+        ERRORMSG("SequenceViewer::ReplaceAlignment() - bad parameters");
+        return false;
+    }
+
+    // empty out and then recreate the current alignment list and display (but not the undo stacks!)
+    DELETE_ALL_AND_CLEAR(alignments, AlignmentList);
+    alignments.push_back(newAln);
+    display->Empty();
+    display->AddBlockBoundaryRow(newAln);
+    for (unsigned int row=0; row<newAln->NRows(); ++row)
+        display->AddRowFromAlignment(row, newAln);
+
+    // set starting scroll to a few residues left of the first aligned block
+    display->SetStartingColumn(newAln->GetFirstAlignedBlockPosition() - 5);
+
+    Save();    // make this an undoable operation
+    if (sequenceWindow)
+        sequenceWindow->UpdateDisplay(display);
+    return true;
+}
+
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
     SequenceDisplay *display = new SequenceDisplay(false, viewerWindow);
@@ -549,6 +577,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/10/21 21:59:49  thiessen
+* working refiner integration
+*
 * Revision 1.72  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
