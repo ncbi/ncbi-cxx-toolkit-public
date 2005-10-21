@@ -31,13 +31,14 @@ trap 'rm -f $res_file' 1 2 15
 n_ok=0
 n_err=0
 sum_list=""
+driver_status=0
 
 # Run one test
 RunTest()
 {
   echo
   (
-    $CHECK_EXEC python_ncbi_dbapi_test $1 > $res_file 2>&1
+    $CHECK_EXEC run_sybase_app.sh python_ncbi_dbapi_test $1 > $res_file 2>&1
   )
   if test $? -eq 0 ; then
       echo "OK:"
@@ -54,7 +55,7 @@ RunTest()
 }
 
 # Check existence of the "dbapi_driver_check"
-$CHECK_EXEC dbapi_driver_check
+$CHECK_EXEC run_sybase_app.sh dbapi_driver_check
 if test $? -ne 99 ; then
   echo "The DBAPI driver existence check application not found."
   echo
@@ -67,43 +68,66 @@ if test -f $CFG_LIB/libpython_ncbi_dbapi.so ; then
 fi
 
 
-#if $CHECK_EXEC dbapi_driver_check ftds ; then
-#    $CHECK_EXEC python_ncbi_dbapi_test
-#    exit $?
-#fi
-#
-#exit 1
-
 # Loop through all combinations of {driver, server, test}
 for driver in $driver_list ; do
   cat <<EOF
 
 ******************* DRIVER:  $driver ************************
 EOF
+    $CHECK_EXEC run_sybase_app.sh dbapi_driver_check $driver
+    driver_status=$?
 
-  if $CHECK_EXEC dbapi_driver_check $driver ; then
-    for server in $server_list ; do
-      if test \( $driver = "ctlib" -o $driver = "dblib" \) -a  $server = $server_mssql ; then
-         continue
-      fi
-      if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
-         continue
-      fi
+    if test $driver_status -eq 5; then 
+        cat <<EOF
 
-      cat <<EOF
+Driver not found.
+EOF
+    elif test $driver_status -eq 4; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (Database-related driver initialization error)"
+        cat <<EOF
+    
+Database-related driver initialization error.
+EOF
+    elif test $driver_status -eq 3; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (Corelib-related driver initialization error)"
+        cat <<EOF
+
+Corelib-related driver initialization error.
+EOF
+    elif test $driver_status -eq 2; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (C++-related driver initialization error)"
+        cat <<EOF
+
+C++-related driver initialization error.
+EOF
+    elif test $driver_status -eq 1; then
+        n_err=`expr $n_err + 1`
+        sum_list="$sum_list XXX_SEPARATOR -  dbapi_driver_check $driver (Unknown driver initialization error)"
+        cat <<EOF
+
+Unknown driver initialization error.
+EOF
+    else
+        for server in $server_list ; do
+            if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
+                continue
+            fi
+            if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+                continue
+            fi
+
+            cat <<EOF
 
 ~~~~~~ SERVER:  $server ~~~~~~~~~~~~~~~~~~~~~~~~
 EOF
 
-     RunTest "-d $driver -S $server"
-    done
+            RunTest "-d $driver -S $server"
+        done
+    fi
 
-  else
-    cat <<EOF
-
-Driver not found.
-EOF
-  fi
 done
 
 rm -f $res_file
