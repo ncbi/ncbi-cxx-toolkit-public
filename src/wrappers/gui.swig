@@ -35,10 +35,12 @@
 // nested classes that cause problems
 %ignore *::CConvertCache_SCacheKeySort;
 %ignore *::CRegularGridGen_const_iterator;
-%ignore *::CGuiRegistry_CReadView;
-%ignore *::CGuiRegistry_CReadWriteView;
+%ignore *::CGuiRegistry_CReadView::GetTopKeys;
+%ignore *::CGuiRegistry_CReadView::GetKeys;
+%ignore *::CGuiRegistry_SKeyInfo::access;
 %ignore *::CPluginTask_STaskInfo::job_id;
 %ignore *::CPluginTask_STaskInfo::status;
+%{typedef CGuiRegistry::CReadView CReadView;%}  // nasty hack
 %ignore *::CGuiDiagHandler_CDiagEvent;
 
 // nested classes problem (CGuiRegistry::CReadView)
@@ -60,8 +62,6 @@
 %ignore ncbi::operator<(const CPluginHandle&, const CPluginHandle&);
 %ignore ncbi::operator<(CLayoutObject const &, CLayoutObject const &);
 
-// Nested classes trouble with gui/objutils/registry.hpp
-#define GUI_OBJUTILS___REGISTRY__HPP
 
 %%
 
@@ -318,6 +318,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/21 15:22:08  jcherry
+ * Wrap CGuiRegistry, despite nested classes problem
+ *
  * Revision 1.5  2005/10/18 15:53:37  jcherry
  * Don't included gui/objutils/iselection.hpp, which has been removed
  *
