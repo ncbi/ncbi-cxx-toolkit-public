@@ -276,6 +276,8 @@ bool AlignmentUtility::DoLeaveOneOut(
         return false;
     }
 
+    BlockMultipleAlignment::AlignmentList toRealign;
+
     bool status = false;
     DP_BlockInfo *dpBlocks = NULL;
     DP_AlignmentResult *dpResult = NULL;
@@ -305,7 +307,6 @@ bool AlignmentUtility::DoLeaveOneOut(
         if (rowToRealign < 1 || rowToRealign >= m_currentMultiple->NRows())
             THROW_MESSAGE("invalid row number");
         vector < unsigned int > rowsToRemove(1, rowToRealign);
-        BlockMultipleAlignment::AlignmentList toRealign;
         TRACE_MESSAGE("extracting for realignment: "
             << m_currentMultiple->GetSequenceOfRow(rowToRealign)->IdentifierString());
         if (!m_currentMultiple->ExtractRows(rowsToRemove, &toRealign))
@@ -411,6 +412,8 @@ bool AlignmentUtility::DoLeaveOneOut(
 
     CException::EnableBackgroundReporting(prevState);
 
+    DELETE_ALL_AND_CLEAR(toRealign, BlockMultipleAlignment::AlignmentList);
+
     DP_DestroyBlockInfo(dpBlocks);
     DP_DestroyAlignmentResult(dpResult);
 
@@ -452,6 +455,8 @@ bool AlignmentUtility::DoLeaveNOut(
         ERROR_MESSAGE("inconsistent sizes between row list and query terminii lists for LNO");
         return false;
     }
+
+    BlockMultipleAlignment::AlignmentList toRealign;
 
     bool status = false;
     DP_BlockInfo *dpBlocks = NULL;
@@ -500,7 +505,6 @@ bool AlignmentUtility::DoLeaveNOut(
         }
 
         //  Extract rows in decreasing row-number order.
-        BlockMultipleAlignment::AlignmentList toRealign;
         BlockMultipleAlignment::AlignmentList::iterator toRealignIt, toRealignEnd;
         if (!m_currentMultiple->ExtractRows(sortedRowsToRealign, &toRealign))
             THROW_MESSAGE("ExtractRows() failed");
@@ -639,6 +643,8 @@ bool AlignmentUtility::DoLeaveNOut(
 
     CException::EnableBackgroundReporting(prevState);
 
+    DELETE_ALL_AND_CLEAR(toRealign, BlockMultipleAlignment::AlignmentList);
+
     DP_DestroyBlockInfo(dpBlocks);
     DP_DestroyAlignmentResult(dpResult);
 
@@ -742,6 +748,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/10/22 11:50:26  thiessen
+* plug memory leak
+*
 * Revision 1.20  2005/10/04 21:36:03  lanczyck
 * bug fix in DoLeaveNOut
 *

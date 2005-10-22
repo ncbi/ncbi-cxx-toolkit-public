@@ -77,6 +77,15 @@ void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remo
     v = copy;
 }
 
+// utility function to delete all elements from an STL container
+#define DELETE_ALL_AND_CLEAR(container, ContainerType) \
+do { \
+    ContainerType::iterator i, ie = (container).end(); \
+    for (i=(container).begin(); i!=ie; ++i) \
+        delete *i; \
+    (container).clear(); \
+} while (0)
+
 END_SCOPE(struct_util)
 
 #endif // STRUCT_UTIL_PRIVATE__HPP
@@ -84,6 +93,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/10/22 11:50:26  thiessen
+* plug memory leak
+*
 * Revision 1.8  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()
