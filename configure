@@ -4705,6 +4705,10 @@ echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-r
   ICC:9* )
     # Back and forth we go.
     LDFLAGS="-i-static $LDFLAGS"
+    # Running icpc on a bunch of object files doesn't always ensure that
+    # the C++ standard library is actually linked in, and we shouldn't
+    # rely on help from wrapper scripts.
+    LINK="$LINK -Kc++"
     ;;
 esac
 

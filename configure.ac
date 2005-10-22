@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.394 2005/10/18 15:11:05 ucko Exp $
+#  $Id: configure.ac,v 1.395 2005/10/22 15:37:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1192,6 +1192,10 @@ case "$compiler:$compiler_version:$with_bin_release" in
   ICC:9* )
     # Back and forth we go.
     LDFLAGS="-i-static $LDFLAGS"
+    # Running icpc on a bunch of object files doesn't always ensure that
+    # the C++ standard library is actually linked in, and we shouldn't
+    # rely on help from wrapper scripts.
+    LINK="$LINK -Kc++"
     ;;
 esac
 
