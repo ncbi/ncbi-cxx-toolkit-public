@@ -470,12 +470,12 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
         if (masterFrom <= masterTo && masterFrom < master->Length() && masterTo < master->Length())
             argstr << "&from=" << (masterFrom+1) << "&to=" << (masterTo+1); // URL #'s are 1-based
         argstr << '\0';
-        auto_ptr<char> args(argstr.str());
+        string args((string) CNcbiOstrstreamToString(argstr));
 
         // connect to vastalign.cgi
         CBiostruc_annot_set structureAlignment;
-        INFOMSG("trying to load VAST alignment data from " << host << path << '?' << args.get());
-        if (!GetAsnDataViaHTTP(host, path, args.get(), &structureAlignment, &err)) {
+        INFOMSG("trying to load VAST alignment data from " << host << path << '?' << args);
+        if (!GetAsnDataViaHTTP(host, path, args, &structureAlignment, &err)) {
             ERRORMSG("Error calling vastalign.cgi: " << err);
             BlockMultipleAlignment *newAlignment = MakeEmptyAlignment(master, *s);
             if (newAlignment) newAlignments->push_back(newAlignment);
@@ -1161,6 +1161,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.79  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

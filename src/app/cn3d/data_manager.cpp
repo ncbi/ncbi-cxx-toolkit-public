@@ -317,8 +317,7 @@ bool ASNDataManager::ConvertMimeDataToCDD(const std::string& cddName)
         cdd->SetId().Set().push_back(id);
         CNcbiOstrstream oss;
         oss << "loc" << localID++ << '\0';
-        auto_ptr<char> accession(oss.str());
-        id->SetGid().SetAccession(accession.get());
+        id->SetGid().SetAccession((string) CNcbiOstrstreamToString(oss));
 
         // fill in data
         if (!seqEntryList) {
@@ -1025,6 +1024,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.25  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

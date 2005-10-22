@@ -122,8 +122,8 @@ Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, std::st
         ncbi::SetDiagTrace(ncbi::eDT_Disable);
         objOstream << from;
 
-        NS_AUTO_PTR<char> strData(asnOstrstream.str()); // to make sure data gets freed
-        aimp = AsnIoMemOpen("rb", (unsigned char *) asnOstrstream.str(), asnOstrstream.pcount());
+        std::string strData((string) ncbi::CNcbiOstrstreamToString(asnOstrstream));
+        aimp = AsnIoMemOpen("rb", (unsigned char *) strData.data(), strData.size());
         if (!aimp || !(cObject = (*readFunc)(aimp->aip, NULL)))
             throw "AsnIoMem -> C object failed";
 
@@ -164,6 +164,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.12  2004/05/27 19:43:24  thiessen
 * prefix diag trace stuff with ncbi::
 *

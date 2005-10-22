@@ -550,8 +550,7 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
     }
 
     oss << '\0';
-    auto_ptr<char> d(oss.str());
-    *data = d.get();
+    *data = (string) CNcbiOstrstreamToString(oss);
     return true;
 }
 
@@ -580,6 +579,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.46  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

@@ -436,8 +436,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
         // draw label
         if (oss.pcount() > 0) {
             oss << '\0';
-            string labelText = oss.str();
-            delete oss.str();
+            string labelText = (string) CNcbiOstrstreamToString(oss);
 
             // apply highlight color if necessary
             if (GlobalMessenger()->IsHighlighted(molecule, id))
@@ -456,6 +455,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.37  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

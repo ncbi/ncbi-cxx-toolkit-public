@@ -1426,8 +1426,7 @@ void StructureObject::RealignStructure(int nCoords,
         << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->identifier->ToString()
         << " with master " << multiple->GetSequenceOfRow(0)->identifier->ToString()
         << ", as computed by Cn3D" << '\0';
-    feature->SetName(string(oss.str()));
-    delete oss.str();
+    feature->SetName((string) CNcbiOstrstreamToString(oss));
 }
 
 void StructureObject::SelectByDistance(double cutoff, unsigned int options,
@@ -1516,6 +1515,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.149  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.148  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

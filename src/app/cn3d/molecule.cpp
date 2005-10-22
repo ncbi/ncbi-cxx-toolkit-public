@@ -388,8 +388,7 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                 oss << '\0';
 
                 // draw label
-                string labelText = oss.str();
-                delete oss.str();
+                string labelText = (string) CNcbiOstrstreamToString(oss);
                 parentSet->renderer->DrawLabel(labelText, labelPosition, labelColor);
             }
         }
@@ -404,6 +403,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.47  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

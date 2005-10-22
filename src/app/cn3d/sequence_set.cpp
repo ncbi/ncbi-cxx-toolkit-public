@@ -478,8 +478,7 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
         oss << identifier->accession.c_str();
     }
     oss << '\0';
-    LaunchWebPage(oss.str());
-    delete oss.str();
+	LaunchWebPage(((string) CNcbiOstrstreamToString(oss)).c_str());
 }
 
 static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
@@ -660,6 +659,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.71  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

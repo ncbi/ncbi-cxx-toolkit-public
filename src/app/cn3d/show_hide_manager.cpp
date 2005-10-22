@@ -107,8 +107,7 @@ public:
         oss << indent << indent << m->identifier->pdbID;
         if (m->identifier->pdbChain != ' ') oss << '_' << (char) m->identifier->pdbChain;
         oss << " d" << labelNum << '\0';
-        label = oss.str();
-        delete oss.str();
+        label = (string) CNcbiOstrstreamToString(oss);
     }
     bool IsVisible(const ShowHideManager *shm) const
     {
@@ -525,6 +524,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.24  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

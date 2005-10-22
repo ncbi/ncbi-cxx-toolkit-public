@@ -985,11 +985,9 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
                 // set scores to show in alignment
                 newAlignment->SetRowDouble(0, thdTbl->tg[i]);
                 newAlignment->SetRowDouble(1, thdTbl->tg[i]);
-                CNcbiOstrstream oss;
-                oss << "Threading successful; alignment score before merge: " << thdTbl->tg[i] << '\0';
-                newAlignment->SetRowStatusLine(0, oss.str());
-                newAlignment->SetRowStatusLine(1, oss.str());
-                delete oss.str();
+                string status = string("Threading successful; alignment score before merge: ") + NStr::DoubleToString(thdTbl->tg[i]);
+                newAlignment->SetRowStatusLine(0, status);
+                newAlignment->SetRowStatusLine(1, status);
 
                 if (options.mergeAfterEachSequence) {
                     if (!sequenceViewer->EditorIsOn())
@@ -1155,8 +1153,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
         multiple->SetRowDouble(row, score);
         CNcbiOstrstream oss;
         oss << "PSSM+Contact score (PSSM x" << weightPSSM << "): " << score << '\0';
-        multiple->SetRowStatusLine(row, oss.str());
-        delete oss.str();
+        multiple->SetRowStatusLine(row, (string) CNcbiOstrstreamToString(oss));
     }
 
     retval = true;
@@ -1249,6 +1246,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.48  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

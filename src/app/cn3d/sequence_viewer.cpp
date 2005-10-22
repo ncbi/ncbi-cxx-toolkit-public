@@ -233,8 +233,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
 
         titleList.resize(titleList.size() + 1);
         oss << '\n' << '\0';
-        auto_ptr<char> data(oss.str());
-        titleList.back() = data.get();
+        titleList.back() = (string) CNcbiOstrstreamToString(oss);
     }
 
     static const int eAllRepeats=0, eFakeRepeatIDs=1, eNoRepeats=2;
@@ -340,10 +339,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
         if (doHTML) {
             // prefer gi's, since accessions can be outdated
             if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-                CNcbiOstrstream uidoss;
-                uidoss << sequence->identifier->gi << '\0';
-                uids[row] = uidoss.str();
-                delete uidoss.str();
+                uids[row] = NStr::IntToString(sequence->identifier->gi);
             } else if (sequence->identifier->pdbID.size() > 0) {
                 if (sequence->identifier->pdbID != "query" &&
                     sequence->identifier->pdbID != "consensus") {
@@ -577,6 +573,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.73  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *

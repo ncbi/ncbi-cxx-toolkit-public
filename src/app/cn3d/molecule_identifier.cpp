@@ -41,8 +41,6 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/PDB_mol_id.hpp>
 
-#include <memory>
-
 #include "molecule_identifier.hpp"
 #include "structure_set.hpp"
 #include "molecule.hpp"
@@ -229,8 +227,7 @@ string MoleculeIdentifier::ToString(void) const
     } else
         oss << '?';
     oss << '\0';
-    auto_ptr<char> chars(oss.str());    // frees memory upon function return
-    return string(oss.str());
+    return (string) CNcbiOstrstreamToString(oss);
 }
 
 const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int moleculeID)
@@ -335,6 +332,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/10/22 02:50:34  thiessen
+* deal with memory issues, mostly in ostrstream->string conversion
+*
 * Revision 1.18  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
