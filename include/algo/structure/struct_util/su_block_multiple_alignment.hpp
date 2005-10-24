@@ -43,20 +43,14 @@
 #include <vector>
 #include <map>
 
-// forward declaration of BLAST_Matrix
-struct _blast_matrix;
-typedef struct _blast_matrix BLAST_Matrix_;
-
 
 BEGIN_SCOPE(struct_util)
-
-extern int LookupBLASTResidueNumberFromCharacter(unsigned char r);
-extern int Round(double d);
 
 class Sequence;
 class Block;
 class UngappedAlignedBlock;
 class UnalignedBlock;
+class BLAST_Matrix;
 
 class BlockMultipleAlignment : public ncbi::CObject
 {
@@ -122,9 +116,9 @@ public:
     // given row and sequence index, return alignment index; not the most efficient function - use sparingly
     unsigned int GetAlignmentIndex(unsigned int row, unsigned int seqIndex, eUnalignedJustification justification);
 
-    // get list of all blocks
-    typedef std::list < ncbi::CRef < Block > > BlockList;
-    const BlockList& GetBlockList() const { return m_blocks;}
+    // get a vector of all Blocks
+    typedef std::vector < ncbi::CConstRef < Block > > ConstBlockList;
+    void GetBlockList(ConstBlockList& cbl) const;
 
     // fill in a vector of UngappedAlignedBlocks
     typedef std::vector < const UngappedAlignedBlock * > UngappedAlignedBlockList;
@@ -133,7 +127,7 @@ public:
     void GetModifiableUngappedAlignedBlocks(ModifiableUngappedAlignedBlockList *blocks);
 
     // PSSM for this alignment (cached)
-    const BLAST_Matrix_ * GetPSSM(void) const;
+    const BLAST_Matrix * GetPSSM(void) const;
     void RemovePSSM(void) const;
 
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
@@ -222,11 +216,12 @@ public:
 private:
     SequenceList m_sequences;
 
+    typedef std::list < ncbi::CRef < Block > > BlockList;
     BlockList m_blocks;
 
     typedef struct {
         Block *block;
-        unsigned int blockColumn, alignedBlockNum;
+        int blockColumn, alignedBlockNum;
     } BlockInfo;
     typedef std::vector < BlockInfo > BlockMap;
     BlockMap m_blockMap;
@@ -257,7 +252,7 @@ private:
     mutable std::vector < std::string > m_rowStrings;
 
     // associated PSSM
-    mutable BLAST_Matrix_ *m_pssm;
+    mutable BLAST_Matrix *m_pssm;
 };
 
 
@@ -291,11 +286,11 @@ public:
 
     // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
     typedef struct {
-        unsigned int from, to;
+        int from, to;
     } Range;
 
     const Range* GetRangeOfRow(int row) const { return &(m_ranges[row]); }
-    void SetRangeOfRow(unsigned int row, unsigned int from, unsigned int to)
+    void SetRangeOfRow(unsigned int row, int from, int to)
     {
         m_ranges[row].from = from;
         m_ranges[row].to = to;
@@ -370,6 +365,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/10/24 23:26:59  thiessen
+* switch to C++ PSSM generation
+*
 * Revision 1.3  2004/08/19 20:44:37  lanczyck
 * add accessor to return list of all blocks
 *

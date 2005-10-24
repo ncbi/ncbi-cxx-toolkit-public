@@ -4,7 +4,7 @@
 # Build application "struct_util_demo"
 #################################
 
-REQUIRES = objects ctools C-Toolkit
+REQUIRES = objects
 
 APP = struct_util_demo
 
@@ -12,12 +12,13 @@ SRC = struct_util_demo
 
 LIB = xstruct_util \
       xstruct_dp \
+	xblast blastdb xnetblast tables \
       ncbimime \
       cdd \
       scoremat \
       cn3d \
       mmdb \
-      seqset $(SEQ_LIBS) \
+      seqset $(SEQ_LIBS) sequtil \
       pub \
       medline \
       biblio \
@@ -28,10 +29,6 @@ LIB = xstruct_util \
       xctools \
       xncbi
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS)
 
-NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj \
-              -lncbiobj -lncbi
-
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
-
+LIBS = $(ORIG_LIBS) $(NETWORK_LIBS)

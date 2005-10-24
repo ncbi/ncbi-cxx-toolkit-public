@@ -40,36 +40,13 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-// forward declaration of BLAST_Matrix; #include <blastkar.h> to access
-struct _blast_matrix;
-typedef struct _blast_matrix BLAST_Matrix_;
-
 
 BEGIN_SCOPE(struct_util)
-
-extern int LookupBLASTResidueNumberFromCharacter(unsigned char r);
-extern int Round(double d);
 
 class SequenceSet;
 class AlignmentSet;
 class BlockMultipleAlignment;
-
-static inline int GetPSSMScoreOfCharWithAverageOfBZ(const Int4 * const *matrix, unsigned int pssmIndex, char resChar)
-{
-    int score, blRes = LookupBLASTResidueNumberFromCharacter(resChar);
-    switch (blRes) {
-        case 2: // B -> rounded average D/N
-            score = Round(((double) matrix[pssmIndex][4] + matrix[pssmIndex][13]) / 2);
-            break;
-        case 23: // Z -> rounded average E/Q
-            score = Round(((double) matrix[pssmIndex][5] + matrix[pssmIndex][15]) / 2);
-            break;
-        default:
-            score = matrix[pssmIndex][blRes];
-            break;
-    }
-    return score;
-}
+class BLAST_Matrix;
 
 class AlignmentUtility
 {
@@ -93,7 +70,7 @@ public:
     const SequenceSet * GetSequenceSet(void) const {return m_sequenceSet;}
 
 	// Get the PSSM associated with this alignment (implies IBM); returns NULL on failure
-	const BLAST_Matrix_ * GetPSSM(void);
+    const BLAST_Matrix * GetPSSM(void);
 
     // Get the BlockMultipleAlignment (implies IBM); returns NULL on failure
     const BlockMultipleAlignment * GetBlockMultipleAlignment(void);
@@ -160,6 +137,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/10/24 23:26:59  thiessen
+* switch to C++ PSSM generation
+*
 * Revision 1.12  2005/09/06 18:47:31  lanczyck
 * add method DoLeaveNOut:  faster than DoLeaveOneOut run N times, at possible cost of a lower alignment score
 *

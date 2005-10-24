@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
 
+
 BEGIN_SCOPE(struct_util)
 
 #define ERROR_MESSAGE(s) ERR_POST(ncbi::Error << "struct_util: " << s << '!')
@@ -93,6 +94,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/10/24 23:24:24  thiessen
+* switch to C++ PSSM generation
+*
 * Revision 1.9  2005/10/22 11:50:26  thiessen
 * plug memory leak
 *

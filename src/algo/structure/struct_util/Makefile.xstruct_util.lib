@@ -4,15 +4,14 @@
 # Build library "xstruct_util"
 #################################
 
-REQUIRES = objects C-Toolkit
-
+REQUIRES = objects
 LIB = xstruct_util
 
 ASN_DEP = seqset
 
-SRC = struct_util \
-      su_alignment_set \
-      su_block_multiple_alignment \
-      su_sequence_set
-
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+SRC = aaa_dummy_pch \
+	struct_util \
+	su_alignment_set \
+	su_block_multiple_alignment \
+	su_pssm \
+	su_sequence_set

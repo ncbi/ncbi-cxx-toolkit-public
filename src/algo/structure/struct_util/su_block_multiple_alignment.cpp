@@ -40,29 +40,14 @@
 
 #include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
 #include <algo/structure/struct_util/su_sequence_set.hpp>
+#include <algo/structure/struct_util/su_pssm.hpp>
 #include "su_private.hpp"
-
-// C-toolkit stuff for PSSM calculation
-#include <objalign.h>
-#include <blast.h>
-#include <blastkar.h>
-#include <cddutil.h>
-#include <thrdatd.h>
-#include <thrddecl.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(struct_util)
-
-// from su_sequence_set.cpp
-extern BioseqPtr GetOrCreateBioseq(const Sequence *sequence);
-extern void AddCSeqId(SeqIdPtr *sid, const ncbi::objects::CSeq_id& cppid);
-
-static const int SCALING_FACTOR = 1000000;
-static const string ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
-static const string BLASTResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList& sequenceList)
 {
@@ -127,194 +112,28 @@ static int GetBLOSUM62Score(char a, char b)
     return Blosum62Matrix.s[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
 }
 
-// creates a SeqAlign from a BlockMultipleAlignment
-static SeqAlignPtr CreateCSeqAlign(const BlockMultipleAlignment& multiple)
-{
-    // one SeqAlign (chained into a linked list) for each slave row
-    SeqAlignPtr prevSap = NULL, firstSap = NULL;
-    for (unsigned int row=1; row<multiple.NRows(); ++row) {
-
-        SeqAlignPtr sap = SeqAlignNew();
-        if (prevSap) prevSap->next = sap;
-        prevSap = sap;
-        if (!firstSap) firstSap = sap;
-
-        sap->type = SAT_PARTIAL;
-        sap->dim = 2;
-        sap->segtype = SAS_DENDIAG;
-
-        DenseDiagPtr prevDd = NULL;
-        BlockMultipleAlignment::UngappedAlignedBlockList blocks;
-        multiple.GetUngappedAlignedBlocks(&blocks);
-        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-
-        for (b=blocks.begin(); b!=be; ++b) {
-            DenseDiagPtr dd = DenseDiagNew();
-            if (prevDd) prevDd->next = dd;
-            prevDd = dd;
-            if (b == blocks.begin()) sap->segs = dd;
-
-            dd->dim = 2;
-            AddCSeqId(&(dd->id), multiple.GetSequenceOfRow(0)->GetPreferredIdentifier());
-            AddCSeqId(&(dd->id), multiple.GetSequenceOfRow(row)->GetPreferredIdentifier());
-
-            dd->len = (*b)->m_width;
-
-            dd->starts = (Int4Ptr) MemNew(2 * sizeof(Int4));
-            const Block::Range *range = (*b)->GetRangeOfRow(0);
-            dd->starts[0] = range->from;
-            range = (*b)->GetRangeOfRow(row);
-            dd->starts[1] = range->from;
-        }
-    }
-
-    return firstSap;
-}
-
-static void CreateAllBioseqs(const BlockMultipleAlignment& multiple)
-{
-    for (unsigned int row=0; row<multiple.NRows(); ++row)
-        GetOrCreateBioseq(multiple.GetSequenceOfRow(row));
-}
-
-static Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment& multiple,
-    double weightPSSM, BLAST_KarlinBlkPtr karlinBlock)
-{
-    // special case for "PSSM" of single-row "alignment" - just use BLOSUM62 score
-    if (multiple.NRows() == 1) {
-        Seq_Mtf *seqMtf = NewSeqMtf(multiple.GetMaster()->Length(), ThreaderResidues.size());
-        for (unsigned int res=0; res<multiple.GetMaster()->Length(); ++res)
-            for (unsigned int aa=0; aa<ThreaderResidues.size(); ++aa)
-                seqMtf->ww[res][aa] = ThrdRound(weightPSSM * SCALING_FACTOR *
-                    GetBLOSUM62Score(multiple.GetMaster()->m_sequenceString[res], ThreaderResidues[aa]));
-        WARNING_MESSAGE("Created Seq_Mtf (PSSM) from BLOSUM62 scores");
-        return seqMtf;
-    }
-
-    // convert all sequences to Bioseqs
-    CreateAllBioseqs(multiple);
-
-    // create SeqAlign from this BlockMultipleAlignment
-    SeqAlignPtr seqAlign = CreateCSeqAlign(multiple);
-
-    // "spread" unaligned residues between aligned blocks, for PSSM construction
-    CddDegapSeqAlign(seqAlign);
-
-    Seq_Mtf *seqMtf = NULL;
-    for (int i=11; i>=1; --i) {
-        // first try auto-determined pseudocount (-1); if fails, find higest <= 10 that works
-        int pseudocount = (i == 11) ? -1 : i;
-        seqMtf = CddDenDiagCposComp2KBP(
-            GetOrCreateBioseq(multiple.GetMaster()),
-            pseudocount,
-            seqAlign,
-            NULL,
-            NULL,
-            weightPSSM,
-            SCALING_FACTOR,
-            NULL,
-            karlinBlock
-        );
-        if (seqMtf)
-            break;
-        else
-            WARNING_MESSAGE("Cannot use " << ((pseudocount == -1) ? "(empirical) " : "")
-                << "pseudocount of " << pseudocount);
-    }
-
-    if (seqMtf)
-        TRACE_MESSAGE("created Seq_Mtf (PSSM)");
-    else
-        ERROR_MESSAGE("Cannot find any pseudocount that yields an acceptable PSSM!");
-
-    SeqAlignSetFree(seqAlign);
-    return seqMtf;
-}
-
-// gives BLAST residue number for a character (or # for 'X' if char not found)
-int LookupBLASTResidueNumberFromCharacter(unsigned char r)
-{
-    typedef map < unsigned char, int > Char2Int;
-    static Char2Int charMap;
-
-    if (charMap.size() == 0) {
-        for (unsigned int i=0; i<BLASTResidues.size(); ++i)
-            charMap[BLASTResidues[i]] = i;
-    }
-
-    Char2Int::const_iterator n = charMap.find(toupper(r));
-    if (n != charMap.end())
-        return n->second;
-    else
-        return charMap.find('X')->second;
-}
-
-// gives BLAST residue number for a threader residue number (or # for 'X' if char == -1)
-static int LookupBLASTResidueNumberFromThreaderResidueNumber(unsigned char r)
-{
-    r = toupper(r);
-    return LookupBLASTResidueNumberFromCharacter(
-            (r < ThreaderResidues.size()) ? ThreaderResidues[r] : 'X');
-}
-
-int Round(double d)
-{
-    if (d >= 0.0)
-        return (int) (d + 0.5);
-    else
-        return (int) (d - 0.5);
-}
-
 const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 {
     if (m_pssm) return m_pssm;
-
-    // for now, use threader's SeqMtf
-    BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
-    Seq_Mtf *seqMtf = CreateSeqMtf(*this, 1.0, karlinBlock);
-
-    m_pssm = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
-    m_pssm->is_prot = TRUE;
-    m_pssm->name = StringSave("BLOSUM62");
-    m_pssm->karlinK = karlinBlock->K;
-    m_pssm->rows = seqMtf->n + 1;
-    m_pssm->columns = 26;
-
-    int i, j;
-    m_pssm->matrix = (Int4 **) MemNew(m_pssm->rows * sizeof(Int4 *));
-    for (i=0; i<m_pssm->rows; ++i) {
-        m_pssm->matrix[i] = (Int4 *) MemNew(m_pssm->columns * sizeof(Int4));
-
-        // set scores from threader matrix
-        if (i < seqMtf->n) {
-            // initialize all rows with custom score, or BLAST_SCORE_MIN; to match what Aron's function creates
-            for (j=0; j<m_pssm->columns; ++j)
-                m_pssm->matrix[i][j] = (j == 21 ? -1 : (j == 25 ? -4 : BLAST_SCORE_MIN));
-
-            for (j=0; j<seqMtf->AlphabetSize; ++j) {
-                m_pssm->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
-                    Round(((double) seqMtf->ww[i][j]) / SCALING_FACTOR);
-            }
-        } else {
-            // initialize last row with BLAST_SCORE_MIN
-            for (j=0; j<m_pssm->columns; ++j)
-                m_pssm->matrix[i][j] = BLAST_SCORE_MIN;
-        }
-    }
-
-    m_pssm->posFreqs = NULL;
-
-    FreeSeqMtf(seqMtf);
-    BlastKarlinBlkDestruct(karlinBlock);
+    m_pssm = CreateBlastMatrix(this);
     return m_pssm;
 }
 
 void BlockMultipleAlignment::RemovePSSM(void) const
 {
     if (m_pssm) {
-        BLAST_MatrixDestruct(m_pssm);
+        delete m_pssm;
         m_pssm = NULL;
     }
+}
+
+void BlockMultipleAlignment::GetBlockList(ConstBlockList& cbl) const
+{
+    cbl.clear();
+    cbl.reserve(m_blocks.size());
+    BlockList::const_iterator b, be = m_blocks.end();
+    for (b=m_blocks.begin(); b!=be; ++b)
+        cbl.push_back(CConstRef<Block>(b->GetPointer()));
 }
 
 bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
@@ -339,11 +158,11 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
         range = block->GetRangeOfRow(row);
         if (prevBlock) prevRange = prevBlock->GetRangeOfRow(row);
         if (nextBlock) nextRange = nextBlock->GetRangeOfRow(row);
-        if (range->to - range->from + 1 != block->m_width ||       // check block m_width
+        if (range->to - range->from + 1 != block->m_width ||        // check block m_width
             (prevRange && range->from <= prevRange->to) ||          // check for range overlap
             (nextRange && range->to >= nextRange->from) ||          // check for range overlap
             range->from > range->to ||                              // check range values
-            range->to >= (*sequence)->Length())                     // check bounds of end
+            range->to >= (int)(*sequence)->Length())                // check bounds of end
         {
             ERROR_MESSAGE("CheckAlignedBlock() - range error");
             return false;
@@ -525,7 +344,7 @@ const Block * BlockMultipleAlignment::GetBlock(unsigned int row, unsigned int se
     // first check to see if it's in the same block as last time.
     if (m_cachePrevBlock) {
         range = m_cachePrevBlock->GetRangeOfRow(row);
-        if (seqIndex >= range->from && seqIndex <= range->to)
+        if ((int)seqIndex >= range->from && (int)seqIndex <= range->to)
             return m_cachePrevBlock;
         ++m_cacheBlockIterator; // start search at next block
     } else {
@@ -538,7 +357,7 @@ const Block * BlockMultipleAlignment::GetBlock(unsigned int row, unsigned int se
         if (m_cacheBlockIterator == m_blocks.end())
             m_cacheBlockIterator = m_blocks.begin();
         range = (*m_cacheBlockIterator)->GetRangeOfRow(row);
-        if (seqIndex >= range->from && seqIndex <= range->to) {
+        if ((int)seqIndex >= range->from && (int)seqIndex <= range->to) {
             m_cachePrevBlock = *m_cacheBlockIterator; // cache this block
             return m_cachePrevBlock;
         }
@@ -1500,7 +1319,7 @@ unsigned int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigne
             block = m_blockMap[alignmentIndex].block;
 
             range = block->GetRangeOfRow(row);
-            if (seqIndex >= range->from && seqIndex <= range->to) {
+            if ((int)seqIndex >= range->from && (int)seqIndex <= range->to) {
 
                 // override requested justification for end blocks
                 if (block == m_blocks.back()) // also true if there's a single aligned block
@@ -1600,7 +1419,7 @@ unsigned int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int r
                 seqIndex = BlockMultipleAlignment::eUndefined;
             break;
     }
-    if (seqIndex < range->from || seqIndex > range->to)
+    if ((int)seqIndex < range->from || (int)seqIndex > range->to)
         seqIndex = BlockMultipleAlignment::eUndefined;
 
     return seqIndex;
@@ -1648,6 +1467,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/10/24 23:24:24  thiessen
+* switch to C++ PSSM generation
+*
 * Revision 1.14  2005/06/03 16:24:10  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

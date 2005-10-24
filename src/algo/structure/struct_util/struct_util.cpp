@@ -32,19 +32,19 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <set>
 
 #include <corelib/ncbistd.hpp>
 
-#include <algo/structure/struct_dp/struct_dp.h>
+#include <set>
+
 #include <algo/structure/struct_util/struct_util.hpp>
 #include <algo/structure/struct_util/su_sequence_set.hpp>
 #include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
 #include "su_private.hpp"
 #include "su_alignment_set.hpp"
+#include <algo/structure/struct_util/su_pssm.hpp>
 
-// for PSSM (BLAST_Matrix)
-#include <blastkar.h>
+#include <algo/structure/struct_dp/struct_dp.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -254,7 +254,7 @@ int ScoreByPSSM(unsigned int block, unsigned int queryPos)
 
     int masterPos = g_dpBlocks->blockPositions[block], score = 0;
     for (unsigned int i=0; i<g_dpBlocks->blockSizes[block]; ++i)
-        score += GetPSSMScoreOfCharWithAverageOfBZ(g_dpPSSM->matrix, masterPos + i, g_dpQuery->m_sequenceString[queryPos + i]);
+        score += GetPSSMScoreOfCharWithAverageOfBZ(g_dpPSSM, masterPos + i, g_dpQuery->m_sequenceString[queryPos + i]);
 
     return score;
 }
@@ -360,7 +360,7 @@ bool AlignmentUtility::DoLeaveOneOut(
                 *range = (*o)->GetRangeOfRow(1);
             for (unsigned int i=0; i<(*l)->m_width; ++i)
                 originalScore += GetPSSMScoreOfCharWithAverageOfBZ(
-                    m_currentMultiple->GetPSSM()->matrix, masterRange->from + i, g_dpQuery->m_sequenceString[range->from + i]);
+                    m_currentMultiple->GetPSSM(), masterRange->from + i, g_dpQuery->m_sequenceString[range->from + i]);
         }
         INFO_MESSAGE("score of extracted row with PSSM(N-1) before realignment: " << originalScore);
 
@@ -582,7 +582,7 @@ bool AlignmentUtility::DoLeaveNOut(
                     *range = (*o)->GetRangeOfRow(1);
                 for (unsigned int i=0; i<(*l)->m_width; ++i)
                     originalScore += GetPSSMScoreOfCharWithAverageOfBZ(
-                        m_currentMultiple->GetPSSM()->matrix, masterRange->from + i, g_dpQuery->m_sequenceString[range->from + i]);
+                        m_currentMultiple->GetPSSM(), masterRange->from + i, g_dpQuery->m_sequenceString[range->from + i]);
             }
             INFO_MESSAGE("score of extracted row with PSSM(N-1) before realignment: " << originalScore);
 
@@ -683,7 +683,7 @@ const AlignmentUtility::SeqAnnotList& AlignmentUtility::GetSeqAnnots(void)
     return m_seqAnnots;
 }
 
-const BLAST_Matrix_ * AlignmentUtility::GetPSSM(void)
+const BLAST_Matrix * AlignmentUtility::GetPSSM(void)
 {
     // first we need to do IBM -> BlockMultipleAlignment
     if (!m_currentMultiple && !DoIBM())
@@ -737,7 +737,7 @@ int AlignmentUtility::ScoreRowByPSSM(unsigned int row)
             *range = (*b)->GetRangeOfRow(row);
         for (unsigned int i=0; i<(*b)->m_width; ++i)
             score += GetPSSMScoreOfCharWithAverageOfBZ(
-                m_currentMultiple->GetPSSM()->matrix, masterRange->from + i, sequence->m_sequenceString[range->from + i]);
+                m_currentMultiple->GetPSSM(), masterRange->from + i, sequence->m_sequenceString[range->from + i]);
     }
 
     return score;
@@ -748,6 +748,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/10/24 23:24:24  thiessen
+* switch to C++ PSSM generation
+*
 * Revision 1.21  2005/10/22 11:50:26  thiessen
 * plug memory leak
 *

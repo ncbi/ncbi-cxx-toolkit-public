@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <ctools/ctools.h>
 
 #include <algo/structure/struct_util/struct_util.hpp>
 #include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
@@ -203,7 +202,6 @@ int main(int argc, const char* argv[])
 {
     SetDiagStream(&NcbiCerr);       // send all diagnostic messages to cerr
     SetDiagPostLevel(eDiag_Info);   // show all messages
-    SetupCToolkitErrPost();         // reroute C-toolkit err messages to C++ err streams
 
     SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
 #ifdef _DEBUG
@@ -226,6 +224,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/10/24 23:24:24  thiessen
+* switch to C++ PSSM generation
+*
 * Revision 1.7  2004/07/29 18:44:24  thiessen
 * adjust info message
 *
