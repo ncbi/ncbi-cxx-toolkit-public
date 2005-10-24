@@ -68,13 +68,21 @@ static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
 
     while( !input_stream->eof() )
     {
-        CRef< CSeq_entry > aSeqEntry
-            = ReadFasta( *input_stream,
-                           fReadFasta_AssumeNuc
-                         | fReadFasta_ForceType
-                         | fReadFasta_OneSeq
-                         | fReadFasta_AllSeqIds,
-                         0, 0 );
+        TReadFastaFlags flags = fReadFasta_AssumeNuc |
+                                fReadFasta_ForceType |
+                                fReadFasta_OneSeq    |
+                                fReadFasta_AllSeqIds;
+
+        CRef< CSeq_entry > aSeqEntry;
+        CNcbiIstream::pos_type pos = input_stream->tellg();
+
+        try {
+            aSeqEntry = ReadFasta( *input_stream, flags, 0, 0 );
+        }catch( ... ) {
+            input_stream->seekg( pos );
+            aSeqEntry = ReadFasta( 
+                    *input_stream, flags | fReadFasta_NoParseID, 0, 0 );
+        }
 
         if(    aSeqEntry != 0
             && aSeqEntry->IsSeq()
@@ -250,6 +258,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.8  2005/10/24 20:54:15  morgulis
+ * Fixed a problem with exception being thrown by ReadFasta if defline is not
+ * properly formatted.
+ *
  * Revision 1.7  2005/09/19 14:37:09  morgulis
  * Added API to return masked intervals as CRef< CPacked_seqint >.
  *
