@@ -15,3 +15,5 @@ SRC = aaa_dummy_pch \
 	su_block_multiple_alignment \
 	su_pssm \
 	su_sequence_set
+
+CPPFLAGS = $(ORIG_CPPFLAGS) -Wall -Werror

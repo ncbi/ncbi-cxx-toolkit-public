@@ -378,7 +378,7 @@ bool AlignmentUtility::DoLeaveOneOut(
                 modBlocks[b]->SetRangeOfRow(1,
                     dpResult->blockPositions[b], dpResult->blockPositions[b] + dpBlocks->blockSizes[b] - 1);
             } else {
-                if (dpResult->blockPositions[b] != modBlocks[b]->GetRangeOfRow(1)->from)    // just to check...
+                if ((int)dpResult->blockPositions[b] != modBlocks[b]->GetRangeOfRow(1)->from)    // just to check...
                     THROW_MESSAGE("dpResult block doesn't match frozen position on slave");
             }
         }
@@ -600,7 +600,7 @@ bool AlignmentUtility::DoLeaveNOut(
                     modBlocks[b]->SetRangeOfRow(1,
                                                 dpResult->blockPositions[b], dpResult->blockPositions[b] + dpBlocks->blockSizes[b] - 1);
                 } else {
-                    if (dpResult->blockPositions[b] != modBlocks[b]->GetRangeOfRow(1)->from)    // just to check...
+                    if ((int)dpResult->blockPositions[b] != modBlocks[b]->GetRangeOfRow(1)->from)    // just to check...
                         THROW_MESSAGE("dpResult block doesn't match frozen position on slave");
                 }
             }
@@ -748,6 +748,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/10/24 23:39:13  thiessen
+* GCC warning fixes
+*
 * Revision 1.22  2005/10/24 23:24:24  thiessen
 * switch to C++ PSSM generation
 *

@@ -93,7 +93,7 @@ static inline int Round(double Num)
     return((int)(Num - 0.5));
 }
 
-inline int GetPSSMScoreOfCharWithAverageOfBZ(const BLAST_Matrix *matrix, unsigned int pssmIndex, char resChar)
+int GetPSSMScoreOfCharWithAverageOfBZ(const BLAST_Matrix *matrix, unsigned int pssmIndex, char resChar)
 {
     int score, blRes = LookupNCBIStdaaNumberFromCharacter(resChar);
     switch (blRes) {
@@ -148,7 +148,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
     BlockMultipleAlignment::ConstBlockList blocks;
 	bma->GetBlockList(blocks);
 
-    unsigned int b, row, column, masterStart, masterWidth, slaveStart, slaveWidth, left, right, middle;
+    unsigned int b, row, column, masterStart, masterWidth, slaveStart, slaveWidth, left=0, right=0, middle=0;
     const Block::Range *range;
     const Sequence *seq;
 
@@ -160,7 +160,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
         if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
                 range->to < range->from - 1 ||
                 range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(0)->to + 1)) ||
-                (b == blocks.size() - 1 && range->to != seq->Length() - 1))
+                (b == blocks.size() - 1 && range->to != (int)seq->Length() - 1))
             PTHROW("FillInAlignmentData() - master range error");
         masterStart = range->from;
         masterWidth = range->to - range->from + 1;
@@ -171,7 +171,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
             if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
                     range->to < range->from - 1 ||
                     range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(row)->to + 1)) ||
-                    (b == blocks.size() - 1 && range->to != seq->Length() - 1))
+                    (b == blocks.size() - 1 && range->to != (int)seq->Length() - 1))
                 PTHROW("FillInAlignmentData() - slave range error");
             slaveStart = range->from;
             slaveWidth = range->to - range->from + 1;
@@ -461,13 +461,13 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
         // adjust for matrix layout in pssm
         if (pssm.GetPssm().GetByRow()) {
             ++r;
-            if (r == pssm.GetPssm().GetNumColumns()) {
+            if ((int)r == pssm.GetPssm().GetNumColumns()) {
                 ++c;
                 r = 0;
             }
         } else {
             ++c;
-            if (c == pssm.GetPssm().GetNumRows()) {
+            if ((int)c == pssm.GetPssm().GetNumRows()) {
                 ++r;
                 c = 0;
             }
@@ -550,6 +550,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/24 23:39:13  thiessen
+* GCC warning fixes
+*
 * Revision 1.1  2005/10/24 23:24:24  thiessen
 * switch to C++ PSSM generation
 *

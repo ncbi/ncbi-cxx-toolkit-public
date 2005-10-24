@@ -83,6 +83,7 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     return copy;
 }
 
+/*
 static inline unsigned int ScreenResidueCharacter(char original)
 {
     char ch = toupper((unsigned char) original);
@@ -111,6 +112,7 @@ static int GetBLOSUM62Score(char a, char b)
 
     return Blosum62Matrix.s[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
 }
+*/
 
 const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
 {
@@ -158,7 +160,7 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
         range = block->GetRangeOfRow(row);
         if (prevBlock) prevRange = prevBlock->GetRangeOfRow(row);
         if (nextBlock) nextRange = nextBlock->GetRangeOfRow(row);
-        if (range->to - range->from + 1 != block->m_width ||        // check block m_width
+        if (range->to - range->from + 1 != (int)block->m_width ||   // check block m_width
             (prevRange && range->from <= prevRange->to) ||          // check for range overlap
             (nextRange && range->to >= nextRange->from) ||          // check for range overlap
             range->from > range->to ||                              // check range values
@@ -1467,6 +1469,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/10/24 23:39:13  thiessen
+* GCC warning fixes
+*
 * Revision 1.15  2005/10/24 23:24:24  thiessen
 * switch to C++ PSSM generation
 *
