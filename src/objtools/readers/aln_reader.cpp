@@ -59,7 +59,7 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
         return 0;
     }
     string s;
-    NcbiGetlineEOL(*is, s);
+    NcbiGetline(*is, s, "\n\r");
     return strdup(s.c_str());
 }
 
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/10/24 13:44:34  jcherry
+ * Tolerate all three line-termination conventions, regardless of platform
+ *
  * Revision 1.15  2005/10/12 16:05:26  jcherry
  * When building a Seq-entry, create a local id if id parse fails
  *
