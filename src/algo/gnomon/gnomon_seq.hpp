@@ -85,17 +85,21 @@ inline TResidue Complement(TResidue c)
     switch(c)
     {
         case 'A': 
-        case 'a': 
             return 'T';
-        case 'C': 
+        case 'a': 
+            return 't';
+        case 'C':
+            return 'G'; 
         case 'c': 
-            return 'G';
-        case 'G': 
+            return 'g';
+        case 'G':
+            return 'C'; 
         case 'g': 
-            return 'C';
-        case 'T': 
+            return 'c';
+        case 'T':
+            return 'A'; 
         case 't': 
-            return 'A';
+            return 'a';
         default:
             return 'N';
     }
@@ -141,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/24 17:38:52  souvorov
+ * Case sensetive Complement
+ *
  * Revision 1.3  2005/10/06 15:50:42  chetvern
  * moved TDVec definition from hmm.hpp to gnomon_seq.hpp
  * renamed template parameter VecIt to more exact BidirectionalIterator
