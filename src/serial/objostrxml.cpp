@@ -342,11 +342,13 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
                                   TEnumValueType value,
                                   const string& valueName)
 {
+    bool skipname = valueName.empty() ||
+                  (m_WriteNamedIntegersByValue && values.IsInteger());
     if ( !values.GetName().empty() ) {
         // global enum
         OpenTagStart();
         m_Output.PutString(values.GetName());
-        if ( !valueName.empty() ) {
+        if ( !skipname ) {
             m_Output.PutString(" value=\"");
             m_Output.PutString(valueName);
             m_Output.PutChar('\"');
@@ -366,7 +368,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
     }
     else {
         // local enum (member, variant or element)
-        if ( valueName.empty() ) {
+        if ( skipname ) {
             _ASSERT(values.IsInteger());
             m_Output.PutInt4(value);
         }
@@ -1374,6 +1376,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2005/10/24 20:26:33  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.85  2005/10/03 14:15:04  gouriano
 * Corrected to work with the updated CStringUTF8 class
 *

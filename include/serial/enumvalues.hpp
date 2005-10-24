@@ -84,6 +84,7 @@ public:
     // returns value of enum element, if found
     // otherwise, throws exception
     TEnumValueType FindValue(const CLightString& name) const;
+    bool IsValidName(const CLightString& name) const;
 
     // returns name of enum element, if found
     // otherwise, if (allowBadValue == true) returns empty string,
@@ -117,6 +118,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/10/24 20:27:18  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.10  2004/05/24 15:12:10  gouriano
 * added method to acces list of values in CEnumeratedTypeValues
 *

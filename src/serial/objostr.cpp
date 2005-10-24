@@ -195,6 +195,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
     : m_Output(out, deleteOut), m_Fail(fNoError), m_Flags(fFlagNone),
       m_Separator(""), m_AutoSeparator(false),
       m_DataFormat(format),
+      m_WriteNamedIntegersByValue(false),
       m_VerifyData(x_GetVerifyDataDefault())
 {
 }
@@ -1020,6 +1021,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2005/10/24 20:26:33  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.102  2005/10/11 18:08:31  gouriano
 * Corrected handling CEofException
 *

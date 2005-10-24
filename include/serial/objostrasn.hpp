@@ -69,7 +69,8 @@ public:
         }
 
 protected:
-    void WriteEnum(TEnumValueType value, const string& valueName);
+    void WriteEnum(const CEnumeratedTypeValues& values,
+                   TEnumValueType value, const string& valueName);
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
     virtual void WriteInt4(Int4 data);
@@ -172,6 +173,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/10/24 20:27:18  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.48  2004/06/08 20:25:42  gouriano
 * Made functions, that are not visible from the outside, protected
 *

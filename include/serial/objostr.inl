@@ -393,6 +393,18 @@ bool CObjectOStream::GetUseIndentation(void) const
     return m_Output.GetUseIndentation();
 }
 
+inline
+void CObjectOStream::SetWriteNamedIntegersByValue(bool set)
+{
+    m_WriteNamedIntegersByValue = set;
+}
+
+inline
+bool CObjectOStream::GetWriteNamedIntegersByValue(void) const
+{
+    return m_WriteNamedIntegersByValue;
+}
+
 
 #endif /* def OBJOSTR__HPP  &&  ndef OBJOSTR__INL */
 
@@ -400,6 +412,9 @@ bool CObjectOStream::GetUseIndentation(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/10/24 20:27:18  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.25  2004/05/24 18:12:24  gouriano
 * In text output files make indentation optional
 *

@@ -106,6 +106,9 @@ public:
 
     void SetUseIndentation(bool set);
     bool GetUseIndentation(void) const;
+    
+    void SetWriteNamedIntegersByValue(bool set);
+    bool GetWriteNamedIntegersByValue(void) const;
 
     // constructors
 protected:
@@ -511,6 +514,7 @@ protected:
     string m_Separator;
     bool   m_AutoSeparator;
     ESerialDataFormat   m_DataFormat;
+    bool  m_WriteNamedIntegersByValue;
 
 private:
     ESerialVerifyData   m_VerifyData;
@@ -541,6 +545,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2005/10/24 20:27:18  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.92  2005/10/11 18:08:12  gouriano
 * Corrected handling CEofException
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/10/24 20:26:33  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.31  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method
@@ -173,6 +176,12 @@ TEnumValueType CEnumeratedTypeValues::FindValue(const CLightString& name) const
                    "invalid value of enumerated type");
     }
     return i->second;
+}
+
+bool CEnumeratedTypeValues::IsValidName(const CLightString& name) const
+{
+    const TNameToValue& m = NameToValue();
+    return ( m.find(name) != m.end() );
 }
 
 const string& CEnumeratedTypeValues::FindName(TEnumValueType value,

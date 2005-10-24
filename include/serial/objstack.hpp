@@ -166,7 +166,7 @@ private:
 #define END_OBJECT_FRAME_OF(Stream) \
     } catch (CSerialException& s_expt) { \
         std::string msg((Stream).TopFrame().GetFrameName()); \
-        (Stream).PopErrorFrame(); \
+        (Stream).PopFrame(); \
         s_expt.AddFrameInfo(msg); \
         throw; \
     } catch ( CEofException& e_expt ) { \
@@ -224,6 +224,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/10/24 20:27:18  gouriano
+* Added option to write named integers by value only
+*
 * Revision 1.25  2005/10/11 18:08:12  gouriano
 * Corrected handling CEofException
 *

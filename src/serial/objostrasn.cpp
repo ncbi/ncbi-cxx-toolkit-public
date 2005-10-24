@@ -93,27 +93,28 @@ void CObjectOStreamAsn::WriteFileHeader(TTypeInfo type)
     }
 }
 
-inline
-void CObjectOStreamAsn::WriteEnum(TEnumValueType value,
-                                  const string& valueName)
+void CObjectOStreamAsn::WriteEnum(
+    const CEnumeratedTypeValues& values,
+    TEnumValueType value, const string& valueName)
 {
-    if ( !valueName.empty() )
-        m_Output.PutString(valueName);
-    else
+    if (valueName.empty() || (m_WriteNamedIntegersByValue && values.IsInteger())) {
         m_Output.PutInt4(value);
+    } else {
+        m_Output.PutString(valueName);
+    }    
 }
 
 void CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
                                   TEnumValueType value)
 {
-    WriteEnum(value, values.FindName(value, values.IsInteger()));
+    WriteEnum(values,value,values.FindName(value, values.IsInteger()));
 }
 
 void CObjectOStreamAsn::CopyEnum(const CEnumeratedTypeValues& values,
                                  CObjectIStream& in)
 {
     TEnumValueType value = in.ReadEnum(values);
-    WriteEnum(value, values.FindName(value, values.IsInteger()));
+    WriteEnum(values, value, values.FindName(value, values.IsInteger()));
 }
 
 void CObjectOStreamAsn::WriteBool(bool data)
