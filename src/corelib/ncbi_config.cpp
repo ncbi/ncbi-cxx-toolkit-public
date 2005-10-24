@@ -98,7 +98,7 @@ void s_GetSubNodes(const IRegistry&      reg,
         const string& element = reg.Get(section, element_name);
         if (!element.empty()) {
             list<string> sub_node_list;
-            NStr::Split(element, ",; ", sub_node_list);
+            NStr::Split(element, ",; \t\n\r", sub_node_list);
             s_List2Set(sub_node_list, dst);
         }
     }
@@ -141,7 +141,7 @@ void s_ParamTree_IncludeSections(const IRegistry& reg,
     if ( element.empty() ) {
         return;
     }
-    NStr::Split(element, ",; ", inc_list);
+    NStr::Split(element, ",; \t\n\r", inc_list);
 
     ITERATE(list<string>, inc_it, inc_list) {
         const string& inc_section_name = *inc_it;
@@ -263,7 +263,7 @@ void s_ParamTree_SplitConvertSubNodes(const IRegistry&      reg,
                                       CConfig::TParamTree*  node)
 {
     list<string> sub_node_list;
-    NStr::Split(sub_nodes, ",; ", sub_node_list);
+    NStr::Split(sub_nodes, ",; \t\n\r", sub_node_list);
     s_ParamTree_ConvertSubNodes(reg, sub_node_list, node);
 }
 
@@ -290,7 +290,7 @@ void s_GetIncludes(const IRegistry&      reg,
     const string& element = reg.Get(section, kIncludeSections);
     if ( !element.empty() ) {
         list<string> inc_list;
-        NStr::Split(element, ",; ", inc_list);
+        NStr::Split(element, ",; \t\n\r", inc_list);
         s_List2Set(inc_list, dst);
     }
 }
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/10/24 22:02:47  grichenk
+ * Added CR, LF and TAB to the list of separators
+ *
  * Revision 1.13  2005/07/21 15:44:05  ivanov
  * Removed default parameters for NStr::StringTo*
  *
