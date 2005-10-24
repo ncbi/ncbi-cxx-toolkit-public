@@ -2,7 +2,8 @@
 # $Id$
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds ftds63 odbc msdblib" # mysql
+# Tere are problems with ftds63 currently
+driver_list="ctlib dblib ftds odbc msdblib" # mysql
 server_list="MS_DEV1 STRAUSS"
 server_mssql="MS_DEV1"
 
