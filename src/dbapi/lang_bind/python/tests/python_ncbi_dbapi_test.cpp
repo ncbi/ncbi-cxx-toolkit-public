@@ -583,7 +583,7 @@ CPythonDBAPITestSuite::CPythonDBAPITestSuite(const CTestArguments& args)
     if ( ( args.GetDriverName() == "ctlib" && 
            args.GetServerName() != "MOZART"
          ) ||
-         ( args.GetDriverName() == "ftds" && 
+         ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63") && 
            args.GetServerType() == CTestArguments::eMsSql )
          ) {
         // This test doen't work with the dblib driver currently ...
@@ -659,11 +659,11 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "msdblib", "odbc", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "msdblib", "odbc", "gateway"
 #else
 #define DEF_SERVER    "STRAUSS"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds63", "gateway"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",
@@ -723,7 +723,8 @@ CTestArguments::SetDatabaseParameters(void)
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "125";
-    } else if ( GetDriverName() == "ftds" && GetServerType() == eSybase ) {
+    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") && 
+                GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
         m_DatabaseParameters["version"] = "42";
     }
@@ -771,6 +772,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/10/24 13:07:51  ssikorsk
+* Added support for the ftds63 driver
+*
 * Revision 1.20  2005/10/20 13:11:19  ssikorsk
 * Use TDS protocol 12.5 with the dblib driver
 *
