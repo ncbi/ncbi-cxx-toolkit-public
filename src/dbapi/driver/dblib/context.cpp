@@ -806,7 +806,7 @@ public:
 };
 
 CDbapiFtdsCFBase::CDbapiFtdsCFBase(const string& driver_name)
-    : TParent(kDBAPI_FTDS_DriverName, 1)
+    : TParent(driver_name, 1)
 {
     return ;
 }
@@ -1117,6 +1117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/10/24 11:07:22  ssikorsk
+ * Fixed CDbapiFtdsCFBase::CDbapiFtdsCFBase typo.
+ *
  * Revision 1.51  2005/10/20 13:07:20  ssikorsk
  * Fixed:
  * CDBLibContext::DBLIB_SetApplicationName
