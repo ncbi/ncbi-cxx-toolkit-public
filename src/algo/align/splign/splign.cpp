@@ -139,7 +139,7 @@ void CSplign::SetMinCompartmentIdentity( double idty )
 
 size_t CSplign::s_GetDefaultMaxGenomicExtent(void)
 {
-    return 10000;
+    return 25000;
 }
 
 
@@ -323,26 +323,6 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
             size_t max_seg_size = 0;
 
             bool imprf = imperfect[i/4];
-            /*
-            if(imprf == false) {
-
-                // make sure the hit is really that good
-                const size_t d1 = pattern0[i+1] - pattern0[i] + 1;
-                const size_t d2 = pattern0[i+3] - pattern0[i+2] + 1;
-                if(d1 != d2) {
-                    imprf = true;
-                }
-                else {
-                    for(size_t i1 = pattern0[i], i2 = pattern0[i+2];
-                        i1 <= pattern0[i+1]; ++i1, ++i2) {
-                        if(Seq1[i1] != Seq2[i2]) {
-                            imprf = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            */
             if(imprf) {                
 
                 nwa.SetSequences(Seq1 + pattern0[i],
@@ -427,6 +407,14 @@ void CSplign::Run( THitRefs* phitrefs )
     }
 
     THitRefs& hitrefs = *phitrefs;
+    
+    // make sure query hit is in plus strand
+    NON_CONST_ITERATE(THitRefs, ii, hitrefs) {
+        THitRef& h = *ii;
+        if(h->GetQueryStrand() == false) {
+            h->FlipStrands();
+        }
+    }
   
     if(m_aligner.IsNull()) {
       NCBI_THROW( CAlgoAlignException,
@@ -1663,6 +1651,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/10/24 17:33:17  kapustin
+ * Ensure input hits have positive query strand
+ *
  * Revision 1.40  2005/10/19 17:56:35  kapustin
  * Switch to using ObjMgr+LDS to load sequence data
  *
