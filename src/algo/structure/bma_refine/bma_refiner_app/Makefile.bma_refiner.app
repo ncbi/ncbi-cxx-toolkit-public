@@ -5,11 +5,12 @@ APP = bma_refiner
 
 SRC = bma_refiner
 
-REQUIRES = objects ctools C-Toolkit
+REQUIRES = objects
 
 LIB =   xbma_refiner \
         xstruct_util \
         xstruct_dp \
+        xblast blastdb xnetblast tables \
         cdd \
         scoremat \
         cn3d \
@@ -26,11 +27,8 @@ LIB =   xbma_refiner \
 
 #CFLAGS   = $(FAST_CFLAGS)
 
-CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..  $(NCBI_C_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
 
 #LDFLAGS  = $(FAST_LDFLAGS)
 
-NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj \
-              -lncbiobj -lncbi
-
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) 
+LIBS = $(ORIG_LIBS) $(NETWORK_LIBS)

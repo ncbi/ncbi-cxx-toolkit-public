@@ -68,12 +68,13 @@ void CBlockedAlignmentEditor::SetExtensionBounds() {
     unsigned i, j;
     unsigned int startPos = 0;  //  block start position in alignment index coordinate
     unsigned int nAligned = 0;
-    BMA::BlockList::const_iterator blit;
+    BMA::ConstBlockList::const_iterator blit;
     const Block* prevBlock = NULL;
 
     m_extBound.clear();
     if (m_bma) {
-        const BMA::BlockList& blockList = m_bma->GetBlockList();
+        BMA::ConstBlockList blockList;
+		m_bma->GetBlockList(blockList);
         nAligned = m_bma->NAlignedBlocks();
         m_extBound.resize(nAligned);
         blit = blockList.begin();
@@ -137,8 +138,9 @@ bool CBlockedAlignmentEditor::GetCharacterForColumn(unsigned alignmentIndex, uns
     if (!m_bma || !residue) return result;
 
     BMA::eUnalignedJustification just;
-    const BMA::BlockList& blockList = m_bma->GetBlockList();
-    BMA::BlockList::const_iterator blit = blockList.begin();
+    BMA::ConstBlockList blockList;
+	m_bma->GetBlockList(blockList);
+    BMA::ConstBlockList::const_iterator blit = blockList.begin();
 
     unsigned bNum = 0, pos = 0;
     unsigned nBlocks = blockList.size();
@@ -371,8 +373,9 @@ unsigned CBlockedAlignmentEditor::GetSeqIndexForColumn(unsigned alignmentIndex, 
     unsigned blockNum = 0, pos = 0;
 //    unsigned nBlocks = m_bma->NBlocks(), nRows = m_bma->NRows();
 
-    const BMA::BlockList& blockList = m_bma->GetBlockList();
-    BMA::BlockList::const_iterator blit = blockList.begin();
+    BMA::ConstBlockList blockList;
+	m_bma->GetBlockList(blockList);
+    BMA::ConstBlockList::const_iterator blit = blockList.begin();
 
     for (;blit != blockList.end(); ++blit) {
         if (alignmentIndex < pos + (*blit)->m_width) {
@@ -394,8 +397,9 @@ bool CBlockedAlignmentEditor::IsResidueAtIndexOnAllRows(unsigned alignmentIndex)
     unsigned nRows = m_bma->NRows();
 //    unsigned nBlocks = m_bma->NBlocks(), nRows = m_bma->NRows();
 
-    const BMA::BlockList& blockList = m_bma->GetBlockList();
-    BMA::BlockList::const_iterator blit = blockList.begin();
+    BMA::ConstBlockList blockList;
+	m_bma->GetBlockList(blockList);
+    BMA::ConstBlockList::const_iterator blit = blockList.begin();
 
     for (;blit != blockList.end() && !found; ++blit) {
         if (alignmentIndex < pos + (*blit)->m_width) {
@@ -443,6 +447,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/10/24 23:24:52  thiessen
+* struct_util now uses C++ PSSM generation; remove C-toolkit dependency
+*
 * Revision 1.2  2005/10/19 18:40:19  lanczyck
 * output formatting changes
 *

@@ -39,10 +39,9 @@
 //#include "../local_struct_util/su_block_multiple_alignment.hpp"
 #include <algo/structure/struct_util/struct_util.hpp>
 #include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
+#include <algo/structure/struct_util/su_pssm.hpp>
 #include <algo/structure/bma_refine/AlignRefineScorer.hpp>
 
-//  for BLAST_Matrix_ typedef
-#include <blastkar.h>
 
 USING_NCBI_SCOPE;
 //USING_SCOPE(objects);
@@ -97,16 +96,14 @@ double RowScorer::ComputeBlockScores(struct_util::AlignmentUtility& au, vector<d
     int tmp;
     const BlockMultipleAlignment* bma;
     BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
-    int** pssmMatrix;
 
     //    cout << "in RowScorer::computeBlockScores; ";
     blockScores.clear();
     m_scoreComputed = false;
-    if (au.Okay()) {
+	if (au.Okay() && au.GetBlockMultipleAlignment()->GetPSSM()) {
         totalScore = 0;
         m_scoreComputed = true;
         bma = au.GetBlockMultipleAlignment();
-        pssmMatrix = (bma->GetPSSM()) ? bma->GetPSSM()->matrix : NULL;
         bma->GetUngappedAlignedBlocks(&alignedBlocks);
         nBlocks = alignedBlocks.size();
         nRows = bma->NRows();
@@ -131,7 +128,7 @@ double RowScorer::ComputeBlockScores(struct_util::AlignmentUtility& au, vector<d
                     //                    cout << "  block " << j << " width = " << alignedBlocks[j]->m_width << "  block start = " << (int) alignedBlocks[j]->GetIndexAt(0, i) << " align index = " << pssmIndex << endl;
                     for (k = 0; k < alignedBlocks[j]->m_width; ++k, ++pssmIndex) {
                         residue = alignedBlocks[j]->GetCharacterAt(k, i);
-                        tmp = GetPSSMScoreOfCharWithAverageOfBZ(pssmMatrix, pssmIndex, residue);
+						tmp = GetPSSMScoreOfCharWithAverageOfBZ(bma->GetPSSM(), pssmIndex, residue);
                         //                        cout << "    " << residue << " " << pssmIndex << " " << tmp << endl;
                         blockScore += (double) tmp; 
                     }
@@ -154,6 +151,9 @@ END_SCOPE(align_refine)
     /*
      * ---------------------------------------------------------------------------
      * $Log$
+     * Revision 1.2  2005/10/24 23:24:52  thiessen
+     * struct_util now uses C++ PSSM generation; remove C-toolkit dependency
+     *
      * Revision 1.1  2005/06/28 13:44:23  lanczyck
      * block multiple alignment refiner code from internal/structure/align_refine
      *

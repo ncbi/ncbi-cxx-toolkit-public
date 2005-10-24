@@ -20,5 +20,4 @@ SRC =   RowSelector \
         RefinerEngine
 
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
-
+CPPFLAGS = $(ORIG_CPPFLAGS)

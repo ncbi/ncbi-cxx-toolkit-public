@@ -35,9 +35,8 @@
 #include <map>
 
 #include <algo/structure/struct_util/su_sequence_set.hpp>
+#include <algo/structure/struct_util/su_pssm.hpp>
 #include <algo/structure/bma_refine/BMAUtils.hpp>
-
-#include <blastkar.h>
 
 USING_NCBI_SCOPE;
 
@@ -53,8 +52,9 @@ bool BMAUtils::GetCharacterAndIndexForColumn(const BMA& bma, unsigned alignmentI
     if (!residue) return result;
 
     BMA::eUnalignedJustification just;
-    const BMA::BlockList& blockList = bma.GetBlockList();
-    BMA::BlockList::const_iterator blit = blockList.begin();
+    BMA::ConstBlockList blockList;
+	bma.GetBlockList(blockList);
+    BMA::ConstBlockList::const_iterator blit = blockList.begin();
 
     unsigned bNum = 0, pos = 0;
     unsigned nBlocks = blockList.size();
@@ -114,7 +114,6 @@ void BMAUtils::GetPSSMScoresForColumn(const BMA& bma, unsigned alignmentIndex, v
     char residue;
     unsigned int i, nRows, masterIndex;
     int score;
-    int** pssmMatrix;
 
     scores.clear();
     if (!bma.GetPSSM()) {
@@ -126,14 +125,13 @@ void BMAUtils::GetPSSMScoresForColumn(const BMA& bma, unsigned alignmentIndex, v
     if (!GetCharacterAndIndexForColumn(bma, alignmentIndex, 0, &residue, &masterIndex)) return;
 
     nRows = bma.NRows();
-    pssmMatrix = bma.GetPSSM()->matrix;
     for (i = 0; i < nRows; ++i) {
 
         if (i > 0 && !GetCharacterForColumn(bma, alignmentIndex, i, &residue)) {
             residue = '-';
         }
 
-        score = GetPSSMScoreOfCharWithAverageOfBZ(pssmMatrix, masterIndex, residue);
+        score = GetPSSMScoreOfCharWithAverageOfBZ(bma.GetPSSM(), masterIndex, residue);
         TRACE_MESSAGE_CL("GetPSSMScoreForColumn " << masterIndex+1 << ":  (row, column, residue, score) = (" << i+1 << ", "  << alignmentIndex+1 << ", " << residue << ", " << score << ")\n");
 
         scores.push_back(score);
@@ -146,8 +144,9 @@ void BMAUtils::MapAlignmentIndexToSeqIndex(const BMA& bma, unsigned int row, map
     char residue;
     bool isAlignedBlock;
     unsigned int seqIndex = 0, alignmentIndex = 0;
-    const BMA::BlockList& blocks = bma.GetBlockList();
-    BMA::BlockList::const_iterator b = blocks.begin(), be = blocks.end();
+    BMA::ConstBlockList blocks;
+	bma.GetBlockList(blocks);
+    BMA::ConstBlockList::const_iterator b = blocks.begin(), be = blocks.end();
 
     aI2sI.clear();
     if (row >= bma.NRows()) {
@@ -270,10 +269,10 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
     unsigned int seqIndex, masterSeqIndex;
     unsigned int column = 0, blockNum = 0, alignedBlockNum = 0, nRows = bma.NRows();
     int thisScore, score = 0;
-    int** pssmMatrix;
 
-    const BMA::BlockList& blocks = bma.GetBlockList();
-    BMA::BlockList::const_iterator b, be;
+    BMA::ConstBlockList blocks;
+	bma.GetBlockList(blocks);
+    BMA::ConstBlockList::const_iterator b, be;
     if (blocks.size() == 0) {
         ERROR_MESSAGE_CL("PrintPSSMForRow() - alignment has no blocks\n");
         return;
@@ -286,7 +285,6 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
         ERROR_MESSAGE_CL("Invalid PSSM for BlockMultipleAlignment object");
         return;
     }
-    pssmMatrix = bma.GetPSSM()->matrix;
 
     EDiagSev oldPostLevel = SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_OmitInfoSev);
@@ -331,7 +329,7 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
 //                thisScore = GetPSSMScoreOfCharWithAverageOfBZ(pssmMatrix, masterRange->from + i, sequence->m_sequenceString[range->from + i]);
                 if (isInPssm && BMAUtils::GetCharacterAndIndexForColumn(bma, column, 0, &masterResidue, &masterSeqIndex)) {
                     
-                    thisScore = GetPSSMScoreOfCharWithAverageOfBZ(pssmMatrix, masterSeqIndex, residue);
+                    thisScore = GetPSSMScoreOfCharWithAverageOfBZ(bma.GetPSSM(), masterSeqIndex, residue);
                     score += thisScore;
                     oss << "; master/slave sequence pos: " << setw(4) << masterSeqIndex+1 << "/";
 
@@ -344,9 +342,9 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
                     oss.setf(initFlags, IOS_BASE::adjustfield);
 
                     if (viewColumn) {
-                        oss << " residue number " << setw(4) << LookupBLASTResidueNumberFromCharacter(residue) << endl;
+                        oss << " residue number " << setw(4) << LookupNCBIStdaaNumberFromCharacter(residue) << endl;
                         for (unsigned int k=0; k < 26; ++k) {
-                            oss << "  " << k+1 << "  " << pssmMatrix[masterSeqIndex][k];
+                            oss << "  " << k+1 << "  " << bma.GetPSSM()->matrix[masterSeqIndex][k];
                         }
                     }
                 } else {
@@ -377,8 +375,8 @@ void BMAUtils::PrintPSSMByColumn(const BMA& bma, bool dumpRawMatrix, bool viewCo
 //    map<unsigned int, const Block::Range*> ranges;
 //    map<unsigned int, const Sequence*> sequences;
 
-//    const BMA::BlockList& blocks = bma.GetBlockList();
-//    BMA::BlockList::const_iterator b = blocks.begin(), be = blocks.end();
+//    const BMA::ConstBlockList& blocks = bma.GetBlockList();
+//    BMA::ConstBlockList::const_iterator b = blocks.begin(), be = blocks.end();
 
     EDiagSev oldPostLevel = SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_OmitInfoSev);
@@ -409,7 +407,6 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
         ERROR_MESSAGE_CL("Invalid PSSM for BlockMultipleAlignment object");
         return;
     }
-    int** pssmMatrix = bma.GetPSSM()->matrix;
 
     bool isAlignedBlock = false;
     bool columnInPssm, validSeqIndex;
@@ -419,8 +416,9 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
     unsigned int blockIndex, seqIndex, masterSeqIndex, nRows, row;
 
 
-    const BMA::BlockList& blocks = bma.GetBlockList();
-    BMA::BlockList::const_iterator b = blocks.begin(), be = blocks.end();
+    BMA::ConstBlockList blocks;
+	bma.GetBlockList(blocks);
+    BMA::ConstBlockList::const_iterator b = blocks.begin(), be = blocks.end();
     const Block* thisBlock = NULL;
 
     //  Find which block this column is in.
@@ -464,7 +462,7 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
         //cout << "    blockIndex " << blockIndex+1 << "  residue " << residue << "  seqIndex " << seqIndex+1 << " is Aligned " << isAlignedBlock << " (return from GCAIFC: " << validSeqIndex << ")\n";
 
         if (columnInPssm) {
-            thisScore = GetPSSMScoreOfCharWithAverageOfBZ(pssmMatrix, masterSeqIndex, residue);
+            thisScore = GetPSSMScoreOfCharWithAverageOfBZ(bma.GetPSSM(), masterSeqIndex, residue);
             score += thisScore;
         } else {
             thisScore = kMax_Int;
@@ -482,9 +480,9 @@ void BMAUtils::PrintPSSMForColumn(const BMA& bma, unsigned int column, bool view
         if (columnInPssm) {
             oss << " score " << setw(4) << thisScore;
             if (viewColumn) {
-                oss << " residue number " << setw(4) << LookupBLASTResidueNumberFromCharacter(residue);
+                oss << " residue number " << setw(4) << LookupNCBIStdaaNumberFromCharacter(residue);
                 for (unsigned int k=0; k < 26; ++k) {
-                    oss << endl << "  " << k+1 << "  " << pssmMatrix[masterSeqIndex][k];
+                    oss << endl << "  " << k+1 << "  " << bma.GetPSSM()->matrix[masterSeqIndex][k];
                 }
             }
         }
@@ -524,8 +522,9 @@ bool BMAUtils::IsColumnOfType(const BMA& bma, unsigned int column, AlignmentChar
     }
     TRACE_MESSAGE_CL("Alignment index " << column << ":  in-pssm property of column = " << isInPssm << "; requested type " << ctype);
 
-    const BMA::BlockList& blocks = bma.GetBlockList();
-    BMA::BlockList::const_iterator b = blocks.begin(), be = blocks.end();
+    BMA::ConstBlockList blocks;
+	bma.GetBlockList(blocks);
+    BMA::ConstBlockList::const_iterator b = blocks.begin(), be = blocks.end();
 
     //  If not supplied, find the block this column is in; verify column is in the block if was passed
     for (; b!=be; ++b) {
@@ -584,6 +583,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/10/24 23:24:52  thiessen
+* struct_util now uses C++ PSSM generation; remove C-toolkit dependency
+*
 * Revision 1.2  2005/06/29 00:35:07  ucko
 * Fix GCC 2.95 build errors.
 *
