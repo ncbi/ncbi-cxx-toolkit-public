@@ -165,10 +165,11 @@ CConnParam::CConnParam(
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
         // BcpIn to it using protocol version other than "100".
         m_DatabaseParameters["version"] = "125";
-    } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eSybase ) {
+    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63")  && 
+                GetServerType() == eSybase ) {
         // ftds forks with Sybase databases using protocol v42 only ...
-        // m_DatabaseParameters["version"] = "42";
-        m_DatabaseParameters["version"] = "46";
+        m_DatabaseParameters["version"] = "42";
+        // m_DatabaseParameters["version"] = "46";
     }
 
 }
@@ -2582,6 +2583,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/10/24 13:17:53  ssikorsk
+* Added support for the ftds63 driver
+*
 * Revision 1.25  2005/10/19 15:48:16  ssikorsk
 * Connect to Sybase using protocol version 12.5;
 * Improved reading of Text and Image data types;
