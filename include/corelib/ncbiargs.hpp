@@ -890,6 +890,8 @@ public:
 ///  - CArgAllow_Int8s    -- Int8    value to fall within a given interval
 ///  - CArgAllow_Integers -- integer value to fall within a given interval
 ///  - CArgAllow_Doubles  -- floating-point value to fall in a given interval
+///
+/// @sa CArgAllow_Regexp
 
 class NCBI_XNCBI_EXPORT CArgAllow : public CObject
 {
@@ -1202,6 +1204,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/10/24 16:07:34  vakatov
+ * + @sa CArgAllow_Regexp, which is defined in another library
+ *
  * Revision 1.46  2005/06/13 19:28:26  lavr
  * CArgDescriptions::Delete() document name=""
  *
