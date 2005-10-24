@@ -43,6 +43,9 @@
 
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/db_blast.hpp>
+#include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/core/blast_seqsrc.h>
 
 #include <objmgr/scope.hpp>
 
@@ -79,6 +82,10 @@ protected:
                          CRef<objects::CScope>  scope,
                          THitRefs* phitrefs);
 
+    void x_GetDbBlastHits(BlastSeqSrc* seq_src,
+                          blast::TSeqLocVector& queries,
+                          THitRefs* phitrefs);
+
     CNcbiOstream*                    m_AsnOut;
 
     CNcbiOstream*    m_logstream;
@@ -90,9 +97,12 @@ protected:
                      const string& msg);
 
     bool x_GetNextPair(istream& ifs, THitRefs* hitrefs);
+    bool x_GetNextPair(const THitRefs& hitrefs, THitRefs* hitrefs_pair);
 
     string                          m_firstline;
     THitRefs                        m_PendingHits;
+
+    size_t                          m_CurHitRef;
 
     auto_ptr<objects::CLDS_Database>    m_LDS_db;
 };
@@ -104,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/24 17:44:06  kapustin
+ * Intermediate update
+ *
  * Revision 1.14  2005/10/19 17:56:35  kapustin
  * Switch to using ObjMgr+LDS to load sequence data
  *

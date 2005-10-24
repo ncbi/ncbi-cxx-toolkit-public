@@ -30,21 +30,28 @@
 */
 
 #include <ncbi_pch.hpp>
+
 #include "splign_app.hpp"
 #include "splign_app_exception.hpp"
 
 #include <corelib/ncbistd.hpp>
+
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/nw/nw_spliced_aligner32.hpp>
+#include <algo/align/util/hit_comparator.hpp>
+#include <algo/blast/api/seqsrc_seqdb.hpp>
 
 #include <objmgr/object_manager.hpp>
+#include <objmgr/seq_vector.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/seqdb/seqdb.hpp>
 #include <objtools/lds/lds_admin.hpp>
 #include <objtools/data_loaders/lds/lds_dataloader.hpp>
 
@@ -88,7 +95,8 @@ void CSplignApp::Init()
 
     argdescr->AddOptionalKey
         ("mklds", "mklds",
-         "[Batch mode] Make LDS DB under the specified directory "
+         "[Batch mode] "
+         "Make LDS DB under the specified directory "
          "with cDNA and genomic FASTA files or symlinks.",
          CArgDescriptions::eString);
 
@@ -113,6 +121,12 @@ void CSplignApp::Init()
     argdescr->AddOptionalKey
         ("querydb", "querydb",
          "[Batch mode] Pathname to the blast database of query (cDNA) "
+         "sequences. To create one, use formatdb -o T -p F",
+         CArgDescriptions::eString);
+
+    argdescr->AddOptionalKey
+        ("subjdb", "querydb",
+         "[Incremental mode] Pathname to the blast database of subject "
          "sequences. To create one, use formatdb -o T -p F",
          CArgDescriptions::eString);
 #endif
@@ -239,7 +253,6 @@ void CSplignApp::Init()
     SetupArgDescriptions(argdescr.release());
 }
 
-
 bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 {
     hitrefs->resize(0);
@@ -323,6 +336,39 @@ bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 }
 
 
+bool CSplignApp::x_GetNextPair(const THitRefs& hitrefs, 
+                               THitRefs* hitrefs_pair)
+{
+    USING_SCOPE(objects);
+
+    hitrefs_pair->resize(0);
+
+    const size_t dim = hitrefs.size();
+    if(dim == 0) {
+        return false;
+    }
+
+    if(m_CurHitRef == dim) {
+        m_CurHitRef == numeric_limits<size_t>::max();
+        return false;
+    }
+
+    if(m_CurHitRef == numeric_limits<size_t>::max()) {
+        m_CurHitRef = 0;
+    }
+
+    CConstRef<CSeq_id> query (hitrefs[m_CurHitRef]->GetQueryId());
+    CConstRef<CSeq_id> subj  (hitrefs[m_CurHitRef]->GetSubjId());
+    while(m_CurHitRef < dim 
+          && hitrefs[m_CurHitRef]->GetQueryId()->Match(*query)
+          && hitrefs[m_CurHitRef]->GetSubjId()->Match(*subj)  ) 
+    {
+        hitrefs_pair->push_back(hitrefs[m_CurHitRef++]);
+    }
+    return true;
+}
+
+
 void CSplignApp::x_LogStatus(size_t model_id, 
                              bool query_strand,
                              const CAlignShadow::TId& query, 
@@ -356,13 +402,17 @@ CRef<blast::CBlastOptionsHandle> CSplignApp::x_SetupBlastOptions(bool cross)
     blast_options_handle->SetDefaults();
     CBlastOptions& blast_opt = blast_options_handle->SetOptions();
 
+    /*
+    blast_opt.SetGapOpeningCost(4);
     blast_opt.SetGapExtensionCost(4);
     blast_opt.SetMismatchPenalty(-4);
     blast_opt.SetMatchReward(1);
+    */
+
     if(!cross) {
-        blast_opt.SetWordSize(20);
-        blast_opt.SetGapXDropoff(0);
-        blast_opt.SetGapXDropoffFinal(0);
+        blast_opt.SetWordSize(40);
+        blast_opt.SetGapXDropoff(1);
+        blast_opt.SetGapXDropoffFinal(1);
     }
 
     return blast_options_handle;
@@ -392,6 +442,35 @@ string GetLdsDbDir(const string& fasta_dir)
     return lds_db_dir;
 }
 
+
+void CSplignApp::x_GetDbBlastHits(BlastSeqSrc* seq_src,
+                                  blast::TSeqLocVector& queries,
+                                  THitRefs* phitrefs)
+{
+    USING_SCOPE(objects);
+    USING_SCOPE(blast);
+
+    // run blast and print ASN output
+    CDbBlast blast (queries, seq_src, *m_BlastOptionsHandle);
+    TSeqAlignVector sav = blast.Run();
+    phitrefs->resize(0);
+    ITERATE(TSeqAlignVector, ii, sav) {
+        if((*ii)->IsSet()) {
+            const CSeq_align_set::Tdata &sas0 = (*ii)->Get();
+            ITERATE(CSeq_align_set::Tdata, sa_iter0, sas0) {
+                const CSeq_align_set::Tdata &sas = 
+                    (*sa_iter0)->GetSegs().GetDisc().Get();
+                ITERATE(CSeq_align_set::Tdata, sa_iter, sas) {
+
+                    THitRef hitref (new CBlastTabular(**sa_iter));
+                    phitrefs->push_back(hitref);
+                }
+            }
+        }
+    }
+}
+
+
 int CSplignApp::Run()
 { 
     USING_SCOPE(objects);
@@ -408,8 +487,10 @@ int CSplignApp::Run()
     const bool is_subj    = args["subj"];
 #ifdef GENOME_PIPELINE
     const bool is_querydb = args["querydb"];
+    const bool is_subjdb = args["subjdb"];
 #else
     const bool is_querydb = false;
+    const bool is_subjdb = false;
 #endif
     const bool is_cross   = args["cross"];
 
@@ -445,6 +526,9 @@ int CSplignApp::Run()
     else if(is_subj && is_querydb && !(is_query || is_hits || is_ldsdir)) {
         run_mode = eBatch2;
     }
+    else if(is_query && is_subjdb && !(is_subj || is_hits || is_ldsdir)) {
+        run_mode = eIncremental;
+    }
     else if(is_hits && is_ldsdir && !(is_query || is_subj || is_querydb)) {
         run_mode = eBatch1;
     }
@@ -461,8 +545,8 @@ int CSplignApp::Run()
     // open asn output stream, if any
     m_AsnOut = args["asn"]? & args["asn"].AsOutputFile(): NULL;
     
-    // in pairwise and batch 2 mode, setup blast options
-    if(run_mode == ePairwise || run_mode == eBatch2) {
+    // in pairwise, batch 2 or incremental mode, setup blast options
+    if(run_mode != eBatch1) {
         m_BlastOptionsHandle = x_SetupBlastOptions(is_cross);
     }
 
@@ -506,9 +590,12 @@ int CSplignApp::Run()
     m_Splign->SetAligner() = aligner;
     m_Splign->SetStartModelId(1);
 
+    // splign formatter object    
+    m_Formatter.Reset(new CSplignFormatter(*m_Splign));
+
+    // do mode-specific preparations
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CRef<CScope> scope;
-
     CRef<CSeq_id> seqid_query, seqid_subj;
     if(run_mode == ePairwise) {
 
@@ -540,19 +627,82 @@ int CSplignApp::Run()
               new CLDS_Database(ldsdb_dir, kSplignLdsDb, kSplignLdsDb));
         m_LDS_db.reset(ldsdb);
         m_LDS_db->Open();
-        CLDS_DataLoader::RegisterInObjectManager(*objmgr, 
-                                                 *ldsdb, 
-                                                 CObjectManager::eDefault);
+        CLDS_DataLoader::RegisterInObjectManager(
+            *objmgr, *ldsdb, CObjectManager::eDefault);
         scope.Reset (new CScope(*objmgr));
         scope->AddDefaults();
     }
+    else if(run_mode == eIncremental) {
 
-    m_Splign->SetScope() = scope;    
+        USING_SCOPE(objects);
+        USING_SCOPE(blast);
 
-    // splign formatter object    
-    m_Formatter.Reset(new CSplignFormatter(*m_Splign));
+        scope.Reset (new CScope(*objmgr));
+        scope->AddDefaults();
+        m_Splign->SetScope() = scope;
 
+        // prepare CSeqDB
+        CSeqDB seqdb(args["subjdb"].AsString(), CSeqDB::eNucleotide);
+        CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
+
+        CNcbiIstream& ifa = args["query"].AsInputFile();
+        for(CRef<CSeq_entry> se (ReadFasta(ifa, fReadFasta_OneSeq));
+            se.NotEmpty(); se = ReadFasta(ifa, fReadFasta_OneSeq)) 
+        {
+            scope->ResetHistory();
+            scope->AddTopLevelSeqEntry(*se);
+
+            const CSeq_entry::TSeq& bioseq = se->GetSeq();    
+            const CSeq_entry::TSeq::TId& qids = bioseq.GetId();
+            CRef<CSeq_id> seqid_query (qids.back());
+
+            TSeqLocVector queries;
+            CRef<CSeq_loc> sl (new CSeq_loc);
+            sl->SetWhole().Assign(*seqid_query);
+            queries.push_back(SSeqLoc(*sl, *scope));
+            
+            THitRefs hitrefs;
+            x_GetDbBlastHits(seq_src, queries, &hitrefs);
+
+            typedef CHitComparator<CBlastTabular> THitComparator;
+            THitComparator hc (THitComparator::eSubjIdQueryId);
+            stable_sort(hitrefs.begin(), hitrefs.end(), hc);
+
+            THitRefs hitrefs_pair;
+            m_CurHitRef = numeric_limits<size_t>::max();
+            while(x_GetNextPair(hitrefs, &hitrefs_pair)) {
+                
+                int oid = -1;
+                CConstRef<CSeq_id> seqid_subj (
+                        hitrefs_pair.front()->GetSubjId());
+                if(!seqdb.SeqidToOid(*seqid_subj, oid)) {
+                    NCBI_THROW(CSplignAppException,
+                               eGeneral,
+                               "Unable load sequence for "
+                               + seqid_subj->GetSeqIdString(true));
+                }
+                
+                CRef<CBioseq> bq (seqdb.GetBioseq(oid));
+                CRef<CSeq_entry> se_subj (new CSeq_entry);
+                se_subj->SetSeq(*bq);
+                scope->AddTopLevelSeqEntry(*se_subj);
+                x_ProcessPair(hitrefs_pair, args); 
+            }
+
+            if(ifa.eof()) { break; }
+        }
+    }
+    else {
+        NCBI_THROW(CSplignAppException,
+                   eGeneral,
+                   "Requested mode not implemented." );
+    }
+
+    m_Splign->SetScope() = scope;
+
+    // run splign in selected mode 
     if(run_mode == ePairwise) {
+
         THitRefs hitrefs;
         x_GetBl2SeqHits(seqid_query, seqid_subj, scope, &hitrefs);
         x_ProcessPair(hitrefs, args);
@@ -564,6 +714,9 @@ int CSplignApp::Run()
         while(x_GetNextPair(hit_stream, &hitrefs) ) {
             x_ProcessPair(hitrefs, args);
         }
+    }
+    else if (run_mode == eIncremental) {
+        // done at the preparation step
     }
     else {
         NCBI_THROW(CSplignAppException,
@@ -626,7 +779,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
     if(hitrefs.size() == 0) {
         return;
     }
-    
+
     CAlignShadow::TId query = hitrefs.front()->GetQueryId();
     CAlignShadow::TId subj  = hitrefs.front()->GetSubjId();
     
@@ -635,6 +788,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
     const string strand = args["strand"].AsString();
     CSplign::TResults splign_results;
     if(strand == kStrandPlus) {
+
         m_Splign->SetStrand(true);
         m_Splign->Run(&hitrefs);
         const CSplign::TResults& results = m_Splign->GetResult();
@@ -784,6 +938,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/10/24 17:44:06  kapustin
+ * Intermediate update
+ *
  * Revision 1.51  2005/10/19 17:56:35  kapustin
  * Switch to using ObjMgr+LDS to load sequence data
  *
