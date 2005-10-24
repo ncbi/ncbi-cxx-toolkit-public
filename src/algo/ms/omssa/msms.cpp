@@ -72,10 +72,8 @@ CAA::CAA(void)
 
 CCleave::CCleave(void): CleaveAt(0), kCleave(0), NMethionine(false)
 {
-    ProtonMass = static_cast <int> (kProton*MSSCALE);
-    TermMass = static_cast <int> 
-	((kTermMass[kCIon] + kTermMass[kXIon])*MSSCALE);
-    Reverse = ReverseAA.GetMap();
+    ProtonMass = MSSCALE2INT(kProton);
+    TermMass = MSSCALE2INT(kTermMass[kCIon] + kTermMass[kXIon]);
 }
 
 // char based replacement for find_first_of()
@@ -563,22 +561,20 @@ void CMassArray::x_Init(const CMSSearchSettings::TProductsearchtype &SearchType)
     if(SearchType == eMSSearchType_average) {
 	for(i = 0; i < kNumUniqueAA; i++ ) {
 	    CalcMass[i] = AverageMass[i];
-	    IntCalcMass[i] = static_cast <int> 
-		(AverageMass[i]*MSSCALE + 0.5);
+	    IntCalcMass[i] = MSSCALE2INT(AverageMass[i]);
 	}
     }
-    else if(SearchType == eMSSearchType_monoisotopic) {
+    else if(SearchType == eMSSearchType_monoisotopic || 
+            SearchType == eMSSearchType_exact) {
 	for(i = 0; i < kNumUniqueAA; i++ ) {
 	    CalcMass[i] = MonoMass[i];
-	    IntCalcMass[i] = static_cast <int>
-		(MonoMass[i]*MSSCALE + 0.5);
+	    IntCalcMass[i] = MSSCALE2INT(MonoMass[i]);
 	}
     }
     else if(SearchType == eMSSearchType_monon15) {
      for(i = 0; i < kNumUniqueAA; i++ ) {
          CalcMass[i] = MonoN15Mass[i];
-         IntCalcMass[i] = static_cast <int>
-         (MonoN15Mass[i]*MSSCALE + 0.5);
+         IntCalcMass[i] = MSSCALE2INT(MonoN15Mass[i]);
      }
      }
 }
@@ -598,7 +594,7 @@ void CMassArray::Init(const CMSMod &Mods,
 
     for(i = Mods.GetAAMods(eMSModType_modaa).begin(); i != Mods.GetAAMods(eMSModType_modaa).end(); i++) {
     	for(j = 0; j < Modset->GetModNumChars(*i); j++) {
-    	    CalcMass[Modset->GetModChar(*i, j)] +=  Modset->GetModMass(*i)/(double)MSSCALE;
+    	    CalcMass[Modset->GetModChar(*i, j)] +=  MSSCALE2DBL(Modset->GetModMass(*i));
     	    IntCalcMass[Modset->GetModChar(*i, j)] += Modset->GetModMass(*i);
     	}
     }
@@ -607,6 +603,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.28  2005/10/24 21:46:13  lewisg
+  exact mass, peptide size limits, validation, code cleanup
+
   Revision 1.27  2005/09/15 21:29:24  lewisg
   filter out n-term protein mods
 

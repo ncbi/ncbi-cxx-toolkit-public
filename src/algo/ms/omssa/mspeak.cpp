@@ -277,7 +277,6 @@ struct CMZICompareIntensity {
 
 void CMSPeak::xCMSPeak(void)
 {
-    AAMap = AA.GetMap();
     Sorted[0] = Sorted[1] = false;
     MZI[MSCULLED1] = 0;
     MZI[MSCULLED2] = 0;
@@ -316,8 +315,8 @@ CMSPeak::~CMSPeak(void)
 	delete [] HitList[iCharges];
 }
 
-// add hit to hitlist.  returns true if successful
-bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
+
+const bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
 {
     out = 0;
     // initialize index using charge
@@ -359,7 +358,9 @@ void CMSPeak::Sort(int Which)
     Sorted[Which] = true;
 }
 
-bool CMSPeak::Contains(int value, int Which)
+
+const bool CMSPeak::Contains(const int value, 
+                             const int Which) const
 {
     CMZI precursor;
     precursor.MZ = value -  tol; // /2;
@@ -370,7 +371,8 @@ bool CMSPeak::Contains(int value, int Which)
 }
 
 		
-bool CMSPeak::ContainsFast(int value, int Which)
+const bool CMSPeak::ContainsFast(const int value,
+                                 const int Which) const
 {
 
     int x, l, r;
@@ -393,10 +395,8 @@ bool CMSPeak::ContainsFast(int value, int Which)
     return false;
 }
 
-// compare assuming all lists are sorted
-// the intensity array holds the intensity if there is a match to the ladder
-// returns total number of matches, which may be more than is recorded in the ladder due to overlap
-int CMSPeak::CompareSorted(CLadder& Ladder, int Which, TIntensity* Intensity)
+
+const int CMSPeak::CompareSorted(CLadder& Ladder, const int Which, TIntensity* Intensity) const
 {
     unsigned i(0), j(0);
     int retval(0);
@@ -574,7 +574,7 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder, int Which, TIntensity* Intensity
 }
 
 
-int CMSPeak::Compare(CLadder& Ladder, int Which)
+const int CMSPeak::Compare(CLadder& Ladder, const int Which) const
 {
     unsigned i;
     int retval(0);
@@ -587,8 +587,8 @@ int CMSPeak::Compare(CLadder& Ladder, int Which)
     return retval;
 }
 
-// compares the top peaks to the ladder.  returns immediately when finding a hit
-bool CMSPeak::CompareTop(CLadder& Ladder)
+
+const bool CMSPeak::CompareTop(CLadder& Ladder) const
 {
     unsigned i;
     for(i = 0; i < Num[MSTOPHITS]; i++) {
@@ -598,16 +598,16 @@ bool CMSPeak::CompareTop(CLadder& Ladder)
 }
 
 
-// read in an asn.1 spectrum and initialize peak values
-int CMSPeak::Read(CMSSpectrum& Spectrum,
-				   double MSMSTolerance,
-				   double PrecursorTol,
-				   int Scale)
+int CMSPeak::Read(const CMSSpectrum& Spectrum,
+                  const CMSSearchSettings& Settings)
 {
     try {
-	SetTolerance(MSMSTolerance);
-	SetPrecursorTol(PrecursorTol);
-    Precursormz = MSSCALE * (Spectrum.GetPrecursormz()/(double)MSSCALE);  
+	SetTolerance(Settings.GetMsmstol());
+	SetPrecursorTol(Settings.GetPeptol());
+    //  note that there are two scales -- input scale and computational scale
+    //  Precursormz = MSSCALE * (Spectrum.GetPrecursormz()/(double)MSSCALE);  
+    // for now, we assume one scale
+    Precursormz = Spectrum.GetPrecursormz();  
 	Num[MSORIGINAL] = 0;   
     
 	const CMSSpectrum::TMz& Mz = Spectrum.GetMz();
@@ -617,7 +617,9 @@ int CMSPeak::Read(CMSSpectrum& Spectrum,
 
 	int i;
 	for(i = 0; i < Num[MSORIGINAL]; i++) {
-	    MZI[MSORIGINAL][i].MZ = Mz[i]*MSSCALE/MSSCALE;
+        //	MZI[MSORIGINAL][i].MZ = Mz[i]*MSSCALE/MSSCALE;
+        // for now, we assume one scale
+	    MZI[MSORIGINAL][i].MZ = Mz[i];
 	    MZI[MSORIGINAL][i].Intensity = Abundance[i];
 	}
 	Sort(MSORIGINAL);
@@ -629,8 +631,9 @@ int CMSPeak::Read(CMSSpectrum& Spectrum,
     return 0;
 }
 
-// return the number of peaks in a range
-int CMSPeak::CountRange(double StartFraction, double StopFraction)
+
+const int CMSPeak::CountRange(const double StartFraction,
+                              const double StopFraction) const
 {
     CMZI Start, Stop;
     int Precursor = static_cast <int> (Precursormz + tol/2.0);
@@ -644,8 +647,8 @@ int CMSPeak::CountRange(double StartFraction, double StopFraction)
     return HiHit - LoHit;
 }
 
-// return the percentage of peaks below and at the precursor
-int CMSPeak::PercentBelow(void)
+
+const int CMSPeak::PercentBelow(void) const
 {
     CMZI precursor;
     precursor.MZ = static_cast <int> (Precursormz + tol/2.0);
@@ -656,15 +659,16 @@ int CMSPeak::PercentBelow(void)
     return Hit-MZI[MSORIGINAL];
 }
 
-// is the data charge +1?
-bool CMSPeak::IsPlus1(double PercentBelowIn)
+
+const bool CMSPeak::IsPlus1(const double PercentBelowIn) const
 {
     if(PercentBelowIn/Num[MSORIGINAL] > PlusOne) return true;
     return false;
 }
 
-// takes the ratio, low/high, of two ranges in the spectrum
-double CMSPeak::RangeRatio(double Start, double Middle, double Stop)
+const double CMSPeak::RangeRatio(const double Start, 
+                                 const double Middle, 
+                                 const double Stop) const
 {
     int Lo = CountRange(Start, Middle);
     int Hi = CountRange(Middle, Stop);
@@ -672,10 +676,6 @@ double CMSPeak::RangeRatio(double Start, double Middle, double Stop)
 }
 
 
-//! calculates charge based on threshold and sets charge value 
-/*!
-\param ChargeHandle contains info on how to deal with charge
-*/
 void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle)
 {
 	ConsiderMult = min(ChargeHandle.GetConsidermult(), MSMAXCHARGE);
@@ -725,7 +725,7 @@ void CMSPeak::SetComputedCharge(const CMSChargeHandle& ChargeHandle)
 }
 
 // initializes arrays used to track hits
-void CMSPeak::InitHitList(int Minhit)
+void CMSPeak::InitHitList(const int Minhit)
 {
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++) {
@@ -736,30 +736,30 @@ void CMSPeak::InitHitList(int Minhit)
     }
 }
 
-void CMSPeak::xWrite(std::ostream& FileOut, CMZI *Temp, int Num)
+
+void CMSPeak::xWrite(std::ostream& FileOut, const CMZI * const Temp, const int Num) const
 {
-    FileOut << CalcPrecursorMass(1)/(double)MSSCALE + kProton << " " << 1 << endl;
+    FileOut << MSSCALE2DBL(CalcPrecursorMass(1)) + kProton << " " << 1 << endl;
 
     int i;
     unsigned Intensity;
     for(i = 0; i < Num; i++) {
         Intensity = Temp[i].Intensity;
         if(Intensity == 0.0) Intensity = 1;  // make Mascot happy
-        FileOut << (double)Temp[i].MZ/MSSCALE << " " << 
+        FileOut << MSSCALE2DBL(Temp[i].MZ) << " " << 
 	    Intensity << endl;
     }
 }
 
-void CMSPeak::Write(std::ostream& FileOut, EFileType FileType, int Which)
+
+void CMSPeak::Write(std::ostream& FileOut, const EFileType FileType, const int Which) const
 {
     if(!FileOut || FileType != eDTA) return;
     xWrite(FileOut, MZI[Which], Num[Which]);
 }
 
 
-// counts the number of peaks above % of maximum peak
-
-int CMSPeak::AboveThresh(double Threshold, int Which)
+const int CMSPeak::AboveThresh(const double Threshold, const int Which) const
 {
     CMZI *MZISort = new CMZI[Num[Which]];
     unsigned i;
@@ -790,8 +790,8 @@ void CMSPeak::TruncatePlus1(void)
 #endif 
 
 // functions used in SmartCull
-// take out original peaks below a threshold.  assumes original peaks sorted by intensity
-void CMSPeak::CullBaseLine(double Threshold, CMZI *Temp, int& TempLen)
+
+void CMSPeak::CullBaseLine(const double Threshold, CMZI *Temp, int& TempLen)
 {
     unsigned iMZI;
     for(iMZI = 0; iMZI < TempLen && Temp[iMZI].Intensity > Threshold * Temp[0].Intensity; iMZI++);
@@ -799,8 +799,7 @@ void CMSPeak::CullBaseLine(double Threshold, CMZI *Temp, int& TempLen)
 }
 
 
-// cull precursors
-void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, int Precursor)
+void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor)
 {
     // chop out precursors
     int iTemp(0), iMZI;
@@ -816,7 +815,7 @@ void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, int Precursor)
 }
 
 // iterate thru peaks, deleting ones that pass the test
-void CMSPeak::CullIterate(CMZI *Temp, int& TempLen, TMZIbool FCN)
+void CMSPeak::CullIterate(CMZI *Temp, int& TempLen, const TMZIbool FCN)
 {
     if(!FCN) return;
     int iTemp(0), iMZI, jMZI;
@@ -846,7 +845,7 @@ void CMSPeak::CullIterate(CMZI *Temp, int& TempLen, TMZIbool FCN)
 // object for looking for isotopes.  true if isotope
 static bool FCompareIsotope(const CMZI& x, const CMZI& y, int tol)
 {
-    if(y.MZ < x.MZ + 2*MSSCALE + tol && y.MZ > x.MZ - tol) return true;
+    if(y.MZ < x.MZ + MSSCALE2INT(2) + tol && y.MZ > x.MZ - tol) return true;
     return false;
 }
 
@@ -861,8 +860,8 @@ void CMSPeak::CullIsotope(CMZI *Temp, int& TempLen)
 // function for looking for H2O or NH3.  true if is.
 static bool FCompareH2ONH3(const CMZI& x, const CMZI& y, int tol)
 {
-    if((y.MZ > x.MZ - 18*MSSCALE - tol && y.MZ < x.MZ - 18*MSSCALE + tol ) ||
-       (y.MZ > x.MZ - 17*MSSCALE - tol && y.MZ < x.MZ - 17*MSSCALE + tol))
+    if((y.MZ > x.MZ - MSSCALE2INT(18) - tol && y.MZ < x.MZ - MSSCALE2INT(18) + tol ) ||
+       (y.MZ > x.MZ - MSSCALE2INT(17) - tol && y.MZ < x.MZ - MSSCALE2INT(17) + tol))
 	return true;
     return false;
 }
@@ -877,9 +876,8 @@ void CMSPeak::CullH20NH3(CMZI *Temp, int& TempLen)
 }
 
 
-void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
-								 double Threshold, int SingleWindow,
-								 int DoubleWindow, int SingleHit, int DoubleHit)
+void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct, 
+                                 const CMSSearchSettings& Settings)
 {
     int TempLen(0);
     CMZI *Temp = new CMZI [Num[MSORIGINAL]]; // temporary holder
@@ -900,8 +898,7 @@ void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
     }
 #endif
 
-	SmartCull(Threshold, SingleWindow,
-			  DoubleWindow, SingleHit, DoubleHit,
+	SmartCull(Settings,
 			  Temp, TempLen, ConsiderMultProduct);
 
     // make the array of culled peaks
@@ -921,7 +918,7 @@ void CMSPeak::CullChargeAndWhich(bool ConsiderMultProduct,
 }
 
 
-void CMSPeak::Rank(int Which)
+void CMSPeak::Rank(const int Which)
 {
     int i;
     for(i = 1; i <= Num[Which]; i++)
@@ -929,9 +926,7 @@ void CMSPeak::Rank(int Which)
 }
 
 // use smartcull on all charges
-void CMSPeak::CullAll(double Threshold, int SingleWindow,
-		      int DoubleWindow, int SingleHit, int DoubleHit,
-		      int Tophitnum)
+void CMSPeak::CullAll(const CMSSearchSettings& Settings)
 {    
     int iCharges;
 
@@ -939,14 +934,10 @@ void CMSPeak::CullAll(double Threshold, int SingleWindow,
     Sorted[MSORIGINAL] = false;
 
 	if(MinCharge < ConsiderMult) {	
-		CullChargeAndWhich(false,
-						   Threshold, SingleWindow,
-						   DoubleWindow, SingleHit, DoubleHit);
+		CullChargeAndWhich(false, Settings);
 	}
 	if(MaxCharge >= ConsiderMult) {
-		CullChargeAndWhich(true,
-						   Threshold, SingleWindow,
-						   DoubleWindow, SingleHit, DoubleHit);
+		CullChargeAndWhich(true, Settings);
 	}
 
     // make the high intensity list
@@ -956,7 +947,7 @@ void CMSPeak::CullAll(double Threshold, int SingleWindow,
     copy(MZI[Which], MZI[Which] + Num[Which], Temp);
     sort(Temp, Temp + Num[Which], CMZICompareIntensity());
 
-    if(Num[Which] > Tophitnum)  Num[MSTOPHITS] = Tophitnum;
+    if(Num[Which] > Settings.GetTophitnum())  Num[MSTOPHITS] = Settings.GetTophitnum();
     else  Num[MSTOPHITS] = Num[Which];
 
     MZI[MSTOPHITS] = new CMZI [Num[MSTOPHITS]]; // holds highest hits
@@ -969,17 +960,22 @@ void CMSPeak::CullAll(double Threshold, int SingleWindow,
     delete [] Temp;
 }
 
-// check to see if TestMZ is Diff away from BigMZ
-bool CMSPeak::IsAtMZ(int BigMZ, int TestMZ, int Diff, int tol)
+
+const bool CMSPeak::IsAtMZ(const int BigMZ,
+                           const int TestMZ, 
+                           const int Diff, 
+                           const int tol) const
 {
-    if(TestMZ < BigMZ - Diff*MSSCALE + tol && 
-       TestMZ > BigMZ - Diff*MSSCALE - tol)
+    if(TestMZ < BigMZ - MSSCALE2INT(Diff) + tol && 
+       TestMZ > BigMZ - MSSCALE2INT(Diff) - tol)
 	return true;
     return false;
 }
 
-// see if TestMZ can be associated with BigMZ, e.g. water loss, etc.
-bool CMSPeak::IsMajorPeak(int BigMZ, int TestMZ, int tol)
+
+const bool CMSPeak::IsMajorPeak(const int BigMZ,
+                                const int TestMZ, 
+                                const int tol) const
 {
     if (IsAtMZ(BigMZ, TestMZ, 1, tol) || 
 	IsAtMZ(BigMZ, TestMZ, 16, tol) ||
@@ -989,14 +985,27 @@ bool CMSPeak::IsMajorPeak(int BigMZ, int TestMZ, int tol)
 }
 
 // recursively culls the peaks
-void CMSPeak::SmartCull(double Threshold, int SingleWindow,
-						int DoubleWindow, int SingleNum, int DoubleNum,
-						CMZI *Temp, int& TempLen, bool ConsiderMultProduct)
+void CMSPeak::SmartCull(const CMSSearchSettings& Settings,
+						CMZI *Temp, 
+                        int& TempLen, 
+                        const bool ConsiderMultProduct)
+/*
+double Threshold, int SingleWindow,
+		      int DoubleWindow, int SingleHit, int DoubleHit,
+		      int Tophitnum
+    .GetCutlo(),
+		       MyRequest->GetSettings().GetSinglewin(),
+		       MyRequest->GetSettings().GetDoublewin(),
+		       MyRequest->GetSettings().GetSinglenum(),
+		       MyRequest->GetSettings().GetDoublenum(),
+		       MyRequest->GetSettings().GetTophitnum()
+               */
+
 {
     int iMZI = 0;  // starting point
 
     // prep the data
-    CullBaseLine(Threshold, Temp, TempLen);
+    CullBaseLine(Settings.GetCutlo(), Temp, TempLen);
 #ifdef DEBUG_PEAKS1
     {
 	sort(Temp, Temp+TempLen , CMZICompare());
@@ -1035,20 +1044,20 @@ void CMSPeak::SmartCull(double Threshold, int SingleWindow,
 	HitCount = 0;
 	if(!ConsiderMultProduct || Temp[iMZI].MZ > Precursormz) {
 	    // if charge 1 region, allow fewer peaks
-	    Window = SingleWindow; //27;
-	    HitsAllowed = SingleNum;
+	    Window = Settings.GetSinglewin(); //27;
+	    HitsAllowed = Settings.GetSinglenum();
 	}
 	else {
 	    // otherwise allow a greater number
-	    Window = DoubleWindow; //14;
-	    HitsAllowed = DoubleNum;
+	    Window = Settings.GetDoublewin(); //14;
+	    HitsAllowed = Settings.GetDoublenum();
 	}
 	// go over smaller peaks
 	set <int> Considered;
 	for(jMZI = iMZI + 1; jMZI < TempLen; jMZI++) { 
 	    if(Deleted.count(jMZI) != 0) continue;
-	    if(Temp[jMZI].MZ < Temp[iMZI].MZ + Window*MSSCALE + tol &&
-	       Temp[jMZI].MZ > Temp[iMZI].MZ - Window*MSSCALE - tol) {
+	    if(Temp[jMZI].MZ < Temp[iMZI].MZ + MSSCALE2INT(Window) + tol &&
+	       Temp[jMZI].MZ > Temp[iMZI].MZ - MSSCALE2INT(Window) - tol) {
 		if(IsMajorPeak(Temp[iMZI].MZ, Temp[jMZI].MZ, tol)) {
 		    // link little peak to big peak
 		    MajorPeak[jMZI] = iMZI;
@@ -1093,8 +1102,8 @@ void CMSPeak::SmartCull(double Threshold, int SingleWindow,
 
 // return the lowest culled peak and the highest culled peak less than the
 // +1 precursor mass
-void CMSPeak::HighLow(int& High, int& Low, int& NumPeaks, int PrecursorMass,
-		      int Charge, double Threshold, int& NumLo, int& NumHi)
+void CMSPeak::HighLow(int& High, int& Low, int& NumPeaks, const int PrecursorMass,
+		      const int Charge, const double Threshold, int& NumLo, int& NumHi)
 {
     int Which = GetWhich(Charge);
 
@@ -1130,9 +1139,10 @@ void CMSPeak::HighLow(int& High, int& Low, int& NumPeaks, int PrecursorMass,
     }
 }
 
-// count the number of putative AA intervals.
-// Nodup true means don't count the peaks twice
-int CMSPeak::CountAAIntervals(CMassArray& MassArray, bool Nodup, int Which)
+
+const int CMSPeak::CountAAIntervals(const CMassArray& MassArray,
+                                    const bool Nodup, 
+                                    const int Which) const
 {	
     unsigned ipeaks, low;
     int i;
@@ -1170,8 +1180,7 @@ int CMSPeak::CountAAIntervals(CMassArray& MassArray, bool Nodup, int Which)
 }
 
 
-// return maximum intensity value
-int CMSPeak::GetMaxI(int Which)
+const int CMSPeak::GetMaxI(const int Which) const
 {
     unsigned Intensity(0), i;
     for(i = 0; i < Num[Which]; i++) {
@@ -1232,8 +1241,8 @@ int CMSPeakSet::SortPeaks(int Peptol, int Zdep)
     	    // correction for incorrect charge determination.
     	    // see 12/13/02 notebook, pg. 135
     	    ptol = (Zdep * (Peaks->GetCharges()[iCharges] - 1) + 1) * Peptol;
-            CalcMass = static_cast <int> (Peaks->GetPrecursormz() * Peaks->GetCharges()[iCharges] -
-                                          Peaks->GetCharges()[iCharges]*kProton*MSSCALE);
+            CalcMass = Peaks->GetPrecursormz() * Peaks->GetCharges()[iCharges] -
+                MSSCALE2INT(Peaks->GetCharges()[iCharges]*kProton);
             temp = new TMassPeak;
     	    temp->Mass = CalcMass;
     	    temp->Peptol = ptol;

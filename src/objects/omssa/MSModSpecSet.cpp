@@ -65,13 +65,13 @@ void CMSModSpecSet::CreateArrays(void)
         if((*iMods)->GetMonomass() == 0.0) continue;
 
         ModTypes[ModNum] = static_cast <EMSModType> ((*iMods)->GetType());
-        ModMass[ModNum] = static_cast <int> ((*iMods)->GetMonomass() * MSSCALE);
+        ModMass[ModNum] = static_cast <int> ((*iMods)->GetMonomass() * MSSCALE + 0.5);
 
         // set up neutral loss if specified
         if((*iMods)->CanGetNeutralloss())
             NeutralLoss[ModNum] = static_cast <int> 
             (((*iMods)->GetMonomass() -
-              (*iMods)->GetNeutralloss().GetMonomass()) * MSSCALE);
+              (*iMods)->GetNeutralloss().GetMonomass()) * MSSCALE + 0.5);
         else 
             NeutralLoss[ModNum] = ModMass[ModNum];
 
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/10/24 21:46:13  lewisg
+* exact mass, peptide size limits, validation, code cleanup
+*
 * Revision 1.4  2005/09/14 15:30:18  lewisg
 * neutral loss
 *

@@ -86,7 +86,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(1, 0, 8));
+    SetVersion(CVersionInfo(2, 0, 0));
 }
 
 
@@ -181,12 +181,16 @@ void COMSSA::Init()
 			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("te", "protol", "precursor ion  mass tolerance in Da",
 			   CArgDescriptions::eDouble, "2.0");
-    argDesc->AddDefaultKey("tom", "promass", "product ion search type (0 = mono, 1 = avg, 2 = N15)",
+    argDesc->AddDefaultKey("tom", "promass", "product ion search type (0 = mono, 1 = avg, 2 = N15, 3 = exact)",
                 CArgDescriptions::eInteger, "0");
-    argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg, 2 = N15)",
+    argDesc->AddDefaultKey("tem", "premass", "precursor ion search type (0 = mono, 1 = avg, 2 = N15, 3 = exact)",
                 CArgDescriptions::eInteger, "0");
     argDesc->AddDefaultKey("tez", "prozdep", "charge dependency of precursor mass tolerance (0 = none, 1 = linear)",
                 CArgDescriptions::eInteger, "1");
+    argDesc->AddDefaultKey("tex", "exact", 
+                   "theshold in Da above which the mass of neutron should be added in exact mass search",
+                   CArgDescriptions::eDouble, 
+                   "1446.94");
 
     argDesc->AddDefaultKey("i", "ions", 
                "id numbers of ions to search (comma delimited, no spaces)",
@@ -299,6 +303,10 @@ void COMSSA::Init()
                      "minimum size of peptides for no-enzyme and semi-tryptic searches",
                      CArgDescriptions::eInteger, 
                      "4");
+    argDesc->AddDefaultKey("nox", "maxno", 
+                      "maximum size of peptides for no-enzyme and semi-tryptic searches (0=none)",
+                      CArgDescriptions::eInteger, 
+                      "0");
     argDesc->AddFlag("ns", "test");
 
 
@@ -469,6 +477,8 @@ int COMSSA::Run()
 	Request->SetSettings().SetPeptol(args["te"].AsDouble());
 	Request->SetSettings().SetMsmstol(args["to"].AsDouble());
     Request->SetSettings().SetZdep(args["tez"].AsInteger());
+    Request->SetSettings().SetExactmass(args["tex"].AsDouble());
+
 	InsertList(args["i"].AsString(), Request->SetSettings().SetIonstosearch(), "unknown ion");
 	Request->SetSettings().SetCutlo(args["cl"].AsDouble());
 	Request->SetSettings().SetCuthi(args["ch"].AsDouble());
@@ -494,6 +504,7 @@ int COMSSA::Run()
     Request->SetSettings().SetSearchctermproduct(args["sct"].AsInteger());
     Request->SetSettings().SetMaxproductions(args["sp"].AsInteger());
     Request->SetSettings().SetMinnoenzyme(args["no"].AsInteger());
+    Request->SetSettings().SetMaxnoenzyme(args["nox"].AsInteger());
 
 	if(args["x"].AsString() != "0") {
 	    InsertList(args["x"].AsString(), Request->SetSettings().SetTaxids(), "unknown tax id");
@@ -611,6 +622,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.45  2005/10/24 21:46:13  lewisg
+  exact mass, peptide size limits, validation, code cleanup
+
   Revision 1.44  2005/09/22 14:58:03  ucko
   Tweak PrintMods to compile with WorkShop's ultra-strict STL; take
   advantage of ITERATE along the way.

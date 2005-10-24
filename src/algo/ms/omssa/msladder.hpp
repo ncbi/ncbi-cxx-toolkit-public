@@ -89,33 +89,55 @@ public:
      * @param ModMask bit mask of modifications to use
      * @param ModList modification information
      * @param NumMod the total number of mods
-     * @param Searchctermproduct should the cterminal ions be created
-     * @param Searchb1 should the first forward ion be created
+     * @param Settings search settings
      * 
      * @return false if fails
      */
-    bool CreateLadder(int IonType,
-                      int Charge,
-                      const char *Sequence,
-                      int SeqIndex,
-                      int start,
-                      int stop,
-                      int mass,
-                      CMassArray& MassArray, 
-                      CAA &AA,
-                      unsigned ModMask,
-                      CMod ModList[],
-                      int NumMod,
-                      int Searchctermproduct,
-                      int Searchb1
-                      );
+    const bool CreateLadder(const int IonType,
+                            const int Charge,
+                            const char * const Sequence,
+                            const int SeqIndex,
+                            const int start,
+                            const int stop,
+                            const int mass,
+                            const CMassArray& MassArray, 
+                            const CAA &AA,
+                            const unsigned ModMask,
+                            const CMod ModList[],
+                            const int NumMod,
+                            const CMSSearchSettings& Settings
+                            );
 
-    ///
-    /// calculate the mass difference
-    ///
-    bool CalcDelta(int &delta, const int *IntMassArray, char *AAMap, const char *Sequence,
-                        int Offset, int Direction, int NumMod, int &ModIndex,
-                        CMod ModList[], unsigned ModMask, int i);
+    /**
+     * calculate the mass difference
+     *
+     * @param IntMassArray amino acid masses
+     * @param AAMap convert aa to index
+     * @param Sequence the sequence
+     * @param Offset start position in the sequence
+     * @param Direction the direction of the ion series
+     * @param NumMod number of modifications
+     * @param ModIndex position of the modifications
+     * @param ModList modification info
+     * @param ModMask modification mask
+     * @param i index into sequence
+     * @param ion the ladder
+     * @param Charge charge state
+     * @param Setting search settings
+     */
+    bool CalcDelta(const int *IntMassArray,
+                   const char * const AAMap,
+                   const char *Sequence,
+                   int Offset, 
+                   int Direction, 
+                   int NumMod, 
+                   int &ModIndex,
+                   const CMod ModList[],
+                   unsigned ModMask,
+                   int i,
+                   int& ion,
+                   const int Charge, 
+                   const CMSSearchSettings& Settings);
 
 
     // check if modification mask position is set
@@ -160,14 +182,24 @@ private:
 /////////////////// CLadder inline methods
 
 inline
-bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, const char *Sequence,
-                        int Offset, int Direction, int NumMod, int &ModIndex,
-                        CMod ModList[], unsigned ModMask, int i)
+bool CLadder::CalcDelta(const int *IntMassArray, 
+                        const char * const AAMap, 
+                        const char *Sequence,
+                        int Offset, 
+                        int Direction, 
+                        int NumMod, 
+                        int &ModIndex,
+                        const CMod ModList[], 
+                        unsigned ModMask, 
+                        int i,
+                        int& ion,
+                        const int Charge, 
+                        const CMSSearchSettings& Settings)
 {
-    delta = IntMassArray[AAMap[Sequence[Offset + Direction*i]]];
+    int delta = IntMassArray[AAMap[Sequence[Offset + Direction*i]]];
     if(!delta) return false; // unusable char (-BXZ*)
 
-
+    // check for mods
     while(NumMod > 0 && ModIndex >= 0 && ModIndex < NumMod &&
         ModList[ModIndex].GetSite() == &(Sequence[Offset + Direction*i])) {
         if (MaskSet(ModMask, ModIndex)) { 
@@ -175,6 +207,17 @@ bool CLadder::CalcDelta(int &delta, const int *IntMassArray, char *AAMap, const 
         }
         ModIndex += Direction;
     }
+
+    // increment the ladder
+
+    // first check to see if exact mass increment needed
+    if(Settings.GetProductsearchtype() == eMSSearchType_exact) {
+        if (ion/MSSCALE2INT(Settings.GetExactmass()) != (ion+delta) / 
+            MSSCALE2INT(Settings.GetExactmass()))
+            ion += MSSCALE2INT(kNeutron)/Charge;
+    }
+
+    ion += delta/Charge;
     return true;
 }
 
@@ -261,6 +304,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.17  2005/10/24 21:46:13  lewisg
+  exact mass, peptide size limits, validation, code cleanup
+
   Revision 1.16  2005/09/20 21:07:57  lewisg
   get rid of c-toolkit dependencies and nrutil
 

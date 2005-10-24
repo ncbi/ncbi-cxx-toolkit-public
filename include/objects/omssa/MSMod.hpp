@@ -61,6 +61,8 @@ const char * const UniqueAA = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
 // used to scale all float masses into ints
 #define MSSCALE 100
+#define MSSCALE2INT(x) (static_cast <int> ((x) * MSSCALE + 0.5))
+#define MSSCALE2DBL(x) ((x)/ static_cast <double> (MSSCALE))
 
 
 
@@ -73,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/10/24 21:46:13  lewisg
+* exact mass, peptide size limits, validation, code cleanup
+*
 * Revision 1.2  2005/03/14 22:29:54  lewisg
 * add mod file input
 *

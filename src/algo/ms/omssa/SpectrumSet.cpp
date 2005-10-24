@@ -303,7 +303,7 @@ bool CSpectrumSet::GetDTAHeader(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectru
     if(!isPKL) {
         precursor = (precursor + (dummy - 1)*kProton ) / dummy;
     }
-    MySpectrum->SetPrecursormz(static_cast <int> (precursor*MSSCALE));
+    MySpectrum->SetPrecursormz(MSSCALE2INT(precursor));
 
     return true;
 }
@@ -355,8 +355,8 @@ bool CSpectrumSet::GetDTABody(CNcbiIstream& DTA, TInputPeaks& InputPeaks)
 
     if(!(DTA >> dummy) || dummy < 0)
         return false;
-    if (dummy > kMax_Int) dummy = kMax_Int/MSSCALE;
-    InputPeak.mz = static_cast <int> (dummy*MSSCALE);
+    if (dummy > kMax_Int) dummy = MSSCALE2DBL(kMax_Int);
+    InputPeak.mz = MSSCALE2INT(dummy);
 
     if(!(DTA >> dummy) || dummy < 0)
         return false;
@@ -499,7 +499,7 @@ int CSpectrumSet::GetMGFBlock(CNcbiIstream& DTA, CRef <CMSSpectrum>& MySpectrum)
             CNcbiIstrstream istr(LastLine.c_str());
             double precursor;
             if(istr >> precursor) {
-                MySpectrum->SetPrecursormz(static_cast <int> (precursor*MSSCALE));
+                MySpectrum->SetPrecursormz(MSSCALE2INT(precursor));
                 MySpectrum->SetCharge().push_back(1);   // required in asn.1 (but shouldn't be)
                 }
             else return 1;
@@ -544,6 +544,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.24  2005/10/24 21:46:13  lewisg
+ * exact mass, peptide size limits, validation, code cleanup
+ *
  * Revision 1.23  2005/08/01 13:44:18  lewisg
  * redo enzyme classes, no-enzyme, fix for fixed mod enumeration
  *

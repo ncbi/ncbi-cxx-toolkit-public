@@ -67,7 +67,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Invalid precursor search type");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Precursor search type missing");
         retval = 1;
     }
@@ -77,7 +78,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Invalid Product search type");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Product search type missing");
         retval = 1;
     }
@@ -90,7 +92,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
                 Error.push_back("Unknown search ion");
                 retval = 1;
             }
-    } else {
+    }
+    else {
         Error.push_back("Ion search type missing");
         retval = 1;
     }
@@ -103,7 +106,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Precursor mass tolerance less than 0");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Precursor mass tolerance missing");
         retval = 1;
     }
@@ -114,8 +118,20 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Product mass tolerance less than 0");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Product mass tolerance missing");
+        retval = 1;
+    }
+
+    if (CanGetExactmass()) {
+        if (GetExactmass() < 0) {
+            Error.push_back("Exact Mass threshold less than 0");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("Exact Mass threshold  missing");
         retval = 1;
     }
 
@@ -126,7 +142,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Precursor mass tolerance charge dependence setting invalid");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Precursor mass tolerance charge dependence missing");
         retval = 1;
     }
@@ -137,7 +154,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Low cut value out of range");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Low cut value missing");
         retval = 1;
     }
@@ -148,7 +166,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Hi cut value out of range");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Hi cut value missing");
         retval = 1;
     }
@@ -158,7 +177,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
         if (GetCutlo() > GetCuthi()) {
             Error.push_back("Lo cut exceeds Hi cut value");
             retval = 1;
-        } else if (CanGetCutinc() && GetCutinc() <= 0) {
+        }
+        else if (CanGetCutinc() && GetCutinc() <= 0) {
             Error.push_back("Cut increment too small");
             retval = 1;
         }
@@ -169,7 +189,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Cut increment less than 0");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Cut increment missing");
         retval = 1;
     }
@@ -180,7 +201,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Single win size less than 0");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Single win size missing");
         retval = 1;
     }
@@ -191,7 +213,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Double win size less than 0");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Double win size missing");
         retval = 1;
     }
@@ -202,7 +225,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Single num less than 0");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Single num missing");
         retval = 1;
     }
@@ -213,7 +237,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Double num less than 0");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Double num missing");
         retval = 1;
     }
@@ -244,7 +269,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Unknown enzyme");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Enzyme missing");
         retval = 1;
     }
@@ -255,7 +281,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Invalid missed cleavage value");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Missed cleavage value missing");
         retval = 1;
     }
@@ -266,7 +293,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Invalid hit list length");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Hit list length missing");
         retval = 1;
     }
@@ -277,7 +305,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Empty BLAST library name");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("BLAST library name missing");
         retval = 1;
     }
@@ -288,7 +317,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Less than one top hit needed");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Missing top hit value");
         retval = 1;
     }
@@ -299,7 +329,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Less than one match need for hit");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Missing minimum number of matches");
         retval = 1;
     }
@@ -310,7 +341,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("Less than two peaks required in input spectra");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("Missing minimum peaks value for valid spectra");
         retval = 1;
     }
@@ -321,7 +353,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             Error.push_back("m/z scaling value less than one");
             retval = 1;
         }
-    } else {
+    }
+    else {
         Error.push_back("missing m/z scaling value");
         retval = 1;
     }
@@ -346,7 +379,8 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             !GetChargehandling().CanGetPlusone()) {
             Error.push_back("unknown chargehandling option");
             retval = 1;
-        } else {
+        }
+        else {
             if (GetChargehandling().GetMaxcharge() < 1 ||
                 GetChargehandling().GetMincharge() < 1) {
                 Error.push_back("invalid min/max charge value");
@@ -367,11 +401,99 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
                 retval = 1;
             }
             if (GetChargehandling().GetPlusone() < 0 ||
-                 GetChargehandling().GetPlusone() > 1) {
-                 Error.push_back("invalid 1+ charge determination threshold");
-                 retval = 1;
-             }
+                GetChargehandling().GetPlusone() > 1) {
+                Error.push_back("invalid 1+ charge determination threshold");
+                retval = 1;
+            }
         }
+    }
+
+    if (CanGetMaxmods()) {
+        if (GetMaxmods() < 0) {
+            Error.push_back("maximum number of modifications is negative");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("unable to get maximum number of modifications");
+        retval = 1;
+    }
+
+    if (CanGetPseudocount()) {
+        if (GetPseudocount() < 0) {
+            Error.push_back("pseudocount value less than zero");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("unable to get pseudocount");
+        retval = 1;
+    }
+
+    if (CanGetSearchb1()) {
+        if (GetSearchb1() != 1 && GetSearchb1() != 0) {
+            Error.push_back("invalid setting for first forward ion search");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("unable to get setting for first forward ion search");
+        retval = 1;
+    }
+
+    if (CanGetSearchctermproduct()) {
+        if (GetSearchctermproduct() != 1 && GetSearchctermproduct() != 0) {
+            Error.push_back("invalid setting for c-term ion search");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("unable to get setting for c-term ion search");
+        retval = 1;
+    }
+
+    if (CanGetMaxproductions()) {
+        if (GetMaxproductions() < 0) {
+            Error.push_back("maximum number of product ions < 0");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("unable to get maximum number of product ions");
+        retval = 1;
+    }
+
+    if (CanGetMinnoenzyme()) {
+        if (GetMinnoenzyme() < 1) {
+            Error.push_back("minimum size of peptide in noenzyme search < 1");
+            retval = 1;
+        }
+        if (CanGetMaxnoenzyme()) {
+            if (GetMaxnoenzyme() < GetMinnoenzyme() && GetMaxnoenzyme() != 0) {
+                Error.push_back("maximum size of peptide in noenzyme search exceeds minimum peptide size");
+                retval = 1;
+            }
+        }
+        else {
+            Error.push_back("unable to get maximum size of peptide in noenzyme search");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("unable to get minimum size of peptide in noenzyme search");
+        retval = 1;
+    }
+
+
+    if (CanGetExactmass()) {
+        if (GetExactmass() < 0) {
+            Error.push_back("exact mass threshold set to < 0");
+            retval = 1;
+        }
+    }
+    else {
+        Error.push_back("unable to get exact mass threshold");
+        retval = 1;
     }
 
     return retval;
@@ -387,6 +509,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/10/24 21:46:13  lewisg
+* exact mass, peptide size limits, validation, code cleanup
+*
 * Revision 1.4  2005/01/31 17:30:57  lewisg
 * adjustable intensity, z dpendence of precursor mass tolerance
 *

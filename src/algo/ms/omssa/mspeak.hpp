@@ -531,7 +531,7 @@ inline CMZI::CMZI(int MZIn, unsigned IntensityIn): MZ(MZIn), Intensity(Intensity
 
 inline CMZI::CMZI(double MZIn, double IntensityIn)
 {
-    MZ = static_cast <int> (MZIn * MSSCALE);
+    MZ = MSSCALE2INT(MZIn);
     Intensity = static_cast <unsigned> (IntensityIn);
 }
 
@@ -575,7 +575,9 @@ typedef CMSHit * TMSHitList;
 // the maximum charge state that can be considered
 #define MSMAXCHARGE 10
 
-// function object for cull iterate
+/** 
+ * function object for cull iterate 
+ */
 typedef bool (*TMZIbool) (const CMZI&, const CMZI&, int tol);
 
 enum EChargeState {
@@ -593,11 +595,24 @@ typedef AutoPtr <unsigned, ArrayDeleter<unsigned> > TIntensity;
 // for statistical modelling
 // #define MSSTATRUN
 
-// class to hold experimental data and manipulate
+/**
+ * class to hold spectral data
+ * for filtering and statistical characterization
+ */
 
 class NCBI_XOMSSA_EXPORT CMSPeak {
 public:
+
+    /**
+     * CMSPeak ctor
+     */
     CMSPeak(void);
+
+    /**
+     * CMSPeak ctor
+     * 
+     * @param HitListSize size of the hit list allowed
+     */
     CMSPeak(int HitListSize);
 
 #ifdef MSSTATRUN
@@ -614,14 +629,29 @@ public:
 #endif
 
 private:
-    // c'tor helper
+
+    /**
+     *  shared c'tor code
+     */
     void xCMSPeak(void);
-    // writes out dta format
-    void xWrite(std::ostream& FileOut, CMZI *Temp, int Num);
+
+    /** 
+     * writes out dta format
+     * 
+     * @param FileOut output for dta file
+     * @param Temp list of intensities and m/z
+     * @param Num number of peaks
+     */
+    void xWrite(std::ostream& FileOut, const CMZI * const Temp, const int Num) const;
 
 public:
+
     ~CMSPeak(void);
-	
+
+    /**
+     * sort the peak by increasing m/z
+     * @param Which which of the mzi arrays should be sorted?
+     */
     void Sort(int Which = MSORIGINAL);
 
     /**
@@ -643,179 +673,427 @@ public:
      * Rank the given spectrum by intensity.
      * assumes the spectrum is sorted by intensity.
      * highest intensity is given rank 1.
-     * @param Which which experimental spectrum to use
      * 
+     * @param Which which experimental spectrum to use
      */
-    void Rank(int Which);
+    void Rank(const int Which);
 
-    //! Read a spectrum set into a CMSPeak
-    int Read(CMSSpectrum& Spectrum, //!< the spectrum itself
-			 double MSMSTolerance, //!< product mass tolerance, unscaled
-			 double PrecursorTol,   //!< precursor mass tolerance, unscaled
-			 int Scale              //!< mass scale to use
-			 );
+    /**
+     * Read a spectrum set into a CMSPeak
+     * 
+     * @param Spectrum the spectrum itself
+     * @param Settings search settings, e.g. experimental tolerances
+     */
+    int Read(const CMSSpectrum& Spectrum,
+             const CMSSearchSettings& Settings);
 
-    // Write out a CMSPeak in dta format (useful for debugging)
-    void Write(std::ostream& FileOut, EFileType FileType = eDTA, int Which = MSORIGINAL);
+    /**
+     *  Write out a CMSPeak in dta format (useful for debugging)
+     * 
+     * @param FileOut the file to write out to
+     * @param FileType file format to use
+     * @param Which which MZI set to use
+     */
+    void Write(std::ostream& FileOut, const EFileType FileType = eDTA, const int Which = MSORIGINAL) const;
 
     // functions used in SmartCull
-    // iterate thru peaks, deleting ones that pass the test
-    void CullIterate(CMZI *Temp, int& TempLen, TMZIbool FCN);
-    // cull precursors
-    void CullPrecursor(CMZI *Temp, int& TempLen, int Precursor);
-    // take out peaks below a threshold
-    void CullBaseLine(double Threshold, CMZI *Temp, int& TempLen);
-    // cull isotopes using the Markey Method
+    
+    /**
+     * iterate thru peaks, deleting ones that pass the test
+     * 
+     * @param Temp MZI values to use
+     * @param TempLen length of Temp
+     * @param FCN function to use to do the test
+     */
+    void CullIterate(CMZI *Temp, int& TempLen, const TMZIbool FCN);
+
+    /**
+     *  cull precursors
+     * 
+     * @param Temp MZI values to use
+     * @param TempLen length of Temp
+     * @param scaled precursor value
+     */
+    void CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor);
+
+    /**
+     *  take out peaks below a threshold
+     * 
+     * @param Temp MZI values to use
+     * @param TempLen length of Temp
+     * @param Threshold fraction of highest intensity used to cull
+     */
+    void CullBaseLine(const double Threshold, CMZI *Temp, int& TempLen);
+
+    /**
+     *  cull isotopes using the Markey Method
+     * 
+     * @param Temp MZI values to use
+     * @param TempLen length of Temp
+     */
     void CullIsotope(CMZI *Temp, int& TempLen);
-    // cull peaks that are water or ammonia loss
-    // note that this only culls the water or ammonia loss if these peaks have a lesser
-    // less intensity
+
+    /**
+     * cull peaks that are water or ammonia loss
+     * note that this only culls the water or ammonia loss if these peaks have a lesser
+     * less intensity
+     * 
+     * @param Temp MZI values to use
+     * @param TempLen length of Temp
+     */
     void CullH20NH3(CMZI *Temp, int& TempLen);
 
-    // recursively culls the peaks
-    void SmartCull(double Threshold,
-				   int SingleWindow,  // size of the charge 1 window in Da
-				   int DoubleWindow,  // size of the charge 2 window in Da
-				   int SingleNum,     // number of peaks allowed in charge 1 window
-				   int DoubleNum,     // number of peaks allowed in charge 2 window
-				   CMZI *Temp,        // array of m/z intensity values
+    /**
+     * recursively culls the peaks
+     * 
+     * @param ConsiderMultProduct assume multiply charged products?
+     * @param Temp MZI values to use
+     * @param TempLen length of Temp
+     * @param Settings search settings, e.g. experimental tolerances
+     */
+    void SmartCull(const CMSSearchSettings& Settings,
+				   CMZI *Temp,
 				   int& TempLen,
-				   bool ConsiderMultProduct  // assume multiply charged products?
+				   const bool ConsiderMultProduct
 				   );
 
+    /**
+     *  use smartcull on all charge states
+     * 
+     * @param Settings search settings, e.g. experimental tolerances
+     */
+    void CullAll(const CMSSearchSettings& Settings);
 
-    // use smartcull on all charges
-    void CullAll(double Threshold, 
-		 int SingleWindow,
-		 int DoubleWindow,
-		 int SingleNum,
-		 int DoubleNum,
-		 int Tophitnum // the number of top hits where at least one has to match
-		 );
-
-	///
-	///  Performs culling based on whether to consider multiply charged ions or not
-	///
-
+	/**
+	 * Performs culling based on whether to consider multiply charged ions or not
+     * 
+     * @param ConsiderMultProduct should we use multiply charged products?
+     * @param Settings search settings, e.g. experimental tolerances
+	 */
 	void CullChargeAndWhich(bool ConsiderMultProduct,  // should we use multiply charged products?
-							double Threshold,
-							int SingleWindow,
-							int DoubleWindow,
-							int SingleHit, 
-							int DoubleHit
+							const CMSSearchSettings& Settings
 							);
 
-    // return the lowest culled peak and the highest culled peak less than the
-    // precursor mass passed in
-    void HighLow(int& High, int& Low, int& NumPeaks, int PrecursorMass, int Charge,
-		 double Threshold,
-		 int& NumLo,  // number of peak below mh/2
-		 int& NumHi   // number of peaks above mh/2 and below mh
-		 );
+    /**
+     * return the lowest culled peak and the highest culled peak less than the
+     * precursor mass passed in
+     * 
+     * @param NumLo number of peak below mh/2
+     * @param NumHi number of peaks above mh/2 and below mh
+     */
+    void HighLow(int& High,
+                 int& Low,
+                 int& NumPeaks, 
+                 const int PrecursorMass,
+                 const int Charge,
+                 const double Threshold,
+                 int& NumLo,
+                 int& NumHi
+                 );
 
-    // count number of AA intervals in spectum.
-    int CountAAIntervals(CMassArray& MassArray, bool Nodup=true, int Which = MSCULLED1);
+    /**
+     * count number of AA intervals in spectrum.
+     */
+    const int CountAAIntervals(const CMassArray& MassArray,
+                               const bool Nodup=true,
+                               const int Which = MSCULLED1) const;
 	
-    // counts the number of peaks above % of maximum peak
-    int AboveThresh(double Threshold, int Which = MSORIGINAL);
+    /**
+     *  counts the number of peaks above % of maximum peak
+     */
+    const int AboveThresh(const double Threshold,
+                          const int Which = MSORIGINAL) const;
 	
-    // the number of peaks at and below the precursor ion
-    int PercentBelow(void);
-    //  return the number of peaks in a range. range is in fractions of MH
-    int CountRange(double StartFraction, double StopFraction);
-    // takes the ratio, low/high, of two ranges in the spectrum
-    double RangeRatio(double Start, double Middle, double Stop);
+    /**
+     *  the number of peaks at and below the precursor ion
+     */
+    const int PercentBelow(void) const;
 
-    // various charge functions, some depreciated
+    /**
+     * return the number of peaks in a range. range is in fractions of MH
+     */
+    const int CountRange(const double StartFraction,
+                         const double StopFraction) const;
+
+    /**
+     *  takes the ratio, low/high, of two ranges in the spectrum
+     */
+    const double RangeRatio(const double Start,
+                            const double Middle, 
+                            const double Stop) const;
+
+
+    // various charge functions
+
     
-    void SetPlusOne(double PlusIn);
-    // is the data charge +1?
-    bool IsPlus1(double PercentBelowIn);
+    void SetPlusOne(const double PlusIn);
 
-    //! calculates charge based on threshold and sets charge value 
-    /*!
-    \param ChargeHandle contains info on how to deal with charge
-    */
+    /**
+     *  is the data charge +1?
+     */
+    const bool IsPlus1(const double PercentBelowIn) const;
+
+    /**
+     *  calculates charge based on threshold and sets charge value 
+     * 
+     * @param ChargeHandle contains info on how to deal with charge
+     */
     void SetComputedCharge(const CMSChargeHandle& ChargeHandle);
 
-    EChargeState GetComputedCharge(void);
-    // return allowed computed charges
-    int* GetCharges(void) { return Charges;}
-    // return number of allowed computed charges
-    int GetNumCharges(void) { return NumCharges; }
-    // Truncate the at the precursor if plus one and set charge to 1
-    // if charge is erronously set to 1, set it to 2
-//    void TruncatePlus1(void);
-    
-    unsigned GetNum(int Which = MSORIGINAL);
-    CMZI *GetMZI(int Which = MSORIGINAL);
+    /**
+     * return the computed charge state
+     */
+    const EChargeState GetComputedCharge(void) const;
 
-    int Compare(CLadder& Ladder, int Which = MSCULLED1);
-    bool Contains(int value, int Which);
-    bool ContainsFast(int value, int Which);
-    // compares only the top hits
-    bool CompareTop(CLadder& Ladder);
-    int GetMaxI(int Which = MSORIGINAL);
-    // returns the cull array index
-    int GetWhich(int Charge);
+    /**
+     *  return allowed computed charges
+     */
+    int * GetCharges(void);
+
+    /**
+     *  return number of allowed computed charges
+     */
+    const int GetNumCharges(void) const;
+
+    /**
+     * Get the number of peaks
+     * 
+     * @param Which which experimental spectrum to use
+     */
+    const unsigned GetNum(const int Which = MSORIGINAL) const;
+
+    /**
+     * Get the m/z and intensity array
+     * 
+     * @param Which which experimental spectrum to use
+     */
+    CMZI *GetMZI(const int Which = MSORIGINAL) const;
+
+    /**
+     * compare peaks to ladder using ContainsFast
+     *
+     * @param Ladder the ladder to compare
+     * @param Which which experimental spectrum to use
+     */
+    const int Compare(CLadder& Ladder, const int Which = MSCULLED1) const;
+
+    /**
+     * see if value is contained in peaks
+     * 
+     * @param value the m/z to compare
+     * @param Which which experimental spectrum to use
+     */
+    const bool Contains(const int value,
+                        const int Which) const;
 
 
-    // compare assuming all lists are sorted
-    // Intensity is optional argument that allows recording of the intensity
-    int CompareSorted(CLadder& Ladder, int Which, TIntensity * Intensity);
+    /**
+     * see if value is contained in peaks using binary search
+     * 
+     * @param value the m/z value to compare
+     * @param Which which experimental spectrum to use
+     */
+    const bool ContainsFast(const int value,
+                            const int Which) const;
 
+    /**
+     * compares only the top hits
+     * 
+     * @param Ladder ladder to compare to
+     */
+    const bool CompareTop(CLadder& Ladder) const;
 
-    // initializes arrays used to track hits
-    void InitHitList(int Minhit  // minimal number of hits for a match
+    /**
+     * Get Maximum intensity
+     * 
+     * @param Which which experimental spectrum to use
+     */
+    const int GetMaxI(const int Which = MSORIGINAL) const;
+
+    /**
+     * returns the cull array index
+     * 
+     * @param Which which experimental spectrum to use
+     */
+    const int GetWhich(const int Charge) const;
+
+    /**
+     * compare assuming all lists are sorted
+     * the intensity array holds the intensity if there is a match to the ladder
+     * returns total number of matches, which may be more than is recorded in the ladder due to overlap
+     * 
+     * 
+     * @param Intensity is optional argument that allows recording of the intensity
+     * @param Which which experimental spectrum to use
+     * @param Ladder the ladder to compare to
+     */
+    const int CompareSorted(CLadder& Ladder, const int Which, TIntensity * Intensity) const;
+
+    /**
+     * initializes arrays used to track hits
+     * 
+     * @param Minhit minimal number of hits for a match
+     */
+    void InitHitList(const int Minhit
 		      );
 
-    TMSHitList& GetHitList(int Index);
-    int GetHitListIndex(int Index);
-    // add hit to hitlist.  returns true and the added hit if successful
-    bool AddHit(CMSHit& in, CMSHit*& out);
+    /**
+     * Get a hit list
+     * 
+     * @param Index which hit list
+     */
+    TMSHitList& GetHitList(const int Index);
+
+    /**
+     * Get size of hit list
+     * 
+     * @param Index which hit list
+     */
+    const int GetHitListIndex(const int Index) const;
+
+    /**
+     * add hit to hitlist.  returns true and the added hit if successful
+     * 
+     * @param in Hit to add
+     * @param out the added hit
+     */
+    const bool AddHit(CMSHit& in, CMSHit*& out);
 
 
-    // keep track of the number of peptides examine for each charge state
-    int GetPeptidesExamined(int ChargeIn);
-    int& SetPeptidesExamined(int ChargeIn);
+    /**
+     * return number of peptides examine for each charge state
+     * 
+     * @param ChargeIn charge state
+     */
+    const int GetPeptidesExamined(const int ChargeIn) const;
+
+    /**
+     * set the number of peptides examine for each charge state
+     * 
+     * @param ChargeIn charge state
+     */
+    int& SetPeptidesExamined(const int ChargeIn);
 
 
     // getter-setters
-    // get precursor m/z
-    int GetPrecursormz(void);
-    // gets a calculated neutral mass
-    int CalcPrecursorMass(int PrecursorCharge);
-	// gets min precursor charge to consider multiply charged product ions
-	int GetConsiderMult(void);  
-    EMSHitError GetError(void);
-    void SetError(EMSHitError ErrorIn);
+   
+    /**
+     *  get precursor m/z
+     */
+    const int GetPrecursormz(void) const;
+
+    /**
+     * calculates neutral mass
+     * 
+     * @param PrecusorCharge the charge to assume
+     */
+    const int CalcPrecursorMass(const int PrecursorCharge) const;
+
+	/**
+     * gets min precursor charge to consider multiply charged product ions
+     */
+	const int GetConsiderMult(void) const;  
+
+    /**
+     * return any errors in computing on peaks
+     */
+    const EMSHitError GetError(void) const;
+
+    /**
+     * set any errors in computing on peaks
+     * 
+     * @param ErrorIn what was the error?
+     */
+    void SetError(const EMSHitError ErrorIn);
+
+    /**
+     * set the names of the spectrum
+     */
     CMSSpectrum::TIds& SetName(void);
+
+    /**
+     * get the names of the spectrum
+     */
     const CMSSpectrum::TIds& GetName(void) const;
+
+    /**
+     * set the spectrum number
+     */
     int& SetNumber(void);
+
+    /**
+     * get the spectrum number
+     */
     const int GetNumber(void) const;
 
-    //! set the product mass tolerance in Daltons.
-    void SetTolerance(double tolin);
-	//! get the product mass tolerance in Daltons.
-    int GetTol(void) const;
+    /**
+     * set the product mass tolerance in Daltons.
+     * 
+     * @param tolin unscaled mass tolerance
+     */
+    void SetTolerance(const double tolin);
 
-	//! set the precursor mass tolerance in Daltons.
+	/**
+     * get the product mass tolerance in Daltons.
+     */
+    const int GetTol(void) const;
+
+	/**
+     * set the precursor mass tolerance in Daltons.
+     * 
+     * @param tolin precursor mass tolerance
+     */
 	void SetPrecursorTol(double tolin);
-	//! get the precursor mass tolerance in Daltons.
-	int GetPrecursorTol(void) const;
 
-    char *SetUsed(int Which);
+	/**
+     * get the precursor mass tolerance in Daltons.
+     */
+	const int GetPrecursorTol(void) const;
 
-    // clear used arrays for one cull type
-    void ClearUsed(int Which);
-    // clear used arrays for all cull types
+    /**
+     * return array to mark peaks as used
+     * 
+     * @param Which which experimental spectrum to use
+     */
+    char *SetUsed(const int Which);
+
+    /**
+     * clear used arrays for one cull type
+     * 
+     * @param Which which experimental spectrum to use
+     */
+    void ClearUsed(const int Which);
+
+    /**
+     * clear used arrays for all cull types
+     */
     void ClearUsedAll(void);
 
     // functions for testing if peaks are h2o or nh3 losses
-    // check to see if TestMZ is Diff away from BigMZ
-    bool IsAtMZ(int BigMZ, int TestMZ, int Diff, int tol);
-    // see if TestMZ can be associated with BigMZ, e.g. water loss, etc.
-    bool IsMajorPeak(int BigMZ, int TestMZ, int tol);
+    
+    /**
+     * check to see if TestMZ is Diff away from BigMZ
+     * 
+     * @param BigMZ the major ion
+     * @param TestMZ the minor ion
+     * @param Diff distance between minor and major ions
+     * @param tol mass tolerance
+     */
+    const bool IsAtMZ(const int BigMZ, 
+                      const int TestMZ, 
+                      const int Diff, 
+                      const int tol) const;
+
+    /**
+     * see if TestMZ can be associated with BigMZ, e.g. water loss, etc.
+     * 
+     * @param BigMZ the major ion
+     * @param TestMZ the minor ion
+     * @param tol mass tolerance
+     */
+    const bool IsMajorPeak(const int BigMZ, 
+                           const int TestMZ, 
+                           const int tol) const;
 
 private:
     CMZI *MZI[MSNUMDATA]; // m/z values and intensities, sorted by m/z.  first is original, second is culled
@@ -839,7 +1117,6 @@ private:
 	int MaxCharge;  // maximum precursor charge to consider
 	int MinCharge;  // minimum precursor charge to consider
     CAA AA;
-    char *AAMap;
 
     CMSSpectrum::TIds Name;  // name taken from spectrum
     int Number;  // spectrum number taken from spectrum
@@ -858,105 +1135,118 @@ private:
 
 ///////////////////   CMSPeak inline methods
 
-inline void CMSPeak::SetPlusOne(double PlusIn) 
+inline 
+void CMSPeak::SetPlusOne(const double PlusIn) 
 { 
     PlusOne = PlusIn; 
 }
 
-inline EChargeState CMSPeak::GetComputedCharge(void) 
+inline 
+const EChargeState CMSPeak::GetComputedCharge(void) const
 { 
     return ComputedCharge; 
 }
 
-inline unsigned CMSPeak::GetNum(int Which) 
+inline 
+const unsigned CMSPeak::GetNum(const int Which) const
 { 
     return Num[Which];
 }
 
-inline CMZI * CMSPeak::GetMZI(int Which) 
+inline 
+CMZI * CMSPeak::GetMZI(const int Which) const 
 { 
     return MZI[Which];
 }
 
 
-inline TMSHitList& CMSPeak::GetHitList(int Index) 
+inline 
+TMSHitList& CMSPeak::GetHitList(const int Index)
 { 
     return HitList[Index]; 
 }
 
-inline int CMSPeak::GetHitListIndex(int Index) 
+inline 
+const int CMSPeak::GetHitListIndex(const int Index) const
 { 
     return HitListIndex[Index]; 
 }
 
-// keep track of the number of peptides examine for each charge state
-inline int CMSPeak::GetPeptidesExamined(int ChargeIn) 
+inline 
+const int CMSPeak::GetPeptidesExamined(const int ChargeIn) const
 { 
     return PeptidesExamined[ChargeIn - Charges[0]];
 }
 
-inline int& CMSPeak::SetPeptidesExamined(int ChargeIn) 
+inline 
+int& CMSPeak::SetPeptidesExamined(const int ChargeIn) 
 { 
     return PeptidesExamined[ChargeIn - Charges[0]];
 }
 
-
-inline int CMSPeak::GetPrecursormz(void)
+inline 
+const int CMSPeak::GetPrecursormz(void) const
 {
     return Precursormz;
 }
 
 inline 
-int CMSPeak::CalcPrecursorMass(int PrecursorCharge)
+const int CMSPeak::CalcPrecursorMass(const int PrecursorCharge) const
 {
-    return static_cast <int> (Precursormz * PrecursorCharge - PrecursorCharge * kProton * MSSCALE);
+    return Precursormz * PrecursorCharge - MSSCALE2INT(PrecursorCharge * kProton);
 }
 
 
 inline
-int CMSPeak::GetConsiderMult(void)  
+const int CMSPeak::GetConsiderMult(void) const  
 {
 	return ConsiderMult;
 }
 
-inline EMSHitError CMSPeak::GetError(void) 
+inline 
+const EMSHitError CMSPeak::GetError(void) const
 {
     return Error; 
 }
 
-inline void CMSPeak::SetError(EMSHitError ErrorIn) 
+inline 
+void CMSPeak::SetError(const EMSHitError ErrorIn) 
 {
     Error = ErrorIn; 
 }
 
-inline CMSSpectrum::TIds& CMSPeak::SetName(void) 
+inline 
+CMSSpectrum::TIds& CMSPeak::SetName(void) 
 { 
     return Name; 
 }
 
-inline const CMSSpectrum::TIds& CMSPeak::GetName(void) const 
+inline 
+const CMSSpectrum::TIds& CMSPeak::GetName(void) const 
 { 
     return Name; 
 }
 
-inline int& CMSPeak::SetNumber(void) 
-{ 
-    return Number; 
-}
-
-inline const int CMSPeak::GetNumber(void) const 
+inline 
+int& CMSPeak::SetNumber(void) 
 { 
     return Number; 
 }
 
 inline 
-void CMSPeak::SetTolerance(double tolin)
+const int CMSPeak::GetNumber(void) const 
+{ 
+    return Number; 
+}
+
+inline 
+void CMSPeak::SetTolerance(const double tolin)
 {
-    tol = static_cast <int> (tolin*MSSCALE);
+    tol = MSSCALE2INT(tolin);
 }
 
 inline 
-int CMSPeak::GetTol(void) const
+const int CMSPeak::GetTol(void) const
 { 
     return tol; 
 }
@@ -964,26 +1254,29 @@ int CMSPeak::GetTol(void) const
 inline 
 void CMSPeak::SetPrecursorTol(double tolin)
 {
-    PrecursorTol = static_cast <int> (tolin*MSSCALE);
+    PrecursorTol = MSSCALE2INT(tolin);
 }
 
 inline 
-int CMSPeak::GetPrecursorTol(void) const
+const int CMSPeak::GetPrecursorTol(void) const
 { 
     return PrecursorTol; 
 }
 
-inline char *CMSPeak::SetUsed(int Which)
+inline 
+char *CMSPeak::SetUsed(const int Which)
 {
     return Used[Which];
 }
 
-inline void CMSPeak::ClearUsed(int Which)
+inline 
+void CMSPeak::ClearUsed(const int Which)
 {
     memset(Used[Which], 0, Num[Which]);
 }
 
-inline void CMSPeak::ClearUsedAll(void)
+inline 
+void CMSPeak::ClearUsedAll(void)
 {
     int iCharges;
     for(iCharges = 0; iCharges < GetNumCharges(); iCharges++)
@@ -992,10 +1285,23 @@ inline void CMSPeak::ClearUsedAll(void)
 }
 
 // returns the cull array index
-inline int CMSPeak::GetWhich(int Charge)
+inline 
+const int CMSPeak::GetWhich(const int Charge) const
 {
     if(Charge < ConsiderMult) return MSCULLED1;
     else return MSCULLED2;
+}
+
+inline
+int * CMSPeak::GetCharges(void)
+{ 
+    return Charges;
+}
+
+inline
+const int CMSPeak::GetNumCharges(void) const
+{ 
+    return NumCharges; 
 }
 
 /////////////////// end of  CMSPeak  inline methods
@@ -1084,6 +1390,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.34  2005/10/24 21:46:13  lewisg
+  exact mass, peptide size limits, validation, code cleanup
+
   Revision 1.33  2005/09/21 18:05:59  lewisg
   speed up non-specific search, add fields to result
 

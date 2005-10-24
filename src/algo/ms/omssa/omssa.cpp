@@ -117,8 +117,7 @@ int CSearch::CreateLadders(const char *Sequence,
                                     SetMassAndMask(iMissed, iMod).Mask,
                                     ModList,
                                     NumMod,
-                                    MyRequest->GetSettings().GetSearchctermproduct(),
-                                    MyRequest->GetSettings().GetSearchb1()
+                                    MyRequest->GetSettings()
                                     )) return 1;
     if(!YLadder[iMod]->CreateLadder(BackwardIon,
                                     1,
@@ -132,8 +131,7 @@ int CSearch::CreateLadders(const char *Sequence,
                                     SetMassAndMask(iMissed, iMod).Mask,
                                     ModList, 
                                     NumMod,
-                                    MyRequest->GetSettings().GetSearchctermproduct(),
-                                    MyRequest->GetSettings().GetSearchb1()
+                                    MyRequest->GetSettings()
                                     )) return 1;
     if(!B2Ladder[iMod]->CreateLadder(ForwardIon,
                                      2,
@@ -147,8 +145,7 @@ int CSearch::CreateLadders(const char *Sequence,
                                      SetMassAndMask(iMissed, iMod).Mask,
                                      ModList, 
                                      NumMod,
-                                     MyRequest->GetSettings().GetSearchctermproduct(),
-                                     MyRequest->GetSettings().GetSearchb1()
+                                     MyRequest->GetSettings()
                                      )) return 1;
     if(!Y2Ladder[iMod]->CreateLadder(BackwardIon,
                                      2,
@@ -162,8 +159,7 @@ int CSearch::CreateLadders(const char *Sequence,
                                      SetMassAndMask(iMissed, iMod).Mask,
                                      ModList,
                                      NumMod,
-                                     MyRequest->GetSettings().GetSearchctermproduct(),
-                                     MyRequest->GetSettings().GetSearchb1()
+                                     MyRequest->GetSettings()
                                      )) return 1;
     
     return 0;
@@ -292,11 +288,7 @@ void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
 	    ERR_POST(Error << "omssa: unable to allocate CMSPeak");
 	    return;
 	}
-	if(Peaks->Read(*Spectrum,
-				   MyRequest->GetSettings().GetMsmstol(), 
-				   MyRequest->GetSettings().GetPeptol(),
-				   MyRequest->GetSettings().GetScale()
-					) != 0) {
+	if(Peaks->Read(*Spectrum, MyRequest->GetSettings()) != 0) {
 	    ERR_POST(Error << "omssa: unable to read spectrum into CMSPeak");
 	    return;
 	}
@@ -308,12 +300,7 @@ void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
 	Peaks->Sort();
 	Peaks->SetComputedCharge(MyRequest->GetSettings().GetChargehandling());
 	Peaks->InitHitList(MyRequest->GetSettings().GetMinhit());
-	Peaks->CullAll(MyRequest->GetSettings().GetCutlo(),
-		       MyRequest->GetSettings().GetSinglewin(),
-		       MyRequest->GetSettings().GetDoublewin(),
-		       MyRequest->GetSettings().GetSinglenum(),
-		       MyRequest->GetSettings().GetDoublenum(),
-		       MyRequest->GetSettings().GetTophitnum());
+	Peaks->CullAll(MyRequest->GetSettings());
 		
 	if(Peaks->GetNum(MSCULLED1) < MyRequest->GetSettings().GetMinspectra())
 	    {
@@ -323,7 +310,7 @@ void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
 	PeakSet.AddPeak(Peaks);
 		
     }
-    MaxMZ = PeakSet.SortPeaks(static_cast <int> (MyRequest->GetSettings().GetPeptol()*MSSCALE),
+    MaxMZ = PeakSet.SortPeaks(MSSCALE2INT(MyRequest->GetSettings().GetPeptol()),
                       MyRequest->GetSettings().GetZdep());
 	
 }
@@ -488,7 +475,8 @@ void CSearch::CreateModCombinations(int Missed,
                 				    int NumMod[],
                 				    unsigned NumMassAndMask[],
                                     int NumModSites[],
-                                    CMod ModList[][MAXMOD])
+                                    CMod ModList[][MAXMOD]
+                                    )
 {
     // need to iterate thru combinations that have iMod.
     // i.e. iMod = 3 and NumMod=5
@@ -567,12 +555,22 @@ printf("\n");
     		// keep track of the  number of ladders
     		iModCount++;
 
-// todo: calcmodindex must ignore fixed mods
-
 	    } while(iModCount < MaxModPerPep &&
 		    CalcModIndex(ModIndex, iMod, NumMod[iMissed], NumFixed,
                          NumModSites[iMissed], ModList[iMissed]));
 	} // iMod
+
+    // if exact mass, add neutrons as appropriate
+    if(MyRequest->GetSettings().GetPrecursorsearchtype() == eMSSearchType_exact) {
+        int ii;
+        for(ii = 0; ii < iModCount; ++ii) {
+            SetMassAndMask(iMissed, ii).Mass += 
+                SetMassAndMask(iMissed, ii).Mass /
+                MSSCALE2INT(MyRequest->GetSettings().GetExactmass()) * 
+                MSSCALE2INT(kNeutron);
+        }
+    }
+
 
 	// sort mask and mass by mass
 	sort(MassAndMask.get() + iMissed*MaxModPerPep, MassAndMask.get() + iMissed*MaxModPerPep + iModCount,
@@ -707,8 +705,6 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
 
 	// calculated masses and masks
-	// TMassMask MassAndMask[MAXMISSEDCLEAVE][MaxModPerPep];
-	// TMassMask MassAndMask[MAXMISSEDCLEAVE][MAXMOD2];
     MassAndMask.reset(new TMassMask[MAXMISSEDCLEAVE*MaxModPerPep]);
 
 	// the number of masses and masks for each peptide
@@ -745,6 +741,8 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
     vector <int> taxids;
     vector <int>::iterator itaxids;
+    bool TaxInfo(false);  // check to see if any tax information in blast library
+
 	// iterate through sequences
 	for(iSearch = 0; iSearch < numseq; iSearch++) {
 	    if(iSearch/10000*10000 == iSearch) ERR_POST(Info << "sequence " << 
@@ -752,7 +750,9 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
 	    if(MyRequest->GetSettings().IsSetTaxids()) {
             rdfp->GetTaxIDs(iSearch, taxids, false);
-            for(itaxids = taxids.begin(); itaxids != taxids.end(); ++itaxids) {   		
+            for(itaxids = taxids.begin(); itaxids != taxids.end(); ++itaxids) {    
+                if(*itaxids == 0) continue;
+                TaxInfo = true;
                 for(iTax = Tax.begin(); iTax != Tax.end(); ++iTax) {
                     if(*itaxids == *iTax) goto TaxContinue;
                 } 
@@ -778,7 +778,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
         // if non-specific enzyme, set stop point
         if(enzyme->GetNonSpecific()) {
-            enzyme->SetStop() = Sequence.GetData() + MyRequest->GetSettings().GetMinnoenzyme();
+            enzyme->SetStop() = Sequence.GetData() + MyRequest->GetSettings().GetMinnoenzyme() - 1;
         }
 
 	    // iterate thru the sequence by digesting it
@@ -976,8 +976,11 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                 // argghh, doesn't work for semi-tryptic, which resets the mass
                 // need to use different criterion if semi-tryptic and  start position was
                 // moved.  otherwise this criterion is OK
-                if( NonSpecificMass < MaxMZ - MonoMass[7]*MSSCALE &&
-                   enzyme->GetStop() < Sequence.GetData() + Sequence.GetLength()) {
+                if(NonSpecificMass < MaxMZ /*- MSSCALE2INT(MonoMass[7]) */&&
+                   enzyme->GetStop() < Sequence.GetData() + Sequence.GetLength() &&
+                   (MyRequest->GetSettings().GetMaxnoenzyme() == 0 ||
+                    enzyme->GetStop() - PepStart[0] + 1 < MyRequest->GetSettings().GetMaxnoenzyme())
+                   ) {
                     enzyme->SetStop()++;
                     NonSpecificMass += PrecursorIntMassArray[AA.GetMap()[*(enzyme->GetStop())]];
                 }
@@ -985,17 +988,18 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
                 else if ( PepStart[0] < Sequence.GetData() + Sequence.GetLength() - 
                           MyRequest->GetSettings().GetMinnoenzyme()) {
                     PepStart[0]++;
-                    enzyme->SetStop() = PepStart[0] + MyRequest->GetSettings().GetMinnoenzyme();
+                    enzyme->SetStop() = PepStart[0] + MyRequest->GetSettings().GetMinnoenzyme() - 1;
 
                     // reset mass
                     NonSpecificMass = 0;
                     const char *iSeqChar;
                     for(iSeqChar = PepStart[0]; iSeqChar <= enzyme->GetStop(); iSeqChar++)
                         PrecursorIntMassArray[AA.GetMap()[*iSeqChar]];
+                    // reset sequence done flag if at end of sequence
+                    SequenceDone = false;
                 }
                 else SequenceDone = true;
                 
-                // todo: is the stop inclusive or exclusive
                 // if this is partial tryptic, loop back if one end or the other is not tryptic
                 // for start, need to check sequence before (check for start of seq)
                 // for end, need to deal with end of protein case
@@ -1055,6 +1059,11 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
 
 
 	}
+
+   
+	if(MyRequest->GetSettings().IsSetTaxids() && !TaxInfo)
+        ERR_POST(Error << 
+                 "Taxonomically restricted search specified and no taxonomy information found in sequence library");
 	
 	// read out hits
 	SetResult(PeakSet);
@@ -1392,14 +1401,16 @@ void CSearch::CalcNSort(TScoreList& ScoreList,
 #endif
                 _TRACE( "N=" << HitList[iHitList].GetN() << " M=" << HitList[iHitList].GetM() <<
                      " Sum=" << HitList[iHitList].GetSum() << " Ave=" << Average << " SD=" << StdDev <<
-                     " erf=" << Perf );
-                pval *= (1 - Perf)/1000.0;
-//                pval *= Perf;
+                     " Perf=" << Perf  << " (1-Perf)/1000*pval=" << (1-Perf)/1000*pval <<
+                    " pval*perf=" << pval*Perf);
+//                pval *= (1 - Perf)/1000;
+                pval *= Perf;
 
             }
             else ERR_POST(Info << "M is zero");
     }
 	    double eval = /*2e5*/ 1e5 * pval * N;
+        _TRACE( " pval=" << pval << " eval=" << eval );
 	    ScoreList.insert(pair<const double, CMSHit *> 
 			     (eval, &(HitList[iHitList])));
 	}   
@@ -1500,12 +1511,12 @@ double CSearch::CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
     int High, Low, NumPeaks, NumLo, NumHi;
     Peaks->HighLow(High, Low, NumPeaks, Mass, Charge, Threshold, NumLo, NumHi);
     if(High == -1) return -1.0; // error
-    o = (double)Low/MSSCALE;
-    r = (double)High/MSSCALE;
+    o = MSSCALE2DBL(Low);
+    r = MSSCALE2DBL(High);
     v1 = NumHi;
     v2 = NumLo;
     v = NumPeaks;
-    m = Mass/(double)MSSCALE;
+    m = MSSCALE2DBL(Mass);
 
     // limit h by maxproductions
     // todo: add correction for Charge > +2
@@ -1516,7 +1527,7 @@ double CSearch::CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
     // and by requests not to search b1 and bn/y1 ions
     h = 2*(h - MyRequest->GetSettings().GetSearchctermproduct()) -
          MyRequest->GetSettings().GetSearchb1();
-    t = (Peaks->GetTol())/(double)MSSCALE;
+    t = MSSCALE2DBL(Peaks->GetTol());
     // see 12/13/02 notebook, pg. 127
 	
     retval = 2.0 * t * h * v / m;
@@ -1545,6 +1556,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.65  2005/10/24 21:46:13  lewisg
+exact mass, peptide size limits, validation, code cleanup
+
 Revision 1.64  2005/10/03 18:05:03  lewisg
 reverse rank score
 

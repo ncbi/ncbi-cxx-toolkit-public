@@ -69,6 +69,8 @@ const int kIonTypes = 6;
 // direction.  1 = N->C, -1 = C->N
 const double kWater = 18.015; 
 
+/** neutron mass */
+const double kNeutron = 1.008664904; 
 
 const double AAAbundance[] = {1.0, 0.0758, 1.0, 0.0167, 0.0528, 0.0635, 0.0408, 0.0683, 0.0224, 0.058, 0.0593, 0.0943, 0.0237, 0.0447, 0.0491, 0.0399, 0.0514, 0.0715, 0.0569, 0.0656, 0.0124, 1.0, 0.0318, 1.0, 1.0, 1.0, 0.0}; 
 
@@ -100,8 +102,8 @@ class NCBI_XOMSSA_EXPORT CMassArray {
 public:
     CMassArray(void) {};
 
-    const double* GetMass(void);
-    const int* GetIntMass(void);
+    const double * const GetMass(void) const;
+    const int * const GetIntMass(void) const;
 
     //! initialize mass arrays with fixed mods
     void Init(const CMSSearchSettings::TProductsearchtype &SearchType);
@@ -121,12 +123,12 @@ private:
 
 ///////////////////   CMassArray inline methods
 
-inline const double* CMassArray::GetMass(void) 
+inline const double * const CMassArray::GetMass(void) const 
 { 
     return CalcMass; 
 }
 
-inline const int* CMassArray::GetIntMass(void) 
+inline const int * const CMassArray::GetIntMass(void) const
 { 
     return IntCalcMass; 
 }
@@ -145,7 +147,12 @@ inline const int* CMassArray::GetIntMass(void)
 class NCBI_XOMSSA_EXPORT CAA {
 public:
     CAA(void);
-    char *GetMap(void);
+
+    /**
+     * return the map for translating AA char to AA number
+     */
+    const char * const GetMap(void) const;
+
 private:
     char AAMap[256];
 };
@@ -153,7 +160,8 @@ private:
 
 ///////////////////    CAA inline methods
 
-inline char *CAA::GetMap(void) 
+inline 
+const char * const CAA::GetMap(void) const
 {
     return AAMap; 
 }
@@ -584,7 +592,6 @@ protected:
     int ProtonMass; // mass of the proton
     int TermMass;  // mass of h2o
     CAA ReverseAA;
-    char *Reverse;
 
     /**
      *  where to cleave.  last two letters are in readdb format, assuming 
@@ -687,7 +694,7 @@ void CCleave::CalcMass(char SeqChar,
 		       const int *IntCalcMass
 		       )
 {
-    *Masses += IntCalcMass[Reverse[SeqChar]];
+    *Masses += IntCalcMass[ReverseAA.GetMap()[SeqChar]];
 }
 
 
@@ -1007,6 +1014,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.28  2005/10/24 21:46:13  lewisg
+  exact mass, peptide size limits, validation, code cleanup
+
   Revision 1.27  2005/09/21 18:05:59  lewisg
   speed up non-specific search, add fields to result
 

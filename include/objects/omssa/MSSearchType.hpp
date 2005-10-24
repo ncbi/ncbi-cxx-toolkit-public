@@ -55,7 +55,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 char const * const kSearchType[eMSSearchType_max] = {
     "monoisotopic",
     "average",
-    "monoisotopic N15"
+    "monoisotopic N15",
+    "exact"
 };	   
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -67,6 +68,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/10/24 21:46:13  lewisg
+* exact mass, peptide size limits, validation, code cleanup
+*
 * Revision 1.3  2005/01/31 17:30:57  lewisg
 * adjustable intensity, z dpendence of precursor mass tolerance
 *
