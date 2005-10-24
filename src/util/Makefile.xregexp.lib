@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = regexp
+SRC = regexp arg_regexp
 
 LIB = xregexp
 
