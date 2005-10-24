@@ -52,6 +52,7 @@ public:
         eSubjMaxQueryMax,
         eQueryId,
         eSubjId,
+        eSubjIdQueryId,
         eSubjStrand
     };
 
@@ -114,6 +115,18 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         rv = *(lhs->GetSubjId()) < *(rhs->GetSubjId());
         break;
 
+    case eSubjIdQueryId: 
+        {
+        const int co = lhs->GetSubjId()->CompareOrdered( *(rhs->GetSubjId()) );
+        if(co == 0) {
+            rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
+        }
+        else {
+            rv = co < 0;
+        }
+        }
+        break;
+
     case eSubjStrand:
 
         rv = lhs->GetSubjStrand() < rhs->GetSubjStrand();
@@ -135,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/24 17:31:59  kapustin
+ * Add eSubjIdQueryId sort criterion
+ *
  * Revision 1.5  2005/09/27 14:38:19  rsmith
  * Sorting CRefs not CConstRefs
  *
