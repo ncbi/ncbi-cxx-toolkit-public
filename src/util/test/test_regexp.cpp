@@ -36,6 +36,8 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <util/regexp.hpp>
+#include <util/arg_regexp.hpp>
+
 
 USING_NCBI_SCOPE;
 
@@ -45,12 +47,29 @@ class CRegexApplication : public CNcbiApplication
 private:
     virtual void Init(void);
     virtual int  Run(void);
-    virtual void Exit(void);
 };
+
 
 
 void CRegexApplication::Init(void)
 {
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Test program for regexps");
+
+    // Describe the expected command-line arguments
+    arg_desc->AddExtra
+        (1, 10,
+         "These arguments must match a name-like regular expression",
+         CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        (kEmptyStr, new CArgAllow_Regexp("^[A-Z][a-z][a-z]*$"));
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
 }
 
 
@@ -65,25 +84,28 @@ int CRegexApplication::Run(void)
     pattern.Set(pat);
     
     // String to find matching pattern in
-    string text("The quick brown fox jumped over the lazy dogs.\n" \
-                "Now is the time for all good men to come to the aid of " \
-                "their country.\nTwas the night before Christmas and all " \
-                "through the house, not a\n creature was stirring, not " \
-                "even a mouse.\n");
-    
+    const string text
+        ("The quick brown fox jumped over the lazy dogs.\n"             \
+         "Now is the time for all good men to come to the aid of "      \
+         "their country.\nTwas the night before Christmas and all "     \
+         "through the house, not a\n creature was stirring, not "       \
+         "even a mouse.\n");
+
     // Display pattern and sub pattern matches
-    cout << pattern.GetMatch(text.c_str()) << endl;
-    for (int k = 1; k < pattern.NumFound(); k++) {
-        cout << pattern.GetSub(text.c_str(), 1) << endl;
+    cout << pattern.GetMatch(text) << endl;
+    for (int k = 1;  k < pattern.NumFound();  k++) {
+        cout << pattern.GetSub(text, 1) << endl;
     }    
     
+    cout << string(33, '-') << endl;
+
     // Set new pattern and ignore case
     pattern.Set("t\\w*e", CRegexp::fCompile_ignore_case);
     
     // Find all matches to pattern
     size_t start = 0;
     while (start != string::npos) {
-        string match = pattern.GetMatch(text.c_str(), start);
+        string match = pattern.GetMatch(text, start);
         if (pattern.NumFound() > 0) {
             cout << match << endl;
             start = text.find(match, start) + 1;            
@@ -91,34 +113,25 @@ int CRegexApplication::Run(void)
             break;
         }
     }
-    
-    // Same as above but with cstrings and elinates string return
+
+    cout << string(33, '-') << endl;
+
+    // Same as above but using GetResults() instead of return string
     start = 0;
-    char *txt = new char[text.length() + 1];
-    strcpy(txt, text.c_str());
-    while (true)
-    {
-        pattern.GetMatch(txt, start, 0, CRegexp::fMatch_default, true);
+    for (;;) {
+        pattern.GetMatch(text, start, 0, CRegexp::fMatch_default, true);
         if (pattern.NumFound() > 0) {
-            const int *rslt = pattern.GetResults(0);
+            const int* rslt = pattern.GetResults(0);
+            cout << text.substr(rslt[0], rslt[1] - rslt[0]) << endl;
             start = rslt[1];
-            for (int i = rslt[0]; i < rslt[1]; i++) {
-                cout << txt[i];
-            }
-            cout << endl;
         } else {
             break;
         }
     }
-    delete[] txt;                  
+
     return 0;
 }
 
-
-void CRegexApplication::Exit(void)
-{
-    SetDiagStream(0);
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -132,9 +145,14 @@ int main(int argc, const char* argv[])
 }
 
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/24 15:28:39  vakatov
+ * Added test for regexp-based cmdline argument validation (CArgAllow_Regexp).
+ * Simplified some other tests.
+ *
  * Revision 1.6  2004/11/22 17:20:50  ivanov
  * Use fCompile_* and fMatch_* flags.
  *
