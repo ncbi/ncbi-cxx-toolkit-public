@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 ///   SetConstraint("MyArg", new CArgAllow_Regexp("^[A-Z][a-z][a-z]*$"))
 ///
 
-class NCBI_XNCBI_EXPORT CArgAllow_Regexp : public CArgAllow
+class NCBI_XREGEXP_EXPORT CArgAllow_Regexp : public CArgAllow
 {
 public:
     /// @param pattern
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/24 19:36:36  vakatov
+ * Use NCBI_XREGEXP_EXPORT
+ *
  * Revision 1.1  2005/10/24 15:22:27  vakatov
  * Initial revision
  *
