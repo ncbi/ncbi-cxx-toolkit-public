@@ -1252,14 +1252,17 @@ CHTML_tr* CHTML_table::Row(TIndex row)
 
 CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type)
 {
-    return GetCache().GetCellNode(m_CurrentRow = row, m_CurrentCol = col,
-                                  type);
+    m_CurrentRow = (row == TIndex(-1)) ? 0 : row;
+    m_CurrentCol = (col == TIndex(-1)) ? 0 : col;
+    return GetCache().GetCellNode(m_CurrentRow, m_CurrentCol, type);
 }
 
 CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type,
                             TIndex rowSpan, TIndex colSpan)
 {
-    return GetCache().GetCellNode(m_CurrentRow = row, m_CurrentCol = col,
+    m_CurrentRow = (row == TIndex(-1)) ? 0 : row;
+    m_CurrentCol = (col == TIndex(-1)) ? 0 : col;
+    return GetCache().GetCellNode(m_CurrentRow, m_CurrentCol,
                                   type, rowSpan, colSpan);
 }
 
@@ -2317,6 +2320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.124  2005/10/25 18:19:11  ivanov
+ * CHTML_table::Cell() -- added check on -1 values for row and col position
+ *
  * Revision 1.123  2005/10/19 15:09:26  ivanov
  * CHTML_table -- init current row with -1 value, markink it as undefined
  *
