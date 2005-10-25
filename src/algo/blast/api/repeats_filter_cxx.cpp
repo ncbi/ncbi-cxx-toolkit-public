@@ -50,7 +50,7 @@ static char const rcsid[] = "$Id$";
 
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
-#include <algo/blast/api/repeats_filter.hpp>
+#include "repeats_filter.hpp"
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_filter.h>
@@ -235,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.23  2005/10/25 14:19:32  camacho
+ *  repeats_filter.hpp is now a private header
+ *
  *  Revision 1.22  2005/09/16 17:02:36  camacho
  *  Refactoring of filtering locations code.
  *
