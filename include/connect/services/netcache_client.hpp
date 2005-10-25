@@ -135,6 +135,12 @@ public:
                    size_t        size,
                    unsigned int  time_to_live = 0);
 
+    /// BLOB locking mode
+    enum ELockMode {
+        eLockWait,   ///< waits for BLOB to become available
+        eLockNoWait  ///< throws an exception immediately if BLOB locked
+    };
+
     /// Retrieve BLOB from server by key
     /// If BLOB not found method returns NULL
     //
@@ -152,12 +158,15 @@ public:
     ///    BLOB key to read (returned by PutData)
     /// @param blob_size
     ///    Size of the BLOB
+    /// @param lock_mode
+    ///    Blob locking mode
     /// @return
     ///    IReader* (caller must delete this). 
     ///    NULL means that BLOB was not found (expired).
     virtual 
     IReader* GetData(const string& key, 
-                     size_t*       blob_size = 0);
+                     size_t*       blob_size = 0,
+                     ELockMode     lock_mode = eLockWait);
 
     /// NetCache server locks BLOB so only one client can 
     /// work with one BLOB at a time. Method returns TRUE
@@ -368,7 +377,8 @@ public:
 
     virtual 
     IReader* GetData(const string& key, 
-                            size_t*       blob_size = 0);
+                     size_t*       blob_size = 0,
+                     ELockMode     lock_mode = eLockWait);
     virtual
     bool IsLocked(const string& key);
 
@@ -419,7 +429,9 @@ public:
         ///< BLOB key corruption or version mismatch
         eKeyFormatError,
         ///< Server side error
-        eServerError
+        eServerError,
+        ///< BLOB is locked by another client
+        eBlobLocked
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -540,6 +552,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/10/25 19:10:14  kuznets
+ * + blob retrieval with non-blocking mode
+ *
  * Revision 1.42  2005/10/25 14:28:33  kuznets
  * + IsLocked() - BLOB lock detection
  *
