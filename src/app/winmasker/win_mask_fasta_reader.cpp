@@ -46,13 +46,21 @@ CRef< CSeq_entry > CWinMaskFastaReader::GetNextSequence()
 {
     while( !input_stream.eof() )
     {
-        CRef< CSeq_entry > aSeqEntry 
-            = ReadFasta( input_stream,
-                         fReadFasta_AssumeNuc 
-                         | fReadFasta_ForceType
-                         | fReadFasta_OneSeq
-                         | fReadFasta_AllSeqIds,
-                         NULL, NULL );
+        TReadFastaFlags flags = fReadFasta_AssumeNuc |
+                               fReadFasta_ForceType |
+                               fReadFasta_OneSeq    |
+                               fReadFasta_AllSeqIds;
+
+        CRef< CSeq_entry > aSeqEntry;
+        CNcbiIstream::pos_type pos = input_stream.tellg();
+
+        try {
+            aSeqEntry = ReadFasta( input_stream, flags, NULL, NULL );
+        }catch( ... ) {
+            input_stream.seekg( pos );
+            aSeqEntry = ReadFasta( 
+                    input_stream, flags|fReadFasta_NoParseID, NULL, NULL );
+        }
 
         if( aSeqEntry->IsSeq() && aSeqEntry->GetSeq().IsNa() )
             return aSeqEntry;
@@ -67,6 +75,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/10/25 14:03:22  morgulis
+ * Worked around the problem with exception being thrown by ReadFasta when defline
+ * parsing failed.
+ *
  * Revision 1.2  2005/03/21 13:19:26  dicuccio
  * Updated API: use object manager functions to supply data, instead of passing
  * data as strings.
