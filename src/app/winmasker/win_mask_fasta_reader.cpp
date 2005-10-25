@@ -52,7 +52,7 @@ CRef< CSeq_entry > CWinMaskFastaReader::GetNextSequence()
                                fReadFasta_AllSeqIds;
 
         CRef< CSeq_entry > aSeqEntry;
-        CNcbiIstream::pos_type pos = input_stream.tellg();
+        CT_POS_TYPE pos = input_stream.tellg();
 
         try {
             aSeqEntry = ReadFasta( input_stream, flags, NULL, NULL );
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/10/25 20:11:51  ucko
+ * Use CT_POS_TYPE for portability to GCC 2.95.
+ *
  * Revision 1.3  2005/10/25 14:03:22  morgulis
  * Worked around the problem with exception being thrown by ReadFasta when defline
  * parsing failed.
