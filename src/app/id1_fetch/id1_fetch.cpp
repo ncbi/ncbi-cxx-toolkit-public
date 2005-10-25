@@ -64,6 +64,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/format/flat_file_generator.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -75,11 +76,6 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
-#if 1
-#include <objtools/flat/flat_ncbi_formatter.hpp>
-#else
-#include <objmgr/util/genbank.hpp>
-#endif
 #include <objmgr/util/sequence.hpp>
 
 #include <memory>
@@ -535,20 +531,22 @@ bool CId1FetchApp::LookUpGI(int gi)
         WriteQualityScores(handle);
     } else if (fmt == "genbank"  ||  fmt == "genpept") {
         bool gp = fmt == "genpept";
-        const CSeq_entry& entry =
-            *handle.GetTopLevelEntry().GetCompleteSeq_entry();
-#if 1
-        CFlatNCBIFormatter formatter(*new CFlatTextOStream(*m_OutputFile),
-                                     *m_Scope, IFlatFormatter::eMode_Entrez);
-        formatter.Format(entry, formatter,
-                         gp ? IFlatFormatter::fSkipNucleotides
-                         : IFlatFormatter::fSkipProteins);
-#else
-        CGenbankWriter(*m_OutputFile, *m_Scope,
-                       gp ? CGenbankWriter::eFormat_Genpept
-                       : CGenbankWriter::eFormat_Genbank)
-            .Write(entry);
-#endif
+        CSeq_entry_Handle entry = handle.GetTopLevelEntry();
+
+        CFlatFileConfig ff_config;
+        ff_config.SetMode(CFlatFileConfig::eMode_Entrez);
+        ff_config.SetFormatGenbank();
+        ff_config
+            .SetHideSNPFeatures()
+            .SetShowContigFeatures()
+            .SetShowContigSources();
+        if (gp) {
+            ff_config.SetViewProt();
+        }
+        CFlatFileGenerator ff(ff_config);
+        ff.SetAnnotSelector().ExcludeNamedAnnots("SNP");
+
+        ff.Generate(entry, *m_OutputFile);
     }
 
     if (reply_object.NotEmpty()  &&  format != eSerial_None) {
@@ -751,6 +749,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2005/10/25 12:10:40  dicuccio
+* Use the new flat file generator
+*
 * Revision 1.54  2005/06/29 18:21:45  ucko
 * When parsing exotic ID formats, parse versions ourself rather than
 * requiring CSeq_id to have an extra constructor.
