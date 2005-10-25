@@ -12,23 +12,12 @@ SRC = struct_util_demo
 
 LIB = xstruct_util \
       xstruct_dp \
-	xblast blastdb xnetblast tables \
+      xblast seqdb blastdb xnetblastcli xnetblast tables xobjsimple xobjutil \
       ncbimime \
       cdd \
       scoremat \
       cn3d \
       mmdb \
-      seqset $(SEQ_LIBS) sequtil \
-      pub \
-      medline \
-      biblio \
-      general \
-      xconnect \
-      xser \
-      xutil \
-      xctools \
-      xncbi
+      $(OBJMGR_LIBS)
 
-CPPFLAGS = $(ORIG_CPPFLAGS)
-
-LIBS = $(ORIG_LIBS) $(NETWORK_LIBS)
+LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
