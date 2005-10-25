@@ -122,6 +122,7 @@ void CTestResult<TObjectType>::Check(const TObjectType& obj,
 }
 
 
+EMPTY_TEMPLATE
 void CTestResult<string>::Check(const string& obj,
                                 const CArgs& args,
                                 const string& title)
@@ -432,6 +433,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/25 16:15:34  ucko
+* Explicitly tag CTestResult<string>::Check with EMPTY_TEMPLATE.
+*
 * Revision 1.1  2005/10/24 22:04:07  grichenk
 * Initial revision
 *
