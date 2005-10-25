@@ -131,23 +131,30 @@ public:
         m_Id = id;
     }
 
-    void Lock(const string& blob_key, unsigned timeout)
+    /// Returns false if lock was not successfull 
+    /// (when timeout == 0 i.e. no-locking mode)
+    bool Lock(const string& blob_key, unsigned timeout)
     {
         unsigned cnt = 0; unsigned sleep_ms = 10;
         unsigned id = 0;
         while (true) {
-            {{
-            CFastMutexGuard guard(x_NetCacheMutex_ID);
-
             if (id == 0) {
                 id = CNetCache_Key::GetBlobId(blob_key);
             }
+
+            {{
+            CFastMutexGuard guard(x_NetCacheMutex_ID);
 
             if ((*m_IdSet)[id] == false) {
                 m_IdSet->set(id);
                 break;
             }
             }}
+
+            if (timeout == 0) {
+                return false;
+            }
+
             cnt += sleep_ms;
             if (cnt > timeout * 1000) {
                 string err_msg("Failed to lock BLOB object ");
@@ -159,6 +166,7 @@ public:
             SleepMilliSec(sleep_ms);
         } // while
         m_Id = id;
+        return true;
     }
 
     void LockNewId(unsigned*  max_id, unsigned timeout)
@@ -323,13 +331,15 @@ struct SNC_Request
     ENC_RequestType req_type;
     unsigned int    timeout;
     string          req_id;
-    string          err_msg;      
+    string          err_msg;
+    bool            no_lock;
 
     void Init() 
     {
         req_type = eError;
         timeout = 0;
         req_id.erase(); err_msg.erase();
+        no_lock = false;
     }
 };
 
@@ -980,7 +990,15 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
     }
 
     CIdBusyGuard guard(&m_UsedIds);
-    guard.Lock(req_id, m_InactivityTimeout);
+    if (req.no_lock) {
+        bool lock_accuired = guard.Lock(req_id, 0);
+        if (!lock_accuired) {  // BLOB is locked by someone else
+            WriteMsg(sock, "ERR:", "BLOB locked by another client");
+            return;
+        }
+    } else {
+        guard.Lock(req_id, m_InactivityTimeout);
+    }
     char* buf = tdata.buffer.get();
 
     ICache::BlobAccessDescr ba_descr;
@@ -1328,18 +1346,52 @@ put_args_parse:
     if (strncmp(s, "ISLK", 4) == 0) {
         req->req_type = eIsLock;
         s += 4;
-        goto parse_blob_id;
-    }
 
-    if (strncmp(s, "GET", 3) == 0) {
-        req->req_type = eGet;
-        s += 3;
 parse_blob_id:
         while (*s && isspace((unsigned char)(*s))) {
             ++s;
         }
 
         req->req_id = s;
+        return;
+    }
+
+    if (strncmp(s, "GET", 3) == 0) {
+        req->req_type = eGet;
+        s += 3;
+
+        // parse blob id
+        while (*s && isspace((unsigned char)(*s))) {
+            ++s;
+        }
+
+        req->req_id.erase();
+
+        // skip blob id
+        while (*s && !isspace((unsigned char)(*s))) {
+            char ch = *s;
+            req->req_id.append(1, ch);
+            ++s;
+        }
+
+        if (!*s) {
+            return;
+        }
+
+        // skip whitespace
+        while (*s && !isspace((unsigned char)(*s))) {
+            ++s;
+        }
+
+        if (!*s) {
+            return;
+        }
+
+        // NW modificator (no wait request)
+        if (s[0] == 'N' && s[1] == 'W') {
+            req->no_lock = true;
+        }
+
         return;
     } // GET
 
@@ -1932,6 +1984,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2005/10/25 18:11:54  kuznets
+ * Implemented no-wait-lock mode for GET
+ *
  * Revision 1.66  2005/10/25 14:29:59  kuznets
  * Implemented BLOB lock detection
  *
