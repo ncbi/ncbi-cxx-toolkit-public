@@ -100,6 +100,12 @@ public:
         Lock(id, timeout);
     }
 
+    bool IsLocked(unsigned int  id)
+    {
+        CFastMutexGuard guard(x_NetCacheMutex_ID);
+        return (*m_IdSet)[id];
+    }
+
     void Lock(unsigned int   id,
               unsigned       timeout)
     {
@@ -305,6 +311,7 @@ typedef enum {
     eLogging,
     eGetConfig,
     eGetStat,
+    eIsLock
 } ENC_RequestType;
 
 
@@ -462,6 +469,10 @@ private:
 
     /// Process "GETSTAT" request
     void ProcessGetStat(CSocket& sock, const SNC_Request& req);
+
+    /// Process "ISLK" request
+    void ProcessIsLock(CSocket& sock, const SNC_Request& req);
+
 
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
@@ -667,6 +678,10 @@ void CNetCacheServer::Process(SOCK sock)
                 case eLogging:
                     stat.req_code = 'L';
                     ProcessLog(socket, tdata->req);
+                    break;
+                case eIsLock:
+                    stat.req_code = 'K';
+                    ProcessIsLock(socket, tdata->req);
                     break;
                 case eError:
                     WriteMsg(socket, "ERR:", tdata->req.err_msg);
@@ -1082,7 +1097,6 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
 
     WriteMsg(sock, "ID:", rid);
 
-
     auto_ptr<IWriter> iwrt;
 
     // Reconfigure socket for no-timeout operation
@@ -1222,6 +1236,28 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 
 }
 
+void CNetCacheServer::ProcessIsLock(CSocket& sock, const SNC_Request& req)
+{
+    const string& req_id = req.req_id;
+
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        return;
+    }
+    CNetCache_Key blob_id(req_id);
+    if (!x_CheckBlobId(sock, &blob_id, req_id))
+        return;
+
+    CIdBusyGuard guard(&m_UsedIds);
+    if (guard.IsLocked(blob_id.id)) {
+        WriteMsg(sock, "OK:", "1");
+    } else {
+        WriteMsg(sock, "OK:", "0");
+    }
+
+}
+
+
 
 void CNetCacheServer::WriteMsg(CSocket&       sock, 
                                const string&  prefix, 
@@ -1289,6 +1325,11 @@ put_args_parse:
         return;
     } // GETCONF
 
+    if (strncmp(s, "ISLK", 4) == 0) {
+        req->req_type = eIsLock;
+        s += 4;
+        goto parse_blob_id;
+    }
 
     if (strncmp(s, "GET", 3) == 0) {
         req->req_type = eGet;
@@ -1891,6 +1932,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2005/10/25 14:29:59  kuznets
+ * Implemented BLOB lock detection
+ *
  * Revision 1.65  2005/09/21 18:22:21  kuznets
  * Reflected changes in client API
  *
