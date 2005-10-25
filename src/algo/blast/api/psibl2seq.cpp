@@ -110,11 +110,20 @@ s_QueryFactorySanityCheck(CRef<IQueryFactory> query_factory,
         }
     }
 
-    BLAST_SequenceBlk* sblk = query_data->GetSequenceBlk();
+    BLAST_SequenceBlk* sblk = NULL;
+    try { sblk = query_data->GetSequenceBlk(); }
+    catch (const CBlastException& e) {
+        if (e.GetMsg().find("Incompatible sequence codings") != ncbi::NPOS) {
+            NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
+        }
+    }
+    ASSERT(sblk);
+    ASSERT(sblk->length > 0);
+
     CFormatGuess::ESequenceType sequence_type =
-        CFormatGuess::SequenceType((const char*)sblk->sequence,
+        CFormatGuess::SequenceType((const char*)sblk->sequence_start,
                                    static_cast<unsigned>(sblk->length));
-    if (sequence_type != CFormatGuess::eProtein) {
+    if (sequence_type == CFormatGuess::eNucleotide) {
         NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
     }
 }
@@ -146,6 +155,7 @@ CPsiBl2Seq::x_Validate()
     if (m_Subject.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Missing subject sequence data source");
+    } else {
         s_QueryFactorySanityCheck(m_Subject, m_OptsHandle, eSubject);
     }
 }
