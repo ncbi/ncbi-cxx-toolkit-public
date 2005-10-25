@@ -23,64 +23,90 @@ driver_status=0
 # Run one test
 RunSimpleTest()
 {
-  echo
-  (
-    cd $1 > /dev/null 2>&1
-    $CHECK_EXEC run_sybase_app.sh $cmd > $res_file 2>&1
-  )
-  if test $? -eq 0 ; then
-      echo "OK:"
-      n_ok=`expr $n_ok + 1`
-      sum_list="$sum_list XXX_SEPARATOR +  $cmd"
-      return
-  fi
+    # echo
+    (
+        cd $1 > /dev/null 2>&1
+        # $CHECK_EXEC run_sybase_app.sh $cmd > $res_file 2>&1
+        $CHECK_EXEC run_sybase_app.sh $cmd > /dev/null 2> $res_file
+    )
 
-  # error occurred
-  n_err=`expr $n_err + 1`
-  sum_list="$sum_list XXX_SEPARATOR -  $cmd"
+    if test $? -eq 0 ; then
+        # echo "OK:"
+        n_ok=`expr $n_ok + 1`
+        sum_list="$sum_list XXX_SEPARATOR +  $cmd"
+        return
+    fi
 
-  cat $res_file
+    # error occurred
+    n_err=`expr $n_err + 1`
+    sum_list="$sum_list XXX_SEPARATOR -  $cmd"
+
+    echo
+    cat $res_file
 }
 
 # Run one test (RunTest sql_command reg_expression)
 RunTest()
 {
-  sql="$1"
-  reg_exp="$2"
-
-  echo
-  $CHECK_EXEC run_sybase_app.sh $cmd "$sql" > $res_file 2>&1
-
-  if test $? -eq 0 ; then
-    if grep "$reg_exp" $res_file > /dev/null 2>&1 ; then
-      echo "OK:"
-      grep "$reg_exp" $res_file
-      n_ok=`expr $n_ok + 1`
-      sum_list="$sum_list XXX_SEPARATOR +  $cmd '$sql'"
-      return
+    sql="$1"
+    reg_exp="$2"
+    
+    echo
+    $CHECK_EXEC run_sybase_app.sh $cmd "$sql" > $res_file 2>&1
+    
+    if test $? -eq 0 ; then
+        if grep "$reg_exp" $res_file > /dev/null 2>&1 ; then
+        echo "OK:"
+        grep "$reg_exp" $res_file
+        n_ok=`expr $n_ok + 1`
+        sum_list="$sum_list XXX_SEPARATOR +  $cmd '$sql'"
+        return
+        fi
     fi
-  fi
 
-  # error occurred
-  n_err=`expr $n_err + 1`
-  sum_list="$sum_list XXX_SEPARATOR -  $cmd '$sql'"
+    # error occurred
+    n_err=`expr $n_err + 1`
+    sum_list="$sum_list XXX_SEPARATOR -  $cmd '$sql'"
 
-  cat $res_file
+    cat $res_file
+}
+
+# Run one test (RunTest sql_command)
+RunTest2()
+{
+    sql="$1"
+
+    # echo
+    $CHECK_EXEC run_sybase_app.sh $cmd "$sql" > /dev/null 2> $res_file 
+
+    if test $? -eq 0 ; then
+        # echo "OK:"
+        n_ok=`expr $n_ok + 1`
+        sum_list="$sum_list XXX_SEPARATOR +  $cmd '$sql'"
+        return
+    fi
+
+    # error occurred
+    n_err=`expr $n_err + 1`
+    sum_list="$sum_list XXX_SEPARATOR -  $cmd '$sql'"
+
+    echo
+    cat $res_file
 }
 
 
 # Check existence of the "dbapi_driver_check"
 $CHECK_EXEC run_sybase_app.sh dbapi_driver_check
 if test $? -ne 99 ; then
-  echo "The DBAPI driver existence check application not found."
-  echo
-  exit 1
+    echo "The DBAPI driver existence check application not found."
+    echo
+    exit 1
 fi
 
 
 # Loop through all combinations of {driver, server, test}
 for driver in $driver_list ; do
-  cat <<EOF
+    cat <<EOF
 
 ******************* DRIVER:  $driver ************************
 EOF
@@ -136,10 +162,10 @@ EOF
 
         # lang_query
             cmd="lang_query -d $driver -S $server -Q"
-            RunTest 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
-            RunTest 'select qq = 57 + 33' '<ROW><qq>90<'
-            RunTest 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
-            RunTest 'select name, type from sysobjects' '<ROW><name>'
+            RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
+            RunTest2 'select qq = 57 + 33' '<ROW><qq>90<'
+            RunTest2 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
+            RunTest2 'select name, type from sysobjects' '<ROW><name>'
         # simple tests
             if test $driver = "dblib"  -a  $server = $server_mssql ; then
                 continue
