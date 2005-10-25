@@ -159,6 +159,15 @@ public:
     IReader* GetData(const string& key, 
                      size_t*       blob_size = 0);
 
+    /// NetCache server locks BLOB so only one client can 
+    /// work with one BLOB at a time. Method returns TRUE
+    /// if BLOB is locked at the moment. 
+    ///
+    /// @return TRUE if BLOB exists and locked by another client
+    /// FALSE if BLOB not found or not locked
+    virtual
+    bool IsLocked(const string& key);
+
     /// Status of GetData() call
     /// @sa GetData
     enum EReadResult {
@@ -360,6 +369,9 @@ public:
     virtual 
     IReader* GetData(const string& key, 
                             size_t*       blob_size = 0);
+    virtual
+    bool IsLocked(const string& key);
+
     virtual 
     void Remove(const string& key);
     virtual 
@@ -528,6 +540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/10/25 14:28:33  kuznets
+ * + IsLocked() - BLOB lock detection
+ *
  * Revision 1.41  2005/09/21 18:21:08  kuznets
  * Made a class for key manipulation service functions
  *

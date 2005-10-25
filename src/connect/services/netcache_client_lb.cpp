@@ -385,6 +385,28 @@ CNetCacheClient_LB::GetData(const string& key, SBlobData& blob_to_read)
 }
 
 
+bool CNetCacheClient_LB::IsLocked(const string& key)
+{
+    if (!key.empty()) {
+        CNetCache_Key blob_key(key);
+        ++m_Requests;
+        if ((blob_key.hostname == m_Host) &&
+            (blob_key.port == m_Port)) {
+
+            CNC_BoolGuard bg(&m_StickToHost);
+            return TParent::IsLocked(key);
+        } else {
+            CNetCacheClient cl(m_ClientName);
+            cl.SetClientNameComment(m_ClientNameComment);
+            return cl.IsLocked(key);
+        }
+    } else {
+        _ASSERT(0);
+    }
+    return false;
+}
+
+
 void CNetCacheClient_LB::Remove(const string& key)
 {
     if (!key.empty()) {
@@ -470,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/10/25 14:29:09  kuznets
+ * + IsLocked() - BLOB lock detection
+ *
  * Revision 1.24  2005/09/21 18:21:54  kuznets
  * Made a class for key manipulation service functions
  *

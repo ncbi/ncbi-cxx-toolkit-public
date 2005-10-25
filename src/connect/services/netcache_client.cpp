@@ -417,6 +417,49 @@ void CNetCacheClient::Remove(const string& key)
 }
 
 
+bool CNetCacheClient::IsLocked(const string& key)
+{
+    CheckConnect(key);
+    CSockGuard sg(*m_Sock);
+
+    string& request = m_Tmp;
+    MakeCommandPacket(&request, "ISLK ");
+    request += key;
+    WriteStr(request.c_str(), request.length() + 1);
+
+    WaitForServer();
+
+    string& answer = m_Tmp;
+    
+    bool locked = false;
+
+    bool res = ReadStr(*m_Sock, &answer);
+    if (res) {
+        if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
+            string msg = "Server error:";
+            if (NStr::strncmp(answer.c_str(), "ERR:", 4) == 0) {
+                answer.erase(0, 4);
+            }
+            if (NStr::strncmp(answer.c_str(), "BLOB not found", 14) == 0) {
+                return false;
+            }
+            msg += answer;
+            NCBI_THROW(CNetCacheException, eServerError, msg);
+        }
+
+
+        const char* ans = answer.c_str();
+        if (*ans == '1') {
+            locked = true;
+        }
+    } else {
+        NCBI_THROW(CNetServiceException, 
+                   eCommunicationError, "Communication error");
+    }
+
+    return locked;
+}
+
 
 IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
 {
@@ -455,6 +498,9 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
                 *blob_size = 0;
             }
         }
+    } else {
+        NCBI_THROW(CNetServiceException, 
+                   eCommunicationError, "Communication error");
     }
 
     IReader* reader = new CNetCacheSock_RW(m_Sock);
@@ -866,6 +912,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/10/25 14:29:09  kuznets
+ * + IsLocked() - BLOB lock detection
+ *
  * Revision 1.50  2005/09/21 18:21:14  kuznets
  * Made a class for key manipulation service functions
  *
