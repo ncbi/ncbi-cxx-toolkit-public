@@ -78,7 +78,7 @@ void AlignmentManager::Init(void)
     threader = new Threader();
     blaster = new BLASTer();
     blockAligner = new BlockAligner();
-    bmaRefiner = new BMARefiner();
+//    bmaRefiner = new BMARefiner();
 
     originalMultiple = NULL;
 }
@@ -155,7 +155,7 @@ AlignmentManager::~AlignmentManager(void)
     delete threader;
     delete blaster;
     delete blockAligner;
-    delete bmaRefiner;
+//    delete bmaRefiner;
     if (originalMultiple) delete originalMultiple;
 }
 
@@ -1198,7 +1198,8 @@ void AlignmentManager::RefineAlignment(void)
 
     // actually run the refiner
     BMARefiner::AlignmentUtilityList resultAUs;
-    bool okay = bmaRefiner->RefineMultipleAlignment(au.get(), &resultAUs, NULL);
+    BMARefiner bmaRefiner;
+    bool okay = bmaRefiner.RefineMultipleAlignment(au.get(), &resultAUs, NULL);
 
     if (okay) {
 
@@ -1240,6 +1241,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2005/10/25 17:41:35  thiessen
+* fix flicker in alignment display; add progress meter and misc fixes to refiner
+*
 * Revision 1.104  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *

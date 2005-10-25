@@ -1843,7 +1843,7 @@ int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int row,
                 seqIndex = -1;
             break;
     }
-    if (seqIndex < (int)range->from || seqIndex > (int)range->to) seqIndex = -1;
+    if (seqIndex < range->from || seqIndex > range->to) seqIndex = -1;
 
     return seqIndex;
 }
@@ -1902,6 +1902,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2005/10/25 17:41:35  thiessen
+* fix flicker in alignment display; add progress meter and misc fixes to refiner
+*
 * Revision 1.71  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *

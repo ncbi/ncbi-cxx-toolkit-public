@@ -62,7 +62,7 @@ USING_SCOPE(blast);
 
 BEGIN_SCOPE(Cn3D)
 
-//#define DEBUG_PSSM // for testing/debugging PSSM data
+//#define DEBUG_PSSM 1 // for testing/debugging PSSM data
 
 #define PTHROW(stream) NCBI_THROW(CException, eUnknown, stream)
 
@@ -275,7 +275,6 @@ static double CalculateInformationContent(const PSIMsa *data, bool ignoreMaster)
         double columnContent = 0.0;
 #endif
 
-
         // do info content
         static const double ln2 = log(2.0), threshhold = 0.0001;
         for (p=profile.begin(), pe=profile.end(); p!=pe; ++p) {
@@ -448,8 +447,8 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
             << "matrix->name: " << (matrix->name ? matrix->name : "(none)") << '\n'
             << "matrix->rows: " << matrix->rows << '\n'
             << "matrix->columns: " << matrix->columns << '\n';
-        for (r=0; r<matrix->rows; ++r) {
-            for (c=0; c<matrix->columns; ++c)
+        for (r=0; (int)r<matrix->rows; ++r) {
+            for (c=0; (int)c<matrix->columns; ++c)
                 ofs << matrix->matrix[r][c] << ' ';
             ofs << '\n';
         }
@@ -589,6 +588,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/10/25 17:41:35  thiessen
+* fix flicker in alignment display; add progress meter and misc fixes to refiner
+*
 * Revision 1.8  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

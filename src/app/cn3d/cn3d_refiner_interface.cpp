@@ -53,6 +53,7 @@
 #include "cn3d_refiner_interface.hpp"
 #include "wx_tools.hpp"
 #include "cn3d_tools.hpp"
+#include "progress_meter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -164,8 +165,14 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
     SetDialogSevereErrors(true);
     bool errorsEncountered = true;
 
+    wxSetCursor(*wxHOURGLASS_CURSOR);
+    ProgressMeter wait(NULL, "Refinement in progress...", "Wait", 100);
+    wait.SetValue(50);
+
     //  Execute the refinement...
     align_refine::RefinerResultCode result = m_refinerEngine->Refine(originalMultiple);
+
+    wait.SetValue(90);
 
     //  If requested, store results (in order of decreasing score so best alignment is first).
     if (result == align_refine::eRefinerResultOK) {
@@ -180,6 +187,9 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
             errorsEncountered = false;  //  it's ok if we don't want the results now
         }
     }
+
+    wait.Show(false);
+    wxSetCursor(wxNullCursor);
 
 //    else {
 //        WARNINGMSG("alignment refiner encountered a problem (code " << result << ") - current alignment unchanged");
@@ -629,6 +639,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/10/25 17:41:35  thiessen
+* fix flicker in alignment display; add progress meter and misc fixes to refiner
+*
 * Revision 1.3  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *

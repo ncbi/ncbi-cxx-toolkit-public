@@ -181,6 +181,7 @@ void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)
 void ViewerWindowBase::NewDisplay(SequenceDisplay *display, bool enableSelectByColumn)
 {
     viewerWidget->AttachAlignment(display);
+    GlobalMessenger()->PostRedrawAllSequenceViewers();
     menuBar->EnableTop(menuBar->FindMenu("Edit"), display->IsEditable());
     menuBar->EnableTop(menuBar->FindMenu("Unaligned Justification"), display->IsEditable());
     menuBar->Enable(MID_SELECT_COLS, enableSelectByColumn);
@@ -418,6 +419,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2005/10/25 17:41:35  thiessen
+* fix flicker in alignment display; add progress meter and misc fixes to refiner
+*
 * Revision 1.56  2005/10/19 17:28:20  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

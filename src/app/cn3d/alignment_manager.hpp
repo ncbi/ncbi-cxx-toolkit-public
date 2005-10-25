@@ -76,7 +76,7 @@ public:
     Threader *threader; // made public so viewers have access to it
     BLASTer *blaster;
     BlockAligner *blockAligner;
-    BMARefiner *bmaRefiner;
+//    BMARefiner *bmaRefiner;
 
     void ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const;
 
@@ -174,6 +174,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2005/10/25 17:41:35  thiessen
+* fix flicker in alignment display; add progress meter and misc fixes to refiner
+*
 * Revision 1.54  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *

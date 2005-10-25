@@ -104,7 +104,7 @@ public:
     ~SequenceViewerWidget_SequenceArea(void);
 
     // stuff from parent widget
-    bool AttachAlignment(ViewableAlignment *newAlignment, unsigned int initX, unsigned int initY);
+    bool AttachAlignment(ViewableAlignment *newAlignment, int initX, int initY);
     void SetMouseMode(SequenceViewerWidget::eMouseMode mode);
     void SetBackgroundColor(const wxColor& backgroundColor);
     void SetCharacterFont(wxFont *font);
@@ -193,7 +193,7 @@ SequenceViewerWidget_SequenceArea::~SequenceViewerWidget_SequenceArea(void)
 }
 
 bool SequenceViewerWidget_SequenceArea::AttachAlignment(
-    ViewableAlignment *newAlignment, unsigned int initX, unsigned int initY)
+    ViewableAlignment *newAlignment, int initX, int initY)
 {
     alignment = newAlignment;
 
@@ -201,14 +201,15 @@ bool SequenceViewerWidget_SequenceArea::AttachAlignment(
         // set size of virtual area
         alignment->GetSize(&areaWidth, &areaHeight);
         if (areaWidth <= 0 || areaHeight <= 0) return false;
-//        TESTMSG(Info << "area height " << areaHeight);
+//        TRACEMSG(Info << "area height " << areaHeight);
 
         // "+1" to make sure last real column and row are always visible, even
         // if visible area isn't exact multiple of cell size
         SetScrollbars(
             cellWidth, cellHeight,
             areaWidth + 1, areaHeight + 1,
-            initX, initY);
+            initX, initY,
+            true);
 
         alignment->MouseOver(-1, -1);
 
@@ -337,8 +338,8 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         if (lastCellY >= (int)areaHeight) lastCellY = areaHeight - 1;
 
         // draw cells
-//        TESTMSG("drawing cells " << firstCellX << ',' << firstCellY
-//            << " to " << lastCellX << ',' << lastCellY);
+//        TRACEMSG("drawing cells " << firstCellX << ',' << firstCellY << " to " << lastCellX << ',' << lastCellY
+//            << "; vsX,vsY = " << vsX << ',' << vsY);
         for (y=firstCellY; y<=lastCellY; ++y) {
             for (x=firstCellX; x<=lastCellX; ++x) {
                 DrawCell(memDC, x, y, vsX, vsY, false);
@@ -852,8 +853,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
 {
     wxPaintDC dc(this);
 
-    int vsX, vsY;
-    int updTop, updBottom, firstRow, lastRow, row;
+    int vsX, vsY, updTop, updBottom, firstRow, lastRow, row;
 
     dc.BeginDrawing();
 
@@ -1031,7 +1031,7 @@ void SequenceViewerWidget::TitleAreaToggle(void)
     }
 }
 
-bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment, unsigned int initX, unsigned int initY)
+bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment, int initX, int initY)
 {
     // do titles first, since on Mac sequence area update causes title redraw
     titleArea->ShowTitles(newAlignment);
@@ -1124,6 +1124,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/10/25 17:41:35  thiessen
+* fix flicker in alignment display; add progress meter and misc fixes to refiner
+*
 * Revision 1.44  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
