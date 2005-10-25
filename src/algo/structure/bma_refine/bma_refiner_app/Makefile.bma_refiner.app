@@ -10,20 +10,13 @@ REQUIRES = objects
 LIB =   xbma_refiner \
         xstruct_util \
         xstruct_dp \
-        xblast blastdb xnetblast tables \
+        xblast seqdb blastdb xnetblastcli xnetblast tables \
+        xobjsimple xobjutil \
         cdd \
         scoremat \
         cn3d \
         mmdb \
-        seqset $(SEQ_LIBS) \
-        pub \
-        medline \
-        biblio \
-        general \
-        xser \
-        xutil \
-        xconnect \
-        xncbi 
+        $(OBJMGR_LIBS)
 
 #CFLAGS   = $(FAST_CFLAGS)
 
@@ -31,4 +24,4 @@ CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
 
 #LDFLAGS  = $(FAST_LDFLAGS)
 
-LIBS = $(ORIG_LIBS) $(NETWORK_LIBS)
+LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
