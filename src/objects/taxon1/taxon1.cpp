@@ -282,6 +282,7 @@ public:
         if( m_nType == mod->GetSubtype() ) {
             return true;
         }
+#if 0
         switch( mod->GetSubtype() ) {
         case COrgMod::eSubtype_strain:
         case COrgMod::eSubtype_substrain:
@@ -305,6 +306,7 @@ public:
         default:
             break;
         }
+#endif
         return false;
     }
 
@@ -1939,6 +1941,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.34  2005/10/25 17:43:45  domrach
+ * New orgname modifier conflict rules
+ *
  * Revision 6.33  2005/08/19 20:50:54  domrach
  * Unneeded check for output stream state removed
  *
