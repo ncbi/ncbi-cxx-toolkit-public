@@ -190,6 +190,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
 
     wait.Show(false);
     wxSetCursor(wxNullCursor);
+    SetDiagPostLevel(eDiag_Info);   // may be changed by refiner
 
 //    else {
 //        WARNINGMSG("alignment refiner encountered a problem (code " << result << ") - current alignment unchanged");
@@ -639,6 +640,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/10/25 20:54:29  thiessen
+* reset diag post level after refinement
+*
 * Revision 1.4  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *
