@@ -80,9 +80,6 @@ environment.
 // For on-the-fly tabular output
 #include "blast_tabular.hpp"
 
-// For repeats filtering
-#include "../repeats_filter.hpp"
-
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
@@ -541,9 +538,6 @@ int CBlastApplication::Run(void)
     CBlastOptionsHandle* opts = CBlastOptionsFactory::Create(program);
 
     ProcessCommandLineArgs(opts, seq_src);
-
-    // Perform repeats filtering if required
-    Blast_FindRepeatFilterLoc(query_loc, opts);
 
     BlastHSPStream* hsp_stream = NULL;
     bool tabular_output = args["tabular"].AsBoolean();
