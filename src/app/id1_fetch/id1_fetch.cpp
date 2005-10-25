@@ -543,10 +543,10 @@ bool CId1FetchApp::LookUpGI(int gi)
         if (gp) {
             ff_config.SetViewProt();
         }
-        CFlatFileGenerator ff(ff_config);
-        ff.SetAnnotSelector().ExcludeNamedAnnots("SNP");
+        CFlatFileGenerator ffg(ff_config);
+        ffg.SetAnnotSelector().ExcludeNamedAnnots("SNP");
 
-        ff.Generate(entry, *m_OutputFile);
+        ffg.Generate(entry, *m_OutputFile);
     }
 
     if (reply_object.NotEmpty()  &&  format != eSerial_None) {
@@ -749,6 +749,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2005/10/25 15:52:35  ucko
+* Rename ff to ffg due to Mac-specific namespace pollution.
+*
 * Revision 1.55  2005/10/25 12:10:40  dicuccio
 * Use the new flat file generator
 *
