@@ -38,7 +38,7 @@ static char const rcsid[] = "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/api/dust_filter.hpp>
+#include "dust_filter.hpp"
 #include <serial/iterator.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -135,6 +135,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.4  2005/10/25 14:19:17  camacho
+ *  dust_filter.hpp is now a private header
+ *
  *  Revision 1.3  2005/09/28 18:53:06  camacho
  *  Updated to use CSymDustMasker::GetMaskedInts() interface
  *
