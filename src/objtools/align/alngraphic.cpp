@@ -634,7 +634,8 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                 image->SetAttribute("border", 0);
                 if(m_View & eMouseOverInfo){
                     image->SetAttribute("ONMouseOver", m_MouseOverFormName 
-                                        + ".defline.value=" + "'" + (*iter2)->info
+                                        + ".defline.value=" + "'" + 
+                                        NStr::JavaScriptEncode((*iter2)->info)
                                         + "'");
                     image->SetAttribute("ONMOUSEOUT", m_MouseOverFormName + 
                                         ".defline.value='Mouse-over to show defline and scores, click to show alignments'");
@@ -673,6 +674,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.6  2005/10/25 14:38:07  jianye
+*fixed mouse-over problem of showing single quotes such as 5'
+*
 *Revision 1.5  2005/06/23 15:58:55  jianye
 *return minimal round number 1 in getroundnumber()
 *
