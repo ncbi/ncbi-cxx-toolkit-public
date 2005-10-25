@@ -338,7 +338,8 @@ IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
 
 
 IReader* CNetCacheClient_LB::GetData(const string& key, 
-                                     size_t*       blob_size)
+                                     size_t*       blob_size,
+                                     ELockMode     lock_mode)
 {
     if (!key.empty()) {
         CNetCache_Key blob_key(key);
@@ -492,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/10/25 19:11:09  kuznets
+ * Added non blocking blob get
+ *
  * Revision 1.25  2005/10/25 14:29:09  kuznets
  * + IsLocked() - BLOB lock detection
  *

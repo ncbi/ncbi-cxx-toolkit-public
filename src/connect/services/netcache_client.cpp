@@ -461,7 +461,9 @@ bool CNetCacheClient::IsLocked(const string& key)
 }
 
 
-IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
+IReader* CNetCacheClient::GetData(const string& key, 
+                                  size_t*       blob_size,
+                                  ELockMode     lock_mode)
 {
     CheckConnect(key);
 
@@ -469,6 +471,18 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
     MakeCommandPacket(&request, "GET ");
     
     request += key;
+
+    switch (lock_mode) {
+    case eLockNoWait:
+        request += " NW";  // no-wait mode
+        break;
+    case eLockWait:
+        break;
+    default:
+        _ASSERT(0);
+        break;
+    }
+
     WriteStr(request.c_str(), request.length() + 1);
 
     WaitForServer();
@@ -484,6 +498,10 @@ IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
             }
             if (NStr::strncmp(answer.c_str(), "BLOB not found", 14) == 0) {
                 return NULL;
+            }
+            if (NStr::strncmp(answer.c_str(), "BLOB locked", 11) == 0) {
+                msg += answer;
+                NCBI_THROW(CNetCacheException, eBlobLocked, msg);
             }
             msg += answer;
             NCBI_THROW(CNetCacheException, eServerError, msg);
@@ -912,6 +930,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/10/25 19:11:09  kuznets
+ * Added non blocking blob get
+ *
  * Revision 1.51  2005/10/25 14:29:09  kuznets
  * + IsLocked() - BLOB lock detection
  *
