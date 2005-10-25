@@ -81,7 +81,7 @@ environment.
 #include "blast_tabular.hpp"
 
 // For repeats filtering
-#include <algo/blast/api/repeats_filter.hpp>
+#include "../repeats_filter.hpp"
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
