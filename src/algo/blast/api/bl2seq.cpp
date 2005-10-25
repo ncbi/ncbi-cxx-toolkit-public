@@ -38,9 +38,10 @@
 #include <objects/seqalign/Seq_align.hpp>
 
 #include <algo/blast/api/bl2seq.hpp>
-#include <algo/blast/api/dust_filter.hpp>
 #include <algo/blast/api/seqsrc_multiseq.hpp>
 #include <algo/blast/api/seqinfosrc_seqvec.hpp>
+#include "dust_filter.hpp"
+#include "repeats_filter.hpp"
 #include "blast_seqalign.hpp"
 #include "blast_objmgr_priv.hpp"
 
@@ -203,8 +204,11 @@ CBl2Seq::SetupSearch()
         ENa_strand strand_opt = kOptions.GetStrandOption();
         TAutoUint1ArrayPtr gc = FindGeneticCode(kOptions.GetQueryGeneticCode());
 
-        if (CBlastNucleotideOptionsHandle *nucl_handle = dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle))
+        if (CBlastNucleotideOptionsHandle *nucl_handle =
+            dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle)) {
             Blast_FindDustFilterLoc(m_tQueries, nucl_handle);
+            Blast_FindRepeatFilterLoc(m_tQueries, nucl_handle);
+        }
         
         SetupQueryInfo(m_tQueries, prog, strand_opt, &mi_clsQueryInfo);
         SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
@@ -377,6 +381,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.85  2005/10/25 14:19:02  camacho
+ * Perform repeats filtering as part of set up
+ *
  * Revision 1.84  2005/09/22 14:49:58  madden
  * Validate options before calling SetupSearch
  *

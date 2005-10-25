@@ -46,11 +46,12 @@
 
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_options.hpp>
-#include "blast_seqalign.hpp"
-#include "blast_objmgr_priv.hpp"
 #include <algo/blast/api/blast_mtlock.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
-#include <algo/blast/api/dust_filter.hpp>
+#include "dust_filter.hpp"
+#include "repeats_filter.hpp"
+#include "blast_seqalign.hpp"
+#include "blast_objmgr_priv.hpp"
 
 // Core BLAST engine includes
 #include <algo/blast/core/blast_def.h>
@@ -498,8 +499,11 @@ void CDbBlast::SetupSearch()
 
         x_ResetQueryDs();
 
-        if (CBlastNucleotideOptionsHandle *nucl_handle = dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle))
+        if (CBlastNucleotideOptionsHandle *nucl_handle =
+            dynamic_cast<CBlastNucleotideOptionsHandle*>(&*m_OptsHandle)) {
             Blast_FindDustFilterLoc(m_tQueries, nucl_handle);
+            Blast_FindRepeatFilterLoc(m_tQueries, nucl_handle);
+        }
 
         EBlastProgramType prog = kOptions.GetProgramType();
         if (m_ipQueryData == NULL) {
@@ -766,6 +770,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.84  2005/10/25 14:19:02  camacho
+ * Perform repeats filtering as part of set up
+ *
  * Revision 1.83  2005/09/21 15:09:04  camacho
  * Remove dead code, enable use of query retrieval interface
  *
