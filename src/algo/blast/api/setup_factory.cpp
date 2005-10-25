@@ -107,8 +107,16 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                   &masked_query_regions,
                                   &retval,
                                   &blast_msg);
-    // FIXME: should this be returned, wait until Ilya's
-    // changes for returning filtering locations are checked in
+
+#if 0
+FIXME: implement creating CPacked_seqint from ILocalQueryData 
+    CPacked_seqint query_locations;
+    TSeqLocInfoVector masked_locs;
+    Blast_GetSeqLocInfoVector(opts_memento->m_ProgramType,
+                              query_locations,
+                              masked_query_regions,
+                              masked_locs);
+#endif
     BlastMaskLocFree(masked_query_regions);
 
     if (blast_msg.Get() || status != 0) {
