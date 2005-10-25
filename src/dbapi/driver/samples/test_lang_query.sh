@@ -5,7 +5,7 @@
 # CTLIB does not work on Solaris sparc when this limit is < ~1300
 ulimit -n 1536 > /dev/null 2>&1
 
-# Disable ftds63 temporarily
+# ftds63
 driver_list="ctlib dblib ftds odbc msdblib"
 # server_list="MS_DEV2 BARTOK BARTOK_12"
 server_list="MS_DEV1 STRAUSS MOZART"
@@ -154,6 +154,9 @@ EOF
             if test $driver = "ctlib"  -a  $server = $server_mssql ; then
                 continue
             fi
+            if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
+                continue
+            fi
 
             cat <<EOF
 
@@ -161,16 +164,20 @@ EOF
 EOF
 
         # lang_query
+
             cmd="lang_query -d $driver -S $server -Q"
             RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
             RunTest2 'select qq = 57 + 33' '<ROW><qq>90<'
             RunTest2 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
             RunTest2 'select name, type from sysobjects' '<ROW><name>'
+
         # simple tests
+
             if test $driver = "dblib"  -a  $server = $server_mssql ; then
                 continue
             fi
-            # do not run tests wit a boolk copy operations 
+
+            # do not run tests with a boolk copy operations 
             # on Sybase databases with the "ftds" driver
             if test \( $driver = "ftds" -a $server = $server_mssql \) \
                     -o $driver != "ftds" ; then
@@ -178,12 +185,19 @@ EOF
                 RunSimpleTest "dbapi_bcp"
                 cmd="dbapi_testspeed -d $driver -S $server"
                 RunSimpleTest "dbapi_testspeed"
+            else
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -d $driver -S $server (skipped)"
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -d $driver -S $server (skipped)"
             fi
+
             # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
-            if test $driver != "ftds" -a $server != $server_mssql ; then
+            if test $driver != "ftds" -a $driver != "ftds63" -a $server != $server_mssql ; then
                 cmd="dbapi_cursor -d $driver -S $server"
                 RunSimpleTest "dbapi_cursor"
+            else
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_cursor -d $driver -S $server (skipped)"
             fi
+
             cmd="dbapi_query -d $driver -S $server"
             RunSimpleTest "dbapi_query"
             cmd="dbapi_send_data -d $driver -S $server"
