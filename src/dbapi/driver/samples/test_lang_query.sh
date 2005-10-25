@@ -5,8 +5,8 @@
 # CTLIB does not work on Solaris sparc when this limit is < ~1300
 ulimit -n 1536 > /dev/null 2>&1
 
-
-driver_list="ctlib dblib ftds ftds63 odbc msdblib"
+# Disable ftds63 temporarily
+driver_list="ctlib dblib ftds odbc msdblib"
 # server_list="MS_DEV2 BARTOK BARTOK_12"
 server_list="MS_DEV1 STRAUSS MOZART"
 # server_mssql="MS_DEV2"
