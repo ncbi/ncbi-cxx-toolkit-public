@@ -34,7 +34,7 @@
  *********************************
  * Random generator seeding support
  *    private global:  g_NCBI_ConnectRandomSeed
- *    macro:           NCBI_CONNECT_SRAND_ADDENT
+ *    macro:           NCBI_CONNECT_SRAND_ADDEND
  * Critical section (basic multi-thread synchronization):
  *    private global:  g_CORE_MT_Lock
  *    macros:          CORE_LOCK_WRITE, CORE_LOCK_READ, CORE_UNLOCK
@@ -196,11 +196,14 @@ extern NCBI_XCONNECT_EXPORT char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2005/10/25 18:53:10  lavr
+ * Fix ADDEND spelling (finally, hopefully)
+ *
  * Revision 6.14  2005/07/11 18:14:14  lavr
  * Fix ADDEND spelling
  *
  * Revision 6.13  2005/05/03 11:50:19  ivanov
- * Added MS Win specific for NCBI_CONNECT_SRAND_ADDENT, removing dependency
+ * Added MS Win specific for NCBI_CONNECT_SRAND_ADDEND, removing dependency
  * from socket library.
  *
  * Revision 6.12  2005/05/02 16:04:17  lavr

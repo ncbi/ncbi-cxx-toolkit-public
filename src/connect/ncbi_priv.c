@@ -94,6 +94,9 @@ extern char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2005/10/25 18:53:10  lavr
+ * Fix ADDEND spelling (finally, hopefully)
+ *
  * Revision 6.8  2005/07/11 18:14:14  lavr
  * Fix ADDEND spelling
  *
@@ -101,7 +104,7 @@ extern char* g_CORE_RegistryGET
  * +<connect/ncbi_socket.h> for non-UNIX, non-Windows platforms
  *
  * Revision 6.6  2005/05/03 11:50:19  ivanov
- * Added MS Win specific for NCBI_CONNECT_SRAND_ADDENT, removing dependency
+ * Added MS Win specific for NCBI_CONNECT_SRAND_ADDEND, removing dependency
  * from socket library.
  *
  * Revision 6.5  2005/05/02 16:04:20  lavr
