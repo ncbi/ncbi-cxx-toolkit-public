@@ -62,7 +62,7 @@ enum EFeatureQualifier {
     eFQ_EC_number,
     eFQ_encodes,
     eFQ_estimated_length,
-    eFQ_evidence,
+    eFQ_experiment,
     eFQ_exception,
     eFQ_exception_note,
     eFQ_figure,
@@ -81,6 +81,7 @@ enum EFeatureQualifier {
     eFQ_go_process,
     eFQ_heterogen,
     eFQ_illegal_qual,
+    eFQ_inference,
     eFQ_insertion_seq,
     eFQ_label,
     eFQ_locus_tag,
@@ -240,6 +241,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/10/26 13:30:18  ludwigf
+* Removed qualifier "evidence".
+* Added qualifiers "experiment" and "inference".
+*
 * Revision 1.6  2005/02/09 14:53:02  shomrat
 * Added subsource qualifiers for Barcode of Life project
 *

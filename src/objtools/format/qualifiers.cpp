@@ -10,7 +10,6 @@
 *  thus cannot be copyrighted.  This software/database is freely available
 *  to the public for use. The National Library of Medicine and the U.S.
 *  Government have not placed any restriction on its use or reproduction.
-*
 *  Although all reasonable efforts have been taken to ensure the accuracy
 *  and reliability of the software and data, the NLM and the U.S.
 *  Government do not and cannot warrant the performance or results that
@@ -457,18 +456,19 @@ void CFlatCodonQVal::Format(TFlatQuals& q, const string& name, CBioseqContext& c
 }
 
 
-void CFlatExpEvQVal::Format(TFlatQuals& q, const string& name,
+void CFlatExperimentQVal::Format(TFlatQuals& q, const string& name,
                           CBioseqContext&, IFlatQVal::TFlags) const
 {
-    const char* s = 0;
-    switch (m_Value) {
-    case CSeq_feat::eExp_ev_experimental:      s = "experimental";      break;
-    case CSeq_feat::eExp_ev_not_experimental:  s = "not_experimental";  break;
-    default:                                   break;
-    }
-    if (s) {
-        x_AddFQ(q, name, s, CFormatQual::eUnquoted);
-    }
+    const char* s = "experimental evidence, no additional details recorded";
+    x_AddFQ(q, name, s, CFormatQual::eQuoted);
+}
+
+
+void CFlatInferenceQVal::Format(TFlatQuals& q, const string& name,
+                          CBioseqContext&, IFlatQVal::TFlags) const
+{
+    const char* s = "non-experimental evidence, no additional details recorded";
+    x_AddFQ(q, name, s, CFormatQual::eQuoted);
 }
 
 
@@ -977,6 +977,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/10/26 13:30:18  ludwigf
+* Removed qualifier "evidence".
+* Added qualifiers "experiment" and "inference".
+*
 * Revision 1.31  2005/08/16 16:50:06  shomrat
 * Do not convert quals to note in dump mode; Chages to ModelEv and ProductNames
 *

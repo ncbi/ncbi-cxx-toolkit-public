@@ -431,9 +431,10 @@ START_SUBTYPE(gene)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);	
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -457,10 +458,11 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -482,9 +484,10 @@ START_SUBTYPE(prot)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -502,9 +505,10 @@ START_SUBTYPE(preprotein)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -522,9 +526,10 @@ START_SUBTYPE(mat_peptide_aa)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -541,9 +546,10 @@ START_SUBTYPE(sig_peptide_aa)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -560,9 +566,10 @@ START_SUBTYPE(transit_peptide_aa)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -597,10 +604,11 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -618,9 +626,10 @@ START_SUBTYPE(tRNA)
     ADD_QUAL(anticodon);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -636,9 +645,10 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -654,9 +664,10 @@ START_SUBTYPE(snRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -672,9 +683,10 @@ START_SUBTYPE(scRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -690,9 +702,10 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -708,9 +721,10 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -739,8 +753,9 @@ START_SUBTYPE(attenuator)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -755,8 +770,9 @@ START_SUBTYPE(C_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -772,8 +788,9 @@ START_SUBTYPE(CAAT_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -789,10 +806,11 @@ START_SUBTYPE(Imp_CDS)
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(exception);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -815,8 +833,9 @@ START_SUBTYPE(conflict)
     ADD_QUAL(citation);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -830,8 +849,9 @@ START_SUBTYPE(D_loop)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -844,8 +864,9 @@ START_SUBTYPE(D_segment)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -861,8 +882,9 @@ START_SUBTYPE(enhancer)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -877,9 +899,10 @@ START_SUBTYPE(exon)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -896,8 +919,9 @@ START_SUBTYPE(GC_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -910,9 +934,10 @@ START_SUBTYPE(iDNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -928,9 +953,10 @@ START_SUBTYPE(intron)
     ADD_QUAL(citation);
     ADD_QUAL(cons_splice);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -945,8 +971,9 @@ START_SUBTYPE(J_segment)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -962,9 +989,10 @@ START_SUBTYPE(LTR)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -979,9 +1007,10 @@ START_SUBTYPE(mat_peptide)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -999,9 +1028,10 @@ START_SUBTYPE(misc_binding)
     ADD_QUAL(bound_moiety);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1016,8 +1046,9 @@ START_SUBTYPE(misc_difference)
     ADD_QUAL(clone);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1033,9 +1064,10 @@ START_SUBTYPE(misc_feature)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1053,8 +1085,9 @@ START_SUBTYPE(misc_recomb)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1069,9 +1102,10 @@ START_SUBTYPE(misc_RNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1087,9 +1121,10 @@ START_SUBTYPE(misc_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1105,9 +1140,10 @@ START_SUBTYPE(misc_structure)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1121,9 +1157,10 @@ START_SUBTYPE(modified_base)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(frequency);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1140,8 +1177,9 @@ START_SUBTYPE(N_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1158,8 +1196,9 @@ START_SUBTYPE(old_sequence)
     ADD_QUAL(citation);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1173,8 +1212,9 @@ START_SUBTYPE(polyA_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1187,8 +1227,9 @@ START_SUBTYPE(polyA_site)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1201,9 +1242,10 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1219,9 +1261,10 @@ START_SUBTYPE(prim_transcript)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1237,8 +1280,9 @@ START_SUBTYPE(primer_bind)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1252,9 +1296,10 @@ START_SUBTYPE(promoter)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1272,9 +1317,10 @@ START_SUBTYPE(protein_bind)
     ADD_QUAL(bound_moiety);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1288,8 +1334,9 @@ START_SUBTYPE(RBS)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1303,9 +1350,10 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(insertion_seq);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
@@ -1324,9 +1372,10 @@ START_SUBTYPE(repeat_unit)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1343,8 +1392,9 @@ START_SUBTYPE(rep_origin)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(direction);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1358,8 +1408,9 @@ START_SUBTYPE(S_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1375,8 +1426,9 @@ START_SUBTYPE(satellite)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1393,9 +1445,10 @@ START_SUBTYPE(sig_peptide)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1461,9 +1514,10 @@ START_SUBTYPE(stem_loop)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1478,8 +1532,9 @@ START_SUBTYPE(STS)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1493,8 +1548,9 @@ START_SUBTYPE(TATA_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1507,8 +1563,9 @@ START_SUBTYPE(terminator)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1523,9 +1580,10 @@ START_SUBTYPE(transit_peptide)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1542,8 +1600,9 @@ START_SUBTYPE(unsure)
     ADD_QUAL(citation);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1557,8 +1616,9 @@ START_SUBTYPE(V_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1574,8 +1634,9 @@ START_SUBTYPE(V_segment)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1592,9 +1653,10 @@ START_SUBTYPE(variation)
     ADD_QUAL(citation);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(frequency);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1613,9 +1675,10 @@ START_SUBTYPE(3clip)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1629,9 +1692,10 @@ START_SUBTYPE(3UTR)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1645,9 +1709,10 @@ START_SUBTYPE(5clip)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1661,9 +1726,10 @@ START_SUBTYPE(5UTR)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1677,8 +1743,9 @@ START_SUBTYPE(10_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1693,8 +1760,9 @@ START_SUBTYPE(35_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1715,8 +1783,9 @@ START_SUBTYPE(operon)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(map);
     ADD_QUAL(note);
@@ -1733,8 +1802,9 @@ START_SUBTYPE(oriT)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(direction);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1754,8 +1824,9 @@ START_SUBTYPE(region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1772,9 +1843,10 @@ START_SUBTYPE(comment)  // same as misc_feature
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1792,9 +1864,10 @@ START_SUBTYPE(bond)  // same as misc_feature
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1812,9 +1885,10 @@ START_SUBTYPE(site)  //  same as misc_feature
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1844,9 +1918,10 @@ START_SUBTYPE(psec_str)  //  same as misc_feature
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1867,9 +1942,10 @@ START_SUBTYPE(het)  //  same as misc_feature
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
-    ADD_QUAL(evidence);
+    ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
+    ADD_QUAL(inference);
     ADD_QUAL(label);
     ADD_QUAL(locus_tag);
     ADD_QUAL(map);
@@ -1958,14 +2034,15 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_ecotype, "ecotype"),
     TQualPair(CSeqFeatData::eQual_environmental_sample, "environmental_sample"),
     TQualPair(CSeqFeatData::eQual_estimated_length, "estimated_length"),
-    TQualPair(CSeqFeatData::eQual_evidence, "evidence"),
     TQualPair(CSeqFeatData::eQual_exception, "exception"),
+    TQualPair(CSeqFeatData::eQual_experiment, "experiment"),
     TQualPair(CSeqFeatData::eQual_focus, "focus"),
     TQualPair(CSeqFeatData::eQual_frequency, "frequency"),
     TQualPair(CSeqFeatData::eQual_function, "function"),
     TQualPair(CSeqFeatData::eQual_gene, "gene"),
     TQualPair(CSeqFeatData::eQual_germline, "germline"),
     TQualPair(CSeqFeatData::eQual_haplotype, "haplotype"),
+    TQualPair(CSeqFeatData::eQual_inference, "inference"),
     TQualPair(CSeqFeatData::eQual_insertion_seq, "insertion_seq"),
     TQualPair(CSeqFeatData::eQual_isolate, "isolate"),
     TQualPair(CSeqFeatData::eQual_isolation_source, "isolation_source"),
@@ -2037,6 +2114,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.25  2005/10/26 13:30:18  ludwigf
+* Removed qualifier "evidence".
+* Added qualifiers "experiment" and "inference".
+*
 * Revision 6.24  2005/09/30 19:12:38  vasilche
 * Fixed MT-safety of tables initialization.
 *

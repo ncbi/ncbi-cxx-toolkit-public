@@ -361,15 +361,21 @@ private:
 };
 
 
-class NCBI_FORMAT_EXPORT CFlatExpEvQVal : public IFlatQVal
+class NCBI_FORMAT_EXPORT CFlatExperimentQVal : public IFlatQVal
 {
 public:
-    CFlatExpEvQVal(CSeq_feat::TExp_ev value) : m_Value(value) { }
+    CFlatExperimentQVal() { }
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
+};
 
-private:
-    CSeq_feat::TExp_ev m_Value;
+
+class NCBI_FORMAT_EXPORT CFlatInferenceQVal : public IFlatQVal
+{
+public:
+    CFlatInferenceQVal() { }
+    void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
+                TFlags flags) const;
 };
 
 
@@ -586,6 +592,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/10/26 13:30:18  ludwigf
+* Removed qualifier "evidence".
+* Added qualifiers "experiment" and "inference".
+*
 * Revision 1.25  2005/09/14 18:44:15  jcherry
 * Commented out declaration of unimplemented constructor
 *

@@ -724,10 +724,16 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
     if ( m_Feat->IsSetExt() ) {
         x_AddExtQuals(m_Feat->GetExt());
     }
-    // evidence
+ 
+    // experiment and inference
     if (m_Feat->IsSetExp_ev()) {
-        x_AddQual(eFQ_evidence, new CFlatExpEvQVal(m_Feat->GetExp_ev()));
+        if ( m_Feat->GetExp_ev() == CSeq_feat::eExp_ev_experimental ) {
+            x_AddQual(eFQ_experiment, new CFlatExperimentQVal());
+        } else {
+            x_AddQual(eFQ_inference, new CFlatInferenceQVal());
+        }
     }
+
     // citation
     if (m_Feat->IsSetCit()) {
         x_AddQual(eFQ_citation, new CFlatPubSetQVal(m_Feat->GetCit()));
@@ -1345,31 +1351,13 @@ void CFeatureItem::x_AddExceptionQuals(CBioseqContext& ctx) const
     // /exception currently legal only on cdregion
     if ( m_Feat->GetData().IsCdregion()  ||  !cfg.DropIllegalQuals() ) {
         // exception flag is set, but no exception text supplied
-        if ( except_text.empty()  &&
-             m_Feat->CanGetExcept()  &&  m_Feat->GetExcept() ) {
-            // if no /exception text, use text in comment, remove from /note
-            if ( x_HasQual(eFQ_seqfeat_note) ) {
-                const CFlatStringQVal* qval = 
-                    dynamic_cast<const CFlatStringQVal*>(x_GetQual(eFQ_seqfeat_note)->second.GetPointerOrNull());
-                if ( qval != 0 ) {
-                    const string& seqfeat_note = qval->GetValue();
-                    if ( !cfg.DropIllegalQuals()  ||
-                        s_IsValidExceptionText(seqfeat_note) ) {
-                        except_text = seqfeat_note;
-                        x_RemoveQuals(eFQ_seqfeat_note);
-                    }
-                }
-            } else {
-                except_text = "No explanation supplied";
-            }
-
-            // if DropIllegalQuals is set, check CDS list here as well
-            if ( cfg.DropIllegalQuals()  &&
-                 !s_IsValidExceptionText(except_text) ) {
-                except_text.erase();
-            }
-        }
         
+        //
+        //  here used to be code doctoring things up in case the exception flag was set
+        //  but no exception text was supplied. Now supposed to caught by validation.
+        //  Removed 2005-10-18 (fl).
+        //
+
         if ( cfg.DropIllegalQuals() ) {
             string except = except_text;
             s_ParseException(except, except_text, note_text, ctx);
@@ -1933,9 +1921,10 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(direction),
         DO_IMPORT(EC_number),
         DO_IMPORT(estimated_length),
-        DO_IMPORT(evidence),
+        DO_IMPORT(experiment),
         DO_IMPORT(frequency),
         DO_IMPORT(function),
+        DO_IMPORT(inference),
         DO_IMPORT(insertion_seq),
         DO_IMPORT(label),
         DO_IMPORT(map),
@@ -2009,7 +1998,6 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
             }
             break;
         case eFQ_estimated_length:
-        case eFQ_evidence:
         case eFQ_mod_base:
         case eFQ_number:
             if ((*it)->IsSetVal()  &&  !NStr::IsBlank(val)) {
@@ -2218,7 +2206,8 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(cons_splice);
     DO_QUAL(direction);
     DO_QUAL(function);
-    DO_QUAL(evidence);
+    DO_QUAL(experiment);
+    DO_QUAL(inference);
     DO_QUAL(exception);
     DO_QUAL(frequency);
     DO_QUAL(EC_number);
@@ -2313,7 +2302,6 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE(prot_note);
     DO_NOTE(prot_comment);
     DO_NOTE(prot_method);
-    //DO_NOTE(figure);
     DO_NOTE(maploc);
     DO_NOTE(prot_conflict);
     DO_NOTE(prot_missing);
@@ -2592,7 +2580,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_EC_number, CSeqFeatData::eQual_EC_number),
     TQualPair(eFQ_encodes, CSeqFeatData::eQual_note),
     TQualPair(eFQ_estimated_length, CSeqFeatData::eQual_estimated_length),
-    TQualPair(eFQ_evidence, CSeqFeatData::eQual_evidence),
+    TQualPair(eFQ_experiment, CSeqFeatData::eQual_experiment),
     TQualPair(eFQ_exception, CSeqFeatData::eQual_exception),
     TQualPair(eFQ_exception_note, CSeqFeatData::eQual_note),
     TQualPair(eFQ_figure, CSeqFeatData::eQual_note),
@@ -2611,6 +2599,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_go_process, CSeqFeatData::eQual_note),
     TQualPair(eFQ_heterogen, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_illegal_qual, CSeqFeatData::eQual_bad),
+    TQualPair(eFQ_inference, CSeqFeatData::eQual_inference),
     TQualPair(eFQ_insertion_seq, CSeqFeatData::eQual_insertion_seq),
     TQualPair(eFQ_label, CSeqFeatData::eQual_label),
     TQualPair(eFQ_locus_tag, CSeqFeatData::eQual_locus_tag),
@@ -3711,6 +3700,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2005/10/26 13:30:18  ludwigf
+* Removed qualifier "evidence".
+* Added qualifiers "experiment" and "inference".
+*
 * Revision 1.58  2005/10/07 15:38:54  vasilche
 * Fixed MT-safety with CSeq_id_Handle.
 *
