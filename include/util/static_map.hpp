@@ -163,7 +163,7 @@ public:
     CStaticArrayMap(const_iterator obj, size_type array_size)
         : TBase(obj, array_size)
     {
-        x_Validate();
+        this->x_Validate();
     }
 
     /// Constructor to initialize comparator object.
@@ -171,7 +171,7 @@ public:
                     const key_compare& comp)
         : TBase(obj, array_size, comp)
     {
-        x_Validate();
+        this->x_Validate();
     }
 
 
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/26 18:44:49  vasilche
+ * Fixed x_Validate() lookup.
+ *
  * Revision 1.7  2005/10/26 18:27:28  ludwigf
  * Fixed x_Validate() diagnostics for CStaticArraySet and CStaticArrayMap.
  *
