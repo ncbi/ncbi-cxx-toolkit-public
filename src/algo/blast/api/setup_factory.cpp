@@ -43,7 +43,6 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_mtlock.hpp>      // for Blast_DiagnosticsInitMT
 
 #include "blast_memento_priv.hpp"
-#include "blast_seqsrc_adapter_priv.hpp"
 
 // SeqAlignVector building
 #include "blast_seqalign.hpp"
