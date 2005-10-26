@@ -86,7 +86,8 @@ public:
     void Reset(void);
 
     /// TSE info getters
-    CBlobIdKey GetBlobId(void) const;
+    typedef CBlobIdKey TBlobId;
+    TBlobId GetBlobId(void) const;
 
     bool Blob_IsSuppressed(void) const;
     bool Blob_IsSuppressedTemp(void) const;

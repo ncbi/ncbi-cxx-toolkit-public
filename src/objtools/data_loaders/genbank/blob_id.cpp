@@ -33,7 +33,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-const string CBlob_id::ToString(void) const
+string CBlob_id::ToString(void) const
 {
     CNcbiOstrstream ostr;
     ostr << "Blob(";
@@ -45,12 +45,32 @@ const string CBlob_id::ToString(void) const
 }
 
 
+bool CBlob_id::operator==(const CBlobId& id_ref) const
+{
+    const CBlob_id* id = dynamic_cast<const CBlob_id*>(&id_ref);
+    return id && *this == *id;
+}
+
+
+bool CBlob_id::operator<(const CBlobId& id_ref) const
+{
+    const CBlob_id* id = dynamic_cast<const CBlob_id*>(&id_ref);
+    if ( !id ) {
+        return typeid(*this).before(typeid(id_ref));
+    }
+    return *this < *id;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
  * $Log$
+ * Revision 1.2  2005/10/26 14:36:46  vasilche
+ * Updated for new CBlobId interface.
+ *
  * Revision 1.1  2004/08/04 14:55:18  vasilche
  * Changed TSE locking scheme.
  * TSE cache is maintained by CDataSource.

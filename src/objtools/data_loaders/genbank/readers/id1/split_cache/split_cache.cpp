@@ -705,7 +705,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
         }
         version = m_Loader->GetBlobVersion(blob_id_0);
     }
-    blob_id = dynamic_cast<const CBlob_id&>(*blob_id_0);
+    blob_id = m_Loader->GetRealBlobId(blob_id_0);
 
     if ( !m_ProcessedBlobs.insert(blob_id).second ) {
         // already processed
@@ -749,7 +749,7 @@ void CSplitCacheApp::ProcessBlob(CBioseq_Handle& bh, const CSeq_id_Handle& idh)
     {{
         // check if blob_id/version is changed
         blob_id_0 = tse.GetBlobId();
-        CBlob_id real_blob_id = dynamic_cast<const CBlob_id&>(*blob_id_0);
+        CBlob_id real_blob_id = m_Loader->GetRealBlobId(blob_id_0);
         if ( real_blob_id != blob_id ) {
             blob_id = real_blob_id;
             version = tse.GetBlobVersion();
@@ -1106,6 +1106,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/10/26 14:36:46  vasilche
+* Updated for new CBlobId interface.
+*
 * Revision 1.39  2005/09/02 14:32:27  vasilche
 * Removed unused variable.
 *

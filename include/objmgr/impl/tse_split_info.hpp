@@ -62,7 +62,7 @@ struct SAnnotObjectsIndex;
 class NCBI_XOBJMGR_EXPORT CTSE_Split_Info : public CObject
 {
 public:
-    typedef CConstRef<CObject>                      TBlobId;
+    typedef CBlobIdKey                              TBlobId;
     typedef int                                     TBlobVersion;
     typedef int                                     TSplitVersion;
     typedef CTSE_Chunk_Info::TChunkId               TChunkId;

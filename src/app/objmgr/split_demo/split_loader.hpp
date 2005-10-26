@@ -94,7 +94,7 @@ private:
     typedef vector< CRef<CTSE_Chunk_Info> > TChunks;
 
     // Load and split TSE from file, store detached data locally
-    CTSE_LoadLock x_LoadData(void);
+    void x_LoadData(CTSE_LoadLock& load_lock);
     // Split bioseq, store annotations, descriptors and seq-data
     void x_SplitSeq(TChunks& chunks, CBioseq& bioseq);
     // Split bioseq, store annotations and descriptors

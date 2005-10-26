@@ -608,7 +608,7 @@ CStandaloneRequestResult::GetTSE_LoadLock(const CBlob_id& blob_id)
     if ( !m_DataSource ) {
         m_DataSource = new CDataSource;
     }
-    CConstRef<CObject> key(new CBlob_id(blob_id));
+    CDataLoader::TBlobId key(new CBlob_id(blob_id));
     return m_DataSource->GetTSE_LoadLock(key);
 }
 

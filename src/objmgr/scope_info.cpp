@@ -184,8 +184,7 @@ CDataSource_ScopeInfo::GetTSE_Lock(const CTSE_Lock& lock)
     TTSE_ScopeInfo info;
     {{
         TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
-        STSE_Key key(*lock, m_CanBeUnloaded);
-        TTSE_ScopeInfo& slot = m_TSE_InfoMap[key];
+        TTSE_ScopeInfo& slot = m_TSE_InfoMap[lock->GetBlobId()];
         if ( !slot ) {
             slot = info = new CTSE_ScopeInfo(*this, lock,
                                              m_NextTSEIndex++,
@@ -228,7 +227,8 @@ void CDataSource_ScopeInfo::AttachTSE(CTSE_ScopeInfo& info,
     _ASSERT(lock && &lock->GetDataSource() == &GetDataSource());
     TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
     _VERIFY(m_TSE_InfoMap.insert(TTSE_InfoMap::value_type
-                                 (STSE_Key(*lock, m_CanBeUnloaded),
+                                 (lock->GetBlobId(),
+                                  //STSE_Key(*lock, m_CanBeUnloaded),
                                   Ref(&info))).second);
     if ( m_CanBeUnloaded ) {
         // add this TSE into index by SeqId
@@ -390,7 +390,7 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse)
     if ( tse.CanBeUnloaded() ) {
         x_UnindexTSE(tse);
     }
-    _VERIFY(m_TSE_InfoMap.erase(tse));
+    _VERIFY(m_TSE_InfoMap.erase(tse.GetBlobId()));
     tse.m_TSE_LockCounter.Add(1); // to prevent storing into m_TSE_UnlockQueue
     // remove TSE lock completely
     {{
@@ -477,49 +477,6 @@ CDataSource_ScopeInfo::FindBioseq_Lock(const CBioseq& bioseq)
         return GetTSE_Lock(lock.second)->GetBioseqLock(null, lock.first);
     }
     return TBioseq_Lock();
-}
-
-
-CDataSource_ScopeInfo::STSE_Key::STSE_Key(const CTSE_Info& tse,
-                                          bool can_be_unloaded)
-{
-    if ( can_be_unloaded ) {
-        m_Loader = tse.GetDataSource().GetDataLoader();
-        _ASSERT(m_Loader);
-        m_BlobId = tse.GetBlobId();
-        _ASSERT(m_BlobId);
-        _ASSERT(m_BlobId.GetPointer() != &tse);
-    }
-    else {
-        m_Loader = 0;
-        m_BlobId = &tse;
-    }
-}
-
-
-CDataSource_ScopeInfo::STSE_Key::STSE_Key(const CTSE_ScopeInfo& tse)
-{
-    if ( tse.CanBeUnloaded() ) {
-        m_Loader = tse.GetDSInfo().GetDataSource().GetDataLoader();
-        _ASSERT(m_Loader);
-    }
-    else {
-        m_Loader = 0;
-    }
-    m_BlobId = tse.GetBlobId();
-    _ASSERT(m_BlobId);
-}
-
-
-bool CDataSource_ScopeInfo::STSE_Key::operator<(const STSE_Key& tse2) const
-{
-    _ASSERT(m_Loader == tse2.m_Loader);
-    if ( m_Loader ) {
-        return m_Loader->LessBlobId(m_BlobId, tse2.m_BlobId);
-    }
-    else {
-        return m_BlobId < tse2.m_BlobId;
-    }
 }
 
 
@@ -781,7 +738,7 @@ CTSE_ScopeInfo::TBlobId CTSE_ScopeInfo::GetBlobId(void) const
     }
     else {
         _ASSERT(m_TSE_Lock);
-        return TBlobId(&*m_TSE_Lock);
+        return m_TSE_Lock->GetBlobId();
     }
 }
 
@@ -1788,6 +1745,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/10/26 14:36:39  vasilche
+* Updated for new CBlobId interface.
+*
 * Revision 1.27  2005/10/18 15:38:12  vasilche
 * Restore handles to inner objects when adding removed objects.
 *

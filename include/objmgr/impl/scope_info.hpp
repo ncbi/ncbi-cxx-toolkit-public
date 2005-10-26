@@ -42,6 +42,7 @@
 #include <objmgr/impl/tse_scope_lock.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/tse_handle.hpp>
+#include <objmgr/blob_id.hpp>
 
 #include <set>
 #include <map>
@@ -176,19 +177,8 @@ class NCBI_XOBJMGR_EXPORT CDataSource_ScopeInfo : public CObject
 public:
     typedef CRef<CDataSource>                           TDataSourceLock;
     typedef CRef<CTSE_ScopeInfo>                        TTSE_ScopeInfo;
-    struct STSE_Key
-    {
-        typedef CConstRef<CObject> TBlobId;
-
-        STSE_Key(const CTSE_Info& tse, bool can_be_unloaded);
-        STSE_Key(const CTSE_ScopeInfo& tse);
-        
-        CDataLoader*    m_Loader;
-        TBlobId         m_BlobId;
-
-        bool operator<(const STSE_Key& tse2) const;
-    };
-    typedef map<STSE_Key, TTSE_ScopeInfo>               TTSE_InfoMap;
+    typedef CBlobIdKey                                  TBlobId;
+    typedef map<TBlobId, TTSE_ScopeInfo>                TTSE_InfoMap;
     typedef CTSE_LockSet                                TTSE_LockSet;
     typedef multimap<CSeq_id_Handle, TTSE_ScopeInfo>    TTSE_BySeqId;
     typedef CDeleteQueue<const CTSE_ScopeInfo*,
@@ -285,7 +275,7 @@ private: // to prevent copying
 class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CObject
 {
 public:
-    typedef CConstRef<CObject>                            TBlobId;
+    typedef CBlobIdKey                                    TBlobId;
     typedef multimap<CSeq_id_Handle, CRef<CBioseq_ScopeInfo> >  TBioseqById;
     typedef vector<CSeq_id_Handle>                        TBioseqsIds;
     typedef pair<int, int>                                TBlobOrder;
@@ -630,6 +620,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/10/26 14:36:39  vasilche
+* Updated for new CBlobId interface.
+*
 * Revision 1.24  2005/10/18 15:38:12  vasilche
 * Restore handles to inner objects when adding removed objects.
 *

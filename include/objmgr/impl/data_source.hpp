@@ -81,6 +81,7 @@ class CDSAnnotLockReadGuard;
 class CDSAnnotLockWriteGuard;
 class CScope_Impl;
 
+/*
 struct SBlobIdComp
 {
     typedef CConstRef<CObject>                      TBlobId;
@@ -102,7 +103,7 @@ struct SBlobIdComp
         
     CRef<CDataLoader> m_DataLoader;
 };
-
+*/
 
 struct SSeqMatch_DS : public SSeqMatch_TSE
 {
@@ -135,7 +136,7 @@ public:
     typedef set<CSeq_id_Handle>                     TSeq_idSet;
     typedef map<TTSE_Lock, TSeq_idSet>              TTSE_LockMatchSet;
     typedef CRef<CTSE_Info>                         TTSE_Ref;
-    typedef CConstRef<CObject>                      TBlobId;
+    typedef CBlobIdKey                              TBlobId;
 
     typedef CDSAnnotLockReadGuard                   TAnnotLockReadGuard;
     typedef CDSAnnotLockWriteGuard                  TAnnotLockWriteGuard;
@@ -266,7 +267,7 @@ private:
     // internal typedefs
 
     // blob lookup map
-    typedef map<TBlobId, TTSE_Ref, SBlobIdComp>     TBlob_Map;
+    typedef map<TBlobId, TTSE_Ref>                  TBlob_Map;
     // unlocked blobs cache
     typedef list<TTSE_Ref>                          TBlob_Cache;
 

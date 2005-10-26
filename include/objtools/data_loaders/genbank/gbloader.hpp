@@ -113,6 +113,7 @@ class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
 public:
     // typedefs from CReader
     typedef unsigned                  TConn;
+    typedef CBlob_id                  TRealBlobId;
 
     virtual ~CGBDataLoader(void);
 
@@ -133,7 +134,6 @@ public:
 
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
-    CBlob_id GetBlobId(const TBlobId& blob_id) const;
     bool CanGetBlobById(void) const;
     TTSE_Lock GetBlobById(const TBlobId& id);
 
@@ -172,15 +172,16 @@ public:
     virtual CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
     CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
 
-    bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
-    string BlobIdToString(const TBlobId& id) const;
+    //bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
+    //string BlobIdToString(const TBlobId& id) const;
 
     virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& handle,
                                       const TTSE_LockSet& tse_set);
 
     virtual void GC(void);
 
-    CBlob_id GetBlobId(const CTSE_Info& tse_info) const;
+    const TRealBlobId& GetRealBlobId(const TBlobId& blob_id) const;
+    const TRealBlobId& GetRealBlobId(const CTSE_Info& tse_info) const;
 
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const string& key);
     CRef<CLoadInfoSeq_ids> GetLoadInfoSeq_ids(const CSeq_id_Handle& key);

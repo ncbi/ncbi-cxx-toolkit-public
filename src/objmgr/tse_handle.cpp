@@ -116,18 +116,9 @@ const CTSE_Info& CTSE_Handle::x_GetTSE_Info(void) const
 }
 
 
-CBlobIdKey CTSE_Handle::GetBlobId(void) const
+CTSE_Handle::TBlobId CTSE_Handle::GetBlobId(void) const
 {
-    CBlobIdKey ret;
-    if ( *this ) {
-        const CTSE_Info& tse = x_GetTSE_Info();
-        CTSE_Info::TBlobId blob_id = tse.GetBlobId();
-        if ( !blob_id ) {
-            blob_id = &tse;
-        }
-        ret = CBlobIdKey(tse.GetDataSource().GetDataLoader(), blob_id);
-    }
-    return ret;
+    return x_GetTSE_Info().GetBlobId();
 }
 
 

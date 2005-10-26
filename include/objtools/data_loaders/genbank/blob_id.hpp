@@ -34,11 +34,12 @@
 #include <corelib/ncbiobj.hpp>
 #include <utility>
 #include <string>
+#include <objmgr/blob_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XREADER_EXPORT CBlob_id : public CObject
+class NCBI_XREADER_EXPORT CBlob_id : public CBlobId
 {
 public:
     CBlob_id(void)
@@ -59,7 +60,10 @@ public:
             return m_SatKey;
         }
 
-    const string ToString(void) const;
+    string ToString(void) const;
+
+    bool operator<(const CBlobId& blob_id) const;
+    bool operator==(const CBlobId& blob_id) const;
 
     bool operator<(const CBlob_id& blob_id) const
         {
@@ -76,8 +80,7 @@ public:
         }
     bool operator!=(const CBlob_id& blob_id) const
         {
-            return m_SatKey != blob_id.m_SatKey ||
-                m_Sat != blob_id.m_Sat || m_SubSat != blob_id.m_SubSat;
+            return !(*this == blob_id);
         }
 
     bool IsEmpty(void) const
@@ -158,6 +161,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2005/10/26 14:36:46  vasilche
+* Updated for new CBlobId interface.
+*
 * Revision 1.2  2004/10/25 16:53:38  vasilche
 * Added suppord for orphan annotations.
 *

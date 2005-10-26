@@ -154,7 +154,7 @@ public:
 
     typedef CBioseq_set::TClass TClass;
 
-    typedef CConstRef<CObject> TBlobId;
+    typedef CBlobIdKey TBlobId;
     typedef int TBlobVersion;
     TBlobId GetBlobId(void) const;
     TBlobVersion GetBlobVersion(void) const;
@@ -652,6 +652,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/10/26 14:36:39  vasilche
+* Updated for new CBlobId interface.
+*
 * Revision 1.23  2005/10/18 15:38:12  vasilche
 * Restore handles to inner objects when adding removed objects.
 *

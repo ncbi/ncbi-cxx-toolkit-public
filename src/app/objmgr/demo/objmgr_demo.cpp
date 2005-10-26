@@ -571,7 +571,7 @@ int CDemoApp::Run(void)
             }
             else {
                 NcbiCout << "Resolved: "<<id->AsFastaString()<<
-                    " -> "<<gb_loader->GetBlobId(blob_id).ToString()<<NcbiEndl;
+                    " -> "<<blob_id.ToString()<<NcbiEndl;
             }
         }
         catch ( CException& exc ) {
@@ -1165,6 +1165,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2005/10/26 14:36:50  vasilche
+* Updated for new CBlobId interface.
+*
 * Revision 1.107  2005/09/19 14:56:46  kuznets
 * lds_admin.lib merged with lds.lib
 *

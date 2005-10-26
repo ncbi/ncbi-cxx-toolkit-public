@@ -97,11 +97,14 @@ CSplitDataLoader::TTSE_LockSet
 CSplitDataLoader::GetRecords(const CSeq_id_Handle& idh,
                              EChoice choice)
 {
-    // Split information is filled by x_LoadData()
-    CTSE_LoadLock lock = x_LoadData();
-    _ASSERT(m_TSE);
     TTSE_LockSet locks;
-    locks.insert(TTSE_Lock(lock));
+    TBlobId blob_id = GetBlobId(idh);
+    if ( blob_id ) {
+        TTSE_Lock lock = GetBlobById(blob_id);
+        if ( lock ) {
+            locks.insert(lock);
+        }
+    }
     return locks;
 }
 
@@ -144,11 +147,9 @@ void CSplitDataLoader::GetChunk(TChunk chunk)
 CSplitDataLoader::TBlobId
 CSplitDataLoader::GetBlobId(const CSeq_id_Handle& idh)
 {
-    // Check if the id is known
-    if (m_Ids.find(idh) != m_Ids.end()) {
-        return TBlobId(m_TSE.GetPointer());
-    }
-    return TBlobId(0);
+    TBlobId blob_id;
+    blob_id = new CBlobIdString(m_DataFile);
+    return blob_id;
 }
 
 
@@ -161,21 +162,22 @@ bool CSplitDataLoader::CanGetBlobById(void) const
 CSplitDataLoader::TTSE_Lock
 CSplitDataLoader::GetBlobById(const TBlobId& blob_id)
 {
-    // Load data, get the lock
-    CTSE_LoadLock lock = x_LoadData();
-    if (blob_id == TBlobId(m_TSE)) {
-        return TTSE_Lock(lock);
+    TBlobId my_blob_id = new CBlobIdString(m_DataFile);
+    if ( blob_id != my_blob_id ) {
+        return TTSE_Lock();
     }
-    return TTSE_Lock();
+    // Load data, get the lock
+    CTSE_LoadLock lock = GetDataSource()->GetTSE_LoadLock(blob_id);
+    if ( !lock.IsLoaded() ) {
+        x_LoadData(lock);
+    }
+    return lock;
 }
 
 
-CTSE_LoadLock CSplitDataLoader::x_LoadData(void)
+void CSplitDataLoader::x_LoadData(CTSE_LoadLock& load_lock)
 {
-    if ( m_TSE ) {
-        // Already loaded, get and return the lock
-        return GetDataSource()->GetTSE_LoadLock(TBlobId(&*m_TSE));
-    }
+    _ASSERT(!m_TSE);
     m_TSE.Reset(new CSeq_entry);
     m_NextSeqsetId = 0;
     m_NextChunkId = 0;
@@ -194,8 +196,6 @@ CTSE_LoadLock CSplitDataLoader::x_LoadData(void)
         x_SplitSet(chunks, m_TSE->SetSet());
     }
     // Fill TSE info
-    CTSE_LoadLock load_lock =
-        GetDataSource()->GetTSE_LoadLock(TBlobId(&*m_TSE));
     CTSE_Info& info = *load_lock;
     info.SetSeq_entry(*m_TSE);
     // Attach all chunks to the TSE info
@@ -204,7 +204,6 @@ CTSE_LoadLock CSplitDataLoader::x_LoadData(void)
     }
     // Mark TSE info as loaded
     load_lock.SetLoaded();
-    return load_lock;
 }
 
 

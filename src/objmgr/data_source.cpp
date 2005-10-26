@@ -80,8 +80,7 @@ CDataSource::CDataSource(void)
 
 CDataSource::CDataSource(CDataLoader& loader)
     : m_Loader(&loader),
-      m_DefaultPriority(99),
-      m_Blob_Map(SBlobIdComp(&loader))
+      m_DefaultPriority(99)
 {
     m_Loader->SetTargetDataSource(*this);
 }
@@ -200,7 +199,8 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
     _ASSERT(!info->HasDataSource());
     TBlobId blob_id = info->GetBlobId();
     if ( !blob_id ) {
-        blob_id = info;
+        // Set pointer to TSE itself as its BlobId.
+        info->m_BlobId = blob_id = new CBlobIdPtr(info);
     }
     _VERIFY(m_Blob_Map.insert(TBlob_Map::value_type(blob_id, info)).second);
     info->x_DSAttach(*this);
@@ -263,9 +263,7 @@ void CDataSource::x_DropTSE(CRef<CTSE_Info> info)
     {{
         TCacheLock::TWriteLockGuard guard(m_DSCacheLock);
         TBlobId blob_id = info->GetBlobId();
-        if ( !blob_id ) {
-            blob_id = info;
-        }
+        _ASSERT(blob_id);
         _VERIFY(m_Blob_Map.erase(blob_id));
     }}
     _ASSERT(!info->IsLocked());
@@ -1248,6 +1246,7 @@ CDataSource::TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,
 
 CTSE_LoadLock CDataSource::GetTSE_LoadLock(const TBlobId& blob_id)
 {
+    _ASSERT(blob_id);
     CTSE_LoadLock ret;
     {{
         CTSE_Lock lock;

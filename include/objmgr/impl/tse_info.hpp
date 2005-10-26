@@ -39,6 +39,7 @@
 #include <objmgr/impl/tse_lock.hpp>
 #include <objmgr/annot_name.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/blob_id.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 #include <util/rangemap.hpp>
@@ -168,7 +169,7 @@ public:
         fState_other_error   = 1 << 8
     };
 */
-    typedef CConstRef<CObject>                TBlobId;
+    typedef CBlobIdKey                        TBlobId;
     typedef CBioseq_Handle::TBioseqStateFlags TBlobState;
     typedef int                               TBlobVersion;
     typedef pair<TBlobState, TBlobVersion>    TBlobOrder;
