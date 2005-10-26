@@ -179,8 +179,8 @@ EOF
 
             # do not run tests with a boolk copy operations 
             # on Sybase databases with the "ftds" driver
-            if test \( $driver = "ftds" -a $server = $server_mssql \) \
-                    -o $driver != "ftds" ; then
+            if test \( $driver = "ftds" -a $server = $server_mssql \) -o \
+                    \( $driver != "ftds" -a $driver != "msdblib" \); then
 
                 cmd="dbapi_bcp -d $driver -S $server"
                 RunSimpleTest "dbapi_bcp"
