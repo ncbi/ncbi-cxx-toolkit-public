@@ -86,7 +86,7 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
             reader.reset(m_NCClient->GetData(key, &blob_size, mode));
             break;
         }
-        catch (CNetServiceException& ex) {
+        catch (CNetCacheException& ex) {
             if (ex.GetErrCode() == CNetServiceException::eTimeout) {
 
                 ERR_POST("Communication Error : " << ex.what());
@@ -292,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/26 19:08:08  kuznets
+ * Bug fix: incorrect exception catch
+ *
  * Revision 1.14  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *
