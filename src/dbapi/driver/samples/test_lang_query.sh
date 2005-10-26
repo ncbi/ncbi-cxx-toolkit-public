@@ -5,8 +5,8 @@
 # CTLIB does not work on Solaris sparc when this limit is < ~1300
 ulimit -n 1536 > /dev/null 2>&1
 
-# ftds63
-driver_list="ctlib dblib ftds odbc msdblib"
+
+driver_list="ctlib dblib ftds ftds63 odbc msdblib"
 # server_list="MS_DEV2 BARTOK BARTOK_12"
 server_list="MS_DEV1 STRAUSS MOZART"
 # server_mssql="MS_DEV2"
@@ -181,8 +181,10 @@ EOF
             # on Sybase databases with the "ftds" driver
             if test \( $driver = "ftds" -a $server = $server_mssql \) \
                     -o $driver != "ftds" ; then
+
                 cmd="dbapi_bcp -d $driver -S $server"
                 RunSimpleTest "dbapi_bcp"
+
                 cmd="dbapi_testspeed -d $driver -S $server"
                 RunSimpleTest "dbapi_testspeed"
             else
