@@ -153,6 +153,10 @@ CDbapiSampleApp::Init()
                             "Password",
                             CArgDescriptions::eString, "allowed");
 
+    arg_desc->AddOptionalKey("v", "version",
+                            "TDS protocol version",
+                            CArgDescriptions::eInteger);
+
     // Add user's command-line argument descriptions
     InitSample(*arg_desc);
 
@@ -172,18 +176,27 @@ CDbapiSampleApp::Run()
     m_ServerName = args["S"].AsString();
     m_UserName   = args["U"].AsString();
     m_Password   = args["P"].AsString();
+    if ( args["v"].HasValue() ) {
+        m_TDSVersion = args["v"].AsString();
+    } else {
+        m_TDSVersion.clear();
+    }
 
-    // Setup some driver-specific attributes
-    if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
-        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-        // BcpIn to it using protocol version other than "100".
-        SetDatabaseParameter("version", "100");
-//     } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
-//         SetDatabaseParameter("version", "100");
-    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) &&  
-                GetServerType() == eSybase ) {
-        // ftds forks with Sybase databases using protocol v42 only ...
-        SetDatabaseParameter("version", "42");
+    if ( m_TDSVersion.empty() ) {
+        // Setup some driver-specific attributes
+        if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
+            // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+            // BcpIn to it using protocol version other than "100".
+            SetDatabaseParameter("version", "100");
+//         } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
+//             SetDatabaseParameter("version", "100");
+        } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) &&  
+                    GetServerType() == eSybase ) {
+            // ftds forks with Sybase databases using protocol v42 only ...
+            SetDatabaseParameter("version", "42");
+        }
+    } else {
+        SetDatabaseParameter("version", m_TDSVersion);
     }
 
     try {
@@ -472,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/26 11:29:30  ssikorsk
+ * Added optional app key "v" (TDS protocol version)
+ *
  * Revision 1.8  2005/10/19 16:04:46  ssikorsk
  * Handle ftds63 driver
  *

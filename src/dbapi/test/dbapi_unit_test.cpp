@@ -3336,6 +3336,10 @@ CTestArguments::CTestArguments(int argc, char * argv[])
                             CArgDescriptions::eString,
                             "DBAPI_Sample");
 
+    arg_desc->AddOptionalKey("v", "version",
+                            "TDS protocol version",
+                            CArgDescriptions::eInteger);
+
     auto_ptr<CArgs> args_ptr(arg_desc->CreateArgs(arguments));
     const CArgs& args = *args_ptr;
 
@@ -3346,6 +3350,11 @@ CTestArguments::CTestArguments(int argc, char * argv[])
     m_UserName      = args["U"].AsString();
     m_UserPassword  = args["P"].AsString();
     m_DatabaseName  = args["D"].AsString();
+    if ( args["v"].HasValue() ) {
+        m_TDSVersion = args["v"].AsString();
+    } else {
+        m_TDSVersion.clear();
+    }
 
     SetDatabaseParameters();
 }
@@ -3365,16 +3374,20 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ( GetDriverName() == "ctlib" ) {
-        // m_DatabaseParameters["version"] = "125";
-    } else if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
-        // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
-        // BcpIn to it using protocol version other than "100".
-        m_DatabaseParameters["version"] = "100";
-    } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") && 
-                GetServerType() == eSybase ) {
-        // ftds work with Sybase databases using protocol v42 only ...
-        m_DatabaseParameters["version"] = "42";
+    if ( m_TDSVersion.empty() ) {
+        if ( GetDriverName() == "ctlib" ) {
+            // m_DatabaseParameters["version"] = "125";
+        } else if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
+            // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
+            // BcpIn to it using protocol version other than "100".
+            m_DatabaseParameters["version"] = "100";
+        } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") && 
+                    GetServerType() == eSybase ) {
+            // ftds work with Sybase databases using protocol v42 only ...
+            m_DatabaseParameters["version"] = "42";
+        }
+    } else {
+        m_DatabaseParameters["version"] = m_TDSVersion;
     }
 
     if ( GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) {
@@ -3405,6 +3418,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.55  2005/10/26 11:30:12  ssikorsk
+ * Added optional app key "v" (TDS protocol version)
+ *
  * Revision 1.54  2005/10/21 11:49:12  ssikorsk
  * Disable Test_Bulk_Writing temporarily
  *
