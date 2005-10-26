@@ -58,7 +58,7 @@ void CGB_block::BasicCleanup(void)
     //  origin:
     //  append period if there isn't one already
     //
-q    if ( CanGetOrigin() ) {
+    if ( CanGetOrigin() ) {
         const TOrigin& origin = GetOrigin();
         if ( ! origin.empty() && ! NStr::EndsWith(origin, ".")) {
             SetOrigin() += '.';
@@ -75,6 +75,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/10/26 14:11:55  ucko
+* Fix typo (stray "q")
+*
 * Revision 1.1  2005/10/26 13:50:13  ludwigf
 * Extended BasicCleanup() to cover additional items.
 *
