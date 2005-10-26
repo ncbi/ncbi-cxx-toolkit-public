@@ -243,8 +243,8 @@ void CSeq_entry_Info::x_DoUpdate(TNeedUpdateFlags flags)
     if ( flags & fNeedUpdate_bioseq ) {
         x_LoadChunk(kBioseqChunkId);
     }
-    if ( m_Contents ) {
-        m_Contents->x_Update(flags);
+    if ( (flags & fNeedUpdate_children) && m_Contents ) {
+        m_Contents->x_Update(flags >> kNeedUpdate_bits);
         _ASSERT(Which()==m_Object->Which());
     }
     TParent::x_DoUpdate(flags);
@@ -556,6 +556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/10/26 14:36:40  vasilche
+ * Pass correct update flags to child.
+ *
  * Revision 1.28  2005/10/18 15:35:48  vasilche
  * Update bioseq if needed.
  *
