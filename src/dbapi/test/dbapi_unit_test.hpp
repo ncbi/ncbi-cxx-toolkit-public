@@ -121,6 +121,7 @@ private:
     string m_UserName;
     string m_UserPassword;
     string m_DatabaseName;
+    string m_TDSVersion;
     TDatabaseParameters m_DatabaseParameters;
 };
 
@@ -221,6 +222,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2005/10/26 11:31:08  ssikorsk
+ * Added CTestArguments::m_TDSVersion
+ *
  * Revision 1.29  2005/10/03 12:19:06  ssikorsk
  * Added a Test_Insert test to the test-suite.
  *
