@@ -63,23 +63,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-/// Auxiliary class to convert data encoded in the PSSM to CNcbiMatrix
-class CAsn1PssmConverter 
-{
-public:
-    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
-    /// what is stored in the BlastScoreBlk) containing scores
-    /// Throws std::runtime_error if scores are not available
-    static CNcbiMatrix<int>*
-    GetScores(CConstRef<CPssmWithParameters> pssm);
-
-    /// Returns matrix of BLASTAA_SIZE by query size (dimensions are opposite of
-    /// what is stored in the BlastScoreBlk) containing frequency ratios
-    /// Throws std::runtime_error if frequency ratios are not available
-    static CNcbiMatrix<double>* 
-    GetFreqRatios(CConstRef<CPssmWithParameters> pssm);
-};
-
 void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
                              CConstRef<CPssmWithParameters> pssm)
 {
@@ -107,7 +90,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     bool missing_scores = false;
     try {
         auto_ptr< CNcbiMatrix<int> > scores
-            (CAsn1PssmConverter::GetScores(pssm));
+            (CScorematPssmConverter::GetScores(pssm));
         ASSERT(score_blk->psi_matrix->pssm->ncols == scores->GetCols());
         ASSERT(score_blk->psi_matrix->pssm->nrows == scores->GetRows());
 
@@ -124,7 +107,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     bool missing_freq_ratios = false;
     try {
         auto_ptr< CNcbiMatrix<double> > freq_ratios
-            (CAsn1PssmConverter::GetFreqRatios(pssm));
+            (CScorematPssmConverter::GetFreqRatios(pssm));
         ASSERT(score_blk->psi_matrix->pssm->ncols == 
                freq_ratios->GetCols());
         ASSERT(score_blk->psi_matrix->pssm->nrows == 
@@ -147,7 +130,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
 }
 
 CNcbiMatrix<int>*
-CAsn1PssmConverter::GetScores(CConstRef<CPssmWithParameters> pssm_asn)
+CScorematPssmConverter::GetScores(CConstRef<CPssmWithParameters> pssm_asn)
 {
     if (pssm_asn.Empty()) {
         throw runtime_error("Cannot use NULL ASN.1 PSSM");
@@ -188,7 +171,7 @@ CAsn1PssmConverter::GetScores(CConstRef<CPssmWithParameters> pssm_asn)
 }
 
 CNcbiMatrix<double>*
-CAsn1PssmConverter::GetFreqRatios(CConstRef<CPssmWithParameters> pssm_asn)
+CScorematPssmConverter::GetFreqRatios(CConstRef<CPssmWithParameters> pssm_asn)
 {
     if (pssm_asn.Empty()) {
         throw runtime_error("Cannot use NULL PSSM");
@@ -238,7 +221,7 @@ void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
     ASSERT(query_data->GetSeqLength(0) == seqblk->length);
     ASSERT(query_data->GetSeqLength(0) == pssm->GetPssm().GetNumColumns());
     auto_ptr< CNcbiMatrix<double> > freq_ratios
-        (CAsn1PssmConverter::GetFreqRatios(pssm));
+        (CScorematPssmConverter::GetFreqRatios(pssm));
 
     CPsiBlastInputFreqRatios pssm_engine_input(seqblk->sequence, 
                                                seqblk->length, 
