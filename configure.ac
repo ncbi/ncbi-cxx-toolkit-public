@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.395 2005/10/22 15:37:20 ucko Exp $
+#  $Id: configure.ac,v 1.396 2005/10/26 18:46:11 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -206,6 +206,10 @@ AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(wxwin2,
    [ --with-wxwin=DIR        use wxWindows installation in DIR])
+AC_ARG_WITH(freetype,
+   [ --without-freetype      do not use FreeType])
+AC_ARG_WITH(freetype_,
+   [ --with-freetype=DIR     use FreeType installation in DIR])
 AC_ARG_WITH(fastcgi,
    [ --without-fastcgi       do not use Fast-CGI library])
 AC_ARG_WITH(fastcgi2,
@@ -334,7 +338,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution \
 ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
-z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus \
+z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
 local-lbsm ncbi-crypt serial objects dbapi app ctools gui algo internal"
@@ -375,9 +379,9 @@ for x_arg in "$@" ; do
       | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-expat=* | --with-sablot=* \
-      | --with-libxml=* | --with-libxslt=* \
-      | --with-xerces=* | --with-xalan=* | --with-bdb=* | --with-odbc=* \
-      | --with-python=* | --with-icu=* | --with-gif=* | --with-jpeg=* \
+      | --with-icu=* | --with-xerces=* | --with-xalan=* \
+      | --with-libxml=* | --with-libxslt=* | --with-bdb=* | --with-odbc=* \
+      | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
       | --with-boost=* | --with-boost-tag=* \
@@ -4363,6 +4367,55 @@ NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
     $X_CFLAGS)
 # The use of X_CFLAGS is probably redundant, but shouldn't hurt.
 
+## FreeType
+if test "$with_freetype" != "no" ; then
+   : ${FREETYPE_BINPATH=$FREETYPE_PATH/bin}
+   AC_PATH_PROG(freetype_config, freetype-config, [],
+                [$FREETYPE_BINPATH:$PATH])
+   if test -n "$freetype_config" ; then
+      : ${FREETYPE_BINPATH=`dirname $freetype_config`}
+      : ${FREETYPE_INCLUDE=`$freetype_config --cflags`}
+      : ${FREETYPE_LIBS=`$freetype_config --libs |\
+             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`}
+      AC_CACHE_CHECK([whether FREETYPE_INCLUDE needs doctoring],
+                     ncbi_cv_lib_freetype_fix_include,
+         [CPPFLAGS="$FREETYPE_INCLUDE $orig_CPPFLAGS"
+          AC_COMPILE_IFELSE(
+             [AC_LANG_PROGRAM(
+                 [[#include <ft2build.h>]], [])],
+             [ncbi_cv_lib_freetype_fix_include=no],
+             [ncbi_cv_lib_freetype_fix_include=yes])])
+      if test "$ncbi_cv_lib_freetype_fix_include" = yes; then
+         FREETYPE_INCLUDE=`echo "$FREETYPE_INCLUDE" |\
+             sed -e 's:\(-I[[^ ]]*\)\(/freetype2\):\1 \1\2:g'`
+      fi
+      AC_CACHE_CHECK([whether FreeType works], ncbi_cv_lib_freetype,
+         [CPPFLAGS="$FREETYPE_INCLUDE $orig_CPPFLAGS"
+          LIBS="$FREETYPE_LIBS $orig_LIBS"
+          AC_LINK_IFELSE(
+             [AC_LANG_PROGRAM(
+                 [[#include <ft2build.h>
+                   #include FT_FREETYPE_H]],
+                 [[FT_Select_Charmap(NULL, ft_encoding_unicode);]])],
+             [ncbi_cv_lib_freetype=yes], [ncbi_cv_lib_freetype=no])])
+      if test "$ncbi_cv_lib_freetype" = no; then
+         with_freetype=no
+      fi
+   else
+      with_freetype=no
+   fi
+fi
+if test "$with_freetype" = "no" ; then
+   FREETYPE_PATH="No_FREETYPE"
+   FREETYPE_INCLUDE=
+   FREETYPE_LIBS=
+   WithoutPackages="$WithoutPackages FreeType"
+else
+   WithPackages="$WithPackages FreeType"
+   AC_DEFINE(HAVE_FREETYPE, 1, [Define to 1 if FreeType is available.])
+fi
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -4975,6 +5028,8 @@ AC_SUBST(XERCES_STATIC_LIBS)
 AC_SUBST(XALAN_INCLUDE)
 AC_SUBST(XALAN_LIBS)
 AC_SUBST(XALAN_STATIC_LIBS)
+AC_SUBST(FREETYPE_INCLUDE)
+AC_SUBST(FREETYPE_LIBS)
 
 AC_SUBST(NCBI_C_ncbi)
 

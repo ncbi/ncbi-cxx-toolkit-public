@@ -61,6 +61,9 @@
 /* Define to 1 if you have the `freehostent' function. */
 #undef HAVE_FREEHOSTENT
 
+/* Define to 1 if FreeType is available. */
+#undef HAVE_FREETYPE
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
