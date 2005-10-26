@@ -35,6 +35,10 @@
 
 #include <corelib/ncbiapp.hpp>
 
+#include <objmgr/seq_entry_handle.hpp>
+
+#include <algo/dustmask/symdust.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CDustMaskApplication : public CNcbiApplication
@@ -44,6 +48,36 @@ public:
     static const char * const USAGE_LINE;
     virtual void Init(void);
     virtual int Run (void);
+
+private:
+
+    typedef CSymDustMasker duster_type;
+    typedef duster_type::TMaskList::const_iterator it_type;
+    typedef void (*out_handler_type)(
+            CNcbiOstream *, 
+            const objects::CBioseq_Handle &,
+            const duster_type::TMaskList & );
+
+    static void interval_out_handler( 
+            CNcbiOstream * output_stream, 
+            const objects::CBioseq_Handle & bsh, 
+            const duster_type::TMaskList & res );
+    static void acclist_out_handler( 
+            CNcbiOstream * output_stream,
+            const objects::CBioseq_Handle & bsh,
+            const duster_type::TMaskList & res );
+    static void fasta_out_handler( 
+            CNcbiOstream * output_stream,
+            const objects::CBioseq_Handle & bsh,
+            const duster_type::TMaskList & res );
+    static void write_normal(
+            CNcbiOstream * output_stream,
+            const objects::CSeqVector & data,
+            TSeqPos & start, TSeqPos & stop );
+    static void write_lowerc(
+            CNcbiOstream * output_stream,
+            const objects::CSeqVector & data,
+            TSeqPos & start, TSeqPos & stop );
 };
 
 END_NCBI_SCOPE
@@ -52,6 +86,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/10/26 18:44:23  morgulis
+ * Added -oformat option to specify the output format.
+ * Added support for acclist and fasta output formats.
+ *
  * Revision 1.1  2005/05/31 14:41:32  morgulis
  * Initial checkin of the dustmasker project.
  *

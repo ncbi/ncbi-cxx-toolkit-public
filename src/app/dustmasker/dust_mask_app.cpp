@@ -54,7 +54,6 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
 
-#include <algo/dustmask/symdust.hpp>
 #include "dust_mask_app.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -95,7 +94,7 @@ static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
 
 //-------------------------------------------------------------------------
 const char * const CDustMaskApplication::USAGE_LINE 
-    = "DUST based low complexity region masker";
+    = "Low complexity region masker based on Symmetric DUST algorithm";
 
 //-------------------------------------------------------------------------
 void CDustMaskApplication::Init(void)
@@ -119,7 +118,114 @@ void CDustMaskApplication::Init(void)
                              "DUST linker (how close masked intervals "
                              "should be to get merged together).",
                              CArgDescriptions::eInteger, "1" );
+    arg_desc->AddDefaultKey( "oformat", "output_format",
+                             "output format",
+                             CArgDescriptions::eString, "interval" );
+    arg_desc->SetConstraint( "oformat",
+                             (new CArgAllow_Strings())->Allow( "interval" )
+                             ->Allow( "fasta" )->Allow( "acclist" ) );
     SetupArgDescriptions( arg_desc.release() );
+}
+
+//-------------------------------------------------------------------------
+void CDustMaskApplication::interval_out_handler( 
+        CNcbiOstream * output_stream, 
+        const CBioseq_Handle & bsh, 
+        const duster_type::TMaskList & res )
+{
+    if( output_stream != 0 ) {
+        *output_stream << ">"
+                       << CSeq_id::GetStringDescr( 
+                               *bsh.GetCompleteBioseq(),
+                               CSeq_id::eFormat_FastA )
+                       << " " << sequence::GetTitle( bsh ) << "\n";
+
+        for( it_type it = res.begin(); it != res.end(); ++it ) {
+            *output_stream << it->first  << " - " 
+                           << it->second << "\n";
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+void CDustMaskApplication::acclist_out_handler( 
+        CNcbiOstream * output_stream, 
+        const CBioseq_Handle & bsh, 
+        const duster_type::TMaskList & res )
+{
+    if( output_stream != 0 ) {
+        for( it_type it = res.begin(); it != res.end(); ++it ) {
+            *output_stream << CSeq_id::GetStringDescr(
+                    *bsh.GetCompleteBioseq(), CSeq_id::eFormat_FastA )
+                           << "\t" << it->first 
+                           << "\t" << it->second << "\n";
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+static const Uint4 LINE_WIDTH = 60;
+
+inline void CDustMaskApplication::write_normal( 
+        CNcbiOstream * output_stream, const CSeqVector & data, 
+        TSeqPos & start, TSeqPos & stop )
+{
+    for( Uint4 count = start; count < stop; ++count ) {
+        *output_stream << data[count];
+
+        if( (count + 1)%LINE_WIDTH == 0 ) {
+            *output_stream << "\n";
+        }
+    }
+}
+
+inline void CDustMaskApplication::write_lowerc( 
+        CNcbiOstream * output_stream, const CSeqVector & data,
+        TSeqPos & start, TSeqPos & stop )
+{
+    for( Uint4 count = start; count < stop; ++count ) {
+        *output_stream << (char)tolower( data[count] );
+
+        if( (count + 1)%LINE_WIDTH == 0 ) {
+            *output_stream << "\n";
+        }
+    }
+}
+
+//-------------------------------------------------------------------------
+void CDustMaskApplication::fasta_out_handler( 
+        CNcbiOstream * output_stream, 
+        const CBioseq_Handle & bsh, 
+        const duster_type::TMaskList & res )
+{
+    if( output_stream != 0 ) {
+        *output_stream << ">"
+                       << CSeq_id::GetStringDescr( 
+                               *bsh.GetCompleteBioseq(),
+                               CSeq_id::eFormat_FastA )
+                       << " " << sequence::GetTitle( bsh ) << "\n";
+        CSeqVector data 
+            = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
+        typedef CSeqVector::const_iterator citer_type;
+        TSeqPos start = 0, stop;
+
+        for( it_type it = res.begin(); it != res.end(); ++it ) {
+            stop = it->first;
+            write_normal( output_stream, data, start, stop );
+            start = stop; stop = it->second + 1;
+            write_lowerc( output_stream, data, start, stop );
+            start = stop;
+        }
+
+        stop = data.size();
+        write_normal( output_stream, data, start, stop );
+
+        if( stop%LINE_WIDTH != 0 ) {
+            *output_stream << endl;
+        }else {
+            *output_stream << flush;
+        }
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -155,11 +261,24 @@ int CDustMaskApplication::Run (void)
         *om, new CId2Reader, CObjectManager::eDefault);
 
     // Set up the duster object.
-    typedef CSymDustMasker duster_type;
     Uint4 level = GetArgs()["level"].AsInteger();
     duster_type::size_type window = GetArgs()["window"].AsInteger();
     duster_type::size_type linker = GetArgs()["linker"].AsInteger();
     duster_type duster( level, window, linker );
+
+    out_handler_type out_handler = 0;
+
+    {
+        std::string oformat = GetArgs()["oformat"].AsString();
+        
+        if( oformat == "interval" ) {
+            out_handler = &interval_out_handler;
+        }else if( oformat == "acclist" ) {
+            out_handler = &acclist_out_handler;
+        }else if( oformat == "fasta" ) {
+            out_handler = &fasta_out_handler;
+        }
+    }
 
     // Now process each input sequence in a loop.
     CRef< CSeq_entry > aSeqEntry( 0 );
@@ -182,6 +301,11 @@ int CDustMaskApplication::Run (void)
                 = bsh.GetSeqVector( CBioseq_Handle::eCoding_Iupac );
             std::auto_ptr< duster_type::TMaskList > res = duster( data );
 
+            if( out_handler != 0 && res.get() != 0 ) {
+                out_handler( output_stream, bsh, *res.get() );
+            }
+
+            /*
             if( output_stream != 0 )
             {
                 *output_stream << ">"
@@ -189,12 +313,12 @@ int CDustMaskApplication::Run (void)
                                     *bsh.GetCompleteBioseq(),
                                     CSeq_id::eFormat_FastA )
                                << " " << sequence::GetTitle( bsh ) << "\n";
-                typedef duster_type::TMaskList::const_iterator it_type;
 
                 for( it_type it = res->begin(); it != res->end(); ++it )
                     *output_stream << it->first  << " - " 
                                    << it->second << "\n";
             }
+            */
 
             /*
             CConstRef< objects::CSeq_id > id = bsh.GetSeqId();
@@ -244,11 +368,12 @@ int CDustMaskApplication::Run (void)
             }
             */
 
-            cerr << "." << flush;
+            NcbiCerr << "." << flush;
         }
     }
 
     *output_stream << flush;
+    NcbiCerr << endl;
     return 0;
 }
 
@@ -258,6 +383,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/10/26 18:44:23  morgulis
+ * Added -oformat option to specify the output format.
+ * Added support for acclist and fasta output formats.
+ *
  * Revision 1.8  2005/10/24 20:54:15  morgulis
  * Fixed a problem with exception being thrown by ReadFasta if defline is not
  * properly formatted.
