@@ -194,22 +194,6 @@ CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
         // orphan annotations only - no Bioseqs in this DB
         return locks;
     }
-    string acc_col = "col" + NStr::IntToString(m_ColIdx[eAccession]);
-
-    //
-    // find out if we've already loaded annotations for this seq-id
-    //
-    TEntries::iterator iter = m_Entries.find(idh);
-    if (iter != m_Entries.end()) {
-        CConstRef<CObject> blob_id(&*iter->second);
-        CTSE_LoadLock load_lock =
-            GetDataSource()->GetTSE_LoadLock(blob_id);
-        if ( !load_lock.IsLoaded() ) {
-            locks.insert(GetDataSource()->AddTSE(*iter->second));
-            load_lock.SetLoaded();
-        }
-        return locks;
-    }
 
     //
     // now, find out if this ID is in our list of ids
@@ -220,9 +204,21 @@ CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
     }
 
     //
+    // find out if we've already loaded annotations for this seq-id
+    //
+    TBlobId blob_id = new CBlobIdFor<CSeq_id_Handle>(idh);
+    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
+    if ( load_lock.IsLoaded() ) {
+        if ( load_lock->HasSeq_entry() ) {
+            locks.insert(load_lock);
+        }
+        return locks;
+    }
+
+    //
     // okay, this ID is correct, so load all features with this id
     //
-
+    string acc_col = "col" + NStr::IntToString(m_ColIdx[eAccession]);
     string sql("select * from TableData where " + acc_col +
                " in (");
     string tmp;
@@ -311,29 +307,20 @@ CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
         annot->SetData().SetFtable().push_back(feat);
     }
 
-    CRef<CSeq_entry> entry;
     if (annot) {
         // we then add the object to the data loader
         // we need to create a dummy TSE for it first
-        entry.Reset(new CSeq_entry());
+        CRef<CSeq_entry> entry(new CSeq_entry());
         entry->SetSet().SetSeq_set();
         entry->SetSet().SetAnnot().push_back(annot);
 
-        CConstRef<CObject> blob_id(&*entry);
-        CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
-        _ASSERT(!load_lock.IsLoaded());
-        locks.insert(GetDataSource()->AddTSE(*entry));
-        load_lock.SetLoaded();
-
+        load_lock->SetSeq_entry(*entry);
+        locks.insert(load_lock);
         _TRACE("CSageDataLoader(): loaded "
             << annot->GetData().GetFtable().size()
             << " features for " << idh.AsString());
     }
-
-    // we always save an entry here.  If the entry is empty,
-    // we have no information about this sequence, but we at
-    // least don't need to repeat an expensive search
-    m_Entries[idh] = entry;
+    load_lock.SetLoaded();
     return locks;
 }
 
@@ -416,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/10/26 14:36:45  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.15  2005/07/01 16:40:37  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *

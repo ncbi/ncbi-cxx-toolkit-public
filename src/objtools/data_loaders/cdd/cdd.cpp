@@ -92,15 +92,11 @@ CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
     CMutexGuard LOCK(m_Mutex);
 
     int cdd_id = id->GetGeneral().GetTag().GetId();
-    TCddEntries::iterator iter = m_Entries.find(cdd_id);
-    if (iter != m_Entries.end()) {
-        // found, already added
-        CConstRef<CObject> blob_id(&*iter->second);
-        CTSE_LoadLock load_lock =
-            GetDataSource()->GetTSE_LoadLock(blob_id);
-        if ( !load_lock.IsLoaded() ) {
-            locks.insert(GetDataSource()->AddTSE(*iter->second));
-            load_lock.SetLoaded();
+    TBlobId blob_id = new CBlobIdInt(cdd_id);
+    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
+    if ( load_lock.IsLoaded() ) {
+        if ( load_lock->HasSeq_entry() ) {
+            locks.insert(load_lock);
         }
         return locks;
     }
@@ -116,7 +112,6 @@ CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
     CConn_HttpStream inHttp(url);
     inHttp << params;
 
-
     CRef<CSeq_entry> entry(new CSeq_entry());
     try {
         auto_ptr<CObjectIStream> is
@@ -125,14 +120,13 @@ CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
     }
     catch (...) {
         _TRACE("CCddDataLoader(): failed to parse data");
+        load_lock.SetLoaded();
+        return locks;
     }
 
     // save our entry in all relevant places
-    m_Entries[cdd_id] = entry;
-    CConstRef<CObject> blob_id(&*entry);
-    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
-    _ASSERT(!load_lock.IsLoaded());
-    locks.insert(GetDataSource()->AddTSE(*entry));
+    load_lock->SetSeq_entry(*entry);
+    locks.insert(load_lock);
     load_lock.SetLoaded();
     return locks;
 }
@@ -204,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/10/26 14:36:44  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.11  2005/02/02 19:49:55  grichenk
  * Fixed more warnings
  *

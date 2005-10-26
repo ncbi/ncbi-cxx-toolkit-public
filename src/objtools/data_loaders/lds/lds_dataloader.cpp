@@ -56,18 +56,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
 
-
-class CLDS_BlobId : public CObject
-{
-public:
-    CLDS_BlobId(int rec_id)
-    : m_RecId(rec_id)
-    {}
-    int GetRecId() const { return m_RecId; }
-private:
-    int    m_RecId;
-};
-
 /// @internal
 ///
 struct SLDS_ObjectDisposition
@@ -414,7 +402,7 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
             }
         }
 
-        CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
+        TBlobId blob_id(new CBlobIdInt(object_id));
         CTSE_LoadLock load_lock = data_source->GetTSE_LoadLock(blob_id);
         if ( !load_lock.IsLoaded() ) {
             CRef<CSeq_entry> seq_entry = 
@@ -432,21 +420,6 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 
 
     return locks;
-}
-
-
-bool CLDS_DataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
-{
-    const CLDS_BlobId& bid1 = dynamic_cast<const CLDS_BlobId&>(*id1);
-    const CLDS_BlobId& bid2 = dynamic_cast<const CLDS_BlobId&>(*id2);
-    return bid1.GetRecId() < bid2.GetRecId();
-}
-
-
-string CLDS_DataLoader::BlobIdToString(const TBlobId& id) const
-{
-    const CLDS_BlobId& bid = dynamic_cast<const CLDS_BlobId&>(*id);
-    return NStr::IntToString(bid.GetRecId());
 }
 
 
@@ -564,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/10/26 14:36:44  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.33  2005/10/20 15:35:03  kuznets
  * Code cleanup
  *

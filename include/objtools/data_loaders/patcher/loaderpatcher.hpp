@@ -116,11 +116,6 @@ public:
     virtual void GetChunk(TChunk chunk_info);
     virtual void GetChunks(const TChunkSet& chunks);
 
-    virtual bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
-
-    /*
-    virtual string BlobIdToString(const TBlobId& id) const;
-    */
     /*
     virtual SRequestDetails ChoiceToDetails(EChoice choice) const;
     virtual EChoice DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const; 
@@ -178,6 +173,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.5  2005/10/26 14:36:44  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.4  2005/09/06 20:05:17  ucko
  * Include datapatcher_iface.hpp rather than just forward-declaring
  * IDataPatcher, as some compiler versions (such as GCC 2.95) otherwise

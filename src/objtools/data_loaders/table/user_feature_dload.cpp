@@ -219,49 +219,38 @@ CUsrFeatDataLoader::GetRecords(const CSeq_id_Handle& idh,
         // only orphan annotations are available - no Bioseqs in this DB
         return locks;
     }
+
     //
     // find out if we've already loaded annotations for this seq-id
     //
-    TEntries::iterator iter = m_Entries.find(idh);
-    if (iter != m_Entries.end()) {
-        CConstRef<CObject> blob_id(&*iter->second);
-        CTSE_LoadLock load_lock =
-            GetDataSource()->GetTSE_LoadLock(blob_id);
-        if ( !load_lock.IsLoaded() ) {
-            locks.insert(GetDataSource()->AddTSE(*iter->second));
-            load_lock.SetLoaded();
+    TBlobId blob_id = new CBlobIdFor<CSeq_id_Handle>(idh);
+    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
+    if ( load_lock.IsLoaded() ) {
+        if ( load_lock->HasSeq_entry() ) {
+            locks.insert(load_lock);
         }
         return locks;
     }
 
     CRef<CSeq_annot> annot = GetAnnot(idh);
     if (!annot) {
+        load_lock.SetLoaded();
         return locks;
     }
 
-    CRef<CSeq_entry> entry;
-
     // we then add the object to the data loader
     // we need to create a dummy TSE for it first
-    entry.Reset(new CSeq_entry());
+    CRef<CSeq_entry> entry(new CSeq_entry());
     entry->SetSet().SetSeq_set();
     entry->SetSet().SetAnnot().push_back(annot);
-
-    CConstRef<CObject> blob_id(&*entry);
-    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
-    _ASSERT(!load_lock.IsLoaded());
-    locks.insert(GetDataSource()->AddTSE(*entry));
+    
     load_lock.SetLoaded();
+    locks.insert(load_lock);
     
     _TRACE("CUsrFeatDataLoader(): loaded "
            << annot->GetData().GetFtable().size()
            << " features for " << idh.AsString());
     
-
-    // we always save an entry here.  If the entry is empty,
-    // we have no information about this sequence, but we at
-    // least don't need to repeat an expensive search
-    m_Entries[idh] = entry;
     return locks;
 }
 
@@ -480,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/10/26 14:36:45  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.12  2005/07/01 16:40:37  ucko
  * Adjust for CSeq_id's use of CSeqIdException to report bad input.
  *

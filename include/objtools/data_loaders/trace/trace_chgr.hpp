@@ -65,17 +65,8 @@ private:
 
     CTraceChromatogramLoader(const string& loader_name);
 
-    // cached map of resolved chromatograms
-    // here, the int is the trace ID, or 'ti'
-    typedef map<int, CRef<CSeq_entry> > TTraceEntries;
-    TTraceEntries m_Entries;
-
     // client for data retrieval
     CRef<CID1Client> m_Client;
-
-    // mutex guarding input into the map
-    CMutex m_Mutex;
-
 
     // retrieve our ID1 client
     CID1Client& x_GetClient();
@@ -113,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/26 14:36:44  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.8  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

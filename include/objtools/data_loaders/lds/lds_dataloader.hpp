@@ -92,9 +92,6 @@ public:
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
     
-    bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
-    string BlobIdToString(const TBlobId& id) const;
-
     void SetDatabase(CLDS_Database& lds_db,
                      const string&  dl_name);
 
@@ -173,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/10/26 14:36:44  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.20  2005/09/22 01:22:55  ucko
  * Also make internal typedefs public for the sake of WorkShop, for
  * which the previous fix proved insufficient.

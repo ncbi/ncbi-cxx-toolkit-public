@@ -69,10 +69,6 @@ private:
 
     CCddDataLoader(const string& loader_name);
 
-    // cached map of resolved consensus sequences
-    typedef map<int, CRef<CSeq_entry> > TCddEntries;
-    TCddEntries m_Entries;
-
     // mutex guarding input into the map
     CMutex m_Mutex;
 };
@@ -105,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/26 14:36:44  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.9  2004/08/10 16:56:10  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *

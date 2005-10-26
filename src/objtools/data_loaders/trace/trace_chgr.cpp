@@ -102,15 +102,11 @@ CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
     }
 
     int ti = id->GetGeneral().GetTag().GetId();
-    CMutexGuard LOCK(m_Mutex);
-    TTraceEntries::iterator iter = m_Entries.find(ti);
-    if (iter != m_Entries.end()) {
-        CConstRef<CObject> blob_id(&*iter->second);
-        CTSE_LoadLock load_lock =
-            GetDataSource()->GetTSE_LoadLock(blob_id);
-        if ( !load_lock.IsLoaded() ) {
-            locks.insert(GetDataSource()->AddTSE(*iter->second));
-            load_lock.SetLoaded();
+    TBlobId blob_id = new CBlobIdInt(ti);
+    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
+    if ( load_lock.IsLoaded() ) {
+        if ( load_lock->HasSeq_entry() ) {
+            locks.insert(load_lock);
         }
         return locks;
     }
@@ -126,15 +122,11 @@ CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
     if (info) {
         entry.Reset(&info->SetBlob());
     }
-    m_Entries[ti] = entry;
     if (entry) {
-        CConstRef<CObject> blob_id(&*entry);
-        CTSE_LoadLock load_lock =
-            GetDataSource()->GetTSE_LoadLock(blob_id);
-        _ASSERT(!load_lock.IsLoaded());
-        locks.insert(GetDataSource()->AddTSE(*entry));
-        load_lock.SetLoaded();
+        load_lock->SetSeq_entry(*entry);
+        locks.insert(load_lock);
     }
+    load_lock.SetLoaded();
     return locks;
 }
 
@@ -217,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/10/26 14:36:45  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.10  2005/02/02 19:49:55  grichenk
  * Fixed more warnings
  *

@@ -169,11 +169,6 @@ CDataLoaderPatcher::GetBlobById(const TBlobId& blob_id)
     return PatchLock(m_DataLoader->GetBlobById(blob_id));
 }
 
-bool CDataLoaderPatcher::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
-{
-    return m_DataLoader->LessBlobId(id1, id2);
-    //return id1 < id2;
-}
 void CDataLoaderPatcher::GetChunk(TChunk chunk_info)
 {
     m_DataLoader->GetChunk(chunk_info);
@@ -182,13 +177,6 @@ void CDataLoaderPatcher::GetChunks(const TChunkSet& chunks)
 {
     m_DataLoader->GetChunks(chunks);
 }
-
-/*
-string CDataLoaderPatcher::BlobIdToString(const TBlobId& id) const
-{
-    return m_DataLoader->BlobIdToString(id);
-}
-*/
 
 /*
 SRequestDetails CDataLoaderPatcher::ChoiceToDetails(EChoice choice) const
@@ -358,6 +346,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.4  2005/10/26 14:36:45  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.3  2005/09/06 13:22:11  didenko
  * IDataPatcher interface moved to a separate file
  *

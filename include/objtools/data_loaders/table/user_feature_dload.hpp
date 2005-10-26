@@ -164,11 +164,6 @@ private:
     typedef multimap<objects::CSeq_id_Handle, string,
                         SIdHandleByContent> TIdMap;
     TIdMap m_Ids;
-
-    // the map of items we've already loaded
-    typedef map<objects::CSeq_id_Handle, CRef<objects::CSeq_entry>,
-                SIdHandleByContent> TEntries;
-    TEntries m_Entries;
 };
 
 
@@ -196,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/26 14:36:44  vasilche
+ * Updated for new CBlobId interface. Fixed load lock logic.
+ *
  * Revision 1.9  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *
