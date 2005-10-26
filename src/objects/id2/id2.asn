@@ -1,4 +1,4 @@
---$Revision: 1.16 $
+--$Revision: 1.17 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -446,7 +446,10 @@ ID2-Blob-Id ::= SEQUENCE {
                 snp         (1),
                 snp-graph   (4),
                 cdd         (8),
-                mgc         (16)
+                mgc         (16),
+                hprd        (32),
+                sts         (64),
+                trna        (128)
         } DEFAULT main,
         sat-key         INTEGER,
         -- version of blob, optional in some requests
