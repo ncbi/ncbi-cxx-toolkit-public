@@ -579,6 +579,8 @@ I_DriverContext* FTDS_CreateContext(const map<string,string>* attr)
             version= DBVERSION_46;
         else if ( vers.find("70") != string::npos )
             version= DBVERSION_70;
+        else if ( vers.find("80") != string::npos )
+            version= DBVERSION_80;
         else if ( vers.find("100") != string::npos )
             version= DBVERSION_100;
 
@@ -865,6 +867,9 @@ CDbapiFtdsCFBase::CreateInstance(
                     case 70 :
                         db_version = DBVERSION_70;
                         break;
+                    case 80 :
+                        db_version = DBVERSION_80;
+                        break;
                     case 100 :
                         db_version = DBVERSION_100;
                         break;
@@ -1117,6 +1122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/10/26 11:33:02  ssikorsk
+ * Handle TDS v8.0 in case of the ftds driiver
+ *
  * Revision 1.52  2005/10/24 11:07:22  ssikorsk
  * Fixed CDbapiFtdsCFBase::CDbapiFtdsCFBase typo.
  *
