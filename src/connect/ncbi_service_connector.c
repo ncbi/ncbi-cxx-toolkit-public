@@ -243,27 +243,31 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
         strncpy0(net_info->args, cgi_args, sizeof(net_info->args) - 1);
 
     if (service) {
-        ConnNetInfo_PrependArg(net_info, args, 0);
-        if (!ConnNetInfo_PreOverrideArg(net_info, "service", service)) {
-            const char* a = args ? strrchr(args, '&') : 0;
-            if (!a)
-                a = args;
-            while (a) {
-                ConnNetInfo_DeleteArg(net_info, a + (*a == '&' ? 1 : 0));
-                if (ConnNetInfo_PreOverrideArg(net_info, "service", service))
-                    break;
-                if (a != args) {
-                    while (a > args) {
-                        if (*--a == '&')
-                            break;
-                    }
-                } else
-                    a = 0;
-            }
-            if (!a) {
-                if (dynamic_header)
-                    free(dynamic_header);
-                return 0/*failed*/;
+        if (!args) {
+            ConnNetInfo_AppendArg(net_info, "service", service);
+        } else {
+            ConnNetInfo_PrependArg(net_info, args, 0);
+            if (!ConnNetInfo_PreOverrideArg(net_info, "service", service)) {
+                const char* a = args ? strrchr(args, '&') : 0;
+                if (!a)
+                    a = args;
+                while (a) {
+                    ConnNetInfo_DeleteArg(net_info, a + (*a == '&' ? 1 : 0));
+                    if (ConnNetInfo_PreOverrideArg(net_info,"service",service))
+                        break;
+                    if (a != args) {
+                        while (a > args) {
+                            if (*--a == '&')
+                                break;
+                        }
+                    } else
+                        a = 0;
+                }
+                if (!a) {
+                    if (dynamic_header)
+                        free(dynamic_header);
+                    return 0/*failed*/;
+                }
             }
         }
     }
@@ -359,7 +363,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
                                                ? eReqMethod_Post
                                                : eReqMethod_Any),
                                             SERV_HTTP_PATH(&info->u.http),
-                                            0, 0,
+                                            uuu->service, 0,
                                             SERV_HTTP_ARGS(&info->u.http),
                                             user_header, info->mime_t,
                                             info->mime_s, info->mime_e,
@@ -456,7 +460,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                     ? eReqMethod_Post : eReqMethod_Any);
             user_header = s_AdjustNetParams(net_info, req_method,
                                             SERV_HTTP_PATH(&info->u.http),
-                                            0, 0,
+                                            uuu->service, 0,
                                             SERV_HTTP_ARGS(&info->u.http),
                                             user_header, info->mime_t,
                                             info->mime_s, info->mime_e, 0);
@@ -850,6 +854,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.64  2005/10/26 14:44:59  lavr
+ * Insure service name appears in URLs for HTTP services
+ *
  * Revision 6.63  2005/08/12 19:21:52  lavr
  * Take fHCC_Flushable from connector's extra params in case of HTTP
  *
