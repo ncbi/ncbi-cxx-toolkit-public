@@ -1019,6 +1019,26 @@ bool BlockMultipleAlignment::OptimizeBlock(unsigned int row, unsigned int alignm
         range = nextBlock->GetRangeOfRow(row);
         maxShiftLeft = range->to - range->from + 1;
     }
+
+    // if this is first or last block, constrain by footprint
+    int blockNum = GetAlignedBlockNumber(alignmentIndex);
+    if (blockNum == 1 || blockNum == (int)NAlignedBlocks()) {
+        int excess = 0;
+        if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
+            WARNINGMSG("Can't get footprint excess residues from registry");
+        if (blockNum == 1) {
+            if ((int)maxShiftRight > excess) {
+                WARNINGMSG("maxShiftRight constrained to " << excess << " by footprint excess residues preference");
+                maxShiftRight = excess;
+            }
+        } else { // last block
+            if ((int)maxShiftLeft > excess) {
+                WARNINGMSG("maxShiftLeft constrained to " << excess << " by footprint excess residues preference");
+                maxShiftLeft = excess;
+            }
+        }
+    }
+
     TRACEMSG("maxShiftRight " << maxShiftRight << ", maxShiftLeft " << maxShiftLeft);
     if (maxShiftRight == 0 && maxShiftLeft == 0) {
         TRACEMSG("no room to shift this block");
@@ -1902,6 +1922,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/10/26 21:35:38  thiessen
+* constrain OptimizeBlock() by footprint excess
+*
 * Revision 1.73  2005/10/26 18:36:05  thiessen
 * minor fixes
 *
