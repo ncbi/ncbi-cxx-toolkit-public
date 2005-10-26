@@ -52,9 +52,6 @@ static char const rcsid[] =
 #include <objects/scoremat/PssmIntermediateData.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-// Utility headers
-#include <util/format_guess.hpp>
-
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -82,58 +79,16 @@ CPsiBl2Seq::CPsiBl2Seq(CRef<IQueryFactory> query,
     x_Validate();
 }
 
-/// Enumeration to specify the different uses of the query factory
-enum EQueryFactoryType { eQuery, eSubject };
-
-/// Function to perform sanity checks on the query factory
-void
-s_QueryFactorySanityCheck(CRef<IQueryFactory> query_factory, 
-                          CConstRef<CBlastOptionsHandle> opts_handle,
-                          EQueryFactoryType query_factory_type)
-{
-    CRef<ILocalQueryData> query_data =
-        query_factory->MakeLocalQueryData(&opts_handle->GetOptions());
-
-    // Compose the exception error message
-    string excpt_msg("CPsiBl2Seq only accepts ");
-    if (query_factory_type == eQuery) {
-        excpt_msg += "one protein sequence as query";
-    } else if (query_factory_type == eSubject) {
-        excpt_msg += "protein sequences as subjects";
-    } else {
-        abort();
-    }
-
-    if (query_factory_type == eQuery) {
-        if (query_data->GetNumQueries() != 1) {
-            NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
-        }
-    }
-
-    BLAST_SequenceBlk* sblk = NULL;
-    try { sblk = query_data->GetSequenceBlk(); }
-    catch (const CBlastException& e) {
-        if (e.GetMsg().find("Incompatible sequence codings") != ncbi::NPOS) {
-            NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
-        }
-    }
-    ASSERT(sblk);
-    ASSERT(sblk->length > 0);
-
-    CFormatGuess::ESequenceType sequence_type =
-        CFormatGuess::SequenceType((const char*)sblk->sequence_start,
-                                   static_cast<unsigned>(sblk->length));
-    if (sequence_type == CFormatGuess::eNucleotide) {
-        NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
-    }
-}
-
 void
 CPsiBl2Seq::x_Validate()
 {
     // Either PSSM or a protein query must be provided
-    if (m_Pssm.Empty() && m_Query.Empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, "Missing PSSM or Query");
+    if (m_Pssm.NotEmpty()) {
+        CPsiBlastValidate::Pssm(*m_Pssm);
+    } else if (m_Query.NotEmpty()) {
+        CPsiBlastValidate::QueryFactory(m_Query, *m_OptsHandle);
+    } else {
+        NCBI_THROW(CBlastException, eInvalidArgument, "Missing query or pssm");
     }
 
     // Options validation
@@ -142,21 +97,13 @@ CPsiBl2Seq::x_Validate()
     }
     m_OptsHandle->Validate();
 
-    // PSSM/Query sanity checks
-    if (m_Pssm.NotEmpty()) {
-        ValidatePssm(*m_Pssm);
-    } else if (m_Query.NotEmpty()) {
-        s_QueryFactorySanityCheck(m_Query, m_OptsHandle, eQuery);
-    } else {
-        abort();
-    }
-
     // Subject sequence(s) sanity checks
     if (m_Subject.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Missing subject sequence data source");
     } else {
-        s_QueryFactorySanityCheck(m_Subject, m_OptsHandle, eSubject);
+        CPsiBlastValidate::QueryFactory(m_Subject, *m_OptsHandle, 
+                                        CPsiBlastValidate::eQFT_Subject);
     }
 }
 

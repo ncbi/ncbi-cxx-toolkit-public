@@ -47,8 +47,11 @@ struct PSIBlastOptions;
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
 // Forward declarations
+
 template <class T> class CNcbiMatrix;
+
 BEGIN_SCOPE(objects)
     class CPssmWithParameters;
 END_SCOPE(objects)
@@ -56,6 +59,11 @@ END_SCOPE(objects)
 BEGIN_SCOPE(blast)
 
 class CBlastOptions;
+class CBlastOptionsHandle;
+class IQueryFactory;
+
+/////////////////////////////////////////////////////////////////////////////
+// Function prototypes/Class definitions
 
 /** Setup CORE BLAST score block structure with data from the scoremat PSSM.
  * @param score_blk BlastScoreBlk structure to set up [in|out]
@@ -72,11 +80,27 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
 void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts);
 
-/** Perform validation on the PSSM
- * @param pssm PSSM as specified in scoremat.asn [in]
- * @throws CBlastException on failure when validating data
- */
-void ValidatePssm(const objects::CPssmWithParameters& pssm);
+/// Auxialiry class containing static methods to validate PSI-BLAST search
+/// components
+class CPsiBlastValidate {
+public:
+
+    /** Perform validation on the PSSM
+     * @param pssm PSSM as specified in scoremat.asn [in]
+     * @throws CBlastException on failure when validating data
+     */
+    static void
+    Pssm(const objects::CPssmWithParameters& pssm);
+
+    /// Enumeration to specify the different uses of the query factory
+    enum EQueryFactoryType { eQFT_Query, eQFT_Subject };
+
+    /// Function to perform sanity checks on the query factory
+    static void
+    QueryFactory(CRef<IQueryFactory> query_factory, 
+                 const CBlastOptionsHandle& opts_handle, 
+                 EQueryFactoryType query_factory_type = eQFT_Query);
+};
 
 /// Auxiliary class to convert data encoded in the PSSM to CNcbiMatrix
 class CScorematPssmConverter 

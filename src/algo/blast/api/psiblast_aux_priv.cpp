@@ -42,10 +42,12 @@ static char const rcsid[] =
 
 #include <algo/blast/api/pssm_engine.hpp>
 #include <algo/blast/api/psi_pssm_input.hpp>
-#include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
 
+// Utility headers
+#include <util/format_guess.hpp>
 #include <util/math/matrix.hpp>
 
 // Object includes
@@ -240,7 +242,8 @@ void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
         pssm_with_scores->GetPssm().GetFinalData().GetH();
 }
 
-void ValidatePssm(const CPssmWithParameters& pssm)
+void 
+CPsiBlastValidate::Pssm(const CPssmWithParameters& pssm)
 {
     if ( !pssm.CanGetPssm() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
@@ -278,6 +281,48 @@ void ValidatePssm(const CPssmWithParameters& pssm)
     if ( !pssm.GetPssm().GetIsProtein() ) {
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "PSSM does not represent protein scoring matrix");
+    }
+}
+
+void
+CPsiBlastValidate::QueryFactory(CRef<IQueryFactory> query_factory, 
+                                const CBlastOptionsHandle& opts_handle, 
+                                CPsiBlastValidate::EQueryFactoryType qf_type)
+{
+    CRef<ILocalQueryData> query_data =
+        query_factory->MakeLocalQueryData(&opts_handle.GetOptions());
+
+    // Compose the exception error message
+    string excpt_msg("CPsiBl2Seq only accepts ");
+    if (qf_type == eQFT_Query) {
+        excpt_msg += "one protein sequence as query";
+    } else if (qf_type == eQFT_Subject) {
+        excpt_msg += "protein sequences as subjects";
+    } else {
+        abort();
+    }
+
+    if (qf_type == eQFT_Query) {
+        if (query_data->GetNumQueries() != 1) {
+            NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
+        }
+    }
+
+    BLAST_SequenceBlk* sblk = NULL;
+    try { sblk = query_data->GetSequenceBlk(); }
+    catch (const CBlastException& e) {
+        if (e.GetMsg().find("Incompatible sequence codings") != ncbi::NPOS) {
+            NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
+        }
+    }
+    ASSERT(sblk);
+    ASSERT(sblk->length > 0);
+
+    CFormatGuess::ESequenceType sequence_type =
+        CFormatGuess::SequenceType((const char*)sblk->sequence_start,
+                                   static_cast<unsigned>(sblk->length));
+    if (sequence_type == CFormatGuess::eNucleotide) {
+        NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
     }
 }
 
