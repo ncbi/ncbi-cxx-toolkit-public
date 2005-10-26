@@ -179,7 +179,7 @@ CDbapiSampleApp::Run()
     if ( args["v"].HasValue() ) {
         m_TDSVersion = args["v"].AsString();
     } else {
-        m_TDSVersion.clear();
+        m_TDSVersion.erase();
     }
 
     if ( m_TDSVersion.empty() ) {
@@ -485,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/26 13:59:07  ucko
+ * Use string::erase rather than string::clear for compatibility with GCC 2.95.
+ *
  * Revision 1.9  2005/10/26 11:29:30  ssikorsk
  * Added optional app key "v" (TDS protocol version)
  *
