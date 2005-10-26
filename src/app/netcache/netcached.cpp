@@ -63,7 +63,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.5  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.6  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -1379,7 +1379,7 @@ parse_blob_id:
         }
 
         // skip whitespace
-        while (*s && !isspace((unsigned char)(*s))) {
+        while (*s && isspace((unsigned char)(*s))) {
             ++s;
         }
 
@@ -1984,6 +1984,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2005/10/26 19:05:09  kuznets
+ * Fixed minor bug in query parsing
+ *
  * Revision 1.67  2005/10/25 18:11:54  kuznets
  * Implemented no-wait-lock mode for GET
  *
