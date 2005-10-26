@@ -555,9 +555,9 @@ bool Cn3DApp::OnInit(void)
         if (model != eModel_type_other) {   // -o present
             CNcbi_mime_asn1 *mime = CreateMimeFromBiostruc(filename, model);
             if (mime)
-                structureWindow->LoadData(NULL, commandLine.Found("f"), mime);
+                structureWindow->LoadData(NULL, commandLine.Found("f"), commandLine.Found("n"), mime);
         } else {
-            structureWindow->LoadData(filename.c_str(), commandLine.Found("f"));
+            structureWindow->LoadData(filename.c_str(), commandLine.Found("f"), commandLine.Found("n"));
         }
     }
 
@@ -567,7 +567,7 @@ bool Cn3DApp::OnInit(void)
         if (commandLine.Found("d", &id)) {
             CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model);
             if (mime)
-                structureWindow->LoadData(NULL, commandLine.Found("f"), mime);
+                structureWindow->LoadData(NULL, commandLine.Found("f"), commandLine.Found("n"), mime);
         } else {
             ERRORMSG("-o requires either -d or Biostruc file name");
         }
@@ -588,10 +588,6 @@ bool Cn3DApp::OnInit(void)
         structureWindow->SetupFileMessenger(
             messageFilename.c_str(), messageApp.c_str(), commandLine.Found("r"));
     }
-
-    // optionally show alignment window
-	if (structureWindow->glCanvas->structureSet)
-		structureWindow->glCanvas->structureSet->alignmentManager->ShowSequenceViewer(!commandLine.Found("n"));
 
     // optionally open imports window, but only if any imports present
     if (commandLine.Found("i") && structureWindow->glCanvas->structureSet &&
@@ -647,6 +643,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/10/26 18:55:30  thiessen
+* better handling of -n option
+*
 * Revision 1.28  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

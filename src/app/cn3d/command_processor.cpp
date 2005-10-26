@@ -233,7 +233,7 @@ IMPLEMENT_COMMAND_FUNCTION(LoadFile)
     }
 
     wxString stripped(wxString(dataIn.c_str()).Strip(wxString::both));
-    if (!structureWindow->LoadData(stripped.c_str(), true))
+    if (!structureWindow->LoadData(stripped.c_str(), true, false))
         ADD_REPLY_ERROR(string("Error loading file '") + stripped.c_str() + "'");
 }
 
@@ -251,6 +251,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/10/26 18:55:30  thiessen
+* better handling of -n option
+*
 * Revision 1.12  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

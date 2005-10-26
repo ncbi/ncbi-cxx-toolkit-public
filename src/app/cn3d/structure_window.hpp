@@ -82,7 +82,7 @@ public:
     void SendCommand(const std::string& toApp, const std::string& command, const std::string& data);
 
     // public methods
-    bool LoadData(const char *filename, bool force, ncbi::objects::CNcbi_mime_asn1 *mimeData = NULL);
+    bool LoadData(const char *filename, bool force, bool noAlignmentWindow, ncbi::objects::CNcbi_mime_asn1 *mimeData = NULL);
     bool SaveDialog(bool prompt, bool canCancel);
     void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
@@ -266,6 +266,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/10/26 18:55:30  thiessen
+* better handling of -n option
+*
 * Revision 1.15  2004/10/05 14:57:54  thiessen
 * add distance selection dialog
 *

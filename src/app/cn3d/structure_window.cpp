@@ -1335,7 +1335,7 @@ void StructureWindow::SetColoringMenuFlag(int which)
     menuBar->Check(MID_ELEMENT, (which == MID_ELEMENT));
 }
 
-bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1 *mimeData)
+bool StructureWindow::LoadData(const char *filename, bool force, bool noAlignmentWindow, CNcbi_mime_asn1 *mimeData)
 {
     SetCursor(*wxHOURGLASS_CURSOR);
     glCanvas->SetCurrent();
@@ -1346,9 +1346,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
     }
 
     // clear old data
-    bool hadData = false;
     if (glCanvas->structureSet) {
-        hadData = true;
         DestroyNonModalDialogs();
         GlobalMessenger()->RemoveAllHighlights(false);
         GlobalMessenger()->CacheHighlights();   // copy empty highlights list, e.g. clear cache
@@ -1507,7 +1505,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
     if (!glCanvas->renderer->HasASNViewSettings())
         glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
-    if (hadData)
+    if (!noAlignmentWindow)
         glCanvas->structureSet->alignmentManager->ShowSequenceViewer(true);
     SetCursor(wxNullCursor);
 
@@ -1526,7 +1524,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
             "", "", "All Files|*.*|CDD (*.acd)|*.acd|Binary ASN (*.val)|*.val|ASCII ASN (*.prt)|*.prt",
             wxOPEN | wxFILE_MUST_EXIST);
         if (!filestr.IsEmpty())
-            LoadData(filestr.c_str(), false);
+            LoadData(filestr.c_str(), false, false);
     }
 
     else if (event.GetId() == MID_NETWORK_OPEN) {
@@ -1550,7 +1548,7 @@ void StructureWindow::OnOpen(wxCommandEvent& event)
 
         CNcbi_mime_asn1 *mime = LoadStructureViaCache(id.c_str(), model);
         if (mime)
-            LoadData(NULL, false, mime);
+            LoadData(NULL, false, false, mime);
     }
 }
 
@@ -1661,6 +1659,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/10/26 18:55:30  thiessen
+* better handling of -n option
+*
 * Revision 1.42  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
