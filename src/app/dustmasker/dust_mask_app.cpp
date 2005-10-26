@@ -73,7 +73,7 @@ static CRef< CSeq_entry > GetNextSequence( CNcbiIstream * input_stream )
                                 fReadFasta_AllSeqIds;
 
         CRef< CSeq_entry > aSeqEntry;
-        CNcbiIstream::pos_type pos = input_stream->tellg();
+        CT_POS_TYPE pos = input_stream->tellg();
 
         try {
             aSeqEntry = ReadFasta( *input_stream, flags, 0, 0 );
@@ -383,6 +383,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.10  2005/10/26 20:23:37  ucko
+ * Use CT_POS_TYPE for portability to GCC 2.95.
+ *
  * Revision 1.9  2005/10/26 18:44:23  morgulis
  * Added -oformat option to specify the output format.
  * Added support for acclist and fasta output formats.
