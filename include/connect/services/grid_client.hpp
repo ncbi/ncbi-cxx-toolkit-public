@@ -132,7 +132,8 @@ public:
     /// data storage (NetCache). Size of the input data can be determined 
     /// using GetInputBlobSize
     ///
-    CNcbiIstream& GetIStream();
+    CNcbiIstream& GetIStream(INetScheduleStorage::ELockMode = 
+                             INetScheduleStorage::eLockWait);
 
     /// Get the size of an input stream
     ///
@@ -254,6 +255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.5  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

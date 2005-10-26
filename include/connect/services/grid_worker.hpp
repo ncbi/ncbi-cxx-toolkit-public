@@ -160,9 +160,13 @@ public:
 
     /// Get a stream with input data for a job. Stream is based on network
     /// data storage (NetCache). Size of the input data can be determined 
-    /// using GetInputBlobSize
+    /// using GetInputBlobSize. Will throw a CNetScheduleStorageException 
+    /// exception with code eBlocked if the mode parameter is set to 
+    /// INetScheduleStorage::eLockNoWait and a blob is blocked by 
+    /// another process.
     ///
-    CNcbiIstream& GetIStream();
+    CNcbiIstream& GetIStream(INetScheduleStorage::ELockMode mode =
+                             INetScheduleStorage::eLockWait);
 
     /// Get the size of an input stream
     ///
@@ -511,6 +515,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.28  2005/09/30 14:58:56  didenko
  * Added optional parameter to PutProgressMessage methods which allows
  * sending progress messages regardless of the rate control.

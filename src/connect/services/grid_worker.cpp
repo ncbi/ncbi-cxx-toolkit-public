@@ -125,10 +125,10 @@ const string& CWorkerNodeJobContext::GetClientName()const
     return m_WorkerNode.GetClientName();
 }
 
-CNcbiIstream& CWorkerNodeJobContext::GetIStream()
+CNcbiIstream& CWorkerNodeJobContext::GetIStream(INetScheduleStorage::ELockMode mode)
 {   
     _ASSERT(m_ThreadContext);
-    return m_ThreadContext->GetIStream();
+    return m_ThreadContext->GetIStream(mode);
 }
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 {
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.33  2005/09/30 14:58:56  didenko
  * Added optional parameter to PutProgressMessage methods which allows
  * sending progress messages regardless of the rate control.

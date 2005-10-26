@@ -53,7 +53,7 @@ public:
     void CloseStreams();
     void Reset();
 
-    CNcbiIstream& GetIStream();
+    CNcbiIstream& GetIStream(INetScheduleStorage::ELockMode);
     CNcbiOstream& GetOStream();
     void PutProgressMessage(const string& msg, bool send_immediately);
 
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 6.4  2005/09/30 14:58:56  didenko
  * Added optional parameter to PutProgressMessage methods which allows
  * sending progress messages regardless of the rate control.

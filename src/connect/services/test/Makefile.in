@@ -6,7 +6,7 @@
 
 LIB_PROJ =
 
-APP_PROJ = test_netcache_client
+APP_PROJ = test_netcache_client test_nsstorage
 
 
 srcdir = @srcdir@

@@ -176,7 +176,8 @@ void CGridDebugContext::x_DumpBlob(const string& blob_id, const string& fname)
 {
     auto_ptr<INetScheduleStorage> storage(CreateStorage());
     size_t blob_size = 0;
-    CNcbiIstream& is = storage->GetIStream(blob_id, &blob_size);
+    CNcbiIstream& is = storage->GetIStream(blob_id, &blob_size, 
+                                           INetScheduleStorage::eLockWait);
     CNcbiOfstream ofile( fname.c_str() );
     char buf[1024];
     while( !is.eof() ) {
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 6.2  2005/05/23 15:51:54  didenko
  * Moved grid_control_thread.hpp grid_debug_context.hpp to
  * include/connect/service

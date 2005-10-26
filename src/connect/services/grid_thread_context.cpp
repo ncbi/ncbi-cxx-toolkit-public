@@ -75,12 +75,13 @@ CWorkerNodeJobContext& CGridThreadContext::GetJobContext()
 }
 
 /// @internal
-CNcbiIstream& CGridThreadContext::GetIStream()
+CNcbiIstream& CGridThreadContext::GetIStream(INetScheduleStorage::ELockMode mode)
 {
     _ASSERT(m_JobContext);
     if (m_Reader.get()) {
         return m_Reader->GetIStream(m_JobContext->GetJobInput(),
-                                    &m_JobContext->SetJobInputBlobSize());
+                                    &m_JobContext->SetJobInputBlobSize(),
+                                    mode);
     }
     NCBI_THROW(CNetScheduleStorageException,
                eReader, "Reader is not set.");
@@ -265,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 6.9  2005/09/30 14:58:56  didenko
  * Added optional parameter to PutProgressMessage methods which allows
  * sending progress messages regardless of the rate control.

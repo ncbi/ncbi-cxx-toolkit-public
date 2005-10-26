@@ -54,11 +54,17 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT INetScheduleStorage
 {
 public:
+    enum ELockMode {
+        eLockWait,   ///< waits for BLOB to become available
+        eLockNoWait  ///< throws an exception immediately if BLOB locked
+    };
+
     virtual ~INetScheduleStorage() {}
 
     virtual string        GetBlobAsString(const string& data_id) = 0;
     virtual CNcbiIstream& GetIStream(const string& data_id, 
-                                     size_t* blob_size = 0) = 0;
+                                     size_t* blob_size = 0,
+                                     ELockMode lockMode = eLockWait) = 0;
     virtual CNcbiOstream& CreateOStream(string& data_id) = 0;
 
     virtual string CreateEmptyBlob() = 0;
@@ -101,16 +107,18 @@ class NCBI_XCONNECT_EXPORT CNetScheduleStorageException : public CException
 public:
     enum EErrCode {
         eReader,
-        eWriter
+        eWriter,
+        eBlocked
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eReader: return "eReaderError";
-        case eWriter: return "eWriterError";
-        default:      return CException::GetErrCodeString();
+        case eReader:  return "eReaderError";
+        case eWriter:  return "eWriterError";
+        case eBlocked: return "eBlocked";
+        default:       return CException::GetErrCodeString();
         }
     }
 
@@ -128,7 +136,8 @@ public:
     }
 
     virtual CNcbiIstream& GetIStream(const string&,
-                             size_t* blob_size = 0)
+                                     size_t* blob_size = 0,
+                                     ELockMode lockMode = eLockWait)
     {
         if (blob_size) *blob_size = 0;
         NCBI_THROW(CNetScheduleStorageException,
@@ -153,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.9  2005/05/10 14:11:22  didenko
  * Added blob caching
  *

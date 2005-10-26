@@ -441,6 +441,7 @@ public:
         case eAuthenticationError: return "eAuthenticationError";
         case eKeyFormatError:      return "eKeyFormatError";
         case eServerError:         return "eServerError";
+        case eBlobLocked:          return "eBlobLocked";
         default:                   return CException::GetErrCodeString();
         }
     }
@@ -552,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.43  2005/10/25 19:10:14  kuznets
  * + blob retrieval with non-blocking mode
  *

@@ -64,7 +64,8 @@ public:
     virtual string        GetBlobAsString(const string& data_id);
 
     virtual CNcbiIstream& GetIStream(const string& data_id,
-                                     size_t* blob_size = 0);
+                                     size_t* blob_size = 0,
+                                     ELockMode lockMode = eLockWait);
     virtual CNcbiOstream& CreateOStream(string& data_id);
 
     virtual string CreateEmptyBlob();
@@ -81,7 +82,8 @@ private:
     auto_ptr<CNcbiOstream>    m_OStream;
 
     auto_ptr<IReader> x_GetReader(const string& key,
-                                  size_t& blob_size);
+                                  size_t& blob_size,
+                                  ELockMode lockMode);
     void x_Check();
 
     TCacheFlags m_CacheFlags;
@@ -117,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.11  2005/08/15 19:08:43  didenko
  * Changed NetScheduler Storage parameters
  *

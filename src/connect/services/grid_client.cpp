@@ -137,9 +137,10 @@ CNetScheduleClient::EJobStatus CGridJobStatus::GetStatus()
     return status;
 }
 
-CNcbiIstream& CGridJobStatus::GetIStream()
+CNcbiIstream& CGridJobStatus::GetIStream(INetScheduleStorage::ELockMode mode)
 {
-    return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize);
+    return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize,
+                                                mode);
 }
 
 string CGridJobStatus::GetProgressMessage()
@@ -169,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.4  2005/04/20 19:25:59  didenko
  * Added support for progress messages passing from a worker node to a client
  *

@@ -69,8 +69,11 @@ void CNetCacheNSStorage::x_Check()
 }
 
 auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
-                                                  size_t& blob_size)
+                                                  size_t& blob_size,
+                                                  ELockMode lockMode)
 {
+    CNetCacheClient::ELockMode mode = lockMode == eLockNoWait ? 
+        CNetCacheClient::eLockNoWait : CNetCacheClient::eLockWait;
     x_Check();
     blob_size = 0;
 
@@ -80,17 +83,20 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
     int try_count = 0;
     while(1) {
         try {
-            reader.reset(m_NCClient->GetData(key, &blob_size));
+            reader.reset(m_NCClient->GetData(key, &blob_size, mode));
             break;
         }
         catch (CNetServiceException& ex) {
-            if (ex.GetErrCode() != CNetServiceException::eTimeout) 
-                throw;
+            if (ex.GetErrCode() == CNetServiceException::eTimeout) {
 
-            ERR_POST("Communication Error : " << ex.what());
-            if (++try_count >= 2)
-                throw;
-            SleepMilliSec(1000 + try_count*2000);
+                ERR_POST("Communication Error : " << ex.what());
+                if (++try_count >= 2)
+                    throw;
+                SleepMilliSec(1000 + try_count*2000);
+            } else if(ex.GetErrCode() == CNetCacheException::eBlobLocked) {
+                NCBI_THROW(CNetScheduleStorageException,
+                   eBlocked, "Requested blob is blocked by another process.");
+            }
         }
     }
     if (!reader.get()) {
@@ -101,11 +107,12 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
 }
 
 CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
-                                             size_t* blob_size)
+                                             size_t* blob_size,
+                                             ELockMode lockMode)
 {
     if (blob_size) *blob_size = 0;
     size_t b_size = 0;
-    auto_ptr<IReader> reader = x_GetReader(key, b_size);
+    auto_ptr<IReader> reader = x_GetReader(key, b_size, lockMode);
     if (!reader.get()) {
         m_IStream.reset(new CNcbiIstrstream("",0));
         return *m_IStream;
@@ -145,7 +152,7 @@ string CNetCacheNSStorage::GetBlobAsString(const string& data_id)
 {
     size_t b_size = 0;
     try {
-        auto_ptr<IReader> reader = x_GetReader(data_id, b_size);
+        auto_ptr<IReader> reader = x_GetReader(data_id, b_size, eLockWait);
         if (!reader.get())
             return data_id;
         AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
@@ -285,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/10/26 16:37:44  didenko
+ * Added for non-blocking read for netschedule storage
+ *
  * Revision 1.13  2005/08/15 19:08:44  didenko
  * Changed NetScheduler Storage parameters
  *
