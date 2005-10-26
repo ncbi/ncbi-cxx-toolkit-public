@@ -65,6 +65,8 @@ public:
         eSubSat_SNP_graph  = 1<<2,
         eSubSat_CDD  = 1<<3,
         eSubSat_MGC  = 1<<4,
+        eSubSat_HPRD = 1<<5,
+        eSubSat_STS  = 1<<6,
         eSubSat_tRNA = 1<<7
     };
     typedef int TSubSat;
@@ -181,6 +183,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.7  2005/10/26 14:36:47  vasilche
+* Added new external annotations types.
+*
 * Revision 1.6  2005/08/12 19:51:16  vasilche
 * Added tRNA external annotations.
 *
