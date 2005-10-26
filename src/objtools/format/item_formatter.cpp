@@ -115,6 +115,12 @@ CFlatItemFormatter::~CFlatItemFormatter(void)
 }
 
 
+void CFlatItemFormatter::Format(const IFlatItem& item, IFlatTextOStream& text_os)
+{
+    item.Format(*this, text_os);
+}
+
+
 static void s_PrintAccessions
 (CNcbiOstream& os,
  const vector<string>& accs,
@@ -746,8 +752,9 @@ static void s_FormatCitGen
     }
 
     if (gen.IsSetVolume()  &&  !NStr::IsBlank(gen.GetVolume())) {
-        if ( ! journal.empty() && prefix.empty() && journal[ journal.size() - 1 ] == '.' )
+        if (prefix.empty()  &&  NStr::EndsWith(journal, ".")) {
             prefix = ' ';
+        }
         (journal += prefix) += gen.GetVolume();
         prefix = ' ';
     }
@@ -1235,6 +1242,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/10/26 14:54:14  ucko
+* Clean up after previous commit: restore CFlatItemFormatter::Format
+* and make use of NStr::EndsWith to simplify logic elsewhere.
+*
 * Revision 1.29  2005/10/26 13:50:13  ludwigf
 * Extended BasicCleanup() to cover additional items.
 *
