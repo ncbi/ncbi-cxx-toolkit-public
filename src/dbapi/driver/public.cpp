@@ -245,7 +245,10 @@ EDB_Type CDB_Result::ItemDataType(unsigned int item_num) const
 
 bool CDB_Result::Fetch()
 {
-    CHECK_RESULT(m_Res);
+    // CHECK_RESULT(m_Res);
+    if ( !m_Res ) {
+        return false;
+    }
     return m_Res->Fetch();
 }
 
@@ -743,6 +746,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/10/26 12:25:15  ssikorsk
+ * CDB_Result::Fetch returns false if m_Res is NULL now.
+ *
  * Revision 1.18  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *
