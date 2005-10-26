@@ -108,7 +108,7 @@ public:
 
 
 template<typename Value, class Converter = PConvertToString<Value> >
-class NCBI_XOBJMGR_EXPORT CBlobIdFor : public CBlobId
+class CBlobIdFor : public CBlobId
 {
 public:
     typedef Value value_type;
@@ -156,7 +156,7 @@ typedef CBlobIdFor<string> CBlobIdString;
 typedef CBlobIdFor<CSeq_id_Handle> CBlobIdSeq_id;
 
 
-class NCBI_XOBJMGR_EXPORT CBlobIdKey
+class CBlobIdKey
 {
 public:
     CBlobIdKey(const CBlobId* id = 0)
@@ -164,7 +164,7 @@ public:
         {
         }
 
-    DECLARE_OPERATOR_BOOL(m_Id);
+    DECLARE_OPERATOR_BOOL_REF(m_Id);
 
     const CBlobId& operator*(void) const
         {
@@ -208,6 +208,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/26 15:37:41  vasilche
+* Removed EXPORT from completely inlined classes.
+*
 * Revision 1.1  2005/10/26 14:36:37  vasilche
 * Added new CBlobId interface.
 *
