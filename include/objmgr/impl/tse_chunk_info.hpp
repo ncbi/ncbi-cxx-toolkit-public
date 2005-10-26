@@ -40,6 +40,7 @@
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
 #include <objmgr/impl/mutex_pool.hpp>
+#include <objmgr/blob_id.hpp>
 
 #include <vector>
 #include <list>
@@ -72,7 +73,7 @@ public:
     //////////////////////////////////////////////////////////////////
 
     // chunk identification
-    typedef CConstRef<CObject> TBlobId;
+    typedef CBlobIdKey TBlobId;
     typedef int TBlobVersion;
     typedef int TChunkId;
 
@@ -182,6 +183,38 @@ public:
 
     void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
 
+    //////////////////////////////////////////////////////////////////
+    // methods to find out what information is needed to be loaded
+    //////////////////////////////////////////////////////////////////
+    const TDescInfos& GetDescInfos(void) const
+        {
+            return m_DescInfos;
+        }
+    const TPlaces GetAnnotPlaces(void) const
+        {
+            return m_AnnotPlaces;
+        }
+    const TBioseqPlaces GetBioseqPlaces(void) const
+        {
+            return m_BioseqPlaces;
+        }
+    const TBioseqIds GetBioseqIds(void) const
+        {
+            return m_BioseqIds;
+        }
+    const TAnnotContents GetAnnotContents(void) const
+        {
+            return m_AnnotContents;
+        }
+    const TLocationSet& GetSeq_dataInfos(void) const
+        {
+            return m_Seq_data;
+        }
+    const TAssemblyInfos& GetAssemblyInfos(void) const
+        {
+            return m_AssemblyInfos;
+        }
+
 protected:
     //////////////////////////////////////////////////////////////////
     // interaction with CTSE_Info
@@ -276,6 +309,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/10/26 14:36:41  vasilche
+* Updated for new CBlobId interface.
+* Added getters for chunk contents description.
+*
 * Revision 1.24  2005/08/31 14:47:14  didenko
 * Changed the object parameter type for LoadAnnot and LoadBioseq methods
 *
