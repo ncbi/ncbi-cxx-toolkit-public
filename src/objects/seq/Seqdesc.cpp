@@ -48,6 +48,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/general/cleanup_utils.hpp>
+#include <objects/seqblock/GB_block.hpp>
 
 // generated classes
 
@@ -172,6 +173,7 @@ void CSeqdesc::BasicCleanup(ECleanupMode mode)
     case CSeqdesc::e_Org:
         break;
     case CSeqdesc::e_Comment:
+        CommentCleanup( SetComment() );
         break;
     case CSeqdesc::e_Num:
         break;
@@ -180,6 +182,7 @@ void CSeqdesc::BasicCleanup(ECleanupMode mode)
     case CSeqdesc::e_Pir:
         break;
     case CSeqdesc::e_Genbank:
+        SetGenbank().BasicCleanup();
         break;
     case CSeqdesc::e_Pub:
         SetPub().BasicCleanup();
@@ -214,6 +217,15 @@ void CSeqdesc::BasicCleanup(ECleanupMode mode)
     }
 }
 
+void CSeqdesc::CommentCleanup( TComment& comment )
+{
+    //  Remove trailing periods:
+    if ( ! comment.empty() && (comment[ comment.size() -1 ] == '.') ) {
+        comment = comment.substr( 0, comment.size() -1 );
+    }
+};
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -223,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.6  2005/10/26 13:50:13  ludwigf
+* Extended BasicCleanup() to cover additional items.
+*
 * Revision 6.5  2005/05/20 13:34:26  shomrat
 * Added BasicCleanup()
 *
