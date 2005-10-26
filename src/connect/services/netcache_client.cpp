@@ -466,6 +466,7 @@ IReader* CNetCacheClient::GetData(const string& key,
                                   ELockMode     lock_mode)
 {
     CheckConnect(key);
+    CSockGuard sg(*m_Sock);
 
     string& request = m_Tmp;
     MakeCommandPacket(&request, "GET ");
@@ -521,6 +522,7 @@ IReader* CNetCacheClient::GetData(const string& key,
                    eCommunicationError, "Communication error");
     }
 
+    sg.Release();
     IReader* reader = new CNetCacheSock_RW(m_Sock);
     return reader;
 }
@@ -930,6 +932,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/10/26 19:09:35  kuznets
+ * Bug fix: disconnect from server when throwing exception
+ *
  * Revision 1.52  2005/10/25 19:11:09  kuznets
  * Added non blocking blob get
  *
