@@ -39,6 +39,7 @@
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/tse_lock.hpp>
+#include <objmgr/blob_id.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <set>
@@ -248,16 +249,13 @@ public:
     virtual void GetBlobs(TTSE_LockSets& tse_sets);
 
     // blob operations
-    typedef CConstRef<CObject> TBlobId;
+    typedef CBlobIdKey TBlobId;
     typedef int TBlobVersion;
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
 
     virtual bool CanGetBlobById(void) const;
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
-
-    virtual bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
-    virtual string BlobIdToString(const TBlobId& id) const;
 
     virtual SRequestDetails ChoiceToDetails(EChoice choice) const;
     virtual EChoice DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const;
@@ -310,49 +308,9 @@ private:
 /* @} */
 
 
-class NCBI_XOBJMGR_EXPORT CBlobIdKey
-{
-public:
-    CBlobIdKey(void)
-        {
-        }
-    CBlobIdKey(const CDataLoader* loader, const CDataLoader::TBlobId& blob_id)
-        : m_Loader(loader), m_BlobId(blob_id)
-        {
-        }
-
-    string ToString(void) const;
-
-    bool operator<(const CBlobIdKey& id) const
-        {
-            if ( m_Loader != id.m_Loader ) return m_Loader < id.m_Loader;
-            if ( !m_Loader ) return m_BlobId < id.m_BlobId;
-            return m_Loader->LessBlobId(m_BlobId, id.m_BlobId);
-        }
-    bool operator==(const CBlobIdKey& id) const
-        {
-            if ( m_Loader != id.m_Loader ) return false;
-            if ( !m_Loader ) return m_BlobId == id.m_BlobId;
-            return !m_Loader->LessBlobId(m_BlobId, id.m_BlobId) &&
-                !m_Loader->LessBlobId(id.m_BlobId, m_BlobId);
-        }
-    bool operator!=(const CBlobIdKey& id) const
-        {
-            if ( m_Loader != id.m_Loader ) return true;
-            if ( !m_Loader ) return m_BlobId != id.m_BlobId;
-            return m_Loader->LessBlobId(m_BlobId, id.m_BlobId) ||
-                m_Loader->LessBlobId(id.m_BlobId, m_BlobId);
-        }
-
-private:
-    CConstRef<CDataLoader>  m_Loader;
-    CDataLoader::TBlobId    m_BlobId;
-};
-
-
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 1, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 2, 1, 1);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>
@@ -380,6 +338,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/10/26 14:36:38  vasilche
+* Added new CBlobId interface.
+* Advanced CDataLoader plugin interface version.
+*
 * Revision 1.44  2005/09/20 19:16:55  kuznets
 * Added template param typedef to CParamLoaderMaker
 *

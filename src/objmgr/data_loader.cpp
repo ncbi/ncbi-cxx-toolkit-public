@@ -370,25 +370,17 @@ CDataLoader::TBlobVersion CDataLoader::GetBlobVersion(const TBlobId& /*id*/)
 }
 
 
-bool CDataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
+/////////////////////////////////////////////////////////////////////////////
+// CBlobId
+
+CBlobId::~CBlobId(void)
 {
-    return id1 < id2;
 }
 
 
-string CDataLoader::BlobIdToString(const TBlobId& id) const
+bool CBlobId::operator==(const CBlobId& id) const
 {
-    return "TSE("+NStr::PtrToString(id.GetPointerOrNull())+
-        ", loader="+NStr::PtrToString(this)+")";
-}
-
-
-string CBlobIdKey::ToString(void) const
-{
-    if ( !m_Loader ) {
-        return "TSE("+NStr::PtrToString(m_BlobId.GetPointerOrNull())+")";
-    }
-    return m_Loader->BlobIdToString(m_BlobId);
+    return !(*this < id || id < *this);
 }
 
 
@@ -398,6 +390,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/10/26 14:36:38  vasilche
+* Added new CBlobId interface.
+* Advanced CDataLoader plugin interface version.
+*
 * Revision 1.24  2005/07/21 19:37:17  grichenk
 * Added CScope::GetBioseqHandles() and supporting methods in data source,
 * data loader and readers.
