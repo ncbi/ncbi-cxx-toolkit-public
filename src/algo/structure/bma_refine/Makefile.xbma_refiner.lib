@@ -4,7 +4,7 @@
 # 
 ##########################################
 
-REQUIRES = objects ctools
+REQUIRES = objects
 
 LIB =   xbma_refiner
 
@@ -18,6 +18,3 @@ SRC =   RowSelector \
         RefinerCycle \
         RefinerTrial \
         RefinerEngine
-
-
-CPPFLAGS = $(ORIG_CPPFLAGS)
