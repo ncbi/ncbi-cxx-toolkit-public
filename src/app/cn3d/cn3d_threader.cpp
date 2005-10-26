@@ -1152,7 +1152,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
         // set score in alignment rows (for sorting and status line display)
         multiple->SetRowDouble(row, score);
         CNcbiOstrstream oss;
-        oss << "PSSM+Contact score (PSSM x" << weightPSSM << "): " << score << '\0';
+        oss << "PSSM+Contact score (PSSM x" << weightPSSM << "): " << score;
         multiple->SetRowStatusLine(row, (string) CNcbiOstrstreamToString(oss));
     }
 
@@ -1246,6 +1246,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.49  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

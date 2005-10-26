@@ -435,7 +435,6 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
         // draw label
         if (oss.pcount() > 0) {
-            oss << '\0';
             string labelText = (string) CNcbiOstrstreamToString(oss);
 
             // apply highlight color if necessary
@@ -455,6 +454,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.38  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

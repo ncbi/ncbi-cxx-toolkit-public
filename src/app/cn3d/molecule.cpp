@@ -385,7 +385,6 @@ bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
                 }
                 if (identifier->pdbChain != MoleculeIdentifier::VALUE_NOT_SET && identifier->pdbChain != ' ')
                     oss << " (" << (char) identifier->pdbChain << ')';
-                oss << '\0';
 
                 // draw label
                 string labelText = (string) CNcbiOstrstreamToString(oss);
@@ -403,6 +402,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.48  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

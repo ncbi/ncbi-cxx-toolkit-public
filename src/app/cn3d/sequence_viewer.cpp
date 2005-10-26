@@ -180,7 +180,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
 {
     // do whole alignment for now
     unsigned int firstCol = 0, lastCol = alignment->AlignmentWidth() - 1, nColumns = 70;
-    if (firstCol < 0 || lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
+    if (lastCol >= alignment->AlignmentWidth() || firstCol > lastCol || nColumns < 1) {
         ERRORMSG("DumpFASTA() - nonsensical display region parameters");
         return;
     }
@@ -232,7 +232,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
         }
 
         titleList.resize(titleList.size() + 1);
-        oss << '\n' << '\0';
+        oss << '\n';
         titleList.back() = (string) CNcbiOstrstreamToString(oss);
     }
 
@@ -573,6 +573,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.74  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

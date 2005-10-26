@@ -226,7 +226,6 @@ string MoleculeIdentifier::ToString(void) const
         oss << "mmdb " << mmdbID << " molecule " << moleculeID;
     } else
         oss << '?';
-    oss << '\0';
     return (string) CNcbiOstrstreamToString(oss);
 }
 
@@ -332,6 +331,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.19  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

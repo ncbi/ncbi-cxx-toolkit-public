@@ -148,11 +148,11 @@ void BlockMultipleAlignment::FreeColors(void)
 bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
 {
     if (!block || !block->IsAligned()) {
-        ERRORMSG("MultipleAlignment::CheckAlignedBlock() - checks aligned blocks only");
+        ERRORMSG("BlockMultipleAlignment::CheckAlignedBlock() - checks aligned blocks only");
         return false;
     }
     if (block->NSequences() != sequences->size()) {
-        ERRORMSG("MultipleAlignment::CheckAlignedBlock() - block size mismatch");
+        ERRORMSG("BlockMultipleAlignment::CheckAlignedBlock() - block size mismatch");
         return false;
     }
 
@@ -172,7 +172,7 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
             (nextRange && range->to >= nextRange->from) ||          // check for range overlap
             range->from > range->to ||                              // check range values
             range->to >= (int)(*sequence)->Length()) {              // check bounds of end
-            ERRORMSG("MultipleAlignment::CheckAlignedBlock() - range error");
+            ERRORMSG("BlockMultipleAlignment::CheckAlignedBlock() - range error");
             return false;
         }
     }
@@ -1902,6 +1902,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.72  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *

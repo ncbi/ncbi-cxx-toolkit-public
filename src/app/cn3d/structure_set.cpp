@@ -1425,7 +1425,7 @@ void StructureObject::RealignStructure(int nCoords,
         << slaveMolecule->identifier->pdbID << ((char) slaveMolecule->identifier->pdbChain) << slaveDomain << ' '
         << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->identifier->ToString()
         << " with master " << multiple->GetSequenceOfRow(0)->identifier->ToString()
-        << ", as computed by Cn3D" << '\0';
+        << ", as computed by Cn3D";
     feature->SetName((string) CNcbiOstrstreamToString(oss));
 }
 
@@ -1515,6 +1515,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.150  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.149  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

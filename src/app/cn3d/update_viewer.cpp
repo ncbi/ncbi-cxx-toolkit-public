@@ -469,7 +469,6 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
             << "&slave=" << (*s)->identifier->ToString();
         if (masterFrom <= masterTo && masterFrom < master->Length() && masterTo < master->Length())
             argstr << "&from=" << (masterFrom+1) << "&to=" << (masterTo+1); // URL #'s are 1-based
-        argstr << '\0';
         string args((string) CNcbiOstrstreamToString(argstr));
 
         // connect to vastalign.cgi
@@ -946,7 +945,7 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
 
     // find best-scoring aligment above some threshold
     const BlockMultipleAlignment *bestMatchFromMultiple = NULL;
-    int b, bestRow = -1;
+    unsigned int b, bestRow = 0;
     BLASTer::AlignmentList::const_iterator p, pe = rowAlignments.end();
     for (b=0, p=rowAlignments.begin(); p!=pe; ++b, ++p) {
         if (!bestMatchFromMultiple || (*p)->GetRowDouble(0) < bestMatchFromMultiple->GetRowDouble(0)) {
@@ -981,12 +980,11 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
         new BlockMultipleAlignment(seqs, importSeq->parentSet->alignmentManager);
 
     // create maximally sized blocks
-    int masterStart=-1;
-	unsigned int importStart, importLoc, slaveLoc, masterLoc, len=0;
-    for (importStart=-1, importLoc=0; importLoc<=importSeq->Length(); ++importLoc) {
+    int masterStart=-1, importStart, importLoc, slaveLoc, masterLoc, len=0;
+    for (importStart=-1, importLoc=0; importLoc<=(int)importSeq->Length(); ++importLoc) {
 
         // map import -> slave -> master
-        slaveLoc = (importLoc < importSeq->Length()) ? import2slave[importLoc] : -1;
+        slaveLoc = (importLoc < (int)importSeq->Length()) ? import2slave[importLoc] : -1;
         masterLoc = (slaveLoc >= 0) ? slave2master[slaveLoc] : -1;
 
         // if we're currently inside a block..
@@ -1161,6 +1159,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.80  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

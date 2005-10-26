@@ -316,7 +316,7 @@ bool ASNDataManager::ConvertMimeDataToCDD(const std::string& cddName)
         CRef < CCdd_id > id(new CCdd_id());
         cdd->SetId().Set().push_back(id);
         CNcbiOstrstream oss;
-        oss << "loc" << localID++ << '\0';
+        oss << "loc" << localID++;
         id->SetGid().SetAccession((string) CNcbiOstrstreamToString(oss));
 
         // fill in data
@@ -1024,6 +1024,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.26  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

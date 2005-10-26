@@ -477,8 +477,7 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
         if (identifier->accession == "query" || identifier->accession == "consensus") return;
         oss << identifier->accession.c_str();
     }
-    oss << '\0';
-	LaunchWebPage(((string) CNcbiOstrstreamToString(oss)).c_str());
+    LaunchWebPage(((string) CNcbiOstrstreamToString(oss)).c_str());
 }
 
 static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
@@ -659,6 +658,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.72  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *

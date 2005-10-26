@@ -549,7 +549,6 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
         oss << '\n';
     }
 
-    oss << '\0';
     *data = (string) CNcbiOstrstreamToString(oss);
     return true;
 }
@@ -579,6 +578,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/10/26 18:36:05  thiessen
+* minor fixes
+*
 * Revision 1.47  2005/10/22 02:50:34  thiessen
 * deal with memory issues, mostly in ostrstream->string conversion
 *
