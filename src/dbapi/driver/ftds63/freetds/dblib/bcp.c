@@ -1741,7 +1741,8 @@ _bcp_start_copy_in(DBPROCESS * dbproc)
 	 */
 	dbproc->bcpinfo->var_cols = 0;
 
-	if (IS_TDS50(tds)) {
+/*     if (IS_TDS50(tds)) { -- by ssikorsk */
+    if ( IS_TDS42(tds) || IS_TDS46(tds) || IS_TDS50(tds) ) { 
 		for (i = 0; i < dbproc->bcpinfo->bindinfo->num_cols; i++) {
 	
 			bcpcol = dbproc->bcpinfo->bindinfo->columns[i];
@@ -1789,7 +1790,8 @@ _bcp_start_copy_in(DBPROCESS * dbproc)
 			}
 			dbproc->bcpinfo->bindinfo->row_size = bcp_record_size;
 		}
-	}
+	} 
+    
 	if (IS_TDS7_PLUS(tds)) {
 		for (i = 0; i < dbproc->bcpinfo->bindinfo->num_cols; i++) {
 	
