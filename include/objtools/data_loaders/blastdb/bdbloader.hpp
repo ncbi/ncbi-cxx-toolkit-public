@@ -96,17 +96,15 @@ public:
     
     virtual ~CBlastDbDataLoader();
     
-    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
-    
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
-    
-    
-    /// Unload a TSE, clear chunk mappings
-    virtual void DropTSE(CRef<CTSE_Info> tse_info);
-    
+
+
+    /// Load TSE
+    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
     /// Load a description or data chunk.
     virtual void GetChunk(TChunk chunk);
-    
+
+
     /// Gets the blob id for a given sequence.
     ///
     /// Given a Seq_id_Handle, this method finds the corresponding top
@@ -183,7 +181,7 @@ public:
         /// @param end
         ///   The coordinate of the end of the region to build.
         CSeqChunkData(CRef<CSeqDB>     seqdb,
-                      CSeq_id_Handle & sih,
+                      const CSeq_id_Handle & sih,
                       int              oid,
                       int              begin,
                       int              end)
@@ -249,62 +247,11 @@ public:
         CRef<CSeq_literal> m_Literal;
     };
     
-    /// Description data
-    class CDescrData {
-    public:
-        /// Empty constructor needed for std::map.
-        CDescrData()
-        {
-        }
-        
-        /// Description data.
-        ///
-        /// Build an object containing the description data.
-        /// Construction of these description objects is relatively
-        /// inexpensive, and is done immediately rather than deferred.
-        ///
-        /// @param sih
-        ///   Identifies the original sequence this data describes.
-        /// @param descr
-        ///   A description of the sequence.
-        CDescrData(CSeq_id_Handle & sih, CRef<CSeq_descr> descr)
-            : m_SIH(sih), m_Descr(descr)
-        {
-        }
-        
-        /// Get the identifier this description corresponds to.
-        /// @return
-        ///   A handle for the sequence identifier.
-        CSeq_id_Handle & GetSeqIdHandle()
-        {
-            return m_SIH;
-        }
-        
-        /// Get the sequence description.
-        /// @return
-        ///   An object describing the sequence.
-        CRef<CSeq_descr> GetDescr()
-        {
-            return m_Descr;
-        }
-        
-    private:
-        /// A handle to the sequence identifier.
-        CSeq_id_Handle   m_SIH;
-        
-        /// The sequence description object.
-        CRef<CSeq_descr> m_Descr;
-    };
-    
-    /// A mapping from chunk id to sequence data region.
-    typedef map< int, CSeqChunkData >  TSeqChunkCache;
-    
-    /// A mapping from chunk id to sequence description.
-    typedef map< int, CDescrData >     TDescrChunks;
-    
     /// A mapping from sequence identifier to blob ids.
     typedef map< CSeq_id_Handle, int > TIds;
     
+    int GetOid(const CSeq_id_Handle& idh);
+    int GetOid(const TBlobId& blob_id) const;
     
     /// Manages a sequence and its subordinate chunks.
     class CCachedSeqData : public CObject {
@@ -321,7 +268,7 @@ public:
         ///   The sequence database containing the original sequence.
         /// @param oid
         ///   Locates the sequence within the CSeqDB database.
-        CCachedSeqData(const CSeq_id_Handle & sih, CSeqDB & seqdb, int oid);
+        CCachedSeqData(CSeqDB & seqdb, int oid);
         
         /// Get the top-level seq-entry.
         CRef<CSeq_entry> GetTSE()
@@ -333,12 +280,6 @@ public:
         CSeq_id_Handle & GetSeqIdHandle()
         {
             return m_SIH;
-        }
-        
-        /// Get the sequence description
-        CRef<CSeq_descr> GetDescr()
-        {
-            return m_Descr;
         }
         
         /// Get the length of the sequence.
@@ -362,49 +303,10 @@ public:
         /// @return
         ///   An object representing the specified range of sequence data.
         CSeqChunkData BuildDataChunk(int id, int begin, int end);
-        
-        /// Build an object representing a sequence description.
-        ///
-        /// An object will be constructed to represent a sequence
-        /// description.  The ids of the objects returned from this
-        /// method are stored in this (CCachedSeqData) object.
-        ///
-        /// @param chunknum
-        ///   The chunk id for the new chunk.
-        /// @return
-        ///   An object representing the sequence description.
-        CDescrData AddDescr(int chunknum)
-        {
-            m_DescrIds.push_back(chunknum);
-            return CDescrData(GetSeqIdHandle(), GetDescr());
-        }
-        
-        /// Remove this sequence's sub-objects from the data loader.
-        ///
-        /// The data loader stores a number of objects associated with
-        /// this sequence.  This method removes those objects from the
-        /// std::map containers passed to it, and clears internal data
-        /// stored for this object.
-        ///
-        /// @param descrs
-        ///   A map from chunk id to sequence description objects.
-        /// @param seqdata
-        ///   A map from chunk id to sequence data ranges objects.
-        void FreeChunks(TDescrChunks & descrs, TSeqChunkCache & seqdata)
-        {
-            m_TSE.Reset();
-            
-            ITERATE(vector<int>, diter, m_DescrIds) {
-                descrs.erase(*diter);
-            }
-            m_DescrIds.clear();
-            
-            ITERATE(vector<int>, sditer, m_SeqDataIds) {
-                seqdata.erase(*sditer);
-            }
-            m_SeqDataIds.clear();
-        }
-        
+
+        /// Add an empty CDelta_seq to the Seq-entry in m_TSE.
+        void AddDelta(int begin, int end);
+
         /// Add this sequence's identifiers to a lookup table.
         ///
         /// This method adds identifiers from this sequence to a
@@ -416,9 +318,6 @@ public:
         void RegisterIds(TIds & idmap);
         
     private:
-        /// Add an empty CDelta_seq to the Seq-entry in m_TSE.
-        void x_AddDelta(int begin, int end);
-        
         /// SeqID handle
         CSeq_id_Handle m_SIH;
         
@@ -427,21 +326,12 @@ public:
         
         /// Sequence length in bases
         int m_Length;
-        
-        /// Descriptors
-        CRef<CSeq_descr> m_Descr;
-        
+
         /// Database reference
         CRef<CSeqDB> m_SeqDB;
         
         /// Locates this sequence within m_SeqDB.
         int m_OID;
-        
-        /// Associated chunk numbers for descriptions
-        vector<int> m_DescrIds;
-        
-        /// Associated chunk numbers for sequence data
-        vector<int> m_SeqDataIds;
     };
 private:
     /// Load sequence data from cache or from the database.
@@ -452,37 +342,11 @@ private:
     /// description of what data is available will be returned in the
     /// "lock" parameter.
     ///
-    /// @param idh
-    ///   Identifies the sequence for which to load data.
+    /// @param oid
+    ///   Object id in BLAST DB
     /// @param lock
     ///   Information about the sequence data is returned here.
-    /// @return
-    ///   true for success, false if the identifier is not found.
-    bool x_LoadData(const CSeq_id_Handle& idh, CTSE_LoadLock & lock);
-    
-    /// Split the sequence description.
-    ///
-    /// The sequence description is stored and a list of available
-    /// description chunks is returned via the 'chunks' parameter.
-    /// These do not contain the sequence descriptions, but merely
-    /// indicate what is available.
-    ///
-    /// @param chunks
-    ///   The sequence description chunks will be returned here.
-    /// @param seqdata
-    ///   Object managing all data pieces for this sequence.
-    void x_SplitDescr(TChunks & chunks, CCachedSeqData & seqdata);
-    
-    /// Split the sequence.
-    ///
-    /// Chunks listing the descriptions and data ranges for this
-    /// sequence is returned via the 'chunks' parameter.
-    ///
-    /// @param chunks
-    ///   The sequence data chunks will be returned here.
-    /// @param seqdata
-    ///   Object managing all data pieces for this sequence.
-    void x_SplitSeq(TChunks & chunks, CCachedSeqData & seqdata);
+    void x_LoadData(int oid, CTSE_LoadLock & lock);
     
     /// Split the sequence data.
     ///
@@ -508,17 +372,11 @@ private:
                             int              begin,
                             int              end);
     
-    /// A mapping from OID to cached sequence information.
-    typedef map< int, CRef<CCachedSeqData> > TOidCache;
-    
     const string    m_DBName;      ///< Blast database name
     EDbType         m_DBType;      ///< Is this database protein or nucleotide?
     CRef<CSeqDB>    m_SeqDB;       ///< The sequence database
-    TOidCache       m_OidCache;    ///< The primary cache of sequence information
-    TSeqChunkCache  m_SeqChunks;   ///< A cache of chunks of sequence data
-    TDescrChunks    m_DescrChunks; ///< A cache of sequence descriptions
+
     TIds            m_Ids;         ///< ID to OID translation
-    int             m_NextChunkId; ///< The next chunk id to assign
 };
 
 END_SCOPE(objects)
@@ -547,6 +405,12 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.21  2005/10/26 14:36:43  vasilche
+ * Updated for new CBlobId interface.
+ * Removed extra maps for split info - used information from chunk info.
+ * Fixed double loading of sequences.
+ * Do not split descriptors as they are loaded anyway.
+ *
  * Revision 1.20  2005/07/12 12:53:33  camacho
  * Doxygen fix
  *
