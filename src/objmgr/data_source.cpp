@@ -200,7 +200,7 @@ CDataSource::TTSE_Lock CDataSource::AddTSE(CRef<CTSE_Info> info)
     TBlobId blob_id = info->GetBlobId();
     if ( !blob_id ) {
         // Set pointer to TSE itself as its BlobId.
-        info->m_BlobId = blob_id = new CBlobIdPtr(info);
+        info->m_BlobId = blob_id = new CBlobIdPtr(info.GetPointer());
     }
     _VERIFY(m_Blob_Map.insert(TBlob_Map::value_type(blob_id, info)).second);
     info->x_DSAttach(*this);
