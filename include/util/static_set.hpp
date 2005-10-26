@@ -111,7 +111,6 @@ public:
         : m_Begin(obj)
         , m_End(obj + array_size / sizeof(value_type))
     {
-        x_Validate();
     }
 
     /// Constructor to initialize comparator object.
@@ -121,7 +120,6 @@ public:
         , m_End(obj + array_size / sizeof(value_type))
         , m_Compare(comp)
     {
-        x_Validate();
     }
 
     /// Return the start of the controlled sequence.
@@ -205,17 +203,7 @@ public:
 
     virtual const key_type& extract_key(const value_type& value) const = 0;
 
-private:
-    const_iterator m_Begin;
-    const_iterator m_End;
-
-    value_compare m_Compare;
-
-    bool x_Bad(const key_type& key, const_iterator iter) const
-    {
-        return iter == end()  ||  m_Compare(key, *iter);
-    }
-
+protected:
     /// Perform sort-order validation.  This is a no-op in release mode.
     void x_Validate() const
     {
@@ -235,6 +223,16 @@ private:
 #endif
     }
 
+private:
+    const_iterator m_Begin;
+    const_iterator m_End;
+
+    value_compare m_Compare;
+
+    bool x_Bad(const key_type& key, const_iterator iter) const
+    {
+        return iter == end()  ||  m_Compare(key, *iter);
+    }
 };
 
 
@@ -259,6 +257,7 @@ public:
     CStaticArraySet(const_iterator obj, size_type array_size)
         : TBase(obj, array_size)
     {
+        x_Validate();
     }
 
     /// Constructor to initialize comparator object.
@@ -266,6 +265,7 @@ public:
                     const key_compare& comp)
         : TBase(obj, array_size, comp)
     {
+        x_Validate();
     }
 
     /// Return the key comparison object
@@ -287,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/10/26 18:27:28  ludwigf
+ * Fixed x_Validate() diagnostics for CStaticArraySet and CStaticArrayMap.
+ *
  * Revision 1.3  2005/05/04 15:59:46  ucko
  * Suggest PNocase_CStr when using const char*; make validation errors clearer.
  *

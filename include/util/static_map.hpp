@@ -163,6 +163,7 @@ public:
     CStaticArrayMap(const_iterator obj, size_type array_size)
         : TBase(obj, array_size)
     {
+        x_Validate();
     }
 
     /// Constructor to initialize comparator object.
@@ -170,6 +171,7 @@ public:
                     const key_compare& comp)
         : TBase(obj, array_size, comp)
     {
+        x_Validate();
     }
 
 
@@ -193,6 +195,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/26 18:27:28  ludwigf
+ * Fixed x_Validate() diagnostics for CStaticArraySet and CStaticArrayMap.
+ *
  * Revision 1.6  2005/05/04 15:59:46  ucko
  * Suggest PNocase_CStr when using const char*; make validation errors clearer.
  *
