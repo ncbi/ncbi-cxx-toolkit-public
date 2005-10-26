@@ -178,6 +178,7 @@ private:
     string m_ServerName;
     string m_UserName;
     string m_Password;
+    string m_TDSVersion;
 
     TDatabaseParameters  m_DatabaseParameters;
 };
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/26 11:28:09  ssikorsk
+ * Added CDbapiSampleApp::m_TDSVersion
+ *
  * Revision 1.1  2004/12/20 16:46:52  ssikorsk
  * Refactoring of dbapi/driver/samples
  *
