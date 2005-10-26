@@ -5,7 +5,7 @@
 ulimit -n 1024 > /dev/null 2>&1
 
 # Declare drivers and servers
-driver_list="ctlib dblib ftds ftds63 odbc" # msdblib, mysql
+driver_list="ctlib dblib ftds ftds63 odbc msdblib" # mysql
 server_list="MS_DEV1 STRAUSS MOZART"
 server_mssql="MS_DEV1"
 
@@ -95,13 +95,31 @@ Unknown driver initialization error.
 EOF
     else
         for server in $server_list ; do
+
             if test \( $driver = "ctlib" -o $driver = "dblib" \) -a $server = $server_mssql ; then
                 continue
             fi
             if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
                 continue
             fi
-            if test $driver = "ftds" -a  $server != $server_mssql ; then
+
+#            if test $driver = "ftds" -a  $server != $server_mssql ; then
+#                sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
+#                continue
+#            fi
+
+            if test $driver = "ftds" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
+                continue
+            fi
+
+            if test $driver = "ftds63" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
+                continue
+            fi
+
+            if test $driver = "msdblib" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
                 continue
             fi
 
