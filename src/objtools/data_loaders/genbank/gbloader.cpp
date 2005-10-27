@@ -223,7 +223,7 @@ namespace {
         if ( params ) {
             for ( TParams::TNodeList_I it = params->SubNodeBegin();
                   it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
                     return static_cast<TParams*>(*it);
                 }
             }
@@ -237,7 +237,7 @@ namespace {
         if ( params ) {
             for ( TParams::TNodeList_CI it = params->SubNodeBegin();
                   it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
                     return static_cast<const TParams*>(*it);
                 }
             }
@@ -253,7 +253,7 @@ CGBDataLoader::GetParamsSubnode(const TParamTree* params,
 {
     const TParamTree* subnode = 0;
     if ( params ) {
-        if ( NStr::CompareNocase(params->GetId(), subnode_name) == 0 ) {
+        if ( NStr::CompareNocase(params->GetKey(), subnode_name) == 0 ) {
             subnode = params;
         }
         else {
@@ -270,13 +270,14 @@ CGBDataLoader::GetParamsSubnode(TParamTree* params,
 {
     _ASSERT(params);
     TParamTree* subnode = 0;
-    if ( NStr::CompareNocase(params->GetId(), subnode_name) == 0 ) {
+    if ( NStr::CompareNocase(params->GetKey(), subnode_name) == 0 ) {
         subnode = params;
     }
     else {
         subnode = FindSubNode(params, subnode_name);
         if ( !subnode ) {
-            subnode = params->AddNode(subnode_name, kEmptyStr);
+            subnode = params->AddNode(
+                TParamTree::TValueType(subnode_name, kEmptyStr));
         }
     }
     return subnode;
@@ -319,10 +320,10 @@ void CGBDataLoader::SetParam(TParamTree* params,
 {
     TParamTree* subnode = FindSubNode(params, param_name);
     if ( !subnode ) {
-        params->AddNode(param_name, param_value);
+        params->AddNode(TParamTree::TValueType(param_name, param_value));
     }
     else {
-        subnode->SetValue(param_value);
+        subnode->GetValue().value = param_value;
     }
 }
 
@@ -333,7 +334,7 @@ string CGBDataLoader::GetParam(const TParamTree* params,
     if ( params ) {
         const TParamTree* subnode = FindSubNode(params, param_name);
         if ( subnode ) {
-            return subnode->GetValue();
+            return subnode->GetValue().value;
         }
     }
     return kEmptyStr;

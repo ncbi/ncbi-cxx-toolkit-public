@@ -51,16 +51,41 @@ BEGIN_NCBI_SCOPE
 ///    Bi-directionaly linked N way tree.
 ///
 
-template <class TValue> 
+/// Default key getter for CTreeNode
+template <class TValue>
+class CDefaultNodeKeyGetter
+{
+public:
+    typedef TValue TNodeType;   ///< same as CTreeNode template argument
+    typedef TValue TValueType;  ///< node's value
+    typedef TValue TKeyType;    ///< node's key
+
+    /// Get value of a node
+    static const TValueType& GetValue(const TNodeType& node) { return node; }
+    /// Get non-const value of a node
+    static TValueType& GetValueNC(TNodeType& node) { return node; }
+    /// Get key of a node
+    static const TKeyType& GetKey(const TNodeType& node) { return node; }
+    /// Get non-const key
+    static TKeyType& GetKeyNC(TNodeType& node) { return node; }
+    /// Check if the two keys are equal
+    static bool KeyCompare(const TKeyType& key1, const TKeyType& key2)
+        { return key1 == key2; }
+};
+
+
+template <class TValue, class TKeyGetter = CDefaultNodeKeyGetter<TValue> >
 class CTreeNode
 {
 public:
-    typedef TValue                     TValueType;
-    typedef CTreeNode<TValue>          TTreeType;
-    typedef list<TTreeType*>           TNodeList;
-    typedef list<const TTreeType*>     TConstNodeList;
+    typedef TValue                              TValueType;
+    typedef typename TKeyGetter::TKeyType       TKeyType;
+    typedef CTreeNode<TValue, TKeyGetter>       TTreeType;
+    typedef list<TTreeType*>                    TNodeList;
+    typedef list<const TTreeType*>              TConstNodeList;
     typedef typename TNodeList::iterator        TNodeList_I;
     typedef typename TNodeList::const_iterator  TNodeList_CI;
+    typedef list<TKeyType>                      TKeyList;
 
     /// Tree node construction
     ///
@@ -76,47 +101,55 @@ public:
     ///
     /// @return parent to the current node, NULL if it is a top
     /// of the tree
-    const TTreeType* GetParent() const { return m_Parent; }
+    const TTreeType* GetParent(void) const { return m_Parent; }
 
     /// Get node's parent
     ///
     /// @return parent to the current node, NULL if it is a top
     /// of the tree
-    TTreeType* GetParent() { return m_Parent; }
+    TTreeType* GetParent(void) { return m_Parent; }
 
     /// Get the topmost node 
     ///
     /// @return global parent of the current node, this if it is a top
     /// of the tree
-    const TTreeType* GetRoot() const;
+    const TTreeType* GetRoot(void) const;
 
     /// Get the topmost node 
     ///
     /// @return global parent of the current node, this if it is a top
     /// of the tree
-    TTreeType* GetRoot();
+    TTreeType* GetRoot(void);
 
 
     /// Return first const iterator on subnode list
-    TNodeList_CI SubNodeBegin() const { return m_Nodes.begin(); }
+    TNodeList_CI SubNodeBegin(void) const { return m_Nodes.begin(); }
 
     /// Return first iterator on subnode list
-    TNodeList_I SubNodeBegin() { return m_Nodes.begin(); }
+    TNodeList_I SubNodeBegin(void) { return m_Nodes.begin(); }
 
     /// Return last const iterator on subnode list
-    TNodeList_CI SubNodeEnd() const { return m_Nodes.end(); }
+    TNodeList_CI SubNodeEnd(void) const { return m_Nodes.end(); }
 
     /// Return last iterator on subnode list
-    TNodeList_I SubNodeEnd() { return m_Nodes.end(); }
+    TNodeList_I SubNodeEnd(void) { return m_Nodes.end(); }
 
     /// Return node's value
-    const TValue& GetValue() const { return m_Value; }
+    const TValue& GetValue(void) const { return m_Value; }
 
     /// Return node's value
-    TValue& GetValue() { return m_Value; }
+    TValue& GetValue(void) { return m_Value; }
 
     /// Set value for the node
     void SetValue(const TValue& value) { m_Value = value; }
+
+    const TValue& operator*(void) const { return m_Value; }
+    TValue& operator*(void) { return m_Value; }
+    const TValue* operator->(void) const { return &m_Value; }
+    TValue& operator->(void) { return &m_Value; }
+
+    const TKeyType& GetKey(void) const { return TKeyGetter::GetKey(m_Value); }
+    TKeyType& GetKey(void) { return TKeyGetter::GetKeyNC(m_Value); }
 
     /// Remove subnode of the current node. Must be direct subnode.
     ///
@@ -188,7 +221,7 @@ public:
     ///    val value reference
     ///
     /// @return pointer to new subtree
-    CTreeNode<TValue>* AddNode(const TValue& val = TValue());
+    TTreeType* AddNode(const TValue& val = TValue());
 
     /// Remove all subnodes from the source node and attach them to the
     /// current tree (node). Source node cannot be an ancestor of the 
@@ -216,133 +249,29 @@ public:
     /// @return TRUE if tree_node is a direct or indirect parent
     bool IsParent(const TTreeType& tree_node) const;
 
-protected:
-    void CopyFrom(const TTreeType& tree);
-    void SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
-
-    const TNodeList& GetSubNodes() const { return m_Nodes; }
-
-protected:
-    TTreeType*         m_Parent; ///< Pointer on the parent node
-    TNodeList          m_Nodes;  ///< List of dependent nodes
-    TValue             m_Value;  ///< Node value
-};
-
-
-template <class TId, class TValue>
-struct CTreePair
-{
-    TId       id;
-    TValue    value;
-
-    CTreePair() {}
-    CTreePair(const TId& tid, const TValue& tvalue)
-    : id(tid),
-      value(tvalue)
-    {}
-
-    TId GetId() const { return id; }
-};
-
-/////////////////////////////////////////////////////////////////////////////
-///
-///    Bi-directionaly linked N way tree.
-///    Parameterized by id - value pair
-
-template <class TId, class TValue> class CTreePairNode
-    : public CTreeNode< CTreePair<TId, TValue> >
-{
-public:
-    typedef TId                                  TIdType;
-    typedef TValue                               TValueType;
-    typedef CTreeNode<CTreePair<TId, TValue> >   TParent;
-    typedef typename TParent::TValueType         TTreeValueType;
-    typedef CTreePair<TId, TValue>               TTreePair;
-    typedef CTreePairNode<TId, TValue>           TPairTreeType;
-    typedef list<TPairTreeType*>                 TPairTreeNodeList;
-    typedef list<const TPairTreeType*>           TConstPairTreeNodeList;
-
-public:
-
-    CTreePairNode(const TId& id = TId(), const TValue& value = TValue());
-    CTreePairNode(const CTreePairNode<TId, TValue>& tr);
-    CTreePairNode<TId, TValue>& operator=(const CTreePairNode<TId, TValue>& tr);
-
-
-    /// Add new subnode whose value is (a copy of) val
-    ///
-    /// @param 
-    ///    val value reference
-    ///
-    /// @return pointer to new subtree
-    CTreePairNode<TId, TValue>* AddNode(const TId& id, const TValue& value);
-
-    void AddNode(CTreePairNode<TId, TValue>* node) { TParent::AddNode(node); }
-
-    const CTreePairNode<TId, TValue>* GetRoot() const 
-    { return (const CTreePairNode<TId, TValue>*)TParent::GetRoot(); }
-
-    CTreePairNode<TId, TValue>* GetRoot() 
-    { return (CTreePairNode<TId, TValue>*)TParent::GetRoot(); }
-
-    const CTreePairNode<TId, TValue>* GetParent() const 
-    { return (const CTreePairNode<TId, TValue>*)TParent::GetParent(); }
-
-    CTreePairNode<TId, TValue>* GetParent() 
-    { return (CTreePairNode<TId, TValue>*)TParent::GetParent(); }
-
-    /// Return TParent::TValueType 
-    /// (tree node value in terms of the upper level tree)
-    const TTreeValueType& GetTreeValue() const { return this->m_Value; }
-
-    /// Return TParent::TValueType 
-    /// (tree node value in terms of the upper level tree)
-    TTreeValueType& GetTreeValue() { return this->m_Value; }
-
-    /// Return node's value
-    const TValueType& GetValue() const { return this->m_Value.value; }
-
-    /// Return node's id
-    const TIdType& GetId() const { return this->m_Value.id; }
-
-    /// Return node's value
-    TValueType& GetValue() { return this->m_Value.value; }
-
-    /// Return node's id
-    TIdType& GetId() { return this->m_Value.id; }
-
-    /// Set value for the node
-    void SetValue(const TValue& value) { this->m_Value.value = value; }
-
-    /// Set id for the node
-    void SetId(const TId& id) { this->m_Value.id = id; }
-
     /// Find tree nodes corresponding to the path from the top
     ///
     /// @param node_path
-    ///    hierachy of node ids to search for
+    ///    hierachy of node keys to search for
     /// @param res
     ///    list of discovered found nodes
-    void FindNodes(const list<TId>& node_path, TPairTreeNodeList* res);
+    void FindNodes(const TKeyList& node_path, TNodeList* res);
 
     /// Find tree nodes corresponding to the path from the top
     ///
     /// @param node_path
-    ///    hierachy of node ids to search for
+    ///    hierachy of node keys to search for
     /// @param res
     ///    list of discovered found nodes (const pointers)
-    void FindNodes(const list<TId>&        node_path, 
-                   TConstPairTreeNodeList* res) const;
+    void FindNodes(const TKeyList& node_path, 
+                   TConstNodeList* res) const;
 
-    /// Non recursive linear scan of all subnodes, with id comparison
+    /// Non recursive linear scan of all subnodes, with key comparison
     ///
     /// @return SubNode pointer or NULL
-    ///
-    /// If return value is not NULL Id and value can be received by
-    /// FindSubNode(...)->GetId(), FindSubNode(...)->GetValue()
-    const TPairTreeType* FindSubNode(const TId& id) const;
+    const TTreeType* FindSubNode(const TKeyType& key) const;
 
-    /// Parameters for Id node search
+    /// Parameters for node search by key
     ///
     enum ENodeSearchType
     {
@@ -360,16 +289,70 @@ public:
     /// @param sflag
     ///     ORed ENodeSearchType
     /// @return node pointer or NULL
-    const TPairTreeType* FindNode(const TId&      id, 
-                                  TNodeSearchMode sflag = eImmediateAndTop) const;
+    const TTreeType* FindNode(const TKeyType& key, 
+                              TNodeSearchMode sflag = eImmediateAndTop) const;
 
+protected:
+    void CopyFrom(const TTreeType& tree);
+    void SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
+
+    const TNodeList& GetSubNodes() const { return m_Nodes; }
+
+protected:
+    TTreeType*         m_Parent; ///< Pointer on the parent node
+    TNodeList          m_Nodes;  ///< List of dependent nodes
+    TValue             m_Value;  ///< Node value
 };
+
+
+/// Default key getter for pair-node (id + value)
+template <class TId, class TValue, class TNode>
+class CPairNodeKeyGetter
+{
+public:
+    typedef TNode  TNodeType;
+    typedef TValue TValueType;
+    typedef TId    TKeyType;
+
+    static const TValueType& GetValue(const TNodeType& node)
+        { return node.value; }
+    static TValueType& GetValueNC(TNodeType& node)
+        { return node.value; }
+    static const TKeyType& GetKey(const TNodeType& node)
+        { return node.id; }
+    static TKeyType& GetKeyNC(TNodeType& node)
+        { return node.id; }
+    static bool KeyCompare(const TKeyType& key1, const TKeyType& key2)
+        { return key1 == key2; }
+};
+
+
+/// Node data template for id-value trees
+template <class TId, class TValue>
+struct CTreePair
+{
+    /// Node data type
+    typedef CTreePair<TId, TValue>                     TTreePair;
+    /// Key getter for CTreeNode
+    typedef CPairNodeKeyGetter<TId, TValue, TTreePair> TPairKeyGetter;
+    /// Tree node type
+    typedef CTreeNode<TTreePair, TPairKeyGetter>       TPairTreeNode;
+
+    CTreePair() {}
+    CTreePair(const TId& aid, const TValue& avalue = TValue())
+    : id(aid),
+      value(avalue)
+    {}
+
+    TId    id;
+    TValue value;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Tree algorithms
 //
-
 
 
 /// Tree traverse code returned by the traverse predicate function
@@ -557,14 +540,15 @@ Fun TreeBreadthFirstTraverse(TTreeNode& tree_node, Fun func)
 //  CTreeNode<TValue>
 //
 
-template<class TValue>
-CTreeNode<TValue>::CTreeNode(const TValue& value)
+template<class TValue, class TKeyGetter>
+CTreeNode<TValue, TKeyGetter>::CTreeNode(const TValue& value)
 : m_Parent(0),
   m_Value(value)
-{}
+{
+}
 
-template<class TValue>
-CTreeNode<TValue>::~CTreeNode()
+template<class TValue, class TKeyGetter>
+CTreeNode<TValue, TKeyGetter>::~CTreeNode(void)
 {
     _ASSERT(m_Parent == 0);
     ITERATE(typename TNodeList, it, m_Nodes) {
@@ -574,16 +558,17 @@ CTreeNode<TValue>::~CTreeNode()
     }
 }
 
-template<class TValue>
-CTreeNode<TValue>::CTreeNode(const TTreeType& tree)
+template<class TValue, class TKeyGetter>
+CTreeNode<TValue, TKeyGetter>::CTreeNode(const TTreeType& tree)
 : m_Parent(0),
   m_Value(tree.m_Value)
 {
     CopyFrom(tree);
 }
 
-template<class TValue>
-CTreeNode<TValue>& CTreeNode<TValue>::operator=(const TTreeType& tree)
+template<class TValue, class TKeyGetter>
+CTreeNode<TValue, TKeyGetter>&
+CTreeNode<TValue, TKeyGetter>::operator=(const TTreeType& tree)
 {
     NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNode* node = *it;
@@ -594,8 +579,8 @@ CTreeNode<TValue>& CTreeNode<TValue>::operator=(const TTreeType& tree)
     return *this;
 }
 
-template<class TValue>
-void CTreeNode<TValue>::CopyFrom(const TTreeType& tree)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::CopyFrom(const TTreeType& tree)
 {
     ITERATE(typename TNodeList, it, tree.m_Nodes) {
         const CTreeNode* src_node = *it;
@@ -604,8 +589,8 @@ void CTreeNode<TValue>::CopyFrom(const TTreeType& tree)
     }
 }
 
-template<class TValue>
-void CTreeNode<TValue>::RemoveNode(TTreeType* subnode)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::RemoveNode(TTreeType* subnode)
 {
     NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNode* node = *it;
@@ -618,8 +603,8 @@ void CTreeNode<TValue>::RemoveNode(TTreeType* subnode)
     }    
 }
 
-template<class TValue>
-void CTreeNode<TValue>::RemoveNode(TNodeList_I it)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::RemoveNode(TNodeList_I it)
 {
     CTreeNode* node = *it;
     node->m_Parent = 0;
@@ -627,10 +612,9 @@ void CTreeNode<TValue>::RemoveNode(TNodeList_I it)
     delete node;
 }
 
-
-template<class TValue>
-typename CTreeNode<TValue>::TTreeType* 
-CTreeNode<TValue>::DetachNode(typename CTreeNode<TValue>::TTreeType* subnode)
+template<class TValue, class TKeyGetter>
+typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::DetachNode(TTreeType* subnode)
 {
     NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
         CTreeNode* node = *it;
@@ -643,10 +627,9 @@ CTreeNode<TValue>::DetachNode(typename CTreeNode<TValue>::TTreeType* subnode)
     return 0;
 }
 
-
-template<class TValue>
-typename CTreeNode<TValue>::TTreeType* 
-CTreeNode<TValue>::DetachNode(typename CTreeNode<TValue>::TNodeList_I it)
+template<class TValue, class TKeyGetter>
+typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::DetachNode(TNodeList_I it)
 {
     CTreeNode* node = *it;
     m_Nodes.erase(it);
@@ -655,17 +638,17 @@ CTreeNode<TValue>::DetachNode(typename CTreeNode<TValue>::TNodeList_I it)
     return node;
 }
 
-
-template<class TValue>
-void CTreeNode<TValue>::AddNode(typename CTreeNode<TValue>::TTreeType* subnode)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::AddNode(TTreeType* subnode)
 {
     _ASSERT(subnode != this);
     m_Nodes.push_back(subnode);
     subnode->SetParent(this);
 }
 
-template<class TValue>
-CTreeNode<TValue>* CTreeNode<TValue>::AddNode(const TValue& val)
+template<class TValue, class TKeyGetter>
+typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::AddNode(const TValue& val)
 {
     TTreeType* subnode = new TTreeType(val);
     AddNode(subnode);
@@ -673,8 +656,8 @@ CTreeNode<TValue>* CTreeNode<TValue>::AddNode(const TValue& val)
 }
 
 
-template<class TValue>
-void CTreeNode<TValue>::MoveSubnodes(TTreeType* src_tree_node)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::MoveSubnodes(TTreeType* src_tree_node)
 {
     _ASSERT(!IsParent(*src_tree_node));
     TNodeList& src_nodes = src_tree_node->m_Nodes;
@@ -685,16 +668,16 @@ void CTreeNode<TValue>::MoveSubnodes(TTreeType* src_tree_node)
 }
 
 
-template<class TValue>
-void CTreeNode<TValue>::InsertNode(TNodeList_I it,
-                                   TTreeType* subnode)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::InsertNode(TNodeList_I it,
+                                               TTreeType* subnode)
 {
     m_Nodes.insert(it, subnode);
     subnode->SetParent(this);
 }
 
-template<class TValue>
-void CTreeNode<TValue>::RemoveAllSubNodes(EDeletePolicy del)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::RemoveAllSubNodes(EDeletePolicy del)
 {
     if (del == eDelete) {
         NON_CONST_ITERATE(typename TNodeList, it, m_Nodes) {
@@ -705,8 +688,9 @@ void CTreeNode<TValue>::RemoveAllSubNodes(EDeletePolicy del)
     m_Nodes.clear();
 }
 
-template<class TValue>
-const typename CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot() const
+template<class TValue, class TKeyGetter>
+const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::GetRoot() const
 {
     const TTreeType* node_ptr = this;
     while (true) {
@@ -719,8 +703,9 @@ const typename CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot() const
     return node_ptr;
 }
 
-template<class TValue>
-typename CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot()
+template<class TValue, class TKeyGetter>
+typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::GetRoot()
 {
     TTreeType* node_ptr = this;
     while (true) {
@@ -733,8 +718,8 @@ typename CTreeNode<TValue>::TTreeType* CTreeNode<TValue>::GetRoot()
     return node_ptr;
 }
 
-template<class TValue>
-bool CTreeNode<TValue>::IsParent(const TTreeType& tree_node) const
+template<class TValue, class TKeyGetter>
+bool CTreeNode<TValue, TKeyGetter>::IsParent(const TTreeType& tree_node) const
 {
     _ASSERT(this != &tree_node);
 
@@ -749,56 +734,22 @@ bool CTreeNode<TValue>::IsParent(const TTreeType& tree_node) const
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CTreePairNode<TId, TValue>
-//
-
-
-template<class TId, class TValue>
-CTreePairNode<TId, TValue>::CTreePairNode(const TId& id, const TValue& value)
- : TParent(TTreePair(id, value))
-{}
-
-
-template<class TId, class TValue>
-CTreePairNode<TId, TValue>::CTreePairNode(const CTreePairNode<TId, TValue>& tr)
-: TParent(tr)
-{}
-
-
-template<class TId, class TValue>
-CTreePairNode<TId, TValue>& 
-CTreePairNode<TId, TValue>::operator=(const CTreePairNode<TId, TValue>& tr)
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
+                                              TNodeList*      res)
 {
-    TParent::operator=(tr);
-}
+    TTreeType* tr = this;
 
-template<class TId, class TValue>
-CTreePairNode<TId, TValue>*
-CTreePairNode<TId, TValue>::AddNode(const TId& id, const TValue& value)
-{
-    return (CTreePairNode<TId, TValue>*)TParent::AddNode(TTreePair(id, value));
-}
-
-template<class TId, class TValue>
-void CTreePairNode<TId, TValue>::FindNodes(const list<TId>& node_path, 
-                                           TPairTreeNodeList*       res)
-{
-    typename TParent::TTreeType* tr = this;
-
-    ITERATE(typename list<TId>, sit, node_path) {
-        const TId& search_id = *sit;
+    ITERATE(typename TKeyList, sit, node_path) {
+        const TKeyType& key = *sit;
         bool sub_level_found = false;
 
-        typename TParent::TNodeList_I it = tr->SubNodeBegin();
-        typename TParent::TNodeList_I it_end = tr->SubNodeEnd();
+        TNodeList_I it = tr->SubNodeBegin();
+        TNodeList_I it_end = tr->SubNodeEnd();
 
         for (; it != it_end; ++it) {
-            TParent* node = *it;
-            const TTreePair& node_pair = node->GetValue();
-
-            if (node_pair.id == search_id) {
+            TTreeType* node = *it;
+            if (node->GetKey() == key) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -817,24 +768,22 @@ void CTreePairNode<TId, TValue>::FindNodes(const list<TId>& node_path,
 
 
 
-template<class TId, class TValue>
-void CTreePairNode<TId, TValue>::FindNodes(const list<TId>&         node_path, 
-                                           TConstPairTreeNodeList*  res) const
+template<class TValue, class TKeyGetter>
+void CTreeNode<TValue, TKeyGetter>::FindNodes(const TKeyList& node_path,
+                                              TConstNodeList* res) const
 {
-    const typename TParent::TTreeType* tr = this;
+    const TTreeType* tr = this;
 
-    ITERATE(typename list<TId>, sit, node_path) {
-        const TId& search_id = *sit;
+    ITERATE(typename TKeyList, sit, node_path) {
+        const TKeyType& key = *sit;
         bool sub_level_found = false;
 
-        typename TParent::TNodeList_CI it = tr->SubNodeBegin();
-        typename TParent::TNodeList_CI it_end = tr->SubNodeEnd();
+        TNodeList_CI it = tr->SubNodeBegin();
+        TNodeList_CI it_end = tr->SubNodeEnd();
 
         for (; it != it_end; ++it) {
-            const TParent* node = *it;
-            const TTreePair& node_pair = node->GetValue();
-
-            if (node_pair.id == search_id) {
+            const TTreeType* node = *it;
+            if (node->GetKey() == key) {
                 tr = node;
                 sub_level_found = true;
                 break;
@@ -848,49 +797,48 @@ void CTreePairNode<TId, TValue>::FindNodes(const list<TId>&         node_path,
 
     } // ITERATE
 
-    res->push_back((TPairTreeType*)tr);
+    res->push_back(tr);
 }
 
-template<class TId, class TValue>
-const CTreePairNode<TId, TValue>*
-CTreePairNode<TId, TValue>::FindSubNode(const TId& id) const
+template<class TValue, class TKeyGetter>
+const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::FindSubNode(const TKeyType& key) const
 {
-    typename TParent::TNodeList_CI it = this->SubNodeBegin();
-    typename TParent::TNodeList_CI it_end = this->SubNodeEnd();
+    TNodeList_CI it = SubNodeBegin();
+    TNodeList_CI it_end = SubNodeEnd();
 
     for(; it != it_end; ++it) {
-        const TTreeValueType& v = (*it)->GetValue();
-        if (v.id == id) {
-            const TParent* pt = *it;
-            return (CTreePairNode<TId, TValue>*)(pt);
+        if ((*it)->GetKey() == key) {
+            return *it;
         }
     }
     return 0;
 }
 
-template<class TId, class TValue>
-const CTreePairNode<TId, TValue>*
-CTreePairNode<TId, TValue>::FindNode(const TId&      id,
-                                     TNodeSearchMode sflag) const
+template<class TValue, class TKeyGetter>
+const typename CTreeNode<TValue, TKeyGetter>::TTreeType*
+CTreeNode<TValue, TKeyGetter>::FindNode(const TKeyType& key,
+                                        TNodeSearchMode sflag) const
 {
-    const TPairTreeType* ret = 0;
+    const TTreeType* ret = 0;
     if (sflag & eImmediateSubNodes) {
-         ret = FindSubNode(id);
+         ret = FindSubNode(key);
     }
 
     if (!ret && (sflag & eAllUpperSubNodes)) {
-        const TPairTreeType* parent = GetParent();
-        for (;parent; parent = parent->GetParent()) {
-            ret = parent->FindSubNode(id);
-            if (ret)
+        const TTreeType* parent = GetParent();
+        for (; parent; parent = parent->GetParent()) {
+            ret = parent->FindSubNode(key);
+            if (ret) {
                 return ret;
+            }
         }
     }
 
     if (!ret && (sflag & eTopLevelNodes)) {
-        const TPairTreeType* root = GetRoot();
+        const TTreeType* root = GetRoot();
         if (root != this) {
-            ret = root->FindSubNode(id);
+            ret = root->FindSubNode(key);
         }
     }
     return ret;
@@ -904,6 +852,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/10/27 16:48:48  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.40  2004/10/21 13:27:46  kuznets
  * Improved documentation
  *

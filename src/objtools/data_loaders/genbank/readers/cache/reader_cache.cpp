@@ -424,7 +424,7 @@ struct SPluginParams
         if ( params ) {
             for ( TParams::TNodeList_I it = params->SubNodeBegin();
                   it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
                     return static_cast<TParams*>(*it);
                 }
             }
@@ -440,7 +440,7 @@ struct SPluginParams
         if ( params ) {
             for ( TParams::TNodeList_CI it = params->SubNodeBegin();
                   it != params->SubNodeEnd(); ++it ) {
-                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                if ( NStr::CompareNocase((*it)->GetKey(), name) == 0 ) {
                     return static_cast<const TParams*>(*it);
                 }
             }
@@ -457,7 +457,7 @@ struct SPluginParams
         _ASSERT(!name.empty());
         TParams* node = FindSubNode(params, name);
         if ( !node ) {
-            node = params->AddNode(name, default_value);
+            node = params->AddNode(TParams::TValueType(name, default_value));
         }
         return node;
     }
@@ -475,7 +475,7 @@ struct SPluginParams
                                   const string& name,
                                   const char* value)
     {
-        return SetSubNode(params, name, value)->GetValue();
+        return SetSubNode(params, name, value)->GetValue().value;
     }
 
 
@@ -504,7 +504,7 @@ bool IsDisabledCache(const SCacheInfo::TParams* params)
         SPluginParams::FindSubNode(params,
             NCBI_GBLOADER_READER_CACHE_PARAM_DRIVER);
     if ( driver ) {
-        if ( driver->GetValue().empty() ) {
+        if ( driver->GetValue().value.empty() ) {
             // driver is set empty, it means no cache
             return true;
         }
@@ -648,11 +648,11 @@ void CCacheReader::InitializeCache(CReaderCacheManager& cache_manager,
     const TParams* share_id_param =
         id_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
     bool share_id = !share_id_param  ||
-        NStr::StringToBool(share_id_param->GetValue());
+        NStr::StringToBool(share_id_param->GetValue().value);
     const TParams* share_blob_param =
         blob_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
     bool share_blob = !share_blob_param  ||
-        NStr::StringToBool(share_blob_param->GetValue());
+        NStr::StringToBool(share_blob_param->GetValue().value);
     if (share_id  ||  share_blob) {
         if ( share_id ) {
             ICache* cache = cache_manager.

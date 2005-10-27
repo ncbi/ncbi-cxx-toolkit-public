@@ -474,24 +474,25 @@ static void s_TEST_IdTreeOperations()
 
 static void s_TEST_IdTree()
 {
-    typedef CTreePairNode<int, int> TTree;
+    typedef CTreePair<int, int>::TTreePair     TTreePair;
+    typedef CTreePair<int, int>::TPairTreeNode TTree;
 
-    TTree* tr = new TTree(0, 0);
+    TTree* tr = new TTree(TTreePair(0, 0));
     
-    tr->AddNode(1, 10);
-    tr->AddNode(100, 110);
-    TTree* tr2 = tr->AddNode(2, 20);
-    tr2->AddNode(20, 21);    
-    TTree* tr3 =tr2->AddNode(22, 22);
-    tr3->AddNode(222, 222);
+    tr->AddNode(TTreePair(1, 10));
+    tr->AddNode(TTreePair(100, 110));
+    TTree* tr2 = tr->AddNode(TTreePair(2, 20));
+    tr2->AddNode(TTreePair(20, 21));    
+    TTree* tr3 =tr2->AddNode(TTreePair(22, 22));
+    tr3->AddNode(TTreePair(222, 222));
 
     {{
     const TTree* tnd = tr->FindSubNode(100);
     assert(tnd);
-    assert(tnd->GetId() == 100);
-    assert(tnd->GetValue() == 110);
-    const TTree::TTreeValueType& tv = tnd->GetTreeValue();
-    assert(tv.value == 110);
+    assert(tnd->GetValue().id == 100);
+    assert(tnd->GetValue().value == 110);
+    const TTree& tv = tnd->GetValue();
+    assert(tv.GetValue().value == 110);
 
     }}
 
@@ -500,13 +501,13 @@ static void s_TEST_IdTree()
     npath.push_back(2);
     npath.push_back(22);
 
-    TTree::TConstPairTreeNodeList res;
+    TTree::TConstNodeList res;
     tr->FindNodes(npath, &res);
     assert(!res.empty());
-    TTree::TConstPairTreeNodeList::const_iterator it = res.begin();
+    TTree::TConstNodeList::const_iterator it = res.begin();
     const TTree* ftr = *it;
 
-    assert(ftr->GetValue() == 22);
+    assert(ftr->GetValue().value == 22);
     }}
 
     {{
@@ -514,7 +515,7 @@ static void s_TEST_IdTree()
     npath.push_back(2);
     npath.push_back(32);
 
-    TTree::TConstPairTreeNodeList res;
+    TTree::TConstNodeList res;
     tr->FindNodes(npath, &res);
     assert(res.empty());
     }}
@@ -528,14 +529,14 @@ static void s_TEST_IdTree()
 
     const TTree* node = PairTreeTraceNode(*tr, npath);
     assert(node);
-    cout << node->GetId() << " " << node->GetValue() << endl;
-    assert(node->GetValue() == 110);
+    cout << node->GetValue().id << " " << node->GetValue().value << endl;
+    assert(node->GetValue().value == 110);
 
 
     node = PairTreeBackTraceNode(*tr3, 1);
     assert(node);
-    cout << node->GetId() << " " << node->GetValue() << endl;
-    assert(node->GetValue() == 10);
+    cout << node->GetValue().id << " " << node->GetValue().value << endl;
+    assert(node->GetValue().value == 10);
     }}
 
     {{
@@ -546,8 +547,8 @@ static void s_TEST_IdTree()
 
     const TTree* node = PairTreeTraceNode(*tr, npath);
     assert(node);
-    cout << node->GetId() << " " << node->GetValue() << endl;
-    assert(node->GetValue() == 222);
+    cout << node->GetValue().id << " " << node->GetValue().value << endl;
+    assert(node->GetValue().value == 222);
     }}
 
     delete tr;
@@ -604,6 +605,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/10/27 16:48:48  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.2  2004/07/22 16:31:19  kuznets
  * + test for CTreePairNode::FindSubNode
  *

@@ -83,7 +83,8 @@ public:
     /// Recursive class factory calls are modeled as tree, where specific
     /// subtree is responsible for CF parameters
     ///
-    typedef CTreePairNode<string, string>  TParamTree;
+    typedef CTreePair<string, string>  TParamValue;
+    typedef TParamValue::TPairTreeNode TParamTree;
 
 public:
     /// Optionally takes ownership on passed param_tree
@@ -210,6 +211,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/10/27 16:48:48  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.9  2004/12/20 16:43:10  ucko
  * Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
  *

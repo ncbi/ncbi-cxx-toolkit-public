@@ -378,26 +378,26 @@ const TPairTree* PairTreeBackTraceNode(const TPairTree& tr,
     const TPairTree* ptr = &tr;
 
     do {
-        const typename TPairTree::TValueType& node_value = ptr->GetValue();
+        const TValue& node_value = ptr->GetValue().value;
 
         if (search_id == node_value) {
-            return (TPairTree*) ptr;
+            return ptr;
         }
 
         typename TPairTree::TNodeList_CI it = ptr->SubNodeBegin();
         typename TPairTree::TNodeList_CI it_end = ptr->SubNodeEnd();
 
         for (;it != it_end; ++it) {
-            const typename TPairTree::TParent* node = *it;
-            const typename TPairTree::TTreePair& node_pair = node->GetValue();
+            const TPairTree* node = *it;
+            const typename TPairTree::TValueType& node_pair = node->GetValue();
 
-            if (search_id == node_pair.GetId()) {
-                return (TPairTree*) node;
+            if (search_id == node_pair.id) {
+                return node;
             }
 
         } // for
 
-        ptr = (TPairTree*)ptr->GetParent();
+        ptr = ptr->GetParent();
 
     } while (ptr);
 
@@ -421,18 +421,18 @@ const TPairTree* PairTreeTraceNode(const TPairTree& tr, const TPathList& node_pa
     const typename TPathList::value_type& last_search_id = *last_it;
 
     ITERATE(typename TPathList, sit, node_path) {
-        const typename TPairTree::TIdType& search_id = *sit;
+        const typename TPairTree::TKeyType& search_id = *sit;
         bool sub_level_found = false;
         
         typename TPairTree::TNodeList_CI it = ptr->SubNodeBegin();
         typename TPairTree::TNodeList_CI it_end = ptr->SubNodeEnd();
 
         for (;it != it_end; ++it) {
-            const typename TPairTree::TParent* node = *it;
-            const typename TPairTree::TTreePair& node_pair = node->GetValue();
+            const TPairTree* node = *it;
+            const typename TPairTree::TValueType& node_pair = node->GetValue();
 
             
-            if (node_pair.GetId() == search_id) {  
+            if (node_pair.id == search_id) {  
                 ptr = (TPairTree*) node;
                 sub_level_found = true;
             }
@@ -947,6 +947,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/27 16:48:48  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.9  2004/11/01 19:57:09  kuznets
  * Code clenaup
  *

@@ -981,7 +981,7 @@ CDbapiCtlibCF2::CreateInstance(
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
-            typedef TPluginManagerParamTree::TTreeValueType TValue;
+            typedef TPluginManagerParamTree::TValueType   TValue;
 
             // Get parameters ...
             TCIter cit = params->SubNodeBegin();
@@ -1079,6 +1079,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/10/27 16:48:49  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.46  2005/10/20 13:04:49  ssikorsk
  * Fixed:
  * CTLibContext::CTLIB_SetApplicationName

@@ -2631,7 +2631,7 @@ bool CBDB_Cache::SameCacheParams(const TCacheParams* params) const
         return false;
     }
     const TCacheParams* driver = params->FindNode("driver");
-    if (!driver  ||  driver->GetValue() != kBDBCacheDriverName) {
+    if (!driver  ||  driver->GetValue().value != kBDBCacheDriverName) {
         return false;
     }
     const TCacheParams* driver_params = params->FindNode(kBDBCacheDriverName);
@@ -2640,12 +2640,13 @@ bool CBDB_Cache::SameCacheParams(const TCacheParams* params) const
     }
     const TCacheParams* path = params->FindNode(kCFParam_path);
     string str_path = path ?
-        CDirEntry::AddTrailingPathSeparator(path->GetValue()) : kEmptyStr;
+        CDirEntry::AddTrailingPathSeparator(
+        path->GetValue().value) : kEmptyStr;
     if (!path  || str_path != m_Path) {
         return false;
     }
     const TCacheParams* name = params->FindNode(kCFParam_name);
-    return name  &&  name->GetValue() == m_Name;
+    return name  &&  name->GetValue().value == m_Name;
 }
 
 
@@ -2825,6 +2826,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.122  2005/10/27 16:48:48  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.121  2005/08/15 11:34:19  kuznets
  * Statistics: Added total number of BLOBs deleted by GC
  *

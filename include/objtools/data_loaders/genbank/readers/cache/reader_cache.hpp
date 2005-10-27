@@ -86,7 +86,9 @@ struct NCBI_XREADER_CACHE_EXPORT SCacheInfo
     };
     static string GetBlobSubkey(int chunk_id = kMain_ChunkId);
 
-    typedef CTreePairNode<string, string> TParams;
+    typedef CTreePair<string, string> TParamPair;
+    typedef TParamPair::TPairTreeNode TParams;
+
     enum EReaderOrWriter {
         eCacheReader,
         eCacheWriter

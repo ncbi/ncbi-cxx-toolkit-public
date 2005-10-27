@@ -483,7 +483,7 @@ CDbapiOdbcCF2::CreateInstance(
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
-            typedef TPluginManagerParamTree::TTreeValueType TValue;
+            typedef TPluginManagerParamTree::TValueType   TValue;
 
             // Get parameters ...
             TCIter cit = params->SubNodeBegin();
@@ -567,6 +567,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/10/27 16:48:49  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.23  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

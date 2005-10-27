@@ -70,11 +70,11 @@ void CCacheWriter::InitializeCache(CReaderCacheManager& cache_manager,
     const TParams* share_id_param =
         id_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
     bool share_id = !share_id_param  ||
-        NStr::StringToBool(share_id_param->GetValue());
+        NStr::StringToBool(share_id_param->GetValue().value);
     const TParams* share_blob_param =
         blob_params->FindNode(NCBI_GBLOADER_WRITER_CACHE_PARAM_SHARE);
     bool share_blob = !share_blob_param  ||
-        NStr::StringToBool(share_blob_param->GetValue());
+        NStr::StringToBool(share_blob_param->GetValue().value);
     if (share_id  ||  share_blob) {
         if ( share_id ) {
             ICache* cache = cache_manager.

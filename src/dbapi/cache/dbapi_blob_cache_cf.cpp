@@ -116,7 +116,7 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
     if (!params)
         return drv.release();
 
-    const string& tree_id = params->GetId();
+    const string& tree_id = params->GetKey();
     if (NStr::CompareNocase(tree_id, kDBAPI_BlobCacheDriverName) != 0) {
         LOG_POST(Warning
           << "ICache class factory: Top level Id does not match driver name."
@@ -196,6 +196,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/27 16:48:49  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.7  2005/05/12 15:49:49  grichenk
  * Share bdb cache between reader and writer
  *

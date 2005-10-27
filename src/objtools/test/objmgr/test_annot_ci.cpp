@@ -236,14 +236,13 @@ string CTestApp::x_GetStringParam(const TParams& param,
                                   const string& name,
                                   bool optional)
 {
-    const TParamTree::TPairTreeType* p =
-        static_cast<const TParamTree&>(param).
+    const TParamTree* p = param.
         FindNode(name, TParamTree::eImmediateSubNodes);
     if ( !p  &&  !optional ) {
         ERR_POST(Fatal <<
-            "Missing parameter '" << name << "' in '" << p->GetId() << "'");
+            "Missing parameter '" << name << "' in '" << p->GetKey() << "'");
     }
-    return p ? p->GetValue() : kEmptyStr;
+    return p ? p->GetValue().value : kEmptyStr;
 }
 
 
@@ -344,15 +343,14 @@ int CTestApp::Run(void)
     auto_ptr<CConfig::TParamTree>
         app_params(CConfig::ConvertRegToTree(GetConfig()));
     _ASSERT( app_params.get() );
-    const TParamTree::TPairTreeType* tests =
-        app_params->FindNode(kTestsSection);
+    const TParamTree* tests = app_params->FindNode(kTestsSection);
     if ( !tests ) {
         ERR_POST(Fatal << "[Tests] not found in config file");
     }
     TParamTree::TNodeList_CI test_it = tests->SubNodeBegin();
     for ( ; test_it != tests->SubNodeEnd(); test_it++) {
         const TParams& param = **test_it;
-        string title = (*test_it)->GetValue().GetId();
+        string title = (*test_it)->GetValue().id;
 
         LOG_POST("Running test: " << title);
         CSeq_loc loc;
@@ -433,6 +431,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/10/27 16:48:49  grichenk
+* Redesigned CTreeNode (added search methods),
+* removed CPairTreeNode.
+*
 * Revision 1.2  2005/10/25 16:15:34  ucko
 * Explicitly tag CTestResult<string>::Check with EMPTY_TEMPLATE.
 *

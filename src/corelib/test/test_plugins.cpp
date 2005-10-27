@@ -207,7 +207,7 @@ public:
     {}
 
     ETreeTraverseCode 
-        operator()(const TPluginManagerParamTree::TParent& tr, int delta) 
+        operator()(const TPluginManagerParamTree& tr, int delta) 
     {
         m_Level += delta;
         if (delta >= 0) { 
@@ -262,7 +262,7 @@ void s_TestRegConvert()
     reg.Set("XXX", "s1B",  "777");
 
     TPluginManagerParamTree* tr = CConfig::ConvertRegToTree(reg);
-    TPluginManagerParamTree::TParent* ptr = tr;
+    TPluginManagerParamTree* ptr = tr;
 
 
     CParamTreePrintFunc func;
@@ -270,19 +270,19 @@ void s_TestRegConvert()
 
     const TPluginManagerParamTree* nd = tr->FindNode("PARENT");
     _ASSERT(nd);    
-    _ASSERT(nd->GetId() == "PARENT");
+    _ASSERT(nd->GetKey() == "PARENT");
 
     nd = nd->FindNode("Section1");
     _ASSERT(nd);    
-    _ASSERT(nd->GetId() == "Section1");
+    _ASSERT(nd->GetKey() == "Section1");
 
     nd = nd->FindNode("AAA");
     _ASSERT(nd);    
-    _ASSERT(nd->GetId() == "AAA");
+    _ASSERT(nd->GetKey() == "AAA");
 
     nd = nd->FindNode("PARENT");
     _ASSERT(nd);    
-    _ASSERT(nd->GetId() == "PARENT");
+    _ASSERT(nd->GetKey() == "PARENT");
 
     delete tr;
 }
@@ -338,6 +338,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/27 16:48:49  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.9  2004/09/23 16:44:44  kuznets
  * Reflecting changes in ncbi_config.hpp
  *

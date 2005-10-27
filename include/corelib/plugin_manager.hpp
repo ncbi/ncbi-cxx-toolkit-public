@@ -718,7 +718,7 @@ TClass* CPluginManager<TClass>::CreateInstanceFromKey(
     if ( !driver_node ) {
         return drv;
     }
-    string driver_name = driver_node->GetValue();
+    string driver_name = driver_node->GetValue().value;
     // Driver name may contain a list of drivers
     drv = CreateInstanceFromList(params, driver_name, version);
     return drv;
@@ -1136,6 +1136,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/10/27 16:48:48  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.51  2005/08/01 14:40:18  ssikorsk
  * Fixed compatibility checking logic in CInvalidDrvVer
  *

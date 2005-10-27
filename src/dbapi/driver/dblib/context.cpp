@@ -840,7 +840,7 @@ CDbapiFtdsCFBase::CreateInstance(
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
-            typedef TPluginManagerParamTree::TTreeValueType TValue;
+            typedef TPluginManagerParamTree::TValueType   TValue;
 
             // Get parameters ...
             TCIter cit = params->SubNodeBegin();
@@ -1029,7 +1029,7 @@ CDbapiDblibCF2::CreateInstance(
 
         if ( params != NULL ) {
             typedef TPluginManagerParamTree::TNodeList_CI TCIter;
-            typedef TPluginManagerParamTree::TTreeValueType TValue;
+            typedef TPluginManagerParamTree::TValueType   TValue;
 
             // Get parameters ...
             TCIter cit = params->SubNodeBegin();
@@ -1122,6 +1122,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/10/27 16:48:49  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.53  2005/10/26 11:33:02  ssikorsk
  * Handle TDS v8.0 in case of the ftds driiver
  *

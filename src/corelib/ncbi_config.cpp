@@ -110,14 +110,14 @@ void s_AddOrReplaceSubNode(CConfig::TParamTree* node_ptr,
                            const string& element_name,
                            const string& element_value)
 {
-    CConfig::TParamTree* existing_node =
-        (CConfig::TParamTree*)node_ptr->FindNode(element_name,
-        CConfig::TParamTree::eImmediateSubNodes);
+    CConfig::TParamTree* existing_node = const_cast<CConfig::TParamTree*>
+        (node_ptr->FindNode(element_name,
+                            CConfig::TParamTree::eImmediateSubNodes));
     if ( existing_node ) {
-        existing_node->SetValue(element_value);
+        existing_node->GetValue().value = element_value;
     }
     else {
-        node_ptr->AddNode(element_name, element_value);
+        node_ptr->AddNode(CConfig::TParamValue(element_name, element_value));
     }
 }
 
@@ -152,10 +152,10 @@ void s_ParamTree_IncludeSections(const IRegistry& reg,
         // Check if this node is an ancestor (circular reference)
         CConfig::TParamTree* parent_node =  node_ptr;
         while (parent_node) {
-            const string& id = parent_node->GetId();
+            const string& id = parent_node->GetKey();
             if (NStr::CompareNocase(inc_node_name, id) == 0) {
                 _TRACE(Error << "PluginManger: circular section reference "
-                             << node_ptr->GetId() << "->" << inc_node_name);
+                             << node_ptr->GetKey() << "->" << inc_node_name);
                 continue; // skip the offending subnode
             }
             parent_node = (CConfig::TParamTree*)parent_node->GetParent();
@@ -208,10 +208,10 @@ void s_ParamTree_ConvertSubNode(const IRegistry&      reg,
 
     CConfig::TParamTree* parent_node =  node;
     while (parent_node) {
-        const string& id = parent_node->GetId();
+        const string& id = parent_node->GetKey();
         if (NStr::CompareNocase(node_name, id) == 0) {
             _TRACE(Error << "PluginManger: circular section reference " 
-                            << node->GetId() << "->" << node_name);
+                            << node->GetKey() << "->" << node_name);
             return; // skip the offending subnode
         }
         parent_node = (CConfig::TParamTree*)parent_node->GetParent();
@@ -223,11 +223,11 @@ void s_ParamTree_ConvertSubNode(const IRegistry&      reg,
         return;
     }
 
-    CConfig::TParamTree* sub_node_ptr = const_cast<CConfig::TParamTree*>(
-        node->FindNode(node_name));
+    CConfig::TParamTree* sub_node_ptr = const_cast<CConfig::TParamTree*>
+        (node->FindNode(node_name));
     if ( !sub_node_ptr ) {
         auto_ptr<CConfig::TParamTree> sub_node(new CConfig::TParamTree);
-        sub_node->SetId(node_name);
+        sub_node->GetKey() = node_name;
         sub_node_ptr = sub_node.release();
         node->AddNode(sub_node_ptr);
     }
@@ -332,7 +332,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
         TParamTree* node_ptr;
         {{
             auto_ptr<TParamTree> node(new TParamTree);
-            node->SetId(section_name);
+            node->GetKey() = section_name;
             tree_root->AddNode(node_ptr = node.release());
         }}
 
@@ -352,7 +352,7 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
                 continue;
             }
             if (NStr::CompareNocase(element_name, kNodeName) == 0) {
-                node_ptr->SetId(element_value);
+                node_ptr->GetKey() = element_value;
                 continue;
             }
             if (s_IsSubNode(element_name)) {
@@ -415,7 +415,7 @@ const string& CConfig::GetString(const string&  driver_name,
 {
     const TParamTree* tn = m_ParamTree->FindSubNode(param_name);
 
-    if (tn == 0 || tn->GetValue().empty()) {
+    if (tn == 0 || tn->GetValue().value.empty()) {
         if (on_error == eErr_NoThrow) {
             return default_value;
         }
@@ -423,7 +423,7 @@ const string& CConfig::GetString(const string&  driver_name,
                      ", missing parameter:" + param_name;
         NCBI_THROW(CConfigException, eParameterMissing, msg);
     }
-    return tn->GetValue();
+    return tn->GetValue().value;
 }
 
 
@@ -537,6 +537,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/10/27 16:48:49  grichenk
+ * Redesigned CTreeNode (added search methods),
+ * removed CPairTreeNode.
+ *
  * Revision 1.14  2005/10/24 22:02:47  grichenk
  * Added CR, LF and TAB to the list of separators
  *
