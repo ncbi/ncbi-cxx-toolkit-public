@@ -242,7 +242,7 @@ void CTestStaticMap::TestStaticSet(void) const
         try {
             TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
         }
-        catch ( abort_exception& exc ) {
+        catch ( abort_exception& /*exc*/ ) {
             LOG_POST(Info << "Test CStaticArraySet correctly detected error");
             return;
         }
@@ -334,7 +334,7 @@ void CTestStaticMap::TestStaticMap(void) const
         try {
             TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
         }
-        catch ( abort_exception& exc ) {
+        catch ( abort_exception& /*exc*/ ) {
             LOG_POST(Info << "Test CStaticArrayMap correctly detected error");
             return;
         }
@@ -460,6 +460,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/27 15:02:32  vasilche
+ * Fixed warning about unused exception variable.
+ *
  * Revision 1.8  2005/10/27 13:30:12  vasilche
  * Check detection of CStaticMap/Set in runtime.
  *
