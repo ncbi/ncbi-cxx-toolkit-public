@@ -1892,16 +1892,18 @@ public:
 ///      Microsoft Windows code page 1252
 ///      UCS-2/UTF-16 (no surrogates)
 
+enum EEncoding {
+    eEncoding_Unknown,
+    eEncoding_UTF8,
+    eEncoding_Ascii,
+    eEncoding_ISO8859_1,
+    eEncoding_Windows_1252
+};
+typedef Uint2 TUnicodeSymbol;
+
 class NCBI_XNCBI_EXPORT CStringUTF8 : public string
 {
 public:
-    enum EEncoding {
-        eEncoding_Unknown,
-        eEncoding_UTF8,
-        eEncoding_Ascii,
-        eEncoding_ISO8859_1,
-        eEncoding_Windows_1252
-    };
     enum EValidate {
         eNoValidate,
         eValidate
@@ -2103,6 +2105,20 @@ public:
         return *this;
     }
 
+    /// Assign to a single character
+    ///
+    /// @param ch
+    ///   Character
+    /// @param encoding
+    ///   Character encoding
+    CStringUTF8& Assign(char ch,
+                        EEncoding encoding)
+    {
+        erase();
+        x_AppendChar( CharToSymbol( ch, encoding ) );
+        return *this;
+    }
+
     /// Append a C++ string
     ///
     /// @param src
@@ -2132,6 +2148,19 @@ public:
                         EValidate validate = eNoValidate)
     {
         x_Append(src, encoding, validate);
+        return *this;
+    }
+
+    /// Append single character
+    ///
+    /// @param ch
+    ///   Character
+    /// @param encoding
+    ///   Character encoding
+    CStringUTF8& Append(char ch,
+                        EEncoding encoding)
+    {
+        x_AppendChar( CharToSymbol( ch, encoding ) );
         return *this;
     }
 
@@ -2232,7 +2261,7 @@ public:
     ///   Character encoding
     /// @return
     ///   Code point
-    static Uint2 CharToSymbol(Uint1 ch, EEncoding encoding);
+    static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
     
     /// Convert Unicode code point into encoded character
     ///
@@ -2242,7 +2271,35 @@ public:
     ///   Character encoding
     /// @return
     ///   Encoded character
-    static Uint2 SymbolToChar(Uint2 sym, EEncoding encoding);
+    static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
+
+    /// Convert sequence of UTF8 code units into Unicode code point
+    ///
+    /// @param src
+    ///   UTF8 zero-terminated buffer
+    /// @return
+    ///   Unicode code point
+    static TUnicodeSymbol Decode(const char*& src);
+
+    /// Convert first character of UTF8 sequence into Unicode
+    ///
+    /// @param ch
+    ///   character
+    /// @param more
+    ///   if the character is valid, - how many more characters to expect
+    /// @return
+    ///   non-zero, if the character is valid
+    static TUnicodeSymbol  DecodeFirst(char ch, size_t& more);
+
+    /// Convert next character of UTF8 sequence into Unicode
+    ///
+    /// @param ch
+    ///   character
+    /// @param ch16
+    ///   Unicode character
+    /// @return
+    ///   non-zero, if the character is valid
+    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
 
 private:
     /// Function AsAscii is deprecated - use AsLatin1() instead
@@ -2253,7 +2310,7 @@ private:
 
     void   x_Validate(void) const;
     /// Convert Unicode code point into UTF8 and append
-    void   x_AppendChar(Uint2 ch);
+    void   x_AppendChar(TUnicodeSymbol ch);
     /// Convert coded character sequence into UTF8 and append
     void   x_Append(const char* src,
                     EEncoding encoding = eEncoding_ISO8859_1,
@@ -2263,13 +2320,11 @@ private:
     void x_Append(const wchar_t* src);
 #endif // HAVE_WSTRING
     /// Check how many bytes is needed to represent the code point in UTF8
-    static size_t x_BytesNeeded(Uint2 ch);
+    static size_t x_BytesNeeded(TUnicodeSymbol ch);
     /// Check if the character is valid first code unit of UTF8
-    static bool   x_EvalFirst(Uint1 ch, size_t& more);
+    static bool   x_EvalFirst(char ch, size_t& more);
     /// Check if the character is valid non-first code unit of UTF8
-    static bool   x_EvalNext(Uint1 ch);
-    /// Convert sequence of UTF8 code units into Unicode code point
-    static Uint2  x_DecodeChar(const char*& src);
+    static bool   x_EvalNext(char ch);
 };
 
 
@@ -3120,6 +3175,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.98  2005/10/27 15:53:06  gouriano
+ * Further enhancements of CStringUTF8
+ *
  * Revision 1.97  2005/10/21 17:35:52  gouriano
  * Enhanced CStringUTF8
  *
