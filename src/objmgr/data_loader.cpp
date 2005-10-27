@@ -378,6 +378,12 @@ CBlobId::~CBlobId(void)
 }
 
 
+bool CBlobId::LessByTypeId(const CBlobId& id2) const
+{
+    return typeid(*this).before(typeid(id2));
+}
+
+
 bool CBlobId::operator==(const CBlobId& id) const
 {
     return !(*this < id || id < *this);
@@ -390,6 +396,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/10/27 15:04:27  vasilche
+* Moved code dealing with type_info to *.cpp to avoid warning on MSVC.
+*
 * Revision 1.25  2005/10/26 14:36:38  vasilche
 * Added new CBlobId interface.
 * Advanced CDataLoader plugin interface version.

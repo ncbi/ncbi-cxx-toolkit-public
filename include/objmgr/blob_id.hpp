@@ -104,6 +104,9 @@ public:
     // Comparison methods
     virtual bool operator<(const CBlobId& id) const = 0;
     virtual bool operator==(const CBlobId& id) const;
+
+protected:
+    bool LessByTypeId(const CBlobId& id2) const;
 };
 
 
@@ -134,13 +137,12 @@ public:
         {
             const TThisType* id_ptr = dynamic_cast<const TThisType*>(&id_ref);
             return id_ptr && GetValue() == id_ptr->GetValue();
-            
         }
     bool operator<(const CBlobId& id_ref) const
         {
             const TThisType* id_ptr = dynamic_cast<const TThisType*>(&id_ref);
             if ( !id_ptr ) {
-                return typeid(*this).before(typeid(id_ref));
+                return this->LessByTypeId(id_ref);
             }
             return GetValue() < id_ptr->GetValue();
         }
@@ -208,6 +210,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/10/27 15:04:27  vasilche
+* Moved code dealing with type_info to *.cpp to avoid warning on MSVC.
+*
 * Revision 1.2  2005/10/26 15:37:41  vasilche
 * Removed EXPORT from completely inlined classes.
 *
