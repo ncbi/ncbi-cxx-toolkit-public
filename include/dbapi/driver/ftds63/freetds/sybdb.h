@@ -482,6 +482,7 @@ DBBOOL dbcolbrowse(DBPROCESS * dbprocess, int colnum);
 RETCODE	dbcolinfo (DBPROCESS *dbproc, CI_TYPE type, DBINT column, DBINT computeid, DBCOL *pdbcol);
 DBINT dbcollen(DBPROCESS * dbproc, int column);
 char *dbcolname(DBPROCESS * dbproc, int column);
+char *dbcoltablename(DBPROCESS * dbproc, int column); /* We need this information for dbwritetext */
 char *dbcolsource(DBPROCESS * dbproc, int colnum);
 int dbcoltype(DBPROCESS * dbproc, int column);
 DBTYPEINFO *dbcoltypeinfo(DBPROCESS * dbproc, int column);
