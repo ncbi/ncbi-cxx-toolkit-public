@@ -81,12 +81,16 @@ objects/omssa/MSZdependence.hpp
 objects/omssa/MSZdependence_.hpp
 objects/omssa/NameValue.hpp
 objects/omssa/NameValue_.hpp
+objects/omssa/OMSSA_module.hpp
 
 %%
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/27 12:37:18  jcherry
+ * Added *_module.hpp
+ *
  * Revision 1.2  2005/08/03 14:57:10  jcherry
  * Added headers
  *

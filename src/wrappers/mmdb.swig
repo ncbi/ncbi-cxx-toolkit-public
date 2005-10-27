@@ -97,6 +97,8 @@ objects/cdd/Update_align.hpp
 objects/cdd/Update_align_.hpp
 objects/cdd/Update_comment.hpp
 objects/cdd/Update_comment_.hpp
+objects/cdd/NCBI_Cdd_module.hpp
+
 objects/cn3d/Cn3d_GL_matrix.hpp
 objects/cn3d/Cn3d_GL_matrix_.hpp
 objects/cn3d/Cn3d_backbone_label_style.hpp
@@ -137,6 +139,8 @@ objects/cn3d/Cn3d_vector.hpp
 objects/cn3d/Cn3d_vector_.hpp
 objects/cn3d/Cn3d_view_settings.hpp
 objects/cn3d/Cn3d_view_settings_.hpp
+objects/cn3d/NCBI_Cn3d_module.hpp
+
 objects/mmdb1/Atom.hpp
 objects/mmdb1/Atom_.hpp
 objects/mmdb1/Atom_id.hpp
@@ -193,6 +197,9 @@ objects/mmdb1/Residue_graph_pntr.hpp
 objects/mmdb1/Residue_graph_pntr_.hpp
 objects/mmdb1/Residue_id.hpp
 objects/mmdb1/Residue_id_.hpp
+objects/mmdb1/MMDB_Chemical_graph_module.hpp
+objects/mmdb1/MMDB_module.hpp
+
 objects/mmdb2/Alternate_conformation_id.hpp
 objects/mmdb2/Alternate_conformation_id_.hpp
 objects/mmdb2/Alternate_conformation_ids.hpp
@@ -237,6 +244,8 @@ objects/mmdb2/T_mesh.hpp
 objects/mmdb2/T_mesh_.hpp
 objects/mmdb2/Triangles.hpp
 objects/mmdb2/Triangles_.hpp
+objects/mmdb2/MMDB_Structural_model_module.hpp
+
 objects/mmdb3/Align_stats.hpp
 objects/mmdb3/Align_stats_.hpp
 objects/mmdb3/Atom_pntrs.hpp
@@ -307,6 +316,8 @@ objects/mmdb3/Trans_matrix.hpp
 objects/mmdb3/Trans_matrix_.hpp
 objects/mmdb3/Transform.hpp
 objects/mmdb3/Transform_.hpp
+objects/mmdb3/MMDB_Features_module.hpp
+
 objects/ncbimime/Biostruc_align.hpp
 objects/ncbimime/Biostruc_align_.hpp
 objects/ncbimime/Biostruc_align_seq.hpp
@@ -325,12 +336,16 @@ objects/ncbimime/Entrez_style.hpp
 objects/ncbimime/Entrez_style_.hpp
 objects/ncbimime/Ncbi_mime_asn1.hpp
 objects/ncbimime/Ncbi_mime_asn1_.hpp
+objects/ncbimime/NCBI_Mime_module.hpp
 
 %%
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/27 12:37:18  jcherry
+ * Added *_module.hpp
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *

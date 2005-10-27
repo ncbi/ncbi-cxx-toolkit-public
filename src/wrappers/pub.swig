@@ -91,10 +91,14 @@ objects/biblio/PubStatusDateSet_.hpp
 objects/biblio/Title.hpp
 objects/biblio/Title_.hpp
 objects/biblio/label_util.hpp
+objects/biblio/NCBI_Biblio_module.hpp
+
 objects/medlars/Medlars_entry.hpp
 objects/medlars/Medlars_entry_.hpp
 objects/medlars/Medlars_record.hpp
 objects/medlars/Medlars_record_.hpp
+objects/medlars/NCBI_Medlars_module.hpp
+
 objects/medline/DocRef.hpp
 objects/medline/DocRef_.hpp
 objects/medline/Medline_entry.hpp
@@ -109,6 +113,8 @@ objects/medline/Medline_rn.hpp
 objects/medline/Medline_rn_.hpp
 objects/medline/Medline_si.hpp
 objects/medline/Medline_si_.hpp
+objects/medline/NCBI_Medline_module.hpp
+
 objects/mla/Error_val.hpp
 objects/mla/Error_val_.hpp
 objects/mla/Mla_back.hpp
@@ -123,22 +129,30 @@ objects/mla/Title_msg_list.hpp
 objects/mla/Title_msg_list_.hpp
 objects/mla/Title_type.hpp
 objects/mla/Title_type_.hpp
+objects/mla/NCBI_MedArchive_module.hpp
+
 objects/pub/Pub.hpp
 objects/pub/Pub_.hpp
 objects/pub/Pub_equiv.hpp
 objects/pub/Pub_equiv_.hpp
 objects/pub/Pub_set.hpp
 objects/pub/Pub_set_.hpp
+objects/pub/NCBI_Pub_module.hpp
+
 objects/pubmed/Pubmed_entry.hpp
 objects/pubmed/Pubmed_entry_.hpp
 objects/pubmed/Pubmed_url.hpp
 objects/pubmed/Pubmed_url_.hpp
+objects/pubmed/NCBI_PubMed_module.hpp
 
 %%
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/27 12:37:18  jcherry
+ * Added *_module.hpp
+ *
  * Revision 1.1  2005/05/11 21:27:35  jcherry
  * Initial version
  *

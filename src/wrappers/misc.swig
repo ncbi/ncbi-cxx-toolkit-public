@@ -33,6 +33,8 @@
 
 objects/access/Link_set.hpp
 objects/access/Link_set_.hpp
+objects/access/NCBI_Access_module.hpp
+
 objects/docsum/NSE_Assay.hpp
 objects/docsum/NSE_Assay_.hpp
 objects/docsum/NSE_AssayList.hpp
@@ -83,6 +85,8 @@ objects/docsum/NSE_Submitter.hpp
 objects/docsum/NSE_Submitter_.hpp
 objects/docsum/NSE_SubmitterList.hpp
 objects/docsum/NSE_SubmitterList_.hpp
+objects/docsum/NSE_module.hpp
+
 objects/entrez2/E2Reply.hpp
 objects/entrez2/E2Reply_.hpp
 objects/entrez2/E2Request.hpp
@@ -159,6 +163,8 @@ objects/entrez2/Entrez2_term_pos.hpp
 objects/entrez2/Entrez2_term_pos_.hpp
 objects/entrez2/Entrez2_term_query.hpp
 objects/entrez2/Entrez2_term_query_.hpp
+objects/entrez2/NCBI_Entrez2_module.hpp
+
 objects/featdef/FeatDef.hpp
 objects/featdef/FeatDef_.hpp
 objects/featdef/FeatDefGroupSet.hpp
@@ -171,6 +177,8 @@ objects/featdef/FeatDispGroupSet.hpp
 objects/featdef/FeatDispGroupSet_.hpp
 objects/featdef/FeatMolType.hpp
 objects/featdef/FeatMolType_.hpp
+objects/featdef/NCBI_FeatDef_module.hpp
+
 objects/gbseq/GBAuthor.hpp
 objects/gbseq/GBAuthor_.hpp
 objects/gbseq/GBFeature.hpp
@@ -191,6 +199,8 @@ objects/gbseq/GBSeqid.hpp
 objects/gbseq/GBSeqid_.hpp
 objects/gbseq/GBSet.hpp
 objects/gbseq/GBSet_.hpp
+objects/gbseq/NCBI_GBSeq_module.hpp
+
 objects/mim/Mim_allelic_variant.hpp
 objects/mim/Mim_allelic_variant_.hpp
 objects/mim/Mim_author.hpp
@@ -217,6 +227,8 @@ objects/mim/Mim_set.hpp
 objects/mim/Mim_set_.hpp
 objects/mim/Mim_text.hpp
 objects/mim/Mim_text_.hpp
+objects/mim/NCBI_Mim_module.hpp
+
 objects/objprt/PrintForm.hpp
 objects/objprt/PrintForm_.hpp
 objects/objprt/PrintFormat.hpp
@@ -237,10 +249,14 @@ objects/objprt/TemplateName.hpp
 objects/objprt/TemplateName_.hpp
 objects/objprt/UserFormat.hpp
 objects/objprt/UserFormat_.hpp
+objects/objprt/NCBI_ObjPrt_module.hpp
+
 objects/tinyseq/TSeq.hpp
 objects/tinyseq/TSeq_.hpp
 objects/tinyseq/TSeqSet.hpp
 objects/tinyseq/TSeqSet_.hpp
+objects/tinyseq/NCBI_TSeq_module.hpp
+
 objects/remap/RMReply.hpp
 objects/remap/RMReply_.hpp
 objects/remap/RMRequest.hpp
@@ -259,6 +275,7 @@ objects/remap/Remap_result.hpp
 objects/remap/Remap_result_.hpp
 objects/remap/remap_client.hpp
 objects/remap/remap_client_.hpp
+objects/remap/NCBI_Remap_module.hpp
 
 // entrezgene
 
@@ -278,6 +295,7 @@ objects/entrezgene/Other_source.hpp
 objects/entrezgene/Other_source_.hpp
 objects/entrezgene/Xtra_Terms.hpp
 objects/entrezgene/Xtra_Terms_.hpp
+objects/entrezgene/NCBI_Entrezgene_module.hpp
 
 // proj
 
@@ -291,6 +309,7 @@ objects/proj/Project_id.hpp
 objects/proj/Project_id_.hpp
 objects/proj/Project_item.hpp
 objects/proj/Project_item_.hpp
+objects/proj/NCBI_Project_module.hpp
 
 // biotree
 
@@ -308,6 +327,7 @@ objects/biotree/NodeFeature_.hpp
 objects/biotree/NodeSet.hpp
 objects/biotree/NodeSet_.hpp
 objects/biotree/Node_.hpp
+objects/biotree/NCBI_BioTree_module.hpp
 
 // INSD
 
@@ -331,12 +351,16 @@ objects/insdseq/INSDSeqid.hpp
 objects/insdseq/INSDSeqid_.hpp
 objects/insdseq/INSDSet.hpp
 objects/insdseq/INSDSet_.hpp
+objects/insdseq/INSD_INSDSeq_module.hpp
 
 %%
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/27 12:37:18  jcherry
+ * Added *_module.hpp
+ *
  * Revision 1.4  2005/10/19 15:35:58  jcherry
  * Reflect rollback of docsum ASN.1 specification
  *

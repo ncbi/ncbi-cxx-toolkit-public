@@ -103,6 +103,7 @@ objects/pcsubstance/PC_UrnDataType_.hpp
 objects/pcsubstance/PC_Urn_.hpp
 objects/pcsubstance/PC_XRefData.hpp
 objects/pcsubstance/PC_XRefData_.hpp
+objects/pcsubstance/NCBI_PCSubstance_module.hpp
 
 objects/pcassay/PC_AnnotatedXRef.hpp
 objects/pcassay/PC_AnnotatedXRef_.hpp
@@ -122,12 +123,16 @@ objects/pcassay/PC_RealMinMax.hpp
 objects/pcassay/PC_RealMinMax_.hpp
 objects/pcassay/PC_ResultType.hpp
 objects/pcassay/PC_ResultType_.hpp
+objects/pcassay/NCBI_PCAssay_module.hpp
 
 %%
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/27 12:37:18  jcherry
+ * Added *_module.hpp
+ *
  * Revision 1.2  2005/07/29 14:36:47  jcherry
  * Reflect new pcassay spec
  *

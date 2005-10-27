@@ -117,6 +117,7 @@ objects/seq/Seq_literal_.hpp
 objects/seq/Seqdesc.hpp
 objects/seq/Seqdesc_.hpp
 objects/seq/seqport_util.hpp
+objects/seq/NCBI_Sequence_module.hpp
 
 objects/seqalign/Dense_diag.hpp
 objects/seqalign/Dense_diag_.hpp
@@ -135,6 +136,7 @@ objects/seqalign/Seq_align_set_.hpp
 objects/seqalign/Std_seg.hpp
 objects/seqalign/Std_seg_.hpp
 objects/seqalign/seqalign_exception.hpp
+objects/seqalign/NCBI_Seqalign_module.hpp
 
 objects/seqblock/EMBL_block.hpp
 objects/seqblock/EMBL_block_.hpp
@@ -156,6 +158,12 @@ objects/seqblock/PRF_ExtraSrc.hpp
 objects/seqblock/PRF_ExtraSrc_.hpp
 objects/seqblock/SP_block.hpp
 objects/seqblock/SP_block_.hpp
+objects/seqblock/EMBL_General_module.hpp
+objects/seqblock/GenBank_General_module.hpp
+objects/seqblock/PDB_General_module.hpp
+objects/seqblock/PIR_General_module.hpp
+objects/seqblock/PRF_General_module.hpp
+objects/seqblock/SP_General_module.hpp
 
 objects/seqcode/Seq_code_set.hpp
 objects/seqcode/Seq_code_set_.hpp
@@ -165,6 +173,7 @@ objects/seqcode/Seq_code_type.hpp
 objects/seqcode/Seq_code_type_.hpp
 objects/seqcode/Seq_map_table.hpp
 objects/seqcode/Seq_map_table_.hpp
+objects/seqcode/NCBI_SeqCode_module.hpp
 
 objects/seqfeat/BinomialOrgName.hpp
 objects/seqfeat/BinomialOrgName_.hpp
@@ -218,6 +227,14 @@ objects/seqfeat/Tx_evidence.hpp
 objects/seqfeat/Tx_evidence_.hpp
 objects/seqfeat/Txinit.hpp
 objects/seqfeat/Txinit_.hpp
+objects/seqfeat/NCBI_Organism_module.hpp
+objects/seqfeat/NCBI_BioSource_module.hpp
+objects/seqfeat/NCBI_Seqfeat_module.hpp
+objects/seqfeat/NCBI_Gene_module.hpp
+objects/seqfeat/NCBI_Protein_module.hpp
+objects/seqfeat/NCBI_RNA_module.hpp
+objects/seqfeat/NCBI_Rsite_module.hpp
+objects/seqfeat/NCBI_TxInit_module.hpp
 
 objects/seqloc/Giimport_id.hpp
 objects/seqloc/Giimport_id_.hpp
@@ -249,6 +266,7 @@ objects/seqloc/Seq_point.hpp
 objects/seqloc/Seq_point_.hpp
 objects/seqloc/Textseq_id.hpp
 objects/seqloc/Textseq_id_.hpp
+objects/seqloc/NCBI_Seqloc_module.hpp
 
 objects/seqres/Byte_graph.hpp
 objects/seqres/Byte_graph_.hpp
@@ -258,16 +276,21 @@ objects/seqres/Real_graph.hpp
 objects/seqres/Real_graph_.hpp
 objects/seqres/Seq_graph.hpp
 objects/seqres/Seq_graph_.hpp
+objects/seqres/NCBI_Seqres_module.hpp
+
 objects/seqset/Bioseq_set.hpp
 objects/seqset/Bioseq_set_.hpp
 objects/seqset/Seq_entry.hpp
 objects/seqset/Seq_entry_.hpp
+objects/seqset/NCBI_Seqset_module.hpp
+
 objects/submit/Contact_info.hpp
 objects/submit/Contact_info_.hpp
 objects/submit/Seq_submit.hpp
 objects/submit/Seq_submit_.hpp
 objects/submit/Submit_block.hpp
 objects/submit/Submit_block_.hpp
+objects/submit/NCBI_Submit_module.hpp
 
 objects/scoremat/BlockProperty.hpp
 objects/scoremat/BlockProperty_.hpp
@@ -289,6 +312,7 @@ objects/scoremat/PssmParameters_.hpp
 objects/scoremat/PssmWithParameters.hpp
 objects/scoremat/PssmWithParameters_.hpp
 objects/scoremat/Pssm_.hpp
+objects/scoremat/NCBI_ScoreMat_module.hpp
 
 objects/blast/Blas_get_searc_resul_reply.hpp
 objects/blast/Blas_get_searc_resul_reply_.hpp
@@ -375,6 +399,7 @@ objects/blast/Blast_finish_params_reques.hpp
 objects/blast/Blast_finish_params_reques_.hpp
 objects/blast/blastclient.hpp
 objects/blast/blastclient_.hpp
+objects/blast/NCBI_Blast4_module.hpp
 
 objects/blastxml/BlastOutput.hpp
 objects/blastxml/BlastOutput_.hpp
@@ -388,6 +413,7 @@ objects/blastxml/Parameters.hpp
 objects/blastxml/Parameters_.hpp
 objects/blastxml/Statistics.hpp
 objects/blastxml/Statistics_.hpp
+objects/blastxml/NCBI_BlastOutput_module.hpp
 
 objects/id1/Entry_complexities.hpp
 objects/id1/Entry_complexities_.hpp
@@ -407,6 +433,7 @@ objects/id1/ID1server_maxcomplex.hpp
 objects/id1/ID1server_maxcomplex_.hpp
 objects/id1/ID1server_request.hpp
 objects/id1/ID1server_request_.hpp
+objects/id1/NCBI_ID1Access_module.hpp
 
 objects/id2/id2_client.hpp
 objects/id2/id2_client_.hpp
@@ -510,6 +537,7 @@ objects/id2/ID2S_Reply_Get_Split_Info.hpp
 objects/id2/ID2S_Reply_Get_Split_Info_.hpp
 objects/id2/ID2_Reply_ReGet_Blob.hpp
 objects/id2/ID2_Reply_ReGet_Blob_.hpp
+objects/id2/NCBI_ID2Access_module.hpp
 
 objects/seqsplit/ID2S_Bioseq_Ids.hpp
 objects/seqsplit/ID2S_Bioseq_Ids_.hpp
@@ -563,6 +591,7 @@ objects/seqsplit/ID2S_Sequence_Piece.hpp
 objects/seqsplit/ID2S_Sequence_Piece_.hpp
 objects/seqsplit/ID2S_Split_Info.hpp
 objects/seqsplit/ID2S_Split_Info_.hpp
+objects/seqsplit/NCBI_Seq_split_module.hpp
 
 objects/taxon1/taxon1.hpp
 objects/taxon1/taxon1__.hpp
@@ -580,12 +609,14 @@ objects/taxon1/Taxon1_resp.hpp
 objects/taxon1/Taxon1_resp_.hpp
 objects/taxon1/Taxon2_data.hpp
 objects/taxon1/Taxon2_data_.hpp
+objects/taxon1/NCBI_Taxon1_module.hpp
 
 objects/blastdb/Blast_def_line.hpp
 objects/blastdb/Blast_def_line_.hpp
 objects/blastdb/Blast_def_line_set.hpp
 objects/blastdb/Blast_def_line_set_.hpp
 objects/blastdb/defline_extra.hpp
+objects/blastdb/NCBI_BlastDL_module.hpp
 
 // seqtest
 
@@ -595,6 +626,7 @@ objects/seqtest/Seq_test_result.hpp
 objects/seqtest/Seq_test_result_.hpp
 objects/seqtest/Seq_test_result_set.hpp
 objects/seqtest/Seq_test_result_set_.hpp
+objects/seqtest/NCBI_SeqTest_module.hpp
 
 %%
 
@@ -621,6 +653,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/10/27 12:37:18  jcherry
+ * Added *_module.hpp
+ *
  * Revision 1.4  2005/08/03 14:57:10  jcherry
  * Added headers
  *
