@@ -88,48 +88,6 @@ BEGIN_NCBI_SCOPE
 ///
 ///
 
-template<class ValueType,
-         class FirstCompare = less<typename ValueType::first_type> >
-class PLessByFirst
-{
-public:
-    typedef ValueType                       value_type;
-    typedef typename value_type::first_type first_type;
-    typedef FirstCompare                    first_compare;
-
-    PLessByFirst()
-    {
-    }
-
-    PLessByFirst(const first_compare& comp)
-        : m_FirstComp(comp)
-    {
-    }
-
-    bool operator()(const value_type& v0, const value_type& v1) const
-    {
-        return m_FirstComp(v0.first, v1.first);
-    }
-
-    bool operator()(const first_type& v0, const value_type& v1) const
-    {
-        return m_FirstComp(v0, v1.first);
-    }
-
-    bool operator()(const value_type& v0, const first_type& v1) const
-    {
-        return m_FirstComp(v0.first, v1);
-    }
-
-    const first_compare& first_comp() const
-    {
-        return m_FirstComp;
-    }
-
-private:
-    first_compare m_FirstComp;
-};
-
 
 ///
 /// class CStaticArrayMap<> provides access to a static array in much the
@@ -139,51 +97,27 @@ private:
 
 template <class KeyType, class ValueType, class KeyCompare = less<KeyType> >
 class CStaticArrayMap
-    : public CStaticArraySearchBase< KeyType, pair<KeyType, ValueType>,
-                                     PLessByFirst< pair<KeyType, ValueType>,
-                                                    KeyCompare > >
+    : public CStaticArraySearchBase<PKeyValuePair<pair<KeyType, ValueType> >,
+                                    KeyCompare>
 {
-    typedef CStaticArraySearchBase< KeyType, pair<KeyType, ValueType>,
-                                    PLessByFirst< pair<KeyType, ValueType>,
-                                                  KeyCompare > > TBase;
+    typedef CStaticArraySearchBase<PKeyValuePair<pair<KeyType, ValueType> >,
+                                   KeyCompare> TBase;
 public:
-    typedef typename TBase::key_type        key_type;
-    typedef KeyCompare                      key_compare;
-    typedef ValueType                       mapped_type;
-    typedef typename TBase::value_type      value_type;
-    typedef typename TBase::value_compare   value_compare;
-    typedef typename TBase::const_reference const_reference;
-    typedef typename TBase::const_iterator  const_iterator;
-    typedef typename TBase::size_type       size_type;
-    typedef typename TBase::difference_type difference_type;
-
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArrayMap(const_iterator obj, size_type array_size)
+    CStaticArrayMap(typename TBase::const_iterator obj,
+                    typename TBase::size_type array_size)
         : TBase(obj, array_size)
     {
-        this->x_Validate();
     }
 
     /// Constructor to initialize comparator object.
-    CStaticArrayMap(const_iterator obj, size_type array_size,
-                    const key_compare& comp)
+    CStaticArrayMap(typename TBase::const_iterator obj,
+                    typename TBase::size_type array_size,
+                    const typename TBase::key_compare& comp)
         : TBase(obj, array_size, comp)
     {
-        this->x_Validate();
-    }
-
-
-    /// Return the key comparison object
-    const key_compare& key_comp() const
-    {
-        return this->value_comp().first_comp();
-    }
-
-    const key_type& extract_key(const value_type& value) const
-    {
-        return value.first;
     }
 };
 
@@ -195,6 +129,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/27 13:29:17  vasilche
+ * Avoid virtual methods by key/value getter.
+ * Moved x_Validate() back to base search class.
+ *
  * Revision 1.8  2005/10/26 18:44:49  vasilche
  * Fixed x_Validate() lookup.
  *

@@ -44,6 +44,86 @@
 
 BEGIN_NCBI_SCOPE
 
+template<class KeyValueGetter, class KeyCompare>
+struct PLessByKey : public KeyCompare
+{
+    typedef KeyValueGetter                  getter;
+    typedef typename getter::value_type     value_type;
+    typedef typename getter::key_type       key_type;
+    typedef KeyCompare                      key_compare;
+
+    PLessByKey()
+    {
+    }
+
+    PLessByKey(const key_compare& comp)
+        : key_compare(comp)
+    {
+    }
+
+    const key_compare& key_comp() const
+    {
+        return *this;
+    }
+
+    template<class Type1, class Type2>
+    bool operator()(const Type1& v1, const Type2& v2) const
+    {
+        return key_comp()(getter::get_key(v1), getter::get_key(v2));
+    }
+};
+
+
+template<class Value>
+class PKeyValueSelf
+{
+public:
+    typedef Value       value_type;
+    typedef value_type  key_type;
+    typedef value_type  mapped_type;
+    
+    static const key_type& get_key(const value_type& value)
+    {
+        return value;
+    }
+    static const mapped_type& get_mapped(const value_type& value)
+    {
+        return value;
+    }
+    static mapped_type& get_mapped(value_type& value)
+    {
+        return value;
+    }
+};
+
+
+template<class Value>
+class PKeyValuePair
+{
+public:
+    typedef Value       value_type;
+    typedef typename value_type::first_type  key_type;
+    typedef typename value_type::second_type mapped_type;
+    
+    static const key_type& get_key(const key_type& key)
+    {
+        return key;
+    }
+    static const key_type& get_key(const value_type& value)
+    {
+        return value.first;
+    }
+    static const mapped_type& get_mapped(const value_type& value)
+    {
+        return value.second;
+    }
+    static mapped_type& get_mapped(value_type& value)
+    {
+        return value.second;
+    }
+};
+
+
 ///
 /// class CStaticArraySet<> is an array adaptor that provides an STLish
 /// interface to statically-defined arrays, while making efficient use
@@ -88,7 +168,7 @@ BEGIN_NCBI_SCOPE
 ///     }
 ///
 ///
-template <typename KeyType, typename ValueType, typename ValueCompare>
+template <typename KeyValueGetter, typename KeyCompare>
 class CStaticArraySearchBase
 {
 public:
@@ -96,9 +176,12 @@ public:
         eNpos = -1
     };
 
-    typedef KeyType             key_type;
-    typedef ValueType           value_type;
-    typedef ValueCompare        value_compare;
+    typedef KeyValueGetter      getter;
+    typedef typename getter::value_type   value_type;
+    typedef typename getter::key_type     key_type;
+    typedef typename getter::mapped_type  mapped_type;
+    typedef KeyCompare          key_compare;
+    typedef PLessByKey<getter, key_compare> value_compare;
     typedef const value_type&   const_reference;
     typedef const value_type*   const_iterator;
     typedef size_t              size_type;
@@ -111,21 +194,32 @@ public:
         : m_Begin(obj)
         , m_End(obj + array_size / sizeof(value_type))
     {
+        x_Validate();
     }
 
     /// Constructor to initialize comparator object.
     CStaticArraySearchBase(const_iterator obj, size_type array_size,
-                           const value_compare& comp)
-        : m_Begin(obj)
+                           const key_compare& comp)
+        : m_Begin(comp, obj)
         , m_End(obj + array_size / sizeof(value_type))
-        , m_Compare(comp)
     {
+        x_Validate();
+    }
+
+    const value_compare& value_comp() const
+    {
+        return m_Begin.first();
+    }
+
+    const key_compare& key_comp() const
+    {
+        return value_comp().key_comp();
     }
 
     /// Return the start of the controlled sequence.
     const_iterator begin() const
     {
-        return m_Begin;
+        return m_Begin.second();
     }
 
     /// Return the end of the controlled sequence.
@@ -150,14 +244,14 @@ public:
     /// is less than or equal to the indicated key.
     const_iterator lower_bound(const key_type& key) const
     {
-        return std::lower_bound(begin(), end(), key, m_Compare);
+        return std::lower_bound(begin(), end(), key, value_comp());
     }
 
     /// Return an iterator into the sequence such that the iterator's key
     /// is greater than the indicated key.
     const_iterator upper_bound(const key_type& key) const
     {
-        return std::upper_bound(begin(), end(), key, m_Compare);
+        return std::upper_bound(begin(), end(), key, value_comp());
     }
 
     /// Return a const_iterator pointing to the specified element, or
@@ -196,27 +290,19 @@ public:
         return x_Bad(key, iter)? eNpos: iter - begin();
     }
 
-    const value_compare& value_comp() const
-    {
-        return m_Compare;
-    }
-
-    virtual const key_type& extract_key(const value_type& value) const = 0;
-
 protected:
     /// Perform sort-order validation.  This is a no-op in release mode.
     void x_Validate() const
     {
 #ifdef _DEBUG
-        if ( !empty() ) {
-            const_iterator curr = begin(), prev = curr;
+        const_iterator curr = begin(), prev = curr;
+        if ( curr != end() ) {
             while ( ++curr != end() ) {
-                bool in_order = m_Compare(*prev, *curr);
-                if ( !in_order ) {
-                    ERR_POST("keys out of order: " << extract_key(*prev)
-                             << " vs. " << extract_key(*curr));
+                if ( !value_comp()(*prev, *curr) ) {
+                    ERR_POST(Fatal << "keys out of order: " <<
+                             getter::get_key(*prev) << " vs. " <<
+                             getter::get_key(*curr));
                 }
-                _ASSERT( in_order );
                 prev = curr;
             }
         }
@@ -224,59 +310,37 @@ protected:
     }
 
 private:
-    const_iterator m_Begin;
+    pair_base_member<value_compare, const_iterator> m_Begin;
     const_iterator m_End;
-
-    value_compare m_Compare;
 
     bool x_Bad(const key_type& key, const_iterator iter) const
     {
-        return iter == end()  ||  m_Compare(key, *iter);
+        return iter == end()  ||  value_comp()(key, *iter);
     }
 };
 
 
 template <class KeyType, class KeyCompare = less<KeyType> >
 class CStaticArraySet
-    : public CStaticArraySearchBase<KeyType, KeyType, KeyCompare>
+    : public CStaticArraySearchBase<PKeyValueSelf<KeyType>, KeyCompare>
 {
-    typedef CStaticArraySearchBase<KeyType, KeyType, KeyCompare> TBase;
+    typedef CStaticArraySearchBase<PKeyValueSelf<KeyType>, KeyCompare> TBase;
 public:
-    typedef typename TBase::key_type        key_type;
-    typedef KeyCompare                      key_compare;
-    typedef typename TBase::value_type      value_type;
-    typedef typename TBase::value_compare   value_compare;
-    typedef typename TBase::const_reference const_reference;
-    typedef typename TBase::const_iterator  const_iterator;
-    typedef typename TBase::size_type       size_type;
-    typedef typename TBase::difference_type difference_type;
-
     /// default constructor.  This will build a map around a given array; the
     /// storage of the end pointer is based on the supplied array size.  In
     /// debug mode, this will verify that the array is sorted.
-    CStaticArraySet(const_iterator obj, size_type array_size)
+    CStaticArraySet(typename TBase::const_iterator obj,
+                    typename TBase::size_type array_size)
         : TBase(obj, array_size)
     {
-        this->x_Validate();
     }
 
     /// Constructor to initialize comparator object.
-    CStaticArraySet(const_iterator obj, size_type array_size,
-                    const key_compare& comp)
+    CStaticArraySet(typename TBase::const_iterator obj,
+                    typename TBase::size_type array_size,
+                    const typename TBase::key_compare& comp)
         : TBase(obj, array_size, comp)
     {
-        this->x_Validate();
-    }
-
-    /// Return the key comparison object
-    const key_compare& key_comp() const
-    {
-        return value_compare();
-    }
-
-    const key_type& extract_key(const value_type& value) const
-    {
-        return value;
     }
 };
 
@@ -287,6 +351,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/27 13:29:17  vasilche
+ * Avoid virtual methods by key/value getter.
+ * Moved x_Validate() back to base search class.
+ *
  * Revision 1.5  2005/10/26 18:44:49  vasilche
  * Fixed x_Validate() lookup.
  *
