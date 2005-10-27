@@ -35,14 +35,18 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <util/static_map.hpp>
-#include <util/static_set.hpp>
 #include <stdlib.h>
 
 #include <set>
 #include <map>
 
 #include <test/test_assert.h>  /* This header must go last */
+
+#ifndef _DEBUG
+# define _DEBUG 1
+#endif
+#include <util/static_map.hpp>
+#include <util/static_set.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -60,11 +64,13 @@ public:
     int m_LookupCount;
 
     enum ETestBadData {
-        eBad_none,
         eBad_swap_at_begin,
         eBad_equal_at_begin,
+        eBad_swap_in_middle,
+        eBad_equal_in_middle,
+        eBad_swap_at_end,
         eBad_equal_at_end,
-        eBad_swap_at_end
+        eBad_none
     };
 
     ETestBadData m_TestBadData;
@@ -154,6 +160,16 @@ void TestAll(const typename TRef::key_type& key, const TRef& ref,
                                             tst.upper_bound(key)));
 }
 
+namespace {
+    class abort_exception : public exception
+    {
+    };
+    
+    void AbortThrow()
+    {
+        throw abort_exception();
+    }
+}
 
 void CTestStaticMap::TestStaticSet(void) const
 {
@@ -167,32 +183,72 @@ void CTestStaticMap::TestStaticSet(void) const
         ref.insert(rand());
     }
 
-    int* arr = new int[m_NumberOfElements];
+    typedef int value_type;
+    value_type* arr;
+    AutoPtr<value_type, ArrayDeleter<value_type> > arr_del
+        (arr = new value_type[m_NumberOfElements]);
+    
+    bool error = false;
     {{
-        int index = 0;
-        ITERATE ( TRef, it, ref ) {
-            arr[index++] = *it;
-        }
-        if ( m_NumberOfElements >= 2 ) {
+        {{
+            int index = 0;
+            ITERATE ( TRef, it, ref ) {
+                arr[index++] = *it;
+            }
+        }}
+        if ( m_TestBadData != eBad_none && m_NumberOfElements >= 2 ) {
+            size_t index = m_NumberOfElements;
+            bool assign = false;
             switch ( m_TestBadData ) {
             case eBad_swap_at_begin:
-                swap(arr[0], arr[1]);
+                index = 0;
+                assign = false;
                 break;
             case eBad_swap_at_end:
-                swap(arr[m_NumberOfElements-1], arr[m_NumberOfElements-2]);
+                index = m_NumberOfElements-2;
+                assign = false;
+                break;
+            case eBad_swap_in_middle:
+                index = m_NumberOfElements/2;
+                assign = false;
                 break;
             case eBad_equal_at_begin:
-                arr[0] = arr[1];
+                index = 0;
+                assign = true;
                 break;
             case eBad_equal_at_end:
-                arr[m_NumberOfElements-1] = arr[m_NumberOfElements-2];
+                index = m_NumberOfElements-2;
+                assign = true;
+                break;
+            case eBad_equal_in_middle:
+                index = m_NumberOfElements/2;
+                assign = true;
                 break;
             default:
                 break;
             }
+            if ( assign ) {
+                arr[index] = arr[index+1];
+            }
+            else {
+                swap(arr[index], arr[index+1]);
+            }
+            error = true;
         }
     }}
 
+    if ( error ) {
+        SetAbortHandler(AbortThrow);
+        try {
+            TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
+        }
+        catch ( abort_exception& exc ) {
+            LOG_POST(Info << "Test CStaticArraySet correctly detected error");
+            return;
+        }
+        SetAbortHandler(0);
+        ERR_POST(Fatal << "Test CStaticArraySet failed to detected error");
+    }
     TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
 
     _ASSERT(ref.empty() == tst.empty());
@@ -203,8 +259,6 @@ void CTestStaticMap::TestStaticSet(void) const
 
         TestAll(key, ref, tst, arr);
     }
-
-    delete[] arr;
 
     LOG_POST(Info << "Test CStaticArraySet passed");
 }
@@ -221,32 +275,72 @@ void CTestStaticMap::TestStaticMap(void) const
         ref.insert(TRef::value_type(rand(), rand()));
     }
 
-    pair<int, int>* arr = new pair<int, int>[m_NumberOfElements];
+    typedef pair<int, int> value_type;
+    value_type* arr;
+    AutoPtr<value_type, ArrayDeleter<value_type> > arr_del
+        (arr = new value_type[m_NumberOfElements]);
+    
+    bool error = false;
     {{
-        int index = 0;
-        ITERATE ( TRef, it, ref ) {
-            arr[index++] = TTst::value_type(it->first, it->second);
-        }
-        if ( m_NumberOfElements >= 2 ) {
+        {{
+            int index = 0;
+            ITERATE ( TRef, it, ref ) {
+                arr[index++] = TTst::value_type(it->first, it->second);
+            }
+        }}
+        if ( m_TestBadData != eBad_none && m_NumberOfElements >= 2 ) {
+            size_t index = m_NumberOfElements;
+            bool assign = false;
             switch ( m_TestBadData ) {
             case eBad_swap_at_begin:
-                swap(arr[0], arr[1]);
+                index = 0;
+                assign = false;
                 break;
             case eBad_swap_at_end:
-                swap(arr[m_NumberOfElements-1], arr[m_NumberOfElements-2]);
+                index = m_NumberOfElements-2;
+                assign = false;
+                break;
+            case eBad_swap_in_middle:
+                index = m_NumberOfElements/2;
+                assign = false;
                 break;
             case eBad_equal_at_begin:
-                arr[0] = arr[1];
+                index = 0;
+                assign = true;
                 break;
             case eBad_equal_at_end:
-                arr[m_NumberOfElements-1] = arr[m_NumberOfElements-2];
+                index = m_NumberOfElements-2;
+                assign = true;
+                break;
+            case eBad_equal_in_middle:
+                index = m_NumberOfElements/2;
+                assign = true;
                 break;
             default:
                 break;
             }
+            if ( assign ) {
+                arr[index] = arr[index+1];
+            }
+            else {
+                swap(arr[index], arr[index+1]);
+            }
+            error = true;
         }
     }}
 
+    if ( error ) {
+        SetAbortHandler(AbortThrow);
+        try {
+            TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
+        }
+        catch ( abort_exception& exc ) {
+            LOG_POST(Info << "Test CStaticArrayMap correctly detected error");
+            return;
+        }
+        SetAbortHandler(0);
+        ERR_POST(Fatal << "Test CStaticArrayMap failed to detected error");
+    }
     TTst tst(arr, sizeof(*arr)*m_NumberOfElements);
 
     _ASSERT(ref.empty() == tst.empty());
@@ -257,8 +351,6 @@ void CTestStaticMap::TestStaticMap(void) const
 
         TestAll(key, ref, tst, arr);
     }
-
-    delete[] arr;
 
     LOG_POST(Info << "Test CStaticArrayMap passed");
 }
@@ -292,13 +384,16 @@ void CTestStaticMap::Init(void)
 
     d->AddDefaultKey("b", "badDataType",
                      "type of bad data to test",
-                     CArgDescriptions::eString, "none");
+                     CArgDescriptions::eString, "all");
     d->SetConstraint("b", (new CArgAllow_Strings)->
-                     Allow("none")->
+                     Allow("all")->
                      Allow("swap_at_begin")->
+                     Allow("swap_in_middle")->
                      Allow("swap_at_end")->
                      Allow("equal_at_begin")->
-                     Allow("equal_at_end"));
+                     Allow("equal_in_middle")->
+                     Allow("equal_at_end")->
+                     Allow("none"));
 
     SetupArgDescriptions(d.release());
 }
@@ -311,21 +406,38 @@ int CTestStaticMap::Run(void)
     m_NumberOfElements = args["n"].AsInteger();
     m_LookupCount = args["c"].AsInteger();
 
-    {{
-        string bad_type = args["b"].AsString();
+    string type = args["t"].AsString();
+
+    string bad_type = args["b"].AsString();
+    if ( bad_type == "all" ) {
+        for ( int i = 0; i != eBad_none; ++i ) {
+            m_TestBadData = ETestBadData(i);
+            if ( type == "set" || type == "both" ) {
+                TestStaticSet();
+            }
+            if ( type == "map" || type == "both" ) {
+                TestStaticMap();
+            }
+        }
+        m_TestBadData = eBad_none;
+    }
+    else {
         if ( bad_type == "swap_at_begin" )
             m_TestBadData = eBad_swap_at_begin;
+        else if ( bad_type == "swap_in_middle" )
+            m_TestBadData = eBad_swap_in_middle;
         else if ( bad_type == "swap_at_end" )
             m_TestBadData = eBad_swap_at_end;
         else if ( bad_type == "equal_at_begin" )
             m_TestBadData = eBad_equal_at_begin;
+        else if ( bad_type == "equal_in_middle" )
+            m_TestBadData = eBad_equal_in_middle;
         else if ( bad_type == "equal_at_end" )
             m_TestBadData = eBad_equal_at_end;
         else
             m_TestBadData = eBad_none;
-    }}
-        
-    string type = args["t"].AsString();
+    }
+    
     if ( type == "set" || type == "both" ) {
         TestStaticSet();
     }
@@ -333,6 +445,7 @@ int CTestStaticMap::Run(void)
         TestStaticMap();
     }
 
+    NcbiCout << "All tests passed." << NcbiEndl;
     return 0;
 }
 
@@ -347,6 +460,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/27 13:30:12  vasilche
+ * Check detection of CStaticMap/Set in runtime.
+ *
  * Revision 1.7  2005/04/25 19:05:24  ivanov
  * Fixed compilation warnings on 64-bit Worshop compiler
  *
