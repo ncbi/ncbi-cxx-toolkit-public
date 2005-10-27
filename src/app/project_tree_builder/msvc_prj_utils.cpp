@@ -72,7 +72,7 @@ void SaveToXmlFile(const string&               file_path,
 
     CObjectOStreamXml xs(ofs, false);
     xs.SetReferenceDTD(false);
-    xs.SetEncoding(CObjectOStreamXml::eEncoding_Windows_1252);
+    xs.SetEncoding(eEncoding_Windows_1252);
 
     xs << project;
 }
@@ -1072,6 +1072,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/10/27 15:55:53  gouriano
+ * Corrected to match changed support of character encodings in streams
+ *
  * Revision 1.36  2005/04/29 14:11:12  gouriano
  * Added definition of runtime library type
  *
