@@ -108,7 +108,7 @@ EOF
 #                continue
 #            fi
 
-            if test $driver = "ftds" ; then
+            if test $driver = "ftds" -a $server != $server_mssql ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
                 continue
             fi
