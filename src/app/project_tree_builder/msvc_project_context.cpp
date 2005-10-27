@@ -371,7 +371,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info, true) ) {
+        if ( CMsvcSite::IsLibOk(lib_info) ) {
             if ( !lib_info.m_Libs.empty() ) {
                 copy(lib_info.m_Libs.begin(), lib_info.m_Libs.end(), 
                     back_inserter(additional_libs));
@@ -471,7 +471,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info, true) ) {
+        if ( CMsvcSite::IsLibOk(lib_info) ) {
             if ( !lib_info.m_LibPath.empty() ) {
                 dir_list.push_back(lib_info.m_LibPath);
             }
@@ -1060,6 +1060,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/10/27 15:56:22  gouriano
+ * More verbose diagnostics
+ *
  * Revision 1.53  2005/05/12 18:08:20  gouriano
  * Do not convert file path in custom build info
  *
