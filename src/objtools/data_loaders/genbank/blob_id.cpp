@@ -56,7 +56,7 @@ bool CBlob_id::operator<(const CBlobId& id_ref) const
 {
     const CBlob_id* id = dynamic_cast<const CBlob_id*>(&id_ref);
     if ( !id ) {
-        return typeid(*this).before(typeid(id_ref));
+        return LessByTypeId(id_ref);
     }
     return *this < *id;
 }
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2005/10/27 15:18:38  vasilche
+ * Use LessByTypeId() from parent class to avoid warning on MSVC.
+ *
  * Revision 1.2  2005/10/26 14:36:46  vasilche
  * Updated for new CBlobId interface.
  *
