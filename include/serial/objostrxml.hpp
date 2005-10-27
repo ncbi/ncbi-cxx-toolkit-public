@@ -53,14 +53,10 @@ public:
 
     virtual string GetPosition(void) const;
 
-    enum EEncoding {
-        eEncoding_Unknown,
-        eEncoding_UTF8,
-        eEncoding_ISO8859_1,
-        eEncoding_Windows_1252
-    };
     void SetEncoding(EEncoding enc);
     EEncoding GetEncoding(void) const;
+    void SetDefaultStringEncoding(EEncoding enc);
+    EEncoding GetDefaultStringEncoding(void) const;
 
     void SetReferenceSchema(bool use_schema = true);
     bool GetReferenceSchema(void) const;
@@ -144,6 +140,8 @@ protected:
     virtual void CopyAnyContentObject(CObjectIStream& in);
 
     void WriteEscapedChar(char c);
+    void WriteEncodedChar(const char*& src,
+                          EStringType type = eStringTypeVisible);
 
     virtual void WriteEnum(const CEnumeratedTypeValues& values,
                            TEnumValueType value);
@@ -283,6 +281,7 @@ private:
     bool m_EnforcedStdXml;
     ERealValueFormat m_RealFmt;
     EEncoding m_Encoding;
+    EEncoding m_StringEncoding;
     bool m_UseSchemaRef;
     bool m_UseSchemaLoc;
     bool m_UseDTDRef;
@@ -308,6 +307,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/10/27 15:54:29  gouriano
+* Added support for various character encodings
+*
 * Revision 1.40  2005/02/09 14:23:53  gouriano
 * Implemented seriaization of mixed content elements
 *

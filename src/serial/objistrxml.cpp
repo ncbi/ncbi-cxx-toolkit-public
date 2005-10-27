@@ -53,17 +53,29 @@ CObjectIStreamXml::CObjectIStreamXml(void)
     : CObjectIStream(eSerial_Xml),
       m_TagState(eTagOutside), m_Attlist(false),
       m_StdXml(false), m_EnforcedStdXml(false),
-      m_Encoding( eEncoding_Unknown )
+      m_Encoding( eEncoding_Unknown ),
+      m_StringEncoding( eEncoding_ISO8859_1 )
 {
+    m_Utf8Pos = m_Utf8Buf.begin();
 }
 
 CObjectIStreamXml::~CObjectIStreamXml(void)
 {
 }
 
-CObjectIStreamXml::EEncoding CObjectIStreamXml::GetEncoding(void) const
+EEncoding CObjectIStreamXml::GetEncoding(void) const
 {
     return m_Encoding;
+}
+
+void CObjectIStreamXml::SetDefaultStringEncoding(EEncoding enc)
+{
+    m_StringEncoding = enc;
+}
+
+EEncoding CObjectIStreamXml::GetDefaultStringEncoding(void) const
+{
+    return m_StringEncoding;
 }
 
 bool CObjectIStreamXml::EndOfData(void)
@@ -627,18 +639,55 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar, bool* encoded)
     else if ( c == endingChar ) {
         return -1;
     }
-    if ((c & 0x80) != 0) {
-        if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
-            Uint1 ch = c;
-            Uint1 chRes = (ch & 0x1F);
-            m_Input.SkipChar();
-            ch = m_Input.PeekChar();
-            chRes = (chRes << 6) | (ch & 0x3F);
-            c = chRes;
-        }
-    }
     m_Input.SkipChar();
     return c & 0xFF;
+}
+
+int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool* encoded)
+{
+    EEncoding enc_out( type == eStringTypeUTF8 ? eEncoding_UTF8 : m_StringEncoding);
+    EEncoding enc_in(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
+
+    if (enc_out == eEncoding_UTF8 &&
+        !m_Utf8Buf.empty() && m_Utf8Pos != m_Utf8Buf.end()) {
+        if (++m_Utf8Pos != m_Utf8Buf.end()) {
+            return *m_Utf8Pos & 0xFF;
+        } else {
+            m_Utf8Buf.erase();
+        }
+    }
+    if (enc_in != enc_out && enc_out != eEncoding_Unknown) {
+        int c = ReadEscapedChar(endingChar, encoded);
+        if (c < 0) {
+            return c;
+        }
+        if (enc_out != eEncoding_UTF8) {
+            TUnicodeSymbol chU = enc_in == eEncoding_UTF8 ?
+                ReadUtf8Char(c) : CStringUTF8::CharToSymbol( c, enc_in);
+            Uint1 ch = CStringUTF8::SymbolToChar( chU, enc_out);
+            return ch & 0xFF;
+        }
+        if ((c & 0x80) == 0) {
+            return c;
+        }
+        m_Utf8Buf.Assign(c,enc_in);
+        m_Utf8Pos = m_Utf8Buf.begin();
+        return *m_Utf8Pos & 0xFF;
+    }
+    return ReadEscapedChar(endingChar, encoded);
+}
+
+TUnicodeSymbol CObjectIStreamXml::ReadUtf8Char(char c)
+{
+    size_t more = 0;
+    TUnicodeSymbol chU = CStringUTF8::DecodeFirst(c, more);
+    while (chU && more--) {
+        chU = CStringUTF8::DecodeNext(chU, m_Input.GetChar());
+    }
+    if (chU == 0) {
+        ThrowError(fInvalidData, "invalid UTF8 string");
+    }
+    return chU;
 }
 
 CLightString CObjectIStreamXml::ReadAttributeName(void)
@@ -658,7 +707,7 @@ void CObjectIStreamXml::ReadAttributeValue(string& value, bool skipClosing)
         ThrowError(fFormatError, "attribute value must start with ' or \"");
     m_Input.SkipChar();
     for ( ;; ) {
-        int c = ReadEscapedChar(startChar);
+        int c = ReadEncodedChar(startChar);
         if ( c < 0 )
             break;
         value += char(c);
@@ -891,19 +940,7 @@ void CObjectIStreamXml::ReadString(string& str, EStringType type)
 {
     str.erase();
     if ( !EndOpeningTagSelfClosed() ) {
-        EEncoding enc = m_Encoding;
-        if (type == eStringTypeUTF8) {
-            if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
-                m_Encoding = eEncoding_ISO8859_1;
-            } else {
-                string tmp;
-                ReadTagData(tmp);
-                (static_cast<CStringUTF8&>(str)) = tmp;
-                return;
-            }
-        }
-        ReadTagData(str);
-        m_Encoding = enc;
+        ReadTagData(str, type);
     }
 }
 
@@ -918,14 +955,14 @@ char* CObjectIStreamXml::ReadCString(void)
     return strdup(str.c_str());
 }
 
-void CObjectIStreamXml::ReadTagData(string& str)
+void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
 {
     BeginData();
     bool skip_spaces = false;
     bool encoded = false;
     try {
         for ( ;; ) {
-            int c = ReadEscapedChar(m_Attlist ? '\"' : '<', &encoded);
+            int c = ReadEncodedChar(m_Attlist ? '\"' : '<', type, &encoded);
             if ( c < 0 ) {
                 break;
             }
@@ -2217,6 +2254,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2005/10/27 15:54:49  gouriano
+* Added support for various character encodings
+*
 * Revision 1.81  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

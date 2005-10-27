@@ -59,13 +59,9 @@ public:
     virtual string ReadFileHeader(void);
     virtual string PeekNextTypeName(void);
 
-    enum EEncoding {
-        eEncoding_Unknown,
-        eEncoding_UTF8,
-        eEncoding_ISO8859_1,
-        eEncoding_Windows_1252
-    };
     EEncoding GetEncoding(void) const;
+    void SetDefaultStringEncoding(EEncoding enc);
+    EEncoding GetDefaultStringEncoding(void) const;
 
     void SetEnforcedStdXml(bool set = true);
     bool GetEnforcedStdXml(void)     {return m_EnforcedStdXml;}
@@ -207,7 +203,9 @@ private:
     void BeginData(void);
 
     int ReadEscapedChar(char endingChar, bool* encoded=0);
-    void ReadTagData(string& s);
+    int ReadEncodedChar(char endingChar, EStringType type = eStringTypeVisible, bool* encoded=0);
+    TUnicodeSymbol ReadUtf8Char(char ch);
+    void ReadTagData(string& s, EStringType type = eStringTypeVisible);
 
     CLightString ReadName(char c);
     CLightString RejectedName(void);
@@ -239,9 +237,12 @@ private:
     bool m_EnforcedStdXml;
     string m_LastPrimitive;
     EEncoding m_Encoding;
+    EEncoding m_StringEncoding;
     string m_CurrNsPrefix;
     map<string,string> m_NsPrefixToName;
     map<string,string> m_NsNameToPrefix;
+    CStringUTF8 m_Utf8Buf;
+    CStringUTF8::const_iterator m_Utf8Pos;
 };
 
 
@@ -258,6 +259,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/10/27 15:54:29  gouriano
+* Added support for various character encodings
+*
 * Revision 1.41  2005/08/17 18:17:03  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

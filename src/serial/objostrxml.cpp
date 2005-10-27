@@ -68,7 +68,8 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_UseDefaultDTDFilePrefix( true),
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
-      m_RealFmt( eRealScientificFormat ), m_Encoding( eEncoding_Unknown ),
+      m_RealFmt( eRealScientificFormat ),
+      m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_ISO8859_1 ),
       m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
       m_SkipIndent( false )
 {
@@ -84,9 +85,19 @@ void CObjectOStreamXml::SetEncoding(EEncoding enc)
     m_Encoding = enc;
 }
 
-CObjectOStreamXml::EEncoding CObjectOStreamXml::GetEncoding(void) const
+EEncoding CObjectOStreamXml::GetEncoding(void) const
 {
     return m_Encoding;
+}
+
+void CObjectOStreamXml::SetDefaultStringEncoding(EEncoding enc)
+{
+    m_StringEncoding = enc;
+}
+
+EEncoding CObjectOStreamXml::GetDefaultStringEncoding(void) const
+{
+    return m_StringEncoding;
 }
 
 void CObjectOStreamXml::SetReferenceSchema(bool use_schema)
@@ -435,19 +446,30 @@ void CObjectOStreamXml::WriteEscapedChar(char c)
             }
             m_Output.PutChar("0123456789abcdef"[lo]);
             m_Output.PutChar(';');
-        } else if ((unsigned int)c >= 0x80) {
-            if ( m_Encoding == eEncoding_UTF8 ||
-                 m_Encoding == eEncoding_Unknown ) {
-                Uint1 ch = c;
-                m_Output.PutChar((ch >> 6) | 0xC0);
-                m_Output.PutChar((ch & 0x3F) | 0x80);
-            } else {
-                m_Output.PutChar(c);
-            }
         } else {
             m_Output.PutChar(c);
         }
         break;
+    }
+}
+
+void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
+{
+    EEncoding enc_in( type == eStringTypeUTF8 ? eEncoding_UTF8 : m_StringEncoding);
+    EEncoding enc_out(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
+
+    if (enc_in == enc_out || enc_in == eEncoding_Unknown || (*src & 0x80) == 0) {
+        WriteEscapedChar(*src);
+    } else if (enc_out != eEncoding_UTF8) {
+        TUnicodeSymbol chU = (enc_in == eEncoding_UTF8) ?
+            CStringUTF8::Decode(src) : CStringUTF8::CharToSymbol( *src, enc_in);
+        WriteEscapedChar( CStringUTF8::SymbolToChar( chU, enc_out) );
+    } else {
+        CStringUTF8 tmp;
+        tmp.Assign(*src,enc_in);
+        for ( string::const_iterator t = tmp.begin(); t != tmp.end(); ++t ) {
+            WriteEscapedChar(*t);
+        }
     }
 }
 
@@ -593,7 +615,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
                 }
                 m_Output.PutString(it->GetName());
                 m_Output.PutString("=\"");
-                m_Output.PutString(it->GetValue());
+                WriteString(it->GetValue());
                 m_Output.PutChar('\"');
                 x_EndNamespace(ns);
             }
@@ -613,7 +635,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
         return;
     }
     bool was_open = true, was_close=true;
-    for (string::const_iterator is=value.begin(); is != value.end(); ++is) {
+    for (const char* is = value.c_str(); *is; ++is) {
         if (*is == '/' && *(is+1) == '>') {
             m_Output.DecIndentLevel();
             was_open = false;
@@ -633,7 +655,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
                 was_open = true;
             }
         }
-        m_Output.PutChar(*is);
+        WriteEncodedChar(is);
         if (*is == '<') {
             if (*(is+1) == '/') {
                 m_Output.PutChar(*(++is));
@@ -667,28 +689,17 @@ void CObjectOStreamXml::WriteCString(const char* str)
         SelfCloseTagEnd();
     }
     else {
-        while ( *str ) {
-            WriteEscapedChar(*str++);
+        for ( ; *str; ++str) {
+            WriteEncodedChar(str);
         }
     }
 }
 
 void CObjectOStreamXml::WriteString(const string& str, EStringType type)
 {
-    EEncoding enc = m_Encoding;
-    if (type == eStringTypeUTF8) {
-        if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
-            m_Encoding = eEncoding_ISO8859_1;
-        } else {
-            string tmp = (static_cast<const CStringUTF8&>(str)).AsLatin1();
-            WriteString( tmp, eStringTypeVisible);
-            return;
-        }
+    for ( const char* src = str.c_str(); *src; ++src ) {
+        WriteEncodedChar(src,type);
     }
-    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
-        WriteEscapedChar(*i);
-    }
-    m_Encoding = enc;
 }
 
 void CObjectOStreamXml::WriteStringStore(const string& str)
@@ -700,11 +711,9 @@ void CObjectOStreamXml::WriteStringStore(const string& str)
 
 void CObjectOStreamXml::CopyString(CObjectIStream& in)
 {
-    string str;
+    CStringUTF8 str;
     in.ReadStd(str);
-    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
-        WriteEscapedChar(*i);
-    }
+    WriteString(str, eStringTypeUTF8);
 }
 
 void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)
@@ -1376,6 +1385,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2005/10/27 15:54:49  gouriano
+* Added support for various character encodings
+*
 * Revision 1.86  2005/10/24 20:26:33  gouriano
 * Added option to write named integers by value only
 *
