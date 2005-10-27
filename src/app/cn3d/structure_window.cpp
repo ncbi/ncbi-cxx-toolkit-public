@@ -280,6 +280,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     subMenu->Append(MID_OBJECT, "&Object", "", true);
     subMenu->Append(MID_DOMAIN, "&Domain", "", true);
     subMenu->Append(MID_MOLECULE, "&Molecule", "", true);
+    subMenu->Append(MID_RESIDUE, "Res&idue", "", true);
     subMenu->Append(MID_RAINBOW, "&Rainbow", "", true);
     subMenu->Append(MID_HYDROPHOB, "&Hydrophobicity", "", true);
     subMenu->Append(MID_CHARGE, "Char&ge", "", true);
@@ -1290,6 +1291,7 @@ void StructureWindow::OnSetStyle(wxCommandEvent& event)
             case MID_OBJECT: COLORING_SHORTCUT(eObjectShortcut, MID_OBJECT);
             case MID_DOMAIN: COLORING_SHORTCUT(eDomainShortcut, MID_DOMAIN);
             case MID_MOLECULE: COLORING_SHORTCUT(eMoleculeShortcut, MID_MOLECULE);
+            case MID_RESIDUE: COLORING_SHORTCUT(eResidueShortcut, MID_RESIDUE);
             case MID_RAINBOW: COLORING_SHORTCUT(eRainbowShortcut, MID_RAINBOW);
             case MID_HYDROPHOB: COLORING_SHORTCUT(eHydrophobicityShortcut, MID_HYDROPHOB);
             case MID_CHARGE: COLORING_SHORTCUT(eChargeShortcut, MID_CHARGE);
@@ -1328,6 +1330,7 @@ void StructureWindow::SetColoringMenuFlag(int which)
     menuBar->Check(MID_OBJECT, (which == MID_OBJECT));
     menuBar->Check(MID_DOMAIN, (which == MID_DOMAIN));
     menuBar->Check(MID_MOLECULE, (which == MID_MOLECULE));
+    menuBar->Check(MID_RESIDUE, (which == MID_RESIDUE));
     menuBar->Check(MID_RAINBOW, (which == MID_RAINBOW));
     menuBar->Check(MID_HYDROPHOB, (which == MID_HYDROPHOB));
     menuBar->Check(MID_CHARGE, (which == MID_CHARGE));
@@ -1659,6 +1662,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/10/27 13:27:40  thiessen
+* add residue coloring scheme
+*
 * Revision 1.43  2005/10/26 18:55:30  thiessen
 * better handling of -n option
 *

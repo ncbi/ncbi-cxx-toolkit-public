@@ -155,6 +155,7 @@ public:
                 MID_OBJECT,
                 MID_DOMAIN,
                 MID_MOLECULE,
+                MID_RESIDUE,
                 MID_RAINBOW,
                 MID_HYDROPHOB,
                 MID_CHARGE,
@@ -266,6 +267,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/10/27 13:27:40  thiessen
+* add residue coloring scheme
+*
 * Revision 1.16  2005/10/26 18:55:30  thiessen
 * better handling of -n option
 *

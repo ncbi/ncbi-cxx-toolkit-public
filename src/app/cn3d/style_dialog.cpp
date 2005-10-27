@@ -218,6 +218,7 @@ void StyleDialog::SetupStyleStrings(void)
         ColorSchemeStrings.Associate(StyleSettings::eElement, "Element");
         ColorSchemeStrings.Associate(StyleSettings::eObject, "Object");
         ColorSchemeStrings.Associate(StyleSettings::eMolecule, "Molecule");
+        ColorSchemeStrings.Associate(StyleSettings::eResidue, "Residue");
         ColorSchemeStrings.Associate(StyleSettings::eDomain, "Domain");
         ColorSchemeStrings.Associate(StyleSettings::eSecondaryStructure, "Secondary Structure");
         ColorSchemeStrings.Associate(StyleSettings::eUserSelect, "User Selection");
@@ -757,6 +758,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Element",
         "Object",
         "Molecule",
+        "Residue",
         "Domain",
         "Secondary Structure",
         "Temperature",
@@ -774,7 +776,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Normalized Block Fit",
         "Block Row Fit"
     };
-    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 19, strs12, 0 );
+    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 20, strs12, 0 );
     item3->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item13 = new wxButton( parent, ID_PBB_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
@@ -801,6 +803,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Element",
         "Object",
         "Molecule",
+        "Residue",
         "Domain",
         "Temperature",
         "Rainbow",
@@ -817,7 +820,7 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Normalized Block Fit",
         "Block Row Fit"
     };
-    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 18, strs17, 0 );
+    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 19, strs17, 0 );
     item3->Add( item17, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item18 = new wxButton( parent, ID_PSIDE_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
@@ -853,12 +856,13 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Element",
         "Object",
         "Molecule",
+        "Residue",
         "Domain",
         "Temperature",
         "Rainbow",
         "User Selection"
     };
-    wxChoice *item22 = new wxChoice( parent, ID_NUC_COLOR, wxDefaultPosition, wxDefaultSize, 7, strs22, 0 );
+    wxChoice *item22 = new wxChoice( parent, ID_NUC_COLOR, wxDefaultPosition, wxDefaultSize, 8, strs22, 0 );
     item3->Add( item22, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item23 = new wxButton( parent, ID_NUC_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
@@ -885,12 +889,13 @@ wxSizer *LayoutSettingsPage( wxPanel *parent, bool call_fit, bool set_sizer )
         "Element",
         "Object",
         "Molecule",
+        "Residue",
         "Domain",
         "Temperature",
         "Rainbow",
         "User Selection"
     };
-    wxChoice *item27 = new wxChoice( parent, ID_NSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 7, strs27, 0 );
+    wxChoice *item27 = new wxChoice( parent, ID_NSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 8, strs27, 0 );
     item3->Add( item27, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item28 = new wxButton( parent, ID_NSIDE_USER, "Set Color", wxDefaultPosition, wxDefaultSize, 0 );
@@ -1319,6 +1324,9 @@ wxSizer *LayoutDetailsPage(wxPanel *parent, bool call_fit, bool set_sizer)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/10/27 13:27:40  thiessen
+* add residue coloring scheme
+*
 * Revision 1.28  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

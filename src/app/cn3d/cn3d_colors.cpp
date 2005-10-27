@@ -81,6 +81,12 @@ Colors::Colors(void)
     colors[eNegative].Set(.9, .2, .2);
     colors[eNeutral].Set(.6, .6, .6);
 
+    colors[eNuc_A].Set(.1, .9, .2);
+    colors[eNuc_T_U].Set(.9, .1, .2);
+    colors[eNuc_C].Set(.1, .2, 1.0);
+    colors[eNuc_G].Set(.85, .7, 0);
+    colors[eNuc_X].Set(.6, .6, .6);
+
     colors[eNoDomain].Set(.4, .4, .4);
     colors[eNoTemperature].Set(.4, .4, .4);
     colors[eNoHydrophobicity].Set(.4, .4, .4);
@@ -177,6 +183,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/10/27 13:27:40  thiessen
+* add residue coloring scheme
+*
 * Revision 1.20  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

@@ -72,6 +72,13 @@ public:
         eNegative,
         eNeutral,
 
+        // nucleotide residues
+        eNuc_A,
+        eNuc_T_U,
+        eNuc_C,
+        eNuc_G,
+        eNuc_X,
+
         // misc other colors
         eNoDomain,
         eNoTemperature,
@@ -129,6 +136,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/10/27 13:27:40  thiessen
+* add residue coloring scheme
+*
 * Revision 1.15  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

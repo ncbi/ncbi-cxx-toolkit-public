@@ -98,6 +98,7 @@ public:
         eObject = 2,
         eMolecule = 3,
         eDomain = 4,
+        eResidue = 20,
         eSecondaryStructure = 5,
         eTemperature = 13,
         eHydrophobicity = 14,
@@ -195,6 +196,7 @@ public:
         eObjectShortcut,
         eDomainShortcut,
         eMoleculeShortcut,
+        eResidueShortcut,
         eRainbowShortcut,
         eHydrophobicityShortcut,
         eChargeShortcut,
@@ -426,6 +428,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/10/27 13:27:40  thiessen
+* add residue coloring scheme
+*
 * Revision 1.42  2004/06/02 21:33:13  thiessen
 * reorganize user annotation storage so that reordering is saved
 *

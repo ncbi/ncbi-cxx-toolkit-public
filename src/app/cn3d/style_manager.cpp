@@ -405,6 +405,15 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
             helixObjects.colorScheme = strandObjects.colorScheme = eMolecule;
             break;
 
+        case eResidueShortcut:
+            proteinBackbone.colorScheme = eResidue;
+            nucleotideBackbone.colorScheme = eResidue;
+            proteinSidechains.colorScheme = eResidue;
+            nucleotideSidechains.colorScheme = eResidue;
+            heterogens.colorScheme = solvents.colorScheme = eMolecule;
+            helixObjects.colorScheme = strandObjects.colorScheme = eMolecule;
+            break;
+
         case eRainbowShortcut:
             proteinBackbone.colorScheme = eRainbow;
             nucleotideBackbone.colorScheme = eRainbow;
@@ -791,6 +800,28 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
                 GlobalColors()->Get(Colors::eNoHydrophobicity);
             break;
         }
+
+        case StyleSettings::eResidue:
+            if (residue->IsNucleotide()) {
+                switch (residue->code) {
+                    case 'A':
+                        atomStyle->color = GlobalColors()->Get(Colors::eNuc_A); break;
+                    case 'T': case 'U':
+                        atomStyle->color = GlobalColors()->Get(Colors::eNuc_T_U); break;
+                    case 'C':
+                        atomStyle->color = GlobalColors()->Get(Colors::eNuc_C); break;
+                    case 'G':
+                        atomStyle->color = GlobalColors()->Get(Colors::eNuc_G); break;
+                    default:
+                        atomStyle->color = GlobalColors()->Get(Colors::eNuc_X);
+                }
+            } else {
+                char ch = toupper((unsigned char) residue->code);
+                if (ch < 'A' || ch > 'Z')
+                    ch = 'X';
+                atomStyle->color = GlobalColors()->Get(Colors::eRainbowMap, (((double) (ch - 'A')) / ('Z' - 'A')));
+            }
+            break;
 
         case StyleSettings::eUserSelect:
             if (backboneStyle)
@@ -1644,6 +1675,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2005/10/27 13:27:40  thiessen
+* add residue coloring scheme
+*
 * Revision 1.87  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
