@@ -109,18 +109,24 @@ int CTestNSStorage::Run(void)
     CNcbiOstream& os = storage1->CreateOStream(blobid);
     os << "Test_date";
     size_t blobsize;
+
     try {
         CNcbiIstream& is = storage2->GetIStream(blobid, &blobsize,
                                INetScheduleStorage::eLockNoWait );
     } catch( CNetScheduleStorageException& ex ) {
-        if( ex.GetErrCode() == CNetCacheException::eBlobLocked ) {
+        if( ex.GetErrCode() == CNetScheduleStorageException::eBlocked ) {
             cout << "Blob : " << blobid << " is blocked" << endl;
+        } else {
+            throw;
         }
     }
     
-    storage1.release();
-    CNcbiIstream& is = storage2->GetIStream(blobid, &blobsize,
-                                    INetScheduleStorage::eLockNoWait );
+
+    storage1.reset(0);
+
+    cout << "Second attempt." << endl;
+
+    CNcbiIstream& is = storage2->GetIStream(blobid, &blobsize);
     string res;
     is >> res;
     cout << res;
@@ -138,6 +144,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2005/10/27 13:15:45  kuznets
+ * Fixed bug with exception handling and memory management
+ *
  * Revision 6.1  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *
