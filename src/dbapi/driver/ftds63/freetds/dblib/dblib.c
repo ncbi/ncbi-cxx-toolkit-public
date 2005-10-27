@@ -1524,6 +1524,20 @@ dbcolname(DBPROCESS * dbproc, int column)
 	return resinfo->columns[column - 1]->column_name;
 }
 
+char *
+dbcoltablename(DBPROCESS * dbproc, int column)
+{
+	TDSRESULTINFO *resinfo = dbproc->tds_socket->res_info;
+
+	assert(resinfo);
+
+	if (column < 1 || column > resinfo->num_cols)
+		return NULL;
+
+	assert(resinfo->columns[column - 1]->table_name[resinfo->columns[column - 1]->table_namelen] == 0);
+	return resinfo->columns[column - 1]->table_name;
+}
+
 /**
  * \ingroup dblib_api
  * \brief Read a row from the row buffer.
@@ -2444,6 +2458,7 @@ dbcolinfo (DBPROCESS *dbproc, CI_TYPE type, DBINT column, DBINT computeid, DBCOL
 
 	strcpy(pdbcol->Name, dbcolname(dbproc, column));
 	strcpy(pdbcol->ActualName, dbcolname(dbproc, column));
+	strcpy(pdbcol->TableName, dbcoltablename(dbproc, column));
 	
 	pdbcol->Type = dbcoltype(dbproc, column);
 	pdbcol->UserType = dbcolutype(dbproc, column);
@@ -3989,7 +4004,18 @@ dbretdata(DBPROCESS * dbproc, int retnum)
 
 	colinfo = param_info->columns[retnum - 1];
 	/* FIXME blob are stored is different way */
-	return &param_info->current_row[colinfo->column_offset];
+	/* return &param_info->current_row[colinfo->column_offset]; */
+
+    /* Fix */
+	if (tds_get_null(param_info->current_row, retnum - 1)) {
+		return NULL;
+	}
+	if (is_blob_type(colinfo->column_type)) {
+		return (BYTE *) ((TDSBLOB *) (param_info->current_row + colinfo->column_offset))->textvalue;
+	}
+
+	return (BYTE *) & param_info->current_row[colinfo->column_offset];
+
 }
 
 /**
@@ -5389,6 +5415,7 @@ dbtxptr(DBPROCESS * dbproc, int column)
 		return NULL;
 	blob = (TDSBLOB *) & (resinfo->current_row[resinfo->columns[column]->column_offset]);
 	return (DBBINARY *) blob->textptr;
+    /* return (DBBINARY *) blob->textvalue; */
 }
 
 /**
