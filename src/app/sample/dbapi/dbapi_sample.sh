@@ -103,25 +103,16 @@ EOF
                 continue
             fi
 
-#            if test $driver = "ftds" -a  $server != $server_mssql ; then
-#                sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
-#                continue
-#            fi
-
             if test $driver = "ftds" -a $server != $server_mssql ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
                 continue
             fi
 
-            if test $driver = "ftds63" ; then
+            if test $driver = "ftds63" -o $driver = "msdblib" -o $driver = "odbc" ; then
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
                 continue
             fi
 
-            if test $driver = "msdblib" ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_sample -d $driver -s $server (skipped)"
-                continue
-            fi
 
         cat <<EOF
 
