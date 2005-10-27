@@ -195,6 +195,7 @@ EOF
             # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
             # MS SQL is already disabled for non-ftds drivers.
             if test \( $driver != "ftds" -a $driver != "ftds63" \) -o \
+                    \( $driver = "ftds" -a $server = $server_mssql \) -o \
                     \( $driver = "ftds63" -a $server = $server_mssql \) ; then
                 cmd="dbapi_cursor -d $driver -S $server"
                 RunSimpleTest "dbapi_cursor"
