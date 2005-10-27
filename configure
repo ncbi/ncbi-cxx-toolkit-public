@@ -4723,6 +4723,9 @@ echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-r
     # the C++ standard library is actually linked in, and we shouldn't
     # rely on help from wrapper scripts.
     LINK="$LINK -Kc++"
+    # Some intrinsics can go into infinite loops in optimized builds.
+    CFLAGS="$ORIG_CFLAGS -fno-builtin-memcpy -fno-builtin-memset"
+    CXXFLAGS="$ORIG_CXXFLAGS -fno-builtin-memcpy -fno-builtin-memset"
     ;;
 esac
 

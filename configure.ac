@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.396 2005/10/26 18:46:11 ucko Exp $
+#  $Id: configure.ac,v 1.397 2005/10/27 20:35:57 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1200,6 +1200,9 @@ case "$compiler:$compiler_version:$with_bin_release" in
     # the C++ standard library is actually linked in, and we shouldn't
     # rely on help from wrapper scripts.
     LINK="$LINK -Kc++"
+    # Some intrinsics can go into infinite loops in optimized builds.
+    CFLAGS="$ORIG_CFLAGS -fno-builtin-memcpy -fno-builtin-memset"
+    CXXFLAGS="$ORIG_CXXFLAGS -fno-builtin-memcpy -fno-builtin-memset"
     ;;
 esac
 
