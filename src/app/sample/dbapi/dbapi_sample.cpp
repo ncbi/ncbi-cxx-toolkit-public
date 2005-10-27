@@ -115,17 +115,24 @@ int CDbapiTest::Run()
 
         // Create data source - the root object for all other
         // objects in the library.
-        //
-        // set TDS version for STRAUSS
-        if( (NStr::CompareNocase(server, "STRAUSS") == 0 ||
-             NStr::CompareNocase(server, "MOZART") == 0)
-			&& NStr::CompareNocase(driver, "ftds") == 0) {
+
+        if ( NStr::CompareNocase(server, "STRAUSS") == 0 ||
+             NStr::CompareNocase(server, "MOZART") == 0 ) {
+
             map<string,string> attr;
-            attr["version"] = "46";
+            if ( NStr::CompareNocase(driver, "ftds") == 0 ||
+                NStr::CompareNocase(driver, "ftds63") == 0 ) {
+
+                // set TDS version
+                attr["version"] = "42";
+            } else if ( NStr::CompareNocase(driver, "dblib") == 0 ) {
+                // set TDS version
+                attr["version"] = "100";
+            }
             ds = dm.CreateDs(driver, &attr);
-        }
-        else
+        } else {
             ds = dm.CreateDs(driver);
+        }
 
         // Redirect error messages to CMultiEx storage in the
         // data source object (global). Default output is sent
@@ -828,6 +835,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/10/27 13:21:40  ssikorsk
+* Handle ftds63 driver. Set TDS v10 in case of the dblib driver.
+*
 * Revision 1.20  2005/10/17 12:26:33  ssikorsk
 * Enable dbapi_sample with MOZART
 *
