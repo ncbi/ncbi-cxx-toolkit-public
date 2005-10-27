@@ -1519,6 +1519,8 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
 #if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE)
     DBCOL dbcol;
+
+    memset(&dbcol, 0, sizeof(dbcol));
     RETCODE res = dbcolinfo(dblink, CI_REGULAR, col_num, 0, &dbcol );
     
     CHECK_DRIVER_ERROR( 
@@ -1526,9 +1528,13 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
         "Cannot get the DBCOLINFO*", 
         280000 );
     
-    m_ObjName += dbcol.TableName;
-    m_ObjName += ".";
-    m_ObjName += dbcol.ActualName;
+    if ( dbcol.TableName && *dbcol.TableName) {
+        m_ObjName += dbcol.TableName;
+        m_ObjName += ".";
+        m_ObjName += dbcol.ActualName;
+    } else {
+        m_ObjName.erase();
+    }
     
 // #if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE) /*Text,Image*/
 //     const char* pColName = dbcolname(dblink,col_num);
@@ -1555,7 +1561,7 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
         280000 );
 
     if (!x_MakeObjName(col_info)) {
-        m_ObjName = "";
+        m_ObjName.erase();
     }
 #endif
 
@@ -1636,6 +1642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/10/27 12:56:46  ssikorsk
+ * Improved table and column name retrieval in CDBL_ITDescriptor::CDBL_ITDescriptor
+ *
  * Revision 1.29  2005/09/26 15:25:51  ssikorsk
  * Use dbcolinfo within CDBL_ITDescriptor::CDBL_ITDescriptor in case of MSDBLIB and TreeTDS
  * instead of an unsafe "offset in some undocumented structure obtained with the help
