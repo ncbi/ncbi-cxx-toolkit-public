@@ -84,7 +84,6 @@ CDB_Result* CDBL_CursorCmd::Open()
     _ASSERT(m_Connect->m_Context);
     
     const bool connected_to_MSSQLServer = m_Connect->m_Context->ConnectedToMSSQLServer();
-    const int TDSVersion = m_Connect->m_Context->GetTDSVersion();
     
     if (m_IsOpen) { // need to close it first
         Close();
@@ -331,7 +330,15 @@ bool CDBL_CursorCmd::Close()
     }
 
     if (m_IsDeclared) {
-        string buff = "deallocate cursor " + m_Name;
+        string buff;
+        const bool connected_to_MSSQLServer = m_Connect->m_Context->ConnectedToMSSQLServer();
+
+        if ( connected_to_MSSQLServer ) {
+            buff = "deallocate " + m_Name;
+        } else {
+            buff = "deallocate cursor " + m_Name;
+        }
+
         m_LCmd = 0;
         try {
             m_LCmd = m_Connect->LangCmd(buff);
@@ -549,6 +556,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/10/27 12:58:22  ssikorsk
+ * Fixed "deallocate cursor" syntax in case of MS SQL Server
+ *
  * Revision 1.18  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
