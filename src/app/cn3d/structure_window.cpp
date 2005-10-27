@@ -228,14 +228,16 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menu->Append(MID_SHOW_HIDE, "&Pick Structures...");
     menu->AppendSeparator();
     menu->Append(MID_SHOW_ALL, "Show &Everything\te");
+    menu->Append(MID_SHOW_CHAINS, "Show Aligned C&hains");
     menu->Append(MID_SHOW_DOMAINS, "Show Aligned &Domains\td");
     menu->Append(MID_SHOW_ALIGNED, "Show &Aligned Residues");
-    menu->Append(MID_SHOW_SELECTED_RESIDUES, "Show &Selected Residues");
-    menu->Append(MID_SHOW_SELECTED_DOMAINS, "Show Selected Do&mains");
     subMenu = new wxMenu;
     subMenu->Append(MID_SHOW_UNALIGNED_ALL, "Show &All");
     subMenu->Append(MID_SHOW_UNALIGNED_ALN_DOMAIN, "Show in Aligned &Domains");
     menu->Append(MID_SHOW_UNALIGNED, "&Unaligned Residues", subMenu);
+    menu->AppendSeparator();
+    menu->Append(MID_SHOW_SELECTED_DOMAINS, "Show Selected Do&mains");
+    menu->Append(MID_SHOW_SELECTED_RESIDUES, "Show &Selected Residues");
     menu->AppendSeparator();
     menu->Append(MID_DIST_SELECT, "Select by Dis&tance...");
     menu->Append(MID_SELECT_CHAIN, "Select &Chain...");
@@ -1225,6 +1227,9 @@ void StructureWindow::OnShowHide(wxCommandEvent& event)
         case MID_SHOW_ALIGNED:
             glCanvas->structureSet->showHideManager->ShowResidues(glCanvas->structureSet, true);
             break;
+        case MID_SHOW_CHAINS:
+            glCanvas->structureSet->showHideManager->ShowAlignedChains(glCanvas->structureSet);
+            break;
         case MID_SHOW_UNALIGNED_ALL:
             glCanvas->structureSet->showHideManager->ShowResidues(glCanvas->structureSet, false);
             break;
@@ -1692,6 +1697,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/10/27 16:11:22  thiessen
+* add show aligned chains
+*
 * Revision 1.45  2005/10/27 14:45:39  thiessen
 * add arbitrary chain selection
 *

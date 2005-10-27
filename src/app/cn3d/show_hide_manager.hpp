@@ -75,6 +75,7 @@ public:
 
     // functions to show/hide more complex groups of stuff
     void ShowAlignedDomains(const StructureSet *set);
+    void ShowAlignedChains(const StructureSet *set);
     void ShowResidues(const StructureSet *set, bool showAligned);
     void ShowUnalignedResiduesInAlignedDomains(const StructureSet *set);
     void ShowSelectedResidues(const StructureSet *set);
@@ -100,6 +101,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/27 16:11:22  thiessen
+* add show aligned chains
+*
 * Revision 1.13  2004/02/19 17:05:13  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

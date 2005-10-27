@@ -123,6 +123,7 @@ public:
             MID_SHOW_ALL,
             MID_SHOW_DOMAINS,
             MID_SHOW_ALIGNED,
+            MID_SHOW_CHAINS,
             MID_SHOW_UNALIGNED,
                 MID_SHOW_UNALIGNED_ALL,
                 MID_SHOW_UNALIGNED_ALN_DOMAIN,
@@ -268,6 +269,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/10/27 16:11:22  thiessen
+* add show aligned chains
+*
 * Revision 1.18  2005/10/27 14:45:39  thiessen
 * add arbitrary chain selection
 *

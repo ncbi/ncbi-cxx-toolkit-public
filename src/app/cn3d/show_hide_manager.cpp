@@ -388,6 +388,7 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
                 Show(m->second, false);
                 continue;
             }
+
             if (!m->second->IsProtein()) continue;  // but leave all hets/solvents visible
 
             if (!set->alignmentManager->IsInAlignment(m->second->sequence)) {
@@ -411,6 +412,23 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
     }
 }
 
+void ShowHideManager::ShowAlignedChains(const StructureSet *set)
+{
+    MakeAllVisible();
+    StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
+    for (o=set->objects.begin(); o!=oe; ++o) {
+        ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+        for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
+
+            // hide all nucleotides but leave all aligned proteins + hets/solvents visible
+            if (m->second->IsNucleotide() ||
+                (m->second->IsProtein() && !set->alignmentManager->IsInAlignment(m->second->sequence)))
+            {
+                Show(m->second, false);
+            }
+        }
+    }
+}
 
 void ShowHideManager::PrivateShowResidues(const StructureSet *set, bool showAligned)
 {
@@ -524,6 +542,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/10/27 16:11:22  thiessen
+* add show aligned chains
+*
 * Revision 1.26  2005/10/26 18:36:05  thiessen
 * minor fixes
 *
