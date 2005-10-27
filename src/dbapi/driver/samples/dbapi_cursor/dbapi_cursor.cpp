@@ -183,8 +183,6 @@ CDbapiCursorApp::RunSample(void)
         //Delete table from database
         DeleteTable(GetTableName());
 
-        // Drop lost tables.
-        DeleteLostTables();
     } catch ( CDB_Exception& e ) {
         CDB_UserHandler::GetDefault().HandleIt(&e);
         return 1;
@@ -201,6 +199,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/27 12:59:37  ssikorsk
+ * Disabled DeleteLostTables because we use temporary tables only now
+ *
  * Revision 1.7  2005/08/24 12:43:15  ssikorsk
  * Use temporary table to store test data
  *
