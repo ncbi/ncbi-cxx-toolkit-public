@@ -67,6 +67,7 @@
 #include "cn3d_tools.hpp"
 #include "molecule_identifier.hpp"
 #include "messenger.hpp"
+#include "chemical_graph.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -252,10 +253,14 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
             }
         }
         if (taxid.size() > 0)
-            description = string("[") + taxid + ']';
+            taxonomy = string("[") + taxid + ']';
         if (defline.size() > 0) {
-            if (taxid.size() > 0) description += ' ';
-            description += defline;
+            title = defline;
+            // remove taxonomy repeated at end of title
+            if (taxonomy.size() > 0 && NStr::EndsWith(title, taxonomy, NStr::eNocase))
+                title = title.substr(0, title.size() - taxonomy.size());
+            if (title[title.size() - 1] == ' ')
+                title = title.substr(0, title.size() - 1);
         }
     }
 
@@ -342,6 +347,28 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
 
     // get identifier (may be NULL if there's a problem!)
     identifier = MoleculeIdentifier::GetIdentifier(this, pdbID, pdbChain, mmdbID, gi, accession);
+}
+
+string Sequence::GetDescription(void) const
+{
+    string descr;
+    if (taxonomy.size() > 0)
+        descr = taxonomy;
+    if (title.size() > 0) {
+        if (descr.size() > 0)
+            descr += ' ';
+        descr += title;
+    } else if (molecule) {
+        const StructureObject *object;
+        if (molecule->GetParentOfType(&object)) {
+            if (object->graph->name.size() > 0) {
+                if (descr.size() > 0)
+                    descr += ' ';
+                descr += object->graph->name;
+            }
+        }
+    }
+    return descr;
 }
 
 void Sequence::AddMMDBAnnotTag(int mmdbID) const
@@ -658,6 +685,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/10/27 22:53:03  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.73  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

@@ -110,6 +110,17 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     const StructureObject *object;
     if (!GetParentOfType(&object)) return;
 
+    // get any name from description
+    if (graph.IsSetDescr()) {
+        CBiostruc_graph::TDescr::const_iterator d, de = graph.GetDescr().end();
+        for (d=graph.GetDescr().begin(); d!=de; ++d) {
+            if ((*d)->IsName()) {
+                name = (*d)->GetName();
+                break;
+            }
+        }
+    }
+
     // if this is the only StructureObject in this StructureSet, and if this
     // StructureObject has only one CoordSet, and if this CoordSet's AtomSet
     // has multiple ensembles, then use multiple altConf ensemble
@@ -525,6 +536,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/10/27 22:53:02  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.41  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

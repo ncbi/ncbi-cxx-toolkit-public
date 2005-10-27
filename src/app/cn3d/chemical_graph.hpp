@@ -73,6 +73,7 @@ public:
         const FeatureList& features);
 
     // public data
+    std::string name;
     typedef std::map < int, const Molecule * > MoleculeMap;
     MoleculeMap molecules;
     typedef std::list < const Bond * > BondList;
@@ -115,6 +116,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/10/27 22:53:02  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.19  2004/02/19 17:04:46  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -1139,8 +1139,9 @@ void StructureWindow::OnCDD(wxCommandEvent& event)
                     if (rejected) continue;
 
                     wxString description((*s)->identifier->ToString().c_str());
-                    if ((*s)->description.size() > 0)
-                        description += wxString("     ") + (*s)->description.c_str();
+					string descr = (*s)->GetDescription();
+                    if (descr.size() > 0)
+                        description += wxString("     ") + descr.c_str();
                     seqsDescrs.resize(seqsDescrs.size() + 1);
                     seqsDescrs.back().first = *s;
                     seqsDescrs.back().second = description;
@@ -1697,6 +1698,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2005/10/27 22:53:03  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.46  2005/10/27 16:11:22  thiessen
 * add show aligned chains
 *

@@ -222,8 +222,9 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
                 oss << seq->identifier->accession;
                 prevID = true;
             }
-            if (seq->description.size() > 0)
-                oss << ' ' << seq->description;
+			string descr = seq->GetDescription();
+            if (descr.size() > 0)
+                oss << ' ' << descr;
 
         } else {
             // add repeat id
@@ -441,11 +442,12 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 
             // title
             if (doHTML && uids[row].size() > 0) {
+				string descr = sequence->GetDescription();
                 os << "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi"
                     << "?cmd=Search&doptcmdl=GenPept&db=Protein&term="
                     << uids[row] << "\" onMouseOut=\"window.status=''\"\n"
                     << "onMouseOver=\"window.status='"
-                    << ShortAndEscapedString((sequence->description.size() > 0) ? sequence->description : titles[row])
+                    << ShortAndEscapedString((descr.size() > 0) ? descr : titles[row])
                     << "';return true\">"
                     << setw(0) << titles[row] << "</a>";
             } else {
@@ -573,6 +575,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2005/10/27 22:53:03  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.75  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

@@ -76,12 +76,14 @@ public:
     // keep a reference to the original asn Bioseq
     ncbi::CRef < ncbi::objects::CBioseq > bioseqASN;
 
-    std::string sequenceString, description;
     const MoleculeIdentifier *identifier;
 
     // corresponding biopolymer chain (if any)
     const Molecule *molecule;
     bool isProtein;
+
+    std::string sequenceString, title, taxonomy;
+    std::string GetDescription(void) const;
 
     unsigned int Length(void) const { return sequenceString.size(); }
     int GetOrSetMMDBLink(void) const;
@@ -107,6 +109,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/10/27 22:53:03  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.33  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

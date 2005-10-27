@@ -200,7 +200,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                     for (s=structureSet->sequenceSet->sequences.begin(); s!=se; ++s) {
                         if ((*s)->identifier == m->second->identifier) {
                             descr.Printf("%s: gi %i (%s)", m->second->identifier->ToString().c_str(),
-                                (*s)->identifier->gi, (*s)->description.c_str());
+                                (*s)->identifier->gi, (*s)->GetDescription().c_str());
                             break;
                         }
                     }
@@ -346,6 +346,9 @@ wxSizer *SetupCDDSplashDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/10/27 22:53:02  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.13  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

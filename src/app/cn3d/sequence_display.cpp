@@ -389,7 +389,7 @@ void SequenceDisplay::MouseOver(int column, int row) const
                 sequence = displayRow->GetSequence();
                 if (sequence) {
                     idLoc.Printf("length %i", sequence->Length());
-                    status = sequence->description.c_str();
+                    status = sequence->GetDescription().c_str();
                 }
             }
         }
@@ -1322,6 +1322,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/10/27 22:53:02  thiessen
+* better handling of sequence descriptions
+*
 * Revision 1.82  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *
