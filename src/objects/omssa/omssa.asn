@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.29 2005/10/24 21:46:13 lewisg Exp $
+-- $Id: omssa.asn,v 1.30 2005/10/27 17:12:04 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -297,7 +297,15 @@ MSZdependence ::= INTEGER {
 	max(2)
         }
 	
--- Search settings
+-- Iterative search settings
+
+MSIterativeSettings ::=  SEQUENCE {
+        researchthresh REAL, -- e-val threshold for re-searching spectra, 0 = always re-search
+        subsetthresh REAL,   -- e-val threshold for picking sequence subset, 0 = all sequences
+        replacethresh REAL   -- e-val threshold for replacing hitset, 0 = always
+        }
+	
+-- Generic search settings
 
 MSSearchSettings ::= SEQUENCE {
 	precursorsearchtype MSSearchType,  -- average or monoisotopic?
@@ -338,16 +346,21 @@ MSSearchSettings ::= SEQUENCE {
 	maxproductions INTEGER DEFAULT 0,     -- max number of ions in each series (0=all)
 	minnoenzyme INTEGER DEFAULT 4,        -- min number of AA in peptide for noenzyme search
 	maxnoenzyme INTEGER DEFAULT 0,        -- max number of AA in peptide for noenzyme search (0=none)
-	exactmass REAL OPTIONAL               -- the threshold in Da for adding neutron
-}
+	exactmass REAL OPTIONAL,              -- the threshold in Da for adding neutron
+	settingid INTEGER OPTIONAL,           -- id of the search settings
+	iterativesettings MSIterativeSettings OPTIONAL   -- iterative search settings
+        }
 
+
+MSSearchSettingsSet ::= SEQUENCE OF MSSearchSettings
 
 -- The search request that is given to the OMSSA algorithm
 
 MSRequest ::= SEQUENCE {
 	spectra MSSpectrumset,      -- the set of spectra
         settings MSSearchSettings,  -- the search settings
-	rid VisibleString OPTIONAL  -- request id
+	rid VisibleString OPTIONAL,  -- request id
+	moresettings MSSearchSettingsSet OPTIONAL -- additional search runs
 	}
 
 
@@ -430,7 +443,8 @@ MSHitSet ::= SEQUENCE {
         error MSHitError OPTIONAL,               -- error, if any
         hits SEQUENCE OF MSHits OPTIONAL,        -- set of hit to spectrum
         ids SEQUENCE OF VisibleString OPTIONAL,  -- filenames or other ids of spectra searched
-        namevalue SEQUENCE OF NameValue OPTIONAL -- extra info: retention times, etc.
+        namevalue SEQUENCE OF NameValue OPTIONAL,-- extra info: retention times, etc.
+	settingid INTEGER OPTIONAL               -- id of the search setting used
 	}
 
 

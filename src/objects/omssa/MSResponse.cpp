@@ -107,7 +107,9 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
                      (*iHit)->GetEvalue() << "," << (*iHit)->GetMass()/fMZ_scale << "," << 
                     Gi << "," << Accession << "," <<
                     (*iPephit)->GetStart() + 1 << "," << (*iPephit)->GetStop() + 1 << "," <<
-                     CSVString((*iPephit)->GetDefline()) << "," << CSVString(ModString) << endl;
+                    CSVString((*iPephit)->GetDefline()) << "," << CSVString(ModString) <<
+                    "," << (*iHit)->GetCharge() << 
+                    "," <<  (*iHit)->GetTheomass()/fMZ_scale  << endl;
             }
         }
     }
@@ -123,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/10/27 17:12:04  lewisg
+* iterative search, addition to csv output
+*
 * Revision 1.2  2005/05/23 19:00:27  lewisg
 * don't output gi or accession if not available
 *
