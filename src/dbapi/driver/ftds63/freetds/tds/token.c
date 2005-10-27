@@ -1200,9 +1200,12 @@ tds_process_col_fmt(TDSSOCKET * tds)
 		case 4:
 			curcol->column_size = tds_get_int(tds);
 			/* junk the table name -- for now */
-			tabnamesize = tds_get_smallint(tds);
-			tds_get_n(tds, NULL, tabnamesize);
-			bytes_read += 5 + 4 + 2 + tabnamesize;
+			// tabnamesize = tds_get_smallint(tds);
+			// tds_get_n(tds, NULL, tabnamesize);
+			// bytes_read += 5 + 4 + 2 + tabnamesize;
+            curcol->table_namelen =
+			    tds_get_string(tds, tds_get_smallint(tds), curcol->table_name, sizeof(curcol->table_name) - 1);
+			bytes_read += 5 + 4 + 2 + curcol->table_namelen;
 			break;
 		case 1:
 			curcol->column_size = tds_get_byte(tds);
