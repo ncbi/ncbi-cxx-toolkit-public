@@ -129,6 +129,7 @@ public:
             MID_SHOW_SELECTED_RESIDUES,
             MID_SHOW_SELECTED_DOMAINS,
             MID_DIST_SELECT,
+            MID_SELECT_CHAIN,
             MID_SELECT_MOLECULE,
         // Structure Alignments menu
         // Style menu
@@ -267,6 +268,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/10/27 14:45:39  thiessen
+* add arbitrary chain selection
+*
 * Revision 1.17  2005/10/27 13:27:40  thiessen
 * add residue coloring scheme
 *

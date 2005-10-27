@@ -238,8 +238,9 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menu->Append(MID_SHOW_UNALIGNED, "&Unaligned Residues", subMenu);
     menu->AppendSeparator();
     menu->Append(MID_DIST_SELECT, "Select by Dis&tance...");
+    menu->Append(MID_SELECT_CHAIN, "Select &Chain...");
     menu->Append(MID_SELECT_MOLECULE, "Select M&olecule...\tm");
-    menuBar->Append(menu, "Show/&Hide");
+    menuBar->Append(menu, "Se&lect");
 
     // Style menu
     menu = new wxMenu;
@@ -575,6 +576,35 @@ void StructureWindow::OnSelect(wxCommandEvent& event)
                     for (r=m->second->residues.begin(); r!=re; ++r)
                         GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
                 }
+            }
+        }
+    }
+
+    else if (event.GetId() == MID_SELECT_CHAIN) {
+        vector < string > names;
+        vector < const Molecule * > molecules;
+        StructureSet::ObjectList::const_iterator o, oe = glCanvas->structureSet->objects.end();
+        for (o=glCanvas->structureSet->objects.begin(); o!=oe; ++o) {
+            ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+            for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
+                if (m->second->residues.size() > 1) {
+                    names.push_back((*o)->pdbID + '_' + m->second->name);
+                    molecules.push_back(m->second);
+                }
+            }
+        }
+        wxArrayString aChoices;
+        for (unsigned int i=0; i<names.size(); ++i)
+            aChoices.Add(names[i].c_str());
+        wxArrayInt selections;
+        size_t nSelected = wxGetMultipleChoices(selections, "Choose chain(s) to select:", "Select Chain", aChoices);
+        if (nSelected > 0) {
+            GlobalMessenger()->RemoveAllHighlights(true);
+            for (size_t i=0; i<selections.GetCount(); ++i) {
+                const Molecule *molecule = molecules[selections.Item(i)];
+                Molecule::ResidueMap::const_iterator r, re = molecule->residues.end();
+                for (r=molecule->residues.begin(); r!=re; ++r)
+                    GlobalMessenger()->ToggleHighlight(molecule, r->first);
             }
         }
     }
@@ -1662,6 +1692,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/10/27 14:45:39  thiessen
+* add arbitrary chain selection
+*
 * Revision 1.44  2005/10/27 13:27:40  thiessen
 * add residue coloring scheme
 *
