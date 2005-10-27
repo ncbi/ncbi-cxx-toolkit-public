@@ -1169,7 +1169,7 @@ tds_process_col_fmt(TDSSOCKET * tds)
 	int col, hdrsize;
 	TDSCOLUMN *curcol;
 	TDSRESULTINFO *info;
-	TDS_SMALLINT tabnamesize;
+	/* TDS_SMALLINT tabnamesize; */
 	int bytes_read = 0;
 	int rest;
 	TDS_SMALLINT flags;
