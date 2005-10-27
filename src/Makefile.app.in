@@ -63,7 +63,7 @@ rebuild-libs:
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
 	done
 
-$(XAPP): $(XOBJ) $(XLIBDEP)
+$(XAPP): $(XOBJ) $(XLIBDEP) $(srcdir)/Makefile.$(TMPL).app
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)

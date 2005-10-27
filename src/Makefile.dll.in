@@ -51,7 +51,7 @@ XDLLDEP       = .$(LIB).dep
 XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP = $(DLL_LIB:%=$(status_dir)/.%.dep)
 
-$(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
+$(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP) $(srcdir)/Makefile.$(TMPL).lib
 	-$(RM) $(XDLL)
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
