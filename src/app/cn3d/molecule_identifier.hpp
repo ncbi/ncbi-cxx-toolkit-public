@@ -65,9 +65,9 @@ public:
 
     // create, or retrieve if known, an identifier for an entity
     static const MoleculeIdentifier * GetIdentifier(const Molecule *molecule,
-        std::string pdbID, int pdbChain, int gi, std::string accession);
+        const std::string& pdbID, int pdbChain, int gi, const std::string& accession);
     static const MoleculeIdentifier * GetIdentifier(const Sequence *sequence,
-        std::string pdbID, int pdbChain, int mmdbID, int gi, std::string accession);
+        const std::string& pdbID, int pdbChain, int mmdbID, int gi, const std::string& accession);
 
     // get identifier for MMDB ID + molecule (NULL if not found)
     static const MoleculeIdentifier * FindIdentifier(int mmdbID, int moleculeID);
@@ -105,6 +105,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/10/28 15:42:34  thiessen
+* more graceful handling of same accession multiple gi version conflict
+*
 * Revision 1.7  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

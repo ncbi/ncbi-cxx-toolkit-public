@@ -56,11 +56,12 @@ BEGIN_SCOPE(Cn3D)
 
 typedef list < MoleculeIdentifier > MoleculeIdentifierList;
 static MoleculeIdentifierList knownIdentifiers;
+static map < string, bool > bannedAccessions;
 
 const int MoleculeIdentifier::VALUE_NOT_SET = -1;
 
 const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *molecule,
-    string _pdbID, int _pdbChain, int _gi, string _accession)
+    const string& _pdbID, int _pdbChain, int _gi, const string& _accession)
 {
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return NULL;
@@ -118,7 +119,8 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
             if (identifier->accession != _accession)
                 ERRORMSG("MoleculeIdentifier::GetIdentifier() - accession mismatch");
         } else {
-            identifier->accession = _accession;
+            if (bannedAccessions.find(_accession) == bannedAccessions.end())
+                identifier->accession = _accession;
         }
     }
 
@@ -133,7 +135,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
 }
 
 const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *sequence,
-    string _pdbID, int _pdbChain, int _mmdbID, int _gi, string _accession)
+    const string& _pdbID, int _pdbChain, int _mmdbID, int _gi, const string& _accession)
 {
     // see if there's already an identifier that matches this sequence
     MoleculeIdentifier *identifier = NULL;
@@ -154,6 +156,34 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
         identifier = &(knownIdentifiers.back());
     }
 
+    if (_gi != VALUE_NOT_SET) {
+        if (identifier->gi != VALUE_NOT_SET) {
+            if (identifier->gi != _gi) {
+                if (identifier->accession.size() > 0 && identifier->accession == _accession) {
+
+                    // special case where accession is same, gi is different: two versions of same sequence
+                    ERRORMSG("The sequence gi " << _gi << " has the same accession code ("
+                        << _accession << ") as gi " << identifier->gi
+                        << ". You should remove the older sequence (presumably gi "
+                        << ((_gi < identifier->gi) ? _gi : identifier->gi) << ").");
+
+                    // make a new identifier to keep the two gi's separate, and "forget" the accession
+                    // so there's no ambiguity if something tries to refer to one of these by accession only
+                    bannedAccessions[_accession] = true;
+                    identifier->accession.erase();
+                    knownIdentifiers.resize(knownIdentifiers.size() + 1, MoleculeIdentifier());
+                    identifier = &(knownIdentifiers.back());
+                    identifier->gi = _gi;
+
+                } else {
+                    ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
+                }
+            }
+        } else {
+            identifier->gi = _gi;
+        }
+    }
+
     // check consistency, and see if there's some more information we can fill out
     if (_mmdbID != VALUE_NOT_SET) {
         if (identifier->mmdbID != VALUE_NOT_SET) {
@@ -172,32 +202,13 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
             identifier->pdbChain = _pdbChain;
         }
     }
-    if (_gi != VALUE_NOT_SET) {
-        if (identifier->gi != VALUE_NOT_SET) {
-            if (identifier->gi != _gi) {
-                if (identifier->accession.size() > 0 && identifier->accession == _accession) {
-                    // special case where accession is same, gi is different: two versions of same sequence
-                    ERRORMSG("The sequence being processed (gi " << _gi << ") has the same accession code ("
-                        << _accession <<
-                        ") as a sequence already encountered (gi " << identifier->gi << "). Cn3D does not "
-                        "allow two versions of the same sequence to be present simultaneously. If you want "
-                        "to use one (e.g. gi " << _gi << "), you need to first delete all instances of the other "
-                        "(e.g. gi " << identifier->gi << ").");
-                    return NULL;
-                } else {
-                    ERRORMSG("MoleculeIdentifier::GetIdentifier() - gi mismatch");
-                }
-            }
-        } else {
-            identifier->gi = _gi;
-        }
-    }
     if (_accession.size() > 0) {
         if (identifier->accession.size() > 0) {
             if (identifier->accession != _accession)
                 ERRORMSG("MoleculeIdentifier::GetIdentifier() - accession mismatch");
         } else {
-            identifier->accession = _accession;
+            if (bannedAccessions.find(_accession) == bannedAccessions.end())
+                identifier->accession = _accession;
         }
     }
 
@@ -245,6 +256,7 @@ const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int mo
 void MoleculeIdentifier::ClearIdentifiers(void)
 {
     knownIdentifiers.clear();
+    bannedAccessions.clear();
 }
 
 bool MoleculeIdentifier::MatchesSeqId(const ncbi::objects::CSeq_id& sid) const
@@ -331,6 +343,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/10/28 15:42:34  thiessen
+* more graceful handling of same accession multiple gi version conflict
+*
 * Revision 1.20  2005/10/26 18:36:05  thiessen
 * minor fixes
 *
