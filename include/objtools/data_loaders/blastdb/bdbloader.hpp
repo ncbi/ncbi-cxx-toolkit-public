@@ -268,7 +268,7 @@ public:
         ///   The sequence database containing the original sequence.
         /// @param oid
         ///   Locates the sequence within the CSeqDB database.
-        CCachedSeqData(CSeqDB & seqdb, int oid);
+        CCachedSeqData(CSeqDB & seqdb, const CSeq_id_Handle& idh, int oid);
         
         /// Get the top-level seq-entry.
         CRef<CSeq_entry> GetTSE()
@@ -346,7 +346,7 @@ private:
     ///   Object id in BLAST DB
     /// @param lock
     ///   Information about the sequence data is returned here.
-    void x_LoadData(int oid, CTSE_LoadLock & lock);
+    void x_LoadData(const CSeq_id_Handle& idh, int oid, CTSE_LoadLock & lock);
     
     /// Split the sequence data.
     ///
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.22  2005/10/28 18:33:09  vasilche
+ * Fixed selection of correct defline for gis.
+ *
  * Revision 1.21  2005/10/26 14:36:43  vasilche
  * Updated for new CBlobId interface.
  * Removed extra maps for split info - used information from chunk info.

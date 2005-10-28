@@ -101,6 +101,19 @@ CBlastDbDataLoader::~CBlastDbDataLoader(void)
 {
 }
 
+
+typedef pair<int, CSeq_id_Handle> TBlob_id;
+template<>
+struct PConvertToString<TBlob_id>
+    : public unary_function<TBlob_id, string>
+{
+    string operator()(const TBlob_id& v) const
+        {
+            return NStr::IntToString(v.first) + ':' + v.second.AsString();
+        }
+};
+
+
 CBlastDbDataLoader::TTSE_LockSet
 CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
 {
@@ -128,13 +141,15 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, EChoice choice)
 }
 
 CBlastDbDataLoader::CCachedSeqData::CCachedSeqData(CSeqDB               & db,
+                                                   const CSeq_id_Handle&  idh,
                                                    int                    oid)
-    : m_SeqDB(& db), m_OID(oid)
+    : m_SIH(idh), m_SeqDB(& db), m_OID(oid)
 {
     m_TSE.Reset();
     m_Length = m_SeqDB->GetSeqLength(m_OID);
     
-    CRef<CBioseq> bioseq(m_SeqDB->GetBioseqNoData(m_OID, 0));
+    CRef<CBioseq> bioseq(m_SeqDB->GetBioseqNoData(m_OID,
+                                                  idh.IsGi()? idh.GetGi(): 0));
     
     CConstRef<CSeq_id> first_id( bioseq->GetFirstId() );
     _ASSERT(first_id);
@@ -142,6 +157,7 @@ CBlastDbDataLoader::CCachedSeqData::CCachedSeqData(CSeqDB               & db,
         m_SIH = CSeq_id_Handle::GetHandle(*first_id);
     }
     
+    bioseq->SetInst().SetLength(m_Length);
     bioseq->SetInst().SetMol((m_SeqDB->GetSequenceType() == CSeqDB::eProtein)
                              ? CSeq_inst::eMol_aa
                              : CSeq_inst::eMol_na);
@@ -268,14 +284,15 @@ void CBlastDbDataLoader::x_AddSplitSeqChunk(TChunks        & chunks,
     chunks.push_back(chunk);
 }
 
-void CBlastDbDataLoader::x_LoadData(int oid,
-                                    CTSE_LoadLock        & lock)
+void CBlastDbDataLoader::x_LoadData(const CSeq_id_Handle& idh,
+                                    int oid,
+                                    CTSE_LoadLock& lock)
 {
     _ASSERT(oid != -1);
     _ASSERT(lock);
     _ASSERT(!lock.IsLoaded());
 
-    CRef<CCachedSeqData> cached(new CCachedSeqData(*m_SeqDB, oid));
+    CRef<CCachedSeqData> cached(new CCachedSeqData(*m_SeqDB, idh, oid));
     
     cached->RegisterIds(m_Ids);
     
@@ -338,7 +355,9 @@ int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
 
 int CBlastDbDataLoader::GetOid(const TBlobId& blob_id) const
 {
-    return dynamic_cast<const CBlobIdInt&>(*blob_id).GetValue();
+    const TBlob_id& id =
+        dynamic_cast<const CBlobIdFor<TBlob_id>&>(*blob_id).GetValue();
+    return id.first;
 }
 
 
@@ -354,7 +373,7 @@ CBlastDbDataLoader::GetBlobId(const CSeq_id_Handle& idh)
     TBlobId blob_id;
     int oid = GetOid(idh);
     if ( oid != -1 ) {
-        blob_id = new CBlobIdInt(oid);
+        blob_id = new CBlobIdFor<TBlob_id>(TBlob_id(oid, idh));
     }
     return blob_id;
 }
@@ -365,7 +384,9 @@ CBlastDbDataLoader::GetBlobById(const TBlobId& blob_id)
 {
     CTSE_LoadLock lock = GetDataSource()->GetTSE_LoadLock(blob_id);
     if ( !lock.IsLoaded() ) {
-        x_LoadData(GetOid(blob_id), lock);
+        const TBlob_id& id =
+            dynamic_cast<const CBlobIdFor<TBlob_id>&>(*blob_id).GetValue();
+        x_LoadData(id.second, id.first, lock);
     }
     return lock;
 }
@@ -492,6 +513,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.35  2005/10/28 18:33:10  vasilche
+ * Fixed selection of correct defline for gis.
+ *
  * Revision 1.34  2005/10/26 14:36:43  vasilche
  * Updated for new CBlobId interface.
  * Removed extra maps for split info - used information from chunk info.
