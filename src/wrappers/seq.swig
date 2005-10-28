@@ -345,8 +345,6 @@ objects/blast/Blast4_get_paramsets_reply.hpp
 objects/blast/Blast4_get_paramsets_reply_.hpp
 objects/blast/Blast4_get_programs_reply.hpp
 objects/blast/Blast4_get_programs_reply_.hpp
-objects/blast/Blast4_get_queries_request.hpp
-objects/blast/Blast4_get_queries_request_.hpp
 objects/blast/Blast4_get_queries_reply.hpp
 objects/blast/Blast4_get_queries_reply_.hpp
 objects/blast/Blast4_get_sequenc_request.hpp
@@ -397,6 +395,10 @@ objects/blast/Blast4_value.hpp
 objects/blast/Blast4_value_.hpp
 objects/blast/Blast_finish_params_reques.hpp
 objects/blast/Blast_finish_params_reques_.hpp
+objects/blast/Blast_get_reque_info_reply.hpp
+objects/blast/Blast_get_reque_info_reply_.hpp
+objects/blast/Blast_get_reque_info_reque.hpp
+objects/blast/Blast_get_reque_info_reque_.hpp
 objects/blast/blastclient.hpp
 objects/blast/blastclient_.hpp
 objects/blast/NCBI_Blast4_module.hpp
@@ -653,6 +655,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/28 15:48:41  jcherry
+ * Reflect change to blast ASN.1 spec
+ *
  * Revision 1.5  2005/10/27 12:37:18  jcherry
  * Added *_module.hpp
  *
