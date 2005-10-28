@@ -39,7 +39,7 @@ XLIBDEP     = .$(LIB).dep
 XLIBLINK    = @lib_pre@$(LIB)-static@lib_ext@
 XLIBDEPLINK = .$(LIB)-static.dep
 
-$(XLIB): $(XLIBOBJ) $(srcdir)/Makefile.$(TMPL).lib 
+$(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
 	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XOBJ) | @TSORT@` $(AR_FILTER)
 	@$(RANLIB) $(XLIB)

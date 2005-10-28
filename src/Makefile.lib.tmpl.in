@@ -30,3 +30,8 @@ include $(builddir)/Makefile.is_dll_support
 # Standard rules to build a library
 #
 include $(builddir)/Makefile.$(LIB_OR_DLL)
+
+
+# If the makefile's changed, we probably at least need to relink.
+#
+$(XLIB) $(XDLL): $(srcdir)/Makefile.$(TMPL).lib

@@ -24,3 +24,8 @@ include $(srcdir)/Makefile.$(TMPL).app
 # Standard rules to build an application
 #
 include $(builddir)/Makefile.$(APP_OR_NULL)
+
+
+# If the makefile's changed, we probably at least need to relink.
+#
+$(XAPP): $(srcdir)/Makefile.$(TMPL).app
