@@ -1703,6 +1703,36 @@ unsigned int BlockMultipleAlignment::NAlignedBlocks(void) const
     return n;
 }
 
+unsigned int BlockMultipleAlignment::SumOfAlignedBlockWidths(void) const
+{
+    unsigned int w = 0;
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; ++b)
+        if ((*b)->IsAligned())
+            w += (*b)->width;
+    return w;
+}
+
+double BlockMultipleAlignment::GetRelativeAlignmentFraction(unsigned int alignmentIndex) const
+{
+    if (!blockMap[alignmentIndex].block->IsAligned())
+        return -1.0;
+
+    unsigned int f = 0;
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; ++b) {
+        if ((*b)->IsAligned()) {
+            if (*b == blockMap[alignmentIndex].block) {
+                f += blockMap[alignmentIndex].blockColumn;
+                return (((double) f) / (SumOfAlignedBlockWidths() - 1));
+            } else {
+                f += (*b)->width;
+            }
+        }
+    }
+    return -1.0;    // should never get here
+}
+
 bool BlockMultipleAlignment::HasNoAlignedBlocks(void) const
 {
     return (blocks.size() == 0 || (blocks.size() == 1 && !blocks.front()->IsAligned()));
@@ -1922,6 +1952,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/10/28 18:20:41  thiessen
+* add alignment rainbow coloring
+*
 * Revision 1.74  2005/10/26 21:35:38  thiessen
 * constrain OptimizeBlock() by footprint excess
 *

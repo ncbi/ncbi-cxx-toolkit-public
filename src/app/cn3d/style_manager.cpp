@@ -69,6 +69,7 @@
 #include "molecule_identifier.hpp"
 #include "atom_set.hpp"
 #include "cn3d_tools.hpp"
+#include "block_multiple_alignment.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -758,11 +759,21 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             break;
 
         case StyleSettings::eRainbow: {
-            double pos = 1.0;
-            if ((residue->IsAminoAcid() || residue->IsNucleotide()) && molecule->NResidues() > 1) {
+            double pos = -1.0;
+            const BlockMultipleAlignment *multiple = molecule->parentSet->alignmentManager->GetCurrentMultipleAlignment();
+            if (multiple) {
+                if (molecule->sequence && molecule->parentSet->alignmentManager->IsAligned(molecule->sequence, residue->id - 1)) {
+                    pos = multiple->GetRelativeAlignmentFraction(multiple->GetAlignmentIndex(
+                        multiple->GetRowForSequence(molecule->sequence), residue->id - 1,
+                        BlockMultipleAlignment::eLeft));    // justification is irrelevant since this is aligned
+                }
+            } else if ((residue->IsAminoAcid() || residue->IsNucleotide()) && molecule->NResidues() > 1) {
                 pos = 1.0 * (residue->id - 1) / (molecule->NResidues() - 1);
             }
-            atomStyle->color = GlobalColors()->Get(Colors::eRainbowMap, pos);
+            if (pos >= 0.0)
+                atomStyle->color = GlobalColors()->Get(Colors::eRainbowMap, pos);
+            else
+                atomStyle->color = GlobalColors()->Get(Colors::eUnaligned);
             break;
         }
 
@@ -1675,6 +1686,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2005/10/28 18:20:42  thiessen
+* add alignment rainbow coloring
+*
 * Revision 1.88  2005/10/27 13:27:40  thiessen
 * add residue coloring scheme
 *

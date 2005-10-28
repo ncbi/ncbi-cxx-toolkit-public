@@ -287,6 +287,8 @@ private:
     RowSeqIndexFlags geometryViolations;
     bool showGeometryViolations;
 
+    unsigned int SumOfAlignedBlockWidths(void) const;
+
 public:
 
     // NULL if block before is aligned; if NULL passed, retrieves last block (if unaligned; else NULL)
@@ -302,6 +304,10 @@ public:
 
     // return a number from 1..n for aligned blocks, -1 for unaligned
     int GetAlignedBlockNumber(unsigned int alignmentIndex) const { return blockMap[alignmentIndex].alignedBlockNum; }
+
+    // return [0..1] for aligned residues depending on the alignment position - first aligned column is 0, last is 1;
+    // -1 if unaligned. This is mainly for alignment rainbow coloring
+    double GetRelativeAlignmentFraction(unsigned int alignmentIndex) const;
 
     // for storing/querying info
     double GetRowDouble(unsigned int row) const { return rowDoubles[row]; }
@@ -436,6 +442,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/10/28 18:20:41  thiessen
+* add alignment rainbow coloring
+*
 * Revision 1.51  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *
