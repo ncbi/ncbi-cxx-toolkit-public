@@ -118,19 +118,19 @@ algo/blast/api/blast_types.hpp
 algo/blast/api/blastx_options.hpp
 algo/blast/api/db_blast.hpp
 algo/blast/api/disc_nucl_options.hpp
-algo/blast/api/dust_filter.hpp
 algo/blast/api/hspstream_queue.hpp
 algo/blast/api/phiblast_nucl_options.hpp
 algo/blast/api/phiblast_prot_options.hpp
 algo/blast/api/psi_pssm_input.hpp
+algo/blast/api/psibl2seq.hpp
 algo/blast/api/psiblast_options.hpp
 algo/blast/api/pssm_input.hpp
 algo/blast/api/remote_blast.hpp
-algo/blast/api/repeats_filter.hpp
 algo/blast/api/rpstblastn_options.hpp
 algo/blast/api/seqinfosrc_seqdb.hpp
 algo/blast/api/seqinfosrc_seqvec.hpp
 algo/blast/api/seqsrc_multiseq.hpp
+algo/blast/api/seqsrc_query_factory.hpp
 algo/blast/api/seqsrc_seqdb.hpp
 algo/blast/api/sseqloc.hpp
 algo/blast/api/tblastn_options.hpp
@@ -275,6 +275,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/10/28 15:49:25  jcherry
+ * Removed two blast headers that are now private.  Added some others.
+ *
  * Revision 1.11  2005/09/29 15:40:25  jcherry
  * Added algo/blast/api/sseqloc.hpp (new header)
  *
