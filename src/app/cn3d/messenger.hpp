@@ -102,6 +102,7 @@ public:
     bool IsHighlighted(const Molecule *molecule, int residueID) const;
     bool IsHighlighted(const Sequence *sequence, unsigned int seqIndex) const;
     bool IsHighlightedAnywhere(const MoleculeIdentifier *identifier) const;
+    bool IsHighlightedAnywhere(const Molecule *molecule) const;
 
     // clear all highlight stores - and optionally post redraws. Returns 'true'
     // if there were actually any highlights to remove
@@ -153,15 +154,14 @@ private:
     // To store lists of highlighted entities
     MoleculeHighlightMap highlights, highlightCache;
 
-    bool IsHighlighted(const MoleculeIdentifier *identifier, unsigned int index) const;
+    bool IsHighlighted(const MoleculeIdentifier *identifier, int index) const;
     void ToggleHighlights(const MoleculeIdentifier *identifier, unsigned int indexFrom, unsigned int indexTo,
         const StructureSet *set);
 
     void RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifier, const StructureSet *set);
 
 public:
-    Messenger(void) : redrawAllStructures(false), redrawAllSequenceViewers(false),
-        highlightingSuspended(false) { }
+    Messenger(void) : redrawAllStructures(false), redrawAllSequenceViewers(false), highlightingSuspended(false) { }
 
     bool IsAnythingHighlighted(void) const { return (highlights.size() > 0); }
 
@@ -202,6 +202,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/10/28 17:06:12  thiessen
+* show only highlighted molecules when showing structure evidence
+*
 * Revision 1.30  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

@@ -195,7 +195,7 @@ void Messenger::NewSequenceViewerFont(void)
 
 ///// highlighting functions /////
 
-bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, unsigned int index) const
+bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, int index) const
 {
     if (highlightingSuspended) return false;
 
@@ -204,7 +204,7 @@ bool Messenger::IsHighlighted(const MoleculeIdentifier *identifier, unsigned int
 
     if (index == -1) return true;   // special check for highlight anywhere
 
-    if (index < 0 || index >= h->second.size()) {
+    if (index < 0 || index >= (int)h->second.size()) {
         ERRORMSG("Messenger::IsHighlighted() - index out of range");
         return false;
     } else
@@ -226,6 +226,10 @@ bool Messenger::IsHighlightedAnywhere(const MoleculeIdentifier *identifier) cons
     return IsHighlighted(identifier, -1);
 }
 
+bool Messenger::IsHighlightedAnywhere(const Molecule *molecule) const
+{
+    return IsHighlighted(molecule->identifier, -1);
+}
 
 void Messenger::RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifier, const StructureSet *set)
 {
@@ -578,6 +582,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/10/28 17:06:12  thiessen
+* show only highlighted molecules when showing structure evidence
+*
 * Revision 1.48  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

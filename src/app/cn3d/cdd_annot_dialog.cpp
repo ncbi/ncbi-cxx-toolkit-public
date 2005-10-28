@@ -819,12 +819,23 @@ void CDDAnnotateDialog::ShowEvidence(void)
         const StructureObject *bestObject = HighlightResidues(structureSet, selectedEvidence->GetBsannot());
         if (bestObject) {
 
-            // first, set show/hide to make only objects of this mmdb id visible
+            // first, set show/hide to make only objects with this mmdb id visible
             structureSet->showHideManager->MakeAllVisible();
             StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
-            for (o=structureSet->objects.begin(); o!=oe; ++o)
-                if ((*o)->mmdbID != bestObject->mmdbID)
+            for (o=structureSet->objects.begin(); o!=oe; ++o) {
+                if ((*o)->mmdbID != bestObject->mmdbID) {
                     structureSet->showHideManager->Show(*o, false);
+                }
+
+                // on structure of interest, make visible only molecules with highlights
+                else {
+                    ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+                    for (m=(*o)->graph->molecules.begin(); m!=me; ++m)
+                        if (!GlobalMessenger()->IsHighlightedAnywhere(m->second))
+                            structureSet->showHideManager->Show(m->second, false);
+                }
+            }
+
             // now force redrawing of structures, so the frames that contains
             // these objects aren't empty (otherwise, renderer won't show selected frame)
             GlobalMessenger()->ProcessRedraws();
@@ -1246,6 +1257,9 @@ wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/10/28 17:06:12  thiessen
+* show only highlighted molecules when showing structure evidence
+*
 * Revision 1.40  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *
