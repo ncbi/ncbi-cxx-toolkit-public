@@ -42,6 +42,7 @@ BEGIN_SCOPE(objects)
     class CDense_seg;
     class CSeq_align;
     class CSeq_align_set;
+    class CScope;
 END_SCOPE(objects)
 
 
@@ -57,7 +58,11 @@ public:
                    CConstRef<objects::CSeq_id> id2);
 
     // formatters
-    string AsText(const CSplign::TResults* results = 0) const;
+    string AsExonTable(const CSplign::TResults* results = 0) const;
+
+    string AsAlignmentText(CRef<objects::CScope> scope,
+                           const CSplign::TResults* results = 0) const;
+
     CRef<objects::CSeq_align_set> AsSeqAlignSet(const CSplign::TResults*
                                                 results = 0) const;
 
@@ -86,6 +91,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/10/31 16:29:36  kapustin
+ * Support traditional pairwise alignment text output
+ *
  * Revision 1.12  2005/09/12 16:22:31  kapustin
  * Move compartmentization to xalgoutil
  *

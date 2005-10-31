@@ -30,9 +30,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "splign_util.hpp"
 
+#include <algo/align/nw/align_exception.hpp>
 #include <algo/align/splign/splign_formatter.hpp>
+
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -40,6 +41,10 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <objmgr/seq_vector.hpp>
+
+#include "splign_util.hpp"
+#include "messages.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -75,11 +80,14 @@ void CSplignFormatter::SetSeqIds(CConstRef<objects::CSeq_id> id1,
 }
 
 
-string CSplignFormatter::AsText(const CSplign::TResults* results) const
+string CSplignFormatter::AsExonTable(const CSplign::TResults* results) const
 {
     if(results == 0) {
         results = &m_splign_results;
     }
+
+    const string querystr (m_QueryId->GetSeqIdString(true));
+    const string subjstr (m_SubjId->GetSeqIdString(true));
 
     CNcbiOstrstream oss;
     oss.precision(3);
@@ -92,8 +100,8 @@ string CSplignFormatter::AsText(const CSplign::TResults* results) const
             
             oss << (ii->m_QueryStrand? '+': '-')
                 << ii->m_id << '\t' 
-                << m_QueryId->GetSeqIdString(true) << '\t' 
-                << m_SubjId->GetSeqIdString(true) << '\t';
+                << querystr << '\t' 
+                << subjstr << '\t';
             if(seg.m_exon) {
                 oss << seg.m_idty << '\t';
             }
@@ -103,9 +111,10 @@ string CSplignFormatter::AsText(const CSplign::TResults* results) const
             
             oss << seg.m_len << '\t'
                 << seg.m_box[0] + 1 << '\t' << seg.m_box[1] + 1 << '\t';
-      
+            
             if(seg.m_exon) {
-                oss << seg.m_box[2] + 1 << '\t' << seg.m_box[3] + 1 << '\t';
+                oss << seg.m_box[2] + 1 << '\t' 
+                    << seg.m_box[3] + 1 << '\t';
             }
             else {
                 oss << "-\t-\t";
@@ -120,6 +129,7 @@ string CSplignFormatter::AsText(const CSplign::TResults* results) const
 #endif
             }
             else {
+
                 if(i == 0) {
                     oss << "<L-Gap>\t";
                 }
@@ -136,7 +146,238 @@ string CSplignFormatter::AsText(const CSplign::TResults* results) const
             }
             oss << endl;
         }
+    }
+    
+    return CNcbiOstrstreamToString(oss);
+}
+
+
+string CSplignFormatter::AsAlignmentText(
+    CRef<objects::CScope> scope, const CSplign::TResults* results) const
+
+{
+    if(results == 0) {
+        results = &m_splign_results;
+    }
+    
+    const size_t extra_chars = 5;
+    const size_t max_width = 80;
+    
+    const string querystr (m_QueryId->GetSeqIdString(true));
+    const string subjstr (m_SubjId->GetSeqIdString(true));
+
+    CNcbiOstrstream oss;
+    oss.precision(3);
+
+    ITERATE(CSplign::TResults, ii, *results) {
+            
+        if(ii->m_error) {
+            continue;
+        }
         
+        const bool qstrand = ii->m_QueryStrand;
+        const bool sstrand = ii->m_SubjStrand;
+        const char qc = qstrand? '+': '-';
+        const char sc = sstrand? '+': '-';
+
+        oss << endl << '>' << qc << ii->m_id << '\t' 
+            << querystr << '(' << qc << ")\t" 
+            << subjstr << '(' << sc << ')' << endl;
+                
+        // query seq-vector
+        CBioseq_Handle bh_query = scope->GetBioseqHandle(*m_QueryId);
+        CSeqVector sv_query = bh_query.GetSeqVector(
+                                  CBioseq_Handle::eCoding_Iupac);
+
+        // subject seq-vector
+        CBioseq_Handle bh_subj = scope->GetBioseqHandle(*m_SubjId);
+        CSeqVector sv_subj=bh_subj.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+        size_t exons_total = 0;
+        ITERATE(CSplign::TSegments, jj, ii->m_segments) {
+            if(jj->m_exon) {
+                ++exons_total;
+            }
+        }
+
+        size_t exon_count = 0;
+        ITERATE(CSplign::TSegments, jj, ii->m_segments) {
+            
+            const CSplign::SSegment& s = *jj;
+            if(s.m_exon) {
+
+                size_t qbeg = s.m_box[0];
+                size_t qfin = s.m_box[1];
+                size_t sbeg = s.m_box[2];
+                size_t sfin = s.m_box[3];
+
+                if(exon_count > 0) {
+                    if(sstrand) {
+                        sbeg -= extra_chars;
+                    }
+                    else {
+                        sbeg += extra_chars;
+                    }
+                }
+
+                if(exon_count + 1 < exons_total) {
+                    if(sstrand) {
+                        sfin += extra_chars;
+                    }
+                    else {
+                        sfin -= extra_chars;
+                    }
+                }
+
+                size_t s0, s1;
+                if(sbeg < sfin) {
+                    s0 = sbeg;
+                    s1 = sfin;
+                }
+                else {
+                    s0 = sfin;
+                    s1 = sbeg;
+                }
+
+                size_t q0, q1;
+                if(qbeg < qfin) {
+                    q0 = qbeg;
+                    q1 = qfin;
+                }
+                else {
+                    q0 = qfin;
+                    q1 = qbeg;
+                }
+
+                // Load seq data
+                string str;
+                sv_subj.GetSeqData(sv_subj.begin() + s0,
+                                   sv_subj.begin() + s1 + 1, str);
+                vector<char> subj (str.size());
+                if(sstrand) {
+                    copy(str.begin(), str.end(), subj.begin());
+                }
+                else {
+                    reverse(str.begin(), str.end());
+                    transform(str.begin(), str.end(), 
+                              subj.begin(), SCompliment());
+                }
+
+                sv_query.GetSeqData(sv_query.begin() + q0,
+                                    sv_query.begin() + q1 + 1, str);
+
+                vector<char> query (str.size());
+                if(qstrand) {
+                    copy(str.begin(), str.end(), query.begin());
+                }
+                else {
+                    reverse(str.begin(), str.end());
+                    transform(str.begin(), str.end(), 
+                              query.begin(), SCompliment());
+                }
+                
+                oss << endl << "Exon " << (exon_count + 1) << " ("
+                    << (1 + s.m_box[0]) << '-' << (1 + s.m_box[1]) << ','
+                    << (1 + s.m_box[2]) << '-' << (1 + s.m_box[3]) << ") "
+                    << "Len = " << s.m_len << ' '
+                    << "Identity = " << s.m_idty << endl;
+                
+                string l0, l1, l2, l3;
+
+                l0 = NStr::IntToString(qbeg + 1) + ":" 
+                    + NStr::IntToString(sbeg + 1);
+
+                string trans;
+                if(exon_count > 0) {
+                    trans.assign(extra_chars, '#');
+                }
+                trans.append(s.m_details);
+                if(exon_count + 1 < exons_total) {
+                    trans.append(extra_chars, '#');
+                }
+
+                size_t lines = 0;
+                for(size_t t = 0, td = trans.size(), 
+                        iq = 0, is = 0; t < td; ++t) {
+                    
+                    char c = trans[t], c1, c2, c3;
+                    
+                    switch(c) {
+                 
+                    case '#':
+                        c1 = '.';
+                        c2 = ' ';
+                        c3 = subj[is++];
+                        break;
+       
+                    case 'M':
+                        c1 = query[iq++];
+                        c2 = '|';
+                        c3 = subj[is++];
+                        break;
+
+                    case 'R':
+                        c1 = query[iq++];
+                        c2 = ' ';
+                        c3 = subj[is++];
+                        break;
+                        
+                    case 'I':
+                        c1 = '-';
+                        c2 = ' ';
+                        c3 = subj[is++];
+                        break;
+                        
+                    case 'D':
+                        c1 = query[iq++];
+                        c2 = ' ';
+                        c3 = '-';
+                        break;
+                        
+                    default:
+                        NCBI_THROW( CAlgoAlignException,
+                                    eInternal,
+                                    g_msg_UnknownTranscriptSymbol + c);
+                    }
+                    l1.push_back(c1);
+                    l2.push_back(c2);
+                    l3.push_back(c3);
+                    
+                    if(l1.size() == max_width) {
+
+                        oss << l0 << endl << l1 << endl 
+                            << l2 << endl << l3 << endl << endl;
+                        ++lines;
+                        l1.resize(0); l2.resize(0); l3.resize(0);
+                        size_t q0;
+                        if(qstrand) {
+                            q0 = qbeg + lines*max_width;
+                        }
+                        else {
+                            q0 = qbeg - lines*max_width;
+                        }
+
+                        size_t s0;
+                        if(qstrand) {
+                            s0 = sbeg + lines*max_width;
+                        }
+                        else {
+                            s0 = sbeg - lines*max_width;
+                        }
+
+                        l0 = NStr::IntToString(q0 + 1) + ":" 
+                            + NStr::IntToString(s0 + 1);
+                    }
+                }
+                if(l1.size()) {
+                    oss << l0 << endl << l1 << endl 
+                        << l2 << endl << l3 << endl;
+                    l0.resize(0); l1.resize(0); l2.resize(0); l3.resize(0);
+                }
+
+                ++exon_count;
+            }
+        }
     }
     
     return CNcbiOstrstreamToString(oss);
@@ -284,6 +525,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/10/31 16:29:58  kapustin
+ * Support traditional pairwise alignment text output
+ *
  * Revision 1.17  2005/06/20 17:49:26  kapustin
  * Strip strand info when both strands are positive
  *

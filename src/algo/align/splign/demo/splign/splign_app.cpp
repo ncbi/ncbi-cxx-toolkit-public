@@ -130,8 +130,6 @@ void CSplignApp::Init()
          "sequences. To create one, use formatdb -o T -p F",
          CArgDescriptions::eString);
 #endif
-
-    argdescr->AddFlag("cross", "Cross-species mode");
     
     argdescr->AddDefaultKey
         ("log", "log", "Splign log file",
@@ -141,7 +139,13 @@ void CSplignApp::Init()
     argdescr->AddOptionalKey
         ("asn", "asn", "ASN.1 output file name", 
          CArgDescriptions::eOutputFile);
+
+    argdescr->AddOptionalKey
+        ("aln", "aln", "Pairwise alignment output file name", 
+         CArgDescriptions::eOutputFile);
     
+    argdescr->AddFlag("cross", "Cross-species mode");
+
     argdescr->AddDefaultKey
         ("strand", "strand", "Spliced sequence's strand.",
          CArgDescriptions::eString, kStrandPlus);
@@ -159,13 +163,14 @@ void CSplignApp::Init()
          "Multiple compartments will only be identified if "
          "they have at least this level of coverage.",
          CArgDescriptions::eDouble,
-         "0.25");
+         NStr::DoubleToString(CSplign::s_GetDefaultCompartmentPenalty()));
     
     argdescr->AddDefaultKey
         ("min_compartment_idty", "min_compartment_identity",
          "Minimal overall identity a compartment "
          "must have in order to be aligned.",
-         CArgDescriptions::eDouble, "0.5");
+         CArgDescriptions::eDouble,
+         NStr::DoubleToString(CSplign::s_GetDefaultMinCompartmentIdty()));
     
     argdescr->AddDefaultKey
         ("max_extent", "max_extent",
@@ -178,7 +183,8 @@ void CSplignApp::Init()
         ("min_exon_idty", "identity",
          "Minimal exon identity. Lower identity segments "
          "will be marked as gaps.",
-         CArgDescriptions::eDouble, "0.75");
+         CArgDescriptions::eDouble,
+         NStr::DoubleToString(CSplign::s_GetDefaultMinExonIdty()));
     
 #ifdef GENOME_PIPELINE
     
@@ -252,6 +258,7 @@ void CSplignApp::Init()
     
     SetupArgDescriptions(argdescr.release());
 }
+
 
 bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 {
@@ -409,10 +416,18 @@ CRef<blast::CBlastOptionsHandle> CSplignApp::x_SetupBlastOptions(bool cross)
     blast_opt.SetMatchReward(1);
     */
 
+    blast_opt.SetWordSize(80);
+
     if(!cross) {
-        blast_opt.SetWordSize(40);
+        blast_opt.SetMaskAtHash(true);
         blast_opt.SetGapXDropoff(1);
         blast_opt.SetGapXDropoffFinal(1);
+    }
+
+    if(blast_options_handle->Validate() == false) {
+        NCBI_THROW(CSplignAppException,
+                   eInternal,
+                   "Incorrect blast setup");
     }
 
     return blast_options_handle;
@@ -545,6 +560,9 @@ int CSplignApp::Run()
     // open asn output stream, if any
     m_AsnOut = args["asn"]? & args["asn"].AsOutputFile(): NULL;
     
+    // open paiwise alignment output stream, if any
+    m_AlnOut = args["aln"]? & args["aln"].AsOutputFile(): NULL;
+    
     // in pairwise, batch 2 or incremental mode, setup blast options
     if(run_mode != eBatch1) {
         m_BlastOptionsHandle = x_SetupBlastOptions(is_cross);
@@ -637,20 +655,15 @@ int CSplignApp::Run()
         USING_SCOPE(objects);
         USING_SCOPE(blast);
 
-        scope.Reset (new CScope(*objmgr));
-        scope->AddDefaults();
-        m_Splign->SetScope() = scope;
-
-        // prepare CSeqDB
-        CSeqDB seqdb(args["subjdb"].AsString(), CSeqDB::eNucleotide);
-        CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
-
         CNcbiIstream& ifa = args["query"].AsInputFile();
         for(CRef<CSeq_entry> se (ReadFasta(ifa, fReadFasta_OneSeq));
             se.NotEmpty(); se = ReadFasta(ifa, fReadFasta_OneSeq)) 
         {
-            scope->ResetHistory();
+
+            scope.Reset (new CScope(*objmgr));
+            scope->AddDefaults();
             scope->AddTopLevelSeqEntry(*se);
+            m_Splign->SetScope() = scope;
 
             const CSeq_entry::TSeq& bioseq = se->GetSeq();    
             const CSeq_entry::TSeq::TId& qids = bioseq.GetId();
@@ -662,8 +675,9 @@ int CSplignApp::Run()
             queries.push_back(SSeqLoc(*sl, *scope));
             
             THitRefs hitrefs;
+            CSeqDB seqdb(args["subjdb"].AsString(), CSeqDB::eNucleotide);
+            CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(&seqdb));
             x_GetDbBlastHits(seq_src, queries, &hitrefs);
-
             typedef CHitComparator<CBlastTabular> THitComparator;
             THitComparator hc (THitComparator::eSubjIdQueryId);
             stable_sort(hitrefs.begin(), hitrefs.end(), hc);
@@ -675,12 +689,7 @@ int CSplignApp::Run()
                 int oid = -1;
                 CConstRef<CSeq_id> seqid_subj (
                         hitrefs_pair.front()->GetSubjId());
-                if(!seqdb.SeqidToOid(*seqid_subj, oid)) {
-                    NCBI_THROW(CSplignAppException,
-                               eGeneral,
-                               "Unable load sequence for "
-                               + seqid_subj->GetSeqIdString(true));
-                }
+                seqdb.SeqidToOid(*seqid_subj, oid);
                 
                 CRef<CBioseq> bq (seqdb.GetBioseq(oid));
                 CRef<CSeq_entry> se_subj (new CSeq_entry);
@@ -831,13 +840,19 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
                    "Auto strand not yet implemented");
     }
         
-    cout << m_Formatter->AsText(&splign_results) << flush;
+    cout << m_Formatter->AsExonTable(&splign_results) << flush;
         
     if(m_AsnOut) {
-
+        
         *m_AsnOut << MSerial_AsnText 
                   << m_Formatter->AsSeqAlignSet(&splign_results)
                   << endl;
+    }
+    
+    if(m_AlnOut) {
+        
+        *m_AlnOut << m_Formatter->AsAlignmentText(m_Splign->GetScope(),
+                                                  &splign_results);
     }
         
     ITERATE(CSplign::TResults, ii, splign_results) {
@@ -938,6 +953,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/10/31 16:29:58  kapustin
+ * Support traditional pairwise alignment text output
+ *
  * Revision 1.52  2005/10/24 17:44:06  kapustin
  * Intermediate update
  *

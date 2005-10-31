@@ -87,6 +87,7 @@ protected:
                           THitRefs* phitrefs);
 
     CNcbiOstream*                    m_AsnOut;
+    CNcbiOstream*                    m_AlnOut;
 
     CNcbiOstream*    m_logstream;
     void x_LogStatus(size_t model_id,
@@ -114,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/10/31 16:29:58  kapustin
+ * Support traditional pairwise alignment text output
+ *
  * Revision 1.15  2005/10/24 17:44:06  kapustin
  * Intermediate update
  *
