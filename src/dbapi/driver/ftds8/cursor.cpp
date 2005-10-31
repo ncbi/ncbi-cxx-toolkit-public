@@ -77,7 +77,6 @@ CDB_Result* CTDS_CursorCmd::Open()
     _ASSERT(m_Connect->m_Context);
     
     const bool connected_to_MSSQLServer = m_Connect->m_Context->ConnectedToMSSQLServer();
-    const int TDSVersion = m_Connect->m_Context->GetTDSVersion();
     
     if (m_IsOpen) { // need to close it first
         Close();
@@ -183,7 +182,7 @@ I_ITDescriptor* CTDS_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     if(!m_IsOpen || (m_Res == 0)) {
         return 0;
     }
-    while(m_Res->CurrentItemNo() < item_num) {
+    while(static_cast<unsigned int>(m_Res->CurrentItemNo()) < item_num) {
         if(!m_Res->SkipItem()) return 0;
     }
     
@@ -534,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/10/31 12:28:52  ssikorsk
+ * Get rid of warnings.
+ *
  * Revision 1.16  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

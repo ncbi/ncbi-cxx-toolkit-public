@@ -202,7 +202,7 @@ CS_RETCODE CTL_RowResult::my_ct_get_data(CS_COMMAND* cmd, CS_INT item,
   if(buflen > n) buflen= n;
   memcpy(buffer, (char*)(m_BindItem[item]) + m_Indicator[item], buflen);
   if(outlen) *outlen= buflen;
-  m_Indicator[item]+= buflen;
+    m_Indicator[item] += static_cast<CS_SMALLINT>(buflen);
   return (n == buflen)? CS_END_ITEM : CS_SUCCEED;
 }
 
@@ -1058,6 +1058,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/10/31 12:27:01  ssikorsk
+ * Get rid of warnings.
+ *
  * Revision 1.22  2005/09/19 14:19:02  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

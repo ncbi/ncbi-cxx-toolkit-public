@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 
@@ -607,7 +608,7 @@ size_t CTDS_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
     if (buffer)
         memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
-    if (m_Offset >= d_len) {
+    if (m_Offset >= static_cast<size_t>(d_len)) {
         m_Offset = 0;
         ++m_CurrItem;
     }
@@ -999,7 +1000,7 @@ size_t CTDS_ParamResult::ReadItem(void* buffer, size_t buffer_size,
 
     memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
-    if (m_Offset >= d_len) {
+    if ( m_Offset >= static_cast<size_t>(d_len) ) {
         m_Offset = 0;
         ++m_CurrItem;
     }
@@ -1474,6 +1475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/10/31 12:25:56  ssikorsk
+ * Get rid of warnings.
+ *
  * Revision 1.22  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

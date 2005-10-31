@@ -760,7 +760,10 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
             if(is_null) *is_null= true;
             return 0;
         default:
-			   if(f >= 0) return (f <= buffer_size)? (size_t)f : buffer_size;
+            if ( f >= 0 ) {
+                return (static_cast<size_t>(f) <= buffer_size) ? 
+                    static_cast<size_t>(f) : buffer_size;
+            }
             m_Reporter.ReportErrors();
             return 0;
         }
@@ -1048,6 +1051,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/10/31 12:25:21  ssikorsk
+ * Get rid of warnings.
+ *
  * Revision 1.20  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

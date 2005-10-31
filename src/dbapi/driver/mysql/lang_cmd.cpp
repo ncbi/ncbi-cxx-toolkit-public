@@ -80,7 +80,7 @@ bool CMySQL_LangCmd::Send()
         DATABASE_DRIVER_WARNING( "Failed: mysql_real_query", 800003 );
     }
     
-    int nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
+    my_ulonglong nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
     m_HasResults = nof_Rows == -1 || nof_Rows > 0;
     return true;
 }
@@ -147,12 +147,12 @@ void CMySQL_LangCmd::Release()
 
 int CMySQL_LangCmd::LastInsertId() const
 {
-  return mysql_insert_id(&this->m_Connect->m_MySQL);
+  return static_cast<int>( mysql_insert_id(&this->m_Connect->m_MySQL) );
 }
 
 int CMySQL_LangCmd::RowCount() const
 {
-  return mysql_affected_rows(&this->m_Connect->m_MySQL);
+  return static_cast<int>( mysql_affected_rows(&this->m_Connect->m_MySQL) );
 }
 
 string CMySQL_LangCmd::EscapeString(const char* str, unsigned long len)
@@ -168,6 +168,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/10/31 12:27:38  ssikorsk
+ * Get rid of warnings.
+ *
  * Revision 1.10  2005/04/04 13:03:57  ssikorsk
  * Revamp of DBAPI exception class CDB_Exception
  *

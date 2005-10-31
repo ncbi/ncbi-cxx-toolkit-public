@@ -298,7 +298,7 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     if(!m_IsOpen || (m_Res == 0)) {
         return 0;
     }
-    while(m_Res->CurrentItemNo() < item_num) {
+    while ( static_cast<unsigned int>(m_Res->CurrentItemNo()) < item_num ) {
         if(!m_Res->SkipItem()) return 0;
     }
     
@@ -706,6 +706,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/10/31 12:29:14  ssikorsk
+ * Get rid of warnings.
+ *
  * Revision 1.12  2005/09/19 14:19:02  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
