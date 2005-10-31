@@ -341,21 +341,23 @@ string GetOpt(const CNcbiRegistry& registry,
               const string&        opt, 
               const SConfigInfo&   config)
 {
-    string section_spec(section);
-    section_spec += config.m_Debug? ".debug": ".release";
-    string section_dr(section_spec); //section.debug or section.release
-    section_spec += '.';
-    section_spec += config.m_Name;
-
-    string val_spec = registry.GetString(section_spec, opt, "");
-    if ( !val_spec.empty() )
-        return val_spec;
-
-    val_spec = registry.GetString(section_dr, opt, "");
-    if ( !val_spec.empty() )
-        return val_spec;
-
-    return registry.GetString(section, opt, "");
+    string build =
+        (GetApp().GetBuildType().GetType() == CBuildType::eStatic) ?
+        "static" : "dll";
+    string spec = config.m_Debug ? "debug": "release";
+    list<string> entries;
+    entries.push_front(section);
+    entries.push_front(section + "." + build);
+    entries.push_front(section + "." + spec);
+    entries.push_front(section + "." + build + "." + spec);
+    entries.push_front(section + "." + spec + "." + config.m_Name);
+    entries.push_front(section + "." + build + "." + spec + "." + config.m_Name);
+    string value;
+    for (list<string>::const_iterator s = entries.begin();
+        s != entries.end() && value.empty(); ++s) {
+        value = registry.GetString(*s, opt, "");
+    }
+    return value;
 }
 
 
@@ -1072,6 +1074,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2005/10/31 16:00:03  gouriano
+ * Added "build type" level to configuration parameters
+ *
  * Revision 1.37  2005/10/27 15:55:53  gouriano
  * Corrected to match changed support of character encodings in streams
  *
