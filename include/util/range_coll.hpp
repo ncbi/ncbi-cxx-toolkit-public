@@ -255,13 +255,6 @@ protected:
         bool b_intersects = it != end()  &&  it->GetFrom() < r.GetToOpen();
         return make_pair(it, b_intersects);
     }
-    pair<const_iterator, bool>    x_Intersects(const TRange& r) const
-    {
-        PRangeLessPos<TRange, position_type>    p;
-        const_iterator it = lower_bound(begin(), end(), r.GetFrom(), p);
-        bool b_intersects = it != end()  &&  it->GetFrom() < r.GetToOpen();
-        return make_pair(it, b_intersects);
-    }
     pair<const_iterator, bool>    x_Contains(const TRange& r) const
     {
         PRangeLessPos<TRange, position_type>    p;
@@ -391,6 +384,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/10/31 20:34:05  dicuccio
+ * FIx bungled commit in version 1.10
+ *
  * Revision 1.10  2005/10/31 20:25:06  dicuccio
  * Const-ified several functions
  *
