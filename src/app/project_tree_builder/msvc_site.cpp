@@ -77,6 +77,12 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
 
 bool CMsvcSite::IsProvided(const string& thing) const
 {
+    if (thing.empty()) {
+        return true;
+    }
+    if (thing[0] == '-') {
+        return !IsProvided( thing.c_str() + 1);
+    }
     if ( m_NotProvidedThing.find(thing) != m_NotProvidedThing.end() ) {
         return false;
     }
@@ -499,6 +505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/10/31 19:55:03  gouriano
+ * Added requirement negation option
+ *
  * Revision 1.31  2005/10/31 15:58:17  gouriano
  * Added list of "provided" requirements; so, all of them must be known
  *

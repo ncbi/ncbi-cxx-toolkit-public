@@ -573,9 +573,10 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* 
         GetApp().GetSite().GetLibInfo(requires, config, &lib_info);
         
         if ( lib_info.IsEmpty() ) {
-            if (requires == "MT" &&
+            bool st = 
                 (config.m_rtType == SConfigInfo::rtSingleThreaded ||
-                 config.m_rtType == SConfigInfo::rtSingleThreadedDebug)) {
+                 config.m_rtType == SConfigInfo::rtSingleThreadedDebug);
+            if ((requires == "MT" && st) || (requires == "-MT" && !st)) {
                 if (unmet) {
                     if (!unmet->empty()) {
                         *unmet += ", ";
@@ -1060,6 +1061,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/10/31 19:55:03  gouriano
+ * Added requirement negation option
+ *
  * Revision 1.54  2005/10/27 15:56:22  gouriano
  * More verbose diagnostics
  *
