@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <string.h>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -104,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/10/31 19:01:40  ssikorsk
+ * + #include <algorithm>
+ *
  * Revision 1.6  2005/10/31 17:18:39  ssikorsk
  * Revamp CDBHandlerStack to use std::deque
  *
