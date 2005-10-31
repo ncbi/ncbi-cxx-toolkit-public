@@ -36,157 +36,99 @@
 
 BEGIN_NCBI_SCOPE
 
-// NOTE: this function should be inlined. In majority of cases conditions
-// in both ifs are false, so the execution path is really short.
-//------------------------------------------------------------------------------
-inline void CSymDustMasker::triplets::add_k_info( triplet_type t )
-{
-    inner_sum_ += inner_counts_[t];
-    ++inner_counts_[t];
-
-    // if we just reached or exceeded low_k_ elements, then update 
-    // high_beg_ as necessary
-    if( inner_counts_[t] > low_k_ )
-    {
-        Uint4 off = triplet_list_.size() - (high_beg_ - start_) - 1;
-
-        do{
-            rem_k_info( triplet_list_[off] );
-            --off;
-            ++high_beg_;
-        }while( triplet_list_[off+1] != t );
-    }
-}
-
 //------------------------------------------------------------------------------
 CSymDustMasker::triplets::triplets( 
-    triplet_type first, size_type window, Uint1 low_k,
-    lcr_list_type & lcr_list, thres_table_type & thresholds )
+    size_type window, Uint1 low_k,
+    perfect_list_type & perfect_list, thres_table_type & thresholds )
     : start_( 0 ), stop_( 0 ), max_size_( window - 2 ), low_k_( low_k ),
-      high_beg_( 0 ), lcr_list_( lcr_list ), thresholds_( thresholds ),
-      outer_counts_( 64, 0 ), inner_counts_( 64, 0 ),
-      outer_sum_( 0 ), inner_sum_( 0 )
-{
-    // update the data structures for the first triplet in the window
-    triplet_list_.push_front( first );
-    ++outer_counts_[first];
-    add_k_info( first );
-}
+      L( 0 ), P( perfect_list ), thresholds_( thresholds ),
+      c_w( 64, 0 ), c_v( 64, 0 ),
+      r_w( 0 ), r_v( 0 )
+{}
 
 //------------------------------------------------------------------------------
-inline void CSymDustMasker::triplets::rem_k_info( triplet_type t )
+void CSymDustMasker::triplets::shift_window( triplet_type t )
 {
-    --inner_counts_[t];
-    inner_sum_ -= inner_counts_[t];
-}
+    // shift the left end of the window, if necessary
+    if( triplet_list_.size() >= max_size_ ) {
+        triplet_type s = triplet_list_.back();
+        triplet_list_.pop_back();
+        rem_triplet_info( r_w, c_w, s );
 
-//------------------------------------------------------------------------------
-inline void CSymDustMasker::triplets::push_triplet( triplet_type t )
-{ 
-    triplet_list_.push_front( t ); 
-    outer_sum_ += outer_counts_[t];
-    ++outer_counts_[t];
+        if( L == start_ ) {
+            ++L;
+            rem_triplet_info( r_v, c_v, s );
+        }
+
+        ++start_;
+    }
+
+    triplet_list_.push_front( t );
+    add_triplet_info( r_w, c_w, t );
+    add_triplet_info( r_v, c_v, t );
+
+    if( c_v[t] > low_k_ ) {
+        Uint4 off = triplet_list_.size() - (L - start_) - 1;
+
+        do {
+            rem_triplet_info( r_v, c_v, triplet_list_[off] );
+            ++L;
+        }while( triplet_list_[off--] != t );
+    }
+
     ++stop_;
-    add_k_info( t );
 }
 
 //------------------------------------------------------------------------------
-inline void CSymDustMasker::triplets::pop_triplet()
+inline void CSymDustMasker::triplets::find_perfect()
 {
-    triplet_type t = triplet_list_.back();
-
-    // remove from the position list only if the suffix spans the whole window
-    if( inner_counts_[t] == outer_counts_[t] )
-        rem_k_info( t );
-
-    // make sure the high_beg_ is within the window
-    if( start_ == high_beg_ )
-        ++high_beg_;
-
-    --outer_counts_[t];
-    outer_sum_ -= outer_counts_[t];
-    triplet_list_.pop_back();
-    ++start_;
-}
-
-//------------------------------------------------------------------------------
-inline bool CSymDustMasker::triplets::add( sequence_type::value_type n )
-{
-    typedef lcr_list_type::iterator lcr_iter_type;
+    typedef perfect_list_type::iterator perfect_iter_type;
     static counts_type counts( 64 );
 
-    bool result = false;
+    Uint4 count = stop_ - L; // count is the suffix length
 
-    // shift the left end of the window, if necessary
-    if( triplet_list_.size() >= max_size_ )
-    {
-        pop_triplet();
-        result = true;
-    }
+    // we need a local copy of triplet counts
+    std::copy( c_v.begin(), c_v.end(), counts.begin() );
 
-    push_triplet( ((triplet_list_.front()<<2)&TRIPLET_MASK) + (n&3) );
-    Uint4 count = stop_ - high_beg_ + 1; // count is the suffix length
+    Uint4 score = r_v; // and of the partial sum
+    perfect_iter_type perfect_iter = P.begin();
+    Uint4 max_perfect_score = 0;
+    size_type max_len = 0;
+    size_type pos = L - 1; // skipping the suffix
+    impl_citer_type it = triplet_list_.begin() + count; // skipping the suffix
+    impl_citer_type iend = triplet_list_.end();
 
-    // if the condition does not hold then nothing in the window should be masked
-    if( count < triplet_list_.size() && 10*outer_sum_ > thresholds_[count] )
-    {
-        // we need a local copy of triplet counts
-        std::copy( inner_counts_.begin(), inner_counts_.end(), counts.begin() );
+    for( ; it != iend; ++it, ++count, --pos ) {
+        Uint1 cnt = counts[*it];
+        add_triplet_info( score, counts, *it );
 
-        Uint4 score = inner_sum_; // and of the partial sum
-        lcr_iter_type lcr_iter = lcr_list_.begin();
-        Uint4 max_lcr_score = 0;
-        size_type max_len = 0;
-        size_type pos = high_beg_ - 1; // skipping the suffix
-        impl_citer_type it = triplet_list_.begin() + count; // skipping the suffix
-        impl_citer_type iend = triplet_list_.end();
-
-        for( ; it != iend; ++it, ++count, --pos )
-        {
-            Uint1 cnt = counts[*it];
-
-            // If this triplet has not appeared before, then the partial sum
-            //      does not change
-            if( cnt > 0 )
-            {
-                score += cnt;
-
-                if( score*10 > thresholds_[count] )
-                {   // found the candidate for the perfect interval
-                    // get the max score for the existing perfect intervals within
-                    //      current suffix
-                    while(    lcr_iter != lcr_list_.end() 
-                           && pos <= lcr_iter->bounds_.first )
-                    {
-                        if(    max_lcr_score == 0 
-                            || max_len*lcr_iter->score_ 
-                               > max_lcr_score*lcr_iter->len_ )
-                        {
-                            max_lcr_score = lcr_iter->score_;
-                            max_len = lcr_iter->len_;
-                        }
-
-                        ++lcr_iter;
-                    }
-
-                    // check if the current suffix score is at least as large
-                    if(    max_lcr_score == 0 
-                        || score*max_len >= max_lcr_score*count )
-                    {
-                        max_lcr_score = score;
-                        max_len = count;
-                        lcr_iter = lcr_list_.insert( 
-                            lcr_iter, lcr( pos, stop_ + 2, 
-                                           max_lcr_score, count ) );
-                    }
+        if( cnt > 0 && score*10 > thresholds_[count] ) {
+            // found the candidate for the perfect interval
+            // get the max score for the existing perfect intervals within
+            //      current suffix
+            while(    perfect_iter != P.end() 
+                   && pos <= perfect_iter->bounds_.first ) {
+                if(    max_perfect_score == 0 
+                    || max_len*perfect_iter->score_ 
+                       > max_perfect_score*perfect_iter->len_ ) {
+                    max_perfect_score = perfect_iter->score_;
+                    max_len = perfect_iter->len_;
                 }
+
+                ++perfect_iter;
             }
 
-            ++counts[*it];
+            // check if the current suffix score is at least as large
+            if(    max_perfect_score == 0 
+                || score*max_len >= max_perfect_score*count ) {
+                max_perfect_score = score;
+                max_len = count;
+                perfect_iter = P.insert( 
+                        perfect_iter, perfect( pos, stop_ + 1, 
+                        max_perfect_score, count ) );
+            }
         }
     }
-
-    return result;
 }
     
 //------------------------------------------------------------------------------
@@ -202,6 +144,35 @@ CSymDustMasker::CSymDustMasker(
 
     for( size_type i = 1; i < window_ - 2; ++i )
         thresholds_.push_back( i*level_ );
+}
+
+//------------------------------------------------------------------------------
+inline void CSymDustMasker::save_masked_regions( 
+        TMaskList & res, size_type wstart, size_type start )
+{
+    if( !P.empty() ) {
+        TMaskedInterval b = P.back().bounds_;
+        
+        if( b.first < wstart ) {
+            TMaskedInterval b1( b.first + start, b.second + start );
+
+            if( !res.empty() ) {
+                size_type s = res.back().second;
+
+                if( s + linker_ >= b1.first ) {
+                    res.back().second = max( s, b1.second );
+                }else {
+                    res.push_back( b1 );
+                }
+            }else {
+                res.push_back( b1 );
+            }
+
+            while( !P.empty() && P.back().bounds_.first < wstart ) {
+                P.pop_back();
+            }
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -223,66 +194,37 @@ CSymDustMasker::operator()( const sequence_type & seq,
     if( stop - start > 2 )    // there must be at least one triplet
     {
         // initializations
-        lcr_list_.clear();
-        triplet_type first_triplet
-            = (converter_( seq[start] )<<4) 
-            + (converter_( seq[start + 1] )<<2)
-            + (converter_( seq[start + 2] ));
-        triplets tris( first_triplet, window_, low_k_, lcr_list_, thresholds_ );
-        seq_citer_type it = seq.begin() + start + tris.stop() + 3;
+        P.clear();
+        triplet_type t
+            = (converter_( seq[start] )<<2) 
+            + converter_( seq[start + 1] );
+        triplets w( window_, low_k_, P, thresholds_ );
+        seq_citer_type it = seq.begin() + start + w.stop() + 2;
         const seq_citer_type seq_end = seq.begin() + stop + 1;
 
         while( it != seq_end )
         {
-            // append all the perfect intervals outside of the current window
-            //      to the result
-            while( !lcr_list_.empty() )
-            {
-                TMaskedInterval b = lcr_list_.back().bounds_;
-                TMaskedInterval b1( b.first + start, b.second + start );
-
-                if( b.first >= tris.start() )
-                    break;
-
-                if( res->empty() )
-                    res->push_back( TMaskedInterval( b1 ) );
-                else
-                {
-                    TMaskedInterval last = res->back();
-
-                    if( last.second + linker_ < b1.first )
-                        res->push_back( b1 );
-                    else if( last.second < b1.second )
-                        res->back().second = b1.second;
-                }
-
-                lcr_list_.pop_back();
-            }
+            save_masked_regions( *res.get(), w.start(), start );
 
             // shift the window
-            tris.add( converter_( *it ) );
+            t = ((t<<2)&TRIPLET_MASK) + (converter_( *it )&0x3);
+            w.shift_window( t );
+            
+            if( w.needs_processing() ) {
+                w.find_perfect();
+            }
+
             ++it;
         }
 
         // append the rest of the perfect intervals to the result
-        while( !lcr_list_.empty() )
         {
-                TMaskedInterval b = lcr_list_.back().bounds_;
-                TMaskedInterval b1( b.first + start, b.second + start );
+            size_type wstart = w.start();
 
-                if( res->empty() )
-                    res->push_back( b1 );
-                else
-                {
-                    TMaskedInterval last = res->back();
-
-                    if( last.second + linker_ < b1.first )
-                        res->push_back( b1 );
-                    else if( last.second < b1.second )
-                        res->back().second = b1.second;
-                }
-
-                lcr_list_.pop_back();
+            while( !P.empty() ) {
+                save_masked_regions( *res.get(), wstart, start );
+                ++wstart;
+            }
         }
     }
 
@@ -328,6 +270,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.16  2005/10/31 20:55:14  morgulis
+ * Refactoring of the library code to better correspond to the pseudocode
+ * in the paper text.
+ *
  * Revision 1.15  2005/10/21 17:25:54  morgulis
  * Fixed a problem of linker usage in the last window of the sequence.
  *

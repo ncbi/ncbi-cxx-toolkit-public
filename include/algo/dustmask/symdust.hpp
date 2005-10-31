@@ -107,7 +107,7 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
         /** \internal
             \brief Type representing a perfect interval.
          */
-        struct lcr
+        struct perfect
         {
             TMaskedInterval bounds_;    /**<\internal The actual interval. */
             Uint4 score_;               /**<\internal The score of the interval. */
@@ -120,13 +120,13 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                 \param score the score
                 \param len the length
              */
-            lcr( size_type start, size_type stop, Uint4 score, size_type len )
+            perfect( size_type start, size_type stop, Uint4 score, size_type len )
                 : bounds_( start, stop ), score_( score ), len_( len )
             {}
         };
 
         /**\brief Type representing a list of perfect intervals. */
-        typedef std::list< lcr > lcr_list_type;
+        typedef std::list< perfect > perfect_list_type;
         /**\brief Table type to store score sum thresholds for each window length. */
         typedef std::vector< Uint4 > thres_table_type;
         /**\brief Type representing a triplet value. */
@@ -198,17 +198,15 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                 
                 /** \internal
                     \brief Object constructor.
-                    \param first the first triplet value
                     \param window max window size
                     \param low_k max triplet multiplicity that guarantees that
                                  the window score is not above the threshold
-                    \param lcr_list [in/out] current list of perfect intervals
+                    \param perfect_list [in/out] current list of perfect intervals
                     \param thresholds table of threshold values for each window size
                  */
-                triplets( triplet_type first,
-                          size_type window, 
+                triplets( size_type window, 
                           Uint1 low_k,
-                          lcr_list_type & lcr_list,
+                          perfect_list_type & perfect_list,
                           thres_table_type & thresholds );
 
                 size_type start() const { return start_; }  /**<\internal Get position of the first triplet. */
@@ -216,18 +214,31 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                 size_type size() const { return triplet_list_.size(); } /**<\internal Get the number of triplets. */
 
                 /** \internal
-                    \brief Shift the right (and possibly left) end of the window 
-                           one position to the right.
-
-                    This function shifts the window one base to the right keeping the left 
-                    end if window length is less than max window length. Does necessary
-                    processing to keep the list of perfect intervals updated.
-
-                    \param n next base character in the sequence
-                    \return true if the left end of the window has shifted;
-                            false otherwise
+                    \brief Update the list of perfect intervals with with suffixes
+                           of the current window.
                  */
-                bool add( sequence_type::value_type n ); 
+                void find_perfect(); 
+
+                /** \internal
+                    \brief Shift the window one base to the right using triplet
+                           value t.
+                    \param t the triplet value to add to the right end of the
+                             triplet list
+                */
+                void shift_window( triplet_type t );
+
+                /** \internal
+                    \brief Check the condition of Proposition 2 allowing
+                           to skip the window processing.
+                    \return true if the window requires suffix processing,
+                            false otherwise
+                */
+                bool needs_processing() const
+                {
+                  Uint4 count = stop_ - L; 
+                  return count < triplet_list_.size() && 
+                         10*r_w > thresholds_[count];
+                }
                           
             private:
                 
@@ -239,31 +250,28 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                 typedef std::vector< Uint1 > counts_type;
 
                 /** \internal
-                    \brief Add triplet to the triplets list and update
-                           the position lists.
-                    \param t new triplet value
-                 */
-                void push_triplet( triplet_type t );
+                    \brief Recompute the value of the running sum
+                           and the triplet counts when a new triplet
+                           is added.
+                    \param r the running sum
+                    \param c the triplet counts
+                    \param t the new triplet value
+                */
+                void add_triplet_info( 
+                        Uint4 & r, counts_type & c, triplet_type t )
+                { r += c[t]; ++c[t]; }
 
                 /** \internal
-                    \brief Remove the triplet from the beginning of the
-                           triplet list and update the position lists.
-                 */
-                void pop_triplet();
-
-                /** \internal
-                    \brief Update the position lists when a new triplet
-                           value is added.
-                    \param t new triplet value
-                 */
-                void add_k_info( triplet_type t );
-
-                /** \internal 
-                    \brief Update the position lists when a triplet value 
-                           is deleted.
-                    \param t triplet value being deleted
-                 */
-                void rem_k_info( triplet_type t );
+                    \brief Recompute the value of the running sum
+                           and the triplet counts when a triplet
+                           is removed.
+                    \param r the running sum
+                    \param c the triplet counts
+                    \param t the triplet value being removed
+                */
+                void rem_triplet_info( 
+                        Uint4 & r, counts_type & c, triplet_type t )
+                { --c[t]; r -= c[t]; }
 
                 impl_type triplet_list_;            /**<\internal The triplet list. */
 
@@ -273,18 +281,27 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
 
                 Uint1 low_k_;                       /**<\internal Max triplet multiplicity that guarantees that
                                                                   that the window score is not above the threshold. */
-                Uint4 high_beg_;                    /**<\internal Position of the start of the window suffix
+                Uint4 L;                            /**<\internal Position of the start of the window suffix
                                                                   corresponding to low_k_. */
 
-                lcr_list_type & lcr_list_;          /**<\internal Current list of perfect subintervals. */
+                perfect_list_type & P;              /**<\internal Current list of perfect subintervals. */
                 thres_table_type & thresholds_;     /**<\internal Table containing thresholds for each 
                                                                   value of window length. */
 
-                counts_type outer_counts_;          /**<\internal Table of triplet counts for the whole window. */
-                counts_type inner_counts_;          /**<\internal Table of triplet counts for the window suffix. */
-                Uint4 outer_sum_;                   /**<\internal s_w for the whole window. */
-                Uint4 inner_sum_;                   /**<\internal s_w for the window suffix. */
+                counts_type c_w;             /**<\internal Table of triplet counts for the whole window. */
+                counts_type c_v;             /**<\internal Table of triplet counts for the window suffix. */
+                Uint4 r_w;                   /**<\internal running sum for the whole window. */
+                Uint4 r_v;                   /**<\internal running sum for the window suffix. */
         };
+
+        /** \internal
+            \brief Merge perfect intervals into the result list.
+            \param res the result list
+            \param w the list of perfect intervals
+            \param start the start position of the subsequence
+        */
+        void save_masked_regions( 
+                TMaskList & res, size_type w, size_type start );
 
         Uint4 level_;       /**<\internal Score threshold. */
         size_type window_;  /**<\internal Max window size. */
@@ -292,7 +309,7 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
 
         Uint1 low_k_;   /**<\internal max triplet multiplicity guaranteeing not to exceed score threshold. */
 
-        lcr_list_type lcr_list_;        /**<\internal List of perfect intervals within current window. */
+        perfect_list_type P;            /**<\internal List of perfect intervals within current window. */
         thres_table_type thresholds_;   /**<\internal Table containing score thresholds for each window size. */
 
         convert_t converter_;   /**\internal IUPACNA to NCBI2NA converter object. */
@@ -305,6 +322,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.12  2005/10/31 20:55:14  morgulis
+ * Refactoring of the library code to better correspond to the pseudocode
+ * in the paper text.
+ *
  * Revision 1.11  2005/09/19 14:37:09  morgulis
  * Added API to return masked intervals as CRef< CPacked_seqint >.
  *
