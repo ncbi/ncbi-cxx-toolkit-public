@@ -33,6 +33,7 @@
  */
 
 #include <dbapi/driver/exception.hpp>
+#include <deque>
 
 
 BEGIN_NCBI_SCOPE
@@ -43,21 +44,19 @@ class NCBI_DBAPIDRIVER_EXPORT CDBHandlerStack
 public:
     CDBHandlerStack(size_t n = 8);
     CDBHandlerStack(const CDBHandlerStack& s);
+    ~CDBHandlerStack(void);
+    
     CDBHandlerStack& operator= (const CDBHandlerStack& s);
 
+public:
     void Push(CDB_UserHandler* h);
     void Pop (CDB_UserHandler* h, bool last = true);
 
     void PostMsg(CDB_Exception* ex);
 
-    ~CDBHandlerStack() {
-        delete [] m_Stack;
-    }
     
 private:
-    CDB_UserHandler** m_Stack;
-    int               m_TopItem;
-    int               m_Room;
+    deque<CDB_UserHandler*> m_Stack;
 };
 
 
@@ -70,6 +69,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/31 17:18:27  ssikorsk
+ * Revamp CDBHandlerStack to use std::deque
+ *
  * Revision 1.5  2003/02/13 15:40:50  ivanov
  * Added export specifier NCBI_DBAPIDRIVER_EXPORT
  *

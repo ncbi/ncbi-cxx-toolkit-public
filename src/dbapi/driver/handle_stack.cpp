@@ -38,75 +38,61 @@ BEGIN_NCBI_SCOPE
 
 CDBHandlerStack::CDBHandlerStack(size_t n)
 {
-    m_Room    = (n < 8) ? 8 : (int) n;
-    m_Stack   = new CDB_UserHandler* [m_Room];
-    m_TopItem = 0;
+    n = n;
 }
 
+CDBHandlerStack::~CDBHandlerStack() 
+{
+}
 
 void CDBHandlerStack::Push(CDB_UserHandler* h)
 {
-    if (m_TopItem >= m_Room) {
-        CDB_UserHandler** t = m_Stack;
-        m_Room += m_Room / 2;
-        m_Stack = new CDB_UserHandler* [m_Room];
-        memcpy(m_Stack, t, m_TopItem * sizeof(CDB_UserHandler*));
-        delete [] t;
-    }
-    m_Stack[m_TopItem++] = h;
+    m_Stack.push_back( h );
 }
 
 
 void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 {
-    int i;
-
     if ( last ) {
-        for (i = m_TopItem;  --i >= 0; ) {
-            if (m_Stack[i] == h) {
-                m_TopItem = i;
-                break;
-            }
+        while ( !m_Stack.empty() && m_Stack.back() != h ) {
+            m_Stack.pop_back();
         }
-    }
-    else {
-        for (i = 0;  i < m_TopItem;  i++) {
-            if (m_Stack[i] == h) {
-                m_TopItem = i;
-                break;
-            }
+    } else {
+        deque<CDB_UserHandler*>::iterator cit;
+        
+        cit = find(m_Stack.begin(), m_Stack.end(), h);
+        if ( cit != m_Stack.end() ) {
+            m_Stack.erase( cit, m_Stack.end() );
         }
     }
 }
 
 
 CDBHandlerStack::CDBHandlerStack(const CDBHandlerStack& s)
+: m_Stack( s.m_Stack )
 {
-    m_Stack = new CDB_UserHandler* [s.m_Room];
-    memcpy(m_Stack, s.m_Stack, s.m_TopItem * sizeof(CDB_UserHandler*));
-    m_TopItem = s.m_TopItem;
-    m_Room    = s.m_Room;
+    return;
 }
 
 
 CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 {
-    if (m_Room < s.m_TopItem) {
-        delete [] m_Stack;
-        m_Stack = new CDB_UserHandler* [s.m_Room];
-        m_Room = s.m_Room;
+    if ( this != &s ) {
+        m_Stack = s.m_Stack;
     }
-    memcpy(m_Stack, s.m_Stack, s.m_TopItem * sizeof(CDB_UserHandler*));
-    m_TopItem = s.m_TopItem;
     return *this;
 }
 
 
 void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 {
-    for (int i = m_TopItem;  --i >= 0; ) {
-        if ( m_Stack[i]->HandleIt(ex) )
+    deque<CDB_UserHandler*>::const_reverse_iterator cit;
+    const deque<CDB_UserHandler*>::const_reverse_iterator cend = m_Stack.rend();
+    
+    for (cit = m_Stack.rbegin(); cit != cend; ++cit) {
+        if ( *cit && (*cit)->HandleIt(ex) ) {
             break;
+        }
     }
 }
 
@@ -118,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/10/31 17:18:39  ssikorsk
+ * Revamp CDBHandlerStack to use std::deque
+ *
  * Revision 1.5  2004/05/17 21:11:38  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
