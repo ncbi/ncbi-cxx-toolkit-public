@@ -173,6 +173,7 @@ public:
 private:
     const CNcbiRegistry& m_Registry;
     
+    set<string> m_ProvidedThing;
     set<string> m_NotProvidedThing;
 
     list<SLibChoice> m_LibChoices;
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/10/31 15:57:59  gouriano
+ * Added list of "provided" requirements; so, all of them must be known
+ *
  * Revision 1.24  2005/05/25 12:32:52  gouriano
  * Added FILES option into conditional macro
  *

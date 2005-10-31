@@ -222,7 +222,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,0,1) );
+    SetVersion( CVersionInfo(1,0,2) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1099,6 +1099,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/10/31 15:58:41  gouriano
+ * Added list of "provided" requirements; so, all of them must be known
+ *
  * Revision 1.62  2005/09/15 18:24:37  gouriano
  * Recognize and process local (within a single makefile) macros
  *

@@ -44,25 +44,23 @@ BEGIN_NCBI_SCOPE
 CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     :m_Registry(registry)
 {
-    // Not provided requests
-    string not_provided_requests_str = 
-        m_Registry.GetString("Configure", "NotProvidedRequests", "");
-    
-    list<string> not_provided_requests_list;
-    NStr::Split(not_provided_requests_str, LIST_SEPARATOR, 
-                not_provided_requests_list);
+    // Provided requests
+    string str = 
+        m_Registry.GetString("Configure", "ProvidedRequests", "");
+    list<string> provided;
+    NStr::Split(str, LIST_SEPARATOR, provided);
+    m_ProvidedThing.insert(provided.begin(),provided.end());
 
-    copy(not_provided_requests_list.begin(),
-         not_provided_requests_list.end(),
-         inserter(m_NotProvidedThing, m_NotProvidedThing.end()));
+    // Not provided requests
+    str = m_Registry.GetString("Configure", "NotProvidedRequests", "");
+    list<string> not_provided;
+    NStr::Split(str, LIST_SEPARATOR, not_provided);
+    m_NotProvidedThing.insert(not_provided.begin(),not_provided.end());
 
     // Lib choices
-    string lib_choices_str = 
-        m_Registry.GetString("Configure", "LibChoices", "");
-
+    str = m_Registry.GetString("Configure", "LibChoices", "");
     list<string> lib_choices_list;
-    NStr::Split(lib_choices_str, LIST_SEPARATOR, 
-                lib_choices_list);
+    NStr::Split(str, LIST_SEPARATOR, lib_choices_list);
     ITERATE(list<string>, p, lib_choices_list) {
         const string& choice_str = *p;
         string lib_id;
@@ -79,15 +77,19 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
 
 bool CMsvcSite::IsProvided(const string& thing) const
 {
-    return m_NotProvidedThing.find(thing) == m_NotProvidedThing.end();
+    if ( m_NotProvidedThing.find(thing) != m_NotProvidedThing.end() ) {
+        return false;
+    }
+    if ( m_ProvidedThing.find(thing) != m_ProvidedThing.end() ) {
+        return true;
+    }
+    return IsDescribed(thing);
 }
 
 
 bool CMsvcSite::IsDescribed(const string& section) const
 {
-    list<string> sections;
-    m_Registry.EnumerateSections(&sections);
-    return find(sections.begin(), sections.end(), section) != sections.end();
+    return m_Registry.HasEntry(section);
 }
 
 
@@ -497,6 +499,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/10/31 15:58:17  gouriano
+ * Added list of "provided" requirements; so, all of them must be known
+ *
  * Revision 1.30  2005/05/25 12:32:32  gouriano
  * Added FILES option into conditional macro
  *
