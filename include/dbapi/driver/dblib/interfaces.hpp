@@ -37,6 +37,24 @@
 #include <dbapi/driver/util/handle_stack.hpp>
 #include <dbapi/driver/util/pointer_pot.hpp>
 
+#ifdef MS_DBLIB_IN_USE
+#    define CDBLibContext       CMSDBLibContext
+#    define CDBL_Connection     CMSDBL_Connection
+#    define CDBL_LangCmd        CMSDBL_LangCmd
+#    define CDBL_RPCCmd         CMSDBL_RPCCmd
+#    define CDBL_CursorCmd      CMSDBL_CursorCmd
+#    define CDBL_BCPInCmd       CMSDBL_BCPInCmd
+#    define CDBL_SendDataCmd    CMSDBL_SendDataCmd
+#    define CDBL_RowResult      CMSDBL_RowResult
+#    define CDBL_ParamResult    CMSDBL_ParamResult
+#    define CDBL_ComputeResult  CMSDBL_ComputeResult
+#    define CDBL_StatusResult   CMSDBL_StatusResult
+#    define CDBL_CursorResult   CMSDBL_CursorResult
+#    define CDBL_BlobResult     CMSDBL_BlobResult
+#    define CDBL_ITDescriptor   CMSDBL_ITDescriptor
+#    define SDBL_ColDescr       CMSDBL_ColDescr
+#endif // MS_DBLIB_IN_USE
+
 #ifdef FTDS_IN_USE
 #    include <dbapi/driver/ftds/ncbi_ftds_rename_sybdb.h>
 #    include <cspublic.h>
@@ -67,72 +85,35 @@
 
 #endif // FTDS_IN_USE
 
-#include <sybfront.h>
-#include <sybdb.h>
-#include <syberror.h>
+
+#ifdef MS_DBLIB_IN_USE
+    #include <windows.h>
+
+    #define DBNTWIN32             /* must be defined before sqlfront.h */
+    #include <sqlfront.h>         /* must be after windows.h */
+
+    #if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
+        typedef const BYTE *LPCBYTE;  /* MSVC7 headers lucks typedef for LPCBYTE */
+    #endif
+
+    #include <sqldb.h>
+#else
+    #include <sybfront.h>
+    #include <sybdb.h>
+    #include <syberror.h>
+#endif // MS_DBLIB_IN_USE
+
+
 
 BEGIN_NCBI_SCOPE
 
-#ifdef FTDS_IN_USE
 
-// some defines
-#ifndef SYBEFCON
-#  define SYBEFCON        20002   /* SQL Server connection failed. */
+#ifdef MS_DBLIB_IN_USE
+#   define DBVERSION_UNKNOWN DBUNKNOWN
+#   define DBVERSION_46 DBVER42
+#   define DBVERSION_100 DBVER60
+#   define DBCOLINFO    DBCOL
 #endif
-#ifndef SYBETIME
-#  define SYBETIME        20003   /* SQL Server connection timed out. */
-#endif
-#ifndef SYBECONN
-#  define SYBECONN        20009   /* Unable to connect socket -- SQL Server is
-                                   * unavailable or does not exist.
-                                   */
-#endif
-#ifndef EXINFO
-#  define EXINFO          1       /* informational, non-error */
-#endif
-#ifndef EXUSER
-#  define EXUSER          2       /* user error */
-#endif
-
-#ifndef EXNONFATAL
-#  define EXNONFATAL      3       /* non-fatal error */
-#endif
-#ifndef EXCONVERSION
-#  define EXCONVERSION    4       /* Error in DB-LIBRARY data conversion. */
-#endif
-#ifndef EXSERVER
-#  define EXSERVER        5       /* The Server has returned an error flag. */
-#endif
-#ifndef EXTIME
-#  define EXTIME          6       /* We have exceeded our timeout period while
-                                   * waiting for a response from the Server -
-                                   * the DBPROCESS is still alive.
-                                   */
-#endif
-#ifndef EXPROGRAM
-#  define EXPROGRAM       7       /* coding error in user program */
-#endif
-#ifndef INT_EXIT
-#  define INT_EXIT        0
-#endif
-#ifndef INT_CONTINUE
-#  define INT_CONTINUE    1
-#endif
-#ifndef INT_CANCEL
-#  define INT_CANCEL      2
-#endif
-#ifndef INT_TIMEOUT
-#  define INT_TIMEOUT     3
-#endif
-
-
-typedef unsigned char CS_BIT;
-#ifndef DBBIT
-#  define DBBIT CS_BIT
-#endif
-
-#endif // FTDS_IN_USE
-
 
 #ifdef FTDS_IN_USE
 #    define DEFAULT_TDS_VERSION DBVERSION_UNKNOWN
@@ -773,7 +754,10 @@ protected:
 //  CDBL_ITDescriptor::
 //
 
-#ifdef FTDS_IN_USE
+#if defined(MS_DBLIB_IN_USE)
+#    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd01
+#    define CMSDBL_ITDESCRIPTOR_TYPE_MAGNUM CDBL_ITDESCRIPTOR_TYPE_MAGNUM
+#elif defined(FTDS_IN_USE)
 #    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xf00
 #    define CTDS_ITDESCRIPTOR_TYPE_MAGNUM CDBL_ITDESCRIPTOR_TYPE_MAGNUM
 #else
@@ -813,7 +797,22 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-#if defined(FTDS_IN_USE)
+#if defined(MS_DBLIB_IN_USE)
+
+extern NCBI_DBAPIDRIVER_DBLIB_EXPORT const string kDBAPI_MSDBLIB_DriverName;
+
+extern "C"
+{
+
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
+void
+NCBI_EntryPoint_xdbapi_msdblib(
+    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
+    CPluginManager<I_DriverContext>::EEntryPointRequest method);
+
+} // extern C
+
+#elif defined(FTDS_IN_USE)
 
 // Uncomment a line below if you want to simulate a previous ftds driver logic.
 // #define FTDS_LOGIC 
@@ -864,6 +863,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/10/31 12:16:00  ssikorsk
+ * Merged msdblib/interfaces.hpp into dblib/interfaces.hpp
+ *
  * Revision 1.27  2005/10/20 12:54:35  ssikorsk
  * - CDBLibContext::m_AppName
  * - CDBLibContext::m_HostName
