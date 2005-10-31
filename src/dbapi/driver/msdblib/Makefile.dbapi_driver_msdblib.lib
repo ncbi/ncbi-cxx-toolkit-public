@@ -4,7 +4,7 @@ SRC = ../dblib/bcp ../dblib/connection ../dblib/context ../dblib/cursor ../dblib
 
 LIB = dbapi_driver_msdblib
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(MSSQL_INCLUDE) -DUSE_MS_DBLIB
+CPPFLAGS = -DMS_DBLIB_IN_USE $(ORIG_CPPFLAGS) $(MSSQL_INCLUDE)
 
 REQUIRES = MSSQL
 
