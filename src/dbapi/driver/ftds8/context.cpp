@@ -40,6 +40,7 @@
 #include <dbapi/driver/driver_mgr.hpp>
 
 #include <dbapi/driver/ftds/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 #ifdef NCBI_FTDS
@@ -617,6 +618,9 @@ CDbapiFtdsCF2::CreateInstance(
                     case 70 :
                         db_version = DBVERSION_70;
                         break;
+                    case 80 :
+                        db_version = DBVERSION_80;
+                        break;
                     case 100 :
                         db_version = DBVERSION_100;
                         break;
@@ -693,6 +697,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/10/31 12:30:11  ssikorsk
+ * Handle TDS v8.0
+ *
  * Revision 1.47  2005/10/27 16:48:49  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
