@@ -1,0 +1,7 @@
+# $Id$
+#################################
+
+LIB_PROJ = xstruct_thread
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
