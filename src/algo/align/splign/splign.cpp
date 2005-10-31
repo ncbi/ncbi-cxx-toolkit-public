@@ -70,12 +70,12 @@ static const double kMinTermExonIdty = 0.90;
 
 CSplign::CSplign( void )
 {
-    m_compartment_penalty = 0.25;
-    m_MinExonIdty = 0.75;
-    m_MinCompartmentIdty = 0.5;
+    m_compartment_penalty = s_GetDefaultCompartmentPenalty();
+    m_MinExonIdty = s_GetDefaultMinExonIdty();
+    m_MinCompartmentIdty =s_GetDefaultMinCompartmentIdty();
+    m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
     m_endgaps = true;
     m_strand = true;
-    m_max_genomic_ext = s_GetDefaultMaxGenomicExtent();
     m_nopolya = false;
     m_model_id = 0;
 }
@@ -154,13 +154,23 @@ size_t CSplign::GetMaxGenomicExtent(void) const
     return m_max_genomic_ext;
 }
 
-
 double CSplign::GetMinExonIdentity( void ) const {
     return m_MinExonIdty;
 }
 
+double CSplign::s_GetDefaultMinExonIdty(void)
+{
+    return 0.75;
+}
+
+
 double CSplign::GetMinCompartmentIdentity( void ) const {
     return m_MinCompartmentIdty;
+}
+
+double CSplign::s_GetDefaultMinCompartmentIdty(void)
+{
+    return 0.5;
 }
 
 CRef<objects::CScope> CSplign::GetScope(void) const
@@ -183,6 +193,11 @@ void CSplign::SetCompartmentPenalty(double penalty)
                     g_msg_QueryCoverageOutOfRange);
     }
     m_compartment_penalty = penalty;
+}
+
+double CSplign::s_GetDefaultCompartmentPenalty(void)
+{
+    return 0.4;
 }
 
 double CSplign::GetCompartmentPenalty( void ) const 
@@ -602,7 +617,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     m_genomic.clear();
     x_LoadSequence(&m_genomic, *(phitrefs->front()->GetSubjId()), 
                    smin, smax, true);
-
+    
     const THit::TCoord ctg_end = smin + m_genomic.size();
     if(ctg_end - 1 < smax) { // perhabs adjust smax
         smax = ctg_end - 1;
@@ -1651,6 +1666,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/10/31 16:29:53  kapustin
+ * Retrieve parameter defaults with static member methods
+ *
  * Revision 1.41  2005/10/24 17:33:17  kapustin
  * Ensure input hits have positive query strand
  *

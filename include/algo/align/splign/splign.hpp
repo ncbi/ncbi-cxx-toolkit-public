@@ -79,12 +79,15 @@ public:
     size_t GetMaxGenomicExtent(void) const;
 
     void   SetCompartmentPenalty(double penalty);
+    static double s_GetDefaultCompartmentPenalty(void);
     double GetCompartmentPenalty(void) const;
 
     void   SetMinCompartmentIdentity(double idty);
+    static double s_GetDefaultMinCompartmentIdty(void);
     double GetMinCompartmentIdentity(void) const;
 
     void   SetMinExonIdentity(double idty);
+    static double s_GetDefaultMinExonIdty(void);
     double GetMinExonIdentity(void) const;
 
     void   SetStartModelId(size_t model_id) {
@@ -224,6 +227,7 @@ protected:
     void   x_SetPattern(THitRefs* hitrefs);
     void   x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const;
     Uint4  x_GetGenomicExtent(const Uint4 query_extent) const;
+
     void   x_LoadSequence(vector<char>* seq, 
                           const objects::CSeq_id& seqid,
                           THit::TCoord start,
@@ -238,6 +242,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.30  2005/10/31 16:29:10  kapustin
+ * Retrieve parameter defaults with static member methods
+ *
  * Revision 1.29  2005/10/20 17:57:13  ivanov
  * + #include <objmgr/scope.hpp>
  *
