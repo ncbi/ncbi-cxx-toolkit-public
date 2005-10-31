@@ -255,6 +255,13 @@ protected:
         bool b_intersects = it != end_nc()  &&  it->GetFrom() < r.GetToOpen();
         return make_pair(it, b_intersects);
     }
+    pair<const_iterator, bool>    x_Intersects(const TRange& r) const
+    {
+        PRangeLessPos<TRange, position_type>    p;
+        const_iterator it = lower_bound(begin(), end(), r.GetFrom(), p);
+        bool b_intersects = it != end()  &&  it->GetFrom() < r.GetToOpen();
+        return make_pair(it, b_intersects);
+    }
     pair<const_iterator, bool>    x_Contains(const TRange& r) const
     {
         PRangeLessPos<TRange, position_type>    p;
@@ -384,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/31 15:49:05  ucko
+ * Add a const version of x_Intersects for use by IntersectingWith.
+ *
  * Revision 1.8  2005/08/17 15:28:23  dicuccio
  * Added Contains()
  *
