@@ -87,10 +87,12 @@ CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 
 void CDBHandlerStack::PostMsg(CDB_Exception* ex)
 {
-    deque<CDB_UserHandler*>::const_reverse_iterator cit;
-    const deque<CDB_UserHandler*>::const_reverse_iterator cend = m_Stack.rend();
-    
-    for (cit = m_Stack.rbegin(); cit != cend; ++cit) {
+    // Attempting to use m_Stack directly on WorkShop fails because it
+    // tries to call the non-const version of rbegin(), and the
+    // resulting reverse_iterator can't automatically be converted to
+    // a const_reverse_iterator.  (Sigh.)
+    const deque<CDB_UserHandler*>& s = m_Stack;
+    REVERSE_ITERATE(deque<CDB_UserHandler*>, cit, s) {
         if ( *cit && (*cit)->HandleIt(ex) ) {
             break;
         }
@@ -105,6 +107,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/31 21:28:04  ucko
+ * Tweak PostMsg to compile under WorkShop, and to take advantage of the
+ * REVERSE_ITERATE macro.
+ *
  * Revision 1.7  2005/10/31 19:01:40  ssikorsk
  * + #include <algorithm>
  *
