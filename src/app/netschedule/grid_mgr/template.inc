@@ -1,3 +1,34 @@
+<!-- -- Start page menu view -- -->
+<@START_PAGE_MENU@>
+<table border="1" cellspacing="0" cellpadding="2">
+<tr>
+   <td>
+     <a href="<@SELF_URL@>?cmd=showserver"><@ns_url_label@></a>
+   </td>
+</tr>
+<tr>
+    <td>
+      <a href="<@SELF_URL@>?cmd=showncserver"><@nc_url_label@></a>
+	</td>
+</tr>
+</table>
+</@START_PAGE_MENU@>
+
+
+<!-- -- NC Services view -- -->
+<@NC_SERVICES_VIEW@>
+<table border="1" cellspacing="0" cellpadding="2">
+<@srvs_table_row_hook@>
+</table>
+</@NC_SERVICES_VIEW@>
+
+<@nc_srvs_table_row_template@>
+<tr>
+    <td><@service@></td> <td><@host_port@></td>
+</tr>
+</@nc_srvs_table_row_template@>
+
+
 <!-- -- Services view -- -->
 <@SERVICES_VIEW@>
 <table border="1" cellspacing="0" cellpadding="2">
@@ -22,6 +53,8 @@
 <tr><td>
 </td></tr>
 </@srvs_table_row_template@>
+
+
 
 
 <@srv_table_row_template@>
@@ -119,6 +152,26 @@ Statistics for worker node @ <@HOST@>:<@PORT@> </br>
 </pre></td></tr>
 </table>
 </@WORKERNODE_QUEUE_VIEW@>
+
+
+<!-- -- NetCache server statistics -- -->
+<@NC_STAT_VIEW@>
+<table width="700" cellspacing="0">
+<tr class="row_header"><td>
+Statistics for NetCache server @ <@HOST@>:<@PORT@> </br>
+</td></tr>
+</table>
+</br>
+
+<table width="700" border="1" cellspacing="0" cellpadding="2">
+<tr class="row_colored"><td><@VERSION@></td> </tr>
+<tr class="row_even"><td><pre class="row_even">
+<pre>
+<@INFO@>
+</pre></td></tr>
+</table>
+</@NC_STAT_VIEW@>
+
 
 <@ERROR_VIEW@>
 Error message: <@error@>

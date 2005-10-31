@@ -109,6 +109,9 @@ CNCBINode* RowHook(CHTMLPage* page, THookContext* ctx)
     return node.release();
 }
 
+
+
+
 //
 // CGridMgrCommand
 // 
@@ -141,18 +144,36 @@ private:
     auto_ptr<CHTMLPage> m_Page;
 };
 
+//
+// CStartPageCommand
+// 
+
+
+class CStartPageCommand : public CGridMgrCommand
+{
+public:
+  
+    CStartPageCommand( CGridMgrResource& resource );
+    virtual ~CStartPageCommand();
+
+
+    virtual CNcbiCommand* Clone( void ) const;
+    virtual string GetName( void ) const;
+    virtual CNCBINode* CreateView( CCgiContext& ctx );
+
+};
 
 
 //
-// CShowServersCommand
+// CShowNSServersCommand
 //
 
-class CShowServersCommand : public CGridMgrCommand
+class CShowNSServersCommand : public CGridMgrCommand
 {
 public:
 
-    CShowServersCommand( CGridMgrResource& resource );
-    virtual ~CShowServersCommand();
+    CShowNSServersCommand( CGridMgrResource& resource );
+    virtual ~CShowNSServersCommand();
 
     virtual CNcbiCommand* Clone( void ) const;
 
@@ -171,15 +192,43 @@ public:
 
 private:
    
-    typedef CHookContext<CNSServices,CShowServersCommand> THookCtxSrvs;
+    typedef CHookContext<CNSServices,CShowNSServersCommand> THookCtxSrvs;
     auto_ptr<THookCtxSrvs> m_TableRowHook;
 
-    typedef CHookContext<CServiceInfo,CShowServersCommand> THookCtxSrv;
+    typedef CHookContext<CServiceInfo,CShowNSServersCommand> THookCtxSrv;
     list<AutoPtr<THookCtxSrv> > m_SvrHooks;
 
-    typedef CHookContext<CHostInfo,CShowServersCommand> THookCtxHost;
+    typedef CHookContext<CHostInfo,CShowNSServersCommand> THookCtxHost;
     list<AutoPtr<THookCtxHost> > m_HostHooks;
 };
+
+//
+// CShowNCServersCommand
+//
+
+class CShowNCServersCommand : public CGridMgrCommand
+{
+public:
+    CShowNCServersCommand(CGridMgrResource& resource);
+    virtual ~CShowNCServersCommand();
+
+    virtual CNcbiCommand* Clone( void ) const;
+
+    virtual string GetName( void ) const;
+
+    virtual CNCBINode* CreateView( CCgiContext& ctx );
+
+    CNCBINode* Render(const CServiceInfo& info, 
+                      CHTMLPage& page, long row_number);
+
+    virtual void Clean();
+
+private:
+    typedef CHookContext<CNSServices,CShowNCServersCommand> THookCtxSrvs;
+    auto_ptr<THookCtxSrvs> m_TableRowHook;
+};
+
+
 
 //
 // CShowServerStatCommand
@@ -208,6 +257,26 @@ private:
     auto_ptr<THookContext> m_TableRowHook;
 
 };
+
+
+//
+// CShowNCServerStatCommand
+//
+
+class CShowNCServerStatCommand : public CGridMgrCommand
+{
+public:
+
+    CShowNCServerStatCommand( CGridMgrResource& resource );
+    virtual ~CShowNCServerStatCommand(void);
+
+    virtual CNcbiCommand* Clone(void) const;
+
+    virtual string GetName(void) const;
+
+    virtual CNCBINode* CreateView(CCgiContext& ctx);
+};
+
 
 //
 // CShowWNStatCommand
@@ -250,6 +319,9 @@ public:
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2005/10/31 19:28:51  kuznets
+* Implemented WEB interface to netcache statistics
+*
 * Revision 1.4  2005/08/15 19:06:04  didenko
 * Added test command
 *

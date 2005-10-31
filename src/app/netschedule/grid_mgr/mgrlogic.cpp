@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistr.hpp>
 #include <connect/services/netschedule_client.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <functional>
@@ -44,8 +45,60 @@
 // class CNSService
 
 namespace {
+
 typedef map<string, string> TStrToStr;
 typedef TStrToStr::value_type TS2SPair;
+
+/// Function takes URL to lbsmd page and retrieves map
+/// "servicename"->"server:port"
+///
+/// @internal
+///
+static
+void s_ReadServices(const string& url, TStrToStr* srv_host_map)
+{
+	_ASSERT(srv_host_map);
+	
+    char buf[1024];
+    TStrToStr& srv_host = *srv_host_map;
+	string str;
+	
+    CConn_HttpStream is(url);
+	
+    for(bool started = false; is.good() && !is.eof();) {
+        is.getline(buf, sizeof(buf));
+        buf[is.gcount()] = 0;
+        if (NStr::StartsWith(buf, "-------------------")) {
+            if (started) {
+                break;
+			}
+            started = true;
+            continue;
+        }
+        if (!started) {
+            continue;
+		}
+        if (NStr::StartsWith(buf,"Service")) {
+            continue;
+		}
+        str = buf;
+        vector<string> strs;
+        NStr::Tokenize(str, " ", strs, NStr::eMergeDelims);
+        if (strs.size() > 3) {
+            string srv_name = NStr::TruncateSpaces(strs[0]);
+            string srv_host_port = NStr::TruncateSpaces(strs[3]);
+
+            TStrToStr::iterator it = srv_host.find(srv_name);
+            if (it == srv_host.end()) {
+                srv_host[srv_name] = srv_host_port;
+            } else {
+                string& s = it->second;
+                s += ";" + srv_host_port;
+            }
+        }
+	} // for
+}
+
 
 struct ServiceInfoCreator
     :public unary_function<TS2SPair, AutoPtr<CServiceInfo> >
@@ -64,39 +117,9 @@ CNSServices::CNSServices()
 
 CNSServices::CNSServices(const string& lbsurl)
 {
-    char buf[1024];
-    CConn_HttpStream is(lbsurl);
-    bool started = false;
     TStrToStr srv_host;
-    while(is.good() && !is.eof()) {
-        is.getline(buf,sizeof(buf));
-        buf[is.gcount()] = 0;
-        if (NStr::StartsWith(buf, "-------------------")) {
-            if (started)
-                break;
-            started = true;
-            continue;
-        } 
-        if (!started)
-            continue;
-        if (NStr::StartsWith(buf,"Service"))
-            continue;
-        string str = buf;
-        vector<string> strs;
-        NStr::Tokenize(str, " ", strs, NStr::eMergeDelims);
-        if (strs.size() > 3) {
-            string srv_name = NStr::TruncateSpaces(strs[0]);
-            string srv_host_port = NStr::TruncateSpaces(strs[3]);
-
-            TStrToStr::iterator it = srv_host.find(srv_name);
-            if (it == srv_host.end()) {
-                srv_host[srv_name] = srv_host_port;
-            } else {
-                string& s = it->second;
-                s += ";" + srv_host_port;
-            }
-        }
-    }
+	s_ReadServices(lbsurl, &srv_host);
+	
     transform(srv_host.begin(), srv_host.end(),
               back_inserter(m_Services),
               ServiceInfoCreator());
@@ -132,6 +155,31 @@ public:
         return CNetScheduleClient::CheckConnect(key);
     }
 };
+
+
+///////////////////////////////////////////////////////////////////////////////////
+
+class CNetCacheClient_Control : public CNetCacheClient 
+{
+public:
+    CNetCacheClient_Control(const string&  host,
+                            unsigned short port)
+    : CNetCacheClient(host, port, "netcache_grid_admin")
+    {}
+
+    using CNetCacheClient::ShutdownServer;
+    using CNetCacheClient::Logging;
+    using CNetCacheClient::IsAlive;
+    using CNetCacheClient::PrintConfig;
+    using CNetCacheClient::PrintStat;
+	
+    virtual void CheckConnect(const string& key)
+    {
+        return CNetCacheClient::CheckConnect(key);
+    }
+};
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -335,9 +383,40 @@ void CWorkerNodeInfo::SetLastAccess(const CTime& time)
           m_Active=false;*/
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// class CNetCacheStatInfo
+
+CNetCacheStatInfo::CNetCacheStatInfo(const string& host, unsigned int port)
+ : m_Host(host),
+   m_Port(port)
+{
+    try {
+        CNetCacheClient_Control cl(GetHost(), GetPort());
+        m_Version = cl.ServerVersion();
+    } catch(...) {}
+}
+
+string CNetCacheStatInfo::GetStatistics() const
+{
+    string info;
+    try {
+        CNetCacheClient_Control cl(GetHost(), GetPort());
+        CNcbiOstrstream os;
+        cl.PrintStat(os);
+        info = CNcbiOstrstreamToString(os);
+    } catch(...) {}
+    return info;
+}
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/10/31 19:28:51  kuznets
+ * Implemented WEB interface to netcache statistics
+ *
  * Revision 1.8  2005/08/17 14:44:24  kuznets
  * Reflected change in CheckConnect proto
  *

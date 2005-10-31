@@ -52,13 +52,16 @@ BEGIN_NCBI_SCOPE
 
 CNcbiResource* CGridMgrApp::LoadResource(void)
 { 
-    auto_ptr<CGridMgrResource> resource(new CGridMgrResource( GetConfig() ));  
+    auto_ptr<CGridMgrResource> resource(new CGridMgrResource( GetConfig() ));
 
     // add commands to the resource class
-    resource->AddCommand( new CShowServersCommand(*resource) );
+    resource->AddCommand( new CShowNSServersCommand(*resource) );
+    resource->AddCommand( new CShowNCServersCommand(*resource) );
     resource->AddCommand( new CShowServerStatCommand(*resource) );
     resource->AddCommand( new CShowWNStatCommand(*resource) );
     resource->AddCommand( new CTestRWNCCommand(*resource) );
+    resource->AddCommand( new CShowNCServerStatCommand(*resource) );
+	
     return resource.release();
 }
 
@@ -76,6 +79,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/31 19:28:51  kuznets
+ * Implemented WEB interface to netcache statistics
+ *
  * Revision 1.2  2005/08/15 19:06:04  didenko
  * Added test command
  *

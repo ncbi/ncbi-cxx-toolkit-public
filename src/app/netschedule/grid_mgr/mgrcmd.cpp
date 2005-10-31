@@ -106,23 +106,63 @@ CNCBINode* CGridMgrCommand::CreateErrorNode()
     return node.release();
 }
 
+
 //
-// CShowServersCommand
+// CStartPageCommand
+// 
+
+
+CStartPageCommand::CStartPageCommand(CGridMgrResource& resource)
+  : CGridMgrCommand( resource )
+{
+}
+
+CStartPageCommand::~CStartPageCommand()
+{
+}
+
+CNcbiCommand* CStartPageCommand::Clone(void) const
+{
+    return new CStartPageCommand( const_cast<CGridMgrResource&>(GetGridMgrResource()) );
+}
+
+string CStartPageCommand::GetName( void ) const
+{
+    return string("startpage");
+}
+
+CNCBINode* CStartPageCommand::CreateView(CCgiContext& ctx)
+{
+    auto_ptr <CNCBINode> node(new CNCBINode);
+    node->AppendChild(new CHTMLTagNode("START_PAGE_MENU"));
+	
+	CHTMLPage& page = GetPage();
+	
+	page.AddTagMap("nc_url_label", new CHTMLText("NetCache"));
+	page.AddTagMap("ns_url_label", new CHTMLText("NetShedule"));
+	
+    return node.release();
+}
+
+
+
+//
+// CShowNSServersCommand
 //
 
-CShowServersCommand::CShowServersCommand( CGridMgrResource& resource )
+CShowNSServersCommand::CShowNSServersCommand( CGridMgrResource& resource )
   : CGridMgrCommand( resource )
 {}
 
-CShowServersCommand::~CShowServersCommand()
+CShowNSServersCommand::~CShowNSServersCommand()
 {}
 
-CNcbiCommand* CShowServersCommand::Clone( void ) const
+CNcbiCommand* CShowNSServersCommand::Clone( void ) const
 {
-    return new CShowServersCommand( const_cast<CGridMgrResource&>(GetGridMgrResource()) );
+    return new CShowNSServersCommand( const_cast<CGridMgrResource&>(GetGridMgrResource()) );
 }
 
-string CShowServersCommand::GetName( void ) const
+string CShowNSServersCommand::GetName( void ) const
 {
     return string("showserver"); // set the value of this string in helloapi.cpp
 }
@@ -135,7 +175,7 @@ string CShowServersCommand::GetName( void ) const
 //
 
 
-CNCBINode* CShowServersCommand::Render(const CQueueInfo& info, 
+CNCBINode* CShowNSServersCommand::Render(const CQueueInfo& info, 
                                        CHTMLPage& page, long row_number)
 {
     auto_ptr<CNCBINode> node(new CNCBINode);
@@ -152,7 +192,7 @@ CNCBINode* CShowServersCommand::Render(const CQueueInfo& info,
     return node.release();
 }
 
-CNCBINode* CShowServersCommand::Render(const CHostInfo& info, 
+CNCBINode* CShowNSServersCommand::Render(const CHostInfo& info, 
                                        CHTMLPage& page, long row_number)
 {
     auto_ptr<CNCBINode> node(new CNCBINode);
@@ -182,7 +222,7 @@ CNCBINode* CShowServersCommand::Render(const CHostInfo& info,
     return node.release();
 }
 
-CNCBINode* CShowServersCommand::Render(const CServiceInfo& info, 
+CNCBINode* CShowNSServersCommand::Render(const CServiceInfo& info, 
                                        CHTMLPage& page, long row_number)
 {
     auto_ptr<CNCBINode> node(new CNCBINode);
@@ -203,7 +243,7 @@ CNCBINode* CShowServersCommand::Render(const CServiceInfo& info,
 }
 
 
-CNCBINode* CShowServersCommand::CreateView(CCgiContext& ctx)
+CNCBINode* CShowNSServersCommand::CreateView(CCgiContext& ctx)
 {
     auto_ptr <CNCBINode> node(new CNCBINode);
     node->AppendChild(new CHTMLTagNode("SERVICES_VIEW"));
@@ -220,13 +260,96 @@ CNCBINode* CShowServersCommand::CreateView(CCgiContext& ctx)
     return node.release();
 }
 
-void CShowServersCommand::Clean()
+void CShowNSServersCommand::Clean()
 {
     CGridMgrCommand::Clean();
     m_TableRowHook.reset();
     m_SvrHooks.clear();
     m_HostHooks.clear();
 }
+
+
+//
+// CShowNCServersCommand
+//
+
+CShowNCServersCommand::CShowNCServersCommand(CGridMgrResource& resource)
+  : CGridMgrCommand( resource )
+{}
+
+CShowNCServersCommand::~CShowNCServersCommand()
+{}
+
+CNcbiCommand* CShowNCServersCommand::Clone( void ) const
+{
+    return new CShowNCServersCommand(const_cast<CGridMgrResource&>(GetGridMgrResource()));
+}
+
+string CShowNCServersCommand::GetName( void ) const
+{
+    return string("showncserver");
+}
+
+CNCBINode* CShowNCServersCommand::CreateView(CCgiContext& ctx)
+{
+    auto_ptr <CNCBINode> node(new CNCBINode);
+    node->AppendChild(new CHTMLTagNode("NC_SERVICES_VIEW"));
+
+    const IRegistry& reg = ctx.GetConfig();
+    
+    string url = reg.GetString("urls", "lb_nc_url", "");
+	
+	auto_ptr<CNSServices> nsserv(new CNSServices(url));
+    m_TableRowHook.reset(new THookCtxSrvs(nsserv.release(),*this));
+
+    GetPage().AddTagMap("srvs_table_row_hook", 
+                        CreateTagMapper<CHTMLPage,THookCtxSrvs*>
+                        (RowHook<THookCtxSrvs>, m_TableRowHook.get()));
+						
+    return node.release();
+}
+
+CNCBINode* CShowNCServersCommand::Render(const CServiceInfo& info, 
+                                         CHTMLPage&          page, 
+										 long                row_number)
+{
+    auto_ptr<CNCBINode> node(new CNCBINode);
+	
+    node->AppendChild(new CHTMLTagNode("nc_srvs_table_row_template"));
+    page.AddTagMap("service",new CHTMLText(info.GetName()));
+	
+	CServiceInfo::const_iterator it = info.begin();
+	CServiceInfo::const_iterator it_end = info.end();
+
+	string host_port;	
+	for (;it != it_end; ++it) {
+		string addr = (*it)->GetHost();
+		unsigned port = (*it)->GetPort();
+		
+		addr.append(":");
+		addr.append(NStr::IntToString(port));
+		
+		string url = "<a href=\"<@SELF_URL@>?cmd=ncserverstat&server=";
+		url.append(addr);
+		url.append("\">");
+		url.append(addr);
+		url.append("</a>");
+		
+		host_port.append(url);
+		host_port.append(" ");
+	}
+    page.AddTagMap("host_port",new CHTMLText(host_port));
+	
+	return node.release();
+}
+
+
+void CShowNCServersCommand::Clean()
+{
+    CGridMgrCommand::Clean();
+    m_TableRowHook.reset();
+}
+
 
 //
 // CShowServerStatCommand
@@ -392,6 +515,62 @@ CNCBINode* CShowWNStatCommand::CreateView(CCgiContext& ctx)
     return node.release();
 }
 
+//
+// CTestRWNCCommand
+//
+
+CShowNCServerStatCommand::CShowNCServerStatCommand(CGridMgrResource& resource)
+  : CGridMgrCommand(resource)
+{}
+
+CShowNCServerStatCommand::~CShowNCServerStatCommand()
+{}
+
+CNcbiCommand* CShowNCServerStatCommand::Clone(void) const
+{
+	return new CShowNCServerStatCommand(const_cast<CGridMgrResource&>(GetGridMgrResource()));
+}
+
+string CShowNCServerStatCommand::GetName( void ) const
+{
+	return "ncserverstat";
+}
+
+CNCBINode* CShowNCServerStatCommand::CreateView(CCgiContext& ctx)
+{
+    // get the list of cgi request name, value pairs
+    const TCgiEntries& entries = ctx.GetRequest().GetEntries();
+
+    // look for ones where the name is "input" 
+    TCgiEntriesCI it = entries.find("server");
+    if (it == entries.end()) {
+        throw runtime_error("Server or port is not specified");
+	}
+	
+	string server = (*it).second.GetValue();
+	string host, port_str;
+	NStr::SplitInTwo(server, ":", host, port_str);
+	unsigned port = NStr::StringToUInt(port_str);
+	
+	if (host.empty() || port == 0) {
+        throw runtime_error("Server or port is not specified");
+	}
+	
+
+    auto_ptr <CNCBINode> node(new CNCBINode);
+    node->AppendChild(new CHTMLTagNode("NC_STAT_VIEW"));
+
+
+    GetPage().AddTagMap("HOST",  new CHTMLText(host));
+    GetPage().AddTagMap("PORT",  new CHTMLText(port_str));
+
+    CNetCacheStatInfo nc_info(host,port);
+
+    GetPage().AddTagMap("VERSION", new CHTMLText(nc_info.GetVersion()));
+    GetPage().AddTagMap("INFO", new CHTMLText(nc_info.GetStatistics()));
+	
+    return node.release();
+}
 
 //
 // CTestRWNCCommand
@@ -494,6 +673,9 @@ CNCBINode* CTestRWNCCommand::CreateView(CCgiContext& ctx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/10/31 19:28:51  kuznets
+ * Implemented WEB interface to netcache statistics
+ *
  * Revision 1.7  2005/08/15 19:06:04  didenko
  * Added test command
  *

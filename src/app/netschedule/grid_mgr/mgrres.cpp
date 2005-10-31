@@ -46,7 +46,7 @@ CGridMgrResource::~CGridMgrResource()
 
 CNcbiCommand* CGridMgrResource::GetDefaultCommand( void ) const
 {
-    return new CShowServersCommand( const_cast<CGridMgrResource&>(*this) );
+    return new CShowNSServersCommand(const_cast<CGridMgrResource&>(*this));
 }
 
 END_NCBI_SCOPE
@@ -55,6 +55,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/10/31 19:28:51  kuznets
+ * Implemented WEB interface to netcache statistics
+ *
  * Revision 1.1  2005/06/27 12:52:40  didenko
  * Added grid manager cgi
  *

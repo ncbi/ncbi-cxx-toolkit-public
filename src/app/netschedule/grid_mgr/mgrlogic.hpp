@@ -53,6 +53,7 @@ public:
     ~CNSServices();
 
     const_iterator begin() const { return m_Services.begin(); }
+
     const_iterator end() const { return m_Services.end(); }
 
 private:
@@ -192,6 +193,32 @@ private:
     
 };
 
+
+//
+// class CNetCacheStatInfo
+//
+
+class CNetCacheStatInfo
+{
+public:
+    CNetCacheStatInfo(const string& host, unsigned int port);
+	
+    const string& GetHost() const { return m_Host; }
+    unsigned int GetPort() const { return m_Port; }
+
+    string GetStatistics() const;
+	string GetVersion() const { return m_Version; }
+
+private:
+    string       m_Host;
+    unsigned int m_Port;
+    string       m_Version;
+};
+
+
+
+
+
 template<class Info>
 inline string GetSPort(const Info& info)
 {
@@ -201,6 +228,9 @@ inline string GetSPort(const Info& info)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/10/31 19:28:51  kuznets
+ * Implemented WEB interface to netcache statistics
+ *
  * Revision 1.2  2005/07/07 19:06:44  didenko
  * Added errors handling
  *
