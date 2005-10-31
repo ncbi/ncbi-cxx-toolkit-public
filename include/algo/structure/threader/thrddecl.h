@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/31 21:57:16  thiessen
+* MSVC fix
+*
 * Revision 1.1  2005/10/31 21:26:38  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -149,7 +152,7 @@ int slou(Fld_Mtf* mtf, Cor_Def* cdf, int cs, int ct, int of, Cur_Loc* sli,
 
 float bwfi(Thd_Tbl* ttb, Gib_Scd* gsp, Thd_Tst* tts);
 
-float zsc(Thd_Tbl* ttb, Seq_Mtf* psm, Qry_Seq* qsq, Cxl_Los** cpr,
+void zsc(Thd_Tbl* ttb, Seq_Mtf* psm, Qry_Seq* qsq, Cxl_Los** cpr,
           Cor_Def* cdf, Rcx_Ptl* pmf, Seg_Gsm* spe, Cur_Aln* sai, Rnd_Smp* pvl,
           double ScalingFactor);
 

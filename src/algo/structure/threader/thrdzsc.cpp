@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/10/31 21:57:32  thiessen
+* MSVC fix
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -77,7 +80,7 @@ extern "C" {
 /* Sorts the stored energies in descending order, picks up the alignment.
 Calculates the Z-score by shuffling the aliged region 10000 times. */
 
-float zsc(Thd_Tbl* ttb, Seq_Mtf* psm, Qry_Seq* qsq, Cxl_Los** cpr, Cor_Def* cdf,
+void zsc(Thd_Tbl* ttb, Seq_Mtf* psm, Qry_Seq* qsq, Cxl_Los** cpr, Cor_Def* cdf,
           Rcx_Ptl* pmf, Seg_Gsm* spe, Cur_Aln* sai, Rnd_Smp* pvl, double ScalingFactor) {
 /*---------------------------------------------------------*/
 /* ttb:  Tables to hold Results of Gibbs sampled threading */
@@ -98,7 +101,7 @@ int	i_max;		/* Index of the top hit */
 int	ntr;		/* Number of positions to be shuffled */
 int	nsc;		/* Number of core segments */
 int	ppi;		/* Index of the peptide group in potential */
-int	n_perm;		/* Number of permutations */ 
+int	n_perm;		/* Number of permutations */
 int	mn,mx;
 int	n_thr;		/* Number of top threads to calculate Z-score for */
 int	to,from,
@@ -156,7 +159,7 @@ for(i=0;i<=nsc;i++) lsg[i]=1;
 itr=0;
 
 for(j=0;j<nsc;j++){
-	
+
 	mn=ttb->al[j][i_max]-ttb->no[j][i_max];
 	mx=ttb->al[j][i_max]+ttb->co[j][i_max];
 
@@ -239,13 +242,13 @@ if(k!=0){
 		    sq[aqi[i]]=qsq->sq[r[i]];}
 		    }
 
-/* Calculate the energy for a given permuted sequence aligned with 
+/* Calculate the energy for a given permuted sequence aligned with
 the structure*/
 
 /* Loop over core segments */
 
 for(i=0; i<nsc; i++) {
-	
+
 	cr=cpr[i];
 
 	spe->gs[i]=0; spe->ms[i]=0;
@@ -277,7 +280,7 @@ for(i=0; i<nsc; i++) {
 	/*Loop over residue-peptide contacts in the refernce list */
 
 	for(j=0; j<cr->rp.n; j++) {
-	   
+
 	   /* Test that the contact is present in the current core */
 
 	   r1=cr->rp.r1[j];
@@ -309,7 +312,7 @@ for(i=0; i<nsc; i++) {
 
 	    spe->gs[i]+=pmf->rrt[d][t1][t2];
 
-	    } 
+	    }
 
 /* Sum motif energies */
 
