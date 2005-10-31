@@ -341,9 +341,7 @@ string GetOpt(const CNcbiRegistry& registry,
               const string&        opt, 
               const SConfigInfo&   config)
 {
-    string build =
-        (GetApp().GetBuildType().GetType() == CBuildType::eStatic) ?
-        "static" : "dll";
+    string build = GetApp().GetBuildType().GetTypeStr();
     string spec = config.m_Debug ? "debug": "release";
     list<string> entries;
     entries.push_front(section);
@@ -1074,6 +1072,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/10/31 19:54:28  gouriano
+ * Fine-tune build type name
+ *
  * Revision 1.38  2005/10/31 16:00:03  gouriano
  * Added "build type" level to configuration parameters
  *
