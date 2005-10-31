@@ -251,8 +251,8 @@ string CSplignFormatter::AsAlignmentText(
 
                 // Load seq data
                 string str;
-                sv_subj.GetSeqData(sv_subj.begin() + s0,
-                                   sv_subj.begin() + s1 + 1, str);
+                sv_subj.GetSeqData(sv_subj.begin() + TSeqPos(s0),
+                                   sv_subj.begin() + TSeqPos(s1 + 1), str);
                 vector<char> subj (str.size());
                 if(sstrand) {
                     copy(str.begin(), str.end(), subj.begin());
@@ -263,8 +263,8 @@ string CSplignFormatter::AsAlignmentText(
                               subj.begin(), SCompliment());
                 }
 
-                sv_query.GetSeqData(sv_query.begin() + q0,
-                                    sv_query.begin() + q1 + 1, str);
+                sv_query.GetSeqData(sv_query.begin() + TSeqPos(q0),
+                                    sv_query.begin() + TSeqPos(q1 + 1), str);
 
                 vector<char> query (str.size());
                 if(qstrand) {
@@ -525,6 +525,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/10/31 20:49:38  ucko
+ * Tweak to fix compilation on systems where TSeqPos and size_t are not
+ * equivalent.
+ *
  * Revision 1.18  2005/10/31 16:29:58  kapustin
  * Support traditional pairwise alignment text output
  *
