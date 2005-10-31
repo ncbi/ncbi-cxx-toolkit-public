@@ -1350,7 +1350,19 @@ bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
             }
         }
         else {
-            if ( !hr.IntersectingWith(range) ) {
+            ENa_strand strand;
+            switch ( index.m_Flags & SAnnotObject_Index::fStrand_both ) {
+            case SAnnotObject_Index::fStrand_plus:
+                strand = eNa_strand_plus;
+                break;
+            case SAnnotObject_Index::fStrand_minus:
+                strand = eNa_strand_minus;
+                break;
+            default:
+                strand = eNa_strand_unknown;
+                break;
+            }
+            if ( !hr.IntersectingWith(range, strand) ) {
                 return false;
             }
         }
@@ -2215,6 +2227,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2005/10/31 19:24:55  vasilche
+* Fixed strand filtering when iterating over interval in OverlapIntervals mode.
+*
 * Revision 1.67  2005/10/04 15:54:44  vasilche
 * Workaround icc 9 optimizer bug.
 *
