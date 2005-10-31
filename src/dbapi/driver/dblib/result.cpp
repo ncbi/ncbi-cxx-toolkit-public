@@ -30,13 +30,9 @@
  */
 #include <ncbi_pch.hpp>
 
-#ifndef USE_MS_DBLIB
-#  include <dbapi/driver/dblib/interfaces.hpp>
-#  include <dbapi/driver/dblib/interfaces_p.hpp>
-#else
-#  include <dbapi/driver/msdblib/interfaces.hpp>
-#  include <dbapi/driver/msdblib/interfaces_p.hpp>
-#endif
+#include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
+
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 
@@ -1642,6 +1638,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/10/31 12:20:42  ssikorsk
+ * Do not use separate include files for msdblib.
+ *
  * Revision 1.30  2005/10/27 12:56:46  ssikorsk
  * Improved table and column name retrieval in CDBL_ITDescriptor::CDBL_ITDescriptor
  *

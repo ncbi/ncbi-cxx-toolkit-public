@@ -39,13 +39,9 @@
 // DO NOT DELETE this include !!!
 #include <dbapi/driver/driver_mgr.hpp>
 
-#ifndef USE_MS_DBLIB
-#  include <dbapi/driver/dblib/interfaces.hpp>
-#  include <dbapi/driver/dblib/interfaces_p.hpp>
-#else
-#  include <dbapi/driver/msdblib/interfaces.hpp>
-#  include <dbapi/driver/msdblib/interfaces_p.hpp>
-#endif
+#include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
+
 #include <dbapi/driver/util/numeric_convert.hpp>
 
 #if defined(NCBI_OS_MSWIN)
@@ -327,11 +323,11 @@ CDBLibContext::~CDBLibContext()
 #ifdef MS_DBLIB_IN_USE
         // Fails for some reason (04/08/05) ...
         // dbfreelogin(m_Login);
+        dbwinexit();
 #else
         dbloginfree(m_Login);
-#endif
-
         dbexit();
+#endif
         g_pContext = NULL;
 
 #if defined(NCBI_OS_MSWIN)
@@ -740,14 +736,14 @@ NCBI_EntryPoint_xdbapi_msdblib(
     CHostEntryPointImpl<CDbapiMSDblibCF2>::NCBI_EntryPointImpl( info_list, method );
 }
 
-NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void
 DBAPI_RegisterDriver_MSDBLIB(void)
 {
     RegisterEntryPoint<I_DriverContext>( NCBI_EntryPoint_xdbapi_msdblib );
 }
 
-NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
+NCBI_DBAPIDRIVER_DBLIB_EXPORT
 void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
 {
     mgr.RegisterDriver("msdblib", MSDBLIB_CreateContext);
@@ -760,7 +756,7 @@ void DBAPI_RegisterDriver_MSDBLIB_old(I_DriverMgr& mgr)
 }
 
 extern "C" {
-    NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
+    NCBI_DBAPIDRIVER_DBLIB_EXPORT
     void* DBAPI_E_msdblib()
     {
         return (void*)DBAPI_RegisterDriver_MSDBLIB_old;
@@ -1122,6 +1118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/10/31 12:19:59  ssikorsk
+ * Do not use separate include files for msdblib.
+ *
  * Revision 1.54  2005/10/27 16:48:49  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.

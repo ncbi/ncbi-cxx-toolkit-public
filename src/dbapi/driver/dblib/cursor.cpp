@@ -30,13 +30,8 @@
  */
 #include <ncbi_pch.hpp>
 
-#ifndef USE_MS_DBLIB
-#  include <dbapi/driver/dblib/interfaces.hpp>
-#  include <dbapi/driver/dblib/interfaces_p.hpp>
-#else
-#  include <dbapi/driver/msdblib/interfaces.hpp>
-#  include <dbapi/driver/msdblib/interfaces_p.hpp>
-#endif
+#include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
 
 #include <stdio.h>
 
@@ -192,7 +187,7 @@ I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
     if(!m_IsOpen || (m_Res == 0)) {
         return 0;
     }
-    while(m_Res->CurrentItemNo() < item_num) {
+    while ( static_cast<unsigned int>(m_Res->CurrentItemNo()) < item_num ) {
         if(!m_Res->SkipItem()) return 0;
     }
     
@@ -556,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/10/31 12:19:59  ssikorsk
+ * Do not use separate include files for msdblib.
+ *
  * Revision 1.19  2005/10/27 12:58:22  ssikorsk
  * Fixed "deallocate cursor" syntax in case of MS SQL Server
  *
