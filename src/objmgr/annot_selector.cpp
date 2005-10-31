@@ -565,9 +565,10 @@ bool SAnnotSelector::IncludedFeatType(TFeatType type) const
         return false;
     }
     // Make sure features are selected
-    return GetAnnotType() == CSeq_annot::C_Data::e_Ftable
-        &&  (GetFeatType() == CSeqFeatData::e_not_set
-        || GetFeatType() == type);
+    return GetAnnotType() == CSeq_annot::C_Data::e_not_set ||
+        GetAnnotType() == CSeq_annot::C_Data::e_Ftable &&
+        (GetFeatType() == CSeqFeatData::e_not_set ||
+         GetFeatType() == type);
 }
 
 
@@ -578,12 +579,13 @@ bool SAnnotSelector::IncludedFeatSubtype(TFeatSubtype subtype) const
             .test(CAnnotType_Index::GetSubtypeIndex(subtype));
     }
     // Make sure features are selected
-    return GetAnnotType() == CSeq_annot::C_Data::e_Ftable
-        &&  (GetFeatType() == CSeqFeatData::e_not_set
-        ||  subtype == CSeqFeatData::eSubtype_any
-        ||  GetFeatSubtype() == subtype
-        ||  (GetFeatSubtype() == CSeqFeatData::eSubtype_any
-        &&  GetFeatType() == CSeqFeatData::GetTypeFromSubtype(subtype)));
+    return GetAnnotType() == CSeq_annot::C_Data::e_not_set ||
+        GetAnnotType() == CSeq_annot::C_Data::e_Ftable &&
+        (GetFeatType() == CSeqFeatData::e_not_set ||
+         subtype == CSeqFeatData::eSubtype_any ||
+         GetFeatSubtype() == subtype ||
+         (GetFeatSubtype() == CSeqFeatData::eSubtype_any &&
+          GetFeatType() == CSeqFeatData::GetTypeFromSubtype(subtype)));
 }
 
 
@@ -613,6 +615,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/10/31 20:02:47  vasilche
+* Fixed SAnnotSelector::IncludedFeat*type() when annot type is not set.
+*
 * Revision 1.27  2005/05/10 17:03:31  grichenk
 * Fixed filtering by feature type/subtype
 *
