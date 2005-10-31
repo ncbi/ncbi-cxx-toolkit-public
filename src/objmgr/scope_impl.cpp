@@ -1825,7 +1825,8 @@ void CScope_Impl::ResetHistory(EActionIfLocked action)
     NON_CONST_ITERATE ( TDSMap, it, m_DSMap ) {
         it->second->ResetHistory(action);
     }
-    m_Seq_idMap.clear();
+    x_ClearCacheOnRemoveData();
+    //m_Seq_idMap.clear();
 }
 
 
