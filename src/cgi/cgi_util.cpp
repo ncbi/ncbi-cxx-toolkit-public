@@ -224,7 +224,7 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
     // Parse into entries
     unsigned int position = 1;
     for (SIZE_TYPE beg = 0; beg < len; ) {
-        // ignore 1st ampersand (it is just a temp. slack to some biz. clients)
+        // ignore 1st ampersand
         if (beg == 0  &&  query[0] == '&') {
             beg = 1;
             continue;
@@ -241,7 +241,7 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
         if (mid == beg  ||
             (mid != NPOS  &&  query[mid] == '&'  &&  mid == len-1)) {
             NCBI_THROW2(CCgiParseException, eFormat,
-                "Invalid delimiter: \"" + query + "\"", mid+1);
+                        "Invalid delimiter: \"" + query + "\"", mid+1);
         }
         if (mid == NPOS) {
             mid = len;
@@ -254,9 +254,9 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
         if (query[mid] == '=') { // has a value
             mid++;
             SIZE_TYPE end = query.find_first_of(" &", mid);
-            if (end != NPOS  &&  (query[end] != '&'  ||  end == len-1)) {
-            NCBI_THROW2(CCgiParseException, eFormat,
-                "Invalid delimiter: \"" + query + "\"", end+1);
+            if (end != NPOS  &&  query[end] != '&') {
+                NCBI_THROW2(CCgiParseException, eFormat,
+                            "Invalid delimiter: \"" + query + "\"", end+1);
             }
             if (end == NPOS) {
                 end = len;
@@ -953,6 +953,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/10/31 22:22:09  vakatov
+* Allow ampersand in the end of URL args
+*
 * Revision 1.2  2005/10/17 16:46:43  grichenk
 * Added CCgiArgs_Parser base class.
 * Redesigned CCgiRequest to use CCgiArgs_Parser.

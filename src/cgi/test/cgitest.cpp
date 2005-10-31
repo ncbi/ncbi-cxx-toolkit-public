@@ -256,6 +256,8 @@ static void TestCgi_Request_Static(void)
     assert(  TestEntries(entries, "xx=&yy=zz") );
     assert(  TestEntries(entries, "rr=") );
     assert( !TestEntries(entries, "xx&") );
+    assert(  TestEntries(entries, "xx=&") );
+    assert(  TestEntries(entries, "xx=yy&") );
     entries.clear();
 
     // Give a temporary slack to some buggy clients -- allow leading ampersand
@@ -636,6 +638,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.24  2005/10/31 22:22:16  vakatov
+ * Allow ampersand in the end of URL args
+ *
  * Revision 1.23  2005/06/30 17:14:26  grichenk
  * Added flag to CCgiCookies to allow storing invalid cookies.
  * Added CCgiCookie::IsInvalid(). Throw exception when writing
