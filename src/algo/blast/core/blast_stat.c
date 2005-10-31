@@ -563,9 +563,10 @@ BLAST_MATRIX_NOMINAL
  * 8. Theta
  */
 
-/** Karlin-Altschul parameter values for substitution scores 1 and -4. */
+/** Karlin-Altschul parameter values for substitution scores 1 and -5. */
 static const array_of_8 blastn_values_1_5[] = {
-    { 3, 3, 1.39, 0.747, 1.38, 1.02,  0, 100 }
+    { 0, 0, 1.39, 0.747, 1.38, 1.00,  0, 100 },
+    { 3, 3, 1.39, 0.747, 1.38, 1.00,  0, 100 }
 };
 
 /** Karlin-Altschul parameter values for substitution scores 1 and -4. */
@@ -638,6 +639,16 @@ static const array_of_8 blastn_values_2_3[] = {
     { 2, 2, 0.515, 0.14, 0.33, 1.55, -9, 81 }
 };
 
+/** Karlin-Altschul parameter values for substitution scores 3 and -4. */
+static const array_of_8 blastn_values_3_4[] = {
+    { 6, 3, 0.389, 0.25, 0.56, 0.7, -5, 95},
+    { 5, 3, 0.375, 0.21, 0.47, 0.8, -6, 92},
+    { 4, 3, 0.351, 0.14, 0.35, 1.0, -9, 86},
+    { 6, 2, 0.362, 0.16, 0.45, 0.8, -4, 88},
+    { 5, 2, 0.330, 0.092, 0.28, 1.2, -13, 81},
+    { 4, 2, 0.281, 0.046, 0.16, 1.8, -23, 69}
+};
+
 /** Karlin-Altschul parameter values for substitution scores 4 and -5. */
 static const array_of_8 blastn_values_4_5[] = {
     { 0, 0, 0.22, 0.061, 0.22, 1.0, -15, 74 },
@@ -656,6 +667,11 @@ static const array_of_8 blastn_values_1_1[] = {
     { 4,  1, 1.08,  0.28, 0.54, 2.0,  -2, 98 }, 
     { 3,  1, 1.06,  0.25, 0.46, 2.3,  -4, 96 }, 
     { 2,  1, 0.99,  0.17, 0.30, 3.3, -10, 90 }
+};
+
+/** Karlin-Altschul parameter values for substitution scores 3 and -2. */
+static const array_of_8 blastn_values_3_2[] = {
+    {  5,  5, 0.208, 0.030, 0.072, 2.9, -47, 77}
 };
 
 /** Karlin-Altschul parameter values for substitution scores 5 and -4. */
@@ -2811,6 +2827,14 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
         *array_size = sizeof(blastn_values_2_3)/sizeof(array_of_8);
         *gap_open_max = 6;
         *gap_extend_max = 4;
+    } else if (reward == 3 && penalty == -4) {
+        if ((status=s_SplitArrayOf8(blastn_values_3_4, &kValues, &kValues_non_affine, &split)))
+           return status;
+        
+        *round_down = TRUE;
+        *array_size = sizeof(blastn_values_3_4)/sizeof(array_of_8);
+        *gap_open_max = 6;
+        *gap_extend_max = 3;
     } else if (reward == 1 && penalty == -1) {
         if ((status=s_SplitArrayOf8(blastn_values_1_1, &kValues, &kValues_non_affine, &split)))
            return status;
@@ -2818,6 +2842,13 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
         *array_size = sizeof(blastn_values_1_1)/sizeof(array_of_8);
         *gap_open_max = 4;
         *gap_extend_max = 2;
+    } else if (reward == 3 && penalty == -2) {
+        if ((status=s_SplitArrayOf8(blastn_values_3_2, &kValues, &kValues_non_affine, &split)))
+           return status;
+        
+        *array_size = sizeof(blastn_values_3_2)/sizeof(array_of_8);
+        *gap_open_max = 5;
+        *gap_extend_max = 5;
     } else if (reward == 4 && penalty == -5) {
         if ((status=s_SplitArrayOf8(blastn_values_4_5, &kValues, &kValues_non_affine, &split)))
            return status;
@@ -2877,20 +2908,46 @@ Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName,
      return 0;
 }
 
+
 Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
                                        Int4 penalty,
-                                       Int4* gap_existence, 
+                                       Int4* gap_existence,
                                        Int4* gap_extension)
 {
-    int array_size = 0; /* dummy parameter. */
-    const array_of_8* normal=NULL; /* dummy parameter */
-    const array_of_8* non_affine=NULL; /* dummy parameter */
-    Boolean round_down = FALSE;
-    Int2 status = s_GetNuclValuesArray(reward, penalty, &array_size, &normal, &non_affine, 
-            gap_existence, gap_extension, &round_down, NULL);
-    if (status)
+   int array_size = 0; /* dummy parameter. */
+   const array_of_8* normal=NULL; /* dummy parameter */
+   const array_of_8* non_affine=NULL; /* dummy parameter */
+   Boolean round_down = FALSE;
+   int gap_existence_max=0;
+   int gap_extension_max=0;
+   Int2 status = s_GetNuclValuesArray(reward, penalty, &array_size, &normal, &non_affine,
+            &gap_existence_max, &gap_extension_max, &round_down, NULL);
+
+   if (status)
        return status;
 
+   if (*gap_existence == 0 && *gap_extension == 0 && non_affine)
+       return 0;   /* these values are supported. */
+   else
+   {
+         int index=0;
+         Boolean found=FALSE;
+         while (index < array_size)
+         {
+               if (*gap_existence == normal[index][0] && *gap_extension == normal[index][1])
+               {
+                      found = TRUE;
+                      break; /* these values are supported. */
+               }
+               index++;
+         }
+
+         if (!found)
+         {
+             *gap_existence = gap_existence_max;
+             *gap_extension = gap_extension_max;
+         }
+   }
    return 0;
 }
 
@@ -4159,6 +4216,11 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.133  2005/10/31 14:05:24  madden
+ * 1.) add support for blastn reward/penalty values of 1/-5, 3/-4, and 3/-2.
+ * 2.) BLAST_GetNucleotideGapExistenceExtendParams now validates value as well as suggesting a
+ * reasonable value.
+ *
  * Revision 1.132  2005/10/14 17:29:22  madden
  * Add preliminary support for vecscreen parameters
  *
