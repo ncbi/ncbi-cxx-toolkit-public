@@ -30,13 +30,8 @@
  */
 #include <ncbi_pch.hpp>
 
-#ifndef USE_MS_DBLIB
-#  include <dbapi/driver/dblib/interfaces.hpp>
-#  include <dbapi/driver/dblib/interfaces_p.hpp>
-#else
-#  include <dbapi/driver/msdblib/interfaces.hpp>
-#  include <dbapi/driver/msdblib/interfaces_p.hpp>
-#endif
+#include <dbapi/driver/dblib/interfaces.hpp>
+#include <dbapi/driver/dblib/interfaces_p.hpp>
 
 #include <stdio.h>
 
@@ -548,6 +543,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/10/31 12:24:32  ssikorsk
+ * Do not use separate include files for the msdblib driver.
+ *
  * Revision 1.20  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
