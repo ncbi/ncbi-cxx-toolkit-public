@@ -1813,6 +1813,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         }
         // Get status 
         int status = auto_stmt->GetReturnStatus();
+        status = status; // Get rid of warnings.
     }
 }
 
@@ -3265,13 +3266,13 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     
     // !!! There are still problems ...
     // !!! It does not work in case of a new FTDS driver.
-    if ( args.GetDriverName() != "ctlib" && 
-         args.GetDriverName() != "dblib" &&
-         args.GetDriverName() != "ftds63" ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+//     if ( args.GetDriverName() != "ctlib" &&
+//          args.GetDriverName() != "dblib" &&
+//          args.GetDriverName() != "ftds63" ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_DateTime, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
     
     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) && 
          args.GetServerType() == CTestArguments::eMsSql ) {
@@ -3377,7 +3378,8 @@ CTestArguments::SetDatabaseParameters(void)
     if ( m_TDSVersion.empty() ) {
         if ( GetDriverName() == "ctlib" ) {
             // m_DatabaseParameters["version"] = "125";
-        } else if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
+        } else if ( GetDriverName() == "dblib"  &&  
+                    GetServerType() == eSybase ) {
             // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
             // BcpIn to it using protocol version other than "100".
             m_DatabaseParameters["version"] = "100";
@@ -3385,6 +3387,10 @@ CTestArguments::SetDatabaseParameters(void)
                     GetServerType() == eSybase ) {
             // ftds work with Sybase databases using protocol v42 only ...
             m_DatabaseParameters["version"] = "42";
+//         } else if ( GetDriverName() == "ftds63" &&
+//                     GetServerType() == eSybase ) {
+//             // ftds63 is TDS v10.0 oriented ...
+//             m_DatabaseParameters["version"] = "100";
         }
     } else {
         m_DatabaseParameters["version"] = m_TDSVersion;
@@ -3418,6 +3424,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.56  2005/10/31 17:26:43  ssikorsk
+ * Disable Test_DateTime for all database drivers.
+ *
  * Revision 1.55  2005/10/26 11:30:12  ssikorsk
  * Added optional app key "v" (TDS protocol version)
  *
