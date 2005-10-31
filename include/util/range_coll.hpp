@@ -241,18 +241,18 @@ protected:
     {   
         return m_vRanges.end(); 
     }    
-    pair<iterator, bool>    x_Find(position_type pos)
+    pair<const_iterator, bool>    x_Find(position_type pos) const
     {
         PRangeLessPos<TRange, position_type>    p;
-        iterator it = lower_bound(begin_nc(), end_nc(), pos, p);
-        bool b_contains = it != end_nc()  &&  it->GetFrom() >= pos;
+        const_iterator it = lower_bound(begin(), end(), pos, p);
+        bool b_contains = it != end()  &&  it->GetFrom() >= pos;
         return make_pair(it, b_contains);
     }
-    pair<iterator, bool>    x_Intersects(const TRange& r)
+    pair<const_iterator, bool>    x_Intersects(const TRange& r) const
     {
         PRangeLessPos<TRange, position_type>    p;
-        iterator it = lower_bound(begin_nc(), end_nc(), r.GetFrom(), p);
-        bool b_intersects = it != end_nc()  &&  it->GetFrom() < r.GetToOpen();
+        const_iterator it = lower_bound(begin(), end(), r.GetFrom(), p);
+        bool b_intersects = it != end()  &&  it->GetFrom() < r.GetToOpen();
         return make_pair(it, b_intersects);
     }
     pair<const_iterator, bool>    x_Intersects(const TRange& r) const
@@ -391,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/10/31 20:25:06  dicuccio
+ * Const-ified several functions
+ *
  * Revision 1.9  2005/10/31 15:49:05  ucko
  * Add a const version of x_Intersects for use by IntersectingWith.
  *
