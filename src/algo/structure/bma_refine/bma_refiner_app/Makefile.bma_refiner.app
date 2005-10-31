@@ -18,10 +18,10 @@ LIB =   xbma_refiner \
         mmdb \
         $(OBJMGR_LIBS)
 
-#CFLAGS   = $(FAST_CFLAGS)
+CXXFLAGS   = $(FAST_CXXFLAGS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/..
 
-#LDFLAGS  = $(FAST_LDFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
