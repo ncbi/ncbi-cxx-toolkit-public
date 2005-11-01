@@ -21878,7 +21878,7 @@ if test "$with_sss" = "no" ; then
    NCBI_SSS_LIBPATH=
    LIBSSSUTILS=
    LIBSSSDB=
-   WithoutPackages="$WithoutPackages SSS SSSUTILS SSSDB"
+   WithoutPackages="$WithoutPackages SSSUTILS SSSDB"
 else
    if test "$with_included_sss" = "yes"; then
       NCBI_SSS_LIBPATH= # Not needed
@@ -25429,6 +25429,7 @@ LDFLAGS='$LDFLAGS'
 LIB_OR_DLL='$LIB_OR_DLL'
 with_dll='$with_dll'
 WithFeatures='$WithFeatures'
+WithoutFeatures='$WithoutFeatures'
 WithPackages='$WithPackages'
 WithoutPackages='$WithoutPackages'
 WithProjects='$WithProjects $OPT_GROUPS'

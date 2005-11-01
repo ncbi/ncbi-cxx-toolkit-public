@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.399 2005/11/01 19:14:57 ucko Exp $
+#  $Id: configure.ac,v 1.400 2005/11/01 21:48:17 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -5315,6 +5315,7 @@ LDFLAGS='$LDFLAGS'
 LIB_OR_DLL='$LIB_OR_DLL'
 with_dll='$with_dll'
 WithFeatures='$WithFeatures'
+WithoutFeatures='$WithoutFeatures'
 WithPackages='$WithPackages'
 WithoutPackages='$WithoutPackages'
 WithProjects='$WithProjects $OPT_GROUPS'
