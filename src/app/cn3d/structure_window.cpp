@@ -154,7 +154,7 @@ END_EVENT_TABLE()
 StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL), cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
-    cddRefDialog(NULL), cddBookRefDialog(NULL), cddOverview(NULL), 
+    cddRefDialog(NULL), cddBookRefDialog(NULL), cddOverview(NULL),
     spinIncrement(3.0), helpController(NULL), helpConfig(NULL),
     fileMessagingManager("Cn3D"), fileMessenger(NULL)
 {
@@ -787,10 +787,11 @@ static string GetFavoritesFile(bool forRead)
 
 static bool LoadFavorites(void)
 {
+    favoriteStyles.Reset();
+
     string favoritesFile;
     RegistryGetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, &favoritesFile);
     if (favoritesFile != NO_FAVORITES_FILE) {
-        favoriteStyles.Reset();
         if (wxFile::Exists(favoritesFile.c_str())) {
             INFOMSG("loading favorites from " << favoritesFile);
             string err;
@@ -798,6 +799,8 @@ static bool LoadFavorites(void)
                 favoriteStylesChanged = false;
                 return true;
             }
+            ERRORMSG("Error loading from favorites file " << favoritesFile);
+            favoriteStyles.Reset();
         } else {
             WARNINGMSG("Favorites file does not exist: " << favoritesFile);
             RegistrySetString(REG_CONFIG_SECTION, REG_FAVORITES_NAME, NO_FAVORITES_FILE);
@@ -1699,6 +1702,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/11/01 14:48:37  thiessen
+* better reporting of Favorites load errors
+*
 * Revision 1.48  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
