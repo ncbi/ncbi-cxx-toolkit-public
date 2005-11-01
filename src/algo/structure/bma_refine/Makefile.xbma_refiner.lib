@@ -6,6 +6,8 @@
 
 REQUIRES = objects
 
+ASN_DEP = cdd
+
 LIB =   xbma_refiner
 
 SRC =   RowSelector \
