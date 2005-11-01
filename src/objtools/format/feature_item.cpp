@@ -1129,14 +1129,33 @@ void CFeatureItem::x_AddCdregionQuals
             pref = p;
         }
         if (pref != NULL) {
+
+            // 
+            //  Processing of "product" qualifiers:
+            //  If in "release", "gbench", or "entrez" mode, turn only the first
+            //  "product" qualifier in the object into a "/product" qualifier in
+            //  the flat file. Lump the remaining object "product" qualifiers 
+            //  into the the flat file "/note" qualifier.
+            //  If in "dump" mode, turn every "product" qualifier in the object
+            //  into a "/product" qualifier in the flat file.
+            //
             const CProt_ref::TName& names = pref->GetName();
             if (!names.empty()) {
-                x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
-                CProt_ref::TName::const_iterator rest = names.begin();
-                if ( ++rest != names.end() ) {
-                    x_AddQual(eFQ_prot_names, new CFlatProductNamesQVal(names, m_Gene));
+                if ( ! cfg.IsModeDump() ) {
+                    x_AddQual(eFQ_cds_product, 
+                        new CFlatStringQVal(names.front()));
+                    if ( names.size() > 1 ) {
+                        x_AddQual(eFQ_prot_names, 
+                            new CFlatProductNamesQVal(names, m_Gene));
+                    }
+
+                } else {
+                    ITERATE(CProt_ref::TName, it, names) {
+                        x_AddQual( eFQ_cds_product, new CFlatStringQVal(*it) );
+                    }
                 }
             }
+
             if ( pref->CanGetDesc() ) {
                 string desc = pref->GetDesc();
                 TrimSpacesAndJunkFromEnds(desc);
@@ -3706,6 +3725,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2005/11/01 19:32:51  ludwigf
+* ADDED: In modes other than "dump", product qualifiers in excess of 1 will
+* be turned into a "/note" qualifier in the flat file.
+*
 * Revision 1.60  2005/11/01 14:03:33  ludwigf
 * ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
 * implemented as GB_qualifiers with string values.
