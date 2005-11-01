@@ -38,8 +38,8 @@ property pShouldBuild : true
 
 property pStationeryName : "ApplicationStationery"
 
-property pTargetKeyWords : {"MSL", "BSD", "Debug", "Final"}
-property pDefaultTargets : {"BSD", "Debug"}
+property pTargetKeyWords : {"Debug", "Final"}
+property pDefaultTargets : {"Debug"}
 
 --
 --  Set Global variables
@@ -298,10 +298,12 @@ on SetProjectData()
 	
 	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "app:asn2asn", {"C++"}), commonObjLibs, {}))
 	
-	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets", "libdl"}, {"test_validator"}), Â
-		objMgrLibs & {"xvalidate"}, {}))
+	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets", "libdl", "cmdline"}, {"test_validator"}), Â
+		objMgrLibs & {"xvalidate", "xobjutil", "submit"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
 		commonObjLibs & {"id1", "xconnect"}, {}))
+	
+	AddAppProject("convert_seq", {"cmdline", "C++"}, "app:convert_seq", objMgrLibs & {"xformat", "xalnmgr", "gbseq", "xobjutil", "xobjread", "tables", "submit"}, {})
 	
 	if pBuildDemos then
 		---- DEMO ---
