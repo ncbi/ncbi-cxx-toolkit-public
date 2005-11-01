@@ -50,6 +50,8 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
     list<string> provided;
     NStr::Split(str, LIST_SEPARATOR, provided);
     m_ProvidedThing.insert(provided.begin(),provided.end());
+    GetStandardFeatures(provided);
+    m_ProvidedThing.insert(provided.begin(),provided.end());
 
     // Not provided requests
     str = m_Registry.GetString("Configure", "NotProvidedRequests", "");
@@ -505,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/11/01 14:43:18  gouriano
+ * Looking for provided features check also standard ones
+ *
  * Revision 1.32  2005/10/31 19:55:03  gouriano
  * Added requirement negation option
  *
