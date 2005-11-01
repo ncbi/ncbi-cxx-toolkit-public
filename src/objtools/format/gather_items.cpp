@@ -957,7 +957,7 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     }
 
     // if no source found create one (only if not FTable format or Dump mode)
-    if ( srcs.empty()  &&  !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
+    if ( srcs.empty()  &&  ! cfg.IsFormatFTable()  &&  ! cfg.IsModeDump() ) {
         CRef<CBioSource> bsrc(new CBioSource);
         bsrc->SetOrg();
         CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*bsrc, CRange<TSeqPos>::GetWhole(), ctx));
@@ -1624,6 +1624,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2005/11/01 19:30:20  ludwigf
+* FIXED: The default source should only be created if the format differs from
+* "ftable"  *and*  the mode differs from "dump".
+*
 * Revision 1.51  2005/10/07 15:39:36  vasilche
 * Fixed MT-safety - removed static SAnnotSelector.
 *
