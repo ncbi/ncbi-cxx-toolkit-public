@@ -155,7 +155,7 @@ public:
     enum EErrGetPut {
         eErr_Unknown,   ///< no info on operation 
         eErr_Put,       ///< Put error
-        eErr_Get,       ///< Get error
+        eErr_Get        ///< Get error
     };
 
     void AddInternalError(EErrGetPut operation);
@@ -723,6 +723,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2005/11/01 15:09:54  kuznets
+ * Fixed compilation warning
+ *
  * Revision 1.59  2005/08/15 11:33:54  kuznets
  * Statistics: Added total number of BLOBs deleted by GC
  *
