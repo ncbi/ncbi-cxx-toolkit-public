@@ -1,4 +1,4 @@
---$Revision: 1.14 $
+--$Revision: 1.15 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -54,6 +54,7 @@ Cn3d-color-scheme ::= ENUMERATED {  -- available color schemes (not all
     object (2),
     molecule (3),
     domain (4),
+    residue (20),
     secondary-structure (5),
     user-select (6),
     -- different alignment conservation coloring (currently only for proteins)
