@@ -1363,6 +1363,8 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
+    ADD_QUAL(rpt_unit_range);
+    ADD_QUAL(rpt_unit_seq);
     ADD_QUAL(standard_name);
     ADD_QUAL(transposon);
     ADD_QUAL(usedin);
@@ -1384,6 +1386,8 @@ START_SUBTYPE(repeat_unit)
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
+    ADD_QUAL(rpt_unit_range);
+    ADD_QUAL(rpt_unit_seq);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1437,6 +1441,8 @@ START_SUBTYPE(satellite)
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
+    ADD_QUAL(rpt_unit_range);
+    ADD_QUAL(rpt_unit_seq);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -1813,6 +1819,8 @@ START_SUBTYPE(oriT)
     ADD_QUAL(rpt_family);
     ADD_QUAL(rpt_type);
     ADD_QUAL(rpt_unit);
+    ADD_QUAL(rpt_unit_range);
+    ADD_QUAL(rpt_unit_seq);
     ADD_QUAL(standard_name);
     ADD_QUAL(usedin);
 END_SUBTYPE
@@ -2073,6 +2081,8 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_rpt_family, "rpt_family"),
     TQualPair(CSeqFeatData::eQual_rpt_type, "rpt_type"),
     TQualPair(CSeqFeatData::eQual_rpt_unit, "rpt_unit"),
+    TQualPair(CSeqFeatData::eQual_rpt_unit_range, "rpt_unit_range" ),
+    TQualPair(CSeqFeatData::eQual_rpt_unit_seq, "rpt_unit_seq" ),
     TQualPair(CSeqFeatData::eQual_segment, "segment"),
     TQualPair(CSeqFeatData::eQual_sequence_mol, "sequence_mol"),
     TQualPair(CSeqFeatData::eQual_serotype, "serotype"),
@@ -2114,6 +2124,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.26  2005/11/01 14:03:33  ludwigf
+* ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
+* implemented as GB_qualifiers with string values.
+*
 * Revision 6.25  2005/10/26 13:30:18  ludwigf
 * Removed qualifier "evidence".
 * Added qualifiers "experiment" and "inference".

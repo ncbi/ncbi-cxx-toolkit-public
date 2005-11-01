@@ -117,6 +117,8 @@ enum EFeatureQualifier {
     eFQ_rpt_family,
     eFQ_rpt_type,
     eFQ_rpt_unit,
+    eFQ_rpt_unit_range,
+    eFQ_rpt_unit_seq,
     eFQ_rrna_its,
     eFQ_sec_str_type,
     eFQ_selenocysteine,
@@ -241,6 +243,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/11/01 14:03:33  ludwigf
+* ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
+* implemented as GB_qualifiers with string values.
+*
 * Revision 1.7  2005/10/26 13:30:18  ludwigf
 * Removed qualifier "evidence".
 * Added qualifiers "experiment" and "inference".

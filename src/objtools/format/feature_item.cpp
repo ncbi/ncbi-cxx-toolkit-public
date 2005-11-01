@@ -1940,6 +1940,8 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(rpt_family),
         DO_IMPORT(rpt_type),
         DO_IMPORT(rpt_unit),
+        DO_IMPORT(rpt_unit_range),
+        DO_IMPORT(rpt_unit_seq),
         DO_IMPORT(standard_name),
         DO_IMPORT(transposon),
         DO_IMPORT(usedin)
@@ -2221,6 +2223,8 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(rpt_family);
     DO_QUAL(rpt_type);
     DO_QUAL(rpt_unit);
+    DO_QUAL(rpt_unit_range);
+    DO_QUAL(rpt_unit_seq);
     DO_QUAL(insertion_seq);
     DO_QUAL(transposon);
     DO_QUAL(usedin);
@@ -2635,6 +2639,8 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_rpt_family, CSeqFeatData::eQual_rpt_family),
     TQualPair(eFQ_rpt_type, CSeqFeatData::eQual_rpt_type),
     TQualPair(eFQ_rpt_unit, CSeqFeatData::eQual_rpt_unit),
+    TQualPair(eFQ_rpt_unit_range, CSeqFeatData::eQual_rpt_unit_range),
+    TQualPair(eFQ_rpt_unit_seq, CSeqFeatData::eQual_rpt_unit_seq),
     TQualPair(eFQ_rrna_its, CSeqFeatData::eQual_note),
     TQualPair(eFQ_sec_str_type, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_selenocysteine, CSeqFeatData::eQual_note),
@@ -3700,6 +3706,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2005/11/01 14:03:33  ludwigf
+* ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
+* implemented as GB_qualifiers with string values.
+*
 * Revision 1.59  2005/10/26 13:30:18  ludwigf
 * Removed qualifier "evidence".
 * Added qualifiers "experiment" and "inference".

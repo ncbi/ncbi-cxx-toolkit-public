@@ -271,6 +271,8 @@ public:
         eQual_rpt_family,
         eQual_rpt_type,
         eQual_rpt_unit,
+        eQual_rpt_unit_range,
+        eQual_rpt_unit_seq,
         eQual_segment,
         eQual_sequence_mol,
         eQual_serotype,
@@ -375,6 +377,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/11/01 14:03:33  ludwigf
+* ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
+* implemented as GB_qualifiers with string values.
+*
 * Revision 1.10  2005/10/26 13:30:17  ludwigf
 * Removed qualifier "evidence".
 * Added qualifiers "experiment" and "inference".
