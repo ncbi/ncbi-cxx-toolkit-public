@@ -57,7 +57,7 @@
 %ignore *::CSeqMaskerOstatFactory_CSeqMaskerOstatFactoryException;
 %ignore *::CSeqMaskerOstatOpt_Exception;
 
-%ignore *::CSymDustMasker_lcr;  // shouldn't be public anyway
+%ignore *::CSymDustMasker_perfect;  // shouldn't be public anyway
 
 %ignore *::CTSE_Info_SIdAnnotInfo;  // in objmgr/impl
 
@@ -120,6 +120,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/01 15:51:24  jcherry
+ * CSymDustMasker::lcr changed to CSymDustMasker::perfect
+ *
  * Revision 1.8  2005/10/07 17:12:31  jcherry
  * Hide util/bitset/bm.h from SWIG
  *
