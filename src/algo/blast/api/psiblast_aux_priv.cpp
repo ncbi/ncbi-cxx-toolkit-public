@@ -132,7 +132,8 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
 }
 
 CNcbiMatrix<int>*
-CScorematPssmConverter::GetScores(CConstRef<CPssmWithParameters> pssm_asn)
+CScorematPssmConverter::GetScores(CConstRef<objects::CPssmWithParameters> 
+                                  pssm_asn)
 {
     if (pssm_asn.Empty()) {
         throw runtime_error("Cannot use NULL ASN.1 PSSM");
@@ -173,7 +174,8 @@ CScorematPssmConverter::GetScores(CConstRef<CPssmWithParameters> pssm_asn)
 }
 
 CNcbiMatrix<double>*
-CScorematPssmConverter::GetFreqRatios(CConstRef<CPssmWithParameters> pssm_asn)
+CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters> 
+                                      pssm_asn)
 {
     if (pssm_asn.Empty()) {
         throw runtime_error("Cannot use NULL PSSM");
@@ -243,7 +245,8 @@ void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
 }
 
 void 
-CPsiBlastValidate::Pssm(const CPssmWithParameters& pssm)
+CPsiBlastValidate::Pssm(const objects::CPssmWithParameters& pssm,
+                        bool require_scores)
 {
     if ( !pssm.CanGetPssm() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
@@ -268,6 +271,10 @@ CPsiBlastValidate::Pssm(const CPssmWithParameters& pssm)
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "PSSM data must contain either scores or frequency ratios");
     }
+    if (missing_scores && require_scores) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+               "PSSM data must contain scores (did you run the PSSM engine?)");
+    }
 
     if ( !pssm.GetPssm().CanGetQuery() ) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
@@ -287,7 +294,7 @@ CPsiBlastValidate::Pssm(const CPssmWithParameters& pssm)
 void
 CPsiBlastValidate::QueryFactory(CRef<IQueryFactory> query_factory, 
                                 const CBlastOptionsHandle& opts_handle, 
-                                CPsiBlastValidate::EQueryFactoryType qf_type)
+                                EQueryFactoryType qf_type)
 {
     CRef<ILocalQueryData> query_data =
         query_factory->MakeLocalQueryData(&opts_handle.GetOptions());

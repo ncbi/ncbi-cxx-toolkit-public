@@ -87,10 +87,13 @@ public:
 
     /** Perform validation on the PSSM
      * @param pssm PSSM as specified in scoremat.asn [in]
+     * @param require_scores Set to true if scores MUST be present (otherwise,
+     * either scores or frequency ratios are acceptable) [in]
      * @throws CBlastException on failure when validating data
      */
     static void
-    Pssm(const objects::CPssmWithParameters& pssm);
+    Pssm(const objects::CPssmWithParameters& pssm,
+         bool require_scores = false);
 
     /// Enumeration to specify the different uses of the query factory
     enum EQueryFactoryType { eQFT_Query, eQFT_Subject };
