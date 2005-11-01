@@ -216,7 +216,8 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
     }}
 
     // If no '=' present in the parsed string then try to parse it as ISINDEX
-    if (query.find_first_of("&=") == NPOS) {
+    if (query.find_first_of("&=") == NPOS
+        &&  query.find_first_of("+") != NPOS) {
         x_SetIndexString(query, *encoder);
         return;
     }
@@ -224,22 +225,18 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
     // Parse into entries
     unsigned int position = 1;
     for (SIZE_TYPE beg = 0; beg < len; ) {
-        // ignore 1st ampersand
-        if (beg == 0  &&  query[0] == '&') {
-            beg = 1;
+        // ignore ampersand and "&amp;"
+        if ( (query[beg] == '&') ) {
+            ++beg;
+            if (beg < len && !NStr::CompareNocase(query, beg, 4, "amp;")) {
+                beg += 4;
+            }
             continue;
-        }
-
-        // kludge for the sake of some older browsers, which fail to decode
-        // "&amp;" within hrefs.
-        if ( !NStr::CompareNocase(query, beg, 4, "amp;") ) {
-            beg += 4;
         }
 
         // parse and URL-decode name
         SIZE_TYPE mid = query.find_first_of("=&", beg);
-        if (mid == beg  ||
-            (mid != NPOS  &&  query[mid] == '&'  &&  mid == len-1)) {
+        if (mid == beg) {
             NCBI_THROW2(CCgiParseException, eFormat,
                         "Invalid delimiter: \"" + query + "\"", mid+1);
         }
@@ -264,9 +261,9 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
 
             value = encoder->DecodeArgValue(query.substr(mid, end - mid));
 
-            beg = end + 1;
+            beg = end;
         } else {  // has no value
-            beg = mid + 1;
+            beg = mid;
         }
 
         // store the name-value pair
@@ -953,6 +950,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/11/01 22:02:44  grichenk
+* Allow any number of ampersands in queries.
+*
 * Revision 1.3  2005/10/31 22:22:09  vakatov
 * Allow ampersand in the end of URL args
 *

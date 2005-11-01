@@ -204,7 +204,7 @@ static void PrintEntries(TCgiEntries& entries)
 {
     for (TCgiEntries::iterator iter = entries.begin();
          iter != entries.end();  ++iter) {
-        assert( !NStr::StartsWith(iter->first, "amp;", NStr::eNocase) );
+        // assert( !NStr::StartsWith(iter->first, "amp;", NStr::eNocase) );
         NcbiCout << "  (\"" << iter->first << "\", \""
                  << iter->second << "\")" << NcbiEndl;
     }
@@ -255,14 +255,38 @@ static void TestCgi_Request_Static(void)
     assert( !TestEntries(entries, " xx=yy") );
     assert(  TestEntries(entries, "xx=&yy=zz") );
     assert(  TestEntries(entries, "rr=") );
-    assert( !TestEntries(entries, "xx&") );
-    assert(  TestEntries(entries, "xx=&") );
-    assert(  TestEntries(entries, "xx=yy&") );
     entries.clear();
 
-    // Give a temporary slack to some buggy clients -- allow leading ampersand
-    // assert( !TestEntries(entries, "&zz=qq") );
-    assert( TestEntries(entries, "&zz=qq") );
+    assert(  TestEntries(entries, "&&") );
+    assert(  TestEntries(entries, "aa") );
+    assert(  TestEntries(entries, "bb&") );
+    assert(  TestEntries(entries, "&cc") );
+    assert(  TestEntries(entries, "&dd&") );
+    assert(  TestEntries(entries, "ee&&") );
+    assert(  TestEntries(entries, "&&ff") );
+    assert(  TestEntries(entries, "&&gg&&") );
+    entries.clear();
+
+    assert(  TestEntries(entries, "aa=") );
+    assert(  TestEntries(entries, "bb=&") );
+    assert(  TestEntries(entries, "&cc=") );
+    assert(  TestEntries(entries, "dd=&&") );
+    assert(  TestEntries(entries, "&&ee=") );
+    entries.clear();
+
+    assert(  TestEntries(entries, "&aa=uu") );
+    assert(  TestEntries(entries, "bb=vv&") );
+    assert(  TestEntries(entries, "&cc=ww&") );
+    assert(  TestEntries(entries, "&&dd=xx") );
+    assert(  TestEntries(entries, "ee=yy&&") );
+    assert(  TestEntries(entries, "&&ff=zz&&") );
+    entries.clear();
+
+    assert(  TestEntries(entries, "aa=vv&&bb=ww") );
+    assert(  TestEntries(entries, "cc=&&dd=xx") );
+    assert(  TestEntries(entries, "ee=yy&&ff") );
+    assert(  TestEntries(entries, "gg&&hh=zz") );
+    entries.clear();
 
     // assert( !TestEntries(entries, "tt=qq=pp") );
     assert( !TestEntries(entries, "=ggg&ppp=PPP") );
@@ -270,12 +294,16 @@ static void TestCgi_Request_Static(void)
     assert(  TestEntries(entries, "xxx&eee") );
     assert(  TestEntries(entries, "xxx+eee") );
     assert(  TestEntries(entries, "UUU") );
-    assert( !TestEntries(entries, "a=d&&eee") );
     assert(  TestEntries(entries, "a%21%2f%25aa=%2Fd%2c&eee=%3f") );
+    entries.clear();
 
     // some older browsers fail to parse &amp; in HREFs; ensure that
     // we handle it properly.
     assert(  TestEntries(entries, "a=b&amp;c=d&amp;e=f") );
+    assert(  TestEntries(entries, "&amp;c=d&amp;e=f") );
+    assert(  TestEntries(entries, "&amp;&amp;c=d&amp;&amp;e=f&amp;&amp;") );
+    assert(  TestEntries(entries, "amp;c=d&amp;amp;e=f") );
+    entries.clear();
 
     // Test CCgiRequest::ParseIndexes()
     TCgiIndexes indexes;
@@ -638,6 +666,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.25  2005/11/01 22:02:44  grichenk
+ * Allow any number of ampersands in queries.
+ *
  * Revision 1.24  2005/10/31 22:22:16  vakatov
  * Allow ampersand in the end of URL args
  *
