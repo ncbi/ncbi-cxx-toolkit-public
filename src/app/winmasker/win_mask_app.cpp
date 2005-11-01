@@ -196,13 +196,13 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "sdust", "use_sdust",
                              "combine window masking with symmetric dusting",
                              CArgDescriptions::eBoolean, "F" );
+    arg_desc->AddDefaultKey( "dust_level", "dust_level",
+                             "dust minimum level",
+                             CArgDescriptions::eInteger, "20" );
 #if 0
     arg_desc->AddDefaultKey( "dust_window", "dust_window",
                              "window size for dusting",
                              CArgDescriptions::eInteger, "64" );
-    arg_desc->AddDefaultKey( "dust_level", "dust_level",
-                             "dust minimum level",
-                             CArgDescriptions::eInteger, "20" );
     arg_desc->AddDefaultKey( "dust_linker", "dust_linker",
                              "link windows by this many basepairs",
                              CArgDescriptions::eInteger, "1" );
@@ -408,6 +408,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.15  2005/11/01 16:08:36  morgulis
+ * Restored -dust_level option to windowmasker.
+ *
  * Revision 1.14  2005/08/30 14:35:20  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.

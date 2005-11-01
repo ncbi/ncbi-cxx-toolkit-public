@@ -92,10 +92,10 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       use_dust( args["dust"].AsBoolean() ),
       use_sdust( args["sdust"].AsBoolean() ),
       // dust_window( args["dust_window"].AsInteger() ),
-      // dust_level( args["dust_level"].AsInteger() ),
       // dust_linker( args["dust_linker"].AsInteger() ),
       dust_window( 64 ),
-      dust_level( 20 ),
+      // dust_level( 20 ),
+      dust_level( args["dust_level"].AsInteger() ),
       dust_linker( 1 ),
       checkdup( args["checkdup"].AsBoolean() ),
       sformat( args["sformat"].AsString() ),
@@ -211,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.12  2005/11/01 16:08:36  morgulis
+ * Restored -dust_level option to windowmasker.
+ *
  * Revision 1.11  2005/08/30 14:35:20  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.
