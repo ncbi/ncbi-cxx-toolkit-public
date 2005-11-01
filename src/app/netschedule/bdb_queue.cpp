@@ -515,7 +515,7 @@ void CQueueDataBase::ReadConfig(const IRegistry& reg, unsigned* min_run_timeout)
                     auto_ptr<CNSLB_ThreasholdCurve>  
                       deny_curve(s_ConfigureCurve(reg, sname, lb_stall_time));
 
-                    CNSLB_DecisionModule*   decision_maker = 0;
+                    //CNSLB_DecisionModule*   decision_maker = 0;
 
                     auto_ptr<CNSLB_DecisionModule_DistributeRate> 
                         decision_distr_rate(
@@ -2200,7 +2200,6 @@ void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
 
     _ASSERT(worker_node && input);
     unsigned get_attempts = 0;
-    unsigned fetch_attempts = 0;
     const unsigned kMaxGetAttempts = 100;
     EGetJobUpdateStatus upd_status;
 
@@ -2943,6 +2942,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/11/01 15:16:14  kuznets
+ * Cleaned unused variables
+ *
  * Revision 1.52  2005/09/20 14:05:25  kuznets
  * Minor bug fix
  *
