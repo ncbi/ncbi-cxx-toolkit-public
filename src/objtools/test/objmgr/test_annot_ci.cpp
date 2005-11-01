@@ -89,50 +89,63 @@ const string kMapped            = "mapped";    // original or mapped (bool)
 template<class TObjectType> class CTestResult
 {
 public:
-    static void Check(const TObjectType& obj,
+    typedef CRef<TObjectType> TObjectRef;
+    typedef list<TObjectRef> TObjectList;
+    static void Check(const TObjectList& obj_list,
                       const CArgs& args,
                       const string& title);
 };
 
 
 template<class TObjectType>
-void CTestResult<TObjectType>::Check(const TObjectType& obj,
+void CTestResult<TObjectType>::Check(const TObjectList& obj_list,
                                      const CArgs& args,
                                      const string& title)
 {
     if ( args["dump"] ) {
-        NcbiCout << MSerial_AsnText << obj;
+        ITERATE(typename TObjectList, it, obj_list) {
+            NcbiCout << MSerial_AsnText << **it;
+        }
     }
     else {
         TObjectType ref;
-        try {
-            args["results"].AsInputFile() >> MSerial_AsnText >> ref;
-        }
-        catch (CSerialException) {
-            SetDiagStream(&NcbiCerr);
-            ERR_POST(Fatal << "Test '" << title << "' failed - unable to read "
-                << obj.GetThisTypeInfo()->GetName());
-        }
-        if ( !obj.Equals(ref) ) {
-            SetDiagStream(&NcbiCerr);
-            ERR_POST(Fatal << "Test '" << title << "' failed - invalid "
-                << obj.GetThisTypeInfo()->GetName());
+        for (size_t i = 0; i < obj_list.size(); ++i) {
+            try {
+                args["results"].AsInputFile() >> MSerial_AsnText >> ref;
+            }
+            catch (CSerialException) {
+                SetDiagStream(&NcbiCerr);
+                ERR_POST(Fatal << "Test '" << title
+                    << "' failed - unable to read "
+                    << TObjectType::GetTypeInfo()->GetName());
+            }
+            bool found = false;
+            ITERATE(typename TObjectList, it, obj_list) {
+                if ( (*it)->Equals(ref) ) {
+                    found = true;
+                    break;
+                }
+            }
+            if ( !found ) {
+                SetDiagStream(&NcbiCerr);
+                ERR_POST(Fatal << "Test '" << title << "' failed - invalid "
+                    << TObjectType::GetTypeInfo()->GetName());
+            }
         }
     }
 }
 
 
-EMPTY_TEMPLATE
-void CTestResult<string>::Check(const string& obj,
-                                const CArgs& args,
-                                const string& title)
+void CheckString(const string& str,
+                 const CArgs& args,
+                 const string& title)
 {
     if ( args["dump"] ) {
-        NcbiCout << obj;
+        NcbiCout << str;
     }
     else {
         list<string> errs;
-        NStr::Split(obj, "\n\r", errs);
+        NStr::Split(str, "\n\r", errs);
         CNcbiIstream& in = args["results"].AsInputFile();
         ITERATE(list<string>, err, errs) {
             string ref;
@@ -348,11 +361,15 @@ int CTestApp::Run(void)
         ERR_POST(Fatal << "[Tests] not found in config file");
     }
     TParamTree::TNodeList_CI test_it = tests->SubNodeBegin();
+
+    // Capture errors
+    CNcbiOstrstream err_out;
+    SetDiagStream(&err_out);
+
     for ( ; test_it != tests->SubNodeEnd(); test_it++) {
         const TParams& param = **test_it;
         string title = (*test_it)->GetValue().id;
 
-        LOG_POST("Running test: " << title);
         CSeq_loc loc;
         {{
             string loc_str = x_GetStringParam(param, kLocation);
@@ -363,48 +380,60 @@ int CTestApp::Run(void)
         bool use_mapped = x_GetBoolParam(param, kMapped, true);
         string value = x_GetStringParam(param, kAnnotType, true);
 
-        // Capture errors
-        CNcbiOstrstream err_out;
-        SetDiagStream(&err_out);
-
         try {
-            if ( value.empty()  ||  NStr::EqualNocase(value, kAnnotType_Feat) ) {
+            if ( value.empty() || NStr::EqualNocase(value, kAnnotType_Feat) ) {
+                typedef CTestResult<CSeq_feat> TTestResult;
+                TTestResult::TObjectList feat_list;
                 for (CFeat_CI it(*m_Scope, loc, sel); it; ++it) {
-                    CConstRef<CSeq_feat> feat(use_mapped ?
-                        &it->GetMappedFeature() : &it->GetOriginalFeature());
-                    CTestResult<CSeq_feat>::Check(*feat, args, title);
+                    CRef<CSeq_feat> feat(new CSeq_feat);
+                    feat->Assign(use_mapped ?
+                        it->GetMappedFeature() : it->GetOriginalFeature());
+                    feat_list.push_back(feat);
                 }
+                TTestResult::Check(feat_list, args, title);
             }
             else if ( NStr::EqualNocase(value, kAnnotType_Align) ) {
+                typedef CTestResult<CSeq_align> TTestResult;
+                TTestResult::TObjectList align_list;
                 for (CAlign_CI it(*m_Scope, loc, sel); it; ++it) {
-                    CConstRef<CSeq_align> align(use_mapped ?
-                        &*it : &it.GetOriginalSeq_align());
-                    CTestResult<CSeq_align>::Check(*align, args, title);
+                    CRef<CSeq_align> align(new CSeq_align);
+                    align->Assign(use_mapped ?
+                        *it : it.GetOriginalSeq_align());
+                    align_list.push_back(align);
                 }
+                TTestResult::Check(align_list, args, title);
             }
             else if ( NStr::EqualNocase(value, kAnnotType_Graph) ) {
+                typedef CTestResult<CSeq_graph> TTestResult;
+                TTestResult::TObjectList graph_list;
                 for (CGraph_CI it(*m_Scope, loc, sel); it; ++it) {
-                    CConstRef<CSeq_graph> graph(use_mapped ?
-                        &it->GetMappedGraph() : &it->GetOriginalGraph());
-                    CTestResult<CSeq_graph>::Check(*graph, args, title);
+                    CRef<CSeq_graph> graph(new CSeq_graph);
+                    graph->Assign(use_mapped ?
+                        it->GetMappedGraph() : it->GetOriginalGraph());
+                    graph_list.push_back(graph);
                 }
+                TTestResult::Check(graph_list, args, title);
             }
             else if ( NStr::EqualNocase(value, kAnnotType_Annot) ) {
+                typedef CTestResult<CSeq_annot> TTestResult;
+                TTestResult::TObjectList annot_list;
                 for (CAnnot_CI it(*m_Scope, loc, sel); it; ++it) {
-                    CTestResult<CSeq_annot>::Check(*it->GetCompleteSeq_annot(),
-                        args, title);
+                    CRef<CSeq_annot> annot(new CSeq_annot);
+                    annot->Assign(*it->GetCompleteSeq_annot());
+                    annot_list.push_back(annot);
                 }
+                TTestResult::Check(annot_list, args, title);
             }
         }
         catch (CException& e) {
             ERR_POST(e.what());
         }
-        // Check captured errors
-        SetDiagStream(&NcbiCerr);
-        if ( err_out.pcount() ) {
-            string errors(err_out.rdbuf()->str(), err_out.pcount());
-            CTestResult<string>::Check(errors, args, title);
-        }
+    }
+    // Check captured errors
+    SetDiagStream(&NcbiCerr);
+    if ( err_out.pcount() ) {
+        string errors(err_out.rdbuf()->str(), err_out.pcount());
+        CheckString(errors, args, "errors messages");
     }
 
     LOG_POST("All tests passed");
@@ -431,6 +460,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/11/01 16:50:54  grichenk
+* Added test for annot-ci.
+* Do not check order of objects in the tests.
+*
 * Revision 1.3  2005/10/27 16:48:49  grichenk
 * Redesigned CTreeNode (added search methods),
 * removed CPairTreeNode.
