@@ -432,6 +432,9 @@
 /* Define to 1 if the system has the type `wstring'. */
 #undef HAVE_WSTRING
 
+/* Define to 1 if wxWidgets is available. */
+#undef HAVE_WXWIDGETS
+
 /* Define to 1 if wxWindows is available. */
 #undef HAVE_WXWINDOWS
 

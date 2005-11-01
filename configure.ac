@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.397 2005/10/27 20:35:57 ucko Exp $
+#  $Id: configure.ac,v 1.398 2005/11/01 18:26:49 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -203,9 +203,13 @@ AC_ARG_WITH(glut,
 AC_ARG_WITH(glut2,
    [ --with-glut=DIR         use GLUT installation in DIR])
 AC_ARG_WITH(wxwin,
-   [ --without-wxwin         do not use wxWindows])
+   [ --without-wxwin         do not use wxWindows (2.4-)])
 AC_ARG_WITH(wxwin2,
    [ --with-wxwin=DIR        use wxWindows installation in DIR])
+AC_ARG_WITH(wxwidgets,
+   [ --without-wxwidgets     do not use wxWidgets (2.6+)])
+AC_ARG_WITH(wxwidgets2,
+   [ --with-wxwidgets=DIR    use wxWidgets installation in DIR])
 AC_ARG_WITH(freetype,
    [ --without-freetype      do not use FreeType])
 AC_ARG_WITH(freetype_,
@@ -337,7 +341,8 @@ x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution \
-ncbi-c wxwin fastcgi sss sssdb sssutils included-sss geo included-geo \
+ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
+geo included-geo \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
@@ -376,7 +381,7 @@ for x_arg in "$@" ; do
       | --libdir=* | --bindir=* | --includedir=* \
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-pcre=* \
-      | --with-sybase-local=* | --with-wxwin=* | --with-orbacus=* \
+      | --with-sybase-local=* | --with-wxwin=* | --with-wxwidgets=* \
       | --with-ftds=* | --with-mysql=* | --with-fltk=* | --with-fastcgi=* \
       | --with-sqlite=* | --with-expat=* | --with-sablot=* \
       | --with-icu=* | --with-xerces=* | --with-xalan=* \
@@ -384,7 +389,7 @@ for x_arg in "$@" ; do
       | --with-python=* | --with-freetype=* | --with-gif=* | --with-jpeg=* \
       | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
       | --with-mesa=* | --with-glut=* | --with-oechem=* | --with-cppunit=* \
-      | --with-boost=* | --with-boost-tag=* \
+      | --with-boost=* | --with-boost-tag=* | --with-orbacus=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -3647,6 +3652,101 @@ else
 fi
 
 
+## wxWidgets
+if test "$with_wxwidgets" != "no" ; then
+   if test -z "$WXWIDGETS_PATH"; then
+      if test -d "$with_wxwidgets"; then
+         WXWIDGETS_PATH=$with_wxwidgets
+      else
+         WXWIDGETS_PATH="$NCBI/wxwidgets"
+      fi
+   fi
+   if test -d "$WXWIDGETS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
+        -a -z "$WXWIDGETS_ARCH_PATH"; then
+      WXWIDGETS_ARCH_PATH="$WXWIDGETS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
+   elif test -d "$WXWIDGETS_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
+        -a -z "$WXWIDGETS_ARCH_PATH"; then
+      WXWIDGETS_ARCH_PATH="$WXWIDGETS_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
+   else
+      WXWIDGETS_ARCH_PATH="$WXWIDGETS_PATH"
+   fi
+   WXWIDGETS_BINPATH=${WXWIDGETS_BINPATH:="$WXWIDGETS_ARCH_PATH/bin"}
+   WXWIDGETS_LIBPATH=${WXWIDGETS_LIBPATH:="$WXWIDGETS_ARCH_PATH/lib"}
+   WXWIDGETS_INCLUDE=
+   wxconf=$WXWIDGETS_BINPATH/wx-config
+   for x in `"$wxconf" --libs --static`; do
+      case "$x" in
+         -L*)
+             d=`echo $x | sed -e 's/^-L//'`
+             pcd=$d/pkgconfig
+             if test -d "$pcd"; then
+                PKG_CONFIG_PATH="${PKG_CONFIG_PATH+$PKG_CONFIG_PATH:}$pcd"
+             fi
+             ;;
+      esac
+   done
+   export PKG_CONFIG_PATH
+   if "$wxconf" --list | grep 'Default config is gtk2' >/dev/null; then
+      gtkconf="pkg-config gtk+-2.0"
+   elif test -x "$WXWIDGETS_BINPATH/gtk-config"; then
+      gtkconf=$WXWIDGETS_BINPATH/gtk-config
+   elif gtk-config --version >/dev/null 2>&1; then
+      gtkconf=gtk-config
+   else
+      # May work without gtk-config (e.g., on Mac OS X)
+      gtkconf=:
+   fi
+   case "$host_os" in
+      darwin* ) baseflags=""                  ;;
+      *       ) baseflags=`$gtkconf --cflags` ;;
+   esac
+   AC_CACHE_CHECK([for wxWidgets in $WXWIDGETS_ARCH_PATH],
+      ncbi_cv_lib_wxwidgets,
+      [if test -x "$wxconf" ; then
+          WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
+          WXWIDGETS_LIBS=`$wxconf --libs |\
+             sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+
+          CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
+          LIBS="$WXWIDGETS_LIBS $orig_LIBS"
+          AC_LINK_IFELSE([AC_LANG_PROGRAM(
+             [[#include <wx/wx.h>]],
+             [[ wxExit(); ]])],
+             [ncbi_cv_lib_wxwidgets=yes], [ncbi_cv_lib_wxwidgets=no])
+       else
+          ncbi_cv_lib_wxwidgets=no
+       fi])
+   if test "$ncbi_cv_lib_wxwidgets" = "no"; then
+      with_wxwidgets="no"
+   fi
+fi
+
+if test "$with_wxwidgets" = "no" ; then
+   WXWIDGETS_LIBPATH="No_wxWidgets"
+   WXWIDGETS_INCLUDE=
+   WXWIDGETS_LIBS=
+   WXWIDGETS_STATIC_LIBS=
+   WXWIDGETS_GL_LIBS=
+   WXWIDGETS_GL_STATIC_LIBS=
+   WXWIDGETS_POST_LINK=:
+   WithoutPackages="$WithoutPackages wxWidgets"
+else
+   WithPackages="$WithPackages wxWidgets"
+   # The "yes" may have been cached; get the actual settings again if needed
+   if test -z "$WXWIDGETS_INCLUDE"; then
+      WXWIDGETS_INCLUDE="$baseflags `$wxconf --cflags`"
+      WXWIDGETS_LIBS=`$wxconf --libs |\
+         sed -e "s/-L\\([[^ ]]*\\)/-L\\1 ${CONF_f_runpath}\\1/"`
+   fi
+   WXWIDGETS_STATIC_LIBS=`$wxconf --libs --static`
+   WXWIDGETS_GL_LIBS=`$wxconf --gl-libs`
+   WXWIDGETS_GL_STATIC_LIBS=`$wxconf --gl-libs --static`
+   WXWIDGETS_POST_LINK=`$wxconf --rezflags`
+   test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
+   AC_DEFINE(HAVE_WXWIDGETS, 1, [Define to 1 if wxWidgets is available.])
+fi
+
+
 ## In-house Fast-CGI library
 if test "$with_fastcgi" != "no" ; then
    case "$with_fastcgi" in
@@ -4997,6 +5097,12 @@ AC_SUBST(WXWIN_STATIC_LIBS)
 AC_SUBST(WXWIN_GL_LIBS)
 AC_SUBST(WXWIN_GL_STATIC_LIBS)
 AC_SUBST(WXWIN_POST_LINK)
+AC_SUBST(WXWIDGETS_INCLUDE)
+AC_SUBST(WXWIDGETS_LIBS)
+AC_SUBST(WXWIDGETS_STATIC_LIBS)
+AC_SUBST(WXWIDGETS_GL_LIBS)
+AC_SUBST(WXWIDGETS_GL_STATIC_LIBS)
+AC_SUBST(WXWIDGETS_POST_LINK)
 AC_SUBST(FASTCGI_INCLUDE)
 AC_SUBST(FASTCGI_LIBS)
 AC_SUBST(FASTCGI_OBJS)

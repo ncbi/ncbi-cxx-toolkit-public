@@ -338,7 +338,7 @@ OSMESA_LIBS    = @OSMESA_LIBS@
 GLUT_INCLUDE   = @GLUT_INCLUDE@
 GLUT_LIBS      = @GLUT_LIBS@
 
-# wxWindows:  headers and libs
+# wxWindows (2.4 or older):  headers and libs
 WXWIN_INCLUDE        = @WXWIN_INCLUDE@
 WXWIN_LIBS           = @WXWIN_LIBS@
 WXWIN_STATIC_LIBS    = @WXWIN_STATIC_LIBS@
@@ -346,6 +346,15 @@ WXWIN_GL_LIBS        = @WXWIN_GL_LIBS@
 WXWIN_GL_STATIC_LIBS = @WXWIN_GL_STATIC_LIBS@
 # Assign WXWIN_POST_LINK to POST_LINK when building WX apps.
 WXWIN_POST_LINK      = @WXWIN_POST_LINK@
+
+# wxWidgets (2.6 or newer):  headers and libs
+WXWIDGETS_INCLUDE        = @WXWIDGETS_INCLUDE@
+WXWIDGETS_LIBS           = @WXWIDGETS_LIBS@
+WXWIDGETS_STATIC_LIBS    = @WXWIDGETS_STATIC_LIBS@
+WXWIDGETS_GL_LIBS        = @WXWIDGETS_GL_LIBS@
+WXWIDGETS_GL_STATIC_LIBS = @WXWIDGETS_GL_STATIC_LIBS@
+# Assign WXWIDGETS_POST_LINK to POST_LINK when building WX apps.
+WXWIDGETS_POST_LINK      = @WXWIDGETS_POST_LINK@
 
 # FLTK:  headers and libs (both with and without OpenGL support).
 FLTK_INCLUDE     = @FLTK_INCLUDE@
