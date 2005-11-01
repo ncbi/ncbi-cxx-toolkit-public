@@ -78,7 +78,7 @@ public:
     /// Client Name composition rules
     enum EUseName {
         eUseName_Global, ///< Only global name is used; client_name ignored
-        eUseName_Both,   ///< The name is composed of: "<global>::<local>"
+        eUseName_Both    ///< The name is composed of: "<global>::<local>"
     };
 
     /// Set an application-wide name for NetCache clients, and if to use
@@ -215,6 +215,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/11/01 14:56:21  kuznets
+ * Compilation warning fixed
+ *
  * Revision 1.10  2005/09/21 16:11:18  kuznets
  * Added support for global application wide client names
  *
