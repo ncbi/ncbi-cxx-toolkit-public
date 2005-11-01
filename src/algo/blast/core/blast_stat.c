@@ -2744,6 +2744,52 @@ s_SplitArrayOf8(const array_of_8* input, const array_of_8** normal, const array_
 
 }
 
+/** Adjust Lambda and H if reward and penalty have a non-1 gcd.
+ * the two arrays (normal and linear) should be filled in with values already.
+ * @param normal the values for normal (e.g, "affine") gap costs [in|out]
+ * @param linear specialized values used for megablast [in|out]
+ * @param array_size Number of supported combinations for this match/mismatch
+ *                   pair [out]
+ * @param gap_existence_max start of infinite regime for gap existence [in|out]
+ * @param gap_extension_max start of infinite regime for gap extension [in|out]
+ * @param multiplier multiplier for gap costs [out]
+*/
+static Int2
+s_AdjustGapParametersByGcd(array_of_8* normal, array_of_8* linear, int size, Int4* gap_existence_max, Int4* gap_extend_max, int divisor)
+{
+    if (divisor == 1)
+       return 0;
+
+    if (size <=0)
+       return 1;
+
+    (*gap_existence_max) *= divisor;
+    (*gap_extend_max) *= divisor;
+
+    if (normal)
+    {
+         int i;
+   
+         for (i=0; i<size; i++)
+         {  /* divide lambda and H by divisor. */
+            /* multiply gap existence and extension by divisor. */
+                normal[i][0] *= divisor;
+                normal[i][1] *= divisor;
+                normal[i][2] /= divisor;
+                normal[i][5] /= divisor;
+         }
+    }
+    if (linear)
+    {  /* divide lambda and H by divisor. */
+       linear[0][0] *= divisor;
+       linear[0][1] *= divisor;
+       linear[0][2] /= divisor;
+       linear[0][5] /= divisor;
+    }
+
+    return 0;
+}
+
 /** Returns the array of values corresponding to the given match/mismatch
  * scores, the number of supported gap cost combinations and thresholds for 
  * the gap costs, beyond which the ungapped statistics can be applied.
@@ -2762,7 +2808,7 @@ s_SplitArrayOf8(const array_of_8* input, const array_of_8** normal, const array_
  */
 static Int2
 s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
-                     const array_of_8** normal, const array_of_8** non_affine,
+                     array_of_8** normal, array_of_8** non_affine,
                      Int4* gap_open_max, Int4* gap_extend_max, Boolean* round_down,
                      Blast_Message** error_return)
 {
@@ -2770,10 +2816,19 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
     const array_of_8 * kValues = NULL;
     const array_of_8 * kValues_non_affine = NULL;
     Boolean split = FALSE;
+    int divisor = BLAST_Gcd(reward, penalty);
 
     *round_down = FALSE;
 
     *array_size = 0;
+    *normal = NULL;
+    *non_affine = NULL;
+
+    if (divisor != 1)
+    {
+       reward /= divisor;
+       penalty /= divisor;
+    }
 
     if (reward == 1 && penalty == -5) {
         if ((status=s_SplitArrayOf8(blastn_values_1_5, &kValues, &kValues_non_affine, &split)))
@@ -2875,8 +2930,15 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
     if (split)
         (*array_size)--;
 
-    *normal = kValues;
-    *non_affine = kValues_non_affine;
+    if (status == 0)
+    {
+        if (*array_size > 0)
+            *normal = BlastMemDup(kValues, (*array_size)*sizeof(array_of_8));
+        if (kValues_non_affine)
+            *non_affine = BlastMemDup(kValues_non_affine, sizeof(array_of_8));
+
+        status = s_AdjustGapParametersByGcd(*normal, *non_affine, *array_size, gap_open_max, gap_extend_max, divisor);
+    }
 
     return status;
 }
@@ -2915,8 +2977,8 @@ Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
                                        Int4* gap_extension)
 {
    int array_size = 0; /* dummy parameter. */
-   const array_of_8* normal=NULL; /* dummy parameter */
-   const array_of_8* non_affine=NULL; /* dummy parameter */
+   array_of_8* normal=NULL; /* dummy parameter */
+   array_of_8* non_affine=NULL; /* dummy parameter */
    Boolean round_down = FALSE;
    int gap_existence_max=0;
    int gap_extension_max=0;
@@ -2924,10 +2986,14 @@ Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
             &gap_existence_max, &gap_extension_max, &round_down, NULL);
 
    if (status)
+   {
+       sfree(normal);
+       sfree(non_affine);
        return status;
+   }
 
    if (*gap_existence == 0 && *gap_extension == 0 && non_affine)
-       return 0;   /* these values are supported. */
+       status = 0;   /* these values are supported. */
    else
    {
          int index=0;
@@ -2947,8 +3013,11 @@ Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
              *gap_existence = gap_existence_max;
              *gap_extension = gap_extension_max;
          }
+         status = 0;
    }
-   return 0;
+   sfree(normal);
+   sfree(non_affine);
+   return status;
 }
 
 /** Fills in error_return with strings describing the allowed values.
@@ -3224,42 +3293,46 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
     const int kHIndex = 4;
     int num_combinations = 0;
     int gap_open_max, gap_extend_max;
-    const array_of_8* kNormal=NULL;
-    const array_of_8* kNonAffine=NULL; 
+    array_of_8* normal=NULL;
+    array_of_8* linear=NULL; 
     Int2 status = s_GetNuclValuesArray(reward,
                                        penalty,
                                        &num_combinations,
-                                       &kNormal,
-                                       &kNonAffine,
+                                       &normal,
+                                       &linear,
                                        &gap_open_max,
                                        &gap_extend_max,
                                        round_down,
                                        error_return);
 
     if (status)
+    {
+       sfree(normal);
+       sfree(linear);
        return status;
+    }
 
     ASSERT(kbp && kbp_ungap);
 
 
     /* Try to find the table entry corresponding to input gap costs. */
-    if (gap_open == 0 && gap_extend == 0 && kNonAffine)
+    if (gap_open == 0 && gap_extend == 0 && linear)
     {
-        kbp->Lambda = kNonAffine[0][kLambdaIndex];
-        kbp->K = kNonAffine[0][kKIndex];
+        kbp->Lambda = linear[0][kLambdaIndex];
+        kbp->K = linear[0][kKIndex];
         kbp->logK = log(kbp->K);
-        kbp->H = kNonAffine[0][kHIndex];
+        kbp->H = linear[0][kHIndex];
     }
     else
     {
         int index=0;
         for (index = 0; index < num_combinations; ++index) {
-            if (kNormal[index][kGapOpenIndex] == gap_open &&
-                kNormal[index][kGapExtIndex] == gap_extend) {
-                kbp->Lambda = kNormal[index][kLambdaIndex];
-                kbp->K = kNormal[index][kKIndex];
+            if (normal[index][kGapOpenIndex] == gap_open &&
+                normal[index][kGapExtIndex] == gap_extend) {
+                kbp->Lambda = normal[index][kLambdaIndex];
+                kbp->K = normal[index][kKIndex];
                 kbp->logK = log(kbp->K);
-                kbp->H = kNormal[index][kHIndex];
+                kbp->H = normal[index][kHIndex];
                 break;
             }
         }
@@ -3283,7 +3356,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
                 {
                      len = strlen(buffer);
                      sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n", 
-                        (long) kNormal[i][kGapOpenIndex],  (long) kNormal[i][kGapExtIndex]);
+                        (long) normal[i][kGapOpenIndex],  (long) normal[i][kGapExtIndex]);
                 }
                 len = strlen(buffer);
                 sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n", 
@@ -3292,11 +3365,15 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
                 sprintf(buffer+len, "Any values more stringent than %ld and %ld are supported\n", 
                      (long) gap_open_max, (long) gap_extend_max);
                 Blast_MessageWrite(error_return, eBlastSevError, 0, 0, buffer);
+                sfree(normal);
+                sfree(linear);
                 return 1;
             }
         }
     }
 
+    sfree(normal);
+    sfree(linear);
     return 0;
 }
 
@@ -3328,14 +3405,15 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
     Int4 num_combinations = 0;
     Int4 gap_open_max = 0, gap_extend_max = 0;
     Int4 index = 0;
-    const array_of_8* kNormal=NULL;
-    const array_of_8* kNonAffine=NULL; 
+    array_of_8* normal=NULL;
+    array_of_8* linear=NULL; 
     Boolean round_down = FALSE;
+    Boolean found = FALSE;
     Int2 status = s_GetNuclValuesArray(reward,
                                        penalty,
                                        &num_combinations, 
-                                       &kNormal,
-                                       &kNonAffine,
+                                       &normal,
+                                       &linear,
                                        &gap_open_max,
                                        &gap_extend_max,
                                        &round_down,
@@ -3347,28 +3425,39 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
     ASSERT(alpha && beta && kbp);
 
     /* For ungapped search return ungapped values of alpha and beta. */
-    if (gapped_calculation && kNormal) {
-        if (gap_open == 0 && gap_extend == 0 && kNonAffine)
+    if (gapped_calculation && normal) {
+        if (gap_open == 0 && gap_extend == 0 && linear)
         {
-            *alpha = kNonAffine[0][kAlphaIndex];
-             *beta = kNonAffine[0][kBetaIndex];
-            return 0;
+            *alpha = linear[0][kAlphaIndex];
+            *beta = linear[0][kBetaIndex];
+            found = TRUE;
         }
-        for (index = 0; index < num_combinations; ++index) {
-            if (kNormal[index][kGapOpenIndex] == gap_open && 
-                kNormal[index][kGapExtIndex] == gap_extend) {
-                *alpha = kNormal[index][kAlphaIndex];
-                *beta = kNormal[index][kBetaIndex];
-                return 0;
+        else
+        {
+      
+            for (index = 0; index < num_combinations; ++index) {
+                if (normal[index][kGapOpenIndex] == gap_open && 
+                    normal[index][kGapExtIndex] == gap_extend) {
+                    *alpha = normal[index][kAlphaIndex];
+                    *beta = normal[index][kBetaIndex];
+                    found = TRUE;
+                    break;
+                }
             }
         }
+        
     }
 
     /* If input values not found in tables, or if this is an ungapped search,
        return the ungapped values of alpha and beta. */
-    *alpha = kbp->Lambda/kbp->H;
-    *beta = s_GetUngappedBeta(reward, penalty);
+    if (!found)
+    {
+        *alpha = kbp->Lambda/kbp->H;
+        *beta = s_GetUngappedBeta(reward, penalty);
+    }
 
+    sfree(linear);
+    sfree(normal);
     return 0;
 }
 
@@ -4216,6 +4305,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.134  2005/11/01 18:49:01  madden
+ * Changes to s_GetNuclValuesArray and calling functions to support (for blastn) reward and penalty values that are multiples of already supported values
+ *
  * Revision 1.133  2005/10/31 14:05:24  madden
  * 1.) add support for blastn reward/penalty values of 1/-5, 3/-4, and 3/-2.
  * 2.) BLAST_GetNucleotideGapExistenceExtendParams now validates value as well as suggesting a
