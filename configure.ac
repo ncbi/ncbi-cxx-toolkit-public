@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.398 2005/11/01 18:26:49 ucko Exp $
+#  $Id: configure.ac,v 1.399 2005/11/01 19:14:57 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -695,6 +695,7 @@ else
    MT_FLAG=
    THREAD_LIBS=
    mt_sfx=""
+   WithoutFeatures="$WithoutFeatures MT"
 fi
 MT_SFX="${mt_sfx}"
 AC_SUBST(MT_SFX)
@@ -1250,6 +1251,7 @@ esac
 
 if test "$with_dll" = "no"; then # no DLLs whatsoever!
    FORCE_STATIC_LIB="LIB_OR_DLL = lib"
+   WithoutFeatures="$WithoutFeatures DLL"
 else
    FORCE_STATIC_LIB=
    WithFeatures="$WithFeatures DLL"
@@ -1894,6 +1896,7 @@ elif test "$x_have_unistd" = "yes" ; then
      solaris) AC_DEFINE(NCBI_OS_SOLARIS, 1, [Define to 1 on Solaris.])      ;;
    esac
 else
+   WithoutFeatures="$WithoutFeatures unix"
    AC_DEFINE(NCBI_OS_MAC, 1, [Define to 1 on MacOS.])
    AC_DEFINE(NCBI_OS, "MAC", [Operating system name])
 fi
@@ -3849,7 +3852,7 @@ if test "$with_sss" = "no" ; then
    NCBI_SSS_LIBPATH=
    LIBSSSUTILS=
    LIBSSSDB=
-   WithoutPackages="$WithoutPackages SSS"
+   WithoutPackages="$WithoutPackages SSSUTILS SSSDB"
 else
    if test "$with_included_sss" = "yes"; then
       NCBI_SSS_LIBPATH= # Not needed
@@ -4871,6 +4874,8 @@ if test -n "$with_check"  -a  "$with_check" != "no" ; then
       CHECK_ARG=`echo "$with_check" | sed 's/%/ /g'`
    fi
    WithFeatures="$WithFeatures check"
+else
+   WithoutFeatures="$WithoutFeatures check"
 fi
 CHECK_TOOLS=$with_check_tools
 
@@ -5215,6 +5220,9 @@ dnl Update list of enabled packages
 rm -f "$status_dir"/*.enabled
 for p in $WithPackages $WithProjects $WithFeatures ; do
    touch "$status_dir"/$p.enabled
+done
+for p in $WithoutPackages $WithoutProjects $WithoutFeatures ; do
+   touch "$status_dir"/-$p.enabled
 done
 
 dnl Create dummy .dep files for system installations of (b)zlib.
