@@ -1275,10 +1275,10 @@ bool CBDB_Cache::HasBlobs(const string&  key,
         return false;
     }
 
-    const char* skey = m_CacheAttrDB->key;
+    //const char* skey = m_CacheAttrDB->key;
     //int overflow = m_CacheAttrDB->overflow;
-    const char* ssubkey = m_CacheAttrDB->subkey;
-    int version = m_CacheAttrDB->version;
+    //const char* ssubkey = m_CacheAttrDB->subkey;
+    //int version = m_CacheAttrDB->version;
 
     if (x_CheckTimestampExpired(curr)) {
         return false;
@@ -2826,6 +2826,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.123  2005/11/01 14:53:25  kuznets
+ * Fixed unused var warning
+ *
  * Revision 1.122  2005/10/27 16:48:48  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
