@@ -65,7 +65,7 @@ ShowHideDialog::ShowHideDialog(
     const wxPoint& pos
 ) :
     wxDialog(parent, id, title, pos, wxSize(MIN_SIZE), wxCAPTION | wxRESIZE_BORDER),
-    itemsEnabled(itemsOn), callbackObject(callback), applyB(NULL), haveApplied(false)
+    itemsEnabled(itemsOn), haveApplied(false), callbackObject(callback), applyB(NULL)
 {
     SetAutoLayout(true);
     SetSizeHints(MIN_SIZE);
@@ -208,6 +208,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.15  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

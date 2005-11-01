@@ -54,9 +54,9 @@ BEGIN_NCBI_SCOPE
 
 FileMessenger::FileMessenger(FileMessagingManager *parentManager,
     const std::string& messageFilename, MessageResponder *responderObject, bool isReadOnly) :
-        manager(parentManager), responder(responderObject),
+        manager(parentManager),
         messageFile(messageFilename), lockFile(string(messageFilename) + ".lock"),
-        lastKnownSize(0), readOnly(isReadOnly)
+        responder(responderObject), readOnly(isReadOnly), lastKnownSize(0)
 {
     TRACEMSG("monitoring message file " << messageFilename);
 }
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.12  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

@@ -501,8 +501,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     if (firstCol == 0 && lastCol == alignment->AlignmentWidth()-1) {
         for (alnRow=0; alnRow<alignment->NRows(); ++alnRow) {
             row = rowOrder[alnRow]; // translate display row -> data row
-            if (lastShownSeqLocs[row] !=
-                    alignment->GetSequenceOfRow(row)->Length()-1) {
+            if (lastShownSeqLocs[row] != (int)alignment->GetSequenceOfRow(row)->Length() - 1) {
                 ERRORMSG("DumpText: full display - seqloc markers don't add up for row " << row);
                 break;
             }
@@ -575,6 +574,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.76  2005/10/27 22:53:03  thiessen
 * better handling of sequence descriptions
 *

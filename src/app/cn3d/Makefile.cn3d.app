@@ -69,7 +69,7 @@ SRC =	aaa_dummy_pch \
 	viewer_window_base \
 	wx_tools
 
-LIB =	xbma_refiner xstruct_util xstruct_dp xblast \
+LIB =	xbma_refiner xstruct_util xstruct_dp xstruct_thread xblast \
 	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
 	xser xutil xctools xconnect xncbi \
@@ -95,8 +95,7 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 
 LDFLAGS = $(FAST_LDFLAGS)
 
-NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj \
-              -lncbiobj -lncbi
+NCBI_C_LIBS = -lncbiid1 -lnetcli -lncbitool -lblastcompadj -lncbiobj -lncbi
 
 LIBS = \
 	$(WXWIDGETS_LIBS) \

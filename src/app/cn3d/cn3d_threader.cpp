@@ -37,6 +37,10 @@
 
 #include <memory>
 
+#include <objects/scoremat/scoremat__.hpp>
+
+#include <algo/structure/threader/thrdatd.h>
+
 #include "block_multiple_alignment.hpp"
 #include "cn3d_threader.hpp"
 #include "sequence_set.hpp"
@@ -48,16 +52,10 @@
 #include "cn3d_tools.hpp"
 #include "molecule_identifier.hpp"
 #include "sequence_viewer.hpp"
-
-// C-toolkit stuff
-#include <objseq.h>
-#include <objalign.h>
-#include <thrdatd.h>
-#include <thrddecl.h>
-#include <cddutil.h>
-#include <ncbistr.h>
+#include "cn3d_pssm.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -72,22 +70,22 @@ BEGIN_SCOPE(Cn3D)
 
 // default threading options
 ThreaderOptions::ThreaderOptions(void) :
+    mergeAfterEachSequence(true),
+    freezeIsolatedBlocks(true),
     weightPSSM(0.5),
     loopLengthMultiplier(1.5),
     nRandomStarts(1),
     nResultAlignments(1),
-    terminalResidueCutoff(-1),
-    mergeAfterEachSequence(true),
-    freezeIsolatedBlocks(true)
+    terminalResidueCutoff(-1)
 {
 }
 
 ThreaderOptions globalThreaderOptions;
 
 // gives threader residue number for a character (-1 if non-standard aa)
-static unsigned int LookupThreaderResidueNumberFromCharacterAbbrev(unsigned char r)
+static int LookupThreaderResidueNumberFromCharacterAbbrev(char r)
 {
-    typedef map < char, unsigned int > Char2Int;
+    typedef map < char, int > Char2Int;
     static Char2Int charMap;
 
     if (charMap.size() == 0) {
@@ -104,14 +102,15 @@ const unsigned int Threader::SCALING_FACTOR = 1000000;
 const string Threader::ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 
 // gives NCBIStdaa residue number for a threader residue number (or # for 'X' if char == -1)
-unsigned int LookupNCBIStdaaNumberFromThreaderResidueNumber(unsigned char r)
+unsigned int LookupNCBIStdaaNumberFromThreaderResidueNumber(char r)
 {
     r = toupper((unsigned char) r);
     return LookupNCBIStdaaNumberFromCharacter(
-            (r >= 0 && r < Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
+            (r >= 0 && r < (int)Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
 }
 
-Threader::Threader(void)
+Threader::Threader(AlignmentManager *parentAlnMgr) :
+    alignmentManager(parentAlnMgr)
 {
 }
 
@@ -121,8 +120,7 @@ Threader::~Threader(void)
     for (c=contacts.begin(); c!=ce; ++c) FreeFldMtf(c->second);
 }
 
-Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
-    double weightPSSM, BLAST_KarlinBlkPtr karlinBlock)
+Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM)
 {
     // special case for "PSSM" of single-row "alignment" - just use BLOSUM62 score
     if (multiple->NRows() == 1) {
@@ -131,8 +129,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
             for (unsigned int aa=0; aa<ThreaderResidues.size(); ++aa)
                 seqMtf->ww[res][aa] = ThrdRound(
                     weightPSSM * SCALING_FACTOR *
-                        GetBLOSUM62Score(multiple->GetMaster()->sequenceString[res],
-                                         ThreaderResidues[aa]));
+                        GetBLOSUM62Score(multiple->GetMaster()->sequenceString[res], ThreaderResidues[aa]));
         TRACEMSG("Created Seq_Mtf (PSSM) from BLOSUM62 scores");
         return seqMtf;
     }
@@ -143,55 +140,51 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple,
         return NULL;
     }
 
-    // convert all sequences to Bioseqs
-    multiple->GetMaster()->parentSet->CreateAllBioseqs(multiple);
-
-    // create SeqAlign from this BlockMultipleAlignment
-    SeqAlignPtr seqAlign = multiple->CreateCSeqAlign();
-
-#ifdef DEBUG_THREADER
-    // dump for debugging
-    SeqAlignPtr saChain = seqAlign;
-    AsnIoPtr aip = AsnIoOpen("Seq-align.debug.txt", "w");
-    while (saChain) {
-        SeqAlignAsnWrite(saChain, aip, NULL);
-        saChain = saChain->next;
+    CRef < CPssmWithParameters > pssm(CreatePSSM(multiple));
+    if (pssm.Empty()) {
+        ERRORMSG("CreatePSSM() failed");
+        return NULL;
     }
-    aip = AsnIoClose(aip);
-#endif
+    
+    TRACEMSG("converting CPssmWithParameters to Seq_Mtf");
 
-    // "spread" unaligned residues between aligned blocks, for PSSM construction
-    CddDegapSeqAlign(seqAlign);
-
-    Seq_Mtf *seqMtf = NULL;
-    for (unsigned int i=11; i>=1; --i) {
-        // first try auto-determined pseudocount (-1); if fails, find higest <= 10 that works
-        int pseudocount = (i == 11) ? -1 : i;
-        seqMtf = CddDenDiagCposComp2KBP(
-            multiple->GetMaster()->parentSet->GetOrCreateBioseq(multiple->GetMaster()),
-            pseudocount,
-            seqAlign,
-            NULL,
-            NULL,
-            weightPSSM,
-            SCALING_FACTOR,
-            NULL,
-            karlinBlock
-        );
-        if (seqMtf)
-            break;
-        else
-            WARNINGMSG("Cannot use " << ((pseudocount == -1) ? "(empirical) " : "")
-                << "pseudocount of " << pseudocount);
+    if (!pssm->GetPssm().IsSetFinalData()) {
+        ERRORMSG("CreateSeqMtf() - pssm must have finalData");
+        return NULL;
+    }
+    unsigned int nScores = pssm->GetPssm().GetNumRows() * pssm->GetPssm().GetNumColumns();
+    if (pssm->GetPssm().GetNumRows() != 26 || pssm->GetPssm().GetFinalData().GetScores().size() != nScores
+            || pssm->GetPssm().GetNumColumns() != (int)multiple->GetMaster()->Length()) {
+        ERRORMSG("CreateSeqMtf() - bad matrix size");
+        return NULL;
     }
 
-    if (seqMtf)
-        TRACEMSG("created Seq_Mtf (PSSM)");
-    else
-        ERRORMSG("Cannot find any pseudocount that yields an acceptable PSSM!");
+    Seq_Mtf *seqMtf = NewSeqMtf(pssm->GetPssm().GetNumColumns(), 26);
 
-    SeqAlignSetFree(seqAlign);
-	return seqMtf;
+    // convert matrix
+    unsigned int i, r = 0, c = 0;
+    CPssmFinalData::TScores::const_iterator s = pssm->GetPssm().GetFinalData().GetScores().begin();
+    for (i=0; i<nScores; ++i, ++s) {
+
+        seqMtf->ww[r][c] = ThrdRound(weightPSSM * SCALING_FACTOR * (*s));
+
+        // adjust for matrix layout in pssm
+        if (pssm->GetPssm().GetByRow()) {
+            ++r;
+            if ((int)r == pssm->GetPssm().GetNumColumns()) {
+                ++c;
+                r = 0;
+            }
+        } else {
+            ++c;
+            if ((int)c == pssm->GetPssm().GetNumRows()) {
+                ++r;
+                c = 0;
+            }
+        }
+    }
+    
+    return seqMtf;
 }
 
 Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier)
@@ -372,7 +365,7 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     char      *FileName = "ContactPotential";
     char      ResName[32];
     char      Path[512];
-    Int4      i, j, k;
+    unsigned int i, j, k;
     double    temp;
 
     static const unsigned int kNumDistances = 6;
@@ -663,7 +656,7 @@ static void GetContacts(const Threader::VirtualCoordinateList& coords,
                 (coords[i].type == Threader::VIRTUAL_PEPTIDE &&
                  coords[j].type == Threader::VIRTUAL_PEPTIDE) ||
                 // don't include disulfide-bonded cysteine pairs
-                (coords[i].disulfideWith == j || coords[j].disulfideWith == i)
+                (coords[i].disulfideWith == (int)j || coords[j].disulfideWith == (int)i)
                 ) continue;
 
             bin = BinDistance(coords[i].coord, coords[j].coord);
@@ -795,14 +788,14 @@ Fld_Mtf * Threader::CreateFldMtf(const Sequence *masterSequence)
 }
 
 static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl, unsigned int nResult,
-    const Cor_Def *corDef, BlockMultipleAlignment::SequenceList *sequences, AlignmentManager *alnMgr)
+    const Cor_Def *corDef, BlockMultipleAlignment::SequenceList *sequences, AlignmentManager *alignmentManager)
 {
     if (corDef->sll.n != thdTbl->nsc || (int)nResult >= thdTbl->n) {
         ERRORMSG("CreateAlignmentFromThdTbl() - inconsistent Thd_Tbl");
         return NULL;
     }
 
-    BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(sequences, alnMgr);
+    BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(sequences, alignmentManager);
 
     // add blocks from threader result
     for (int block=0; block<corDef->sll.n; ++block) {
@@ -907,7 +900,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
     trajectory = new float[gibScd->ntp];
 
     // create initial PSSM
-    if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM, NULL))) goto cleanup;
+    if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM))) goto cleanup;
 #ifdef DEBUG_THREADER
     pFile = fopen("Seq_Mtf.debug.txt", "w");
     PrintSeqMtf(seqMtf, pFile);
@@ -934,7 +927,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
 
         Qry_Seq *qrySeq = NULL;
         Thd_Tbl *thdTbl = NULL;
-        unsigned int success;
+        unsigned int success = 0;
 
         // create query sequence
         if (!(qrySeq = CreateQrySeq(masterMultiple, *p, options.terminalResidueCutoff))) goto cleanup2;
@@ -978,8 +971,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
                 BlockMultipleAlignment::SequenceList *sequences = new BlockMultipleAlignment::SequenceList(2);
                 sequences->front() = (*p)->GetMaster();
                 sequences->back() = (*p)->GetSequenceOfRow(1);
-                newAlignment = CreateAlignmentFromThdTbl(thdTbl, i, corDef,
-                    sequences, masterMultiple->alignmentManager);
+                newAlignment = CreateAlignmentFromThdTbl(thdTbl, i, corDef, sequences, alignmentManager);
                 if (!newAlignment) continue;
 
                 // set scores to show in alignment
@@ -1024,7 +1016,7 @@ cleanup2:
         if (success && p != pe && options.mergeAfterEachSequence) {
             // re-create PSSM after each merge
             FreeSeqMtf(seqMtf);
-            if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM, NULL))) goto cleanup;
+            if (!(seqMtf = CreateSeqMtf(masterMultiple, options.weightPSSM))) goto cleanup;
         }
     }
 
@@ -1125,7 +1117,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     if (weightPSSM < 1.0 && !(fldMtf = CreateFldMtf(multiple->GetMaster()))) goto cleanup;
 
     // create PSSM
-    if (weightPSSM > 0.0 && !(seqMtf = CreateSeqMtf(multiple, weightPSSM, NULL))) goto cleanup;
+    if (weightPSSM > 0.0 && !(seqMtf = CreateSeqMtf(multiple, weightPSSM))) goto cleanup;
 
     // create potential
     if (weightPSSM < 1.0 && !(rcxPtl = CreateRcxPtl(1.0 - weightPSSM))) goto cleanup;
@@ -1246,6 +1238,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.50  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

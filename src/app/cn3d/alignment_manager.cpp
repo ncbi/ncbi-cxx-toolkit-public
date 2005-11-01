@@ -75,7 +75,7 @@ void AlignmentManager::Init(void)
     updateViewer = new UpdateViewer(this);
     GlobalMessenger()->AddSequenceViewer(updateViewer);
 
-    threader = new Threader();
+    threader = new Threader(this);
     blaster = new BLASTer();
     blockAligner = new BlockAligner();
 //    bmaRefiner = new BMARefiner();
@@ -770,7 +770,7 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
             BlockMultipleAlignment::UngappedAlignedBlockList blocks;
             multiple->GetUngappedAlignedBlocks(&blocks);
             BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-            unsigned int col, row, rowScore, bestScore, lastRow = multiple->NRows() - 1;
+            unsigned int col, row, rowScore, bestScore=0, lastRow = multiple->NRows() - 1;
             const Sequence *mergeSeq = multiple->GetSequenceOfRow(lastRow);
             for (row=0; row<lastRow; ++row) {
                 const Sequence *otherSeq = multiple->GetSequenceOfRow(row);
@@ -1241,6 +1241,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.106  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.105  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *

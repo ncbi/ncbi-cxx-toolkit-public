@@ -96,7 +96,7 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
         return;
     }
     if (fontScale != 1.0 && fontScale > 0.0)
-        fontInfo.SetPointSize(fontScale * fontInfo.GetPointSize());
+        fontInfo.SetPointSize((int)(fontScale * fontInfo.GetPointSize()));
     auto_ptr<wxFont> newFont(wxFont::New(fontInfo));
     if (!newFont.get() || !newFont->Ok()) {
         ERRORMSG("Cn3DGLCanvas::SetGLFontFromRegistry() - can't get wxFont from wxNativeFontInfo");
@@ -263,6 +263,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.6  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

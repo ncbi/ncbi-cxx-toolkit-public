@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include "sequence_viewer_widget.hpp"
 #include "viewable_alignment.hpp"
@@ -70,7 +71,7 @@ private:
     const SequenceViewerWidget_SequenceArea *sequenceArea;
 
     ViewableAlignment *alignment;
-    unsigned int highlightedTitleRow;
+    int highlightedTitleRow;
 
     wxColor currentBackgroundColor;
     wxFont *titleFont;
@@ -174,7 +175,7 @@ SequenceViewerWidget_SequenceArea::SequenceViewerWidget_SequenceArea(
         const wxString& name
     ) :
     wxScrolledWindow(parent, -1, pos, size, style, name),
-    alignment(NULL), currentFont(NULL), titleArea(NULL), bitmap(NULL)
+    titleArea(NULL), alignment(NULL), bitmap(NULL), currentFont(NULL)
 {
     // set default background color
     currentBackgroundColor = *wxWHITE;
@@ -722,7 +723,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
             RemoveRubberband(dc, fromX, fromY, cellX, cellY, vsX, vsY);
         } else {
             DrawCell(dc, fromX, fromY, vsX, vsY, true);
-            if (cellX != fromX || cellY != fromY)
+            if (cellX != (int)fromX || cellY != (int)fromY)
                 DrawCell(dc, cellX, cellY, vsX, vsY, true);
         }
         dc.EndDrawing();
@@ -753,7 +754,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
     }
 
     // process continuation of selection - redraw rectangle
-    else if (dragging && (cellX != prevToX || cellY != prevToY)) {
+    else if (dragging && (cellX != (int)prevToX || cellY != (int)prevToY)) {
 
         wxClientDC dc(this);
         dc.BeginDrawing();
@@ -768,7 +769,7 @@ void SequenceViewerWidget_SequenceArea::OnMouseEvent(wxMouseEvent& event)
         } else {
             if (prevToX != fromX || prevToY != fromY)
                 DrawCell(dc, prevToX, prevToY, vsX, vsY, true);
-            if (cellX != fromX || cellY != fromY) {
+            if (cellX != (int)fromX || cellY != (int)fromY) {
                 DrawRubberband(dc, cellX, cellY, cellX, cellY, vsX, vsY);
             }
         }
@@ -794,8 +795,8 @@ SequenceViewerWidget_TitleArea::SequenceViewerWidget_TitleArea(
         const wxPoint& pos,
         const wxSize& size) :
     wxWindow(parent, id, pos, size, wxNO_3D),
-    titleFont(NULL), cellHeight(0), maxTitleWidth(20), alignment(NULL),
-    sequenceArea(NULL), highlightedTitleRow(-1)
+    sequenceArea(NULL), alignment(NULL), highlightedTitleRow(-1), titleFont(NULL), 
+    cellHeight(0), maxTitleWidth(20)
 {
     currentBackgroundColor = *wxWHITE;
 }
@@ -1124,6 +1125,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.45  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *

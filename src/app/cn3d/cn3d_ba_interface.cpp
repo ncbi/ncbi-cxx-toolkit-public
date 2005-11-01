@@ -121,8 +121,8 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
             }
         }
         if (p == pe)
-            blockInfo->freezeBlocks[i] = -1;
-//        if (blockInfo->freezeBlocks[i] >= 0)
+            blockInfo->freezeBlocks[i] = DP_UNFROZEN_BLOCK;
+//        if (blockInfo->freezeBlocks[i] != DP_UNFROZEN_BLOCK)
 //            TESTMSG("block " << (i+1) << " frozen at query pos " << (blockInfo->freezeBlocks[i]+1));
 //        else
 //            TESTMSG("block " << (i+1) << " unfrozen");
@@ -264,10 +264,10 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         // slave sequence info
         dpQuery = (*s)->GetSequenceOfRow(1);
         int startQueryPosition =
-            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < dpQuery->Length()) ?
+            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < (int)dpQuery->Length()) ?
                 (*s)->alignSlaveFrom : 0;
         int endQueryPosition =
-            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < dpQuery->Length()) ?
+            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < (int)dpQuery->Length()) ?
                 (*s)->alignSlaveTo : dpQuery->Length() - 1;
         TRACEMSG("query region: " << (startQueryPosition+1) << " to " << (endQueryPosition+1));
 
@@ -482,8 +482,8 @@ bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *opt
     options->mergeAfterEachSequence = cMerge->IsChecked();
     return (
         fpPercent->GetDouble(&(options->loopPercentile)) &&
-        iExtension->GetInteger(&(options->loopExtension)) &&
-        iCutoff->GetInteger(&(options->loopCutoff))
+        iExtension->GetUnsignedInteger(&(options->loopExtension)) &&
+        iCutoff->GetUnsignedInteger(&(options->loopCutoff))
     );
 }
 
@@ -512,6 +512,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.38  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

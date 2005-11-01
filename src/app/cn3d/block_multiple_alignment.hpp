@@ -72,7 +72,6 @@ public:
     ~BlockMultipleAlignment(void);
 
     const SequenceList * GetSequences(void) const { return sequences; }
-    AlignmentManager *alignmentManager;
 
     // create a C-object SeqAlign from this alignment (actually a linked list of pairwise
     // SeqAlign's; should be freed with SeqAlignSetFree())
@@ -241,6 +240,7 @@ public:
     unsigned int ShowGeometryViolations(bool showGeometryViolations);
 
 private:
+    AlignmentManager *alignmentManager;
     SequenceList *sequences;
     ConservationColorer *conservationColorer;
     mutable BLAST_Matrix *pssm;
@@ -326,7 +326,7 @@ public:
 
     // kludge for now for storing allowed alignment regions, e.g. when demoted from multiple.
     // (only two ranges for now, since this is used only with pairwise alignments)
-    unsigned int alignMasterFrom, alignMasterTo, alignSlaveFrom, alignSlaveTo;
+    int alignMasterFrom, alignMasterTo, alignSlaveFrom, alignSlaveTo;
 };
 
 
@@ -360,7 +360,7 @@ public:
 
 protected:
     Block(const BlockMultipleAlignment *multiple) :
-        parentAlignment(multiple), ranges(multiple->NRows()) { }
+        width(0), ranges(multiple->NRows()), parentAlignment(multiple)  { }
 
     typedef std::vector < Range > RangeList;
     RangeList ranges;
@@ -442,6 +442,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.52  2005/10/28 18:20:41  thiessen
 * add alignment rainbow coloring
 *

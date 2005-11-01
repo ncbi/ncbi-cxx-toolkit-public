@@ -68,7 +68,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
     const CMolecule_graph& graph,
     const ResidueGraphList& standardDictionary,
     const ResidueGraphList& localDictionary) :
-    StructureBase(parentGraph), type(eOther), sequence(NULL), nDomains(0)
+        StructureBase(parentGraph), type(eOther), nDomains(0), sequence(NULL)
 {
     int gi = MoleculeIdentifier::VALUE_NOT_SET, pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
     string pdbID, accession;
@@ -402,6 +402,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.49  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

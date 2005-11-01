@@ -65,9 +65,9 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(Cn3D)
 
 BlockMultipleAlignment::BlockMultipleAlignment(SequenceList *sequenceList, AlignmentManager *alnMgr) :
-    sequences(sequenceList), conservationColorer(NULL), alignmentManager(alnMgr),
-    alignMasterFrom(-1), alignMasterTo(-1), alignSlaveFrom(-1), alignSlaveTo(-1),
-    pssm(NULL), showGeometryViolations(false)
+    alignmentManager(alnMgr), sequences(sequenceList), conservationColorer(NULL),
+    pssm(NULL), showGeometryViolations(false),
+    alignMasterFrom(-1), alignMasterTo(-1), alignSlaveFrom(-1), alignSlaveTo(-1)
 {
     InitCache();
     rowDoubles.resize(sequenceList->size(), 0.0);
@@ -167,7 +167,7 @@ bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
         range = block->GetRangeOfRow(row);
         if (prevBlock) prevRange = prevBlock->GetRangeOfRow(row);
         if (nextBlock) nextRange = nextBlock->GetRangeOfRow(row);
-        if (range->to - range->from + 1 != block->width ||          // check block width
+        if (range->to - range->from + 1 != (int)block->width ||     // check block width
             (prevRange && range->from <= prevRange->to) ||          // check for range overlap
             (nextRange && range->to >= nextRange->from) ||          // check for range overlap
             range->from > range->to ||                              // check range values
@@ -257,7 +257,8 @@ bool BlockMultipleAlignment::AddUnalignedBlocks(void)
 
 bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
 {
-    unsigned int i = 0, j, n = 0;
+    unsigned int i = 0, j;
+    int n = 0;
     BlockList::iterator b, be = blocks.end();
 
     // reset old stuff, recalculate width
@@ -278,7 +279,7 @@ bool BlockMultipleAlignment::UpdateBlockMapAndColors(bool clearRowInfo)
         for (j=0; j<(*b)->width; ++j, ++i) {
             blockMap[i].block = *b;
             blockMap[i].blockColumn = j;
-            blockMap[i].alignedBlockNum = aBlock ? n : -1;
+            blockMap[i].alignedBlockNum = (aBlock ? n : -1);
         }
     }
 
@@ -783,7 +784,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(unsigned int columnFrom, unsigned
     }
 
     // shrink block from right (requestedShift < 0)
-    else if (blockColumn == info.block->width - 1 &&
+    else if (blockColumn == (int)info.block->width - 1 &&
                 requestedShift < 0 && -requestedShift < (int)info.block->width) {
         actualShift = requestedShift;
         TRACEMSG("shrinking block from right");
@@ -807,7 +808,7 @@ bool BlockMultipleAlignment::MoveBlockBoundary(unsigned int columnFrom, unsigned
     }
 
     // grow block to right
-    else if (blockColumn == info.block->width - 1 && requestedShift > 0) {
+    else if (blockColumn == (int)info.block->width - 1 && requestedShift > 0) {
         Block *nextBlock = GetBlockAfter(info.block);
         if (nextBlock && !nextBlock->IsAligned()) {
             int nRes;
@@ -1089,7 +1090,7 @@ bool BlockMultipleAlignment::OptimizeBlock(unsigned int row, unsigned int alignm
     }
 
     // if the best position is other than the current, then shift the block accordingly
-    bool moved = (bestSeqIndexStart != range->from);
+    bool moved = ((int)bestSeqIndexStart != range->from);
     if (moved) {
         if ((int)bestSeqIndexStart < range->from)
             TRACEMSG("shifting block right by " << (range->from - bestSeqIndexStart));
@@ -1184,7 +1185,8 @@ bool BlockMultipleAlignment::CreateBlock(unsigned int fromAlignmentIndex, unsign
         if (!GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, &seq, &seqIndexFrom, &ignored) ||
             !GetSequenceAndIndexAt(toAlignmentIndex, row, justification, &seq, &seqIndexTo, &ignored) ||
             seqIndexFrom < 0 || seqIndexTo < 0 ||
-            seqIndexTo - seqIndexFrom + 1 != newBlockWidth) return false;
+            seqIndexTo - seqIndexFrom + 1 != (int)newBlockWidth) 
+                return false;
         seqIndexesFrom[row] = seqIndexFrom;
         seqIndexesTo[row] = seqIndexTo;
     }
@@ -1442,7 +1444,7 @@ bool BlockMultipleAlignment::ExtractRows(
                     newAlignment->alignSlaveFrom = 0;
                 newAlignment->alignSlaveTo =
                     uaBlocks.back()->GetRangeOfRow(slavesToRemove[i])->to + excess;
-                if (newAlignment->alignSlaveTo >= (*newSeqs)[1]->Length())
+                if (newAlignment->alignSlaveTo >= (int)((*newSeqs)[1]->Length()))
                     newAlignment->alignSlaveTo = (*newSeqs)[1]->Length() - 1;
                 TRACEMSG((*newSeqs)[1]->identifier->ToString() << " aligned from "
                     << newAlignment->alignSlaveFrom << " to " << newAlignment->alignSlaveTo);
@@ -1767,7 +1769,7 @@ int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigned int seq
                 // search block columns to find index (inefficient, but avoids having to write
                 // inverse functions of Block::GetIndexAt()
                 for (blockColumn=0; blockColumn<block->width; ++blockColumn) {
-                    if (seqIndex == block->GetIndexAt(blockColumn, row, justification))
+                    if ((int)seqIndex == block->GetIndexAt(blockColumn, row, justification))
                         return alignmentIndex + blockColumn;
                 }
                 ERRORMSG("BlockMultipleAlignment::GetAlignmentIndex() - can't find index in block");
@@ -1863,7 +1865,7 @@ int UnalignedBlock::GetIndexAt(unsigned int blockColumn, unsigned int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const
 {
     const Block::Range *range = GetRangeOfRow(row);
-    int seqIndex;
+    int seqIndex = -1;
     unsigned int rangeWidth, rangeMiddle, extraSpace;
 
     switch (justification) {
@@ -1952,6 +1954,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.75  2005/10/28 18:20:41  thiessen
 * add alignment rainbow coloring
 *

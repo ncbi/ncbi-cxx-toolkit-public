@@ -52,7 +52,7 @@ public:
 
   Element(const char *n, const char *s,
           double r, double g, double b, double v) :
-    name(n), symbol(s), color(r,g,b), vdWRadius(v) { }
+    name(n), symbol(s), vdWRadius(v), color(r,g,b) { }
 };
 
 class PeriodicTableClass
@@ -97,6 +97,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.7  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

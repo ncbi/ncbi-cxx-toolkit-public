@@ -389,7 +389,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         TRACEMSG("drawing ChemicalGraph of object " << object->pdbID);
 
     // put each protein (with its 3d-objects) or nucleotide chain in its own display list
-    bool continueDraw;
+    bool continueDraw = false;
     AtomSetList::const_iterator a, ae=atomSetList.end();
     MoleculeMap::const_iterator m, me=molecules.end();
     for (m=molecules.begin(); m!=me; ++m) {
@@ -445,6 +445,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
         a->first->SetActiveEnsemble(a->second);
         parentSet->renderer->StartDisplayList(displayListOtherStart + n);
 
+        continueDraw = true;
         for (m=molecules.begin(); m!=me; ++m) {
             if (m->second->IsProtein() || m->second->IsNucleotide()) continue;
             if (!(continueDraw = m->second->DrawAll(a->first))) break;
@@ -536,6 +537,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.42  2005/10/27 22:53:02  thiessen
 * better handling of sequence descriptions
 *

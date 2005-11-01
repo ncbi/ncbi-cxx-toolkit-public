@@ -34,7 +34,8 @@
 #ifndef CN3D_UPDATE_VIEWER__HPP
 #define CN3D_UPDATE_VIEWER__HPP
 
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 
 #include <objects/mmdb1/Biostruc.hpp>
 #include <objects/mmdb3/Biostruc_feature.hpp>
@@ -134,6 +135,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.26  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

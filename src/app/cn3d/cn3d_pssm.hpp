@@ -37,13 +37,17 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistre.hpp>
 
+#include <objects/scoremat/PssmWithParameters.hpp>
+
 #include <blastkar.h>   // for BLAST_Matrix
+
 
 BEGIN_SCOPE(Cn3D)
 
 class BlockMultipleAlignment;
 
 BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma);
+ncbi::objects::CPssmWithParameters * CreatePSSM(const BlockMultipleAlignment *bma);
 
 void OutputPSSM(const BlockMultipleAlignment *bma, ncbi::CNcbiOstream& os);
 
@@ -54,6 +58,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.2  2005/06/07 12:18:52  thiessen
 * add PSSM export
 *

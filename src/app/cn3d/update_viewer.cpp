@@ -149,11 +149,9 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 
     // populate successive lines of the display with each alignment, with blank lines inbetween
     AlignmentList::const_iterator a, ae = newAlignments.end();
-    int nViolations = 0;
     for (a=newAlignments.begin(); a!=ae; ++a) {
         if ((*a)->NRows() != 2) {
-            ERRORMSG("UpdateViewer::AddAlignments() - got alignment with "
-                << (*a)->NRows() << " rows");
+            ERRORMSG("UpdateViewer::AddAlignments() - got alignment with " << (*a)->NRows() << " rows");
             continue;
         }
 
@@ -164,7 +162,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
         // add alignment to the display, including block row since editor is always on
         if (display->NRows() != 0) display->AddRowFromString("");
         display->AddBlockBoundaryRow(*a);
-        for (int row=0; row<2; ++row)
+        for (unsigned int row=0; row<2; ++row)
             display->AddRowFromAlignment(row, *a);
     }
 
@@ -172,7 +170,7 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
         display->SetStartingColumn(alignments.front()->GetFirstAlignedBlockPosition() - 5);
 
     Save();    // make this an undoable operation
-	if (updateWindow) updateWindow->UpdateDisplay(display);
+    if (updateWindow) updateWindow->UpdateDisplay(display);
 }
 
 void UpdateViewer::ReplaceAlignments(const AlignmentList& alignmentList)
@@ -1064,7 +1062,7 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
             if (newAlignment->alignMasterFrom < 0)
                 newAlignment->alignMasterFrom = 0;
             newAlignment->alignMasterTo = uaBlocks.back()->GetRangeOfRow(row)->to + excess;
-            if (newAlignment->alignMasterTo >= (*seqs)[0]->Length())
+            if (newAlignment->alignMasterTo >= ((int)((*seqs)[0]->Length())))
                 newAlignment->alignMasterTo = (*seqs)[0]->Length() - 1;
             newAlignment->alignSlaveFrom = update->alignSlaveFrom;
             newAlignment->alignSlaveTo = update->alignSlaveTo;
@@ -1159,6 +1157,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.81  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

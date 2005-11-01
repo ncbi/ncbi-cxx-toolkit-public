@@ -117,7 +117,7 @@ public:
     bool IsSolvent(void) const { return (type == eSolvent); }
     bool IsHeterogen(void) const { return (!IsProtein() && !IsNucleotide() && !IsSolvent()); }
 
-    int NResidues(void) const { return residues.size(); }
+    unsigned int NResidues(void) const { return residues.size(); }
     const Residue::AtomInfo * GetAtomInfo(int rID, int aID) const
     {
         ResidueMap::const_iterator info=residues.find(rID);
@@ -158,6 +158,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.30  2004/05/20 18:49:21  thiessen
 * don't do structure realignment if < 3 coords present
 *

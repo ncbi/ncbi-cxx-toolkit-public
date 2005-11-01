@@ -154,8 +154,9 @@ END_EVENT_TABLE()
 StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
     wxFrame(NULL, wxID_HIGHEST + 1, title, pos, size, wxDEFAULT_FRAME_STYLE | wxTHICK_FRAME),
     glCanvas(NULL), cddAnnotateDialog(NULL), cddDescriptionDialog(NULL), cddNotesDialog(NULL),
-    cddRefDialog(NULL), cddBookRefDialog(NULL), helpController(NULL), helpConfig(NULL),
-    cddOverview(NULL), fileMessagingManager("Cn3D"), fileMessenger(NULL), spinIncrement(3.0)
+    cddRefDialog(NULL), cddBookRefDialog(NULL), cddOverview(NULL), 
+    spinIncrement(3.0), helpController(NULL), helpConfig(NULL),
+    fileMessagingManager("Cn3D"), fileMessenger(NULL)
 {
     GlobalMessenger()->AddStructureWindow(this);
     animationTimer.SetOwner(this, MID_ANIMATE);
@@ -710,7 +711,7 @@ void StructureWindow::OnAnimationTimer(wxTimerEvent& event)
     else if (animationMode == ANIM_SPIN) {
         // pretend the user dragged the mouse to the right
         glCanvas->renderer->ChangeView(OpenGLRenderer::eXYRotateHV,
-            spinIncrement/glCanvas->renderer->GetRotateSpeed(), 0);
+            ((int) (spinIncrement / glCanvas->renderer->GetRotateSpeed())), 0);
         glCanvas->Refresh(false);
     }
 }
@@ -832,7 +833,7 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
         if (name.size() == 0) return;
 
         // replace style of same name
-        CCn3d_style_settings *settings;
+        CCn3d_style_settings *settings = NULL;
         CCn3d_style_settings_set::Tdata::iterator f, fe = favoriteStyles.Set().end();
         for (f=favoriteStyles.Set().begin(); f!=fe; ++f) {
             if (Stricmp((*f)->GetName().c_str(), name.c_str()) == 0) {
@@ -978,7 +979,7 @@ void StructureWindow::DestroyNonModalDialogs(void)
 void StructureWindow::OnPreferences(wxCommandEvent& event)
 {
     PreferencesDialog dialog(this);
-    int result = dialog.ShowModal();
+    dialog.ShowModal();
     glCanvas->Refresh(true); // in case stereo options changed
 }
 
@@ -1698,6 +1699,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.47  2005/10/27 22:53:03  thiessen
 * better handling of sequence descriptions
 *

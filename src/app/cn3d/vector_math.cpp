@@ -181,7 +181,7 @@ void RigidBodyFit(
     double  rot[3][3], corlnmatrx[3][3];
     int     flag1, flag2, flag3;
     int     i, j, iatv, ix;
-    double  an2, xx, f, fz, sgn, del, phix, phibes;
+    double  an2, xx, f, fz=0.0, sgn, del, phix, phibes;
     double  tol = .0001;
 
     // compute centroids
@@ -329,6 +329,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.10  2005/10/19 17:28:20  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

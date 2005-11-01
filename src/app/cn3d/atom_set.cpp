@@ -61,7 +61,7 @@ BEGIN_SCOPE(Cn3D)
 AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
     StructureBase(parent), activeEnsemble(NULL)
 {
-    int nAtoms = coords.GetNumber_of_points();
+    unsigned int nAtoms = coords.GetNumber_of_points();
     TRACEMSG("model has " << nAtoms << " atomic coords");
 
     bool haveTemp = coords.IsSetTemperature_factors(),
@@ -146,7 +146,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
     StructureObject *object = const_cast<StructureObject*>(constObject);
 
     // actually do the work of unpacking serial atom data into Atom objects
-    for (int i=0; i<nAtoms; ++i) {
+    for (unsigned int i=0; i<nAtoms; ++i) {
         AtomCoord *atom = new AtomCoord(this);
 
         atom->site.x = (static_cast<double>(*(i_X++)))/siteScale;
@@ -289,6 +289,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.21  2005/10/19 17:28:17  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

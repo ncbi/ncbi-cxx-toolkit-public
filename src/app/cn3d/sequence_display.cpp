@@ -197,7 +197,7 @@ bool DisplayRowFromString::GetCharacterTraitsAt(unsigned int column,
 ////////////////////////////////////////////////////////////////////////////////
 
 SequenceDisplay::SequenceDisplay(bool editable, ViewerWindowBase* const *parentViewerWindow) :
-    isEditable(editable), maxRowWidth(0), viewerWindow(parentViewerWindow), startingColumn(0)
+    isEditable(editable), viewerWindow(parentViewerWindow), startingColumn(0), maxRowWidth(0)
 {
 }
 
@@ -1214,7 +1214,7 @@ void SequenceDisplay::RowsAdded(unsigned int nRowsAddedToMultiple, BlockMultiple
     if (nRowsAddedToMultiple == 0) return;
 
     // find the last row that's from this multiple
-    unsigned int r, nRows = 0, lastAlnRowIndex;
+    unsigned int r, nRows = 0, lastAlnRowIndex = 0;
     int displayWhere = -1;
     DisplayRowFromAlignment *lastAlnRow = NULL;
     for (r=0; r<rows.size(); ++r) {
@@ -1223,7 +1223,7 @@ void SequenceDisplay::RowsAdded(unsigned int nRowsAddedToMultiple, BlockMultiple
             lastAlnRow = alnRow;
             lastAlnRowIndex = r;
             ++nRows;
-            if (alnWhere >= 0 && alnRow->row == alnWhere)
+            if (alnWhere >= 0 && (int)alnRow->row == alnWhere)
                 displayWhere = r;  // convert 'where' from alignment row to display row
         }
     }
@@ -1322,6 +1322,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.83  2005/10/27 22:53:02  thiessen
 * better handling of sequence descriptions
 *

@@ -45,7 +45,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
-#include <gdk/gdkx.h>
 
 #elif defined(__WXMAC__)
 #include <OpenGL/gl.h>
@@ -502,7 +501,7 @@ bool ExportPNG(Cn3DGLCanvas *glCanvas)
 
         currentCtx = glXGetCurrentContext(); // save current context info
         currentXdrw = glXGetCurrentDrawable();
-        display = GDK_DISPLAY();
+        display = (Display *) wxGetDisplay();
 
         currentXErrHandler = XSetErrorHandler(X_error_handler);
         gotAnXError = false;
@@ -868,6 +867,9 @@ wxSizer *SetupPNGOptionsDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.22  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

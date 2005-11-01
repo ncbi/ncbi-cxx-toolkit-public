@@ -105,7 +105,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
     StructureSet *structureSet, CDDSplashDialog **parentHandle,
     wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos) :
         wxDialog(parent, id, title, pos, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
-        sSet(structureSet), structureWindow(cn3dFrame), handle(parentHandle)
+        handle(parentHandle), structureWindow(cn3dFrame), sSet(structureSet)
 {
     if (!structureSet) {
         Destroy();
@@ -346,6 +346,9 @@ wxSizer *SetupCDDSplashDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.14  2005/10/27 22:53:02  thiessen
 * better handling of sequence descriptions
 *

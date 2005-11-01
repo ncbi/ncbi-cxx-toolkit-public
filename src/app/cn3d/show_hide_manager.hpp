@@ -53,7 +53,7 @@ class StructureObject;
 class ShowHideManager : public ShowHideCallbackObject
 {
 public:
-    ~ShowHideManager();
+    virtual ~ShowHideManager();
 
     // eventually this will be tied to a GUI element or something...
     bool OverlayConfEnsembles(void) const { return true; }
@@ -101,6 +101,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.14  2005/10/27 16:11:22  thiessen
 * add show aligned chains
 *

@@ -94,13 +94,13 @@ BEGIN_EVENT_TABLE(TaxonomyWindow, wxFrame)
 END_EVENT_TABLE()
 
 TaxonomyWindow::TaxonomyWindow(wxFrame *parent, TaxonomyWindow **thisHandle) :
-    handle(thisHandle),
     wxFrame(parent, -1, "Taxonomy Tree", wxPoint(75,75), wxSize(400,400),
         wxDEFAULT_FRAME_STYLE
 #if defined(__WXMSW__)
                 | wxFRAME_TOOL_WINDOW | wxFRAME_NO_TASKBAR | wxFRAME_FLOAT_ON_PARENT
 #endif
-        )
+    ),
+    handle(thisHandle)
 {
     // for now, create simple wx window with the tree
     tree = new wxTreeCtrl(this, -1, wxPoint(0,0), GetClientSize());
@@ -406,6 +406,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.14  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

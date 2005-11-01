@@ -761,7 +761,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                         for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); ++r) {
                         // highlight residues in interval
                         if (o == annotObjects.begin()) {
-                            if (r >= 1 && r <= m->second->NResidues())
+                            if (r >= 1 && r <= (int)m->second->NResidues())
                                 GlobalMessenger()->ToggleHighlight(m->second, r);
                             else
                                 throw "annotation's residue ID out of molecule's residue range";
@@ -1257,6 +1257,9 @@ wxSizer *SetupEvidenceDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.41  2005/10/28 17:06:12  thiessen
 * show only highlighted molecules when showing structure evidence
 *

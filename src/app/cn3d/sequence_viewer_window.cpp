@@ -463,6 +463,10 @@ void SequenceViewerWindow::OnExport(wxCommandEvent& event)
     else if (event.GetId() == MID_EXPORT_TEXT) type = SequenceViewer::asText;
     else if (event.GetId() == MID_EXPORT_HTML) type = SequenceViewer::asHTML;
     else if (event.GetId() == MID_EXPORT_PSSM) type = SequenceViewer::asPSSM;
+    else {
+        ERRORMSG("SequenceViewerWindow::OnExport() - unrecognized export type");
+        return;
+    }
     sequenceViewer->ExportAlignment(type);
 }
 
@@ -517,7 +521,7 @@ void SequenceViewerWindow::OnHighlight(wxCommandEvent& event)
 
         // first find all alignment indexes (columns) that have highlights in any row
         BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-        unsigned int row, blockColumn, seqIndex;
+        unsigned int row, blockColumn, seqIndex=0;
         typedef list < pair < int, int > > IntPairList;     // pair is < start, len >
         IntPairList alignmentIndexesWithHighlights;
         bool inHighlightedRange;
@@ -581,6 +585,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.60  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *

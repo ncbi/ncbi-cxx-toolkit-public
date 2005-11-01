@@ -142,8 +142,9 @@ public:
     DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5),
         const std::string& t = "", bool hasBG = false, Vector bgColor = Vector(1,1,1),
         BlockMultipleAlignment *a = NULL) :
-        theString(s), stringColor(color), title(t),
-        hasBackgroundColor(hasBG), backgroundColor(bgColor), alignment(a) { }
+            title(t), theString(s), stringColor(color),
+            backgroundColor(bgColor), hasBackgroundColor(hasBG), alignment(a) { }
+    virtual ~DisplayRowFromString(void) { }
 
     unsigned int Width(void) const { return theString.size(); }
 
@@ -184,7 +185,7 @@ class SequenceDisplay : public ViewableAlignment
 
 public:
     SequenceDisplay(bool editable, ViewerWindowBase* const *parentViewerWindow);
-    ~SequenceDisplay(void);
+    virtual ~SequenceDisplay(void);
 
     // these functions add a row to the end of the display, from various sources
     void AddRowFromAlignment(unsigned int row, BlockMultipleAlignment *fromAlignment);
@@ -301,6 +302,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.29  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

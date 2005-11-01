@@ -71,7 +71,7 @@ public:
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
     typedef std::list< ncbi::CRef< ncbi::objects::CUpdate_align > > UpdateAlignList;
     AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet, const UpdateAlignList& updates);
-    ~AlignmentManager(void);
+    virtual ~AlignmentManager(void);
 
     Threader *threader; // made public so viewers have access to it
     BLASTer *blaster;
@@ -174,6 +174,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.55  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *

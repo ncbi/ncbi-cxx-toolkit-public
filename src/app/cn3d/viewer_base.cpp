@@ -50,10 +50,10 @@ USING_NCBI_SCOPE;
 BEGIN_SCOPE(Cn3D)
 
 // limits the size of the stack (set to -1 for unlimited)
-const int ViewerBase::MAX_UNDO_STACK_SIZE = 50;
+const unsigned int ViewerBase::MAX_UNDO_STACK_SIZE = 50;
 
 ViewerBase::ViewerBase(ViewerWindowBase* *window, AlignmentManager *alnMgr) :
-    viewerWindow(window), alignmentManager(alnMgr), currentDisplay(NULL)
+    alignmentManager(alnMgr), viewerWindow(window), currentDisplay(NULL)
 {
     if (!window) ERRORMSG("ViewerBase::ViewerBase() - got NULL handle");
 }
@@ -310,6 +310,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.23  2005/10/19 17:28:20  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

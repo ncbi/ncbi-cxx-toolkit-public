@@ -150,7 +150,7 @@ Residue::Residue(StructureBase *parent,
 
     // get CResidue_graph*
     // standard (of correct type) or local dictionary?
-    const ResidueGraphList *dictionary;
+    const ResidueGraphList *dictionary = NULL;
     int graphID;
     if (residue.GetResidue_graph().IsStandard() &&
         residue.GetResidue_graph().GetStandard().GetBiostruc_residue_graph_set_id().IsOther_database() &&
@@ -454,6 +454,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.39  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

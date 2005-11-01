@@ -187,7 +187,7 @@ static const std::string
 
 // utility function to remove some elements from a vector
 template < class T >
-void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
+void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, unsigned int nToRemove)
 {
     if (v.size() != remove.size()) {
 #ifndef _DEBUG
@@ -271,6 +271,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.39  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

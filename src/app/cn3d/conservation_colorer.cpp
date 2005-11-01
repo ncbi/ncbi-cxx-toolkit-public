@@ -74,7 +74,7 @@ int GetBLOSUM62Score(char a, char b)
         unpacked = true;
     }
 
-    return Blosum62Matrix.s[ScreenResidueCharacter(a)][ScreenResidueCharacter(b)];
+    return Blosum62Matrix.s[(int)ScreenResidueCharacter(a)][(int)ScreenResidueCharacter(b)];
 }
 
 static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
@@ -90,7 +90,7 @@ static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
 }
 
 ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
-    nColumns(0), basicColorsCurrent(false), fitColorsCurrent(false), alignment(parent)
+   alignment(parent), nColumns(0), basicColorsCurrent(false), fitColorsCurrent(false)
 {
 }
 
@@ -126,7 +126,7 @@ void ConservationColorer::CalculateBasicConservationColors(void)
     typedef vector < int > IntVector;
     IntVector varieties(nColumns, 0), weightedVarieties(nColumns, 0);
     identities.resize(nColumns);
-    int minVariety, maxVariety, minWeightedVariety, maxWeightedVariety;
+    int minVariety=0, maxVariety=0, minWeightedVariety=0, maxWeightedVariety=0;
 
     typedef vector < float > FloatVector;
     FloatVector informationContents(nColumns, 0.0f);
@@ -256,12 +256,12 @@ void ConservationColorer::CalculateFitConservationColors(void)
 
     typedef map < char, int > CharIntMap;
     vector < CharIntMap > fitScores(nColumns);
-    int minFit, maxFit;
+    int minFit=0, maxFit=0;
 
     typedef vector < float > FloatVector;
     typedef map < const UngappedAlignedBlock * , FloatVector > BlockRowScores;
     BlockRowScores blockFitScores, blockZFitScores, blockRowFitScores;
-    float minBlockFit, maxBlockFit, minBlockZFit, maxBlockZFit, minBlockRowFit, maxBlockRowFit;
+    float minBlockFit=0.0f, maxBlockFit=0.0f, minBlockZFit=0.0f, maxBlockZFit=0.0f, minBlockRowFit=0.0f, maxBlockRowFit=0.0f;
 
     BlockMap::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; ++b) {
@@ -469,6 +469,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.41  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

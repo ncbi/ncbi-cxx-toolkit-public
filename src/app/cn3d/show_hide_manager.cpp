@@ -62,6 +62,7 @@ class ShowHideInfo
 protected:
     string label;
 public:
+    virtual ~ShowHideInfo(void) { }
     vector < int > parentIndexes;
     void GetLabel(string *str) const { *str = label; }
     virtual bool IsVisible(const ShowHideManager *shm) const = 0;
@@ -74,6 +75,7 @@ private:
     const StructureObject *object;
 public:
     ShowHideObject(const StructureObject *o) : object(o) { label = o->pdbID; }
+    virtual ~ShowHideObject(void) { }
     bool IsVisible(const ShowHideManager *shm) const { return shm->IsVisible(object); }
     void Show(ShowHideManager *shm, bool isShown) const { shm->Show(object, isShown); }
 };
@@ -91,6 +93,7 @@ public:
             label += (char) m->identifier->pdbChain;
         }
     }
+    virtual ~ShowHideMolecule(void) { }
     bool IsVisible(const ShowHideManager *shm) const { return shm->IsVisible(molecule); }
     void Show(ShowHideManager *shm, bool isShown) const { shm->Show(molecule, isShown); }
 };
@@ -109,10 +112,11 @@ public:
         oss << " d" << labelNum;
         label = (string) CNcbiOstrstreamToString(oss);
     }
+    virtual ~ShowHideDomain(void) { }
     bool IsVisible(const ShowHideManager *shm) const
     {
         bool isVisible = false;
-        for (int i=0; i<molecule->NResidues(); ++i) {
+        for (unsigned int i=0; i<molecule->NResidues(); ++i) {
             if (molecule->residueDomains[i] == domainID &&
                 shm->IsVisible(molecule->residues.find(i+1)->second)) {
                 isVisible = true;   // return true if any residue from this domain is visible
@@ -123,7 +127,7 @@ public:
     }
     void Show(ShowHideManager *shm, bool isShown) const
     {
-        for (int i=0; i<molecule->NResidues(); ++i)
+        for (unsigned int i=0; i<molecule->NResidues(); ++i)
             if (molecule->residueDomains[i] == domainID)
                 shm->Show(molecule->residues.find(i+1)->second, isShown);
     }
@@ -328,7 +332,7 @@ bool ShowHideManager::SelectionChangedCallback(
     const vector < bool >& original, vector < bool >& itemsEnabled)
 {
     // count number of changes
-    unsigned int i, nChanges = 0, itemChanged, nEnabled = 0, itemEnabled;
+    unsigned int i, nChanges = 0, itemChanged = 0, nEnabled = 0, itemEnabled = 0;
     for (i=0; i<itemsEnabled.size(); ++i) {
         if (itemsEnabled[i] != original[i]) {
             ++nChanges;
@@ -542,6 +546,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.27  2005/10/27 16:11:22  thiessen
 * add show aligned chains
 *

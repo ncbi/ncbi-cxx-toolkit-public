@@ -41,8 +41,7 @@
 #include <list>
 #include <vector>
 
-#include <thrdatd.h>
-#include <blastkar.h>
+#include <algo/structure/threader/thrdatd.h>
 
 #include "vector_math.hpp"
 
@@ -70,11 +69,12 @@ class BlockMultipleAlignment;
 class Sequence;
 class StructureBase;
 class SequenceViewer;
+class AlignmentManager;
 
 class Threader
 {
 public:
-    Threader(void);
+    Threader(AlignmentManager *parentAlnMgr);
     ~Threader(void);
 
     static const unsigned int SCALING_FACTOR;
@@ -108,7 +108,7 @@ public:
     typedef struct {
         unsigned char type;
         Vector coord;
-        unsigned int disulfideWith;    // if Cysteine, virtual coord index of any disulfide-bound Cys; -1 otherwise
+        int disulfideWith;    // if Cysteine, virtual coord index of any disulfide-bound Cys; -1 otherwise
     } VirtualCoordinate;
     typedef std::vector < VirtualCoordinate > VirtualCoordinateList;
 
@@ -121,6 +121,8 @@ public:
     typedef std::list < Contact > ContactList;
 
 private:
+    AlignmentManager *alignmentManager;
+    
     // holds Fld_Mtf structures already calculated for a given object (Molecule or Sequence)
     typedef std::map < const StructureBase *, Fld_Mtf * > ContactMap;
     ContactMap contacts;
@@ -132,10 +134,7 @@ private:
     Rcx_Ptl * CreateRcxPtl(double weightContacts);
     Gib_Scd * CreateGibScd(bool fast, unsigned int nRandomStarts);
     Fld_Mtf * CreateFldMtf(const Sequence *masterSequence);
-public:
-    // also used by blast module
-    static Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment *multiple,
-        double weightPSSM, BLAST_KarlinBlkPtr karlinBlock);
+    Seq_Mtf * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);
 };
 
 END_SCOPE(Cn3D)
@@ -145,6 +144,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.21  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

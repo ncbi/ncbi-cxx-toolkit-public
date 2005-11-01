@@ -101,7 +101,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
     BlockMultipleAlignment::ConstBlockList blocks;
     bma->GetBlocks(&blocks);
 
-    unsigned int b, row, column, masterStart, masterWidth, slaveStart, slaveWidth, left, right, middle;
+    unsigned int b, row, column, masterStart, masterWidth, slaveStart, slaveWidth, left=0, right, middle=0;
     const Block::Range *range;
     const Sequence *seq;
 
@@ -113,7 +113,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
         if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
                 range->to < range->from - 1 ||
                 range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(0)->to + 1)) ||
-                (b == blocks.size() - 1 && range->to != seq->Length() - 1))
+                (b == blocks.size() - 1 && range->to != (int)seq->Length() - 1))
             PTHROW("FillInAlignmentData() - master range error");
         masterStart = range->from;
         masterWidth = range->to - range->from + 1;
@@ -124,7 +124,7 @@ static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
             if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
                     range->to < range->from - 1 ||
                     range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(row)->to + 1)) ||
-                    (b == blocks.size() - 1 && range->to != seq->Length() - 1))
+                    (b == blocks.size() - 1 && range->to != (int)seq->Length() - 1))
                 PTHROW("FillInAlignmentData() - slave range error");
             slaveStart = range->from;
             slaveWidth = range->to - range->from + 1;
@@ -423,13 +423,13 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
         // adjust for matrix layout in pssm
         if (pssm.GetPssm().GetByRow()) {
             ++r;
-            if (r == pssm.GetPssm().GetNumColumns()) {
+            if ((int)r == pssm.GetPssm().GetNumColumns()) {
                 ++c;
                 r = 0;
             }
         } else {
             ++c;
-            if (c == pssm.GetPssm().GetNumRows()) {
+            if ((int)c == pssm.GetPssm().GetNumRows()) {
                 ++r;
                 c = 0;
             }
@@ -569,6 +569,19 @@ BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
     return matrix;
 }
 
+CPssmWithParameters * CreatePSSM(const BlockMultipleAlignment *bma)
+{
+    CRef < CPssmWithParameters > pssm;
+    try {
+        Cn3DPSSMInput input(bma);
+        CPssmEngine engine(&input);
+        pssm = engine.Run();
+    } catch (exception& e) {
+        ERRORMSG("CreateBlastMatrix() failed with exception: " << e.what());
+    }
+    return pssm.Release();
+}
+
 void OutputPSSM(const BlockMultipleAlignment *bma, CNcbiOstream& os)
 {
     try {
@@ -588,6 +601,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.9  2005/10/25 17:41:35  thiessen
 * fix flicker in alignment display; add progress meter and misc fixes to refiner
 *

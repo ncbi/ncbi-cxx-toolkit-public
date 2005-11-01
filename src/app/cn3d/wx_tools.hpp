@@ -133,6 +133,7 @@ public:
         const wxPoint& spinCtrlPos, const wxSize& spinCtrlSize);
 
     bool GetInteger(int *value) const;
+    bool GetUnsignedInteger(unsigned int *value) const;
     bool SetInteger(int value);
 
 private:
@@ -232,6 +233,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.14  2003/02/03 19:20:09  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

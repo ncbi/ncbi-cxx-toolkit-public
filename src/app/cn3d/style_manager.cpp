@@ -375,6 +375,8 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
                 case eBlockFitShortcut: proteinBackbone.colorScheme = eBlockFit; break;
                 case eBlockZFitShortcut: proteinBackbone.colorScheme = eBlockZFit; break;
                 case eBlockRowFitShortcut: proteinBackbone.colorScheme = eBlockRowFit; break;
+                default:
+                    break;
             }
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
@@ -1686,6 +1688,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.89  2005/10/28 18:20:42  thiessen
 * add alignment rainbow coloring
 *

@@ -66,8 +66,8 @@ public:
 
     typedef struct {
         double loopPercentile;
-        int loopExtension;
-        int loopCutoff;
+        unsigned int loopExtension;
+        unsigned int loopCutoff;
         bool globalAlignment;
         bool keepExistingBlocks;
         bool mergeAfterEachSequence;
@@ -84,6 +84,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.11  2004/09/28 14:18:28  thiessen
 * turn on editor automatically on merge
 *

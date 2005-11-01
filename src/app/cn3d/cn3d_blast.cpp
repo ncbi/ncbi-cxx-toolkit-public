@@ -151,8 +151,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 
         // override master alignment interval if specified
         if (!multiple) {
-            if ((*s)->alignMasterFrom >= 0 && (*s)->alignMasterFrom < masterSeq->Length() &&
-                (*s)->alignMasterTo >= 0 && (*s)->alignMasterTo < masterSeq->Length() &&
+            if ((*s)->alignMasterFrom >= 0 && (*s)->alignMasterFrom < (int)masterSeq->Length() &&
+                (*s)->alignMasterTo >= 0 && (*s)->alignMasterTo < (int)masterSeq->Length() &&
                 (*s)->alignMasterFrom <= (*s)->alignMasterTo)
             {
                 masterSeqInt->from = (*s)->alignMasterFrom;
@@ -170,10 +170,10 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         // setup Seq-loc interval for slave
         slaveSeqInt->id = slaveBioseq->id;
         slaveSeqInt->from =
-            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < slaveSeq->Length()) ?
+            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < (int)slaveSeq->Length()) ?
                 (*s)->alignSlaveFrom : 0;
         slaveSeqInt->to =
-            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < slaveSeq->Length()) ?
+            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < (int)slaveSeq->Length()) ?
                 (*s)->alignSlaveTo : slaveSeq->Length() - 1;
         INFOMSG("for BLAST: master range " <<
                 (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
@@ -494,6 +494,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.38  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

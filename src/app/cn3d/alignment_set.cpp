@@ -166,7 +166,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
         slave = *s;
     }
 
-    unsigned int i, masterRes, slaveRes, blockNum = 0;
+    unsigned int i, blockNum = 0;
+    int masterRes, slaveRes;
 
     // unpack dendiag alignment
     if (seqAlign.GetSegs().IsDendiag()) {
@@ -202,9 +203,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
                     masterRes = block.GetStarts().back() + i;
                     slaveRes = block.GetStarts().front() + i;
                 }
-                if (masterRes >= master->Length() || slaveRes >= slave->Length()) {
-                    ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - "
-                        "seqloc in dendiag block > length of sequence!");
+                if (masterRes < 0 || masterRes >= (int)master->Length() || slaveRes < 0 || slaveRes >= (int)slave->Length()) {
+                    ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - seqloc in dendiag block > length of sequence!");
                     return;
                 }
                 masterToSlave[masterRes] = slaveRes;
@@ -220,8 +220,8 @@ MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence
 
         if (!block.IsSetDim() && block.GetDim() != 2 ||
             block.GetIds().size() != 2 ||
-            block.GetStarts().size() != 2 * block.GetNumseg() ||
-            block.GetLens().size() != block.GetNumseg()) {
+            (int)block.GetStarts().size() != 2 * block.GetNumseg() ||
+            (int)block.GetLens().size() != block.GetNumseg()) {
             ERRORMSG("MasterSlaveAlignment::MasterSlaveAlignment() - \n"
                 "incorrect denseg block dimension");
             return;
@@ -275,6 +275,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.33  2005/10/19 17:28:17  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

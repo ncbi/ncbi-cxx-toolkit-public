@@ -89,7 +89,7 @@ IntegerTextCtrl::IntegerTextCtrl(wxWindow* parent, wxWindowID id, const wxString
 {
 }
 
-void IntegerTextCtrl::Validate(wxCommandEvent& event)
+void IntegerTextCtrl::Validate(wxCommandEvent&)
 {
     if (IsValidInteger())
         SetBackgroundColour(*wxWHITE);
@@ -175,9 +175,19 @@ void IntegerSpinCtrl::OnSpinButtonDown(wxSpinEvent& event)
 
 bool IntegerSpinCtrl::GetInteger(int *value) const
 {
-	long longValue;
-	if (!iTextCtrl->GetValue().ToLong(&longValue)) return false;
-	*value = (int) longValue;
+    long longValue;
+    if (!iTextCtrl->GetValue().ToLong(&longValue)) return false;
+    *value = (int) longValue;
+    return (iTextCtrl->IsValidInteger());
+}
+
+bool IntegerSpinCtrl::GetUnsignedInteger(unsigned int *value) const
+{
+    long longValue;
+    if (!iTextCtrl->GetValue().ToLong(&longValue)) return false;
+    if (minVal < 0 || maxVal < 0 || longValue < 0)
+        WARNINGMSG("IntegerSpinCtrl::GetUnsignedInteger() - possible signed/unsigned mismatch");
+    *value = (unsigned int) longValue;
     return (iTextCtrl->IsValidInteger());
 }
 
@@ -360,6 +370,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.19  2005/10/19 17:28:20  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

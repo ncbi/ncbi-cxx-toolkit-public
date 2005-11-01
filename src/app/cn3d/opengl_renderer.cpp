@@ -46,7 +46,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
-#include <gdk/gdk.h>    // needed for GdkFont
 
 #elif defined(__WXMAC__)
 //#include <Fonts.h>
@@ -334,7 +333,7 @@ void OpenGLRenderer::MyGluSphere(GLdouble radius, GLint slices, GLint stacks)
 
 OpenGLRenderer::OpenGLRenderer(Cn3DGLCanvas *parentGLCanvas) :
     structureSet(NULL), glCanvas(parentGLCanvas),
-    selectMode(false), currentDisplayList(NO_LIST), cameraAngleRad(0.0), rotateSpeed(0.5),
+    cameraAngleRad(0.0), rotateSpeed(0.5), selectMode(false), currentDisplayList(NO_LIST),
     stereoOn(false)
 {
     // make sure a name will fit in a GLuint
@@ -743,7 +742,7 @@ void OpenGLRenderer::ShowNextFrame(void)
 {
     if (!structureSet || structureSet->frameMap.size() == 0) return;
     if (currentFrame == ALL_FRAMES) currentFrame = structureSet->frameMap.size() - 1;
-    int originalFrame = currentFrame;
+    unsigned int originalFrame = currentFrame;
     do {
         if (currentFrame == structureSet->frameMap.size() - 1)
             currentFrame = 0;
@@ -756,7 +755,7 @@ void OpenGLRenderer::ShowPreviousFrame(void)
 {
     if (!structureSet || structureSet->frameMap.size() == 0) return;
     if (currentFrame == ALL_FRAMES) currentFrame = 0;
-    int originalFrame = currentFrame;
+    unsigned int originalFrame = currentFrame;
     do {
         if (currentFrame == 0)
             currentFrame = structureSet->frameMap.size() - 1;
@@ -1156,11 +1155,11 @@ void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
     double radius, bool cap1, bool cap2,
     double tension)
 {
-    int i, j, k, m, offset;
+    int i, j, k, m, offset=0;
     Vector R1, R2, Qt, p, dQt, H, V;
     double len, MG[4][3], T[4], t, prevlen=0.0, cosj, sinj;
-    GLdouble *Nx = NULL, *Ny, *Nz, *Cx, *Cy, *Cz,
-        *pNx, *pNy, *pNz, *pCx, *pCy, *pCz, *tmp;
+    GLdouble *Nx=NULL, *Ny=NULL, *Nz=NULL, *Cx=NULL, *Cy=NULL, *Cz=NULL,
+        *pNx=NULL, *pNy=NULL, *pNz=NULL, *pCx=NULL, *pCy=NULL, *pCz=NULL, *tmp;
 
     if (!p0 || !p3) {
         ERRORMSG("DrawHalfWorm: got NULL 0th and/or 3rd coords for worm");
@@ -1923,7 +1922,14 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
     SelectObject(hdc, currentFont);
 
 #elif defined(__WXGTK__)
-    glXUseXFont(gdk_font_id(GetGLFont().GetInternalFont()), firstChar, nChars, fontBase);
+//  need to somehow get X font from wxFont... ugh.
+//
+//    PangoFont *pf = pango_font_map_load_font(
+//        PangoFontMap *fontmap,
+//        glCanvas->GtkGetPangoDefaultContext(),
+//        GetGLFont().GetNativeFontInfo().description);
+//
+//    glXUseXFont(gdk_font_id(GetGLFont().GetInternalFont()), firstChar, nChars, fontBase);
 
 #elif defined(__WXMAC__)
     wxFontRefData *fontRefData = (wxFontRefData *) GetGLFont().GetRefData();
@@ -1949,6 +1955,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2005/11/01 02:44:07  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.85  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

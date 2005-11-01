@@ -109,7 +109,7 @@ private:
     DisplayStack displayStack;
 
     // limits the size of the stack (set to -1 for unlimited)
-    static const int MAX_UNDO_STACK_SIZE;
+    static const unsigned int MAX_UNDO_STACK_SIZE;
 
     int nRedosStored;
     bool stacksEnabled;
@@ -146,6 +146,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/11/01 02:44:08  thiessen
+* fix GCC warnings; switch threader to C++ PSSMs
+*
 * Revision 1.17  2003/10/20 13:17:15  thiessen
 * add float geometry violations sorting
 *
