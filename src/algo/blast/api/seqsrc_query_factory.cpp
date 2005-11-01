@@ -31,8 +31,9 @@
 /// Implementation of the BlastSeqSrc interface for a query factory
 
 #include <ncbi_pch.hpp>
-#include <algo/blast/api/seqsrc_query_factory.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/api/seqsrc_query_factory.hpp>
 #include <algo/blast/core/blast_seqsrc_impl.h>
 #include "bioseq_extract_data_priv.hpp"
 
@@ -408,6 +409,10 @@ QueryFactoryBlastSeqSrcInit(CRef<IQueryFactory> query_factory,
 {
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
+
+    if (query_factory.Empty()) {
+        NCBI_THROW(CBlastException, eInvalidArgument, "Empty query factory");
+    }
 
     SQueryFactorySrcNewArgs args(query_factory, program);
 
