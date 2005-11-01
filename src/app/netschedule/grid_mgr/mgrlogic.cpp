@@ -175,7 +175,7 @@ public:
 	
     virtual void CheckConnect(const string& key)
     {
-        return CNetCacheClient::CheckConnect(key);
+        CNetCacheClient::CheckConnect(key);
     }
 };
 
@@ -414,6 +414,10 @@ string CNetCacheStatInfo::GetStatistics() const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/11/01 01:42:56  ucko
+ * CNetCacheClient_Control::CheckConnect: drop bogus "return", as the
+ * return type is void.
+ *
  * Revision 1.9  2005/10/31 19:28:51  kuznets
  * Implemented WEB interface to netcache statistics
  *
