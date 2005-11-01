@@ -305,7 +305,7 @@ property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtr
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_data, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xcache_bdb ncbi_bdb ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
-property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_cdd ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
+property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_cdd ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
 
 property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank", bundle:true, req:true}
 property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
@@ -415,6 +415,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2005/11/01 12:52:21  lebedev
+ * algo_basic += ncbi_misc
+ *
  * Revision 1.75  2005/10/19 21:20:27  lebedev
  * ncbi_seqext += cleanup
  *
