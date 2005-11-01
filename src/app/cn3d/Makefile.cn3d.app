@@ -95,7 +95,7 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 
 LDFLAGS = $(FAST_LDFLAGS)
 
-NCBI_C_LIBS = -lncbiid1 -lnetcli -lncbitool -lblastcompadj -lncbiobj -lncbi
+NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lblastcompadj -lncbiobj -lncbi
 
 LIBS = \
 	$(WXWIDGETS_LIBS) \
