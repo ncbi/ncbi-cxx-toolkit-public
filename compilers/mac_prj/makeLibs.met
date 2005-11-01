@@ -1,4 +1,3 @@
-
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -47,8 +46,8 @@ property pStationeryName : "LibraryStationery"
 property pPluginStationeryName : "PluginStationery"
 property pDylibStationeryName : "DLLStationery"
 
-property pTargetKeyWords : {"BSD", "MSL", "Final", "Debug"}
-property pDefaultTargets : {"BSD", "Debug"}
+property pTargetKeyWords : {"Final", "Debug"}
+property pDefaultTargets : {"Debug"}
 
 --
 --  Set Global variables
@@ -270,7 +269,7 @@ on SetProjectData()
 		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
 		AddSimpleProject("dbapi", {}, "dbapi")
 		AddSimpleProject("dbapi_driver", {}, "dbapi:driver")
-		AddSimpleProject("xhtml", {}, "html")
+		AddSimpleProjectExceptFiles("xhtml", {}, "html", {"nodemap.cpp"})
 		AddSimpleProjectListFiles("xcser", {}, "serial", {"asntypes.cpp", "serialasn.cpp"})
 		AddSimpleProjectExceptFiles("xser", {}, "serial", Â
 			{"asntypes.cpp", "object.cpp", "objstrb.cpp", "rtti.cpp", "serialasn.cpp"})
@@ -397,12 +396,12 @@ on SetProjectData()
 		AddSimpleProject("xcddalignview", {}, "objtools:cddalignview")
 		AddSimpleProject("xflat", {}, "objtools:flat")
 		AddSimpleProject("lds", {}, "objtools:lds")
-		AddSimpleProject("lds_admin", {}, "objtools:lds:admin")
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
 		AddSimpleProject("xobjmanip", {}, "objtools:manip")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
 		AddSimpleProject("seqdb", {}, "objtools:readers:seqdb")
 		AddSimpleProject("xformat", {}, "objtools:format")
+		AddSimpleProject("xcleanup", {}, "objtools:cleanup")
 		
 		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
 		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
@@ -414,7 +413,8 @@ on SetProjectData()
 		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 		
-		-- AddSimpleProject("xalgoalignutil", {}, "algo:align:util") -- fix.
+		AddSimpleProject("xalgoalignutil", {}, "algo:align:util")
+		AddSimpleProject("xalgocontig_assembly", {}, "algo:align:contig_assembly")
 		AddSimpleProject("xalgodustmask", {}, "algo:dustmask")
 		AddSimpleProject("xalgowinmask", {}, "algo:winmask")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
@@ -482,6 +482,7 @@ on SetProjectData()
 		AddGuiProject("w_feat_table", {}, "widgets:feat_table")
 		AddGuiProject("w_controls", {}, "widgets:controls")
 		AddGuiProject("w_data", {}, "widgets:data")
+		AddGuiProject("w_object_list", {}, "widgets:object_list")
 		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
@@ -508,7 +509,7 @@ on SetProjectData()
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"}
 		set ObjTools to {"xncbi", "xconnect", "xthrserv", "xconnserv", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables", "xformat"}
-		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
+		set LdsLibs to {"bdb", "lds", "libdb"}
 		
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
@@ -517,11 +518,11 @@ on SetProjectData()
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
-			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link", "view_composite"})}
+			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "selection_service", "task_manager", "task_queue", "view_link", "view_composite"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images", "sqlitelib"}, gui_core_files)
 		
 		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", Â
-			"gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask"}, {}))
+			"gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_object_list", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask"}, {}))
 		
 		-- PLUGINS --
 		
@@ -533,7 +534,7 @@ on SetProjectData()
 			{"xloader_cdd", "cdd", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "xalgoalignutil", "xalgocontig_assembly", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb", "xobjsimple"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
@@ -558,8 +559,9 @@ on SetProjectData()
 			{"gui_dlg_feat_search", "gui_dlg_seq_goto"})
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_feat_compare", "w_feat_table"})
-		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"taxon1", "w_taxtree", "w_seq"})
+		AddPluginExcept("gui_view_text", {}, "plugins:view:text", Â
+			{"taxon1", "w_taxtree", "w_seq"}, Â
+			{"genbank_ff_formatter.cpp", "header_editor.cpp", "object_editor.cpp", "paragraph.cpp", "reference_editor.cpp", "view_genbank.cpp", "auth_form.cpp"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
 		
 		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree"})
@@ -1424,7 +1426,7 @@ end GetTargetSpecs
 on AskForTargetSpec()
 	try
 		choose from list pTargetKeyWords default items pDefaultTargets Â
-			with prompt "Choose Target types to compile:" cancel button name "Build All" with multiple selections allowed
+			with prompt "Choose Target types to compile:" cancel button name "Build All" without multiple selections allowed
 	on error errmsg number errnum
 		if errnum is -1713 then -- no user interaction allowed.
 			set targ to pDefaultTargets -- build defaults
