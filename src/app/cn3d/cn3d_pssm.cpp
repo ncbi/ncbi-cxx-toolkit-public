@@ -418,7 +418,7 @@ static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
     CPssmFinalData::TScores::const_iterator s = pssm.GetPssm().GetFinalData().GetScores().begin();
     for (i=0; i<nScores; ++i, ++s) {
 
-        matrix->matrix[r][c] = *s;
+        matrix->matrix[r][c] = *s / pssm.GetPssm().GetFinalData().GetScalingFactor();
 
         // adjust for matrix layout in pssm
         if (pssm.GetPssm().GetByRow()) {
@@ -601,6 +601,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/01 18:11:17  thiessen
+* fix pssm->Seq_Mtf conversion
+*
 * Revision 1.10  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

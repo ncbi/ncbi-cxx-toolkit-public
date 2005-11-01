@@ -145,7 +145,7 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
         ERRORMSG("CreatePSSM() failed");
         return NULL;
     }
-    
+
     TRACEMSG("converting CPssmWithParameters to Seq_Mtf");
 
     if (!pssm->GetPssm().IsSetFinalData()) {
@@ -159,31 +159,34 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
         return NULL;
     }
 
-    Seq_Mtf *seqMtf = NewSeqMtf(pssm->GetPssm().GetNumColumns(), 26);
+    Seq_Mtf *seqMtf = NewSeqMtf(pssm->GetPssm().GetNumColumns(), ThreaderResidues.size());
 
     // convert matrix
-    unsigned int i, r = 0, c = 0;
+    unsigned int i;
+    int t, r = 0, c = 0;
     CPssmFinalData::TScores::const_iterator s = pssm->GetPssm().GetFinalData().GetScores().begin();
     for (i=0; i<nScores; ++i, ++s) {
 
-        seqMtf->ww[r][c] = ThrdRound(weightPSSM * SCALING_FACTOR * (*s));
+        t = LookupThreaderResidueNumberFromCharacterAbbrev(LookupCharacterFromNCBIStdaaNumber(r));
+        if (t >= 0)
+            seqMtf->ww[c][t] = ThrdRound(weightPSSM * SCALING_FACTOR * (*s) / pssm->GetPssm().GetFinalData().GetScalingFactor());
 
         // adjust for matrix layout in pssm
         if (pssm->GetPssm().GetByRow()) {
-            ++r;
-            if ((int)r == pssm->GetPssm().GetNumColumns()) {
-                ++c;
-                r = 0;
-            }
-        } else {
             ++c;
-            if ((int)c == pssm->GetPssm().GetNumRows()) {
+            if (c == pssm->GetPssm().GetNumColumns()) {
                 ++r;
                 c = 0;
             }
+        } else {
+            ++r;
+            if (r == pssm->GetPssm().GetNumRows()) {
+                ++c;
+                r = 0;
+            }
         }
     }
-    
+
     return seqMtf;
 }
 
@@ -1238,6 +1241,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/11/01 18:11:17  thiessen
+* fix pssm->Seq_Mtf conversion
+*
 * Revision 1.51  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
