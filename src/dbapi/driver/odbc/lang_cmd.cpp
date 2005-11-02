@@ -107,7 +107,9 @@ bool CODBC_LangCmd::Send()
         if (!x_AssignParams(q_str, bindGuard, indicator)) {
             SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
             m_HasFailed = true;
-            DATABASE_DRIVER_ERROR( "cannot assign params", 420003 );
+
+            string err_message = "cannot assign params" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 420003 );
         }
     }
 
@@ -134,7 +136,10 @@ bool CODBC_LangCmd::Send()
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "SQLExecDirect failed", 420001 );
+        {
+            string err_message = "SQLExecDirect failed" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_FATAL( err_message, 420001 );
+        }
 
     case SQL_SUCCESS_WITH_INFO:
         m_Reporter.ReportErrors();
@@ -145,17 +150,26 @@ bool CODBC_LangCmd::Send()
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "Some other query is executing on this connection", 420002 );
+        {
+            string err_message = "Some other query is executing on this connection" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_FATAL( err_message, 420002 );
+        }
 
     case SQL_INVALID_HANDLE:
         m_HasFailed= true;
-        DATABASE_DRIVER_FATAL( "The statement handler is invalid (memory corruption suspected)", 420004 );
+        {
+            string err_message = "The statement handler is invalid (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_FATAL( err_message, 420004 );
+        }
 
     default:
         m_Reporter.ReportErrors();
         SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "Unexpected error", 420005 );
+        {
+            string err_message = "Unexpected error" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_FATAL( err_message, 420005 );
+        }
 
     }
 
@@ -206,12 +220,13 @@ CDB_Result* CODBC_LangCmd::Result()
         m_hasResults= xCheck4MoreResults();
     }
 
-    if (!m_WasSent) {
-        DATABASE_DRIVER_ERROR( "a command has to be sent first", 420010 );
+    if ( !m_WasSent ) {
+        string err_message = "a command has to be sent first" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 420010 );
     }
 
     if(!m_hasResults) {
-        m_WasSent= false;
+        m_WasSent = false;
         return 0;
     }
 
@@ -227,9 +242,15 @@ CDB_Result* CODBC_LangCmd::Result()
 
         case SQL_ERROR:
             m_Reporter.ReportErrors();
-            DATABASE_DRIVER_ERROR( "SQLNumResultCols failed", 420011 );
+            {
+                string err_message = "SQLNumResultCols failed" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 420011 );
+            }
         default:
-            DATABASE_DRIVER_ERROR( "SQLNumResultCols failed (memory corruption suspected)", 420012 );
+            {
+                string err_message = "SQLNumResultCols failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 420012 );
+            }
         }
 
         if(nof_cols < 1) { // no data in this result set
@@ -239,10 +260,17 @@ CDB_Result* CODBC_LangCmd::Result()
                     m_Reporter.ReportErrors();
                 case SQL_SUCCESS: break;
                 case SQL_ERROR:
+                    {
                         m_Reporter.ReportErrors();
-                        DATABASE_DRIVER_ERROR( "SQLRowCount failed", 420013 );
+
+                        string err_message = "SQLRowCount failed" + m_Reporter.GetExtraMsg();
+                        DATABASE_DRIVER_ERROR( err_message, 420013 );
+                    }
                 default:
-                    DATABASE_DRIVER_ERROR( "SQLRowCount failed (memory corruption suspected)", 420014 );
+                    {
+                        string err_message = "SQLRowCount failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                        DATABASE_DRIVER_ERROR( err_message, 420014 );
+                    }
             }
 
             m_RowCount = rc;
@@ -487,10 +515,17 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
                 break;
 
             case SQL_ERROR:
-                m_Reporter.ReportErrors();
-                DATABASE_DRIVER_ERROR( "SQLBindParameter failed", 420066 );
+                {
+                    m_Reporter.ReportErrors();
+
+                    string err_message = "SQLBindParameter failed" + m_Reporter.GetExtraMsg();
+                    DATABASE_DRIVER_ERROR( err_message, 420066 );
+                }
             default:
-                DATABASE_DRIVER_ERROR( "SQLBindParameter failed (memory corruption suspected)", 420067 );
+                {
+                    string err_message = "SQLBindParameter failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                    DATABASE_DRIVER_ERROR( err_message, 420067 );
+                }
         }
         cmd += "declare " + name + ' ' + type + ";select " + name + " = ?;";
 
@@ -509,10 +544,17 @@ bool CODBC_LangCmd::xCheck4MoreResults()
     case SQL_SUCCESS:           return true;
     case SQL_NO_DATA:           return false;
     case SQL_ERROR:
-        m_Reporter.ReportErrors();
-        DATABASE_DRIVER_ERROR( "SQLMoreResults failed", 420014 );
+        {
+            m_Reporter.ReportErrors();
+
+            string err_message = "SQLMoreResults failed" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 420014 );
+        }
     default:
-        DATABASE_DRIVER_ERROR( "SQLMoreResults failed (memory corruption suspected)", 420015 );
+        {
+            string err_message = "SQLMoreResults failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 420015 );
+        }
     }
 }
 
@@ -523,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/11/02 16:46:21  ssikorsk
+ * Pass context information with an error message of a database exception.
+ *
  * Revision 1.13  2005/11/02 12:59:34  ssikorsk
  * Report extra information in exceptions and error messages.
  *

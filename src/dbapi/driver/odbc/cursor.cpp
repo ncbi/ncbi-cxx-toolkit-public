@@ -43,10 +43,11 @@ BEGIN_NCBI_SCOPE
 
 CODBC_CursorCmd::CODBC_CursorCmd(CODBC_Connection* con, SQLHSTMT cmd,
                                const string& cursor_name, const string& query,
-                               unsigned int nof_params) :
-    m_CursCmd(con, cmd, "declare "+cursor_name+" cursor for "+query, nof_params),
-    m_Connect(con), m_Name(cursor_name), m_LCmd(0), m_IsOpen(false), 
-    m_HasFailed(false), m_IsDeclared(false), m_Res(0), m_RowCount(-1)
+                               unsigned int nof_params) 
+: m_CursCmd(con, cmd, "declare " + cursor_name + " cursor for " + query, nof_params)
+, m_Connect(con), m_Name(cursor_name), m_LCmd(0), m_IsOpen(false)
+, m_HasFailed(false), m_IsDeclared(false), m_Res(0), m_RowCount(-1)
+, m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_STMT, cmd, &con->m_Reporter)
 {
 }
 
@@ -81,7 +82,8 @@ CDB_Result* CODBC_CursorCmd::Open()
         }
 #endif
     } catch (const CDB_Exception& e) {
-        DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor", 422001 );
+        string err_message = "failed to declare cursor" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422001 );
     }
     m_IsDeclared = true;
 
@@ -109,7 +111,8 @@ CDB_Result* CODBC_CursorCmd::Open()
             m_LCmd->Release();
             m_LCmd = 0;
         }
-        DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor", 422002 );
+        string err_message = "failed to open cursor" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422002 );
     }
     m_IsOpen = true;
 
@@ -155,7 +158,8 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
     } catch (const CDB_Exception& e) {
         if (cmd)
             delete cmd;
-        DATABASE_DRIVER_ERROR_EX( e, "update failed", 422004 );
+        string err_message = "update failed" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
     }
 
     return true;
@@ -224,7 +228,8 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
     } catch (const CDB_Exception& e) {
         if (cmd)
             delete cmd;
-        DATABASE_DRIVER_ERROR_EX( e, "update failed", 422004 );
+        string err_message = "update failed" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
     }
 
     return true;
@@ -274,7 +279,9 @@ bool CODBC_CursorCmd::Close()
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor", 422003 );
+
+            string err_message = "failed to close cursor" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
         }
 
         m_IsOpen = false;
@@ -303,7 +310,9 @@ bool CODBC_CursorCmd::Close()
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor", 422003 );
+
+            string err_message = "failed to deallocate cursor" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR_EX( e, err_message, 422003 );
         }
 
         m_IsDeclared = false;
@@ -345,6 +354,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/02 16:46:21  ssikorsk
+ * Pass context information with an error message of a database exception.
+ *
  * Revision 1.8  2005/11/02 13:51:05  ssikorsk
  * Rethrow catched CDB_Exception to preserve useful information.
  *

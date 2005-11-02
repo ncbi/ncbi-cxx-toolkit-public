@@ -36,6 +36,8 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+static const char* wrong_type = "Wrong type of CDB_Object";
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -103,9 +105,15 @@ CODBC_RowResult::CODBC_RowResult(
             continue;
         case SQL_ERROR:
             m_Reporter.ReportErrors();
-            DATABASE_DRIVER_ERROR( "SQLDescribeCol failed", 420020 );
+            {
+                string err_message = "SQLDescribeCol failed" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 420020 );
+            }
         default:
-            DATABASE_DRIVER_ERROR( "SQLDescribeCol failed (memory corruption suspected)", 420021 );
+            {
+                string err_message = "SQLDescribeCol failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 420021 );
+            }
 	   }
 	}
 }
@@ -161,9 +169,15 @@ bool CODBC_RowResult::Fetch()
             break;
         case SQL_ERROR:
             m_Reporter.ReportErrors();
-            DATABASE_DRIVER_ERROR( "SQLFetch failed", 430003 );
+            {
+                string err_message = "SQLFetch failed" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430003 );
+            }
         default:
-            DATABASE_DRIVER_ERROR( "SQLFetch failed (memory corruption suspected)", 430004 );
+            {
+                string err_message = "SQLFetch failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430004 );
+            }
         }
     }
     return false;
@@ -205,7 +219,10 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
     case SQL_ERROR:
         m_Reporter.ReportErrors();
     default:
-        DATABASE_DRIVER_ERROR( "SQLGetData failed ", 430027 );
+        {
+            string err_message = "SQLGetData failed " + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 430027 );
+        }
     }
 }
 
@@ -258,7 +275,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_LongChar*)     item_buf) = buffer;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -297,7 +317,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_LongChar*) item_buf) = buffer;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
 
         break;
@@ -327,7 +350,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*)      item_buf) = v ? 1 : 0;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -360,7 +386,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         }
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -384,7 +413,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*)      item_buf) = (Int4) v;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -403,7 +435,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*) item_buf) = (Int4) v;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -417,7 +452,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Int*) item_buf) = (Int4) v;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -432,7 +470,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Double*)      item_buf) = v;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -446,7 +487,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             else *((CDB_Float*)      item_buf) = v;
             break;
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -478,7 +522,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         }
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
@@ -506,7 +553,11 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 case SQL_ERROR:
                     m_Reporter.ReportErrors();
                 default:
-                    DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving text/image into CDB_Text", 430021 );
+                    {
+                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" + 
+                            m_Reporter.GetExtraMsg();
+                        DATABASE_DRIVER_ERROR( err_message, 430021 );
+                    }
                 }
 				break;
             }
@@ -530,19 +581,29 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 case SQL_ERROR:
                     m_Reporter.ReportErrors();
                 default:
-                    DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving text/image into CDB_Image", 430022 );
+                    {
+                        string err_message = "SQLGetData failed while retrieving text/image into CDB_Image" + 
+                            m_Reporter.GetExtraMsg();
+                        DATABASE_DRIVER_ERROR( err_message, 430022 );
+                    }
                 }
 				break;
             }
             break;
         }
         default:
-            DATABASE_DRIVER_ERROR( "Wrong type of CDB_Object", 430020 );
+            {
+                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 430020 );
+            }
         }
         break;
     }
     default:
-        DATABASE_DRIVER_ERROR( "Unsupported column type", 430025 );
+        {
+            string err_message = "Unsupported column type" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 430025 );
+        }
 
     }
     return item_buf;
@@ -689,7 +750,11 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             case SQL_ERROR:
                 m_Reporter.ReportErrors();
             default:
-                DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving text into CDB_Text", 430023 );
+                {
+                    string err_message = "SQLGetData failed while retrieving text into CDB_Text" + 
+                        m_Reporter.GetExtraMsg();
+                    DATABASE_DRIVER_ERROR( err_message, 430023 );
+                }
             }
         }
         return val;
@@ -714,13 +779,20 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             case SQL_ERROR:
                 m_Reporter.ReportErrors();
             default:
-                DATABASE_DRIVER_ERROR( "SQLGetData failed while retrieving image into CDB_Image", 430024 );
+                {
+                    string err_message = "SQLGetData failed while retrieving text into CDB_Image" + 
+                        m_Reporter.GetExtraMsg();
+                    DATABASE_DRIVER_ERROR( err_message, 430024 );
+                }
             }
         }
         return val;
     }
     default:
-        DATABASE_DRIVER_ERROR( "Unsupported column type", 430025 );
+        {
+            string err_message = "Unsupported column type" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 430025 );
+        }
 
     }
 }
@@ -783,7 +855,10 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
     case SQL_ERROR:
         m_Reporter.ReportErrors();
     default:
-        DATABASE_DRIVER_ERROR( "SQLGetData failed ", 430026 );
+        {
+            string err_message = "SQLGetData failed " + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 430026 );
+        }
     }
 }
 
@@ -806,7 +881,10 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         m_Reporter.ReportErrors();
         return 0;
     default:
-        DATABASE_DRIVER_ERROR( "SQLColAttribute failed", 430027 );
+        {
+            string err_message = "SQLColAttribute failed" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 430027 );
+        }
     }
     string base_table=(const char*)buffer;
 
@@ -822,7 +900,10 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
         m_Reporter.ReportErrors();
         return 0;
     default:
-        DATABASE_DRIVER_ERROR( "SQLColAttribute failed", 430027 );
+        {
+            string err_message = "SQLColAttribute failed" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 430027 );
+        }
     }
     string base_column=(const char*)buffer;
 
@@ -893,6 +974,7 @@ CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd)
 : m_Cmd(cmd)
 , m_Res(NULL)
 , m_EOR(false)
+, m_Reporter( cmd->m_Reporter )
 {
     try {
         m_Cmd->Send();
@@ -914,7 +996,8 @@ CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd)
             }
         }
     } catch (const CDB_Exception& e) {
-        DATABASE_DRIVER_ERROR_EX( e, "failed to get the results", 422010 );
+        string err_message = "failed to get the results" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422010 );
     }
 }
 
@@ -998,7 +1081,8 @@ bool CODBC_CursorResult::Fetch()
             }
         }
     } catch (const CDB_Exception& e) {
-        DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results", 422011 );
+        string err_message = "Failed to fetch the results" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
     }
     return false;
 }
@@ -1065,6 +1149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/11/02 16:46:21  ssikorsk
+ * Pass context information with an error message of a database exception.
+ *
  * Revision 1.23  2005/11/02 13:51:05  ssikorsk
  * Rethrow catched CDB_Exception to preserve useful information.
  *

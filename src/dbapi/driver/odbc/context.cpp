@@ -174,7 +174,8 @@ CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn)
 {
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
-        DATABASE_DRIVER_FATAL( "Cannot allocate a context", 400001 );
+        string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_FATAL( err_message, 400001 );
     }
 
     m_Reporter.SetHandle(m_Context);
@@ -288,13 +289,15 @@ CDB_Connection* CODBCContext::Connect(const string&   srv_name,
     if((mode & fDoNotConnect) != 0) return 0;
     // new connection needed
     if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
-        DATABASE_DRIVER_ERROR( "You have to provide server name, user name and "
-                           "password to connect to the server", 100010 );
+        string err_message = "You have to provide server name, user name and " 
+            "password to connect to the server" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 100010 );
     }
 
     SQLHDBC con = x_ConnectToServer(srv_name, user_name, passwd, mode);
     if (con == 0) {
-        DATABASE_DRIVER_ERROR( "Cannot connect to the server", 100011 );
+        string err_message = "Cannot connect to the server" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 100011 );
     }
 
     CODBC_Connection* t_con = new CODBC_Connection(this, con, reusable, pool_name);
@@ -616,6 +619,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/11/02 16:46:21  ssikorsk
+ * Pass context information with an error message of a database exception.
+ *
  * Revision 1.29  2005/11/02 15:59:47  ucko
  * Revert previous change in favor of supplying empty compilation info
  * via a static constant.

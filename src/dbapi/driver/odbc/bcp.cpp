@@ -51,18 +51,19 @@ BEGIN_NCBI_SCOPE
 CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* con,
                                SQLHDBC       cmd,
                                const string&    table_name,
-                               unsigned int     nof_columns) :
-    m_Connect(con), m_Cmd(cmd), m_Params(nof_columns),
-    m_WasSent(false), m_HasFailed(false),
-    m_HasTextImage(false), m_WasBound(false), 
-    m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_DBC, cmd, &con->m_Reporter)
+                               unsigned int     nof_columns) 
+: m_Connect(con), m_Cmd(cmd), m_Params(nof_columns)
+, m_WasSent(false), m_HasFailed(false)
+, m_HasTextImage(false), m_WasBound(false)
+, m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_DBC, cmd, &con->m_Reporter)
 {
     string extra_msg = "Table Name: " + table_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
         m_Reporter.ReportErrors();
-        DATABASE_DRIVER_FATAL( "bcp_init failed", 423001 );
+        string err_message = "bcp_init failed" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_FATAL( err_message, 423001 );
     }
 }
 
@@ -331,13 +332,15 @@ bool CODBC_BCPInCmd::SendRow()
     
     if (!x_AssignParams(param_buff)) {
         m_HasFailed = true;
-        DATABASE_DRIVER_ERROR( "cannot assign params", 423004 );
+        string err_message = "cannot assign params" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 423004 );
     }
 
     if (bcp_sendrow(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
         m_Reporter.ReportErrors();
-        DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 423005 );
+        string err_message = "bcp_sendrow failed" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 423005 );
     }
     m_WasSent = true;
 
@@ -370,7 +373,8 @@ bool CODBC_BCPInCmd::SendRow()
                     } else {
                         err_text = "bcp_moretext for image failed";
                     }
-                    DATABASE_DRIVER_ERROR( "bcp_sendrow failed", 423006 );
+                    string err_message = "bcp_sendrow failed" + m_Reporter.GetExtraMsg();
+                    DATABASE_DRIVER_ERROR( err_message, 423006 );
                 }
                 if (!l)
                     break;
@@ -454,6 +458,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/11/02 16:46:21  ssikorsk
+ * Pass context information with an error message of a database exception.
+ *
  * Revision 1.9  2005/11/02 12:58:38  ssikorsk
  * Report extra information in exceptions and error messages.
  *

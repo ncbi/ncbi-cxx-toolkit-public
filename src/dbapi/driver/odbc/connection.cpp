@@ -120,8 +120,9 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
 #ifdef NCBI_OS_UNIX
     return 0; // not implemented
 #else
-    if (!m_BCPable) {
-        DATABASE_DRIVER_ERROR( "No bcp on this connection", 410003 );
+    if ( !m_BCPable ) {
+        string err_message = "No bcp on this connection" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 410003 );
     }
 
     CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(this, m_Link, table_name, nof_columns);
@@ -192,7 +193,8 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_i
 
     if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, false, log_it, p, lrep, &ph)) ||
        (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
-        DATABASE_DRIVER_ERROR( "Cannot prepare a command", 410035 );
+        string err_message = "Cannot prepare a command" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
     return x_SendData(cmd, img, lrep);
@@ -217,7 +219,8 @@ bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it
 
     if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, true, log_it, p, lrep, &ph)) ||
        (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
-        DATABASE_DRIVER_ERROR( "Cannot prepare a command", 410035 );
+        string err_message = "Cannot prepare a command" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
     return x_SendData(cmd, txt, lrep);
@@ -327,8 +330,10 @@ CODBC_Connection::~CODBC_Connection()
             case SQL_SUCCESS:
                 break;
             default:
-                DATABASE_DRIVER_ERROR( "SQLDisconnect failed (memory corruption suspected)", 410009 );
-
+                {
+                    string err_message = "SQLDisconnect failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                    DATABASE_DRIVER_ERROR( err_message, 410009 );
+                }
             }
         }
         if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
@@ -474,10 +479,16 @@ bool CODBC_Connection::x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Report
     case SQL_SUCCESS:           break;
     case SQL_NO_DATA:           return true;
     case SQL_NEED_DATA: 
-        DATABASE_DRIVER_ERROR( "Not all the data were sent", 410044 );
+        {
+            string err_message = "Not all the data were sent" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 410044 );
+        }
     case SQL_ERROR:             rep.ReportErrors();
     default:
-        DATABASE_DRIVER_ERROR( "SQLParamData failed", 410045 );
+        {
+            string err_message = "SQLParamData failed" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 410045 );
+        }
     }
     
     for(;;) {
@@ -486,10 +497,16 @@ bool CODBC_Connection::x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Report
         case SQL_SUCCESS:           continue;
         case SQL_NO_DATA:           break;
         case SQL_ERROR:             
-            rep.ReportErrors();
-            DATABASE_DRIVER_ERROR( "SQLMoreResults failed", 410014 );
+            {
+                rep.ReportErrors();
+                string err_message = "SQLMoreResults failed" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 410014 );
+            }
         default:
-            DATABASE_DRIVER_ERROR( "SQLMoreResults failed (memory corruption suspected)", 410015 );
+            {
+                string err_message = "SQLMoreResults failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 410015 );
+            }
         }
         break;
     }
@@ -516,7 +533,9 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
     if((!ODBC_xSendDataPrepare(cmd, descr, (SQLINTEGER)nof_bytes,
                               false, logit, p, m_Reporter, &m_ParamPH)) ||
        (!ODBC_xSendDataGetId(cmd, &p, m_Reporter))) {
-        DATABASE_DRIVER_ERROR( "Cannot prepare a command", 410035 );
+
+        string err_message = "Cannot prepare a command" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err_message, 410035 );
     }   
 }
 
@@ -546,10 +565,16 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     case SQL_SUCCESS:           break;
     case SQL_NO_DATA:           break;
     case SQL_NEED_DATA: 
-        DATABASE_DRIVER_ERROR( "Not all the data were sent", 410044 );
+        {
+            string err_message = "Not all the data were sent" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 410044 );
+        }
     case SQL_ERROR:             m_Reporter.ReportErrors();
     default:
-        DATABASE_DRIVER_ERROR( "SQLParamData failed", 410045 );
+        {
+            string err_message = "SQLParamData failed" + m_Reporter.GetExtraMsg();
+            DATABASE_DRIVER_ERROR( err_message, 410045 );
+        }
     }
 
     for(;;) {
@@ -558,10 +583,16 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         case SQL_SUCCESS:           continue;
         case SQL_NO_DATA:           break;
         case SQL_ERROR:             
-            m_Reporter.ReportErrors();
-            DATABASE_DRIVER_ERROR( "SQLMoreResults failed", 410014 );
+            {
+                m_Reporter.ReportErrors();
+                string err_message = "SQLMoreResults failed" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 410014 );
+            }
         default:
-            DATABASE_DRIVER_ERROR( "SQLMoreResults failed (memory corruption suspected)", 410015 );
+            {
+                string err_message = "SQLMoreResults failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                DATABASE_DRIVER_ERROR( err_message, 410015 );
+            }
         }
         break;
     }
@@ -610,6 +641,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/11/02 16:46:21  ssikorsk
+ * Pass context information with an error message of a database exception.
+ *
  * Revision 1.12  2005/11/02 12:58:38  ssikorsk
  * Report extra information in exceptions and error messages.
  *
