@@ -63,7 +63,7 @@
 #define HAVE_WINDOWS_H   1
 #define HAVE_WSTRING     1
 
-#define NCBI_DEPRECATED
+#define NCBI_DEPRECATED __declspec(deprecated)
 
 #ifdef _WIN64
 typedef __int64 ssize_t;
