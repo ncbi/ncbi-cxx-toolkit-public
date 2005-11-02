@@ -2946,3 +2946,45 @@ NGYENPTYKFFEQMQN"
     }
   }
 }
+Seq-entry ::= seq {
+  id {
+    gi 2
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 194,
+    seq-data ncbi2na '0F4E6D687DE5D8965B11EA5790276CD35BC7DC439029297BB485F6CC
+69AF96E709B041F40D66821E606C7E6BAD7CB027E0'H
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data rna {
+            type mRNA,
+            ext name "amyloid-beta protein"
+          },
+          location int {
+            from 1,
+            to 12,
+            strand plus,
+            id gi 2
+          }
+        },
+        {
+          data rna {
+            type mRNA,
+            ext name "amyloid-beta protein"
+          },
+          location int {
+            from 13,
+            to 24,
+            strand minus,
+            id gi 2
+          }
+        }
+      }
+    }
+  }
+}

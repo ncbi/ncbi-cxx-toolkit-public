@@ -206,69 +206,6 @@ Seq-annot ::= {
   }
 }
 Seq-annot ::= {
-  data align {
-    {
-      type partial,
-      dim 2,
-      segs denseg {
-        dim 2,
-        numseg 1,
-        ids {
-          gi 178601,
-          gi 178602
-        },
-        starts {
-          1,
-          1
-        },
-        lens {
-          8
-        }
-      }
-    },
-    {
-      type partial,
-      dim 2,
-      segs denseg {
-        dim 2,
-        numseg 1,
-        ids {
-          gi 178601,
-          gi 178602
-        },
-        starts {
-          1,
-          1
-        },
-        lens {
-          0
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
-  data ftable {
-    {
-      data imp {
-        key "exon"
-      },
-      comment "G00-119-692",
-      location int {
-        from 184,
-        to 351,
-        id gi 178601
-      },
-      qual {
-        {
-          qual "number",
-          val "7"
-        }
-      }
-    }
-  }
-}
-Seq-annot ::= {
   data ftable {
     {
       data gene {
@@ -573,6 +510,69 @@ Seq-annot ::= {
           to 1379,
           strand plus,
           id gi 178613
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data align {
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 178601,
+          gi 178602
+        },
+        starts {
+          1,
+          1
+        },
+        lens {
+          8
+        }
+      }
+    },
+    {
+      type partial,
+      dim 2,
+      segs denseg {
+        dim 2,
+        numseg 1,
+        ids {
+          gi 178601,
+          gi 178602
+        },
+        starts {
+          1,
+          1
+        },
+        lens {
+          0
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data imp {
+        key "exon"
+      },
+      comment "G00-119-692",
+      location int {
+        from 184,
+        to 351,
+        id gi 178601
+      },
+      qual {
+        {
+          qual "number",
+          val "7"
         }
       }
     }
@@ -1477,6 +1477,54 @@ Seq-align ::= {
     lens {
       8
     }
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 1,
+    to 12,
+    strand plus,
+    id gi 2
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 13,
+    to 24,
+    strand minus,
+    id gi 2
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 1,
+    to 12,
+    strand plus,
+    id gi 2
+  }
+}
+Seq-feat ::= {
+  data rna {
+    type mRNA,
+    ext name "amyloid-beta protein"
+  },
+  location int {
+    from 13,
+    to 24,
+    strand minus,
+    id gi 2
   }
 }
 Error: Zero length alignment
