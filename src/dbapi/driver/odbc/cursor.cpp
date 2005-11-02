@@ -80,8 +80,8 @@ CDB_Result* CODBC_CursorCmd::Open()
             }
         }
 #endif
-    } catch (CDB_Exception& ) {
-        DATABASE_DRIVER_ERROR( "failed to declare cursor", 422001 );
+    } catch (const CDB_Exception& e) {
+        DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor", 422001 );
     }
     m_IsDeclared = true;
 
@@ -104,12 +104,12 @@ CDB_Result* CODBC_CursorCmd::Open()
         }
 #endif
         m_LCmd->Release();
-    } catch (CDB_Exception& ) {
+    } catch (const CDB_Exception& e) {
         if (m_LCmd) {
             m_LCmd->Release();
             m_LCmd = 0;
         }
-        DATABASE_DRIVER_ERROR( "failed to open cursor", 422002 );
+        DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor", 422002 );
     }
     m_IsOpen = true;
 
@@ -152,10 +152,10 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
         }
 #endif
         delete cmd;
-    } catch (CDB_Exception& ) {
+    } catch (const CDB_Exception& e) {
         if (cmd)
             delete cmd;
-        DATABASE_DRIVER_ERROR( "update failed", 422004 );
+        DATABASE_DRIVER_ERROR_EX( e, "update failed", 422004 );
     }
 
     return true;
@@ -221,10 +221,10 @@ bool CODBC_CursorCmd::Delete(const string& table_name)
         }
 #endif
         delete cmd;
-    } catch (CDB_Exception& ) {
+    } catch (const CDB_Exception& e) {
         if (cmd)
             delete cmd;
-        DATABASE_DRIVER_ERROR( "update failed", 422004 );
+        DATABASE_DRIVER_ERROR_EX( e, "update failed", 422004 );
     }
 
     return true;
@@ -270,11 +270,11 @@ bool CODBC_CursorCmd::Close()
             }
 #endif
             m_LCmd->Release();
-        } catch (CDB_Exception& ) {
+        } catch (const CDB_Exception& e) {
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR( "failed to close cursor", 422003 );
+            DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor", 422003 );
         }
 
         m_IsOpen = false;
@@ -299,11 +299,11 @@ bool CODBC_CursorCmd::Close()
             }
 #endif
             m_LCmd->Release();
-        } catch (CDB_Exception& ) {
+        } catch (const CDB_Exception& e) {
             if (m_LCmd)
                 m_LCmd->Release();
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR( "failed to deallocate cursor", 422003 );
+            DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor", 422003 );
         }
 
         m_IsDeclared = false;
@@ -345,6 +345,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/11/02 13:51:05  ssikorsk
+ * Rethrow catched CDB_Exception to preserve useful information.
+ *
  * Revision 1.7  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

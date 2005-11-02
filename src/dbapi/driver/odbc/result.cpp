@@ -913,8 +913,8 @@ CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd)
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& ) {
-        DATABASE_DRIVER_ERROR( "failed to get the results", 422010 );
+    } catch (const CDB_Exception& e) {
+        DATABASE_DRIVER_ERROR_EX( e, "failed to get the results", 422010 );
     }
 }
 
@@ -960,7 +960,7 @@ bool CODBC_CursorResult::Fetch()
         if (m_Res && m_Res->Fetch()) {
             return true;
         }
-    } catch (CDB_Exception& ) {
+    } catch ( const CDB_Exception& ) {
 		delete m_Res;
 		m_Res = 0;
 	}
@@ -997,8 +997,8 @@ bool CODBC_CursorResult::Fetch()
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& ) {
-        DATABASE_DRIVER_ERROR( "Failed to fetch the results", 422011 );
+    } catch (const CDB_Exception& e) {
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results", 422011 );
     }
     return false;
 }
@@ -1065,6 +1065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/11/02 13:51:05  ssikorsk
+ * Rethrow catched CDB_Exception to preserve useful information.
+ *
  * Revision 1.22  2005/11/02 12:58:38  ssikorsk
  * Report extra information in exceptions and error messages.
  *
