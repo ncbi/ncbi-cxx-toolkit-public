@@ -425,18 +425,34 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
 #define NCBI_DATABASE_THROW( exception_class, message, err_code, severity ) \
     throw exception_class( DIAG_COMPILE_INFO, \
         0, (message), severity, err_code )
+#define NCBI_DATABASE_RETHROW( prev_exception, exception_class, message, \
+    err_code, severity ) \
+    throw exception_class( DIAG_COMPILE_INFO, \
+        &(prev_exception), (message), severity, err_code )
 
 #define DATABASE_DRIVER_ERROR( message, err_code ) \
     NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Error )
+#define DATABASE_DRIVER_ERROR_EX( prev_exception, message, err_code ) \
+    NCBI_DATABASE_RETHROW( prev_exception, CDB_ClientEx, message, err_code, \
+    eDiag_Error )
 
 #define DATABASE_DRIVER_WARNING( message, err_code ) \
     NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Warning )
+#define DATABASE_DRIVER_WARNING_EX( prev_exception, message, err_code ) \
+    NCBI_DATABASE_RETHROW( prev_exception, CDB_ClientEx, message, err_code, \
+    eDiag_Warning )
 
 #define DATABASE_DRIVER_FATAL( message, err_code ) \
     NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Fatal )
+#define DATABASE_DRIVER_FATAL_EX( prev_exception, message, err_code ) \
+    NCBI_DATABASE_RETHROW( prev_exception, CDB_ClientEx, message, err_code, \
+    eDiag_Fatal )
 
 #define DATABASE_DRIVER_INFO( message, err_code ) \
     NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Info )
+#define DATABASE_DRIVER_INFO_EX( prev_exception, message, err_code ) \
+    NCBI_DATABASE_RETHROW( prev_exception, CDB_ClientEx, message, err_code, \
+    eDiag_Info )
 
 
 #define CHECK_DRIVER_ERROR( failed, message, err_code ) \
@@ -460,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/11/02 12:56:27  ssikorsk
+ * Added new macros to be able to rethrow exceptions.
+ *
  * Revision 1.21  2005/05/16 10:57:46  ssikorsk
  * Using severity level from the CException class
  *
