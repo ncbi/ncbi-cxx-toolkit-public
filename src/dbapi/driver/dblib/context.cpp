@@ -379,7 +379,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx to(DIAG_COMPILE_INFO,
+            CDB_TimeoutEx to( CDiagCompileInfo(),
                              0,
                              dberrstr,
                              dberr);
@@ -388,7 +388,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         return INT_TIMEOUT;
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
+            CDB_DeadlockEx dl( CDiagCompileInfo(),
                               0,
                               dberrstr);
             hs->PostMsg(&dl);
@@ -403,7 +403,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx info(DIAG_COMPILE_INFO,
+            CDB_ClientEx info( CDiagCompileInfo(),
                          0,
                          dberrstr,
                          eDiag_Info,
@@ -415,18 +415,18 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXCONVERSION:
     case EXSERVER:
     case EXPROGRAM:
-        {
-            CDB_ClientEx err(DIAG_COMPILE_INFO,
-                         0,
-                         dberrstr,
-                         eDiag_Error,
-                         dberr);
+        if ( dberr != 20018 ) {
+            CDB_ClientEx err(CDiagCompileInfo(),
+                             0,
+                             dberrstr,
+                             eDiag_Error,
+                             dberr);
             hs->PostMsg(&err);
         }
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx to(DIAG_COMPILE_INFO,
+            CDB_TimeoutEx to( CDiagCompileInfo(),
                              0,
                              dberrstr,
                              dberr);
@@ -435,7 +435,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ftl(DIAG_COMPILE_INFO,
+            CDB_ClientEx ftl( CDiagCompileInfo(),
                          0,
                          dberrstr,
                          eDiag_Fatal,
@@ -466,25 +466,18 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
+        CDB_DeadlockEx dl( CDiagCompileInfo(),
                           0,
                           string(srvname) + ": " + msgtxt);
         hs->PostMsg(&dl);
     } else {
-//         EDiagSev sev =
-//             severity <  10 ? eDiag_Info :
-//             severity == 10 ? eDiag_Warning :
-//             severity <  16 ? eDiag_Error :
-//             severity >  16 ? eDiag_Fatal :
-//             eDB_Unknown;
-
         EDiagSev sev =
             severity <  10 ? eDiag_Info :
             severity == 10 ? eDiag_Warning :
             severity <  16 ? eDiag_Error : eDiag_Fatal;
 
         if (!procname.empty()) {
-            CDB_RPCEx rpc(DIAG_COMPILE_INFO,
+            CDB_RPCEx rpc( CDiagCompileInfo(),
                       0,
                       string(srvname) + ": " + msgtxt,
                       sev,
@@ -493,7 +486,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                       line);
             hs->PostMsg(&rpc);
         } else {
-            CDB_DSEx m(DIAG_COMPILE_INFO,
+            CDB_DSEx m( CDiagCompileInfo(),
                      0,
                      string(srvname) + ": " + msgtxt,
                      sev,
@@ -1118,6 +1111,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/11/02 13:30:33  ssikorsk
+ * Do not report function name, file name and line number in case of SQL Server errors.
+ *
  * Revision 1.55  2005/10/31 12:19:59  ssikorsk
  * Do not use separate include files for msdblib.
  *

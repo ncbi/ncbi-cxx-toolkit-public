@@ -377,7 +377,7 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
         }
 
 //         CDB_ClientEx ex(sev, msg->msgnumber, "cslib", msg->msgstring);
-        CDB_ClientEx ex(DIAG_COMPILE_INFO, 0, msg->msgstring, sev, msg->msgnumber);
+        CDB_ClientEx ex( CDiagCompileInfo(), 0, msg->msgstring, sev, msg->msgnumber);
         drv->m_CntxHandlers.PostMsg(&ex);
     }
     else if (msg->severity != CS_SV_INFORM) {
@@ -433,12 +433,20 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
 
     switch (msg->severity) {
     case CS_SV_INFORM: {
-        CDB_ClientEx info(DIAG_COMPILE_INFO, 0, msg->msgstring, eDiag_Info, msg->msgnumber);
+        CDB_ClientEx info( CDiagCompileInfo(), 
+                           0, 
+                           msg->msgstring, 
+                           eDiag_Info, 
+                           msg->msgnumber);
         hs->PostMsg(&info);
         break;
     }
     case CS_SV_RETRY_FAIL: {
-        CDB_TimeoutEx to(DIAG_COMPILE_INFO, 0, msg->msgstring, msg->msgnumber);
+        CDB_TimeoutEx to( 
+            CDiagCompileInfo(), 
+            0, 
+            msg->msgstring, 
+            msg->msgnumber);
         hs->PostMsg(&to);
     if(con) {
       CS_INT status;
@@ -453,12 +461,21 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     case CS_SV_CONFIG_FAIL:
     case CS_SV_API_FAIL:
     case CS_SV_INTERNAL_FAIL: {
-        CDB_ClientEx err(DIAG_COMPILE_INFO, 0, msg->msgstring, eDiag_Error, msg->msgnumber);
+        CDB_ClientEx err( CDiagCompileInfo(), 
+                          0, 
+                          msg->msgstring, 
+                          eDiag_Error, 
+                          msg->msgnumber);
         hs->PostMsg(&err);
         break;
     }
     default: {
-        CDB_ClientEx ftl(DIAG_COMPILE_INFO, 0, msg->msgstring, eDiag_Fatal, msg->msgnumber);
+        CDB_ClientEx ftl( 
+            CDiagCompileInfo(), 
+            0, 
+            msg->msgstring, 
+            eDiag_Fatal, 
+            msg->msgnumber);
         hs->PostMsg(&ftl);
         break;
     }
@@ -514,26 +531,19 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     }
 
     if (msg->msgnumber == 1205 /*DEADLOCK*/) {
-        CDB_DeadlockEx dl(DIAG_COMPILE_INFO, 
+        CDB_DeadlockEx dl(CDiagCompileInfo(),
                           0, 
                           "Server '" + string(msg->svrname) + "': " + msg->text);
         hs->PostMsg(&dl);
     }
     else {
-//         EDiagSev sev =
-//             msg->severity <  10 ? eDiag_Info :
-//             msg->severity == 10 ? eDiag_Warning :
-//             msg->severity <  16 ? eDiag_Error :
-//             msg->severity >  16 ? eDiag_Fatal :
-//             eDB_Unknown;
-
         EDiagSev sev =
             msg->severity <  10 ? eDiag_Info :
             msg->severity == 10 ? eDiag_Warning :
             msg->severity <  16 ? eDiag_Error : eDiag_Fatal;
 
         if (msg->proclen > 0) {
-            CDB_RPCEx rpc(DIAG_COMPILE_INFO,
+            CDB_RPCEx rpc(CDiagCompileInfo(),
                           0,
                           "Server '" + string(msg->svrname) + "': " + msg->text,
                           sev,
@@ -544,7 +554,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         }
         else if (msg->sqlstatelen > 1  &&
                  (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-            CDB_SQLEx sql(DIAG_COMPILE_INFO,
+            CDB_SQLEx sql(CDiagCompileInfo(),
                           0,
                           "Server '" + string(msg->svrname) + "': " + msg->text,
                           sev,
@@ -554,7 +564,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
             hs->PostMsg(&sql);
         }
         else {
-            CDB_DSEx m(DIAG_COMPILE_INFO,
+            CDB_DSEx m(CDiagCompileInfo(),
                        0,
                        "Server '" + string(msg->svrname) + "': " + msg->text,
                        sev,
@@ -1079,6 +1089,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/11/02 13:30:33  ssikorsk
+ * Do not report function name, file name and line number in case of SQL Server errors.
+ *
  * Revision 1.47  2005/10/27 16:48:49  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.

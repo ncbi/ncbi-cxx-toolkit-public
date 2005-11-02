@@ -82,6 +82,7 @@ void CODBC_Reporter::ReportErrors()
     SQLSMALLINT MsgLen;
     SQLCHAR SqlState[6];
     SQLCHAR Msg[1024];
+    string err_msg;
 
     if( !m_HStack ) {
         return;
@@ -387,12 +388,17 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         connect_str+= srv_name;
         connect_str+= ";UID=";
         connect_str+= user_name;
+        m_Reporter.SetExtraMsg( connect_str );
         connect_str+= ";PWD=";
         connect_str+= passwd;
+        
         r= SQLDriverConnect(con, 0, (SQLCHAR*) connect_str.c_str(), SQL_NTS,
                             0, 0, 0, SQL_DRIVER_NOPROMPT);
     }
     else {
+        string extra_msg = "SERVER: " + srv_name + "; USER: " + user_name;
+        m_Reporter.SetExtraMsg( extra_msg );
+        
         r= SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
                    (SQLCHAR*) user_name.c_str(), SQL_NTS,
                    (SQLCHAR*) passwd.c_str(), SQL_NTS);
@@ -612,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/11/02 13:30:34  ssikorsk
+ * Do not report function name, file name and line number in case of SQL Server errors.
+ *
  * Revision 1.25  2005/11/02 12:58:38  ssikorsk
  * Report extra information in exceptions and error messages.
  *
