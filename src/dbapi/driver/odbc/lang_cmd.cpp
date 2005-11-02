@@ -52,7 +52,7 @@ CODBC_LangCmd::CODBC_LangCmd(
     , m_Cmd(cmd)
     , m_Query(lang_query)
     , m_Params(nof_params)
-    , m_Reporter(&conn->m_MsgHandlers, SQL_HANDLE_STMT, cmd)
+    , m_Reporter(&conn->m_MsgHandlers, SQL_HANDLE_STMT, cmd, &conn->m_Reporter)
 {
     m_WasSent   =  false;
     m_HasFailed =  false;
@@ -64,6 +64,8 @@ CODBC_LangCmd::CODBC_LangCmd(
         DATABASE_DRIVER_ERROR( "SQLSetStmtAttr failed (memory corruption suspected)", 420014 );
     }
 */
+    // string extra_msg = "SQL Command: \"" + lang_query + "\"";
+    // m_Reporter.SetExtraMsg( extra_msg );
 }
 
 
@@ -521,6 +523,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/11/02 12:59:34  ssikorsk
+ * Report extra information in exceptions and error messages.
+ *
  * Revision 1.12  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

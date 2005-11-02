@@ -44,11 +44,21 @@ BEGIN_NCBI_SCOPE
 //
 
 CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection* con, SQLHSTMT cmd,
-                         const string& proc_name, unsigned int nof_params) :
-    m_Connect(con), m_Cmd(cmd), m_Query(proc_name), m_Params(nof_params),
-    m_WasSent(false), m_HasFailed(false), m_Recompile(false), m_Res(0),
-    m_RowCount(-1), m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_STMT, cmd)
+                         const string& proc_name, unsigned int nof_params) 
+: m_Connect(con)
+, m_Cmd(cmd)
+, m_Query(proc_name)
+, m_Params(nof_params)
+, m_WasSent(false)
+, m_HasFailed(false)
+, m_Recompile(false)
+, m_Res(0)
+, m_RowCount(-1)
+, m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_STMT, cmd, &con->m_Reporter)
 {
+    string extra_msg = "Procedure Name: " + proc_name;
+    m_Reporter.SetExtraMsg( extra_msg );
+
     return;
 }
 
@@ -550,6 +560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/11/02 12:58:38  ssikorsk
+ * Report extra information in exceptions and error messages.
+ *
  * Revision 1.13  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

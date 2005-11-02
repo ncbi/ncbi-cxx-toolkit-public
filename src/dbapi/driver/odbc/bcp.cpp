@@ -55,8 +55,11 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* con,
     m_Connect(con), m_Cmd(cmd), m_Params(nof_columns),
     m_WasSent(false), m_HasFailed(false),
     m_HasTextImage(false), m_WasBound(false), 
-    m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_DBC, cmd)
+    m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_DBC, cmd, &con->m_Reporter)
 {
+    string extra_msg = "Table Name: " + table_name;
+    m_Reporter.SetExtraMsg( extra_msg );
+
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
         m_Reporter.ReportErrors();
         DATABASE_DRIVER_FATAL( "bcp_init failed", 423001 );
@@ -451,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/02 12:58:38  ssikorsk
+ * Report extra information in exceptions and error messages.
+ *
  * Revision 1.8  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

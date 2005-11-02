@@ -64,20 +64,27 @@ class CODBC_StatusResult;
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Reporter
 {
 public:
-    CODBC_Reporter(CDBHandlerStack* hs, SQLSMALLINT ht, SQLHANDLE h) :
-        m_HStack(hs), m_HType(ht), m_Handle(h) {}
+    CODBC_Reporter(CDBHandlerStack* hs, 
+                   SQLSMALLINT ht, 
+                   SQLHANDLE h,
+                   const CODBC_Reporter* parent_reporter = NULL);
+    ~CODBC_Reporter(void);
     
 public:
     void ReportErrors(void);
     void SetHandlerStack(CDBHandlerStack* hs) {
-        m_HStack= hs;
+        m_HStack = hs;
     }
     void SetHandle(SQLHANDLE h) {
-        m_Handle= h;
+        m_Handle = h;
     }
 	void SetHandleType(SQLSMALLINT ht) {
-		m_HType= ht;
+		m_HType = ht;
 	}
+    void SetExtraMsg(const string& em) {
+        m_ExtraMsg = em;
+    }
+    string GetExtraMsg(void) const;
     
 private:
     CODBC_Reporter(void);
@@ -86,6 +93,8 @@ private:
     CDBHandlerStack* m_HStack;
     SQLHANDLE m_Handle;
     SQLSMALLINT m_HType;
+    const CODBC_Reporter* m_ParentReporter;
+    string m_ExtraMsg;
 };
 
 
@@ -131,6 +140,10 @@ public:
     virtual void ODBC_SetPacketSize(SQLUINTEGER packet_size);
 
     virtual SQLHENV ODBC_GetContext(void) const;
+    const CODBC_Reporter& GetReporter(void) const
+    {
+        return m_Reporter;
+    }
 
 private:
     SQLHENV     m_Context;
@@ -626,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/11/02 12:59:35  ssikorsk
+ * Report extra information in exceptions and error messages.
+ *
  * Revision 1.13  2005/10/20 12:58:47  ssikorsk
  * Code reformatting
  *

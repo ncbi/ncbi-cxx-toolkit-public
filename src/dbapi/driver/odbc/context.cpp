@@ -51,6 +51,31 @@ BEGIN_NCBI_SCOPE
 //
 //  CODBC_Reporter::
 //
+CODBC_Reporter::CODBC_Reporter(CDBHandlerStack* hs, 
+                               SQLSMALLINT ht, 
+                               SQLHANDLE h,
+                               const CODBC_Reporter* parent_reporter) 
+: m_HStack(hs)
+, m_HType(ht)
+, m_Handle(h)
+, m_ParentReporter(parent_reporter) 
+{
+}
+
+CODBC_Reporter::~CODBC_Reporter(void)
+{
+}
+
+string 
+CODBC_Reporter::GetExtraMsg(void) const
+{
+    if ( m_ParentReporter != NULL ) {
+        return " " + m_ExtraMsg + " " + m_ParentReporter->GetExtraMsg();
+    }
+
+    return " " + m_ExtraMsg;
+}
+
 void CODBC_Reporter::ReportErrors()
 {
     SQLINTEGER NativeError;
@@ -58,30 +83,39 @@ void CODBC_Reporter::ReportErrors()
     SQLCHAR SqlState[6];
     SQLCHAR Msg[1024];
 
-    if(!m_HStack) return;
+    if( !m_HStack ) {
+        return;
+    }
+
+    memset(Msg, 0, sizeof(Msg));
 
     for(SQLSMALLINT i= 1; i < 128; i++) {
-        switch(SQLGetDiagRec(m_HType, m_Handle, i, SqlState, &NativeError,
-                             Msg, sizeof(Msg), &MsgLen)) {
+        int rc = SQLGetDiagRec(m_HType, m_Handle, i, SqlState, &NativeError,
+                             Msg, sizeof(Msg), &MsgLen);
+        string err_msg( reinterpret_cast<const char*>(Msg) );
+        err_msg += GetExtraMsg();
+
+        switch( rc ) {
         case SQL_SUCCESS:
             if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
-                CDB_TimeoutEx to(DIAG_COMPILE_INFO,
+
+                CDB_TimeoutEx to(CDiagCompileInfo(),
                                  0,
-                                 (const char*)Msg,
+                                 err_msg.c_str(),
                                  NativeError);
 
                 m_HStack->PostMsg(&to);
             }
             else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
-                CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
+                CDB_DeadlockEx dl(CDiagCompileInfo(),
                                   0,
-                                  (const char*)Msg);
+                                  err_msg.c_str());
                 m_HStack->PostMsg(&dl);
             }
             else if(NativeError != 5701 && NativeError != 5703){
-                CDB_SQLEx se(DIAG_COMPILE_INFO,
+                CDB_SQLEx se(CDiagCompileInfo(),
                              0,
-                             (const char*)Msg,
+                             err_msg.c_str(),
                              eDiag_Warning,
                              NativeError,
                              (const char*)SqlState,
@@ -94,9 +128,12 @@ void CODBC_Reporter::ReportErrors()
 
         case SQL_SUCCESS_WITH_INFO:
             {
-                CDB_DSEx dse(DIAG_COMPILE_INFO,
+                string err_msg( "Message is too long to be retrieved" );
+                err_msg += GetExtraMsg();
+
+                CDB_DSEx dse(CDiagCompileInfo(),
                              0,
-                             "Message is too long to be retrieved",
+                             err_msg.c_str(),
                              eDiag_Warning,
                              777);
                 m_HStack->PostMsg(&dse);
@@ -105,9 +142,12 @@ void CODBC_Reporter::ReportErrors()
 
         default:
             {
-                CDB_ClientEx ce(DIAG_COMPILE_INFO,
+                string err_msg( "SQLGetDiagRec failed (memory corruption suspected" );
+                err_msg += GetExtraMsg();
+
+                CDB_ClientEx ce(CDiagCompileInfo(),
                                 0,
-                                "SQLGetDiagRec failed (memory corruption suspected",
+                                err_msg.c_str(),
                                 eDiag_Warning,
                                 420016);
                 m_HStack->PostMsg(&ce);
@@ -126,7 +166,8 @@ void CODBC_Reporter::ReportErrors()
 
 
 
-CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn) : m_Reporter(0, SQL_HANDLE_ENV, 0)
+CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn) 
+: m_Reporter(0, SQL_HANDLE_ENV, 0)
 {
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
@@ -334,6 +375,9 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
 #endif
 
 
+    string extra_msg = "SERVER: " + srv_name + "; USER: " + user_name;
+    m_Reporter.SetExtraMsg( extra_msg );
+        
     if(!m_UseDSN) {
 #ifdef NCBI_OS_MSWIN
       string connect_str("DRIVER={SQL Server};SERVER=");
@@ -353,6 +397,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                    (SQLCHAR*) user_name.c_str(), SQL_NTS,
                    (SQLCHAR*) passwd.c_str(), SQL_NTS);
     }
+
     switch(r) {
     case SQL_SUCCESS_WITH_INFO:
         xReportConError(con);
@@ -567,6 +612,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/11/02 12:58:38  ssikorsk
+ * Report extra information in exceptions and error messages.
+ *
  * Revision 1.24  2005/10/27 16:48:49  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.

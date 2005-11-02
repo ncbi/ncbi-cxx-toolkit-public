@@ -47,7 +47,7 @@ static bool ODBC_xSendDataGetId(SQLHSTMT cmd, SQLPOINTER* id,
 
 CODBC_Connection::CODBC_Connection(CODBCContext* cntx, SQLHDBC con,
                                    bool reusable, const string& pool_name):
-    m_Reporter(0, SQL_HANDLE_DBC, con)
+    m_Reporter(0, SQL_HANDLE_DBC, con, &cntx->GetReporter())
 {
     m_Link     = con;
     m_Context  = cntx;
@@ -71,6 +71,9 @@ CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
 {
     SQLHSTMT cmd;
     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
+
+    string extra_msg = "SQL Command: \"" + lang_query + "\"";
+    m_Reporter.SetExtraMsg( extra_msg );
 
     if(r == SQL_ERROR) {
         m_Reporter.ReportErrors();
@@ -96,6 +99,9 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
 #else
     SQLHSTMT cmd;
     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
+
+    string extra_msg = "RPC Command: " + rpc_name;
+    m_Reporter.SetExtraMsg( extra_msg );
 
     if(r == SQL_ERROR) {
         m_Reporter.ReportErrors();
@@ -135,6 +141,9 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 #else
     SQLHSTMT cmd;
     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
+
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \"" + query + "\"";
+    m_Reporter.SetExtraMsg( extra_msg );
 
     if(r == SQL_ERROR) {
         m_Reporter.ReportErrors();
@@ -501,7 +510,7 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
                                      CDB_ITDescriptor& descr,
                                      size_t nof_bytes, bool logit) :
     m_Connect(conn), m_Cmd(cmd), m_Bytes2go(nof_bytes),
-    m_Reporter(&conn->m_MsgHandlers, SQL_HANDLE_STMT, cmd)
+    m_Reporter(&conn->m_MsgHandlers, SQL_HANDLE_STMT, cmd, &conn->m_Reporter)
 {
     SQLPOINTER p= (SQLPOINTER)1;
     if((!ODBC_xSendDataPrepare(cmd, descr, (SQLINTEGER)nof_bytes,
@@ -601,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/11/02 12:58:38  ssikorsk
+ * Report extra information in exceptions and error messages.
+ *
  * Revision 1.11  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

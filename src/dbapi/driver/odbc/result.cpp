@@ -889,18 +889,23 @@ CODBC_ParamResult::~CODBC_ParamResult()
 //  CODBC_CursorResult::
 //
 
-CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd) :
-    m_Cmd(cmd), m_Res(0)
+CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd) 
+: m_Cmd(cmd)
+, m_Res(NULL)
+, m_EOR(false)
 {
     try {
         m_Cmd->Send();
-		m_EOR= true;
+		m_EOR = true;
+
         while (m_Cmd->HasMoreResults()) {
             m_Res = m_Cmd->Result();
+
             if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-				m_EOR= false;
+				m_EOR = false;
                 return;
             }
+
             if (m_Res) {
                 while (m_Res->Fetch())
                     ;
@@ -922,7 +927,7 @@ EDB_ResType CODBC_CursorResult::ResultType() const
 
 unsigned int CODBC_CursorResult::NofItems() const
 {
-    return m_Res? m_Res->NofItems() : 0;
+    return m_Res ? m_Res->NofItems() : 0;
 }
 
 
@@ -947,19 +952,25 @@ EDB_Type CODBC_CursorResult::ItemDataType(unsigned int item_num) const
 bool CODBC_CursorResult::Fetch()
 {
 
-	if(m_EOR) return false;
+    if( m_EOR ) {
+        return false;
+    }
+
 	try {
-		if (m_Res && m_Res->Fetch()) return true;
+        if (m_Res && m_Res->Fetch()) {
+            return true;
+        }
     } catch (CDB_Exception& ) {
 		delete m_Res;
-		m_Res= 0;
+		m_Res = 0;
 	}
 
     try {
         // finish this command
-		m_EOR= true;
-        if(m_Res) {
+		m_EOR = true;
+        if( m_Res ) {
 			delete m_Res;
+			m_Res = 0;
 			while (m_Cmd->HasMoreResults()) {
 				m_Res = m_Cmd->Result();
 				if (m_Res) {
@@ -970,15 +981,16 @@ bool CODBC_CursorResult::Fetch()
 				}
 			}
 		}
+
         // send the another "fetch cursor_name" command
         m_Cmd->Send();
         while (m_Cmd->HasMoreResults()) {
             m_Res = m_Cmd->Result();
             if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-				m_EOR= false;
+				m_EOR = false;
                 return m_Res->Fetch();
             }
-            if (m_Res) {
+            if ( m_Res ) {
                 while (m_Res->Fetch())
                     ;
                 delete m_Res;
@@ -1037,8 +1049,10 @@ bool CODBC_CursorResult::SkipItem()
 CODBC_CursorResult::~CODBC_CursorResult()
 {
     try {
-        if (m_Res)
+        if (m_Res) {
             delete m_Res;
+			m_Res = 0;
+        }
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -1051,6 +1065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/11/02 12:58:38  ssikorsk
+ * Report extra information in exceptions and error messages.
+ *
  * Revision 1.21  2005/10/31 12:25:21  ssikorsk
  * Get rid of warnings.
  *
