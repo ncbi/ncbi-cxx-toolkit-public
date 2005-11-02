@@ -372,10 +372,7 @@ CDB_UserHandler_Wrapper::~CDB_UserHandler_Wrapper()
         m_Handler = 0;
         s_CDB_DefUserHandler_IsSet = false;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -437,10 +434,7 @@ CDB_UserHandler_Diag::~CDB_UserHandler_Diag()
     try {
         m_Prefix.erase();
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -488,10 +482,7 @@ CDB_UserHandler_Stream::~CDB_UserHandler_Stream()
         }
         m_Prefix.erase();
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -519,6 +510,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/11/02 14:32:39  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.18  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *

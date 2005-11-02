@@ -182,10 +182,7 @@ CDB_Connection::~CDB_Connection()
             Context()->x_Recycle(m_Connect, m_Connect->IsReusable());
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -296,10 +293,7 @@ CDB_Result::~CDB_Result()
             m_Res->Release();
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -400,10 +394,7 @@ CDB_LangCmd::~CDB_LangCmd()
             m_Cmd->Release();
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -502,10 +493,7 @@ CDB_RPCCmd::~CDB_RPCCmd()
             m_Cmd->Release();
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -561,10 +549,7 @@ CDB_BCPInCmd::~CDB_BCPInCmd()
             m_Cmd->Release();
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -640,10 +625,7 @@ CDB_CursorCmd::~CDB_CursorCmd()
             m_Cmd->Release();
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -676,10 +658,7 @@ CDB_SendDataCmd::~CDB_SendDataCmd()
             m_Cmd->Release();
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -732,10 +711,7 @@ CDB_ResultProcessor::~CDB_ResultProcessor()
 
         if(m_Prev) m_Prev->Release();
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -746,6 +722,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/11/02 14:32:39  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.19  2005/10/26 12:25:15  ssikorsk
  * CDB_Result::Fetch returns false if m_Res is NULL now.
  *

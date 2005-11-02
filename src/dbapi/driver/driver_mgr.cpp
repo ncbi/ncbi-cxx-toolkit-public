@@ -287,10 +287,7 @@ C_DriverMgr::~C_DriverMgr()
             s_DrvCount= 0;
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
@@ -383,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/11/02 14:32:39  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.29  2005/10/20 14:58:44  ssikorsk
  * Do not hide CPluginManagerException exception during driver loading
  *

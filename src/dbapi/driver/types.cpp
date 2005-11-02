@@ -274,10 +274,7 @@ CDB_Char::~CDB_Char()
     try {
         delete [] m_Val;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -318,10 +315,7 @@ CDB_LongChar::~CDB_LongChar()
     try {
         delete [] m_Val;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -384,10 +378,7 @@ CDB_Binary::~CDB_Binary()
     try {
         delete [] m_Val;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -426,10 +417,7 @@ CDB_LongBinary::~CDB_LongBinary()
     try {
         delete [] m_Val;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -561,10 +549,7 @@ CDB_Stream::~CDB_Stream()
     try {
         delete m_Store;
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -961,6 +946,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/11/02 14:32:39  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.20  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *

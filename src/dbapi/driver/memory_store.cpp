@@ -533,10 +533,7 @@ CMemStore::~CMemStore()
             m_Last = m_Current;
         }
     }
-    catch(...) {
-        // Destructors do not throw ...
-        _ASSERT(false);
-    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -547,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/11/02 14:32:39  ssikorsk
+ * Use NCBI_CATCH_ALL macro instead of catch(...)
+ *
  * Revision 1.9  2005/09/15 11:00:01  ssikorsk
  * Destructors do not throw exceptions any more.
  *
