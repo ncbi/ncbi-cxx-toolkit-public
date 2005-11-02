@@ -100,7 +100,7 @@ void CODBC_Reporter::ReportErrors()
         case SQL_SUCCESS:
             if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
 
-                CDB_TimeoutEx to(CDiagCompileInfo(),
+                CDB_TimeoutEx to(DIAG_COMPILE_INFO,
                                  0,
                                  err_msg.c_str(),
                                  NativeError);
@@ -108,13 +108,13 @@ void CODBC_Reporter::ReportErrors()
                 m_HStack->PostMsg(&to);
             }
             else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
-                CDB_DeadlockEx dl(CDiagCompileInfo(),
+                CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
                                   0,
                                   err_msg.c_str());
                 m_HStack->PostMsg(&dl);
             }
             else if(NativeError != 5701 && NativeError != 5703){
-                CDB_SQLEx se(CDiagCompileInfo(),
+                CDB_SQLEx se(DIAG_COMPILE_INFO,
                              0,
                              err_msg.c_str(),
                              eDiag_Warning,
@@ -132,7 +132,7 @@ void CODBC_Reporter::ReportErrors()
                 string err_msg( "Message is too long to be retrieved" );
                 err_msg += GetExtraMsg();
 
-                CDB_DSEx dse(CDiagCompileInfo(),
+                CDB_DSEx dse(DIAG_COMPILE_INFO,
                              0,
                              err_msg.c_str(),
                              eDiag_Warning,
@@ -146,7 +146,7 @@ void CODBC_Reporter::ReportErrors()
                 string err_msg( "SQLGetDiagRec failed (memory corruption suspected" );
                 err_msg += GetExtraMsg();
 
-                CDB_ClientEx ce(CDiagCompileInfo(),
+                CDB_ClientEx ce(DIAG_COMPILE_INFO,
                                 0,
                                 err_msg.c_str(),
                                 eDiag_Warning,
@@ -614,6 +614,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/11/02 15:38:07  ucko
+ * Replace CDiagCompileInfo() with DIAG_COMPILE_INFO, as the latter
+ * automatically fills in some useful information and is less likely to
+ * confuse compilers into thinking they're looking at function prototypes.
+ *
  * Revision 1.27  2005/11/02 13:37:08  ssikorsk
  * Fixed file merging problems.
  *

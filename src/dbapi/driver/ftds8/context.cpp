@@ -317,7 +317,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx to(CDiagCompileInfo(),
+            CDB_TimeoutEx to(DIAG_COMPILE_INFO,
                              0,
                              dberrstr,
                              dberr);
@@ -326,7 +326,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         return INT_TIMEOUT;
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx dl(CDiagCompileInfo(),
+            CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
                               0,
                               dberrstr);
             hs->PostMsg(&dl);
@@ -341,7 +341,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx info(CDiagCompileInfo(),
+            CDB_ClientEx info(DIAG_COMPILE_INFO,
                               0,
                               dberrstr,
                               eDiag_Info,
@@ -354,7 +354,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
     case EXSERVER:
     case EXPROGRAM:
         {
-            CDB_ClientEx err(CDiagCompileInfo(),
+            CDB_ClientEx err(DIAG_COMPILE_INFO,
                              0,
                              dberrstr,
                              eDiag_Error,
@@ -364,7 +364,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx to(CDiagCompileInfo(),
+            CDB_TimeoutEx to(DIAG_COMPILE_INFO,
                              0,
                              dberrstr,
                              dberr);
@@ -373,7 +373,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ftl(CDiagCompileInfo(),
+            CDB_ClientEx ftl(DIAG_COMPILE_INFO,
                              0,
                              dberrstr,
                              eDiag_Fatal,
@@ -403,7 +403,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
         &link->m_MsgHandlers : &g_pTDSContext->m_CntxHandlers;
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx dl(CDiagCompileInfo(),
+        CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
                           0,
                           string(srvname) + ": " + msgtxt);
         hs->PostMsg(&dl);
@@ -414,7 +414,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
             severity <  16 ? eDiag_Error : eDiag_Fatal;
 
         if (!procname.empty()) {
-            CDB_RPCEx rpc(CDiagCompileInfo(),
+            CDB_RPCEx rpc(DIAG_COMPILE_INFO,
                           0,
                           string(srvname) + ": " + msgtxt,
                           sev,
@@ -423,7 +423,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                           line);
             hs->PostMsg(&rpc);
         } else {
-            CDB_DSEx m(CDiagCompileInfo(),
+            CDB_DSEx m(DIAG_COMPILE_INFO,
                        0,
                        string(srvname) + ": " + msgtxt,
                        sev,
@@ -690,6 +690,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/11/02 15:38:02  ucko
+ * Replace CDiagCompileInfo() with DIAG_COMPILE_INFO, as the latter
+ * automatically fills in some useful information and is less likely to
+ * confuse compilers into thinking they're looking at function prototypes.
+ *
  * Revision 1.49  2005/11/02 13:30:34  ssikorsk
  * Do not report function name, file name and line number in case of SQL Server errors.
  *
