@@ -463,6 +463,127 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// AutoArray --
+///
+/// "AutoPtr" like class for using with arrays
+///
+/// vector<> template comes with a performance penalty, since it always
+/// initializes its content. This template is not a vector replacement,
+/// it's a version of AutoPtr<> tuned for array pointers. For convinience
+/// it defines array style access operator [] and size based contructor.
+///
+/// @sa AutoPtr
+///
+
+template< class X, class Del = ArrayDeleter<X> >
+class AutoArray
+{
+public:
+    typedef X element_type;         ///< Define element type.
+    typedef Del deleter_type;       ///< Alias for template argument.
+
+public:
+
+    /// Construct the arrya using C++ new[] operator
+    /// @note In this case you should use ArrayDeleter<> or compatible
+    AutoArray(size_t size)
+        : m_Ptr(new element_type[size]), m_Data(true)
+    {}
+
+    AutoArray(element_type* p = 0)
+        : m_Ptr(p), m_Data(true)
+    {}
+
+    AutoArray(element_type* p, const deleter_type& deleter)
+        : m_Ptr(p), m_Data(deleter, true)
+    {
+    }
+
+    AutoArray(const AutoPtr<X, Del>& p)
+        : m_Ptr(0), m_Data(p.m_Data)
+    {
+        m_Ptr = p.x_Release();
+    }
+
+    ~AutoArray(void)
+    {
+        reset();
+    }
+
+    /// Assignment operator.
+    AutoPtr<X, Del>& operator=(const AutoPtr<X, Del>& p)
+    {
+        if (this != &p) {
+            bool owner = p.m_Data.second();
+            reset(p.x_Release());
+            m_Data.second() = owner;
+        }
+        return *this;
+    }
+
+    /// Assignment operator.
+    AutoPtr<X, Del>& operator=(element_type* p)
+    {
+        reset(p);
+        return *this;
+    }
+    /// Bool operator for use in if() clause.
+    DECLARE_OPERATOR_BOOL_PTR(m_Ptr);
+
+    /// Dereference operator.
+    element_type& operator* (void) const { return *m_Ptr; }
+
+    /// Reference operator.
+    element_type* operator->(void) const { return  m_Ptr; }
+
+    /// Get pointer.
+    element_type* get       (void) const { return  m_Ptr; }
+
+    /// Release will release ownership of pointer to caller.
+    element_type* release(void)
+    {
+        m_Data.second() = false;
+        return m_Ptr;
+    }
+
+    /// array style dereference (returns value)
+    element_type operator[](size_t pos) const { return m_Ptr[pos]; }
+
+    /// array style dereference (returns reference)
+    element_type& operator[](size_t pos) { return m_Ptr[pos]; }
+
+    /// Reset will delete old pointer, set content to new value,
+    /// and accept ownership upon the new pointer.
+    void reset(element_type* p = 0)
+    {
+        if (m_Ptr  &&  m_Data.second()) {
+            m_Data.first().Delete(release());
+        }
+        m_Ptr   = p;
+        m_Data.second() = true;
+    }
+
+    void Swap(AutoPtr<X, Del>& a)
+    {
+        swap(m_Ptr, a.m_Ptr);
+        swap(m_Data, a.m_Data);
+    }
+
+private:
+    /// Release for const object.
+    element_type* x_Release(void) const
+    {
+        return const_cast<AutoPtr<X, Del>*>(this)->release();
+    }
+
+private:
+    element_type*  m_Ptr;
+    mutable pair_base_member<deleter_type, bool> m_Data; ///< State info.
+};
+
+
 
 // "min" and "max" templates
 //
@@ -774,6 +895,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2005/11/02 15:10:40  kuznets
+ * +AutoArray<>
+ *
  * Revision 1.87  2005/06/17 15:16:36  vasilche
  * New template pair_base_member<> for empty base optimization.
  * Changed AutoPtr to store Deleter object using pair_base_member.
