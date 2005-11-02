@@ -166,7 +166,11 @@ EOF
         # lang_query
 
             cmd="lang_query -d $driver -S $server -Q"
-            RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
+            if test $driver != "ftds63" ; then
+                RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
+            else
+                sum_list="$sum_list XXX_SEPARATOR #  $cmd select qq = 57.55 + 0.0033 (skipped)"
+            fi
             RunTest2 'select qq = 57 + 33' '<ROW><qq>90<'
             RunTest2 'select qq = GETDATE()' '<ROW><qq>../../.... ..:..:..<'
             RunTest2 'select name, type from sysobjects' '<ROW><name>'
