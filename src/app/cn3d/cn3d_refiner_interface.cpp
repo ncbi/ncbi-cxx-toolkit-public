@@ -154,15 +154,25 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
         refinedMultiples->clear();
     }
 
-    // show options dialog each time block aligner is run; initializes the refiner engine
-    // By default, no blocks are frozen.  If wish to freeze blocks, will require changes to ConfigureRefiner
-    if (!ConfigureRefiner(parent, nAlignedBlocks)) return true;
+    // Show options dialog each time block aligner is run; recreates & initializes the refiner engine.
+
+    // A) The one-argument form of 'ConfigureRefiner' requires uses of 'SetBlocksToRealign', and optionally 
+    // 'SetRowsToExcludeFromLNO', to specify the refineable portions of the alignment.
+    if (!ConfigureRefiner(parent)) return true;
+    //  Tell the refinement engine which blocks to refine/which rows to exclude from refinement.
+    SetBlocksToRealign(nAlignedBlocks);
+    //bool realignedBlocksSet = SetBlocksToRealign(const vector<unsigned int>& blocks, true);
+    //bool excludedRowsSet    = SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRows, true);
+
+
+    // B) With this form of 'ConfigureRefiner', can skip the above manual calls to SetBlocksToRealign/SetRowsToExcludeFromLNO
+    //if (!ConfigureRefiner(parent, const vector<unsigned int>* blocksToRealign, const vector<unsigned int>* rowsToExclude = NULL)) return true;
+
     if (!m_refinerEngine) {
         ERRORMSG("Error initializing alignment refinement engine");
         return false;
     }
 
-    SetDialogSevereErrors(true);
     bool errorsEncountered = true;
 
     wxSetCursor(*wxHOURGLASS_CURSOR);
@@ -170,7 +180,9 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
     wait.SetValue(50);
 
     //  Execute the refinement...
+    SetDialogSevereErrors(false);
     align_refine::RefinerResultCode result = m_refinerEngine->Refine(originalMultiple);
+    SetDialogSevereErrors(true);
 
     wait.SetValue(90);
 
@@ -203,11 +215,89 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
     return !errorsEncountered;
 }
 
+bool BMARefiner::SetBlocksToRealign(const vector<unsigned int>& blocks, bool clearOldList) {
+
+    bool result = (m_refinerEngine != NULL);
+    align_refine::LeaveOneOutParams loo;
+
+    if (result) {
+        m_refinerEngine->GetLOOParams(loo);
+        if (clearOldList) loo.blocks.clear();
+
+        loo.blocks.insert(loo.blocks.begin(), blocks.begin(), blocks.end());
+
+        m_refinerEngine->SetLOOParams(loo);
+    }
+    return result;
+}
+
+bool BMARefiner::SetBlocksToRealign(unsigned int nAlignedBlocks) {
+
+    vector<unsigned int> blocks;
+    for (unsigned int i = 0; i < nAlignedBlocks; ++i) {
+        blocks.push_back(i);
+    }
+    return SetBlocksToRealign(blocks, true);
+}
+
+bool BMARefiner::SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRows, bool clearOldList) {
+
+    bool result = (m_refinerEngine != NULL);
+    align_refine::LeaveOneOutParams loo;
+
+    if (result) {
+        m_refinerEngine->GetLOOParams(loo);
+        if (clearOldList) loo.rowsToExclude.clear();
+
+        loo.rowsToExclude.insert(loo.rowsToExclude.begin(), excludedRows.begin(), excludedRows.end());
+
+        m_refinerEngine->SetLOOParams(loo);
+    }
+    return result;
+}
+
 bool BMARefiner::ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks)
+{
+
+    //  All blocks are refined; none frozen.
+    //  NOTE:  froms/tos fields of 'loo' are set w/i RefinerPhase::DoPhase
+    //         and rowsToExclude field is filled w/ structures & master as 
+    //         needed when making the RowSelector object.
+
+    if (!SetBlocksToRealign(nAlignedBlocks)) {
+        WARNINGMSG("ConfigureRefiner:  could not configure refiner to realign all blocks");
+    }
+    return ConfigureRefiner(parent);
+}
+
+bool BMARefiner::ConfigureRefiner(wxWindow* parent, const vector<unsigned int>* blocksToRealign, const vector<unsigned int>* rowsToExclude)
+{
+
+    //  Selected blocks are refined; others frozen.  
+    //  Selected rows do not undergo LOO/LNO refinement phase.
+    //  NOTE:  froms/tos fields of 'loo' are set w/i RefinerPhase::DoPhase
+    //         and rowsToExclude field is filled w/ structures & master as 
+    //         needed when making the RowSelector object.
+
+    if (blocksToRealign && !SetBlocksToRealign(*blocksToRealign, true)) {
+        WARNINGMSG("ConfigureRefiner:  could not configure blocks-to-realign list");
+    }
+    if (rowsToExclude && !SetRowsToExcludeFromLNO(*rowsToExclude, true)) {
+        WARNINGMSG("ConfigureRefiner:  could not configure rows-to-exclude list");
+    }
+
+    return ConfigureRefiner(parent);
+}
+
+bool BMARefiner::ConfigureRefiner(wxWindow* parent)
 {
     BMARefinerOptionsDialog::GeneralRefinerParams genl;
     align_refine::LeaveOneOutParams loo;
     align_refine::BlockEditingParams be;
+
+    //  By default, turn off block editing.  (Not changing in default BEP ctor in
+    //  case something else assumes the default is true.)
+    be.editBlocks = false;
 
     //  If a refiner exists, reuse it's parameters.
     if (m_refinerEngine) {
@@ -215,13 +305,6 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks)
         genl.nTrials = m_refinerEngine->NumTrials();
         m_refinerEngine->GetLOOParams(loo);
         m_refinerEngine->GetBEParams(be);
-    }
-
-    //  All blocks are currently refined; none frozen.
-    //  NOTE:  froms/tos fields of 'loo' are set w/i RefinerPhase::DoPhase
-    //         and rowsToExclude field is filled in when making the RowSelector object.
-    for (unsigned int i = 0; i < nAlignedBlocks; ++i) {
-        loo.blocks.push_back(i);
     }
 
     //  Use a fixed column scoring method & block boundary alg for now.
@@ -434,9 +517,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     wxStaticText *item40 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item40, 0, wxALIGN_CENTER|wxALL, 5 );
     beCheck = new wxCheckBox( panel, ID_BE_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-//    beCheck->SetValue(current_be.editBlocks);
-    beCheck->SetValue(false);
-    beCheck->Enable(false);
+    beCheck->SetValue(current_be.editBlocks);
     item38->Add( beCheck, 0, wxALIGN_CENTER|wxALL, 5 );
 
     //  Define a minimum block size (really only relevant for shrinking blocks...
@@ -481,7 +562,10 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
 
     item36->Add( item38, 0, wxALIGN_CENTER|wxALL, 5 );
 
-
+    //  Enable/disable block-editing controls based on state of 'beCheck'.
+    wxCommandEvent dummyEvent;
+    dummyEvent.SetId(ID_BE_CHECKBOX);
+    OnCheck(dummyEvent);
 
     //  OK/Cancel buttons
     wxBoxSizer *item54 = new wxBoxSizer( wxHORIZONTAL );
@@ -619,10 +703,6 @@ void BMARefinerOptionsDialog::OnButton(wxCommandEvent& event)
 void BMARefinerOptionsDialog::OnCheck(wxCommandEvent& event)
 {
     bool doBlockEdit = beCheck->IsChecked();
-    if (doBlockEdit) {
-        beCheck->SetValue(false);
-        doBlockEdit = false;
-    }
 
     minBlockSizeSpin->GetTextCtrl()->Enable(doBlockEdit);
     minBlockSizeSpin->GetSpinButton()->Enable(doBlockEdit);
@@ -640,6 +720,10 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/11/02 20:32:43  lanczyck
+* add API to specify blocks to refine and rows to exclude from refinement;
+* turn block extension on
+*
 * Revision 1.5  2005/10/25 20:54:29  thiessen
 * reset diag post level after refinement
 *

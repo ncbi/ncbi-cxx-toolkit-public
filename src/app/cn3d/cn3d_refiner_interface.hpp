@@ -73,13 +73,37 @@ public:
     //  In case it's desired to get info results/settings directly from the refiner engine.
     const align_refine::CBMARefinerEngine* GetRefiner() {return m_refinerEngine;}
 
+    //  Sets the align_refine::LeaveOneOutParams.blocks field.
+    //  Only block numbers listed in the vector will be refined; any previous list
+    //  of refined blocks is erased first (unless clearOldList is false).
+    //  Return false if couldn't set the blocks.
+    bool SetBlocksToRealign(const vector<unsigned int>& blocks, bool clearOldList = true);
+    //  Convenience method to specify all blocks for realignment (old list always cleared).
+    //  Return false if couldn't set the blocks.
+    bool SetBlocksToRealign(unsigned int nAlignedBlocks);
+
+    //  Sets the align_refine::LeaveOneOutParams.rowsToExclude field.  (The master and
+    //  if requested, structured rows, need not be excluded here -- they will be handled
+    //  automatically in the refiner engine as required.)
+    //  Those row numbers listed in the vector will NOT be subjected to LOO/LNO refinement.
+    //  Note that these rows are *not* excluded from block-size changing refinements.
+    //  Any previous list of excluded rows is erased first (unless clearOldList is false).
+    //  Return false if couldn't set the rows to exclude.
+    bool SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRows, bool clearOldList = true);
+
 private:
 
     align_refine::CBMARefinerEngine* m_refinerEngine;
 
-    // brings up a dialog that lets the user set refinement parameters; returns false if cancelled
-    // initializes the refiner engine w/ values found in the dialog.
+    // Brings up a dialog that lets the user set refinement parameters; returns false if cancelled
+    // initializes the refiner engine w/ values found in the dialog.  First version realigns all
+    // blocks and explicitly excludes no rows; second allows for flexibility in freezing blocks & rows.
     bool ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks);
+    // Using the null defaults implies user will set blocks to realign/rows to exclude manually later.
+    bool ConfigureRefiner(wxWindow* parent, const vector<unsigned int>* blocksToRealign, const vector<unsigned int>* rowsToExclude = NULL);
+
+    //   Common core called by the two above wrappers.  
+    bool ConfigureRefiner(wxWindow* parent);
 };
 
 END_SCOPE(Cn3D)
@@ -89,6 +113,10 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2005/11/02 20:32:43  lanczyck
+* add API to specify blocks to refine and rows to exclude from refinement;
+* turn block extension on
+*
 * Revision 1.2  2005/10/21 21:59:49  thiessen
 * working refiner integration
 *
