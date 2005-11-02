@@ -293,7 +293,7 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
     double bits = 0;
     string bit_str, evalue_str;
     string title;
-  
+    
     const CBioseq_Handle& handle = m_Scope->GetBioseqHandle(id);
     if(handle){
         const CBioseq::TId& ids = handle.GetBioseqCore()->GetId();
@@ -311,7 +311,7 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
         aln_info->gi = 0;
         aln_info->id = &id;
         aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);
-    }
+    }  
     s_GetAlnScores(aln, score, bits, evalue);
     NStr::DoubleToString(bit_str, (int)bits);
     NStr::DoubleToString(evalue_str, evalue);
@@ -366,7 +366,7 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
     tbl_box->SetCellSpacing(0)->SetCellPadding(10)->SetAttribute("border", "1");    
     tbl_box->SetAttribute("bordercolorlight", "#0000FF");
     tbl_box->SetAttribute("bordercolordark", "#0000FF");
-   
+  
     CConstRef<CSeq_id> previous_id, subid, master_id;
     for (CSeq_align_set::Tdata::const_iterator iter = m_AlnSet->Get().begin(); 
          iter != m_AlnSet->Get().end() && num_align < m_NumAlignToShow; 
@@ -399,12 +399,22 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
         SAlignInfo* alninfo = new SAlignInfo;
         alninfo->range = seq_range;
         //get aln info 
-        x_GetAlnInfo(**iter, *subid, alninfo);
+        try{
+            x_GetAlnInfo(**iter, *subid, alninfo);
+        } catch (const CException& e){
+            string id_string;
+            subid->GetLabel(&id_string, CSeq_id::eContent);
+            out << "Warning: " << e.what() << "id= "<< id_string << endl;
+            delete alninfo;
+            is_first_aln = false;
+            previous_id = subid;
+            continue;
+        }
         alninfo_list->push_back(alninfo);
         is_first_aln = false;
         previous_id = subid;
     }
-    
+ 
     //save last set of seqs with the same id
     if(alninfo_list){
         m_AlninfoListList.push_back(alninfo_list);
@@ -674,6 +684,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.7  2005/11/02 18:19:44  jianye
+*catch getbioseqhandle exception
+*
 *Revision 1.6  2005/10/25 14:38:07  jianye
 *fixed mouse-over problem of showing single quotes such as 5'
 *
