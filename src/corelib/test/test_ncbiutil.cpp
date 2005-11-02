@@ -374,10 +374,24 @@ int TestSwap(void)
 }
 
 
+int TestAutoArray(void)
+{
+    AutoArray<int> a1(100);
+    for (int i = 0; i < 100; ++i) {
+        a1[i] = i;
+    }
+    for (int i = 0; i < 100; ++i) {
+        assert (i == a1[i]);
+    }
+
+    return 1;
+}
+
 int main(int, char **) {
     TestPEqualTo();
     TestOperatorBool();
     TestSwap();
+    TestAutoArray();
     return 0;
 }
 
@@ -385,6 +399,9 @@ int main(int, char **) {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2005/11/02 15:11:28  kuznets
+ * + test for AutoArray<>
+ *
  * Revision 6.5  2005/06/17 15:31:03  vasilche
  * Added test of safe bool operators.
  * Added test of swap().
