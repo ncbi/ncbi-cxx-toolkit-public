@@ -747,9 +747,9 @@ public:
     void SetCurrentCell(TIndex row, TIndex col)
         { m_CurrentRow = row; m_CurrentCol = col; }
     TIndex GetCurrentRow(void) const
-        { return m_CurrentRow; }
+        { return (m_CurrentRow == TIndex(-1)) ? 0 : m_CurrentRow; }
     TIndex GetCurrentCol(void) const
-        { return m_CurrentCol; }
+        { return (m_CurrentCol == TIndex(-1)) ? 0 : m_CurrentCol; }
 
     class CTableInfo;
 
@@ -1617,6 +1617,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2005/11/02 16:07:31  ivanov
+ * CHTML_Table::GetCurrent[Row|Col] return 0 instead of -1 if current
+ * row/column in the table is not defined
+ *
  * Revision 1.87  2005/08/22 12:12:19  ivanov
  * Renamed x_PrintBegin() -> PrintString()
  *
