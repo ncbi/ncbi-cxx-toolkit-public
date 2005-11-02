@@ -388,7 +388,6 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
         connect_str+= srv_name;
         connect_str+= ";UID=";
         connect_str+= user_name;
-        m_Reporter.SetExtraMsg( connect_str );
         connect_str+= ";PWD=";
         connect_str+= passwd;
         
@@ -396,9 +395,6 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
                             0, 0, 0, SQL_DRIVER_NOPROMPT);
     }
     else {
-        string extra_msg = "SERVER: " + srv_name + "; USER: " + user_name;
-        m_Reporter.SetExtraMsg( extra_msg );
-        
         r= SQLConnect(con, (SQLCHAR*) srv_name.c_str(), SQL_NTS,
                    (SQLCHAR*) user_name.c_str(), SQL_NTS,
                    (SQLCHAR*) passwd.c_str(), SQL_NTS);
@@ -618,6 +614,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/11/02 13:37:08  ssikorsk
+ * Fixed file merging problems.
+ *
  * Revision 1.26  2005/11/02 13:30:34  ssikorsk
  * Do not report function name, file name and line number in case of SQL Server errors.
  *
