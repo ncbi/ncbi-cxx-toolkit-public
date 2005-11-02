@@ -116,8 +116,8 @@ CDB_Result* CTDS_CursorCmd::Open()
         
         cmd->Send();
         cmd->DumpResults();
-    } catch (CDB_Exception&) {
-        DATABASE_DRIVER_ERROR( "failed to declare cursor", 222001 );
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "failed to declare cursor", 222001 );
     }
     
     m_IsDeclared = true;
@@ -131,8 +131,8 @@ CDB_Result* CTDS_CursorCmd::Open()
         
         cmd->Send();
         cmd->DumpResults();
-    } catch (CDB_Exception&) {
-        DATABASE_DRIVER_ERROR( "failed to open cursor", 222002 );
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "failed to open cursor", 222002 );
     }
     
     m_IsOpen = true;
@@ -170,8 +170,8 @@ bool CTDS_CursorCmd::Update(const string&, const string& upd_query)
             }
         }
 #endif
-    } catch (CDB_Exception&) {
-        DATABASE_DRIVER_ERROR( "update failed", 222004 );
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "update failed", 222004 );
     }
 
     return true;
@@ -255,10 +255,10 @@ bool CTDS_CursorCmd::Delete(const string& table_name)
         }
 #endif
         delete cmd;
-    } catch (CDB_Exception&) {
+    } catch ( const CDB_Exception& e ) {
         if (cmd)
             delete cmd;
-        DATABASE_DRIVER_ERROR( "update failed", 222004 );
+        DATABASE_DRIVER_ERROR_EX( e, "update failed", 222004 );
     }
 
     return true;
@@ -302,11 +302,11 @@ bool CTDS_CursorCmd::Close()
             }
 #endif
             delete m_LCmd;
-        } catch (CDB_Exception&) {
+        } catch ( const CDB_Exception& e ) {
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR( "failed to close cursor", 222003 );
+            DATABASE_DRIVER_ERROR_EX( e, "failed to close cursor", 222003 );
         }
 
         m_IsOpen = false;
@@ -331,11 +331,11 @@ bool CTDS_CursorCmd::Close()
             }
 #endif
             delete m_LCmd;
-        } catch (CDB_Exception&) {
+        } catch ( const CDB_Exception& e) {
             if (m_LCmd)
                 delete m_LCmd;
             m_LCmd = 0;
-            DATABASE_DRIVER_ERROR( "failed to deallocate cursor", 222003 );
+            DATABASE_DRIVER_ERROR_EX( e, "failed to deallocate cursor", 222003 );
         }
 
         m_IsDeclared = false;
@@ -533,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/11/02 14:16:59  ssikorsk
+ * Rethrow catched CDB_Exception to preserve useful information.
+ *
  * Revision 1.17  2005/10/31 12:28:52  ssikorsk
  * Get rid of warnings.
  *

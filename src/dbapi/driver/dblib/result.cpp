@@ -1367,8 +1367,8 @@ CDBL_CursorResult::CDBL_CursorResult(CDB_LangCmd* cmd) :
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& ) {
-        DATABASE_DRIVER_ERROR( "failed to get the results", 222010 );
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "failed to get the results", 222010 );
     }
 }
 
@@ -1447,8 +1447,8 @@ bool CDBL_CursorResult::Fetch()
                 m_Res = 0;
             }
         }
-    } catch (CDB_Exception& ) {
-        DATABASE_DRIVER_ERROR( "Failed to fetch the results", 222011 );
+    } catch ( const CDB_Exception& e ) {
+        DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results", 222011 );
     }
     return false;
 }
@@ -1638,6 +1638,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/11/02 14:16:59  ssikorsk
+ * Rethrow catched CDB_Exception to preserve useful information.
+ *
  * Revision 1.31  2005/10/31 12:20:42  ssikorsk
  * Do not use separate include files for msdblib.
  *
