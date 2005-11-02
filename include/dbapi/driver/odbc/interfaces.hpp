@@ -400,6 +400,8 @@ private:
     bool            m_HasFailed;
     I_Result*       m_Res;
     int             m_RowCount;
+
+    CODBC_Reporter  m_Reporter;
 };
 
 
@@ -612,6 +614,8 @@ protected:
     CODBC_LangCmd* m_Cmd;
     CDB_Result*  m_Res;
 	bool m_EOR;
+
+    CODBC_Reporter m_Reporter;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -639,6 +643,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/11/02 16:38:59  ssikorsk
+ * + CODBC_Reporter member to CODBC_CursorResult and CODBC_CursorCmd.
+ *
  * Revision 1.14  2005/11/02 12:59:35  ssikorsk
  * Report extra information in exceptions and error messages.
  *
