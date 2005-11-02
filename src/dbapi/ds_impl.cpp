@@ -48,11 +48,14 @@ CDataSource::CDataSource(I_DriverContext *ctx)
 
 CDataSource::~CDataSource()
 {
-    _TRACE("Deleting " << GetIdent() << " " << (void*)this);
-    Notify(CDbapiDeletedEvent(this));
-    delete m_context;
-    delete m_multiExH;
-    _TRACE(GetIdent() << " " << (void*)this << " deleted.");
+    try {
+        _TRACE("Deleting " << GetIdent() << " " << (void*)this);
+        Notify(CDbapiDeletedEvent(this));
+        delete m_context;
+        delete m_multiExH;
+        _TRACE(GetIdent() << " " << (void*)this << " deleted.");
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 void CDataSource::SetLoginTimeout(unsigned int i)
@@ -178,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/11/02 15:02:25  ssikorsk
+ * Catch all exceptions in destructors.
+ *
  * Revision 1.19  2005/10/20 15:49:52  kholodov
  * Added: set and get application name
  *

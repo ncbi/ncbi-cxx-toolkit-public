@@ -116,14 +116,17 @@ void CConnection::Connect(const string& user,
 
 CConnection::~CConnection()
 {
-    if( IsAux() ) {
-        _TRACE("Auxiliary connection " << (void*)this << " is being deleted...");
-    } else {
-        _TRACE("Default connection " << (void*)this << " is being deleted...");
+    try {
+        if( IsAux() ) {
+            _TRACE("Auxiliary connection " << (void*)this << " is being deleted...");
+        } else {
+            _TRACE("Default connection " << (void*)this << " is being deleted...");
+        }
+        FreeResources();
+        Notify(CDbapiDeletedEvent(this));
+        _TRACE(GetIdent() << " " << (void*)this << " deleted.");
     }
-    FreeResources();
-    Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted.");
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -511,6 +514,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.40  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.39  2005/04/04 13:03:56  ssikorsk
 * Revamp of DBAPI exception class CDB_Exception
 *

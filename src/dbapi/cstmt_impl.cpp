@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.18  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.17  2005/04/12 18:12:10  ssikorsk
 * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
 *
@@ -109,7 +112,10 @@ CCallableStatement::CCallableStatement(const string& proc,
 
 CCallableStatement::~CCallableStatement()
 {
-    Notify(CDbapiClosedEvent(this));
+    try {
+        Notify(CDbapiClosedEvent(this));
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 CDB_RPCCmd* CCallableStatement::GetRpcCmd() 

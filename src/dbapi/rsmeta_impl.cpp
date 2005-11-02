@@ -61,8 +61,11 @@ CResultSetMetaData::CResultSetMetaData(CDB_Result *rs)
 
 CResultSetMetaData::~CResultSetMetaData()
 {
-  Notify(CDbapiDeletedEvent(this));
-  _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    try {
+        Notify(CDbapiDeletedEvent(this));
+        _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 void CResultSetMetaData::Action(const CDbapiEvent& e) 
@@ -82,6 +85,9 @@ void CResultSetMetaData::Action(const CDbapiEvent& e)
 
 /*
 * $Log$
+* Revision 1.9  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.8  2005/05/25 21:01:54  kholodov
 * Modified: optimized code
 *

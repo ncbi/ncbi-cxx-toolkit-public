@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.18  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.17  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
@@ -122,10 +125,13 @@ CCursor::CCursor(const string& name,
 
 CCursor::~CCursor()
 {
-    Notify(CDbapiClosedEvent(this));
-    FreeResources();
-    Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    try {
+        Notify(CDbapiClosedEvent(this));
+        FreeResources();
+        Notify(CDbapiDeletedEvent(this));
+        _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
   

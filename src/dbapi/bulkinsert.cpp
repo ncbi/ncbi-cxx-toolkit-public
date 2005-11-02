@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.7  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -81,10 +84,13 @@ CBulkInsert::CBulkInsert(const string& name,
 
 CBulkInsert::~CBulkInsert()
 {
-    Notify(CDbapiClosedEvent(this));
-    FreeResources();
-    Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    try {
+        Notify(CDbapiClosedEvent(this));
+        FreeResources();
+        Notify(CDbapiDeletedEvent(this));
+        _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 void CBulkInsert::Close()

@@ -100,10 +100,13 @@ void CResultSet::Init()
 
 CResultSet::~CResultSet()
 {
-    Notify(CDbapiClosedEvent(this));
-    FreeResources();
-    Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted.");
+    try {
+        Notify(CDbapiClosedEvent(this));
+        FreeResources();
+        Notify(CDbapiDeletedEvent(this));
+        _TRACE(GetIdent() << " " << (void*)this << " deleted.");
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 const CVariant& CResultSet::GetVariant(unsigned int idx)
@@ -419,6 +422,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.42  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.41  2005/09/07 11:03:02  ssikorsk
 * Changed an implementation of the CResultSet::GetColumnNo method
 *

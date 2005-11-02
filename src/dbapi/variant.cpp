@@ -289,7 +289,10 @@ CVariant::CVariant(const CVariant& v)
 			      
 CVariant::~CVariant(void) 
 {
-    delete m_data;
+    try {
+        delete m_data;
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -838,6 +841,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
 }
 /*
 * $Log$
+* Revision 1.41  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.40  2005/08/22 12:03:55  ssikorsk
 * Use actual data size instead of database column size with eDB_LongBinary
 *

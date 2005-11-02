@@ -81,12 +81,15 @@ CDriverManager::CDriverManager()
 
 CDriverManager::~CDriverManager()
 {
-    map<string, IDataSource*>::iterator i_ds_list = m_ds_list.begin();
+    try {
+        map<string, IDataSource*>::iterator i_ds_list = m_ds_list.begin();
 
-    for( ; i_ds_list != m_ds_list.end(); ++i_ds_list ) {
-        delete (*i_ds_list).second;
+        for( ; i_ds_list != m_ds_list.end(); ++i_ds_list ) {
+            delete (*i_ds_list).second;
+        }
+        m_ds_list.clear();
     }
-    m_ds_list.clear();
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
@@ -171,6 +174,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.20  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.19  2005/04/08 16:51:28  ssikorsk
 * Restored a previous CDriverManager::GetInstance logic because of ctlib issues
 *

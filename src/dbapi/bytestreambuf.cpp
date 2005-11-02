@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.10  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
@@ -91,13 +94,16 @@ CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
 
 CByteStreamBuf::~CByteStreamBuf()
 {
+    try {
 #if 0 // misbehaves
-    if( m_rs != 0 && m_len > 0 )
-        m_rs->SkipItem();
+        if( m_rs != 0 && m_len > 0 )
+            m_rs->SkipItem();
 #endif
 
-    delete[] m_buf;
-    delete m_cmd;
+        delete[] m_buf;
+        delete m_cmd;
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 CT_CHAR_TYPE* CByteStreamBuf::getGBuf()

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.11  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.10  2005/06/14 15:35:49  kholodov
 * Fixed: uninitialized m_destroyConn
 *
@@ -80,7 +83,10 @@ CBlobIStream::CBlobIStream(CResultSet* rs, streamsize bufsize)
 
 CBlobIStream::~CBlobIStream()
 {
-    delete rdbuf();
+    try {
+        delete rdbuf();
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 CBlobOStream::CBlobOStream(CDB_Connection* connAux,
@@ -119,10 +125,13 @@ CBlobOStream::CBlobOStream(CDB_CursorCmd* curCmd,
 
 CBlobOStream::~CBlobOStream()
 {
-    delete rdbuf();
-    delete m_desc;
-    if( m_destroyConn )
-        delete m_conn;
+    try {
+        delete rdbuf();
+        delete m_desc;
+        if( m_destroyConn )
+            delete m_conn;
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 END_NCBI_SCOPE

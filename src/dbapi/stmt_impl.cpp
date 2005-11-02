@@ -59,10 +59,13 @@ CStatement::CStatement(CConnection* conn)
 
 CStatement::~CStatement()
 {
-    Notify(CDbapiClosedEvent(this));
-    FreeResources();
-    Notify(CDbapiDeletedEvent(this));
-    _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    try {
+        Notify(CDbapiClosedEvent(this));
+        FreeResources();
+        Notify(CDbapiDeletedEvent(this));
+        _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 IConnection* CStatement::GetParentConn() 
@@ -291,6 +294,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.31  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.30  2005/04/12 19:11:10  ssikorsk
 * Do not clean a parameter list after Execute (previous behavior restored). This can cause problems with the ctlib driver.
 *

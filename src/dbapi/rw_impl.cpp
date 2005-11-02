@@ -113,13 +113,19 @@ ERW_Result CBlobWriter::Flush()
 
 CBlobWriter::~CBlobWriter()
 {
-    delete dataCmd;
+    try {
+        delete dataCmd;
+    }
+    NCBI_CATCH_ALL( kEmptyStr )
 }
 
 
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.3  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
 * Revision 1.2  2005/01/31 14:21:46  kholodov
 * Added: use of CDB_ITDescriptor for writing BLOBs
 *
