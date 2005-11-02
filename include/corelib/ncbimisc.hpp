@@ -549,7 +549,7 @@ public:
     }
 
     /// array style dereference (returns value)
-    element_type operator[](size_t pos) const { return m_Ptr[pos]; }
+    const element_type& operator[](size_t pos) const { return m_Ptr[pos]; }
 
     /// array style dereference (returns reference)
     element_type& operator[](size_t pos) { return m_Ptr[pos]; }
@@ -895,6 +895,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2005/11/02 15:48:10  kuznets
+ * return const reference in operator[] const (AutoArray)
+ *
  * Revision 1.88  2005/11/02 15:10:40  kuznets
  * +AutoArray<>
  *
