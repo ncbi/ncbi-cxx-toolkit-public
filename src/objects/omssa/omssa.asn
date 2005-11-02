@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.30 2005/10/27 17:12:04 lewisg Exp $
+-- $Id: omssa.asn,v 1.31 2005/11/02 21:59:35 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -63,7 +63,9 @@ MSEnzymes ::= INTEGER {
 	semi-tryptic (16),
 	no-enzyme (17),
 	chymotrypsin-p (18),
-        max(19),
+	aspn-de (19),
+	gluc-de (20),
+        max(21),
 	none (255)
 	}
 
@@ -205,7 +207,9 @@ MSMod ::= INTEGER {
     camthiopropanoylk (131),
     phosphoneutrallosss (132),
     phosphoneutrallosst (133),
-    max (134), -- maximum number of mods
+    phosphoetdlosss (134),
+    phosphoetdlosst (135),
+    max (136), -- maximum number of mods
     none(10000)
     }
 
@@ -302,7 +306,7 @@ MSZdependence ::= INTEGER {
 MSIterativeSettings ::=  SEQUENCE {
         researchthresh REAL, -- e-val threshold for re-searching spectra, 0 = always re-search
         subsetthresh REAL,   -- e-val threshold for picking sequence subset, 0 = all sequences
-        replacethresh REAL   -- e-val threshold for replacing hitset, 0 = always
+        replacethresh REAL   -- e-val threshold for replacing hitset, 0 = only if better
         }
 	
 -- Generic search settings
