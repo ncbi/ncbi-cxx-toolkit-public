@@ -463,14 +463,15 @@ bool CZipCompression::CompressFile(const string& src_file,
     // Collect info about compressed file
     CZipCompression::SFileInfo info;
 
-    if ( F_ISSET(fWriteGZipFormat) ) {
-        s_CollectFileInfo(src_file, info);
-    }
+    // For backward compatibility -- collect file info and
+    // write gzip file by default.
+    s_CollectFileInfo(src_file, info);
     // Open output file
-    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write,
-        F_ISSET(fWriteGZipFormat) ? &info : 0) ) {
+    if ( !cf.Open(dst_file, CCompressionFile::eMode_Write, &info) ) {
         return false;
     } 
+    // --- 
+
     // Make compression
     if ( CCompression::x_CompressFile(src_file, cf, buf_size) ) {
         return cf.Close();
@@ -970,7 +971,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
                 }
             }
             // Check gzip header in the buffer
-            header_len = s_CheckGZipHeader(m_Cache.c_str(), m_Cache.size());
+            header_len = s_CheckGZipHeader(m_Cache.data(), m_Cache.size());
             _ASSERT(header_len < kMaxHeaderSize);
             // If gzip header found, skip it
             if ( header_len ) {
@@ -994,7 +995,7 @@ CCompressionProcessor::EStatus CZipDecompressor::Process(
         }
         // Have some cached unprocessed data
         if ( m_Cache.size() ) {
-            STREAM->next_in   = (unsigned char*)(m_Cache.c_str());
+            STREAM->next_in   = (unsigned char*)(m_Cache.data());
             STREAM->avail_in  = (unsigned int)m_Cache.size();
             STREAM->next_out  = (unsigned char*)out_buf;
             STREAM->avail_out = (unsigned int)out_size;
@@ -1077,6 +1078,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/11/02 18:02:31  ivanov
+ * Restored functionality of CZipCompression::CompressFile() to write
+ * gzip files by default
+ *
  * Revision 1.25  2005/08/22 14:30:49  ivanov
  * Call End() in the CZipCompression destrustor for abnormal
  * terminated sessions
