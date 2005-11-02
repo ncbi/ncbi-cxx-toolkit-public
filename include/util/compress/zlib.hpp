@@ -90,10 +90,13 @@ class NCBI_XUTIL_EXPORT CZipCompression : public CCompression
 public:
     /// Zip stream processing flags.
     enum EFlags {
-        fCheckFileHeader = (1<<1), ///< Check & skip file header
-                                   ///< for decompression stream;
-        fWriteGZipFormat = (1<<2)  ///< Use .gz file format to write
-                                   ///< into compression stream
+        ///< Check & skip file header for decompression stream
+        fCheckFileHeader = (1<<1), 
+                                   
+        ///< Use .gz file format to write into compression stream
+        ///< (the archive also can store file name and file modification
+        ///< in this format)
+        fWriteGZipFormat = (1<<2)  
     };
 
     /// Constructor
@@ -390,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/11/02 18:03:27  ivanov
+ * Added more comments for CZipCompression::EFlags
+ *
  * Revision 1.15  2005/06/06 10:53:40  ivanov
  * Rewritten CZipCompressionFile using compression streams.
  * CompressFile() now can write file`s name/mtime into gzip file header.
