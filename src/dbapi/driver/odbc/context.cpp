@@ -47,6 +47,8 @@
 
 BEGIN_NCBI_SCOPE
 
+static const CDiagCompileInfo kBlankCompileInfo;
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CODBC_Reporter::
@@ -100,7 +102,7 @@ void CODBC_Reporter::ReportErrors()
         case SQL_SUCCESS:
             if(strncmp((const char*)SqlState, "HYT", 3) == 0) { // timeout
 
-                CDB_TimeoutEx to(DIAG_COMPILE_INFO,
+                CDB_TimeoutEx to(kBlankCompileInfo,
                                  0,
                                  err_msg.c_str(),
                                  NativeError);
@@ -108,13 +110,13 @@ void CODBC_Reporter::ReportErrors()
                 m_HStack->PostMsg(&to);
             }
             else if(strncmp((const char*)SqlState, "40001", 5) == 0) { // deadlock
-                CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
+                CDB_DeadlockEx dl(kBlankCompileInfo,
                                   0,
                                   err_msg.c_str());
                 m_HStack->PostMsg(&dl);
             }
             else if(NativeError != 5701 && NativeError != 5703){
-                CDB_SQLEx se(DIAG_COMPILE_INFO,
+                CDB_SQLEx se(kBlankCompileInfo,
                              0,
                              err_msg.c_str(),
                              eDiag_Warning,
@@ -132,7 +134,7 @@ void CODBC_Reporter::ReportErrors()
                 string err_msg( "Message is too long to be retrieved" );
                 err_msg += GetExtraMsg();
 
-                CDB_DSEx dse(DIAG_COMPILE_INFO,
+                CDB_DSEx dse(kBlankCompileInfo,
                              0,
                              err_msg.c_str(),
                              eDiag_Warning,
@@ -146,7 +148,7 @@ void CODBC_Reporter::ReportErrors()
                 string err_msg( "SQLGetDiagRec failed (memory corruption suspected" );
                 err_msg += GetExtraMsg();
 
-                CDB_ClientEx ce(DIAG_COMPILE_INFO,
+                CDB_ClientEx ce(kBlankCompileInfo,
                                 0,
                                 err_msg.c_str(),
                                 eDiag_Warning,
@@ -614,6 +616,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/11/02 15:59:47  ucko
+ * Revert previous change in favor of supplying empty compilation info
+ * via a static constant.
+ *
  * Revision 1.28  2005/11/02 15:38:07  ucko
  * Replace CDiagCompileInfo() with DIAG_COMPILE_INFO, as the latter
  * automatically fills in some useful information and is less likely to

@@ -53,6 +53,8 @@
 BEGIN_NCBI_SCOPE
 
 
+static const CDiagCompileInfo kBlankCompileInfo;
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CDBLibContext::
@@ -379,7 +381,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case SYBEFCON:
     case SYBECONN:
         {
-            CDB_TimeoutEx to( DIAG_COMPILE_INFO,
+            CDB_TimeoutEx to( kBlankCompileInfo,
                              0,
                              dberrstr,
                              dberr);
@@ -388,7 +390,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         return INT_TIMEOUT;
     default:
         if(dberr == 1205) {
-            CDB_DeadlockEx dl( DIAG_COMPILE_INFO,
+            CDB_DeadlockEx dl( kBlankCompileInfo,
                               0,
                               dberrstr);
             hs->PostMsg(&dl);
@@ -403,7 +405,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXINFO:
     case EXUSER:
         {
-            CDB_ClientEx info( DIAG_COMPILE_INFO,
+            CDB_ClientEx info( kBlankCompileInfo,
                          0,
                          dberrstr,
                          eDiag_Info,
@@ -416,7 +418,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     case EXSERVER:
     case EXPROGRAM:
         if ( dberr != 20018 ) {
-            CDB_ClientEx err(DIAG_COMPILE_INFO,
+            CDB_ClientEx err(kBlankCompileInfo,
                              0,
                              dberrstr,
                              eDiag_Error,
@@ -426,7 +428,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         break;
     case EXTIME:
         {
-            CDB_TimeoutEx to( DIAG_COMPILE_INFO,
+            CDB_TimeoutEx to( kBlankCompileInfo,
                              0,
                              dberrstr,
                              dberr);
@@ -435,7 +437,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         return INT_TIMEOUT;
     default:
         {
-            CDB_ClientEx ftl( DIAG_COMPILE_INFO,
+            CDB_ClientEx ftl( kBlankCompileInfo,
                          0,
                          dberrstr,
                          eDiag_Fatal,
@@ -466,7 +468,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
     if (msgno == 1205/*DEADLOCK*/) {
-        CDB_DeadlockEx dl( DIAG_COMPILE_INFO,
+        CDB_DeadlockEx dl( kBlankCompileInfo,
                           0,
                           string(srvname) + ": " + msgtxt);
         hs->PostMsg(&dl);
@@ -477,7 +479,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
             severity <  16 ? eDiag_Error : eDiag_Fatal;
 
         if (!procname.empty()) {
-            CDB_RPCEx rpc( DIAG_COMPILE_INFO,
+            CDB_RPCEx rpc( kBlankCompileInfo,
                       0,
                       string(srvname) + ": " + msgtxt,
                       sev,
@@ -486,7 +488,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                       line);
             hs->PostMsg(&rpc);
         } else {
-            CDB_DSEx m( DIAG_COMPILE_INFO,
+            CDB_DSEx m( kBlankCompileInfo,
                      0,
                      string(srvname) + ": " + msgtxt,
                      sev,
@@ -1111,6 +1113,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2005/11/02 15:59:36  ucko
+ * Revert previous change in favor of supplying empty compilation info
+ * via a static constant.
+ *
  * Revision 1.57  2005/11/02 15:37:57  ucko
  * Replace CDiagCompileInfo() with DIAG_COMPILE_INFO, as the latter
  * automatically fills in some useful information and is less likely to
