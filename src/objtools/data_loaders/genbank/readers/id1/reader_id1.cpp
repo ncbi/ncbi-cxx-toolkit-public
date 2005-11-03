@@ -66,6 +66,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+#define DEFAULT_SERVICE  "ID1"
+#define DEFAULT_NUM_CONN 3
+#define DEFAULT_TIMEOUT  20
+#define MAX_MT_CONN      5
+
 //#define GENBANK_ID1_RANDOM_FAILS 1
 #define GENBANK_ID1_RANDOM_FAILS_FREQUENCY 20
 #define GENBANK_ID1_RANDOM_FAILS_RECOVER 3 // new + write + read
@@ -112,7 +117,44 @@ enum EDebugLevel
 
 
 CId1Reader::CId1Reader(int max_connections)
+    : m_ServiceName(DEFAULT_SERVICE),
+      m_Timeout(DEFAULT_TIMEOUT)
 {
+    if ( max_connections <= 0 ) {
+        max_connections = DEFAULT_NUM_CONN;
+    }
+    SetInitialConnections(max_connections);
+}
+
+
+CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
+                       const string& driver_name)
+{
+    CConfig conf(params);
+    TConn max_connections = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN,
+        CConfig::eErr_NoThrow,
+        DEFAULT_NUM_CONN);
+    m_ServiceName = conf.GetString(
+        driver_name,
+        NCBI_GBLOADER_READER_ID1_PARAM_SERVICE_NAME,
+        CConfig::eErr_NoThrow,
+        kEmptyStr);
+    if ( m_ServiceName.empty() ) {
+        m_ServiceName = GetConfigString("GENBANK",
+                                        "ID1_SERVICE_NAME");
+    }
+    if ( m_ServiceName.empty() ) {
+        m_ServiceName = GetConfigString("NCBI",
+                                        "SERVICE_NAME_ID1",
+                                        DEFAULT_SERVICE);
+    }
+    m_Timeout = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_TIMEOUT);
     SetInitialConnections(max_connections);
 }
 
@@ -125,7 +167,7 @@ CId1Reader::~CId1Reader()
 int CId1Reader::GetMaximumConnectionsLimit(void) const
 {
 #ifdef NCBI_THREADS
-    return 3;
+    return MAX_MT_CONN;
 #else
     return 1;
 #endif
@@ -175,14 +217,12 @@ CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
 
 CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
 {
-    string id1_svc = GetConfigString("NCBI", "SERVICE_NAME_ID1", "ID1");
-
     STimeout tmout;
-    tmout.sec = 20;
+    tmout.sec = m_Timeout;
     tmout.usec = 0;
     
     AutoPtr<CConn_ServiceStream> stream
-        (new CConn_ServiceStream(id1_svc, fSERV_Any, 0, 0, &tmout));
+        (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
 
 #ifdef GENBANK_ID1_RANDOM_FAILS
     SetRandomFail(*stream);
@@ -194,7 +234,7 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
     
     if ( GetDebugLevel() >= eTraceConn ) {
         NcbiCout << "CId1Reader: New connection " << conn 
-                 << " to " << id1_svc << " opened." << NcbiEndl;
+                 << " to " << m_ServiceName << " opened." << NcbiEndl;
     }
 
     return stream.release();
@@ -736,12 +776,7 @@ public:
         }
         if (version.Match(NCBI_INTERFACE_VERSION(objects::CReader)) 
                             != CVersionInfo::eNonCompatible) {
-            objects::CReader::TConn noConn = GetParamDataSize(
-                params,
-                NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN,
-                false,
-                3);
-            drv = new objects::CId1Reader(noConn);
+            drv = new objects::CId1Reader(params, driver);
         }
         return drv;
     }

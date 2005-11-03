@@ -70,7 +70,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#define DEFAULT_ID2_SERVICE_NAME "ID2"
+#define DEFAULT_SERVICE  "ID2"
+#define DEFAULT_NUM_CONN 3
+#define DEFAULT_TIMEOUT  20
+#define MAX_MT_CONN      5
 
 static int GetDebugLevel(void)
 {
@@ -159,9 +162,52 @@ namespace {
 
 
 CId2Reader::CId2Reader(int max_connections)
+    : m_ServiceName(DEFAULT_SERVICE),
+      m_Timeout(DEFAULT_TIMEOUT),
+      m_AvoidRequest(0)
+{
+    m_RequestSerialNumber.Set(1);
+    if ( max_connections <= 0 ) {
+        max_connections = DEFAULT_NUM_CONN;
+    }
+    SetInitialConnections(max_connections);
+}
+
+
+CId2Reader::CId2Reader(const TPluginManagerParamTree* params,
+                       const string& driver_name)
     : m_AvoidRequest(0)
 {
     m_RequestSerialNumber.Set(1);
+    CConfig conf(params);
+    TConn max_connections = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID2_PARAM_NUM_CONN,
+        CConfig::eErr_NoThrow,
+        DEFAULT_NUM_CONN);
+    m_ServiceName = conf.GetString(
+        driver_name,
+        NCBI_GBLOADER_READER_ID2_PARAM_SERVICE_NAME,
+        CConfig::eErr_NoThrow,
+        kEmptyStr);
+    if ( m_ServiceName.empty() ) {
+        m_ServiceName = GetConfigString("GENBANK",
+                                        "ID2_CGI_NAME");
+    }
+    if ( m_ServiceName.empty() ) {
+        m_ServiceName = GetConfigString("GENBANK",
+                                        "ID2_SERVICE_NAME");
+    }
+    if ( m_ServiceName.empty() ) {
+        m_ServiceName = GetConfigString("NCBI",
+                                        "SERVICE_NAME_ID2",
+                                        DEFAULT_SERVICE);
+    }
+    m_Timeout = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID2_PARAM_TIMEOUT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_TIMEOUT);
     SetInitialConnections(max_connections);
 }
 
@@ -174,7 +220,7 @@ CId2Reader::~CId2Reader()
 int CId2Reader::GetMaximumConnectionsLimit(void) const
 {
 #ifdef NCBI_THREADS
-    return 3;
+    return MAX_MT_CONN;
 #else
     return 1;
 #endif
@@ -235,37 +281,23 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
         }
     }
     
-    STimeout tmout;
-    tmout.sec = 20;
-    tmout.usec = 0;
-
-    bool is_service = false;
-    string dst;
-    if ( dst.empty() ) {
-        string cgi = GetConfigString("GENBANK", "ID2_CGI_NAME");
-        dst = cgi;
-        is_service = false;
-    }
-    if ( dst.empty() ) {
-        string srv = GetConfigString("GENBANK", "ID2_SERVICE_NAME",
-                                     DEFAULT_ID2_SERVICE_NAME);
-        dst = srv;
-        is_service = true;
-    }
-        
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s;
-        s << "CId2Reader: New connection to " << dst << "...\n";
+        s << "CId2Reader: New connection to " << m_ServiceName << "...\n";
     }
         
+    STimeout tmout;
+    tmout.sec = m_Timeout;
+    tmout.usec = 0;
+
     AutoPtr<CConn_IOStream> stream;
-    if ( is_service ) {
+    if ( NStr::StartsWith(m_ServiceName, "http://") ) {
         stream.reset
-            (new CConn_ServiceStream(dst, fSERV_Any, 0, 0, &tmout));
+            (new CConn_HttpStream(m_ServiceName));
     }
     else {
         stream.reset
-            (new CConn_HttpStream(dst/*, fHCC_AutoReconnect, &tmout*/));
+            (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
     }
     if ( stream->bad() ) {
         NCBI_THROW(CLoaderException, eNoConnection, "connection failed");
@@ -273,7 +305,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
 
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s;
-        s << "CId2Reader: New connection to " << dst << " opened.\n";
+        s << "CId2Reader: New connection to " << m_ServiceName << " opened.\n";
     }
     x_InitConnection(*stream);
 
@@ -1519,6 +1551,23 @@ public:
     CId2ReaderCF()
         : TParent(NCBI_GBLOADER_READER_ID2_DRIVER_NAME, 0) {}
     ~CId2ReaderCF() {}
+
+    objects::CReader* 
+    CreateInstance(const string& driver  = kEmptyStr,
+                   CVersionInfo version =
+                   NCBI_INTERFACE_VERSION(objects::CReader),
+                   const TPluginManagerParamTree* params = 0) const
+    {
+        objects::CReader* drv = 0;
+        if ( !driver.empty()  &&  driver != m_DriverName ) {
+            return 0;
+        }
+        if (version.Match(NCBI_INTERFACE_VERSION(objects::CReader)) 
+                            != CVersionInfo::eNonCompatible) {
+            drv = new objects::CId2Reader(params, driver);
+        }
+        return drv;
+    }
 };
 
 

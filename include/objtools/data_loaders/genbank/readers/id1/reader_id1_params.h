@@ -39,5 +39,9 @@
 
 /* Maximum number of simultaneous connection to id1 server */
 #define NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN "no_conn"
+/* NCBI service name to connect to */
+#define NCBI_GBLOADER_READER_ID1_PARAM_SERVICE_NAME "service"
+/* Timeout of network connections in seconds */
+#define NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT "timeout"
 
 #endif

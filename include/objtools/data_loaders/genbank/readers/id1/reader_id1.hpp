@@ -52,7 +52,9 @@ class CLoadLockBlob_ids;
 class NCBI_XREADER_ID1_EXPORT CId1Reader : public CId1ReaderBase
 {
 public:
-    CId1Reader(int max_connections = 3);
+    CId1Reader(int max_connections = 0);
+    CId1Reader(const TPluginManagerParamTree* params,
+               const string& driver_name);
     ~CId1Reader();
 
     int GetMaximumConnectionsLimit(void) const;
@@ -107,6 +109,8 @@ protected:
                           const CBlob_id& blob_id);
 
 private:
+    string m_ServiceName;
+    int    m_Timeout;
 
     CRef<CTSE_Info> x_ReceiveMainBlob(CConn_ServiceStream* stream);
 

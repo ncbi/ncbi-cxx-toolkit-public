@@ -75,7 +75,9 @@ struct SId2LoadedSet;
 class NCBI_XREADER_ID2_EXPORT CId2Reader : public CReader
 {
 public:
-    CId2Reader(int max_connections = 5);
+    CId2Reader(int max_connections = 0);
+    CId2Reader(const TPluginManagerParamTree* params,
+               const string& driver_name);
     ~CId2Reader();
 
     int GetMaximumConnectionsLimit(void) const;
@@ -194,6 +196,9 @@ protected:
     bool x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,
                                  const TSeqIds& seq_ids);
 private:
+    string m_ServiceName;
+    int    m_Timeout;
+
     typedef map< TConn, AutoPtr<CConn_IOStream> > TConnections;
     TConnections   m_Connections;
     CTime          m_NextConnectTime;
