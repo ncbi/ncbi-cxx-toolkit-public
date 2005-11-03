@@ -58,6 +58,7 @@ void
 CPSIBlastOptionsHandle::SetQueryOptionDefaults()
 {
     SetSegFiltering(false);
+    SetFilterString("F");   // this should be deprecated in the future...
 }
 
 void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
@@ -76,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/03 23:18:47  camacho
+ * explicitely set filtering to false
+ *
  * Revision 1.8  2005/11/03 22:15:01  camacho
  * Add method to override query options defaults to enforce no filtering of the query
  *
