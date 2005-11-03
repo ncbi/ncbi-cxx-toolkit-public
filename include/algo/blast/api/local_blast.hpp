@@ -47,6 +47,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Class to perform a BLAST search on local BLAST databases
+/// Note that PHI-BLAST can be run using this class also, one only need to
+/// configure it as a regular blastp or blastn search and set the pattern in
+/// the CBlastOptionsHandle object
+/// @todo should RPS-BLAST be moved out of this object?
 class NCBI_XBLAST_EXPORT CLocalBlast : public CObject, public CThreadable
 {
 public:
