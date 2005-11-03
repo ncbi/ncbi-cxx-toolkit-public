@@ -573,6 +573,7 @@ CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(CSeq_annot& annot)
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info)
     : m_Gi(info.m_Gi),
+      m_Seq_id(info.m_Seq_id),
       m_SNP_Set(info.m_SNP_Set),
       m_Comments(info.m_Comments),
       m_Alleles(info.m_Alleles),
@@ -726,6 +727,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.18  2005/11/03 14:25:46  vasilche
+ * Do not forget to copy CSeq_id.
+ *
  * Revision 1.17  2005/09/20 15:45:36  vasilche
  * Feature editing API.
  * Annotation handles remember annotations by index.
