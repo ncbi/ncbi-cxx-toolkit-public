@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/11/03 19:45:42  vasilche
+* Added simple tests for ResetHistory() and GetEditHandles().
+*
 * Revision 1.20  2005/09/12 16:05:22  vasilche
 * Report major GetIds inconsistency instead of abort.
 *
@@ -260,6 +263,8 @@ protected:
     int  m_idx;
     bool m_no_reset;
     bool m_keep_handles;
+    bool m_selective_reset;
+    bool m_edit_handles;
 };
 
 
@@ -560,7 +565,13 @@ bool CTestOM::Thread_Run(int idx)
 
                         _ASSERT(annot_it.size() == annots.size());
                         set<CSeq_annot_Handle> annots2;
+                        if ( m_edit_handles ) {
+                            handle.GetEditHandle();
+                        }
                         for ( ; annot_it; ++annot_it ) {
+                            if ( m_edit_handles ) {
+                                annot_it->GetEditHandle();
+                            }
                             annots2.insert(*annot_it);
                         }
                         _ASSERT(annots.size() == annots2.size());
@@ -613,6 +624,10 @@ bool CTestOM::Thread_Run(int idx)
                         _ASSERT(annots.size() == annots2.size());
                         _ASSERT(annots == annots2);
                     }
+                }
+                if ( m_selective_reset ) {
+                    scope.ResetHistory();
+                    CAnnot_CI annot_it(handle);
                 }
                 if ( m_no_reset && m_keep_handles ) {
                     handles.insert(handle);
@@ -685,7 +700,12 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddDefaultKey("pass_count", "PassCount",
                        "Run test several times",
                        CArgDescriptions::eInteger, "1");
-    args.AddFlag("no_reset", "Do not reset scope history after each id");
+    args.AddFlag("selective_reset",
+                 "Check ResetHistory() with locked handles");
+    args.AddFlag("no_reset",
+                 "Do not reset scope history after each id");
+    args.AddFlag("edit_handles",
+                 "Check GetEditHandle()");
     args.AddFlag("keep_handles",
                  "Remember bioseq handles if not resetting scope history");
     return true;
@@ -759,7 +779,9 @@ bool CTestOM::TestApp_Init(void)
     m_prefetch = args["prefetch"];
     m_verbose = args["verbose"];
     m_pass_count = args["pass_count"].AsInteger();
+    m_selective_reset = args["selective_reset"];
     m_no_reset = args["no_reset"];
+    m_edit_handles = args["edit_handles"];
     m_keep_handles = args["keep_handles"];
     m_idx = args["thread_index"].AsInteger();
 
