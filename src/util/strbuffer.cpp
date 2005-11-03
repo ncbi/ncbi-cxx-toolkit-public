@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/11/03 21:39:07  ucko
+* Make sure to cast integers to CT_OFF_TYPE before adding them to
+* CT_POS_TYPE (member) variables.
+*
 * Revision 1.49  2005/11/03 15:13:47  gouriano
 * Use streampos instead of streamoff for positioning
 *
@@ -427,7 +431,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                 memmove(newPos, m_CurrentPos, copy_count);
             m_CurrentPos = newPos;
             m_DataEndPos -= erase;
-            m_BufferPos += erase;
+            m_BufferPos += CT_OFF_TYPE(erase);
             pos -= erase;
             newPosOffset -= erase;
         }
@@ -825,7 +829,7 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
         else {
             m_CurrentPos = m_Buffer;
         }
-        m_BufferPos += count;
+        m_BufferPos += CT_OFF_TYPE(count);
     }
 }
 
