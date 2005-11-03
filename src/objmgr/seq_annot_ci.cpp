@@ -153,7 +153,6 @@ void CSeq_annot_CI::x_Initialize(const CSeq_entry_Handle& entry, EFlags flags)
 
 CSeq_annot_CI& CSeq_annot_CI::operator++(void)
 {
-    _ASSERT(*this);
     _ASSERT(m_CurrentEntry);
     _ASSERT(m_AnnotIter != x_GetAnnots().end());
     ++m_AnnotIter;
@@ -211,6 +210,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/11/03 14:34:06  vasilche
+* Removed erroneous asserion.
+*
 * Revision 1.13  2005/04/07 16:30:42  vasilche
 * Inlined handles' constructors and destructors.
 * Optimized handles' assignment operators.
