@@ -181,7 +181,11 @@ public:
     /// @param query_data source of query sequence data [in]
     /// @param lookup_segments query segments to be searched because they were
     /// not filtered, needed for the lookup table creation (otherwise pass
-    /// NULL) [in|out]
+    /// NULL). If this is passed to this function it should also be passed to
+    /// CreateLookupTable [in|out]
+    /// @param masked_query_regions Regions of the query which were masked
+    /// including those masked outside the CORE). If non-NULL they will be
+    /// populated and caller assumes ownership of the object [in|out]
     /// @param rps_info RPS-BLAST data structures as obtained from
     /// CreateRpsStructures [in]
     /// @todo need to convert the lookup_segments to some kind of c++ object
@@ -189,6 +193,7 @@ public:
     CreateScoreBlock(const CBlastOptionsMemento* opts_memento, 
                      CRef<ILocalQueryData> query_data, 
                      BlastSeqLoc** lookup_segments, 
+                     TSeqLocInfoVector* masked_query_regions = NULL,
                      const CBlastRPSInfo* rps_info = NULL);
 
     /// Initialize the lookup table. Note that for the case of PSI-BLAST the

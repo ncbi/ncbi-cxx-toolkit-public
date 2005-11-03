@@ -164,7 +164,8 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
     BlastSeqLoc* lookup_segments(0);
     BlastScoreBlk* sbp =
         CSetupFactory::CreateScoreBlock(m_OptsMemento, query_data, 
-                                        kIsPhiBlast ? &lookup_segments : 0,
+                                        kIsPhiBlast ? &lookup_segments : 0, 
+                                        /* FIXME: masked locations */ 0,
                                         m_InternalData->m_RpsData);
     m_InternalData->m_ScoreBlk.Reset
         (new TBlastScoreBlk(sbp, BlastScoreBlkFree));

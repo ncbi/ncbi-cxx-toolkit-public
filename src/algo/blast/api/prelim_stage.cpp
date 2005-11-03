@@ -146,6 +146,7 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
     BlastScoreBlk* sbp =
         CSetupFactory::CreateScoreBlock(m_OptsMemento, query_data,
                                         &lookup_segments, 
+                                        /* FIXME: masked locations */ 0,
                                         m_InternalData->m_RpsData);
     m_InternalData->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp,
                                                        BlastScoreBlkFree));

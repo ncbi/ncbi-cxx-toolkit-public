@@ -74,10 +74,31 @@ CSetupFactory::CreateRpsStructures(const string& rps_dbname,
     return retval;
 }
 
+static
+CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
+{
+    const int kNumQueries = query_data.GetNumQueries();
+    if (kNumQueries == 0) {
+        return CRef<CPacked_seqint>();
+    }
+
+    CRef<CPacked_seqint> retval(new CPacked_seqint);
+    for (int i = 0; i < kNumQueries; i++) {
+        if (query_data.GetSeq_loc(i)->IsInt()) {
+            retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
+        } else if (const CSeq_id* id = query_data.GetSeq_loc(i)->GetId()) {
+            retval->AddInterval(*id, 0, query_data.GetSeqLength(i));
+        }
+    }
+
+    return retval;
+}
+
 BlastScoreBlk*
 CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                 CRef<ILocalQueryData> query_data,
                                 BlastSeqLoc** lookup_segments,
+                                TSeqLocInfoVector* masked_query_regions,
                                 const CBlastRPSInfo* rps_info)
 {
     ASSERT(opts_memento);
@@ -90,7 +111,7 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
     }
 
     CBlast_Message blast_msg;
-    BlastMaskLoc* masked_query_regions(0);
+    CBlastMaskLoc core_masked_query_regions;
 
     BlastQueryInfo* query_info = query_data->GetQueryInfo();
     BLAST_SequenceBlk* queries = query_data->GetSequenceBlk();
@@ -103,20 +124,18 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                   query_info,
                                   rps_scale_factor,
                                   lookup_segments,
-                                  &masked_query_regions,
+                                  &core_masked_query_regions,
                                   &retval,
                                   &blast_msg);
 
-#if 0
-FIXME: implement creating CPacked_seqint from ILocalQueryData 
-    CPacked_seqint query_locations;
-    TSeqLocInfoVector masked_locs;
-    Blast_GetSeqLocInfoVector(opts_memento->m_ProgramType,
-                              query_locations,
-                              masked_query_regions,
-                              masked_locs);
-#endif
-    BlastMaskLocFree(masked_query_regions);
+    if (masked_query_regions) {
+        CRef<CPacked_seqint> query_locations = 
+            s_LocalQueryData2Packed_seqint(*query_data);
+        Blast_GetSeqLocInfoVector(opts_memento->m_ProgramType,
+                                  *query_locations,
+                                  core_masked_query_regions,
+                                  *masked_query_regions);
+    }
 
     if (blast_msg.Get() || status != 0) {
         string msg = blast_msg ? blast_msg->message : 
