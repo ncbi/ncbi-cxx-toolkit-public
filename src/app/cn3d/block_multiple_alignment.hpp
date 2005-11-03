@@ -160,9 +160,9 @@ public:
     typedef std::vector < const Block * > ConstBlockList;
     void GetBlocks(ConstBlockList *blocks) const;
 
-    // fill in a vector of UngappedAlignedBlocks
+    // fill in a vector of UngappedAlignedBlocks; returns # aligned blocks
     typedef std::vector < const UngappedAlignedBlock * > UngappedAlignedBlockList;
-    void GetUngappedAlignedBlocks(UngappedAlignedBlockList *blocks) const;
+    unsigned int GetUngappedAlignedBlocks(UngappedAlignedBlockList *blocks) const;
 
     // free color storage
     void FreeColors(void);
@@ -442,6 +442,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/11/03 22:31:32  thiessen
+* major reworking of the BLAST core; C++ blast-two-sequences working
+*
 * Revision 1.53  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

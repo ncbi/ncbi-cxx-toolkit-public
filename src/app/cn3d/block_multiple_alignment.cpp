@@ -1185,7 +1185,7 @@ bool BlockMultipleAlignment::CreateBlock(unsigned int fromAlignmentIndex, unsign
         if (!GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, &seq, &seqIndexFrom, &ignored) ||
             !GetSequenceAndIndexAt(toAlignmentIndex, row, justification, &seq, &seqIndexTo, &ignored) ||
             seqIndexFrom < 0 || seqIndexTo < 0 ||
-            seqIndexTo - seqIndexFrom + 1 != (int)newBlockWidth) 
+            seqIndexTo - seqIndexFrom + 1 != (int)newBlockWidth)
                 return false;
         seqIndexesFrom[row] = seqIndexFrom;
         seqIndexesTo[row] = seqIndexTo;
@@ -1366,7 +1366,7 @@ void BlockMultipleAlignment::GetBlocks(ConstBlockList *cbl) const
         cbl->push_back(*b);
 }
 
-void BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *uabs) const
+unsigned int BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *uabs) const
 {
     uabs->clear();
     uabs->reserve(blocks.size());
@@ -1376,6 +1376,7 @@ void BlockMultipleAlignment::GetUngappedAlignedBlocks(UngappedAlignedBlockList *
         if (uab) uabs->push_back(uab);
     }
     uabs->resize(uabs->size());
+    return uabs->size();
 }
 
 bool BlockMultipleAlignment::ExtractRows(
@@ -1954,6 +1955,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2005/11/03 22:31:32  thiessen
+* major reworking of the BLAST core; C++ blast-two-sequences working
+*
 * Revision 1.76  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

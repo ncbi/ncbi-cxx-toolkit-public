@@ -41,14 +41,13 @@
 #include <algo/blast/api/pssm_engine.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_encoding.h>
-
-#include <objects/scoremat/scoremat__.hpp>
-
-// conflicts between algo/blast stuff and C-toolkit stuff
+// avoids conflicts between algo/blast stuff and C-toolkit stuff
 #undef INT1_MIN
 #undef INT1_MAX
 #undef INT2_MIN
 #undef INT2_MAX
+
+#include <objects/scoremat/scoremat__.hpp>
 
 #include "cn3d_pssm.hpp"
 #include "block_multiple_alignment.hpp"
@@ -601,6 +600,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/11/03 22:31:33  thiessen
+* major reworking of the BLAST core; C++ blast-two-sequences working
+*
 * Revision 1.11  2005/11/01 18:11:17  thiessen
 * fix pssm->Seq_Mtf conversion
 *

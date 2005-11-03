@@ -34,7 +34,7 @@
 #ifndef CN3D_BLAST__HPP
 #define CN3D_BLAST__HPP
 
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbistd.hpp>
 
 #include <list>
 
@@ -73,6 +73,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/03 22:31:32  thiessen
+* major reworking of the BLAST core; C++ blast-two-sequences working
+*
 * Revision 1.10  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

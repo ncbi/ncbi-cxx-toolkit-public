@@ -941,7 +941,7 @@ static BlockMultipleAlignment * GetAlignmentByBestNeighbor(
         return NULL;
     }
 
-    // find best-scoring aligment above some threshold
+    // find best-scoring aligment above some threshold; assumes E-value is in RowDouble
     const BlockMultipleAlignment *bestMatchFromMultiple = NULL;
     unsigned int b, bestRow = 0;
     BLASTer::AlignmentList::const_iterator p, pe = rowAlignments.end();
@@ -1045,9 +1045,10 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
         if (*a == update) break;
     if (a == GetCurrentAlignments().end()) return;
 
-    // set up BLAST-2-sequences between update slave and each sequence from the multiple
-    BLASTer::AlignmentList toRealign;
+    // do BLAST-2-sequences between update slave and each sequence from the multiple
+    BLASTer::AlignmentList newAlignments;
     for (unsigned int row=0; row<multiple->NRows(); ++row) {
+        BLASTer::AlignmentList toRealign;
         BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
         (*seqs)[0] = multiple->GetSequenceOfRow(row);
         (*seqs)[1] = updateSeq;
@@ -1071,18 +1072,16 @@ void UpdateViewer::BlastNeighbor(BlockMultipleAlignment *update)
             ERRORMSG("error finalizing alignment");
             delete newAlignment;
         }
-    }
-
-    // actually do BLAST alignments
-    BLASTer::AlignmentList newAlignments;
-    SetDiagPostLevel(eDiag_Error); // ignore all but Errors while reading data
-    alignmentManager->blaster->
-        CreateNewPairwiseAlignmentsByBlast(NULL, toRealign, &newAlignments, false);
-    SetDiagPostLevel(eDiag_Info);
-    DELETE_ALL_AND_CLEAR(toRealign, BLASTer::AlignmentList);
-    if (newAlignments.size() != multiple->NRows()) {
-        ERRORMSG("UpdateViewer::BlastUpdate() - CreateNewPairwiseAlignmentsByBlast() failed");
-        return;
+        BLASTer::AlignmentList result;
+        SetDiagPostLevel(eDiag_Error);
+        alignmentManager->blaster->CreateNewPairwiseAlignmentsByBlast(NULL, toRealign, &result, false);
+        SetDiagPostLevel(eDiag_Info);
+        DELETE_ALL_AND_CLEAR(toRealign, BLASTer::AlignmentList);
+        if (result.size() != 1) {
+            ERRORMSG("UpdateViewer::BlastUpdate() - CreateNewPairwiseAlignmentsByBlast() failed");
+            return;
+        }
+        newAlignments.push_back(result.front());
     }
 
     // replace alignment with result
@@ -1157,6 +1156,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/11/03 22:31:33  thiessen
+* major reworking of the BLAST core; C++ blast-two-sequences working
+*
 * Revision 1.82  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

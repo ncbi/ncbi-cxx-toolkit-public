@@ -69,7 +69,7 @@ SRC =	aaa_dummy_pch \
 	viewer_window_base \
 	wx_tools
 
-LIB =	xbma_refiner xstruct_util xstruct_dp xstruct_thread xblast \
+LIB =	xbma_refiner xstruct_util xstruct_dp xstruct_thread xblast seqdb \
 	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
 	xser xutil xctools xconnect xncbi \

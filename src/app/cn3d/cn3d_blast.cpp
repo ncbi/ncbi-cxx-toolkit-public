@@ -33,38 +33,31 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 
-#include <objects/seqalign/Seq_align.hpp>
+#include <algo/blast/api/psibl2seq.hpp>
+#include <algo/blast/api/objmgrfree_query_data.hpp>
+// avoids conflicts between algo/blast stuff and C-toolkit stuff
+#undef INT1_MIN
+#undef INT1_MAX
+#undef INT2_MIN
+#undef INT2_MAX
+
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
 
-#ifdef __WXMSW__
-#include <windows.h>
-#include <wx/msw/winundef.h>
-#endif
-#include <wx/wx.h>
-
-// C stuff
-#include <objseq.h>
-#include <blast.h>
-#include <blastkar.h>
-
 #include "cn3d_blast.hpp"
-#include "structure_set.hpp"
-#include "sequence_set.hpp"
 #include "block_multiple_alignment.hpp"
+#include "cn3d_pssm.hpp"
+#include "sequence_set.hpp"
 #include "cn3d_tools.hpp"
-#include "asn_converter.hpp"
+#include "structure_set.hpp"
 #include "molecule_identifier.hpp"
-
-// hack so I can catch memory leaks specific to this module, at the line where allocation occurs
-#ifdef _DEBUG
-#ifdef MemNew
-#undef MemNew
-#endif
-#define MemNew(sz) memset(malloc(sz), 0, (sz))
-#endif
+#include "asn_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -72,267 +65,292 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-#ifdef _DEBUG
-#define PRINT_PSSM // for testing/debugging
-#endif
+//    bob->db_length = 1000000;
+//    SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
+//    bob->searchsp_eff = BLASTCalculateSearchSpace(bob, 1, bob->db_length, queryLength);
 
-//#define DEBUG_BLAST // for testing/debugging blast calls
-
-static BLAST_OptionsBlkPtr CreateBlastOptionsBlk(void)
+class TruncatedSequence : public CObject
 {
-    BLAST_OptionsBlkPtr bob = BLASTOptionNew("blastp", true);
-    bob->db_length = 1000000;
-    bob->scalingFactor = 1.0;
-    return bob;
-}
+public:
+    const Sequence *originalFullSequence;
+    CRef < CSeq_entry > truncatedSequence;
+    int fromIndex, toIndex;
+};
 
-static void SetEffectiveSearchSpaceSize(BLAST_OptionsBlkPtr bob, Int4 queryLength)
+static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAlignment *multiple,
+    const BlockMultipleAlignment *pair, int alnNum, bool isMaster, int extension)
 {
-    bob->searchsp_eff = BLASTCalculateSearchSpace(bob, 1, bob->db_length, queryLength);
+    CRef < TruncatedSequence > ts(new TruncatedSequence);
+
+    // master sequence (only used for blast-two-sequences)
+    if (isMaster) {
+
+        ts->originalFullSequence = pair->GetMaster();
+        BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
+
+        // use alignMasterTo/From if present and reasonable
+        if (pair->alignMasterFrom >= 0 && pair->alignMasterFrom < (int)ts->originalFullSequence->Length() &&
+            pair->alignMasterTo >= 0 && pair->alignMasterTo < (int)ts->originalFullSequence->Length() &&
+            pair->alignMasterFrom <= pair->alignMasterTo)
+        {
+            ts->fromIndex = pair->alignMasterFrom;
+            ts->toIndex = pair->alignMasterTo;
+        }
+
+        // use aligned footprint + extension if multiple has any aligned blocks
+        else if (multiple && multiple->GetUngappedAlignedBlocks(&uaBlocks) > 0)
+        {
+            ts->fromIndex = uaBlocks.front()->GetRangeOfRow(0)->from - extension;
+            if (ts->fromIndex < 0)
+                ts->fromIndex = 0;
+            ts->toIndex = uaBlocks.back()->GetRangeOfRow(0)->to + extension;
+            if (ts->toIndex >= (int)ts->originalFullSequence->Length())
+                ts->toIndex = ts->originalFullSequence->Length() - 1;
+        }
+
+        // otherwise, just use the whole sequence
+        else {
+            ts->fromIndex = 0;
+            ts->toIndex = ts->originalFullSequence->Length() - 1;
+        }
+    }
+
+    // slave sequence
+    else {
+
+        ts->originalFullSequence = pair->GetSequenceOfRow(1);
+
+        // use alignSlaveTo/From if present and reasonable
+        if (pair->alignSlaveFrom >= 0 && pair->alignSlaveFrom < (int)ts->originalFullSequence->Length() &&
+            pair->alignSlaveTo >= 0 && pair->alignSlaveTo < (int)ts->originalFullSequence->Length() &&
+            pair->alignSlaveFrom <= pair->alignSlaveTo)
+        {
+            ts->fromIndex = pair->alignSlaveFrom;
+            ts->toIndex = pair->alignSlaveTo;
+        }
+
+        // otherwise, just use the whole sequence
+        else {
+            ts->fromIndex = 0;
+            ts->toIndex = ts->originalFullSequence->Length() - 1;
+        }
+    }
+
+    // create new Bioseq (contained in a Seq-entry) with the truncated sequence
+    ts->truncatedSequence.Reset(new CSeq_entry);
+    CBioseq& bioseq = ts->truncatedSequence->SetSeq();
+    CRef < CSeq_id > id(new CSeq_id);
+    id->SetLocal().SetStr(NStr::IntToString(alnNum));
+    bioseq.SetId().push_back(id);
+    bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
+    bioseq.SetInst().SetLength(ts->toIndex - ts->fromIndex + 1);
+    bioseq.SetInst().SetSeq_data().SetNcbistdaa().Set().resize(ts->toIndex - ts->fromIndex + 1);
+    for (int j=ts->fromIndex; j<=ts->toIndex; ++j)
+        bioseq.SetInst().SetSeq_data().SetNcbistdaa().Set()[j - ts->fromIndex] =
+            LookupNCBIStdaaNumberFromCharacter(ts->originalFullSequence->sequenceString[j]);
+
+    return ts;
 }
 
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
     const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM)
 {
+    newAlignments->clear();
     if (usePSSM && (!multiple || multiple->HasNoAlignedBlocks())) {
         ERRORMSG("usePSSM true, but NULL or zero-aligned block multiple alignment");
         return;
     }
-
-    // set up BLAST stuff
-    BLAST_OptionsBlkPtr options = CreateBlastOptionsBlk();
-    if (!options) {
-        ERRORMSG("BLASTOptionNew() failed");
+    if (!usePSSM && toRealign.size() > 1) {
+        ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - currently can only do single blast-2-sequences at a time");
         return;
     }
+    if (toRealign.size() == 0)
+        return;
 
-    // create Seq-loc intervals
-    SeqLocPtr masterSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
-    masterSeqLoc->choice = SEQLOC_INT;
-    SeqIntPtr masterSeqInt = SeqIntNew();
-    masterSeqLoc->data.ptrvalue = masterSeqInt;
-    if (multiple) {
-        BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
-        multiple->GetUngappedAlignedBlocks(&uaBlocks);
-        if (uaBlocks.size() > 0) {
-            int excess = 0;
-            if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
-                WARNINGMSG("Can't get footprint excess residues from registry");
-            masterSeqInt->from = uaBlocks.front()->GetRangeOfRow(0)->from - excess;
-            if (masterSeqInt->from < 0)
-                masterSeqInt->from = 0;
-            masterSeqInt->to = uaBlocks.back()->GetRangeOfRow(0)->to + excess;
-            if (masterSeqInt->to >= (int)multiple->GetMaster()->Length())
-                masterSeqInt->to = multiple->GetMaster()->Length() - 1;
-        } else {
-            masterSeqInt->from = 0;
-            masterSeqInt->to = multiple->GetMaster()->Length() - 1;
-        }
-    }
-    SeqLocPtr slaveSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
-    slaveSeqLoc->choice = SEQLOC_INT;
-    SeqIntPtr slaveSeqInt = SeqIntNew();
-    slaveSeqLoc->data.ptrvalue = slaveSeqInt;
+    try {
+        const Sequence *master = (multiple ? multiple->GetMaster() : NULL);
 
-    // create BLAST_Matrix if using PSSM from multiple
-    const BLAST_Matrix *BLASTmatrix = NULL;
-    if (usePSSM) BLASTmatrix = multiple->GetPSSM();
+        int extension = 0;
+        if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &extension))
+            WARNINGMSG("Can't get footprint residue extension from registry");
 
-    string err;
-    AlignmentList::const_iterator s, se = toRealign.end();
-    for (s=toRealign.begin(); s!=se; ++s) {
-        if (multiple && (*s)->GetMaster() != multiple->GetMaster())
-            ERRORMSG("master sequence mismatch");
-
-        // get C Bioseq for master
-        const Sequence *masterSeq = multiple ? multiple->GetMaster() : (*s)->GetMaster();
-        Bioseq *masterBioseq = masterSeq->parentSet->GetOrCreateBioseq(masterSeq);
-        masterSeqInt->id = masterBioseq->id;
-
-        // override master alignment interval if specified
-        if (!multiple) {
-            if ((*s)->alignMasterFrom >= 0 && (*s)->alignMasterFrom < (int)masterSeq->Length() &&
-                (*s)->alignMasterTo >= 0 && (*s)->alignMasterTo < (int)masterSeq->Length() &&
-                (*s)->alignMasterFrom <= (*s)->alignMasterTo)
-            {
-                masterSeqInt->from = (*s)->alignMasterFrom;
-                masterSeqInt->to = (*s)->alignMasterTo;
-            } else {
-                masterSeqInt->from = 0;
-                masterSeqInt->to = masterSeq->Length() - 1;
+        // collect subject(s) - second sequence of each realignment
+        vector < CRef < TruncatedSequence > > subjectTSs;
+        CBioseq_set bss;
+        int localID = 0;
+        AlignmentList::const_iterator a, ae = toRealign.end();
+        for (a=toRealign.begin(); a!=ae; ++a, ++localID) {
+            if (!master)
+                master = (*a)->GetMaster();
+            if ((*a)->GetMaster() != master) {
+                ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - all masters must be the same");
+                return;
             }
+            if ((*a)->NRows() != 2) {
+                ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - can only realign pairwise alignments");
+                return;
+            }
+            subjectTSs.push_back(CreateTruncatedSequence(multiple, *a, localID, false, extension));
+            bss.SetSeq_set().push_back(subjectTSs.back()->truncatedSequence);
         }
+        CRef < blast::IQueryFactory > sequenceSubjects(new blast::CObjMgrFree_QueryFactory(CConstRef<CBioseq_set>(&bss)));
 
-        // get C Bioseq for slave of each incoming (pairwise) alignment
-        const Sequence *slaveSeq = (*s)->GetSequenceOfRow(1);
-        Bioseq *slaveBioseq = slaveSeq->parentSet->GetOrCreateBioseq(slaveSeq);
+        // main blast engine
+        CRef < blast::CPsiBl2Seq > blastEngine;
 
-        // setup Seq-loc interval for slave
-        slaveSeqInt->id = slaveBioseq->id;
-        slaveSeqInt->from =
-            ((*s)->alignSlaveFrom >= 0 && (*s)->alignSlaveFrom < (int)slaveSeq->Length()) ?
-                (*s)->alignSlaveFrom : 0;
-        slaveSeqInt->to =
-            ((*s)->alignSlaveTo >= 0 && (*s)->alignSlaveTo < (int)slaveSeq->Length()) ?
-                (*s)->alignSlaveTo : slaveSeq->Length() - 1;
-        INFOMSG("for BLAST: master range " <<
-                (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
-                (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
-
-        // set search space size
-        SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
-        INFOMSG("effective search space size: " << ((int) options->searchsp_eff));
-
-        // actually do the BLAST alignment
-        SeqAlign *salp = NULL;
+        // setup searches: blast-sequence-vs-pssm
+        CRef < CPssmWithParameters > pssmQuery;
+        CRef < blast::CPSIBlastOptionsHandle > pssmOptions;
         if (usePSSM) {
-            INFOMSG("calling BlastTwoSequencesByLocWithCallback(); PSSM db_length "
-                << (int) options->db_length << ", K " << BLASTmatrix->karlinK);
-            salp = BlastTwoSequencesByLocWithCallback(
-                masterSeqLoc, slaveSeqLoc,
-                "blastp", options,
-                NULL, NULL, NULL,
-                const_cast<BLAST_Matrix*>(BLASTmatrix));
-        } else {
-            INFOMSG("calling BlastTwoSequencesByLoc()");
-            salp = BlastTwoSequencesByLoc(masterSeqLoc, slaveSeqLoc, "blastp", options);
+            pssmQuery = CreatePSSM(multiple);
+            blastEngine.Reset( new
+                blast::CPsiBl2Seq(
+                    pssmQuery,
+                    sequenceSubjects,
+                    CConstRef < blast::CPSIBlastOptionsHandle > (pssmOptions.GetPointer())));
         }
 
-        // create new alignment structure
-        BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
-        (*seqs)[0] = masterSeq;
-        (*seqs)[1] = slaveSeq;
-        BlockMultipleAlignment *newAlignment =
-            new BlockMultipleAlignment(seqs, slaveSeq->parentSet->alignmentManager);
-        newAlignment->SetRowDouble(0, kMax_Double);
-        newAlignment->SetRowDouble(1, kMax_Double);
+        // setup searches: blast-two-sequences
+        CRef < TruncatedSequence > masterTS;
+        CRef < blast::IQueryFactory > sequenceQuery;
+        CRef < blast::CBlastProteinOptionsHandle > sequenceOptions;
+        if (!usePSSM) {
+            masterTS = CreateTruncatedSequence(multiple, toRealign.front(), -1, true, extension);
+            sequenceQuery.Reset(new
+                blast::CObjMgrFree_QueryFactory(
+                    CConstRef < CBioseq > (&(masterTS->truncatedSequence->GetSeq()))));
+            sequenceOptions.Reset(new blast::CBlastProteinOptionsHandle);
+            sequenceOptions->SetMatrixName("BLOSUM62");
+            blastEngine.Reset(new
+                blast::CPsiBl2Seq(
+                    sequenceQuery,
+                    sequenceSubjects,
+                    CConstRef < blast::CBlastProteinOptionsHandle > (sequenceOptions.GetPointer())));
+        }
 
-        // process the result
-        if (!salp) {
-            WARNINGMSG("BLAST failed to find a significant alignment");
-        } else {
+        // actually do the alignment(s)
+        CRef < blast::CSearchResults > results = blastEngine->Run();
+        string err;
+        WriteASNToFile("Seq-align-set.txt", results->GetSeqAlign().GetObject(), false, &err);
 
-            // convert C SeqAlign to C++ for convenience
-#ifdef _DEBUG
-            AsnIoPtr aip = AsnIoOpen("seqalign.txt", "w");
-            SeqAlignAsnWrite(salp, aip, NULL);
-            AsnIoFree(aip, true);
-#endif
-            CSeq_align sa;
-            bool okay = ConvertAsnFromCToCPP(salp, (AsnWriteFunc) SeqAlignAsnWrite, &sa, &err);
-            SeqAlignSetFree(salp);
-            if (!okay) {
-                ERRORMSG("Conversion of SeqAlign to C++ object failed");
-                continue;
-            }
+        // parse the alignments
+        if (results->GetSeqAlign()->Get().size() != toRealign.size()) {
+            ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - bad # result alignments");
+            return;
+        }
+        CSeq_align_set::Tdata::const_iterator r, re = results->GetSeqAlign()->Get().end();
+        localID = 0;
+        for (r=results->GetSeqAlign()->Get().begin(); r!=re; ++r, ++localID) {
 
-            // make sure the structure of this SeqAlign is what we expect
-            if (!sa.IsSetDim() || sa.GetDim() != 2 ||
-                !sa.GetSegs().IsDenseg() || sa.GetSegs().GetDenseg().GetDim() != 2 ||
-                !masterSeq->identifier->MatchesSeqId(*(sa.GetSegs().GetDenseg().GetIds().front())) ||
-                !slaveSeq->identifier->MatchesSeqId(*(sa.GetSegs().GetDenseg().GetIds().back()))) {
-                ERRORMSG("Confused by BLAST result format");
-                continue;
-            }
+            // create new alignment structure
+            BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+            (*seqs)[0] = master;
+            (*seqs)[1] = subjectTSs[localID]->originalFullSequence;
+            string slaveTitle = subjectTSs[localID]->originalFullSequence->identifier->ToString();
+            auto_ptr < BlockMultipleAlignment > newAlignment(
+                new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
+            newAlignment->SetRowDouble(0, kMax_Double);
+            newAlignment->SetRowDouble(1, kMax_Double);
 
-            // fill out with blocks from BLAST alignment
-            CDense_seg::TStarts::const_iterator iStart = sa.GetSegs().GetDenseg().GetStarts().begin();
-            CDense_seg::TLens::const_iterator iLen = sa.GetSegs().GetDenseg().GetLens().begin();
-#ifdef _DEBUG
-            int raw_pssm = 0, raw_bl62 = 0;
-#endif
-            for (int i=0; i<sa.GetSegs().GetDenseg().GetNumseg(); ++i) {
-                int masterStart = *(iStart++), slaveStart = *(iStart++), len = *(iLen++);
-                if (masterStart >= 0 && slaveStart >= 0 && len > 0) {
-                    UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment);
-                    newBlock->SetRangeOfRow(0, masterStart, masterStart + len - 1);
-                    newBlock->SetRangeOfRow(1, slaveStart, slaveStart + len - 1);
-                    newBlock->width = len;
-                    newAlignment->AddAlignedBlockAtEnd(newBlock);
+            // check for valid or empty alignment
+            if ((*r)->GetType() != CSeq_align::eType_disc || !(*r)->GetSegs().IsDisc()) {
+                ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment not in expected format (disc)");
+            } else if (!(*r)->IsSetDim() && (*r)->GetSegs().GetDisc().Get().size() == 0) {
+                WARNINGMSG("BLAST did not find a significant alignment for "
+                    << slaveTitle << " with " << (usePSSM ? string("PSSM") : master->identifier->ToString()));
+            } else {
 
-#ifdef _DEBUG
-                    // calculate score manually, to compare with that returned by BLAST
-                    for (int j=0; j<len; ++j) {
-                        if (usePSSM)
-                            raw_pssm += BLASTmatrix->matrix
-                                [masterStart + j]
-                                [LookupNCBIStdaaNumberFromCharacter(slaveSeq->sequenceString[slaveStart + j])];
-                        raw_bl62 += GetBLOSUM62Score(
-                            masterSeq->sequenceString[masterStart + j],
-                            slaveSeq->sequenceString[slaveStart + j]);
-                    }
-#endif
-                }
-#ifdef _DEBUG
-                else if ((masterStart < 0 || slaveStart < 0) && len > 0) {
-                    int gap = options->gap_open + options->gap_extend * len;
-                    if (usePSSM) raw_pssm -= gap;
-                    raw_bl62 -= gap;
-                }
-#endif
-            }
-#ifdef _DEBUG
-            TRACEMSG("Calculated raw score by PSSM: " << raw_pssm);
-            TRACEMSG("Calculated raw score by BLOSUM62: " << raw_bl62);
-#endif
+                // unpack Seq-align; use first one, which assumes blast returns the highest scoring alignment first
+                const CSeq_align& sa = (*r)->GetSegs().GetDisc().Get().front().GetObject();
+                if (!sa.IsSetDim() || sa.GetDim() != 2 || sa.GetType() != CSeq_align::eType_partial) {
+                    ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment not in expected format (dim 2, partial)");
+                } else if (sa.GetSegs().IsDenseg()) {
 
-            // get scores
-            if (sa.IsSetScore()) {
-                wxString scores;
-                scores.Printf("BLAST result for %s vs. %s:",
-                    masterSeq->identifier->ToString().c_str(),
-                    slaveSeq->identifier->ToString().c_str());
-
-                CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
-                for (sc=sa.GetScore().begin(); sc!=sce; ++sc) {
-                    if ((*sc)->IsSetId() && (*sc)->GetId().IsStr()) {
-
-                        // E-value (put in status line and double values)
-                        if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "e_value") {
-                            newAlignment->SetRowDouble(0, (*sc)->GetValue().GetReal());
-                            newAlignment->SetRowDouble(1, (*sc)->GetValue().GetReal());
-                            wxString status;
-                            status.Printf("E-value %g", (*sc)->GetValue().GetReal());
-                            newAlignment->SetRowStatusLine(0, status.c_str());
-                            newAlignment->SetRowStatusLine(1, status.c_str());
-                            wxString tmp = scores;
-                            scores.Printf("%s E-value: %g", tmp.c_str(), (*sc)->GetValue().GetReal());
-                        }
-
-                        // raw score
-                        if ((*sc)->GetValue().IsInt() && (*sc)->GetId().GetStr() == "score") {
-                            wxString tmp = scores;
-                            scores.Printf("%s raw: %i", tmp.c_str(), (*sc)->GetValue().GetInt());
-                        }
-
-                        // bit score
-                        if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "bit_score") {
-                            wxString tmp = scores;
-                            scores.Printf("%s bit score: %g", tmp.c_str(), (*sc)->GetValue().GetReal());
+                    // unpack Dense-seg
+                    const CDense_seg& ds = sa.GetSegs().GetDenseg();
+                    if (!ds.IsSetDim() || ds.GetDim() != 2 || ds.GetIds().size() != 2 ||
+                            ds.GetLens().size() != ds.GetNumseg() || ds.GetStarts().size() != 2 * ds.GetNumseg()) {
+                        ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (denseg dims)");
+                    } else if (!ds.GetIds().front()->IsLocal() || !ds.GetIds().front()->GetLocal().IsStr() ||
+                            ds.GetIds().front()->GetLocal().GetStr() != "-1" ||
+                            !ds.GetIds().back()->IsLocal() || !ds.GetIds().back()->GetLocal().IsStr() ||
+                            ds.GetIds().back()->GetLocal().GetStr() != NStr::IntToString(localID)) {
+                        ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (ids)");
+                    } else {
+                        // unpack segs
+                        CDense_seg::TStarts::const_iterator s = ds.GetStarts().begin();
+                        CDense_seg::TLens::const_iterator l, le = ds.GetLens().end();
+                        for (l=ds.GetLens().begin(); l!=le; ++l) {
+                            int masterStart = *(s++), slaveStart = *(s++);
+                            if (masterStart >= 0 && slaveStart >= 0) {  // skip gaps
+                                masterStart += masterTS->fromIndex;
+                                slaveStart += subjectTSs[localID]->fromIndex;
+                                UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment.get());
+                                newBlock->SetRangeOfRow(0, masterStart, masterStart + (*l) - 1);
+                                newBlock->SetRangeOfRow(1, slaveStart, slaveStart + (*l) - 1);
+                                newBlock->width = *l;
+                                newAlignment->AddAlignedBlockAtEnd(newBlock);
+                            }
                         }
                     }
+
+                } else {
+                    ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment in unrecognized format");
                 }
 
-                INFOMSG(scores.c_str());
+                // unpack score
+                if (!sa.IsSetScore() || sa.GetScore().size() == 0) {
+                    WARNINGMSG("BLAST did not return an alignment score for " << slaveTitle);
+                } else {
+                    CNcbiOstrstream oss;
+                    oss << "BLAST result scores for " << slaveTitle << " vs. "
+                        << (usePSSM ? string("PSSM") : master->identifier->ToString()) << ':';
+
+                    bool haveE = false;
+                    CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
+                    for (sc=sa.GetScore().begin(); sc!=sce; ++sc) {
+                        if ((*sc)->IsSetId() && (*sc)->GetId().IsStr()) {
+
+                            // E-value (put in status line and double values)
+                            if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "e_value") {
+                                haveE = true;
+                                newAlignment->SetRowDouble(0, (*sc)->GetValue().GetReal());
+                                newAlignment->SetRowDouble(1, (*sc)->GetValue().GetReal());
+                                string status = string("E-value: ") + NStr::DoubleToString((*sc)->GetValue().GetReal());
+                                newAlignment->SetRowStatusLine(0, status);
+                                newAlignment->SetRowStatusLine(1, status);
+                                oss << ' ' << status;
+                            }
+
+                            // raw score
+                            else if ((*sc)->GetValue().IsInt() && (*sc)->GetId().GetStr() == "score") {
+                                oss << " raw: " << (*sc)->GetValue().GetInt();
+                            }
+
+                            // bit score
+                            else if ((*sc)->GetValue().IsReal() && (*sc)->GetId().GetStr() == "bit_score") {
+                                oss << " bit score: " << (*sc)->GetValue().GetReal();
+                            }
+                        }
+                    }
+
+                    INFOMSG((string) CNcbiOstrstreamToString(oss));
+                    if (!haveE)
+                        WARNINGMSG("BLAST did not return an E-value for " << slaveTitle);
+                }
             }
+
+            // finalize and and add new alignment to list
+            if (newAlignment->AddUnalignedBlocks() && newAlignment->UpdateBlockMapAndColors(false))
+                newAlignments->push_back(newAlignment.release());
+            else
+                ERRORMSG("error finalizing alignment");
         }
 
-        // finalize and and add new alignment to list
-        if (newAlignment->AddUnalignedBlocks() && newAlignment->UpdateBlockMapAndColors(false)) {
-            newAlignments->push_back(newAlignment);
-        } else {
-            ERRORMSG("error finalizing alignment");
-            delete newAlignment;
-        }
+    } catch (exception& e) {
+        ERRORMSG("CreateNewPairwiseAlignmentsByBlast() failed with exception: " << e.what());
     }
-
-    BLASTOptionDelete(options);
-    masterSeqInt->id = NULL;    // don't free Seq-id, since it belongs to the Bioseq
-    SeqIntFree(masterSeqInt);
-    MemFree(masterSeqLoc);
-    slaveSeqInt->id = NULL;
-    SeqIntFree(slaveSeqInt);
-    MemFree(slaveSeqLoc);
 }
 
 void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
@@ -342,135 +360,23 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         return;
     }
 
-    // set up BLAST stuff
-    BLAST_OptionsBlkPtr options = CreateBlastOptionsBlk();
-    if (!options) {
-        ERRORMSG("BLASTOptionNew() failed");
-        return;
-    }
-
-    // get master sequence
-    const Sequence *masterSeq = multiple->GetMaster();
-    Bioseq *masterBioseq = masterSeq->parentSet->GetOrCreateBioseq(masterSeq);
-
-    // create Seq-loc interval for master and slave
-    SeqLocPtr masterSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
-    masterSeqLoc->choice = SEQLOC_INT;
-    SeqIntPtr masterSeqInt = SeqIntNew();
-    masterSeqLoc->data.ptrvalue = masterSeqInt;
-    masterSeqInt->id = masterBioseq->id;
-    BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
-    multiple->GetUngappedAlignedBlocks(&uaBlocks);
-    if (uaBlocks.size() == 0) {
-        ERRORMSG("Self-hit requires at least one aligned block");
-        return;
-    }
-    int excess = 0;
-    if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &excess))
-        WARNINGMSG("Can't get footprint excess residues from registry");
-    masterSeqInt->from = uaBlocks.front()->GetRangeOfRow(0)->from - excess;
-    if (masterSeqInt->from < 0) masterSeqInt->from = 0;
-    masterSeqInt->to = uaBlocks.back()->GetRangeOfRow(0)->to + excess;
-    if (masterSeqInt->to >= (int)masterSeq->Length()) masterSeqInt->to = masterSeq->Length() - 1;
-
-#ifdef DEBUG_BLAST
-    CNcbiOfstream ofs("blast.txt", IOS_BASE::out);
-    if (ofs) {
-        ofs << "master interval: " << masterSeqInt->from << " - " << masterSeqInt->to << '\n'
-            << "options->db_length: " << options->db_length << '\n'
-            << "options->scalingFactor: " << options->scalingFactor << '\n';
-    }
-#endif
-
-    SeqLocPtr slaveSeqLoc = (SeqLocPtr) MemNew(sizeof(SeqLoc));
-    slaveSeqLoc->choice = SEQLOC_INT;
-    SeqIntPtr slaveSeqInt = SeqIntNew();
-    slaveSeqLoc->data.ptrvalue = slaveSeqInt;
-
-    // create BLAST_Matrix if using PSSM from multiple
-    const BLAST_Matrix *BLASTmatrix = multiple->GetPSSM();
-
-    string err;
     unsigned int row;
     for (row=0; row<multiple->NRows(); ++row) {
 
-        // get C Bioseq for each slave
-        const Sequence *slaveSeq = multiple->GetSequenceOfRow(row);
-        Bioseq *slaveBioseq = slaveSeq->parentSet->GetOrCreateBioseq(slaveSeq);
-
-        // setup Seq-loc interval for slave
-        slaveSeqInt->id = slaveBioseq->id;
-        slaveSeqInt->from = uaBlocks.front()->GetRangeOfRow(row)->from - excess;
-        if (slaveSeqInt->from < 0) slaveSeqInt->from = 0;
-        slaveSeqInt->to = uaBlocks.back()->GetRangeOfRow(row)->to + excess;
-        if (slaveSeqInt->to >= (int)slaveSeq->Length()) slaveSeqInt->to = slaveSeq->Length() - 1;
-//        TESTMSG("for BLAST: master range " <<
-//                (masterSeqInt->from + 1) << " to " << (masterSeqInt->to + 1) << ", slave range " <<
-//                (slaveSeqInt->from + 1) << " to " << (slaveSeqInt->to + 1));
-#ifdef DEBUG_BLAST
-        if (ofs && row > 0)
-            ofs << "slave " << (row-1) << " interval: " << slaveSeqInt->from << " - " << slaveSeqInt->to << '\n';
-#endif
-
-        // set search space size
-        SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
-
-        // actually do the BLAST alignment
-
-//        TRACEMSG("calling BlastTwoSequencesByLocWithCallback()");
-        SeqAlign *salp = BlastTwoSequencesByLocWithCallback(
-            masterSeqLoc, slaveSeqLoc,
-            "blastp", options,
-            NULL, NULL, NULL,
-            const_cast<BLAST_Matrix*>(BLASTmatrix));
-
-//        TRACEMSG("calling B2SPssmMultipleQueries()");
-//        SeqLocPtr target[1];
-//        target[0] = slaveSeqLoc;
-//        options->searchsp_eff = 0;
-//        SeqAlignPtr *psalp = B2SPssmMultipleQueries(masterSeqLoc,
-//            const_cast<BLAST_Matrix*>(BLASTmatrix), target, 1, options);
-//        SeqAlign *salp = psalp[0];
-
-        // process the result
         double score = -1.0;
-        if (salp) {
-            // convert C SeqAlign to C++ for convenience
-            CSeq_align sa;
-            bool okay = ConvertAsnFromCToCPP(salp, (AsnWriteFunc) SeqAlignAsnWrite, &sa, &err);
-            SeqAlignSetFree(salp);
-            if (!okay) {
-                ERRORMSG("Conversion of SeqAlign to C++ object failed");
-                continue;
-            }
-
-            // get score
-            if (sa.IsSetScore()) {
-                CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
-                for (sc=sa.GetScore().begin(); sc!=sce; ++sc) {
-                    if ((*sc)->GetValue().IsReal() && (*sc)->IsSetId() &&
-                        (*sc)->GetId().IsStr() && (*sc)->GetId().GetStr() == "e_value") {
-                        score = (*sc)->GetValue().GetReal();
-                        break;
-                    }
-                }
-            }
-            if (score < 0.0) ERRORMSG("Got back Seq-align with no E-value");
-
-        }
 
         // set score in row
         multiple->SetRowDouble(row, score);
-        wxString status;
+        string status;
         if (score >= 0.0)
-            status.Printf("Self hit E-value: %g", score);
+            status = string("Self hit E-value: %g") + NStr::DoubleToString(score);
         else
-            status = "No detectable self hit";
-        multiple->SetRowStatusLine(row, status.c_str());
+            status = "(self-hit not yet implemented)";//"No detectable self hit";
+        multiple->SetRowStatusLine(row, status);
     }
 
     // print out overall self-hit rate
-    int nSelfHits = 0;
+    unsigned int nSelfHits = 0;
     static const double threshold = 0.01;
     for (row=0; row<multiple->NRows(); ++row) {
         if (multiple->GetRowDouble(row) >= 0.0 && multiple->GetRowDouble(row) <= threshold)
@@ -479,14 +385,6 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     INFOMSG("Self hits with E-value <= " << setprecision(3) << threshold << ": "
         << (100.0*nSelfHits/multiple->NRows()) << "% ("
         << nSelfHits << '/' << multiple->NRows() << ')' << setprecision(6));
-
-    BLASTOptionDelete(options);
-    masterSeqInt->id = NULL;    // don't free Seq-id, since it belongs to the Bioseq
-    SeqIntFree(masterSeqInt);
-    MemFree(masterSeqLoc);
-    slaveSeqInt->id = NULL;
-    SeqIntFree(slaveSeqInt);
-    MemFree(slaveSeqLoc);
 }
 
 END_SCOPE(Cn3D)
@@ -494,6 +392,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/11/03 22:31:32  thiessen
+* major reworking of the BLAST core; C++ blast-two-sequences working
+*
 * Revision 1.39  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *
