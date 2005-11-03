@@ -562,19 +562,29 @@ string CObjectIStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-CNcbiStreamoff CObjectIStream::GetStreamOffset(void) const
+CNcbiStreampos CObjectIStream::GetStreamOffset(void) const
 {
     return m_Input.GetStreamOffset();
 }
 
-void CObjectIStream::SetStreamOffset(CNcbiStreamoff pos)
+CNcbiStreampos CObjectIStream::GetStreamPos(void) const
+{
+    return m_Input.GetStreamPos();
+}
+
+void CObjectIStream::SetStreamOffset(CNcbiStreampos pos)
 {
     m_Input.SetStreamOffset(pos);
 }
 
+void CObjectIStream::SetStreamPos(CNcbiStreampos pos)
+{
+    m_Input.SetStreamPos(pos);
+}
+
 string CObjectIStream::GetPosition(void) const
 {
-    return "byte "+NStr::UIntToString(GetStreamOffset());
+    return "byte "+NStr::UIntToString(GetStreamPos());
 }
 
 void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info, 
@@ -1570,6 +1580,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.139  2005/11/03 15:13:27  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.138  2005/10/11 18:08:31  gouriano
 * Corrected handling CEofException
 *

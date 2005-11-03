@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2005/11/03 15:12:44  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.36  2005/08/17 18:05:05  gouriano
 * Added EndOfData method
 *
@@ -255,8 +258,13 @@ public:
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
-    CNcbiStreamoff GetStreamOffset(void) const THROWS1_NONE;
-    void   SetStreamOffset(CNcbiStreamoff pos);
+    // deprecated; use GetStreamPos instead
+    CNcbiStreampos GetStreamOffset(void) const THROWS1_NONE;
+    // deprecated; use SetStreamPos instead
+    void   SetStreamOffset(CNcbiStreampos pos);
+
+    CNcbiStreampos GetStreamPos(void) const THROWS1_NONE;
+    void   SetStreamPos(CNcbiStreampos pos);
     
     // action: read in buffer up to end of line
     size_t ReadLine(char* buff, size_t size)
@@ -297,7 +305,7 @@ private:
 
     const char* m_Error;
 
-    CNcbiStreamoff m_BufferOffset; // offset of current buffer in source stream
+    CNcbiStreampos m_BufferPos; // offset of current buffer in source stream
     size_t m_BufferSize;      // buffer size
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
@@ -323,7 +331,8 @@ public:
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
-    CNcbiStreamoff GetStreamOffset(void) const THROWS1_NONE;
+    CNcbiStreampos GetStreamOffset(void) const THROWS1_NONE;
+    CNcbiStreampos GetStreamPos(void) const THROWS1_NONE;
 
     size_t GetCurrentLineLength(void) const THROWS1_NONE;
 
@@ -410,7 +419,7 @@ private:
 
     size_t m_IndentLevel;
 
-    CNcbiStreamoff m_BufferOffset; // offset of current buffer in source stream
+    CNcbiStreampos m_BufferPos; // offset of current buffer in source stream
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
     char* m_BufferEnd;       // end of valid content in buffer

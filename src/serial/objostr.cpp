@@ -370,14 +370,19 @@ string CObjectOStream::GetStackTrace(void) const
     return GetStackTraceASN();
 }
 
-CNcbiStreamoff CObjectOStream::GetStreamOffset(void) const
+CNcbiStreampos CObjectOStream::GetStreamOffset(void) const
 {
     return m_Output.GetStreamOffset();
 }
 
+CNcbiStreampos CObjectOStream::GetStreamPos(void) const
+{
+    return m_Output.GetStreamPos();
+}
+
 string CObjectOStream::GetPosition(void) const
 {
-    return "byte "+NStr::UIntToString(GetStreamOffset());
+    return "byte "+NStr::UIntToString(GetStreamPos());
 }
 
 void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info, 
@@ -1021,6 +1026,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2005/11/03 15:13:27  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.103  2005/10/24 20:26:33  gouriano
 * Added option to write named integers by value only
 *

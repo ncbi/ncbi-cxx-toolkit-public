@@ -89,11 +89,10 @@ bool CByteSourceReader::Pushback(const char* /*data*/, size_t size)
     return true;
 }
 
-void CByteSourceReader::Seekg(CNcbiStreamoff /* pos */)
+void CByteSourceReader::Seekg(CNcbiStreampos /* pos */)
 {
     NCBI_THROW(CUtilException,eWrongCommand,"CByteSourceReader::Seekg: unable to seek");
 }
-
 
 CRef<CSubSourceCollector>
 CByteSourceReader::SubSource(size_t /*prevent*/,
@@ -194,10 +193,11 @@ bool CStreamByteSourceReader::Pushback(const char* data, size_t size)
     return true;
 }
 
-void CStreamByteSourceReader::Seekg(CNcbiStreamoff pos)
+void CStreamByteSourceReader::Seekg(CNcbiStreampos pos)
 {
     m_Stream->seekg(pos);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CIRByteSourceReader
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/11/03 15:13:47  gouriano
+ * Use streampos instead of streamoff for positioning
+ *
  * Revision 1.40  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *

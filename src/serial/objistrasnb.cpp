@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/11/03 15:13:27  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.78  2005/08/22 14:40:06  gouriano
 * Recognize old-style BigInts in binary ASN
 *
@@ -347,6 +350,7 @@
 
 BEGIN_NCBI_SCOPE
 
+static CNcbiStreampos s_Streampos_Max = numeric_limits<CNcbiStreamoff>::max();
 
 CObjectIStream* CObjectIStream::CreateObjectIStreamAsnBinary(void)
 {
@@ -359,7 +363,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
+    m_CurrentTagLimit = s_Streampos_Max;
 #endif
     m_CurrentTagLength = 0;
 }
@@ -370,7 +374,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
+    m_CurrentTagLimit = s_Streampos_Max;
 #endif
     m_CurrentTagLength = 0;
     Open(in);
@@ -383,7 +387,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
+    m_CurrentTagLimit = s_Streampos_Max;
 #endif
     m_CurrentTagLength = 0;
     Open(in, deleteIn);
@@ -395,7 +399,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
 {
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
+    m_CurrentTagLimit = s_Streampos_Max;
 #endif
     m_CurrentTagLength = 0;
     Open(reader);
@@ -550,7 +554,7 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
     if ( FlushTag() != eIndefiniteLengthByte ) {
         ThrowError(fFormatError, "indefinite length is expected");
     }
-    _ASSERT(m_CurrentTagLimit == numeric_limits<CNcbiStreamoff>::max());
+    _ASSERT(m_CurrentTagLimit == s_Streampos_Max);
     // save tag limit
     // tag limit is not changed
     m_Limits.push(m_CurrentTagLimit);
@@ -560,10 +564,10 @@ void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 
 size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
 {
-    CNcbiStreamoff cur_pos = m_Input.GetStreamOffset();
-    CNcbiStreamoff newLimit = cur_pos + length;
+    CNcbiStreampos cur_pos = m_Input.GetStreamPos();
+    CNcbiStreampos newLimit = cur_pos + CNcbiStreamoff(length);
     _ASSERT(newLimit >= cur_pos);
-    CNcbiStreamoff currentLimit = m_CurrentTagLimit;
+    CNcbiStreampos currentLimit = m_CurrentTagLimit;
     _ASSERT(newLimit <= currentLimit);
     m_Limits.push(currentLimit);
     m_CurrentTagLimit = newLimit;
@@ -625,8 +629,8 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
     if ( m_CurrentTagState != eData )
         ThrowError(fIllegalCall, "illegal EndOfTag call");
     // check for all bytes read
-    if ( m_CurrentTagLimit != numeric_limits<CNcbiStreamoff>::max() ) {
-        if ( m_Input.GetStreamOffset() != m_CurrentTagLimit )
+    if ( m_CurrentTagLimit != s_Streampos_Max) {
+        if ( m_Input.GetStreamPos() != m_CurrentTagLimit )
             ThrowError(fIllegalCall,
                        "illegal EndOfTag call: not all data bytes read");
     }
@@ -635,7 +639,7 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
     // restore tag limit from stack
     m_CurrentTagLimit = m_Limits.top();
     m_Limits.pop();
-    _ASSERT(m_CurrentTagLimit == numeric_limits<CNcbiStreamoff>::max());
+    _ASSERT(m_CurrentTagLimit == s_Streampos_Max);
 }
 
 void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
@@ -646,11 +650,11 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
                                     char(eZeroLengthByte)) ) {
         ThrowError(eFormatError, "end of content expected");
     }
-    _ASSERT(m_CurrentTagLimit == numeric_limits<CNcbiStreamoff>::max());
+    _ASSERT(m_CurrentTagLimit == s_Streampos_Max);
     // restore tag limit from stack
     m_CurrentTagLimit = m_Limits.top();
     m_Limits.pop();
-    _ASSERT(m_CurrentTagLimit == numeric_limits<CNcbiStreamoff>::max());
+    _ASSERT(m_CurrentTagLimit == s_Streampos_Max);
     m_CurrentTagState = eTagStart;
     m_CurrentTagLength = 0;
 }
@@ -659,7 +663,7 @@ Uint1 CObjectIStreamAsnBinary::ReadByte(void)
 {
     if ( m_CurrentTagState != eData )
         ThrowError(fIllegalCall, "illegal ReadByte call");
-    if ( m_Input.GetStreamOffset() >= m_CurrentTagLimit )
+    if ( m_Input.GetStreamPos() >= m_CurrentTagLimit )
         ThrowError(fOverflow, "tag size overflow");
     return m_Input.GetChar();
 }
@@ -675,8 +679,8 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
     if ( count == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    CNcbiStreamoff cur_pos = m_Input.GetStreamOffset();
-    CNcbiStreamoff end_pos = cur_pos + count;
+    CNcbiStreampos cur_pos = m_Input.GetStreamPos();
+    CNcbiStreampos end_pos = cur_pos + CNcbiStreamoff(count);
     if ( end_pos < cur_pos || end_pos > m_CurrentTagLimit )
         ThrowError(fOverflow, "tag size overflow");
 #endif
@@ -693,8 +697,8 @@ void CObjectIStreamAsnBinary::ReadBytes(string& str, size_t count)
     if ( count == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    CNcbiStreamoff cur_pos = m_Input.GetStreamOffset();
-    CNcbiStreamoff end_pos = cur_pos + count;
+    CNcbiStreampos cur_pos = m_Input.GetStreamPos();
+    CNcbiStreampos end_pos = cur_pos + CNcbiStreamoff(count);
     if ( end_pos < cur_pos || end_pos > m_CurrentTagLimit )
         ThrowError(fOverflow, "tag size overflow");
 #endif
@@ -711,8 +715,8 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
     if ( count == 0 )
         return;
 #if CHECK_STREAM_INTEGRITY
-    CNcbiStreamoff cur_pos = m_Input.GetStreamOffset();
-    CNcbiStreamoff end_pos = cur_pos + count;
+    CNcbiStreampos cur_pos = m_Input.GetStreamPos();
+    CNcbiStreampos end_pos = cur_pos + CNcbiStreamoff(count);
     if ( end_pos < cur_pos || end_pos > m_CurrentTagLimit )
         ThrowError(fOverflow, "tag size overflow");
 #endif

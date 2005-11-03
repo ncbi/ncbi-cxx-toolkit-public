@@ -759,7 +759,7 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
         if ( out.m_CurrentTagState != out.eTagStart )
             out.ThrowError(out.fIllegalCall,
                 string("AsnWrite only allowed at tag start: data= ")+data);
-        if ( out.m_CurrentPosition + length > out.m_CurrentTagLimit )
+        if ( out.m_CurrentPosition + CNcbiStreamoff(length) > out.m_CurrentTagLimit )
             out.ThrowError(out.fIllegalCall,
                 string("tag DATA overflow: data= ")+data);
         out.m_CurrentPosition += length;
@@ -867,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2005/11/03 15:13:27  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.66  2005/06/03 17:56:46  lavr
 * Explicit (unsigned char) casts in ctype routines
 * CVS log moved to end as it confuses commit filter

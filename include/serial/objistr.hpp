@@ -379,8 +379,10 @@ public:
     void HandleEOF(CEofException&);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    CNcbiStreamoff GetStreamOffset(void) const;
-    void   SetStreamOffset(CNcbiStreamoff pos);
+    CNcbiStreampos GetStreamOffset(void) const;
+    CNcbiStreampos GetStreamPos(void) const;
+    void   SetStreamOffset(CNcbiStreampos pos);
+    void   SetStreamPos(CNcbiStreampos pos);
 
     void ThrowError1(const CDiagCompileInfo& diag_info,
                      TFailFlags fail, const char* message);
@@ -717,6 +719,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.112  2005/11/03 15:13:06  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.111  2005/10/11 18:08:12  gouriano
 * Corrected handling CEofException
 *

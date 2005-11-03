@@ -289,7 +289,8 @@ public:
     void HandleEOF(CEofException&);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    CNcbiStreamoff GetStreamOffset(void) const;
+    CNcbiStreampos GetStreamOffset(void) const;
+    CNcbiStreampos GetStreamPos(void) const;
 
     enum EFlags {
         fFlagNone                = 0,
@@ -545,6 +546,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.94  2005/11/03 15:13:06  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.93  2005/10/24 20:27:18  gouriano
 * Added option to write named integers by value only
 *

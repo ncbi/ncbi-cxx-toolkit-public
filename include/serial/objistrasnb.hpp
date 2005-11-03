@@ -174,8 +174,8 @@ private:
     //                         -- after any of Peek?Tag or ExpectSysTag
     // 
     size_t m_CurrentTagLength;  // length of tag header (without length field)
-    CNcbiStreamoff m_CurrentTagLimit;   // end of current tag data (INT_MAX if unlimited)
-    stack<CNcbiStreamoff> m_Limits;
+    CNcbiStreampos m_CurrentTagLimit;   // end of current tag data (INT_MAX if unlimited)
+    stack<CNcbiStreampos> m_Limits;
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 
 #if CHECK_STREAM_INTEGRITY
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/11/03 15:13:06  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.48  2005/06/14 13:11:57  gouriano
 * Renamed  ReadAnyContent to SkipAnyContent
 *

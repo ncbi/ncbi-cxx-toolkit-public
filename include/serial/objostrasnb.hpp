@@ -175,7 +175,7 @@ private:
     void WriteNumberValue(Uint8 data);
 
 #if CHECK_STREAM_INTEGRITY
-    CNcbiStreamoff m_CurrentPosition;
+    CNcbiStreampos m_CurrentPosition;
     enum ETagState {
         eTagStart,
         eTagValue,
@@ -185,12 +185,12 @@ private:
         eData
     };
     ETagState m_CurrentTagState;
-    CNcbiStreamoff m_CurrentTagPosition;
+    CNcbiStreampos m_CurrentTagPosition;
     Uint1 m_CurrentTagCode;
     size_t m_CurrentTagLengthSize;
     size_t m_CurrentTagLength;
-    CNcbiStreamoff m_CurrentTagLimit;
-    stack<CNcbiStreamoff> m_Limits;
+    CNcbiStreampos m_CurrentTagLimit;
+    stack<CNcbiStreampos> m_Limits;
 
     void StartTag(TByte code);
     void EndTag(void);
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/11/03 15:13:06  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.47  2005/06/29 16:02:59  vasilche
 * WriteByte() becomes private as it's used only internally.
 * WriteBytesOf() made as member template to be able to access private methods.

@@ -114,7 +114,7 @@ void CObjectOStreamAsnBinary::EndTag(void)
 inline
 void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 {
-    CNcbiStreamoff limit = m_CurrentPosition + 1 + length;
+    CNcbiStreampos limit = m_CurrentPosition + CNcbiStreamoff(1 + length);
     if ( limit <= m_CurrentPosition || limit > m_CurrentTagLimit )
         ThrowError(fIllegalCall, "tag will overflow enclosing tag");
     else
@@ -186,7 +186,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
             SetTagLength(m_CurrentTagLength);
         break;
     case eData:
-        if ( m_CurrentPosition + 1 == m_CurrentTagLimit )
+        if ( m_CurrentPosition + CNcbiStreamoff(1) == m_CurrentTagLimit )
             EndTag();
         break;
     }
@@ -206,7 +206,7 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
         ThrowError(fIllegalCall, "WriteBytes only allowed in DATA");
-    CNcbiStreamoff new_pos = m_CurrentPosition + size;
+    CNcbiStreampos new_pos = m_CurrentPosition + CNcbiStreamoff(size);
     if ( new_pos < m_CurrentPosition || new_pos > m_CurrentTagLimit )
         ThrowError(fOverflow, "tag DATA overflow");
     m_CurrentPosition = new_pos;
@@ -1120,6 +1120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.97  2005/11/03 15:13:27  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.96  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

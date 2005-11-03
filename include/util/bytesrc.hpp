@@ -85,7 +85,7 @@ public:
 
     // Set reader current position, when possible
     // (default implementation throws an exception)
-    virtual void Seekg(CNcbiStreamoff pos);
+    virtual void Seekg(CNcbiStreampos pos);
 
 private:
     CByteSourceReader(const CByteSourceReader&);
@@ -193,7 +193,7 @@ public:
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
     bool Pushback(const char* data, size_t size);
-    virtual void Seekg(CNcbiStreamoff pos);
+    virtual void Seekg(CNcbiStreampos pos);
 
 protected:
     CConstRef<CByteSource> m_Source;
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2005/11/03 15:12:44  gouriano
+ * Use streampos instead of streamoff for positioning
+ *
  * Revision 1.27  2005/06/29 16:03:30  vasilche
  * Removed declaration of obsolete method.
  *

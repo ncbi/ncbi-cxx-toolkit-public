@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/11/03 15:12:44  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.8  2005/04/26 14:11:04  vasilche
 * Implemented optimized reading methods CSkipExpected*() and GetChars(string&).
 *
@@ -177,10 +180,17 @@ size_t CIStreamBuffer::GetLine(void) const
 }
 
 inline
-CNcbiStreamoff CIStreamBuffer::GetStreamOffset(void) const
+CNcbiStreampos CIStreamBuffer::GetStreamOffset(void) const
     THROWS1_NONE
 {
-    return m_BufferOffset + (m_CurrentPos - m_Buffer);
+    return GetStreamPos();
+}
+
+inline
+CNcbiStreampos CIStreamBuffer::GetStreamPos(void) const
+    THROWS1_NONE
+{
+    return m_BufferPos + CNcbiStreamoff(m_CurrentPos - m_Buffer);
 }
 
 inline
@@ -209,10 +219,17 @@ size_t COStreamBuffer::GetLine(void) const
 }
 
 inline
-CNcbiStreamoff COStreamBuffer::GetStreamOffset(void) const
+CNcbiStreampos COStreamBuffer::GetStreamOffset(void) const
     THROWS1_NONE
 {
-    return m_BufferOffset + (m_CurrentPos - m_Buffer);
+    return GetStreamPos();
+}
+
+inline
+CNcbiStreampos COStreamBuffer::GetStreamPos(void) const
+    THROWS1_NONE
+{
+    return m_BufferPos + CNcbiStreamoff(m_CurrentPos - m_Buffer);
 }
 
 inline

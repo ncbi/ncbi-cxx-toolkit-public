@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/11/03 15:13:47  gouriano
+* Use streampos instead of streamoff for positioning
+*
 * Revision 1.48  2005/05/12 15:08:21  lavr
 * Use explicit (unsigned char) conversion in <ctype.h>'s macros
 *
@@ -228,7 +231,7 @@ size_t BiggerBufferSize(size_t size) THROWS1_NONE
 
 CIStreamBuffer::CIStreamBuffer(void)
     THROWS1((bad_alloc))
-    : m_Error(0), m_BufferOffset(0),
+    : m_Error(0), m_BufferPos(0),
       m_BufferSize(KInitialBufferSize), m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer), m_DataEndPos(m_Buffer),
       m_Line(1),
@@ -265,7 +268,7 @@ void CIStreamBuffer::Close(void)
         }
         m_Input.Reset();
     }
-    m_BufferOffset = 0;
+    m_BufferPos = 0;
     m_CurrentPos = m_Buffer;
     m_DataEndPos = m_Buffer;
     m_Line = 1;
@@ -424,7 +427,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
                 memmove(newPos, m_CurrentPos, copy_count);
             m_CurrentPos = newPos;
             m_DataEndPos -= erase;
-            m_BufferOffset += erase;
+            m_BufferPos += erase;
             pos -= erase;
             newPosOffset -= erase;
         }
@@ -622,10 +625,15 @@ void CIStreamBuffer::BadNumber(void)
         "bad number in line " + NStr::UIntToString(GetLine()));
 }
 
-void CIStreamBuffer::SetStreamOffset(CNcbiStreamoff pos)
+void CIStreamBuffer::SetStreamOffset(CNcbiStreampos pos)
+{
+    SetStreamPos(pos);
+}
+
+void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
 {
     m_Input->Seekg(pos);
-    m_BufferOffset = pos;
+    m_BufferPos = pos;
     m_DataEndPos = m_Buffer;
     m_CurrentPos = m_Buffer;
     m_Line = 1;
@@ -750,7 +758,7 @@ Uint8 CIStreamBuffer::GetUint8(void)
 COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
     THROWS1((bad_alloc))
     : m_Output(out), m_DeleteOutput(deleteOut), m_Error(0),
-      m_IndentLevel(0), m_BufferOffset(0),
+      m_IndentLevel(0), m_BufferPos(0),
       m_Buffer(new char[KInitialBufferSize]),
       m_CurrentPos(m_Buffer),
       m_BufferEnd(m_Buffer + KInitialBufferSize),
@@ -817,7 +825,7 @@ void COStreamBuffer::FlushBuffer(bool fullBuffer)
         else {
             m_CurrentPos = m_Buffer;
         }
-        m_BufferOffset += count;
+        m_BufferPos += count;
     }
 }
 
