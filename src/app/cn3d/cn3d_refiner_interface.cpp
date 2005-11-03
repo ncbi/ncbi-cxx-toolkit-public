@@ -61,8 +61,12 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+//  These listed in order of enum BlockBoundaryAlgorithmMethod
+static const wxString blockEditAlgStrings[] = {"No", "Only expand", "Only shrink", "Expand and shrink"};
+
 class BMARefinerOptionsDialog : public wxDialog
 {
+
 public:
 
     struct GeneralRefinerParams {
@@ -110,11 +114,12 @@ private:
     IntegerSpinCtrl *lnoSpin, *loopExtensionSpin, *loopCutoffSpin, *rngSpin, *nExtSpin, *cExtSpin;
     IntegerSpinCtrl *minBlockSizeSpin, *medianSpin;
     FloatingPointSpinCtrl *loopPercentSpin, *rawVoteSpin, *weightedVoteSpin ;
-    wxCheckBox *fixStructCheck, *fullSeqCheck, *beCheck;
+    wxCheckBox *fixStructCheck, *fullSeqCheck, *extendFirstCheck;
+    wxComboBox *esCombo;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
-    void OnCheck(wxCommandEvent& event);
+    void OnCombo(wxCommandEvent& event);
     DECLARE_EVENT_TABLE()
 };
 
@@ -307,10 +312,9 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent)
         m_refinerEngine->GetBEParams(be);
     }
 
-    //  Use a fixed column scoring method & block boundary alg for now.
-    //  (the '3.3.3' method when using defaults for median, negRows & negScore)
+    //  Use a fixed column scoring method for now.
+    //  (the '3.3.3' method when using defaults for median, negRows & negScore, and not extension/shrinkageThresholds)
     be.columnMethod = align_refine::eCompoundScorer;
-    be.algMethod = align_refine::eSimpleExtend;
     be.columnScorerThreshold = 0;  //  this is the 'magic' PSSM score in the compound scorer
 
     BMARefinerOptionsDialog dialog(parent, genl, loo, be);
@@ -340,11 +344,13 @@ const int ID_SPINCTRL = 12002;
 const int ID_TEXTCTRL = 12003;
 const int ID_FIX_STRUCT_CHECKBOX = 12004;
 const int ID_FULL_SEQ_CHECKBOX = 12005;
-const int ID_BE_CHECKBOX = 12006;
+const int ID_BE_COMBOBOX = 12006;
+const int ID_BEXTEND_FIRST_CHECKBOX = 12007;
 
 BEGIN_EVENT_TABLE(BMARefinerOptionsDialog, wxDialog)
     EVT_BUTTON(-1,  BMARefinerOptionsDialog::OnButton)
-    EVT_CHECKBOX(ID_BE_CHECKBOX, BMARefinerOptionsDialog::OnCheck)
+//    EVT_CHECKBOX(ID_BEXTEND_CHECKBOX, BMARefinerOptionsDialog::OnCheck)
+    EVT_COMBOBOX(ID_BE_COMBOBOX, BMARefinerOptionsDialog::OnCombo)
     EVT_CLOSE (     BMARefinerOptionsDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
@@ -384,7 +390,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     wxStaticText *item62 = new wxStaticText( panel, ID_TEXT, wxT("Number of refinement trials:"), wxDefaultPosition, wxDefaultSize, 0 );
     item61->Add( item62, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     nTrialsSpin = new IntegerSpinCtrl(panel,
-        1, 25, 1, current_genl.nTrials,
+        1, 20, 1, current_genl.nTrials,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item61->Add(nTrialsSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -511,14 +517,24 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     wxFlexGridSizer *item38 = new wxFlexGridSizer( 3, 0, 0 );
     item38->AddGrowableCol( 1 );
 
-    //  Activate block changes?
-    wxStaticText *item39 = new wxStaticText( panel, ID_TEXT, wxT("Change block sizes?"), wxDefaultPosition, wxDefaultSize, 0 );
+    //  Allow block extension?
+    int initialValue = (current_be.algMethod >= 0 && current_be.algMethod < align_refine::eGreedyExtend) ? (int) current_be.algMethod : 0;
+    wxStaticText *item39 = new wxStaticText( panel, ID_TEXT, wxT("Change block model?"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item39, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     wxStaticText *item40 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item40, 0, wxALIGN_CENTER|wxALL, 5 );
-    beCheck = new wxCheckBox( panel, ID_BE_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    beCheck->SetValue(current_be.editBlocks);
-    item38->Add( beCheck, 0, wxALIGN_CENTER|wxALL, 5 );
+    esCombo= new wxComboBox( panel, ID_BE_COMBOBOX, wxT(""), wxDefaultPosition, wxDefaultSize, sizeof(blockEditAlgStrings)/sizeof(blockEditAlgStrings[0]), blockEditAlgStrings, wxCB_READONLY );
+    esCombo->SetValue(blockEditAlgStrings[initialValue]);
+    item38->Add( esCombo, 0, wxALIGN_CENTER|wxALL, 5 );
+
+    //  Extend first?
+    wxStaticText *item39b = new wxStaticText( panel, ID_TEXT, wxT("Extend first?"), wxDefaultPosition, wxDefaultSize, 0 );
+    item38->Add( item39b, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxStaticText *item40b = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item38->Add( item40b, 0, wxALIGN_CENTER|wxALL, 5 );
+    extendFirstCheck = new wxCheckBox( panel, ID_BEXTEND_FIRST_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    extendFirstCheck->SetValue(current_be.extendFirst);
+    item38->Add( extendFirstCheck, 0, wxALIGN_CENTER|wxALL, 5 );
 
     //  Define a minimum block size (really only relevant for shrinking blocks...
     wxStaticText *item42 = new wxStaticText( panel, ID_TEXT, wxT("Minimum block size:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -530,7 +546,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item38->Add(minBlockSizeSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item38->Add(minBlockSizeSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    //  Block extension threshold 1:  column of PSSM median score >= this value
+    //  Block extension/shrinkage threshold 1:  column of PSSM median score >= this value
     wxStaticText *item45 = new wxStaticText( panel, ID_TEXT, wxT("Median PSSM score threshold:"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item45, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     medianSpin = new IntegerSpinCtrl(panel,
@@ -540,7 +556,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item38->Add(medianSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item38->Add(medianSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    //  Block extension threshold 2:  % rows w/ PSSM score >= 0 must exceed this value
+    //  Block extension/shrinkage threshold 2:  % rows w/ PSSM score >= 0 must exceed this value
     wxStaticText *item48 = new wxStaticText( panel, ID_TEXT, wxT("Voting percentage (% of rows vote to extend):"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item48, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     rawVoteSpin = new FloatingPointSpinCtrl(panel,
@@ -550,7 +566,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item38->Add(rawVoteSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item38->Add(rawVoteSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    //  Block extension threshold 3:  % of weight in column of PSSM median score >= 0 must exceed this value
+    //  Block extension/shrinkage threshold 3:  % of weight in column of PSSM median score >= 0 must exceed this value
     wxStaticText *item51 = new wxStaticText( panel, ID_TEXT, wxT("Weighted (by PSSM score) voting percentage:"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item51, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     weightedVoteSpin = new FloatingPointSpinCtrl(panel,
@@ -562,10 +578,10 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
 
     item36->Add( item38, 0, wxALIGN_CENTER|wxALL, 5 );
 
-    //  Enable/disable block-editing controls based on state of 'beCheck'.
+    //  Enable/disable block-editing controls based on state of 'extendCheck' & 'shrinkCheck'.
     wxCommandEvent dummyEvent;
-    dummyEvent.SetId(ID_BE_CHECKBOX);
-    OnCheck(dummyEvent);
+    dummyEvent.SetId(ID_BE_COMBOBOX);
+    OnCombo(dummyEvent);
 
     //  OK/Cancel buttons
     wxBoxSizer *item54 = new wxBoxSizer( wxHORIZONTAL );
@@ -666,12 +682,25 @@ bool BMARefinerOptionsDialog::GetParameters( GeneralRefinerParams* genl_params, 
     loo_params->cutoff = (unsigned int) cut;
     loo_params->percentile /= 100.0;
 
-    be_params->editBlocks = beCheck->IsChecked();
+    wxString comboValue = esCombo->GetValue();
+    bool doExtend = (comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtend] || comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtendAndShrink]);
+    bool doShrink = (comboValue == blockEditAlgStrings[(int)align_refine::eSimpleShrink] || comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtendAndShrink]);
+    be_params->editBlocks  = doExtend || doShrink;
+    be_params->canShrink   = doShrink;
+    be_params->extendFirst = extendFirstCheck->IsChecked();
+    if (be_params->editBlocks) {
+        be_params->algMethod = ((doExtend) ? (doShrink ? align_refine::eSimpleExtendAndShrink : align_refine::eSimpleExtend) : align_refine::eSimpleShrink);
+    } else {
+        be_params->algMethod = align_refine::eInvalidBBAMethod;
+    }
+
     result &= minBlockSizeSpin->GetInteger(&mbs);
+    be_params->minBlockSize = (unsigned int) mbs;
+
+    //  Compound scorer parameters
     result &= medianSpin->GetInteger(&(be_params->median));
     result &= rawVoteSpin->GetDouble(&(be_params->negRowsFraction));
     result &= weightedVoteSpin->GetDouble(&(be_params->negScoreFraction));
-    be_params->minBlockSize = (unsigned int) mbs;
     be_params->negRowsFraction = 1.0 - be_params->negRowsFraction/100.0;
     be_params->negScoreFraction = 1.0 - be_params->negScoreFraction/100.0;
 
@@ -700,9 +729,14 @@ void BMARefinerOptionsDialog::OnButton(wxCommandEvent& event)
     }
 }
 
-void BMARefinerOptionsDialog::OnCheck(wxCommandEvent& event)
+void BMARefinerOptionsDialog::OnCombo(wxCommandEvent& event)
 {
-    bool doBlockEdit = beCheck->IsChecked();
+    wxString comboValue = esCombo->GetValue();
+    bool doExtend = (comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtend] || comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtendAndShrink]);
+    bool doShrink = (comboValue == blockEditAlgStrings[(int)align_refine::eSimpleShrink] || comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtendAndShrink]);
+    bool doBlockEdit = (doExtend || doShrink);
+
+    extendFirstCheck->Enable(doShrink);
 
     minBlockSizeSpin->GetTextCtrl()->Enable(doBlockEdit);
     minBlockSizeSpin->GetSpinButton()->Enable(doBlockEdit);
@@ -720,6 +754,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/11/03 00:20:29  lanczyck
+* modify refiner interface and set up of refiner engine to allow for block shrinking and/or to skip block expansion
+*
 * Revision 1.6  2005/11/02 20:32:43  lanczyck
 * add API to specify blocks to refine and rows to exclude from refinement;
 * turn block extension on
