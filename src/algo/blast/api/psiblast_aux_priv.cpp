@@ -300,7 +300,7 @@ CPsiBlastValidate::QueryFactory(CRef<IQueryFactory> query_factory,
         query_factory->MakeLocalQueryData(&opts_handle.GetOptions());
 
     // Compose the exception error message
-    string excpt_msg("CPsiBl2Seq only accepts ");
+    string excpt_msg("PSI-BLAST only accepts ");
     if (qf_type == eQFT_Query) {
         excpt_msg += "one protein sequence as query";
     } else if (qf_type == eQFT_Subject) {
