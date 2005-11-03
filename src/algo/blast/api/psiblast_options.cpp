@@ -54,6 +54,12 @@ CPSIBlastOptionsHandle::CPSIBlastOptionsHandle(EAPILocality locality)
     SetPSIBlastDefaults();
 }
 
+void
+CPSIBlastOptionsHandle::SetQueryOptionDefaults()
+{
+    SetSegFiltering(false);
+}
+
 void CPSIBlastOptionsHandle::SetPSIBlastDefaults(void)
 {
     m_Opts->SetInclusionThreshold( PSI_INCLUSION_ETHRESH );
@@ -70,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/11/03 22:15:01  camacho
+ * Add method to override query options defaults to enforce no filtering of the query
+ *
  * Revision 1.7  2005/10/06 19:43:08  camacho
  * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
  * Fixes problem with uninitializes program and service name for CRemoteBlast.

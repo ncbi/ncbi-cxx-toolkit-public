@@ -77,6 +77,10 @@ protected:
     {
         m_Opts->SetRemoteProgramAndService_Blast3("blastp", "psi");
     }
+
+    /// Override the parent class' default for filtering query sequence (i.e.:
+    /// no filtering applied to the query by default)
+    virtual void SetQueryOptionDefaults();
     
     /// Sets PSIBlastDefaults
     void SetPSIBlastDefaults();
@@ -98,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/03 22:14:53  camacho
+ * Add method to override query options defaults to enforce no filtering of the query
+ *
  * Revision 1.8  2005/06/02 16:18:17  camacho
  * Remove LookupTableOptions::use_pssm
  *
