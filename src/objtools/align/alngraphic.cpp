@@ -294,24 +294,30 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
     string bit_str, evalue_str;
     string title;
     
-    const CBioseq_Handle& handle = m_Scope->GetBioseqHandle(id);
-    if(handle){
-        const CBioseq::TId& ids = handle.GetBioseqCore()->GetId();
-        CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
-        aln_info->id = wid;
-        aln_info->gi =  FindGi(ids);
-        wid->GetLabel(&info, CSeq_id::eContent, 0);
-        title = GetTitle(handle);
-
-        if ((int)title.size() > kDeflineLength){
-            title = title.substr(0, kDeflineLength) + "..";
+    try{
+        const CBioseq_Handle& handle = m_Scope->GetBioseqHandle(id);
+        if(handle){
+            const CBioseq::TId& ids = handle.GetBioseqCore()->GetId();
+            CRef<CSeq_id> wid = FindBestChoice(ids, CSeq_id::WorstRank);
+            aln_info->id = wid;
+            aln_info->gi =  FindGi(ids);
+            wid->GetLabel(&info, CSeq_id::eContent, 0);
+            title = GetTitle(handle);
+            
+            if ((int)title.size() > kDeflineLength){
+                title = title.substr(0, kDeflineLength) + "..";
+            }
+            info += " " + title;   
+        } else {
+            aln_info->gi = 0;
+            aln_info->id = &id;
+            aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);
         }
-        info += " " + title;   
-    } else {
+    } catch (const CException& e){
         aln_info->gi = 0;
         aln_info->id = &id;
-        aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);
-    }  
+        aln_info->id->GetLabel(&info, CSeq_id::eContent, 0);        
+    }
     s_GetAlnScores(aln, score, bits, evalue);
     NStr::DoubleToString(bit_str, (int)bits);
     NStr::DoubleToString(evalue_str, evalue);
@@ -322,7 +328,7 @@ void CAlnGraphic::x_GetAlnInfo(const CSeq_align& aln, const CSeq_id& id,
     info += " S=" + bit_str + " E=" + formatted_evalue;
     aln_info->info = info;
     aln_info->bits = bits;
-   
+  
 }
 
 CAlnGraphic::CAlnGraphic(const CSeq_align_set& seqalign, CScope& scope)
@@ -399,17 +405,7 @@ void CAlnGraphic::AlnGraphicDisplay(CNcbiOstream& out){
         SAlignInfo* alninfo = new SAlignInfo;
         alninfo->range = seq_range;
         //get aln info 
-        try{
-            x_GetAlnInfo(**iter, *subid, alninfo);
-        } catch (const CException& e){
-            string id_string;
-            subid->GetLabel(&id_string, CSeq_id::eContent);
-            out << "Warning: " << e.what() << "id= "<< id_string << endl;
-            delete alninfo;
-            is_first_aln = false;
-            previous_id = subid;
-            continue;
-        }
+        x_GetAlnInfo(**iter, *subid, alninfo);
         alninfo_list->push_back(alninfo);
         is_first_aln = false;
         previous_id = subid;
@@ -684,6 +680,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.8  2005/11/03 17:57:10  jianye
+*not showing exception message
+*
 *Revision 1.7  2005/11/02 18:19:44  jianye
 *catch getbioseqhandle exception
 *
