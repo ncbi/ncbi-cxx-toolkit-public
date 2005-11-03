@@ -45,5 +45,7 @@
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_USER     "user"
 /* PUBSEQ_OS login password */
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_PASSWORD "password"
+/* allow gzip compression */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_GZIP     "gzip"
 
 #endif

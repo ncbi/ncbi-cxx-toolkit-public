@@ -44,10 +44,12 @@ BEGIN_SCOPE(objects)
 class NCBI_XREADER_PUBSEQOS_EXPORT CPubseqReader : public CId1ReaderBase
 {
 public:
-    CPubseqReader(int max_connections = 2,
-                  const string& server = "PUBSEQ_OS",
-                  const string& user = "anyone",
-                  const string& pswd = "allowed");
+    CPubseqReader(int max_connections = 0,
+                  const string& server = kEmptyStr,
+                  const string& user = kEmptyStr,
+                  const string& pswd = kEmptyStr);
+    CPubseqReader(const TPluginManagerParamTree* params,
+                  const string& driver_name);
 
     ~CPubseqReader();
 
@@ -94,11 +96,11 @@ protected:
     I_BaseCmd* x_SendRequest(const CBlob_id& blob_id,
                              CDB_Connection* db_conn,
                              const char* rpc);
-    CDB_Result* x_ReceiveData(CReaderRequestResult& result,
-                              const TBlobId& blob_id,
-                              I_BaseCmd& cmd,
-                              bool force_blob);
-
+    pair<AutoPtr<CDB_Result>, int> x_ReceiveData(CReaderRequestResult& result,
+                                                 const TBlobId& blob_id,
+                                                 I_BaseCmd& cmd,
+                                                 bool force_blob);
+    
 private:
     string                    m_Server;
     string                    m_User;
@@ -107,6 +109,8 @@ private:
     I_DriverContext*          m_Context;
     typedef map< TConn, AutoPtr<CDB_Connection> > TConnections;
     TConnections              m_Connections;
+
+    bool                      m_AllowGzip;
 };
 
 END_SCOPE(objects)

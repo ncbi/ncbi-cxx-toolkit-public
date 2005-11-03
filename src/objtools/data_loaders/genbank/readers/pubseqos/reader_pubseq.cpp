@@ -54,11 +54,17 @@
 #include <serial/serial.hpp>
 
 #include <util/rwstream.hpp>
+#include <util/compress/zlib.hpp>
 #include <corelib/plugin_manager_store.hpp>
+
+#define ALLOW_GZIPPED 1
 
 #define DEFAULT_DB_SERVER   "PUBSEQ_OS"
 #define DEFAULT_DB_USER     "anyone"
 #define DEFAULT_DB_PASSWORD "allowed"
+#define MAX_MT_CONN         5
+#define DEFAULT_NUM_CONN    2
+#define DEFAULT_ALLOW_GZIP  true
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -89,12 +95,20 @@ static int GetDebugLevel(void)
 #define RPC_GET_ASN         "id_get_asn"
 #define RPC_GET_BLOB_INFO   "id_get_blob_prop"
 
+enum {
+    fZipType_gzipped = 2
+};
+
 CPubseqReader::CPubseqReader(int max_connections,
                              const string& server,
                              const string& user,
                              const string& pswd)
-    : m_Server(server) , m_User(user), m_Password(pswd), m_Context(0)
+    : m_Server(server) , m_User(user), m_Password(pswd),
+      m_Context(0), m_AllowGzip(false)
 {
+    if ( max_connections <= 0 ) {
+        max_connections = DEFAULT_NUM_CONN;
+    }
     if ( m_Server.empty() ) {
         m_Server = DEFAULT_DB_SERVER;
     }
@@ -118,9 +132,53 @@ CPubseqReader::CPubseqReader(int max_connections,
 }
 
 
+CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
+                             const string& driver_name)
+    : m_Context(0), m_AllowGzip(false)
+{
+    CConfig conf(params);
+    TConn max_connections = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_NUM_CONN,
+        CConfig::eErr_NoThrow,
+        DEFAULT_NUM_CONN);
+    m_Server = conf.GetString(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_SERVER,
+        CConfig::eErr_NoThrow,
+        DEFAULT_DB_SERVER);
+    m_User = conf.GetString(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_USER,
+        CConfig::eErr_NoThrow,
+        DEFAULT_DB_USER);
+    m_Password = conf.GetString(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_PASSWORD,
+        CConfig::eErr_NoThrow,
+        DEFAULT_DB_PASSWORD);
+#ifdef ALLOW_GZIPPED
+    m_AllowGzip = conf.GetBool(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ_PARAM_GZIP,
+        CConfig::eErr_NoThrow,
+        DEFAULT_ALLOW_GZIP);
+#endif
+
+#if defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT)
+    if ( s_pubseq_readers.Add(1) > 1 ) {
+        s_pubseq_readers.Add(-1);
+        NCBI_THROW(CLoaderException, eNoConnection,
+                   "Attempt to open multiple pubseq_readers "
+                   "without MT-safe DB library");
+    }
+#endif
+
+    SetInitialConnections(max_connections);
+}
+
 CPubseqReader::~CPubseqReader()
 {
-
 #if !defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
     s_pubseq_readers.Add(-1);
 #endif
@@ -130,7 +188,7 @@ CPubseqReader::~CPubseqReader()
 int CPubseqReader::GetMaximumConnectionsLimit(void) const
 {
 #if defined(HAVE_SYBASE_REENTRANT) && defined(NCBI_THREADS)
-    return 1;
+    return MAX_MT_CONN;
 #else
     return 1;
 #endif
@@ -214,10 +272,19 @@ CDB_Connection* CPubseqReader::x_NewConnection(void)
 
     {{
         AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set blob_stream on"));
-        if ( cmd.get() ) {
+        if ( cmd ) {
             cmd->Send();
         }
     }}
+
+#ifdef ALLOW_GZIPPED
+    if ( m_AllowGzip ) {
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set accept gzip"));
+        if ( cmd ) {
+            cmd->Send();
+        }
+    }
+#endif
     
     return conn.release();
 }
@@ -625,8 +692,7 @@ void CPubseqReader::GetBlobVersion(CReaderRequestResult& result,
             CDB_Connection* db_conn = x_GetConnection(conn);
             AutoPtr<I_BaseCmd> cmd
                 (x_SendRequest2(blob_id, db_conn, RPC_GET_BLOB_INFO));
-            AutoPtr<CDB_Result> dbr
-                (x_ReceiveData(result, blob_id, *cmd, false));
+            x_ReceiveData(result, blob_id, *cmd, false);
         }}
         conn.Release();
         if ( !blob_id.IsMainBlob() ) {
@@ -654,9 +720,10 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
     {{
         CDB_Connection* db_conn = x_GetConnection(conn);
         AutoPtr<I_BaseCmd> cmd(x_SendRequest(blob_id, db_conn, RPC_GET_ASN));
-        AutoPtr<CDB_Result> dbr(x_ReceiveData(result, blob_id, *cmd, true));
-        if ( dbr.get() ) {
-            CDB_Result_Reader reader(dbr.get());
+        pair<AutoPtr<CDB_Result>, int> dbr
+            (x_ReceiveData(result, blob_id, *cmd, true));
+        if ( dbr.first ) {
+            CDB_Result_Reader reader(dbr.first.get());
             CRStream stream(&reader);
             CProcessor::EType processor_type;
             if ( blob_id.GetSubSat() == eSubSat_SNP ) {
@@ -665,8 +732,21 @@ void CPubseqReader::GetBlob(CReaderRequestResult& result,
             else {
                 processor_type = CProcessor::eType_Seq_entry;
             }
-            m_Dispatcher->GetProcessor(processor_type)
-                .ProcessStream(result, blob_id, chunk_id, stream);
+            if ( dbr.second & fZipType_gzipped ) {
+                //LOG_POST("Compressed blob: " << blob_id.ToString());
+                CCompressionIStream unzip(stream,
+                                          new CZipStreamDecompressor,
+                                          CCompressionIStream::fOwnProcessor);
+                m_Dispatcher->GetProcessor(processor_type)
+                    .ProcessStream(result, blob_id, chunk_id, unzip);
+                //LOG_POST("Compressed blob: " << blob_id.ToString() << " read.");
+            }
+            else {
+                //LOG_POST("Non-compressed blob: " << blob_id.ToString());
+                m_Dispatcher->GetProcessor(processor_type)
+                    .ProcessStream(result, blob_id, chunk_id, stream);
+                //LOG_POST("Non-compressed blob: " << blob_id.ToString() << " read.");
+            }
         }
         else {
             SetAndSaveNoBlob(result, blob_id, chunk_id);
@@ -695,22 +775,23 @@ I_BaseCmd* CPubseqReader::x_SendRequest(const CBlob_id& blob_id,
 }
 
 
-CDB_Result* CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
-                                         const TBlobId& blob_id,
-                                         I_BaseCmd& cmd,
-                                         bool force_blob)
+pair<AutoPtr<CDB_Result>, int>
+CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
+                             const TBlobId& blob_id,
+                             I_BaseCmd& cmd,
+                             bool force_blob)
 {
-    AutoPtr<CDB_Result> ret;
-
-    CLoadLockBlob blob(result, blob_id);
+    pair<AutoPtr<CDB_Result>, int> ret;
 
     enum {
         kState_dead = 125
     };
-
     TBlobState blob_state = 0;
+
+    CLoadLockBlob blob(result, blob_id);
+
     // new row
-    while( !ret.get() && cmd.HasMoreResults() ) {
+    while( !ret.first && cmd.HasMoreResults() ) {
         _TRACE("next result");
         if ( cmd.HasFailed() ) {
             break;
@@ -721,7 +802,7 @@ CDB_Result* CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
             continue;
         }
         
-        while ( !ret.get() && dbr->Fetch() ) {
+        while ( !ret.first && dbr->Fetch() ) {
             _TRACE("next fetch: " << dbr->NofItems() << " items");
             for ( unsigned pos = 0; pos < dbr->NofItems(); ++pos ) {
                 const string& name = dbr->ItemName(pos);
@@ -771,8 +852,14 @@ CDB_Result* CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
                         blob_state |= CBioseq_Handle::fState_dead;
                     }
                 }
+                else if ( name == "zip_type" ) {
+                    CDB_Int v;
+                    dbr->GetItem(&v);
+                    _TRACE("zip_type: "<<v.Value());
+                    ret.second = v.Value();
+                }
                 else if ( name == "asn1" ) {
-                    ret.reset(dbr.release());
+                    ret.first.reset(dbr.release());
                     break;
                 }
                 else {
@@ -806,12 +893,12 @@ CDB_Result* CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
             }
         }
     }
-    if ( !ret.get() && force_blob ) {
+    if ( !ret.first && force_blob ) {
         // no data
         blob_state |= CBioseq_Handle::fState_no_data;
     }
     m_Dispatcher->SetAndSaveBlobState(result, blob_id, blob, blob_state);
-    return ret.release();
+    return ret;
 }
 
 END_SCOPE(objects)
@@ -851,27 +938,7 @@ public:
         }
         if (version.Match(NCBI_INTERFACE_VERSION(objects::CReader)) 
                             != CVersionInfo::eNonCompatible) {
-            objects::CReader::TConn noConn = GetParamDataSize(
-                params,
-                NCBI_GBLOADER_READER_PUBSEQ_PARAM_NUM_CONN,
-                false,
-                2);
-            string server =
-                GetParam(params,
-                         NCBI_GBLOADER_READER_PUBSEQ_PARAM_SERVER,
-                         false,
-                         kEmptyStr);
-            string user =
-                GetParam(params,
-                         NCBI_GBLOADER_READER_PUBSEQ_PARAM_USER,
-                         false,
-                         kEmptyStr);
-            string password =
-                GetParam(params,
-                         NCBI_GBLOADER_READER_PUBSEQ_PARAM_PASSWORD,
-                         false,
-                         kEmptyStr);
-            drv = new objects::CPubseqReader(noConn, server, user, password);
+            drv = new objects::CPubseqReader(params, driver);
         }
         return drv;
     }
