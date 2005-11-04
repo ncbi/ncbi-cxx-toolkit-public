@@ -343,7 +343,6 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
 {
     if (!key.empty()) {
         CNetCache_Key blob_key(key);
-        //CNetCache_ParseBlobKey(&blob_key, key);
     
         size_t bsize = 0;
         IReader* rdr;
@@ -352,7 +351,7 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
             (blob_key.port == m_Port)) {
 
             CNC_BoolGuard bg(&m_StickToHost);
-            rdr = TParent::GetData(key, &bsize);
+            rdr = TParent::GetData(key, &bsize, lock_mode);
             m_RWBytes += bsize;
             ++m_Requests;
 
@@ -365,7 +364,7 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
 
     CNetCacheClient cl(m_ClientName);
     cl.SetClientNameComment(m_ClientNameComment);
-    IReader* rd = cl.GetData(key, blob_size);
+    IReader* rd = cl.GetData(key, blob_size, lock_mode);
     if (rd == 0) {
         return rd; // BLOB not found
     }
@@ -493,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/11/04 19:10:41  kuznets
+ * Fixed bug with passing no-wait flag to the server
+ *
  * Revision 1.26  2005/10/25 19:11:09  kuznets
  * Added non blocking blob get
  *
