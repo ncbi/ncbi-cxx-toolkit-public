@@ -37,6 +37,7 @@
 #include <corelib/ncbistl.hpp>
 
 #include <list>
+#include <vector>
 
 class wxWindow;
 
@@ -89,7 +90,7 @@ public:
     //  Note that these rows are *not* excluded from block-size changing refinements.
     //  Any previous list of excluded rows is erased first (unless clearOldList is false).
     //  Return false if couldn't set the rows to exclude.
-    bool SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRows, bool clearOldList = true);
+    bool SetRowsToExcludeFromLNO(const std::vector<unsigned int>& excludedRows, bool clearOldList = true);
 
 private:
 
@@ -114,6 +115,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/11/04 12:27:49  thiessen
+* oops, missed another std::
+*
 * Revision 1.4  2005/11/04 12:25:45  thiessen
 * use std:: in header
 *
