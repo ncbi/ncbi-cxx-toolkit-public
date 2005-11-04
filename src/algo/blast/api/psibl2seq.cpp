@@ -36,21 +36,18 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/psibl2seq.hpp>
-#include <algo/blast/api/setup_factory.hpp>
-#include <algo/blast/api/seqsrc_query_factory.hpp>
-#include <algo/blast/api/objmgrfree_query_data.hpp>
-#include <algo/blast/api/traceback_stage.hpp>
-#include "blast_seqalign.hpp"
-#include "prelim_search_runner.hpp"
-#include "seqinfosrc_bioseq.hpp"
-#include "psiblast_aux_priv.hpp"
+#include "subject_psi_sequences.hpp"
+#include "psiblast_impl.hpp"
 
-// Object includes
-#include <objects/scoremat/Pssm.hpp>
-#include <objects/scoremat/PssmFinalData.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
-#include <objects/scoremat/PssmIntermediateData.hpp>
-#include <objects/seqset/Seq_entry.hpp>
+
+//#include <algo/blast/api/blast_subject.hpp>
+#include <corelib/ncbiobj.hpp>
+#include <algo/blast/api/query_data.hpp>
+#include <algo/blast/api/blast_options.hpp>
+#include <algo/blast/api/blast_options_handle.hpp>
+#include <algo/blast/api/blast_prot_options.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -64,149 +61,47 @@ BEGIN_SCOPE(blast)
 CPsiBl2Seq::CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
                        CRef<IQueryFactory> subject,
                        CConstRef<CPSIBlastOptionsHandle> options)
-: m_Pssm(pssm), m_Query(0), m_Subject(subject), m_OptsHandle(options)
+: m_Subject(0), m_Impl(0)
 {
-    x_Validate();
-    x_ExtractQueryFromPssm();
-    x_CreatePssmScoresFromFrequencyRatios();
+    m_Subject = new CBlastSubjectSeqs
+        (subject, CConstRef<CBlastOptionsHandle>(options.GetPointer()));
+    try {
+        m_Impl = new CPsiBlastImpl(pssm, m_Subject, options);
+    } catch (const CBlastException& e) {
+        delete m_Subject;
+        throw;
+    }
 }
 
 CPsiBl2Seq::CPsiBl2Seq(CRef<IQueryFactory> query,
                        CRef<IQueryFactory> subject,
                        CConstRef<CBlastProteinOptionsHandle> options)
-: m_Pssm(0), m_Query(query), m_Subject(subject), m_OptsHandle(options)
+: m_Subject(0), m_Impl(0)
 {
-    x_Validate();
-}
-
-void
-CPsiBl2Seq::x_Validate()
-{
-    // Either PSSM or a protein query must be provided
-    if (m_Pssm.NotEmpty()) {
-        CPsiBlastValidate::Pssm(*m_Pssm);
-    } else if (m_Query.NotEmpty()) {
-        CPsiBlastValidate::QueryFactory(m_Query, *m_OptsHandle);
-    } else {
-        NCBI_THROW(CBlastException, eInvalidArgument, "Missing query or pssm");
-    }
-
-    // Options validation
-    if (m_OptsHandle.Empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, "Missing options");
-    }
-    m_OptsHandle->Validate();
-
-    // Subject sequence(s) sanity checks
-    if (m_Subject.Empty()) {
-        NCBI_THROW(CBlastException, eInvalidArgument, 
-                   "Missing subject sequence data source");
-    } else {
-        CPsiBlastValidate::QueryFactory(m_Subject, *m_OptsHandle, 
-                                        CPsiBlastValidate::eQFT_Subject);
+    m_Subject = new CBlastSubjectSeqs
+        (subject, CConstRef<CBlastOptionsHandle>(options.GetPointer()));
+    try {
+        m_Impl = new CPsiBlastImpl(query, m_Subject, options);
+    } catch (const CBlastException& e) {
+        delete m_Subject;
+        throw;
     }
 }
 
-void
-CPsiBl2Seq::x_CreatePssmScoresFromFrequencyRatios()
+CPsiBl2Seq::~CPsiBl2Seq()
 {
-    if ( !m_Pssm->GetPssm().CanGetFinalData() ||
-         !m_Pssm->GetPssm().GetFinalData().CanGetScores() ||
-         m_Pssm->GetPssm().GetFinalData().GetScores().empty() ) {
-        PsiBlastComputePssmScores(m_Pssm, m_OptsHandle->GetOptions());
+    if (m_Impl) {
+        delete m_Impl;
     }
-}
-
-void
-CPsiBl2Seq::x_ExtractQueryFromPssm()
-{
-    CConstRef<CBioseq> query_bioseq(&m_Pssm->GetPssm().GetQuery().GetSeq());
-    m_Query.Reset(new CObjMgrFree_QueryFactory(query_bioseq));
-}
-
-static CRef<SInternalData> 
-s_SetUpInternalDataStructures(CRef<IQueryFactory> query_factory,
-                              CRef<IQueryFactory> subject_factory, 
-                              CConstRef<CPssmWithParameters> pssm,
-                              const CBlastOptions& options)
-{
-    CRef<SInternalData> retval(new SInternalData);
-    const EBlastProgramType kProgram(options.GetProgramType());
-
-    // 1. Initialize the query data (borrow it from the factory)
-    CRef<ILocalQueryData> query_data = 
-        query_factory->MakeLocalQueryData(&options);
-    retval->m_Queries = query_data->GetSequenceBlk();
-    retval->m_QueryInfo = query_data->GetQueryInfo();
-
-    // 2. Create the options memento
-    CConstRef<CBlastOptionsMemento> opts_memento(options.CreateSnapshot());
-
-    // 3. Create the BlastScoreBlk
-    BlastSeqLoc* lookup_segments(0);
-    BlastScoreBlk* sbp =
-        CSetupFactory::CreateScoreBlock(opts_memento, query_data,
-                                        &lookup_segments);
-    retval->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp, BlastScoreBlkFree));
-    if (pssm.NotEmpty()) {
-        PsiBlastSetupScoreBlock(sbp, pssm);
+    if (m_Subject) {
+        delete m_Subject;
     }
-
-    // 4. Create lookup table
-    LookupTableWrap* lut =
-        CSetupFactory::CreateLookupTable(query_data, opts_memento, 
-                                         retval->m_ScoreBlk->GetPointer(), 
-                                         lookup_segments);
-    retval->m_LookupTable.Reset(new TLookupTableWrap(lut, LookupTableWrapFree));
-    lookup_segments = BlastSeqLocFree(lookup_segments);
-    ASSERT(lookup_segments == NULL);
-
-    // 5. Create diagnostics
-    BlastDiagnostics* diags = CSetupFactory::CreateDiagnosticsStructure();
-    retval->m_Diagnostics.Reset(new TBlastDiagnostics(diags, 
-                                                      Blast_DiagnosticsFree));
-
-    // 6. Create HSP stream
-    BlastHSPStream* hsp_stream = 
-        CSetupFactory::CreateHspStream(opts_memento, 
-                                       query_data->GetNumQueries());
-    retval->m_HspStream.Reset(new TBlastHSPStream(hsp_stream, 
-                                                  BlastHSPStreamFree));
-
-    // 7. Set up the BlastSeqSrc
-    BlastSeqSrc* seqsrc(QueryFactoryBlastSeqSrcInit(subject_factory, kProgram));
-    retval->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
-
-    return retval;
 }
 
 CRef<CSearchResults>
 CPsiBl2Seq::Run()
 {
-    int status(0);
-    const CBlastOptions& opts = m_OptsHandle->GetOptions();
-    CRef<SInternalData> core_data(s_SetUpInternalDataStructures(m_Query, 
-                                                                m_Subject, 
-                                                                m_Pssm,
-                                                                opts));
-
-    CConstRef<CBlastOptionsMemento> opts_memento(opts.CreateSnapshot());
-    status = CPrelimSearchRunner(*core_data, opts_memento)();
-    if (status) {
-        string msg("Preliminary search failed with status ");
-        msg += NStr::IntToString(status);
-        NCBI_THROW(CBlastException, eCoreBlastError, msg);
-    }
-
-    bool is_prot = BlastSeqSrcGetIsProt
-        (core_data->m_SeqSrc->GetPointer()) ? true : false;
-    CRef<IRemoteQueryData> subject_data(m_Subject->MakeRemoteQueryData());
-    CRef<CBioseq_set> subject_bioseqs(subject_data->GetBioseqSet());
-    CBioseqSeqInfoSrc seqinfo_src(*subject_bioseqs, is_prot);
-
-    CBlastTracebackSearch tback(m_Query, core_data, opts, seqinfo_src);
-    m_Results = tback.Run();
-    return CRef<CSearchResults>(&m_Results[0]);
+    return m_Impl->Run();
 }
 
 END_SCOPE(blast)

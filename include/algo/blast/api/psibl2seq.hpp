@@ -52,55 +52,52 @@ BEGIN_SCOPE(blast)
 // Forward declarations
 class IQueryFactory;
 
-/// Runs the PSI-BLAST algorithm between 2 sequences.
-
+/// Runs a single iteration of the PSI-BLAST algorithm between 2 sequences.
 class NCBI_XBLAST_EXPORT CPsiBl2Seq : public CObject
 {
 public:
     /// Constructor to compare a PSSM against protein sequences
-    ///
-    /// @param pssm PSSM to use as query. This must contain the query sequence
-    /// which represents the master sequence for the PSSM. PSSM data might be
-    /// provided as scores or as frequency ratios, in which case the PSSM 
-    /// engine will be invoked to convert them to scores (and save them as a
-    /// effect). If both the scores and frequency ratios are provided, the 
-    /// scores are given priority and are used in the search. [in|out]
-    /// @todo how should scaled PSSM scores be handled?
-    ///
-    /// @param subject Subject sequence(s) to search [in]
-    ///
-    /// @param options PSI-BLAST options [in]
+    /// @param pssm 
+    ///     PSSM to use as query. This must contain the query sequence which
+    ///     represents the master sequence for the PSSM. PSSM data might be
+    ///     provided as scores or as frequency ratios, in which case the PSSM 
+    ///     engine will be invoked to convert them to scores (and save them as a
+    ///     effect). If both the scores and frequency ratios are provided, the 
+    ///     scores are given priority and are used in the search. [in|out]
+    ///     @todo how should scaled PSSM scores be handled?
+    /// @param subject 
+    ///     Subject sequence(s) to search [in]
+    /// @param options 
+    ///     PSI-BLAST options [in]
     CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
                CRef<IQueryFactory> subject,
                CConstRef<CPSIBlastOptionsHandle> options);
 
     /// Constructor to compare two protein sequences in an object manager-free
     /// manner.
-    /// @param query Protein query sequence to search (only 1 is allowed!) [in]
-    /// @param subject Protein nucleotide sequence to search [in]
-    /// @param options Protein options [in]
+    /// @param query 
+    ///     Protein query sequence to search (only 1 is allowed!) [in]
+    /// @param subject 
+    ///     Protein sequence to search [in]
+    /// @param options 
+    ///     Protein options [in]
     CPsiBl2Seq(CRef<IQueryFactory> query,
                CRef<IQueryFactory> subject,
                CConstRef<CBlastProteinOptionsHandle> options);
+
+    /// Destructor
+    ~CPsiBl2Seq();
 
     /// Run the PSI-BLAST 2 Sequences engine
     CRef<CSearchResults> Run();
 
 private:
-    /// PSSM to be used as query
-    CRef<objects::CPssmWithParameters> m_Pssm; 
 
-    /// Query sequence (either extracted from PSSM or provided in constructor
-    CRef<IQueryFactory> m_Query;
+    /// Interface pointer to PSI-BLAST subject abstraction
+    class IPsiBlastSubject* m_Subject;
 
-    /// Subject sequences
-    CRef<IQueryFactory> m_Subject;  
-
-    /// Options to use 
-    CConstRef<CBlastOptionsHandle> m_OptsHandle;
-
-    /// Holds a reference to the results
-    CSearchResultSet m_Results;
+    /// Implementation class
+    class CPsiBlastImpl* m_Impl;
 
     /// Prohibit copy constructor
     CPsiBl2Seq(const CPsiBl2Seq& rhs);
@@ -108,15 +105,6 @@ private:
     /// Prohibit assignment operator
     CPsiBl2Seq& operator=(const CPsiBl2Seq& rhs);
 
-    /// Perform sanity checks on input parameters
-    void x_Validate();
-
-    /// Computes the PSSM scores in case these are not available in the PSSM
-    void x_CreatePssmScoresFromFrequencyRatios();
-
-    /// Auxiliary function to get the query sequence data from the ASN.1 PSSM
-    /// Post-condition: (m_Query.Empty() == false)
-    void x_ExtractQueryFromPssm();
 };
 
 END_SCOPE(blast)
@@ -128,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/11/04 13:26:23  camacho
+* Use CPsiBlastImpl class
+*
 * Revision 1.5  2005/10/20 12:48:29  camacho
 * Doxygen fix
 *
