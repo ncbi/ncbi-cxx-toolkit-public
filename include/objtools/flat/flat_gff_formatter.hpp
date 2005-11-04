@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJTOOLS_FLAT___FLAT_GFF_FORMATTER__HPP
 #define OBJTOOLS_FLAT___FLAT_GFF_FORMATTER__HPP
 
@@ -118,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/11/04 15:02:22  dicuccio
+ * Add explicit #error to catch compilation use
+ *
  * Revision 1.5  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *

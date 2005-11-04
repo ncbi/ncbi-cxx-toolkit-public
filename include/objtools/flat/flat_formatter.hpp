@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_FORMATTER__HPP
 #define OBJECTS_FLAT___FLAT_FORMATTER__HPP
 
@@ -209,6 +210,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/11/04 15:02:22  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.7  2005/06/03 16:21:34  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

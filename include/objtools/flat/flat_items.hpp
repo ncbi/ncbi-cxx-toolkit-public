@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_ITEMS__HPP
 #define OBJECTS_FLAT___FLAT_ITEMS__HPP
 
@@ -275,6 +276,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/11/04 15:02:22  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.6  2003/09/19 00:22:45  ucko
 * CFlatPrimary: use an unsigned range per CAlnMap::GetSeqRange's new rettype.
 *

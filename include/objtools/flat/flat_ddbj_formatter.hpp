@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_DDBJ_FORMATTER__HPP
 #define OBJECTS_FLAT___FLAT_DDBJ_FORMATTER__HPP
 
@@ -59,6 +60,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/11/04 15:02:22  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.3  2003/10/09 17:01:48  dicuccio
 * Added export specifiers
 *

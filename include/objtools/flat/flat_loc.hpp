@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_LOC__HPP
 #define OBJECTS_FLAT___FLAT_LOC__HPP
 
@@ -108,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/11/04 15:02:22  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.3  2003/03/28 19:02:43  ucko
 * Add flags to intervals.
 *

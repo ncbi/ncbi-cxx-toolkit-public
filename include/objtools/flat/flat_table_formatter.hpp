@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_TABLE_FORMATTER__HPP
 #define OBJECTS_FLAT___FLAT_TABLE_FORMATTER__HPP
 
@@ -79,6 +80,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/11/04 15:02:23  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.5  2003/10/09 17:01:49  dicuccio
 * Added export specifiers
 *

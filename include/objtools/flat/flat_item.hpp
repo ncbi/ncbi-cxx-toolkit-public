@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_ITEM__HPP
 #define OBJECTS_FLAT___FLAT_ITEM__HPP
 
@@ -109,6 +110,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/11/04 15:02:22  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.4  2003/04/10 20:08:22  ucko
 * Arrange to pass the item as an argument to IFlatTextOStream::AddParagraph
 *

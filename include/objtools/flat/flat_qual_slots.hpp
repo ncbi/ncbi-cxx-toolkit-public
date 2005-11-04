@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_QUAL_SLOTS__HPP
 #define OBJECTS_FLAT___FLAT_QUAL_SLOTS__HPP
 
@@ -224,6 +225,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/11/04 15:02:23  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.1  2003/03/10 16:39:08  ucko
 * Initial check-in of new flat-file generator
 *

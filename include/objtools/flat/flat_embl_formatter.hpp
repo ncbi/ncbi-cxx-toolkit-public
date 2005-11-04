@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_EMBL_FORMATTER__HPP
 #define OBJECTS_FLAT___FLAT_EMBL_FORMATTER__HPP
 
@@ -86,6 +87,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/11/04 15:02:22  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.7  2003/10/11 19:28:35  ucko
 * Made the XX paragraph a normal member to avoid trouble when statically
 * linked into multiple plugins.

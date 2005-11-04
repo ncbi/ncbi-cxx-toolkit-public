@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_FEATURE__HPP
 #define OBJECTS_FLAT___FLAT_FEATURE__HPP
 
@@ -286,6 +287,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/11/04 15:02:22  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.6  2003/10/17 20:57:53  ucko
 * IFlattishFeature: also expose the underlying Seq-feat to permit
 * additional filtering prior to actual formatting.

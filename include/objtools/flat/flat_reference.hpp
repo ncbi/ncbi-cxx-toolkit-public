@@ -1,3 +1,4 @@
+#error don't include me
 #ifndef OBJECTS_FLAT___FLAT_REFERENCE__HPP
 #define OBJECTS_FLAT___FLAT_REFERENCE__HPP
 
@@ -162,6 +163,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/11/04 15:02:23  dicuccio
+* Add explicit #error to catch compilation use
+*
 * Revision 1.5  2005/03/31 13:11:33  dicuccio
 * Added export specifiers.  Implemented dtor, added hidden copy ctor/alignment
 * operator to satisfy requirements of predeclaration.
