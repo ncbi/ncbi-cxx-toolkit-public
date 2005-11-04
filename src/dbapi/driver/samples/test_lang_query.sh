@@ -186,8 +186,11 @@ EOF
             if test \( $driver = "ftds" -a $server = $server_mssql \) -o \
                     \( $driver != "ftds" -a $driver != "msdblib" \); then
 
-                cmd="dbapi_bcp -d $driver -S $server"
-                RunSimpleTest "dbapi_bcp"
+                # ODBC driver doen't support BCP at all.
+                if test $driver != "odbc" ; then
+                    cmd="dbapi_bcp -d $driver -S $server"
+                    RunSimpleTest "dbapi_bcp"
+                fi
 
                 cmd="dbapi_testspeed -d $driver -S $server"
                 RunSimpleTest "dbapi_testspeed"
