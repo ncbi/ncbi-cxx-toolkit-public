@@ -38,6 +38,8 @@ static char const rcsid[] =
 #include <objects/seqloc/Seq_id.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/psiblast_iteration.hpp>
+#include <algo/blast/api/psiblast_options.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 
 /** @addtogroup AlgoBlast
  *
