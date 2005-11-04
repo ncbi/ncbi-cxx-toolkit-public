@@ -2748,11 +2748,10 @@ s_SplitArrayOf8(const array_of_8* input, const array_of_8** normal, const array_
  * the two arrays (normal and linear) should be filled in with values already.
  * @param normal the values for normal (e.g, "affine") gap costs [in|out]
  * @param linear specialized values used for megablast [in|out]
- * @param array_size Number of supported combinations for this match/mismatch
- *                   pair [out]
+ * @param size Number of supported combinations for this match/mismatch pair [out]
  * @param gap_existence_max start of infinite regime for gap existence [in|out]
- * @param gap_extension_max start of infinite regime for gap extension [in|out]
- * @param multiplier multiplier for gap costs [out]
+ * @param gap_extend_max start of infinite regime for gap extension [in|out]
+ * @param divisor divisor for gap costs [out]
 */
 static Int2
 s_AdjustGapParametersByGcd(array_of_8* normal, array_of_8* linear, int size, Int4* gap_existence_max, Int4* gap_extend_max, int divisor)
@@ -4305,6 +4304,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.135  2005/11/04 13:48:09  madden
+ * Doxygen fixes
+ *
  * Revision 1.134  2005/11/01 18:49:01  madden
  * Changes to s_GetNuclValuesArray and calling functions to support (for blastn) reward and penalty values that are multiples of already supported values
  *
