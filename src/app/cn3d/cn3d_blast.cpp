@@ -68,6 +68,8 @@ public:
     int fromIndex, toIndex;
 };
 
+typedef vector < CRef < TruncatedSequence > > TruncatedSequences;
+
 static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAlignment *multiple,
     const BlockMultipleAlignment *pair, int alnNum, bool isMaster, int extension)
 {
@@ -131,7 +133,7 @@ static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAli
     ts->truncatedSequence.Reset(new CSeq_entry);
     CBioseq& bioseq = ts->truncatedSequence->SetSeq();
     CRef < CSeq_id > id(new CSeq_id);
-    id->SetLocal().SetStr(NStr::IntToString(alnNum));
+    id->SetLocal().SetId(alnNum);
     bioseq.SetId().push_back(id);
     bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
     bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
@@ -144,15 +146,66 @@ static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAli
     return ts;
 }
 
+static inline bool IsLocalID(const CSeq_id& sid, int localID)
+{
+    return (sid.IsLocal() && (
+        (sid.GetLocal().IsStr() && sid.GetLocal().GetStr() == NStr::IntToString(localID)) ||
+        (sid.GetLocal().IsId() && sid.GetLocal().GetId() == localID)));
+}
+
+static inline bool GetLocalID(const CSeq_id& sid, int *localID)
+{
+    *localID = kMin_Int;
+    if (!sid.IsLocal())
+        return false;
+    if (sid.GetLocal().IsId())
+        *localID = sid.GetLocal().GetId();
+    else try {
+        *localID = NStr::StringToInt(sid.GetLocal().GetStr());
+    } catch (...) {
+        return false;
+    }
+    return true;
+}
+
 static bool SeqIdMatchesMaster(const CSeq_id& sid, const Sequence *master, bool usePSSM)
 {
     // if blast-sequence-vs-pssm, master will be Sequence master
     if (usePSSM)
         return (master->identifier->MatchesSeqId(sid));
 
-    // if blast-two-sequences, master will be local str "-1"
+    // if blast-two-sequences, master will be local id -1
     else
-        return (sid.IsLocal() && sid.GetLocal().IsStr() && sid.GetLocal().GetStr() == "-1");
+        return IsLocalID(sid, -1);
+}
+
+static bool SortResultsByLocalID(CSeq_align_set *results)
+{
+    vector < CRef < CSeq_align > > newList(results->Get().size());
+
+    CSeq_align_set::Tdata::iterator a, ae = results->Set().end();
+    for (a=results->Set().begin(); a!=ae; ++a) {
+
+        // find localID in each alignment
+        if (!(*a)->GetSegs().IsDisc() || (*a)->GetSegs().GetDisc().Get().size() == 0)
+            return false;
+        const CSeq_align& sa = (*a)->GetSegs().GetDisc().Get().front().GetObject();
+        int localID;
+        if (sa.GetSegs().IsDenseg() && sa.GetSegs().GetDenseg().GetIds().size() == 2 &&
+                GetLocalID(sa.GetSegs().GetDenseg().GetIds().back().GetObject(), &localID) &&
+                localID >= 0 && localID < (int)newList.size())
+            newList[localID] = *a;
+        else
+            return false;
+    }
+
+    results->Set().clear();
+    for (unsigned int i=0; i<newList.size(); ++i)
+        if (newList[i].Empty())
+            return false;
+        else
+            results->Set().push_back(newList[i]);
+    return true;
 }
 
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
@@ -178,7 +231,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             WARNINGMSG("Can't get footprint residue extension from registry");
 
         // collect subject(s) - second sequence of each realignment
-        vector < CRef < TruncatedSequence > > subjectTSs;
+        TruncatedSequences subjectTSs;
         CBioseq_set bss;
         int localID = 0;
         AlignmentList::const_iterator a, ae = toRealign.end();
@@ -237,14 +290,17 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 
         // actually do the alignment(s)
         CRef < blast::CSearchResults > results = blastEngine->Run();
-        string err;
-        WriteASNToFile("Seq-align-set.txt", results->GetSeqAlign().GetObject(), false, &err);
+//        string err;
+//        WriteASNToFile("Seq-align-set.txt", results->GetSeqAlign().GetObject(), false, &err);
 
         // parse the alignments
-        if (results->GetSeqAlign()->Get().size() != toRealign.size()) {
-            ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - bad # result alignments");
+        if (results->GetSeqAlign()->Get().size() != toRealign.size() ||
+            !SortResultsByLocalID(const_cast<CSeq_align_set*>(results->GetSeqAlign().GetPointer())))
+        {
+            ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - bad result alignments");
             return;
         }
+
         CSeq_align_set::Tdata::const_iterator r, re = results->GetSeqAlign()->Get().end();
         localID = 0;
         for (r=results->GetSeqAlign()->Get().begin(); r!=re; ++r, ++localID) {
@@ -279,8 +335,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                             (int)ds.GetLens().size() != ds.GetNumseg() || (int)ds.GetStarts().size() != 2 * ds.GetNumseg()) {
                         ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (denseg dims)");
                     } else if (!SeqIdMatchesMaster(ds.GetIds().front().GetObject(), master, usePSSM) ||
-                            !ds.GetIds().back()->IsLocal() || !ds.GetIds().back()->GetLocal().IsStr() ||
-                            ds.GetIds().back()->GetLocal().GetStr() != NStr::IntToString(localID)) {
+                               !IsLocalID(ds.GetIds().back().GetObject(), localID)) {
                         ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (ids)");
                     } else {
                         // unpack segs
@@ -435,6 +490,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/11/04 23:50:29  thiessen
+* work around result ordering issue
+*
 * Revision 1.42  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
