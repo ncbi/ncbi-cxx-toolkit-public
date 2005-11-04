@@ -60,7 +60,7 @@ CPsiBlast::CPsiBlast(CRef<IQueryFactory> query_factory,
             (query_factory, 
              m_Subject, 
              CConstRef<CBlastProteinOptionsHandle>(options.GetPointer()));
-    } catch (const CBlastException& e) {
+    } catch (const CBlastException&) {
         delete m_Subject;
         throw;
     }
@@ -72,7 +72,7 @@ CPsiBlast::CPsiBlast(CRef<CPssmWithParameters> pssm,
 : m_Subject(new CBlastSubjectDb(dbinfo)), m_Impl(0)
 {
     try { m_Impl = new CPsiBlastImpl(pssm, m_Subject, options); }
-    catch (const CBlastException& e) {
+    catch (const CBlastException&) {
         delete m_Subject;
         throw;
     }

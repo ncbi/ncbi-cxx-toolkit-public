@@ -67,7 +67,7 @@ CPsiBl2Seq::CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
         (subject, CConstRef<CBlastOptionsHandle>(options.GetPointer()));
     try {
         m_Impl = new CPsiBlastImpl(pssm, m_Subject, options);
-    } catch (const CBlastException& e) {
+    } catch (const CBlastException&) {
         delete m_Subject;
         throw;
     }
@@ -82,7 +82,7 @@ CPsiBl2Seq::CPsiBl2Seq(CRef<IQueryFactory> query,
         (subject, CConstRef<CBlastOptionsHandle>(options.GetPointer()));
     try {
         m_Impl = new CPsiBlastImpl(query, m_Subject, options);
-    } catch (const CBlastException& e) {
+    } catch (const CBlastException&) {
         delete m_Subject;
         throw;
     }

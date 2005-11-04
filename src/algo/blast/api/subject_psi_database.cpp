@@ -71,7 +71,7 @@ CBlastSubjectDb::Validate()
                 : CSeqDB::eNucleotide;
             vector<string> paths;
             CSeqDB::FindVolumePaths(db_name, mol_type, paths);
-        } catch (const CSeqDBException& e) {
+        } catch (const CSeqDBException&) {
             string msg("Could not find ");
             msg += is_prot ? "protein" : "nucleotide";
             msg += " database '" + db_name + "'";
