@@ -34,7 +34,7 @@
 #ifndef CN3D_SEQUENCE_SET__HPP
 #define CN3D_SEQUENCE_SET__HPP
 
-#include <corelib/ncbistd.hpp> // must come first to avoid NCBI type clashes
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 
 #include <string>
@@ -43,8 +43,6 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-
-#include <objloc.h>
 
 #include "structure_base.hpp"
 
@@ -89,10 +87,9 @@ public:
     int GetOrSetMMDBLink(void) const;
     void AddMMDBAnnotTag(int mmdbID) const;
 
-    // Seq-id stuff (C++ and C)
+    // Seq-id stuff
     ncbi::objects::CSeq_id * CreateSeqId(void) const;
     void FillOutSeqId(ncbi::objects::CSeq_id *sid) const;
-    void AddCSeqId(SeqIdPtr *id, bool addAllTypes) const;
 
     // launch web browser with entrez page for this sequence
     void LaunchWebBrowserWithInfo(void) const;
@@ -109,6 +106,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.34  2005/10/27 22:53:03  thiessen
 * better handling of sequence descriptions
 *

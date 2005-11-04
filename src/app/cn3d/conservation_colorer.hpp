@@ -149,6 +149,7 @@ public:
     }
 };
 
+// screen residue to be in ncbistdaa
 extern char ScreenResidueCharacter(char original);
 
 END_SCOPE(Cn3D)
@@ -158,6 +159,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.17  2005/03/08 17:22:31  thiessen
 * apparently working C++ PSSM generation
 *

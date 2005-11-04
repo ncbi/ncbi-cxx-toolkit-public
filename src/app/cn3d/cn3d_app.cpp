@@ -34,7 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
-#include <ctools/ctools.h>
 #include <serial/objostr.hpp>
 
 #include <objects/mmdb1/Biostruc.hpp>
@@ -76,9 +75,6 @@
 #if defined(__WXGTK__) || defined(__WXMAC__)
     #include "cn3d.xpm"
 #endif
-
-#include <ncbi.h>
-#include <ncbienv.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -243,7 +239,6 @@ Cn3DApp::Cn3DApp() : wxApp() /*wxGLApp()*/
     UnsetDiagTraceFlag(eDPF_File);
     UnsetDiagTraceFlag(eDPF_Line);
 #endif
-    SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
 
     // C++ object verification
     CSerialObject::SetVerifyDataGlobal(eSerialVerifyData_Always);
@@ -502,7 +497,6 @@ bool Cn3DApp::OnInit(void)
 #else
     dataDir = programDir + "data" + wxFILE_SEP_PATH;
 #endif
-    Nlm_TransientSetAppParam("ncbi", "ncbi", "data", dataDir.c_str());
 
     INFOMSG("working dir: " << workingDir.c_str());
     INFOMSG("program dir: " << programDir.c_str());
@@ -643,6 +637,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.29  2005/10/26 18:55:30  thiessen
 * better handling of -n option
 *

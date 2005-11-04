@@ -54,7 +54,6 @@
 #include "cn3d_cache.hpp"
 #include "cn3d_tools.hpp"
 #include "asn_reader.hpp"
-#include "asn_converter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -298,6 +297,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.17  2005/10/19 17:28:18  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

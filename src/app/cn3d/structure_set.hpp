@@ -51,9 +51,6 @@
 #include <vector>
 #include <list>
 
-#include <objseq.h>
-#include <objloc.h>
-
 #include "structure_base.hpp"
 #include "vector_math.hpp"
 
@@ -210,10 +207,6 @@ public:
     const RejectList * GetRejects(void) const;
     void ShowRejects(void) const;
 
-    // creates Bioseq from Sequence; registed with SeqMgr and stored in BioseqMap
-    Bioseq * GetOrCreateBioseq(const Sequence *sequence);
-    void CreateAllBioseqs(const BlockMultipleAlignment *multiple);
-
     // adds a new Biostruc to the asn data, if appropriate
     bool AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc);
 
@@ -243,10 +236,6 @@ private:
     typedef std::map < unsigned int, NamePair > NameMap;
     NameMap nameMap;
     unsigned int lastAtomName;
-
-    // holds C Bioseqs associated with Sequences
-    typedef std::map < const Sequence *, Bioseq * > BioseqMap;
-    BioseqMap bioseqs;
 
     // for printing out distances between successively picked atoms
     Vector prevPickedAtomCoord;
@@ -311,6 +300,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.82  2005/10/19 17:28:19  thiessen
 * migrate to wxWidgets 2.6.2; handle signed/unsigned issue
 *

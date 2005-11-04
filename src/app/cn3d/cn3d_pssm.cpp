@@ -41,11 +41,6 @@
 #include <algo/blast/api/pssm_engine.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_encoding.h>
-// avoids conflicts between algo/blast stuff and C-toolkit stuff
-#undef INT1_MIN
-#undef INT1_MAX
-#undef INT2_MIN
-#undef INT2_MAX
 
 #include <objects/scoremat/scoremat__.hpp>
 
@@ -382,82 +377,7 @@ Cn3DPSSMInput::~Cn3DPSSMInput(void)
     delete[] masterNCBIStdaa;
 }
 
-static BLAST_Matrix * ConvertPSSMToBLASTMatrix(const CPssmWithParameters& pssm)
-{
-    TRACEMSG("converting CPssmWithParameters to BLAST_Matrix");
-
-    if (!pssm.GetPssm().IsSetFinalData())
-        PTHROW("ConvertPSSMToBLASTMatrix() - pssm must have finalData");
-    unsigned int nScores = pssm.GetPssm().GetNumRows() * pssm.GetPssm().GetNumColumns();
-    if (pssm.GetPssm().GetNumRows() != 26 || pssm.GetPssm().GetFinalData().GetScores().size() != nScores)
-        PTHROW("ConvertPSSMToBLASTMatrix() - bad matrix size");
-
-    BLAST_Matrix *matrix = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
-
-    // set BLAST_Matrix values
-    matrix->is_prot = pssm.GetPssm().GetIsProtein();
-    matrix->name = NULL;
-    matrix->rows = pssm.GetPssm().GetNumColumns() + 1;  // rows and columns are reversed in pssm vs BLAST_Matrix
-    matrix->columns = pssm.GetPssm().GetNumRows();
-    matrix->posFreqs = NULL;
-    if (pssm.GetPssm().GetFinalData().IsSetKappa())
-        matrix->karlinK = pssm.GetPssm().GetFinalData().GetKappa();
-    else
-        ERRORMSG("ConvertPSSMToBLASTMatrix() - missing Kappa");
-    matrix->original_matrix = NULL;
-
-    // allocate matrix
-    matrix->matrix = (Int4Ptr *) MemNew(matrix->rows * sizeof(Int4Ptr));
-    unsigned int i;
-    for (i=0; (int)i<matrix->rows; ++i)
-        matrix->matrix[i] = (Int4Ptr) MemNew(matrix->columns * sizeof(Int4));
-
-    // convert matrix
-    unsigned int r = 0, c = 0;
-    CPssmFinalData::TScores::const_iterator s = pssm.GetPssm().GetFinalData().GetScores().begin();
-    for (i=0; i<nScores; ++i, ++s) {
-
-        matrix->matrix[r][c] = *s / pssm.GetPssm().GetFinalData().GetScalingFactor();
-
-        // adjust for matrix layout in pssm
-        if (pssm.GetPssm().GetByRow()) {
-            ++r;
-            if ((int)r == pssm.GetPssm().GetNumColumns()) {
-                ++c;
-                r = 0;
-            }
-        } else {
-            ++c;
-            if ((int)c == pssm.GetPssm().GetNumRows()) {
-                ++r;
-                c = 0;
-            }
-        }
-    }
-
-    // Set the last row to BLAST_SCORE_MIN
-    for (i=0; (int)i<matrix->columns; i++)
-        matrix->matrix[matrix->rows - 1][i] = BLAST_SCORE_MIN;
-
-#ifdef DEBUG_PSSM
-    CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
-    if (ofs) {
-        ofs << "matrix->is_prot: " << (int) matrix->is_prot << '\n'
-            << "matrix->name: " << (matrix->name ? matrix->name : "(none)") << '\n'
-            << "matrix->rows: " << matrix->rows << '\n'
-            << "matrix->columns: " << matrix->columns << '\n';
-        for (r=0; (int)r<matrix->rows; ++r) {
-            for (c=0; (int)c<matrix->columns; ++c)
-                ofs << matrix->matrix[r][c] << ' ';
-            ofs << '\n';
-        }
-    }
-#endif
-
-    return matrix;
-}
-
-BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
+PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
 {
 #ifdef DEBUG_PSSM
     {{
@@ -465,11 +385,11 @@ BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
     }}
 #endif
 
-    BLAST_Matrix *matrix = NULL;
     try {
+        TRACEMSG("Creating PSSM...");
         Cn3DPSSMInput input(bma);
         CPssmEngine engine(&input);
-        CRef < CPssmWithParameters > pssm = engine.Run();
+        pssm = engine.Run();
 
 #ifdef DEBUG_PSSM
         CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
@@ -561,45 +481,70 @@ BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
         }
 #endif
 
-        matrix = ConvertPSSMToBLASTMatrix(*pssm);
+        UnpackMatrix();
+
+        // blast functions require a master (query) sequence to be present
+        if (!pssm->GetPssm().IsSetQuery())
+            pssm->SetPssm().SetQuery().SetSeq().Assign(bma->GetMaster()->bioseqASN.GetObject());
+
     } catch (exception& e) {
-        ERRORMSG("CreateBlastMatrix() failed with exception: " << e.what());
+        ERRORMSG("PSSMWrapper::PSSMWrapper() failed with exception: " << e.what());
     }
-    return matrix;
 }
 
-static void PutMasterInPSSM(CPssmWithParameters *pssm, const BlockMultipleAlignment *bma)
+void PSSMWrapper::UnpackMatrix(void)
 {
-    if (!pssm->GetPssm().IsSetQuery())
-        pssm->SetPssm().SetQuery().SetSeq().Assign(bma->GetMaster()->bioseqASN.GetObject());
+    if (!pssm->GetPssm().IsSetFinalData())
+        PTHROW("UnpackMatrix() - pssm must have finalData");
+    unsigned int nScores = pssm->GetPssm().GetNumRows() * pssm->GetPssm().GetNumColumns();
+    if (pssm->GetPssm().GetNumRows() != 26 || pssm->GetPssm().GetFinalData().GetScores().size() != nScores)
+        PTHROW("UnpackMatrix() - bad matrix size");
+
+    scalingFactor = pssm->GetPssm().GetFinalData().GetScalingFactor();
+
+    // allocate matrix
+    unsigned int i;
+    matrix.resize(pssm->GetPssm().GetNumColumns());
+    for (i=0; (int)i<pssm->GetPssm().GetNumColumns(); ++i)
+        matrix[i].resize(26);
+
+    // convert matrix
+    unsigned int r = 0, c = 0;
+    CPssmFinalData::TScores::const_iterator s = pssm->GetPssm().GetFinalData().GetScores().begin();
+    for (i=0; i<nScores; ++i, ++s) {
+
+        matrix[c][r] = *s / scalingFactor;
+
+        // adjust for matrix layout in pssm
+        if (pssm->GetPssm().GetByRow()) {
+            ++c;
+            if ((int)c == pssm->GetPssm().GetNumColumns()) {
+                ++r;
+                c = 0;
+            }
+        } else {
+            ++r;
+            if ((int)r == pssm->GetPssm().GetNumRows()) {
+                ++c;
+                r = 0;
+            }
+        }
+    }
 }
 
-CPssmWithParameters * CreatePSSM(const BlockMultipleAlignment *bma)
+void PSSMWrapper::OutputPSSM(ncbi::CNcbiOstream& os) const
 {
-    CRef < CPssmWithParameters > pssm;
-    try {
-        Cn3DPSSMInput input(bma);
-        CPssmEngine engine(&input);
-        pssm = engine.Run();
-        PutMasterInPSSM(pssm.GetPointer(), bma);
-    } catch (exception& e) {
-        ERRORMSG("CreateBlastMatrix() failed with exception: " << e.what());
-    }
-    return pssm.Release();
+    CObjectOStreamAsn osa(os, false);
+    osa << *pssm;
 }
 
-void OutputPSSM(const BlockMultipleAlignment *bma, CNcbiOstream& os)
+int PSSMWrapper::GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIndex) const
 {
-    try {
-        Cn3DPSSMInput input(bma);
-        CPssmEngine engine(&input);
-        CRef < CPssmWithParameters > pssm = engine.Run();
-        pssm->SetPssm().SetQuery().SetSeq().Assign(bma->GetMaster()->bioseqASN.GetObject());
-        CObjectOStreamAsn osa(os, false);
-        osa << *pssm;
-    } catch (exception& e) {
-        ERRORMSG("OutputPSSM() failed with exception: " << e.what());
+    if (ncbistdaa >= 26 || realMasterIndex > multiple->GetMaster()->Length()) {
+        ERRORMSG("PSSMWrapper::GetPSSMScore() - invalid parameters");
+        return kMin_Int;
     }
+    return (matrix[realMasterIndex][ncbistdaa] / scalingFactor);
 }
 
 END_SCOPE(Cn3D)
@@ -607,6 +552,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.13  2005/11/04 12:26:10  thiessen
 * working C++ blast-sequence-vs-pssm
 *

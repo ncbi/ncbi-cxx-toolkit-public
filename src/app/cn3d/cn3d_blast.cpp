@@ -37,11 +37,6 @@
 
 #include <algo/blast/api/psibl2seq.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
-// avoids conflicts between algo/blast stuff and C-toolkit stuff
-#undef INT1_MIN
-#undef INT1_MAX
-#undef INT2_MIN
-#undef INT2_MAX
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -64,10 +59,6 @@ USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
-
-//    bob->db_length = 1000000;
-//    SetEffectiveSearchSpaceSize(options, slaveSeqInt->to - slaveSeqInt->from + 1);
-//    bob->searchsp_eff = BLASTCalculateSearchSpace(bob, 1, bob->db_length, queryLength);
 
 class TruncatedSequence : public CObject
 {
@@ -214,8 +205,11 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         CRef < CPssmWithParameters > pssmQuery;
         CRef < blast::CPSIBlastOptionsHandle > pssmOptions;
         if (usePSSM) {
-            pssmQuery = CreatePSSM(multiple);
+            pssmQuery.Reset(new CPssmWithParameters);
+            pssmQuery->Assign(multiple->GetPSSM().GetPSSM());
             pssmOptions.Reset(new blast::CPSIBlastOptionsHandle);
+            pssmOptions->SetDbLength(1000000);      // between these two, sets effective search space
+            pssmOptions->SetDbSeqNum(1);            // assumes each subject sequence is scored independently
             blastEngine.Reset(new
                 blast::CPsiBl2Seq(
                     pssmQuery,
@@ -372,24 +366,61 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         return;
     }
 
+    int extension = 0;
+    if (!RegistryGetInteger(REG_ADVANCED_SECTION, REG_FOOTPRINT_RES, &extension))
+        WARNINGMSG("Can't get footprint residue extension from registry");
+
+    BlockMultipleAlignment::UngappedAlignedBlockList uaBlocks;
+    multiple->GetUngappedAlignedBlocks(&uaBlocks);
+    if (uaBlocks.size() == 0) {
+        ERRORMSG("Can't calculate self-hits with no aligned blocks");
+        return;
+    }
+
+    // do BLAST-vs-pssm on all rows, using footprint for each row
+    AlignmentList rowPairs;
     unsigned int row;
     for (row=0; row<multiple->NRows(); ++row) {
+        BlockMultipleAlignment::SequenceList *seqs = new BlockMultipleAlignment::SequenceList(2);
+        (*seqs)[0] = multiple->GetMaster();
+        (*seqs)[1] = multiple->GetSequenceOfRow(row);
+        BlockMultipleAlignment *newAlignment = new BlockMultipleAlignment(seqs, multiple->GetMaster()->parentSet->alignmentManager);
+        const Block::Range *range = uaBlocks.front()->GetRangeOfRow(row);
+        newAlignment->alignSlaveFrom = range->from - extension;
+        if (newAlignment->alignSlaveFrom < 0)
+            newAlignment->alignSlaveFrom = 0;
+        range = uaBlocks.back()->GetRangeOfRow(row);
+        newAlignment->alignSlaveTo = range->to + extension;
+        if (newAlignment->alignSlaveTo >= (int)multiple->GetSequenceOfRow(row)->Length())
+            newAlignment->alignSlaveTo = multiple->GetSequenceOfRow(row)->Length() - 1;
+        rowPairs.push_back(newAlignment);
+    }
+    AlignmentList results;
+    CreateNewPairwiseAlignmentsByBlast(multiple, rowPairs, &results, true);
+    DELETE_ALL_AND_CLEAR(rowPairs, AlignmentList);
+    if (results.size() != multiple->NRows()) {
+        DELETE_ALL_AND_CLEAR(results, AlignmentList);
+        ERRORMSG("CalculateSelfHitScores() - CreateNewPairwiseAlignmentsByBlast() didn't return right # alignments");
+        return;
+    }
 
-        double score = -1.0;
-
-        // set score in row
+    // extract scores, assumes E-value is in RowDouble
+    AlignmentList::const_iterator r = results.begin();
+    for (row=0; row<multiple->NRows(); ++row, ++r) {
+        double score = (*r)->GetRowDouble(1);
         multiple->SetRowDouble(row, score);
         string status;
         if (score >= 0.0)
-            status = string("Self hit E-value: %g") + NStr::DoubleToString(score);
+            status = string("Self hit E-value: ") + NStr::DoubleToString(score);
         else
-            status = "(self-hit not yet implemented)";//"No detectable self hit";
+            status = "No detectable self hit";
         multiple->SetRowStatusLine(row, status);
     }
+    DELETE_ALL_AND_CLEAR(results, AlignmentList);
 
     // print out overall self-hit rate
-    unsigned int nSelfHits = 0;
     static const double threshold = 0.01;
+    unsigned int nSelfHits = 0;
     for (row=0; row<multiple->NRows(); ++row) {
         if (multiple->GetRowDouble(row) >= 0.0 && multiple->GetRowDouble(row) <= threshold)
             ++nSelfHits;
@@ -404,6 +435,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.41  2005/11/04 12:26:10  thiessen
 * working C++ blast-sequence-vs-pssm
 *

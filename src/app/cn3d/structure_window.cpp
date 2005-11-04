@@ -87,8 +87,6 @@
     #include "cn3d.xpm"
 #endif
 
-#include <ncbienv.h>
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -1702,6 +1700,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.49  2005/11/01 14:48:37  thiessen
 * better reporting of Favorites load errors
 *

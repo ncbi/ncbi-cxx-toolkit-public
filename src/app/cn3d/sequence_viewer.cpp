@@ -563,7 +563,7 @@ void SequenceViewer::ExportAlignment(eExportType type)
                 rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
         } else if (type == asPSSM) {
             INFOMSG("exporting PSSM to " << outputFile.c_str());
-            OutputPSSM(alignmentManager->GetCurrentMultipleAlignment(), *ofs);
+            alignmentManager->GetCurrentMultipleAlignment()->GetPSSM().OutputPSSM(*ofs);
         }
     }
 }
@@ -574,6 +574,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.77  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

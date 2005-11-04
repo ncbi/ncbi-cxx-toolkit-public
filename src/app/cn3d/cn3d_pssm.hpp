@@ -34,22 +34,37 @@
 #ifndef CN3D_PSSM__HPP
 #define CN3D_PSSM__HPP
 
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 
-#include <objects/scoremat/PssmWithParameters.hpp>
+#include <vector>
 
-#include <blastkar.h>   // for BLAST_Matrix
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 
 BEGIN_SCOPE(Cn3D)
 
 class BlockMultipleAlignment;
 
-BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma);
-ncbi::objects::CPssmWithParameters * CreatePSSM(const BlockMultipleAlignment *bma);
+class PSSMWrapper{
+public:
+    PSSMWrapper(const BlockMultipleAlignment *bma);
 
-void OutputPSSM(const BlockMultipleAlignment *bma, ncbi::CNcbiOstream& os);
+    const ncbi::objects::CPssmWithParameters& GetPSSM(void) const { return *pssm; }
+    void OutputPSSM(ncbi::CNcbiOstream& os) const;
+
+    int GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIndex) const;
+
+private:
+    const BlockMultipleAlignment *multiple;
+    ncbi::CRef < ncbi::objects::CPssmWithParameters > pssm;
+
+    // store an unpacked matrix for efficient access (e.g. for GetPSSMScore())
+    typedef std::vector < int > Column;
+    std::vector < Column > matrix;
+    int scalingFactor;
+    void UnpackMatrix(void);
+};
 
 END_SCOPE(Cn3D)
 
@@ -58,6 +73,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.3  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

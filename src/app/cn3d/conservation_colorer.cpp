@@ -39,7 +39,7 @@
 #include "block_multiple_alignment.hpp"
 #include "conservation_colorer.hpp"
 #include "cn3d_tools.hpp"
-#include "cn3d_blast.hpp"
+#include "cn3d_pssm.hpp"
 
 #include <math.h>
 
@@ -48,20 +48,9 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-char ScreenResidueCharacter(char original)
+char ScreenResidueCharacter(char ch)
 {
-    char ch = toupper((unsigned char) original);
-    switch (ch) {
-        case 'A': case 'R': case 'N': case 'D': case 'C':
-        case 'Q': case 'E': case 'G': case 'H': case 'I':
-        case 'L': case 'K': case 'M': case 'F': case 'P':
-        case 'S': case 'T': case 'W': case 'Y': case 'V':
-        case 'B': case 'Z':
-            break;
-        default:
-            ch = 'X'; // make all but natural aa's just 'X'
-    }
-    return ch;
+    return LookupCharacterFromNCBIStdaaNumber(LookupNCBIStdaaNumberFromCharacter(ch));
 }
 
 int GetBLOSUM62Score(char a, char b)
@@ -75,18 +64,6 @@ int GetBLOSUM62Score(char a, char b)
     }
 
     return Blosum62Matrix.s[(int)ScreenResidueCharacter(a)][(int)ScreenResidueCharacter(b)];
-}
-
-static int GetPSSMScore(const BLAST_Matrix *pssm, char ch, int masterIndex)
-{
-    if (!pssm || masterIndex < 0 || masterIndex >= pssm->rows) {
-        ERRORMSG("GetPSSMScore() - invalid parameters");
-        return 0;
-    }
-    ch = ScreenResidueCharacter(ch);
-    if (ch == 'B' || ch == 'Z')     // by current calculations, B and Z have "infinite" negative scores in PSSM
-        ch = 'X';
-    return pssm->matrix[masterIndex][LookupNCBIStdaaNumberFromCharacter(ch)];
 }
 
 ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
@@ -275,8 +252,9 @@ void ConservationColorer::CalculateFitConservationColors(void)
             // fit scores
             for (p=profile.begin(); p!=pe; ++p) {
                 int& fit = fitScores[profileColumn][p->first];
-                fit = GetPSSMScore(alignment->GetPSSM(),
-                    p->first, b->first->GetRangeOfRow(0)->from + blockColumn);
+                fit = alignment->GetPSSM().GetPSSMScore(
+                    LookupNCBIStdaaNumberFromCharacter(p->first),
+                    b->first->GetRangeOfRow(0)->from + blockColumn);
                 if (blockColumn == 0 && b == blocks.begin() && p == profile.begin()) {
                     minFit = maxFit = fit;
                 } else {
@@ -469,6 +447,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.42  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

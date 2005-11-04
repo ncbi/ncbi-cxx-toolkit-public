@@ -70,7 +70,6 @@
 #include "style_manager.hpp"
 #include "messenger.hpp"
 #include "cn3d_tools.hpp"
-#include "asn_converter.hpp"
 #include "cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
@@ -1725,7 +1724,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         glEnd();
 
 #ifdef __WXMAC__
-       
+
 		// the top and bottom arrow triangles; connect exactly to end points of base, otherwise
 		// artifacts appear at junction on Mac (actually, they still do, but are much less obvious)
 		glBegin(GL_TRIANGLE_FAN);
@@ -1760,7 +1759,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 #else
 
         glBegin(GL_TRIANGLES);
-		
+
         // the top and bottom arrow triangles
         for (i=0; i<3; ++i) n[i] = unitNormal[i];
         glNormal3dv(n);
@@ -1773,7 +1772,7 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         glVertex3dv(FB);
         glVertex3dv(RB);
         glVertex3dv(LB);
-		
+
 #endif
     }
 
@@ -1828,16 +1827,9 @@ bool OpenGLRenderer::SaveToASNViewSettings(ncbi::objects::CCn3d_user_annotations
     initialViewFromASN->SetRotation_center().SetY(structureSet->rotationCenter.y);
     initialViewFromASN->SetRotation_center().SetZ(structureSet->rotationCenter.z);
 
-    if (annotations) {
-        // store copy in given annotations
-        string err;
-        CRef < CCn3d_view_settings > copy(CopyASNObject(*initialViewFromASN, &err));
-        if (copy.Empty()) {
-            ERRORMSG("OpenGLRenderer::SaveToASNViewSettings() - failed to copy settings:\n" << err);
-            return false;
-        }
-        annotations->SetView(*copy);
-    }
+    // store copy in given annotations
+    if (annotations)
+        annotations->SetView().Assign(*initialViewFromASN);
 
     return true;
 }
@@ -1848,12 +1840,8 @@ bool OpenGLRenderer::LoadFromASNViewSettings(const ncbi::objects::CCn3d_user_ann
     if (!annotations.IsSetView()) return true;
 
     // save a copy of the view settings
-    string err;
-    initialViewFromASN.Reset(CopyASNObject(annotations.GetView(), &err));
-    if (err.size() > 0 || initialViewFromASN.Empty()) {
-        ERRORMSG("OpenGLRenderer::LoadFromASNViewSettings() - failed to copy settings:\n" << err);
-        return false;
-    }
+    initialViewFromASN.Reset(new CCn3d_view_settings);
+    initialViewFromASN->Assign(annotations.GetView());
     return true;
 }
 
@@ -1955,6 +1943,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.86  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

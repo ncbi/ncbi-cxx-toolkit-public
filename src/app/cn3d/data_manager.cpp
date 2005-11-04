@@ -58,7 +58,6 @@
 #include "sequence_set.hpp"
 #include "alignment_set.hpp"
 #include "cn3d_tools.hpp"
-#include "asn_converter.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -1024,6 +1023,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.27  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

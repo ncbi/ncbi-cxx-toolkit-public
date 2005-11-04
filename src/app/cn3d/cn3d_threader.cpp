@@ -40,6 +40,7 @@
 #include <objects/scoremat/scoremat__.hpp>
 
 #include <algo/structure/threader/thrdatd.h>
+#include <algo/structure/threader/thrddecl.h>
 
 #include "block_multiple_alignment.hpp"
 #include "cn3d_threader.hpp"
@@ -136,56 +137,17 @@ Seq_Mtf * Threader::CreateSeqMtf(const BlockMultipleAlignment *multiple, double 
 
     // can't calculate PSSM with no blocks
     if (multiple->HasNoAlignedBlocks()) {
-        ERRORMSG("Can't create PSSM with no aligned blocks");
+        ERRORMSG("Can't create Seq_Mtf with no aligned blocks");
         return NULL;
     }
-
-    CRef < CPssmWithParameters > pssm(CreatePSSM(multiple));
-    if (pssm.Empty()) {
-        ERRORMSG("CreatePSSM() failed");
-        return NULL;
-    }
-
-    TRACEMSG("converting CPssmWithParameters to Seq_Mtf");
-
-    if (!pssm->GetPssm().IsSetFinalData()) {
-        ERRORMSG("CreateSeqMtf() - pssm must have finalData");
-        return NULL;
-    }
-    unsigned int nScores = pssm->GetPssm().GetNumRows() * pssm->GetPssm().GetNumColumns();
-    if (pssm->GetPssm().GetNumRows() != 26 || pssm->GetPssm().GetFinalData().GetScores().size() != nScores
-            || pssm->GetPssm().GetNumColumns() != (int)multiple->GetMaster()->Length()) {
-        ERRORMSG("CreateSeqMtf() - bad matrix size");
-        return NULL;
-    }
-
-    Seq_Mtf *seqMtf = NewSeqMtf(pssm->GetPssm().GetNumColumns(), ThreaderResidues.size());
 
     // convert matrix
-    unsigned int i;
-    int t, r = 0, c = 0;
-    CPssmFinalData::TScores::const_iterator s = pssm->GetPssm().GetFinalData().GetScores().begin();
-    for (i=0; i<nScores; ++i, ++s) {
-
-        t = LookupThreaderResidueNumberFromCharacterAbbrev(LookupCharacterFromNCBIStdaaNumber(r));
-        if (t >= 0)
-            seqMtf->ww[c][t] = ThrdRound(weightPSSM * SCALING_FACTOR * (*s) / pssm->GetPssm().GetFinalData().GetScalingFactor());
-
-        // adjust for matrix layout in pssm
-        if (pssm->GetPssm().GetByRow()) {
-            ++c;
-            if (c == pssm->GetPssm().GetNumColumns()) {
-                ++r;
-                c = 0;
-            }
-        } else {
-            ++r;
-            if (r == pssm->GetPssm().GetNumRows()) {
-                ++c;
-                r = 0;
-            }
-        }
-    }
+    TRACEMSG("converting PSSM scores to Seq_Mtf");
+    Seq_Mtf *seqMtf = NewSeqMtf(multiple->GetMaster()->Length(), ThreaderResidues.size());
+    for (unsigned int c=0; c<multiple->GetMaster()->Length(); ++c)
+        for (unsigned int r=0; r<ThreaderResidues.size(); ++r)
+            seqMtf->ww[c][r] = ThrdRound(weightPSSM * SCALING_FACTOR *
+                multiple->GetPSSM().GetPSSMScore(LookupNCBIStdaaNumberFromCharacter(ThreaderResidues[r]), c));
 
     return seqMtf;
 }
@@ -211,7 +173,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
     for (n=1, ++b; b!=be; ++n, ++b) {
         const UnalignedBlock *uaBlock = multiple->GetUnalignedBlockBefore(*b);
         if (uaBlock) {
-            max = (int) (loopLengthMultiplier * uaBlock->width);
+            max = (unsigned int) (loopLengthMultiplier * uaBlock->width);
             if (max < MIN_LOOP_MAX) max = MIN_LOOP_MAX;
         } else
             max = MIN_LOOP_MAX;
@@ -222,7 +184,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
 
     // minimum block sizes (in coordinates of master)
     const Block::Range *range;
-    unsigned int mid;
+    int mid;
     for (n=0, b=alignedBlocks.begin(); b!=be; ++b, ++n) {
         range = (*b)->GetRangeOfRow(0);
         mid = (range->from + range->to) / 2;
@@ -264,7 +226,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
 }
 
 Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
-        const BlockMultipleAlignment *pairwise, unsigned int terminalCutoff)
+        const BlockMultipleAlignment *pairwise, int terminalCutoff)
 {
     const Sequence *slaveSeq = pairwise->GetSequenceOfRow(1);
     BlockMultipleAlignment::UngappedAlignedBlockList multipleABlocks, pairwiseABlocks;
@@ -335,17 +297,17 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
 /*----------------------------------------------------------------------------
  *  stuff to read in the contact potential. (code swiped from DDV)
  *---------------------------------------------------------------------------*/
-static unsigned int CountWords(char* Str) {
+static unsigned int CountWords(char* chs) {
     unsigned int     i, Count=0;
-    Boolean  InsideStr;
-    InsideStr = FALSE;
-    for (i=0; i<StrLen(Str); ++i) {
+    bool  InsideStr = false;
+    string Str(chs);
+    for (i=0; i<Str.size(); ++i) {
         if (!InsideStr && (Str[i] != ' ')) {
             ++Count;
-            InsideStr = TRUE;
+            InsideStr = true;
         }
         if (Str[i] == ' ') {
-            InsideStr = FALSE;
+            InsideStr = false;
         }
     }
     return(Count);
@@ -375,9 +337,7 @@ Rcx_Ptl * Threader::CreateRcxPtl(double weightContacts)
     static const unsigned int kPeptideIndex = 20;
 
     /* open the contact potential for reading */
-    StrCpy(Path, GetDataDir().c_str());
-    StrCat(Path, FileName);
-    auto_ptr<CNcbiIfstream> InFile(new CNcbiIfstream(Path));
+    auto_ptr<CNcbiIfstream> InFile(new CNcbiIfstream((GetDataDir()+FileName).c_str(), IOS_BASE::in));
     if (!(*InFile)) {
         ERRORMSG("Threader::CreateRcxPtl() - can't open " << Path << " for reading");
         return NULL;
@@ -1241,6 +1201,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.52  2005/11/01 18:11:17  thiessen
 * fix pssm->Seq_Mtf conversion
 *

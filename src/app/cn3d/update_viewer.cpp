@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
+#include <objtools/readers/fasta.hpp>
 
 #include <objects/cdd/Cdd.hpp>
 #include <objects/cdd/Update_align.hpp>
@@ -77,19 +78,12 @@
 #include "structure_set.hpp"
 #include "molecule.hpp"
 #include "cn3d_tools.hpp"
-#include "asn_converter.hpp"
 #include "cn3d_blast.hpp"
 #include "molecule_identifier.hpp"
 #include "cn3d_cache.hpp"
 #include "cn3d_ba_interface.hpp"
 
 #include <wx/tokenzr.h>
-
-// C stuff
-#include <stdio.h>
-#include <tofasta.h>
-#include <objseq.h>
-#include <objsset.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -339,32 +333,14 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
     wxString fastaFile = wxFileSelector("Choose a FASTA file from which to import",
         "", "", "", "*.*", wxOPEN | wxFILE_MUST_EXIST, *viewerWindow);
     if (fastaFile.size() > 0) {
-        FILE *fp = FileOpen(fastaFile.c_str(), "r");
-        if (fp) {
-            SeqEntry *sep = NULL;
-            string err;
-            while ((sep=FastaToSeqEntry(fp, FALSE)) != NULL) {
-
-                // convert C to C++ SeqEntry
-                CSeq_entry se;
-                if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
-                    ERRORMSG("UpdateViewer::ReadSequencesFromFile() - error converting to C++ object: "
-                        << err);
-                } else {
-                    // create Sequence - just one from each Seq-entry for now
-                    if (se.IsSeq()) {
-                        const Sequence *sequence = sSet->CreateNewSequence(se.SetSeq());
-                        if (sequence)
-                            newSequences->push_back(sequence);
-                    } else {
-                        ERRORMSG("FastaToSeqEntry() returned Bioseq-set in Seq-entry");
-                    }
-                }
-                SeqEntryFree(sep);
-            }
-            FileClose(fp);
-        } else
-            ERRORMSG("Unable to open " << fastaFile.c_str());
+        CNcbiIfstream ifs(fastaFile.c_str(), IOS_BASE::in);
+        if (!ifs) {
+            ERRORMSG("Unable to open file " << fastaFile.c_str());
+            return;
+        }
+        CRef < CSeq_entry > se = ReadFasta(ifs, fReadFasta_AssumeProt);
+        string err;
+        WriteASNToFile("Seq-entry.txt", *se, false, &err);
     }
 }
 
@@ -1156,6 +1132,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.83  2005/11/03 22:31:33  thiessen
 * major reworking of the BLAST core; C++ blast-two-sequences working
 *

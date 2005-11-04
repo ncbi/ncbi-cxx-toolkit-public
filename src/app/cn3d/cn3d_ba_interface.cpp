@@ -53,12 +53,11 @@
 #include "block_multiple_alignment.hpp"
 #include "sequence_set.hpp"
 #include "structure_set.hpp"
-#include "asn_converter.hpp"
 #include "molecule_identifier.hpp"
 #include "wx_tools.hpp"
 #include "cn3d_tools.hpp"
-#include "cn3d_blast.hpp"
 #include "sequence_viewer.hpp"
+#include "cn3d_pssm.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -131,7 +130,7 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
 
 // global stuff for DP block aligner score callback
 DP_BlockInfo *dpBlocks = NULL;
-const BLAST_Matrix *dpPSSM = NULL;
+const PSSMWrapper *dpPSSM = NULL;
 const Sequence *dpQuery = NULL;
 
 // sum of scores for residue vs. PSSM
@@ -148,8 +147,9 @@ int dpScoreFunction(unsigned int block, unsigned int queryPos)
 
     unsigned int i, masterPos = dpBlocks->blockPositions[block], score = 0;
     for (i=0; i<dpBlocks->blockSizes[block]; ++i)
-        score += dpPSSM->matrix[masterPos + i]
-            [LookupNCBIStdaaNumberFromCharacter(dpQuery->sequenceString[queryPos + i])];
+        score += dpPSSM->GetPSSMScore(
+            LookupNCBIStdaaNumberFromCharacter(dpQuery->sequenceString[queryPos + i]),
+            masterPos + i);
 
     return score;
 }
@@ -252,7 +252,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     delete loopLengths;
 
     // set up PSSM
-    dpPSSM = multiple->GetPSSM();
+    dpPSSM = &(multiple->GetPSSM());
 
     bool errorsEncountered = false;
 
@@ -313,7 +313,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
                     dpAlignment = NULL;
                     ++(*nRowsAddedToMultiple);
                     // recalculate PSSM
-                    dpPSSM = multiple->GetPSSM();
+                    dpPSSM = &(multiple->GetPSSM());
                 }
             }
             if (dpAlignment)
@@ -512,6 +512,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.39  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

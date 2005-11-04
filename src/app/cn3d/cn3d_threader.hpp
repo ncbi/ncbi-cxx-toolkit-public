@@ -122,7 +122,7 @@ public:
 
 private:
     AlignmentManager *alignmentManager;
-    
+
     // holds Fld_Mtf structures already calculated for a given object (Molecule or Sequence)
     typedef std::map < const StructureBase *, Fld_Mtf * > ContactMap;
     ContactMap contacts;
@@ -130,7 +130,7 @@ private:
     // threading structure setups
     Cor_Def * CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier);
     Qry_Seq * CreateQrySeq(const BlockMultipleAlignment *multiple,
-        const BlockMultipleAlignment *pairwise, unsigned int terminalCutoff);
+        const BlockMultipleAlignment *pairwise, int terminalCutoff);
     Rcx_Ptl * CreateRcxPtl(double weightContacts);
     Gib_Scd * CreateGibScd(bool fast, unsigned int nRandomStarts);
     Fld_Mtf * CreateFldMtf(const Sequence *masterSequence);
@@ -144,6 +144,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.22  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

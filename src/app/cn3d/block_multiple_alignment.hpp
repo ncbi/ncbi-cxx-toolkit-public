@@ -39,10 +39,6 @@
 #include <objects/cdd/Update_align.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
-#include <blastkar.h>
-#include <thrdatd.h>
-#include <thrddecl.h>
-
 #include <list>
 #include <vector>
 #include <map>
@@ -61,6 +57,7 @@ class UngappedAlignedBlock;
 class UnalignedBlock;
 class Messenger;
 class Threader;
+class PSSMWrapper;
 
 class BlockMultipleAlignment
 {
@@ -72,10 +69,6 @@ public:
     ~BlockMultipleAlignment(void);
 
     const SequenceList * GetSequences(void) const { return sequences; }
-
-    // create a C-object SeqAlign from this alignment (actually a linked list of pairwise
-    // SeqAlign's; should be freed with SeqAlignSetFree())
-    SeqAlignPtr CreateCSeqAlign(void) const;
 
     // to track the origin of this alignment if it came from an update
     ncbi::CRef < ncbi::objects::CUpdate_align > updateOrigin;
@@ -172,7 +165,7 @@ public:
     bool HighlightAlignedColumnsOfMasterRange(unsigned int from, unsigned int to) const;
 
     // PSSM for this alignment (cached)
-    const BLAST_Matrix * GetPSSM(void) const;
+    const PSSMWrapper& GetPSSM(void) const;
     void RemovePSSM(void) const;
 
 
@@ -243,7 +236,7 @@ private:
     AlignmentManager *alignmentManager;
     SequenceList *sequences;
     ConservationColorer *conservationColorer;
-    mutable BLAST_Matrix *pssm;
+    mutable PSSMWrapper *pssm;
 
     typedef std::list < Block * > BlockList;
     BlockList blocks;
@@ -442,6 +435,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.54  2005/11/03 22:31:32  thiessen
 * major reworking of the BLAST core; C++ blast-two-sequences working
 *

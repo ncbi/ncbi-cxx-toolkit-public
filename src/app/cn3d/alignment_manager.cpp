@@ -39,6 +39,7 @@
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/scoremat/scoremat__.hpp>
 
 #include "alignment_manager.hpp"
 #include "sequence_set.hpp"
@@ -58,6 +59,7 @@
 #include "style_manager.hpp"
 #include "cn3d_ba_interface.hpp"
 #include "cn3d_refiner_interface.hpp"
+#include "cn3d_pssm.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -228,24 +230,31 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
             TRACEMSG("PSSM changed - zero blocks before or after");
             alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
         } else if (!multiple->HasNoAlignedBlocks() && !originalMultiple->HasNoAlignedBlocks()) {
-            const BLAST_Matrix *originalPSSM = originalMultiple->GetPSSM(), *currentPSSM = multiple->GetPSSM();
-            TRACEMSG("checking for PSSM changes... " << originalPSSM << ' ' << currentPSSM);
-            if (originalPSSM->rows != currentPSSM->rows ||
-                originalPSSM->columns != currentPSSM->columns ||
-                originalPSSM->karlinK != currentPSSM->karlinK)
-            {
+            const CPssmWithParameters
+                &originalPSSM = originalMultiple->GetPSSM().GetPSSM(),
+                &currentPSSM = multiple->GetPSSM().GetPSSM();
+            TRACEMSG("checking for PSSM changes... ");
+            if (originalPSSM.GetPssm().GetNumRows() != currentPSSM.GetPssm().GetNumRows() ||
+                originalPSSM.GetPssm().GetNumColumns() != currentPSSM.GetPssm().GetNumColumns() ||
+                originalPSSM.GetPssm().GetByRow() != currentPSSM.GetPssm().GetByRow() ||
+                !originalPSSM.GetPssm().IsSetFinalData() || !currentPSSM.GetPssm().IsSetFinalData() ||
+                originalPSSM.GetPssm().GetFinalData().GetLambda() != currentPSSM.GetPssm().GetFinalData().GetLambda() ||
+                originalPSSM.GetPssm().GetFinalData().GetKappa() != currentPSSM.GetPssm().GetFinalData().GetKappa() ||
+                originalPSSM.GetPssm().GetFinalData().GetH() != currentPSSM.GetPssm().GetFinalData().GetH() ||
+                originalPSSM.GetPssm().GetFinalData().GetScalingFactor() != currentPSSM.GetPssm().GetFinalData().GetScalingFactor()
+            ) {
                 TRACEMSG("PSSM changed");
                 alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
             } else {
-                int i, j;
-                for (i=0; i<originalPSSM->rows; ++i) {
-                    for (j=0; j<originalPSSM->columns; ++j) {
-                        if (originalPSSM->matrix[i][j] != currentPSSM->matrix[i][j]) {
-                            TRACEMSG("PSSM changed");
-                            alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
-                            i = originalPSSM->rows;
-                            break;
-                        }
+                CPssmFinalData::TScores::const_iterator
+                    o = originalPSSM.GetPssm().GetFinalData().GetScores().begin(),
+                    oe = originalPSSM.GetPssm().GetFinalData().GetScores().end(),
+                    c = currentPSSM.GetPssm().GetFinalData().GetScores().begin();
+                for (; o!=oe; ++o, ++c) {
+                    if ((*o) != (*c)) {
+                        TRACEMSG("PSSM changed");
+                        alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
+                        break;
                     }
                 }
             }
@@ -1241,6 +1250,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.107  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.106  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

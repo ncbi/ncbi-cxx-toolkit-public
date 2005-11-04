@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
+#include <util/regexp.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
@@ -58,8 +59,6 @@
 #include <objects/seqblock/PDB_block.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-
-#include <regex.h>  // regex from C-toolkit
 
 #include "sequence_set.hpp"
 #include "molecule.hpp"
@@ -450,27 +449,6 @@ void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
 //        sid->SetLocal(*oid);
 }
 
-void Sequence::AddCSeqId(SeqIdPtr *id, bool addAllTypes) const
-{
-    if (identifier->pdbID.size() > 0) {
-        PDBSeqIdPtr pdbid = PDBSeqIdNew();
-        pdbid->mol = StrSave(identifier->pdbID.c_str());
-        pdbid->chain = (Uint1) identifier->pdbChain;
-        ValNodeAddPointer(id, SEQID_PDB, pdbid);
-        if (!addAllTypes) return;
-    }
-    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        ValNodeAddInt(id, SEQID_GI, identifier->gi);
-        if (!addAllTypes) return;
-    }
-    if (identifier->accession.size() > 0) {
-        ObjectIdPtr local = ObjectIdNew();
-        local->str = StrSave(identifier->accession.c_str());
-        ValNodeAddPointer(id, SEQID_LOCAL, local);
-        if (!addAllTypes) return;
-    }
-}
-
 int Sequence::GetOrSetMMDBLink(void) const
 {
     if (molecule) {
@@ -585,32 +563,14 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
 
 bool Sequence::HighlightPattern(const string& prositePattern) const
 {
-    // setup regex syntax
-    reg_syntax_t newSyntax = RE_CONTEXT_INDEP_ANCHORS | RE_CONTEXT_INVALID_OPS | RE_INTERVALS |
-        RE_LIMITED_OPS | RE_NO_BK_BRACES | RE_NO_BK_PARENS | RE_NO_EMPTY_RANGES;
-    reg_syntax_t oldSyntax = re_set_syntax(newSyntax);
-
     bool retval = true;
     try {
-        // allocate structures
-        static re_pattern_buffer *patternBuffer = NULL;
-        static re_registers *registers = NULL;
-        if (!patternBuffer) {
-            // new pattern initialized to zero
-            patternBuffer = (re_pattern_buffer *) calloc(1, sizeof(re_pattern_buffer));
-            if (!patternBuffer) throw "can't allocate pattern buffer";
-            patternBuffer->fastmap = (char *) calloc(256, sizeof(char));
-            if (!patternBuffer->fastmap) throw "can't allocate fastmap";
-            registers = (re_registers *) calloc(1, sizeof(re_registers));
-            if (!registers) throw "can't allocate registers";
-            patternBuffer->regs_allocated = REGS_UNALLOCATED;
-        }
 
-        // update pattern buffer if not the same pattern as before
+        // update CRegexp if not the same pattern as before
+        static auto_ptr < CRegexp > regexp;
         static string previousPrositePattern;
         static int nGroups;
-        unsigned int i;
-        if (prositePattern != previousPrositePattern) {
+        if (!regexp.get() || prositePattern != previousPrositePattern) {
 
             // convert from ProSite syntax
             string regexPattern;
@@ -618,64 +578,40 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
                 throw "error converting ProSite to regex syntax";
 
             // create pattern buffer
-            TRACEMSG("compiling pattern '" << regexPattern << "'");
-            const char *error = re_compile_pattern(regexPattern.c_str(), regexPattern.size(), patternBuffer);
-            if (error) throw error;
-
-            // optimize pattern buffer
-            int err = re_compile_fastmap(patternBuffer);
-            if (err) throw "re_compile_fastmap internal error";
+            TRACEMSG("creating CRegexp with pattern '" << regexPattern << "'");
+            regexp.reset(new CRegexp(regexPattern, CRegexp::fCompile_ungreedy));
 
             previousPrositePattern = prositePattern;
         }
 
         // do the search, finding all non-overlapping matches
-        unsigned int start = 0;
-        while (start < Length()) {
+        int i, start = 0;
+        while (start < (int)Length()) {
 
-            int result = re_search(patternBuffer, sequenceString.c_str(),
-                Length(), start, Length(), registers);
-            if (result == -1)
+            // do the search
+            string ignore = regexp->GetMatch(sequenceString, start, 0, CRegexp::fMatch_default, true);
+            if (regexp->NumFound() <= 0)
                 break;
-            else if (result == -2)
-                throw "re_search internal error";
 
-            // re_search gives the longest hit, but we want the shortest; so try to find the
-            // shortest hit within the hit already found by limiting the length of the string
-            // allowed to be included in the search. (This isn't very efficient! but
-            // the regex API doesn't have an option for finding the shortest hit...)
-            unsigned int stringSize = start + 1;
-            while (stringSize <= Length()) {
-                result = re_search(patternBuffer, sequenceString.c_str(),
-                    stringSize, start, stringSize, registers);
-                if (result >= 0) break;
-                ++stringSize;
-            }
+//            TRACEMSG("got match, num (sub)patterns: " << regexp->NumFound());
+//            for (i=0; i<regexp->NumFound(); ++i)
+//                TRACEMSG("    " << i << ": " << (regexp->GetResults(i)[0] + 1) << '-' << regexp->GetResults(i)[1]);
 
-            // parse the match registers, highlight ranges
-//            TESTMSG("found match starting at " << identifier->ToString() << " loc " << result+1);
-            int lastMatched = result;
-            for (i=1; i<registers->num_regs; ++i) {
-                int from = registers->start[i], to = registers->end[i] - 1;
-                if (from >= 0 && to >= 0) {
-                    if (to > lastMatched) lastMatched = to;
+            // parse the match subpatterns, highlight each subpattern range
+            for (i=1; i<regexp->NumFound(); ++i)
+                GlobalMessenger()->AddHighlights(this, regexp->GetResults(i)[0], regexp->GetResults(i)[1] - 1);
 
-                    // highlight this ranage
-//                    TESTMSG("register " << i << ": from " << from+1 << " to " << to+1);
-                    GlobalMessenger()->AddHighlights(this, from, to);
-                }
-            }
-
-            start = lastMatched + 1;
+            // start next search after the end of this one
+            start = regexp->GetResults(regexp->NumFound() - 1)[1];
         }
 
     } catch (const char *err) {
         ERRORMSG("Sequence::HighlightPattern() - " << err);
         retval = false;
+    } catch (exception& e) {
+        ERRORMSG("Sequence::HighlightPattern() - caught exception: " << e.what());
+        retval = false;
     }
-
-    // cleanup
-    re_set_syntax(oldSyntax);
 
     return retval;
 }
@@ -685,6 +621,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.74  2005/10/27 22:53:03  thiessen
 * better handling of sequence descriptions
 *

@@ -81,7 +81,6 @@
 #include "alignment_set.hpp"
 #include "alignment_manager.hpp"
 #include "messenger.hpp"
-#include "asn_converter.hpp"
 #include "block_multiple_alignment.hpp"
 #include "cn3d_tools.hpp"
 #include "molecule_identifier.hpp"
@@ -89,8 +88,6 @@
 #include "molecule.hpp"
 #include "residue.hpp"
 #include "show_hide_dialog.hpp"
-
-#include <objseq.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -603,44 +600,6 @@ StructureSet::~StructureSet(void)
 
     GlobalMessenger()->RemoveAllHighlights(false);
     MoleculeIdentifier::ClearIdentifiers();
-
-    BioseqMap::iterator i, ie = bioseqs.end();
-    for (i=bioseqs.begin(); i!=ie; ++i) BioseqFree(i->second);
-}
-
-BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
-{
-    if (!sequence || !sequence->isProtein) {
-        ERRORMSG("StructureSet::GetOrCreateBioseq() - got non-protein or NULL Sequence");
-        return NULL;
-    }
-
-    // if already done
-    BioseqMap::const_iterator b = bioseqs.find(sequence);
-    if (b != bioseqs.end()) return b->second;
-
-    // create new Bioseq and fill it in from Sequence data
-    BioseqPtr bioseq = BioseqNew();
-    bioseq->mol = Seq_mol_aa;
-    bioseq->seq_data_type = Seq_code_ncbieaa;
-    bioseq->repr = Seq_repr_raw;
-    bioseq->length = sequence->Length();
-    bioseq->seq_data = BSNew(bioseq->length);
-    BSWrite(bioseq->seq_data, const_cast<char*>(sequence->sequenceString.c_str()), bioseq->length);
-
-    // create Seq-id
-    sequence->AddCSeqId(&(bioseq->id), true);
-
-    // store Bioseq
-    bioseqs[sequence] = bioseq;
-
-    return bioseq;
-}
-
-void StructureSet::CreateAllBioseqs(const BlockMultipleAlignment *multiple)
-{
-    for (unsigned int row=0; row<multiple->NRows(); ++row)
-        GetOrCreateBioseq(multiple->GetSequenceOfRow(row));
 }
 
 bool StructureSet::AddBiostrucToASN(ncbi::objects::CBiostruc *biostruc)
@@ -1515,6 +1474,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.151  2005/11/04 20:45:32  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.150  2005/10/26 18:36:05  thiessen
 * minor fixes
 *

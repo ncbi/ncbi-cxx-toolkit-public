@@ -50,14 +50,6 @@
 #include "cn3d_threader.hpp"
 #include "cn3d_pssm.hpp"
 
-// hack so I can catch memory leaks specific to this module, at the line where allocation occurs
-#ifdef _DEBUG
-#ifdef MemNew
-#undef MemNew
-#endif
-#define MemNew(sz) memset(malloc(sz), 0, (sz))
-#endif
-
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -121,20 +113,17 @@ BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
     return copy;
 }
 
-const BLAST_Matrix * BlockMultipleAlignment::GetPSSM(void) const
+const PSSMWrapper& BlockMultipleAlignment::GetPSSM(void) const
 {
-    if (pssm)
-        return pssm;
-
-    pssm = CreateBlastMatrix(this);
-
-    return pssm;
+    if (!pssm)
+        pssm = new PSSMWrapper(this);
+    return *pssm;
 }
 
 void BlockMultipleAlignment::RemovePSSM(void) const
 {
     if (pssm) {
-        BLAST_MatrixDestruct(pssm);
+        delete pssm;
         pssm = NULL;
     }
 }
@@ -1784,49 +1773,6 @@ int BlockMultipleAlignment::GetAlignmentIndex(unsigned int row, unsigned int seq
     return -1;
 }
 
-// creates a SeqAlign from a BlockMultipleAlignment
-SeqAlignPtr BlockMultipleAlignment::CreateCSeqAlign(void) const
-{
-    // one SeqAlign (chained into a linked list) for each slave row
-    SeqAlignPtr prevSap = NULL, firstSap = NULL;
-    for (unsigned int row=1; row<NRows(); ++row) {
-
-        SeqAlignPtr sap = SeqAlignNew();
-        if (prevSap) prevSap->next = sap;
-        prevSap = sap;
-		if (!firstSap) firstSap = sap;
-
-        sap->type = SAT_PARTIAL;
-        sap->dim = 2;
-        sap->segtype = SAS_DENDIAG;
-
-        DenseDiagPtr prevDd = NULL;
-        UngappedAlignedBlockList blocks;
-        GetUngappedAlignedBlocks(&blocks);
-        UngappedAlignedBlockList::const_iterator b, be = blocks.end();
-
-        for (b=blocks.begin(); b!=be; ++b) {
-            DenseDiagPtr dd = DenseDiagNew();
-            if (prevDd) prevDd->next = dd;
-            prevDd = dd;
-            if (b == blocks.begin()) sap->segs = dd;
-
-            dd->dim = 2;
-            GetSequenceOfRow(0)->AddCSeqId(&(dd->id), false);      // master
-            GetSequenceOfRow(row)->AddCSeqId(&(dd->id), false);    // slave
-            dd->len = (*b)->width;
-
-            dd->starts = (Int4Ptr) MemNew(2 * sizeof(Int4));
-            const Block::Range *range = (*b)->GetRangeOfRow(0);
-            dd->starts[0] = range->from;
-            range = (*b)->GetRangeOfRow(row);
-            dd->starts[1] = range->from;
-        }
-    }
-
-	return firstSap;
-}
-
 
 ///// UngappedAlignedBlock methods /////
 
@@ -1955,6 +1901,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/11/04 20:45:31  thiessen
+* major reorganization to remove all C-toolkit dependencies
+*
 * Revision 1.77  2005/11/03 22:31:32  thiessen
 * major reworking of the BLAST core; C++ blast-two-sequences working
 *
