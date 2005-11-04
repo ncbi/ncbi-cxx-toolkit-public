@@ -333,14 +333,32 @@ void UpdateViewer::ReadSequencesFromFile(SequenceList *newSequences, StructureSe
     wxString fastaFile = wxFileSelector("Choose a FASTA file from which to import",
         "", "", "", "*.*", wxOPEN | wxFILE_MUST_EXIST, *viewerWindow);
     if (fastaFile.size() > 0) {
+
+        // get Seq-entry of all sequences in the file
         CNcbiIfstream ifs(fastaFile.c_str(), IOS_BASE::in);
         if (!ifs) {
             ERRORMSG("Unable to open file " << fastaFile.c_str());
             return;
         }
         CRef < CSeq_entry > se = ReadFasta(ifs, fReadFasta_AssumeProt);
-        string err;
-        WriteASNToFile("Seq-entry.txt", *se, false, &err);
+//        string err;
+//        WriteASNToFile("Seq-entry.txt", *se, false, &err);
+
+        // create Sequences from each one
+        if (!se->IsSet() || se->GetSet().GetSeq_set().size() == 0) {
+            WARNINGMSG("ReadFasta() returned unknown format or no Bioseqs");
+        } else {
+            CBioseq_set::TSeq_set::iterator b, be = se->SetSet().SetSeq_set().end();
+            for (b=se->SetSet().SetSeq_set().begin(); b!=be; ++b) {
+                if (!(*b)->IsSeq()) {
+                    WARNINGMSG("ReadFasta() returned nested Bioseq-set");
+                } else {
+                    const Sequence *sequence = sSet->CreateNewSequence((*b)->SetSeq());
+                    if (sequence)
+                         newSequences->push_back(sequence);
+                }
+            }
+        }
     }
 }
 
@@ -1132,6 +1150,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2005/11/04 21:55:05  thiessen
+* complete migration of sequence import from FASTA
+*
 * Revision 1.84  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
