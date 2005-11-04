@@ -83,23 +83,27 @@ s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_
  * @param kbp_in array of Karlin blocks to be searched [in]
  * @param query_info information on number of queries (specifies number of
  * elements in above array) [in]
+ * @param kbp_out Karlin blocks with smallest lambda [out]
  * @return The smallest lambda value
  */
 static double
 s_BlastFindSmallestLambda(Blast_KarlinBlk** kbp_in, 
-                          const BlastQueryInfo* query_info)
+                          const BlastQueryInfo* query_info,
+                          Blast_KarlinBlk** kbp_out)
 {
     Int4 i;
-    double min_lambda = 0.0;
+    double min_lambda = (double) INT4_MAX;
 
     ASSERT(kbp_in && query_info);
 
     for (i=query_info->first_context; i<=query_info->last_context; i++) {
         if (s_BlastKarlinBlkIsValid(kbp_in[i])) {
-            if (min_lambda == 0.0)
+            if (min_lambda > kbp_in[i]->Lambda)
+            {
                 min_lambda = kbp_in[i]->Lambda;
-            else
-                min_lambda = MIN(min_lambda, kbp_in[i]->Lambda);
+                if (kbp_out)
+                  *kbp_out = kbp_in[i];
+            }
         }
     }
 
@@ -218,7 +222,7 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 
    (*parameters)->x_dropoff_init = (Int4)
       ceil(sbp->scale_factor * word_options->x_dropoff * NCBIMATH_LN2/
-           s_BlastFindSmallestLambda(sbp->kbp_std, query_info));
+           s_BlastFindSmallestLambda(sbp->kbp_std, query_info, NULL));
 
    if (program_number == eBlastTypeBlastn &&
       (query_info->contexts[query_info->last_context].query_offset +
@@ -376,7 +380,7 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
 
    /* Set gapped X-dropoffs only if it is a gapped search. */
    if (sbp->kbp_gap) {
-      double min_lambda = s_BlastFindSmallestLambda(sbp->kbp_gap, query_info);
+      double min_lambda = s_BlastFindSmallestLambda(sbp->kbp_gap, query_info, NULL);
       params->gap_x_dropoff = (Int4) 
           (options->gap_x_dropoff*NCBIMATH_LN2 / min_lambda);
       /* Note that this conversion from bits to raw score is done prematurely 
@@ -732,9 +736,6 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
    return 0;
 }
 
-/** machine epsilon assumed by CalculateLinkHSPCutoffs */
-#define MY_EPS 1.0e-9
-
 /* FIXME, move to blast_engine.c and make private?  */
 void
 CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
@@ -742,34 +743,34 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
    const BlastInitialWordParameters* word_params,
    Int8 db_length, Int4 subject_length)
 {
-    double gap_prob, gap_decay_rate, x_variable, y_variable;
     Blast_KarlinBlk* kbp;
+    double gap_prob, gap_decay_rate, x_variable, y_variable;
     Int4 expected_length, window_size, query_length;
     Int8 search_sp;
-    Int4 concat_qlen;
+    const double kEpsilon = 1.0e-9;
 
     if (!link_hsp_params)
         return;
 
-    /* Do this for the first context, should this be changed?? */
-    kbp = sbp->kbp[query_info->first_context];
+    /* Get KarlinBlk for context with smallest lambda (still greater than zero) */
+    s_BlastFindSmallestLambda(sbp->kbp, query_info, &kbp);
     window_size
         = link_hsp_params->gap_size + link_hsp_params->overlap_size + 1;
     gap_prob = link_hsp_params->gap_prob = BLAST_GAP_PROB;
     gap_decay_rate = link_hsp_params->gap_decay_rate;
     /* Use average query length */
     
-    concat_qlen =
-        query_info->contexts[query_info->last_context].query_offset +
-        query_info->contexts[query_info->last_context].query_length - 1;
-    
-    query_length = concat_qlen / (query_info->last_context + 1);
+    query_length =
+        (query_info->contexts[query_info->last_context].query_offset +
+        query_info->contexts[query_info->last_context].query_length - 1)
+        / (query_info->last_context + 1);
     
     if (Blast_SubjectIsTranslated(program) || program == eBlastTypeRpsTblastn) {
         /* Lengths in subsequent calculations should be on the protein scale */
         subject_length /= CODON_LENGTH;
         db_length /= CODON_LENGTH;
     }
+
     
     /* Subtract off the expected score. */
    expected_length = BLAST_Nint(log(kbp->K*((double) query_length)*
@@ -789,6 +790,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
       y_variable = log((double) (subject_length + expected_length)/
                        (double) subject_length)*(kbp->K)/(gap_decay_rate);
    }
+
    search_sp = ((Int8) query_length)* ((Int8) subject_length);
    x_variable = 0.25*y_variable*((double) search_sp);
 
@@ -798,11 +800,11 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
       are being checked for. */
 
    if (search_sp > 8*window_size*window_size) {
-      x_variable /= (1.0 - gap_prob + MY_EPS);
+      x_variable /= (1.0 - gap_prob + kEpsilon);
       link_hsp_params->cutoff_big_gap = 
          (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
       x_variable = y_variable*(window_size*window_size);
-      x_variable /= (gap_prob + MY_EPS);
+      x_variable /= (gap_prob + kEpsilon);
       link_hsp_params->cutoff_small_gap = 
          MAX(word_params->cutoff_score, 
              (Int4) floor((log(x_variable)/kbp->Lambda)) + 1);
@@ -824,6 +826,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/11/04 13:26:20  madden
+ * Fixes to CalculateLinkHSPCutoffs so that invalid KarlinBlk is not used
+ *
  * Revision 1.10  2005/06/08 17:27:53  madden
  * Use functions from blast_program.c
  *
