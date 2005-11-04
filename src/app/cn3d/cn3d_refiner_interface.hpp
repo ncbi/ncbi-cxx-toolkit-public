@@ -77,7 +77,7 @@ public:
     //  Only block numbers listed in the vector will be refined; any previous list
     //  of refined blocks is erased first (unless clearOldList is false).
     //  Return false if couldn't set the blocks.
-    bool SetBlocksToRealign(const vector<unsigned int>& blocks, bool clearOldList = true);
+    bool SetBlocksToRealign(const std::vector<unsigned int>& blocks, bool clearOldList = true);
     //  Convenience method to specify all blocks for realignment (old list always cleared).
     //  Return false if couldn't set the blocks.
     bool SetBlocksToRealign(unsigned int nAlignedBlocks);
@@ -100,9 +100,10 @@ private:
     // blocks and explicitly excludes no rows; second allows for flexibility in freezing blocks & rows.
     bool ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks);
     // Using the null defaults implies user will set blocks to realign/rows to exclude manually later.
-    bool ConfigureRefiner(wxWindow* parent, const vector<unsigned int>* blocksToRealign, const vector<unsigned int>* rowsToExclude = NULL);
+    bool ConfigureRefiner(wxWindow* parent,
+        const std::vector<unsigned int>* blocksToRealign, const std::vector<unsigned int>* rowsToExclude = NULL);
 
-    //   Common core called by the two above wrappers.  
+    //   Common core called by the two above wrappers.
     bool ConfigureRefiner(wxWindow* parent);
 };
 
@@ -113,6 +114,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/11/04 12:25:45  thiessen
+* use std:: in header
+*
 * Revision 1.3  2005/11/02 20:32:43  lanczyck
 * add API to specify blocks to refine and rows to exclude from refinement;
 * turn block extension on
