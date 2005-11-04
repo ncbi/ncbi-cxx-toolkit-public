@@ -568,6 +568,12 @@ BLAST_Matrix * CreateBlastMatrix(const BlockMultipleAlignment *bma)
     return matrix;
 }
 
+static void PutMasterInPSSM(CPssmWithParameters *pssm, const BlockMultipleAlignment *bma)
+{
+    if (!pssm->GetPssm().IsSetQuery())
+        pssm->SetPssm().SetQuery().SetSeq().Assign(bma->GetMaster()->bioseqASN.GetObject());
+}
+
 CPssmWithParameters * CreatePSSM(const BlockMultipleAlignment *bma)
 {
     CRef < CPssmWithParameters > pssm;
@@ -575,6 +581,7 @@ CPssmWithParameters * CreatePSSM(const BlockMultipleAlignment *bma)
         Cn3DPSSMInput input(bma);
         CPssmEngine engine(&input);
         pssm = engine.Run();
+        PutMasterInPSSM(pssm.GetPointer(), bma);
     } catch (exception& e) {
         ERRORMSG("CreateBlastMatrix() failed with exception: " << e.what());
     }
@@ -600,6 +607,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/11/04 12:26:10  thiessen
+* working C++ blast-sequence-vs-pssm
+*
 * Revision 1.12  2005/11/03 22:31:33  thiessen
 * major reworking of the BLAST core; C++ blast-two-sequences working
 *

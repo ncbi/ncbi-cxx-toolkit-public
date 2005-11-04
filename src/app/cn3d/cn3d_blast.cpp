@@ -153,6 +153,17 @@ static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAli
     return ts;
 }
 
+static bool SeqIdMatchesMaster(const CSeq_id& sid, const Sequence *master, bool usePSSM)
+{
+    // if blast-sequence-vs-pssm, master will be Sequence master
+    if (usePSSM)
+        return (master->identifier->MatchesSeqId(sid));
+
+    // if blast-two-sequences, master will be local str "-1"
+    else
+        return (sid.IsLocal() && sid.GetLocal().IsStr() && sid.GetLocal().GetStr() == "-1");
+}
+
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
     const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM)
 {
@@ -204,7 +215,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
         CRef < blast::CPSIBlastOptionsHandle > pssmOptions;
         if (usePSSM) {
             pssmQuery = CreatePSSM(multiple);
-            blastEngine.Reset( new
+            pssmOptions.Reset(new blast::CPSIBlastOptionsHandle);
+            blastEngine.Reset(new
                 blast::CPsiBl2Seq(
                     pssmQuery,
                     sequenceSubjects,
@@ -270,10 +282,9 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                     // unpack Dense-seg
                     const CDense_seg& ds = sa.GetSegs().GetDenseg();
                     if (!ds.IsSetDim() || ds.GetDim() != 2 || ds.GetIds().size() != 2 ||
-                            ds.GetLens().size() != ds.GetNumseg() || ds.GetStarts().size() != 2 * ds.GetNumseg()) {
+                            (int)ds.GetLens().size() != ds.GetNumseg() || (int)ds.GetStarts().size() != 2 * ds.GetNumseg()) {
                         ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (denseg dims)");
-                    } else if (!ds.GetIds().front()->IsLocal() || !ds.GetIds().front()->GetLocal().IsStr() ||
-                            ds.GetIds().front()->GetLocal().GetStr() != "-1" ||
+                    } else if (!SeqIdMatchesMaster(ds.GetIds().front().GetObject(), master, usePSSM) ||
                             !ds.GetIds().back()->IsLocal() || !ds.GetIds().back()->GetLocal().IsStr() ||
                             ds.GetIds().back()->GetLocal().GetStr() != NStr::IntToString(localID)) {
                         ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (ids)");
@@ -284,7 +295,8 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                         for (l=ds.GetLens().begin(); l!=le; ++l) {
                             int masterStart = *(s++), slaveStart = *(s++);
                             if (masterStart >= 0 && slaveStart >= 0) {  // skip gaps
-                                masterStart += masterTS->fromIndex;
+                                if (!usePSSM)
+                                    masterStart += masterTS->fromIndex;
                                 slaveStart += subjectTSs[localID]->fromIndex;
                                 UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment.get());
                                 newBlock->SetRangeOfRow(0, masterStart, masterStart + (*l) - 1);
@@ -392,6 +404,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/11/04 12:26:10  thiessen
+* working C++ blast-sequence-vs-pssm
+*
 * Revision 1.40  2005/11/03 22:31:32  thiessen
 * major reworking of the BLAST core; C++ blast-two-sequences working
 *
