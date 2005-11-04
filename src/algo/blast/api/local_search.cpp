@@ -52,7 +52,7 @@ static char const rcsid[] =
 
 // BLAST includes
 #include <algo/blast/api/local_search.hpp>
-//#include <algo/blast/api/psiblast.hpp>
+#include <algo/blast/api/psiblast.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
 #include "psiblast_aux_priv.hpp"
 
@@ -184,23 +184,18 @@ CLocalPssmSearch::Run()
 {
     ISeqSearch::TResults retval;
 
-#if 0
     CConstRef<CPSIBlastOptionsHandle> psi_opts;
     psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*m_SearchOpts));
     if (psi_opts.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Options for CLocalPssmSearch are not PSI-BLAST");
     }
-#endif
 
     CConstRef<CBioseq> query(&m_Pssm->GetPssm().GetQuery().GetSeq());
     CRef<IQueryFactory> query_factory(new CObjMgrFree_QueryFactory(query));
 
-    CRef<CSearchResults> psi_results;
-#if 0
     CPsiBlast psiblast(query_factory, *m_Subject, psi_opts);
-    psi_results = psiblast.Run();
-#endif
+    CRef<CSearchResults> psi_results = psiblast.Run();
 
     retval.AddResult(psi_results);
     ASSERT(retval.GetNumResults() == 1);
