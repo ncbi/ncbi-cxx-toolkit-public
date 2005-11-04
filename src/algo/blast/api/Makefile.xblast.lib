@@ -36,7 +36,13 @@ blast_objmgr_tools \
 hspstream_queue \
 repeats_filter_cxx \
 blast_mtlock \
+psiblast_subject \
+subject_psi_database \
+subject_psi_sequences \
 psibl2seq \
+psiblast \
+psiblast_impl \
+psiblast_iteration \
 psi_pssm_input \
 psiblast_aux_priv \
 blast_aux_priv \
