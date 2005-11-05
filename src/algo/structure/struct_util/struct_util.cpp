@@ -333,7 +333,7 @@ bool AlignmentUtility::DoLeaveOneOut(
         for (b=0; b<blocks.size(); ++b) {
             if (!realignBlock[b])
                 dpBlocks->freezeBlocks[b] = blocks[b]->GetRangeOfRow(1)->from;
-            TRACE_MESSAGE("block " << (b+1) << " is " << (realignBlock[b] ? "to be realigned" : "frozen"));
+//            TRACE_MESSAGE("block " << (b+1) << " is " << (realignBlock[b] ? "to be realigned" : "frozen"));
         }
 
         // verify query range
@@ -553,7 +553,7 @@ bool AlignmentUtility::DoLeaveNOut(
             for (b=0; b<blocks.size(); ++b) {
                 if (!realignBlock[b])
                     dpBlocks->freezeBlocks[b] = blocks[b]->GetRangeOfRow(1)->from;
-                TRACE_MESSAGE("block " << (b+1) << " is " << (realignBlock[b] ? "to be realigned" : "frozen"));
+//                TRACE_MESSAGE("block " << (b+1) << " is " << (realignBlock[b] ? "to be realigned" : "frozen"));
             }
 
             // verify query range
@@ -748,6 +748,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/11/05 12:08:48  thiessen
+* fewer trace messages
+*
 * Revision 1.23  2005/10/24 23:39:13  thiessen
 * GCC warning fixes
 *
