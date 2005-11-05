@@ -61,7 +61,7 @@ private:
 
     // store an unpacked matrix for efficient access (e.g. for GetPSSMScore())
     typedef std::vector < int > Column;
-    std::vector < Column > matrix;
+    std::vector < Column > scaledMatrix;
     int scalingFactor;
     void UnpackMatrix(void);
 };
@@ -73,6 +73,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/11/05 12:09:40  thiessen
+* special handling of B,Z,U
+*
 * Revision 1.4  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *

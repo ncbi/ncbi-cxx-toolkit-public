@@ -504,16 +504,16 @@ void PSSMWrapper::UnpackMatrix(void)
 
     // allocate matrix
     unsigned int i;
-    matrix.resize(pssm->GetPssm().GetNumColumns());
+    scaledMatrix.resize(pssm->GetPssm().GetNumColumns());
     for (i=0; (int)i<pssm->GetPssm().GetNumColumns(); ++i)
-        matrix[i].resize(26);
+        scaledMatrix[i].resize(26);
 
     // convert matrix
     unsigned int r = 0, c = 0;
     CPssmFinalData::TScores::const_iterator s = pssm->GetPssm().GetFinalData().GetScores().begin();
     for (i=0; i<nScores; ++i, ++s) {
 
-        matrix[c][r] = *s / scalingFactor;
+        scaledMatrix[c][r] = *s;
 
         // adjust for matrix layout in pssm
         if (pssm->GetPssm().GetByRow()) {
@@ -538,13 +538,35 @@ void PSSMWrapper::OutputPSSM(ncbi::CNcbiOstream& os) const
     osa << *pssm;
 }
 
+static inline int Round(double Num)
+{
+  if (Num >= 0)
+    return((int)(Num + 0.5));
+  else
+    return((int)(Num - 0.5));
+}
+
 int PSSMWrapper::GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIndex) const
 {
     if (ncbistdaa >= 26 || realMasterIndex > multiple->GetMaster()->Length()) {
         ERRORMSG("PSSMWrapper::GetPSSMScore() - invalid parameters");
         return kMin_Int;
     }
-    return (matrix[realMasterIndex][ncbistdaa] / scalingFactor);
+    double scaledScore;
+    switch (ncbistdaa) {
+        case 2:  // B -> average D/N
+            scaledScore = ((double) (scaledMatrix[realMasterIndex][4] + scaledMatrix[realMasterIndex][13])) / 2;
+            break;
+        case 23: // Z -> average E/Q
+            scaledScore = ((double) (scaledMatrix[realMasterIndex][5] + scaledMatrix[realMasterIndex][15])) / 2;
+            break;
+        case 24: // U -> C
+            scaledScore = scaledMatrix[realMasterIndex][3];
+            break;
+        default:
+            scaledScore = scaledMatrix[realMasterIndex][ncbistdaa];
+    }
+    return Round(scaledScore / scalingFactor);
 }
 
 END_SCOPE(Cn3D)
@@ -552,6 +574,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/11/05 12:09:40  thiessen
+* special handling of B,Z,U
+*
 * Revision 1.14  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
