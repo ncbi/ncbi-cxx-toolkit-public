@@ -42,8 +42,14 @@ BEGIN_SCOPE(align_refine)
 
 #define ERROR_MESSAGE_CL(s) ERR_POST(ncbi::Error << "align_refine: " << s << '!')
 #define WARNING_MESSAGE_CL(s) ERR_POST(ncbi::Warning << "align_refine: " << s)
-#define INFO_MESSAGE_CL(s) LOG_POST(s)
+#define LOG_MESSAGE_CL(s) LOG_POST(s)
 #define TRACE_MESSAGE_CL(s) ERR_POST(ncbi::Trace << "align_refine: " << s)
+
+#define TERSE_INFO_MESSAGE_CL(s) \
+    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Info, eDPF_Log) \
+      << s \
+      << NCBI_NS_NCBI::Endm )
+
 
 #define THROW_MESSAGE_CL(str) throw ncbi::CException(__FILE__, __LINE__, NULL, ncbi::CException::eUnknown, (str))
 
@@ -54,6 +60,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/11/07 14:39:24  lanczyck
+* define a macro for plain info-level messages
+*
 * Revision 1.1  2005/06/28 13:45:25  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *
