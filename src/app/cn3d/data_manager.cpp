@@ -59,6 +59,8 @@
 #include "alignment_set.hpp"
 #include "cn3d_tools.hpp"
 
+#include <algo/structure/cd_utils/cuCD.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -250,7 +252,6 @@ void ASNDataManager::Load(void)
     }
 
     // remove consensus sequence, then do a check over the whole tree to make sure any reference to it is gone
-/*
     if (GetInternalCDDData()) {
         RemoveConsensusFromCDD();
         for (CTypeConstIterator < CSeq_id > i(ConstBegin(*(GetInternalCDDData()))); i; ++i) {
@@ -259,24 +260,14 @@ void ASNDataManager::Load(void)
                 break;
             }
         }
+    } else if (mimeData.NotEmpty()) {
+        for (CTypeConstIterator < CSeq_id > i(ConstBegin(mimeData.GetObject())); i; ++i) {
+            if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
+                ERRORMSG("ASNDataManager::Load() - a consensus is present in the data: " << i.GetContext());
+                break;
+            }
+        }
     }
-*/
-}
-
-void AddBioseq(CBioseq_set& seqSet, CBioseq& bioseq)
-{
-    seqSet.SetSeq_set().push_back(CRef < CSeq_entry > (new CSeq_entry));
-    seqSet.SetSeq_set().back()->SetSeq(bioseq);
-}
-
-void AddBioseqs(CBioseq_set& seqSet, ASNDataManager::SeqEntryList& seqEntries)
-{
-    ASNDataManager::SeqEntryList::iterator s, se = seqEntries.end();
-    for (s=seqEntries.begin(); s!=se; ++s)
-        if ((*s)->IsSeq())
-            AddBioseq(seqSet, (*s)->SetSeq());
-        else
-            AddBioseqs(seqSet, (*s)->SetSet().SetSeq_set());
 }
 
 void ASNDataManager::RemoveConsensusFromCDD(void)
@@ -285,14 +276,10 @@ void ASNDataManager::RemoveConsensusFromCDD(void)
     if (!cdd)
         return;
 
-    // flatten the sequence list for simplicity
-    if (!seqEntryList) {
-        ERRORMSG("ASNDataManager::RemoveConsensusFromCDD() - Cdd has no Seq-entry records");
-        return;
-    }
-    SeqEntryList flatSeqEntry;
-    flatSeqEntry.push_back(CRef < CSeq_entry > (new CSeq_entry));
-    AddBioseqs(flatSeqEntry.back()->SetSet(), *seqEntryList);
+    int result = cd_utils::PurgeConsensusSequences((cd_utils::CCdCore *) cdd, true);
+    TRACEMSG("PurgeConsensusSequences() removed " << result << " sequence(s)");
+//    string err;
+//    WriteASNToFile("Cdd.txt", *cdd, false, &err);
 }
 
 bool ASNDataManager::ConvertMimeDataToCDD(const std::string& cddName)
@@ -1023,6 +1010,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/11/07 21:56:27  thiessen
+* use cd_utils to remove consensus and remaster
+*
 * Revision 1.28  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
