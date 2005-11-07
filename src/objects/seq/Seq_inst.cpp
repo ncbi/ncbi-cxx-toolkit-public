@@ -51,35 +51,6 @@ CSeq_inst::~CSeq_inst(void)
 {
 }
 
-bool CSeq_inst::IsNa(CSeq_inst::EMol mol)
-{
-    if (mol == CSeq_inst::eMol_dna  ||
-        mol == CSeq_inst::eMol_rna  ||
-        mol == CSeq_inst::eMol_na)
-    {
-        return true;
-    }
-    return false;
-}
-
-bool CSeq_inst::IsAa(CSeq_inst::EMol mol)
-{
-    if (mol == CSeq_inst::eMol_aa)
-    {
-        return true;
-    }
-    return false;
-}
-
-bool CSeq_inst::IsNa(void) const
-{
-    return IsNa (GetMol ());
-}
-
-bool CSeq_inst::IsAa(void) const
-{
-    return IsAa (GetMol ());
-}
 
 END_objects_SCOPE // namespace ncbi::objects::
 
@@ -90,6 +61,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.3  2005/11/07 15:37:17  vasilche
+* Inlined IsNa() & IsAa() methods.
+*
 * Revision 6.2  2004/05/19 17:25:14  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

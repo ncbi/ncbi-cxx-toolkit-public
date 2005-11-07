@@ -81,6 +81,36 @@ CSeq_inst::CSeq_inst(void)
 }
 
 
+inline
+bool CSeq_inst::IsNa(EMol mol)
+{
+    return (mol == eMol_dna  ||
+            mol == eMol_rna  ||
+            mol == eMol_na);
+}
+
+
+inline
+bool CSeq_inst::IsAa(EMol mol)
+{
+    return (mol == eMol_aa);
+}
+
+
+inline
+bool CSeq_inst::IsNa(void) const
+{
+    return IsNa(GetMol());
+}
+
+
+inline
+bool CSeq_inst::IsAa(void) const
+{
+    return IsAa(GetMol());
+}
+
+
 /////////////////// end of CSeq_inst inline methods
 
 
@@ -93,6 +123,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/11/07 15:37:17  vasilche
+* Inlined IsNa() & IsAa() methods.
+*
 * Revision 1.2  2002/12/26 12:42:59  dicuccio
 * Added Win32 export specifiers
 *
