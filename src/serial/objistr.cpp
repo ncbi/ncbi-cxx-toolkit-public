@@ -564,7 +564,7 @@ string CObjectIStream::GetStackTrace(void) const
 
 CNcbiStreampos CObjectIStream::GetStreamOffset(void) const
 {
-    return m_Input.GetStreamOffset();
+    return m_Input.GetStreamPos();
 }
 
 CNcbiStreampos CObjectIStream::GetStreamPos(void) const
@@ -574,7 +574,7 @@ CNcbiStreampos CObjectIStream::GetStreamPos(void) const
 
 void CObjectIStream::SetStreamOffset(CNcbiStreampos pos)
 {
-    m_Input.SetStreamOffset(pos);
+    m_Input.SetStreamPos(pos);
 }
 
 void CObjectIStream::SetStreamPos(CNcbiStreampos pos)
@@ -584,7 +584,7 @@ void CObjectIStream::SetStreamPos(CNcbiStreampos pos)
 
 string CObjectIStream::GetPosition(void) const
 {
-    return "byte "+NStr::UIntToString(GetStreamPos());
+    return "byte "+NStr::Int8ToString(NcbiStreamposToInt8(GetStreamPos()));
 }
 
 void CObjectIStream::ThrowError1(const CDiagCompileInfo& diag_info, 
@@ -1580,6 +1580,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.140  2005/11/07 18:40:49  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.139  2005/11/03 15:13:27  gouriano
 * Use streampos instead of streamoff for positioning
 *

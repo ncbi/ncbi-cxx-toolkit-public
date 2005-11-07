@@ -289,7 +289,8 @@ public:
     void HandleEOF(CEofException&);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    CNcbiStreampos GetStreamOffset(void) const;
+    // deprecated; use GetStreamPos instead
+    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
     CNcbiStreampos GetStreamPos(void) const;
 
     enum EFlags {
@@ -546,6 +547,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2005/11/07 18:40:10  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.94  2005/11/03 15:13:06  gouriano
 * Use streampos instead of streamoff for positioning
 *

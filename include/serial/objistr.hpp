@@ -379,9 +379,11 @@ public:
     void HandleEOF(CEofException&);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    CNcbiStreampos GetStreamOffset(void) const;
+    // deprecated; use GetStreamPos instead
+    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
     CNcbiStreampos GetStreamPos(void) const;
-    void   SetStreamOffset(CNcbiStreampos pos);
+    // deprecated; use SetStreamPos instead
+    NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
     void   SetStreamPos(CNcbiStreampos pos);
 
     void ThrowError1(const CDiagCompileInfo& diag_info,
@@ -719,6 +721,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.113  2005/11/07 18:40:10  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.112  2005/11/03 15:13:06  gouriano
 * Use streampos instead of streamoff for positioning
 *

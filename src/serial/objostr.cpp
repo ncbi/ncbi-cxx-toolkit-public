@@ -372,7 +372,7 @@ string CObjectOStream::GetStackTrace(void) const
 
 CNcbiStreampos CObjectOStream::GetStreamOffset(void) const
 {
-    return m_Output.GetStreamOffset();
+    return m_Output.GetStreamPos();
 }
 
 CNcbiStreampos CObjectOStream::GetStreamPos(void) const
@@ -382,7 +382,7 @@ CNcbiStreampos CObjectOStream::GetStreamPos(void) const
 
 string CObjectOStream::GetPosition(void) const
 {
-    return "byte "+NStr::UIntToString(GetStreamPos());
+    return "byte "+NStr::Int8ToString(NcbiStreamposToInt8(GetStreamPos()));
 }
 
 void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info, 
@@ -1026,6 +1026,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2005/11/07 18:40:49  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.104  2005/11/03 15:13:27  gouriano
 * Use streampos instead of streamoff for positioning
 *

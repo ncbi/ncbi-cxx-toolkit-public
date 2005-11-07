@@ -759,7 +759,7 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
         if ( out.m_CurrentTagState != out.eTagStart )
             out.ThrowError(out.fIllegalCall,
                 string("AsnWrite only allowed at tag start: data= ")+data);
-        if ( out.m_CurrentPosition + CNcbiStreamoff(length) > out.m_CurrentTagLimit )
+        if ( out.m_CurrentTagLimit != 0 && out.m_CurrentPosition + length > out.m_CurrentTagLimit )
             out.ThrowError(out.fIllegalCall,
                 string("tag DATA overflow: data= ")+data);
         out.m_CurrentPosition += CNcbiStreamoff(length);
@@ -867,6 +867,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2005/11/07 18:40:49  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.68  2005/11/07 15:44:22  ucko
 * CObjectOStream::AsnIo::Write: make sure to convert integers to
 * CNcbiStreamoff before adding them to CNcbiStreampos values.

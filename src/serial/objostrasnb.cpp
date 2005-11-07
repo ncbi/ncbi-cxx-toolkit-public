@@ -54,6 +54,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
                                                            bool deleteOut)
 {
@@ -67,7 +68,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
+    m_CurrentTagLimit = 0;
 #endif
 }
 
@@ -79,7 +80,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 #if CHECK_STREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
-    m_CurrentTagLimit = numeric_limits<CNcbiStreamoff>::max();
+    m_CurrentTagLimit = 0;
 #endif
 }
 
@@ -114,8 +115,9 @@ void CObjectOStreamAsnBinary::EndTag(void)
 inline
 void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 {
-    CNcbiStreampos limit = m_CurrentPosition + CNcbiStreamoff(1 + length);
-    if ( limit <= m_CurrentPosition || limit > m_CurrentTagLimit )
+    Int8 limit = m_CurrentPosition + 1 + length;
+    if ( limit <= m_CurrentPosition ||
+        (m_CurrentTagLimit != 0 && limit > m_CurrentTagLimit) )
         ThrowError(fIllegalCall, "tag will overflow enclosing tag");
     else
         m_CurrentTagLimit = limit;
@@ -135,7 +137,8 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
 {
 #if CHECK_STREAM_INTEGRITY
     //_TRACE("WriteByte: " << NStr::PtrToString(byte));
-    if ( m_CurrentPosition >= m_CurrentTagLimit )
+    if ( m_CurrentTagLimit != 0 &&
+         m_CurrentPosition >= m_CurrentTagLimit )
         ThrowError(fOverflow, "tag size overflow");
     switch ( m_CurrentTagState ) {
     case eTagStart:
@@ -186,6 +189,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
             SetTagLength(m_CurrentTagLength);
         break;
     case eData:
+        _ASSERT( m_CurrentTagLimit != 0);
         if ( m_CurrentPosition + CNcbiStreamoff(1) == m_CurrentTagLimit )
             EndTag();
         break;
@@ -206,8 +210,9 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
     //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
         ThrowError(fIllegalCall, "WriteBytes only allowed in DATA");
-    CNcbiStreampos new_pos = m_CurrentPosition + CNcbiStreamoff(size);
-    if ( new_pos < m_CurrentPosition || new_pos > m_CurrentTagLimit )
+    Int8 new_pos = m_CurrentPosition + size;
+    if ( new_pos < m_CurrentPosition ||
+        (m_CurrentTagLimit != 0 && new_pos > m_CurrentTagLimit) )
         ThrowError(fOverflow, "tag DATA overflow");
     m_CurrentPosition = new_pos;
     if ( new_pos == m_CurrentTagLimit )
@@ -1120,6 +1125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.98  2005/11/07 18:40:49  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.97  2005/11/03 15:13:27  gouriano
 * Use streampos instead of streamoff for positioning
 *

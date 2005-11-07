@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/11/07 18:39:33  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.9  2005/11/03 15:12:44  gouriano
 * Use streampos instead of streamoff for positioning
 *
@@ -190,7 +193,13 @@ inline
 CNcbiStreampos CIStreamBuffer::GetStreamPos(void) const
     THROWS1_NONE
 {
-    return m_BufferPos + CNcbiStreamoff(m_CurrentPos - m_Buffer);
+    return NcbiInt8ToStreampos( GetStreamPosAsInt8() );
+}
+
+inline
+Int8 CIStreamBuffer::GetStreamPosAsInt8(void) const
+{
+    return m_BufferPos + (m_CurrentPos - m_Buffer);
 }
 
 inline
@@ -229,7 +238,13 @@ inline
 CNcbiStreampos COStreamBuffer::GetStreamPos(void) const
     THROWS1_NONE
 {
-    return m_BufferPos + CNcbiStreamoff(m_CurrentPos - m_Buffer);
+    return NcbiInt8ToStreampos( GetStreamPosAsInt8() );
+}
+
+inline
+Int8 COStreamBuffer::GetStreamPosAsInt8(void) const
+{
+    return m_BufferPos + (m_CurrentPos - m_Buffer);
 }
 
 inline

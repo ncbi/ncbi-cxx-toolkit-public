@@ -174,8 +174,8 @@ private:
     //                         -- after any of Peek?Tag or ExpectSysTag
     // 
     size_t m_CurrentTagLength;  // length of tag header (without length field)
-    CNcbiStreampos m_CurrentTagLimit;   // end of current tag data (INT_MAX if unlimited)
-    stack<CNcbiStreampos> m_Limits;
+    Int8 m_CurrentTagLimit;   // end of current tag data
+    stack<Int8> m_Limits;
     EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 
 #if CHECK_STREAM_INTEGRITY
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/11/07 18:40:10  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.49  2005/11/03 15:13:06  gouriano
 * Use streampos instead of streamoff for positioning
 *

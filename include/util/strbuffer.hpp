@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2005/11/07 18:39:33  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.37  2005/11/03 15:12:44  gouriano
 * Use streampos instead of streamoff for positioning
 *
@@ -259,11 +262,12 @@ public:
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
     // deprecated; use GetStreamPos instead
-    CNcbiStreampos GetStreamOffset(void) const THROWS1_NONE;
+    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const THROWS1_NONE;
     // deprecated; use SetStreamPos instead
-    void   SetStreamOffset(CNcbiStreampos pos);
+    NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
 
     CNcbiStreampos GetStreamPos(void) const THROWS1_NONE;
+    Int8 GetStreamPosAsInt8(void) const;
     void   SetStreamPos(CNcbiStreampos pos);
     
     // action: read in buffer up to end of line
@@ -305,7 +309,7 @@ private:
 
     const char* m_Error;
 
-    CNcbiStreampos m_BufferPos; // offset of current buffer in source stream
+    Int8 m_BufferPos; // offset of current buffer in source stream
     size_t m_BufferSize;      // buffer size
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
@@ -331,8 +335,10 @@ public:
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
-    CNcbiStreampos GetStreamOffset(void) const THROWS1_NONE;
+    // deprecated; use GetStreamPos instead
+    NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const THROWS1_NONE;
     CNcbiStreampos GetStreamPos(void) const THROWS1_NONE;
+    Int8 GetStreamPosAsInt8(void) const;
 
     size_t GetCurrentLineLength(void) const THROWS1_NONE;
 
@@ -419,7 +425,7 @@ private:
 
     size_t m_IndentLevel;
 
-    CNcbiStreampos m_BufferPos; // offset of current buffer in source stream
+    Int8 m_BufferPos; // offset of current buffer in source stream
     char* m_Buffer;           // buffer pointer
     char* m_CurrentPos;       // current char position in buffer
     char* m_BufferEnd;       // end of valid content in buffer

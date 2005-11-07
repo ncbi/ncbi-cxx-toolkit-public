@@ -175,7 +175,7 @@ private:
     void WriteNumberValue(Uint8 data);
 
 #if CHECK_STREAM_INTEGRITY
-    CNcbiStreampos m_CurrentPosition;
+    Int8 m_CurrentPosition;
     enum ETagState {
         eTagStart,
         eTagValue,
@@ -185,12 +185,12 @@ private:
         eData
     };
     ETagState m_CurrentTagState;
-    CNcbiStreampos m_CurrentTagPosition;
+    Int8 m_CurrentTagPosition;
     Uint1 m_CurrentTagCode;
     size_t m_CurrentTagLengthSize;
     size_t m_CurrentTagLength;
-    CNcbiStreampos m_CurrentTagLimit;
-    stack<CNcbiStreampos> m_Limits;
+    Int8 m_CurrentTagLimit;
+    stack<Int8> m_Limits;
 
     void StartTag(TByte code);
     void EndTag(void);
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/11/07 18:40:10  gouriano
+* Use Int8 in stream position calculations
+*
 * Revision 1.48  2005/11/03 15:13:06  gouriano
 * Use streampos instead of streamoff for positioning
 *
