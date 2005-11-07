@@ -577,7 +577,7 @@ public:
     /// Translate an OID to a PIG.
     bool OidToPig(int oid, int & pig) const;
     
-    /// Translate a GI to an OID.
+    /// Translate an OID to a GI.
     bool OidToGi(int oid, int & gi) const;
     
     /// Translate a GI to an OID.
