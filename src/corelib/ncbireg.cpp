@@ -1432,7 +1432,7 @@ bool CNcbiRegistry::x_Set(const string& section, const string& name,
                           const string& comment)
 {
     TFlags flags2 = (flags & fPersistent) ? flags : (flags | fTransient);
-    bool was_empty = Get(section, name, flags2).empty();
+    bool was_empty = Get(section, name, flags).empty();
     _TRACE('[' << section << ']' << name << " = " << value << ':' << flags);
     if ((flags & fNoOverride)  &&  !was_empty) {
         return false;
@@ -1482,6 +1482,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/11/07 17:02:02  ucko
+ * CNcbiRegistry::x_Set: also pass original flags to Get when checking
+ * whether there was already a value, to avoid inadvertently shadowing
+ * persistent values with transient ones despite fNoOverride.
+ *
  * Revision 1.55  2005/10/17 17:01:55  ucko
  * Tweak CNcbiRegistry::x_Set to pass the original value of flags to
  * recursive invocations of Set.
