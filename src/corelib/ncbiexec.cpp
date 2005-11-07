@@ -180,6 +180,17 @@ static void s_CheckExecArg(const char* arg)
     } \
     args[xi] = (const char*)0
 
+static const char* s_GetErrnoMsg(int err)
+{
+    switch (err) {
+    case E2BIG:     return "Argument list is too large";
+    case EINVAL:    return "Invalid mode";
+    case ENOENT:    return "File not found";
+    case ENOEXEC:   return "File is not executable";
+    case ENOMEM:    return "Out of memory";
+    default:        return "Unknown error";
+    }
+}
 
 int CExec::System(const char *cmdline)
 { 
@@ -204,14 +215,16 @@ int CExec::System(const char *cmdline)
 int CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
 {
     int status;
-#if defined(NCBI_OS_MSWIN)
-    status = spawnv(s_GetRealMode(mode), cmdname, &cmdname);
-#elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
+#if defined(NCBI_OS_MSWIN)
+    status = spawnv(s_GetRealMode(mode), cmdname, args);
+#elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, args);
 #endif
     if (status == -1) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnL");
+        string msg("CExec::SpawnL(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -228,7 +241,9 @@ int CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
 #endif
     if (status == -1) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLE");
+        string msg("CExec::SpawnLE(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -237,14 +252,16 @@ int CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
 int CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
 {
     int status;
-#if defined(NCBI_OS_MSWIN)
-    status = spawnvp(s_GetRealMode(mode), cmdname, &cmdname);
-#elif defined(NCBI_OS_UNIX)
     GET_EXEC_ARGS;
+#if defined(NCBI_OS_MSWIN)
+    status = spawnvp(s_GetRealMode(mode), cmdname, args);
+#elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, args);
 #endif
     if (status == -1) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLP");
+        string msg("CExec::SpawnLP(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -261,7 +278,9 @@ int CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
     status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnLPE");
+        string msg("CExec::SpawnLPE(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -278,7 +297,9 @@ int CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
     status = s_SpawnUnix(eV, mode, cmdname, argv);
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnV");
+        string msg("CExec::SpawnV(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -296,7 +317,9 @@ int CExec::SpawnVE(EMode mode, const char *cmdname,
     status = s_SpawnUnix(eVE, mode, cmdname, argv, envp);
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVE");
+        string msg("CExec::SpawnVE(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -313,7 +336,9 @@ int CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
     status = s_SpawnUnix(eVP, mode, cmdname, argv);
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVP");
+        string msg("CExec::SpawnVP(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -331,7 +356,9 @@ int CExec::SpawnVPE(EMode mode, const char *cmdname,
     status = s_SpawnUnix(eVPE, mode, cmdname, argv, envp);
 #endif
     if (status == -1 ) {
-        NCBI_THROW(CExecException,eSpawn, "CExec::SpawnVPE");
+        string msg("CExec::SpawnVPE(): ");
+        msg += s_GetErrnoMsg(errno);
+        NCBI_THROW(CExecException,eSpawn, msg);
     }
     return status;
 }
@@ -349,6 +376,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/11/07 17:03:43  dicuccio
+ * CExec::SpawnL()/CExec::SpawnLP(): (Win32) bugfix - use GET_EXEC_ARGS to format
+ * varargs.  Added better exception text for clarity.
+ *
  * Revision 1.23  2005/06/10 14:21:06  ivanov
  * UNIX: use freopen() to redirect standard I/O streams to /dev/null
  * for detached process
