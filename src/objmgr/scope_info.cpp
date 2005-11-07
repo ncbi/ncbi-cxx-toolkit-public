@@ -397,7 +397,15 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse)
         TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
         m_TSE_UnlockQueue.Erase(&tse);
     }}
-    tse.ResetTSE_Lock();
+    if ( CanBeEdited() ) {
+        // remove TSE from static blob set in DataSource
+        CConstRef<CTSE_Info> tse_info(&*tse.GetTSE_Lock());
+        tse.ResetTSE_Lock();
+        GetDataSource().DropStaticTSE(const_cast<CTSE_Info&>(*tse_info));
+    }
+    else {
+        tse.ResetTSE_Lock();
+    }
     tse.x_DetachDS();
     tse.m_TSE_LockCounter.Add(-1); // restore lock counter
     _ASSERT(!tse.GetTSE_Lock());
@@ -1745,6 +1753,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/11/07 15:40:54  vasilche
+* Clean edited entries in ResetHistory().
+*
 * Revision 1.28  2005/10/26 14:36:39  vasilche
 * Updated for new CBlobId interface.
 *
