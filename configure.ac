@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.400 2005/11/01 21:48:17 ucko Exp $
+#  $Id: configure.ac,v 1.401 2005/11/07 21:39:54 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -769,9 +769,9 @@ case "$host_os:$compiler" in
    # 1460: Function %n is redeclared "inline" after being called.
    # 1521: A nonstandard preprocessing directive is used.
    CFLAGS="$COMMON_FLAGS -woff 1209 $CFLAGS"
-   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
-   CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
-   LDFLAGS="-LANG:std -G0 $LDFLAGS"
+   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424 $CXXFLAGS"
+   : ${CXXCPP:="$CXX -E -LANG:std"}
+   LDFLAGS="-LANG:std -G0 -FE:eliminate_duplicate_inline_copies -FE:template_in_elf_section $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
    CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    ;;
@@ -1083,7 +1083,9 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
         fi
         ;;
       MIPSpro* )
-        DEF_FAST_FLAGS="-O3 -Ofast -IPA:inline=off"
+        # -Ofast would be preferable, but runs into resource limits when
+        # building libxblast.so. :-/
+        DEF_FAST_FLAGS="-O2"
         ;;
       Compaq:* )
         DEF_FAST_FLAGS="-fast"
