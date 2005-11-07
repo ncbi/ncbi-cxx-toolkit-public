@@ -45,12 +45,28 @@ const char* CBDB_StrErrAdapt::strerror(int errnum)
     return ::db_strerror(errnum);
 }
 
+const char* CBDB_ErrnoException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eSystem:       return "eSystem";
+    case eBerkeleyDB:   return "eBerkeleyDB";
+    default:            return  CException::GetErrCodeString();
+    }
+}
+
+bool CBDB_ErrnoException::IsNoMem() const
+{
+    return (BDB_GetErrno() == ENOMEM);
+}
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/07 19:36:14  kuznets
+ * CBDB_ErrnoException: +IsNoMem() method
+ *
  * Revision 1.2  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
