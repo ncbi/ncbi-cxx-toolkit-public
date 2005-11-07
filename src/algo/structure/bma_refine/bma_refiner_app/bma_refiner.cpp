@@ -289,9 +289,9 @@ int CAlignmentRefiner::Run(void)
     nBlocksFromAU = bma->NAlignedBlocks();
     alWidth       = bma->AlignmentWidth();
 
-    INFO_MESSAGE_CL("\nRows in alignment:  " << bma->NRows());
-    INFO_MESSAGE_CL("Alignment width  :  " << alWidth);
-    INFO_MESSAGE_CL("Number of Aligned Blocks after IBM:  " << nBlocksFromAU << "\n");
+    TERSE_INFO_MESSAGE_CL("\nRows in alignment:  " << bma->NRows());
+    TERSE_INFO_MESSAGE_CL("Alignment width  :  " << alWidth);
+    TERSE_INFO_MESSAGE_CL("Number of Aligned Blocks after IBM:  " << nBlocksFromAU << "\n");
 
     
     //  Some general parameters...
@@ -760,6 +760,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/07 15:30:26  ucko
+ * Use TERSE_INFO_MESSAGE_CL rather than INFO_MESSAGE_CL, which is no
+ * longer defined.
+ *
  * Revision 1.6  2005/10/05 13:24:35  lanczyck
  * handle case where lno is not a factor of # of rows; output modifications
  *
