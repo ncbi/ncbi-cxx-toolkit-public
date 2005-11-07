@@ -50,14 +50,14 @@ public:
 
     // Event function called when parser finds a top level object
     virtual void OnTopObjectFoundPre(const CObjectInfo& object, 
-                                     CNcbiStreamoff stream_offset);
+                                     CNcbiStreampos     stream_pos);
 
     // Event function alled after top object deserialization
     virtual void OnTopObjectFoundPost(const CObjectInfo& object);
 
     // Overload from CObjectsSniffer
     virtual void OnObjectFoundPre(const CObjectInfo& object, 
-                                  CNcbiStreamoff stream_offset);
+                                  CNcbiStreampos     stream_pos);
 
     // Overload from CObjectsSniffer
     virtual void OnObjectFoundPost(const CObjectInfo& object);
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/07 13:04:50  kuznets
+ * Use streampos (portability fix)
+ *
  * Revision 1.2  2005/10/12 12:18:04  kuznets
  * Use 64-bit file sizes and offsets
  *

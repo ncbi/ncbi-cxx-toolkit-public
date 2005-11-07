@@ -46,20 +46,20 @@ BEGIN_SCOPE(objects)
 
 
 //////////////////////////////////////////////////////////////////
-//
-// Serialized objects sniffer.
-// Binary ASN format does not include any information on what 
-// objects are encoded in any particular file. This class uses
-// try and fail method to identify if the input stream contains
-// any objects.
-//
-// Use AddCandidate function to tune the sniffer for recognition, 
-// then call Probe to interrogate the stream.
-// 
-// NOTE: This method is not 100% accurate. Small probablitity 
-// present that serialization code will be able to read the
-// wrong type.
-//
+///
+/// Serialized objects sniffer.
+/// Binary ASN format does not include any information on what 
+/// objects are encoded in any particular file. This class uses
+/// try and fail method to identify if the input stream contains
+/// any objects.
+///
+/// Use AddCandidate function to tune the sniffer for recognition, 
+/// then call Probe to interrogate the stream.
+/// 
+/// NOTE: This method is not 100% accurate. Small probablitity 
+/// present that serialization code will be able to read the
+/// wrong type.
+///
 
 class NCBI_XOBJUTIL_EXPORT CObjectsSniffer
 {
@@ -67,13 +67,13 @@ public:
 
     struct SObjectDescription 
     {
-        CObjectTypeInfo  info;            // Type information class
-        CNcbiStreamoff   stream_offset;   // Offset in file
+        CObjectTypeInfo  info;         ///< Type information class
+        CNcbiStreampos   stream_pos;   ///< Position (Offset) in file
 
         SObjectDescription(const CObjectTypeInfo& object_info,
-                           CNcbiStreamoff offset)
+                           CNcbiStreampos         pos)
         : info(object_info),
-          stream_offset(offset)
+          stream_pos(pos)
         {}
     };
 
@@ -109,46 +109,46 @@ public:
     CObjectsSniffer() : m_DiscardCurrObj(false) {}
     virtual ~CObjectsSniffer() {}
 
-    // Add new possible type to the recognition list.
+    /// Add new possible type to the recognition list.
     void AddCandidate(CObjectTypeInfo ti, 
                       EEventCallBackMode emode=eCallAlways);
 
-    // Return reference on the internal vector of object candidates.
+    /// Return reference on the internal vector of object candidates.
     const TCandidates& GetCandidates() const { return m_Candidates; }
 
-    // The main worker function. Tryes to identify if the input stream contains
-    // any candidate objects. Function reads the stream up until it ends of
-    // deserializer cannot recognize the input file format.
+    /// The main worker function. Tryes to identify if the input stream contains
+    /// any candidate objects. Function reads the stream up until it ends of
+    /// deserializer cannot recognize the input file format.
     void Probe(CObjectIStream& input);
 
-    // Get map of all top level objects
+    /// Get map of all top level objects
     const TTopLevelMapVector& GetTopLevelMap() const { return m_TopLevelMap; }
 
-    // Return TRUE if Probe found at least one top level objects
+    /// Return TRUE if Probe found at least one top level objects
     bool IsTopObjectFound() const { return m_TopLevelMap.size() != 0; }
 
-    // Return stream offset of the most recently found top object.
-    // Note: If the top object has not been found return value is undefined.
-    CNcbiStreamoff GetStreamOffset() const { return m_StreamOffset; }
+    /// Return stream offset of the most recently found top object.
+    /// Note: If the top object has not been found return value is undefined.
+    CNcbiStreampos GetStreamPos() const { return m_StreamPos; }
 
-    // Event handling virtual function, called when candidate is found but 
-    // before deserialization. This function can be overloaded in child
-    // classes to implement some custom actions. This function is called before
-    // deserialization.
+    /// Event handling virtual function, called when candidate is found but 
+    /// before deserialization. This function can be overloaded in child
+    /// classes to implement some custom actions. This function is called before
+    /// deserialization.
     virtual void OnObjectFoundPre(const CObjectInfo& object, 
-                                  CNcbiStreamoff stream_offset);
+                                  CNcbiStreampos     stream_pos);
     
-    // Event handling virtual function, called when candidate is found
-    // and deserialized.
+    /// Event handling virtual function, called when candidate is found
+    /// and deserialized.
     virtual void OnObjectFoundPost(const CObjectInfo& object);
 
-    // Event indicates that sniffer objects needs to reset it's status and
-    // get ready for the next probing.
+    /// Event indicates that sniffer objects needs to reset it's status and
+    /// get ready for the next probing.
     virtual void Reset() {}
 
-    // Set the discard flag. If set TRUE current deserialized object is not
-    // deserialized. 
-    // The mechanizm is based on CObjectIStream::SetDiscardCurrObject
+    /// Set the discard flag. If set TRUE current deserialized object is not
+    /// deserialized. 
+    /// The mechanizm is based on CObjectIStream::SetDiscardCurrObject
     void SetDiscardCurrObject(bool discard=true) { m_DiscardCurrObj = discard; }
     bool GetDiscardCurrObject() const { return m_DiscardCurrObj; }
 
@@ -161,13 +161,13 @@ protected:
     
     friend class COffsetReadHook;
 private:
-    // Possible candidates for type probing
+    /// Possible candidates for type probing
     TCandidates         m_Candidates;    
-    // Vector of level object descriptions
+    /// Vector of level object descriptions
     TTopLevelMapVector  m_TopLevelMap;   
-    // Stream offset of the top level object
-    CNcbiStreamoff      m_StreamOffset;  
-    // Flag indicates that current object should be discarded
+    /// Stream offset of the top level object
+    CNcbiStreampos      m_StreamPos;  
+    /// Flag indicates that current object should be discarded
     bool                m_DiscardCurrObj;
 };
 
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/11/07 13:03:36  kuznets
+ * Use streampos (portability fix)
+ *
  * Revision 1.16  2004/08/30 18:15:09  gouriano
  * use CNcbiStreamoff instead of size_t for stream offset operations
  *

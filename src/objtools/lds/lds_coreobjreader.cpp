@@ -57,16 +57,16 @@ CLDS_CoreObjectsReader::CLDS_CoreObjectsReader(void)
 
 
 void CLDS_CoreObjectsReader::OnTopObjectFoundPre(const CObjectInfo& object,
-                                                 CNcbiStreamoff stream_offset)
+                                                 CNcbiStreampos     stream_pos)
 {
-    // GetStreamOffset() returns offset of the most recent top level object
+    // GetStreamPos() returns offset of the most recent top level object
     // In case of the Text ASN.1 it can differ from the stream_offset variable
     // because reader first reads the file header and only then calls the main
     // Read function.
-    CNcbiStreamoff offset = GetStreamOffset();
+    CNcbiStreampos pos = GetStreamPos();
 
-    m_TopDescr = SObjectParseDescr(&object, offset);
-    m_Stack.push(SObjectParseDescr(&object, offset));
+    m_TopDescr = SObjectParseDescr(&object, pos);
+    m_Stack.push(SObjectParseDescr(&object, pos));
 }
 
 void CLDS_CoreObjectsReader::OnTopObjectFoundPost(const CObjectInfo& object)
@@ -85,16 +85,16 @@ void CLDS_CoreObjectsReader::OnTopObjectFoundPost(const CObjectInfo& object)
 
 
 void CLDS_CoreObjectsReader::OnObjectFoundPre(const CObjectInfo& object, 
-                                              CNcbiStreamoff stream_offset)
+                                              CNcbiStreampos     stream_pos)
 {
     if (m_Stack.size() == 0) {
-        OnTopObjectFoundPre(object, stream_offset);
+        OnTopObjectFoundPre(object, stream_pos);
         return;
     }
 
-    _ASSERT(stream_offset);
+    _ASSERT(stream_pos);
 
-    m_Stack.push(SObjectParseDescr(&object, stream_offset));
+    m_Stack.push(SObjectParseDescr(&object, stream_pos));
 }
 
 
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/11/07 13:04:29  kuznets
+ * Use streampos (portability fix)
+ *
  * Revision 1.3  2005/10/12 13:46:22  kuznets
  * Fixed minor compilation bug
  *

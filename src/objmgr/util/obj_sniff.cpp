@@ -110,7 +110,7 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
 
 
 void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& /*object*/, 
-                                       CNcbiStreamoff /*stream_offset*/)
+                                       CNcbiStreampos /*stream_pos*/)
 {
 }
 
@@ -174,7 +174,7 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
 
     try {
         while (true) {
-            m_StreamOffset = input.GetStreamOffset();
+            m_StreamPos = input.GetStreamPos();
             header = input.ReadFileHeader();
 
             if (it_prev_cand != it_end) {
@@ -186,7 +186,7 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
 
                     input.Read(object_info, CObjectIStream::eNoFileHeader);
                     m_TopLevelMap.push_back(
-                        SObjectDescription(it->type_info, m_StreamOffset));
+                        SObjectDescription(it->type_info, m_StreamPos));
 
                     LOG_POST(Info 
                              << "ASN.1 text top level object found:" 
@@ -203,7 +203,7 @@ void CObjectsSniffer::ProbeASN1_Text(CObjectIStream& input)
 
                         input.Read(object_info, CObjectIStream::eNoFileHeader);
                         m_TopLevelMap.push_back(
-                            SObjectDescription(it->type_info, m_StreamOffset));
+                            SObjectDescription(it->type_info, m_StreamPos));
 
                         LOG_POST(Info 
                                  << "ASN.1 text top level object found:" 
@@ -242,11 +242,11 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
                      << "Trying ASN.1 binary top level object:" 
                      << it->type_info.GetTypeInfo()->GetName() );
 
-            m_StreamOffset = input.GetStreamOffset();
+            m_StreamPos = input.GetStreamPos();
 
             input.Read(object_info);
             m_TopLevelMap.push_back(SObjectDescription(it->type_info, 
-                                                       m_StreamOffset));
+                                                       m_StreamPos));
 
             LOG_POST(Info 
                      << "ASN.1 binary top level object found:" 
@@ -258,7 +258,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         catch (CException& _DEBUG_ARG(e)) {
             _TRACE("  failed to read: " << e.GetMsg());
             Reset();
-            input.SetStreamOffset(m_StreamOffset);
+            input.SetStreamOffset(m_StreamPos);
             ++it; // trying the next type.
         }
     }
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.22  2005/11/07 13:03:56  kuznets
+* Use streampos (portability fix)
+*
 * Revision 1.21  2005/04/26 17:31:54  dicuccio
 * Added tracing on failure to read
 *
