@@ -79,7 +79,7 @@ public:
 /// ::strerror function returning valid error messages for both errno and 
 /// BDB error codes.
 
-class CBDB_ErrnoException : 
+class NCBI_BDB_EXPORT CBDB_ErrnoException : 
     public CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::strerror>
 {
 public:
@@ -92,20 +92,13 @@ public:
         eBerkeleyDB   //!< GetErrno() to return BerkeleyDB specific error code
     };
 
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch ( GetErrCode() ) {
-        case eSystem:       return "eSystem";
-        case eBerkeleyDB:   return "eBerkeleyDB";
-        default:            return  CException::GetErrCodeString();
-        }
-    }
+    virtual const char* GetErrCodeString(void) const;
 
     /// Return Berkley DB related error code.
-    int BDB_GetErrno() const
-    {
-        return GetErrno();
-    }
+    int BDB_GetErrno() const { return GetErrno(); }
+
+    /// Returns TRUE if error is BerekleyDB ENOMEM (insufficient buffer size)
+    bool IsNoMem() const;
 
     NCBI_EXCEPTION_DEFAULT2(CBDB_ErrnoException, CParent, int);
 };
@@ -190,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/11/07 19:35:35  kuznets
+ * DLL export spec for CBDB_ErrnoException, +IsNoMem() method
+ *
  * Revision 1.16  2005/08/15 11:32:56  kuznets
  * Corrected error message(minor)
  *
