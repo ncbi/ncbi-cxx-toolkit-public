@@ -180,7 +180,7 @@ static void TestRegistry(void)
     assert(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
               "Val21" );
     assert(  reg1.Get("Section2", "Name21") == "Val21" );
-    assert( !reg1.Set("Section2", "Name21", NcbiEmptyString) );
+    assert(  reg1.Set("Section2", "Name21", NcbiEmptyString) );
     assert( !reg1.Set("Section2", "Name21", NcbiEmptyString,
                        CNcbiRegistry::ePersistent |
                        CNcbiRegistry::eNoOverride) );
@@ -965,6 +965,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2005/11/07 23:28:34  vakatov
+ * Recent fix in the registry code caught a bug in the test (ironic, isn't it?)
+ *
  * Revision 1.98  2005/10/14 19:02:47  ucko
  * Comment out call to TestStreamposConvert because not all
  * configurations support large files. :-/

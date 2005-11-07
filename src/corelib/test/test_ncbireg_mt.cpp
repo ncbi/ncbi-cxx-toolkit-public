@@ -219,7 +219,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
     assert(  reg1.Get("Section2", "Name21", CNcbiRegistry::ePersistent) ==
              "Val21" );
     assert(  reg1.Get("Section2", "Name21") == "Val21" );
-    assert( !reg1.Set("Section2", "Name21", NcbiEmptyString) );
+    assert(  reg1.Set("Section2", "Name21", NcbiEmptyString) );
     assert( !reg1.Set("Section2", "Name21", NcbiEmptyString,
                       CNcbiRegistry::ePersistent |
                       CNcbiRegistry::eNoOverride) );
@@ -313,6 +313,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2005/11/07 23:30:13  vakatov
+ * Recent fix in the registry code caught a bug in the test (ironic, isn't it?)
+ *
  * Revision 6.8  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
