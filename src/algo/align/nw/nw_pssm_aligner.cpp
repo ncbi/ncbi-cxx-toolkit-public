@@ -33,6 +33,7 @@
 
 
 #include <ncbi_pch.hpp>
+#include <math.h>
 #include "messages.hpp"
 #include <algo/align/nw/nw_pssm_aligner.hpp>
 #include <algo/align/nw/align_exception.hpp>
@@ -159,6 +160,8 @@ void CPSSMAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix *scoremat)
                    g_msg_NullParameter);
     }
     CNWAligner::SetScoreMatrix(scoremat);
+
+    m_ScoreMatrix.s[0][0] = 0;
 }
 
 
@@ -189,8 +192,10 @@ const
 
 CNWAligner::TScore CPSSMAligner::x_Align(SAlignInOut* data)
 {
-    if (m_Freq1 || m_Pssm1)
+    if (m_Freq1)
         return x_AlignProfile(data);      // profile-sequence, profile-profile
+    else if (m_Pssm1)
+        return x_AlignPSSM(data);      // profile-sequence, profile-profile
     else
         return CNWAligner::x_Align(data); // sequence-sequence
 }
@@ -210,7 +215,7 @@ const unsigned char kMaskEc  = 0x02;
 const unsigned char kMaskE   = 0x04;
 const unsigned char kMaskD   = 0x08;
 
-CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
+CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
 {
     const size_t N1 = data->m_len1 + 1;
     const size_t N2 = data->m_len2 + 1;
@@ -389,11 +394,11 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
 
             n0 = V + wg1;
             if(E >= n0) {
-                E += ws1;      // continue the gap
+                E += ws1;
                 tracer = kMaskEc;
             }
             else {
-                E = n0 + ws1;  // open a new gap
+                E = n0 + ws1;
                 tracer = 0;
             }
 
@@ -446,6 +451,249 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
         x_DoBackTrace(backtrace_matrix, data);
     }
     return V;
+}
+
+
+CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
+{
+    const size_t N1 = data->m_len1 + 1;
+    const size_t N2 = data->m_len2 + 1;
+
+    vector<double> stl_rowV (N2), stl_rowF(N2);
+
+    double* rowV    = &stl_rowV[0];
+    double* rowF    = &stl_rowF[0];
+
+    double* pV = rowV - 1;
+
+    const double** freq1_row = m_Freq1 + data->m_offset1 - 1;
+    const double** freq2_row = m_Freq2 + data->m_offset2 - 1;
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
+    m_terminate = false;
+
+    if(m_prg_callback) {
+        m_prg_info.m_iter_total = N1*N2;
+        m_prg_info.m_iter_done = 0;
+        if(m_terminate = m_prg_callback(&m_prg_info)) {
+	  return 0;
+	}
+    }
+
+    TScore wg1L = m_Wg;
+    TScore wg1R = m_Wg;
+    TScore wg2L = m_Wg;
+    TScore wg2R = m_Wg;
+
+    TScore ws1L = m_Ws;
+    TScore ws1R = m_Ws;
+    TScore ws2L = m_Ws;
+    TScore ws2R = m_Ws;
+
+    if (data->m_offset1 == 0) {
+        if (data->m_esf_L1) {
+            wg1L = ws1L = 0;
+        }
+        else {
+            wg1L = m_StartWg;
+            ws1L = m_StartWs;
+        }
+    }
+
+    if (m_SeqLen1 == data->m_offset1 + data->m_len1) {
+        if (data->m_esf_R1) {
+            wg1R = ws1R = 0;
+        }
+        else {
+            wg1R = m_EndWg;
+            ws1R = m_EndWs;
+        }
+    }
+
+    if (data->m_offset2 == 0) {
+        if (data->m_esf_L2) {
+            wg2L = ws2L = 0;
+        }
+        else {
+            wg2L = m_StartWg;
+            ws2L = m_StartWs;
+        }
+    }
+
+    if (m_SeqLen2 == data->m_offset2 + data->m_len2) {
+        if (data->m_esf_R2) {
+            wg2R = ws2R = 0;
+        }
+        else {
+            wg2R = m_EndWg;
+            ws2R = m_EndWs;
+        }
+    }
+
+    TScore wgleft1   = wg1L;
+    TScore wsleft1   = ws1L;
+    TScore wg1 = m_Wg, ws1 = m_Ws;
+
+    // index calculation: [i,j] = i*n2 + j
+    vector<unsigned char> stl_bm (N1*N2);
+    unsigned char* backtrace_matrix = &stl_bm[0];
+
+    // first row
+    size_t k = 1;
+    if (N2 > 1) {
+        rowV[0] = wgleft1 * (1.0 - freq2_row[1][0]);
+        for (k = 1; k < N2; k++) {
+            rowV[k] = pV[k] + wsleft1;
+            rowF[k] = kInfMinus;
+            backtrace_matrix[k] = kMaskE | kMaskEc;
+        }
+    }
+    rowV[0] = 0;
+	
+    if(m_prg_callback) {
+        m_prg_info.m_iter_done = k;
+        m_terminate = m_prg_callback(&m_prg_info);
+    }
+
+    // recurrences
+    TScore wgleft2   = wg2L;
+    TScore wsleft2   = ws2L;
+    double V  = rowV[N2 - 1];
+    double V0;
+    double E, G, n0;
+    unsigned char tracer;
+
+    if (N1 > 1)
+        V0 = wgleft2 * (1.0 - freq1_row[1][0]);
+
+    size_t i, j;
+    for(i = 1;  i < N1 && !m_terminate;  ++i) {
+        
+        V = V0 += wsleft2;
+        E = kInfMinus;
+        backtrace_matrix[k++] = kMaskFc;
+
+        if(i == N1 - 1) {
+            wg1 = wg1R;
+            ws1 = ws1R;
+        }
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
+
+        for (j = 1; j < N2; ++j, ++k) {
+
+            if(j == N2 - 1) {
+                wg2 = wg2R;
+                ws2 = ws2R;
+            }
+            double scaled_wg1 = wg1 * (1.0 - freq2_row[j][0]);
+            double scaled_ws1 = ws1;
+            double scaled_wg2 = wg2 * (1.0 - freq1_row[i][0]);
+            double scaled_ws2 = ws2;
+            
+            double accum = 0.0, sum = 0.0;
+            double diff_freq1[kPSSM_ColumnSize];
+            double diff_freq2[kPSSM_ColumnSize];
+
+            // separate the residue frequencies into two components:
+            // a component that is the same for both columns, and
+            // a component that is different. The all-against-all
+            // score computation only takes place on the components
+            // that are different, so this will assign a higher score
+            // to more similar frequency columns
+
+            for (int m = 1; m < kPSSM_ColumnSize; m++) {
+                if (freq1_row[i][m] < freq2_row[j][m]) {
+                    accum += freq1_row[i][m] * (double)sm[m][m];
+                    diff_freq1[m] = 0.0;
+                    diff_freq2[m] = freq2_row[j][m] - freq1_row[i][m];
+                }
+                else {
+                    accum += freq2_row[j][m] * (double)sm[m][m];
+                    diff_freq1[m] = freq1_row[i][m] - freq2_row[j][m];
+                    diff_freq2[m] = 0.0;
+                }
+            }
+
+            for (int m = 1; m < kPSSM_ColumnSize; m++) {
+                sum += diff_freq1[m];
+            }
+            if (sum > 0) {
+                // normalize one column of differences
+
+                for (int m = 1; m < kPSSM_ColumnSize; m++)
+                    diff_freq1[m] /= sum;
+
+                for (int m = 1; m < kPSSM_ColumnSize; m++) {
+                    for (int n = 1; n < kPSSM_ColumnSize; n++) {
+                        accum += diff_freq1[m] * 
+                                diff_freq2[n] * 
+                                (double)sm[m][n];
+                    }
+                }
+            }
+
+            G = pV[j] + accum * m_FreqScale +
+                freq1_row[i][0] * ws1 * (1-freq2_row[j][0]) +
+                freq2_row[j][0] * ws2 * (1-freq1_row[i][0]);
+
+            pV[j] = V;
+
+            n0 = V + scaled_wg1;
+            if(E >= n0) {
+                E += scaled_ws1;      // continue the gap
+                tracer = kMaskEc;
+            }
+            else {
+                E = n0 + scaled_ws1;  // open a new gap
+                tracer = 0;
+            }
+
+            n0 = rowV[j] + scaled_wg2;
+            if(rowF[j] >= n0) {
+                rowF[j] += scaled_ws2;
+                tracer |= kMaskFc;
+            }
+            else {
+                rowF[j] = n0 + scaled_ws2;
+            }
+
+            if (E >= rowF[j]) {
+                if(E >= G) {
+                    V = E;
+                    tracer |= kMaskE;
+                }
+                else {
+                    V = G;
+                    tracer |= kMaskD;
+                }
+            } else {
+                if(rowF[j] >= G) {
+                    V = rowF[j];
+                }
+                else {
+                    V = G;
+                    tracer |= kMaskD;
+                }
+            }
+            backtrace_matrix[k] = tracer;
+        }
+
+        pV[j] = V;
+
+        if(m_prg_callback) {
+            m_prg_info.m_iter_done = k;
+            if(m_terminate = m_prg_callback(&m_prg_info)) {
+                break;
+            }
+        }
+       
+    }
+
+    if(!m_terminate) {
+        x_DoBackTrace(backtrace_matrix, data);
+    }
+    return (TScore)(V + 0.5);
 }
 
 
@@ -599,6 +847,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/07 18:21:12  papadopo
+ * 1. Split up the PSSM-sequence and profile-profile alignment members
+ * 2. For profile-profile version, weight the cost of a gap open in
+ *    one sequence by the frequency of gaps in the other sequence
+ *
  * Revision 1.6  2005/08/02 17:36:07  papadopo
  * 1. Make the aligner use different penalties for starting and
  *    ending gaps
