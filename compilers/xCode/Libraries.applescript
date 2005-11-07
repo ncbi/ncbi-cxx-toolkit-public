@@ -229,7 +229,6 @@ property w_workspace : {name:"w_workspace", path:"gui:widgets:workspace"}
 property w_phylo_tree : {name:"w_phylo_tree", path:"gui:widgets:phylo_tree"}
 property w_object_list : {name:"w_object_list", path:"gui:widgets:object_list"}
 property w_serial_browse : {name:"w_serial_browse", path:"gui:widgets:serial_browse"}
-property w_feat_compare : {name:"w_feat_compare", path:"gui:widgets:feat_compare"}
 property w_feat_table : {name:"w_feat_table", path:"gui:widgets:feat_table"}
 property w_config : {name:"w_config", path:"gui:widgets:config"}
 property w_controls : {name:"w_controls", path:"gui:widgets:controls"}
@@ -301,7 +300,7 @@ property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_f
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d, w_object_list}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
-property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_compare, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
+property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_data, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xcache_bdb ncbi_bdb ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
@@ -415,6 +414,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2005/11/07 13:25:39  lebedev
+ * w_feat_compare removed
+ *
  * Revision 1.76  2005/11/01 12:52:21  lebedev
  * algo_basic += ncbi_misc
  *
