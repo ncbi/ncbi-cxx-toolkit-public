@@ -1254,8 +1254,9 @@ int CSeq_align_Mapper::x_GetWidth(const CSeq_id& id) const
     case CSeq_inst::eMol_dna:
     case CSeq_inst::eMol_rna:
         return 1;
+    default:
+        return 0;
     }
-    return 0;
 }
 
 
@@ -1265,6 +1266,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/11/07 15:40:19  vasilche
+* Fixed warning in switch (enum).
+*
 * Revision 1.15  2005/09/26 21:38:42  grichenk
 * Adjust segment length when mapping between nucleotide and protein
 * (den-diag, packed-seg).

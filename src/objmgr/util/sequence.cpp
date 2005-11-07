@@ -251,6 +251,9 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
         {{
             return FindBestChoice(ids, ScoreSeqIdHandle);
         }}
+
+    default:
+        break;
     }
     return CSeq_id_Handle();
 }
@@ -2514,6 +2517,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.133  2005/11/07 15:40:19  vasilche
+* Fixed warning in switch (enum).
+*
 * Revision 1.132  2005/08/31 21:43:55  ucko
 * CFastaOstream::WriteSequence: don't forget a trailing newline!
 *
