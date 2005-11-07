@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.31 2005/11/02 21:59:35 lewisg Exp $
+-- $Id: omssa.asn,v 1.32 2005/11/07 19:57:20 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -14,6 +14,7 @@
 OMSSA DEFINITIONS ::=
 BEGIN
 
+IMPORTS Bioseq FROM NCBI-Sequence;
 
 -- Generic holder for experimental info
 
@@ -400,7 +401,8 @@ MSPepHit ::= SEQUENCE {
 	gi INTEGER OPTIONAL, -- genbank identifier
 	accession VisibleString OPTIONAL,  -- sequence accession
 	defline VisibleString OPTIONAL,    -- sequence description
-	protlength INTEGER OPTIONAL        -- length of protein
+	protlength INTEGER OPTIONAL,       -- length of protein
+	oid INTEGER OPTIONAL               -- blast library oid (depricated) 
 }	
 
 -- modifications to a hit peptide
@@ -426,7 +428,7 @@ MSHits ::= SEQUENCE {
         pepstop VisibleString OPTIONAL,   -- AA after the peptide
         protlength INTEGER OPTIONAL,      -- length of protein hit (depricated)
 	theomass INTEGER OPTIONAL,        -- scaled theoretical mass of peptide hit
-	oid INTEGER OPTIONAL              -- blast library oid    
+	oid INTEGER OPTIONAL              -- blast library oid (depricated) 
 	}
 
 
@@ -462,6 +464,15 @@ MSResponseError ::= INTEGER {
 	}
 
 
+-- bioseq container
+
+MSBioseq ::= SEQUENCE {
+	oid INTEGER, -- blast library oid
+        seq Bioseq
+	}
+
+MSBioseqSet ::= SEQUENCE OF MSBioseq
+
 -- search results
 
 MSResponse ::= SEQUENCE {
@@ -471,7 +482,8 @@ MSResponse ::= SEQUENCE {
 	error MSResponseError OPTIONAL,  -- error response
         version VisibleString OPTIONAL,  -- version of OMSSA
 	email VisibleString OPTIONAL,  -- email address for notification
-        dbversion INTEGER OPTIONAL    -- version of db searched (usually size)
+        dbversion INTEGER OPTIONAL,    -- version of db searched (usually size)
+	bioseqs MSBioseqSet OPTIONAL  -- sequences found in search     
 	}	
 	
 -- holds both search requests and responses

@@ -8,5 +8,5 @@ APP = readresult
 
 SRC = readresult
 
-LIB = omssa xser xregexp $(PCRE_LIB) xutil xncbi
+LIB = omssa seqset seq seqcode pub medline biblio general xser xregexp $(PCRE_LIB) xutil xncbi
 LIBS = $(PCRE_LIBS) $(ORIG_LIBS)

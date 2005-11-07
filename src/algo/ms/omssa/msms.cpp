@@ -469,6 +469,28 @@ CChymoP::CChymoP(void)
 }
 
 
+CAspNDE::CAspNDE(void)
+{
+    CleaveAt = "\x04\x05";
+    CleaveOffset = "\x01";
+    CheckProline = false;
+    kCleave = 2;
+    TopDown = false;
+    NonSpecific = false;
+}
+
+
+CGluCDE::CGluCDE(void)
+{
+    CleaveAt = "\x05\x04";
+    CleaveOffset = "\x00";
+    CheckProline = false;
+    kCleave = 2;
+    TopDown = false;
+    NonSpecific = false;
+}
+
+
 ///
 /// Simple minded factory to return back object for enzyme
 ///
@@ -529,11 +551,17 @@ CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
         return new CSemiTryptic;
         break;
     case eMSEnzymes_no_enzyme:
-    return new CNoEnzyme;
-    break;
+        return new CNoEnzyme;
+        break;
     case eMSEnzymes_chymotrypsin_p:
-    return new CChymoP;
-    break;
+        return new CChymoP;
+        break;
+    case eMSEnzymes_aspn_de:
+        return new CAspNDE;
+        break;
+    case eMSEnzymes_gluc_de:
+        return new CGluCDE;
+        break;
     default:
         return 0;
         break;
@@ -603,6 +631,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.29  2005/11/07 19:57:20  lewisg
+  iterative search
+
   Revision 1.28  2005/10/24 21:46:13  lewisg
   exact mass, peptide size limits, validation, code cleanup
 

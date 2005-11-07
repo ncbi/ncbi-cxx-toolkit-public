@@ -370,6 +370,31 @@ int CMSSearchSettings::Validate(std::list<std::string> & Error) const
             }
     }
 
+
+    if(IsSetIterativesettings()){
+        if(!GetIterativesettings().CanGetResearchthresh() ||
+           !GetIterativesettings().CanGetSubsetthresh() ||
+           !GetIterativesettings().CanGetReplacethresh()) {
+            Error.push_back("unknown iterative search setting");
+            retval = 1;
+        }
+        else {
+            if(GetIterativesettings().GetResearchthresh() < 0.0) {
+                Error.push_back("threshold to iteratively search a spectrum again < 0");
+                retval = 1;
+            }
+            if(GetIterativesettings().GetSubsetthresh() < 0.0) {
+                 Error.push_back("threshold to include a sequence in the iterative search < 0");
+                 retval = 1;
+            }
+            if(GetIterativesettings().GetReplacethresh() < 0.0) {
+                Error.push_back("threshold to replace a hit < 0");
+                retval = 1;
+            }
+        }
+    }
+
+
     if (IsSetChargehandling()) {
         if (!GetChargehandling().CanGetMaxcharge() ||
             !GetChargehandling().CanGetMincharge() ||
@@ -509,6 +534,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/11/07 19:57:20  lewisg
+* iterative search
+*
 * Revision 1.5  2005/10/24 21:46:13  lewisg
 * exact mass, peptide size limits, validation, code cleanup
 *

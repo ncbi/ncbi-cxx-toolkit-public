@@ -116,6 +116,31 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
 }
 // ------------------------ END Print .csv ---------------------------------
 
+
+void 
+CMSResponse::GetOidsBelowThreshold(TOidSet& OidSet,
+                                        const double Threshold) const
+{
+    ITERATE(THitsets, iHitSet, GetHitsets()) {
+        ITERATE(CMSHitSet::THits, iHit, (*iHitSet)->GetHits()) {
+            if((*iHit)->GetEvalue() <= Threshold) {
+                OidSet.insert((*iHit)->GetOid());
+            }
+        }
+    }
+}   
+
+
+CRef <CMSHitSet> 
+CMSResponse::FindHitSet(const int Number) const
+{
+    ITERATE(THitsets, iHitSet, GetHitsets()) {
+        if((*iHitSet)->GetNumber() == Number) return *iHitSet;
+    }
+    return null;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -125,6 +150,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/11/07 19:57:20  lewisg
+* iterative search
+*
 * Revision 1.3  2005/10/27 17:12:04  lewisg
 * iterative search, addition to csv output
 *

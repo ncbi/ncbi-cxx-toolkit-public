@@ -82,13 +82,85 @@ private:
     //! reads in modification files
     int ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset);
     template <class T> void InsertList(const string& List, T& ToInsert, string error); 
+
+    /**
+     * Read in a spectrum file
+     * 
+     * @param Filename name of file
+     * @param FileType type of file to be read in
+     * @param MySearch the search
+     * @return 1, -1 = error, 0 = ok
+     */
+    int ReadFile(const string& Filename, 
+                 const EFileType FileType, 
+                 CMSSearch& MySearch);
+
+    /**
+     * Read in a complete search
+     * @param Filename name of file
+     * @param Dataformat xml or asn.1
+     * @param MySearch the search
+     * @return 0 if OK
+     */
+    int ReadCompleteSearch(const string& Filename,
+                           const ESerialDataFormat DataFormat,
+                           CMSSearch& MySearch);
+    
+    /**
+     * Set search settings given args
+     */
+    void SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings);
 };
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(2, 0, 0));
+    SetVersion(CVersionInfo(1, 1, 0));
 }
 
+
+int COMSSA::ReadFile(const string& Filename,
+                     const EFileType FileType,
+                     CMSSearch& MySearch)
+{
+    CNcbiIfstream PeakFile(Filename.c_str());
+    if(!PeakFile) {
+        ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
+                 Filename);
+        return 1;
+    }
+    // create request and response objects if necessary
+    if(!MySearch.CanGetRequest() || MySearch.SetRequest().empty()) {
+        CRef <CMSRequest> Request (new CMSRequest);
+        MySearch.SetRequest().push_back(Request);
+    }    
+    if(!MySearch.CanGetResponse() || MySearch.SetResponse().empty()) {
+        CRef <CMSResponse> Response (new CMSResponse);
+        MySearch.SetResponse().push_back(Response);
+    }
+
+    CRef <CSpectrumSet> SpectrumSet(new CSpectrumSet);
+    (*MySearch.SetRequest().begin())->SetSpectra(*SpectrumSet);
+    return SpectrumSet->LoadFile(FileType, PeakFile);
+}   
+
+
+int COMSSA::ReadCompleteSearch(const string& Filename,
+                               const ESerialDataFormat DataFormat,
+                               CMSSearch& MySearch)
+{
+    auto_ptr<CObjectIStream> 
+        in(CObjectIStream::Open(Filename.c_str(), DataFormat));
+    in->Open(Filename.c_str(), DataFormat);
+    if(in->fail()) {	    
+        ERR_POST(Warning << "ommsacl: unable to search file" << 
+                 Filename);
+        return 1;
+    }
+    in->Read(ObjectInfo(MySearch));
+    in->Close();
+    return 0;
+}
+    
 
 template <class T> void COMSSA::InsertList(const string& Input, T& ToInsert, string error) 
 {
@@ -168,6 +240,10 @@ void COMSSA::Init()
                 CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("fm", "pklinfile", "mgf formatted file",
                 CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("foms", "omsinfile", "omssa oms file",
+                 CArgDescriptions::eString, "");
+    argDesc->AddDefaultKey("fomx", "omxinfile", "omssa omx file",
+                  CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("o", "textasnoutfile", "filename for text asn.1 formatted search results",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("ob", "binaryasnoutfile", "filename for binary asn.1 formatted search results",
@@ -307,6 +383,18 @@ void COMSSA::Init()
                       "maximum size of peptides for no-enzyme and semi-tryptic searches (0=none)",
                       CArgDescriptions::eInteger, 
                       "0");
+    argDesc->AddDefaultKey("is", "subsetthresh", 
+                           "evalue threshold to include a sequence in the iterative search, 0 = all",
+                           CArgDescriptions::eDouble, 
+                           "0.0");
+    argDesc->AddDefaultKey("ir", "replacethresh", 
+                            "evalue threshold to replace a hit, 0 = only if better",
+                            CArgDescriptions::eDouble, 
+                            "0.0");
+    argDesc->AddDefaultKey("ii", "iterativethresh", 
+                            "evalue threshold to iteratively search a spectrum again, 0 = always",
+                            CArgDescriptions::eDouble, 
+                            "0.01");
     argDesc->AddFlag("ns", "test");
 
 
@@ -364,6 +452,67 @@ int COMSSA::ReadModFiles(CArgs& args, CRef <CMSModSpecSet> Modset)
 }
 
 
+void COMSSA::SetSearchSettings(CArgs& args, CRef<CMSSearchSettings> Settings)
+{
+	Settings->SetPrecursorsearchtype(args["tem"].AsInteger());
+	Settings->SetProductsearchtype(args["tom"].AsInteger());
+	Settings->SetPeptol(args["te"].AsDouble());
+	Settings->SetMsmstol(args["to"].AsDouble());
+    Settings->SetZdep(args["tez"].AsInteger());
+    Settings->SetExactmass(args["tex"].AsDouble());
+
+	InsertList(args["i"].AsString(), Settings->SetIonstosearch(), "unknown ion");
+	Settings->SetCutlo(args["cl"].AsDouble());
+	Settings->SetCuthi(args["ch"].AsDouble());
+	Settings->SetCutinc(args["ci"].AsDouble());
+	Settings->SetSinglewin(args["w1"].AsInteger());
+	Settings->SetDoublewin(args["w2"].AsInteger());
+	Settings->SetSinglenum(args["h1"].AsInteger());
+	Settings->SetDoublenum(args["h2"].AsInteger());
+	Settings->SetEnzyme(args["e"].AsInteger());
+	Settings->SetMissedcleave(args["v"].AsInteger());
+	InsertList(args["mv"].AsString(), Settings->SetVariable(), "unknown variable mod");
+	InsertList(args["mf"].AsString(), Settings->SetFixed(), "unknown fixed mod");
+	Settings->SetDb(args["d"].AsString());
+	Settings->SetHitlistlen(args["hl"].AsInteger());
+	Settings->SetTophitnum(args["ht"].AsInteger());
+	Settings->SetMinhit(args["hm"].AsInteger());
+	Settings->SetMinspectra(args["hs"].AsInteger());
+	Settings->SetCutoff(args["he"].AsDouble());
+	Settings->SetMaxmods(args["mm"].AsInteger());
+    Settings->SetPseudocount(args["pc"].AsInteger());
+    Settings->SetSearchb1(args["sb1"].AsInteger());
+    Settings->SetSearchctermproduct(args["sct"].AsInteger());
+    Settings->SetMaxproductions(args["sp"].AsInteger());
+    Settings->SetMinnoenzyme(args["no"].AsInteger());
+    Settings->SetMaxnoenzyme(args["nox"].AsInteger());
+
+	if(args["x"].AsString() != "0") {
+	    InsertList(args["x"].AsString(), Settings->SetTaxids(), "unknown tax id");
+	}
+
+	Settings->SetChargehandling().SetCalcplusone(args["zc"].AsInteger());
+	Settings->SetChargehandling().SetConsidermult(args["zt"].AsInteger());
+	Settings->SetChargehandling().SetMincharge(args["zl"].AsInteger());
+	Settings->SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
+    Settings->SetChargehandling().SetPlusone(args["z1"].AsDouble());
+
+    Settings->SetIterativesettings().SetResearchthresh(args["ii"].AsDouble());
+    Settings->SetIterativesettings().SetSubsetthresh(args["is"].AsDouble());
+    Settings->SetIterativesettings().SetReplacethresh(args["ir"].AsDouble());
+
+	// validate the input
+        list <string> ValidError;
+	if(Settings->Validate(ValidError) != 0) {
+	    list <string>::iterator iErr;
+	    for(iErr = ValidError.begin(); iErr != ValidError.end(); iErr++)
+		ERR_POST(Warning << *iErr);
+	    ERR_POST(Fatal << "Unable to validate settings");
+	}
+     return;
+}
+
+
 int COMSSA::Run()
 {    
 
@@ -395,7 +544,6 @@ int COMSSA::Run()
          return 0;
      }
 
-	_TRACE("omssa: initializing score");
 	CSearch Search;
 
     // set up rank scoring
@@ -407,55 +555,29 @@ int COMSSA::Run()
 		     << retval);
 	    return 1;
 	}
-	_TRACE("ommsa: score initialized");
-	CRef <CSpectrumSet> Spectrumset(new CSpectrumSet);
+
+    CMSSearch MySearch;
 
     int FileRetVal(1);
-	if(args["fx"].AsString().size() != 0) {
-	    CNcbiIfstream PeakFile(args["fx"].AsString().c_str());
-	    if(!PeakFile) {
-		ERR_POST(Fatal <<" omssacl: not able to open spectrum file " <<
-			 args["fx"].AsString());
-		return 1;
-	    }
-	    FileRetVal = Spectrumset->LoadFile(eDTAXML, PeakFile);
-	}
-	else if(args["f"].AsString().size() != 0) {
-	    CNcbiIfstream PeakFile(args["f"].AsString().c_str());
-	    if(!PeakFile) {
-		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
-			 args["f"].AsString());
-		return 1;
-	    }
-	    FileRetVal = Spectrumset->LoadFile(eDTA, PeakFile);
-	}
-	else if(args["fb"].AsString().size() != 0) {
-	    CNcbiIfstream PeakFile(args["fb"].AsString().c_str());
-	    if(!PeakFile) {
-		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
-			 args["fb"].AsString());
-		return 1;
-	    }
-	    FileRetVal = Spectrumset->LoadFile(eDTABlank, PeakFile);
-	}
-	else if(args["fp"].AsString().size() != 0) {
-	    CNcbiIfstream PeakFile(args["fp"].AsString().c_str());
-	    if(!PeakFile) {
-		ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
-			 args["fp"].AsString());
-		return 1;
-	    }
-	    FileRetVal = Spectrumset->LoadFile(ePKL, PeakFile);
-	}
-    else if(args["fm"].AsString().size() != 0) {
-         CNcbiIfstream PeakFile(args["fm"].AsString().c_str());
-         if(!PeakFile) {
-         ERR_POST(Fatal << "omssacl: not able to open spectrum file " <<
-              args["fm"].AsString());
-         return 1;
-         }
-         FileRetVal = Spectrumset->LoadFile(eMGF, PeakFile);
-     }
+
+	if(args["fx"].AsString().size() != 0) 
+        FileRetVal = ReadFile(args["fx"].AsString(), eDTAXML, MySearch);
+	else if(args["f"].AsString().size() != 0)
+        FileRetVal = ReadFile(args["f"].AsString(), eDTA, MySearch);
+	else if(args["fb"].AsString().size() != 0) 
+        FileRetVal = ReadFile(args["fb"].AsString(), eDTABlank, MySearch);
+ 	else if(args["fp"].AsString().size() != 0) 
+        FileRetVal = ReadFile(args["fp"].AsString(), ePKL, MySearch);
+    else if(args["fm"].AsString().size() != 0)
+        FileRetVal = ReadFile(args["fm"].AsString(), eMGF, MySearch);
+    else if(args["fomx"].AsString().size() != 0) {
+        FileRetVal = ReadCompleteSearch(args["fomx"].AsString(), eSerial_Xml, MySearch);
+        Search.SetIterative() = true;
+    }
+    else if(args["foms"].AsString().size() != 0) {
+         FileRetVal = ReadCompleteSearch(args["foms"].AsString(), eSerial_AsnBinary, MySearch);
+         Search.SetIterative() = true;
+    }
 	else {
 	    ERR_POST(Fatal << "omssacl: input file not given.");
 	    return 1;
@@ -470,72 +592,36 @@ int COMSSA::Run()
         return 1;
     }
 
-    CRef<CMSRequest> Request(new CMSRequest);
-    CRef<CMSResponse> Response(new CMSResponse);
-	Request->SetSettings().SetPrecursorsearchtype(args["tem"].AsInteger());
-	Request->SetSettings().SetProductsearchtype(args["tom"].AsInteger());
-	Request->SetSettings().SetPeptol(args["te"].AsDouble());
-	Request->SetSettings().SetMsmstol(args["to"].AsDouble());
-    Request->SetSettings().SetZdep(args["tez"].AsInteger());
-    Request->SetSettings().SetExactmass(args["tex"].AsDouble());
+    // which search settings to use
+    CRef <CMSSearchSettings> SearchSettings;
+    // the ordinal number of the SearchSettings
+    int Settingid(0);
 
-	InsertList(args["i"].AsString(), Request->SetSettings().SetIonstosearch(), "unknown ion");
-	Request->SetSettings().SetCutlo(args["cl"].AsDouble());
-	Request->SetSettings().SetCuthi(args["ch"].AsDouble());
-	Request->SetSettings().SetCutinc(args["ci"].AsDouble());
-	Request->SetSettings().SetSinglewin(args["w1"].AsInteger());
-	Request->SetSettings().SetDoublewin(args["w2"].AsInteger());
-	Request->SetSettings().SetSinglenum(args["h1"].AsInteger());
-	Request->SetSettings().SetDoublenum(args["h2"].AsInteger());
-	Request->SetSettings().SetEnzyme(args["e"].AsInteger());
-	Request->SetSettings().SetMissedcleave(args["v"].AsInteger());
-	Request->SetSpectra(*Spectrumset);
-	InsertList(args["mv"].AsString(), Request->SetSettings().SetVariable(), "unknown variable mod");
-	InsertList(args["mf"].AsString(), Request->SetSettings().SetFixed(), "unknown fixed mod");
-	Request->SetSettings().SetDb(args["d"].AsString());
-	Request->SetSettings().SetHitlistlen(args["hl"].AsInteger());
-	Request->SetSettings().SetTophitnum(args["ht"].AsInteger());
-	Request->SetSettings().SetMinhit(args["hm"].AsInteger());
-	Request->SetSettings().SetMinspectra(args["hs"].AsInteger());
-	Request->SetSettings().SetCutoff(args["he"].AsDouble());
-	Request->SetSettings().SetMaxmods(args["mm"].AsInteger());
-    Request->SetSettings().SetPseudocount(args["pc"].AsInteger());
-    Request->SetSettings().SetSearchb1(args["sb1"].AsInteger());
-    Request->SetSettings().SetSearchctermproduct(args["sct"].AsInteger());
-    Request->SetSettings().SetMaxproductions(args["sp"].AsInteger());
-    Request->SetSettings().SetMinnoenzyme(args["no"].AsInteger());
-    Request->SetSettings().SetMaxnoenzyme(args["nox"].AsInteger());
-
-	if(args["x"].AsString() != "0") {
-	    InsertList(args["x"].AsString(), Request->SetSettings().SetTaxids(), "unknown tax id");
-	}
-
-	Request->SetSettings().SetChargehandling().SetCalcplusone(args["zc"].AsInteger());
-	Request->SetSettings().SetChargehandling().SetConsidermult(args["zt"].AsInteger());
-	Request->SetSettings().SetChargehandling().SetMincharge(args["zl"].AsInteger());
-	Request->SetSettings().SetChargehandling().SetMaxcharge(args["zh"].AsInteger());
-    Request->SetSettings().SetChargehandling().SetPlusone(args["z1"].AsDouble());
-
-	// validate the input
-        list <string> ValidError;
-	if(Request->GetSettings().Validate(ValidError) != 0) {
-	    list <string>::iterator iErr;
-	    for(iErr = ValidError.begin(); iErr != ValidError.end(); iErr++)
-		ERR_POST(Warning << *iErr);
-	    ERR_POST(Fatal << "Unable to validate settings");
-	}
-
+    // set up search settings
+    if(Search.GetIterative()) {
+        Settingid = 1 + (*MySearch.SetRequest().begin())->SetMoresettings().Set().size();
+        SearchSettings = new CMSSearchSettings;
+        (*MySearch.SetRequest().begin())->SetMoresettings().Set().push_back(SearchSettings);
+    }
+    else {
+        SearchSettings.Reset(&((*MySearch.SetRequest().begin())->SetSettings()));
+    }
+    SearchSettings->SetSettingid() = Settingid;
+    SetSearchSettings(args, SearchSettings);
 
 	_TRACE("omssa: search begin");
-	Search.Search(Request, Response, Modset);
+	Search.Search(*MySearch.SetRequest().begin(),
+                  *MySearch.SetResponse().begin(), 
+                  Modset,
+                  SearchSettings);
 	_TRACE("omssa: search end");
 
 
 #if _DEBUG
 	// read out hits
 	CMSResponse::THitsets::const_iterator iHits;
-	iHits = Response->GetHitsets().begin();
-	for(; iHits != Response->GetHitsets().end(); iHits++) {
+	iHits = (*MySearch.SetResponse().begin())->GetHitsets().begin();
+	for(; iHits != (*MySearch.SetResponse().begin())->GetHitsets().end(); iHits++) {
 	    CRef< CMSHitSet > HitSet =  *iHits;
 	    ERR_POST(Info << "Hitset: " << HitSet->GetNumber());
 	    if( HitSet-> CanGetError() && HitSet->GetError() ==
@@ -565,7 +651,7 @@ int COMSSA::Run()
 
 	// Check to see if there is a hitset
 
-	if(!Response->CanGetHitsets()) {
+	if(!(*MySearch.SetResponse().begin())->CanGetHitsets()) {
 	  ERR_POST(Fatal << "No results found");
 	}
 
@@ -586,19 +672,17 @@ int COMSSA::Run()
         // turn on xml schema
         CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
         xml_out->SetReferenceSchema();
+        // turn off names in named integers
+        // xml_out->SetWriteNamedIntegersByValue(false);
 	}
 
     if(txt_out.get() != 0) {
         if(args["w"]) {
-            // make complex object
-            CMSSearch MySearch;
-            MySearch.SetRequest().push_back(Request);
-            MySearch.SetResponse().push_back(Response);
             // write out
             txt_out->Write(ObjectInfo(MySearch));
         }
         else {
-            txt_out->Write(ObjectInfo(*Response));
+            txt_out->Write(ObjectInfo(**MySearch.SetResponse().begin()));
         }
     }
 
@@ -606,7 +690,7 @@ int COMSSA::Run()
     if(args["oc"].AsString() != "") {
         CNcbiOfstream oscsv;
         oscsv.open(args["oc"].AsString().c_str());
-        Response->PrintCSV(oscsv, Modset);
+        (*MySearch.SetResponse().begin())->PrintCSV(oscsv, Modset);
         oscsv.close();
     }
 
@@ -622,6 +706,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.46  2005/11/07 19:57:20  lewisg
+  iterative search
+
   Revision 1.45  2005/10/24 21:46:13  lewisg
   exact mass, peptide size limits, validation, code cleanup
 

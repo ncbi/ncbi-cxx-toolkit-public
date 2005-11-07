@@ -42,6 +42,7 @@
 #include "mspeak.hpp"
 
 #include <vector>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -98,26 +99,48 @@ public:
                             const TMassPeak *MassPeak);
 #endif
 
-    /** 
-     * compare ladders to experiment
-     * 
-     * @param iMod ladder to examine
-     * @param Peaks the experimental values
-     * @param MassPeak
-     * @param N the number of experimental peaks
-     * @param M the number of matched peaks
-     * @param Sum the sum of the ranks of the matched peaks
-     * 
-     */
-    void CompareLaddersRank(int iMod,
-                            CMSPeak *Peaks,
-                            const TMassPeak *MassPeak,
-                            int& N,
-                            int& M,
-                            int& Sum);
     
     // init blast databases.  stream thru db if InitDB true
     int InitBlast(const char *blastdb);
+
+    /**
+     *  Performs the ms/ms search
+     *
+     * @param MyRequestIn the user search params and spectra
+     * @param MyResponseIn the results of the search
+     * @param Modset list of modifications
+     * @param SettingsIn the search settings
+     */
+    int Search(CRef<CMSRequest> MyRequestIn,
+               CRef<CMSResponse> MyResponseIn,
+               CRef <CMSModSpecSet> Modset,
+               CRef <CMSSearchSettings> SettingsIn);
+
+    double CalcPoisson(double Mean, int i);
+    double CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
+			   int Charge, double Threshold);
+    double CalcPvalue(double Mean, int Hits, int n);
+    double CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, double TopHitProb);
+    double CalcNormalTopHit(double Mean, double TopHitProb);
+    double CalcPoissonTopHit(double Mean, int i, double TopHitProb);
+
+
+    /** 
+     * Sets the scoring to use rank statistics
+     */
+    bool& SetRankScore(void);
+
+    /** 
+     * Sets iterate search 
+     */
+    bool& SetIterative(void);
+
+    /** 
+     * Gets iterate search 
+     */
+    const bool GetIterative(void) const;
+
+protected:
 
     // loads spectra into peaks
     void Spectrum2Peak(CMSPeakSet& PeakSet);
@@ -141,15 +164,24 @@ public:
                        int NumMod,
                        CMod ModList[]);
 
-    //! Performs the ms/ms search
-    /*!
-    \param MyRequest the user search params and spectra
-    \param MyResponse the results of the search
-    \param Modset list of modifications
-    */
-    int Search(CRef<CMSRequest> MyRequestIn,
-               CRef<CMSResponse> MyResponseIn,
-               CRef <CMSModSpecSet> Modset);
+
+    /** 
+     * compare ladders to experiment
+     * 
+     * @param iMod ladder to examine
+     * @param Peaks the experimental values
+     * @param MassPeak
+     * @param N the number of experimental peaks
+     * @param M the number of matched peaks
+     * @param Sum the sum of the ranks of the matched peaks
+     * 
+     */
+    void CompareLaddersRank(int iMod,
+                            CMSPeak *Peaks,
+                            const TMassPeak *MassPeak,
+                            int& N,
+                            int& M,
+                            int& Sum);
 
     //! set up the ions to use
     void SetIons(int& ForwardIon, int& BackwardIon);
@@ -207,32 +239,31 @@ public:
                       CMod CModList[]);
 
     unsigned MakeIntFromBoolMap(bool *ModMask,  int& NumMod);
-    int Getnumseq(void) { return numseq; }
-    double CalcPoisson(double Mean, int i);
-    double CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
-			   int Charge, double Threshold);
-    double CalcPvalue(double Mean, int Hits, int n);
-    double CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, double TopHitProb);
-    double CalcNormalTopHit(double Mean, double TopHitProb);
-    double CalcPoissonTopHit(double Mean, int i, double TopHitProb);
+    const int Getnumseq(void) const;
 
-	///
-	///  Adds modification information to hitset
-	///
-	void AddModsToHit(CMSHits *Hit, CMSHit *MSHit);
+    ///
+    ///  Adds modification information to hitset
+    ///
+    void AddModsToHit(CMSHits *Hit, CMSHit *MSHit);
 
     ///
     ///  Adds ion information to hitset
     ///
     void AddIonsToHit(CMSHits *Hit, CMSHit *MSHit);
 
-	///
-	///  Makes a string hashed out of the sequence plus mods
-	///
-	static void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
+    ///
+    ///  Makes a string hashed out of the sequence plus mods
+    ///
+    static void MakeModString(string& seqstring, string& modseqstring, CMSHit *MSHit);
 
     // take hitlist for a peak and insert it into the response
     void SetResult(CMSPeakSet& PeakSet);
+
+    /**
+     * write oidset to result
+     */
+    void WriteBioseqs(void);
+
 
     //! calculate the evalues of the top hits and sort
     void CalcNSort(TScoreList& ScoreList,  //<! the list of top hits to the spectrum
@@ -263,22 +294,22 @@ public:
      * @param Modset modification specifications
      */
     void UpdateWithNewPep(int Missed,
-			  const char *PepStart[],
-			  const char *PepEnd[], 
-			  int NumMod[], 
-			  CMod ModList[][MAXMOD],
-			  int Masses[],
-			  int EndMasses[],
+              const char *PepStart[],
+              const char *PepEnd[], 
+              int NumMod[], 
+              CMod ModList[][MAXMOD],
+              int Masses[],
+              int EndMasses[],
                           int NumModSites[],
                           CRef <CMSModSpecSet> Modset);
 
     // create the various combinations of mods
     void CreateModCombinations(int Missed,
-            			       const char *PepStart[],
-            			       int Masses[],
-            			       int EndMasses[],
-            			       int NumMod[],
-            			       unsigned NumMassAndMask[],
+                               const char *PepStart[],
+                               int Masses[],
+                               int EndMasses[],
+                               int NumMod[],
+                               unsigned NumMassAndMask[],
                                int NumModSites[],
                                CMod ModList[][MAXMOD]);
 
@@ -290,14 +321,40 @@ public:
      */
     void InitLadders(void);
 
-
-    /** 
-     * Sets the scoring to use rank statistics
+    /**
+     * makes map of oid from previous search
+     * used in iterative searching
      */
-    bool& SetRankScore();
+    void MakeOidSet(void);
 
+    /**
+     * examines a hitset to see if any good hits
+     * 
+     * @param Number the spectrum number of the hitset
+     * @return true if no good hits
+     */
+    const bool ReSearch(const int Number) const;
 
-protected:
+    /**
+     * get the oidset
+     */
+    CMSResponse::TOidSet& SetOidSet(void);
+
+    /**
+     * get the oidset
+     */
+    const CMSResponse::TOidSet& GetOidSet(void) const;
+
+    /**
+     * is this search restricted to the oid set?
+     */
+    bool& SetRestrictedSearch(void);
+
+    /**
+     * is this search restricted to the oid set?
+     */
+    const bool GetRestrictedSearch(void) const;
+
 
     /**
      * Get the bit that indicates whether a ladder was calculated
@@ -328,6 +385,36 @@ protected:
      */
     TMassMask& SetMassAndMask(int i, int j);
 
+    /**
+     * Set search settings
+     */
+    CRef<CMSSearchSettings>& SetSettings(void);
+
+    /**
+     * Get search settings
+     */
+    const CRef<CMSSearchSettings> GetSettings(void) const;
+
+    /**
+     * Set search request
+     */
+    CRef<CMSRequest>& SetRequest(void);
+
+    /**
+     * Get search request
+     */
+    const CRef<CMSRequest> GetRequest(void) const;
+
+    /**
+     * Set search response
+     */
+    CRef<CMSResponse>& SetResponse(void);
+
+    /**
+     * Get search response
+     */
+    const CRef<CMSResponse> GetResponse(void) const;
+
 private:
     /** blast library */
     CRef <CSeqDB> rdfp;
@@ -348,6 +435,11 @@ private:
      * Search response
      */
     CRef<CMSResponse> MyResponse;
+
+    /**
+     * Search params
+     */
+    CRef<CMSSearchSettings> MySettings;
 
     /**
      * ion series mass ladders
@@ -379,9 +471,24 @@ private:
     int MaxMZ;
 
     /**
-     * temporary boolean to turn on rank scoring
+     * boolean to turn on rank scoring
      */
     bool UseRankScore;
+
+    /**
+     * boolean to turn on iterative search
+     */
+    bool Iterative;
+
+    /**
+     * set of oids to be searched
+     */
+    CMSResponse::TOidSet OidSet;
+
+    /**
+     * is this a oid restricted search
+     */
+    bool RestrictedSearch;
 
 };
 
@@ -502,62 +609,112 @@ inline bool CSearch::CalcModIndex(int *ModIndex,
     return false;
 }
 
-/**
- * Get the bit that indicates whether a ladder was calculated
- * 
- * @param i the index of the ladder
- */
 inline
 Int1 CSearch::GetLadderCalc(int i) const
 {
     return *(LadderCalc.get() + i);
 }
 
-/**
- * Set the bit that indicates whether a ladder was calculated
- * 
- * @param i the index of the ladder
- */
 inline
 Int1& CSearch::SetLadderCalc(int i)
 {
     return *(LadderCalc.get() + i);
 }
 
-
-/**
- * Clear the ladder calc array up to max index
- * 
- * @param Max the number of indices to clear
- */
 inline
 void CSearch::ClearLadderCalc(int Max)
 {
 	memset(LadderCalc.get(), 0, sizeof(Int1)*Max);
 }
 
-
-/**
- * Set the mask and mass of mod bit array
- * 
- * @param i the index for missed cleavages
- * @param j the index for modification combinations 
- * @param MaxModPerPep the max number of mod combinations
- */
 inline
 TMassMask& CSearch::SetMassAndMask(int i, int j)
 {    
     return *(MassAndMask.get() + i*MaxModPerPep+j);
 }
 
-
-/**
- * temporary boolean to turn on rank scoring
- */
 inline
 bool& CSearch::SetRankScore(void)
 {
     return UseRankScore;
+}
+
+inline
+bool& CSearch::SetIterative(void)
+{   
+    return Iterative;
+}   
+    
+inline
+const bool CSearch::GetIterative(void) const
+{
+    return Iterative;
+}
+
+inline
+CRef<CMSSearchSettings>& CSearch::SetSettings(void)
+{
+    return MySettings;
+}
+
+inline
+const CRef<CMSSearchSettings> CSearch::GetSettings(void) const
+{
+    return MySettings;
+}
+
+inline
+CRef<CMSRequest>& CSearch::SetRequest(void)
+{
+    return MyRequest;
+}
+
+inline
+const CRef<CMSRequest> CSearch::GetRequest(void) const
+{
+    return MyRequest;
+}
+
+inline
+CRef<CMSResponse>& CSearch::SetResponse(void)
+{
+    return MyResponse;
+}
+
+inline
+const CRef<CMSResponse> CSearch::GetResponse(void) const
+{
+    return MyResponse;
+}
+
+inline
+CMSResponse::TOidSet& CSearch::SetOidSet(void)
+{
+    return OidSet;
+}
+
+inline
+const CMSResponse::TOidSet& CSearch::GetOidSet(void) const
+{
+    return OidSet;
+}
+
+inline
+const int CSearch::Getnumseq(void) const 
+{ 
+    return numseq; 
+}
+
+inline
+bool& CSearch::SetRestrictedSearch(void)
+{
+    return RestrictedSearch;
+}
+
+inline
+const bool CSearch::GetRestrictedSearch(void) const
+{
+    return RestrictedSearch;
 }
 
 /////////////////// end of CSearch inline methods
@@ -571,6 +728,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.36  2005/11/07 19:57:20  lewisg
+  iterative search
+
   Revision 1.35  2005/09/20 21:07:57  lewisg
   get rid of c-toolkit dependencies and nrutil
 

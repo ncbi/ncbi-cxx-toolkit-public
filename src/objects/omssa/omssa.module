@@ -1,2 +1,2 @@
 MODULE_PATH   = objects/omssa
-MODULE_IMPORT =
+MODULE_IMPORT = objects/seq/seq

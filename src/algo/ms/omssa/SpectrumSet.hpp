@@ -86,7 +86,7 @@ public:
     ///
     /// wrapper for various file loaders
     ///
-    int LoadFile(EFileType FileType, CNcbiIstream& DTA, int Max = 0);
+    int LoadFile(const EFileType FileType, CNcbiIstream& DTA, int Max = 0);
 
     ///
     /// load in a single dta file
@@ -190,6 +190,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/11/07 19:57:20  lewisg
+ * iterative search
+ *
  * Revision 1.9  2005/08/01 13:44:18  lewisg
  * redo enzyme classes, no-enzyme, fix for fixed mod enumeration
  *

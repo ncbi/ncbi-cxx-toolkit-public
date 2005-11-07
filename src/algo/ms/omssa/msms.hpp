@@ -983,6 +983,29 @@ public:
     CChymoP(void);
 };
 
+/**
+ * eMSEnzymes_aspn_de
+ * Asp-N that cuts at D and E
+ * 
+ */
+
+class NCBI_XOMSSA_EXPORT CAspNDE: public CCleave {
+public:
+    CAspNDE(void);
+};
+
+
+/**
+ * eMSEnzymes_gluc_de
+ * Glu-C that cuts at D and E
+ * 
+ */
+
+class NCBI_XOMSSA_EXPORT CGluCDE: public CCleave {
+public:
+    CGluCDE(void);
+};
+
 
 ///
 /// factory to return back object for enzyme
@@ -1014,6 +1037,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.29  2005/11/07 19:57:20  lewisg
+  iterative search
+
   Revision 1.28  2005/10/24 21:46:13  lewisg
   exact mass, peptide size limits, validation, code cleanup
 

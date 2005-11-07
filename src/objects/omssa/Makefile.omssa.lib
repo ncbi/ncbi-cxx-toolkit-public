@@ -1,2 +1,4 @@
+APP_DEP = seq
+
 LIB = omssa
 SRC = omssa__ omssa___

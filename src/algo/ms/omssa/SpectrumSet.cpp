@@ -64,7 +64,6 @@ static CNcbiIstream& MyGetline(CNcbiIstream& is, string& str)
     // win is \x0d\x0a
     // unix is \x0a
     NcbiGetline(is, str, "\x0d\x0a");
-    if (is.peek() == '\x0a') is.get();
     return is;
 }
 
@@ -79,7 +78,7 @@ static CNcbiIstream& MyGetline(CNcbiIstream& is, string& str)
 /// wrapper for various file loaders
 ///
 
-int CSpectrumSet::LoadFile(EFileType FileType, CNcbiIstream& DTA, int Max)
+int CSpectrumSet::LoadFile(const EFileType FileType, CNcbiIstream& DTA, int Max)
 {
     switch (FileType) {
     case eDTA:
@@ -544,6 +543,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.25  2005/11/07 19:57:20  lewisg
+ * iterative search
+ *
  * Revision 1.24  2005/10/24 21:46:13  lewisg
  * exact mass, peptide size limits, validation, code cleanup
  *
