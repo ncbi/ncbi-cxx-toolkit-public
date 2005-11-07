@@ -1,0 +1,11 @@
+# $Id$
+
+SRC_CXX = blast cobalt dist hit hitlist phi prog \
+	    resfreq rps seg seq traceback tree
+    
+SRC   = $(SRC_CXX)
+
+LIB = cobalt
+
+CXXFLAGS  = $(FAST_CXXFLAGS)
+LDFLAGS = $(FAST_LDFLAGS)

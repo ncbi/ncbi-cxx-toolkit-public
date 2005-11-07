@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile("ALGO" project)
+#################################
+
+LIB_PROJ = cobalt
+SUB_PROJ = demo
+
+srcdir = .
+include $(builddir)/Makefile.meta
