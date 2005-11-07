@@ -1,4 +1,4 @@
-static char const rcsid[] = "$Id";
+static char const rcsid[] = "$Id$";
 
 /*
 * ===========================================================================
@@ -142,9 +142,10 @@ CMultiAligner::x_AssignHitRate()
             sum1 += (double)best_overlap(2*i, j);
             sum2 += (double)best_overlap(2*i+1, j);
         }
-        sum1 /= hit->m_SeqRange1.GetLength();
-        sum2 /= hit->m_SeqRange2.GetLength();
-        hit->m_HitRate = 0.5 * (sum1 + sum2) / num_queries;
+        sum1 = (sum1 / hit->m_SeqRange1.GetLength() + 1) / num_queries;
+        sum2 = (sum2 / hit->m_SeqRange2.GetLength() + 1) / num_queries;
+        hit->m_HitRate = 0.5 * (sum1 + sum2);
+
         ASSERT(hit->m_HitRate >= 1.0 / num_queries && hit->m_HitRate <= 1.0);
     }
 }
@@ -367,6 +368,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/07 20:44:34  papadopo
+  1. Fix rcsid
+  2. Fix incorrect scaling of hit rates
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 
