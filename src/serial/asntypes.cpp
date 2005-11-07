@@ -762,7 +762,7 @@ void CObjectOStream::AsnIo::Write(const char* data, size_t length)
         if ( out.m_CurrentPosition + CNcbiStreamoff(length) > out.m_CurrentTagLimit )
             out.ThrowError(out.fIllegalCall,
                 string("tag DATA overflow: data= ")+data);
-        out.m_CurrentPosition += length;
+        out.m_CurrentPosition += CNcbiStreamoff(length);
 #endif
         out.m_Output.PutString(data, length);
     }
@@ -867,6 +867,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2005/11/07 15:44:22  ucko
+* CObjectOStream::AsnIo::Write: make sure to convert integers to
+* CNcbiStreamoff before adding them to CNcbiStreampos values.
+*
 * Revision 1.67  2005/11/03 15:13:27  gouriano
 * Use streampos instead of streamoff for positioning
 *
