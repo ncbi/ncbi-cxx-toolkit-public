@@ -233,8 +233,12 @@ public:
     // annot
     bool HasAnnots(void) const;
 
-    bool IsNa(void) const;
-    bool IsAa(void) const;
+    // Check sequence type
+    typedef CSeq_inst::TMol TMol;
+    TMol GetSequenceType(void) const;
+    bool IsProtein(void) const;
+    bool IsNucleotide(void) const;
+
     //////////////////////////////////////////////////////////////////
     // Old interface:
 
@@ -267,7 +271,9 @@ public:
     CSeq_entry_Handle GetExactComplexityLevel(CBioseq_set::EClass cls) const;
 
     /// Get some values from core:
-    CSeq_inst::TMol GetBioseqMolType(void) const;
+    TMol GetBioseqMolType(void) const;
+    bool IsNa(void) const;
+    bool IsAa(void) const;
 
     /// Get sequence map.
     const CSeqMap& GetSeqMap(void) const;
@@ -727,6 +733,27 @@ CBioseq_Info& CBioseq_EditHandle::x_GetInfo(void) const
 }
 
 
+inline
+CBioseq_Handle::TMol CBioseq_Handle::GetSequenceType(void) const
+{
+    return GetInst_Mol();
+}
+
+
+inline
+bool CBioseq_Handle::IsProtein(void) const
+{
+    return CSeq_inst::IsAa(GetSequenceType());
+}
+
+
+inline
+bool CBioseq_Handle::IsNucleotide(void) const
+{
+    return CSeq_inst::IsNa(GetSequenceType());
+}
+
+
 /* @} */
 
 
@@ -736,6 +763,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/11/07 15:39:46  vasilche
+* Added CBioseq_Handle::IsProtein() & IsNucleotide().
+*
 * Revision 1.82  2005/09/20 15:42:16  vasilche
 * AttachAnnot takes non-const object.
 *

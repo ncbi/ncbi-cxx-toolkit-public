@@ -297,14 +297,14 @@ CSeqVector::TMol CSeqVector::GetSequenceType(void) const
 inline
 bool CSeqVector::IsProtein(void) const
 {
-    return m_Mol == CSeq_inst::eMol_aa;
+    return CSeq_inst::IsAa(GetSequenceType());
 }
 
 
 inline
 bool CSeqVector::IsNucleotide(void) const
 {
-    return m_Mol != CSeq_inst::eMol_aa;
+    return CSeq_inst::IsNa(GetSequenceType());
 }
 
 
@@ -333,6 +333,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2005/11/07 15:39:46  vasilche
+* Added CBioseq_Handle::IsProtein() & IsNucleotide().
+*
 * Revision 1.59  2005/04/26 18:48:00  vasilche
 * Use case conversion to get gap symbol.
 * Removed obsolete structur SSeqData.

@@ -378,25 +378,25 @@ bool CBioseq_Handle::HasAnnots(void) const
 }
 
 
-bool CBioseq_Handle::IsNa(void) const
-{
-    return x_GetInfo().IsNa();
-}
-
-
-bool CBioseq_Handle::IsAa(void) const
-{
-    return x_GetInfo().IsAa();
-}
-
-
 // end of Bioseq members
 /////////////////////////////////////////////////////////////////////////////
 
 
 CSeq_inst::TMol CBioseq_Handle::GetBioseqMolType(void) const
 {
-    return x_GetInfo().GetInst_Mol();
+    return GetSequenceType();
+}
+
+
+bool CBioseq_Handle::IsNa(void) const
+{
+    return IsNucleotide();
+}
+
+
+bool CBioseq_Handle::IsAa(void) const
+{
+    return IsProtein();
 }
 
 
@@ -886,6 +886,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2005/11/07 15:39:46  vasilche
+* Added CBioseq_Handle::IsProtein() & IsNucleotide().
+*
 * Revision 1.94  2005/10/04 14:15:38  vasilche
 * Correctly deal with null handles in GetParentEntry().
 *

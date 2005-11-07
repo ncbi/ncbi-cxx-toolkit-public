@@ -158,7 +158,7 @@ CSeqVector::CSeqVector(const CBioseq_Handle& bioseq,
       m_Coding(CSeq_data::e_not_set)
 {
     m_Size = bioseq.GetBioseqLength();
-    m_Mol = bioseq.GetBioseqMolType();
+    m_Mol = bioseq.GetSequenceType();
     m_Iterator.x_SetVector(*this);
     SetCoding(coding);
 }
@@ -468,6 +468,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2005/11/07 15:39:46  vasilche
+* Added CBioseq_Handle::IsProtein() & IsNucleotide().
+*
 * Revision 1.77  2005/06/27 17:16:32  vasilche
 * Workaround problem with excetions on GCC 3.0.4 with optimization.
 *
