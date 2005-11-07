@@ -591,6 +591,12 @@ public:
         return SeqDB_GetBaseName( CSeqDB_Substring( m_Value) );
     }
     
+    CSeqDB_Substring FindFileName() const
+    {
+        _ASSERT(Valid());
+        return SeqDB_GetFileName( CSeqDB_Substring( m_Value ) );
+    }
+    
     const string & GetBasePathS() const
     {
         return m_Value;

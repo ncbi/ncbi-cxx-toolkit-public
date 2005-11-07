@@ -647,7 +647,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const CSeqDB_BasePath & this_name,
         // file cyclicality message at this point.
         
         if (m_DBList[i].FindDirName().Empty()) {
-            if (m_DBList[i].FindBaseName() == this_name.FindBaseName()) {
+            if (m_DBList[i].FindFileName() == this_name.FindFileName()) {
                 // If the base name of the alias file is also listed in
                 // "dblist", it is assumed to refer to a volume instead of
                 // to itself.
