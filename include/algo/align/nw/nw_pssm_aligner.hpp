@@ -115,16 +115,20 @@ public:
     const double** GetFreq2() const             {return m_Freq2;}
     int GetFreqScale() const                    {return m_FreqScale;}
 
-    TScore GetStartWg (void) const { return m_StartWg; }
-    TScore GetStartWs (void) const { return m_StartWs; }
-    TScore GetEndWg (void) const   { return m_EndWg; }
-    TScore GetEndWs (void) const   { return m_EndWs; }
+    TScore GetStartWg() const { return m_StartWg; }
+    TScore GetStartWs() const { return m_StartWs; }
+    TScore GetEndWg() const   { return m_EndWg; }
+    TScore GetEndWs() const   { return m_EndWs; }
+    SNCBIFullScoreMatrix& GetMatrix() { return m_ScoreMatrix; }
 
     virtual TScore ScoreFromTranscript(const TTranscript& transcript,
                                        size_t start1 = 0,
                                        size_t start2 = 0) const;
 
 protected:
+
+    // only NCBIstdaa alphabet supported
+    static const int kPSSM_ColumnSize = 26;
 
     // Source sequences
     const TScore** m_Pssm1;
@@ -144,6 +148,7 @@ protected:
     // core dynamic programming
     virtual TScore x_Align (SAlignInOut* data);
     TScore x_AlignProfile (SAlignInOut* data);
+    TScore x_AlignPSSM (SAlignInOut* data);
 
     // retrieve transcript symbol for a one-character diag
     virtual ETranscriptSymbol x_GetDiagTS(size_t i1, size_t i2) const;
@@ -159,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/07 18:23:52  papadopo
+ * minor cleanup
+ *
  * Revision 1.6  2005/08/02 17:34:28  papadopo
  * 1. Add separate open and extend penalties for start and end gaps
  * 2. Minor cleanup
