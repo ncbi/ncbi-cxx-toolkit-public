@@ -128,7 +128,7 @@ void CBMARefinerTrial::CleanUp()
 }
 
 RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detailsStream) {
-    bool writeDetails = (detailsStream && m_verbose);
+    bool writeDetails = (detailsStream || m_verbose);
     bool madeChange = true;
     unsigned int nCycles = m_cycles.size();
     TScoreType finalScore = REFINER_INVALID_SCORE;
@@ -146,9 +146,9 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
     }
 
     if (writeDetails) {
-        //(*detailsStream) << "    about to compute block scores in DoTrial\n";
+        //TERSE_INFO_MESSAGE_CL(  about to compute block scores in DoTrial\n");
         rowScorer.ComputeBlockScores(*au, originalBlockScores);
-        //(*detailsStream) << "    after computed  block scores in DoTrial\n";
+        //TERSE_INFO_MESSAGE_CL(  after computed  block scores in DoTrial\n");
 
         if (au->GetBlockMultipleAlignment()) {
             au->GetBlockMultipleAlignment()->GetUngappedAlignedBlocks(&alignedBlocks);
@@ -159,7 +159,7 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
 
     }
 
-    //(*detailsStream) << "start cycles loop in DoTrial\n";
+    //TERSE_INFO_MESSAGE_CL(art cycles loop in DoTrial\n");
     CBMARefinerCycle::ResetCycleId();
     for (unsigned int i = 0; i < nCycles; ++i) {
 
@@ -200,16 +200,17 @@ RefinerResultCode CBMARefinerTrial::DoTrial(AlignmentUtility* au, ostream* detai
         IOS_BASE::fmtflags initFlags = (detailsStream) ? detailsStream->flags() : cout.flags();
 
         rowScorer.ComputeBlockScores(*au, finalBlockScores);
-        (*detailsStream) << "Block scores summed over all rows (block number, initial block size, trial start, trial end): " << endl;
+        TERSE_INFO_MESSAGE_CL("Block scores summed over all rows (block number, initial block size, trial start, trial end): ");
         for (unsigned int bnum = 0; bnum < originalBlockScores.size(); ++bnum) {
-            detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
-            (*detailsStream) << "    BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum] << " ";
+            if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+            TERSE_INFO_MESSAGE_CL("    BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum] << " "
+             << " " << setw(7) << originalBlockScores[bnum] << " " << setw(7) << finalBlockScores[bnum]);
 
-            detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
-            (*detailsStream) << " " << setw(7) << originalBlockScores[bnum] << " " << setw(7) << finalBlockScores[bnum] << endl;
+//            if (detailsStream) detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
+//            TERSE_INFO_MESSAGE_CL(" " << setw(7) << originalBlockScores[bnum] << " " << setw(7) << finalBlockScores[bnum]);
         }
-        (*detailsStream) << endl;
-        detailsStream->setf(initFlags, IOS_BASE::adjustfield);
+        TERSE_INFO_MESSAGE_CL("");
+        if (detailsStream) detailsStream->setf(initFlags, IOS_BASE::adjustfield);
 
     }
 
@@ -260,6 +261,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/11/07 14:42:11  lanczyck
+ * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
+ *
  * Revision 1.4  2005/10/19 18:39:59  lanczyck
  * reset cycle number in new trials
  *

@@ -243,7 +243,7 @@ unsigned int CBlockedAlignmentEditor::MoveBlockBoundaries(BlockBoundaryAlgorithm
     for (mapIt = localChangedBlocks.begin(); mapIt != localChangedBlocks.end(); ++mapIt) {
         thisBlock = mapIt->second;
         if (thisBlock.from > thisBlock.to) {  // delete the block!
-            INFO_MESSAGE_CL("        MoveBlockBoundaries:  Deleting block " << thisBlock.blockNum+1);
+            LOG_MESSAGE_CL("        MoveBlockBoundaries:  Deleting block " << thisBlock.blockNum+1);
             if (!m_bma->DeleteBlock(thisBlock.to)) {
                 WARNING_MESSAGE_CL("        MoveBlockBoundaries:  Problem trying to delete block " << thisBlock.blockNum+1);
             } else {
@@ -284,9 +284,9 @@ unsigned int CBlockedAlignmentEditor::MoveBlockBoundaries(BlockBoundaryAlgorithm
         }
     }
 
-    INFO_MESSAGE_CL("        MoveBlockBoundaries:  Attempt to change bounds of " << nChanged << " blocks; moved bounds for " << nMoved << " of them");
+    TERSE_INFO_MESSAGE_CL("        Attempted to change bounds of " << nChanged << " blocks; moved bounds for " << nMoved << " of them");
     if (nDeleted > 0) {
-        INFO_MESSAGE_CL("                      and deleted " << nDeleted << " blocks.");
+        TERSE_INFO_MESSAGE_CL("                      and deleted " << nDeleted << " blocks.");
     }
     return nChanged;
 }
@@ -447,6 +447,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/11/07 14:42:11  lanczyck
+* change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
+*
 * Revision 1.3  2005/10/24 23:24:52  thiessen
 * struct_util now uses C++ PSSM generation; remove C-toolkit dependency
 *

@@ -157,7 +157,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     ResetBase();
 
     bool recomputeScores = false;
-    bool writeDetails = (detailsStream != NULL && m_verbose);
+    bool writeDetails = (detailsStream != NULL || m_verbose);
     IOS_BASE::fmtflags initFlags = (detailsStream) ? detailsStream->flags() : cout.flags();
 
 
@@ -197,7 +197,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     if (!m_rowSelector) {
         MakeRowSelector(au, m_looParams, message, 0, true);
         if (writeDetails) {
-            (*detailsStream) << message;
+            TERSE_INFO_MESSAGE_CL(message);
         }
     }
     if (!m_rowSelector) return eRefinerResultRowSelectorError;
@@ -210,12 +210,12 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
     if (m_shuffleRowsAtStart) {
         if (writeDetails) {
-            (*detailsStream) << "    (Reshuffle the row selection order for this " << lnoString << " phase...)\n";
+            TERSE_INFO_MESSAGE_CL("    (Reshuffled the row selection order for this " << lnoString << " phase...)\n");
         }
         m_rowSelector->Shuffle();
     }
 
-    //(*detailsStream) << "starting while loop over rows in DoPhase\n";
+    //TERSE_INFO_MESSAGE_CL(arting while loop over rows in DoPhase\n");
     tries = 0;
     sumShifts = 0;
     while (m_rowSelector->HasNext() && au) {
@@ -281,7 +281,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
         //                cout << "##### row: " << row+1 << " perc " << percentileLOO << "; ext " << extensionLOO << " cut " << cutoffLOO << " from/to " << queryFrom[row] << " " << queryTo[row] << endl;
 
         //  If LOO failed continue to the next row (rollbacks first, if created a copy earlier)
-        //(*detailsStream) << "    about to do LOO for row " << row << endl;
+        //TERSE_INFO_MESSAGE_CL(  about to do LOO for row " << row);
 //        if (!au->DoLeaveOneOut(row, m_looParams.blocks, m_looParams.percentile, m_looParams.extension,
 //                               m_looParams.cutoff, m_looParams.froms[row], m_looParams.tos[row])) {
 
@@ -305,20 +305,20 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
             SetDiagPostLevel(originalPostLevel);
             oldScore = score;
-            //(*detailsStream) << "    about to do rowScorer.ComputeScore after LOO for row " << row << endl;
+            //TERSE_INFO_MESSAGE_CL(  about to do rowScorer.ComputeScore after LOO for row " << row);
             score    = (TScoreType) rowScorer.ComputeScore(*au);  //GetScore(*au);
 
             for (unsigned int i = 0; i < rows.size(); ++i) {
                 row = rows[i];
-//                (*detailsStream) << "    about to do rowScorer.ComputeBlockScores after LOO for row " << row << endl;
+//                TERSE_INFO_MESSAGE_CL(  about to do rowScorer.ComputeBlockScores after LOO for row " << row);
                 rowScore = rowScorer.ComputeBlockScores(*au, m_finalBlockScores[row], row);
                 seqIdStr = GetSeqIdStringForRowFromAU(au, row);
 
                 if (writeDetails) {
-                    (*detailsStream) << lnoMethod << " for " << seqIdStr << " at row " << row+1 << " (before " << lnoString << " rowScore = " << beforeLOORowScores[row] << "; ";
-                    (*detailsStream) << "after " << lnoString << " rowScore = " << rowScore << ")" << endl; 
+                    TERSE_INFO_MESSAGE_CL("    " << lnoMethod << " for " << seqIdStr << " at row " << row+1 << " (before " << lnoString << " rowScore = " << beforeLOORowScores[row] 
+                                                    << "; after " << lnoString << " rowScore = " << rowScore << ")"); 
                 } else {
-                    TRACE_MESSAGE_CL(lnoMethod << " for " << seqIdStr << " at row " << row+1 << " (before " << lnoString << " rowScore = " << beforeLOORowScores[row] << ")"); 
+                    TRACE_MESSAGE_CL("    " << lnoMethod << " for " << seqIdStr << " at row " << row+1 << " (before " << lnoString << " rowScore = " << beforeLOORowScores[row] << ")"); 
                     TRACE_MESSAGE_CL("              (after " << lnoString << " rowScore = " << rowScore << ")"); 
                 }
 
@@ -340,16 +340,18 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
 
                 //  Output individual block scores
                 if (writeDetails) {
-                    (*detailsStream) << "    Block scores on row " << row+1 << " (row, block number, block size, before " << lnoString << ", after " << lnoString << "): " << endl;
+                    TERSE_INFO_MESSAGE_CL("    Block scores on row " << row+1 << " (row, block number, block size, before " << lnoString << ", after " << lnoString << "): ");
                     for (unsigned int bnum = 0; bnum < m_initialBlockScores[row].size(); ++bnum) {
-                        detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
-                        (*detailsStream) << "    row " << setw(5) << row+1 << " BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum];
+//                        if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+//                        TERSE_INFO_MESSAGE_CL("    row " << setw(5) << row+1 << " BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum]);
+                        TERSE_INFO_MESSAGE_CL("    row " << setw(5) << row+1 << " BLOCK " << setw(4) << bnum+1 << " size " << setw(4) << blockWidths[bnum]
+                                              << " " << setw(7) << m_initialBlockScores[row][bnum] << " " << setw(7) << m_finalBlockScores[row][bnum]);
 
-                        detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
-                        (*detailsStream) << " " << setw(7) << m_initialBlockScores[row][bnum] << " " << setw(7) << m_finalBlockScores[row][bnum] << endl;
+//                        if (detailsStream) detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
+//                        TERSE_INFO_MESSAGE_CL(" " << setw(7) << m_initialBlockScores[row][bnum] << " " << setw(7) << m_finalBlockScores[row][bnum]);
                     }
-                    detailsStream->setf(initFlags, IOS_BASE::adjustfield);
-                    (*detailsStream) << endl;
+                    if (detailsStream) detailsStream->setf(initFlags, IOS_BASE::adjustfield);
+                    TERSE_INFO_MESSAGE_CL("");
                 }
 
             }
@@ -360,8 +362,8 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             if (acceptAll) {
                 if (writeDetails) {
                     string& msg = (score == oldScore) ? noChange : accepted;
-//                    (*detailsStream) << "LOO move" << msg << "for " << seqIdStr << " at row " << row+1 << ".  oldScore = " << oldScore << "; new score = " << score;
-                    (*detailsStream) << lnoString << " move" << msg << ".  oldScore = " << oldScore << "; new score = " << score << endl;
+//                    TERSE_INFO_MESSAGE_CL(O move" << msg << "for " << seqIdStr << " at row " << row+1 << ".  oldScore = " << oldScore << "; new score = " << score);
+                    TERSE_INFO_MESSAGE_CL("    " << lnoString << " move" << msg << ".  oldScore = " << oldScore << "; new score = " << score);
                 }
                 if (score == oldScore) {
                     ++scoreSame;
@@ -371,7 +373,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
                 }
 
             } else {
-                TRACE_MESSAGE_CL(lnoMethod << " NOT accepted.  oldScore = " << oldScore << "; rejected new score = " << score);
+                TRACE_MESSAGE_CL("    " << lnoMethod << " NOT accepted.  oldScore = " << oldScore << "; rejected new score = " << score);
                 if (score < oldScore) ++scoreDrop; // use if to not depend on Accept implementation
 
                 delete au;
@@ -522,9 +524,9 @@ CRowSelector* CBMARefinerLOOPhase::MakeRowSelector(AlignmentUtility* au, const L
     }
 
     if (m_rowSelector) {
-        msg  = string(72, '=') + "\nRows that can be left out:\n";
+        msg  = string(30, '=') + "\nRows that can be left out:\n";
         msg += m_rowSelector->PrintSequence(0, 0, true);
-        msg += string(72, '=') + "\n\n";
+        msg += string(30, '=') + "\n\n";
     }
 
     return m_rowSelector;
@@ -533,7 +535,7 @@ CRowSelector* CBMARefinerLOOPhase::MakeRowSelector(AlignmentUtility* au, const L
 
 unsigned int CBMARefinerLOOPhase::AnalyzeRowShifts(const Ranges& before, const Ranges& after, unsigned int row, ostream* details) {
 
-    bool writeDetails = (details != NULL && m_verbose);
+    bool writeDetails = (details != NULL || m_verbose);
     int diffFrom, diffTo;
     double totalNormShift = 0.0;
     unsigned int totalShift = 0;
@@ -546,7 +548,7 @@ unsigned int CBMARefinerLOOPhase::AnalyzeRowShifts(const Ranges& before, const R
     for (i = 0; i < nBlocks; ++i) {
 
         if (i == 0 && writeDetails) {
-            (*details) << "\n    Shift analysis for row " << row+1 << ":" << endl;
+            TERSE_INFO_MESSAGE_CL("\n    Shift analysis for row " << row+1 << ":");
         }
 
         diffFrom = after[i].from - before[i].from;
@@ -558,19 +560,19 @@ unsigned int CBMARefinerLOOPhase::AnalyzeRowShifts(const Ranges& before, const R
             totalShift += abs(diffFrom)*blockLen;
             totalNormShift += abs(diffFrom)/(double) blockLen;
             if (writeDetails) {
-                (*details) << "        Row " << row+1 << " block " << i+1 << " of size " << blockLen << " shifts by " << diffFrom << endl;
+                TERSE_INFO_MESSAGE_CL("        Row " << row+1 << " block " << i+1 << " of size " << blockLen << " shifts by " << diffFrom);
             }
         }
     }
 
     if (writeDetails) {
         if (totalShift > 0) {
-            (*details) << "        Shift detected on row " << row+1 << ":  block-width-weighted shift = " << totalShift;
-            (*details) << "; block-width-normalized shift = " << totalNormShift << endl;
+            TERSE_INFO_MESSAGE_CL("        Shift detected on row " << row+1 << ":  block-width-weighted shift = " << totalShift
+                                  << "; block-width-normalized shift = " << totalNormShift);
         } else if (nBlocks > 0) {
-            (*details) << "        No Shift detected on row " << row+1 << endl;
+            TERSE_INFO_MESSAGE_CL("        No Shift detected on row " << row+1);
         } 
-        (*details) << endl;
+        TERSE_INFO_MESSAGE_CL("");
     }
 
     return totalShift;
@@ -591,10 +593,10 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
         return eRefinerResultPhaseSkipped;
     }
 
-    bool writeDetails = (detailsStream != NULL && m_verbose);
+    bool writeDetails = (detailsStream != NULL || m_verbose);
     IOS_BASE::fmtflags initFlags = (detailsStream) ? detailsStream->flags() : cout.flags();
     if (writeDetails) {
-        (*detailsStream) << "    Start block editing phase." << endl << endl;
+        TERSE_INFO_MESSAGE_CL("    Start block editing phase." << "\n");
     }
 
     TScoreType ext, shrink;
@@ -636,18 +638,20 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
     if (m_blockEditParams.algMethod != eSimpleShrink) {
 
         if (writeDetails) {
-            (*detailsStream) << "        Possible block extensions (PSSM coordinates):" << endl;
+            TERSE_INFO_MESSAGE_CL("        Possible block extensions (PSSM coordinates):");
             for (unsigned j = 0; j < nExtendable; ++j) {
-                detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
-                (*detailsStream) << "        BLOCK " << setw(4) << eb[j].blockNum+1 << " [";
-                detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
-                (*detailsStream) << setw(4) << eb[j].from << ", " << setw(4) << eb[j].to << "]:  max N-extension = ";
+                if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+                TERSE_INFO_MESSAGE_CL("        BLOCK " << setw(4) << eb[j].blockNum+1 << " ["
+                << setw(4) << eb[j].from << ", " << setw(4) << eb[j].to << "]:  max N-extension = "
+                << setw(4) << eb[j].nExt << ";  max C-extension = " << setw(4) << eb[j].cExt);
+//                if (detailsStream) detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
+//                TERSE_INFO_MESSAGE_CL(setw(4) << eb[j].from << ", " << setw(4) << eb[j].to << "]:  max N-extension = ");
 
-                detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
-                (*detailsStream) << setw(4) << eb[j].nExt << ";  max C-extension = " << setw(4) << eb[j].cExt << endl;
+//                if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+//                TERSE_INFO_MESSAGE_CL(setw(4) << eb[j].nExt << ";  max C-extension = " << setw(4) << eb[j].cExt);
             }
-            (*detailsStream) << "        **************************************************\n\n";
-            detailsStream->setf(initFlags, IOS_BASE::adjustfield);
+            TERSE_INFO_MESSAGE_CL("        **************************************************\n");
+            if (detailsStream) detailsStream->setf(initFlags, IOS_BASE::adjustfield);
 
         }
     }
@@ -667,8 +671,8 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
         nExtensions = 0;
         nShrinks = 0;
         if (writeDetails) {
-            (*detailsStream) << "        Changed blocks (PSSM coordinates):" << endl;
-            detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+            TERSE_INFO_MESSAGE_CL("        Changed blocks (PSSM coordinates):");
+            if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
         }
         for (unsigned j = 0; j < nChanged; ++j) {
             origNTerm = origCTerm = origWidth = 0;
@@ -697,32 +701,37 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
             }
 
             if (writeDetails) {
-                (*detailsStream) << "        BLOCK " << setw(4) << changedBlocks[j].blockNum+1 << ":  [";
+//                TERSE_INFO_MESSAGE_CL("        BLOCK " << setw(4) << changedBlocks[j].blockNum+1 << ":  [");
 
-                detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
-                (*detailsStream) << setw(4) << origNTerm << ", " << setw(4) << origCTerm << "] size ";
+//                if (detailsStream) detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
+                TERSE_INFO_MESSAGE_CL("        BLOCK " << setw(4) << changedBlocks[j].blockNum+1 << ":  ["
+                 << setw(4) << origNTerm << ", " << setw(4) << origCTerm << "] size "
+                 << setw(4) << origWidth << " ==> ["
+                 << setw(4) << changedBlocks[j].from << ", " << setw(4) << changedBlocks[j].to << "] size "
+                 << setw(4) << newWidth);
+/*
+                if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+                TERSE_INFO_MESSAGE_CL(setw(4) << origWidth << " ==> [");
 
-                detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
-                (*detailsStream) << setw(4) << origWidth << " ==> [";
+                if (detailsStream) detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
+                TERSE_INFO_MESSAGE_CL(setw(4) << changedBlocks[j].from << ", " << setw(4) << changedBlocks[j].to << "] size ");
 
-                detailsStream->setf(IOS_BASE::right, IOS_BASE::adjustfield);
-                (*detailsStream) << setw(4) << changedBlocks[j].from << ", " << setw(4) << changedBlocks[j].to << "] size ";
-
-                detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
-                (*detailsStream) << setw(4) << newWidth << endl;
+                if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
+                TERSE_INFO_MESSAGE_CL(setw(4) << newWidth);
+*/
             }
 
         }
 
         if (writeDetails) {
-            detailsStream->setf(initFlags, IOS_BASE::adjustfield);
-            (*detailsStream) << endl << "        Overall " << nExtensions << " extensions; " << nShrinks << " shrinkages." << endl;
-            (*detailsStream) << "        Net change:  " << int(nExtensions - nShrinks) << " columns in " << nChanged << " different blocks." << endl;
-            (*detailsStream) << "        **************************************************\n\n";
+            if (detailsStream) detailsStream->setf(initFlags, IOS_BASE::adjustfield);
+            TERSE_INFO_MESSAGE_CL("\n        Overall " << nExtensions << " extensions; " << nShrinks << " shrinkages.");
+            TERSE_INFO_MESSAGE_CL("        Net change:  " << int(nExtensions - nShrinks) << " columns in " << nChanged << " different blocks.");
+            TERSE_INFO_MESSAGE_CL("        **************************************************\n");
         }
     } else if (writeDetails) {
-        (*detailsStream) << "\n        No Changed blocks." << endl;
-        (*detailsStream) << "        **************************************************\n\n";
+        TERSE_INFO_MESSAGE_CL("\n        No Changed blocks.");
+        TERSE_INFO_MESSAGE_CL("        **************************************************\n");
     }
 
     //  The original AlignmentUtility object was not modified in the BlockEditor;
@@ -843,6 +852,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/07 14:42:11  lanczyck
+ * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
+ *
  * Revision 1.8  2005/10/19 18:40:19  lanczyck
  * output formatting changes
  *

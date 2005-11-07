@@ -206,19 +206,20 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
     }
 
     //  In GetScore, might reset diagnostic level
-    SetDiagPostLevel((m_verbose) ? eDiag_Info : eDiag_Error);
+    EDiagSev origDiagSev = SetDiagPostLevel((m_verbose) ? eDiag_Info : eDiag_Error);
+
+    LOG_MESSAGE_CL(string(50, '=') + "\nBeginning Alignment Refinement\n");
 
     //  Loop over trials.
     for (unsigned int i = 0; i < m_nTrials && !converged; ++i) {
-        if (detailsStream) {
-            (*detailsStream) << "\nStart Trial " << i+1 << endl;
-        }
+
+        LOG_MESSAGE_CL("\nStart refinement trial " << i+1);
 
         // create same starting AlignmentUtility class object for trial
         delete au;
-        //(*detailsStream) << "    about to clone original in RunTrials\n";
+        //TERSE_INFO_MESSAGE_CL(  about to clone original in RunTrials\n");
         au = m_originalAlignment->Clone();
-        //(*detailsStream) << "    after cloned   original in RunTrials\n";
+        //TERSE_INFO_MESSAGE_CL(  after cloned   original in RunTrials\n");
         if (!au || !au->Okay()) {
             delete au;
             CleanUp(false);
@@ -227,37 +228,32 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
 
     	resultCode = m_trial->DoTrial(au, detailsStream);
 
-
-        if (detailsStream) {
-            (*detailsStream) << "\nEnd trial " << i+1 << ":\n";
-
-            if (m_trial->NumCyclesRun() != m_trial->NumCycles()) {
-                (*detailsStream) << "    (stopped after " << m_trial->NumCyclesRun() << " of " << m_trial->NumCycles() << " cycles)\n";
-            }
+        LOG_MESSAGE_CL("\n    Trial " << i+1 << " results:\n");
+        if (m_trial->NumCyclesRun() != m_trial->NumCycles()) {
+            LOG_MESSAGE_CL("    (stopped after " << m_trial->NumCyclesRun() << " of " << m_trial->NumCycles() << " cycles)");
         }
 
-
         if (au && resultCode == eRefinerResultOK) {
-            if (detailsStream) {
-                (*detailsStream) << "Original alignment score = " << GetInitialScore() << ":  final score = " << GetFinalScore() << "\n";
-            }
+            LOG_MESSAGE_CL("Original alignment score = " << GetInitialScore() << ":  final score = " << GetFinalScore() << "\n");
             m_perTrialResults.insert(RefinedAlignmentsVT(m_trial->GetFinalScore(), RefinerAU(i+1, au->Clone())));
         } else {
-            if (detailsStream) {
-                (*detailsStream) << "Original alignment score = " << GetInitialScore() << ":  Invalid final score\n";
-            }
+            LOG_MESSAGE_CL("Original alignment score = " << GetInitialScore() << ":  Invalid final score\n");
             ERROR_MESSAGE_CL("Problem in trial " << i+1 << ": returned with error code " << (int) resultCode << "\nSkipping to next scheduled trial.");
             m_perTrialResults.insert(RefinedAlignmentsVT(REFINER_INVALID_SCORE, RefinerAU(i+1, NULL)));
             continue;
         }
 
         converged = IsConverged(message);
-        if (detailsStream) {
-            (*detailsStream) << message << endl;
-        }
+        LOG_MESSAGE_CL(message);
+        LOG_MESSAGE_CL("\nEnd refinement trial " << i+1 << ":\n");
+
     }
 
+    LOG_MESSAGE_CL("\nAlignment Refinement Completed\n" + string(50, '=') + "\n");
+
     delete au;
+
+    SetDiagPostLevel(origDiagSev);
 
     return eRefinerResultOK;
 }

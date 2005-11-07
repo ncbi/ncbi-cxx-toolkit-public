@@ -219,7 +219,7 @@ void BMAUtils::PrintPSSM(const BMA& bma, bool rowMajor, string* stringOutput) {
         EDiagSev oldPostLevel = SetDiagPostLevel(eDiag_Info);
         SetDiagPostFlag(eDPF_OmitInfoSev);
 
-        INFO_MESSAGE_CL(oss.str());
+        LOG_MESSAGE_CL(oss.str());
         
         SetDiagPostLevel(oldPostLevel);
         UnsetDiagPostFlag(eDPF_OmitInfoSev);
@@ -239,7 +239,7 @@ void BMAUtils::PrintPSSMByRow(const BMA& bma, bool dumpRawMatrix, bool viewColum
     EDiagSev oldPostLevel = SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_OmitInfoSev);
 
-    INFO_MESSAGE_CL("printing pssm...:  dimensions " << bma.GetPSSM()->rows << " " << bma.GetPSSM()->columns << "\n");
+    LOG_MESSAGE_CL("printing pssm...:  dimensions " << bma.GetPSSM()->rows << " " << bma.GetPSSM()->columns << "\n");
 
     for (row = 0; row < nRows; ++row) {
         PrintPSSMForRow(bma, row, viewColumn, ctype);
@@ -247,9 +247,9 @@ void BMAUtils::PrintPSSMByRow(const BMA& bma, bool dumpRawMatrix, bool viewColum
 
 
     if (dumpRawMatrix) {
-        INFO_MESSAGE_CL("****************************************");
-        INFO_MESSAGE_CL("****************************************");
-        INFO_MESSAGE_CL("****************************************\n");
+        LOG_MESSAGE_CL("****************************************");
+        LOG_MESSAGE_CL("****************************************");
+        LOG_MESSAGE_CL("****************************************\n");
 
         PrintPSSM(bma);
     }
@@ -362,7 +362,7 @@ void BMAUtils::PrintPSSMForRow(const BMA& bma, unsigned int row, bool viewColumn
     }
 
     oss << '\0';
-    INFO_MESSAGE_CL(oss.str());
+    LOG_MESSAGE_CL(oss.str());
 
     SetDiagPostLevel(oldPostLevel);
     UnsetDiagPostFlag(eDPF_OmitInfoSev);
@@ -389,9 +389,9 @@ void BMAUtils::PrintPSSMByColumn(const BMA& bma, bool dumpRawMatrix, bool viewCo
     }
 
     if (dumpRawMatrix) {
-        INFO_MESSAGE_CL("****************************************");
-        INFO_MESSAGE_CL("****************************************");
-        INFO_MESSAGE_CL("****************************************\n");
+        LOG_MESSAGE_CL("****************************************");
+        LOG_MESSAGE_CL("****************************************");
+        LOG_MESSAGE_CL("****************************************\n");
 
         PrintPSSM(bma);
     }
@@ -583,6 +583,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2005/11/07 14:42:11  lanczyck
+* change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
+*
 * Revision 1.3  2005/10/24 23:24:52  thiessen
 * struct_util now uses C++ PSSM generation; remove C-toolkit dependency
 *

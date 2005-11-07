@@ -107,9 +107,7 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
     unsigned int nPhases = m_phases.size();
     string phaseName;
 
-    if (detailsStream) {
-        (*detailsStream) << "\n    Start Cycle = " << m_cycleId << "\n";
-    }
+    TERSE_INFO_MESSAGE_CL("\n    Start Cycle = " << m_cycleId << "\n");
 
     for (unsigned int p = 0; p < nPhases; ++p) {
         phaseResult = m_phases[p]->DoPhase(au, detailsStream);
@@ -117,14 +115,14 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
             return phaseResult;
         }
 
-        if (detailsStream && m_verbose) {
+        if (m_verbose) {
             phaseName = m_phases[p]->PhaseName();
             if (phaseResult == eRefinerResultOK) {
-                (*detailsStream) << "    End " << phaseName << " phase for cycle " << m_cycleId << endl;
-                (*detailsStream) << "    Phase's initial alignment score = " << m_phases[p]->GetScore(true) 
-                                 << "; alignment score after " << phaseName << " phase = " << m_phases[p]->GetScore(false) << endl << endl;
+                TERSE_INFO_MESSAGE_CL("    End " << phaseName << " phase for cycle " << m_cycleId);
+                TERSE_INFO_MESSAGE_CL("    Phase's initial alignment score = " << m_phases[p]->GetScore(true) 
+                                 << "; alignment score after " << phaseName << " phase = " << m_phases[p]->GetScore(false) << "\n");
             } else {
-                (*detailsStream) << "    Skipped " << phaseName << " phase for cycle " << m_cycleId << endl << endl;
+                TERSE_INFO_MESSAGE_CL("    Skipped " << phaseName << " phase for cycle " << m_cycleId << "\n");
             }
         }
 
@@ -137,9 +135,7 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
         }
     }
 
-    if (detailsStream) {
-        (*detailsStream) << "    End cycle = " << m_cycleId << ":  Cycle's initial alignment score = " << GetInitialScore() << "; Cycle's ending alignment score = " << GetFinalScore() << endl << endl;
-    }
+    TERSE_INFO_MESSAGE_CL("    End cycle = " << m_cycleId << ":  Cycle's initial alignment score = " << GetInitialScore() << "; Cycle's ending alignment score = " << GetFinalScore() << "\n");
 
     //  If made it here, either all phases completed OK or were skipped.
     return eRefinerResultOK;
@@ -244,6 +240,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/11/07 14:42:11  lanczyck
+ * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
+ *
  * Revision 1.4  2005/07/07 22:55:21  lanczyck
  * fix out-of-range iteration index bug when testing for convergence when there were no changes in any of a cycle's phases
  *
