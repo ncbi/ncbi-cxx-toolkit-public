@@ -1,4 +1,4 @@
-static char const rcsid[] = "$Id";
+static char const rcsid[] = "$Id$";
 
 /*
 * ===========================================================================
@@ -38,10 +38,8 @@ Contents: C++ driver for COBALT multiple alignment algorithm
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
-
 #include <objmgr/object_manager.hpp>
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
-
 #include <serial/iterator.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
@@ -131,10 +129,10 @@ void CMultiApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-TSeqLocVector
-GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
+static blast::TSeqLocVector
+x_GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
 {
-    TSeqLocVector retval;
+    blast::TSeqLocVector retval;
 
     // read one query at a time, and use a separate seq_entry,
     // scope, and lowercase mask for each query. This lets different
@@ -159,7 +157,7 @@ GetSeqLocFromStream(CNcbiIstream& instream, CObjectManager& objmgr)
         CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
         CRef<CSeq_loc> seqloc(new CSeq_loc());
         seqloc->SetWhole().Assign(*itr->GetId().front());
-        SSeqLoc sl(seqloc, scope);
+        blast::SSeqLoc sl(seqloc, scope);
         retval.push_back(sl);
     }
     return retval;
@@ -185,8 +183,9 @@ int CMultiApplication::Run(void)
                           args["ccc"].AsDouble(),
                           args["ffb"].AsDouble());
 
-    TSeqLocVector queries = GetSeqLocFromStream(args["i"].AsInputFile(), 
-                                                *m_ObjMgr);
+    blast::TSeqLocVector queries = x_GetSeqLocFromStream(
+                                              args["i"].AsInputFile(), 
+                                              *m_ObjMgr);
 
     aligner.SetQueries(queries);
 
@@ -194,7 +193,7 @@ int CMultiApplication::Run(void)
         if (!args["db"] || !args["b"] || !args["f"]) {
             printf("RPS database, frequency file and block file "
                    "must be specified\n");
-            exit(-1);
+            return -1;
         }
         aligner.SetDomainInfo(args["db"].AsString(),
                               args["b"].AsString(),
@@ -241,6 +240,11 @@ int main(int argc, const char* argv[])
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:44:18  papadopo
+  1. Do not automatically assume blast namespace
+  2. Fix rcsid
+  3. Minor cleanup
+
   Revision 1.1  2005/11/07 18:14:01  papadopo
   Initial revision
 
