@@ -375,6 +375,9 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
             break;
         }
         NcbiGetlineEOL(in, line);
+        if (NStr::EndsWith(line, "\r")) {
+            line.resize(line.size() - 1);
+        }
         if (in.eof()  &&  line.empty()) {
             break;
         } else if (line.empty()) {
@@ -631,6 +634,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2005/11/08 19:37:47  ucko
+* ReadFasta: strip off trailing \r characters, as CGIs may encounter
+* them but they confuse some code (particularly s_ParseFastaDefline).
+*
 * Revision 1.24  2005/10/05 17:51:59  ucko
 * Restore previous NoParseID behavior.
 *
