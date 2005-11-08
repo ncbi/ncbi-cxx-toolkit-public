@@ -266,10 +266,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
-  Revision 1.2  2005/11/08 17:47:19  papadopo
-  1. do not assume blast namespace
-  2. move seqalign output to another file
-  3. minor cleanup
+  Revision 1.3  2005/11/08 17:51:15  papadopo
+  1. Make header files self-sufficient
+  2. ASSERT -> assert
 
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
