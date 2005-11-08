@@ -36,19 +36,24 @@ Contents: implementation of CSequence class
 ******************************************************************************/
 
 #include <ncbi_pch.hpp>
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #include <objects/seq/seqport_util.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+
 #include <algo/cobalt/seq.hpp>
 
 /// @file seq.cpp
 /// Implementation of CSequence class
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
 
 unsigned char
 CSequence::GetPrintableLetter(int pos) const
 {
-    ASSERT(pos >= 0 && pos < GetLength());
+    assert(pos >= 0 && pos < GetLength());
 
     int val;
     switch (m_Sequence[pos]) {
@@ -87,16 +92,16 @@ CSequence::GetPrintableLetter(int pos) const
 void 
 CSequence::Reset(const blast::SSeqLoc& seq_in)
 {
-    ASSERT(seq_in.seqloc->IsSetWhole());
+    assert(seq_in.seqloc->IsSetWhole());
 
     CBioseq_Handle bhandle = seq_in.scope->GetBioseqHandle(
                                          seq_in.seqloc->GetWhole(),
                                          CScope::eGetBioseq_All);
     CConstRef<CBioseq> bioseq = bhandle.GetCompleteBioseq();
 
-    ASSERT(bioseq->IsSetInst());
+    assert(bioseq->IsSetInst());
     const CBioseq::TInst& inst = bioseq->GetInst();
-    ASSERT(inst.IsSetSeq_data());
+    assert(inst.IsSetSeq_data());
     const CSeq_data& seqdata = inst.GetSeq_data(); 
     int seq_length;
 
@@ -142,7 +147,7 @@ CSequence::PropagateGaps(const CNWAligner::TTranscript& transcript,
             new_seq[i] = m_Sequence[j];
             for (int k = 0; k < kAlphabetSize; k++)
                 new_freq(i, k) = m_Freqs(j, k);
-            ASSERT(j < GetLength());
+            assert(j < GetLength());
             j++;
         }
     }
@@ -191,7 +196,7 @@ CSequence::GetPairwiseScore(CSequence& seq1,
                             int gap_open,
                             int gap_extend)
 {
-    ASSERT(seq1.GetLength() == seq2.GetLength());
+    assert(seq1.GetLength() == seq2.GetLength());
 
     int i = -1, j = -1;
     int len = seq1.GetLength();
@@ -259,6 +264,11 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:56:23  papadopo
+  1. make header files self-sufficient
+  2. ASSERT -> assert
+  3. minor cleanup
+
   Revision 1.1  2005/11/07 18:14:01  papadopo
   Initial revision
 
