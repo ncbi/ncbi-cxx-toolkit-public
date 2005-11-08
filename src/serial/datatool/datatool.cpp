@@ -327,9 +327,12 @@ bool CDataTool::ProcessData(void)
 
     auto_ptr<CObjectIStream>
         in(CObjectIStream::Open(inFormat, inFileName, eSerial_StdWhenAny));
-    if (stdXmlIn && inFormat == eSerial_Xml) {
+    if (inFormat == eSerial_Xml) {
         CObjectIStreamXml *is = dynamic_cast<CObjectIStreamXml*>(in.get());
-        is->SetEnforcedStdXml(true);
+        if (stdXmlIn) {
+            is->SetEnforcedStdXml(true);
+        }
+        is->SetDefaultStringEncoding(eEncoding_Unknown);
     }
 
     string typeName;
@@ -386,6 +389,7 @@ bool CDataTool::ProcessData(void)
                 if (stdXmlOut) {
                     os->SetEnforcedStdXml(true);
                 }
+                os->SetDefaultStringEncoding(eEncoding_Unknown);
                 if (use_nsName) {
                     os->SetReferenceSchema(true);
                     if (!nsName.empty()) {
@@ -411,6 +415,7 @@ bool CDataTool::ProcessData(void)
                 if (stdXmlOut) {
                     os->SetEnforcedStdXml(true);
                 }
+                os->SetDefaultStringEncoding(eEncoding_Unknown);
                 if (use_nsName) {
                     os->SetReferenceSchema(true);
                     if (!nsName.empty()) {
@@ -625,6 +630,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.87  2005/11/08 19:24:55  gouriano
+* Set default string encoding of XML streams
+*
 * Revision 1.86  2005/10/12 17:00:19  gouriano
 * Replace C_E class name in unisequence types by something more unique
 * Add typedef in generated code to provide backward compatibility
