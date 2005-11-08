@@ -33,7 +33,7 @@ Contents: Definitions used by all COBALT aligner components
 
 ******************************************************************************/
 
-/// @file multi_base.hpp
+/// @file base.hpp
 /// Definitions used by all COBALT aligner components
 
 #ifndef _ALGO_COBALT_BASE_HPP_
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 18:01:24  papadopo
+  fix typo
+
   Revision 1.2  2005/11/08 17:39:56  papadopo
   1. Move includes to the headers that use them
   2. Add doxygen
