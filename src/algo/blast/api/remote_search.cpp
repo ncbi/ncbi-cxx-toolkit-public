@@ -125,7 +125,6 @@ CRemoteBlast & CRemoteSeqSearch::x_RemoteBlast()
         }
         
         if (! sll.empty()) {
-            _ASSERT(bss.Empty());
             m_RemoteBlast->SetQueries(sll);
         } else {
             _ASSERT(bss.NotEmpty());
