@@ -39,48 +39,49 @@ Contents: Definitions used by all COBALT aligner components
 #ifndef _ALGO_COBALT_BASE_HPP_
 #define _ALGO_COBALT_BASE_HPP_
 
-#include <util/math/matrix.hpp>
-
-#include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/sseqloc.hpp>
-#include <algo/blast/core/blast_setup.h>
-#include <algo/blast/core/blast_stat.h>
-
-#include <algo/phy_tree/dist_methods.hpp>
-#include <algo/align/nw/nw_pssm_aligner.hpp>
-
-#include <objtools/data_loaders/blastdb/bdbloader.hpp> 
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/scope.hpp>
-
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
-#include <objects/seqalign/Seq_align.hpp>
+#include <util/range.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// Basic data type for offsets into a sequence. By
+/// convention, all offsets are zero-based
 typedef int TOffset;
+
+/// Basic type specifying a range on a sequence
 typedef pair<TOffset, TOffset> TOffsetPair;
 
+/// Sufficient extra functionality is needed from CRange
+/// that it justifies extending the class
 template<class Position>
 class CLocalRange : public CRange<Position>
 {
 public:
-    typedef CRange<Position> TParent;
-    typedef typename TParent::position_type position_type;
-    typedef CLocalRange<Position> TThisType;
+    typedef CRange<Position> TParent;                       ///< parent class
+    typedef typename TParent::position_type position_type;  ///< underlying type
+    typedef CLocalRange<Position> TThisType;                ///< shorthand
 
+    /// default constructor
     CLocalRange() {}
+
+    /// convert offsets into a range
+    /// @param from Start offset
+    /// @param to End offset
+    ///
     CLocalRange(position_type from, position_type to)
         : TParent(from, to) {}
+
+    /// convert parent class to a range
+    /// @param range Reference to an object of the parent class
+    ///
     CLocalRange(const TParent& range)
         : TParent(range) {}
 
+    /// Test whether 'this' completely envelops
+    /// a given sequence range
+    /// @param r Range to test for containment
+    /// @return true if 'this' envelops r, false otherwise
+    ///
     bool Contains(const TThisType& r)
     {
         return !TParent::Empty() && 
@@ -90,19 +91,31 @@ public:
                TParent::GetToOpen() >= r.GetToOpen();
     }
 
+    /// Test whether 'this' represents a sequence range
+    /// strictly less than a given sequence range
+    /// @param r Range to test for disjointness
+    /// @return true if offsets of 'this' are strictly
+    ///         below the offsets of r, false otherwise
+    ///
     bool StrictlyBelow(const TThisType& r)
     {
         return TParent::GetToOpen() <= r.TParent::GetFrom();
     }
 
+    /// Initialize an empty range
+    ///
     void SetEmpty()
     {
         TParent::Set(TParent::GetPositionMax(), TParent::GetPositionMin());
     }
 };
 
+/// define for the fundamental building block
+/// of sequence ranges
 typedef CLocalRange<TOffset> TRange;
 
+/// The aligner internally works only with the 
+/// ncbistdaa alphabet
 static const int kAlphabetSize = 26;
 
 END_SCOPE(cobalt)
@@ -112,6 +125,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:39:56  papadopo
+  1. Move includes to the headers that use them
+  2. Add doxygen
+
   Revision 1.1  2005/11/07 18:15:52  papadopo
   Initial revision
 
