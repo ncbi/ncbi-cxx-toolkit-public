@@ -44,8 +44,10 @@ Contents: Use RPS blast to find domain hits
 /// @file rps.cpp
 /// Use RPS blast to find domain hits
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
+
+USING_SCOPE(blast);
 
 class compare_sseg_db_idx {
 public:
@@ -123,7 +125,7 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
         int db_seq_length = db_seq_offsets[db_seq + 1] - db_seq_offsets[db_seq];
         int last_fudge = 0;
 
-        ASSERT(!(hit->HasSubHits()));
+        assert(!(hit->HasSubHits()));
 
         // ignore this alignment if its extent is less than
         // 60% of the extent of query and DB sequence
@@ -144,7 +146,7 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                     itr = lower_bound(blocklist.begin(), blocklist.end(),
                                       target, compare_sseg_db_idx());
 
-        ASSERT(itr != blocklist.end() &&
+        assert(itr != blocklist.end() &&
                target.seq_index == itr->seq_index);
         while (itr != blocklist.end() &&
                itr->seq_index == target.seq_index &&
@@ -170,7 +172,7 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
             // that correspond to the current block
     
             TRange s_range(itr->range.IntersectionWith(target.range));
-            ASSERT(!s_range.Empty() && itr->range.Contains(s_range));
+            assert(!s_range.Empty() && itr->range.Contains(s_range));
     
             int left_fudge, right_fudge;
 
@@ -308,8 +310,8 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                     s_range.GetLength() <= CHit::kMinHitSize)
                     continue;
 
-                ASSERT(tback[first_tback] == CNWAligner::eTS_Match);
-                ASSERT(tback[last_tback] == CNWAligner::eTS_Match);
+                assert(tback[first_tback] == CNWAligner::eTS_Match);
+                assert(tback[last_tback] == CNWAligner::eTS_Match);
 
                 final_script = CEditScript::MakeEditScript(tback, 
                                  TRange(first_tback, last_tback));
@@ -358,7 +360,7 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
     blaster.PartialRun();
 
     BlastHSPResults *blast_results = blaster.GetResults();
-    ASSERT(blast_results);
+    assert(blast_results);
     for (int i = 0; i < num_queries; i++) {
         BlastHitList *hitlist = blast_results->hitlist_array[i];
         if (hitlist == NULL)
@@ -366,7 +368,7 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
 
         for (int j = 0; j < hitlist->hsplist_count; j++) {
             BlastHSPList *hsplist = hitlist->hsplist_array[j];
-            ASSERT(hsplist != NULL);
+            assert(hsplist != NULL);
             
             for (int k = 0; k < hsplist->hspcnt; k++) {
 
@@ -418,7 +420,7 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
     for (int i = 0; i < rps_hits.Size(); i++) {
         CHit *hit = rps_hits.GetHit(i);
 
-        ASSERT(hit->HasSubHits());
+        assert(hit->HasSubHits());
 
         // skip hit i if it overlaps on the query sequence
         // with a higher-scoring HSP.
@@ -462,9 +464,9 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
                 int q = start_pair.first;
                 int s = start_pair.second;
 
-                ASSERT(stop_pair.second - stop_pair.first ==
+                assert(stop_pair.second - stop_pair.first ==
                        start_pair.second - start_pair.first);
-                ASSERT(stop_pair.first-1 < query.GetLength());
+                assert(stop_pair.first-1 < query.GetLength());
 
                 for (int k = 0; k < stop_pair.first - start_pair.first; k++) {
                     for (int m = 0; m < kAlphabetSize; m++) {
@@ -567,6 +569,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:55:02  papadopo
+  ASSERT -> assert
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 

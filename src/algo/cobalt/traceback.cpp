@@ -41,8 +41,8 @@ Contents: implementation of CEditScript class
 /// @file traceback.cpp
 /// Implementation of CEditScript class
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
 
 void 
 CEditScript::AddOps(EGapAlignOpType op_type, int num_ops)
@@ -64,7 +64,7 @@ CEditScript::AddOps(EGapAlignOpType op_type, int num_ops)
 
 CEditScript::CEditScript(GapEditScript *blast_tback) 
 {
-    ASSERT(blast_tback);
+    assert(blast_tback);
 
     GapEditScript *s = blast_tback;
     while (s != NULL) {
@@ -78,8 +78,8 @@ CEditScript
 CEditScript::MakeEditScript(const CNWAligner::TTranscript& tback, 
                            TRange tback_range)
 {
-    ASSERT(!tback_range.Empty());
-    ASSERT(tback_range.GetTo() < (int)tback.size());
+    assert(!tback_range.Empty());
+    assert(tback_range.GetTo() < (int)tback.size());
 
     // Note that the traceback conventions between blast and CNWAligner
     // are opposites: blast wants deletions to represent
@@ -119,7 +119,7 @@ CEditScript::MakeEditScript(const CNWAligner::TTranscript& tback,
 CEditScript
 CEditScript::MakeEditScript(TRange tback_range)
 {
-    ASSERT(!tback_range.Empty());
+    assert(!tback_range.Empty());
 
     // locate the first link that contains tback_range
 
@@ -132,7 +132,7 @@ CEditScript::MakeEditScript(TRange tback_range)
         link_start += itr->num_ops;
         itr++;
     }
-    ASSERT(itr != m_Script.end());
+    assert(itr != m_Script.end());
 
     CEditScript new_script;
 
@@ -147,7 +147,7 @@ CEditScript::MakeEditScript(TRange tback_range)
 
         int num_ops = min(tback_range.GetTo() - curr_tback + 1,
                           link_start + itr->num_ops - curr_tback);
-        ASSERT(num_ops);
+        assert(num_ops);
         new_script.AddOps(itr->op_type, num_ops);
         curr_tback += num_ops;
         link_start += itr->num_ops;
@@ -155,7 +155,7 @@ CEditScript::MakeEditScript(TRange tback_range)
     }
 
     // make sure traceback didn't run out prematurely
-    ASSERT(curr_tback > tback_range.GetTo());
+    assert(curr_tback > tback_range.GetTo());
     return new_script;
 }
 
@@ -225,7 +225,7 @@ CEditScript::FindOffsetFromSeq2(TOffsetPair start_offsets,
 
     // traceback must not run out before the desired
     // query offset is found
-    ASSERT(itr != m_Script.end());
+    assert(itr != m_Script.end());
 
     new_offsets.first = q;
     new_offsets.second = s;
@@ -299,7 +299,7 @@ CEditScript::FindOffsetFromSeq1(TOffsetPair start_offsets,
 
     // traceback must not run out before the desired
     // subject offset is found
-    ASSERT(itr != m_Script.end());
+    assert(itr != m_Script.end());
 
     new_offsets.first = q;
     new_offsets.second = s;
@@ -316,7 +316,7 @@ CEditScript::GetScore(TRange tback_range,
     TOffset s = start_offsets.second;
     int score = 0;
 
-    ASSERT(!tback_range.Empty());
+    assert(!tback_range.Empty());
 
     // find the first link that contains tback_range
     int link_start = 0;
@@ -343,7 +343,7 @@ CEditScript::GetScore(TRange tback_range,
         link_start += itr->num_ops;
         itr++;
     }
-    ASSERT(itr != m_Script.end());
+    assert(itr != m_Script.end());
 
     // assign the first query and subject offset in
     // tback_range to q and s, respectively
@@ -373,7 +373,7 @@ CEditScript::GetScore(TRange tback_range,
 
         int num_ops = min(tback_range.GetTo() - curr_tback + 1,
                           link_start + itr->num_ops - curr_tback);
-        ASSERT(num_ops);
+        assert(num_ops);
 
         switch (itr->op_type) {
         case eGapAlignDel: 
@@ -402,7 +402,7 @@ CEditScript::GetScore(TRange tback_range,
     }
 
     // make sure traceback did not run out prematurely
-    ASSERT(curr_tback > tback_range.GetTo());
+    assert(curr_tback > tback_range.GetTo());
 
     return score;
 }
@@ -463,8 +463,8 @@ CEditScript::VerifyScript(TRange seq1_range, TRange seq2_range)
             break;
         }
     }
-    ASSERT(length1 == seq1_range.GetLength());
-    ASSERT(length2 == seq2_range.GetLength());
+    assert(length1 == seq1_range.GetLength());
+    assert(length2 == seq2_range.GetLength());
 }
 
 END_SCOPE(cobalt)
@@ -472,6 +472,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:56:45  papadopo
+  ASSERT -> assert
+
   Revision 1.1  2005/11/07 18:14:01  papadopo
   Initial revision
 

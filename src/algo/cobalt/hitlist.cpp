@@ -96,7 +96,7 @@ CHitList::MakeCanonical()
         if (hit->m_SeqIndex1 < hit->m_SeqIndex2)
             continue;
 
-        ASSERT(hit->m_SeqIndex1 != hit->m_SeqIndex2);
+        assert(hit->m_SeqIndex1 != hit->m_SeqIndex2);
         swap(hit->m_SeqIndex1, hit->m_SeqIndex2);
         swap(hit->m_SeqRange1, hit->m_SeqRange2);
         if (hit->HasSubHits()) {
@@ -200,12 +200,12 @@ CHitList::MatchOverlappingSubHits(CHitList& matched_list)
         // particular database sequence
 
         CHit *hit1 = GetHit(i);
-        ASSERT(hit1->HasSubHits());
+        assert(hit1->HasSubHits());
 
         for (int j = i + 1; j < num_hits; j++) {
 
             CHit *hit2 = GetHit(j);
-            ASSERT(hit2->HasSubHits());
+            assert(hit2->HasSubHits());
 
             if (hit1->m_SeqIndex2 != hit2->m_SeqIndex2)
                 break;
@@ -317,6 +317,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:53:19  papadopo
+  ASSERT -> assert
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 

@@ -146,7 +146,7 @@ CMultiAligner::x_AssignHitRate()
         sum2 = (sum2 / hit->m_SeqRange2.GetLength() + 1) / num_queries;
         hit->m_HitRate = 0.5 * (sum1 + sum2);
 
-        ASSERT(hit->m_HitRate >= 1.0 / num_queries && hit->m_HitRate <= 1.0);
+        assert(hit->m_HitRate >= 1.0 / num_queries && hit->m_HitRate <= 1.0);
     }
 }
 
@@ -368,6 +368,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 17:55:25  papadopo
+  ASSERT -> assert
+
   Revision 1.2  2005/11/07 20:44:34  papadopo
   1. Fix rcsid
   2. Fix incorrect scaling of hit rates

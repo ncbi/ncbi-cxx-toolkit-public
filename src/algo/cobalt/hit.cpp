@@ -41,12 +41,12 @@ Contents: implementation of CHit class
 /// @file hit.cpp
 /// Implementation of CHit class
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
 
 void CHit::AddUpSubHits()
 {
-    ASSERT(HasSubHits());
+    assert(HasSubHits());
 
     m_SeqRange1 = m_SubHit[0]->m_SeqRange1;
     m_SeqRange2 = m_SubHit[0]->m_SeqRange2;
@@ -67,7 +67,7 @@ CHit::GetRangeFromSeq2(TRange seq_range2,
                        TRange& new_seq_range2,
                        TRange& tback_range)
 {
-    ASSERT(m_SeqRange2.Contains(seq_range2));
+    assert(m_SeqRange2.Contains(seq_range2));
 
     TOffsetPair start_off(m_SeqRange1.GetFrom(), 
                           m_SeqRange2.GetFrom());
@@ -99,7 +99,7 @@ CHit::GetRangeFromSeq1(TRange seq_range1,
                        TRange& seq_range2,
                        TRange& tback_range)
 {
-    ASSERT(m_SeqRange1.Contains(seq_range1));
+    assert(m_SeqRange1.Contains(seq_range1));
 
     TOffsetPair start_off(m_SeqRange1.GetFrom(), 
                           m_SeqRange2.GetFrom());
@@ -129,8 +129,8 @@ CHit::VerifyHit()
 {
     // verify query and subject ranges are nonempty
 
-    ASSERT(!m_SeqRange1.Empty());
-    ASSERT(!m_SeqRange2.Empty());
+    assert(!m_SeqRange1.Empty());
+    assert(!m_SeqRange2.Empty());
 
     // verify the traceback matches up to the sequence ranges
 
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:52:59  papadopo
+  ASSERT -> assert
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 
