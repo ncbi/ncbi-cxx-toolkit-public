@@ -92,7 +92,7 @@ CSequence::GetPrintableLetter(int pos) const
 void 
 CSequence::Reset(const blast::SSeqLoc& seq_in)
 {
-    _ASSERT(seq_in.seqloc->IsSetWhole());
+    _ASSERT(seq_in.seqloc->IsWhole());
 
     CBioseq_Handle bhandle = seq_in.scope->GetBioseqHandle(
                                          seq_in.seqloc->GetWhole(),
@@ -264,6 +264,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/08 19:19:08  papadopo
+  fix typo
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 
