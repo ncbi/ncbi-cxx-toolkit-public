@@ -114,23 +114,43 @@ void* CBDB_TestThread::Main(void)
 {
     SThrTestDB db;
     db.SetEnv(m_Env);
-    db.Open("data.db", CBDB_RawFile::eReadWriteCreate);
+    db.Open("data.db", CBDB_RawFile::eReadWrite);
 
     for (unsigned i = 0; i < m_Recs; ++i) {
+        try {
+            CBDB_Transaction trans(*db.GetEnv(), 
+                                CBDB_Transaction::eTransASync,
+                                CBDB_Transaction::eNoAssociation);
+            db.SetTransaction(&trans);
+
+            {{
+            db.thr_id = m_ThreadId;
+            db.rec_id = i;
+            db.txt = "test";
+            db.Insert();
+            }}
+
+            trans.Commit();
+        } 
+        catch (CBDB_ErrnoException& ex)
         {
-        CBDB_Transaction trans(*db.GetEnv(), 
-                            CBDB_Transaction::eTransASync,
-                            CBDB_Transaction::eNoAssociation);
-        db.SetTransaction(&trans);
+            if (ex.IsDeadLock()) {
 
-        {{
-        db.thr_id = m_ThreadId;
-        db.rec_id = i;
-        db.txt = "test";
-        db.Insert();
-        }}
+                // dead lock transaction is a Berkeley DB reality which can
+                // happen when two or more threads are writing in the same 
+                // file concurrently.
+                //
+                // typically we want to abort current transaction 
+                // and repeat it with the same data.
+                //
+                // In this case we simply ignore the error.
 
-        trans.Commit();
+                NcbiCerr << 
+                 "Dead lock situation detected. Transaction aborted!"
+                 << NcbiEndl;
+            } else {
+                throw;
+            }
         }
     } // for
 
@@ -224,6 +244,11 @@ int CBDB_TestThreads::Run(void)
     env.SetLockTimeout(10 * 1000000); // 10 sec
     env.SetTasSpins(5);
 
+    SThrTestDB db;
+    db.SetEnv(env);
+    db.Open("data.db", CBDB_RawFile::eCreate);
+
+
     NcbiCout << "Ok." << NcbiEndl;
 
     try
@@ -304,6 +329,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/08 19:15:37  kuznets
+ * Illustrated how to deal with dead lock
+ *
  * Revision 1.1  2005/08/29 16:14:55  kuznets
  * Added thread test for BDB transactions
  *
