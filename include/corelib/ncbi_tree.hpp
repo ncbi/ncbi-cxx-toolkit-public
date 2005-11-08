@@ -306,13 +306,13 @@ protected:
 
 
 /// Default key getter for pair-node (id + value)
-template <class TId, class TValue, class TNode>
+template <class TNode>
 class CPairNodeKeyGetter
 {
 public:
-    typedef TNode  TNodeType;
-    typedef TValue TValueType;
-    typedef TId    TKeyType;
+    typedef TNode                      TNodeType;
+    typedef typename TNode::TValueType TValueType;
+    typedef typename TNode::TIdType    TKeyType;
 
     static const TValueType& GetValue(const TNodeType& node)
         { return node.value; }
@@ -331,12 +331,16 @@ public:
 template <class TId, class TValue>
 struct CTreePair
 {
+    // typedefs for CPairNodeKeyGetter
+    typedef TId     TIdType;
+    typedef TValue  TValueType;
+
     /// Node data type
-    typedef CTreePair<TId, TValue>                     TTreePair;
+    typedef CTreePair<TId, TValue>                TTreePair;
     /// Key getter for CTreeNode
-    typedef CPairNodeKeyGetter<TId, TValue, TTreePair> TPairKeyGetter;
+    typedef CPairNodeKeyGetter<TTreePair>         TPairKeyGetter;
     /// Tree node type
-    typedef CTreeNode<TTreePair, TPairKeyGetter>       TPairTreeNode;
+    typedef CTreeNode<TTreePair, TPairKeyGetter>  TPairTreeNode;
 
     CTreePair() {}
     CTreePair(const TId& aid, const TValue& avalue = TValue())
@@ -852,6 +856,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/11/08 20:29:31  grichenk
+ * Simplified CPairNodeKeyGetter template arguments
+ *
  * Revision 1.41  2005/10/27 16:48:48  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
