@@ -121,14 +121,13 @@ class CMultiAligner : public CObject
 public:
     static const CNWAligner::TScore kDefaultGapOpen = -11;
     static const CNWAligner::TScore kDefaultGapExtend = -1;
-    static const double kDefaultEvalue = 0.01;
 
     CMultiAligner(const char *matrix_name = "BLOSUM62",
                   CNWAligner::TScore gap_open = kDefaultGapOpen,
                   CNWAligner::TScore gap_extend = kDefaultGapExtend,
                   CNWAligner::TScore end_gap_open = kDefaultGapOpen,
                   CNWAligner::TScore end_gap_extend = kDefaultGapExtend,
-                  double blastp_evalue = kDefaultEvalue,
+                  double blastp_evalue = 0.01,
                   double conserved_cutoff = 2.0,
                   double filler_res_boost = 1.0
                   );
@@ -156,7 +155,7 @@ public:
     void SetDomainInfo(const string& dbname, 
                        const string& blockfile,
                        const string& freqfile,
-                       double rps_evalue = kDefaultEvalue,
+                       double rps_evalue = 0.01,
                        double domain_resfreq_boost = 0.5)
     { 
         m_RPSdb = dbname; 
@@ -260,9 +259,7 @@ private:
     void x_FindConstraints(vector<size_t>& constraint,
                            vector<CSequence>& alignment,
                            vector<CTree::STreeLeaf>& node_list1,
-                           int freq1_size,
                            vector<CTree::STreeLeaf>& node_list2,
-                           int freq2_size,
                            CNcbiMatrix<CHitList>& pair_info,
                            int iteration);
 };
@@ -274,6 +271,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 19:50:34  papadopo
+  do not initialize a static const double within a class definition
+
   Revision 1.2  2005/11/08 17:41:34  papadopo
   1. rearrange includes to be self-sufficient
   2. do not automatically use blast namespace
