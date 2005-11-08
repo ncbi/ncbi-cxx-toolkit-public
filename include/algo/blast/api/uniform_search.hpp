@@ -311,12 +311,8 @@ public:
     /// Set the subject database(s) to search
     virtual void SetSubject(CConstRef<CSearchDatabase> subject) = 0;
     
-    
-    // Processing
-    typedef CSearchResultSet TResults;
-    
     /// Run the search to completion.
-    virtual TResults Run() = 0;
+    virtual CSearchResultSet Run() = 0;
 };
 
 class ISeqSearch : public ISearch {
@@ -333,7 +329,7 @@ public:
 
 /// Experimental interface (since this does not provide a full interface to
 /// PSI-BLAST)
-/// @note the ISearch::TResults that are returned from the Run method will
+/// @note the CSearchResultSet that is returned from the Run method will
 /// always contain 0 or 1 CSearchResults objects, as PSI-BLAST cannot do
 /// multiple-PSSM searches
 class IPssmSearch : public ISearch {

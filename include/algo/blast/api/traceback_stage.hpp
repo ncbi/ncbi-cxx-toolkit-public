@@ -82,7 +82,7 @@ public:
     // is this enough? 
     virtual ~CBlastTracebackSearch();
     
-    ISearch::TResults Run();
+    CSearchResultSet Run();
     
 private:
     /// Common initialization performed when doing traceback only

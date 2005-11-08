@@ -82,7 +82,7 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
   m_TbackSearch     (0)
 {}
 
-ISearch::TResults
+CSearchResultSet
 CLocalBlast::Run()
 {
     ASSERT(m_QueryFactory);

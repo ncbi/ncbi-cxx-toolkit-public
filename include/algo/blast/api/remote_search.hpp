@@ -62,7 +62,7 @@ public:
     virtual void SetQueryFactory(CRef<IQueryFactory> query_factory);
     
     /// Run the search.
-    virtual TResults Run();
+    virtual CSearchResultSet Run();
     
 private:
     /// Method to construct and run the remote blast search.
@@ -101,7 +101,7 @@ public:
     virtual void SetQuery(CRef<objects::CPssmWithParameters> query);
     
     /// Run the search.
-    virtual TResults Run();
+    virtual CSearchResultSet Run();
     
 private:
     /// Method to construct and run the remote blast search.

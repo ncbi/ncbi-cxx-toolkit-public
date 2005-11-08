@@ -136,10 +136,11 @@ CRemoteBlast & CRemoteSeqSearch::x_RemoteBlast()
     return *m_RemoteBlast;
 }
 
-static ISearch::TResults
+static CSearchResultSet
 s_BuildResultsRemote(CRemoteBlast & rb);
 
-ISeqSearch::TResults CRemoteSeqSearch::Run()
+CSearchResultSet
+CRemoteSeqSearch::Run()
 {
     // Calling Run() directly always queues a new search.
     m_RemoteBlast.Reset();
@@ -222,7 +223,7 @@ s_SplitAlignVectorBySubjects(TSeqAlignVector seqaligns)
     return seqaligns;
 }
 
-static ISearch::TResults
+static CSearchResultSet
 s_BuildResultsRemote(CRemoteBlast & rb)
 {
     // This cascades the warnings and errors: all queries get all
@@ -333,7 +334,8 @@ CRemoteBlast & CRemotePssmSearch::x_RemoteBlast()
     return *m_RemoteBlast;
 }
 
-ISeqSearch::TResults CRemotePssmSearch::Run()
+CSearchResultSet
+CRemotePssmSearch::Run()
 {
     // Calling Run() directly always queues a new search.
     m_RemoteBlast.Reset();

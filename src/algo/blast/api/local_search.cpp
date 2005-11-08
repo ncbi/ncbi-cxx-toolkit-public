@@ -100,7 +100,7 @@ CLocalSeqSearch::~CLocalSeqSearch()
 }
 
 // NOTE: Local search object is re-created every time it is run.
-ISearch::TResults 
+CSearchResultSet 
 CLocalSeqSearch::Run()
 {
     if ( m_QueryFactory.Empty() ) {
@@ -131,7 +131,7 @@ CLocalSeqSearch::Run()
     NCBI_THROW(CSearchException, eInternal,
                "Local search temporarily disabled");
     
-    return ISearch::TResults();
+    return CSearchResultSet();
 }
 
 void 
@@ -179,10 +179,10 @@ CLocalPssmSearch::SetQuery(CRef<objects::CPssmWithParameters> pssm)
     m_Pssm = pssm;
 }
 
-ISeqSearch::TResults 
+CSearchResultSet 
 CLocalPssmSearch::Run()
 {
-    ISeqSearch::TResults retval;
+    CSearchResultSet retval;
 
     CConstRef<CPSIBlastOptionsHandle> psi_opts;
     psi_opts.Reset(dynamic_cast<CPSIBlastOptionsHandle*>(&*m_SearchOpts));

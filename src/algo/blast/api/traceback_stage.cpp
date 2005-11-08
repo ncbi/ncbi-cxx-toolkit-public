@@ -195,7 +195,7 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
         (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
 }
 
-ISeqSearch::TResults
+CSearchResultSet
 CBlastTracebackSearch::Run()
 {
     ASSERT(m_OptsMemento);
@@ -256,7 +256,7 @@ CBlastTracebackSearch::Run()
     
     CSearchResultSet::TMessages empty_msgs(aligns.size());
     
-    return ISearch::TResults(aligns, empty_msgs);
+    return CSearchResultSet(aligns, empty_msgs);
 }
 
 END_SCOPE(blast)
