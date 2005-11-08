@@ -45,9 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
 static void
-x_AddConstraint(int seq_length1,
-                int seq_length2,
-                vector<size_t>& constraint,
+x_AddConstraint(vector<size_t>& constraint,
                 CHit *hit)
 {
     int seq1_start = hit->m_SeqRange1.GetFrom();
@@ -82,20 +80,14 @@ x_AddConstraint(int seq_length1,
 }
 
 static void x_HitToConstraints(vector<size_t>& constraint,
-                               vector<CSequence>& query_data,
                                CHit *hit)
 {
-    int seq_index1 = hit->m_SeqIndex1;
-    int seq_index2 = hit->m_SeqIndex2;
-    int length1 = query_data[seq_index1].GetLength();
-    int length2 = query_data[seq_index2].GetLength();
-
     if (!(hit->HasSubHits())) {
-        x_AddConstraint(length1, length2, constraint, hit);
+        x_AddConstraint(constraint, hit);
     }
     else {
         NON_CONST_ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
-            x_AddConstraint(length1, length2, constraint, *subitr);
+            x_AddConstraint(constraint, *subitr);
         }
     }
 }
@@ -201,9 +193,7 @@ void
 CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                  vector<CSequence>& alignment,
                  vector<CTree::STreeLeaf>& node_list1,
-                 int freq1_size,
                  vector<CTree::STreeLeaf>& node_list2,
-                 int freq2_size,
                  CNcbiMatrix<CHitList>& pair_info,
                  int iteration)
 {
@@ -386,7 +376,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
         }
         //--------------------------------------
 
-        x_HitToConstraints(constraint, alignment, hit);
+        x_HitToConstraints(constraint, hit);
         best_path = best_path->path_next;
     }
     _ASSERT(!constraint.empty());
@@ -453,8 +443,7 @@ CMultiAligner::x_AlignProfileProfile(
     vector<size_t> constraint;
 
     x_FindConstraints(constraint, alignment, node_list1,
-                      freq1_size, node_list2, freq2_size,
-                      pair_info, iteration);
+                      node_list2, pair_info, iteration);
 
     //-------------------------------
     if (m_Verbose) {
@@ -788,7 +777,7 @@ CMultiAligner::x_FindConservedColumns(
         }
     }
 
-    for (int i = 0; i < conserved.Size(); i++)
+    for (i = 0; i < conserved.Size(); i++)
         conserved.GetHit(i)->m_BitScore = 1.0;
 
     //------------------------------
@@ -966,7 +955,7 @@ CMultiAligner::BuildAlignment()
 
     //---------------------
     if (m_Verbose) {
-        for (int i = 0; i < num_edges; i++)
+        for (i = 0; i < num_edges; i++)
             printf("%f ", edges[i].distance);
         printf("cutoff = %f\n", cluster_cutoff);
     }
@@ -982,6 +971,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/08 19:49:19  papadopo
+  fix solaris compile warnings
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 

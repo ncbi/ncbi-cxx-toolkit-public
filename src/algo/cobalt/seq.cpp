@@ -170,7 +170,7 @@ void CSequence::CompressSequences(vector<CSequence>& seq,
                 break;
         }
         if (j < num_seqs) {
-            for (int j = 0; j < num_seqs; j++) {
+            for (j = 0; j < num_seqs; j++) {
                 seq[index_list[j]].m_Sequence[new_length] =
                                  seq[index_list[j]].m_Sequence[i];
                 for (int k = 0; k < kAlphabetSize; k++) {
@@ -264,6 +264,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/08 19:49:19  papadopo
+  fix solaris compile warnings
+
   Revision 1.4  2005/11/08 19:19:08  papadopo
   fix typo
 

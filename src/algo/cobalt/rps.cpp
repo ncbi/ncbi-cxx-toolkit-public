@@ -458,7 +458,7 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
                                  TOffsetPair(subhit->m_SeqRange1.GetFrom(),
                                              subhit->m_SeqRange2.GetFrom()) ));
 
-            for (int j = 0; j < (int)sub_list.size(); j += 2) {
+            for (j = 0; j < (int)sub_list.size(); j += 2) {
                 TOffsetPair& start_pair(sub_list[j]);
                 TOffsetPair& stop_pair(sub_list[j+1]);
                 int q = start_pair.first;
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/08 19:49:19  papadopo
+  fix solaris compile warnings
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 

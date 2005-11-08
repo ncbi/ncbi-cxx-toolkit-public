@@ -94,7 +94,7 @@ CMultiAligner::GetSeqalignResults() const
         }
     }
 
-    for (int j = 0; j < num_queries; j++) {
+    for (j = 0; j < num_queries; j++) {
         if (m_Results[j].GetLetter(i-1) == CSequence::kGapChar)
             denseg->SetStarts().push_back(-1);
         else
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 19:49:19  papadopo
+  fix solaris compile warnings
+
   Revision 1.2  2005/11/08 17:35:00  papadopo
   fix file description
 

@@ -163,13 +163,13 @@ CDistances::ComputeMatrix(vector<CSequence>& query_data,
 
     for (int i = 0; i < hitlist.Size(); i++) {
         CHit *hit = hitlist.GetHit(i);
-        int i = hit->m_SeqIndex1;
-        int j = hit->m_SeqIndex2;
+        int j = hit->m_SeqIndex1;
+        int k = hit->m_SeqIndex2;
         double score = hit->m_BitScore * hit->m_HitRate;
 
-        _ASSERT(i < j);
-        m_Matrix(i,j) -= 0.5 * score * 
-                     (1.0 / self_score[i] + 1.0 / self_score[j]);
+        _ASSERT(j < k);
+        m_Matrix(j,k) -= 0.5 * score * 
+                     (1.0 / self_score[j] + 1.0 / self_score[k]);
     }
 
     for (int i = 0; i < num_queries; i++) {
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/08 19:49:19  papadopo
+  fix solaris compile warnings
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 
