@@ -38,11 +38,11 @@ Contents: Implementation of CMultiAligner class
 #include <ncbi_pch.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
-/// @file multi_aligner.cpp
+/// @file cobalt.cpp
 /// Implementation of the CMultiAligner class
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
 
 CMultiAligner::CMultiAligner(const char *matrix_name,
                              CNWAligner::TScore gap_open,
@@ -82,11 +82,11 @@ CMultiAligner::~CMultiAligner()
 }
 
 void 
-CMultiAligner::SetQueries(const TSeqLocVector& queries)
+CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
 {
     Reset();
     m_tQueries = queries;
-    ITERATE(TSeqLocVector, itr, queries) {
+    ITERATE(blast::TSeqLocVector, itr, queries) {
         m_QueryData.push_back(CSequence(*itr));
     }
 }
@@ -156,66 +156,6 @@ CMultiAligner::ComputeTree()
     //--------------------------------
 }
 
-CRef<CSeq_align>
-CMultiAligner::GetSeqalignResults() const
-{
-    int num_queries = m_Results.size();
-    int length = m_Results[0].GetLength();
-
-    CRef<CSeq_align> retval(new CSeq_align);
-    retval->SetType(CSeq_align::eType_global);
-    retval->SetDim(num_queries);
-
-    CRef<CDense_seg> denseg(new CDense_seg);
-    denseg->SetDim(num_queries);
-
-    for (int i = 0; i < num_queries; i++) {
-        CRef<CSeq_id> id(const_cast<CSeq_id *>(
-                                      &m_tQueries[i].seqloc->GetWhole()));
-        denseg->SetIds().push_back(id);
-    }
-
-    vector<int> seq_off(num_queries, 0);
-    int num_seg = 0;
-    int i, j, seg_len;
-
-    for (i = 1, seg_len = 1; i < length; i++, seg_len++) {
-        for (j = 0; j < num_queries; j++) {
-            if ((m_Results[j].GetLetter(i) == CSequence::kGapChar &&
-                 m_Results[j].GetLetter(i-1) != CSequence::kGapChar) ||
-                (m_Results[j].GetLetter(i) != CSequence::kGapChar &&
-                 m_Results[j].GetLetter(i-1) == CSequence::kGapChar)) 
-                break;
-        }
-        if (j < num_queries) {
-            for (j = 0; j < num_queries; j++) {
-                if (m_Results[j].GetLetter(i-1) == CSequence::kGapChar) {
-                    denseg->SetStarts().push_back(-1);
-                }
-                else {
-                    denseg->SetStarts().push_back(seq_off[j]);
-                    seq_off[j] += seg_len;
-                }
-            }
-            denseg->SetLens().push_back(seg_len);
-            num_seg++;
-            seg_len = 0;
-        }
-    }
-
-    for (int j = 0; j < num_queries; j++) {
-        if (m_Results[j].GetLetter(i-1) == CSequence::kGapChar)
-            denseg->SetStarts().push_back(-1);
-        else
-            denseg->SetStarts().push_back(seq_off[j]);
-    }
-    denseg->SetLens().push_back(seg_len);
-    denseg->SetNumseg(num_seg + 1);
-
-    retval->SetSegs().SetDenseg(*denseg);
-    return retval;
-}
-
 void 
 CMultiAligner::Run()
 {
@@ -227,11 +167,16 @@ CMultiAligner::Run()
     BuildAlignment();
 }
 
-END_SCOPE(cobalt);
-END_NCBI_SCOPE;
+END_SCOPE(cobalt)
+END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:52:17  papadopo
+  1. do not assume blast namespace
+  2. move seqalign output to another file
+  3. minor cleanup
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 

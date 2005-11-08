@@ -37,15 +37,21 @@ Contents: Find local alignments between sequences
 
 #include <ncbi_pch.hpp>
 #include <util/range_coll.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
-/// @file multi_blast.cpp
+/// @file blast.cpp
 /// Find local alignments between sequences
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
+
+USING_SCOPE(blast);
+USING_SCOPE(objects);
 
 static void 
 x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query, 
@@ -84,7 +90,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
 
     for (int i = 0; i < m_DomainHits.Size(); i++) {
         CHit *hit = m_DomainHits.GetHit(i);
-        ASSERT(hit->HasSubHits());
+        assert(hit->HasSubHits());
 
         ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
             CHit *subhit = *subitr;
@@ -153,7 +159,7 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     blaster.PartialRun();
 
     BlastHSPResults *tmp_results = blaster.GetResults();
-    ASSERT(tmp_results);
+    assert(tmp_results);
 
     for (int i = 0; i < tmp_results->num_queries; i++) {
 
@@ -260,6 +266,11 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:47:19  papadopo
+  1. do not assume blast namespace
+  2. move seqalign output to another file
+  3. minor cleanup
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 
