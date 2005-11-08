@@ -27,11 +27,11 @@ static char const rcsid[] = "$Id$";
 
 /*****************************************************************************
 
-File name: cobalt.cpp
+File name: seqalign.cpp
 
 Author: Jason Papadopoulos
 
-Contents: Implementation of CMultiAligner class
+Contents: Seqalign output for a multiple sequence alignment
 
 ******************************************************************************/
 
@@ -39,8 +39,8 @@ Contents: Implementation of CMultiAligner class
 #include <objects/seqalign/Dense_seg.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
-/// @file multi_aligner.cpp
-/// Implementation of the CMultiAligner class
+/// @file seqalign.cpp
+/// Contents: Seqalign output for a multiple sequence alignment
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:35:00  papadopo
+  fix file description
+
   Revision 1.1  2005/11/08 17:32:25  papadopo
   Initial revision
 
