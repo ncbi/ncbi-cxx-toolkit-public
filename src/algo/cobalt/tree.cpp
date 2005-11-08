@@ -132,7 +132,7 @@ CTree::ListTreeLeaves(const TPhyTreeNode *node,
     while (child != node->SubNodeEnd()) {
         double new_dist = curr_dist;
 
-        assert((*child)->GetValue().GetDist() >= 0.0 || (*child)->IsLeaf());
+        _ASSERT((*child)->GetValue().GetDist() >= 0.0 || (*child)->IsLeaf());
         if ((*child)->GetValue().GetDist() > 0) {
             new_dist += (*child)->GetValue().GetDist();
         }
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 18:42:16  papadopo
+  assert -> _ASSERT
+
   Revision 1.2  2005/11/08 17:56:56  papadopo
   ASSERT -> assert
 

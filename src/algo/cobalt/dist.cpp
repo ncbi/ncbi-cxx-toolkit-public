@@ -167,7 +167,7 @@ CDistances::ComputeMatrix(vector<CSequence>& query_data,
         int j = hit->m_SeqIndex2;
         double score = hit->m_BitScore * hit->m_HitRate;
 
-        assert(i < j);
+        _ASSERT(i < j);
         m_Matrix(i,j) -= 0.5 * score * 
                      (1.0 / self_score[i] + 1.0 / self_score[j]);
     }
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 18:42:16  papadopo
+  assert -> _ASSERT
+
   Revision 1.2  2005/11/08 17:52:39  papadopo
   ASSERT -> assert
 

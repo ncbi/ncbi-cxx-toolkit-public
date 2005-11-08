@@ -53,7 +53,7 @@ BEGIN_SCOPE(cobalt)
 unsigned char
 CSequence::GetPrintableLetter(int pos) const
 {
-    assert(pos >= 0 && pos < GetLength());
+    _ASSERT(pos >= 0 && pos < GetLength());
 
     int val;
     switch (m_Sequence[pos]) {
@@ -92,16 +92,16 @@ CSequence::GetPrintableLetter(int pos) const
 void 
 CSequence::Reset(const blast::SSeqLoc& seq_in)
 {
-    assert(seq_in.seqloc->IsSetWhole());
+    _ASSERT(seq_in.seqloc->IsSetWhole());
 
     CBioseq_Handle bhandle = seq_in.scope->GetBioseqHandle(
                                          seq_in.seqloc->GetWhole(),
                                          CScope::eGetBioseq_All);
     CConstRef<CBioseq> bioseq = bhandle.GetCompleteBioseq();
 
-    assert(bioseq->IsSetInst());
+    _ASSERT(bioseq->IsSetInst());
     const CBioseq::TInst& inst = bioseq->GetInst();
-    assert(inst.IsSetSeq_data());
+    _ASSERT(inst.IsSetSeq_data());
     const CSeq_data& seqdata = inst.GetSeq_data(); 
     int seq_length;
 
@@ -147,7 +147,7 @@ CSequence::PropagateGaps(const CNWAligner::TTranscript& transcript,
             new_seq[i] = m_Sequence[j];
             for (int k = 0; k < kAlphabetSize; k++)
                 new_freq(i, k) = m_Freqs(j, k);
-            assert(j < GetLength());
+            _ASSERT(j < GetLength());
             j++;
         }
     }
@@ -196,7 +196,7 @@ CSequence::GetPairwiseScore(CSequence& seq1,
                             int gap_open,
                             int gap_extend)
 {
-    assert(seq1.GetLength() == seq2.GetLength());
+    _ASSERT(seq1.GetLength() == seq2.GetLength());
 
     int i = -1, j = -1;
     int len = seq1.GetLength();
@@ -264,6 +264,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 18:42:16  papadopo
+  assert -> _ASSERT
+
   Revision 1.2  2005/11/08 17:56:23  papadopo
   1. make header files self-sufficient
   2. ASSERT -> assert

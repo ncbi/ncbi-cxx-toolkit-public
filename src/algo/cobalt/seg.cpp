@@ -146,7 +146,7 @@ CMultiAligner::x_AssignHitRate()
         sum2 = (sum2 / hit->m_SeqRange2.GetLength() + 1) / num_queries;
         hit->m_HitRate = 0.5 * (sum1 + sum2);
 
-        assert(hit->m_HitRate >= 1.0 / num_queries && hit->m_HitRate <= 1.0);
+        _ASSERT(hit->m_HitRate >= 1.0 / num_queries && hit->m_HitRate <= 1.0);
     }
 }
 
@@ -368,6 +368,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/08 18:42:16  papadopo
+  assert -> _ASSERT
+
   Revision 1.3  2005/11/08 17:55:25  papadopo
   ASSERT -> assert
 

@@ -110,7 +110,7 @@ x_FillResidueFrequencies(double **freq_data,
     for (size_t i = 0; i < node_list.size(); i++) {
         sum += node_list[i].distance;
     }
-    assert(sum >= 0.0);
+    _ASSERT(sum >= 0.0);
 
     for (size_t i = 0; i < node_list.size(); i++) {
         // update the residue frequencies to include the influence
@@ -193,7 +193,7 @@ x_ExpandRange(TRange& range,
             break;
         }
     }
-    assert(i < len);
+    _ASSERT(i < len);
 }
 
 
@@ -389,7 +389,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
         x_HitToConstraints(constraint, alignment, hit);
         best_path = best_path->path_next;
     }
-    assert(!constraint.empty());
+    _ASSERT(!constraint.empty());
 }
 
 
@@ -982,6 +982,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 18:42:16  papadopo
+  assert -> _ASSERT
+
   Revision 1.2  2005/11/08 17:54:19  papadopo
   ASSERT -> assert
 

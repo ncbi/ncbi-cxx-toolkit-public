@@ -80,7 +80,7 @@ CMultiAligner::FindPatternHits()
         pattern_stream >> pattern;
         SPHIPatternSearchBlkNew((char *)pattern,
                                 FALSE, sbp, &phi_pattern, NULL);
-        assert(phi_pattern != NULL);
+        _ASSERT(phi_pattern != NULL);
 
         for (int j = 0; j < num_queries; j++) {
 
@@ -140,6 +140,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/08 18:42:16  papadopo
+  assert -> _ASSERT
+
   Revision 1.2  2005/11/08 17:54:00  papadopo
   1. do not assume blast namespace
   2. ASSERT -> assert

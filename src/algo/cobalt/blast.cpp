@@ -90,7 +90,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
 
     for (int i = 0; i < m_DomainHits.Size(); i++) {
         CHit *hit = m_DomainHits.GetHit(i);
-        assert(hit->HasSubHits());
+        _ASSERT(hit->HasSubHits());
 
         ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
             CHit *subhit = *subitr;
@@ -159,7 +159,7 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     blaster.PartialRun();
 
     BlastHSPResults *tmp_results = blaster.GetResults();
-    assert(tmp_results);
+    _ASSERT(tmp_results);
 
     for (int i = 0; i < tmp_results->num_queries; i++) {
 
@@ -266,6 +266,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/08 18:42:16  papadopo
+  assert -> _ASSERT
+
   Revision 1.3  2005/11/08 17:51:15  papadopo
   1. Make header files self-sufficient
   2. ASSERT -> assert
