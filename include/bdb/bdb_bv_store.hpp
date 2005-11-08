@@ -37,7 +37,7 @@
 
 #include <bdb/bdb_blob.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
-#include <util/bitset/bmserial.hpp>
+#include <util/bitset/bmserial.h>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -153,26 +153,26 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadVectorOr(TBitVector* bv)
 template<class TBV>
 EBDB_ErrCode 
 CBDB_BvStore<TBV>::WriteVector(const TBitVector&            bv, 
-                               CBDB_BvStore<TBV>::ECompact  compact);
+                               CBDB_BvStore<TBV>::ECompact  compact)
 {
-    const TBitVector* bv_to_store;
+    TBitVector bv_to_store;
     if (compact == eCompact) {
         m_TmpBVec.clear(true);
         m_TmpBVec = bv;
         m_TmpBVec.optimize();
         m_TmpBVec.optimize_gap_size();
-        bv_to_store = &m_TmpBVec;
+        bv_to_store = m_TmpBVec;
     } else {
-        bv_to_store = &bv;
+        bv_to_store = bv;
     }
 
     struct TBitVector::statistics st1;
-    bv_to_store->calc_stat(&st1);
+    bv_to_store.calc_stat(&st1);
 
     if (st1.max_serialize_mem > m_Buffer.size()) {
         m_Buffer.resize(st1.max_serialize_mem);
     }
-    size_t size = bm::serialize(bv, &m_Buffer[0]);
+    size_t size = bm::serialize(bv_to_store, &m_Buffer[0]);
     return UpdateInsert(&m_Buffer[0], size);
 }
 
@@ -182,7 +182,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadRealloc(TBitVector* bv,
 {
     EBDB_ErrCode err;
     try {
-        err = Read(bv);
+        err = Read(bv, clear_target_vec);
     } catch (CBDB_ErrnoException& ex) {
         // check if we have insufficient buffer
         if (ex.IsNoMem()) {
@@ -224,6 +224,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/08 01:48:23  dicuccio
+ * Compilation fixes: use correct include path; remove erroneous ';'.
+ * WriteVector(): bm::serialize() expects non-const bit-vector, so copy prior to
+ * writing
+ *
  * Revision 1.1  2005/11/07 19:37:55  kuznets
  * Initial revision of templetized BV storage
  *
