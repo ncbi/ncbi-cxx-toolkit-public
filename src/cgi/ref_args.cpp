@@ -34,6 +34,7 @@
 #include <cgi/ref_args.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/cgi_util.hpp>
+#include <cgi/cgi_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -94,14 +95,19 @@ void CRefArgs::AddDefinitions(const string& host_mask,
 
 string CRefArgs::GetQueryString(const string& referrer) const
 {
-    CUrl url(referrer);
-    ITERATE(THostMap, it, m_HostMap) {
-        if (NStr::FindNoCase(url.GetHost(), it->first) == NPOS) {
-            continue;
+    try {
+        CUrl url(referrer);
+        ITERATE(THostMap, it, m_HostMap) {
+            if (NStr::FindNoCase(url.GetHost(), it->first) == NPOS) {
+                continue;
+            }
+            if (url.HaveArgs()  &&  url.GetArgs().IsSetValue(it->second)) {
+                return url.GetArgs().GetValue(it->second);
+            }
         }
-        if ( url.HaveArgs()  &&  url.GetArgs().IsSetValue(it->second) ) {
-            return url.GetArgs().GetValue(it->second);
-        }
+    } catch (CCgiParseException& ex) {
+        CException& e = ex;
+        ERR_POST(Warning << "Ignoring malformed HTTP referrer " << e);
     }
     return kEmptyStr;
 }
@@ -136,6 +142,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2005/11/08 20:17:11  vakatov
+* CRefArgs::GetQueryString() -- ignore malformed HTTP referrer, with
+* a warning.
+*
 * Revision 1.7  2005/10/17 21:22:49  grichenk
 * Removed commented code
 *
