@@ -52,6 +52,7 @@ BEGIN_NCBI_SCOPE
 
 
 const string CCgiResponse::sm_ContentTypeName    = "Content-Type";
+const string CCgiResponse::sm_LocationName       = "Location";
 const string CCgiResponse::sm_ContentTypeDefault = "text/html";
 const string CCgiResponse::sm_HTTPStatusName     = "Status";
 const string CCgiResponse::sm_HTTPStatusDefault  = "200 OK";
@@ -213,6 +214,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2005/11/08 20:30:49  grichenk
+* Added SetLocation(CUrl)
+*
 * Revision 1.22  2005/09/01 17:41:24  lavr
 * +SetHeaderValue(CTime&)
 *

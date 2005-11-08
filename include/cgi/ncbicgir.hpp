@@ -35,6 +35,7 @@
 
 #include <corelib/ncbitime.hpp>
 #include <cgi/ncbicgi.hpp>
+#include <cgi/cgi_util.hpp>
 #include <map>
 
 
@@ -78,6 +79,8 @@ public:
     void   SetContentType(const string& type);
     string GetContentType(void) const;
 
+    void   SetLocation(const CUrl& url);
+
     // Get cookies set
     const CCgiCookies& Cookies(void) const;
     CCgiCookies&       Cookies(void);
@@ -99,6 +102,7 @@ public:
 
 protected:
     static const string sm_ContentTypeName;     // Content type header name
+    static const string sm_LocationName;        // Location header name
     static const string sm_ContentTypeDefault;  // Dflt content type: text/html
     static const string sm_HTTPStatusName;      // Status header name:   Status
     static const string sm_HTTPStatusDefault;   // Default HTTP status:  200 OK
@@ -149,6 +153,11 @@ inline string CCgiResponse::GetContentType(void) const
     return GetHeaderValue(sm_ContentTypeName);
 }
 
+inline void CCgiResponse::SetLocation(const CUrl& url)
+{
+    SetHeaderValue(sm_LocationName, url.ComposeUrl(CCgiArgs::eAmp_Char));
+}
+
 inline const CCgiCookies& CCgiResponse::Cookies(void) const
 {
     return m_Cookies;
@@ -189,6 +198,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/11/08 20:30:41  grichenk
+ * Added SetLocation(CUrl)
+ *
  * Revision 1.17  2005/09/01 17:40:57  lavr
  * +SetHeaderValue(CTime&)
  *
