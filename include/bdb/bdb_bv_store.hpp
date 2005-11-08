@@ -62,6 +62,7 @@ public:
     ///    Amount of memory allocated for deserialization buffer
     ///
     CBDB_BvStore(unsigned initial_serialization_buf_size = 16384);
+    ~CBDB_BvStore();
 
     /// Fetch and deserialize the *current* bitvector
     ///
@@ -108,6 +109,8 @@ private:
     vector<unsigned char>     m_Buffer;
     /// temporary bitset
     TBitVector                m_TmpBVec;
+    /// temp block for bitvector serialization
+    bm::word_t*               m_STmpBlock;
 };
 
 /* @} */
@@ -119,8 +122,17 @@ private:
 
 template<class TBV>
 CBDB_BvStore<TBV>::CBDB_BvStore(unsigned initial_serialization_buf_size)
- : m_Buffer(initial_serialization_buf_size)
+ : m_Buffer(initial_serialization_buf_size),
+   m_STmpBlock(0)
 {
+}
+
+template<class TBV>
+CBDB_BvStore<TBV>::~CBDB_BvStore()
+{
+    if (m_STmpBlock) {
+        m_TmpBVec.free_tempblock(m_STmpBlock);
+    }
 }
 
 template<class TBV>
@@ -152,27 +164,31 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadVectorOr(TBitVector* bv)
 
 template<class TBV>
 EBDB_ErrCode 
-CBDB_BvStore<TBV>::WriteVector(const TBitVector&            bv, 
-                               CBDB_BvStore<TBV>::ECompact  compact)
+CBDB_BvStore<TBV>::WriteVector(const TBitVector&  bv, 
+                               ECompact           compact)
 {
-    TBitVector bv_to_store;
+    if (m_STmpBlock == 0) {
+        m_STmpBlock = m_TmpBVec.allocate_tempblock();
+    }
+
+    const TBitVector* bv_to_store;
     if (compact == eCompact) {
-        m_TmpBVec.clear(true);
+        m_TmpBVec.clear(true); // clear vector by memory deallocation
         m_TmpBVec = bv;
         m_TmpBVec.optimize();
         m_TmpBVec.optimize_gap_size();
-        bv_to_store = m_TmpBVec;
+        bv_to_store = &m_TmpBVec;
     } else {
-        bv_to_store = bv;
+        bv_to_store = &bv;
     }
 
     struct TBitVector::statistics st1;
-    bv_to_store.calc_stat(&st1);
+    bv_to_store->calc_stat(&st1);
 
     if (st1.max_serialize_mem > m_Buffer.size()) {
         m_Buffer.resize(st1.max_serialize_mem);
     }
-    size_t size = bm::serialize(bv_to_store, &m_Buffer[0]);
+    size_t size = bm::serialize(*bv_to_store, &m_Buffer[0], m_STmpBlock);
     return UpdateInsert(&m_Buffer[0], size);
 }
 
@@ -225,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/11/08 17:11:30  kuznets
+ * Eliminated temporary in WriteVector (optimization)
+ *
  * Revision 1.3  2005/11/08 14:43:35  dicuccio
  * Fix issue with throw in Read()
  *
