@@ -100,6 +100,9 @@ public:
     /// Returns TRUE if error is BerekleyDB ENOMEM (insufficient buffer size)
     bool IsNoMem() const;
 
+    /// Returns TRUE if error is BerkeleyDB DB_LOCK_DEADLOCK
+    bool IsDeadLock() const;
+
     NCBI_EXCEPTION_DEFAULT2(CBDB_ErrnoException, CParent, int);
 };
 
@@ -183,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/11/08 19:13:51  kuznets
+ * +CBDB_ErrnoException::IsDeadLock()
+ *
  * Revision 1.17  2005/11/07 19:35:35  kuznets
  * DLL export spec for CBDB_ErrnoException, +IsNoMem() method
  *

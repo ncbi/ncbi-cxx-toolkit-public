@@ -59,11 +59,20 @@ bool CBDB_ErrnoException::IsNoMem() const
     return (BDB_GetErrno() == ENOMEM);
 }
 
+bool CBDB_ErrnoException::IsDeadLock() const
+{
+    return (BDB_GetErrno() == DB_LOCK_DEADLOCK);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/11/08 19:13:42  kuznets
+ * +CBDB_ErrnoException::IsDeadLock()
+ *
  * Revision 1.3  2005/11/07 19:36:14  kuznets
  * CBDB_ErrnoException: +IsNoMem() method
  *
