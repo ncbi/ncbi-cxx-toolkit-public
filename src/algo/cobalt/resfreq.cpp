@@ -42,8 +42,8 @@ Contents: Handling of RPS profiles / residue frequencies
 /// @file resfreq.cpp
 /// Handling of RPS profiles / residue frequencies
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
 
 void
 CProfileData::Load(EMapChoice choice, 
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:54:41  papadopo
+  fix typo
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 
