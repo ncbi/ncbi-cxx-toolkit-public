@@ -262,7 +262,7 @@ public:
         /// sequence.  It loads the bioseq (minus sequence data) and
         /// caches the sequence length.
         ///
-        /// @param sih
+        /// @param idh
         ///   A handle to the sequence identifier.
         /// @param seqdb
         ///   The sequence database containing the original sequence.
@@ -342,6 +342,8 @@ private:
     /// description of what data is available will be returned in the
     /// "lock" parameter.
     ///
+    /// @param idh
+    ///   A handle to the sequence identifier.
     /// @param oid
     ///   Object id in BLAST DB
     /// @param lock
@@ -405,6 +407,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.23  2005/11/08 21:03:49  camacho
+ * doxygen fixes
+ *
  * Revision 1.22  2005/10/28 18:33:09  vasilche
  * Fixed selection of correct defline for gis.
  *
