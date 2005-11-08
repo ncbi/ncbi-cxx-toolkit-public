@@ -36,6 +36,13 @@ Contents: Interface for CMultiAligner
 #ifndef _ALGO_COBALT_COBALT_HPP_
 #define _ALGO_COBALT_COBALT_HPP_
 
+#include <util/math/matrix.hpp>
+#include <corelib/ncbifile.hpp>
+#include <algo/blast/api/sseqloc.hpp>
+#include <algo/blast/core/blast_stat.h>
+#include <algo/align/nw/nw_pssm_aligner.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/seq.hpp>
 #include <algo/cobalt/hit.hpp>
@@ -48,8 +55,6 @@ Contents: Interface for CMultiAligner
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
-
-USING_SCOPE(blast);
 
 typedef struct SSegmentLoc {
     int seq_index;
@@ -130,9 +135,9 @@ public:
 
     ~CMultiAligner();
 
-    CRef<CSeq_align> GetSeqalignResults() const;
+    CRef<objects::CSeq_align> GetSeqalignResults() const;
     const vector<CSequence>& GetResults() const { return m_Results; }
-    const TSeqLocVector& GetSeqLocs() const { return m_tQueries; }
+    const blast::TSeqLocVector& GetSeqLocs() const { return m_tQueries; }
     const CHitList& GetDomainHits() const { return m_DomainHits; }
     const CHitList& GetLocalHits() const { return m_LocalHits; }
     const CHitList& GetCombinedHits() const { return m_CombinedHits; }
@@ -146,7 +151,7 @@ public:
 
 
 
-    void SetQueries(const TSeqLocVector& queries);
+    void SetQueries(const blast::TSeqLocVector& queries);
 
     void SetDomainInfo(const string& dbname, 
                        const string& blockfile,
@@ -183,7 +188,7 @@ public:
 private:
     static const int kRpsScaleFactor = 100;
 
-    TSeqLocVector m_tQueries;
+    blast::TSeqLocVector m_tQueries;
     vector<CSequence> m_QueryData;
     vector<CSequence> m_Results;
 
@@ -224,9 +229,9 @@ private:
                              CProfileData& profile_data);
 
     void x_AssignDefaultResFreqs();
-    void x_MakeFillerBlocks(TSeqLocVector& filler_locs,
+    void x_MakeFillerBlocks(blast::TSeqLocVector& filler_locs,
                             vector<SSegmentLoc>& filler_segs);
-    void x_AlignFillerBlocks(TSeqLocVector& filler_locs, 
+    void x_AlignFillerBlocks(blast::TSeqLocVector& filler_locs, 
                              vector<SSegmentLoc>& filler_segs);
 
     void x_FindConsistentHitSubset();
@@ -269,6 +274,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:41:34  papadopo
+  1. rearrange includes to be self-sufficient
+  2. do not automatically use blast namespace
+
   Revision 1.1  2005/11/07 18:15:52  papadopo
   Initial revision
 
