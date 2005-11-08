@@ -39,6 +39,10 @@ Contents: Interface for CDistances class
 #ifndef _ALGO_COBALT_DIST_HPP_
 #define _ALGO_COBALT_DIST_HPP_
 
+#include <util/math/matrix.hpp>
+#include <algo/blast/core/blast_stat.h>
+#include <algo/phy_tree/dist_methods.hpp>
+
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/seq.hpp>
 #include <algo/cobalt/hitlist.hpp>
@@ -85,6 +89,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:42:17  papadopo
+  Rearrange includes to be self-sufficient
+
   Revision 1.1  2005/11/07 18:15:52  papadopo
   Initial revision
 

@@ -40,6 +40,8 @@ Contents: Interface for CEditScript class
 #define _ALGO_COBALT_TRACEBACK_HPP_
 
 #include <algo/blast/core/gapinfo.h>
+#include <algo/align/nw/nw_aligner.hpp>
+
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/seq.hpp>
 
@@ -147,6 +149,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:42:17  papadopo
+  Rearrange includes to be self-sufficient
+
   Revision 1.1  2005/11/07 18:15:52  papadopo
   Initial revision
 

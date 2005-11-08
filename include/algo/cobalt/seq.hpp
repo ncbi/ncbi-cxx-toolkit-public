@@ -39,6 +39,9 @@ Contents: Interface for CSequence class
 #ifndef _ALGO_COBALT_SEQ_HPP_
 #define _ALGO_COBALT_SEQ_HPP_
 
+#include <util/math/matrix.hpp>
+#include <algo/blast/api/sseqloc.hpp>
+#include <algo/align/nw/nw_aligner.hpp>
 #include <algo/cobalt/base.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -98,6 +101,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:42:17  papadopo
+  Rearrange includes to be self-sufficient
+
   Revision 1.1  2005/11/07 18:15:52  papadopo
   Initial revision
 

@@ -70,6 +70,8 @@ Contents: Interface for CHit class
 
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
+#include <algo/align/nw/nw_aligner.hpp>
+
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/seq.hpp>
 #include <algo/cobalt/traceback.hpp>
@@ -156,6 +158,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:42:17  papadopo
+  Rearrange includes to be self-sufficient
+
   Revision 1.1  2005/11/07 18:15:52  papadopo
   Initial revision
 
