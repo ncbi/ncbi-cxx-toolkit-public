@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.16 2005/10/12 12:33:48 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.17 2005/11/08 13:40:50 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -76,7 +76,7 @@ PC-ID ::= SEQUENCE {
 PC-Source ::= CHOICE {
     individual     Pub,                                 -- Individual Submission
     db             PC-DBTracking,                       -- External DB Submission
-    mmdb           PC-MMDBSource                        -- MMDB Submission
+    mmdb           PC-MMDBSource                        -- MMDB Submission (deprecated)
 }
 
 
@@ -224,15 +224,17 @@ PC-StereoGroup ::= SEQUENCE OF INTEGER                  -- Atom Identifiers of a
 PC-InfoData ::= SEQUENCE {
     urn            PC-Urn,                              -- Universal Resource Name  [for Value Qualification]
     value          CHOICE {                             -- Data Value
-                          bval    BOOLEAN,                   -- Boolean or Binary
-                          bvec    SEQUENCE OF BOOLEAN,       -- Boolean Vector
-                          ival    INTEGER,                   -- Integer (signed or unsigned)
-                          ivec    SEQUENCE OF INTEGER,       -- Integer Vector
-                          fval    REAL,                      -- Float or Double
-                          fvec    SEQUENCE OF REAL,          -- Double Vector
-                          sval    VisibleString,             -- String
-                          slist   SEQUENCE OF VisibleString, -- List of Strings
-                          date    Date                       -- Date
+                          bval     BOOLEAN,                   -- Boolean or Binary
+                          bvec     SEQUENCE OF BOOLEAN,       -- Boolean Vector
+                          ival     INTEGER,                   -- Integer (signed or unsigned)
+                          ivec     SEQUENCE OF INTEGER,       -- Integer Vector
+                          fval     REAL,                      -- Float or Double
+                          fvec     SEQUENCE OF REAL,          -- Double Vector
+                          sval     VisibleString,             -- String
+                          slist    SEQUENCE OF VisibleString, -- List of Strings
+                          date     Date,                      -- Date
+                          binary   OCTET STRING,              -- Binary Data
+                          bitlist  BIT STRING                 -- Bit List (specialized version of Boolean vector)
                    }
 }
 
@@ -241,12 +243,12 @@ PC-InfoData ::= SEQUENCE {
 --    Provides explicit source information on derived or calculated data 
 PC-Urn ::= SEQUENCE {
     label           VisibleString,                       -- Generic Name or Label for Display  [e.g., "Log P"]
-    name            VisibleString              OPTIONAL, -- Qualified Name  [e.g., "xlogp"]
+    name            VisibleString              OPTIONAL, -- Qualified Name  [e.g., "XlogP"]
     datatype        PC-UrnDataType             OPTIONAL, -- Specific Data Type of Value  [e.g., binary]
-    parameters      VisibleString              OPTIONAL, -- Parameters for Derivation  [e.g., "metal=0"]
-    implementation  VisibleString              OPTIONAL, -- Implementation Name  [e.g., "E_XlogP"]
-    version         VisibleString              OPTIONAL, -- Implementation Version  [e.g., "1.0"]
-    software        VisibleString              OPTIONAL, -- Implementation Software  [e.g., "cactvs"]
+    parameters      VisibleString              OPTIONAL, -- Implementation Parameter or Name  [e.g., "E_XlogP"]
+    implementation  VisibleString              OPTIONAL, -- NCBI Implementation Name  [e.g., "10.25.2005"]
+    version         VisibleString              OPTIONAL, -- Implementation Version  [e.g., "3.317"]
+    software        VisibleString              OPTIONAL, -- Implementation Software  [e.g., "Cactvs"]
     source          VisibleString              OPTIONAL  -- Implementation Organization  [e.g., "xemistry.com"]
 }
 
@@ -268,11 +270,13 @@ PC-UrnDataType ::= INTEGER {
         boolvec                       (10),  -- Boolean Vector                     [maps to BOOLEAN vector]
 
         -- Specialized Data Types
-        uint64                        (11),  -- 64-Bit Unsigned Integer            [maps to a VisibleString]
-        binary                        (12),  -- Base64 encoded Binary Blob         [maps to a VisibleString]
+        uint64                        (11),  -- 64-Bit Unsigned Integer (Hex form) [maps to a VisibleString]
+        binary                        (12),  -- Binary Data Blob                   [maps to an OCTET STRING]
         url                           (13),  -- URL                                [maps to a VisibleString]
         unicode                       (14),  -- UniCode String                     [maps to a VisibleString]
         date                          (15),  -- ISO8601 Date                       [maps to a Date]
+        fingerprint                   (16),  -- Binary Fingerprint (Gzip'ped bit   [maps to an OCTET STRING]
+                                             --   list w/ 4-Byte prefix denoting bit list length)
 
         unknown                      (255)   -- Unknown Data Type               [maps to a set of VisibleString]
 }
@@ -653,6 +657,13 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.17  2005/11/08 13:40:50  bolton
+-- Added two new InfoData value data types, OCTET STRING and BIT STRING.
+-- Updated the description of the URN definition to be consistent with actual
+-- usage.  Also, modified the Urn data type association with binary data to use
+-- OCTET STRING and added a fingerprint data type.  Documented deprecation of
+-- PC-Source usage of PC-MMDBSource.
+--
 -- Revision 1.16  2005/10/12 12:33:48  bolton
 -- Modified the parity flags for square planar (SP4) stereogenic center.
 --
@@ -745,7 +756,4 @@ END
 -- structural information.
 --
 -- ===========================================================================
-
-
-
 
