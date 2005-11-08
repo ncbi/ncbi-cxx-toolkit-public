@@ -315,23 +315,26 @@ void CCgiArgs::AddArgument(unsigned int /* position */,
 }
 
 
-string CCgiArgs::GetQueryString(EUrlEncode encode) const
+string CCgiArgs::GetQueryString(EAmpEncoding amp_enc,
+                                EUrlEncode encode) const
 {
     CDefaultUrlEncoder encoder(encode);
-    return GetQueryString(&encoder);
+    return GetQueryString(amp_enc, &encoder);
 }
 
 
-string CCgiArgs::GetQueryString(const IUrlEncoder* encoder) const
+string CCgiArgs::GetQueryString(EAmpEncoding amp_enc,
+                                const IUrlEncoder* encoder) const
 {
     if ( !encoder ) {
         encoder = CUrl::GetDefaultEncoder();
     }
     // Encode and construct query string
     string query;
+    string amp = (amp_enc == eAmp_Char) ? "&" : "&amp;";
     ITERATE(TArgs, arg, m_Args) {
         if ( !query.empty() ) {
-            query += m_IsIndex ? "+" : "&";
+            query += m_IsIndex ? "+" : amp;
         }
         query += encoder->EncodeArgName(arg->name);
         if ( !m_IsIndex ) {
@@ -596,7 +599,8 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
 }
 
 
-string CUrl::ComposeUrl(const IUrlEncoder* encoder) const
+string CUrl::ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
+                        const IUrlEncoder* encoder) const
 {
     if ( !encoder ) {
         encoder = GetDefaultEncoder();
@@ -619,7 +623,7 @@ string CUrl::ComposeUrl(const IUrlEncoder* encoder) const
     }
     url += encoder->EncodePath(m_Path);
     if ( m_ArgsList.get() ) {
-        url += "?" + m_ArgsList->GetQueryString(encoder);
+        url += "?" + m_ArgsList->GetQueryString(amp_enc, encoder);
     }
     return url;
 }
@@ -950,6 +954,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2005/11/08 20:30:04  grichenk
+* Added ampersand encoding flag
+*
 * Revision 1.4  2005/11/01 22:02:44  grichenk
 * Allow any number of ampersands in queries.
 *

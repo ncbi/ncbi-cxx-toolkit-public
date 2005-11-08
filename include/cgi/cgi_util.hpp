@@ -182,8 +182,16 @@ public:
     CCgiArgs(const string& query, EUrlEncode decode);
     CCgiArgs(const string& query, const IUrlEncoder* encoder = 0);
 
-    string GetQueryString(EUrlEncode encode) const;
-    string GetQueryString(const IUrlEncoder* encoder = 0) const;
+    /// Ampersand encoding for composed URLs
+    enum EAmpEncoding {
+        eAmp_Char,
+        eAmp_Entity
+    };
+
+    string GetQueryString(EAmpEncoding amp_enc,
+                          EUrlEncode encode) const;
+    string GetQueryString(EAmpEncoding amp_enc,
+                          const IUrlEncoder* encoder = 0) const;
 
     struct SCgiArg
     {
@@ -252,7 +260,8 @@ public:
     /// Compose the URL
     /// @param encode_flag
     ///    encode the URL parts before composing the URL
-    string ComposeUrl(const IUrlEncoder* encoder = 0) const;
+    string ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
+                      const IUrlEncoder* encoder = 0) const;
 
     // Access parts of the URL
     string GetScheme(void) const;
@@ -429,6 +438,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2005/11/08 20:30:04  grichenk
+* Added ampersand encoding flag
+*
 * Revision 1.4  2005/10/17 20:47:01  grichenk
 * +CCgiArgs::IsSetValue()
 *
