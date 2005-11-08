@@ -62,7 +62,7 @@ public:
     ///     Protein query sequence to search (only 1 is allowed!) [in]
     /// @param dbinfo
     ///     Description of the database to search [in]
-    /// @parm options
+    /// @param options
     ///     PSI-BLAST options [in]
     CPsiBlast(CRef<IQueryFactory> query_factory,
               const CSearchDatabase& dbinfo, 
@@ -79,7 +79,7 @@ public:
     ///     @todo how should scaled PSSM scores be handled?
     /// @param dbinfo
     ///     Description of the database to search [in]
-    /// @parm options
+    /// @param options
     ///     PSI-BLAST options [in]
     CPsiBlast(CRef<objects::CPssmWithParameters> pssm,
               const CSearchDatabase& dbinfo, 

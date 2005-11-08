@@ -60,7 +60,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CPsiBlastImpl::CPsiBlastImpl(CRef<CPssmWithParameters> pssm,
+CPsiBlastImpl::CPsiBlastImpl(CRef<objects::CPssmWithParameters> pssm,
                              IPsiBlastSubject* subject,
                              CConstRef<CPSIBlastOptionsHandle> options)
 : m_Pssm(pssm), m_Query(0), m_Subject(subject), m_OptsHandle(options)
@@ -204,7 +204,7 @@ CPsiBlastImpl::Run()
 }
 
 void
-CPsiBlastImpl::SetPssm(CConstRef<CPssmWithParameters> pssm)
+CPsiBlastImpl::SetPssm(CConstRef<objects::CPssmWithParameters> pssm)
 {
     if (pssm.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 

@@ -66,7 +66,7 @@ CPsiBlast::CPsiBlast(CRef<IQueryFactory> query_factory,
     }
 }
 
-CPsiBlast::CPsiBlast(CRef<CPssmWithParameters> pssm,
+CPsiBlast::CPsiBlast(CRef<objects::CPssmWithParameters> pssm,
                      const CSearchDatabase& dbinfo, 
                      CConstRef<CPSIBlastOptionsHandle> options)
 : m_Subject(new CBlastSubjectDb(dbinfo)), m_Impl(0)
