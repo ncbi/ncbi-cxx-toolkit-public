@@ -70,19 +70,19 @@ public:
 
     CHit *GetHit(int index) 
     { 
-        ASSERT(index < Size());
+        assert(index < Size());
         return m_List[index].second; 
     }
 
     bool GetKeepHit(int index)
     { 
-        ASSERT(index < Size());
+        assert(index < Size());
         return m_List[index].first;
     }
 
     void SetKeepHit(int index, bool keep) 
     { 
-        ASSERT(index < Size());
+        assert(index < Size());
         m_List[index].first = keep; 
     }
 
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:40:26  papadopo
+  ASSERT->assert
+
   Revision 1.1  2005/11/07 18:15:52  papadopo
   Initial revision
 
