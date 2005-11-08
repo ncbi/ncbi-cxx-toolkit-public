@@ -190,8 +190,9 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadRealloc(TBitVector* bv,
             unsigned buf_size = LobSize();
             m_Buffer.resize(buf_size);
             err = Read(bv, clear_target_vec);
+        } else {
+            throw;
         }
-        throw;
     }
     return err;
 }
@@ -224,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/08 14:43:35  dicuccio
+ * Fix issue with throw in Read()
+ *
  * Revision 1.2  2005/11/08 01:48:23  dicuccio
  * Compilation fixes: use correct include path; remove erroneous ';'.
  * WriteVector(): bm::serialize() expects non-const bit-vector, so copy prior to
