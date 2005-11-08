@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.9 2005/09/29 21:05:52 tkachenk Exp $
+-- $Id: pcassay.asn,v 1.10 2005/11/08 13:12:49 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -55,6 +55,10 @@ PC-AssaySubmit ::= SEQUENCE {
 }
 
 
+-- Container for multiple Assay Result Sets
+PC-AssayResultsSet ::= SEQUENCE OF PC-AssayResults
+
+
 -- Assay Results provided for a given Substance tested, with respect to the results types defined in the 
 --   referenced Assay Description
 PC-AssayResults ::= SEQUENCE {
@@ -81,8 +85,9 @@ PC-AssayResults ::= SEQUENCE {
                       }               DEFAULT unspecified,
     rank              INTEGER                   DEFAULT 0, -- Numeric Rank of Assay Outcome (for result ordering)
                                                            --   Note: Larger numbers are more active
-    data              SEQUENCE OF PC-AssayData OPTIONAL,            -- Assay Data Reported for this SID (vector)
-    url               VisibleString              OPTIONAL -- Depositor provided URL for this Result
+    data              SEQUENCE OF PC-AssayData  OPTIONAL,  -- Assay Data Reported for this SID (vector)
+    url               VisibleString             OPTIONAL,  -- Depositor provided URL for this Result
+    pub               SEQUENCE OF Pub           OPTIONAL   -- Depositor provided publications for this result
 }
 
 
@@ -123,7 +128,11 @@ PC-AssayDescription ::= SEQUENCE {
     xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
 
     -- Allowed Assay Result Types
-    results           SEQUENCE OF PC-ResultType              -- Result Definitions (vector)
+
+    results           SEQUENCE OF PC-ResultType,             -- Result Definitions (vector)
+
+    -- Additional Information
+    pub               SEQUENCE OF Pub              OPTIONAL  -- Depositor provided publications for this assay
 }
 
 
@@ -230,14 +239,15 @@ PC-RealMinMax ::= SEQUENCE {
     max               REAL                                 -- Maximum Value Allowed
 }
 
----Add Assay Results Set as a wrapper to read and write sequence of PC-AssayResuls
-
-PC-AssayResultsSet ::= SEQUENCE OF PC-AssayResults
 
 END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.10  2005/11/08 13:12:49  bolton
+-- Added ability to provide publications at the assay description and assay
+-- result (per SID) level.  Also, minor changes to comments and object order.
+--
 -- Revision 1.9  2005/09/29 21:05:52  tkachenk
 -- PC-AssayResults.data is made optional to be able to handle empty data rows
 --
