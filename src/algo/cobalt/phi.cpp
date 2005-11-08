@@ -44,8 +44,8 @@ Contents: Match PHI patterns against a list of sequences
 /// @file phi.cpp
 /// Match PHI patterns against a list of sequences
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(cobalt);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cobalt)
 
 typedef struct SPatternHit {
     int query_idx;
@@ -66,7 +66,7 @@ CMultiAligner::FindPatternHits()
 
     CNcbiIfstream pattern_stream(m_PatternFile.c_str());
     if (pattern_stream.bad() || pattern_stream.fail())
-        NCBI_THROW(CBlastException, eInvalidArgument,
+        NCBI_THROW(blast::CBlastException, eInvalidArgument,
                    "Cannot open PHI pattern file");
 
     BlastScoreBlk *sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
@@ -80,7 +80,7 @@ CMultiAligner::FindPatternHits()
         pattern_stream >> pattern;
         SPHIPatternSearchBlkNew((char *)pattern,
                                 FALSE, sbp, &phi_pattern, NULL);
-        ASSERT(phi_pattern != NULL);
+        assert(phi_pattern != NULL);
 
         for (int j = 0; j < num_queries; j++) {
 
@@ -140,6 +140,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/08 17:54:00  papadopo
+  1. do not assume blast namespace
+  2. ASSERT -> assert
+
   Revision 1.1  2005/11/07 18:14:00  papadopo
   Initial revision
 
