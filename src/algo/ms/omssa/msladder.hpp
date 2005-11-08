@@ -212,8 +212,8 @@ bool CLadder::CalcDelta(const int *IntMassArray,
 
     // first check to see if exact mass increment needed
     if(Settings.GetProductsearchtype() == eMSSearchType_exact) {
-        if (ion/MSSCALE2INT(Settings.GetExactmass()) != (ion+delta) / 
-            MSSCALE2INT(Settings.GetExactmass()))
+        if ((ion * Charge)/MSSCALE2INT(Settings.GetExactmass()) != 
+            (ion * Charge + delta) / MSSCALE2INT(Settings.GetExactmass()))
             ion += MSSCALE2INT(kNeutron)/Charge;
     }
 
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.18  2005/11/08 20:36:07  lewisg
+  exact mass for multiply charged ions
+
   Revision 1.17  2005/10/24 21:46:13  lewisg
   exact mass, peptide size limits, validation, code cleanup
 
