@@ -123,8 +123,10 @@ CMSResponse::GetOidsBelowThreshold(TOidSet& OidSet,
 {
     ITERATE(THitsets, iHitSet, GetHitsets()) {
         ITERATE(CMSHitSet::THits, iHit, (*iHitSet)->GetHits()) {
-            if((*iHit)->GetEvalue() <= Threshold) {
-                OidSet.insert((*iHit)->GetOid());
+            ITERATE(CMSHits::TPephits, iPepHit, (*iHit)->GetPephits()) {
+                if((*iHit)->GetEvalue() <= Threshold) {
+                    OidSet.insert((*iPepHit)->GetOid());
+                }
             }
         }
     }
@@ -150,6 +152,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/11/08 22:08:14  lewisg
+* stop using depricated oid
+*
 * Revision 1.4  2005/11/07 19:57:20  lewisg
 * iterative search
 *
