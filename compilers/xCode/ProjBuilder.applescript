@@ -290,6 +290,16 @@ script ProjBuilder
 		end try -- Create a GBENCH Resources
 		
 		
+		(* Create a shell script phase to add resource fork for gbench_feedback app *)
+		if tgName is "gbench_feedback_agent" then
+			set shellScript to "cd \"$TARGET_BUILD_DIR\"" & ret & "$SYSTEM_DEVELOPER_TOOLS/Rez -t APPL " & TheFLTKPath & "/include/FL/mac.r -o $EXECUTABLE_NAME"
+			set scriptPhaseName to "SCRIPTPHASE__" & tgName
+			set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |shellPath|:"/bin/sh", |shellScript|:shellScript}
+			copy scriptPhaseName to the end of |buildPhases| of aTarget -- shell script phase goes first (before compiling)
+			addPair(aScriptPhase, scriptPhaseName)
+		end if -- Create a Resources Fork
+		
+		
 		-- add to main object list
 		addPair(aTarget, targetName)
 		--addPair(aProxy, targetProxy)
@@ -350,7 +360,7 @@ script ProjBuilder
 		
 		set symRoot to TheOUTPath & "/bin"
 		set buildSettings to {|PRODUCT_NAME|:fullToolName, |OTHER_LDFLAGS|:linkerFlags, |SYMROOT|:symRoot}
-		if toolName is "gbench_plugin_scan" then
+		if toolName is "gbench_plugin_scan" or toolName is "gbench_monitor" or toolName is "gbench_feedback_agent" then
 			set symRoot to TheOUTPath & "/bin/$(CONFIGURATION)/Genome Workbench.app/Contents/MacOS"
 			set |SYMROOT| of buildSettings to symRoot
 			set buildSettings to buildSettings & {|TARGET_BUILD_DIR|:symRoot}
@@ -389,7 +399,7 @@ script ProjBuilder
 		copy "TARGET__GBENCH_DISK" to the end of |targets| of rootObject
 		set aScriptPhase to {isa:"PBXShellScriptBuildPhase", |files|:{}, |inputPaths|:{}, |outputPaths|:{}, |runOnlyForDeploymentPostprocessing|:1, |shellPath|:"/bin/sh", |shellScript|:shellScript}
 		
-		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", none:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
+		set theTarget to {isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Genome Workbench Disk Image", |none|:""}, dependencies:{}, |name|:"Genome Workbench Disk Image"}
 		copy "SCRIPTPHASE__GBENCH_DISK" to the beginning of |buildPhases| of theTarget
 		addPair(aScriptPhase, "SCRIPTPHASE__GBENCH_DISK")
 		addPair(theTarget, "TARGET__GBENCH_DISK")
@@ -399,11 +409,11 @@ script ProjBuilder
 		
 		(* Target: Build Everything *)
 		copy "TARGET__BUILD_APP" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", none:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Applications", |none|:""}, dependencies:appDepList, |name|:"Build All Applications"}, "TARGET__BUILD_APP")
 		copy "TARGET__BUILD_LIB" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", none:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All Libraries", |none|:""}, dependencies:libDepList, |name|:"Build All Libraries"}, "TARGET__BUILD_LIB")
 		copy "TARGET__BUILD_ALL" to the beginning of |targets| of rootObject
-		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", none:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
+		addPair({isa:"PBXAggregateTarget", |buildPhases|:{}, |buildSettings|:{|PRODUCT_NAME|:"Build All", |none|:""}, dependencies:allDepList, |name|:"Build All"}, "TARGET__BUILD_ALL")
 		
 		
 		(* add frameworks*)
@@ -585,11 +595,11 @@ script ProjBuilder
 		set theScript to theScript & "fi" & ret
 		
 		-- Create executables directory
-		set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables ; then" & ret
-		set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
-		set theScript to theScript & "fi" & ret
+		--set theScript to theScript & "if test ! -d " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables ; then" & ret
+		--set theScript to theScript & "  mkdir " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
+		--set theScript to theScript & "fi" & ret
 		
-		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/plugins/algo/executables/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
+		--set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/plugins/algo/executables/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
 		-- copy png images
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/share/gbench" & ret
@@ -603,7 +613,7 @@ script ProjBuilder
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench_workspace.icns " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources/gbench_workspace.icns" & ret
 		set theScript to theScript & "cp " & TheNCBIPath & "/src/gui/res/share/gbench/gbench_project.icns " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/Resources/gbench_project.icns" & ret
 		
-		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
+		----set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/plugins/algo/executables " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/executables" & ret
 		
 		set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/res/etc/* " & TheOUTPath & "/bin/$CONFIGURATION/Genome\\ Workbench.app/Contents/MacOS/etc" & ret
 		--set theScript to theScript & "cp -r " & TheNCBIPath & "/src/gui/gbench/patterns/ " & TheOUTPath & "/bin/Genome\\ Workbench.app/Contents/MacOS/etc/patterns" & ret
@@ -619,6 +629,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/11/09 14:18:21  lebedev
+ * gbench_monitor and gbench_feedback_agent added
+ *
  * Revision 1.35  2005/09/26 12:53:24  lebedev
  * Mac OS X icons for saved workspace and project files added
  *

@@ -378,8 +378,12 @@ property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_co
 property demo_wcontrols : {name:"demo_wcontrols", path:"gui:widgets:controls:demo", exc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 property demo_wizard : {name:"demo_wizard", path:"gui:widgets:controls:demo", inc:{"demo_wizard.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
 
-property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
+property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp", "gbench_monitor.cpp", "gbench_feedback_agent.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_widgets_misc gui_config" & FLTK_LIBS, fworks:"Carbon", gbench:true, req:true}
+
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils", req:true}
+property gbench_monitor : {name:"gbench_monitor", path:"gui:gbench", inc:{"gbench_monitor.cpp"}, dep:"ncbi_core", req:true}
+property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench", inc:{"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:true}
+
 (* ====================================================================================================== *)
 
 
@@ -389,7 +393,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite,
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo}
+property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo}
 --property allCTools : {tests}
 
 
@@ -413,6 +417,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.79  2005/11/09 14:18:21  lebedev
+ * gbench_monitor and gbench_feedback_agent added
+ *
  * Revision 1.78  2005/11/07 16:23:08  lebedev
  * xflat removed
  *
