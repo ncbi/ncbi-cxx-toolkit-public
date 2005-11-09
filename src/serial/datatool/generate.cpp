@@ -626,7 +626,7 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
 {
     set<string> modules;
     string module_name, current_module, filename, hppDefine;
-    CNcbiOfstream out;
+    auto_ptr<CDelayedOfstream> out;
     CNamespace ns;
 
     bool isfound = false;
@@ -645,32 +645,32 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
                 continue;
             }
             isfound = true;
-            if (!out.is_open()) {
+            if ( !out.get()  ||  !out->is_open() ) {
                 filename = Path(path, current_module + "_module.hpp");
-                out.open(filename.c_str());
-                if (!out.is_open()) {
+                out.reset(new CDelayedOfstream(filename.c_str()));
+                if (!out->is_open()) {
                     ERR_POST(Fatal << "Cannot create file: " << filename);
                     return;
                 }
                 generated.push_back(filename);
                 hppDefine = current_module + "_REGISTERMODULECLASSES_HPP";
-                code->WriteCopyright(out, false) <<
+                code->WriteCopyright(*out, false) <<
                     "\n"
                     "#ifndef " << hppDefine << "\n"
                     "#define " << hppDefine << "\n"
                     "\n";
-                ns.Set(code->GetNamespace(), out, true);
-                out <<
+                ns.Set(code->GetNamespace(), *out, true);
+                *out <<
                     "\nvoid " << current_module << "_RegisterModuleClasses(void);\n\n";
             }
         }
-        if (out.is_open()) {
-            ns.Reset(out);
-            out <<
+        if (out->is_open()) {
+            ns.Reset(*out);
+            *out <<
                 "\n"
                 "#endif // " << hppDefine << "\n";
-            out.close();
-            if ( !out )
+            out->close();
+            if ( !*out )
                 ERR_POST(Fatal << "Error writing file " << filename);
         }
         current_module.erase();
@@ -681,7 +681,7 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
 {
     set<string> modules;
     string module_name, current_module, filename, hppDefine;
-    CNcbiOfstream out;
+    auto_ptr<CDelayedOfstream> out;
     CNcbiOstrstream out_inc;
     CNcbiOstrstream out_code;
     CNamespace ns;
@@ -702,18 +702,18 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
                 continue;
             }
             isfound = true;
-            if (!out.is_open()) {
+            if ( !out.get()  ||  !out->is_open()) {
                 filename = Path(path, current_module + "_module.cpp");
-                out.open(filename.c_str());
-                if (!out.is_open()) {
+                out.reset(new CDelayedOfstream(filename.c_str()));
+                if (!out->is_open()) {
                     ERR_POST(Fatal << "Cannot create file: " << filename);
                     return;
                 }
                 generated.push_back(filename);
-                code->WriteCopyright(out, false);
-                out << "\n";
+                code->WriteCopyright(*out, false);
+                *out << "\n";
                 if (!CFileCode::GetPchHeader().empty()) {
-                    out <<
+                    *out <<
                         "#include <" << CFileCode::GetPchHeader() << ">\n";
                 }
                 ns.Set(code->GetNamespace(), out_code, false);
@@ -731,16 +731,16 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
                 }
             }
         }
-        if (out.is_open()) {
+        if (out->is_open()) {
             out_code << "}\n\n";
             ns.Reset(out_code);
-            out << string(CNcbiOstrstreamToString(out_inc))
-                << "\n\n"
-                << string(CNcbiOstrstreamToString(out_code));
+            *out << string(CNcbiOstrstreamToString(out_inc))
+                 << "\n\n"
+                 << string(CNcbiOstrstreamToString(out_code));
             out_inc.seekp(0);
             out_code.seekp(0);
-            out.close();
-            if ( !out )
+            out->close();
+            if ( !*out )
                 ERR_POST(Fatal << "Error writing file " << filename);
         }
         current_module.erase();
@@ -1030,6 +1030,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/11/09 21:35:49  ucko
+* Allow GenerateModule[CH]PP to use CDelayedOfstream to avoid touching
+* the files they produce when their contents can stay unchanged.
+*
 * Revision 1.63  2005/09/29 14:45:22  gouriano
 * Added generation of module classes registration code
 *
