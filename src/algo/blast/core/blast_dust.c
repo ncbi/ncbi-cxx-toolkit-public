@@ -331,6 +331,7 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
 static Int2 
 GetDustLocations (BlastSeqLoc** loc, DREGION* reg, Int4 nreg)
 {
+   BlastSeqLoc* tail = NULL;   /* pointer to tail of loc linked list */
         
    if (!loc)
       return -1;
@@ -341,7 +342,9 @@ GetDustLocations (BlastSeqLoc** loc, DREGION* reg, Int4 nreg)
    if (nreg > 0) {
       Int4 i;
       for (i = 0; reg && i < nreg; i++) {
-         BlastSeqLocNew(loc, reg->from, reg->to);
+         /* Cache the tail of the list to avoid the overhead of traversing the
+          * list when appending to it */
+         tail = BlastSeqLocNew(tail ? &tail : loc, reg->from, reg->to);
          reg = reg->next;
       }
    }
