@@ -115,23 +115,10 @@ CLocalSeqSearch::Run()
     // This is delayed to this point to guarantee that the options are
     // populated
     
-    //m_Queries.Reset
-    //    (m_QueryFactory->MakeLocalQueryData(&m_SearchOpts->GetOptions()));
-    //m_LocalBlast.Reset(new CDbBlast(&*m_Queries, m_SeqSrc, *m_SearchOpts));
+    m_LocalBlast.Reset(new CLocalBlast(m_QueryFactory, m_SearchOpts,
+                                       m_SeqSrc));
     
-    //return m_LocalBlast->Run();
-    
-    
-    // This is disabled for now (it always fails on an assertion in
-    // CDbBlast).
-    
-    // When prelim and traceback stages are ready, this should be
-    // modified to use them.
-    
-    NCBI_THROW(CSearchException, eInternal,
-               "Local search temporarily disabled");
-    
-    return CSearchResultSet();
+    return m_LocalBlast->Run();
 }
 
 void 

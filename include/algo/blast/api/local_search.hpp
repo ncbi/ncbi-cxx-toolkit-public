@@ -36,7 +36,8 @@
 #define ALGO_BLAST_API___LOCAL_SEARCH_HPP
 
 #include <algo/blast/api/uniform_search.hpp>
-#include <algo/blast/api/db_blast.hpp>
+#include <algo/blast/api/local_blast.hpp>
+#include <algo/blast/api/psiblast.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -71,16 +72,11 @@ private:
     CRef<CBlastOptionsHandle> m_SearchOpts;
 
     /// Local database search class
-    CRef<CDbBlast>            m_LocalBlast;
-
-    /// Alignments that result from the search
-    TSeqAlignVector           m_AlignmentResults;
+    CRef<CLocalBlast>         m_LocalBlast;
 
     /// Sequence source for the search class to use
     BlastSeqSrc*              m_SeqSrc;
 
-    /// Search queries
-    CRef<ILocalQueryData>     m_Queries;
     /// Factory which provides the query data to be populated in m_Queries
     CRef<IQueryFactory>       m_QueryFactory;
 
@@ -106,9 +102,13 @@ private:
     /// Search configuration
     CRef<CBlastOptionsHandle> m_SearchOpts;
 
+    /// Search class
+    CRef<CPsiBlast> m_PsiBlast;
+
     /// Search queries
     CRef<objects::CPssmWithParameters> m_Pssm;
 
+    /// Subject database
     CConstRef<CSearchDatabase> m_Subject;
 
 };
