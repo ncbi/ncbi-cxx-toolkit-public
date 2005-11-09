@@ -442,6 +442,7 @@ private:
             m_AttrDB.max_time =
                 curr + (m_Cache.GetTimeout() * m_Cache.GetTTL_Prolongation());
             m_AttrDB.owner_name = m_Owner;
+            m_AttrDB.overflow = (m_OverflowFile != 0);
 
             cur.Update();
 
@@ -2826,6 +2827,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.124  2005/11/09 17:32:21  kuznets
+ * Fixed critical bug when BLOB grows from inline storage to overflow
+ *
  * Revision 1.123  2005/11/01 14:53:25  kuznets
  * Fixed unused var warning
  *
