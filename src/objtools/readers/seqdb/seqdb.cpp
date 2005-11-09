@@ -689,7 +689,7 @@ void CSeqDB::SetIterationRange(int oid_begin, int oid_end)
     m_Impl->SetIterationRange(oid_begin, oid_end);
 }
 
-void CSeqDB::GetAliasFileValues(TAliasFileValues & afv) const
+void CSeqDB::GetAliasFileValues(TAliasFileValues & afv)
 {
     m_Impl->Verify();
     m_Impl->GetAliasFileValues(afv);

@@ -556,6 +556,8 @@ public:
     ///   The alias file values will be returned here.
     void GetAliasFileValues(TAliasFileValues & afv) const;
     
+    void CompleteAliasFileValues(const CSeqDBVolSet & volset);
+    
 private:
     /// Private Constructor
     ///
@@ -754,6 +756,7 @@ private:
     
     void x_Tokenize(const string & dbnames);
     
+
     /// Type used to store a set of volume names for each node
     typedef vector<CSeqDB_BasePath> TVolNames;
     
@@ -996,10 +999,8 @@ public:
     /// 
     /// @param afv
     ///   The alias file values will be returned here.
-    void GetAliasFileValues(TAliasFileValues & afv) const
-    {
-        m_Node.GetAliasFileValues(afv);
-    }
+    void GetAliasFileValues(TAliasFileValues   & afv,
+                            const CSeqDBVolSet & volset);
     
 private:
     /// Combined alias files.

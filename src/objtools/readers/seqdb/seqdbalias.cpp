@@ -1408,6 +1408,23 @@ bool CSeqDBAliasNode::NeedTotalsScan(const CSeqDBVolSet & volset) const
 
 
 void CSeqDBAliasNode::
+CompleteAliasFileValues(const CSeqDBVolSet & volset)
+{
+    // First, complete the values stored in the child nodes.
+    
+    NON_CONST_ITERATE(TSubNodeList, node, m_SubNodes) {
+        (**node).CompleteAliasFileValues(volset);
+    }
+    
+    // Then, get the various values for this node.
+    
+    if (m_Values.find("TITLE") == m_Values.end()) {
+        m_Values["TITLE"] = GetTitle(volset);
+    }
+}
+
+
+void CSeqDBAliasNode::
 GetAliasFileValues(TAliasFileValues & afv) const
 {
     _ASSERT(m_ThisName.Valid());
@@ -1417,6 +1434,14 @@ GetAliasFileValues(TAliasFileValues & afv) const
     ITERATE(TSubNodeList, node, m_SubNodes) {
         (**node).GetAliasFileValues(afv);
     }
+}
+
+
+void CSeqDBAliasFile::GetAliasFileValues(TAliasFileValues   & afv,
+                                         const CSeqDBVolSet & volset)
+{
+    m_Node.CompleteAliasFileValues(volset);
+    m_Node.GetAliasFileValues(afv);
 }
 
 

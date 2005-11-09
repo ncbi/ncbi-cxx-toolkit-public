@@ -896,9 +896,13 @@ CSeqDBImpl::FindVolumePaths(vector<string> & paths) const
     paths = m_Aliases.GetVolumeNames();
 }
 
-void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv) const
+void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)
 {
-    m_Aliases.GetAliasFileValues(afv);
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
+
+    m_Aliases.GetAliasFileValues(afv, m_VolSet);
 }
 
 void CSeqDBImpl::x_ScanTotals()

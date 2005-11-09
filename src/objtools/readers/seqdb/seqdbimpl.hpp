@@ -515,7 +515,7 @@ public:
     /// 
     /// @param afv
     ///   The alias file values will be returned here.
-    void GetAliasFileValues(TAliasFileValues & afv) const;
+    void GetAliasFileValues(TAliasFileValues & afv);
     
     /// Verify consistency of the memory management (atlas) layer.
     void Verify()
