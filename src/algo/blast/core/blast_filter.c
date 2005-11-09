@@ -500,9 +500,11 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 BlastSeqLoc* BlastSeqLocListDup(BlastSeqLoc* head)
 {
     BlastSeqLoc* retval = NULL;
+    BlastSeqLoc* retval_tail = NULL;
 
     for (; head; head = head->next) {
-        BlastSeqLocAppend(&retval, s_BlastSeqLocNodeDup(head));
+        retval_tail = BlastSeqLocAppend(retval_tail ? &retval_tail : &retval, 
+                                        s_BlastSeqLocNodeDup(head));
     }
 
     return retval;
@@ -704,6 +706,7 @@ BlastSeqLoc*
 BlastSeqLocCombine(BlastSeqLoc* mask_loc, Int4 link_value)
 {
    BlastSeqLoc* retval = NULL;
+   BlastSeqLoc* retval_tail = NULL;
    Int4 start, stop;	/* Used to merge overlapping SeqLoc's. */
    BlastSeqLoc* loc_head=NULL,* loc_var=NULL;
    
@@ -726,7 +729,10 @@ BlastSeqLocCombine(BlastSeqLoc* mask_loc, Int4 link_value)
        if (ssr && ((stop + link_value) > ssr->left)) {
           stop = MAX(stop, ssr->right);
        } else {
-          BlastSeqLocNew(&retval, start, stop);
+          /* Cache the tail of the list to avoid the overhead of traversing the
+           * list when appending to it */
+          retval_tail = BlastSeqLocNew((retval_tail ? &retval_tail : &retval), 
+                                       start, stop);
           if (loc_var->next) {
               start = ssr->left;
               stop = ssr->right;
@@ -747,6 +753,8 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
 {
    Int4 context;
    const Boolean kIsNucl = (program_number == eBlastTypeBlastn);
+   BlastSeqLoc* tail = NULL;    /* Pointer to the tail of the complement_mask
+                                   linked list */
 
    if (complement_mask == NULL)
 	return -1;
@@ -774,7 +782,10 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       /* mask_loc NULL is simply the case that NULL was passed in, which we 
          take to mean that nothing on query is masked. */
       if (mask_loc == NULL || mask_loc->seqloc_array[context] == NULL) {
-         BlastSeqLocNew(complement_mask, start_offset, end_offset);
+         /* Cache the tail of the list to avoid the overhead of traversing the
+          * list when appending to it */
+         tail = BlastSeqLocNew(tail ? &tail : complement_mask, 
+                               start_offset, end_offset);
          continue;
       }
       
@@ -816,7 +827,9 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
 
          right = filter_start - 1;
 
-         BlastSeqLocNew(complement_mask, left, right);
+         /* Cache the tail of the list to avoid the overhead of traversing the
+          * list when appending to it */
+         tail = BlastSeqLocNew((tail ? &tail : complement_mask), left, right);
          if (filter_end >= end_offset) {
             /* last masked region at end of sequence */
             last_interval_open = FALSE;
@@ -829,7 +842,9 @@ BLAST_ComplementMaskLocations(EBlastProgramType program_number,
       if (last_interval_open) {
          /* Need to finish SSeqRange* for last interval. */
          right = end_offset;
-         BlastSeqLocNew(complement_mask, left, right);
+         /* Cache the tail of the list to avoid the overhead of traversing the
+          * list when appending to it */
+         tail = BlastSeqLocNew((tail ? &tail : complement_mask), left, right);
       }
    }
    return 0;
