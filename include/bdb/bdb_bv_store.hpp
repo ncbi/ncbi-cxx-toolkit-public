@@ -201,7 +201,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadRealloc(TBitVector* bv,
         err = Read(bv, clear_target_vec);
     } catch (CBDB_ErrnoException& ex) {
         // check if we have insufficient buffer
-        if (ex.IsNoMem()) {
+        if (ex.IsBufferSmall() || ex.IsNoMem()) {
             // increase the buffer and re-read
             unsigned buf_size = LobSize();
             m_Buffer.resize(buf_size);
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/11/09 14:03:57  kuznets
+ * Check for insufficient memory in deserialization buffer
+ *
  * Revision 1.4  2005/11/08 17:11:30  kuznets
  * Eliminated temporary in WriteVector (optimization)
  *
