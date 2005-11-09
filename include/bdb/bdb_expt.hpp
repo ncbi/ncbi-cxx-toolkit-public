@@ -100,6 +100,9 @@ public:
     /// Returns TRUE if error is BerekleyDB ENOMEM (insufficient buffer size)
     bool IsNoMem() const;
 
+    /// Returns TRUE if error is BerekleyDB DB_BUFFER_SMALL (insufficient buffer size)
+    bool IsBufferSmall() const;
+
     /// Returns TRUE if error is BerkeleyDB DB_LOCK_DEADLOCK
     bool IsDeadLock() const;
 
@@ -186,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/11/09 14:02:35  kuznets
+ * +IsBufferSmall()
+ *
  * Revision 1.18  2005/11/08 19:13:51  kuznets
  * +CBDB_ErrnoException::IsDeadLock()
  *
