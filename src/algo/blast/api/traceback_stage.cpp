@@ -68,7 +68,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>     qf,
       m_OptsMemento  (0),
       m_HspResults   (0),
       m_SeqInfoSrc   (0),
-      m_OwnSeqInfoSrc(false)
+      m_OwnSeqInfoSrc(false),
+      m_ResultType(eDatabaseSearch)
 {
     x_Init(qf, opts, db.GetDatabaseName());
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(db);
@@ -88,7 +89,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>    qf,
       m_OptsMemento  (0),
       m_HspResults   (0),
       m_SeqInfoSrc   (0),
-      m_OwnSeqInfoSrc(false)
+      m_OwnSeqInfoSrc(false),
+      m_ResultType(eDatabaseSearch)
 {
     BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
     m_SeqInfoSrc = InitSeqInfoSrc(seqsrc);
@@ -108,7 +110,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
       m_OptsMemento  (0),
       m_HspResults   (0),
       m_SeqInfoSrc   (InitSeqInfoSrc(seqsrc)),
-      m_OwnSeqInfoSrc(true)
+      m_OwnSeqInfoSrc(true),
+      m_ResultType(eDatabaseSearch)
 {
     x_Init(qf, opts, BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
@@ -125,7 +128,8 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
       m_OptsMemento  (opts.CreateSnapshot()),
       m_HspResults   (0),
       m_SeqInfoSrc   (const_cast<IBlastSeqInfoSrc*>(&seqinfosrc)),
-      m_OwnSeqInfoSrc(false)
+      m_OwnSeqInfoSrc(false),
+      m_ResultType(eDatabaseSearch)
 {}
 
 CBlastTracebackSearch::~CBlastTracebackSearch()
@@ -134,6 +138,12 @@ CBlastTracebackSearch::~CBlastTracebackSearch()
     if (m_OwnSeqInfoSrc) {
         delete m_SeqInfoSrc;
     }
+}
+
+void
+CBlastTracebackSearch::SetResultType(EResultType type)
+{
+    m_ResultType = type;
 }
 
 void
@@ -247,7 +257,8 @@ CBlastTracebackSearch::Run()
            *m_SeqInfoSrc,
            m_OptsMemento->m_ProgramType,
            m_Options->GetGappedMode(),
-           m_Options->GetOutOfFrameMode());
+           m_Options->GetOutOfFrameMode(),
+           m_ResultType);
     
     // The code should probably capture and return errors here; the
     // traceback stage does not seem to produce messages, but the

@@ -44,6 +44,12 @@
 struct BlastSeqSrc;
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_id;
+    class CSeq_loc;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(blast)
 
 class IBlastSeqInfoSrc;
@@ -53,6 +59,9 @@ class IBlastSeqInfoSrc;
  * @param seqsrc BlastSeqSrc from which to obtain the database information
  */
 IBlastSeqInfoSrc* InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
+
+CConstRef<objects::CSeq_loc> 
+CreateWholeSeqLocFromIds(const list< CRef<objects::CSeq_id> > seqids);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

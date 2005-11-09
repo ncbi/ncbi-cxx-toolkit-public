@@ -207,39 +207,6 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
                         bool is_gapped=true, 
                         bool is_ooframe=false);
 
-/** Extracts from the BlastHSPResults structure results for only one subject 
- * sequence, identified by its index, and converts them into a vector of 
- * CSeq_align_set classes. Returns one vector element per query sequence; 
- * The CSeq_align_set (list of CSeq_align's) consists of exactly one 
- * discontinuous CSeq_align for each vector element.
- * @param results results from running the BLAST algorithm [in]
- * @param prog type of BLAST program [in]
- * @param query All query sequences [in]
- * @param seqinfo_src Source of subject sequences information [in]
- * @param subject_index Index of this subject sequence in a set [in]
- * @param is_gapped Is this a gapped search? [in]
- * @param is_ooframe Is it a search with out-of-frame gapping? [in]
- * @return Vector of seqalign sets (one set per query sequence).
- */
-TSeqAlignVector
-BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results, 
-                                  EBlastProgramType prog,
-                                  TSeqLocVector &query, 
-                                  const IBlastSeqInfoSrc* seqinfo_src, 
-                                  Uint4 subject_index,
-                                  bool is_gapped=true, bool 
-                                  is_ooframe=false);
-
-/// Remap subject offsets in the vector of Seq-aligns relative to the 
-/// underlying sequences if subject Seq-locs are subsequences.
-/// @param seqalignv Vector of Seq-align lists corresponding to multiple 
-///                  queries. Each list must contain Seq-aligns for each
-///                  subject in the subjects vector. [in] [out]
-/// @param subjectv Vector of subject sequence locations [in]
-void
-Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv, 
-                        const TSeqLocVector& subjectv);
-
 /// Converts PHI BLAST results into a Seq-align form. Results are 
 /// split into separate Seq-align-sets corresponding to different
 /// pattern occurrences in query, which are then wrapped into 

@@ -40,6 +40,8 @@ static char const rcsid[] =
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
 #include <algo/blast/api/blast_exception.hpp>
 
+#include <objects/seqloc/Seq_loc.hpp>
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -65,6 +67,13 @@ InitSeqInfoSrc(const BlastSeqSrc* seqsrc)
     return new CSeqDbSeqInfoSrc(db_name, is_prot);
 }
 
+CConstRef<CSeq_loc> CreateWholeSeqLocFromIds(const list< CRef<CSeq_id> > seqids)
+{
+    ASSERT(!seqids.empty());
+    CRef<CSeq_loc> retval(new CSeq_loc);
+    retval->SetWhole().Assign(**seqids.begin());
+    return retval;
+}
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

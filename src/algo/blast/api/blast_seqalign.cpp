@@ -1193,12 +1193,6 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
     return retval;
 }
 
-
-/// Constructs an empty Seq-align-set containing an empty discontinuous
-/// seq-align, and appends it to a previously constructed Seq-align-set.
-/// @param sas Pointer to a Seq-align-set, to which new object should be 
-///            appended (if not NULL).
-/// @return Resulting Seq-align-set. 
 CSeq_align_set*
 CreateEmptySeq_align_set(CSeq_align_set* sas)
 {
@@ -1246,6 +1240,60 @@ void RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query)
     }
 }
 
+/// Remap subject alignment if its location specified the reverse strand or
+/// a starting location other than the beginning of the sequence.
+/// @param subj_aligns Discontinuous Seq-align containing HSPs for a given 
+/// query-subject alignment [in|out]
+/// @param subj_loc Location of the subject sequence searched. [in]
+static void 
+s_RemapToSubjectLoc(CRef<CSeq_align> subj_aligns, const CSeq_loc& subj_loc)
+{
+    const int kSubjDimension = 1;
+    ASSERT(subj_aligns->GetSegs().IsDisc());
+    ASSERT(subj_loc.IsInt() || subj_loc.IsWhole());
+
+    /// Iterate over this subject's HSPs...
+    NON_CONST_ITERATE(CSeq_align_set::Tdata, hsp, 
+                      subj_aligns->SetSegs().SetDisc().Set()) {
+        // If subject is on a minus strand, we'll need to flip subject 
+        // strands and remap subject coordinates on all segments.
+        // Otherwise we only need to shift subject coordinates, 
+        // if the respective location starts not from 0.
+        bool reverse = (subj_loc.GetStrand() == eNa_strand_minus);
+        
+        TSeqPos s_shift = subj_loc.GetStart(eExtreme_Positional);
+        
+        // Nothing needs to be done if subject location is on forward strand 
+        // and starts from the beginning of sequence.
+        if (!reverse && s_shift == 0) {
+            continue;
+        }
+
+        for (CTypeIterator<CDense_seg> seg_itr(Begin(**hsp)); seg_itr; 
+             ++seg_itr) {
+
+            const vector<ENa_strand> strands = seg_itr->GetStrands();
+            // Create temporary CSeq_loc with strand matching the segment 
+            // strand if subject location is on forward strand,
+            // or opposite if subject is on reverse strand, to force 
+            // RemapToLoc to behave correctly.
+            CSeq_loc s_seqloc;
+            ENa_strand s_strand;
+            if (reverse) {
+                s_strand = ((strands[1] == eNa_strand_plus) ?
+                            eNa_strand_minus : eNa_strand_plus);
+            } else {
+                s_strand = strands[1];
+            }
+            s_seqloc.SetInt().SetFrom(s_shift);
+            s_seqloc.SetInt().SetTo(subj_loc.GetStop(eExtreme_Positional));
+            s_seqloc.SetInt().SetStrand(s_strand);
+            s_seqloc.SetId(*subj_loc.GetId());
+            seg_itr->RemapToLoc(kSubjDimension, s_seqloc, !reverse);
+        } // Loop on Dense-segs
+    } // One-iteration loop over subjects
+}
+
 CSeq_align_set*
 BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
                           EBlastProgramType        prog,
@@ -1261,8 +1309,6 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         return CreateEmptySeq_align_set(seq_aligns);
     }
     
-//     TSeqPos query_length = sequence::GetLength(*query.seqloc, query.scope);
-//     CConstRef<CSeq_id> query_id(&sequence::GetId(*query.seqloc, query.scope));
     CConstRef<CSeq_id> query_id(& CSeq_loc_CI(query_loc).GetSeq_id());
     
     _ASSERT(query_id);
@@ -1356,13 +1402,139 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
     return retval;
 }
 
-TSeqAlignVector
-BlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
-                          EBlastProgramType        prog,
-                          class ILocalQueryData  & query,
-                          const IBlastSeqInfoSrc * seqinfo_src,
-                          bool                     is_gapped,
-                          bool                     is_ooframe)
+/** Extracts from the BlastHSPResults structure results for only one subject 
+ * sequence, identified by its index, and converts them into a vector of 
+ * CSeq_align_set objects. Returns one vector element per query sequence; 
+ * The CSeq_align_set (list of CSeq_align's) consists of exactly one 
+ * discontinuous CSeq_align for each vector element.
+ * @param results results from running the BLAST algorithm [in]
+ * @param prog type of BLAST program [in]
+ * @param query_data All query sequences [in]
+ * @param seqinfo_src Source of subject sequences information [in]
+ * @param subject_index Index of this subject sequence in a set [in]
+ * @param is_gapped Is this a gapped search? [in]
+ * @param is_ooframe Is it a search with out-of-frame gapping? [in]
+ * @return Vector of seqalign sets (one set per query sequence).
+ */
+static TSeqAlignVector
+s_BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
+                                    ILocalQueryData& query_data,
+                                    const IBlastSeqInfoSrc& seqinfo_src,
+                                    EBlastProgramType prog, 
+                                    Uint4 subj_index, 
+                                    bool is_gapped, 
+                                    bool is_ooframe)
+{
+    ASSERT(results->num_queries == query_data.GetNumQueries());
+
+    TSeqAlignVector retval;
+    CConstRef<CSeq_id> subject_id;
+    TSeqPos subj_length = 0;
+
+    // Subject is the same for all queries, so retrieve its id right away
+    GetSequenceLengthAndId(&seqinfo_src, subj_index, subject_id, &subj_length);
+
+    // Process each query's hit list
+    for (int qindex = 0; qindex < results->num_queries; qindex++) {
+        CRef<CSeq_align_set> seq_aligns;
+        BlastHitList* hit_list = results->hitlist_array[qindex];
+        BlastHSPList* hsp_list = NULL;
+
+        // Find the HSP list corresponding to this subject, if it exists
+        if (hit_list) {
+            int sindex;
+            for (sindex = 0; sindex < hit_list->hsplist_count; ++sindex) {
+                hsp_list = hit_list->hsplist_array[sindex];
+                if (hsp_list->oid == static_cast<Int4>(subj_index))
+                    break;
+            }
+            /* If hsp_list for this subject is not found, set it to NULL */
+            if (sindex == hit_list->hsplist_count)
+                hsp_list = NULL;
+        }
+
+        if (hsp_list) {
+            // Sort HSPs with e-values as first priority and scores as 
+            // tie-breakers, since that is the order we want to see them in 
+            // in Seq-aligns.
+            Blast_HSPListSortByEvalue(hsp_list);
+
+            CRef<CSeq_align> hit_align;
+            CConstRef<CSeq_loc> seqloc = query_data.GetSeq_loc(qindex);
+            CConstRef<CSeq_id> query_id(seqloc->GetId());
+            TSeqPos query_length = query_data.GetSeqLength(qindex); 
+
+            if (is_gapped) {
+                hit_align =
+                    BLASTHspListToSeqAlign(prog, hsp_list, query_id,
+                                           subject_id, query_length, 
+                                           subj_length, is_ooframe);
+            } else {
+                hit_align =
+                    BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
+                        subject_id, query_length, subj_length);
+            }
+            ASSERT(hit_align->GetSegs().IsDisc());
+            RemapToQueryLoc(hit_align, *seqloc);
+            s_RemapToSubjectLoc(hit_align, *seqinfo_src.GetSeqLoc(subj_index));
+            seq_aligns.Reset(new CSeq_align_set());
+            seq_aligns->Set().push_back(hit_align);
+        } else {
+            seq_aligns.Reset(CreateEmptySeq_align_set(NULL));
+        }
+        retval.push_back(seq_aligns);
+    }
+
+    return retval;
+}
+
+static TSeqAlignVector
+s_BlastResults2SeqAlignSequenceCmp_OMF(const BlastHSPResults* results,
+                                       EBlastProgramType prog,
+                                       class ILocalQueryData& query_data,
+                                       const IBlastSeqInfoSrc* seqinfo_src,
+                                       bool is_gapped,
+                                       bool is_ooframe)
+{
+    TSeqAlignVector retval;
+    retval.reserve(query_data.GetNumQueries());
+
+    ASSERT(results->num_queries == (int)query_data.GetNumQueries());
+
+    for (Uint4 index = 0; index < seqinfo_src->Size(); index++) {
+        TSeqAlignVector seqalign =
+            s_BLAST_OneSubjectResults2CSeqAlign(results, query_data, 
+                                                *seqinfo_src, prog, index, 
+                                                is_gapped, is_ooframe);
+
+        /* Merge the new vector with the current. Assume that both vectors
+           contain CSeq_align_sets for all queries, i.e. have the same 
+           size. */
+        ASSERT(seqalign.size() == (size_t)query_data.GetNumQueries());
+
+        if (retval.size() == 0) {
+            // First time around, just fill the empty vector with the 
+            // seqaligns from the first subject.
+            retval.swap(seqalign);
+        } else {
+
+            for (TSeqAlignVector::size_type i = 0; i < retval.size(); ++i) {
+                retval[i]->Set().splice(retval[i]->Set().end(),
+                                       seqalign[i]->Set());
+            }
+
+        }
+    }
+    return retval;
+}
+
+static TSeqAlignVector
+s_BlastResults2SeqAlignDatabaseSearch_OMF(const BlastHSPResults  * results,
+                                          EBlastProgramType        prog,
+                                          class ILocalQueryData  & query,
+                                          const IBlastSeqInfoSrc * seqinfo_src,
+                                          bool                     is_gapped,
+                                          bool                     is_ooframe)
 {
     ASSERT(results->num_queries == (int)query.GetNumQueries());
     
@@ -1397,7 +1569,8 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                            const IBlastSeqInfoSrc& seqinfo_src,
                            EBlastProgramType   program,
                            bool                gapped,
-                           bool                oof_mode)
+                           bool                oof_mode,
+                           EResultType         result_type)
 {
     TSeqAlignVector retval;
     
@@ -1418,12 +1591,18 @@ LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                                               & seqinfo_src,
                                               query_info->pattern_info);
     } else {
-        retval = BlastResults2SeqAlign_OMF(hsp_results,
-                                           program,
-                                           local_data,
-                                           & seqinfo_src,
-                                           gapped,
-                                           oof_mode);
+        if (result_type == eSequenceComparison) {
+            retval = 
+                s_BlastResults2SeqAlignSequenceCmp_OMF(hsp_results, program, 
+                                                       local_data, &seqinfo_src,
+                                                       gapped, oof_mode);
+        } else {
+            retval = 
+                s_BlastResults2SeqAlignDatabaseSearch_OMF(hsp_results, program, 
+                                                          local_data, 
+                                                          &seqinfo_src, gapped,
+                                                          oof_mode);
+        }
     }
     
     return retval;
@@ -1438,6 +1617,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2005/11/09 20:56:26  camacho
+* Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+* as CBl2Seq and reduce redundant code.
+*
 * Revision 1.61  2005/09/28 21:03:28  camacho
 * Further rearrangement of headers/functions to segregate object manager dependencies.
 *

@@ -63,6 +63,11 @@ class ILocalQueryData;
 void
 RemapToQueryLoc(CRef<CSeq_align> sar, const CSeq_loc & query);
 
+/// Constructs an empty Seq-align-set containing an empty discontinuous
+/// seq-align, and appends it to a previously constructed Seq-align-set.
+/// @param sas Pointer to a Seq-align-set, to which new object should be 
+///            appended (if not NULL).
+/// @return Resulting Seq-align-set. 
 CSeq_align_set*
 CreateEmptySeq_align_set(CSeq_align_set* sas);
 
@@ -83,13 +88,18 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                Int4 query_length, 
                                Int4 subject_length);
 
+/** @todo Kevin comment me please
+ * @param result_type specify how to arrange the results in the return value
+ * [in]
+ */
 TSeqAlignVector
 LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                            ILocalQueryData   & local_data,
                            const IBlastSeqInfoSrc& seqinfo_src,
                            EBlastProgramType   program,
                            bool                gapped,
-                           bool                oof_mode);
+                           bool                oof_mode,
+                           EResultType         result_type = eDatabaseSearch);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -100,6 +110,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2005/11/09 20:56:26  camacho
+* Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+* as CBl2Seq and reduce redundant code.
+*
 * Revision 1.31  2005/09/28 21:03:28  camacho
 * Further rearrangement of headers/functions to segregate object manager dependencies.
 *

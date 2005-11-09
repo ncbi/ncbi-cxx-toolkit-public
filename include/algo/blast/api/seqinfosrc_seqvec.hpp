@@ -57,8 +57,12 @@ public:
     virtual ~CSeqVecSeqInfoSrc();
     /// Retrieve a sequence identifier given its index in the vector.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
+    /// Method to retrieve the sequence location given its ordinal number.
+    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const;
     /// Retrieve sequence length given its index in the vector.
     virtual Uint4 GetLength(Uint4 index) const;
+    /// Returns the size of the underlying container of sequences
+    virtual size_t Size() const;
 private:
     TSeqLocVector m_SeqVec; ///< Vector of subject sequence locations to get 
                             /// information from
@@ -72,6 +76,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/11/09 20:56:26  camacho
+ * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+ * as CBl2Seq and reduce redundant code.
+ *
  * Revision 1.7  2005/09/28 18:21:34  camacho
  * Rearrangement of headers/functions to segregate object manager dependencies.
  *

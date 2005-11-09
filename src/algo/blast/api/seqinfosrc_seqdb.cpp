@@ -36,7 +36,10 @@ static char const rcsid[] =
  */
 
 #include <ncbi_pch.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <algo/blast/api/seqinfosrc_seqdb.hpp>
+#include "blast_aux_priv.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -68,9 +71,19 @@ list< CRef<CSeq_id> > CSeqDbSeqInfoSrc::GetId(Uint4 index) const
     return m_iSeqDb->GetSeqIDs(index);
 }
 
+CConstRef<CSeq_loc> CSeqDbSeqInfoSrc::GetSeqLoc(Uint4 index) const
+{
+    return CreateWholeSeqLocFromIds(GetId(index));
+}
+
 Uint4 CSeqDbSeqInfoSrc::GetLength(Uint4 index) const
 {
     return m_iSeqDb->GetSeqLength(index);
+}
+
+size_t CSeqDbSeqInfoSrc::Size() const
+{
+    return m_iSeqDb->GetNumOIDs();
 }
 
 END_SCOPE(blast)
@@ -82,6 +95,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/11/09 20:56:26  camacho
+ * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+ * as CBl2Seq and reduce redundant code.
+ *
  * Revision 1.4  2005/08/08 16:29:36  dondosha
  * Added constructor from a CSeqDB instance
  *

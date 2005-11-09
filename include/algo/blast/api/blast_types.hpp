@@ -42,9 +42,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-/// Vector of Seq-align-sets
-typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
-
 /// This enumeration is to evolve into a task/program specific list that 
 /// specifies sets of default parameters to easily conduct searches using
 /// BLAST.
@@ -70,6 +67,17 @@ enum EProgram {
     eBlastProgramMax    ///< Undefined program
 };
 
+/// Specifies the style of Seq-aligns that should be built from the
+/// internal BLAST data structures
+enum EResultType {
+    eDatabaseSearch,    ///< Seq-aligns in the style of a database search
+    eSequenceComparison /**< Seq-aligns in the BLAST 2 Sequence style (one
+                         alignment per query-subject pair) */
+};
+
+/// Vector of Seq-align-sets
+typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -77,6 +85,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/11/09 20:56:26  camacho
+* Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+* as CBl2Seq and reduce redundant code.
+*
 * Revision 1.20  2005/09/28 18:21:34  camacho
 * Rearrangement of headers/functions to segregate object manager dependencies.
 *

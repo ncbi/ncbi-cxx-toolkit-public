@@ -92,6 +92,8 @@ public:
     /// Accessor for the most recently used PSSM
     CConstRef<objects::CPssmWithParameters> GetPssm() const;
 
+    void SetResultType(EResultType type);
+
 private:
 
     /// PSSM to be used as query
@@ -108,6 +110,9 @@ private:
 
     /// Holds a reference to the results
     CSearchResultSet m_Results;
+
+    /// Specifies how the results should be produced
+    EResultType m_ResultType;
 
     /// Prohibit copy constructor
     CPsiBlastImpl(const CPsiBlastImpl& rhs);

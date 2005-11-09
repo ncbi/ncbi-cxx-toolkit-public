@@ -64,8 +64,12 @@ public:
     virtual ~CSeqDbSeqInfoSrc();
     /// Retrieve a sequence identifier given its ordinal number.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 oid) const;
+    /// Method to retrieve the sequence location given its ordinal number.
+    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 oid) const;
     /// Retrieve sequence length given its ordinal number.
     virtual Uint4 GetLength(Uint4 oid) const;
+    /// Returns the size of the underlying container of sequences
+    virtual size_t Size() const;
 
 private:
     CRef<CSeqDB> m_iSeqDb; ///< BLAST database object
@@ -79,6 +83,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2005/11/09 20:56:26  camacho
+ * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+ * as CBl2Seq and reduce redundant code.
+ *
  * Revision 1.8  2005/09/26 21:17:15  camacho
  * Minor
  *

@@ -44,6 +44,7 @@
 #include "repeats_filter.hpp"
 #include "blast_seqalign.hpp"
 #include "blast_objmgr_priv.hpp"
+#include <algo/blast/api/objmgr_query_data.hpp>
 
 // NewBlast includes
 #include <algo/blast/core/blast_def.h>
@@ -304,49 +305,18 @@ CBl2Seq::ScanDB()
 TSeqAlignVector
 CBl2Seq::x_Results2SeqAlign()
 {
-    TSeqAlignVector retval;
-    retval.reserve(m_tQueries.size());
-
-    ASSERT(mi_pResults->num_queries == (int)m_tQueries.size());
-
+    EBlastProgramType program = m_OptsHandle->GetOptions().GetProgramType();
     bool gappedMode = m_OptsHandle->GetGappedMode();
     bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
-    Uint4 index;
 
     CSeqVecSeqInfoSrc seqinfo_src(m_tSubjects);
+    CObjMgr_QueryFactory qf(m_tQueries);
+    CRef<ILocalQueryData> query_data =
+        qf.MakeLocalQueryData(&m_OptsHandle->GetOptions());
 
-    for (index = 0; index < m_tSubjects.size(); ++index)
-    {
-        TSeqAlignVector seqalign =
-            BLAST_OneSubjectResults2CSeqAlign(mi_pResults,
-                 m_OptsHandle->GetOptions().GetProgramType(),
-                 m_tQueries, &seqinfo_src, index, 
-                 gappedMode, outOfFrameMode);
-
-        /* Merge the new vector with the current. Assume that both vectors
-           contain CSeq_align_sets for all queries, i.e. have the same 
-           size. */
-        ASSERT(seqalign.size() == m_tQueries.size());
-
-        if (retval.size() == 0) {
-            // First time around, just fill the empty vector with the 
-            // seqaligns from the first subject.
-            retval.swap(seqalign);
-        } else {
-
-            for (unsigned int i = 0; i < retval.size(); ++i) {
-                retval[i]->Set().splice(retval[i]->Set().end(),
-                                       seqalign[i]->Set());
-            }
-
-        }
-    }
-
-    // Remap subject coordinates in Seq-aligns if some of the subject locations
-    // are on reverse strands or do not start from the beginning of sequences.
-    Blast_RemapToSubjectLoc(retval, m_tSubjects);
-
-    return retval;
+    return LocalBlastResults2SeqAlign(mi_pResults, *query_data, seqinfo_src,
+                                      program, gappedMode, outOfFrameMode,
+                                      eSequenceComparison);
 }
 
 Blast_Message* 
@@ -381,6 +351,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.86  2005/11/09 20:56:26  camacho
+ * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+ * as CBl2Seq and reduce redundant code.
+ *
  * Revision 1.85  2005/10/25 14:19:02  camacho
  * Perform repeats filtering as part of set up
  *

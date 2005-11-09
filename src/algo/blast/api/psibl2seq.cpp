@@ -36,18 +36,11 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/psibl2seq.hpp>
-#include "subject_psi_sequences.hpp"
 #include "psiblast_impl.hpp"
-
-#include <objects/scoremat/PssmWithParameters.hpp>
-
-//#include <algo/blast/api/blast_subject.hpp>
-#include <corelib/ncbiobj.hpp>
+#include "subject_psi_sequences.hpp"
 #include <algo/blast/api/query_data.hpp>
-#include <algo/blast/api/blast_options.hpp>
-#include <algo/blast/api/blast_options_handle.hpp>
-#include <algo/blast/api/blast_prot_options.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -101,6 +94,7 @@ CPsiBl2Seq::~CPsiBl2Seq()
 CRef<CSearchResults>
 CPsiBl2Seq::Run()
 {
+    m_Impl->SetResultType(eSequenceComparison);
     return m_Impl->Run();
 }
 

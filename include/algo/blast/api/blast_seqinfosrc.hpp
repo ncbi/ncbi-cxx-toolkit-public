@@ -34,8 +34,9 @@
  * Defines interface for retrieving sequence identifiers.
  */
 
+#include <corelib/ncbiobj.hpp>
 #include <algo/blast/core/blast_export.h>
-#include <objects/seqloc/Seq_id.hpp>
+#include <list>
 
 /** @addtogroup AlgoBlast
  *
@@ -43,6 +44,12 @@
  */
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_id;
+    class CSeq_loc;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(blast)
 
 /// Abstract base class to encapsulate retrieval of sequence identifiers. 
@@ -54,8 +61,12 @@ public:
 	virtual ~IBlastSeqInfoSrc() {}
     /// Method to retrieve a sequence identifier given its ordinal number.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const = 0;
+    /// Method to retrieve the sequence location given its ordinal number.
+    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const = 0;
     /// Method to retrieve a sequence length given its ordinal number.
     virtual Uint4 GetLength(Uint4 index) const = 0;
+    /// Returns the size of the underlying container of sequences
+    virtual size_t Size() const = 0;
 };
 
 /** Retrieves subject sequence Seq-id and length.
@@ -79,6 +90,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/11/09 20:56:26  camacho
+ * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+ * as CBl2Seq and reduce redundant code.
+ *
  * Revision 1.7  2005/10/14 13:44:53  camacho
  * Remove unneeded forward declaration
  *

@@ -46,7 +46,6 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
-    class CSeq_id;
     class CBioseq;
     class CBioseq_set;
 END_SCOPE(objects)
@@ -70,8 +69,12 @@ public:
     CBioseqSeqInfoSrc(const objects::CBioseq_set& bss, bool is_prot);
     /// Retrieve a sequence identifier given its index in the vector.
     virtual list< CRef<objects::CSeq_id> > GetId(Uint4 index) const;
+    /// Retrieve a sequence identifier given its index in the vector.
+    virtual CConstRef<objects::CSeq_loc> GetSeqLoc(Uint4 index) const;
     /// Retrieve sequence length given its index in the vector.
     virtual Uint4 GetLength(Uint4 index) const;
+    /// Returns the size of the underlying container of sequences
+    virtual size_t Size() const;
 private:
     CBlastQuerySourceBioseqSet m_DataSource;
 };

@@ -80,6 +80,15 @@ list< CRef<CSeq_id> > CSeqVecSeqInfoSrc::GetId(Uint4 index) const
     return seqid_list;
 }
 
+CConstRef<CSeq_loc> CSeqVecSeqInfoSrc::GetSeqLoc(Uint4 index) const
+{
+    if (index >= m_SeqVec.size()) {
+        NCBI_THROW(CBlastException, eInvalidArgument, 
+                   "Index out of range for Seq-loc retrieval");
+    }
+    return m_SeqVec[index].seqloc;
+}
+
 Uint4 CSeqVecSeqInfoSrc::GetLength(Uint4 index) const
 {
     if (index >= m_SeqVec.size()) {
@@ -91,6 +100,11 @@ Uint4 CSeqVecSeqInfoSrc::GetLength(Uint4 index) const
                                m_SeqVec[index].scope);
 }
 
+size_t CSeqVecSeqInfoSrc::Size() const
+{
+    return m_SeqVec.size();
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -100,6 +114,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/11/09 20:56:26  camacho
+ * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
+ * as CBl2Seq and reduce redundant code.
+ *
  * Revision 1.4  2005/07/07 16:32:12  camacho
  * Revamping of BLAST exception classes and error codes
  *

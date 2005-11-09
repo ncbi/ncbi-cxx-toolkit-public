@@ -42,14 +42,13 @@ static char const rcsid[] =
 #include <algo/blast/api/traceback_stage.hpp>
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/blast_exception.hpp>
-#include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
 
 // Object includes
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmFinalData.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
-#include <objects/seqset/Seq_entry.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -199,6 +198,7 @@ CPsiBlastImpl::Run()
     IBlastSeqInfoSrc* seqinfo_src(m_Subject->MakeSeqInfoSrc());
     ASSERT(seqinfo_src);
     CBlastTracebackSearch tback(m_Query, core_data, opts, *seqinfo_src);
+    tback.SetResultType(m_ResultType);
     m_Results = tback.Run();
     return CRef<CSearchResults>(&m_Results[0]);
 }
@@ -212,6 +212,12 @@ CPsiBlastImpl::SetPssm(CConstRef<objects::CPssmWithParameters> pssm)
     }
     CPsiBlastValidate::Pssm(*pssm, true);
     m_Pssm.Reset(const_cast<CPssmWithParameters*>(&*pssm));
+}
+
+void
+CPsiBlastImpl::SetResultType(EResultType type)
+{
+    m_ResultType = type;
 }
 
 CConstRef<CPssmWithParameters>

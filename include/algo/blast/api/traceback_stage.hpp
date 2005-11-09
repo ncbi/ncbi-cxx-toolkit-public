@@ -83,6 +83,8 @@ public:
     virtual ~CBlastTracebackSearch();
     
     CSearchResultSet Run();
+
+    void SetResultType(EResultType type);
     
 private:
     /// Common initialization performed when doing traceback only
@@ -111,6 +113,10 @@ private:
     IBlastSeqInfoSrc* m_SeqInfoSrc;
     /// True if the field above must be deleted by this class, false otherwise
     bool m_OwnSeqInfoSrc;
+
+    /// Determines if BLAST database search or BLAST 2 sequences style of
+    /// results should be produced
+    EResultType m_ResultType;
 };
 
 END_SCOPE(BLAST)

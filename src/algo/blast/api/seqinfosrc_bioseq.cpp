@@ -41,6 +41,7 @@ static char const rcsid[] =
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include "blast_aux_priv.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -74,9 +75,19 @@ list< CRef<CSeq_id> > CBioseqSeqInfoSrc::GetId(Uint4 index) const
     return retval;
 }
 
+CConstRef<CSeq_loc> CBioseqSeqInfoSrc::GetSeqLoc(Uint4 index) const
+{
+    return CreateWholeSeqLocFromIds(GetId(index));
+}
+
 Uint4 CBioseqSeqInfoSrc::GetLength(Uint4 index) const
 {
     return static_cast<Uint4>(m_DataSource.GetLength(static_cast<int>(index)));
+}
+
+size_t CBioseqSeqInfoSrc::Size() const
+{
+    return (size_t)m_DataSource.Size();
 }
 
 END_SCOPE(blast)
