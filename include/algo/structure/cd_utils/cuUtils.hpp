@@ -48,6 +48,25 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
+static int CDTreeColorCycle[] ={
+    0x000000,  // black
+    0xff0000,  // red
+    0x149600,  // dark green
+    0x0000ff,  // dark blue
+    0xb428ff,  // purple
+    0xff8c1a,  // orange
+    0x00ffff,  // light blue
+    0xff499b,  // pink
+    0xc89600,  // brown
+    0x00ff00,  // light green
+    0xaaaaaa,  // gray
+    0xcee000,  // olive
+    0x4a85ff,  // blue
+    0xffc800,  // light orange
+    0xc800bc,  // maroon
+    0xeeee00,  // yellow
+};
+
 string GetSeqIDStr(const CSeq_id& SeqID);
 string GetSeqIDStr(const CRef< CSeq_id >& SeqID);
 void Make_GI_or_PDB_String(const CRef< CSeq_id > SeqID, std::string& Str, bool Pad, int Len);
@@ -69,6 +88,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/11/09 20:47:46  hurwitz
+ * make a common color cycle
+ *
  * Revision 1.1  2005/04/19 14:28:01  lanczyck
  * initial version under algo/structure
  *
