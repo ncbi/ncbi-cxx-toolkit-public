@@ -43,11 +43,9 @@
 
 BEGIN_NCBI_SCOPE
 
-#ifdef _DEBUG
-#define CHECK_STREAM_INTEGRITY 1
-#else
-#undef CHECK_STREAM_INTEGRITY
-#endif
+#define CHECK_INSTREAM_STATE      1
+#define CHECK_INSTREAM_LIMITS     0
+#define CHECK_OUTSTREAM_INTEGRITY 0
 
 class NCBI_XSERIAL_EXPORT CAsnBinaryDefs
 {
@@ -146,6 +144,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2005/11/09 20:00:47  gouriano
+* Reviewed stream integrity checks to increase the number of them in Release mode
+*
 * Revision 1.12  2005/04/27 17:01:38  vasilche
 * Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
 * Used enums to represent ASN.1 constants whenever possible.

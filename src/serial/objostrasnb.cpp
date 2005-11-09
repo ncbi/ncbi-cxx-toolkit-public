@@ -65,7 +65,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out), m_FixMethod(how)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_OUTSTREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
     m_CurrentTagLimit = 0;
@@ -77,7 +77,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out, deleteOut), m_FixMethod(how)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_OUTSTREAM_INTEGRITY
     m_CurrentPosition = 0;
     m_CurrentTagState = eTagStart;
     m_CurrentTagLimit = 0;
@@ -86,13 +86,13 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
 
 CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_OUTSTREAM_INTEGRITY
     if ( !m_Limits.empty() || m_CurrentTagState != eTagStart )
         ERR_POST("CObjectOStreamAsnBinary not finished");
 #endif
 }
 
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_OUTSTREAM_INTEGRITY
 inline
 void CObjectOStreamAsnBinary::StartTag(Uint1 code)
 {
@@ -119,8 +119,7 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
     if ( limit <= m_CurrentPosition ||
         (m_CurrentTagLimit != 0 && limit > m_CurrentTagLimit) )
         ThrowError(fIllegalCall, "tag will overflow enclosing tag");
-    else
-        m_CurrentTagLimit = limit;
+    m_CurrentTagLimit = limit;
     if ( GetTagConstructed(m_CurrentTagCode) ) // constructed
         m_CurrentTagState = eTagStart;
     else
@@ -130,12 +129,12 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 }
 #endif
 
-#if !CHECK_STREAM_INTEGRITY
+#if !CHECK_OUTSTREAM_INTEGRITY
 inline
 #endif
 void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_OUTSTREAM_INTEGRITY
     //_TRACE("WriteByte: " << NStr::PtrToString(byte));
     if ( m_CurrentTagLimit != 0 &&
          m_CurrentPosition >= m_CurrentTagLimit )
@@ -190,7 +189,7 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
         break;
     case eData:
         _ASSERT( m_CurrentTagLimit != 0);
-        if ( m_CurrentPosition + CNcbiStreamoff(1) == m_CurrentTagLimit )
+        if ( m_CurrentPosition + 1 == m_CurrentTagLimit )
             EndTag();
         break;
     }
@@ -199,14 +198,14 @@ void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
     m_Output.PutChar(byte);
 }
 
-#if !CHECK_STREAM_INTEGRITY
+#if !CHECK_OUTSTREAM_INTEGRITY
 inline
 #endif
 void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 {
     if ( size == 0 )
         return;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_OUTSTREAM_INTEGRITY
     //_TRACE("WriteBytes: " << size);
     if ( m_CurrentTagState != eData )
         ThrowError(fIllegalCall, "WriteBytes only allowed in DATA");
@@ -1125,6 +1124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.99  2005/11/09 20:01:08  gouriano
+* Reviewed stream integrity checks to increase the number of them in Release mode
+*
 * Revision 1.98  2005/11/07 18:40:49  gouriano
 * Use Int8 in stream position calculations
 *

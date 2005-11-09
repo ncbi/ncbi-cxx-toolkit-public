@@ -174,7 +174,7 @@ private:
     void WriteNumberValue(Uint4 data);
     void WriteNumberValue(Uint8 data);
 
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_OUTSTREAM_INTEGRITY
     Int8 m_CurrentPosition;
     enum ETagState {
         eTagStart,
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/11/09 20:00:47  gouriano
+* Reviewed stream integrity checks to increase the number of them in Release mode
+*
 * Revision 1.49  2005/11/07 18:40:10  gouriano
 * Use Int8 in stream position calculations
 *

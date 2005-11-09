@@ -155,6 +155,15 @@ private:
 
     bool SkipRealValue(void);
 
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
+
+#if CHECK_INSTREAM_STATE
+    enum ETagState {
+        eTagStart,
+        eTagParsed,
+        eLengthValue,
+        eData
+    };
     // states:
     // before StartTag (Peek*Tag/ExpectSysTag) tag:
     //     m_CurrentTagLength == 0
@@ -173,20 +182,13 @@ private:
     // m_CurrentTagLength == beginning of LENGTH field
     //                         -- after any of Peek?Tag or ExpectSysTag
     // 
-    size_t m_CurrentTagLength;  // length of tag header (without length field)
-    Int8 m_CurrentTagLimit;   // end of current tag data
-    stack<Int8> m_Limits;
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
-
-#if CHECK_STREAM_INTEGRITY
-    enum ETagState {
-        eTagStart,
-        eTagParsed,
-        eLengthValue,
-        eData
-    };
     ETagState m_CurrentTagState;
 #endif
+#if CHECK_INSTREAM_LIMITS
+    Int8 m_CurrentTagLimit;   // end of current tag data
+    stack<Int8> m_Limits;
+#endif
+    size_t m_CurrentTagLength;  // length of tag header (without length field)
 
     // low level interface
 private:
@@ -252,6 +254,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/11/09 20:00:47  gouriano
+* Reviewed stream integrity checks to increase the number of them in Release mode
+*
 * Revision 1.50  2005/11/07 18:40:10  gouriano
 * Use Int8 in stream position calculations
 *

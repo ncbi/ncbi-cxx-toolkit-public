@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2005/11/09 20:01:08  gouriano
+* Reviewed stream integrity checks to increase the number of them in Release mode
+*
 * Revision 1.80  2005/11/07 18:40:49  gouriano
 * Use Int8 in stream position calculations
 *
@@ -363,8 +366,10 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamAsnBinary(void)
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
     : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
+#endif
+#if CHECK_INSTREAM_LIMITS
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
@@ -374,8 +379,10 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
                                                  EFixNonPrint how)
     : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
+#endif
+#if CHECK_INSTREAM_LIMITS
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
@@ -387,8 +394,10 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
                                                  EFixNonPrint how)
     : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
+#endif
+#if CHECK_INSTREAM_LIMITS
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
@@ -399,34 +408,15 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
                                                  EFixNonPrint how)
     : CObjectIStream(eSerial_AsnBinary), m_FixMethod(how)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
+#endif
+#if CHECK_INSTREAM_LIMITS
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
     Open(reader);
 }
-
-#if CHECK_STREAM_INTEGRITY
-CObjectIStreamAsnBinary::TByte
-CObjectIStreamAsnBinary::PeekTagByte(size_t index)
-{
-    if ( m_CurrentTagState != eTagStart )
-        ThrowError(fIllegalCall,
-            "illegal PeekTagByte call: only allowed at tag start");
-    return m_Input.PeekChar(index);
-}
-
-CObjectIStreamAsnBinary::TByte
-CObjectIStreamAsnBinary::StartTag(TByte first_tag_byte)
-{
-    if ( m_CurrentTagLength != 0 )
-        ThrowError(fIllegalCall,
-            "illegal StartTag call: current tag length != 0");
-    _ASSERT(PeekTagByte() == first_tag_byte);
-    return first_tag_byte;
-}
-#endif
 
 CObjectIStreamAsnBinary::TLongTag
 CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
@@ -434,10 +424,10 @@ CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
     TByte byte = StartTag(first_tag_byte);
     ETagValue sysTag = GetTagValue(byte);
     if ( sysTag != eLongTag ) {
-        m_CurrentTagLength = 1;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
         m_CurrentTagState = eTagParsed;
 #endif
+        m_CurrentTagLength = 1;
         return sysTag;
     }
     TLongTag tag = 0;
@@ -452,10 +442,10 @@ CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte)
         byte = PeekTagByte(i++);
         tag = (tag << 7) | (byte & 0x7f);
     } while ( (byte & 0x80) != 0 );
-    m_CurrentTagLength = i;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagParsed;
 #endif
+    m_CurrentTagLength = i;
     return tag;
 }
 
@@ -482,10 +472,10 @@ string CObjectIStreamAsnBinary::PeekClassTag(void)
             ThrowError(fOverflow, "tag number is too big (greater than 1024)");
         }
     }
-    m_CurrentTagLength = i;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagParsed;
 #endif
+    m_CurrentTagLength = i;
     name += char(c & 0x7f);
     return name;
 }
@@ -495,10 +485,10 @@ CObjectIStreamAsnBinary::PeekAnyTagFirstByte(void)
 {
     TByte fByte = StartTag(PeekTagByte());
     if ( GetTagValue(fByte) != eLongTag ) {
-        m_CurrentTagLength = 1;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
         m_CurrentTagState = eTagParsed;
 #endif
+        m_CurrentTagLength = 1;
         return fByte;
     }
     size_t i = 1;
@@ -509,10 +499,10 @@ CObjectIStreamAsnBinary::PeekAnyTagFirstByte(void)
         }
         byte = PeekTagByte(i++);
     } while ( (byte & 0x80) != 0 );
-    m_CurrentTagLength = i;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagParsed;
 #endif
+    m_CurrentTagLength = i;
     return fByte;
 }
 
@@ -529,43 +519,54 @@ void CObjectIStreamAsnBinary::UnexpectedByte(TByte byte)
                "byte " + NStr::IntToString(byte) + " expected");
 }
 
-#if CHECK_STREAM_INTEGRITY
+inline
 CObjectIStreamAsnBinary::TByte
 CObjectIStreamAsnBinary::FlushTag(void)
 {
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagState != eTagParsed || m_CurrentTagLength == 0 )
         ThrowError(fIllegalCall, "illegal FlushTag call");
-    m_Input.SkipChars(m_CurrentTagLength);
     m_CurrentTagState = eLengthValue;
+#endif
+    m_Input.SkipChars(m_CurrentTagLength);
     return TByte(m_Input.GetChar());
 }
 
+inline
 bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 {
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagState != eTagParsed )
         ThrowError(fIllegalCall, "illegal PeekIndefiniteLength call");
-    return
-        TByte(m_Input.PeekChar(m_CurrentTagLength)) == eIndefiniteLengthByte;
+#endif
+    return TByte(m_Input.PeekChar(m_CurrentTagLength)) == eIndefiniteLengthByte;
 }
 
+inline
 void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
 {
     // indefinite length allowed only for constructed tags
     if ( !GetTagConstructed(m_Input.PeekChar()) )
         ThrowError(fIllegalCall, "illegal ExpectIndefiniteLength call");
-    if ( FlushTag() != eIndefiniteLengthByte ) {
-        ThrowError(fFormatError, "indefinite length is expected");
-    }
+#if CHECK_INSTREAM_LIMITS
     _ASSERT(m_CurrentTagLimit == 0);
     // save tag limit
     // tag limit is not changed
     m_Limits.push(m_CurrentTagLimit);
+#endif
+    if ( FlushTag() != eIndefiniteLengthByte ) {
+        ThrowError(fFormatError, "indefinite length is expected");
+    }
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
+#endif
     m_CurrentTagLength = 0;
 }
 
+inline
 size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
 {
+#if CHECK_INSTREAM_LIMITS
     Int8 cur_pos = m_Input.GetStreamPosAsInt8();
     Int8 newLimit = cur_pos + length;
     _ASSERT(newLimit >= cur_pos);
@@ -573,10 +574,12 @@ size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
     _ASSERT(currentLimit == 0 || newLimit <= currentLimit);
     m_Limits.push(currentLimit);
     m_CurrentTagLimit = newLimit;
+#endif
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eData;
+#endif
     return length;
 }
-#endif
 
 size_t CObjectIStreamAsnBinary::ReadShortLength(void)
 {
@@ -625,63 +628,55 @@ void CObjectIStreamAsnBinary::ExpectShortLength(size_t length)
     }
 }
 
-#if CHECK_STREAM_INTEGRITY
-void CObjectIStreamAsnBinary::EndOfTag(void)
-{
-    if ( m_CurrentTagState != eData )
-        ThrowError(fIllegalCall, "illegal EndOfTag call");
-    // check for all bytes read
-    if ( m_CurrentTagLimit != 0 &&
-         m_Input.GetStreamPosAsInt8() != m_CurrentTagLimit ) {
-            ThrowError(fIllegalCall,
-                       "illegal EndOfTag call: not all data bytes read");
-    }
-    m_CurrentTagState = eTagStart;
-    m_CurrentTagLength = 0;
-    // restore tag limit from stack
-    m_CurrentTagLimit = m_Limits.top();
-    m_Limits.pop();
-    _ASSERT(m_CurrentTagLimit == 0);
-}
-
+inline
 void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 {
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagState != eTagStart || m_CurrentTagLength != 0 )
         ThrowError(fIllegalCall, "illegal ExpectEndOfContent call");
+#endif
     if ( !m_Input.SkipExpectedChars(char(eEndOfContentsByte),
                                     char(eZeroLengthByte)) ) {
         ThrowError(eFormatError, "end of content expected");
     }
+#if CHECK_INSTREAM_LIMITS
     _ASSERT(m_CurrentTagLimit == 0);
     // restore tag limit from stack
     m_CurrentTagLimit = m_Limits.top();
     m_Limits.pop();
     _ASSERT(m_CurrentTagLimit == 0);
+#endif
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
+#endif
     m_CurrentTagLength = 0;
 }
 
+inline
 Uint1 CObjectIStreamAsnBinary::ReadByte(void)
 {
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagState != eData )
         ThrowError(fIllegalCall, "illegal ReadByte call");
+#endif
+#if CHECK_INSTREAM_LIMITS
     if ( m_CurrentTagLimit != 0 &&
          m_Input.GetStreamPosAsInt8() >= m_CurrentTagLimit )
         ThrowError(fOverflow, "tag size overflow");
-    return m_Input.GetChar();
-}
 #endif
+    return Uint1(m_Input.GetChar());
+}
 
 void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagState != eData ) {
         ThrowError(fIllegalCall, "illegal ReadBytes call");
     }
 #endif
     if ( count == 0 )
         return;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_LIMITS
     Int8 cur_pos = m_Input.GetStreamPosAsInt8();
     Int8 end_pos = cur_pos + count;
     if ( end_pos < cur_pos ||
@@ -693,14 +688,14 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
 
 void CObjectIStreamAsnBinary::ReadBytes(string& str, size_t count)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagState != eData ) {
         ThrowError(fIllegalCall, "illegal ReadBytes call");
     }
 #endif
     if ( count == 0 )
         return;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_LIMITS
     Int8 cur_pos = m_Input.GetStreamPosAsInt8();
     Int8 end_pos = cur_pos + count;
     if ( end_pos < cur_pos ||
@@ -712,14 +707,14 @@ void CObjectIStreamAsnBinary::ReadBytes(string& str, size_t count)
 
 void CObjectIStreamAsnBinary::SkipBytes(size_t count)
 {
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     if ( m_CurrentTagState != eData ) {
         ThrowError(fIllegalCall, "illegal ReadBytes call");
     }
 #endif
     if ( count == 0 )
         return;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_LIMITS
     Int8 cur_pos = m_Input.GetStreamPosAsInt8();
     Int8 end_pos = cur_pos + count;
     if ( end_pos < cur_pos ||

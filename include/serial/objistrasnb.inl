@@ -32,11 +32,16 @@
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 */
 
-#if !CHECK_STREAM_INTEGRITY
+
 inline
 CObjectIStreamAsnBinary::TByte
 CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
+#if CHECK_INSTREAM_STATE
+    if ( m_CurrentTagState != eTagStart )
+        ThrowError(fIllegalCall,
+            "illegal PeekTagByte call: only allowed at tag start");
+#endif
     return TByte(m_Input.PeekChar(index));
 }
 
@@ -44,38 +49,35 @@ inline
 CObjectIStreamAsnBinary::TByte
 CObjectIStreamAsnBinary::StartTag(TByte first_tag_byte)
 {
+    if ( m_CurrentTagLength != 0 )
+        ThrowError(fIllegalCall,
+            "illegal StartTag call: current tag length != 0");
+    _ASSERT(PeekTagByte() == first_tag_byte);
     return first_tag_byte;
 }
 
 inline
-CObjectIStreamAsnBinary::TByte
-CObjectIStreamAsnBinary::FlushTag(void)
+void CObjectIStreamAsnBinary::EndOfTag(void)
 {
-    m_Input.SkipChars(m_CurrentTagLength);
-    return TByte(m_Input.GetChar());
-}
-
-inline
-bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
-{
-    return TByte(m_Input.PeekChar(m_CurrentTagLength))==eIndefiniteLengthByte;
-}
-
-inline
-void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
-{
-    if ( !m_Input.SkipExpectedChar(char(eIndefiniteLengthByte),
-                                   m_CurrentTagLength) ) {
-        ThrowError(eFormatError, "indefinite length is expected");
-    }
-}
-
-inline
-size_t CObjectIStreamAsnBinary::StartTagData(size_t length)
-{
-    return length;
-}
+#if CHECK_INSTREAM_STATE
+    if ( m_CurrentTagState != eData )
+        ThrowError(fIllegalCall, "illegal EndOfTag call");
+    m_CurrentTagState = eTagStart;
 #endif
+#if CHECK_INSTREAM_LIMITS
+    // check for all bytes read
+    if ( m_CurrentTagLimit != 0 &&
+         m_Input.GetStreamPosAsInt8() != m_CurrentTagLimit ) {
+            ThrowError(fIllegalCall,
+                       "illegal EndOfTag call: not all data bytes read");
+    }
+    // restore tag limit from stack
+    m_CurrentTagLimit = m_Limits.top();
+    m_Limits.pop();
+    _ASSERT(m_CurrentTagLimit == 0);
+#endif
+    m_CurrentTagLength = 0;
+}
 
 inline
 void CObjectIStreamAsnBinary::ExpectSysTagByte(TByte byte)
@@ -83,7 +85,7 @@ void CObjectIStreamAsnBinary::ExpectSysTagByte(TByte byte)
     if ( StartTag(PeekTagByte()) != byte )
         UnexpectedSysTagByte(byte);
     m_CurrentTagLength = 1;
-#if CHECK_STREAM_INTEGRITY
+#if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagParsed;
 #endif
 }
@@ -131,29 +133,6 @@ CObjectIStreamAsnBinary::PeekTag(TByte first_tag_byte,
     return PeekTag(first_tag_byte);
 }
 
-#if !CHECK_STREAM_INTEGRITY
-inline
-void CObjectIStreamAsnBinary::EndOfTag(void)
-{
-}
-
-inline
-void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
-{
-    if ( !m_Input.SkipExpectedChars(char(eEndOfContentsByte),
-                                    char(eZeroLengthByte)) ) {
-        ThrowError(eFormatError, "end of content expected");
-    }
-    m_CurrentTagLength = 0;
-}
-
-inline
-Uint1 CObjectIStreamAsnBinary::ReadByte(void)
-{
-    return Uint1(m_Input.GetChar());
-}
-#endif
-
 inline
 Int1 CObjectIStreamAsnBinary::ReadSByte(void)
 {
@@ -179,6 +158,9 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/11/09 20:00:47  gouriano
+* Reviewed stream integrity checks to increase the number of them in Release mode
+*
 * Revision 1.9  2005/04/27 17:01:38  vasilche
 * Converted namespace CObjectStreamAsnBinaryDefs to class CAsnBinaryDefs.
 * Used enums to represent ASN.1 constants whenever possible.
