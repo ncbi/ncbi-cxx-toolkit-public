@@ -716,7 +716,7 @@ public:
     /// 
     /// @param afv
     ///   The alias file contents will be returned here.
-    void GetAliasFileValues(TAliasFileValues & afv) const;
+    void GetAliasFileValues(TAliasFileValues & afv);
     
     /// Get taxonomy information
     /// 

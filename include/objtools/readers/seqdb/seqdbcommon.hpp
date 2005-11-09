@@ -231,8 +231,19 @@ public:
     CSeqDBFileGiList(const string & fname);
 };
 
-/// Alias file contents will be returned in this type of container.
-typedef map< string, vector< map<string, string> > > TSeqDBAliasFileValues;
+
+// The "instance" concept in the following types refers to the fact
+// that each alias file has a seperately instantiated node for each
+// point where it appears in the alias file hierarchy.
+
+/// Set of values found in one instance of one alias file.
+typedef map<string, string> TSeqDBAliasFileInstance;
+
+/// Contents of all instances of a particular alias file pathname.
+typedef vector< TSeqDBAliasFileInstance > TSeqDBAliasFileVersions;
+
+/// Contents of all alias file are returned in this type of container.
+typedef map< string, TSeqDBAliasFileVersions > TSeqDBAliasFileValues;
 
 
 /// SSeqDBTaxInfo
