@@ -5,8 +5,7 @@
 ulimit -n 1024 > /dev/null 2>&1
 
 # Declare drivers and servers
-# ftds63 doesn't work currently
-driver_list="ctlib dblib ftds odbc msdblib" # mysql
+driver_list="ctlib dblib ftds ftds63 odbc msdblib" # mysql
 server_list="MS_DEV1 STRAUSS MOZART"
 server_mssql="MS_DEV1"
 
@@ -103,6 +102,12 @@ EOF
             if test \( $driver = "odbc" -o $driver = "msdblib" \) -a  $server != $server_mssql ; then
                 continue
             fi
+
+            if test $driver = "ftds63" ; then
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_unit_test -d $driver -S $server (skipped)"
+                continue
+            fi
+
 
             cat <<EOF
 
