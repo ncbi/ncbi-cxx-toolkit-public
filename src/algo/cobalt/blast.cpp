@@ -53,8 +53,8 @@ BEGIN_SCOPE(cobalt)
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
-static void 
-x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query, 
+void 
+CMultiAligner::x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query, 
                 TOffset from, TOffset to, vector<SSegmentLoc>& seg_list,
                 int query_index)
 {
@@ -266,6 +266,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/10 15:37:08  papadopo
+  Make AddNewSegmet into a member of CMultiAligner
+
   Revision 1.4  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 
