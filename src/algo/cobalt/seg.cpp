@@ -154,7 +154,7 @@ CMultiAligner::x_AssignHitRate()
 /// @param nodes The graph [in/modified]
 /// @return Pointer to the first node in the optimal path
 ///
-SGraphNode * 
+CMultiAligner::SGraphNode * 
 CMultiAligner::x_FindBestPath(vector<SGraphNode>& nodes)
 {
     // Solve the graph problem detailed in x_FillPairInfo
@@ -368,6 +368,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/10 15:39:54  papadopo
+  SGraphNode is now private to CMultiAligner
+
   Revision 1.4  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 
