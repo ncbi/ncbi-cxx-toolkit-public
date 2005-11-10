@@ -57,6 +57,9 @@ namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 %}
 #endif
 
+// NCBI_DEPRECATED expands to gcc-specific "__attribute__(something)" on linux
+#define __attribute__(x)
+
 %feature("autodoc");  // generate documentation for Python
 
 %include ncbi_stl.i
@@ -171,6 +174,9 @@ object = ncbi_object
 %ifndef WINDOWS objtools/blast_format/blastfmtutil.hpp
 %ifndef WINDOWS objtools/blast_format/showalign.hpp
 %ifndef WINDOWS objtools/blast_format/showdefline.hpp
+%ifndef WINDOWS objtools/blast_format/blastxml_format.hpp
+%ifndef WINDOWS objtools/blast_format/tabular.hpp
+%ifndef WINDOWS objtools/blast_format/vectorscreen.hpp
 %ifndef WINDOWS objtools/align/alngraphic.hpp
 
 objtools/simple/simple_om.hpp
@@ -199,6 +205,10 @@ objtools/simple/simple_om.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/11/10 19:10:53  jcherry
+ * #define __attribute__(x) to nothing (for NCBI_DEPRECATED).
+ * Conditionally wrap some additional blast format headers.
+ *
  * Revision 1.5  2005/09/15 16:32:26  jcherry
  * Turn on wrapping of some gui stuff
  *
