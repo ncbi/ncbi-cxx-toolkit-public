@@ -303,16 +303,41 @@
 			
 			// Makefile.*.app
 			// lookup file name
+			var type = oTask.ProjectType;
+            type = type.replace(/[/]/g, ".");
+			type = oFso.GetExtensionName(type);
+			if (type == "") {
+			    type = "basic";
+			}
 			var src_folder = oFso.GetFolder(oTree.SrcProjectBranch);
 			var src_folder_contents = new Enumerator(src_folder.files);
 			modelname = "";
-			for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
+			for( ; !src_folder_contents.atEnd() && modelname == ""; src_folder_contents.moveNext()) {
 				var src_file = src_folder_contents.item();
 				if (oFso.GetExtensionName(src_file) == "app") {
-					modelname = src_file;
-					samplename = oFso.GetExtensionName( oFso.GetBaseName(src_file) );
+				    var t1 = oFso.GetFileName(src_file).replace(/_/g, ".");
+				    var t2 = oFso.GetBaseName(t1);
+				    while ( t1 != t2 ) {
+				        if ( oFso.GetExtensionName( t1 ) == type) {
+					        modelname = src_file;
+				            break;
+				        }
+				        t1 = t2;
+				        t2 = oFso.GetBaseName(t1);
+				    }
 				}
 			}
+			if ( modelname == "") {
+			    src_folder_contents.moveFirst();
+			    for( ; !src_folder_contents.atEnd(); src_folder_contents.moveNext()) {
+				    var src_file = src_folder_contents.item();
+				    if (oFso.GetExtensionName(src_file) == "app") {
+					    modelname = src_file;
+					    break;
+				    }
+			    }
+			}
+			samplename = oFso.GetExtensionName( oFso.GetBaseName(modelname) );
 			filename = oTree.SrcProjectBranch + "\\Makefile." + oTask.ProjectName + ".app";
             VerboseEcho("Converting model file " + modelname + " to " + filename);
 			// open for reading
