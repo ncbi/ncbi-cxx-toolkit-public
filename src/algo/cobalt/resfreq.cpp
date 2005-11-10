@@ -31,16 +31,17 @@ File name: resfreq.cpp
 
 Author: Jason Papadopoulos
 
-Contents: Handling of RPS profiles / residue frequencies
+Contents: Implementation of CProfileData
 
 ******************************************************************************/
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/seqsrc_seqdb.hpp>
-#include <algo/cobalt/cobalt.hpp>
+#include <algo/blast/core/blast_rps.h>
+#include <algo/cobalt/resfreq.hpp>
 
 /// @file resfreq.cpp
-/// Handling of RPS profiles / residue frequencies
+/// Implementation of CProfileData
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
@@ -112,6 +113,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/10 15:38:26  papadopo
+  Use custom header for CProfileData
+
   Revision 1.2  2005/11/08 17:54:41  papadopo
   fix typo
 
