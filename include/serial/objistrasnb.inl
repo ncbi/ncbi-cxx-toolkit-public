@@ -80,6 +80,21 @@ void CObjectIStreamAsnBinary::EndOfTag(void)
 }
 
 inline
+Uint1 CObjectIStreamAsnBinary::ReadByte(void)
+{
+#if CHECK_INSTREAM_STATE
+    if ( m_CurrentTagState != eData )
+        ThrowError(fIllegalCall, "illegal ReadByte call");
+#endif
+#if CHECK_INSTREAM_LIMITS
+    if ( m_CurrentTagLimit != 0 &&
+         m_Input.GetStreamPosAsInt8() >= m_CurrentTagLimit )
+        ThrowError(fOverflow, "tag size overflow");
+#endif
+    return Uint1(m_Input.GetChar());
+}
+
+inline
 void CObjectIStreamAsnBinary::ExpectSysTagByte(TByte byte)
 {
     if ( StartTag(PeekTagByte()) != byte )
@@ -158,6 +173,9 @@ bool CObjectIStreamAsnBinary::HaveMoreElements(void)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/10 19:50:27  gouriano
+* Moved ReadByte into inl file
+*
 * Revision 1.10  2005/11/09 20:00:47  gouriano
 * Reviewed stream integrity checks to increase the number of them in Release mode
 *
