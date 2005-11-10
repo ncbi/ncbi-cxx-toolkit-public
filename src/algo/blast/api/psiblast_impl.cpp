@@ -62,7 +62,8 @@ BEGIN_SCOPE(blast)
 CPsiBlastImpl::CPsiBlastImpl(CRef<objects::CPssmWithParameters> pssm,
                              IPsiBlastSubject* subject,
                              CConstRef<CPSIBlastOptionsHandle> options)
-: m_Pssm(pssm), m_Query(0), m_Subject(subject), m_OptsHandle(options)
+: m_Pssm(pssm), m_Query(0), m_Subject(subject), m_OptsHandle(options),
+    m_ResultType(eDatabaseSearch)
 {
     x_Validate();
     x_ExtractQueryFromPssm();
@@ -72,7 +73,8 @@ CPsiBlastImpl::CPsiBlastImpl(CRef<objects::CPssmWithParameters> pssm,
 CPsiBlastImpl::CPsiBlastImpl(CRef<IQueryFactory> query,
                              IPsiBlastSubject* subject,
                              CConstRef<CBlastProteinOptionsHandle> options)
-: m_Pssm(0), m_Query(query), m_Subject(subject), m_OptsHandle(options)
+: m_Pssm(0), m_Query(query), m_Subject(subject), m_OptsHandle(options),
+    m_ResultType(eDatabaseSearch)
 {
     x_Validate();
 }
