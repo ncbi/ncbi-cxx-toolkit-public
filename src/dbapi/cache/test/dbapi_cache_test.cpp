@@ -35,7 +35,6 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <dbapi/cache/dbapi_blob_cache.hpp>
-#include <dbapi/driver/drivers.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -70,13 +69,10 @@ int CDBAPI_CacheTest::Run(void)
     cout << "Run CDBAPI_CacheTest test" << endl << endl;
 
     try {
-        CDriverManager &db_drv_man = CDriverManager::GetInstance(); 
         string drv_name;
 #ifdef NCBI_OS_MSWIN
-        DBAPI_RegisterDriver_ODBC(db_drv_man);
         drv_name = "odbc";
 #else
-        DBAPI_RegisterDriver_FTDS(db_drv_man);
         drv_name = "ftds";
 #endif
         const string server = "MSSQL10";
@@ -215,6 +211,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/10 14:44:56  ssikorsk
+ * Remove dependency on CDriverManager
+ *
  * Revision 1.1  2004/07/26 14:07:35  kuznets
  * Initial revision
  *
