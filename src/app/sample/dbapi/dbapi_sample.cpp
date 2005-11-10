@@ -38,7 +38,6 @@
 #include <corelib/ncbienv.hpp>
 
 #include <dbapi/dbapi.hpp>
-#include <dbapi/driver/drivers.hpp>
 #include <vector>
 
 USING_NCBI_SCOPE;
@@ -106,12 +105,6 @@ int CDbapiTest::Run()
         string server = args["s"].AsString();
         string driver = args["d"].AsString();
 
-
-        // Register driver explicitly for static linkage if needed
-#ifdef WIN32
-       // DBAPI_RegisterDriver_ODBC();
-#endif
-        //DBAPI_RegisterDriver_DBLIB(dm);
 
         // Create data source - the root object for all other
         // objects in the library.
@@ -665,9 +658,9 @@ end";
         for(int i = 0; i < COUNT; ++i ) {
             string im = "BLOB data " + NStr::IntToString(i);
             col1 = i;
-            col2.Truncate();
+            // col2.Truncate();
             col2.Append(im.c_str(), im.size());
-            col3.Truncate();
+            // col3.Truncate();
             col3.Append(im.c_str(), im.size());
             bi->AddRow();
         }
@@ -805,7 +798,6 @@ from BlobSample where id = 1");
         stmt->ExecuteUpdate(sql);
         NcbiCout << "Done." << endl;
 
-
     }
     catch(out_of_range) {
         NcbiCout << "Exception: Out of range" << endl;
@@ -835,6 +827,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/11/10 15:17:01  ssikorsk
+* Minor code cleanup
+*
 * Revision 1.21  2005/10/27 13:21:40  ssikorsk
 * Handle ftds63 driver. Set TDS v10 in case of the dblib driver.
 *
