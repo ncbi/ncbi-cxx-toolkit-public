@@ -49,14 +49,6 @@ BEGIN_SCOPE(cobalt)
 
 USING_SCOPE(blast);
 
-class compare_sseg_db_idx {
-public:
-    bool operator()(const SSegmentLoc& a, const SSegmentLoc& b) const {
-        return a.seq_index < b.seq_index;
-    }
-};
-
-
 /// Given an RPS blast database, load a list of block offsets
 /// for each database sequence. The list is resident in a text
 /// file, where each line is as follows
@@ -67,8 +59,8 @@ public:
 /// @param blockfile Name of file containing list of offsets [in]
 /// @param blocklist the list of offsets read from file [out]
 ///
-static void
-x_LoadBlockBoundaries(string blockfile,
+void
+CMultiAligner::x_LoadBlockBoundaries(string blockfile,
                       vector<SSegmentLoc>& blocklist)
 {
     CNcbiIfstream blockstream(blockfile.c_str());
@@ -569,6 +561,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/10 15:39:14  papadopo
+  Make local functions into members of CMultiAligner
+
   Revision 1.4  2005/11/08 19:49:19  papadopo
   fix solaris compile warnings
 
