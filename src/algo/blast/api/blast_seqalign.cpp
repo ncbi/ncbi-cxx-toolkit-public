@@ -1411,7 +1411,7 @@ PhiBlastResults2SeqAlign_OMF(const BlastHSPResults  * results,
  * @param prog type of BLAST program [in]
  * @param query_data All query sequences [in]
  * @param seqinfo_src Source of subject sequences information [in]
- * @param subject_index Index of this subject sequence in a set [in]
+ * @param subj_index Index of this subject sequence in a set [in]
  * @param is_gapped Is this a gapped search? [in]
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
@@ -1617,6 +1617,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2005/11/10 13:58:34  camacho
+* Doxygen fixes
+*
 * Revision 1.62  2005/11/09 20:56:26  camacho
 * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
 * as CBl2Seq and reduce redundant code.

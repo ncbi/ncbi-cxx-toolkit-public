@@ -92,8 +92,9 @@ private:
                 CRef<CBlastOptions> opts,
                 const string& dbname);
 
-    // Auto method generation prevention
+    /// Prohibit copy constructor
     CBlastTracebackSearch(CBlastTracebackSearch &);
+    /// Prohibi assignment operator
     CBlastTracebackSearch & operator =(CBlastTracebackSearch &);
     
     // C++ data

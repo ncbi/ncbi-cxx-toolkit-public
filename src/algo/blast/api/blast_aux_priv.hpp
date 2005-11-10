@@ -60,6 +60,9 @@ class IBlastSeqInfoSrc;
  */
 IBlastSeqInfoSrc* InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
 
+/** Create a single CSeq_loc of type whole from the first id in the list.
+ * @param seqids identifiers for the Seq-loc [in]
+ */
 CConstRef<objects::CSeq_loc> 
 CreateWholeSeqLocFromIds(const list< CRef<objects::CSeq_id> > seqids);
 
