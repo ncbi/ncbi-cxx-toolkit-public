@@ -3,6 +3,8 @@
 APP = odbc_lang
 SRC = odbc_lang
 
+REQUIRES = ODBC
+
 LIB  = ncbi_xdbapi_odbc dbapi_driver xncbi
 LIBS = $(ODBC_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

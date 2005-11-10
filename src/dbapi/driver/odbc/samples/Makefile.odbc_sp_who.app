@@ -3,6 +3,8 @@
 APP = odbc_sp_who
 SRC = odbc_sp_who
 
+REQUIRES = ODBC
+
 LIB  = ncbi_xdbapi_odbc dbapi_driver xncbi
 LIBS = $(ODBC_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
