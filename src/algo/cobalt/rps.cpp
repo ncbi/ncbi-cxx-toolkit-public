@@ -481,9 +481,10 @@ CMultiAligner::FindDomainHits()
         m_Freqfile.empty()) {
         return;
     }
+    m_DomainHits.PurgeAllHits();
+    m_CombinedHits.PurgeAllHits();
 
-    CHitList rps_hits;
-    x_FindRPSHits(rps_hits);
+    x_FindRPSHits(m_DomainHits);
         
     vector<SSegmentLoc> blocklist;
     x_LoadBlockBoundaries(m_Blockfile, blocklist);
@@ -491,15 +492,15 @@ CMultiAligner::FindDomainHits()
     CProfileData profile_data;
     profile_data.Load(CProfileData::eGetPssm, m_RPSdb);
 
-    x_RealignBlocks(rps_hits, blocklist, profile_data);
+    x_RealignBlocks(m_DomainHits, blocklist, profile_data);
     blocklist.clear();
     profile_data.Clear();
 
     //-------------------------------------------------------
     if (m_Verbose) {
         printf("\n\nBlock alignments with conflicts resolved:\n");
-        for (int i = 0; i < rps_hits.Size(); i++) {
-            CHit *hit = rps_hits.GetHit(i);
+        for (int i = 0; i < m_DomainHits.Size(); i++) {
+            CHit *hit = m_DomainHits.GetHit(i);
             NON_CONST_ITERATE(vector<CHit *>, itr, hit->GetSubHit()) {
                 CHit *subhit = *itr;
                 printf("query %d %4d - %4d db %d %4d - %4d score %d ",
@@ -519,14 +520,14 @@ CMultiAligner::FindDomainHits()
     //-------------------------------------------------------
 
     profile_data.Load(CProfileData::eGetResFreqs, m_RPSdb, m_Freqfile);
-    x_AssignRPSResFreqs(rps_hits, profile_data);
+    x_AssignRPSResFreqs(m_DomainHits, profile_data);
     profile_data.Clear();
 
-    rps_hits.MatchOverlappingSubHits(m_DomainHits);
+    m_DomainHits.MatchOverlappingSubHits(m_CombinedHits);
 
     const int kRpsScale = CMultiAligner::kRpsScaleFactor;
-    for (int i = 0; i < m_DomainHits.Size(); i++) {
-        CHit *hit = m_DomainHits.GetHit(i);
+    for (int i = 0; i < m_CombinedHits.Size(); i++) {
+        CHit *hit = m_CombinedHits.GetHit(i);
         hit->m_Score = (hit->m_Score + kRpsScale/2) / kRpsScale;
         NON_CONST_ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
             CHit *subhit = *subitr;
@@ -537,8 +538,8 @@ CMultiAligner::FindDomainHits()
     //-------------------------------------------------------
     if (m_Verbose) {
         printf("\n\nMatched block alignments:\n");
-        for (int i = 0; i < m_DomainHits.Size(); i++) {
-            CHit *hit = m_DomainHits.GetHit(i);
+        for (int i = 0; i < m_CombinedHits.Size(); i++) {
+            CHit *hit = m_CombinedHits.GetHit(i);
             NON_CONST_ITERATE(vector<CHit *>, itr, hit->GetSubHit()) {
                 CHit *subhit = *itr;
                 printf("query %d %4d - %4d query %d %4d - %4d score %d\n",
@@ -561,6 +562,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/11/10 16:18:32  papadopo
+  Allow hitlists to be regenerated cleanly
+
   Revision 1.5  2005/11/10 15:39:14  papadopo
   Make local functions into members of CMultiAligner
 

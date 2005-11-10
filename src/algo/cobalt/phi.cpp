@@ -64,6 +64,8 @@ CMultiAligner::FindPatternHits()
     if (m_PatternFile.empty())
         return;
 
+    m_PatternHits.PurgeAllHits();
+
     CNcbiIfstream pattern_stream(m_PatternFile.c_str());
     if (pattern_stream.bad() || pattern_stream.fail())
         NCBI_THROW(blast::CBlastException, eInvalidArgument,
@@ -140,6 +142,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/10 16:18:31  papadopo
+  Allow hitlists to be regenerated cleanly
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 

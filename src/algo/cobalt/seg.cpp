@@ -275,11 +275,9 @@ CMultiAligner::x_FindAlignmentSubsets()
 void
 CMultiAligner::x_FindConsistentHitSubset()
 {
-    if (!m_CombinedHits.Empty())
-        m_CombinedHits.PurgeAllHits();
+    if (m_CombinedHits.Size() < 2)
+        return;
 
-    m_CombinedHits += m_DomainHits;
-    m_CombinedHits += m_LocalHits;
     m_CombinedHits.MakeCanonical();
 
     for (int i = 0; i < m_CombinedHits.Size(); i++) {
@@ -368,6 +366,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/11/10 16:18:32  papadopo
+  Allow hitlists to be regenerated cleanly
+
   Revision 1.5  2005/11/10 15:39:54  papadopo
   SGraphNode is now private to CMultiAligner
 

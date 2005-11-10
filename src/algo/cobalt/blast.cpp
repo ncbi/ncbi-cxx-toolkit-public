@@ -88,8 +88,8 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
     // into a list that sorts by query index and then by 
     // sequence start offset
 
-    for (int i = 0; i < m_DomainHits.Size(); i++) {
-        CHit *hit = m_DomainHits.GetHit(i);
+    for (int i = 0; i < m_CombinedHits.Size(); i++) {
+        CHit *hit = m_CombinedHits.GetHit(i);
         _ASSERT(hit->HasSubHits());
 
         ITERATE(CHit::TSubHit, subitr, hit->GetSubHit()) {
@@ -229,6 +229,10 @@ CMultiAligner::x_AssignDefaultResFreqs()
 void
 CMultiAligner::FindLocalHits()
 {
+    m_LocalHits.PurgeAllHits();
+    if (m_DomainHits.Empty())
+        m_CombinedHits.PurgeAllHits();
+
     x_AssignDefaultResFreqs();
 
     // Produce another set of queries that consist of the 'filler'
@@ -259,6 +263,8 @@ CMultiAligner::FindLocalHits()
         printf("\n\n");
     }
     //-------------------------------------------------------
+
+    m_CombinedHits += m_LocalHits;
 }
 
 END_SCOPE(cobalt)
@@ -266,6 +272,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/11/10 16:18:31  papadopo
+  Allow hitlists to be regenerated cleanly
+
   Revision 1.5  2005/11/10 15:37:08  papadopo
   Make AddNewSegmet into a member of CMultiAligner
 
