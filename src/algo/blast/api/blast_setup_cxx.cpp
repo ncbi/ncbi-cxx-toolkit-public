@@ -367,10 +367,10 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
     int query_num = 0;  
     
     for(TSeqPos j = 0; j < queries.Size(); j++) {
+        ENa_strand strand = eNa_strand_unknown;
+        BlastSeqLoc* bsl_tmp=NULL;
         try {
             query_num++;
-            ENa_strand strand;
-            BlastSeqLoc* bsl_tmp=NULL;
 
             if ((is_na || translate) &&
                 (strand_opt == eNa_strand_unknown || 
@@ -461,15 +461,15 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                 }
             }
 
-            s_AddMask(prog, mask, index, bsl_tmp, strand,
-                      BlastQueryInfoGetQueryLength(qinfo, prog, index));
-            ++index;
-            ctx_index += kNumContexts;
         } catch (const CException& e) {
             error_string += 
                 "Query number " + NStr::IntToString(query_num) + ": ";
             error_string += e.ReportThis(eDPF_ErrCodeExplanation) + " ";
         }
+        s_AddMask(prog, mask, index, bsl_tmp, strand,
+                      BlastQueryInfoGetQueryLength(qinfo, prog, index));
+        ++index;
+        ctx_index += kNumContexts;
     }
 
     if (error_string.size() != 0) {
@@ -1197,6 +1197,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.100  2005/11/10 14:48:34  madden
+ * Fix to SetupQueries_OMF if zero length query was included
+ *
  * Revision 1.99  2005/09/28 18:23:08  camacho
  * Rearrangement of headers/functions to segregate object manager dependencies.
  *
