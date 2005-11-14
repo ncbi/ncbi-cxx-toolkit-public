@@ -236,6 +236,14 @@ CBlastQuerySourceBioseqSet::CBlastQuerySourceBioseqSet
     }
 }
 
+CBlastQuerySourceBioseqSet::CBlastQuerySourceBioseqSet
+    (const objects::CBioseq& bioseq, bool is_prot) 
+    : m_IsProt(is_prot)
+{
+    x_BioseqSanityCheck(bioseq);
+    m_Bioseqs.push_back(CConstRef<objects::CBioseq>(&bioseq));
+}
+
 objects::ENa_strand 
 CBlastQuerySourceBioseqSet::GetStrand(int /*index*/) const 
 {

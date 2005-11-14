@@ -110,11 +110,16 @@ private:
 class CBlastQuerySourceBioseqSet : public IBlastQuerySource
 {
 public:
-    /// Parametrized constructor
+    /// Parametrized constructor for a Bioseq-set
     /// @param bss set of bioseqs from which to extract the data [in]
-    /// @param is_prot whether the bs argument contains protein or nucleotide
+    /// @param is_prot whether the bss argument contains protein or nucleotide
     /// sequences [in]
     CBlastQuerySourceBioseqSet(const objects::CBioseq_set& bss, bool is_prot);
+    /// Parametrized constructor for a Bioseq
+    /// @param bioseq bioseq from which to extract the data [in]
+    /// @param is_prot whether the bioseq argument contains a protein or 
+    /// nucleotide sequence [in]
+    CBlastQuerySourceBioseqSet(const objects::CBioseq& bioseq, bool is_prot);
     /// Return strand for a sequence
     /// @param index of the sequence in the sequence container [in]
     virtual objects::ENa_strand GetStrand(int index) const;
