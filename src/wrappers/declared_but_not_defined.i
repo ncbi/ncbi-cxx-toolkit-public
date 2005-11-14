@@ -71,15 +71,13 @@
 
 %ignore ncbi::COptionDescription::COptionDescription();
 
-// inline in .cpp
-%ignore ncbi::CObjectIStreamAsnBinary::ReadByte;
-%ignore ncbi::CObjectIStreamAsnBinary::ReadSByte;
-%ignore ncbi::CObjectIStreamAsnBinary::ExpectByte;
-
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/11/14 15:10:40  jcherry
+ * Don't %ignore CObjectIStreamAsnBinary methods (problem fixed)
+ *
  * Revision 1.12  2005/11/10 19:06:00  jcherry
  * %ignore some CObjectIStreamAsnBinary methods that are inline in a .cpp
  *
