@@ -54,7 +54,7 @@ BEGIN_SCOPE(blast)
 // Forward declaration
 class CPSIBlastOptionsHandle;
 
-/// Represents the iteration state in PSI-BLASt
+/// Represents the iteration state in PSI-BLAST
 class CPsiBlastIterationState
 {
 public:
@@ -83,7 +83,7 @@ public:
     bool HasMoreIterations() const;
 
     /// List of CSeq_ids
-    typedef std::list< CRef<objects::CSeq_id> > TSeqIds;
+    typedef vector< CRef<objects::CSeq_id> > TSeqIds;
 
     /// Advance the iterator by passing it the list of Seq-ids which passed the
     /// inclusion criteria for the current iteration

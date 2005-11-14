@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/api/psiblast_iteration.hpp>
 #include <algo/blast/api/psiblast_options.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include "psiblast_aux_priv.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -135,7 +136,15 @@ CPsiBlastIterationState::GetSeqIds(CConstRef<objects::CSeq_align_set> seqalign,
                                    TSeqIds& retval)
 {
     retval.clear();
-    throw runtime_error(string(NCBI_CURRENT_FUNCTION) + " unimplemented");
+
+    CPsiBlastAlignmentProcessor proc;
+    CPsiBlastAlignmentProcessor::THitIdentifiers hit_ids;
+    proc(*seqalign, opts->GetInclusionThreshold(), hit_ids);
+
+    retval.reserve(hit_ids.size());
+    ITERATE(CPsiBlastAlignmentProcessor::THitIdentifiers, itr, hit_ids) {
+        retval.push_back(itr->second);
+    }
 }
 
 END_SCOPE(blast)

@@ -35,7 +35,7 @@
 #define ALGO_BLAST_API___PSIBLAST_AUX_PRIV__HPP
 
 #include <corelib/ncbiobj.hpp>
-#include <list>
+#include <objects/seqalign/Dense_seg.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -53,6 +53,8 @@ BEGIN_NCBI_SCOPE
 template <class T> class CNcbiMatrix;
 
 BEGIN_SCOPE(objects)
+    class CSeq_id;
+    class CSeq_align_set;
     class CPssmWithParameters;
 END_SCOPE(objects)
 
@@ -79,6 +81,35 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
  */
 void PsiBlastComputePssmScores(CRef<objects::CPssmWithParameters> pssm,
                                const CBlastOptions& opts);
+
+/// Returns the lowest score from the list of scores in CDense_seg::TScores
+/// @param scores list of scores [in]
+double GetLowestEvalue(const objects::CDense_seg::TScores& scores);
+
+/** Auxiliary class to retrieve sequence identifiers its position in the
+ * alignment which are below the inclusion evalue threshold.
+ */
+class CPsiBlastAlignmentProcessor {
+public:
+    /// Typedef to identify an interesting hit in an alignment by its index in
+    /// the CSeq_align_set::Tdata and its actual Seq-id
+    typedef pair<unsigned int, CRef<objects::CSeq_id> > THitId;
+
+    /// Container of THitId
+    typedef vector<THitId> THitIdentifiers;
+
+    /// Extract all the THitId which have evalues below the inclusion threshold
+    /// @param alignments 
+    ///     alignments corresponding to one query sequence [in]
+    /// @param evalue_inclusion_threshold
+    ///     All hits in the above alignment which have evalues below this
+    ///     parameter will be included in the return value [in]
+    /// @param output
+    ///     Return value of this method [out]
+    void operator()(const objects::CSeq_align_set& alignments,
+                    double evalue_inclusion_threshold,
+                    THitIdentifiers& output);
+};
 
 /// Auxialiry class containing static methods to validate PSI-BLAST search
 /// components

@@ -124,7 +124,7 @@ public:
     /// @param diags diagnostics data requests for the PSSM engine
     CPsiBlastInputData(const unsigned char* query,
                        unsigned int query_length,
-                       CRef<objects::CSeq_align_set> sset,
+                       CConstRef<objects::CSeq_align_set> sset,
                        CRef<objects::CScope> scope,
                        const PSIBlastOptions& opts,
                        const char* matrix_name = NULL,
@@ -150,7 +150,7 @@ private:
     /// Multiple sequence alignment dimensions
     PSIMsaDimensions                m_MsaDimensions;
     /// Pairwise alignment result of a BLAST search
-    CRef<objects::CSeq_align_set>   m_SeqAlignSet;
+    CConstRef<objects::CSeq_align_set>   m_SeqAlignSet;
     /// Algorithm options
     PSIBlastOptions                 m_Opts;
     /// Diagnostics request structure
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/11/14 15:24:56  camacho
+ * Implemented alignment processor to extract relevant sequences for PSSM generation
+ *
  * Revision 1.12  2005/05/20 18:28:33  camacho
  * + IPssmInputFreqRatios and default implementation
  *

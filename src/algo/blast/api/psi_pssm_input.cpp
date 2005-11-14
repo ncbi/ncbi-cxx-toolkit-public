@@ -57,6 +57,8 @@ static char const rcsid[] =
 #include <objmgr/seq_vector.hpp>
 #include <objects/seq/Seq_data.hpp>
 
+#include "psiblast_aux_priv.hpp"
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -74,16 +76,6 @@ BEGIN_SCOPE(blast)
 //////////////////////////////////////////////////////////////////////////////
 // Static function prototypes
 
-/// Returns the evalue from this score object
-/// @param score ASN.1 score object [in]
-static double 
-s_GetEvalue(const CScore& score);
-
-/// Returns the lowest score from the list of scores in CDense_seg::TScores
-/// @param scores list of scores [in]
-static double
-s_GetLowestEvalue(const CDense_seg::TScores& scores);
-
 /// Retrieves sequence data from sv. Caller is responsible for deallocating
 /// return value with delete[]
 /// @param sv CSeqVector containing sequence data [in]
@@ -97,7 +89,7 @@ s_ExtractSequenceFromSeqVector(const CSeqVector& sv);
 
 CPsiBlastInputData::CPsiBlastInputData(const unsigned char* query,
                                        unsigned int query_length,
-                                       CRef<objects::CSeq_align_set> sset,
+                                       CConstRef<objects::CSeq_align_set> sset,
                                        CRef<objects::CScope> scope,
                                        const PSIBlastOptions& opts,
                                        const char* matrix_name,
@@ -162,34 +154,15 @@ CPsiBlastInputData::Process()
 unsigned int
 CPsiBlastInputData::x_CountAndSelectQualifyingAlignments()
 {
-    unsigned int retval = 0;
-    unsigned int seq_index = 0;
+    CPsiBlastAlignmentProcessor proc;
+    CPsiBlastAlignmentProcessor::THitIdentifiers hit_ids;
+    proc(*m_SeqAlignSet, m_Opts.inclusion_ethresh, hit_ids);
 
-    // For each discontinuous Seq-align corresponding to each query-subj pair
-    // (i.e.: for each hit)
-    ITERATE(CSeq_align_set::Tdata, i, m_SeqAlignSet->Get()) {
-        ASSERT((*i)->GetSegs().IsDisc());
-
-        // For each HSP of this query-subj pair
-        ITERATE(CSeq_align::C_Segs::TDisc::Tdata, hsp_itr,
-                (*i)->GetSegs().GetDisc().Get()) {
-            
-            // Look for HSP with score less than inclusion_ethresh
-            double e = s_GetLowestEvalue((*hsp_itr)->GetScore());
-            if (e < m_Opts.inclusion_ethresh) {
-                retval++;
-                m_ProcessHit[seq_index] = 1U;
-                break;
-            }
-        }
-        seq_index++;
+    ITERATE(CPsiBlastAlignmentProcessor::THitIdentifiers, itr, hit_ids) {
+        ASSERT(itr->first < m_ProcessHit.size());
+        m_ProcessHit[itr->first] = 1U;
     }
-
-    ASSERT(retval <= m_ProcessHit.size());
-    ASSERT(seq_index == m_ProcessHit.size());
-    ASSERT(m_ProcessHit.size() == m_SeqAlignSet->Get().size());
-
-    return retval;
+    return hit_ids.size();
 }
 
 unsigned int
@@ -327,7 +300,7 @@ CPsiBlastInputData::x_ExtractAlignmentData()
                            "Segment type not supported");
             }
 
-            double evalue = s_GetLowestEvalue((*hsp_itr)->GetScore());
+            double evalue = GetLowestEvalue((*hsp_itr)->GetScore());
             // ... below the e-value inclusion threshold
             if (evalue < m_Opts.inclusion_ethresh) {
                 ASSERT(msa_index < GetNumAlignedSequences() + 1);
@@ -465,31 +438,6 @@ CPsiBlastInputData::x_GetSubjectSequence(const objects::CDense_seg& ds,
 //////////////////////////////////////////////////////////////////////////////
 // Static function definitions
 
-static double
-s_GetEvalue(const CScore& score)
-{
-    string score_type = score.GetId().GetStr();
-    if (score.GetValue().IsReal() && 
-       (score_type == "e_value" || score_type == "sum_e")) {
-        return score.GetValue().GetReal();
-    }
-    return numeric_limits<double>::max();
-}
-
-static double 
-s_GetLowestEvalue(const CDense_seg::TScores& scores)
-{
-    double retval = numeric_limits<double>::max();
-    double tmp;
-
-    ITERATE(CDense_seg::TScores, i, scores) {
-        if ( (tmp = s_GetEvalue(**i)) < retval) {
-            retval = tmp;
-        }
-    }
-    return retval;
-}
-
 static Uint1* 
 s_ExtractSequenceFromSeqVector(const CSeqVector& sv) 
 {
@@ -518,6 +466,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/11/14 15:24:48  camacho
+ * Implemented alignment processor to extract relevant sequences for PSSM generation
+ *
  * Revision 1.13  2005/07/07 16:32:12  camacho
  * Revamping of BLAST exception classes and error codes
  *

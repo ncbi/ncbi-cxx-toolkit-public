@@ -45,16 +45,23 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
+#include "blast_aux_priv.hpp"
 
 // Utility headers
 #include <util/format_guess.hpp>
 #include <util/math/matrix.hpp>
 
 // Object includes
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmFinalData.hpp>
 #include <objects/scoremat/PssmWithParameters.hpp>
 #include <objects/scoremat/PssmIntermediateData.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -242,6 +249,64 @@ void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
         pssm_with_scores->GetPssm().GetFinalData().GetKappa();
     pssm->SetPssm().SetFinalData().SetH() =
         pssm_with_scores->GetPssm().GetFinalData().GetH();
+}
+
+/// Returns the evalue from this score object
+/// @param score ASN.1 score object [in]
+static double 
+s_GetEvalue(const CScore& score)
+{
+    string score_type = score.GetId().GetStr();
+    if (score.GetValue().IsReal() && 
+       (score_type == "e_value" || score_type == "sum_e")) {
+        return score.GetValue().GetReal();
+    }
+    return numeric_limits<double>::max();
+}
+
+double GetLowestEvalue(const CDense_seg::TScores& scores)
+{
+    double retval = numeric_limits<double>::max();
+    double tmp;
+
+    ITERATE(CDense_seg::TScores, i, scores) {
+        if ( (tmp = s_GetEvalue(**i)) < retval) {
+            retval = tmp;
+        }
+    }
+    return retval;
+}
+
+void
+CPsiBlastAlignmentProcessor::operator()
+    (const objects::CSeq_align_set& alignments, 
+     double evalue_inclusion_threshold, 
+     THitIdentifiers& output)
+{
+    output.clear();
+    unsigned int seq_index = 0;
+
+    // For each discontinuous Seq-align corresponding to each query-subj pair
+    // (i.e.: for each hit)
+    ITERATE(CSeq_align_set::Tdata, hit, alignments.Get()) {
+        ASSERT((*hit)->GetSegs().IsDisc());
+
+        // For each HSP of this query-subj pair
+        ITERATE(CSeq_align::C_Segs::TDisc::Tdata, hsp,
+                (*hit)->GetSegs().GetDisc().Get()) {
+            
+            // Look for HSP with score less than inclusion_ethresh
+            double e = GetLowestEvalue((*hsp)->GetScore());
+            if (e < evalue_inclusion_threshold) {
+                CRef<CSeq_id> id(const_cast<CSeq_id*>(&(*hsp)->GetSeq_id(1)));
+                output.push_back(make_pair(seq_index, id));
+                break;
+            }
+        }
+        seq_index++;
+    }
+
+    _ASSERT(seq_index == alignments.Get().size());
 }
 
 void 
