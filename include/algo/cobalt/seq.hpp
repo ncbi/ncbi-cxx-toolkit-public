@@ -64,14 +64,6 @@ public:
     unsigned char GetPrintableLetter(int pos) const;
     int GetLength() const { return m_Sequence.size(); }
 
-    bool FreqColEmpty(int col)
-    {
-        for (int i = 0; i < kAlphabetSize; i++)
-            if (m_Freqs(col, i) != 0.0)
-                return false;
-        return true;
-    }
-
     void PropagateGaps(const CNWAligner::TTranscript& transcript,
                        CNWAligner::ETranscriptSymbol gap_choice);
 
@@ -101,6 +93,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/14 16:17:40  papadopo
+  remove unneeded member
+
   Revision 1.2  2005/11/08 17:42:17  papadopo
   Rearrange includes to be self-sufficient
 
