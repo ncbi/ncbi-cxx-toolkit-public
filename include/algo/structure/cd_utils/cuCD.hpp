@@ -129,6 +129,14 @@ int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields = true);
 
 bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields = true);
 
+//   Return +ve (equal to # of block in IBM CD) if the block structure was modified successfully 
+//   (including a trivial merging of adjacent blocks).
+//   Return 0 if no action taken.
+//   Return -ve if run IBM and it found no intersection or otherwise failed.
+//   NOTE:  Only modifying the alignment data; no other coordinate-dependent data in
+//          'ccd' are altered due to shrinking of alignment blocks caused by IBM.
+int IntersectByMaster(CCdCore* ccd);
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -139,6 +147,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2005/11/14 19:29:17  lanczyck
+ * Add IBM algorithm
+ *
  * Revision 1.6  2005/10/03 21:13:18  cliu
  * added remaster and purge consensus functions
  *

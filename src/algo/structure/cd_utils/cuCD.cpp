@@ -65,6 +65,7 @@
 #include <algo/structure/cd_utils/cuAlign.hpp>
 //#include "algComponent.hpp"
 #include <algo/structure/cd_utils/cuCD.hpp>
+#include <algo/structure/cd_utils/cuBlockIntersector.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeFactory.hpp>
 #include <algo/structure/cd_utils/cuSeqTreeRootedLayout.hpp>
 #include <math.h>
@@ -756,6 +757,102 @@ int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields)
     return nPurged;
 }
 
+
+int IntersectByMaster(CCdCore* ccd) {
+
+    int result = -1;
+    unsigned int masterLen = (ccd) ? ccd->GetSequenceStringByRow(0).length() : 0;
+    if (masterLen == 0) return result;
+
+    int nAlignedMaster = 0, nAlignedIBM = 0;
+    unsigned int i, nRows = ccd->GetNumRows();
+    BlockIntersector blockIntersector(masterLen);
+    BlockModel row0BlockModel(ccd->GetSeqAlign(0), false);
+    BlockModel* intersectedBlockModel, *masterBlockModel;
+
+    string sr0 = row0BlockModel.toString();
+
+    nAlignedMaster = row0BlockModel.getTotalBlockLength();
+    if (nAlignedMaster == 0) {
+        return result;
+    }
+
+    for (i = 0; i < nRows; ++i) {
+        masterBlockModel = new BlockModel(ccd->GetSeqAlign(i), false);  
+        if (masterBlockModel) {
+            blockIntersector.addOneAlignment(*masterBlockModel);
+        }
+        delete masterBlockModel;
+    }
+
+    intersectedBlockModel = blockIntersector.getIntersectedAlignment();
+    if (!intersectedBlockModel) {
+        return result;
+    }
+
+    //string sint = intersectedBlockModel->toString();
+
+    //  If have case where every block model isn't identical...
+    if (!(*intersectedBlockModel == row0BlockModel)) {
+
+        nAlignedIBM = intersectedBlockModel->getTotalBlockLength();
+
+        //  Need to modify the block model to conform with intersectedBlockModel.
+        //  If the nAlignedIBM == nAlignedMaster, all residues remain aligned
+        //  but there could still be a difference in block boundaries (e.g.,
+        //  contiguous blocks being defined as two blocks in one seq align but
+        //  one big block in another).
+        if (nAlignedIBM > 0 && nAlignedIBM <= nAlignedMaster) {  
+
+            list< CRef< CSeq_align > >& cdSeqAligns = ccd->GetSeqAligns();
+            list< CRef< CSeq_align > >::iterator cdSeqAlignIt = cdSeqAligns.begin(), cdSeqAlignEnd = cdSeqAligns.end();
+
+            //  Make a dummy pair where the intersected master is aligned to itself.
+            BlockModelPair dummyMasterPair(intersectedBlockModel->toSeqAlign(*intersectedBlockModel));
+
+            //string testStr, testStr2;
+            for (i = 0; cdSeqAlignIt != cdSeqAlignEnd; ++cdSeqAlignIt, ++i) {
+
+                //  this way, adjacent blocks appear to remain separate
+                BlockModelPair intersectedPair(*cdSeqAlignIt);
+                intersectedPair.remaster(dummyMasterPair);
+                //testStr = intersectedPair.getMaster().toString();
+                //testStr2= intersectedPair.getSlave().toString();
+                *cdSeqAlignIt = intersectedPair.toSeqAlign();
+
+                if (i == 0) result = intersectedPair.getMaster().getBlocks().size();
+
+                /*
+                //  this way, adjacent blocks appear to get merged
+                BlockModelPair intersectedPair(*cdSeqAlignIt);
+                delta = *intersectedBlockModel - intersectedPair.getMaster();
+                intersectedSlave = intersectedPair.getSlave() + *(delta.first);
+                testStr = (intersectedPair.getMaster() + *(delta.first)).first->toString();
+                testStr2 = intersectedSlave.first->toString();
+
+                intersectedPair.getMaster() = *intersectedBlockModel;
+                intersectedPair.getSlave()  = *(intersectedSlave.first);
+                *cdSeqAlignIt = intersectedPair.toSeqAlign();
+                */
+            }
+
+        // Should never happen, but original alignment should remain safe.
+        } else if (nAlignedIBM > nAlignedMaster) {  
+            result = row0BlockModel.getBlocks().size();
+
+        // There is no residue common to all seq-aligns.
+        } else if (nAlignedIBM == 0) {
+            result = -1;
+        }
+        delete intersectedBlockModel;
+
+    } else {  //  IBM not required...
+        result = 0;
+    }
+
+    return result;
+}
+
 /*
 string layoutSeqTree(vector<CCdCore*>& cds, int maxX, int maxY, int yInt, vector<SeqTreeEdge>& edges)
 {
@@ -785,6 +882,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2005/11/14 19:30:52  lanczyck
+ * Add IBM algorithm
+ *
  * Revision 1.10  2005/10/03 21:14:11  cliu
  * added remaster and purge consensus functions
  *
