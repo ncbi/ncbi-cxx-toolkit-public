@@ -435,29 +435,49 @@ static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
 ///@param start: start list to be filled
 ///
 static void s_FillCdsStartPosition(string& line, string& concat_exon,
-                                      size_t length_per_line,
-                                      TSeqPos feat_aln_start_totalexon,
-                                      ENa_strand strand, list<TSeqPos>& start){
+                                   size_t length_per_line,
+                                   TSeqPos feat_aln_start_totalexon,
+                                   ENa_strand seq_strand, 
+                                   ENa_strand feat_strand,
+                                   list<TSeqPos>& start){
     size_t actual_line_len = 0;
     size_t aln_len = line.size();
     TSeqPos previous_num_letter = 0;
     
+    //the number of amino acids preceeding this exon start position
     for (size_t i = 0; i <= feat_aln_start_totalexon; i ++){
-        if(isalpha((unsigned char) concat_exon[i])){
-            previous_num_letter ++;
+        if(feat_strand == eNa_strand_minus){
+            //remember the amino acid in this case goes backward
+            //therefore we count backward too
+            if(isalpha((unsigned char) concat_exon[concat_exon.size() -1 - i])){
+                previous_num_letter ++;
+            }
+            
+        } else {
+            if(isalpha((unsigned char) concat_exon[i])){
+                previous_num_letter ++;
+            }
         }
     }
+    
+    
     TSeqPos prev_num = 0;
+    //go through the entire feature line and get the amino acid position 
+    //for each line
     for(size_t i = 0; i < aln_len; i += actual_line_len){
+        //handle the last row which may be shorter
         if(aln_len - i< length_per_line) {
             actual_line_len = aln_len - i;
         } else {
             actual_line_len = length_per_line;
         }
-        
+        //the number of amino acids on this row
         TSeqPos cur_num = 0;
         bool has_intron = false;
+        
+        //go through each character on a row
         for(size_t j = i; j < actual_line_len + i; j ++){
+            //don't count gap
             if(isalpha((unsigned char) line[j])){
                 cur_num ++;
             } else if(line[j] == k_IntronChar){
@@ -466,10 +486,18 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
         }
             
         if(cur_num > 0){
-            if(strand == eNa_strand_plus){
-                start.push_back(previous_num_letter + prev_num);  
+            if(seq_strand == eNa_strand_plus){
+                if(feat_strand == eNa_strand_minus) {
+                    start.push_back(previous_num_letter - prev_num); 
+                } else {
+                    start.push_back(previous_num_letter + prev_num);  
+                }
             } else {
-                start.push_back(previous_num_letter - prev_num);   
+                if(feat_strand == eNa_strand_minus) {
+                    start.push_back(previous_num_letter + prev_num);  
+                } else {
+                    start.push_back(previous_num_letter - prev_num);  
+                } 
             }
         } else if (has_intron) {
             start.push_back(0);  //sentinal for now show
@@ -1502,10 +1530,10 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
             CRef<CSeq_loc> loc_ref =
                 handle.
                 GetRangeSeq_loc(min(seq_start, seq_stop),
-                                max(seq_start, seq_stop),
-                                eNa_strand_plus);
+                                max(seq_start, seq_stop));
             for (CFeat_CI feat(scope, *loc_ref, choice); feat; ++feat) {
                 const CSeq_loc& loc = feat->GetLocation();
+                ENa_strand feat_strand = GetStrand(loc);
                 string featLable = NcbiEmptyString;
                 string featId;
                 char feat_char = ' ';
@@ -1519,6 +1547,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                 TSeqPos aln_stop = m_AV->GetAlnStop();  
                 SAlnFeatureInfo* featInfo = NULL;
                 CRange<TSeqPos> feat_seq_range = loc.GetTotalRange();
+                //find the actual feature sequence start and stop 
                 if(m_AV->IsPositiveStrand(row)){
                     actual_feat_seq_start = 
                         max(feat_seq_range.GetFrom(), seq_start);
@@ -1531,6 +1560,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     actual_feat_seq_stop =
                         max(feat_seq_range.GetFrom(), seq_stop);
                 }
+                //the feature alignment positions
                 feat_aln_from = 
                     m_AV->GetAlnPosFromSeqPos(row, actual_feat_seq_start);
                 feat_aln_to = 
@@ -1544,6 +1574,11 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                           feat->GetProduct().IsWhole()){
                     
                     //show actual aa  if there is a cds product
+                    
+                    //line represents the amino acid line starting covering 
+                    //the whole alignment.  The idea is if there is no feature
+                    //in some range, then fill it with space and this won't
+                    //be shown 
                     string line(aln_stop+1, ' ');   
                     string raw_cdr_product = NcbiEmptyString;    
                     const CSeq_id& productId = 
@@ -1570,7 +1605,9 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     }    
                     //fill concatenated exon (excluding intron)
                     //with product
-                    //this is to align product with the nucleotide seq
+                    //this is will be later used to
+                    //fill the feature line
+
                     string concat_exon(total_coding_len, ' ');
                     char gap_char = m_AV->GetGapChar(row);   
                     TSeqPos frame = 1;
@@ -1578,38 +1615,104 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     if(cdr.IsSetFrame()){
                         frame = cdr.GetFrame();
                     }
-                    TSeqPos num_base = 0, num_coding_base = 0;
-                    TSeqPos coding_start_base = frame - 1;
-                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
-                        for(TSeqPos i = 0; i < loc_it.GetRange().GetLength(); i ++){
-                            if(num_base >= coding_start_base){
-                                num_coding_base ++;
-                                if(num_coding_base % 3 == 2){
-                                    //a.a to the 2nd base
-                                    if(num_coding_base / 3 < raw_cdr_product.size()){
-                                    concat_exon[num_base] 
-                                        = raw_cdr_product[num_coding_base / 3];
-                                    }                           
-                                }
-                            }
-                            num_base ++;
-                        }    
+                    TSeqPos num_base, num_coding_base;
+                    TSeqPos coding_start_base;
+                    if(feat_strand == eNa_strand_minus){
+                        coding_start_base = total_coding_len - 1 - (frame -1);
+                        num_base = total_coding_len - 1;
+                        num_coding_base = 0;
+                        
+                    } else {
+                        coding_start_base = 0; 
+                        coding_start_base += frame - 1;
+                        num_base = 0;
+                        num_coding_base = 0;
                     }
+                    
+                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
+                        //note that feature on minus strand needs to be
+                        //filled backward.
+                        if(feat_strand != eNa_strand_minus){
+                            for(TSeqPos i = 0; i < loc_it.GetRange().GetLength(); i ++){
+                                if(num_base >= coding_start_base){
+                                    num_coding_base ++;
+                                    if(num_coding_base % 3 == 2){
+                                        //a.a to the 2nd base
+                                        if(num_coding_base / 3 < raw_cdr_product.size()){
+                                            //make sure the coding region is no
+                                            //more than the protein seq as there
+                                            //could errors in ncbi record
+                                            concat_exon[num_base] 
+                                                = raw_cdr_product[num_coding_base / 3];
+                                        }                           
+                                    }
+                                }
+                                num_base ++;
+                            }    
+                        } else {
+                            
+                            for(TSeqPos i = 0; i < 
+                                    loc_it.GetRange().GetLength() &&
+                                    num_base >= 0; i ++){
+                                if(num_base <= coding_start_base){
+                                    num_coding_base ++;
+                                    if(num_coding_base % 3 == 2){
+                                        //a.a to the 2nd base
+                                        if(num_coding_base / 3 < 
+                                           raw_cdr_product.size() &&
+                                           coding_start_base > num_coding_base){
+                                            //make sure the coding region is no
+                                            //more than the protein seq as there
+                                            //could errors in ncbi record
+                                            concat_exon[num_base] 
+                                                = raw_cdr_product[num_coding_base / 3];
+                                        }                           
+                                    }
+                                }
+                                num_base --;
+                            }    
+                        }
+                    }
+                 
                     TSeqPos feat_aln_start_totalexon = 0;
                     TSeqPos prev_feat_aln_start_totalexon = 0;
                     TSeqPos prev_feat_seq_stop = 0;
                     TSeqPos intron_size = 0;
                     bool is_first = true;
                     bool  is_first_exon_start = true;
+                    
+                    list<CSeq_loc_CI::TRange> isolated_range;
+                    //here things get complicated a bit. The idea is fill the
+                    //whole feature line in alignment coordinates with
+                    //amino acid on the second base of a condon
+
+                    //isolate the seqloc corresponding to feature
+                    //as this is easier to manipulate
                     for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
+                        isolated_range.push_back(loc_it.GetRange());
+                    }
+
+                    //Need to reverse the seqloc order for minus strand
+                    if(feat_strand == eNa_strand_minus){
+                        isolated_range.reverse(); 
+                    }
+
+                    //go through the feature seqloc and fill the feature line
+                    ITERATE(list<CSeq_loc_CI::TRange>, iter, isolated_range){
+
+                        //intron refers to the distance between two exons
+                        //i.e. each seqloc is an exon
+                        //intron needs to be skipped
                         if(!is_first){
-                            intron_size += loc_it.GetRange().GetFrom() 
+                            intron_size += iter->GetFrom() 
                                 - prev_feat_seq_stop - 1;
                         }
                         CRange<TSeqPos> actual_feat_seq_range =
                             loc_ref->GetTotalRange().
-                            IntersectionWith(loc_it.GetRange());          
+                            IntersectionWith(*iter);          
                         if(!actual_feat_seq_range.Empty()){
+                            //the sequence start position in aln coordinates
+                            //that has a feature
                             TSeqPos feat_aln_start;
                             TSeqPos feat_aln_stop;
                             if(m_AV->IsPositiveStrand(row)){
@@ -1629,42 +1732,86 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                     = m_AV->GetAlnPosFromSeqPos
                                     (row, actual_feat_seq_range.GetFrom());
                             }
+                            //put actual amino acid on feature line
+                            //in aln coord 
                             for (TSeqPos i = feat_aln_start;
-                                 i <= feat_aln_stop;  i ++){
-                                //put actual amino acid in aln coord
-                                if(sequence[i] != gap_char){
-                                    TSeqPos product_adj_seq_pos
-                                    = m_AV->GetSeqPosFromAlnPos(row, i) - 
-                                        intron_size - feat_seq_range.GetFrom();
-                                    if(product_adj_seq_pos < 
-                                       concat_exon.size()){
-                                        line[i] = 
-                                        concat_exon[product_adj_seq_pos];
-                                       
-                                        if(m_AV->IsPositiveStrand(row)){
-                                            if(is_first_exon_start &&
-                                               isalpha((unsigned char) line[i])){
-                                                feat_aln_start_totalexon = 
-                                                    product_adj_seq_pos;
-                                                is_first_exon_start = false;
+                                 i <= feat_aln_stop;  i ++){  
+                                    if(sequence[i] != gap_char){
+                                        //the amino acid position in 
+                                        //concatanated exon that corresponds
+                                        //to the sequence position
+                                        //note intron needs to be skipped
+                                        //as it does not have cds feature
+                                        TSeqPos product_adj_seq_pos
+                                            = m_AV->GetSeqPosFromAlnPos(row, i) - 
+                                            intron_size - feat_seq_range.GetFrom();
+                                        if(product_adj_seq_pos < 
+                                           concat_exon.size()){
+                                            //fill the cds feature line with
+                                            //actual amino acids
+                                            line[i] = 
+                                                concat_exon[product_adj_seq_pos];
+                                            //get the exon start position
+                                            //note minus strand needs to be
+                                            //counted backward
+                                            if(m_AV->IsPositiveStrand(row)){
+                                                //don't count gap 
+                                                if(is_first_exon_start &&
+                                                   isalpha((unsigned char) line[i])){
+                                                    if(feat_strand == eNa_strand_minus){ 
+                                                        feat_aln_start_totalexon = 
+                                                            concat_exon.size()
+                                                            - product_adj_seq_pos + 1;
+                                                        is_first_exon_start = false;
+                                                        
+                                                    } else {
+                                                        feat_aln_start_totalexon = 
+                                                            product_adj_seq_pos;
+                                                        is_first_exon_start = false;
+                                                    }
+                                                }
+                                                
+                                            } else {
+                                                if(feat_strand == eNa_strand_minus){ 
+                                                    if(is_first_exon_start && 
+                                                       isalpha((unsigned char) line[i])){
+                                                        feat_aln_start_totalexon = 
+                                                            concat_exon.size()
+                                                            - product_adj_seq_pos + 1;
+                                                        is_first_exon_start = false;
+                                                        prev_feat_aln_start_totalexon =
+                                                        feat_aln_start_totalexon;
+                                                    }
+                                                    if(!is_first_exon_start){
+                                                        //need to get the
+                                                        //smallest start as
+                                                        //seqloc list is
+                                                        //reversed
+                                                        feat_aln_start_totalexon =
+                                                            min(concat_exon.size()
+                                                                - product_adj_seq_pos + 1, 
+                                                                prev_feat_aln_start_totalexon);
+                                                        prev_feat_aln_start_totalexon =
+                                                        feat_aln_start_totalexon;  
+                                                    }
+                                                } else {
+                                                    feat_aln_start_totalexon = 
+                                                        max(prev_feat_aln_start_totalexon,
+                                                            product_adj_seq_pos); 
+                                                    
+                                                    prev_feat_aln_start_totalexon =
+                                                        feat_aln_start_totalexon;
+                                                }
                                             }
-                                           
-                                        } else {
-                                            feat_aln_start_totalexon = 
-                                                max(prev_feat_aln_start_totalexon,
-                                                    product_adj_seq_pos); 
-                                            
-                                            prev_feat_aln_start_totalexon =
-                                                feat_aln_start_totalexon;
                                         }
-                                    }
-                                } else { //adding gap
-                                    line[i] = ' '; 
-                                }                         
+                                    } else { //adding gap
+                                        line[i] = ' '; 
+                                    }                         
+                               
                             }                      
                         }
                         
-                        prev_feat_seq_stop = loc_it.GetRange().GetTo();  
+                        prev_feat_seq_stop = iter->GetTo();  
                         is_first = false;
                     }                 
                     alternativeFeatStr = line;
@@ -1672,7 +1819,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                            feat_aln_start_totalexon,
                                            m_AV->IsPositiveStrand(row) ?
                                            eNa_strand_plus : eNa_strand_minus,
-                                           featInfo->feature_start); 
+                                           feat_strand, featInfo->feature_start); 
                 }
                 
                 if(featInfo){
@@ -2454,6 +2601,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.88  2005/11/14 19:06:07  jianye
+*added show cds product on minus strand
+*
 *Revision 1.87  2005/09/27 17:10:09  madden
 *Print out compositional adjustment method if appropriate
 *
