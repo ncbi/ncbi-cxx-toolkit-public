@@ -207,7 +207,7 @@ int CAsn2FlatApp::Run(void)
     if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
-    if (args["gbload"]  ||  args["id"]  ||  args["mode"].AsString() == "release") {
+    if (args["gbload"]) {
         CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
     }
 
@@ -279,7 +279,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     const CArgs&   args = GetArgs();
 
     if (!args["nocleanup"]) {
-        //se->BasicCleanup();
+        se->BasicCleanup();
     }
 
     string label;
@@ -554,6 +554,14 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/11/14 18:33:11  ludwigf
+* CHANGED: "-mode release" or "-id ..." will no longer enable remote
+* fetching. Remote fetching can still be turned on through the command line
+* flag "-gbload".
+*
+* CHANGED: BasicCleanup for objects is now enabled unless explicitely turned
+* off through the command line flag "-nocleanup".
+*
 * Revision 1.15  2005/06/20 17:31:09  vasilche
 * Do not blindly catch/drop exceptions.
 *
