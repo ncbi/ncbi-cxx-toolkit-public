@@ -110,7 +110,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
         TOffset seg_start = 0;
 
         ITERATE(CRangeCollection<TOffset>, itr, collection) {
-            if (itr->GetFrom() - seg_start >= CHit::kMinHitSize + 1) {
+            if (itr->GetFrom() - seg_start > CHit::kMinHitSize + 1) {
                 x_AddNewSegment(filler_locs, m_tQueries[i], seg_start, 
                                 itr->GetFrom() - 1, filler_segs, i);
             }
@@ -119,7 +119,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
         int seq_length = sequence::GetLength(*m_tQueries[i].seqloc,
                                              m_tQueries[i].scope);
 
-        if (seq_length - seg_start >= CHit::kMinHitSize + 1) {
+        if (seq_length - seg_start > CHit::kMinHitSize + 1) {
             x_AddNewSegment(filler_locs, m_tQueries[i], seg_start,
                             seq_length - 1, filler_segs, i);
         }
@@ -193,47 +193,15 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     }
 }
 
-void
-CMultiAligner::x_AssignDefaultResFreqs()
-{
-    // Assign background residue frequencies to otherwise
-    // unassigned columns. The actual residue at a given
-    // position is upweighted by a specified amount, and
-    // all other frequencies are downweighted
-
-    BlastScoreBlk *sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
-    Blast_ResFreq *std_freqs = Blast_ResFreqNew(sbp);
-    Blast_ResFreqStdComp(sbp, std_freqs);
-
-    for (int i = 0; i < (int)m_QueryData.size(); i++) {
-        CSequence& query = m_QueryData[i];
-        CSequence::TFreqMatrix& matrix = query.GetFreqs();
-
-        for (int j = 0; j < query.GetLength(); j++) {
-            if (query.FreqColEmpty(j)) {
-                for (int k = 0; k < kAlphabetSize; k++) {
-                    matrix(j, k) = (1 - m_LocalResFreqBoost) * 
-                                   std_freqs->prob[k];
-                }
-                matrix(j, query.GetLetter(j)) += m_LocalResFreqBoost;
-            }
-        }
-    }
-
-    Blast_ResFreqFree(std_freqs);
-    BlastScoreBlkFree(sbp);
-}
-
-
 // see description in multi_aligner_priv.hpp
 void
 CMultiAligner::FindLocalHits()
 {
     m_LocalHits.PurgeAllHits();
-    if (m_DomainHits.Empty())
+    if (m_DomainHits.Empty()) {
+        x_AssignDefaultResFreqs();
         m_CombinedHits.PurgeAllHits();
-
-    x_AssignDefaultResFreqs();
+    }
 
     // Produce another set of queries that consist of the 'filler'
     // in the input data, i.e. all stretches of all sequences not
@@ -272,6 +240,11 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.7  2005/11/14 16:17:08  papadopo
+  Assign default residue frequencies before domain residue frequencies,
+  not after. This guarantees residue frequencies get assigned properly
+  if an alignment process is repeated
+
   Revision 1.6  2005/11/10 16:18:31  papadopo
   Allow hitlists to be regenerated cleanly
 

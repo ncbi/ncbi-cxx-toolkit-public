@@ -474,6 +474,36 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
 
 
 void
+CMultiAligner::x_AssignDefaultResFreqs()
+{
+    // Assign background residue frequencies to otherwise
+    // unassigned columns. The actual residue at a given
+    // position is upweighted by a specified amount, and
+    // all other frequencies are downweighted
+
+    BlastScoreBlk *sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
+    Blast_ResFreq *std_freqs = Blast_ResFreqNew(sbp);
+    Blast_ResFreqStdComp(sbp, std_freqs);
+
+    for (size_t i = 0; i < m_QueryData.size(); i++) {
+        CSequence& query = m_QueryData[i];
+        CSequence::TFreqMatrix& matrix = query.GetFreqs();
+
+        for (int j = 0; j < query.GetLength(); j++) {
+            for (int k = 0; k < kAlphabetSize; k++) {
+                matrix(j, k) = (1 - m_LocalResFreqBoost) * 
+                                   std_freqs->prob[k];
+            }
+            matrix(j, query.GetLetter(j)) += m_LocalResFreqBoost;
+        }
+    }
+
+    Blast_ResFreqFree(std_freqs);
+    BlastScoreBlkFree(sbp);
+}
+
+
+void
 CMultiAligner::FindDomainHits()
 {
     if (m_RPSdb.empty() || 
@@ -491,7 +521,6 @@ CMultiAligner::FindDomainHits()
 
     CProfileData profile_data;
     profile_data.Load(CProfileData::eGetPssm, m_RPSdb);
-
     x_RealignBlocks(m_DomainHits, blocklist, profile_data);
     blocklist.clear();
     profile_data.Clear();
@@ -518,6 +547,11 @@ CMultiAligner::FindDomainHits()
         printf("\n\n");
     }
     //-------------------------------------------------------
+
+    if (m_DomainHits.Empty())
+        return;
+
+    x_AssignDefaultResFreqs();
 
     profile_data.Load(CProfileData::eGetResFreqs, m_RPSdb, m_Freqfile);
     x_AssignRPSResFreqs(m_DomainHits, profile_data);
@@ -562,6 +596,11 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.7  2005/11/14 16:17:08  papadopo
+  Assign default residue frequencies before domain residue frequencies,
+  not after. This guarantees residue frequencies get assigned properly
+  if an alignment process is repeated
+
   Revision 1.6  2005/11/10 16:18:32  papadopo
   Allow hitlists to be regenerated cleanly
 
