@@ -81,7 +81,7 @@ void CCit_sub::BasicCleanup(bool fix_initials)
             imp.ResetPub();
         }
         if (!IsSetDate()  &&  imp.IsSetDate()) {
-            SetDate(imp.SetDate());
+            SetDate().Assign(imp.GetDate());
             imp.ResetDate();
         }
         if (!imp.IsSetPub()) {
@@ -103,6 +103,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/11/14 18:28:20  ludwigf
+* FIXED: The submission date would get lost during the processing of the
+* submission citation data. This happened when the date object got obsoleted
+* while it was still shared into the post-processing data structure.
+*
 * Revision 1.4  2005/05/20 13:32:48  shomrat
 * Added BasicCleanup()
 *
