@@ -1,5 +1,5 @@
-#ifndef NCBIPARAM__HPP
-#define NCBIPARAM__HPP
+#ifndef CORELIB___NCBI_PARAM__HPP
+#define CORELIB___NCBI_PARAM__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -66,8 +66,8 @@ BEGIN_NCBI_SCOPE
 template<class TValue>
 struct SEnumDescription
 {
-    char*  alias; // string representation of enum value
-    TValue value; // int representation of enum value
+    const char*  alias; // string representation of enum value
+    const TValue value; // int representation of enum value
 };
 
 
@@ -75,71 +75,83 @@ struct SEnumDescription
 template<class TValue>
 struct SParamDescription
 {
-    char*  section;
-    char*  name;
-    TValue initial_value;
+    const char*  section;
+    const char*  name;
+    const TValue default_value;
 
     // List of enum values if any
-    SEnumDescription<TValue>* enums;
-    int                       enums_size;
+    const SEnumDescription<TValue>* enums;
+    const size_t                    enums_size;
 };
+
+/// >>>>>>  SParamEnumDescription : public SParamDescription, etc.
+/// >>>>>>  so that ENUM becomes a fully separate add-on component?
+
+
+/// Generate typename for a parameter from its {section, name} attributes
+#define NCBI_PARAM_TYPE(section, name)          \
+    CParam< SNcbiParamDesc_##section##_##name >
 
 
 /// Parameter declaration. Generates type TParam_section_name.
 /// Section and name may be used to set default value through a
 /// registry or environment variable section_name.
-#define NCBI_PARAM_DECL(type, section, name) \
-    struct SNcbiParamDesc_##section##_##name \
-    { \
-        typedef type TValueType; \
-        static SParamDescription< type > sm_ParamDescription; \
-    }; \
-    typedef CParam< SNcbiParamDesc_##section##_##name > \
-            TParam_##section##_##name
+#define NCBI_PARAM_DECL(type, section, name)                      \
+    struct SNcbiParamDesc_##section##_##name                      \
+    {                                                             \
+        typedef type TValueType;                                  \
+        static SParamDescription<TValueType> sm_ParamDescription; \
+    }
 
 
 /// Enum parameter declaration. In addition to NCBI_PARAM_DECL also
-/// specializes CParamParser< type >.
-#define NCBI_ENUM_PARAM_DECL(type, section, name) \
-    EMPTY_TEMPLATE inline CParamParser< type >::TValueType \
-    CParamParser< type >::StringToValue(const string& str, \
-                                        const TParamDesc& descr) \
-    { return CEnumParser< type >::StringToEnum(str, descr); } \
-    EMPTY_TEMPLATE inline string \
-    CParamParser< type >::ValueToString(const TValueType& val, \
-                                        const TParamDesc& descr) \
-    { return CEnumParser< type >::EnumToString(val, descr); } \
-    NCBI_PARAM_DECL(type, section, name);
+/// specializes CParamParser<type>.
+#define NCBI_PARAM_ENUM_DECL(type, section, name)                 \
+                                                                  \
+    EMPTY_TEMPLATE inline CParamParser< type >::TValueType        \
+    CParamParser< type >::StringToValue(const string&     str,    \
+                                        const TParamDesc& descr)  \
+    { return CEnumParser< type >::StringToEnum(str, descr); }     \
+                                                                  \
+    EMPTY_TEMPLATE inline string                                  \
+    CParamParser< type >::ValueToString(const TValueType& val,    \
+                                        const TParamDesc& descr)  \
+    { return CEnumParser< type >::EnumToString(val, descr); }     \
+                                                                  \
+    NCBI_PARAM_DECL(type, section, name)
 
 
-#define NCBI_PARAM_DEF_INTERNAL(type, \
-                                section, \
-                                name, \
-                                initial_value, \
-                                enums, \
-                                enums_size) \
-    SParamDescription< type > \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription = \
-    { #section, #name, initial_value, enums, enums_size }
+#define NCBI_PARAM_DEF_INTERNAL(type,                          \
+                                section,                       \
+                                name,                          \
+                                default_value,                 \
+                                enums,                         \
+                                enums_size)                    \
+    SParamDescription< type >                                  \
+    SNcbiParamDesc_##section##_##name::sm_ParamDescription =   \
+        { #section, #name, default_value, enums, enums_size }
 
 
 /// Parameter definition. "value" is used to set the initial parameter
 /// value, which may be overriden by registry or environment.
-#define NCBI_PARAM_DEF(type, section, name, initial_value) \
-    NCBI_PARAM_DEF_INTERNAL(type, section, name, initial_value, NULL, 0)
+#define NCBI_PARAM_DEF(type, section, name, default_value)              \
+    NCBI_PARAM_DEF_INTERNAL(type, section, name, default_value, NULL, 0)
 
 
 /// Static array of enum name+value pairs. Must be defined before
-/// NCBI_ENUM_PARAM_DEF
-#define NCBI_ENUM_PARAM_ARRAY(type, section, name) \
+/// NCBI_PARAM_ENUM_DEF
+#define NCBI_PARAM_ENUM_ARRAY(type, section, name)                      \
     static SEnumDescription< type > s_EnumData_##section##_##name[] =
 
 
 /// Enum parameter definition. Additional 'enums' argument should provide
 /// static array of SEnumDescription<type>.
-#define NCBI_ENUM_PARAM_DEF(type, section, name, initial_value) \
-    NCBI_PARAM_DEF_INTERNAL(type, section, name, initial_value, \
-    s_EnumData_##section##_##name, ArraySize(s_EnumData_##section##_##name))
+#define NCBI_PARAM_ENUM_DEF(type, section, name, default_value)         \
+    NCBI_PARAM_DEF_INTERNAL(type, section, name, default_value,         \
+                            s_EnumData_##section##_##name,              \
+                            ArraySize(s_EnumData_##section##_##name))
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -158,13 +170,13 @@ template<class TValue>
 class CParamParser
 {
 public:
-    typedef TValue                    TValueType;
-    typedef SParamDescription<TValue> TParamDesc;
+    typedef TValue                     TValueType;
+    typedef SParamDescription<TValue>  TParamDesc;
 
     static TValueType StringToValue(const string& str,
                                     const TParamDesc& descr);
-    static string ValueToString(const TValueType& val,
-                                const TParamDesc& descr);
+    static string     ValueToString(const TValueType& val,
+                                    const TParamDesc& descr);
 };
 
 
@@ -174,7 +186,7 @@ public:
 ///
 /// Enum parameter parser template.
 ///
-/// Converts between string and enum. Is used by NCBI_ENUM_PARAM_DECL.
+/// Converts between string and enum. Is used by NCBI_PARAM_ENUM_DECL.
 ///
 
 
@@ -188,8 +200,8 @@ public:
 
     static TValueType StringToEnum(const string& str,
                                    const TParamDesc& descr);
-    static string EnumToString(const TValueType& val,
-                               const TParamDesc& descr);
+    static string     EnumToString(const TValueType& val,
+                                   const TParamDesc& descr);
 };
 
 
@@ -217,41 +229,41 @@ public:
 
     /// Create parameter with the thread default or global default value.
     /// Changing defaults does not affect the existing parameter objects.
-    CParam(void) : m_Value(GetThreadDefaultValue()) {}
+    CParam(void) : m_Value(GetThreadDefault()) {}
 
     /// Create parameter with a given value, ignore defaults.
     CParam(const TValueType& val) : m_Value(val) {}
 
     /// Load parameter value from registry or environment.
-    /// Overrides section and name set in the parameter description.
-    /// Does not affect the existing default values.
-    CParam(const string& section, const string& name);
+          /// Overrides section and name set in the parameter description.
+          /// Does not affect the existing default values.
+          CParam(const string& section, const string& name);
 
     ~CParam(void) {}
 
     /// Get current parameter value.
-    TValueType GetValue(void) const { return m_Value; }
+    TValueType Get(void) const { return m_Value; }
     /// Set new parameter value (this instance only).
-    void SetValue(const TValueType& val) { m_Value = val; }
+    void Set(const TValueType& val) { m_Value = val; }
 
     /// Get global default value. If not yet set, attempts to load the value
     /// from application registry or environment.
-    static TValueType GetDefaultValue(void);
+    static TValueType GetDefault(void);
     /// Set new global default value. Does not affect values of existing
     /// CParam<> objects or thread-local default values.
-    static void SetDefaultValue(const TValueType& val);
+    static void SetDefault(const TValueType& val);
 
     /// Get thread-local default value if set or global default value.
-    static TValueType GetThreadDefaultValue(void);
+    static TValueType GetThreadDefault(void);
     /// Set new thread-local default value.
-    static void SetThreadDefaultValue(const TValueType& val);
+    static void SetThreadDefault(const TValueType& val);
 
 private:
-    typedef CTls<TValueType> TValueTls;
+    typedef CTls<TValueType> TTls;
 
-    static SSystemFastMutex& sx_GetLock(void);
-    static TValueType& sx_GetDefaultValue(void);
-    static CRef<TValueTls>& sx_GetValueTls(void);
+    static SSystemFastMutex& sx_GetLock    (void);
+    static TValueType&       sx_GetDefault (void);
+    static CRef<TTls>&       sx_GetTls     (void);
 
     TValueType m_Value;
 };
@@ -261,7 +273,7 @@ private:
 
 template<class TValue>
 inline
-void ParamTlsValueCleanup(TValue* value, void*)
+void g_ParamTlsValueCleanup(TValue* value, void*)
 {
     delete value;
 }
@@ -278,6 +290,9 @@ CParamParser<TValue>::StringToValue(const string& str,
     CNcbiIstrstream in(str.c_str());
     TValueType val;
     in >> val;
+
+    // >>>> Check state of stream, THROW if bad!
+
     return val;
 }
 
@@ -287,9 +302,9 @@ inline
 string CParamParser<TValue>::ValueToString(const TValueType& val,
                                            const TParamDesc& descr)
 {
-    CNcbiOstrstream out;
-    out << val;
-    return string(out.str());
+    CNcbiOstrstream buffer;
+    buffer << val;
+    return CNcbiOstrstreamToString(buffer);
 }
 
 
@@ -343,13 +358,16 @@ typename CEnumParser<TValue>::TValueType
 CEnumParser<TValue>::StringToEnum(const string& str,
                                   const TParamDesc& descr)
 {
-    for (int i = 0; i < descr.enums_size; ++i) {
+    for (size_t i = 0;  i < descr.enums_size;  ++i) {
         if ( NStr::Equal(str, descr.enums[i].alias) ) {
             return descr.enums[i].value;
         }
     }
+
+    //>>>>  THROW if unknown!
+
     // Enum name not found
-    return descr.initial_value;
+    return descr.default_value;
 }
 
 
@@ -358,11 +376,14 @@ inline
 string CEnumParser<TValue>::EnumToString(const TValueType& val,
                                          const TParamDesc& descr)
 {
-    for (int i = 0; i < descr.enums_size; ++i) {
+    for (size_t i = 0;  i < descr.enums_size;  ++i) {
         if (descr.enums[i].value == val) {
             return string(descr.enums[i].alias);
         }
     }
+
+    //>>>>  THROW if unknown!
+
     // Enum name not found
     return kEmptyStr;
 }
@@ -375,8 +396,9 @@ inline
 CParam<TDescription>::CParam<TDescription>(const string& section,
                                            const string& name)
 {
-    string str = GetConfigString(section, name,
-        TParamParser::ValueToString(GetThreadDefaultValue()));
+    string str = GetConfigString
+        (section, name,
+         TParamParser::ValueToString(GetThreadDefault()));
     m_Value = TParamParser::StringToValue(str);
 }
 
@@ -393,33 +415,35 @@ SSystemFastMutex& CParam<TDescription>::sx_GetLock(void)
 template<class TDescription>
 inline
 typename CParam<TDescription>::TValueType&
-CParam<TDescription>::sx_GetDefaultValue(void)
+CParam<TDescription>::sx_GetDefault(void)
 {
-    static TValueType s_DefaultValue =
-        TDescription::sm_ParamDescription.initial_value;
+    static TValueType s_Default =
+        TDescription::sm_ParamDescription.default_value;
+
     static bool initialized = false;
-    if (!initialized) {
-        string config_value = GetConfigString(
-            TDescription::sm_ParamDescription.section,
-            TDescription::sm_ParamDescription.name,
-            "");
-        if (config_value != kEmptyStr) {
-            s_DefaultValue =
+    if ( !initialized ) {
+        string config_value =
+            g_GetConfigString(TDescription::sm_ParamDescription.section,
+                              TDescription::sm_ParamDescription.name,
+                              "");
+        if ( !config_value.empty() ) {
+            s_Default =
                 TParamParser::StringToValue(config_value,
-                TDescription::sm_ParamDescription);
+                                            TDescription::sm_ParamDescription);
         }
         initialized = true;
     }
-    return s_DefaultValue;
+
+    return s_Default;
 }
 
 
 template<class TDescription>
 inline
-CRef<typename CParam<TDescription>::TValueTls>&
-CParam<TDescription>::sx_GetValueTls(void)
+CRef<typename CParam<TDescription>::TTls>&
+CParam<TDescription>::sx_GetTls(void)
 {
-    static CRef<TValueTls> s_ValueTls;
+    static CRef<TTls> s_ValueTls;
     return s_ValueTls;
 }
 
@@ -427,49 +451,49 @@ CParam<TDescription>::sx_GetValueTls(void)
 template<class TDescription>
 inline
 typename CParam<TDescription>::TValueType
-CParam<TDescription>::GetDefaultValue(void)
+CParam<TDescription>::GetDefault(void)
 {
     CFastMutexGuard guard(sx_GetLock());
-    return sx_GetDefaultValue();
+    return sx_GetDefault();
 }
 
 
 template<class TDescription>
 inline
-void CParam<TDescription>::SetDefaultValue(const TValueType& val)
+void CParam<TDescription>::SetDefault(const TValueType& val)
 {
     CFastMutexGuard guard(sx_GetLock());
-    sx_GetDefaultValue() = val;
+    sx_GetDefault() = val;
 }
 
 
 template<class TDescription>
 inline
 typename CParam<TDescription>::TValueType
-CParam<TDescription>::GetThreadDefaultValue(void)
+CParam<TDescription>::GetThreadDefault(void)
 {
     CFastMutexGuard guard(sx_GetLock());
-    CRef<TValueTls>& tls = sx_GetValueTls();
+    CRef<TTls>& tls = sx_GetTls();
     if ( tls ) {
         TValueType* v = tls->GetValue();
         if ( v ) {
             return *v;
         }
     }
-    return sx_GetDefaultValue();
+    return sx_GetDefault();
 }
 
 
 template<class TDescription>
 inline
-void CParam<TDescription>::SetThreadDefaultValue(const TValueType& val)
+void CParam<TDescription>::SetThreadDefault(const TValueType& val)
 {
     CFastMutexGuard guard(sx_GetLock());
-    CRef<TValueTls>& tls = sx_GetValueTls();
+    CRef<TTls>& tls = sx_GetTls();
     if ( !tls ) {
-        tls.Reset(new TValueTls);
+        tls.Reset(new TTls);
     }
-    tls->SetValue(new TValueType(val), ParamTlsValueCleanup<TValueType>);
+    tls->SetValue(new TValueType(val), g_ParamTlsValueCleanup<TValueType>);
 }
 
 
@@ -482,11 +506,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/14 22:12:49  vakatov
+ * First code review, with fixes, proposals, etc.
+ *
  * Revision 1.1  2005/11/14 16:59:22  grichenk
  * Initial revision
- *
  *
  * ===========================================================================
  */
 
-#endif  /* NCBIPARAM__HPP */
+#endif  /* CORELIB___NCBI_PARAM__HPP */
