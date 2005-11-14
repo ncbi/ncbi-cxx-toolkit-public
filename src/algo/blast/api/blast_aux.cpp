@@ -426,8 +426,12 @@ CBlastSeqLoc::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 BlastSeqLoc*
 CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
 {
-    if (!slp || slp->IsNull())
+    if (!slp || 
+        slp->Which() == CSeq_loc::e_not_set || 
+        slp->IsEmpty() || 
+        slp->IsNull() ) {
         return NULL;
+    }
 
     _ASSERT(slp->IsInt() || slp->IsPacked_int() || slp->IsMix());
 
@@ -679,6 +683,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.83  2005/11/14 17:19:47  camacho
+ * Handle CSeq_loc::{e_not_set,e_Empty} in CSeqLoc2BlastSeqLoc
+ *
  * Revision 1.82  2005/09/28 18:09:09  camacho
  * Added missing headers
  *
