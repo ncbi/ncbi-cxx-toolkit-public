@@ -422,6 +422,7 @@ private:
                          CProfileData& profile_data);
     void x_AssignRPSResFreqs(CHitList& rps_hits,
                              CProfileData& profile_data);
+    void x_AssignDefaultResFreqs();
 
     void x_AddNewSegment(blast::TSeqLocVector& loc_list, 
                          blast::SSeqLoc& query, 
@@ -429,7 +430,6 @@ private:
                          TOffset to, 
                          vector<SSegmentLoc>& seg_list,
                          int query_index);
-    void x_AssignDefaultResFreqs();
     void x_MakeFillerBlocks(blast::TSeqLocVector& filler_locs,
                             vector<SSegmentLoc>& filler_segs);
     void x_AlignFillerBlocks(blast::TSeqLocVector& filler_locs, 
@@ -473,6 +473,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/14 16:18:08  papadopo
+  x_AssignDefaultResFreqs belongs with a different group of member functions
+
   Revision 1.4  2005/11/10 15:36:15  papadopo
   1. Move helper structures into CMultiAligner
   2. Move CProfileData to its own header
