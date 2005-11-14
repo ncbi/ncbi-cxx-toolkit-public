@@ -1788,8 +1788,8 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                                         //seqloc list is
                                                         //reversed
                                                         feat_aln_start_totalexon =
-                                                            min(concat_exon.size()
-                                                                - product_adj_seq_pos + 1, 
+                                                            min(TSeqPos(concat_exon.size()
+                                                                        - product_adj_seq_pos + 1), 
                                                                 prev_feat_aln_start_totalexon);
                                                         prev_feat_aln_start_totalexon =
                                                         feat_aln_start_totalexon;  
@@ -2601,6 +2601,10 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.89  2005/11/14 21:32:45  ucko
+*Tweak CDisplaySeqalign::x_GetFeatureInfo not to assume size_type and
+*TSeqPos are the same.
+*
 *Revision 1.88  2005/11/14 19:06:07  jianye
 *added show cds product on minus strand
 *
