@@ -2770,7 +2770,7 @@ s_AdjustGapParametersByGcd(array_of_8* normal, array_of_8* linear, int size, Int
          int i;
    
          for (i=0; i<size; i++)
-         {  /* divide lambda and H by divisor. */
+         {  /* divide lambda and alpha by divisor. */
             /* multiply gap existence and extension by divisor. */
                 normal[i][0] *= divisor;
                 normal[i][1] *= divisor;
@@ -2779,7 +2779,7 @@ s_AdjustGapParametersByGcd(array_of_8* normal, array_of_8* linear, int size, Int
          }
     }
     if (linear)
-    {  /* divide lambda and H by divisor. */
+    {  /* divide lambda and alpha by divisor. */
        linear[0][0] *= divisor;
        linear[0][1] *= divisor;
        linear[0][2] /= divisor;
@@ -4304,6 +4304,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.136  2005/11/14 15:55:42  madden
+ * Correct comment
+ *
  * Revision 1.135  2005/11/04 13:48:09  madden
  * Doxygen fixes
  *
