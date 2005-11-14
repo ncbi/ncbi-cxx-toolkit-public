@@ -90,19 +90,31 @@ class IUrlEncoder
 {
 public:
     virtual ~IUrlEncoder(void) {}
+    /// Encode user name
     virtual string EncodeUser(const string& user) const = 0;
+    /// Decode user name
     virtual string DecodeUser(const string& user) const = 0;
+    /// Encode password
     virtual string EncodePassword(const string& password) const = 0;
+    /// Decode password
     virtual string DecodePassword(const string& password) const = 0;
+    /// Encode path on server
     virtual string EncodePath(const string& path) const = 0;
+    /// Decode path on server
     virtual string DecodePath(const string& path) const = 0;
+    /// Encode CGI argument name
     virtual string EncodeArgName(const string& name) const = 0;
+    /// Decode CGI argument name
     virtual string DecodeArgName(const string& name) const = 0;
+    /// Encode CGI argument value
     virtual string EncodeArgValue(const string& value) const = 0;
+    /// Decode CGI argument value
     virtual string DecodeArgValue(const string& value) const = 0;
 };
 
 
+/// Primitive encoder - all methods return the argument value.
+/// Used as base class for other encoders.
 class NCBI_XCGI_EXPORT CEmptyUrlEncoder : public IUrlEncoder
 {
 public:
@@ -119,12 +131,12 @@ public:
 };
 
 
+/// Default encoder, uses the selected encoding for argument names/values
+/// and eUrlEncode_Path for document path. Other parts of the URL are
+/// not encoded.
 class NCBI_XCGI_EXPORT CDefaultUrlEncoder : public CEmptyUrlEncoder
 {
 public:
-    /// Default encoder uses the selected encoding for argument names/values
-    /// and eUrlEncode_Path for document path. Other parts of the URL are
-    /// not encoded.
     CDefaultUrlEncoder(EUrlEncode encode = eUrlEncode_SkipMarkChars);
     virtual string EncodePath(const string& path) const;
     virtual string DecodePath(const string& path) const;
@@ -149,19 +161,34 @@ class NCBI_XCGI_EXPORT CCgiArgs_Parser
 public:
     virtual ~CCgiArgs_Parser(void) {}
 
+    /// Parse query string, call AddArgument() to store each value.
     void SetQueryString(const string& query, EUrlEncode encode);
+    /// Parse query string, call AddArgument() to store each value.
     void SetQueryString(const string& query,
                         const IUrlEncoder* encoder = 0);
 
 protected:
+    /// Query type flag
     enum EArgType {
-        eArg_Value,
-        eArg_Index
+        eArg_Value, ///< Query contains name=value pairs
+        eArg_Index  ///< Query contains a list of names: name1+name2+name3
     };
+    /// Process next query argument. Must be overriden to process and store
+    /// the arguments.
+    /// @param position
+    ///   1-based index of the argument in the query
+    /// @param name
+    ///   Name of the argument.
+    /// @param value
+    ///   Contains argument value if query type is eArg_Value or
+    ///   empty string for eArg_Index.
+    /// @param arg_type
+    ///   Query type flag.
     virtual void AddArgument(unsigned int position,
                              const string& name,
                              const string& value,
                              EArgType arg_type = eArg_Index) = 0;
+
 private:
     void x_SetIndexString(const string& query,
                           const IUrlEncoder& encoder);
@@ -178,21 +205,29 @@ private:
 class NCBI_XCGI_EXPORT CCgiArgs : public CCgiArgs_Parser
 {
 public:
+    /// Create an empty arguments set.
     CCgiArgs(void);
+    /// Parse the query string, store the arguments.
     CCgiArgs(const string& query, EUrlEncode decode);
+    /// Parse the query string, store the arguments.
     CCgiArgs(const string& query, const IUrlEncoder* encoder = 0);
 
     /// Ampersand encoding for composed URLs
     enum EAmpEncoding {
-        eAmp_Char,
-        eAmp_Entity
+        eAmp_Char,   ///< Use & to separate arguments
+        eAmp_Entity  ///< Encode '&' as "&amp;"
     };
 
+    /// Construct and return complete query string. Use selected amp
+    /// and name/value encodings.
     string GetQueryString(EAmpEncoding amp_enc,
                           EUrlEncode encode) const;
+    /// Construct and return complete query string. Use selected amp
+    /// and name/value encodings.
     string GetQueryString(EAmpEncoding amp_enc,
                           const IUrlEncoder* encoder = 0) const;
 
+    /// Name-value pair.
     struct SCgiArg
     {
         SCgiArg(string aname, string avalue)
@@ -203,12 +238,19 @@ public:
     typedef SCgiArg    TArg;
     typedef list<TArg> TArgs;
 
+    /// Check if an argument with the given name exists.
     bool IsSetValue(const string& name) const;
+    /// Get value for the given name. Undefined behaviour if the name
+    /// does not exist.
     const string& GetValue(const string& name) const;
+    /// Set new value for the existing argument or add a new argument.
     void SetValue(const string& name, const string value);
+    /// Get the const list of arguments.
     const TArgs& GetArgs(void) const;
+    /// Get the list of arguments.
     TArgs& GetArgs(void);
 
+    /// Select case sensitivity of arguments' names.
     void SetCase(NStr::ECase name_case);
 
 protected:
@@ -282,16 +324,21 @@ public:
     string GetPath(void) const;
     void SetPath(const string& value);
 
-    /// Get the original (unparsed and undecoded) CGI arguments
+    /// Get the original (unparsed and undecoded) CGI query string
     string GetOriginalArgsString(void) const;
-    /// Get list of arguments
+
+    /// Check if the URL contains any arguments
     bool HaveArgs(void) const;
+    /// Get const list of arguments
     const CCgiArgs& GetArgs(void) const;
+    /// Get list of arguments
     CCgiArgs& GetArgs(void);
 
     CUrl(const CUrl& url);
     CUrl& operator=(const CUrl& url);
 
+    /// Return default URL encoder
+    /// @sa CDefaultUrlEncoder
     static IUrlEncoder* GetDefaultEncoder(void);
 
 private:
@@ -438,6 +485,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2005/11/14 16:58:31  grichenk
+* More Doxygen comments
+*
 * Revision 1.5  2005/11/08 20:30:04  grichenk
 * Added ampersand encoding flag
 *
