@@ -43,6 +43,13 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Checksum calculator
+///
+/// This class is used to compute control sums (CRC32, MD5).
+/// Please note that this class uses static tables. This presents a potential
+/// race condition in MT programs. To avoid races call static InitTables method
+/// before first concurrent use of CChecksum.
+///
 class NCBI_XUTIL_EXPORT CChecksum
 {
 public:
@@ -60,6 +67,12 @@ public:
     CChecksum(const CChecksum& cks);
     ~CChecksum();
     CChecksum& operator=(const CChecksum& cks);
+
+    /// Initialize static tables used in checksum calculation
+    /// Call this method before first concurrent (muti-thread) use of 
+    /// CChecksum. It is safe to call this method repeatedly.
+    static void InitTables(void);
+
 
     bool Valid(void) const;
     EMethod GetMethod(void) const;
@@ -96,7 +109,6 @@ private:
     } m_Checksum;
 
     static Uint4 sm_CRC32Table[256];
-    static void InitTables(void);
     static Uint4 UpdateCRC32(Uint4 checksum, const char* str, size_t length);
 
     bool ValidChecksumLineLong(const char* line, size_t length) const;
@@ -134,6 +146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/11/15 17:47:54  kuznets
+* InitTables made public to open a way to avoid MT races
+*
 * Revision 1.8  2003/08/11 16:45:52  kuznets
 * Added Reset() function to clear the accumulated checksum and reuse the object
 * for consecutive checksum calculations
