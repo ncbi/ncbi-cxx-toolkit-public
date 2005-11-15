@@ -356,6 +356,10 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
 
         LDS_GetSequenceBase(*seq_id, &sbase);
 
+        if (!sbase.str_id.empty()) {
+            NStr::ToUpper(sbase.str_id);
+        }
+
         lds_query.ScreenSequence(sbase, 
                                  &cand_set, 
                                  cur_int_idx, 
@@ -547,6 +551,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/11/15 16:51:48  kuznets
+ * Bug fix: convert search string to upper case when index screening
+ *
  * Revision 1.35  2005/11/15 14:41:15  kuznets
  * Added dignostics
  *
