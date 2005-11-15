@@ -49,9 +49,10 @@ int CAlignVec::FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const
         
         for(i = 0; i < m_fshifts.size(); ++i)
         {
-            if(m_fshifts[i].Loc() >= a && m_fshifts[i].Loc() <= b)
-            {
-                len += (m_fshifts[i].IsDeletion() ? m_fshifts[i].Len() : -m_fshifts[i].Len());
+            if(m_fshifts[i].IsDeletion()) {
+                if(m_fshifts[i].Loc() >= a && m_fshifts[i].Loc() <= b+1) len += m_fshifts[i].Len();
+            } else {
+                if(m_fshifts[i].Loc() > a && m_fshifts[i].Loc() < b) len -= m_fshifts[i].Len();
             }
         }
         
@@ -756,6 +757,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/15 21:03:05  souvorov
+ * FShiftedLen is corrected
+ *
  * Revision 1.6  2005/10/20 19:31:08  souvorov
  * Formatting
  *
