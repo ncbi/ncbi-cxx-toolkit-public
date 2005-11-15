@@ -340,22 +340,27 @@ int NStr::StringToNumeric(const string& str)
                         " - invalid characters", delta);                    \
         }                                                                   \
 
-# define CHECK_ENDPTR(conv)                                                 \
+#define CHECK_ENDPTR(conv)                                                 \
     if ( str[pos] ) {                                                       \
         S2N_CONVERT_ERROR(conv, EINVAL, true, pos);                         \
     }
 
-# define CHECK_ENDPTR_(conv)                                                \
+#define CHECK_ENDPTR_(conv)                                                \
     if ( *endptr ) {                                                        \
         S2N_CONVERT_ERROR(conv, EINVAL, true, s_DiffPtr(endptr, begptr));   \
     }
 
-# define CHECK_RANGE(nmin, nmax, conv)                                      \
+#define CHECK_RANGE(nmin, nmax, conv)                                      \
     if ( errno  ||  value < nmin  ||  value > nmax ) {                      \
         S2N_CONVERT_ERROR(conv, ERANGE, false, 0);                          \
     }
 
-# define CHECK_COMMAS                                                       \
+#define CHECK_RANGE_U(nmax, conv)                                      \
+    if ( errno  ||  value > nmax ) {                      \
+        S2N_CONVERT_ERROR(conv, ERANGE, false, 0);                          \
+    }
+
+#define CHECK_COMMAS                                                       \
     /* Check on possible commas */                                          \
     if (flags & NStr::fAllowCommas) {                                       \
         if (ch == ',') {                                                    \
@@ -377,12 +382,13 @@ int NStr::StringToNumeric(const string& str)
     }
 
 
+
 int NStr::StringToInt(const CTempString& str, TStringToNumFlags flags,int base)
 {
     errno = 0;
     Int8 value = StringToInt8(str, flags, base);
     CHECK_RANGE(kMin_Int, kMax_Int, int);
-    return (int)value;
+    return (int) value;
 }
 
 
@@ -391,8 +397,8 @@ NStr::StringToUInt(const CTempString& str, TStringToNumFlags flags, int base)
 {
     errno = 0;
     Uint8 value = StringToUInt8(str, flags, base);
-    CHECK_RANGE(0, kMax_UInt, unsigned int);
-    return (unsigned int)value;
+    CHECK_RANGE_U(kMax_UInt, unsigned int);
+    return (unsigned int) value;
 }
 
 
@@ -402,7 +408,7 @@ long NStr::StringToLong(const CTempString& str, TStringToNumFlags flags,
     errno = 0;
     Int8 value = StringToInt8(str, flags, base);
     CHECK_RANGE(kMin_Long, kMax_Long, long);
-    return (long)value;
+    return (long) value;
 }
 
 
@@ -411,8 +417,8 @@ NStr::StringToULong(const CTempString& str, TStringToNumFlags flags, int base)
 {
     errno = 0;
     Uint8 value = StringToUInt8(str, flags, base);
-    CHECK_RANGE(0, kMax_ULong, long);
-    return (unsigned long)value;
+    CHECK_RANGE_U(kMax_ULong, long);
+    return (unsigned long) value;
 }
 
 
@@ -2363,6 +2369,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.168  2005/11/15 16:14:11  vakatov
+ * + CHECK_RANGE_U() to heed ICC warning "comparing unsigned with zero"
+ *
  * Revision 1.167  2005/10/27 15:53:21  gouriano
  * Further enhancements of CStringUTF8
  *
