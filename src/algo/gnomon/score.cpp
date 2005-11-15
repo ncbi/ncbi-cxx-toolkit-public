@@ -958,7 +958,7 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         }
     }
     
-    const int NonConsensusMargin = 500;
+    const int NonConsensusMargin = 1500;
     for(set<CAlignVec,SAlignOrder>::iterator it = allaligns.begin(); consensuspenalty != BadScore() && it != allaligns.end(); ++it)
     {
         const CAlignVec& algn(*it);
@@ -1514,6 +1514,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2005/11/15 21:04:08  souvorov
+ * NonConsensusMargin = 1500
+ *
  * Revision 1.6  2005/10/20 19:34:12  souvorov
  * Penalty for nonconsensus starts/stops/splices
  *
