@@ -55,8 +55,10 @@ static char const rcsid[] =
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <objects/scoremat/PssmFinalData.hpp>
-#include <objects/scoremat/PssmWithParameters.hpp>
+#include <objects/scoremat/PssmParameters.hpp>
+#include <objects/scoremat/FormatRpsDbParameters.hpp>
 #include <objects/scoremat/PssmIntermediateData.hpp>
+#include <objects/scoremat/PssmWithParameters.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/general/Object_id.hpp>
@@ -221,6 +223,28 @@ CScorematPssmConverter::GetFreqRatios(CConstRef<objects::CPssmWithParameters>
     return retval.release();
 }
 
+/** Even though the query sequence and the matrix gap costs are not a
+ * product of the PSSM engine, set them as they are required for the
+ * PSI-BLAST (query sequence) and RPS-BLAST/formatrpsdb (gap costs)
+ * @param pssm PSSM to modify [in|out]
+ * @param query Query sequence which corresponds to the PSSM [in]
+ * @param gap_open Gap opening cost associated with the matrix used to build
+ * the PSSM [in]
+ * @param gap_extend Gap extension cost associated with the matrix used to 
+ * build the PSSM [in]
+ */
+void
+PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm, 
+                              const CBioseq& query, 
+                              int gap_open, 
+                              int gap_extend)
+{
+    pssm.SetPssm().SetQuery().SetSeq(const_cast<CBioseq&>(query));
+    ASSERT(pssm.GetParams().GetRpsdbparams().IsSetMatrixName());
+    pssm.SetParams().SetRpsdbparams().SetGapOpen(gap_open);
+    pssm.SetParams().SetRpsdbparams().SetGapExtend(gap_extend);
+}
+
 void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
                                const CBlastOptions& opts)
 {
@@ -249,6 +273,10 @@ void PsiBlastComputePssmScores(CRef<CPssmWithParameters> pssm,
         pssm_with_scores->GetPssm().GetFinalData().GetKappa();
     pssm->SetPssm().SetFinalData().SetH() =
         pssm_with_scores->GetPssm().GetFinalData().GetH();
+
+    PsiBlastAddAncilliaryPssmData(*pssm, *query, 
+                                  opts.GetGapOpeningCost(), 
+                                  opts.GetGapExtensionCost());
 }
 
 /// Returns the evalue from this score object
