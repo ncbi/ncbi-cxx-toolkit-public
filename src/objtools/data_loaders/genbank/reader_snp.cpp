@@ -113,8 +113,8 @@ public:
 class CSNP_Ftable_hook : public CReadChoiceVariantHook
 {
 public:
-    CSNP_Ftable_hook(CTSE_SNP_InfoMap& snps)
-        : m_SNP_InfoMap(&snps),
+    CSNP_Ftable_hook(CTSE_SetObjectInfo& set_info)
+        : m_SetObjectInfo(&set_info),
           m_Seq_annot_hook(new CSeq_annot_hook)
         {
         }
@@ -122,7 +122,7 @@ public:
     void ReadChoiceVariant(CObjectIStream& in,
                            const CObjectInfoCV& variant);
 
-    CRef<CTSE_SNP_InfoMap>          m_SNP_InfoMap;
+    CRef<CTSE_SetObjectInfo>          m_SetObjectInfo;
     CRef<CSeq_annot_hook>           m_Seq_annot_hook;
 };
 
@@ -161,7 +161,7 @@ void CSNP_Ftable_hook::ReadChoiceVariant(CObjectIStream& in,
     }}
     snp_info->x_FinishParsing();
     if ( !snp_info->empty() ) {
-        m_SNP_InfoMap->m_SNP_InfoMap[m_Seq_annot_hook->m_Seq_annot] = snp_info;
+        m_SetObjectInfo->m_Seq_annot_InfoMap[m_Seq_annot_hook->m_Seq_annot].m_SNP_annot_Info = snp_info;
     }
 }
 
@@ -253,12 +253,12 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
 
 void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
                                        const CObjectInfo& object,
-                                       CTSE_SNP_InfoMap& snps)
+                                       CTSE_SetObjectInfo& set_info)
 {
     CProcessor::SetSNPReadHooks(in);
     
     if ( CProcessor::TrySNPTable() ) { // set SNP hook
-        CRef<CSNP_Ftable_hook> hook(new CSNP_Ftable_hook(snps));
+        CRef<CSNP_Ftable_hook> hook(new CSNP_Ftable_hook(set_info));
         CObjectHookGuard<CSeq_annot> guard(*hook->m_Seq_annot_hook, &in);
         CObjectHookGuard<CSeq_annot::TData> guard2("ftable", *hook, &in);
         in.Read(object);
@@ -275,12 +275,12 @@ CSeq_annot_SNP_Info_Reader::ParseAnnot(CObjectIStream& in)
     CRef<CSeq_annot_SNP_Info> ret;
 
     CRef<CSeq_annot> annot(new CSeq_annot);
-    CTSE_SNP_InfoMap snps;
-    Parse(in, Begin(*annot), snps);
-    if ( !snps.m_SNP_InfoMap.empty() ) {
-        _ASSERT(snps.m_SNP_InfoMap.size() == 1);
-        _ASSERT(snps.m_SNP_InfoMap.begin()->first == annot);
-        ret = snps.m_SNP_InfoMap.begin()->second;
+    CTSE_SetObjectInfo set_info;
+    Parse(in, Begin(*annot), set_info);
+    if ( !set_info.m_Seq_annot_InfoMap.empty() ) {
+        _ASSERT(set_info.m_Seq_annot_InfoMap.size() == 1);
+        _ASSERT(set_info.m_Seq_annot_InfoMap.begin()->first == annot);
+        ret = set_info.m_Seq_annot_InfoMap.begin()->second.m_SNP_annot_Info;
     }
     else {
         ret = new CSeq_annot_SNP_Info(*annot);
@@ -292,9 +292,9 @@ CSeq_annot_SNP_Info_Reader::ParseAnnot(CObjectIStream& in)
 
 void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
                                        CSeq_entry& tse,
-                                       CTSE_SNP_InfoMap& snps)
+                                       CTSE_SetObjectInfo& set_info)
 {
-    Parse(in, Begin(tse), snps);
+    Parse(in, Begin(tse), set_info);
 }
 
 
@@ -426,7 +426,7 @@ static const unsigned MAGIC = 0x12340003;
 
 void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CConstObjectInfo& object,
-                                       const CTSE_SNP_InfoMap& snps)
+                                       const CTSE_SetObjectInfo& set_info)
 {
     write_unsigned(stream, MAGIC);
 
@@ -438,22 +438,23 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
         obj_stream.Write(object);
     }}
 
-    write_unsigned(stream, snps.m_SNP_InfoMap.size());
-    ITERATE ( CTSE_SNP_InfoMap::TSNP_InfoMap, it, snps.m_SNP_InfoMap ) {
+    write_unsigned(stream, set_info.m_Seq_annot_InfoMap.size());
+    ITERATE ( CTSE_SetObjectInfo::TSeq_annot_InfoMap, it,
+              set_info.m_Seq_annot_InfoMap ) {
         TAnnotToIndex::const_iterator iter = hook->m_Index.find(it->first);
         if ( iter == hook->m_Index.end() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Orphan CSeq_annot_SNP_Info");
         }
         write_unsigned(stream, iter->second);
-        x_Write(stream, *it->second);
+        x_Write(stream, *it->second.m_SNP_annot_Info);
     }
 }
 
 
 void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
                                       const CObjectInfo& object,
-                                      CTSE_SNP_InfoMap& snps)
+                                      CTSE_SetObjectInfo& set_info)
 {
     unsigned magic = read_unsigned(stream);
     if ( !stream || magic != MAGIC ) {
@@ -477,7 +478,8 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
         }
         TAnnotRef annot = hook->m_Index[index];
         _ASSERT(annot);
-        CRef<CSeq_annot_SNP_Info>& snp_info = snps.m_SNP_InfoMap[annot];
+        CRef<CSeq_annot_SNP_Info>& snp_info =
+            set_info.m_Seq_annot_InfoMap[annot].m_SNP_annot_Info;
         if ( snp_info ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Duplicate CSeq_annot_SNP_Info");
@@ -494,7 +496,7 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
 {
     x_Write(stream, snp_info);
 
-    // complex SNPs
+    // complex Set_Info
     CObjectOStreamAsnBinary obj_stream(stream);
     obj_stream << *snp_info.m_Seq_annot;
 }
@@ -505,7 +507,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
 {
     x_Read(stream, snp_info);
 
-    // complex SNPs
+    // complex Set_Info
     CRef<CSeq_annot> annot(new CSeq_annot);
     {{
         CObjectIStreamAsnBinary obj_stream(stream);
@@ -531,7 +533,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
     StoreIndexedStringsTo(stream, snp_info.m_Alleles);
 
-    // simple SNPs
+    // simple Set_Info
     unsigned count = snp_info.m_SNP_Set.size();
     write_size(stream, count);
     stream.write(reinterpret_cast<const char*>(&snp_info.m_SNP_Set[0]),
@@ -562,7 +564,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                            SSNP_Info::kMax_AlleleIndex,
                            SSNP_Info::kMax_AlleleLength);
 
-    // simple SNPs
+    // simple Set_Info
     unsigned count = read_size(stream);
     if ( stream ) {
         snp_info.m_SNP_Set.resize(count);
@@ -597,6 +599,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.24  2005/11/15 15:56:13  vasilche
+ * Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
+ *
  * Revision 1.23  2005/09/20 15:46:13  vasilche
  * AttachAnnot takes non-const object.
  *

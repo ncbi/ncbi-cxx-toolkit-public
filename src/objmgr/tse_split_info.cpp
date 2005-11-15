@@ -451,7 +451,7 @@ void CTSE_Split_Info::x_LoadAssembly(const TBioseqId& seq_id,
 
 
 void CTSE_Split_Info::x_LoadSeq_entry(CSeq_entry& entry,
-                                      CTSE_SNP_InfoMap* snps)
+                                      CTSE_SetObjectInfo* set_info)
 {
     CRef<CSeq_entry> add;
     NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {
@@ -463,9 +463,9 @@ void CTSE_Split_Info::x_LoadSeq_entry(CSeq_entry& entry,
         else {
             add = new CSeq_entry;
             add->Assign(entry);
-            snps = 0;
+            set_info = 0;
         }
-        listener.LoadSeq_entry(tse, *add, snps);
+        listener.LoadSeq_entry(tse, *add, set_info);
     }
 }
 

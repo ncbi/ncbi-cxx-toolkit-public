@@ -280,9 +280,9 @@ void CTSE_Info::SetUsedMemory(size_t size)
 }
 
 
-void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps)
+void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
 {
-    m_SNP_InfoMap = snps;
+    m_SetObjectInfo = set_info;
 
     entry.Parentize();
 
@@ -308,12 +308,12 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps)
         x_SetObject(entry);
     }
 
-    if ( m_SNP_InfoMap ) {
-        if ( !m_SNP_InfoMap->m_SNP_InfoMap.empty() ) {
+    if ( m_SetObjectInfo ) {
+        if ( !m_SetObjectInfo->m_Seq_annot_InfoMap.empty() ) {
             NCBI_THROW(CObjMgrException, eAddDataError,
                        "Unknown SNP annots");
         }
-        m_SNP_InfoMap = null;
+        m_SetObjectInfo = null;
     }
 }
 
@@ -322,12 +322,12 @@ CRef<CSeq_annot_SNP_Info>
 CTSE_Info::x_GetSNP_Info(const CConstRef<CSeq_annot>& annot)
 {
     CRef<CSeq_annot_SNP_Info> ret;
-    if ( m_SNP_InfoMap ) {
-        CTSE_SNP_InfoMap::TSNP_InfoMap::iterator iter =
-            m_SNP_InfoMap->m_SNP_InfoMap.find(annot);
-        if ( iter != m_SNP_InfoMap->m_SNP_InfoMap.end() ) {
-            ret = iter->second;
-            m_SNP_InfoMap->m_SNP_InfoMap.erase(iter);
+    if ( m_SetObjectInfo ) {
+        CTSE_SetObjectInfo::TSeq_annot_InfoMap::iterator iter =
+            m_SetObjectInfo->m_Seq_annot_InfoMap.find(annot);
+        if ( iter != m_SetObjectInfo->m_Seq_annot_InfoMap.end() ) {
+            ret = iter->second.m_SNP_annot_Info;
+            m_SetObjectInfo->m_Seq_annot_InfoMap.erase(iter);
         }
     }
     return ret;
@@ -1057,12 +1057,12 @@ CTSE_Split_Info& CTSE_Info::GetSplitInfo(void)
     return *m_Split;
 }
 
-CTSE_SNP_InfoMap::CTSE_SNP_InfoMap(void)
+CTSE_SetObjectInfo::CTSE_SetObjectInfo(void)
 {
 }
 
 
-CTSE_SNP_InfoMap::~CTSE_SNP_InfoMap(void)
+CTSE_SetObjectInfo::~CTSE_SetObjectInfo(void)
 {
 }
 

@@ -76,7 +76,7 @@ public:
     virtual void LoadAssembly(CTSE_Info&, const TBioseqId& seq_id,
                               const TAssembly& assembly) = 0;
     virtual void LoadSeq_entry(CTSE_Info&, CSeq_entry& entry, 
-                               CTSE_SNP_InfoMap* snps) = 0;
+                               CTSE_SetObjectInfo* set_info) = 0;
 
     // get attach points from CTSE_Info
     static CBioseq_Base_Info& x_GetBase(CTSE_Info& tse, const TPlace& place);
@@ -129,7 +129,7 @@ public:
     virtual void LoadAssembly(CTSE_Info&, const TBioseqId& seq_id,
                               const TAssembly& assembly);
     virtual void LoadSeq_entry(CTSE_Info&, CSeq_entry& entry, 
-                               CTSE_SNP_InfoMap* snps);
+                               CTSE_SetObjectInfo* set_info);
 
 protected:
     void LoadDescr_NoPatch(CTSE_Info& tse, 
@@ -147,7 +147,7 @@ protected:
                               const TSequence& sequence);
     void LoadSeq_entry_NoPatch(CTSE_Info& tse,
                                CSeq_entry& entry, 
-                               CTSE_SNP_InfoMap* snps);
+                               CTSE_SetObjectInfo* set_info);
 
 
 private:
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2005/11/15 15:54:31  vasilche
+* Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
+*
 * Revision 1.4  2005/08/31 19:36:44  didenko
 * Reduced the number of objects copies which are being created while doing PatchSeqIds
 *

@@ -502,10 +502,10 @@ void CTSE_Chunk_Info::x_LoadAssembly(const TBioseqId& seq_id,
 
 
 void CTSE_Chunk_Info::x_LoadSeq_entry(CSeq_entry& entry,
-                                      CTSE_SNP_InfoMap* snps)
+                                      CTSE_SetObjectInfo* set_info)
 {
     _ASSERT(x_Attached());
-    m_SplitInfo->x_LoadSeq_entry(entry, snps);
+    m_SplitInfo->x_LoadSeq_entry(entry, set_info);
 }
 
 
@@ -515,6 +515,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/11/15 15:54:32  vasilche
+* Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
+*
 * Revision 1.30  2005/09/20 15:42:42  vasilche
 * Removed obsolete code.
 *

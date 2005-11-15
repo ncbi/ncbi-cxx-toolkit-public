@@ -49,7 +49,7 @@ class CSeq_entry;
 class CSeq_annot;
 class CSeq_feat;
 class CSeq_annot_SNP_Info;
-class CTSE_SNP_InfoMap;
+class CTSE_SetObjectInfo;
 
 class NCBI_XREADER_EXPORT CSeq_annot_SNP_Info_Reader
 {
@@ -63,10 +63,10 @@ public:
     static CRef<CSeq_annot_SNP_Info> ParseAnnot(CObjectIStream& in);
     static void Parse(CObjectIStream& in,
                       CSeq_entry& tse,
-                      CTSE_SNP_InfoMap& snps);
+                      CTSE_SetObjectInfo& set_info);
     static void Parse(CObjectIStream& in,
                       const CObjectInfo& object,
-                      CTSE_SNP_InfoMap& snps);
+                      CTSE_SetObjectInfo& set_info);
 
     // store table in platform specific format
     static void Write(CNcbiOstream& stream,
@@ -78,12 +78,12 @@ public:
     // store tables in platform specific format
     static void Write(CNcbiOstream& stream,
                       const CConstObjectInfo& root,
-                      const CTSE_SNP_InfoMap& snps);
+                      const CTSE_SetObjectInfo& set_info);
 
     // load tables in platform specific format
     static void Read(CNcbiIstream& stream,
                      const CObjectInfo& root,
-                     CTSE_SNP_InfoMap& snps);
+                     CTSE_SetObjectInfo& set_info);
 
 
     // store table only in platform specific format
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.6  2005/11/15 15:56:13  vasilche
+* Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
+*
 * Revision 1.5  2005/09/20 15:46:13  vasilche
 * AttachAnnot takes non-const object.
 *

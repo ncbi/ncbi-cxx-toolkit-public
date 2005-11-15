@@ -312,17 +312,17 @@ void CTSE_Default_Assigner::LoadAssembly(CTSE_Info& tse,
 
 void CTSE_Default_Assigner::LoadSeq_entry(CTSE_Info& tse,
                                           CSeq_entry& entry, 
-                                          CTSE_SNP_InfoMap* snps)
+                                          CTSE_SetObjectInfo* set_info)
 {
     PatchId(entry);
-    LoadSeq_entry_NoPatch(tse, entry, snps);
+    LoadSeq_entry_NoPatch(tse, entry, set_info);
 }
 
 void CTSE_Default_Assigner::LoadSeq_entry_NoPatch(CTSE_Info& tse,
                                                   CSeq_entry& entry, 
-                                                  CTSE_SNP_InfoMap* snps)
+                                                  CTSE_SetObjectInfo* set_info)
 {
-    tse.SetSeq_entry(entry, snps);
+    tse.SetSeq_entry(entry, set_info);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/11/15 15:54:31  vasilche
+ * Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
+ *
  * Revision 1.5  2005/08/31 19:36:44  didenko
  * Reduced the number of objects copies which are being created while doing PatchSeqIds
  *

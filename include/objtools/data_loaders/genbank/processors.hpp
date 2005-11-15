@@ -205,7 +205,7 @@ public:
                      const CLoadLockBlob& blob,
                      CWriter* writer,
                      const CSeq_entry& seq_entry,
-                     const CTSE_SNP_InfoMap& snps) const;
+                     const CTSE_SetObjectInfo& set_info) const;
 };
 
 

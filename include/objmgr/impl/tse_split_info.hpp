@@ -53,7 +53,7 @@ class CBioseq_Info;
 class CSeq_entry_Info;
 class CDataSource;
 class CDataLoader;
-class CTSE_SNP_InfoMap;
+class CTSE_SetObjectInfo;
 
 class ITSE_Assigner;
 
@@ -139,7 +139,7 @@ public:
                         const TSequence& sequence);
     void x_LoadAssembly(const TBioseqId& seq_id,
                         const TAssembly& assembly);
-    void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
+    void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info = 0);
 
 
 protected:

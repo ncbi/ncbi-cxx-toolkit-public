@@ -48,7 +48,7 @@ class CReadDispatcher;
 class CWriter;
 class CID2_Reply_Data;
 class CLoadLockBlob;
-class CTSE_SNP_InfoMap;
+class CTSE_SetObjectInfo;
 struct STimeSizeStatistics;
 
 class NCBI_XREADER_EXPORT CProcessor : public CObject 
@@ -121,7 +121,7 @@ public:
                              TChunkId chunk_id,
                              CLoadLockBlob& blob,
                              CRef<CSeq_entry> entry,
-                             CTSE_SNP_InfoMap* snps = 0);
+                             CTSE_SetObjectInfo* set_info = 0);
 
 protected:
     CProcessor(CReadDispatcher& dispatcher);

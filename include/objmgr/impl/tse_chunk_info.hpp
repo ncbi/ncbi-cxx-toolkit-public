@@ -60,7 +60,7 @@ class CBioseq_Base_Info;
 class CBioseq_Info;
 class CBioseq_set_Info;
 class CDataLoader;
-class CTSE_SNP_InfoMap;
+class CTSE_SetObjectInfo;
 class ITSE_Assigner;
 class CTSE_Default_Assigner;
 
@@ -181,7 +181,7 @@ public:
                         const TSequence& seq);
     void x_LoadAssembly(const TBioseqId& seq_id, const TAssembly& assembly);
 
-    void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SNP_InfoMap* snps = 0);
+    void x_LoadSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info = 0);
 
     //////////////////////////////////////////////////////////////////
     // methods to find out what information is needed to be loaded
@@ -309,6 +309,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/11/15 15:54:31  vasilche
+* Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
+*
 * Revision 1.25  2005/10/26 14:36:41  vasilche
 * Updated for new CBlobId interface.
 * Added getters for chunk contents description.
