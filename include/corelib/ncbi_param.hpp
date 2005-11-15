@@ -28,6 +28,7 @@
  *
  * Author:  Aleksey Grichenko
  *
+ * Parameters storage interface
  *
  */
 
@@ -37,10 +38,7 @@
 
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbistre.hpp>
 #include <corelib/ncbithr.hpp>
-#include <corelib/ncbi_config_value.hpp>
 
 
 /** @addtogroup Param
@@ -54,6 +52,39 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// Usage of the parameters:
+///
+/// - Declare the parameter with NCBI_PARAM_DECL (NCBI_PARAM_ENUM_DECL for
+///   enums):
+///   NCBI_PARAM_DECL(int, MySection, MyIntParam);
+///   NCBI_PARAM_DECL(string, MySection, MyStrParam);
+///   NCBI_PARAM_ENUM_DECL(EMyEnum, MySection, MyEnumParam);
+///
+/// - Add parameter definition (this will also generate static data):
+///   NCBI_PARAM_DEF(int, MySection, MyIntParam, 12345);
+///   NCBI_PARAM_DEF(string, MySection, MyStrParam, "Default string value");
+///
+/// - For enum parameters define mappings between strings and values
+///   before defining the parameter:
+///   NCBI_PARAM_ENUM_ARRAY(EMyEnum, MySection, MyEnumParam)
+///   {
+///       {"My_A", eMyEnum_A},
+///       {"My_B", eMyEnum_B},
+///       {"My_C", eMyEnum_C}
+///   };
+///
+///   NCBI_PARAM_ENUM_DEF(EMyEnum, MySection, MyEnumParam, eMyEnum_B);
+///
+/// - Use NCBI_PARAM_TYPE() as parameter type:
+///   NCBI_PARAM_TYPE(MySection, MyIntParam)::GetDefault();
+///   typedef NCBI_PARAM_TYPE(MySection, MyStrParam) TMyStrParam;
+///   TMyStrParam str_param; str_param.Set("Local string value");
+///
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// NCBI_PARAM_DECL
 /// NCBI_PARAM_DEF
 ///
@@ -62,95 +93,107 @@ BEGIN_NCBI_SCOPE
 /// Each parameter must be declared and defined using the macros
 ///
 
-// Internal enum value description
-template<class TValue>
-struct SEnumDescription
-{
-    const char*  alias; // string representation of enum value
-    const TValue value; // int representation of enum value
-};
-
-
-// Internal structure describing parameter properties
-template<class TValue>
-struct SParamDescription
-{
-    const char*  section;
-    const char*  name;
-    const TValue default_value;
-
-    // List of enum values if any
-    const SEnumDescription<TValue>* enums;
-    const size_t                    enums_size;
-};
-
-/// >>>>>>  SParamEnumDescription : public SParamDescription, etc.
-/// >>>>>>  so that ENUM becomes a fully separate add-on component?
-
-
 /// Generate typename for a parameter from its {section, name} attributes
 #define NCBI_PARAM_TYPE(section, name)          \
-    CParam< SNcbiParamDesc_##section##_##name >
+    CParam<SNcbiParamDesc_##section##_##name>
 
 
-/// Parameter declaration. Generates type TParam_section_name.
+/// Parameter declaration. Generates struct for storing the parameter.
 /// Section and name may be used to set default value through a
 /// registry or environment variable section_name.
+/// @sa NCBI_PARAM_DEF
 #define NCBI_PARAM_DECL(type, section, name)                      \
     struct SNcbiParamDesc_##section##_##name                      \
     {                                                             \
         typedef type TValueType;                                  \
-        static SParamDescription<TValueType> sm_ParamDescription; \
+        typedef SParamDescription<TValueType> TDescription;       \
+        static TDescription sm_ParamDescription;                  \
     }
 
 
 /// Enum parameter declaration. In addition to NCBI_PARAM_DECL also
-/// specializes CParamParser<type>.
+/// specializes CParamParser<type> to convert between strings and
+/// enum values.
+/// @sa NCBI_PARAM_ENUM_ARRAY
+/// @sa NCBI_PARAM_ENUM_DEF
 #define NCBI_PARAM_ENUM_DECL(type, section, name)                 \
                                                                   \
-    EMPTY_TEMPLATE inline CParamParser< type >::TValueType        \
-    CParamParser< type >::StringToValue(const string&     str,    \
-                                        const TParamDesc& descr)  \
+    EMPTY_TEMPLATE inline                                         \
+    CParamParser< SParamEnumDescription< type > >::TValueType     \
+    CParamParser< SParamEnumDescription< type > >::               \
+    StringToValue(const string&     str,                          \
+                  const TParamDesc& descr)                        \
     { return CEnumParser< type >::StringToEnum(str, descr); }     \
                                                                   \
     EMPTY_TEMPLATE inline string                                  \
-    CParamParser< type >::ValueToString(const TValueType& val,    \
-                                        const TParamDesc& descr)  \
+    CParamParser< SParamEnumDescription< type > >::               \
+    ValueToString(const TValueType& val,                          \
+                  const TParamDesc& descr)                        \
     { return CEnumParser< type >::EnumToString(val, descr); }     \
                                                                   \
-    NCBI_PARAM_DECL(type, section, name)
-
-
-#define NCBI_PARAM_DEF_INTERNAL(type,                          \
-                                section,                       \
-                                name,                          \
-                                default_value,                 \
-                                enums,                         \
-                                enums_size)                    \
-    SParamDescription< type >                                  \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription =   \
-        { #section, #name, default_value, enums, enums_size }
+    struct SNcbiParamDesc_##section##_##name                      \
+    {                                                             \
+        typedef type TValueType;                                  \
+        typedef SParamEnumDescription<TValueType> TDescription;   \
+        static TDescription sm_ParamDescription;                  \
+    }
 
 
 /// Parameter definition. "value" is used to set the initial parameter
 /// value, which may be overriden by registry or environment.
-#define NCBI_PARAM_DEF(type, section, name, default_value)              \
-    NCBI_PARAM_DEF_INTERNAL(type, section, name, default_value, NULL, 0)
+/// @sa NCBI_PARAM_DECL
+#define NCBI_PARAM_DEF(type, section, name, default_value)     \
+    SParamDescription< type >                                  \
+    SNcbiParamDesc_##section##_##name::sm_ParamDescription =   \
+        { #section, #name, default_value }
 
 
 /// Static array of enum name+value pairs. Must be defined before
 /// NCBI_PARAM_ENUM_DEF
-#define NCBI_PARAM_ENUM_ARRAY(type, section, name)                      \
+/// @sa NCBI_PARAM_ENUM_DEF
+#define NCBI_PARAM_ENUM_ARRAY(type, section, name) \
     static SEnumDescription< type > s_EnumData_##section##_##name[] =
 
 
 /// Enum parameter definition. Additional 'enums' argument should provide
 /// static array of SEnumDescription<type>.
-#define NCBI_PARAM_ENUM_DEF(type, section, name, default_value)         \
-    NCBI_PARAM_DEF_INTERNAL(type, section, name, default_value,         \
-                            s_EnumData_##section##_##name,              \
-                            ArraySize(s_EnumData_##section##_##name))
+/// @sa NCBI_PARAM_ENUM_ARRAY
+#define NCBI_PARAM_ENUM_DEF(type, section, name, default_value) \
+    SParamEnumDescription< type >                               \
+    SNcbiParamDesc_##section##_##name::sm_ParamDescription =    \
+        { #section, #name, default_value,                       \
+          s_EnumData_##section##_##name,                        \
+          ArraySize(s_EnumData_##section##_##name) }
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CParamException --
+///
+/// Exception generated by param parser
+
+class CParamException : public CCoreException
+{
+public:
+    enum EErrCode {
+        eParserError,      ///< Can not convert string to value
+        eBadValue          ///< Unexpected parameter value
+    };
+
+    /// Translate from the error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eParserError: return "eParserError";
+        case eBadValue:    return "eBadValue";
+        default:            return CException::GetErrCodeString();
+        }
+    }
+
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CParamException, CCoreException);
+};
 
 
 
@@ -163,45 +206,21 @@ struct SParamDescription
 /// Used to read parameter value from registry/environment.
 /// Default implementation requires TValue to be readable from and writable
 /// to a stream. Optimized specializations exist for string and bool types.
+/// The template is also specialized for each enum parameter.
 ///
 
 
-template<class TValue>
+template<class TDescription>
 class CParamParser
 {
 public:
-    typedef TValue                     TValueType;
-    typedef SParamDescription<TValue>  TParamDesc;
+    typedef TDescription                      TParamDesc;
+    typedef typename TDescription::TValueType TValueType;
 
     static TValueType StringToValue(const string& str,
                                     const TParamDesc& descr);
     static string     ValueToString(const TValueType& val,
                                     const TParamDesc& descr);
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// CEnumParser
-///
-/// Enum parameter parser template.
-///
-/// Converts between string and enum. Is used by NCBI_PARAM_ENUM_DECL.
-///
-
-
-template<class TValue>
-class CEnumParser
-{
-public:
-    typedef TValue                    TValueType;
-    typedef SParamDescription<TValue> TParamDesc;
-    typedef SEnumDescription<TValue>  TEnumDesc;
-
-    static TValueType StringToEnum(const string& str,
-                                   const TParamDesc& descr);
-    static string     EnumToString(const TValueType& val,
-                                   const TParamDesc& descr);
 };
 
 
@@ -224,8 +243,9 @@ class CParam
 {
 public:
     typedef CParam<TDescription>                   TParam;
-    typedef typename TDescription::TValueType      TValueType;
-    typedef CParamParser<TValueType>               TParamParser;
+    typedef typename TDescription::TDescription    TParamDescription;
+    typedef typename TParamDescription::TValueType TValueType;
+    typedef CParamParser<TParamDescription>        TParamParser;
 
     /// Create parameter with the thread default or global default value.
     /// Changing defaults does not affect the existing parameter objects.
@@ -269,243 +289,20 @@ private:
 };
 
 
-// TLS cleanup function template
-
-template<class TValue>
-inline
-void g_ParamTlsValueCleanup(TValue* value, void*)
-{
-    delete value;
-}
-
-
-// Generic CParamParser
-
-template<class TValue>
-inline
-typename CParamParser<TValue>::TValueType
-CParamParser<TValue>::StringToValue(const string& str,
-                                    const TParamDesc& descr)
-{
-    CNcbiIstrstream in(str.c_str());
-    TValueType val;
-    in >> val;
-
-    // >>>> Check state of stream, THROW if bad!
-
-    return val;
-}
-
-
-template<class TValue>
-inline
-string CParamParser<TValue>::ValueToString(const TValueType& val,
-                                           const TParamDesc& descr)
-{
-    CNcbiOstrstream buffer;
-    buffer << val;
-    return CNcbiOstrstreamToString(buffer);
-}
-
-
-// CParamParser for string
-
-EMPTY_TEMPLATE
-inline
-CParamParser<string>::TValueType
-CParamParser<string>::StringToValue(const string& str,
-                                    const TParamDesc&)
-{
-    return str;
-}
-
-
-EMPTY_TEMPLATE
-inline
-string CParamParser<string>::ValueToString(const string& val,
-                                           const TParamDesc&)
-{
-    return val;
-}
-
-
-// CParamParser for bool
-
-EMPTY_TEMPLATE
-inline
-CParamParser<bool>::TValueType
-CParamParser<bool>::StringToValue(const string& str,
-                                  const TParamDesc&)
-{
-    return NStr::StringToBool(str);
-}
-
-
-EMPTY_TEMPLATE
-inline
-string CParamParser<bool>::ValueToString(const bool& val,
-                                         const TParamDesc&)
-{
-    return NStr::BoolToString(val);
-}
-
-
-// CEnumParser implementation
-
-template<class TValue>
-inline
-typename CEnumParser<TValue>::TValueType
-CEnumParser<TValue>::StringToEnum(const string& str,
-                                  const TParamDesc& descr)
-{
-    for (size_t i = 0;  i < descr.enums_size;  ++i) {
-        if ( NStr::Equal(str, descr.enums[i].alias) ) {
-            return descr.enums[i].value;
-        }
-    }
-
-    //>>>>  THROW if unknown!
-
-    // Enum name not found
-    return descr.default_value;
-}
-
-
-template<class TValue>
-inline
-string CEnumParser<TValue>::EnumToString(const TValueType& val,
-                                         const TParamDesc& descr)
-{
-    for (size_t i = 0;  i < descr.enums_size;  ++i) {
-        if (descr.enums[i].value == val) {
-            return string(descr.enums[i].alias);
-        }
-    }
-
-    //>>>>  THROW if unknown!
-
-    // Enum name not found
-    return kEmptyStr;
-}
-
-
-// CParam implementation
-
-template<class TDescription>
-inline
-CParam<TDescription>::CParam<TDescription>(const string& section,
-                                           const string& name)
-{
-    string str = GetConfigString
-        (section, name,
-         TParamParser::ValueToString(GetThreadDefault()));
-    m_Value = TParamParser::StringToValue(str);
-}
-
-
-template<class TDescription>
-inline
-SSystemFastMutex& CParam<TDescription>::sx_GetLock(void)
-{
-    DEFINE_STATIC_FAST_MUTEX(s_ParamValueLock);
-    return s_ParamValueLock;
-}
-
-
-template<class TDescription>
-inline
-typename CParam<TDescription>::TValueType&
-CParam<TDescription>::sx_GetDefault(void)
-{
-    static TValueType s_Default =
-        TDescription::sm_ParamDescription.default_value;
-
-    static bool initialized = false;
-    if ( !initialized ) {
-        string config_value =
-            g_GetConfigString(TDescription::sm_ParamDescription.section,
-                              TDescription::sm_ParamDescription.name,
-                              "");
-        if ( !config_value.empty() ) {
-            s_Default =
-                TParamParser::StringToValue(config_value,
-                                            TDescription::sm_ParamDescription);
-        }
-        initialized = true;
-    }
-
-    return s_Default;
-}
-
-
-template<class TDescription>
-inline
-CRef<typename CParam<TDescription>::TTls>&
-CParam<TDescription>::sx_GetTls(void)
-{
-    static CRef<TTls> s_ValueTls;
-    return s_ValueTls;
-}
-
-
-template<class TDescription>
-inline
-typename CParam<TDescription>::TValueType
-CParam<TDescription>::GetDefault(void)
-{
-    CFastMutexGuard guard(sx_GetLock());
-    return sx_GetDefault();
-}
-
-
-template<class TDescription>
-inline
-void CParam<TDescription>::SetDefault(const TValueType& val)
-{
-    CFastMutexGuard guard(sx_GetLock());
-    sx_GetDefault() = val;
-}
-
-
-template<class TDescription>
-inline
-typename CParam<TDescription>::TValueType
-CParam<TDescription>::GetThreadDefault(void)
-{
-    CFastMutexGuard guard(sx_GetLock());
-    CRef<TTls>& tls = sx_GetTls();
-    if ( tls ) {
-        TValueType* v = tls->GetValue();
-        if ( v ) {
-            return *v;
-        }
-    }
-    return sx_GetDefault();
-}
-
-
-template<class TDescription>
-inline
-void CParam<TDescription>::SetThreadDefault(const TValueType& val)
-{
-    CFastMutexGuard guard(sx_GetLock());
-    CRef<TTls>& tls = sx_GetTls();
-    if ( !tls ) {
-        tls.Reset(new TTls);
-    }
-    tls->SetValue(new TValueType(val), g_ParamTlsValueCleanup<TValueType>);
-}
-
-
 END_NCBI_SCOPE
 
 
 /* @} */
 
+#include <corelib/ncbi_param_impl.hpp>
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/15 17:46:40  grichenk
+ * Redesigned enum parameters.
+ * Moved implementation details to separate file.
+ *
  * Revision 1.2  2005/11/14 22:12:49  vakatov
  * First code review, with fixes, proposals, etc.
  *
