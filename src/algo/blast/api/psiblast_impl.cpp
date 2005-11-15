@@ -172,6 +172,7 @@ s_SetUpInternalDataStructures(CRef<IQueryFactory> query_factory,
                                                   BlastHSPStreamFree));
 
     // 7. Set up the BlastSeqSrc
+    subject->ResetBlastSeqSrcIteration();
     retval->m_SeqSrc.Reset(new TBlastSeqSrc(subject->MakeSeqSrc(), 0));
 
     return retval;
