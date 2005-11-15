@@ -45,31 +45,69 @@ Contents: Interface for CProfileData
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// Represent databases of PSSM data and residue frequencies
 class CProfileData {
 public:
+    /// Which collection to retrieve
     typedef enum {
-        eGetResFreqs,
-        eGetPssm
+        eGetResFreqs,    ///< Retrieve residue frequencies
+        eGetPssm         ///< Retrieve PSSMs
     } EMapChoice;
 
+    /// Default constructor
+    ///
     CProfileData() {}
+
+    /// Destructor
+    ///
     ~CProfileData() { Clear(); }
 
+    /// Retrieve a list of offsets where database sequences begin.
+    /// @return Pointer to list of offsets
+    ///
     Int4 * GetSeqOffsets() const { return m_SeqOffsets; }
+
+    /// Assuming the database is a list of PSSM columns,
+    /// retrieve a list of all of the PSSMs in the database
+    /// concatenated together. GetSeqOffsets() can be used to
+    /// retrieve a list of the offset of the first PSSM column
+    /// of each database sequence. The returned matrix is 
+    /// (db length) x kAlphabetSize
+    /// @return Pointer to PSSM data
+    ///
     Int4 ** GetPssm() const { return m_PssmRows; }
+
+    /// Assuming the database is a list of columns of profiles,
+    /// frequencies, retrieve a list of all of the profiles
+    /// in the database concatenated together. GetSeqOffsets() 
+    /// can be used to retrieve a list of the offset of the 
+    /// first profile column of each database sequence. The
+    /// returned matrix is (db length) x kAlphabetSize
+    /// @return Pointer to profile data
+    ///
     double ** GetResFreqs() const { return m_ResFreqRows; }
 
+    /// Load information from a given database
+    /// @param choice Specifies whether PSSMs or profiles are loaded [in]
+    /// @param dbname Base name of the database to load [in]
+    /// @param resfreq_file If residue frequencies are desired, the
+    ///                     name of the file that contains them
+    ///
     void Load(EMapChoice choice, 
               string dbname,
               string resfreq_file = "");
+
+    /// Free previously loaded PSSM or profile data
+    ///
     void Clear();
 
 private:
-    CMemoryFile *m_ResFreqMmap;
-    CMemoryFile *m_PssmMmap;
-    Int4 *m_SeqOffsets;
-    Int4 **m_PssmRows;
-    double **m_ResFreqRows;
+    CMemoryFile *m_ResFreqMmap; ///< Memory-mapped residue frequency data
+    CMemoryFile *m_PssmMmap;    ///< Memory-mapped PSSM data
+    Int4 *m_SeqOffsets;         ///< List of the first offset of each
+                                ///  database sequence
+    Int4 **m_PssmRows;          ///< List of pointers to PSSM columns
+    double **m_ResFreqRows;     ///< List of pointers to profile columns
 };
 
 END_SCOPE(cobalt)
@@ -79,6 +117,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.2  2005/11/15 20:10:29  papadopo
+  add doxygen
+
   Revision 1.1  2005/11/10 15:37:59  papadopo
   Initial version
 

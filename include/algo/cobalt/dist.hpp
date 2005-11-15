@@ -50,11 +50,25 @@ Contents: Interface for CDistances class
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// Representation of pairwise distances, intended for use
+/// in multiple sequence alignment applications
 class CDistances {
 
 public:
+    /// Create empty distance matrix
+    ///
     CDistances() {}
 
+    /// Create a pairwise distance matrix
+    /// @param query_data List of sequences for which distances
+    ///                   will be computed [in]
+    /// @param hitlist Collection of local alignments between
+    ///                paris of the sequences in query_data [in]
+    /// @param score_matrix log-odds score matrix to use in the
+    ///                     distance calculations [in]
+    /// @param kbp Karlin-Altschul parameters to use in the 
+    ///            distance calculations [in]
+    ///
     CDistances(vector<CSequence>& query_data,
                CHitList& hitlist, 
                SNCBIFullScoreMatrix& score_matrix,
@@ -63,18 +77,43 @@ public:
         ComputeMatrix(query_data, hitlist, score_matrix, kbp);
     }
 
+    /// Destructor
+    ///
     ~CDistances() {}
 
+    /// Recompute the distance matrix using new parameters
+    /// @param query_data List of sequences for which distances
+    ///                   will be computed [in]
+    /// @param hitlist Collection of local alignments between
+    ///                paris of the sequences in query_data [in]
+    /// @param score_matrix log-odds score matrix to use in the
+    ///                     distance calculations [in]
+    /// @param kbp Karlin-Altschul parameters to use in the 
+    ///            distance calculations [in]
+    ///
     void ComputeMatrix(vector<CSequence>& query_data,
                        CHitList& hitlist, 
                        SNCBIFullScoreMatrix& score_matrix,
                        Blast_KarlinBlk *kbp);
 
+    /// Access the current distance matrix
+    /// @return The distance matrix
     const CDistMethods::TMatrix& GetMatrix() const { return m_Matrix; }
 
 private:
-    CDistMethods::TMatrix m_Matrix;
+    CDistMethods::TMatrix m_Matrix;     ///< Current distance matrix
 
+    /// Compute the self-scores of the input sequences
+    /// @param query_data List of sequences for which distances
+    ///                   will be computed [in]
+    /// @param hitlist Collection of local alignments between
+    ///                paris of the sequences in query_data [in]
+    /// @param score_matrix log-odds score matrix to use in the
+    ///                     distance calculations [in]
+    /// @param kbp Karlin-Altschul parameters to use in the 
+    ///            distance calculations [in]
+    /// @param self_score The computed self scores [out]
+    ///
     void x_GetSelfScores(vector<CSequence>& query_data,
                          CHitList& hitlist,
                          SNCBIFullScoreMatrix& score_matrix,
@@ -89,6 +128,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/15 20:10:29  papadopo
+  add doxygen
+
   Revision 1.2  2005/11/08 17:42:17  papadopo
   Rearrange includes to be self-sufficient
 
