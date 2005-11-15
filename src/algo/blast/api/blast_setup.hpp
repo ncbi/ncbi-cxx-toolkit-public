@@ -125,7 +125,8 @@ public:
     /// @param encoding desired encoding [in]
     /// @param strand strand to fetch [in]
     /// @param sentinel specifies to use or not to use sentinel bytes around
-    ///        sequence data [in]
+    ///        sequence data. Note that this is ignored for proteins, as in the
+    ///        CORE of BLAST, proteins always have sentinel bytes [in]
     /// @param warnings if not NULL, warnings will be returned in this string
     ///        [in|out]
     /// @return SBlastSequence structure containing sequence data requested
@@ -365,6 +366,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2005/11/15 22:43:47  camacho
+* Fix comment
+*
 * Revision 1.53  2005/09/28 18:23:08  camacho
 * Rearrangement of headers/functions to segregate object manager dependencies.
 *
