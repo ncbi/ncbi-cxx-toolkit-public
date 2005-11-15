@@ -71,10 +71,15 @@ CPsiBlastIterationState::HasMoreIterations() const
 bool
 CPsiBlastIterationState::HasConverged() const
 {
-    // For an uninitialized object (i.e.: one that hasn't taken a snapshot), 
+    // For an uninitialized object (i.e.: one that hasn't been 'advanced'), 
     // it doesn't make sense to have converged
     if (m_PreviousData.empty() && m_CurrentData.empty()) {
         return false;
+    }
+    // if the most current list of ids is empty, that means that no new
+    // sequences were found and therefore we have converged.
+    if ( !m_PreviousData.empty() && m_CurrentData.empty() ) {
+        return true;
     }
     // if the size differs, they're obviously not the same :)
     if (m_PreviousData.size() != m_CurrentData.size()) {
