@@ -281,6 +281,13 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
     return CSeqDB::eOidList;
 }
 
+void CSeqDBImpl::ResetInternalChunkBookmark()
+{
+    CHECK_MARKER();
+    CFastMutexGuard guard(m_OIDLock);
+    m_NextChunkOID = 0;
+}
+
 int CSeqDBImpl::GetSeqLength(int oid) const
 {
     CHECK_MARKER();

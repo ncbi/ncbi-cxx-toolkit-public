@@ -551,6 +551,11 @@ public:
                     int         & end_chunk,         // out
                     vector<int> & oid_list,          // out
                     int         * oid_state = NULL); // in+out
+
+    /// Resets this object's internal chunk bookmark, which is used when the
+    /// oid_state argument to GetNextOIDChunk is NULL. This allows for several
+    /// iterations to be performed over the same CSeqDB object
+    void ResetInternalChunkBookmark();
     
     /// Get list of database names.
     ///

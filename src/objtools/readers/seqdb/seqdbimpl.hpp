@@ -398,6 +398,8 @@ public:
                     int         & end_chunk,
                     vector<int> & oid_list,
                     int         * oid_state);
+
+    void ResetInternalChunkBookmark();
     
     /// Get list of database names.
     ///

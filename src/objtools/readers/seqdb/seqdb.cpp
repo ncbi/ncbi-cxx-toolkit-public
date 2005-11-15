@@ -388,6 +388,11 @@ CSeqDB::GetNextOIDChunk(int         & begin,
     return rv;
 }
 
+void CSeqDB::ResetInternalChunkBookmark()
+{
+    m_Impl->ResetInternalChunkBookmark();
+}
+
 const string & CSeqDB::GetDBNameList() const
 {
     return m_Impl->GetDBNameList();
