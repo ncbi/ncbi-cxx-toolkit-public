@@ -111,6 +111,11 @@ public:
                 if (seq_id->Match(*seq_id_db)) {
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
+
+                    LOG_POST(Info << "LDS: Local object " << seq_id_str
+                                  << " id=" << object_id << " matches "
+                                  << seq_id->AsFastaString());
+
                     return;
                 }
             } // ITERATE
@@ -156,6 +161,11 @@ public:
                 if (seq_id->Match(*seq_id_db)) {
                     m_Disposition.push_back(
                         SLDS_ObjectDisposition(object_id, parent_id, tse_id));
+
+                    LOG_POST(Info << "LDS: Local object " << seq_id_str
+                                  << " id=" << object_id << " matches "
+                                  << seq_id->AsFastaString());
+
                     return;
                 }
             } // ITERATE
@@ -537,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/11/15 14:41:15  kuznets
+ * Added dignostics
+ *
  * Revision 1.34  2005/10/26 14:36:44  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *
