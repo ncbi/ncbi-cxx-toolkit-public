@@ -31,6 +31,7 @@ dbapi/driver/odbc$
 dbapi/driver/util$
 gui
 html$
+internal/align_model
 internal/gbench/plugins
 objects
 objmgr$
