@@ -144,7 +144,8 @@ bool CScopeTransaction_Impl::x_CanCommitRollBack() const
     //    if (m_Parent) 
     //        return m_Parent->x_CanCommitRollBack();
     ITERATE(TScopes, it, m_Scopes) {
-        if ( this != &const_cast<TScope&>(*it)->GetTransaction())
+        if ( static_cast<const IScopeTransaction_Impl*>(this)
+             != &const_cast<TScope&>(*it)->GetTransaction() )
             return false;
     }
     return true;
@@ -281,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/15 21:34:44  ucko
+ * Add a redundant cast to x_CanCommitRollBack for GCC 2.95.
+ *
  * Revision 1.1  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *
