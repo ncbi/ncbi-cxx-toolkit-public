@@ -225,7 +225,9 @@ Uint4 CChecksum::sm_CRC32Table[256];
 
 void CChecksum::InitTables(void)
 {
-    if ( sm_CRC32Table[0] == 0 ) {
+    // check the last element to make sure we minimize chances of races 
+    // in MT programs.
+    if ( sm_CRC32Table[255] == 0 ) {
         for ( size_t i = 0;  i < 256;  ++i ) {
             Uint4 byteCRC = Uint4(i) << 24;
             for ( int j = 0;  j < 8;  ++j ) {
@@ -287,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/11/15 19:24:24  kuznets
+ * Check last (not first) element of CRC32 table to avoid races
+ *
  * Revision 1.11  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
