@@ -79,75 +79,177 @@ Contents: Interface for CHit class
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// A generalized representation of a pairwise alignment
 class CHit {
 
 public:
-   static const int kMinHitSize = 2;
-   typedef vector<CHit *> TSubHit;
+    /// Not always used, but useful to avoid 
+    /// extremely small hits
+    static const int kMinHitSize = 2;
+ 
+    /// Hits can be grouped hierarchically
+    typedef vector<CHit *> TSubHit;
+ 
+    /// Numerical identifier for first sequence 
+    /// in alignment
+    int m_SeqIndex1;
+ 
+    /// Numerical identifier for second sequence 
+    /// in alignment
+    int m_SeqIndex2;
+ 
+    /// Score of alignment
+    int m_Score;
+ 
+    /// Score of alignment assuming Karlin 
+    /// Altschul statistics are available
+    double m_BitScore;
+ 
+    /// Fraction (<=1.0) that downweights the alignment
+    /// score based on how other alignment (dis)agree with it
+    double m_HitRate;
+ 
+    /// The range of offsets on the first sequence
+    TRange m_SeqRange1;
+ 
+    /// The range of offsets on the second sequence
+    TRange m_SeqRange2;
+ 
+    /// Create an empty alignment
+    /// @param seq1_index Numerical identifier for first sequence [in]
+    /// @param seq2_index Numerical identifier for second sequence [in]
+    ///
+    CHit(int seq1_index, int seq2_index) 
+           : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
+             m_Score(0), m_BitScore(0.0), m_HitRate(1.0),
+             m_SeqRange1(0,0), m_SeqRange2(0,0) {}
+ 
+    /// Create an alignment from a BLAST hit
+    /// @param seq1_index Numerical identifier for first sequence [in]
+    /// @param seq2_index Numerical identifier for second sequence [in]
+    /// @param hsp A single pairwise alignment from a blast hit [in]
+    ///
+    CHit(int seq1_index, int seq2_index, BlastHSP *hsp)
+           : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
+             m_Score(hsp->score), m_BitScore(0.0), m_HitRate(1.0),
+             m_SeqRange1(hsp->query.offset, hsp->query.end - 1),
+             m_SeqRange2(hsp->subject.offset, hsp->subject.end - 1),
+             m_EditScript(hsp->gap_info) { VerifyHit(); }
+ 
+    /// Create an alignment with all specified parameters
+    /// @param seq1_index Numerical identifier for first sequence [in]
+    /// @param seq2_index Numerical identifier for second sequence [in]
+    /// @param seq_range1 Offsets on the first sequence [in]
+    /// @param seq_range2 Offsets on the second sequence [in]
+    /// @param score The score of the alignment [in]
+    /// @param edit_script Traceback for the alignment (may be empty) [in]
+    /// 
+    CHit(int seq1_index, int seq2_index,
+         TRange seq_range1, TRange seq_range2,
+         int score, CEditScript edit_script)
+        : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index),
+          m_Score(score), m_BitScore(0.0), m_HitRate(1.0),
+          m_SeqRange1(seq_range1), m_SeqRange2(seq_range2),
+          m_EditScript(edit_script) { VerifyHit(); }
+ 
+    /// Destructor
+    ///
+    ~CHit() 
+    {
+        // delete sub-hits
+        for (int i = 0; i < (int)m_SubHit.size(); i++)
+             delete m_SubHit[i];
+    }
+ 
+    /// Add a to a CHit's list of subhits
+    /// @param hit The hit to add [in]
+    ///
+    void InsertSubHit(CHit *hit) { m_SubHit.push_back(hit); }
+ 
+    /// Retrieve a list of subhits
+    /// @return The list of subhits
+    ///
+    TSubHit& GetSubHit() { return m_SubHit; }
+ 
+    /// Retrieve the traceback associated with a CHit
+    /// @return The traceback
+    ///
+    CEditScript& GetEditScript() { return m_EditScript; }
+ 
+    /// Query if a CHit has a hierarchy of subhits available
+    /// @return true if subhits are available
+    ///
+    bool HasSubHits() { return !(m_SubHit.empty()); }
+ 
+    /// Sum the score of all subhits, and make the sequence ranges
+    /// the union of the ranges of all subhits. Traceback is ignored
+    ///
+    void AddUpSubHits();
+ 
+    /// Produce an independent copy of a CHit
+    /// @return Pointer to the copy
+    ///
+    CHit * Copy();
 
-   int m_SeqIndex1;
-   int m_SeqIndex2;
-
-   int m_Score;
-   double m_BitScore;
-   double m_HitRate;
-
-   TRange m_SeqRange1;
-   TRange m_SeqRange2;
-
-   CHit(int seq1_index, int seq2_index) 
-          : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
-            m_Score(0), m_BitScore(0.0), m_HitRate(1.0),
-            m_SeqRange1(0,0), m_SeqRange2(0,0) {}
-
-   CHit(int seq1_index, int seq2_index, BlastHSP *hsp)
-          : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
-            m_Score(hsp->score), m_BitScore(0.0), m_HitRate(1.0),
-            m_SeqRange1(hsp->query.offset, hsp->query.end - 1),
-            m_SeqRange2(hsp->subject.offset, hsp->subject.end - 1),
-            m_EditScript(hsp->gap_info) { VerifyHit(); }
-
-   CHit(int seq1_index, int seq2_index,
-        TRange seq_range1, TRange seq_range2,
-        int score, CEditScript edit_script)
-       : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index),
-         m_Score(score), m_BitScore(0.0), m_HitRate(1.0),
-         m_SeqRange1(seq_range1), m_SeqRange2(seq_range2),
-         m_EditScript(edit_script) { VerifyHit(); }
-
-   ~CHit() 
-   {
-       for (int i = 0; i < (int)m_SubHit.size(); i++)
-            delete m_SubHit[i];
-   }
-
-   void InsertSubHit(CHit *hit) { m_SubHit.push_back(hit); }
-   TSubHit& GetSubHit() { return m_SubHit; }
-   CEditScript& GetEditScript() { return m_EditScript; }
-   bool HasSubHits() { return !(m_SubHit.empty()); }
-   void AddUpSubHits();
-   CHit * Copy();
-
+    /// Retrieve the seq1 range corresponding to a 
+    /// specified seq2 range. Assumes traceback is valid
+    /// @param seq_range2 The target range on the 
+    ///                   second sequence [in]
+    /// @param seq_range1 The corresponding range 
+    ///                   on the first sequence [out]
+    /// @param new_seq_range2 If seq_range2 starts or ends in a
+    ///                    gap on seq_range1, the range is shortened
+    ///                    to exclude the gap and seq_range2 is
+    ///                    cropped to compensate [out]
+    /// @param traceback_range The range of traceback operations
+    ///                   corresponding to seq_range1 and 
+    ///                   new_seq_range2 [out]
+    ///
     void GetRangeFromSeq2(TRange seq_range2,
                           TRange& seq_range1,
                           TRange& new_seq_range2,
                           TRange& traceback_range);
     
+    /// Retrieve the seq2 range corresponding to a 
+    /// specified seq1 range. Assumes traceback is valid
+    /// @param seq_range1 The target range on the 
+    ///                   first sequence [in]
+    /// @param new_seq_range1 If seq_range1 starts or ends in a
+    ///                    gap on seq_range2, the range is shortened
+    ///                    to exclude the gap and seq_range1 is
+    ///                    cropped to compensate [out]
+    /// @param seq_range2 The corresponding range 
+    ///                   on the second sequence [out]
+    /// @param traceback_range The range of traceback operations
+    ///                   corresponding to seq_range1 and 
+    ///                   new_seq_range2 [out]
+    ///
     void GetRangeFromSeq1(TRange seq_range1,
                           TRange& new_seq_range1,
                           TRange& seq_range2,
                           TRange& traceback_range);
 
+    /// Perform basic integrity checks on a CHit
+    ///
     void VerifyHit();
 
+    /// Modify the subhits within a CHit so that all sequence
+    /// ranges are disjoint. Assumes that seq1 is a sequence and
+    /// seq2 is a PSSM
+    /// @param seq1 The sequence data corresponding to the 
+    ///             first sequence [in]
+    /// @param seq2_pssm The PSSM for the second sequence [in]
+    /// @param gap_open Penalty for opening a gap [in]
+    /// @param gap_extend Penalty for extending a gap [in]
+    ///
     void ResolveSubHitConflicts(CSequence& seq1,
                                 int **seq2_pssm,
                                 CNWAligner::TScore gap_open,
                                 CNWAligner::TScore gap_extend);
 
 private:
-   CEditScript m_EditScript;
-   vector<CHit *> m_SubHit;
+   CEditScript m_EditScript;  ///< Traceback for this alignment
+   vector<CHit *> m_SubHit;   ///< Subhits for this alignment
 };
 
 
@@ -158,6 +260,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/15 23:24:15  papadopo
+  add doxygen
+
   Revision 1.2  2005/11/08 17:42:17  papadopo
   Rearrange includes to be self-sufficient
 
