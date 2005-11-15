@@ -36,7 +36,10 @@
 /// ICache interface implementation on top of Berkeley DB
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbireg.hpp>
+
 #include <util/cache/icache.hpp>
+
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_env.hpp>
@@ -166,6 +169,9 @@ public:
 
     static
     void AddToHistogram(TBlobSizeHistogram* hist, unsigned size);
+
+    /// Convert statistics into registry sections and entries
+    void ConvertToRegistry(IRWRegistry* reg) const;
 
 private:
     void InitHistorgam(TBlobSizeHistogram* hist);
@@ -723,6 +729,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2005/11/15 13:37:49  kuznets
+ * Convert cache statistics to registry
+ *
  * Revision 1.60  2005/11/01 15:09:54  kuznets
  * Fixed compilation warning
  *

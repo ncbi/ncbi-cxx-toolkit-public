@@ -624,6 +624,105 @@ void SBDB_CacheStatistics::AddCommError(EErrGetPut operation)
     x_AddErrGetPut(operation);
 }
 
+void SBDB_CacheStatistics::ConvertToRegistry(IRWRegistry* reg) const
+{
+    {{
+    const string sect_stat("bdb_stat");
+
+    reg->Set(sect_stat, "blobs_stored_total",
+             NStr::UIntToString(blobs_stored_total), 0,
+             "Total number of blobs ever stored");
+    reg->Set(sect_stat, "blobs_overflow_total",
+             NStr::UIntToString(blobs_overflow_total), 0,
+             "Total number of overflow blobs (large size)");
+    reg->Set(sect_stat, "blobs_updates_total",
+             NStr::UIntToString(blobs_updates_total), 0,
+             "Total number of blobs updates");
+    reg->Set(sect_stat, "blobs_never_read_total",
+             NStr::UIntToString(blobs_never_read_total), 0,
+             "Total number of blobs stored but never read");
+    reg->Set(sect_stat, "blobs_read_total",
+             NStr::UIntToString(blobs_read_total), 0,
+             "Total number of reads");
+    reg->Set(sect_stat, "blobs_expl_deleted_total",
+             NStr::UIntToString(blobs_expl_deleted_total), 0,
+             "Total number of explicit deletes");
+    reg->Set(sect_stat, "blobs_purge_deleted_total",
+             NStr::UIntToString(blobs_purge_deleted_total), 0,
+             "Total number of BLOBs deletes by garbage collector");
+    reg->Set(sect_stat, "blobs_size_total",
+             NStr::UIntToString(blobs_size_total), 0,
+             "Total size of all BLOBs ever stored");
+    reg->Set(sect_stat, "blob_size_max_total",
+             NStr::UIntToString(blob_size_max_total), 0,
+             "Size of the largest BLOB ever stored");
+
+
+    reg->Set(sect_stat, "blobs_db",
+             NStr::UIntToString(blobs_db), 0,
+             "Current database number of records(BLOBs)");
+    reg->Set(sect_stat, "blobs_size_db",
+             NStr::UIntToString(unsigned(blobs_size_db)), 0,
+             "Current size of all BLOBs");
+
+    reg->Set(sect_stat, "err_protocol",
+             NStr::UIntToString(err_protocol), 0,
+             "Number of NetCache protocol errors");
+    reg->Set(sect_stat, "err_communication",
+             NStr::UIntToString(err_communication), 0,
+             "Number of communication errors");
+    reg->Set(sect_stat, "err_internal",
+             NStr::UIntToString(err_internal), 0,
+             "Number of NetCache server internal errors");
+    reg->Set(sect_stat, "err_no_blob",
+             NStr::UIntToString(err_no_blob), 0,
+             "Number of BLOB not found situations");
+    reg->Set(sect_stat, "err_blob_get",
+             NStr::UIntToString(err_blob_get), 0,
+             "Number of errors when getting BLOBs");
+    reg->Set(sect_stat, "err_blob_put",
+             NStr::UIntToString(err_blob_get), 0,
+             "Number of errors when storing BLOBs");
+
+    }}
+
+
+    {{
+    const string sect_hist("bdb_stat_hist");
+
+    const TBlobSizeHistogram& hist = blob_size_hist;
+    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator hist_end = 
+        hist.end();
+
+    ITERATE(SBDB_CacheStatistics::TBlobSizeHistogram, it, hist) {
+        if (it->second > 0) {
+            hist_end = it;
+        }
+    }
+
+    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator it = 
+        hist.begin();
+
+    for (; it != hist.end(); ++it) {
+
+        string var_name = "size_";
+        var_name += NStr::UIntToString(it->first);
+
+        reg->Set(sect_hist, var_name, NStr::UIntToString(it->second));
+
+        if (it == hist_end) {
+            break;
+        }
+    }
+
+    }}
+
+}
+
+
+
+
+
 
 CBDB_Cache::CBDB_Cache()
 : m_PidGuard(0),
@@ -2827,6 +2926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.125  2005/11/15 13:37:59  kuznets
+ * Convert cache statistics to registry
+ *
  * Revision 1.124  2005/11/09 17:32:21  kuznets
  * Fixed critical bug when BLOB grows from inline storage to overflow
  *
