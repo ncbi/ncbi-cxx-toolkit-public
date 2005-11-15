@@ -43,6 +43,7 @@
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/impl/handle_range.hpp>
+
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/seq_id_translator.hpp>
@@ -184,6 +185,13 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
             lsnr.Reset(new CTSE_Default_Assigner);
         m_Split->x_TSEAttach(*this, lsnr);
     }
+    if (tse->HasDataSource()) {
+        CDataLoader* ld = tse->GetDataSource().GetDataLoader();
+        if ( ld ) {
+            m_EditSaver = ld->GetEditSaver();
+            m_BlobId = CBlobIdKey(new CBlobIdString(tse->m_BlobId.ToString()));
+        }
+    }
 }
 
 
@@ -202,6 +210,11 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
     m_BlobState = tse->m_BlobState;
     m_Name = tse->m_Name;
     m_UsedMemory = tse->m_UsedMemory;
+
+    if (tse->m_Contents)
+        x_SetObject(*tse,NULL);//tse->m_BaseTSE->m_ObjectCopyMap);
+    //x_TSEAttach(*this);
+
     m_Split = tse->m_Split;
     if (m_Split) {
         CRef<ITSE_Assigner> listener = m_Split->GetAssigner(*tse);
@@ -209,11 +222,6 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
             listener.Reset(new CTSE_Default_Assigner);
         m_Split->x_TSEAttach(*this, listener);
     }
-
-    if (tse->m_Contents)
-        x_SetObject(*tse,NULL);//tse->m_BaseTSE->m_ObjectCopyMap);
-
-    //x_TSEAttach(*this);
     return *this;
 }
 
@@ -1015,7 +1023,9 @@ void CTSE_Info::x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos)
     TAnnotObjs& index = x_SetAnnotObjs(name);
 
     ITERATE ( SAnnotObjectsIndex::TObjectKeys, key, keys ) {
-        x_UnmapAnnotObject(index, name, *key);
+        if ( !key->m_AnnotObject_Info->IsRemoved() ) {
+            x_UnmapAnnotObject(index, name, *key);
+        }
     }
 
     if ( index.empty() ) {

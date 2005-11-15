@@ -59,6 +59,7 @@ public:
         eModifyDataError, ///< Error while modifying data
         eInvalidHandle,   ///< Attempt to use an invalid handle
         eLockedData,      ///< Attempt to remove locked data
+        eTransaction,     ///< Transaction violation
         eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
@@ -228,6 +229,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.14  2005/07/14 16:58:26  vasilche
 * Added CObjMgrException::eLockedData.
 *

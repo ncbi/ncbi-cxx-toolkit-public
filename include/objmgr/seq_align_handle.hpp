@@ -61,6 +61,13 @@ class CAnnotObject_Info;
 ///  Proxy to access seq-align objects data
 ///
 
+template<typename Handle>
+class CSeq_annot_Add_EditCommand;
+template<typename Handle>
+class CSeq_annot_Replace_EditCommand;
+template<typename Handle>
+class CSeq_annot_Remove_EditCommand;
+
 class NCBI_XOBJMGR_EXPORT CSeq_align_Handle
 {
 public:
@@ -112,6 +119,19 @@ private:
 
     CSeq_annot_Handle          m_Annot;
     TIndex                     m_AnnotIndex;
+
+private:
+
+    friend class CSeq_annot_Add_EditCommand<CSeq_align_Handle>;
+    friend class CSeq_annot_Replace_EditCommand<CSeq_align_Handle>;
+    friend class CSeq_annot_Remove_EditCommand<CSeq_align_Handle>;
+
+    /// Remove the Seq-align from Seq-annot
+    void x_RealRemove(void) const;
+    /// Replace the Seq-align with new Seq-align object.
+    /// All indexes are updated correspondingly.
+    void x_RealReplace(const CSeq_align& new_obj) const;
+
 };
 
 
@@ -201,6 +221,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.10  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

@@ -64,6 +64,13 @@ class CMappedFeat;
 ///  Proxy to access the seq-feat objects data
 ///
 
+template<typename Handle>
+class CSeq_annot_Add_EditCommand;
+template<typename Handle>
+class CSeq_annot_Replace_EditCommand;
+template<typename Handle>
+class CSeq_annot_Remove_EditCommand;
+
 class NCBI_XOBJMGR_EXPORT CSeq_feat_Handle
 {
 public:
@@ -190,6 +197,18 @@ private:
     CSeq_annot_Handle              m_Annot;
     TIndex                         m_AnnotIndex;
     mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
+
+private:
+    friend class CSeq_annot_Add_EditCommand<CSeq_feat_Handle>;
+    friend class CSeq_annot_Replace_EditCommand<CSeq_feat_Handle>;
+    friend class CSeq_annot_Remove_EditCommand<CSeq_feat_Handle>;
+
+    /// Remove the feature from Seq-annot
+    void x_RealRemove(void) const;
+    /// Replace the feature with new Seq-feat object.
+    /// All indexes are updated correspondingly.
+    void x_RealReplace(const CSeq_feat& new_feat) const;
+
 };
 
 
@@ -531,6 +550,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.17  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

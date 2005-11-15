@@ -39,6 +39,7 @@
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/annot_collector.hpp>
 
+#include <objmgr/impl/seq_annot_edit_commands.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -201,6 +202,21 @@ bool CSeq_feat_Handle::IsRemoved(void) const
 
 void CSeq_feat_Handle::Remove(void) const
 {
+    typedef CSeq_annot_Remove_EditCommand<CSeq_feat_Handle> TCommand;
+    CCommandProcessor processor(GetAnnot().x_GetScopeImpl());
+    processor.run(new TCommand(*this));
+}
+
+
+void CSeq_feat_Handle::Replace(const CSeq_feat& new_feat) const
+{
+    typedef CSeq_annot_Replace_EditCommand<CSeq_feat_Handle> TCommand;
+    CCommandProcessor processor(GetAnnot().x_GetScopeImpl());
+    processor.run(new TCommand(*this, new_feat));
+}
+
+void CSeq_feat_Handle::x_RealRemove(void) const
+{
     if ( IsPlainFeat() ) {
         GetAnnot().GetEditHandle().x_GetInfo().Remove(m_AnnotIndex);
         _ASSERT(IsRemoved());
@@ -212,7 +228,7 @@ void CSeq_feat_Handle::Remove(void) const
 }
 
 
-void CSeq_feat_Handle::Replace(const CSeq_feat& new_feat) const
+void CSeq_feat_Handle::x_RealReplace(const CSeq_feat& new_feat) const
 {
     if ( IsPlainFeat() ) {
         GetAnnot().GetEditHandle().x_GetInfo().
@@ -232,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/11/15 19:22:08  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.13  2005/10/04 15:54:44  vasilche
  * Workaround icc 9 optimizer bug.
  *

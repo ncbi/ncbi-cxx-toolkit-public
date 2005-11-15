@@ -43,6 +43,8 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/seq_entry_edit_commands.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -248,6 +250,7 @@ CBioseq_set_EditHandle CSeq_entry_EditHandle::SetSet(void) const
 {
     return CBioseq_set_EditHandle(x_GetInfo().SetSet(),
                                   GetTSE_Handle());
+
 }
 
 
@@ -255,37 +258,48 @@ CBioseq_EditHandle CSeq_entry_EditHandle::SetSeq(void) const
 {
     return x_GetScopeImpl().GetBioseqHandle(x_GetInfo().SetSeq(),
                                             GetTSE_Handle()).GetEditHandle();
+
 }
 
 
 void CSeq_entry_EditHandle::SetDescr(TDescr& v) const
 {
-    x_GetInfo().SetDescr(v);
+    typedef CSetValue_EditCommand<CSeq_entry_EditHandle,TDescr> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new TCommand(*this, v));
+}
+
+void CSeq_entry_EditHandle::AddDescr(TDescr& v) const
+{
+    typedef CAddDescr_EditCommand<CSeq_entry_EditHandle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new TCommand(*this, v));
 }
 
 
 void CSeq_entry_EditHandle::ResetDescr(void) const
 {
-    x_GetInfo().ResetDescr();
+    typedef CResetValue_EditCommand<CSeq_entry_EditHandle,TDescr> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new TCommand(*this));
 }
 
 
 bool CSeq_entry_EditHandle::AddSeqdesc(CSeqdesc& v) const
 {
-    return x_GetInfo().AddSeqdesc(v);
+    typedef CDesc_EditCommand<CSeq_entry_EditHandle,true> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
 }
 
 
 CRef<CSeqdesc> CSeq_entry_EditHandle::RemoveSeqdesc(const CSeqdesc& v) const
 {
-    return x_GetInfo().RemoveSeqdesc(v);
+    typedef CDesc_EditCommand<CSeq_entry_EditHandle,false> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
 }
 
-
-void CSeq_entry_EditHandle::AddDescr(const CSeq_entry_EditHandle& entry) const
-{
-    x_GetInfo().AddDescr(entry.x_GetInfo());
-}
 
 
 CBioseq_EditHandle
@@ -345,28 +359,46 @@ CSeq_entry_EditHandle::AttachEntry(const CSeq_entry_EditHandle& entry,
 CSeq_annot_EditHandle
 CSeq_entry_EditHandle::AttachAnnot(CSeq_annot& annot) const
 {
-    return x_GetScopeImpl().AttachAnnot(*this, annot);
+    return AttachAnnot(Ref(new CSeq_annot_Info(annot)));
+    //    return x_GetScopeImpl().AttachAnnot(*this, annot);
+}
+
+CSeq_annot_EditHandle
+CSeq_entry_EditHandle::AttachAnnot(CRef<CSeq_annot_Info> annot) const
+{
+    typedef CAttachAnnot_EditCommand<CRef<CSeq_annot_Info> > TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, annot, x_GetScopeImpl()));
 }
 
 
 CSeq_annot_EditHandle
 CSeq_entry_EditHandle::CopyAnnot(const CSeq_annot_Handle& annot) const
 {
-    return x_GetScopeImpl().CopyAnnot(*this, annot);
+    return AttachAnnot(Ref(new CSeq_annot_Info(annot.x_GetInfo(), 0)));
+    //    return x_GetScopeImpl().CopyAnnot(*this, annot);
 }
 
 
 CSeq_annot_EditHandle
 CSeq_entry_EditHandle::TakeAnnot(const CSeq_annot_EditHandle& annot) const
 {
-    return x_GetScopeImpl().TakeAnnot(*this, annot);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    annot.Remove();
+    CSeq_annot_EditHandle handle = AttachAnnot(annot);
+    tr->Commit();
+    return handle;
+    //    return x_GetScopeImpl().TakeAnnot(*this, annot);
 }
 
 
 CSeq_annot_EditHandle
 CSeq_entry_EditHandle::AttachAnnot(const CSeq_annot_EditHandle& annot) const
 {
-    return x_GetScopeImpl().AttachAnnot(*this, annot);
+    typedef CAttachAnnot_EditCommand<CSeq_annot_EditHandle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, annot, x_GetScopeImpl()));
+    //return x_GetScopeImpl().AttachAnnot(*this, annot);
 }
 
 
@@ -383,81 +415,147 @@ CSeq_entry_EditHandle::TakeAllAnnots(const CSeq_entry_EditHandle& entry) const
     }
 }
 
+void CSeq_entry_EditHandle::TakeAllDescr(const CSeq_entry_EditHandle& entry) const
+{
+    if (entry.IsSetDescr()) {
+        CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+        TDescr& descr = const_cast<TDescr&>(entry.GetDescr());
+        AddDescr(descr);
+        entry.ResetDescr();
+        tr->Commit();
+    }
+        //    x_GetInfo().AddDescr(entry.x_GetInfo());
+        //    entry.ResetDescr();
+    
+}
 
 void CSeq_entry_EditHandle::Remove(void) const
 {
-    x_GetScopeImpl().RemoveEntry(*this);
+    if( !GetParentEntry() ) {
+        typedef CRemoveTSE_EditCommand TCommand;
+        CCommandProcessor processor(x_GetScopeImpl());
+        processor.run(new TCommand(*this, x_GetScopeImpl()));
+    } else {
+        typedef CSeq_entry_Remove_EditCommand TCommand;
+        CCommandProcessor processor(x_GetScopeImpl());
+        processor.run(new TCommand(*this, x_GetScopeImpl()));
+        //    x_GetScopeImpl().RemoveEntry(*this);
+    }
 }
 
 
 CBioseq_set_EditHandle CSeq_entry_EditHandle::SelectSet(TClass set_class) const
 {
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
     CBioseq_set_EditHandle seqset = SelectSet(*new CBioseq_set);
     if ( set_class != CBioseq_set::eClass_not_set ) {
         seqset.SetClass(set_class);
     }
+    tr->Commit();
     return seqset;
 }
 
 
 void CSeq_entry_EditHandle::SelectNone(void) const
 {
-    x_GetScopeImpl().SelectNone(*this);
+    typedef CSeq_entry_SelectNone_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new TCommand(*this, x_GetScopeImpl()));
+    //x_GetScopeImpl().SelectNone(*this);
 }
 
 
 CBioseq_set_EditHandle
 CSeq_entry_EditHandle::SelectSet(CBioseq_set& seqset) const
 {
-    return x_GetScopeImpl().SelectSet(*this, seqset);
+    return SelectSet(Ref(new CBioseq_set_Info(seqset)));
+    //return x_GetScopeImpl().SelectSet(*this, seqset);
+}
+
+CBioseq_set_EditHandle
+CSeq_entry_EditHandle::SelectSet(CRef<CBioseq_set_Info> seqset) const
+{
+    typedef CSeq_entry_Select_EditCommand
+                 <CBioseq_set_EditHandle,CRef<CBioseq_set_Info> > TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, seqset, x_GetScopeImpl()));
 }
 
 
 CBioseq_set_EditHandle
 CSeq_entry_EditHandle::CopySet(const CBioseq_set_Handle& seqset) const
 {
-    return x_GetScopeImpl().CopySet(*this, seqset);
+    return SelectSet(Ref(new CBioseq_set_Info(seqset.x_GetInfo(),0)));
+    //return x_GetScopeImpl().CopySet(*this, seqset);
 }
 
 
 CBioseq_set_EditHandle
 CSeq_entry_EditHandle::TakeSet(const CBioseq_set_EditHandle& seqset) const
 {
-    return x_GetScopeImpl().TakeSet(*this, seqset);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    seqset.Remove(CBioseq_set_EditHandle::eKeepSeq_entry);
+    CBioseq_set_EditHandle handle = SelectSet(seqset);
+    tr->Commit();
+    return handle;
+    //return x_GetScopeImpl().TakeSet(*this, seqset);
 }
 
 
 CBioseq_set_EditHandle
 CSeq_entry_EditHandle::SelectSet(const CBioseq_set_EditHandle& seqset) const
 {
-    return x_GetScopeImpl().SelectSet(*this, seqset);
+    typedef CSeq_entry_Select_EditCommand
+                   <CBioseq_set_EditHandle,CBioseq_set_EditHandle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, seqset, x_GetScopeImpl()));
+    //    return x_GetScopeImpl().SelectSet(*this, seqset);
 }
 
 
 CBioseq_EditHandle CSeq_entry_EditHandle::SelectSeq(CBioseq& seq) const
 {
-    return x_GetScopeImpl().SelectSeq(*this, seq);
+    return SelectSeq(Ref(new CBioseq_Info(seq)));
+    //    return x_GetScopeImpl().SelectSeq(*this, seq);
 }
 
+CBioseq_EditHandle 
+CSeq_entry_EditHandle::SelectSeq(CRef<CBioseq_Info> seq) const
+{
+    typedef CSeq_entry_Select_EditCommand
+                 <CBioseq_EditHandle,CRef<CBioseq_Info> > TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, seq, x_GetScopeImpl()));
+}
 
 CBioseq_EditHandle
 CSeq_entry_EditHandle::CopySeq(const CBioseq_Handle& seq) const
 {
-    return x_GetScopeImpl().CopySeq(*this, seq);
+    return SelectSeq(Ref(new CBioseq_Info(seq.x_GetInfo(),0)));
+    //    return x_GetScopeImpl().CopySeq(*this, seq);
 }
 
 
 CBioseq_EditHandle
 CSeq_entry_EditHandle::TakeSeq(const CBioseq_EditHandle& seq) const
 {
-    return x_GetScopeImpl().TakeSeq(*this, seq);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    seq.Remove(CBioseq_EditHandle::eKeepSeq_entry);
+    CBioseq_EditHandle handle = SelectSeq(seq);
+    tr->Commit();
+    return handle;
+    //    return x_GetScopeImpl().TakeSeq(*this, seq);
 }
 
 
 CBioseq_EditHandle
 CSeq_entry_EditHandle::SelectSeq(const CBioseq_EditHandle& seq) const
 {
-    return x_GetScopeImpl().SelectSeq(*this, seq);
+    typedef CSeq_entry_Select_EditCommand
+                   <CBioseq_EditHandle,CBioseq_EditHandle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, seq, x_GetScopeImpl()));
+    //    return x_GetScopeImpl().SelectSeq(*this, seq);
 }
 
 
@@ -470,6 +568,7 @@ CSeq_entry_EditHandle::ConvertSeqToSet(TClass set_class) const
                    "Seq-entry is not in 'seq' state");
     }
     CBioseq_EditHandle seq = SetSeq();
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
     SelectNone();
     _ASSERT(Which() == CSeq_entry::e_not_set);
     _ASSERT(seq.IsRemoved());
@@ -477,6 +576,7 @@ CSeq_entry_EditHandle::ConvertSeqToSet(TClass set_class) const
     CBioseq_set_EditHandle seqset = SelectSet(set_class);
     seqset.AddNewEntry(-1).SelectSeq(seq);
     _ASSERT(seq);
+    tr->Commit();
     return seqset;
 }
 
@@ -489,10 +589,12 @@ void CSeq_entry_EditHandle::CollapseSet(void) const
                    "CSeq_entry_EditHandle::CollapseSet: "
                    "sub entry should be non-empty");
     }
-    entry.AddDescr(*this);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    entry.TakeAllDescr(*this);
     entry.TakeAllAnnots(*this);
     if ( entry.IsSet() ) {
         CBioseq_set_EditHandle seqset = entry.SetSet();
+        entry.SelectNone();
         SelectNone();
         _ASSERT(seqset.IsRemoved());
         _ASSERT(!seqset);
@@ -501,12 +603,14 @@ void CSeq_entry_EditHandle::CollapseSet(void) const
     }
     else {
         CBioseq_EditHandle seq = entry.SetSeq();
+        entry.SelectNone();
         SelectNone();
         _ASSERT(seq.IsRemoved());
         _ASSERT(!seq);
         SelectSeq(seq);
         _ASSERT(seq);
     }
+    tr->Commit();
 }
 
 CBioseq_EditHandle
@@ -518,17 +622,49 @@ CSeq_entry_EditHandle::ConvertSetToSeq(void) const
                    "CSeq_entry_EditHandle::ConvertSetToSeq: "
                    "sub entry should contain Bioseq");
     }
-    entry.AddDescr(*this);
+    CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+    entry.TakeAllDescr(*this);
     entry.TakeAllAnnots(*this);
     CBioseq_EditHandle seq = entry.SetSeq();
+    entry.SelectNone();
     SelectNone();
     _ASSERT(seq.IsRemoved());
     _ASSERT(!seq);
     SelectSeq(seq);
     _ASSERT(seq);
+    tr->Commit();
     return seq;
 }
 
+////////////////////////////////////////////////////////////////////////
+void CSeq_entry_EditHandle::x_RealSetDescr(TDescr& v) const
+{
+    x_GetInfo().SetDescr(v);
+}
+
+
+void CSeq_entry_EditHandle::x_RealResetDescr(void) const
+{
+    x_GetInfo().ResetDescr();
+}
+
+
+bool CSeq_entry_EditHandle::x_RealAddSeqdesc(CSeqdesc& v) const
+{
+    return x_GetInfo().AddSeqdesc(v);
+}
+
+
+CRef<CSeqdesc> CSeq_entry_EditHandle::x_RealRemoveSeqdesc(const CSeqdesc& v) const
+{
+    return x_GetInfo().RemoveSeqdesc(v);
+}
+
+
+void CSeq_entry_EditHandle::x_RealAddSeq_descr(TDescr& v) const
+{
+    x_GetInfo().AddSeq_descr(v);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -536,6 +672,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2005/11/15 19:22:08  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.20  2005/09/20 15:42:16  vasilche
 * AttachAnnot takes non-const object.
 *

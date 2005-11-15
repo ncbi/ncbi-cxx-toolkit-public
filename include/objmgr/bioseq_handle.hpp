@@ -422,6 +422,7 @@ public:
 protected:
     friend class CScope_Impl;
     friend class CSynonymsSet;
+    friend class CSeq_entry_EditHandle;
 
     typedef CBioseq_ScopeInfo TScopeInfo;
     typedef CScopeInfo_Ref<TScopeInfo> TLock;
@@ -469,7 +470,7 @@ public:
     TDescr& SetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& d) const;
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d) const;
-    void AddSeq_descr(const TDescr& v) const;
+    void AddSeq_descr(TDescr& v) const;
     // inst
     void SetInst(TInst& v) const;
     // inst.repr
@@ -573,7 +574,11 @@ public:
     CBioseq_EditHandle MoveToSeq(const CSeq_entry_EditHandle& entry) const;
 
     /// Remove current bioseq from its location
-    void Remove(void) const;
+    enum ERemoveMode {
+        eRemoveSeq_entry,
+        eKeepSeq_entry
+    };
+    void Remove(ERemoveMode mode = eRemoveSeq_entry) const;
 
 protected:
     friend class CScope_Impl;
@@ -582,9 +587,44 @@ protected:
     CBioseq_EditHandle(const CSeq_id_Handle& id, TScopeInfo& info);
     CBioseq_EditHandle(const CSeq_id_Handle& id, const TLock& lock);
 
+    void x_Detach(void) const;
+
 public: // non-public section
     CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
     CBioseq_Info& x_GetInfo(void) const;
+
+public:
+    void x_RealResetDescr(void) const;
+    void x_RealSetDescr(TDescr& v) const;
+    bool x_RealAddSeqdesc(CSeqdesc& d) const;
+    CRef<CSeqdesc> x_RealRemoveSeqdesc(const CSeqdesc& d) const;
+    void x_RealAddSeq_descr(TDescr& v) const;
+
+    void x_RealResetId(void) const;
+    bool x_RealAddId(const CSeq_id_Handle& id) const;
+    bool x_RealRemoveId(const CSeq_id_Handle& id) const;
+
+    void x_RealSetInst(TInst& v) const;
+    void x_RealSetInst_Repr(TInst_Repr v) const;
+    void x_RealSetInst_Mol(TInst_Mol v) const;
+    void x_RealSetInst_Length(TInst_Length v) const;
+    void x_RealSetInst_Fuzz(TInst_Fuzz& v) const;
+    void x_RealSetInst_Topology(TInst_Topology v) const;
+    void x_RealSetInst_Strand(TInst_Strand v) const;
+    void x_RealSetInst_Seq_data(TInst_Seq_data& v) const;
+    void x_RealSetInst_Ext(TInst_Ext& v) const;
+    void x_RealSetInst_Hist(TInst_Hist& v) const;
+    void x_RealResetInst() const;
+    void x_RealResetInst_Repr() const;
+    void x_RealResetInst_Mol() const;
+    void x_RealResetInst_Length() const;
+    void x_RealResetInst_Fuzz() const;
+    void x_RealResetInst_Topology() const;
+    void x_RealResetInst_Strand() const;
+    void x_RealResetInst_Seq_data() const;
+    void x_RealResetInst_Ext() const;
+    void x_RealResetInst_Hist() const;
+
 };
 
 
@@ -763,6 +803,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.83  2005/11/07 15:39:46  vasilche
 * Added CBioseq_Handle::IsProtein() & IsNucleotide().
 *

@@ -471,7 +471,7 @@ CRef<CSeqdesc> CSeq_entry_Info::RemoveSeqdesc(const CSeqdesc& d)
     return m_Contents->RemoveSeqdesc(d);
 }
 
-
+/*
 void CSeq_entry_Info::AddDescr(CSeq_entry_Info& src)
 {
     x_Update(fNeedUpdate_descr);
@@ -479,6 +479,13 @@ void CSeq_entry_Info::AddDescr(CSeq_entry_Info& src)
         m_Contents->AddSeq_descr(src.m_Contents->SetDescr());
     }
 }
+*/
+void CSeq_entry_Info::AddSeq_descr(const TDescr& v)
+{
+    x_Update(fNeedUpdate_descr);
+    m_Contents->AddSeq_descr(v);
+}
+
 
 
 bool CSeq_entry_Info::x_IsEndDesc(TDesc_CI iter) const
@@ -556,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/11/15 19:22:08  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.29  2005/10/26 14:36:40  vasilche
  * Pass correct update flags to child.
  *

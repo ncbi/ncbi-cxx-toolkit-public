@@ -127,7 +127,8 @@ public:
     void SetDescr(TDescr& v);
     bool AddSeqdesc(CSeqdesc& d);
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d);
-    void AddDescr(CSeq_entry_Info& src);
+    //    void AddDescr(CSeq_entry_Info& src);
+    void AddSeq_descr(const TDescr& v);
 
     // low level access for CSeqdesc_CI in case sequence is split
     typedef CSeq_descr::Tdata::const_iterator TDesc_CI;
@@ -270,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/11/15 19:22:07  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.24  2005/09/20 15:42:16  vasilche
 * AttachAnnot takes non-const object.
 *

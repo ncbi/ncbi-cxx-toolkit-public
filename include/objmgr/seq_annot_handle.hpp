@@ -182,14 +182,14 @@ protected:
     typedef CSeq_annot_ScopeInfo TScopeInfo;
     CSeq_annot_Handle(const CSeq_annot_Info& annot, const CTSE_Handle& tse);
 
-    CScope_Impl& x_GetScopeImpl(void) const;
-
     CScopeInfo_Ref<TScopeInfo>  m_Info;
 
 public: // non-public section
     const TScopeInfo& x_GetScopeInfo(void) const;
     const CSeq_annot_Info& x_GetInfo(void) const;
     const CSeq_annot& x_GetSeq_annotCore(void) const;
+
+    CScope_Impl& x_GetScopeImpl(void) const;
 };
 
 
@@ -199,6 +199,9 @@ public: // non-public section
 ///
 ///  Proxy to access and edit seq-annot objects
 ///
+
+template<typename Handle>
+class CSeq_annot_Add_EditCommand;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_EditHandle : public CSeq_annot_Handle
 {
@@ -232,6 +235,16 @@ protected:
 public: // non-public section
     TScopeInfo& x_GetScopeInfo(void) const;
     CSeq_annot_Info& x_GetInfo(void) const;
+
+public:
+    friend class CSeq_annot_Add_EditCommand<CSeq_feat_Handle>;
+    friend class CSeq_annot_Add_EditCommand<CSeq_align_Handle>;
+    friend class CSeq_annot_Add_EditCommand<CSeq_graph_Handle>;
+
+    CSeq_feat_Handle x_RealAdd(const CSeq_feat& new_obj) const;
+    CSeq_align_Handle x_RealAdd(const CSeq_align& new_obj) const;
+    CSeq_graph_Handle x_RealAdd(const CSeq_graph& new_obj) const;
+
 };
 
 
@@ -338,6 +351,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.23  2005/10/18 15:38:12  vasilche
 * Restore handles to inner objects when adding removed objects.
 *

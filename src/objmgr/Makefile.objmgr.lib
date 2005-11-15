@@ -20,7 +20,9 @@ SRC = snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       tse_split_info tse_chunk_info bioseq_ci annot_type_index \
       seq_loc_mapper seq_align_mapper annot_collector data_loader_factory \
       prefetch_impl seq_feat_handle seq_graph_handle seq_align_handle \
-      seq_id_translator tse_assigner
+		seq_id_translator tse_assigner scope_transaction scope_transaction_impl \
+		edit_commands_impl bioseq_edit_commands seq_entry_edit_commands \
+		bioseq_set_edit_commands edit_saver unsupp_editsaver simple_editsaver
 
 LIB    = xobjmgr
 

@@ -43,6 +43,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/tse_handle.hpp>
+#include <objmgr/scope_transaction.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -266,6 +267,8 @@ public:
     typedef vector<CSeq_entry_Handle> TTSE_Handles;
     void GetAllTSEs(TTSE_Handles& tses, enum ETSEKind kind = eManualTSEs);
 
+    CScopeTransaction GetTransaction();
+
 protected:
     CScope_Impl& GetImpl(void);
 
@@ -280,6 +283,7 @@ private:
     friend class CBioseq_CI;
     friend class CHeapScope;
     friend class CPrefetchToken_Impl;
+    friend class CScopeTransaction;
 
     CRef<CScope>      m_HeapScope;
     CRef<CScope_Impl> m_Impl;
@@ -306,6 +310,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.88  2005/07/21 19:37:17  grichenk
 * Added CScope::GetBioseqHandles() and supporting methods in data source,
 * data loader and readers.

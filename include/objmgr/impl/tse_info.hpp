@@ -37,7 +37,9 @@
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/tse_lock.hpp>
-#include <objmgr/annot_name.hpp>
+
+#include <objmgr/edit_saver.hpp>
+//#include <objmgr/annot_name.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/blob_id.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -76,7 +78,7 @@ class CSeq_literal;
 class ISeq_id_Translator;
 class ITSE_Assigner;
 class CTSE_Default_Assigner;
-
+class IEditSaver;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -313,6 +315,8 @@ public:
     typedef TAnnotLock::TWriteLockGuard TAnnotLockWriteGuard;
     TAnnotLock& GetAnnotLock(void) const;
 
+    CRef<IEditSaver> GetEditSaver() const;
+
 private:
     friend class CTSE_Guard;
     friend class CDataSource;
@@ -496,6 +500,7 @@ private:
     auto_ptr<SBaseTSE> m_BaseTSE;
 
     CRef<ISeq_id_Translator> m_SeqIdTranslator;
+    CRef<IEditSaver>         m_EditSaver;
 
 private:
     // Hide copy methods
@@ -665,6 +670,12 @@ inline
 void CTSE_Info::SetSeqIdTranslator(CRef<ISeq_id_Translator> tr)
 {
     m_SeqIdTranslator = tr;
+}
+
+inline
+CRef<IEditSaver> CTSE_Info::GetEditSaver() const
+{
+    return m_EditSaver;
 }
 
 END_SCOPE(objects)

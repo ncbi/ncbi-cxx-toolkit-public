@@ -57,8 +57,8 @@ public:
     virtual CRef<ITSE_Assigner> GetAssigner() = 0;
     virtual CRef<ISeq_id_Translator> GetSeqIdTranslator() = 0;
 
-    virtual void Patch(CSeq_entry& entry);
-    virtual bool IsPatchNeeded(const CTSE_Info& ) = 0;
+    virtual void Patch(const CTSE_Info& tse, CSeq_entry& entry);
+    virtual bool IsPatchNeeded(const CTSE_Info& orig_tse) = 0;
 };
 
 
@@ -87,6 +87,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.2  2005/11/15 19:22:07  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.1  2005/09/06 13:22:11  didenko
  * IDataPatcher interface moved to a separate file
  *

@@ -456,6 +456,11 @@ void CScope::ReplaceAnnot(CSeq_entry& parent,
     eh.AttachAnnot(new_annot);
 }
 
+CScopeTransaction CScope::GetTransaction()
+{
+    return CScopeTransaction(*this);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -463,6 +468,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.119  2005/11/15 19:22:08  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.118  2005/07/21 19:37:17  grichenk
 * Added CScope::GetBioseqHandles() and supporting methods in data source,
 * data loader and readers.

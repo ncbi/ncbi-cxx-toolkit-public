@@ -369,6 +369,10 @@ CDataLoader::TBlobVersion CDataLoader::GetBlobVersion(const TBlobId& /*id*/)
     return 0;
 }
 
+CDataLoader::TEditSaver CDataLoader::GetEditSaver() const 
+{
+    return TEditSaver();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CBlobId
@@ -377,12 +381,10 @@ CBlobId::~CBlobId(void)
 {
 }
 
-
 bool CBlobId::LessByTypeId(const CBlobId& id2) const
 {
     return typeid(*this).before(typeid(id2));
 }
-
 
 bool CBlobId::operator==(const CBlobId& id) const
 {
@@ -396,6 +398,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/11/15 19:22:07  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.26  2005/10/27 15:04:27  vasilche
 * Moved code dealing with type_info to *.cpp to avoid warning on MSVC.
 *

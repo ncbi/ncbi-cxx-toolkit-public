@@ -152,6 +152,7 @@ int CLoaderPatcherTester::Run(void)
     CDataLoaderPatcher::RegisterInObjectManager(*object_manager,
                                                 loader,
                                                 patcher,
+                                                CRef<IEditSaver>(),
                                                 CObjectManager::eDefault,
                                                 88);
     CConstRef<CBioseq> bioseq2;
@@ -190,6 +191,9 @@ int main(int argc, const char** argv)
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2005/11/15 19:22:08  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.2  2005/09/06 13:22:11  didenko
 * IDataPatcher interface moved to a separate file
 *

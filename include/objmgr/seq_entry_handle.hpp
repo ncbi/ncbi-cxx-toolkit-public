@@ -62,6 +62,10 @@ class CBioseq_EditHandle;
 class CSeq_annot_EditHandle;
 
 class CSeq_entry_Info;
+class CSeq_annot_Info;
+class CBioseq_set_Info;
+class CBioseq_Info;
+
 class CTSE_Info;
 
 class CSeqdesc;
@@ -245,7 +249,8 @@ public:
     void ResetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& v) const;
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& v) const;
-    void AddDescr(const CSeq_entry_EditHandle& src_entry) const;
+
+    void AddDescr(TDescr& v) const;
 
     typedef CBioseq_EditHandle TSeq;
     typedef CBioseq_set_EditHandle TSet;
@@ -264,6 +269,7 @@ public:
     /// Make the empty Seq-entry be in set state with given Bioseq-set object.
     /// Returns new Bioseq-set handle.
     TSet SelectSet(CBioseq_set& seqset) const;
+    TSet SelectSet(CRef<CBioseq_set_Info>) const;
 
     /// Make the empty Seq-entry be in set state with given Bioseq-set object.
     /// Returns new Bioseq-set handle.
@@ -285,6 +291,7 @@ public:
     /// Make the empty Seq-entry be in seq state with specified Bioseq object.
     /// Returns new Bioseq handle.
     TSeq SelectSeq(CBioseq& seq) const;
+    TSeq SelectSeq(CRef<CBioseq_Info> seq) const;
 
     /// Make the empty Seq-entry be in seq state with specified Bioseq object.
     /// Returns new Bioseq handle.
@@ -338,6 +345,7 @@ public:
     ///  CopyAnnot()
     ///  TakeAnnot()
     CSeq_annot_EditHandle AttachAnnot(CSeq_annot& annot) const;
+    CSeq_annot_EditHandle AttachAnnot(CRef<CSeq_annot_Info> annot) const;
 
     /// Attach a copy of the annotation
     ///
@@ -350,7 +358,7 @@ public:
     /// @sa
     ///  AttachAnnot()
     ///  TakeAnnot()
-    CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle&annot) const;
+    CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle& annot) const;
 
     /// Remove the annotation from its location and attach to current one
     ///
@@ -388,6 +396,13 @@ public:
     /// @sa
      ///  TakeAnnot()
     void TakeAllAnnots(const CSeq_entry_EditHandle& src_entry) const;
+
+    /// Remove all the descritions from seq-entry and attach to current one
+    ///
+    /// @param src_entry
+    ///  A seq-entry hanlde where annotations will be taken
+    ///
+    void TakeAllDescr(const CSeq_entry_EditHandle& src_entry) const;
 
     // Attach new sub objects to Bioseq-set
     // index < 0 or index >= current number of entries 
@@ -526,6 +541,14 @@ protected:
 public: // non-public section
     TScopeInfo& x_GetScopeInfo(void) const;
     CSeq_entry_Info& x_GetInfo(void) const;
+
+public:
+    void x_RealSetDescr(TDescr& v) const;
+    void x_RealResetDescr(void) const;
+    bool x_RealAddSeqdesc(CSeqdesc& v) const;
+    CRef<CSeqdesc> x_RealRemoveSeqdesc(const CSeqdesc& v) const;
+    void x_RealAddSeq_descr(TDescr& v) const;
+
 };
 
 
@@ -652,6 +675,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.24  2005/10/26 14:36:39  vasilche
 * Updated for new CBlobId interface.
 *

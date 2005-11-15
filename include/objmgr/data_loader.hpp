@@ -40,6 +40,7 @@
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/tse_lock.hpp>
 #include <objmgr/blob_id.hpp>
+
 #include <objects/seq/seq_id_handle.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <set>
@@ -59,6 +60,7 @@ class CDataSource;
 class CTSE_Info;
 class CTSE_Chunk_Info;
 class CBioseq_Info;
+class IEditSaver;
 
 /////////////////////////////////////////////////////////////////////////////
 // structure to describe required data set
@@ -280,6 +282,9 @@ public:
                                       const TTSE_LockSet& tse_set);
     virtual void GC(void);
 
+    typedef CRef<IEditSaver> TEditSaver;
+    virtual TEditSaver GetEditSaver() const;
+
 protected:
     /// Register the loader only if the name is not yet
     /// registered in the object manager
@@ -306,7 +311,6 @@ private:
 
 
 /* @} */
-
 
 END_SCOPE(objects)
 
@@ -338,6 +342,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.45  2005/10/26 14:36:38  vasilche
 * Added new CBlobId interface.
 * Advanced CDataLoader plugin interface version.

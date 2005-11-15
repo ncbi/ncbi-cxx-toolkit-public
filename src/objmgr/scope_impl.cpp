@@ -63,6 +63,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/impl/scope_transaction_impl.hpp>
+
 #include <objmgr/seq_annot_ci.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -77,7 +79,7 @@ BEGIN_SCOPE(objects)
 
 
 CScope_Impl::CScope_Impl(CObjectManager& objmgr)
-    : m_HeapScope(0), m_ObjMgr(0)
+    : m_HeapScope(0), m_ObjMgr(0), m_Transaction(NULL)
 {
     TWriteLockGuard guard(m_ConfLock);
     x_AttachToOM(objmgr);
@@ -493,12 +495,20 @@ CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& seqset,
                          CSeq_entry& entry,
                          int index)
 {
-    CHECK_HANDLE(AttachEntry, seqset);
-    _ASSERT(seqset);
-    return x_AttachEntry(seqset, Ref(new CSeq_entry_Info(entry)), index);
+    return AttachEntry(seqset, Ref(new CSeq_entry_Info(entry)), index);
 }
 
+CSeq_entry_EditHandle
+CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& seqset,
+                         CRef<CSeq_entry_Info> entry,
+                         int index)
+{
+    CHECK_HANDLE(AttachEntry, seqset);
+    _ASSERT(seqset);
+    return x_AttachEntry(seqset,entry, index);
+}
 
+/*
 CSeq_entry_EditHandle
 CScope_Impl::CopyEntry(const CBioseq_set_EditHandle& seqset,
                        const CSeq_entry_Handle& entry,
@@ -526,7 +536,7 @@ CScope_Impl::TakeEntry(const CBioseq_set_EditHandle& seqset,
     entry.Remove();
     return AttachEntry(seqset, entry, index);
 }
-
+*/
 
 CSeq_entry_EditHandle
 CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& seqset,
@@ -548,12 +558,21 @@ CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& seqset,
 CBioseq_EditHandle CScope_Impl::SelectSeq(const CSeq_entry_EditHandle& entry,
                                           CBioseq& seq)
 {
-    CHECK_HANDLE(SelectSeq, entry);
+    return SelectSeq(entry, Ref(new CBioseq_Info(seq)));
+    /*CHECK_HANDLE(SelectSeq, entry);
     _ASSERT(entry);
     return x_SelectSeq(entry, Ref(new CBioseq_Info(seq)));
+    */
+}
+CBioseq_EditHandle CScope_Impl::SelectSeq(const CSeq_entry_EditHandle& entry,
+                                          CRef<CBioseq_Info> seq)
+{
+    CHECK_HANDLE(SelectSeq, entry);
+    _ASSERT(entry);
+    return x_SelectSeq(entry, seq);
 }
 
-
+/*
 CBioseq_EditHandle CScope_Impl::CopySeq(const CSeq_entry_EditHandle& entry,
                                         const CBioseq_Handle& seq)
 {
@@ -576,7 +595,7 @@ CBioseq_EditHandle CScope_Impl::TakeSeq(const CSeq_entry_EditHandle& entry,
     seq.Remove();
     return SelectSeq(entry, seq);
 }
-
+*/
 
 CBioseq_EditHandle CScope_Impl::SelectSeq(const CSeq_entry_EditHandle& entry,
                                           const CBioseq_EditHandle& seq)
@@ -596,12 +615,22 @@ CBioseq_set_EditHandle
 CScope_Impl::SelectSet(const CSeq_entry_EditHandle& entry,
                        CBioseq_set& seqset)
 {
-    CHECK_HANDLE(SelectSet, entry);
+    return SelectSet(entry, Ref(new CBioseq_set_Info(seqset)));
+    /*    CHECK_HANDLE(SelectSet, entry);
     _ASSERT(entry);
-    return x_SelectSet(entry, Ref(new CBioseq_set_Info(seqset)));
+    return x_SelectSet(entry, Ref(new CBioseq_set_Info(seqset)));*/
 }
 
+CBioseq_set_EditHandle
+CScope_Impl::SelectSet(const CSeq_entry_EditHandle& entry,
+                       CRef<CBioseq_set_Info> seqset)
+{
+    CHECK_HANDLE(SelectSet, entry);
+    _ASSERT(entry);
+    return x_SelectSet(entry, seqset);
+}
 
+/*
 CBioseq_set_EditHandle
 CScope_Impl::CopySet(const CSeq_entry_EditHandle& entry,
                      const CBioseq_set_Handle& seqset)
@@ -626,7 +655,7 @@ CScope_Impl::TakeSet(const CSeq_entry_EditHandle& entry,
     seqset.Remove();
     return SelectSet(entry, seqset);
 }
-
+*/
 
 CBioseq_set_EditHandle
 CScope_Impl::SelectSet(const CSeq_entry_EditHandle& entry,
@@ -647,12 +676,23 @@ CSeq_annot_EditHandle
 CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
                          CSeq_annot& annot)
 {
-    CHECK_HANDLE(AttachAnnot, entry);
+    return AttachAnnot(entry, Ref(new CSeq_annot_Info(annot)));
+    /*CHECK_HANDLE(AttachAnnot, entry);
     _ASSERT(entry);
     return x_AttachAnnot(entry, Ref(new CSeq_annot_Info(annot)));
+    */
 }
 
+CSeq_annot_EditHandle
+CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
+                         CRef<CSeq_annot_Info> annot)
+{
+    CHECK_HANDLE(AttachAnnot, entry);
+    _ASSERT(entry);
+    return x_AttachAnnot(entry, annot);
+}
 
+/*
 CSeq_annot_EditHandle
 CScope_Impl::CopyAnnot(const CSeq_entry_EditHandle& entry,
                        const CSeq_annot_Handle& annot)
@@ -677,7 +717,7 @@ CScope_Impl::TakeAnnot(const CSeq_entry_EditHandle& entry,
     annot.Remove();
     return AttachAnnot(entry, annot);
 }
-
+*/
 
 CSeq_annot_EditHandle
 CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
@@ -1287,7 +1327,7 @@ CTSE_Handle CScope_Impl::GetEditHandle(const CTSE_Handle& handle)
     CRef<CDataSource_ScopeInfo> old_ds(&scope_info.GetDSInfo());
     CRef<CDataSource_ScopeInfo> new_ds = GetEditDataSource(*old_ds);
     // load all missing information if split
-    scope_info.m_TSE_Lock->GetCompleteSeq_entry();
+    //scope_info.m_TSE_Lock->GetCompleteSeq_entry();
     CRef<CTSE_Info> new_tse(new CTSE_Info(scope_info.m_TSE_Lock));
     CTSE_Lock new_tse_lock = new_ds->GetDataSource().AddStaticTSE(new_tse);
     scope_info.SetEditTSE(new_tse_lock, *new_ds,
@@ -1995,6 +2035,42 @@ CDataSource* CScope_Impl::GetFirstLoaderSource(void)
         }
     }
     return 0;
+}
+
+
+IScopeTransaction_Impl& CScope_Impl::GetTransaction()
+{
+    if( !m_Transaction )
+        m_Transaction = CreateTransaction();
+    return *m_Transaction;   
+}
+
+
+IScopeTransaction_Impl* CScope_Impl::CreateTransaction()
+{
+    /*    if ( m_Transaction ) {
+        m_Transaction = new CScopeSubTransaction_Impl(*this);
+    } else {
+        m_Transaction = new CScopeTransaction_Impl(*this);
+        }*/
+    m_Transaction = new CScopeTransaction_Impl(*this, m_Transaction);
+    return m_Transaction;   
+}
+
+void CScope_Impl::SetActiveTransaction(IScopeTransaction_Impl* transaction)
+{
+    if (m_Transaction && (transaction && !transaction->HasScope(*this))) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CScope_Impl::AttachToTransaction: already attached to another transaction");
+    }
+    if (transaction)
+        transaction->AddScope(*this);
+    m_Transaction = transaction;
+}
+
+bool CScope_Impl::IsTransactionActive() const
+{
+    return m_Transaction;
 }
 
 

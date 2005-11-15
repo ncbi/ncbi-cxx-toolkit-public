@@ -46,6 +46,7 @@
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/bioseq_edit_commands.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 
@@ -703,10 +704,25 @@ CBioseq_EditHandle::MoveToSeq(const CSeq_entry_EditHandle& entry) const
     return entry.TakeSeq(*this);
 }
 
-
-void CBioseq_EditHandle::Remove(void) const
+void CBioseq_EditHandle::Remove(CBioseq_EditHandle::ERemoveMode mode) const
 {
-    x_GetScopeImpl().RemoveBioseq(*this);
+    if (mode == eKeepSeq_entry) 
+        x_Detach();
+    else {
+        CRef<IScopeTransaction_Impl> tr(x_GetScopeImpl().CreateTransaction());
+        CSeq_entry_Handle parent = GetParentEntry();
+        x_Detach();
+        parent.GetEditHandle().Remove();
+        tr->Commit();
+    }
+}
+
+void CBioseq_EditHandle::x_Detach(void) const
+{
+    typedef CRemoveBioseq_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new TCommand(*this, x_GetScopeImpl()));
+    //    x_GetScopeImpl().RemoveBioseq(*this);
 }
 
 
@@ -715,115 +731,169 @@ void CBioseq_EditHandle::Remove(void) const
 
 void CBioseq_EditHandle::ResetId(void) const
 {
-    x_GetScopeInfo().ResetId();
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new CResetIds_EditCommand(*this));
 }
 
 
 bool CBioseq_EditHandle::AddId(const CSeq_id_Handle& id) const
 {
-    return x_GetScopeInfo().AddId(id);
+    typedef CAddId_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this,id));
+    //    return x_GetScopeInfo().AddId(id);
 }
 
 
 bool CBioseq_EditHandle::RemoveId(const CSeq_id_Handle& id) const
 {
-    return x_GetScopeInfo().RemoveId(id);
+    typedef CRemoveId_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this,id));
+    //    return x_GetScopeInfo().RemoveId(id);
 }
 
 
 void CBioseq_EditHandle::ResetDescr(void) const
 {
-    x_GetInfo().ResetDescr();
+    typedef CResetValue_EditCommand<CBioseq_EditHandle,TDescr> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new TCommand(*this));
 }
 
 
 void CBioseq_EditHandle::SetDescr(TDescr& v) const
 {
-    x_GetInfo().SetDescr(v);
+    typedef CSetValue_EditCommand<CBioseq_EditHandle,TDescr> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    processor.run(new TCommand(*this, v));
 }
 
 
 CBioseq_EditHandle::TDescr& CBioseq_EditHandle::SetDescr(void) const
 {
+    if (x_GetScopeImpl().IsTransactionActive() 
+        || GetTSE_Handle().x_GetTSE_Info().GetEditSaver() ) {
+        NCBI_THROW(CObjMgrException, eTransaction,
+                       "TDescr& CBioseq_EditHandle::SetDescr(): "
+                       "method can not be called if a transaction is requered");
+    }
     return x_GetInfo().SetDescr();
 }
 
 
 bool CBioseq_EditHandle::AddSeqdesc(CSeqdesc& d) const
 {
-    return x_GetInfo().AddSeqdesc(d);
+    typedef CDesc_EditCommand<CBioseq_EditHandle,true> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, d));
 }
 
 
 CRef<CSeqdesc> CBioseq_EditHandle::RemoveSeqdesc(const CSeqdesc& d) const
 {
-    return x_GetInfo().RemoveSeqdesc(d);
+    typedef CDesc_EditCommand<CBioseq_EditHandle,false> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, d));
 }
 
 
-void CBioseq_EditHandle::AddSeq_descr(const TDescr& v) const
+void CBioseq_EditHandle::AddSeq_descr(TDescr& v) const
 {
-    x_GetInfo().AddSeq_descr(v);
+    typedef CAddDescr_EditCommand<CBioseq_EditHandle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().AddSeq_descr(v);
 }
 
 
 void CBioseq_EditHandle::SetInst(TInst& v) const
 {
-    x_GetInfo().SetInst(v);
+    typedef CSet_SeqInst_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Repr(TInst_Repr v) const
 {
-    x_GetInfo().SetInst_Repr(v);
+    typedef CSet_SeqInstRepr_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Repr(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Mol(TInst_Mol v) const
 {
-    x_GetInfo().SetInst_Mol(v);
+    typedef CSet_SeqInstMol_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Mol(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Length(TInst_Length v) const
 {
-    x_GetInfo().SetInst_Length(v);
+    typedef CSet_SeqInstLength_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Length(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Fuzz(TInst_Fuzz& v) const
 {
-    x_GetInfo().SetInst_Fuzz(v);
+    typedef CSet_SeqInstFuzz_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Fuzz(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Topology(TInst_Topology v) const
 {
-    x_GetInfo().SetInst_Topology(v);
+    typedef CSet_SeqInstTopology_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Topology(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Strand(TInst_Strand v) const
 {
-    x_GetInfo().SetInst_Strand(v);
+    typedef CSet_SeqInstStrand_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Strand(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Seq_data(TInst_Seq_data& v) const
 {
-    x_GetInfo().SetInst_Seq_data(v);
+    typedef CSet_SeqInstSeq_data_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Seq_data(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Ext(TInst_Ext& v) const
 {
-    x_GetInfo().SetInst_Ext(v);
+    typedef CSet_SeqInstExt_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Ext(v);
 }
 
 
 void CBioseq_EditHandle::SetInst_Hist(TInst_Hist& v) const
 {
-    x_GetInfo().SetInst_Hist(v);
+    typedef CSet_SeqInstHist_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, v));
+    //    x_GetInfo().SetInst_Hist(v);
 }
 
 
@@ -876,6 +946,154 @@ bool CBioseq_Handle::AddUsedBioseq(const CBioseq_Handle& bh) const
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+void CBioseq_EditHandle::x_RealResetDescr(void) const
+{
+    x_GetInfo().ResetDescr();
+}
+
+
+void CBioseq_EditHandle::x_RealSetDescr(TDescr& v) const
+{
+    x_GetInfo().SetDescr(v);
+}
+
+
+bool CBioseq_EditHandle::x_RealAddSeqdesc(CSeqdesc& d) const
+{
+    return x_GetInfo().AddSeqdesc(d);
+}
+
+
+CRef<CSeqdesc> CBioseq_EditHandle::x_RealRemoveSeqdesc(const CSeqdesc& d) const
+{
+    return x_GetInfo().RemoveSeqdesc(d);
+}
+
+
+void CBioseq_EditHandle::x_RealAddSeq_descr(TDescr& v) const
+{
+    x_GetInfo().AddSeq_descr(v);
+}
+
+void CBioseq_EditHandle::x_RealResetId(void) const
+{
+    x_GetScopeInfo().ResetId();
+}
+
+
+bool CBioseq_EditHandle::x_RealAddId(const CSeq_id_Handle& id) const
+{
+    return x_GetScopeInfo().AddId(id);
+}
+
+bool CBioseq_EditHandle::x_RealRemoveId(const CSeq_id_Handle& id) const
+{
+    return x_GetScopeInfo().RemoveId(id);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst(TInst& v) const
+{
+    x_GetInfo().SetInst(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Repr(TInst_Repr v) const
+{
+    x_GetInfo().SetInst_Repr(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Mol(TInst_Mol v) const
+{
+    x_GetInfo().SetInst_Mol(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Length(TInst_Length v) const
+{
+    x_GetInfo().SetInst_Length(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Fuzz(TInst_Fuzz& v) const
+{
+    x_GetInfo().SetInst_Fuzz(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Topology(TInst_Topology v) const
+{
+    x_GetInfo().SetInst_Topology(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Strand(TInst_Strand v) const
+{
+    x_GetInfo().SetInst_Strand(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Seq_data(TInst_Seq_data& v) const
+{
+    x_GetInfo().SetInst_Seq_data(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Ext(TInst_Ext& v) const
+{
+    x_GetInfo().SetInst_Ext(v);
+}
+
+
+void CBioseq_EditHandle::x_RealSetInst_Hist(TInst_Hist& v) const
+{
+    x_GetInfo().SetInst_Hist(v);
+}
+void CBioseq_EditHandle::x_RealResetInst() const
+{
+    x_GetInfo().ResetInst();
+}
+void CBioseq_EditHandle::x_RealResetInst_Repr() const
+{
+    x_GetInfo().ResetInst_Repr();
+}
+void CBioseq_EditHandle::x_RealResetInst_Mol() const
+{
+    x_GetInfo().ResetInst_Mol();
+}
+void CBioseq_EditHandle::x_RealResetInst_Length() const
+{
+    x_GetInfo().ResetInst_Length();
+}
+void CBioseq_EditHandle::x_RealResetInst_Fuzz() const
+{
+    x_GetInfo().ResetInst_Fuzz();
+}
+void CBioseq_EditHandle::x_RealResetInst_Topology() const
+{
+    x_GetInfo().ResetInst_Topology();
+}
+void CBioseq_EditHandle::x_RealResetInst_Strand() const
+{
+    x_GetInfo().ResetInst_Strand();
+}
+void CBioseq_EditHandle::x_RealResetInst_Seq_data() const
+{
+    x_GetInfo().ResetInst_Seq_data();
+}
+void CBioseq_EditHandle::x_RealResetInst_Ext() const
+{
+    x_GetInfo().ResetInst_Ext();
+}
+void CBioseq_EditHandle::x_RealResetInst_Hist() const
+{
+    x_GetInfo().ResetInst_Hist();
+}
+
+
+
 // end of Bioseq members
 /////////////////////////////////////////////////////////////////////////////
 
@@ -886,6 +1104,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2005/11/15 19:22:07  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.95  2005/11/07 15:39:46  vasilche
 * Added CBioseq_Handle::IsProtein() & IsNucleotide().
 *

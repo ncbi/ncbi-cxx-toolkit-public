@@ -40,6 +40,9 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 
+#include <objmgr/impl/seq_annot_edit_commands.hpp>
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -229,23 +232,57 @@ CSeq_entry_EditHandle CSeq_annot_EditHandle::GetParentEntry(void) const
 
 void CSeq_annot_EditHandle::Remove(void) const
 {
-    x_GetScopeImpl().RemoveAnnot(*this);
+    typedef CRemoveAnnot_EditCommand TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, x_GetScopeImpl()));   
+    //    x_GetScopeImpl().RemoveAnnot(*this);
 }
 
 
 CSeq_feat_Handle CSeq_annot_EditHandle::AddFeat(const CSeq_feat& new_obj) const
 {
-    return CSeq_feat_Handle(*this, x_GetInfo().Add(new_obj));
+
+    typedef CSeq_annot_Add_EditCommand<CSeq_feat_Handle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, new_obj));
+    //    return CSeq_feat_Handle(*this, x_GetInfo().Add(new_obj));
 }
 
 
 CSeq_align_Handle CSeq_annot_EditHandle::AddAlign(const CSeq_align& new_obj) const
 {
-    return CSeq_align_Handle(*this, x_GetInfo().Add(new_obj));
+    typedef CSeq_annot_Add_EditCommand<CSeq_align_Handle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, new_obj));
+    //    return CSeq_align_Handle(*this, x_GetInfo().Add(new_obj));
 }
 
 
 CSeq_graph_Handle CSeq_annot_EditHandle::AddGraph(const CSeq_graph& new_obj) const
+{
+    typedef CSeq_annot_Add_EditCommand<CSeq_graph_Handle> TCommand;
+    CCommandProcessor processor(x_GetScopeImpl());
+    return processor.run(new TCommand(*this, new_obj));
+    //    return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
+}
+
+CSeq_feat_Handle 
+CSeq_annot_EditHandle::x_RealAdd(const CSeq_feat& new_obj) const
+{
+
+    return CSeq_feat_Handle(*this, x_GetInfo().Add(new_obj));
+}
+
+
+CSeq_align_Handle 
+CSeq_annot_EditHandle::x_RealAdd(const CSeq_align& new_obj) const
+{
+    return CSeq_align_Handle(*this, x_GetInfo().Add(new_obj));
+}
+
+
+CSeq_graph_Handle 
+CSeq_annot_EditHandle::x_RealAdd(const CSeq_graph& new_obj) const
 {
     return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
 }
@@ -257,6 +294,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/11/15 19:22:08  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.18  2005/09/20 15:45:36  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

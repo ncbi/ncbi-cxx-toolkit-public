@@ -59,6 +59,13 @@ class CAnnotObject_Info;
 ///  Proxy to access seq-graph objects data
 ///
 
+template<typename Handle>
+class CSeq_annot_Add_EditCommand;
+template<typename Handle>
+class CSeq_annot_Replace_EditCommand;
+template<typename Handle>
+class CSeq_annot_Remove_EditCommand;
+
 class NCBI_XOBJMGR_EXPORT CSeq_graph_Handle
 {
 public:
@@ -119,6 +126,18 @@ private:
 
     CSeq_annot_Handle          m_Annot;
     TIndex                     m_AnnotIndex;
+
+private:
+    friend class CSeq_annot_Add_EditCommand<CSeq_graph_Handle>;
+    friend class CSeq_annot_Replace_EditCommand<CSeq_graph_Handle>;
+    friend class CSeq_annot_Remove_EditCommand<CSeq_graph_Handle>;
+
+    /// Remove the Seq-graph from Seq-annot
+    void x_RealRemove(void) const;
+    /// Replace the Seq-graph with new Seq-graph object.
+    /// All indexes are updated correspondingly.
+    void x_RealReplace(const CSeq_graph& new_obj) const;
+
 };
 
 
@@ -278,6 +297,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.11  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

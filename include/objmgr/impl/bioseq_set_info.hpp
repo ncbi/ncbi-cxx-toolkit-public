@@ -133,6 +133,8 @@ public:
     CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1);
     void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
     void RemoveEntry(CRef<CSeq_entry_Info> entry);
+    // returns -1 if entry is not found
+    int GetEntryIndex(const CSeq_entry_Info& entry) const;
 
     // initialization
     // attaching/detaching to CDataSource (it's in CTSE_Info)
@@ -484,6 +486,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/15 19:22:07  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.10  2005/06/27 18:17:03  vasilche
 * Allow getting CBioseq_set_Handle from CBioseq_set.
 *

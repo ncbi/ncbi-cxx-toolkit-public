@@ -50,6 +50,7 @@ const char* CObjMgrException::GetErrCodeString(void) const
     case eModifyDataError:  return "eModifyDataError";
     case eInvalidHandle:    return "eInvalidHandle";
     case eLockedData:       return "eLockedData";
+    case eTransaction:      return "eTransaction";
     case eOtherError:       return "eOtherError";
     default:                return CException::GetErrCodeString();
     }

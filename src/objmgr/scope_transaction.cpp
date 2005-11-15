@@ -23,45 +23,74 @@
 *
 * ===========================================================================
 *
-*  Author: Maxim Didenko
+* Author: Maxim Didenko
 *
-*  File Description:
+* File Description:
+*   Scope transaction
 *
-* ===========================================================================
 */
+
+
 #include <ncbi_pch.hpp>
 
-#include <objtools/data_loaders/patcher/datapatcher_iface.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/scope_transaction.hpp>
+#include <objmgr/impl/scope_transaction_impl.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 
-#include <objmgr/seq_id_translator.hpp>
-#include <objmgr/impl/tse_assigner.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-void IDataPatcher::Patch(const CTSE_Info& /*tse*/, CSeq_entry& entry)
+CScopeTransaction::CScopeTransaction(CScope& scope)
 {
-    CRef<ISeq_id_Translator> tr = GetSeqIdTranslator();
-    if (tr) 
-        PatchSeqId(entry, *tr);
+    CScope_Impl& impl = scope.GetImpl();
+    x_Set( *impl.CreateTransaction() );
 }
 
-IDataPatcher::~IDataPatcher() 
+CScopeTransaction::~CScopeTransaction()
 {
+    try {
+        RollBack();
+    } catch (exception& ex) {
+        ERR_POST(Fatal << "Exception cought in ~CScopeTransaction() : " 
+                 << ex.what());
+    } catch (...) {
+        ERR_POST(Fatal << "Unknown Exception cought in ~CScopeTransaction()");
+    }
 }
 
+void CScopeTransaction::AddScope(CScope& scope)
+{
+    x_GetImpl().AddScope(scope.GetImpl());
+}
 
+void CScopeTransaction::Commit()
+{
+    x_GetImpl().Commit();
+}
+void CScopeTransaction::RollBack()
+{
+    x_GetImpl().RollBack();
+}
 
+IScopeTransaction_Impl& CScopeTransaction::x_GetImpl()
+{
+    return static_cast<IScopeTransaction_Impl&>(*m_Impl);
+}
+
+void CScopeTransaction::x_Set(IScopeTransaction_Impl& impl)
+{
+    m_Impl.Reset(&impl);
+} 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-
-/* ========================================================================== 
+/*
+ * ===========================================================================
  * $Log$
- * Revision 1.2  2005/11/15 19:22:08  didenko
+ * Revision 1.1  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *
- * Revision 1.1  2005/09/06 13:22:11  didenko
- * IDataPatcher interface moved to a separate file
- *
- * ========================================================================== */
+ * ===========================================================================
+ */

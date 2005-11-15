@@ -416,6 +416,19 @@ void CBioseq_set_Info::RemoveEntry(CRef<CSeq_entry_Info> info)
     obj_seq_set.erase(obj_it);
 }
 
+int CBioseq_set_Info::GetEntryIndex(const CSeq_entry_Info& info) const
+{
+    CRef<CSeq_entry_Info> entry(const_cast<CSeq_entry_Info*>(&info));
+    int index = 0;
+    ITERATE(TSeq_set, it, m_Seq_set) {
+        if (*it == entry)
+            return index;
+        index++;
+    }
+    return -1;
+}
+
+
 
 void CBioseq_set_Info::x_AttachEntry(CRef<CSeq_entry_Info> entry)
 {
@@ -459,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/11/15 19:22:07  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.14  2005/06/27 18:17:04  vasilche
  * Allow getting CBioseq_set_Handle from CBioseq_set.
  *

@@ -69,6 +69,7 @@ class CSeq_entry_EditHandle;
 class CBioseq_set_EditHandle;
 class CBioseq_EditHandle;
 class CSeq_annot_EditHandle;
+class CSeq_entry_Info;
 
 class CBioseq_set_Info;
 
@@ -206,10 +207,13 @@ public:
     /// Return level with exact complexity, or empty handle if not found.
     CSeq_entry_Handle GetExactComplexityLevel(CBioseq_set::EClass cls) const;
 
+    int GetSeq_entry_Index(const CSeq_entry_Handle& handle) const;
+
 protected:
     friend class CScope_Impl;
     friend class CBioseq_Handle;
     friend class CSeq_entry_Handle;
+    friend class CSeq_entry_EditHandle;
 
     friend class CSeqMap_CI;
     friend class CSeq_entry_CI;
@@ -277,7 +281,7 @@ public:
     TDescr& SetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& d) const;
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d) const;
-    void AddSeq_descr(const TDescr& v) const;
+    void AddSeq_descr(TDescr& v) const;
 
     /// Create new empty seq-entry
     ///
@@ -317,7 +321,7 @@ public:
     /// @sa
     ///  AttachAnnot()
     ///  TakeAnnot()
-    CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle&annot) const;
+    CSeq_annot_EditHandle CopyAnnot(const CSeq_annot_Handle& annot) const;
 
     /// Remove the annotation from its location and attach to current one
     ///
@@ -396,6 +400,8 @@ public:
     ///  TakeEntry()
     CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry,
                                       int index = -1) const;
+    CSeq_entry_EditHandle AttachEntry(CRef<CSeq_entry_Info> entry, 
+                                      int index = -1) const;
 
     /// Attach a copy of the existing seq-entry
     ///
@@ -449,8 +455,12 @@ public:
     CSeq_entry_EditHandle AttachEntry(const CSeq_entry_EditHandle& entry,
                                       int index = -1) const;
 
+    enum ERemoveMode {
+        eRemoveSeq_entry,
+        eKeepSeq_entry
+    };
     /// Remove current seqset-entry from its location
-    void Remove(void) const;
+    void Remove(ERemoveMode mode = eRemoveSeq_entry) const;
 
 protected:
     friend class CScope_Impl;
@@ -461,9 +471,33 @@ protected:
     CBioseq_set_EditHandle(CBioseq_set_Info& info,
                            const CTSE_Handle& tse);
 
+    void x_Detach(void) const;
+
 public: // non-public section
     TScopeInfo& x_GetScopeInfo(void) const;
     CBioseq_set_Info& x_GetInfo(void) const;
+
+public:
+
+    void x_RealResetDescr(void) const;
+    void x_RealSetDescr(TDescr& v) const;
+    bool x_RealAddSeqdesc(CSeqdesc& d) const;
+    CRef<CSeqdesc> x_RealRemoveSeqdesc(const CSeqdesc& d) const;
+    void x_RealAddSeq_descr(TDescr& v) const;
+
+    void x_RealResetId(void) const;
+    void x_RealSetId(TId& id) const;
+    void x_RealResetColl(void) const;
+    void x_RealSetColl(TColl& v) const;
+    void x_RealResetLevel(void) const;
+    void x_RealSetLevel(TLevel v) const;
+    void x_RealResetClass(void) const;
+    void x_RealSetClass(TClass v) const;
+    void x_RealResetRelease(void) const;
+    void x_RealSetRelease(TRelease& v) const;
+    void x_RealResetDate(void) const;
+    void x_RealSetDate(TDate& v) const;
+
 };
 
 
@@ -575,6 +609,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/11/15 19:22:06  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.22  2005/10/18 15:38:12  vasilche
 * Restore handles to inner objects when adding removed objects.
 *

@@ -52,6 +52,7 @@
 #include <objmgr/impl/mutex_pool.hpp>
 #include <objmgr/impl/data_source.hpp>
 
+
 #include <objects/seq/Seq_inst.hpp> // for enum EMol
 
 #include <set>
@@ -98,7 +99,8 @@ struct SAnnotTypeSelector;
 struct SAnnotSelector;
 class CPriorityTree;
 class CPriorityNode;
-
+class IScopeTransaction_Impl;
+class CScopeTransaction_Impl;
 
 /////////////////////////////////////////////////////////////////////////////
 // CScope_Impl
@@ -182,13 +184,18 @@ public:
     CSeq_entry_EditHandle AttachEntry(const CBioseq_set_EditHandle& seqset,
                                       CSeq_entry& entry,
                                       int index = -1);
+    CSeq_entry_EditHandle AttachEntry(const CBioseq_set_EditHandle& seqset,
+                                      CRef<CSeq_entry_Info> entry,
+                                      int index = -1);
+    /*
     CSeq_entry_EditHandle CopyEntry(const CBioseq_set_EditHandle& seqset,
                                     const CSeq_entry_Handle& entry,
                                     int index = -1);
-    // Argument entry will be moved to new place.
+        // Argument entry will be moved to new place.
     CSeq_entry_EditHandle TakeEntry(const CBioseq_set_EditHandle& seqset,
                                     const CSeq_entry_EditHandle& entry,
                                     int index = -1);
+    */
     // Argument entry must be removed.
     CSeq_entry_EditHandle AttachEntry(const CBioseq_set_EditHandle& seqset,
                                       const CSeq_entry_EditHandle& entry,
@@ -197,11 +204,15 @@ public:
     // Add annotations to a seq-entry (seq or set)
     CSeq_annot_EditHandle AttachAnnot(const CSeq_entry_EditHandle& entry,
                                       CSeq_annot& annot);
+    CSeq_annot_EditHandle AttachAnnot(const CSeq_entry_EditHandle& entry,
+                                      CRef<CSeq_annot_Info> annot);
+    /*
     CSeq_annot_EditHandle CopyAnnot(const CSeq_entry_EditHandle& entry,
                                     const CSeq_annot_Handle& annot);
     // Argument annot will be moved to new place.
     CSeq_annot_EditHandle TakeAnnot(const CSeq_entry_EditHandle& entry,
                                     const CSeq_annot_EditHandle& annot);
+    */
     // Argument annot must be removed.
     CSeq_annot_EditHandle AttachAnnot(const CSeq_entry_EditHandle& entry,
                                       const CSeq_annot_EditHandle& annot);
@@ -216,22 +227,32 @@ public:
     void SelectNone(const CSeq_entry_EditHandle& entry);
     CBioseq_EditHandle SelectSeq(const CSeq_entry_EditHandle& entry,
                                  CBioseq& seq);
+    CBioseq_EditHandle SelectSeq(const CSeq_entry_EditHandle& entry,
+                                 CRef<CBioseq_Info> seq);
+
+    /*
     CBioseq_EditHandle CopySeq(const CSeq_entry_EditHandle& entry,
                                const CBioseq_Handle& seq);
     // Argument seq will be moved to new place.
     CBioseq_EditHandle TakeSeq(const CSeq_entry_EditHandle& entry,
                                const CBioseq_EditHandle& seq);
+    */
     // Argument seq must be removed.
     CBioseq_EditHandle SelectSeq(const CSeq_entry_EditHandle& entry,
                                  const CBioseq_EditHandle& seq);
 
     CBioseq_set_EditHandle SelectSet(const CSeq_entry_EditHandle& entry,
                                      CBioseq_set& seqset);
+    CBioseq_set_EditHandle SelectSet(const CSeq_entry_EditHandle& entry,
+                                     CRef<CBioseq_set_Info> seqset);
+
+    /*
     CBioseq_set_EditHandle CopySet(const CSeq_entry_EditHandle& entry,
                                    const CBioseq_set_Handle& seqset);
     // Argument seqset will be moved to new place.
     CBioseq_set_EditHandle TakeSet(const CSeq_entry_EditHandle& entry,
                                    const CBioseq_set_EditHandle& seqset);
+    */
     // Argument seqset must be removed.
     CBioseq_set_EditHandle SelectSet(const CSeq_entry_EditHandle& entry,
                                      const CBioseq_set_EditHandle& seqset);
@@ -284,6 +305,12 @@ public:
     CConstRef<CSynonymsSet> GetSynonyms(const CBioseq_Handle& bh);
 
     void GetAllTSEs(TTSE_Handles& tses, int kind);
+
+    IScopeTransaction_Impl* CreateTransaction();
+    void SetActiveTransaction(IScopeTransaction_Impl*);
+    IScopeTransaction_Impl& GetTransaction();
+   
+    bool IsTransactionActive() const;
 
 private:
     // constructor/destructor visible from CScope
@@ -446,6 +473,8 @@ private:
     TSeq_idMap              m_Seq_idMap;
     mutable TSeq_idMapLock  m_Seq_idMapLock;
 
+    IScopeTransaction_Impl* m_Transaction;
+
     friend class CScope;
     friend class CHeapScope;
     friend class CObjectManager;
@@ -465,6 +494,7 @@ private:
     friend class CPrefetchToken_Impl;
     friend class CDataSource_ScopeInfo;
     friend class CTSE_ScopeInfo;
+    friend class CScopeTransaction_Impl;
 };
 
 

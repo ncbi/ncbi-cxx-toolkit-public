@@ -37,6 +37,8 @@
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 
+#include <objmgr/impl/seq_annot_edit_commands.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -84,17 +86,31 @@ bool CSeq_align_Handle::IsRemoved(void) const
 
 void CSeq_align_Handle::Remove(void) const
 {
-    GetAnnot().GetEditHandle().x_GetInfo().Remove(m_AnnotIndex);
-    _ASSERT(IsRemoved());
+    typedef CSeq_annot_Remove_EditCommand<CSeq_align_Handle> TCommand;
+    CCommandProcessor processor(GetAnnot().x_GetScopeImpl());
+    processor.run(new TCommand(*this));
 }
 
 
 void CSeq_align_Handle::Replace(const CSeq_align& new_obj) const
 {
+    typedef CSeq_annot_Replace_EditCommand<CSeq_align_Handle> TCommand;
+    CCommandProcessor processor(GetAnnot().x_GetScopeImpl());
+    processor.run(new TCommand(*this, new_obj));
+}
+
+void CSeq_align_Handle::x_RealRemove(void) const
+{
+    GetAnnot().GetEditHandle().x_GetInfo().Remove(m_AnnotIndex);
+    _ASSERT(IsRemoved());
+}
+
+
+void CSeq_align_Handle::x_RealReplace(const CSeq_align& new_obj) const
+{
     GetAnnot().GetEditHandle().x_GetInfo().Replace(m_AnnotIndex, new_obj);
     _ASSERT(!IsRemoved());
 }
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -102,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/11/15 19:22:08  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.9  2005/09/20 15:45:36  vasilche
  * Feature editing API.
  * Annotation handles remember annotations by index.

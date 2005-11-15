@@ -49,13 +49,14 @@ BEGIN_SCOPE(objects)
 
 CDataLoaderPatcher::TRegisterLoaderInfo 
 CDataLoaderPatcher::RegisterInObjectManager(
-    CObjectManager& om,
-    CRef<CDataLoader> data_loader,
+    CObjectManager&    om,
+    CRef<CDataLoader>  data_loader,
     CRef<IDataPatcher> patcher,
+    CRef<IEditSaver>   saver,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    SParam param(data_loader, patcher);
+    SParam param(data_loader, patcher, saver);
     TMaker maker(param);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -73,7 +74,8 @@ CDataLoaderPatcher::CDataLoaderPatcher(const string& loader_name,
                                        const SParam& param)
     : CDataLoader (loader_name),
       m_DataLoader(param.m_DataLoader),
-      m_Patcher   (param.m_Patcher)
+      m_Patcher   (param.m_Patcher),
+      m_EditSaver (param.m_EditSaver)
 {
 }
 
@@ -211,7 +213,7 @@ CDataLoaderPatcher::PatchLock(const TTSE_Lock& lock)
             if( orig_entry ) {
                 entry.Reset(new CSeq_entry);
                 entry->Assign(*orig_entry);
-                m_Patcher->Patch(*entry);
+                m_Patcher->Patch(*nlock, *entry);
             }
             nlock->Assign(lock, entry, m_Patcher->GetAssigner());
             nlock->SetSeqIdTranslator(m_Patcher->GetSeqIdTranslator());
@@ -229,6 +231,12 @@ void CDataLoaderPatcher::PatchLockSet(const TTSE_LockSet& orig_locks,
         new_locks.insert(PatchLock(lock)); 
     }
 }   
+
+CDataLoader::TEditSaver CDataLoaderPatcher::GetEditSaver() const
+{
+    return m_EditSaver;
+}
+
 
 END_SCOPE(objects)
 
@@ -293,6 +301,7 @@ CDataLoader* CDLPatcher_DataLoaderCF::CreateAndRegister(
     const string& data_patcher =
         GetParam(GetDriverName(), params,
                  kCFParam_DLP_DataPatcher, false, kEmptyStr);
+
     if ( !data_loader.empty() && !data_patcher.empty() ) {
         const TPluginManagerParamTree* dl_tree = 
             params->FindNode(data_loader);
@@ -310,12 +319,28 @@ CDataLoader* CDLPatcher_DataLoaderCF::CreateAndRegister(
         CRef<IDataPatcher> dp(dp_manager.CreateInstance(data_patcher,
                                                         TDPManager::GetDefaultDrvVers(),
                                                         dp_tree));
+        const string& edit_saver =
+            GetParam(GetDriverName(), params,
+                     kCFParam_DLP_EditSaver, false, kEmptyStr);
+
+        CRef<IEditSaver> es;
+        if ( !edit_saver.empty() ) {
+            const TPluginManagerParamTree* es_tree = 
+                params->FindNode(edit_saver);
+
+            typedef CPluginManager<IEditSaver> TESManager;
+            TESManager es_manager;
+            es = es_manager.CreateInstance(edit_saver,
+                                           TESManager::GetDefaultDrvVers(),
+                                           es_tree);
+        }
 
         if (dl && dp) {
             return CDataLoaderPatcher::RegisterInObjectManager(
                              om,
                              dl,
                              dp,
+                             es,
                              GetIsDefault(params),
                              GetPriority(params)).GetLoader();
         }
@@ -346,6 +371,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.5  2005/11/15 19:22:08  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.4  2005/10/26 14:36:45  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *

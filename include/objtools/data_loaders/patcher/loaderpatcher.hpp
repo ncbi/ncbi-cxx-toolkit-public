@@ -39,6 +39,7 @@
 #include <objmgr/tse_handle.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/impl/tse_assigner.hpp>
+#include <objmgr/edit_saver.hpp>
 #include <objmgr/seq_id_translator.hpp>
 #include <objtools/data_loaders/patcher/datapatcher_iface.hpp>
 
@@ -53,7 +54,8 @@ BEGIN_SCOPE(objects)
 // Parameter names used by loader factory
 
 const string kCFParam_DLP_DataLoader = "DataLoader"; 
-const string kCFParam_DLP_DataPatcher = "DataPatcher"; // = EDbType (e.g. "Protein")
+const string kCFParam_DLP_DataPatcher = "DataPatcher"; 
+const string kCFParam_DLP_EditSaver = "EditSaver"; 
 
 class NCBI_XLOADER_PATCHER_EXPORT CDataLoaderPatcher : public CDataLoader
 {
@@ -62,13 +64,17 @@ public:
 
     struct SParam
     {
-        SParam(CRef<CDataLoader> data_loader,
-               CRef<IDataPatcher> patcher) 
-            : m_DataLoader(data_loader), m_Patcher(patcher) 
+        SParam(CRef<CDataLoader>  data_loader,
+               CRef<IDataPatcher> patcher,
+               CRef<IEditSaver>   saver) 
+            : m_DataLoader(data_loader), m_Patcher(patcher),
+              m_EditSaver(saver)
         {}
         
-        CRef<CDataLoader> m_DataLoader;
+        CRef<CDataLoader>  m_DataLoader;
         CRef<IDataPatcher> m_Patcher;
+        CRef<IEditSaver>   m_EditSaver;
+
     };
 
     typedef SRegisterLoaderInfo<CDataLoaderPatcher> TRegisterLoaderInfo;
@@ -76,14 +82,16 @@ public:
         CObjectManager& om,
         CRef<CDataLoader>,
         CRef<IDataPatcher>,
+        CRef<IEditSaver> saver = CRef<IEditSaver>(),
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 
     static string GetLoaderNameFromArgs(const SParam& param);
     static string GetLoaderNameFromArgs(CRef<CDataLoader> data_loader,
-                                        CRef<IDataPatcher> patcher)
+                                        CRef<IDataPatcher> patcher,
+                                        CRef<IEditSaver>   saver)
     {
-        return GetLoaderNameFromArgs(SParam(data_loader, patcher));
+        return GetLoaderNameFromArgs(SParam(data_loader, patcher, saver));
     }
     
     virtual ~CDataLoaderPatcher();
@@ -116,6 +124,9 @@ public:
     virtual void GetChunk(TChunk chunk_info);
     virtual void GetChunks(const TChunkSet& chunks);
 
+
+    virtual TEditSaver GetEditSaver() const;
+
     /*
     virtual SRequestDetails ChoiceToDetails(EChoice choice) const;
     virtual EChoice DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const; 
@@ -125,8 +136,9 @@ public:
     
 private:
 
-    CRef<CDataLoader> m_DataLoader;
+    CRef<CDataLoader>  m_DataLoader;
     CRef<IDataPatcher> m_Patcher;
+    CRef<IEditSaver>   m_EditSaver;
 
     typedef CParamLoaderMaker<CDataLoaderPatcher, SParam> TMaker;
     friend class CParamLoaderMaker<CDataLoaderPatcher, SParam>;
@@ -173,6 +185,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.6  2005/11/15 19:22:07  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.5  2005/10/26 14:36:44  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *

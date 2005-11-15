@@ -111,6 +111,7 @@ public:
     bool CanGetInst(void) const;
     const TInst& GetInst(void) const;
     void SetInst(TInst& v);
+    void ResetInst();
 
     // inst.repr
     typedef TInst::TRepr TInst_Repr;
@@ -118,6 +119,7 @@ public:
     bool CanGetInst_Repr(void) const;
     TInst_Repr GetInst_Repr(void) const;
     void SetInst_Repr(TInst_Repr v);
+    void ResetInst_Repr();
 
     // inst.mol
     typedef TInst::TMol TInst_Mol;
@@ -125,6 +127,7 @@ public:
     bool CanGetInst_Mol(void) const;
     TInst_Mol GetInst_Mol(void) const;
     void SetInst_Mol(TInst_Mol v);
+    void ResetInst_Mol();
 
     // inst.length
     typedef TInst::TLength TInst_Length;
@@ -133,6 +136,7 @@ public:
     TInst_Length GetInst_Length(void) const;
     void SetInst_Length(TInst_Length v);
     TSeqPos GetBioseqLength(void) const; // try to calculate it if not set
+    void ResetInst_Length();
 
     // inst.fuzz
     typedef TInst::TFuzz TInst_Fuzz;
@@ -140,6 +144,7 @@ public:
     bool CanGetInst_Fuzz(void) const;
     const TInst_Fuzz& GetInst_Fuzz(void) const;
     void SetInst_Fuzz(TInst_Fuzz& v);
+    void ResetInst_Fuzz();
 
     // inst.topology
     typedef TInst::TTopology TInst_Topology;
@@ -147,6 +152,7 @@ public:
     bool CanGetInst_Topology(void) const;
     TInst_Topology GetInst_Topology(void) const;
     void SetInst_Topology(TInst_Topology v);
+    void ResetInst_Topology();
 
     // inst.strand
     typedef TInst::TStrand TInst_Strand;
@@ -154,6 +160,7 @@ public:
     bool CanGetInst_Strand(void) const;
     TInst_Strand GetInst_Strand(void) const;
     void SetInst_Strand(TInst_Strand v);
+    void ResetInst_Strand();
 
     // inst.seq-data
     typedef TInst::TSeq_data TInst_Seq_data;
@@ -161,6 +168,7 @@ public:
     bool CanGetInst_Seq_data(void) const;
     const TInst_Seq_data& GetInst_Seq_data(void) const;
     void SetInst_Seq_data(TInst_Seq_data& v);
+    void ResetInst_Seq_data();
 
     // inst.ext
     typedef TInst::TExt TInst_Ext;
@@ -168,6 +176,7 @@ public:
     bool CanGetInst_Ext(void) const;
     const TInst_Ext& GetInst_Ext(void) const;
     void SetInst_Ext(TInst_Ext& v);
+    void ResetInst_Ext();
 
     // inst.hist
     typedef TInst::THist TInst_Hist;
@@ -175,6 +184,7 @@ public:
     bool CanGetInst_Hist(void) const;
     const TInst_Hist& GetInst_Hist(void) const;
     void SetInst_Hist(TInst_Hist& v);
+    void ResetInst_Hist();
 
     // inst.hist.assembly
     typedef TInst::THist::TAssembly TInst_Hist_Assembly;
@@ -305,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.27  2005/11/15 19:22:07  didenko
+ * Added transactions and edit commands support
+ *
  * Revision 1.26  2005/06/27 18:17:03  vasilche
  * Allow getting CBioseq_set_Handle from CBioseq_set.
  *

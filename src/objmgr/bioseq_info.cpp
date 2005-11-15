@@ -446,6 +446,11 @@ void CBioseq_Info::SetInst(TInst& v)
     m_Object->SetInst(v);
 }
 
+void CBioseq_Info::ResetInst()
+{
+    if (IsSetInst())
+        m_Object->ResetInst();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // inst.repr
@@ -474,6 +479,11 @@ void CBioseq_Info::SetInst_Repr(TInst_Repr v)
     m_Object->SetInst().SetRepr(v);;
 }
 
+void CBioseq_Info::ResetInst_Repr()
+{
+    if (IsSetInst_Repr())
+        m_Object->SetInst().ResetRepr();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // inst.mol
@@ -500,6 +510,12 @@ CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
 void CBioseq_Info::SetInst_Mol(TInst_Mol v)
 {
     m_Object->SetInst().SetMol(v);;
+}
+
+void CBioseq_Info::ResetInst_Mol()
+{
+    if (IsSetInst_Mol())
+        m_Object->SetInst().ResetMol();
 }
 
 
@@ -530,6 +546,11 @@ void CBioseq_Info::SetInst_Length(TInst_Length v)
     m_Object->SetInst().SetLength(v);;
 }
 
+void CBioseq_Info::ResetInst_Length()
+{
+    if (IsSetInst_Length())
+        m_Object->SetInst().ResetLength();
+}
 
 CBioseq_Info::TInst_Length CBioseq_Info::GetBioseqLength(void) const
 {
@@ -569,6 +590,11 @@ void CBioseq_Info::SetInst_Fuzz(TInst_Fuzz& v)
     m_Object->SetInst().SetFuzz(v);;
 }
 
+void CBioseq_Info::ResetInst_Fuzz()
+{
+    if (IsSetInst_Fuzz())
+        m_Object->SetInst().ResetFuzz();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // inst.topology
@@ -597,6 +623,11 @@ void CBioseq_Info::SetInst_Topology(TInst_Topology v)
     m_Object->SetInst().SetTopology(v);;
 }
 
+void CBioseq_Info::ResetInst_Topology()
+{
+    if (IsSetInst_Topology())
+        m_Object->SetInst().ResetTopology();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // inst.strand
@@ -623,6 +654,12 @@ CBioseq_Info::TInst_Strand CBioseq_Info::GetInst_Strand(void) const
 void CBioseq_Info::SetInst_Strand(TInst_Strand v)
 {
     m_Object->SetInst().SetStrand(v);;
+}
+
+void CBioseq_Info::ResetInst_Strand()
+{
+    if (IsSetInst_Strand())
+        m_Object->SetInst().ResetStrand();
 }
 
 
@@ -654,6 +691,12 @@ void CBioseq_Info::SetInst_Seq_data(TInst_Seq_data& v)
     m_Object->SetInst().SetSeq_data(v);;
 }
 
+void CBioseq_Info::ResetInst_Seq_data()
+{
+    if (IsSetInst_Seq_data())
+        m_Object->SetInst().ResetSeq_data();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 // inst.ext
@@ -681,6 +724,12 @@ void CBioseq_Info::SetInst_Ext(TInst_Ext& v)
 {
     m_Seq_dataChunks.clear();
     m_Object->SetInst().SetExt(v);
+}
+
+void CBioseq_Info::ResetInst_Ext()
+{
+    if (IsSetInst_Ext())
+        m_Object->SetInst().ResetExt();
 }
 
 
@@ -711,6 +760,11 @@ void CBioseq_Info::SetInst_Hist(TInst_Hist& v)
 {
     m_AssemblyChunk = -1;
     m_Object->SetInst().SetHist(v);;
+}
+void CBioseq_Info::ResetInst_Hist()
+{
+    if (IsSetInst_Hist())
+        m_Object->SetInst().ResetHist();
 }
 
 
@@ -1031,6 +1085,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/11/15 19:22:07  didenko
+* Added transactions and edit commands support
+*
 * Revision 1.32  2005/10/18 15:34:16  vasilche
 * Copy CSeqMap when editing bioseq.
 *
