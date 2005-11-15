@@ -48,6 +48,13 @@ static char const rcsid[] =
 #include <serial/iterator.hpp>
 #include "blast_seqalign.hpp"
 
+// PSI-BLAST includes
+#include <algo/blast/api/psiblast_options.hpp>
+#include <algo/blast/api/psi_pssm_input.hpp>
+#include <algo/blast/api/pssm_engine.hpp>
+#include "bioseq_extract_data_priv.hpp"
+#include <objects/scoremat/PssmWithParameters.hpp>
+
 /** @addtogroup AlgoBlast
  *
  * @{
@@ -366,6 +373,49 @@ TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences)
     return retval;
 }
 
+// Defined in psiblast_aux_priv.cpp
+extern void
+PsiBlastAddAncilliaryPssmData(CPssmWithParameters& pssm, 
+                              const CBioseq& query, 
+                              int gap_open, 
+                              int gap_extend);
+
+CRef<CPssmWithParameters> 
+PsiBlastComputePssmFromAlignment(const CBioseq& query,
+                                 CConstRef<CSeq_align_set> alignment,
+                                 CRef<CScope> database_scope,
+                                 const CPSIBlastOptionsHandle& opts_handle,
+                                 PSIDiagnosticsRequest* diagnostics_request)
+{
+    // Extract PSSM engine options from options handle
+    CPSIBlastOptions opts;
+    PSIBlastOptionsNew(&opts);
+    opts->pseudo_count = opts_handle.GetPseudoCount();
+    opts->inclusion_ethresh = opts_handle.GetInclusionThreshold();
+
+    CBlastQuerySourceBioseqSet query_source(query, true);
+    string warnings;
+    const SBlastSequence query_seq = 
+        query_source.GetBlastSequence(0, eBlastEncodingProtein,
+                                      eNa_strand_unknown,
+                                      eSentinels, &warnings);
+    ASSERT(warnings.empty());
+
+    CPsiBlastInputData input(query_seq.data.get()+1,    // skip sentinel
+                             query_seq.length-2,        // don't count sentinels
+                             alignment, database_scope, 
+                             *opts.Get(), 
+                             opts_handle.GetMatrixName(),
+                             diagnostics_request);
+
+    CPssmEngine engine(&input);
+    CRef<CPssmWithParameters> retval(engine.Run());
+
+    PsiBlastAddAncilliaryPssmData(*retval, query, 
+                                  opts_handle.GetGapOpeningCost(), 
+                                  opts_handle.GetGapExtensionCost());
+    return retval;
+}
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -375,6 +425,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2005/11/15 22:49:15  camacho
+* + function to build PSSM from PSI-BLAST results
+*
 * Revision 1.61  2005/11/09 20:56:26  camacho
 * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
 * as CBl2Seq and reduce redundant code.

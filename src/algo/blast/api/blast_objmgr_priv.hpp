@@ -48,9 +48,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CSeq_loc;
     class CScope;
+    class CBioseq;
+    class CSeq_align_set;
+    class CPssmWithParameters;
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
+
+class CPSIBlastOptionsHandle;
 
 /// Implements the object manager dependant version of the IBlastQuerySource
 class CBlastQuerySourceOM : public IBlastQuerySource {
@@ -73,7 +78,8 @@ public:
     /// @param encoding desired encoding [in]
     /// @param strand strand to fetch [in]
     /// @param sentinel specifies to use or not to use sentinel bytes around
-    ///        sequence data [in]
+    ///        sequence data. Note that this is ignored for proteins, as in the
+    ///        CORE of BLAST, proteins always have sentinel bytes [in]
     /// @param warnings if not NULL, warnings will be returned in this string
     ///        [in|out]
     /// @return SBlastSequence structure containing sequence data requested
@@ -224,6 +230,27 @@ PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results,
                            const IBlastSeqInfoSrc * seqinfo_src,
                            const SPHIQueryInfo    * pattern_info);
 
+/////////////////////////////////////////////////////////////////////////////
+// Functions to help in PSSM generation
+/////////////////////////////////////////////////////////////////////////////
+
+/** Computes a PSSM from the result of a PSI-BLAST iteration
+ * @param query Query sequence [in]
+ * @param alignment BLAST pairwise alignment obtained from the PSI-BLAST
+ * iteration [in]
+ * @param database_scope Scope from which the database sequences will be
+ * retrieved [in]
+ * @param opts_handle PSI-BLAST options [in]
+ * @param diagnostics_req Optional requests for diagnostics data from the PSSM
+ * engine [in]
+ * @todo add overloaded function which takes a blast::SSeqLoc
+ */
+CRef<objects::CPssmWithParameters> 
+PsiBlastComputePssmFromAlignment(const objects::CBioseq& query,
+                                 CConstRef<objects::CSeq_align_set> alignment,
+                                 CRef<objects::CScope> database_scope,
+                                 const CPSIBlastOptionsHandle& opts_handle,
+                                 PSIDiagnosticsRequest* diagnostics_req = 0);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
