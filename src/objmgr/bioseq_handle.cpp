@@ -802,7 +802,7 @@ void CBioseq_EditHandle::AddSeq_descr(TDescr& v) const
 {
     typedef CAddDescr_EditCommand<CBioseq_EditHandle> TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().AddSeq_descr(v);
 }
 
@@ -811,7 +811,7 @@ void CBioseq_EditHandle::SetInst(TInst& v) const
 {
     typedef CSet_SeqInst_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst(v);
 }
 
@@ -820,7 +820,7 @@ void CBioseq_EditHandle::SetInst_Repr(TInst_Repr v) const
 {
     typedef CSet_SeqInstRepr_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Repr(v);
 }
 
@@ -829,7 +829,7 @@ void CBioseq_EditHandle::SetInst_Mol(TInst_Mol v) const
 {
     typedef CSet_SeqInstMol_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Mol(v);
 }
 
@@ -838,7 +838,7 @@ void CBioseq_EditHandle::SetInst_Length(TInst_Length v) const
 {
     typedef CSet_SeqInstLength_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Length(v);
 }
 
@@ -847,7 +847,7 @@ void CBioseq_EditHandle::SetInst_Fuzz(TInst_Fuzz& v) const
 {
     typedef CSet_SeqInstFuzz_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Fuzz(v);
 }
 
@@ -856,7 +856,7 @@ void CBioseq_EditHandle::SetInst_Topology(TInst_Topology v) const
 {
     typedef CSet_SeqInstTopology_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Topology(v);
 }
 
@@ -865,7 +865,7 @@ void CBioseq_EditHandle::SetInst_Strand(TInst_Strand v) const
 {
     typedef CSet_SeqInstStrand_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Strand(v);
 }
 
@@ -874,7 +874,7 @@ void CBioseq_EditHandle::SetInst_Seq_data(TInst_Seq_data& v) const
 {
     typedef CSet_SeqInstSeq_data_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Seq_data(v);
 }
 
@@ -883,7 +883,7 @@ void CBioseq_EditHandle::SetInst_Ext(TInst_Ext& v) const
 {
     typedef CSet_SeqInstExt_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Ext(v);
 }
 
@@ -892,7 +892,7 @@ void CBioseq_EditHandle::SetInst_Hist(TInst_Hist& v) const
 {
     typedef CSet_SeqInstHist_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetInst_Hist(v);
 }
 
@@ -1104,6 +1104,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2005/11/15 22:00:57  ucko
+* Don't return expressions from functions declared void.
+*
 * Revision 1.96  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *

@@ -234,7 +234,7 @@ void CSeq_annot_EditHandle::Remove(void) const
 {
     typedef CRemoveAnnot_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, x_GetScopeImpl()));   
+    processor.run(new TCommand(*this, x_GetScopeImpl()));   
     //    x_GetScopeImpl().RemoveAnnot(*this);
 }
 
@@ -294,6 +294,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2005/11/15 22:00:57  ucko
+* Don't return expressions from functions declared void.
+*
 * Revision 1.19  2005/11/15 19:22:08  didenko
 * Added transactions and edit commands support
 *

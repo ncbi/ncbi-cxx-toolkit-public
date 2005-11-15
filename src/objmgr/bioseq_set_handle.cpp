@@ -346,7 +346,7 @@ void CBioseq_set_EditHandle::ResetId(void) const
 {
     typedef CReset_BioseqSetId_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this));
+    processor.run(new TCommand(*this));
     //x_GetInfo().ResetId();
 }
 
@@ -355,7 +355,7 @@ void CBioseq_set_EditHandle::SetId(TId& v) const
 {
     typedef CSet_BioseqSetId_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this,v));
+    processor.run(new TCommand(*this,v));
     //    x_GetInfo().SetId(v);
 }
 
@@ -364,7 +364,7 @@ void CBioseq_set_EditHandle::ResetColl(void) const
 {
     typedef CReset_BioseqSetColl_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this));
+    processor.run(new TCommand(*this));
     //x_GetInfo().ResetColl();
 }
 
@@ -373,7 +373,7 @@ void CBioseq_set_EditHandle::SetColl(TColl& v) const
 {
     typedef CSet_BioseqSetColl_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //x_GetInfo().SetColl(v);
 }
 
@@ -382,7 +382,7 @@ void CBioseq_set_EditHandle::ResetLevel(void) const
 {
     typedef CReset_BioseqSetLevel_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this));
+    processor.run(new TCommand(*this));
     //    x_GetInfo().ResetLevel();
 }
 
@@ -391,7 +391,7 @@ void CBioseq_set_EditHandle::SetLevel(TLevel v) const
 {
     typedef CSet_BioseqSetLevel_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //x_GetInfo().SetLevel(v);
 }
 
@@ -400,7 +400,7 @@ void CBioseq_set_EditHandle::ResetClass(void) const
 {
     typedef CReset_BioseqSetClass_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this));
+    processor.run(new TCommand(*this));
     //x_GetInfo().ResetClass();
 }
 
@@ -409,7 +409,7 @@ void CBioseq_set_EditHandle::SetClass(TClass v) const
 {
     typedef CSet_BioseqSetClass_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //x_GetInfo().SetClass(v);
 }
 
@@ -418,7 +418,7 @@ void CBioseq_set_EditHandle::ResetRelease(void) const
 {
     typedef CReset_BioseqSetRelease_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this));
+    processor.run(new TCommand(*this));
     //    x_GetInfo().ResetRelease();
 }
 
@@ -427,7 +427,7 @@ void CBioseq_set_EditHandle::SetRelease(TRelease& v) const
 {
     typedef CSet_BioseqSetRelease_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().SetRelease(v);
 }
 
@@ -436,7 +436,7 @@ void CBioseq_set_EditHandle::ResetDate(void) const
 {
     typedef CReset_BioseqSetDate_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this));
+    processor.run(new TCommand(*this));
     //x_GetInfo().ResetDate();
 }
 
@@ -445,7 +445,7 @@ void CBioseq_set_EditHandle::SetDate(TDate& v) const
 {
     typedef CSet_BioseqSetDate_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this,v));
+    processor.run(new TCommand(*this,v));
     //    x_GetInfo().SetDate(v);
 }
 
@@ -502,7 +502,7 @@ void CBioseq_set_EditHandle::AddSeq_descr(TDescr& v) const
 {
     typedef CAddDescr_EditCommand<CBioseq_set_EditHandle> TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, v));
+    processor.run(new TCommand(*this, v));
     //    x_GetInfo().AddSeq_descr(v);
 }
 
@@ -623,7 +623,7 @@ void CBioseq_set_EditHandle::x_Detach(void) const
 {
     typedef CRemoveBioseq_set_EditCommand TCommand;
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this, x_GetScopeImpl()));
+    processor.run(new TCommand(*this, x_GetScopeImpl()));
     //    x_GetScopeImpl().RemoveBioseq_set(*this);
 }
 
@@ -734,6 +734,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/11/15 22:00:57  ucko
+* Don't return expressions from functions declared void.
+*
 * Revision 1.21  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *
