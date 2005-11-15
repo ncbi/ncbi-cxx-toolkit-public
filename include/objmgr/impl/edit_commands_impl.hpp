@@ -52,8 +52,8 @@ BEGIN_SCOPE(objects)
 
 template<typename CMD>
 struct CMDReturn {
-    typedef void TReturn;
-    static inline TReturn GetRet(CMD*) {}
+    typedef bool TReturn;
+    static inline TReturn GetRet(CMD*) { return false; }
 };
 
 class NCBI_XOBJMGR_EXPORT CCommandProcessor
@@ -78,7 +78,7 @@ private:
 
 private:
 
-    void* operator new(std::size_t); // only stack allocation is allowed
+    void* operator new(size_t); // only stack allocation is allowed
     void operator delete(void*);
     CCommandProcessor(const CCommandProcessor&);
     CCommandProcessor& operator=(const CCommandProcessor&);
@@ -545,6 +545,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/11/15 21:54:07  ucko
+* Portability fixes: make default CMDReturn yield a bool (false) rather
+* than void, which confuses some compilers (WorkShop and MIPSpro); also
+* unqualify std::size_t for MIPSpro's sake.
+*
 * Revision 1.1  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *
