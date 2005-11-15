@@ -63,7 +63,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.6  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.7  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -530,11 +530,12 @@ private:
                     size_t   bytes);
 
     void x_CreateLog();
-
+/*
     void x_PrintStatistics(CNcbiOstream& ios, const SBDB_CacheStatistics& cs);
     void x_PrintStatisticsHistogram(
                           CNcbiOstream&                                   ios, 
                           const SBDB_CacheStatistics::TBlobSizeHistogram& hist);
+*/
 
     /// Check if we have active thread data for this thread.
     /// Setup thread data if we don't.
@@ -783,6 +784,8 @@ void CNetCacheServer::ProcessGetConfig(CSocket& sock)
 
 void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
 {
+    CNcbiRegistry reg;
+
     SOCK sk = sock.GetSOCK();
     sock.SetOwnership(eNoOwnership);
     sock.Reset(0, eTakeOwnership, eCopyTimeoutsToSOCK);
@@ -796,8 +799,11 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
     bdb_cache->Lock();
 
     try {
-    const SBDB_CacheStatistics& cs = bdb_cache->GetStatistics();
 
+        const SBDB_CacheStatistics& cs = bdb_cache->GetStatistics();
+        cs.ConvertToRegistry(&reg);
+
+/*
     // print statistics
 
     ios << "[bdb_stat]" << "\n\n";
@@ -831,16 +837,18 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
             x_PrintStatisticsHistogram(ios, it->second.blob_size_hist);
         }
     }
-
+*/
 
     } catch(...) {
         bdb_cache->Unlock();
         throw;
     }
     bdb_cache->Unlock();
+
+    reg.Write(ios,  CNcbiRegistry::fTransient | CNcbiRegistry::fPersistent);
 }
 
-
+/*
 void CNetCacheServer::x_PrintStatistics(CNcbiOstream&               ios, 
                                         const SBDB_CacheStatistics& cs)
 {
@@ -862,7 +870,9 @@ void CNetCacheServer::x_PrintStatistics(CNcbiOstream&               ios,
     ios << "err_blob_get = " << cs.err_blob_get << "\n";
     ios << "err_blob_put = " << cs.err_blob_put << "\n";
 }
+*/
 
+/*
 void CNetCacheServer::x_PrintStatisticsHistogram(
                         CNcbiOstream&                                   ios, 
                         const SBDB_CacheStatistics::TBlobSizeHistogram& hist)
@@ -889,7 +899,7 @@ void CNetCacheServer::x_PrintStatisticsHistogram(
         }
     }
 }
-
+*/
 
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
@@ -1984,6 +1994,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2005/11/15 13:39:14  kuznets
+ * Print server statistics using IRegistry
+ *
  * Revision 1.68  2005/10/26 19:05:09  kuznets
  * Fixed minor bug in query parsing
  *
