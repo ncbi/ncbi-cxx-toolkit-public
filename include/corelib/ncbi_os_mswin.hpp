@@ -85,8 +85,10 @@ inline void Yield(void)
 }
 #endif
 
-
-
+#if !defined(Beep)
+/// Avoid a silly name clash between MS-Win and C Toolkit headers.
+#  define Beep Beep
+#endif
 
 
 #endif  /* CORELIB___NCBI_OS_MSWIN__HPP */

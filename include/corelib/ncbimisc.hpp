@@ -809,12 +809,6 @@ BEGIN_NCBI_SCOPE
     for ( Type::reverse_iterator Var = (Cont).rbegin();  Var != (Cont).rend();  ++Var )
 
 
-#if defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
-/// Avoid a silly name clash between MS-Win and C Toolkit headers.
-#  define Beep Beep
-#endif
-
-
 /// Type for sequence locations and lengths.
 ///
 /// Use this typedef rather than its expansion, which may change.
@@ -886,6 +880,13 @@ void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
 }
 
 
+template<class Element, size_t Size>
+inline
+size_t ArraySize(const Element (&)[Size])
+{
+    return Size;
+}
+
 END_STD_SCOPE
 
 
@@ -895,6 +896,10 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2005/11/15 17:56:30  grichenk
+ * Moved Beep to ncbi_os_mswin.hpp
+ * Added ArraySize template
+ *
  * Revision 1.89  2005/11/02 15:48:10  kuznets
  * return const reference in operator[] const (AutoArray)
  *
