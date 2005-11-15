@@ -35,10 +35,57 @@
 #include <corelib/ncbiargs.hpp>
 
 #include <dbapi/cache/dbapi_blob_cache.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
+
+typedef CTreePair<string, string>  TParamValue;
+typedef TParamValue::TPairTreeNode TParamTree;
+    
+TPluginManagerParamTree*
+MakeParamTree(void)
+{
+    string drv_name;
+#ifdef NCBI_OS_MSWIN
+    drv_name = "odbc";
+#else
+    drv_name = "ftds";
+#endif
+        
+    auto_ptr<TParamTree> parent_node( new TParamTree( TParamTree::TValueType("dbapi", kEmptyStr) ) );
+    
+    parent_node->AddNode( TParamTree::TValueType("driver", drv_name) );
+    parent_node->AddNode( TParamTree::TValueType("server", "MSSQL10") );
+    parent_node->AddNode( TParamTree::TValueType("database", "NCBI_Cache") );
+    parent_node->AddNode( TParamTree::TValueType("login", "cwrite") );
+    parent_node->AddNode( TParamTree::TValueType("password", "allowed") );
+    
+    return parent_node.release();
+}
+
+// xcache_dbapi factory ...
+ICache*
+MakeICache(void)
+{
+    typedef CPluginManager<ICache> TCacheManager; 
+    typedef CPluginManagerGetter<ICache> TCacheManagerStore;
+
+    CRef<TCacheManager> cache_manager( TCacheManagerStore::Get() );
+    auto_ptr<TPluginManagerParamTree> params( MakeParamTree() );
+    ICache* drv = NULL;
+
+    _ASSERT( cache_manager );
+    
+    drv = cache_manager->CreateInstance(
+        "dbapi",
+        NCBI_INTERFACE_VERSION(ICache),
+        params.get()
+        );
+        
+    return drv;
+}
 
 /// Test application
 ///
@@ -58,8 +105,7 @@ void CDBAPI_CacheTest::Init(void)
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-    d->SetUsageContext("test_bdb",
-                       "test BDB library");
+    d->SetUsageContext("test_bdb", "test BDB library");
     SetupArgDescriptions(d.release());
 }
 
@@ -69,38 +115,27 @@ int CDBAPI_CacheTest::Run(void)
     cout << "Run CDBAPI_CacheTest test" << endl << endl;
 
     try {
-        string drv_name;
-#ifdef NCBI_OS_MSWIN
-        drv_name = "odbc";
-#else
-        drv_name = "ftds";
-#endif
-        const string server = "MSSQL10";
-        const string database = "NCBI_Cache";
-        const string login = "cwrite";
-        const string password = "allowed";
+        auto_ptr<ICache> blob_cache( MakeICache() );
+        
+        if ( blob_cache.get() == NULL ) {
+            return 1;
+        }
 
-        {{
-        CDBAPI_Cache  blob_cache;
-        blob_cache.Open(drv_name, server, database, login, password);
+        int top = blob_cache->GetTimeStampPolicy();
+        blob_cache->SetTimeStampPolicy(top, 30);
 
-
-
-        int top = blob_cache.GetTimeStampPolicy();
-        blob_cache.SetTimeStampPolicy(top, 30);
-
-        blob_cache.Purge("", "", 30);
+        blob_cache->Purge("", "", 30);
 
         const char* szTest = "01234567890";
 
-        blob_cache.Store("key_1",
+        blob_cache->Store("key_1",
                          1,
                          "",
                          szTest,
                          strlen(szTest));
 
 
-        size_t blob_size = blob_cache.GetSize("key_1",
+        size_t blob_size = blob_cache->GetSize("key_1",
                                                1,
                                                "");
 
@@ -108,7 +143,7 @@ int CDBAPI_CacheTest::Run(void)
         assert(blob_size == s);
 
         char blob_buf[1024] = {0,};
-        blob_cache.Read("key_1",
+        blob_cache->Read("key_1",
                         1,
                         "", 
                         blob_buf,
@@ -118,7 +153,7 @@ int CDBAPI_CacheTest::Run(void)
         assert(cmp == 0);
 
         {
-        auto_ptr<IWriter> wrt(blob_cache.GetWriteStream("key_3", 1, "sk1"));
+        auto_ptr<IWriter> wrt(blob_cache->GetWriteStream("key_3", 1, "sk1"));
         size_t bytes_written;
         int s = strlen(szTest);
         wrt->Write(szTest, s, &bytes_written);
@@ -128,7 +163,7 @@ int CDBAPI_CacheTest::Run(void)
         {
         char str[1024] = {0,};
         char* sp = str;
-        auto_ptr<IReader> rdr(blob_cache.GetReadStream("key_3", 1, "sk1"));
+        auto_ptr<IReader> rdr(blob_cache->GetReadStream("key_3", 1, "sk1"));
         char buf[1024];
         ERW_Result r;
         size_t rd;
@@ -153,7 +188,7 @@ int CDBAPI_CacheTest::Run(void)
             }
 
             {
-            auto_ptr<IWriter> wrt(blob_cache.GetWriteStream("key_big", 1, ""));
+            auto_ptr<IWriter> wrt(blob_cache->GetWriteStream("key_big", 1, ""));
             unsigned written = 0;
             int* p = big_blob;
             while (written < bsize) {
@@ -168,7 +203,7 @@ int CDBAPI_CacheTest::Run(void)
             wrt->Flush();
             }
     
-            auto_ptr<IReader> rdr(blob_cache.GetReadStream("key_big", 1, ""));
+            auto_ptr<IReader> rdr(blob_cache->GetReadStream("key_big", 1, ""));
             unsigned bn = 0;
             
             ERW_Result r;
@@ -187,13 +222,12 @@ int CDBAPI_CacheTest::Run(void)
                 cnt++;
             } while (rd > 0);
         }
-        blob_cache.Remove("key_big", 1, "");
-
-        }}
-
+        
+        blob_cache->Remove("key_big", 1, "");
     } catch( CDB_Exception& dbe ) {
         NcbiCerr  << dbe.what() << " " << dbe.Message() 
                   << NcbiEndl;
+        return 1;
     }
 
     cout << endl;
@@ -211,6 +245,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/15 17:05:21  ssikorsk
+ * Load ncbi_xcache_dbapi dynamically
+ *
  * Revision 1.2  2005/11/10 14:44:56  ssikorsk
  * Remove dependency on CDriverManager
  *

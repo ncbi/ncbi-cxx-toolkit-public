@@ -161,8 +161,14 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
     }
 
     const string& mem_size_str =
-        GetParam(params, kCFParam_mem_size, false, kEmptyStr);
-    unsigned mem_size = NStr::StringToUInt(mem_size_str);
+        GetParam(params, kCFParam_mem_size, false, "0");
+    unsigned mem_size = 0;
+    
+    try {
+        mem_size = NStr::StringToUInt(mem_size_str);
+    } catch(const CStringException&) {
+        // ignore
+    }
     if (mem_size) {
         drv->SetMemBufferSize(mem_size);
     }
@@ -196,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/15 17:05:21  ssikorsk
+ * Load ncbi_xcache_dbapi dynamically
+ *
  * Revision 1.8  2005/10/27 16:48:49  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
