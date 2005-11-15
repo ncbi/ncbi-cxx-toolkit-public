@@ -48,8 +48,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-const string kObjectManagerPtrName = "ObjectManagerPtr";
-
 typedef CObjectManager TInstance;
 
 static TInstance* s_Instance = 0;
@@ -504,6 +502,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/11/15 15:53:46  vasilche
+* Removed obsolete string constant.
+*
 * Revision 1.48  2005/06/22 14:13:23  vasilche
 * Removed obsolete methods.
 * Register only shared Seq-entries.
