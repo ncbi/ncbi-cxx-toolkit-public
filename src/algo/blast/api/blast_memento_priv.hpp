@@ -111,6 +111,7 @@ private:
 /// It is a modification of the memento design pattern in which the object is
 /// not to restore state but rather to control access to private data
 /// structures of classes enclosing BLAST CORE C-structures.
+/// @todo FIXME: this is not being used, instead the SInternalData is being used
 class CBlastMemento : public CObject
 {
 public:
