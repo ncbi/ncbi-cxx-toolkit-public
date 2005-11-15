@@ -102,6 +102,16 @@ CBlastSubjectDb::x_DetermineMoleculeType()
 }
 
 void
+CBlastSubjectDb::ResetBlastSeqSrcIteration()
+{
+    if (m_DbInfoProvided) {
+        m_SeqSrc = BlastSeqSrcFree(m_SeqSrc);
+    } else {
+        m_DbHandle->ResetInternalChunkBookmark();
+    }
+}
+
+void
 CBlastSubjectDb::x_MakeSeqSrc()
 {
     if (m_DbInfoProvided) {

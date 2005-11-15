@@ -59,6 +59,8 @@ public:
 
     /// Verifies that the database exists or that the CSeqDB object is not NULL
     virtual void Validate();
+    
+    virtual void ResetBlastSeqSrcIteration();
 
 protected:
     /// Creates a BlastSeqSrc from the input data

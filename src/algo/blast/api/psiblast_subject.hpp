@@ -68,6 +68,16 @@ public:
     /// Retrieves or constructs the BlastSeqSrc
     virtual BlastSeqSrc* MakeSeqSrc();
 
+    /// This method should be called so that if the implementation has an
+    /// internal "bookmark" of the chunks of the database it has assigned to
+    /// different threads, this can be reset at the start of a PSI-BLAST 
+    /// iteration. This method should be called before calling MakeSeqSrc() to
+    /// ensure proper action on retrieving the BlastSeqSrc (in some cases it
+    /// might cause a re-construction of the underlying BlastSeqSrc
+    /// implementation). Since this might not apply in some cases, an empty 
+    /// default implementation is provided.
+    virtual void ResetBlastSeqSrcIteration() {}
+
     /// Retrieves or constructs the IBlastSeqInfoSrc
     virtual IBlastSeqInfoSrc* MakeSeqInfoSrc();
 
