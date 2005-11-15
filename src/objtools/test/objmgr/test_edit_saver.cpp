@@ -1,0 +1,563 @@
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Authors:  Maxim Didenko
+*
+* File Description:
+*
+* ===========================================================================
+*/
+
+#include <ncbi_pch.hpp>
+
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbiexpt.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/scope_transaction.hpp>
+#include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/unsupp_editsaver.hpp>
+
+#include <objmgr/util/sequence.hpp>
+
+#include <objmgr/impl/bioseq_set_info.hpp>
+
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_annot.hpp>
+
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/data_loaders/patcher/loaderpatcher.hpp>
+
+#include <test/test_assert.h>  /* This header must go last */
+
+
+BEGIN_NCBI_SCOPE
+using namespace objects;
+using namespace sequence;
+
+//////////////////////////////////////////////////////////////////////////////
+///
+class CTestPatcher : public IDataPatcher
+{
+public:
+    CTestPatcher() : m_Assigner( new CTSE_Default_Assigner ) {}
+    ~CTestPatcher() {}
+    
+    virtual CRef<ITSE_Assigner> GetAssigner() { return m_Assigner; }
+    virtual CRef<ISeq_id_Translator> GetSeqIdTranslator() 
+    { return CRef<ISeq_id_Translator>(); }
+    virtual bool IsPatchNeeded(const CTSE_Info& tse) { return false; }
+
+    virtual void Patch(const CTSE_Info& tse, CSeq_entry& entry) {}
+private:
+
+    CRef<ITSE_Assigner> m_Assigner;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+///
+class CTestApp;
+
+class CTestEditSaver : public CUnsupportedEditSaver
+{
+public:
+    CTestEditSaver(CTestApp& app);
+
+    virtual void BeginTransaction();
+    virtual void CommitTransaction();
+    virtual void RollbackTransaction();
+
+    virtual void AddDesc(const CBioseq_Handle&, const CSeqdesc&, ECallMode);
+    virtual void RemoveDesc(const CBioseq_Handle&, const CSeqdesc&, ECallMode);
+
+    virtual void Add(const CSeq_annot_Handle&, const CSeq_feat&, ECallMode);
+    virtual void Replace(const CSeq_feat_Handle&, const CSeq_feat&, ECallMode);
+    virtual void Remove(const CSeq_feat_Handle&, ECallMode);
+
+    virtual void Attach(const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode);
+    virtual void Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode);
+    virtual void Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&, ECallMode);
+    virtual void Attach(const CBioseq_set_Handle&, const CSeq_entry_Handle&, 
+                        int, ECallMode);
+
+
+    virtual void Reset(const CSeq_entry_Handle&, ECallMode);
+    virtual void Remove(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
+    virtual void Attach(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
+
+private:
+    CTestApp& m_App;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+///
+
+#define DEFINE_OP(operation) \
+    void Call##operation() { ++m_##operation; } \
+    int Get##operation##Calls() const { return m_##operation; }
+
+class CTestApp : public CNcbiApplication
+{
+public:
+    CTestApp();
+
+    virtual void Init(void);
+    virtual int  Run (void);
+
+    DEFINE_OP(BeginTransaction);
+    DEFINE_OP(CommitTransaction);
+    DEFINE_OP(RollbackTransaction);
+    DEFINE_OP(AddDesc);
+    DEFINE_OP(RemoveDesc);
+    DEFINE_OP(AddFeat);
+    DEFINE_OP(ReplaceFeat);
+    DEFINE_OP(RemoveFeat);
+    DEFINE_OP(AttachAnnot);
+    DEFINE_OP(RemoveAnnot);
+
+    DEFINE_OP(AttachBioseq);
+    DEFINE_OP(AttachBioseq_set);
+    DEFINE_OP(AttachSeq_entry);
+    DEFINE_OP(RemoveSeq_entry);
+    DEFINE_OP(ResetSeq_entry);
+
+    void Clear();
+
+private:
+
+    int m_BeginTransaction;
+    int m_CommitTransaction;
+    int m_RollbackTransaction;
+
+    int m_AddDesc;
+    int m_RemoveDesc;
+    
+    int m_AddFeat;
+    int m_ReplaceFeat;
+    int m_RemoveFeat;
+
+    int m_AttachAnnot;
+    int m_RemoveAnnot;
+
+    int m_AttachBioseq;
+    int m_AttachBioseq_set;
+    int m_AttachSeq_entry;
+    int m_RemoveSeq_entry;
+    int m_ResetSeq_entry;
+
+};
+
+CTestApp::CTestApp()
+{
+    Clear();
+}
+void CTestApp::Clear() 
+{
+    m_BeginTransaction = 0;
+    m_CommitTransaction = 0;
+    m_RollbackTransaction = 0;
+
+    m_AddDesc = 0;
+    m_RemoveDesc = 0;
+    
+    m_AddFeat = 0;
+    m_ReplaceFeat = 0;
+    m_RemoveFeat = 0;
+    
+    m_AttachAnnot = 0;
+    m_RemoveAnnot = 0;
+
+    m_AttachBioseq = 0;
+    m_AttachBioseq_set = 0;
+    m_AttachSeq_entry = 0;
+    m_RemoveSeq_entry = 0;
+    m_ResetSeq_entry = 0;
+
+}
+
+//////////////////////////////////////////////////////////////////////////////
+///
+
+CTestEditSaver::CTestEditSaver(CTestApp& app)
+    : m_App(app)
+{
+}
+
+void CTestEditSaver::BeginTransaction()
+{
+    m_App.Clear();
+    m_App.CallBeginTransaction();
+}
+void CTestEditSaver::CommitTransaction()
+{
+    m_App.CallCommitTransaction();
+}
+void CTestEditSaver::RollbackTransaction()
+{
+    m_App.CallRollbackTransaction();
+}
+
+void CTestEditSaver::AddDesc(const CBioseq_Handle&, const CSeqdesc&, 
+                             IEditSaver::ECallMode mode)
+{
+    m_App.CallAddDesc();
+}
+void CTestEditSaver::RemoveDesc(const CBioseq_Handle&, const CSeqdesc&, 
+                                IEditSaver::ECallMode mode)
+{
+    m_App.CallRemoveDesc();
+}
+
+void CTestEditSaver::Add(const CSeq_annot_Handle&, const CSeq_feat&, 
+                         IEditSaver::ECallMode mode)
+{
+    m_App.CallAddFeat();
+}
+void CTestEditSaver::Remove(const CSeq_feat_Handle&, IEditSaver::ECallMode mode)
+{
+    m_App.CallRemoveFeat();
+}
+void CTestEditSaver::Replace(const CSeq_feat_Handle&, const CSeq_feat&, 
+                             IEditSaver::ECallMode mode) 
+{
+    m_App.CallReplaceFeat();
+}
+void CTestEditSaver::Attach(const CSeq_entry_Handle&, const CBioseq_Handle&, 
+                            IEditSaver::ECallMode mode)
+{
+    m_App.CallAttachBioseq();
+}
+void CTestEditSaver::Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, 
+                            IEditSaver::ECallMode mode)
+{
+    m_App.CallAttachBioseq_set();
+}
+void CTestEditSaver::Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&, 
+                            IEditSaver::ECallMode mode)
+{
+    m_App.CallRemoveSeq_entry();
+}
+void CTestEditSaver::Attach(const CBioseq_set_Handle&, const CSeq_entry_Handle&, int, 
+                            IEditSaver::ECallMode mode)
+{
+    m_App.CallAttachSeq_entry();
+}
+void CTestEditSaver::Attach(const CSeq_entry_Handle&, 
+                            const CSeq_annot_Handle&, IEditSaver::ECallMode mode)
+{
+    m_App.CallAttachAnnot();
+}
+void CTestEditSaver::Remove(const CSeq_entry_Handle&, 
+                            const CSeq_annot_Handle&, IEditSaver::ECallMode mode)
+{
+    m_App.CallRemoveAnnot();
+}
+void CTestEditSaver::Reset(const CSeq_entry_Handle&, IEditSaver::ECallMode mode)
+{
+    m_App.CallResetSeq_entry();
+}
+
+//////////////////////////////////////////////////////////////////////////////
+///
+
+#define THROW(message) NCBI_THROW(CException,eUnknown,(message))
+
+void CTestApp::Init(void)
+{
+    // Prepare command line descriptions
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
+                     CArgDescriptions::eInteger);
+
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "test_editsaver", false);
+
+    SetupArgDescriptions(arg_desc.release());
+}
+
+static void s_AddDesc(const CBioseq_Handle& handle)
+{
+    CBioseq_EditHandle ehandle = handle.GetEditHandle();
+    CRef<CSeqdesc> desc(new CSeqdesc);
+    desc->SetComment("-------------- ADDED COMMENT1 ------------");
+    ehandle.AddSeqdesc(*desc);
+}
+
+const string kAddedFeatTitle = "Added Feature";
+const string kAddedAnnotName = "TestAnnot";
+static void s_AddFeat(const CBioseq_Handle& handle) 
+{
+    int gi;
+    CSeq_id_Handle sid = GetId(handle, eGetId_ForceGi);
+    if (!sid)
+        THROW("Bioseq does not have a gi seq_id");
+    gi = sid.GetGi();
+    CSeq_annot_EditHandle feat_annot;
+    CSeq_annot_CI annot_it(handle);
+    for(; annot_it; ++annot_it) {
+        const CSeq_annot_Handle& annot = *annot_it;
+        if ( annot.IsNamed() && annot.GetName() == kAddedAnnotName
+             && annot.IsFtable()) {
+            feat_annot = annot.GetEditHandle();
+            break;
+        }
+    }
+    if (!feat_annot) 
+        return;
+    CRef<CSeq_feat> new_feat(new CSeq_feat);
+    new_feat->SetTitle(kAddedFeatTitle);
+    new_feat->SetData().SetComment();
+    new_feat->SetLocation().SetWhole().SetGi(gi);
+    feat_annot.AddFeat(*new_feat);
+}
+
+static void s_RemoveFeat(const CBioseq_Handle& handle)
+{
+    CFeat_CI feat_it(handle);
+    for(; feat_it; ++feat_it) {
+        const CMappedFeat& feat = *feat_it;
+        if (feat.IsSetTitle() && feat.GetTitle() == kAddedFeatTitle) 
+            feat.GetSeq_feat_Handle().Remove();
+    }
+}
+
+static void s_AddAnnot(const CBioseq_Handle& handle)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    annot->AddName(kAddedAnnotName);
+    annot->SetData().SetFtable();
+    handle.GetEditHandle().AttachAnnot(*annot);
+}
+static void s_RemoveAnnot(const CBioseq_Handle& handle)
+{
+    vector<CSeq_annot_EditHandle> to_remove;
+    CSeq_annot_CI annot_it(handle.GetParentEntry());
+    for(; annot_it; ++annot_it) {
+        const CSeq_annot_Handle& annot = *annot_it;
+        if ( annot.IsNamed() && annot.GetName() ==  kAddedAnnotName
+             && annot.IsFtable()) {
+            to_remove.push_back(annot.GetEditHandle());
+        }
+    }
+    ITERATE(vector<CSeq_annot_EditHandle>, it, to_remove) {
+        it->Remove();
+    }
+}
+
+#define CHECK3(operation, count, message)    \
+    if ( Get##operation##Calls() != count )         \
+        THROW( #operation" : wrong calls number. "message )
+
+#define CHECK(operation, count)  CHECK3(operation, count, "")
+
+
+int CTestApp::Run(void)
+{
+    const CArgs& args = GetArgs();
+    int gi = args["gi"].AsInteger();
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CDataLoader> loader(
+           CGBDataLoader::RegisterInObjectManager(*object_manager,
+                                                  "ID2",
+                                                  CObjectManager::eDefault)
+           .GetLoader());
+
+    CRef<IDataPatcher> patcher(new CTestPatcher);
+    CRef<IEditSaver> saver(new CTestEditSaver(*this));
+
+    
+    CDataLoaderPatcher::RegisterInObjectManager(*object_manager,
+                                                loader,
+                                                patcher,
+                                                saver,
+                                                CObjectManager::eDefault,
+                                                88);
+  
+    CScope scope(*object_manager);
+    scope.AddDefaults();
+        
+    CSeq_id seq_id;
+    seq_id.SetGi(gi);
+
+    bool ok = true;
+    try {
+        CBioseq_Handle bioseq = scope.GetBioseqHandle(seq_id);
+
+        if ( !bioseq ) 
+            THROW("Bioseq not found");
+
+        CSeq_entry_Handle entry = bioseq.GetParentEntry();
+        
+        if( entry.IsSeq() ) {
+            {
+                CScopeTransaction tr = scope.GetTransaction();
+                entry.GetEditHandle().ConvertSeqToSet();
+                CHECK(BeginTransaction, 1);
+                CHECK(ResetSeq_entry, 1);
+                CHECK(AttachBioseq_set, 1);
+                CHECK(AttachSeq_entry, 1);
+                CHECK(AttachBioseq, 1);
+            }
+            CHECK(RollbackTransaction, 1);
+            CHECK(ResetSeq_entry, 3);
+            CHECK(RemoveSeq_entry, 1);
+            CHECK(AttachBioseq, 2);
+            {
+                CScopeTransaction tr = scope.GetTransaction();
+                CBioseq_set_Handle bioseq_set = 
+                    entry.GetEditHandle().ConvertSeqToSet();
+                bioseq = bioseq_set.GetParentEntry().GetSingleSubEntry().GetSeq();
+                s_AddDesc(bioseq);
+                s_AddAnnot(bioseq);
+                tr.Commit();
+            }
+            CHECK(BeginTransaction, 1);
+            CHECK(CommitTransaction, 1);
+            CHECK(RollbackTransaction, 0);
+            {
+                CScopeTransaction tr = scope.GetTransaction();
+                entry.GetEditHandle().ConvertSetToSeq();
+                CHECK(BeginTransaction, 1);
+                CHECK(ResetSeq_entry, 2);
+                CHECK(AttachBioseq, 1);
+            }
+            CHECK(RollbackTransaction, 1);
+            CHECK(ResetSeq_entry, 3);
+            CHECK(AttachBioseq_set, 1);
+            CHECK(AttachBioseq, 2);
+            bioseq = entry.GetEditHandle().ConvertSetToSeq();
+            CHECK(BeginTransaction, 1);
+            CHECK(ResetSeq_entry, 2);
+            CHECK(AttachBioseq, 1);
+            CHECK(CommitTransaction, 1);
+        }
+        {
+            CScopeTransaction tr = scope.GetTransaction();
+            s_AddDesc(bioseq);
+            CHECK(BeginTransaction, 1);
+            CHECK(AddDesc, 1);
+        }
+        CHECK(RemoveDesc, 1);
+        CHECK(RollbackTransaction, 1);
+        {
+            CScopeTransaction tr = scope.GetTransaction();
+            s_AddDesc(bioseq);
+            tr.Commit();
+        }
+        CHECK(CommitTransaction, 1);
+        {
+            CScopeTransaction tr = scope.GetTransaction();
+            s_AddAnnot(bioseq);
+            CHECK(AttachAnnot, 1);
+        }
+        CHECK(RemoveAnnot, 1);
+        Clear();
+        s_AddAnnot(bioseq);
+        CHECK(BeginTransaction, 1);
+        CHECK(CommitTransaction, 1);
+        CHECK(AttachAnnot, 1);
+        {
+            CScopeTransaction tr = scope.GetTransaction();
+            s_AddFeat(bioseq);
+            CHECK(AddFeat, 1);
+        }
+        CHECK(RemoveFeat, 1);
+        s_AddFeat(bioseq);
+        {
+            CScopeTransaction tr = scope.GetTransaction();
+            s_RemoveFeat(bioseq);
+            CHECK(RemoveFeat, 1);
+        }
+        CHECK(AddFeat, 1);
+        s_RemoveFeat(bioseq);
+        {
+            CScopeTransaction tr = scope.GetTransaction();
+            s_RemoveAnnot(bioseq);
+            CHECK(RemoveAnnot, 2);
+        }
+        CHECK(AttachAnnot, 2);
+        s_RemoveAnnot(bioseq);
+
+        {
+            CScopeTransaction tr = scope.GetTransaction();
+            bioseq.GetEditHandle().Remove();
+            CHECK(ResetSeq_entry, 1);
+            CHECK(RemoveSeq_entry, 1);
+        }
+        CHECK(AttachSeq_entry, 1);
+        CHECK(AttachBioseq, 1);
+        
+
+    } catch (exception& ex) {
+        ERR_POST("An Exception is caught : " << ex.what());
+        ok = false;
+    }
+    
+
+    if ( ok ) {
+        NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
+    }
+    else {
+        NcbiCout << " Failed" << NcbiEndl << NcbiEndl;
+    }
+
+    return ok ? 0 : 1;
+
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+///
+END_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
+
+USING_NCBI_SCOPE;
+
+int main(int argc, const char* argv[])
+{
+    return CTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
+}
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.1  2005/11/15 19:25:22  didenko
+* Added bioseq_edit_sample sample
+*
+* ===========================================================================
+*/
+
