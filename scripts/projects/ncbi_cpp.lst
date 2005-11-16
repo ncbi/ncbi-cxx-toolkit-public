@@ -8,7 +8,7 @@ ctools
 dbapi
 hello
 html
-internal
+internal/align_model
 misc
 objects
 objmgr
