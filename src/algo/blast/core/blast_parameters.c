@@ -6,7 +6,7 @@
  *
  *  This software/database is a "United States Government Work" under the
  *  terms of the United States Copyright Act.  It was written as part of
- *  the author's offical duties as a United States Government employee and
+ *  the author's official duties as a United States Government employee and
  *  thus cannot be copyrighted.  This software/database is freely available
  *  to the public for use. The National Library of Medicine and the U.S.
  *  Government have not placed any restriction on its use or reproduction.
@@ -826,6 +826,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/11/16 14:27:03  madden
+ * Fix spelling in CRN
+ *
  * Revision 1.11  2005/11/04 13:26:20  madden
  * Fixes to CalculateLinkHSPCutoffs so that invalid KarlinBlk is not used
  *

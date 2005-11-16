@@ -6,7 +6,7 @@
  *
  *  This software/database is a "United States Government Work" under the
  *  terms of the United States Copyright Act.  It was written as part of
- *  the author's offical duties as a United States Government employee and
+ *  the author's official duties as a United States Government employee and
  *  thus cannot be copyrighted.  This software/database is freely available
  *  to the public for use. The National Library of Medicine and the U.S.
  *  Government have not placed any restriction on its use or reproduction.
@@ -1265,6 +1265,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.175  2005/11/16 14:27:03  madden
+ * Fix spelling in CRN
+ *
  * Revision 1.174  2005/10/18 15:19:04  madden
  * Exclude rpsblast from validation of gap parameters
  *
