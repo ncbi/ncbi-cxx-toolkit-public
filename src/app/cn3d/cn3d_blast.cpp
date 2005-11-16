@@ -179,35 +179,6 @@ static bool SeqIdMatchesMaster(const CSeq_id& sid, const Sequence *master, bool 
         return IsLocalID(sid, -1);
 }
 
-static bool SortResultsByLocalID(CSeq_align_set *results)
-{
-    vector < CRef < CSeq_align > > newList(results->Get().size());
-
-    CSeq_align_set::Tdata::iterator a, ae = results->Set().end();
-    for (a=results->Set().begin(); a!=ae; ++a) {
-
-        // find localID in each alignment
-        if (!(*a)->GetSegs().IsDisc() || (*a)->GetSegs().GetDisc().Get().size() == 0)
-            return false;
-        const CSeq_align& sa = (*a)->GetSegs().GetDisc().Get().front().GetObject();
-        int localID;
-        if (sa.GetSegs().IsDenseg() && sa.GetSegs().GetDenseg().GetIds().size() == 2 &&
-                GetLocalID(sa.GetSegs().GetDenseg().GetIds().back().GetObject(), &localID) &&
-                localID >= 0 && localID < (int)newList.size())
-            newList[localID] = *a;
-        else
-            return false;
-    }
-
-    results->Set().clear();
-    for (unsigned int i=0; i<newList.size(); ++i)
-        if (newList[i].Empty())
-            return false;
-        else
-            results->Set().push_back(newList[i]);
-    return true;
-}
-
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
     const AlignmentList& toRealign, AlignmentList *newAlignments, bool usePSSM)
 {
@@ -263,6 +234,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
             pssmOptions.Reset(new blast::CPSIBlastOptionsHandle);
             pssmOptions->SetDbLength(1000000);      // between these two, sets effective search space
             pssmOptions->SetDbSeqNum(1);            // assumes each subject sequence is scored independently
+            pssmOptions->SetHitlistSize(subjectTSs.size());
             blastEngine.Reset(new
                 blast::CPsiBl2Seq(
                     pssmQuery,
@@ -281,6 +253,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                     CConstRef < CBioseq > (&(masterTS->truncatedSequence->GetSeq()))));
             sequenceOptions.Reset(new blast::CBlastProteinOptionsHandle);
             sequenceOptions->SetMatrixName("BLOSUM62");
+            sequenceOptions->SetHitlistSize(subjectTSs.size());
             blastEngine.Reset(new
                 blast::CPsiBl2Seq(
                     sequenceQuery,
@@ -294,10 +267,9 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 //        WriteASNToFile("Seq-align-set.txt", results->GetSeqAlign().GetObject(), false, &err);
 
         // parse the alignments
-        if (results->GetSeqAlign()->Get().size() != toRealign.size() ||
-            !SortResultsByLocalID(const_cast<CSeq_align_set*>(results->GetSeqAlign().GetPointer())))
+        if (results->GetSeqAlign()->Get().size() != toRealign.size())
         {
-            ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - bad result alignments");
+            ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - did not get one result alignment per input sequence");
             return;
         }
 
@@ -465,7 +437,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         double score = (*r)->GetRowDouble(1);
         multiple->SetRowDouble(row, score);
         string status;
-        if (score >= 0.0)
+        if (score >= 0.0 && score < kMax_Double)
             status = string("Self hit E-value: ") + NStr::DoubleToString(score);
         else
             status = "No detectable self hit";
@@ -490,6 +462,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/11/16 22:01:08  thiessen
+* fix for result list issues
+*
 * Revision 1.43  2005/11/04 23:50:29  thiessen
 * work around result ordering issue
 *
