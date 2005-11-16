@@ -49,7 +49,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
 static int CDTreeColorCycle[] ={
-    0x000000,  // black
+    0x806000,  // dark brown
     0xff0000,  // red
     0x149600,  // dark green
     0x0000ff,  // dark blue
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/11/16 21:19:19  hurwitz
+ * changed a color in the color cycle
+ *
  * Revision 1.2  2005/11/09 20:47:46  hurwitz
  * make a common color cycle
  *
