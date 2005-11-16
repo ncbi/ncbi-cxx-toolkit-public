@@ -264,7 +264,7 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("tez", "prozdep", "charge dependency of precursor mass tolerance (0 = none, 1 = linear)",
                 CArgDescriptions::eInteger, "1");
     argDesc->AddDefaultKey("tex", "exact", 
-                   "theshold in Da above which the mass of neutron should be added in exact mass search",
+                   "threshold in Da above which the mass of neutron should be added in exact mass search",
                    CArgDescriptions::eDouble, 
                    "1446.94");
 
@@ -673,7 +673,7 @@ int COMSSA::Run()
         CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
         xml_out->SetReferenceSchema();
         // turn off names in named integers
-        // xml_out->SetWriteNamedIntegersByValue(false);
+        xml_out->SetWriteNamedIntegersByValue(true);
 	}
 
     if(txt_out.get() != 0) {
@@ -706,6 +706,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.47  2005/11/16 20:01:13  lewisg
+  turn off attribute tag in xml
+
   Revision 1.46  2005/11/07 19:57:20  lewisg
   iterative search
 
