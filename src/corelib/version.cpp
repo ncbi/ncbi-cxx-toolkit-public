@@ -63,9 +63,12 @@ CVersionInfo::CVersionInfo(int ver_major,
 
 
 CVersionInfo::CVersionInfo(const string& version,
-                           const string& /* name */)
+                           const string& name)
 {
     FromStr(version);
+    if (!name.empty()) {
+        m_Name = name;
+    }
 }
 
 static
@@ -399,6 +402,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/11/16 16:20:45  kuznets
+ * Minor improvement in version reconstruction from string
+ *
  * Revision 1.19  2005/10/12 18:12:12  ivanov
  * CVersionInfo:: added default constructor
  *
