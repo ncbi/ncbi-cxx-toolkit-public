@@ -106,9 +106,9 @@ CDbapiSampleApp::GetServerType(void) const
 {
     if ( GetServerName() == "STRAUSS" ||
          GetServerName() == "MOZART" ||
-         GetServerName().compare(0, 6, "BARTOK") == 0 ) {
+         NStr::StartsWith(GetServerName(), "BARTOK") ) {
         return eSybase;
-    } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0 ) {
+    } else if (NStr::StartsWith(GetServerName(), "MS_DEV")) {
         return eMsSql;
     }
 
@@ -490,6 +490,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/11/16 21:58:18  ucko
+ * Use NStr::StartsWith rather than string::compare, which requires an
+ * explicit length and has a nonstandard syntax under GCC 2.95.
+ *
  * Revision 1.11  2005/11/16 16:37:20  ssikorsk
  * Handle Sybase server 'BARTOK'
  *
