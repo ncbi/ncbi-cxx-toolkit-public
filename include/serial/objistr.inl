@@ -1,4 +1,4 @@
-#if defined(OBJISTR__HPP)  &&  !defined(OBJISTR__INL)
+#if defined(SERIAL___OBJISTR__HPP)  &&  !defined(OBJISTR__INL)
 #define OBJISTR__INL
 
 /*  $Id$
@@ -562,12 +562,15 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 }
 
 
-#endif /* def OBJISTR__HPP  &&  ndef OBJISTR__INL */
+#endif /* def SERIAL___OBJISTR__HPP  &&  ndef OBJISTR__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/11/16 16:42:57  ucko
+* Reflect change in objistr.hpp's include guard.
+*
 * Revision 1.31  2005/02/23 21:07:44  vasilche
 * Allow to skip underlying stream flush.
 *
