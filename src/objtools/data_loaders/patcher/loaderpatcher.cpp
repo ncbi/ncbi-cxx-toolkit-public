@@ -205,9 +205,12 @@ CDataLoaderPatcher::PatchLock(const TTSE_Lock& lock)
     CTSE_LoadLock nlock = GetDataSource()->GetTSE_LoadLock(blob_id);
 
     if (!nlock.IsLoaded()) {
-        if (!m_Patcher->IsPatchNeeded(*lock) ) 
+        switch ( m_Patcher->IsPatchNeeded(*lock) ) {
+        case IDataPatcher::eNone:
             nlock->Assign(lock);
-        else {
+            break;
+        case IDataPatcher::ePartTSE:
+            {
             CRef<CSeq_entry> entry;
             CConstRef<CSeq_entry> orig_entry = lock->GetSeq_entrySkeleton();
             if( orig_entry ) {
@@ -217,6 +220,18 @@ CDataLoaderPatcher::PatchLock(const TTSE_Lock& lock)
             }
             nlock->Assign(lock, entry, m_Patcher->GetAssigner());
             nlock->SetSeqIdTranslator(m_Patcher->GetSeqIdTranslator());
+            }
+            break;
+        case IDataPatcher::eWholeTSE:
+            {
+            CRef<CSeq_entry> entry(new CSeq_entry);
+            m_Patcher->Patch(*nlock, *entry);
+            nlock->Assign(lock, entry);
+            nlock->SetSeqIdTranslator(m_Patcher->GetSeqIdTranslator());
+            }
+            break;
+        default:
+            _ASSERT(0);            
         }
 
         nlock.SetLoaded();
@@ -371,6 +386,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.6  2005/11/16 21:11:56  didenko
+ * Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
+ *
  * Revision 1.5  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *

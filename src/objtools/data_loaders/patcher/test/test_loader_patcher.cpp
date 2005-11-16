@@ -60,7 +60,7 @@ public:
     
     virtual CRef<ITSE_Assigner> GetAssigner();
     virtual CRef<ISeq_id_Translator> GetSeqIdTranslator(); 
-    virtual bool IsPatchNeeded(const CTSE_Info& tse) { return true ; }
+    virtual EPatchLevel IsPatchNeeded(const CTSE_Info& tse) { return ePartTSE ; }
 
 private:
 
@@ -191,6 +191,9 @@ int main(int argc, const char** argv)
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/11/16 21:11:56  didenko
+* Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
+*
 * Revision 1.3  2005/11/15 19:22:08  didenko
 * Added transactions and edit commands support
 *

@@ -210,6 +210,8 @@ public:
 
     CTSE_Info& Assign(const CTSE_Lock& tse);
     CTSE_Info& Assign(const CTSE_Lock& tse, 
+                      CRef<CSeq_entry> entry);
+    CTSE_Info& Assign(const CTSE_Lock& tse, 
                       CRef<CSeq_entry> entry, 
                       CRef<ITSE_Assigner> listener);
 

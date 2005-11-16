@@ -85,9 +85,13 @@ CRef<ITSE_Assigner> CSampleDataPatcher::GetAssigner()
 }
 
 
-bool CSampleDataPatcher::IsPatchNeeded(const CTSE_Info& tse)
+IDataPatcher::EPatchLevel CSampleDataPatcher::IsPatchNeeded(const CTSE_Info& tse)
 {
-    return m_AsnDB.HasBlob(tse.GetBlobId().ToString());
+    if ( m_AsnDB.HasWholeBlob(tse.GetBlobId().ToString()) )
+        return eWholeTSE;
+    if ( m_AsnDB.HasBlob(tse.GetBlobId().ToString()) )
+        return ePartTSE;
+    return eNone;
 }
 
 void CSampleDataPatcher::Patch(const CTSE_Info& tse, CSeq_entry& entry)
@@ -134,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/16 21:11:55  didenko
+ * Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
+ *
  * Revision 1.1  2005/11/15 19:25:22  didenko
  * Added bioseq_edit_sample sample
  *

@@ -73,6 +73,17 @@ bool CAsnDB::HasBlob(const string& blobid) const
     CDir dir(m_DBPath + CDirEntry::GetPathSeparator() + blobid);
     return dir.Exists();
 }
+bool CAsnDB::HasWholeBlob(const string& blobid) const
+{
+    CDir dir(m_DBPath + CDirEntry::GetPathSeparator() + blobid);
+    if (dir.Exists()) {
+        string fname = dir.GetPath() + CDirEntry::GetPathSeparator() + "TSE";
+        CFile file(fname);
+        if (file.Exists()) 
+            return true;
+    }
+    return false;
+}
 
 bool CAsnDB::Save(const string& blobid, const CBioseq& bioseq)
 {
@@ -145,6 +156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/16 21:11:55  didenko
+ * Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
+ *
  * Revision 1.1  2005/11/15 19:25:21  didenko
  * Added bioseq_edit_sample sample
  *

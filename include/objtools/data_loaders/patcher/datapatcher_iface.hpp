@@ -52,13 +52,19 @@ class NCBI_XLOADER_PATCHER_EXPORT IDataPatcher : public CObject
 {
 public:
 
+    enum EPatchLevel {
+        eNone,
+        ePartTSE,
+        eWholeTSE
+    };
+
     virtual ~IDataPatcher();
 
     virtual CRef<ITSE_Assigner> GetAssigner() = 0;
     virtual CRef<ISeq_id_Translator> GetSeqIdTranslator() = 0;
 
     virtual void Patch(const CTSE_Info& tse, CSeq_entry& entry);
-    virtual bool IsPatchNeeded(const CTSE_Info& orig_tse) = 0;
+    virtual EPatchLevel IsPatchNeeded(const CTSE_Info& orig_tse) = 0;
 };
 
 
@@ -87,6 +93,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.3  2005/11/16 21:11:55  didenko
+ * Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
+ *
  * Revision 1.2  2005/11/15 19:22:07  didenko
  * Added transactions and edit commands support
  *
