@@ -53,7 +53,9 @@
  *   (src/objtools/feature_item.cpp). This will probably necessitate 
  *   the addition or removal of a class that knows how to format the 
  *   new qualifier for display; look at the code for a similar 
- *   established qualifier for an idea of what needs to be done,
+ *   established qualifier for an idea of what needs to be done
+ *   (check WHEN EDITING THE LIST OF QUALIFIERS comment in that file
+ *   for additonal hints),
  * - add or remove the qualifier to the list of qualifiers known to 
  *   the feature table reader (in src/objtools/reader/readfeat.cpp); 
  *   it's an independent project with its own book-keeping concerning 
@@ -268,6 +270,7 @@ public:
         eQual_pseudo,
         eQual_rearranged,
         eQual_replace,
+        eQual_ribosomal_slippage,
         eQual_rpt_family,
         eQual_rpt_type,
         eQual_rpt_unit,
@@ -287,6 +290,7 @@ public:
         eQual_sub_strain,
         eQual_tissue_lib,
         eQual_tissue_type,
+        eQual_trans_splicing,
         eQual_transgenic,
         eQual_translation,
         eQual_transl_except,
@@ -377,6 +381,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/11/16 15:09:41  ludwigf
+* ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
+*
+* CHANGED: Turned any occurrences of qualifiers "/exception='ribosomal
+* slippage'" and "/exception='trans-splicing'" into qualifiers
+* "/ribosomal_slippage" or "/trans_splicing".
+*
 * Revision 1.11  2005/11/01 14:03:33  ludwigf
 * ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
 * implemented as GB_qualifiers with string values.

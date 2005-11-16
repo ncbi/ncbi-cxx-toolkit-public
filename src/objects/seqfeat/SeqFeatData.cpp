@@ -445,6 +445,7 @@ START_SUBTYPE(gene)
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -473,7 +474,9 @@ START_SUBTYPE(cdregion)
     ADD_QUAL(product);
     ADD_QUAL(protein_id);
     ADD_QUAL(pseudo);
+    ADD_QUAL(ribosomal_slippage);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(transl_except);
     ADD_QUAL(transl_table);
     ADD_QUAL(translation);
@@ -618,6 +621,7 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -638,6 +642,7 @@ START_SUBTYPE(tRNA)
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -734,6 +739,7 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(product);
     ADD_QUAL(pseudo);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1254,6 +1260,7 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(operon);
     ADD_QUAL(product);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1708,6 +1715,7 @@ START_SUBTYPE(3UTR)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -1742,6 +1750,7 @@ START_SUBTYPE(5UTR)
     ADD_QUAL(note);
     ADD_QUAL(old_locus_tag);
     ADD_QUAL(standard_name);
+    ADD_QUAL(trans_splicing);
     ADD_QUAL(usedin);
 END_SUBTYPE
 
@@ -2078,6 +2087,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_pseudo, "pseudo"),
     TQualPair(CSeqFeatData::eQual_rearranged, "rearranged"),
     TQualPair(CSeqFeatData::eQual_replace, "replace"),
+    TQualPair(CSeqFeatData::eQual_ribosomal_slippage, "ribosomal_slippage"),
     TQualPair(CSeqFeatData::eQual_rpt_family, "rpt_family"),
     TQualPair(CSeqFeatData::eQual_rpt_type, "rpt_type"),
     TQualPair(CSeqFeatData::eQual_rpt_unit, "rpt_unit"),
@@ -2097,6 +2107,7 @@ static const TQualPair kQualPairs[] = {
     TQualPair(CSeqFeatData::eQual_sub_strain, "sub_strain"),
     TQualPair(CSeqFeatData::eQual_tissue_lib, "tissue_lib"),
     TQualPair(CSeqFeatData::eQual_tissue_type, "tissue_type"),
+    TQualPair(CSeqFeatData::eQual_trans_splicing, "trans_splicing"),
     TQualPair(CSeqFeatData::eQual_transgenic, "transgenic"),
     TQualPair(CSeqFeatData::eQual_translation, "translation"),
     TQualPair(CSeqFeatData::eQual_transl_except, "transl_except"),
@@ -2124,6 +2135,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.27  2005/11/16 15:09:41  ludwigf
+* ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
+*
+* CHANGED: Turned any occurrences of qualifiers "/exception='ribosomal
+* slippage'" and "/exception='trans-splicing'" into qualifiers
+* "/ribosomal_slippage" or "/trans_splicing".
+*
 * Revision 6.26  2005/11/01 14:03:33  ludwigf
 * ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
 * implemented as GB_qualifiers with string values.

@@ -114,6 +114,7 @@ enum EFeatureQualifier {
     eFQ_region,
     eFQ_region_name,
     eFQ_replace,
+    eFQ_ribosomal_slippage,
     eFQ_rpt_family,
     eFQ_rpt_type,
     eFQ_rpt_unit,
@@ -127,6 +128,7 @@ enum EFeatureQualifier {
     eFQ_site,
     eFQ_site_type,
     eFQ_standard_name,
+    eFQ_trans_splicing,
     eFQ_transcription,
     eFQ_transcript_id,
     eFQ_transcript_id_note,
@@ -243,6 +245,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/11/16 15:09:42  ludwigf
+* ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
+*
+* CHANGED: Turned any occurrences of qualifiers "/exception='ribosomal
+* slippage'" and "/exception='trans-splicing'" into qualifiers
+* "/ribosomal_slippage" or "/trans_splicing".
+*
 * Revision 1.8  2005/11/01 14:03:33  ludwigf
 * ADDED: Additional qualifiers "rpt_unit_range" and "rpt_unit_seq". Both are
 * implemented as GB_qualifiers with string values.

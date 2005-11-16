@@ -30,6 +30,13 @@
 *   new (early 2003) flat-file generator -- representation of features
 *   (mainly of interest to implementors)
 *
+*
+* WHEN EDITING THE LIST OF QUALIFIERS:
+*
+* - there is currently a lot of parallel logic for the FTable case 
+*   (CFeatureItem::x_AddFTableQuals()) and the standard case 
+*   (CFeatureItem::x_Add...Quals()). Make sure to edit both cases as 
+*   appropriate.
 * ===========================================================================
 */
 #include <ncbi_pch.hpp>
@@ -1387,7 +1394,16 @@ void CFeatureItem::x_AddExceptionQuals(CBioseqContext& ctx) const
     }
 
     if ( !except_text.empty() ) {
+
+      if ( except_text == "ribosomal slippage" ) {
+        x_AddQual(eFQ_ribosomal_slippage, new CFlatBoolQVal(true));
+      }
+      else if ( except_text == "trans-splicing" ) {
+        x_AddQual(eFQ_trans_splicing, new CFlatBoolQVal(true));
+      }
+      else {
         x_AddQual(eFQ_exception, new CFlatStringQVal(except_text));
+      }
     }
     if ( !note_text.empty() ) {
         x_AddQual(eFQ_exception_note, new CFlatStringQVal(note_text));
@@ -1956,12 +1972,14 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(phenotype),
         DO_IMPORT(product),
         DO_IMPORT(replace),
+        DO_IMPORT(ribosomal_slippage),
         DO_IMPORT(rpt_family),
         DO_IMPORT(rpt_type),
         DO_IMPORT(rpt_unit),
         DO_IMPORT(rpt_unit_range),
         DO_IMPORT(rpt_unit_seq),
         DO_IMPORT(standard_name),
+        DO_IMPORT(trans_splicing),
         DO_IMPORT(transposon),
         DO_IMPORT(usedin)
 #undef DO_IMPORT
@@ -2239,12 +2257,14 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(mod_base);
     DO_QUAL(PCR_conditions);
     DO_QUAL(phenotype);
+    DO_QUAL(ribosomal_slippage);
     DO_QUAL(rpt_family);
     DO_QUAL(rpt_type);
     DO_QUAL(rpt_unit);
     DO_QUAL(rpt_unit_range);
     DO_QUAL(rpt_unit_seq);
     DO_QUAL(insertion_seq);
+    DO_QUAL(trans_splicing);
     DO_QUAL(transposon);
     DO_QUAL(usedin);
 
@@ -2655,6 +2675,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_region, CSeqFeatData::eQual_note),
     TQualPair(eFQ_region_name, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_replace, CSeqFeatData::eQual_replace),
+    TQualPair(eFQ_ribosomal_slippage, CSeqFeatData::eQual_ribosomal_slippage),
     TQualPair(eFQ_rpt_family, CSeqFeatData::eQual_rpt_family),
     TQualPair(eFQ_rpt_type, CSeqFeatData::eQual_rpt_type),
     TQualPair(eFQ_rpt_unit, CSeqFeatData::eQual_rpt_unit),
@@ -2668,6 +2689,7 @@ static const TQualPair sc_GbToFeatQualMap[] = {
     TQualPair(eFQ_site, CSeqFeatData::eQual_note),
     TQualPair(eFQ_site_type, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_standard_name, CSeqFeatData::eQual_standard_name),
+    TQualPair(eFQ_trans_splicing, CSeqFeatData::eQual_trans_splicing),
     TQualPair(eFQ_transcription, CSeqFeatData::eQual_bad),
     TQualPair(eFQ_transcript_id, CSeqFeatData::eQual_note),
     TQualPair(eFQ_transcript_id_note, CSeqFeatData::eQual_note),
@@ -2772,6 +2794,13 @@ void CFeatureItem::x_AddFTableQuals(CBioseqContext& ctx) const
         x_AddFTableQual("evidence", ev);
     }
     if ( m_Feat->CanGetExcept_text()  &&  !m_Feat->GetExcept_text().empty() ) {
+        string exception_text = m_Feat->GetExcept_text();
+        if ( exception_text == "ribosomal slippage" ) {
+          x_AddFTableQual("ribosomal_slippage");
+        }
+        else if ( exception_text == "trans-splicing" ) {
+          x_AddFTableQual("trans_splicing");
+        }
         x_AddFTableQual("exception", m_Feat->GetExcept_text());
     } else if ( m_Feat->CanGetExcept()  &&  m_Feat->GetExcept() ) {
         x_AddFTableQual("exception");
@@ -3725,6 +3754,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2005/11/16 15:09:41  ludwigf
+* ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
+*
+* CHANGED: Turned any occurrences of qualifiers "/exception='ribosomal
+* slippage'" and "/exception='trans-splicing'" into qualifiers
+* "/ribosomal_slippage" or "/trans_splicing".
+*
 * Revision 1.61  2005/11/01 19:32:51  ludwigf
 * ADDED: In modes other than "dump", product qualifiers in excess of 1 will
 * be turned into a "/note" qualifier in the flat file.
