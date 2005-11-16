@@ -141,11 +141,18 @@ done
 cat > $x_out <<EOF
 #! /bin/sh
 
-res_journal="$x_out.journal"
-res_log="$x_out.log"
+root_dir="$x_root_dir"
+build_dir="$x_build_dir"
+conf_dir="$x_conf_dir"
+compile_dir="$x_compile_dir"
+bin_dir="$x_bin_dir"
+script="$x_out"
+
+res_journal="\$script.journal"
+res_log="\$script.log"
 res_list="$x_list"
-res_concat="$x_out.out"
-res_concat_err="$x_out.out_err"
+res_concat="\$script.out"
+res_concat_err="\$script.out_err"
 
 
 ##  Printout USAGE info and exit
@@ -194,7 +201,7 @@ case "\$method" in
          rm -f \$x_file > /dev/null
       done
       rm -f \$res_journal \$res_log \$res_list \$res_concat \$res_concat_err > /dev/null
-      rm -f $x_out > /dev/null
+      rm -f \$script > /dev/null
       exit 0
       ;;
 #----------------------------------------------------------
@@ -240,33 +247,33 @@ esac
 
 
 # Include configuration file
-. ${x_build_dir}/check.cfg
+. \${build_dir}/check.cfg
 if [ -z "\$NCBI_CHECK_TOOLS" ]; then
    NCBI_CHECK_TOOLS="regular"
 fi
 
 # Valgrind configuration
-VALGRIND_SUP="${x_root_dir}/scripts/check/valgrind.supp"
+VALGRIND_SUP="\${root_dir}/scripts/check/valgrind.supp"
 VALGRIND_CMD="--tool=memcheck --suppressions=\$VALGRIND_SUP"
 
 # Export some global vars
-top_srcdir="$x_root_dir"
+top_srcdir="\$root_dir"
 export top_srcdir
 FEATURES="$x_features"
 export FEATURES
 
 # Add current, build and scripts directories to PATH
-PATH=".:${x_build_dir}:${x_root_dir}/scripts:\${PATH}"
+PATH=".:\${build_dir}:\${root_dir}/scripts:\${PATH}"
 export PATH
 
 # Export bin and lib pathes
-CFG_BIN="${x_conf_dir}/bin"
-CFG_LIB="${x_conf_dir}/lib"
+CFG_BIN="\${conf_dir}/bin"
+CFG_LIB="\${conf_dir}/lib"
 export CFG_BIN CFG_LIB
 
 # Define time-guard script to run tests from other scripts
-check_exec="$x_root_dir/scripts/check/check_exec.sh"
-CHECK_EXEC="${x_root_dir}/scripts/check/check_exec_test.sh"
+check_exec="\$root_dir/scripts/check/check_exec.sh"
+CHECK_EXEC="\${root_dir}/scripts/check/check_exec_test.sh"
 CHECK_EXEC_STDIN="\$CHECK_EXEC -stdin"
 export CHECK_EXEC
 export CHECK_EXEC_STDIN
@@ -280,8 +287,8 @@ EOF
 if [ -n "$x_conf_dir"  -a  -d "$x_conf_dir/lib" ];  then
    cat >> $x_out <<EOF
 # Add a library path for running tests
-. $x_root_dir/scripts/common.sh
-COMMON_AddRunpath "$x_conf_dir/lib"
+. \$root_dir/scripts/common.sh
+COMMON_AddRunpath "\$conf_dir/lib"
 EOF
 else
    echo "WARNING:  Cannot find path to the library dir."
@@ -305,7 +312,7 @@ RunTest() {
 
    # Parameters
    x_work_dir_tail="\$1"
-   x_work_dir="$x_compile_dir/\$x_work_dir_tail"
+   x_work_dir="\$compile_dir/\$x_work_dir_tail"
    x_test="\$2"
    x_app="\$3"
    x_run="\$4"
@@ -391,7 +398,7 @@ RunTest() {
                }' $x_tmp/\$\$.out >> \$x_test_out
 
                # Get application execution time
-               exec_time=\`$x_build_dir/sysdep.sh tl 3 $x_tmp/\$\$.out\`
+               exec_time=\`\$build_dir/sysdep.sh tl 3 $x_tmp/\$\$.out\`
                exec_time=\`echo \$exec_time | tr '\n' '?'\`
                exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
                rm -f $x_tmp/\$\$.out
@@ -408,17 +415,24 @@ RunTest() {
                              ;;
                esac
 
+               # CVS tree checkout date
+               cvs_checkout=''
+               if [ -f "\$root_dir/checkout.date" ] ; then
+                  cvs_checkout=\`cat \$root_dir/checkout.date\`
+               fi
+
                # Write result of the test into the his output file
-               echo "Start time: \$start_time" >> \$x_test_out
-               echo "Stop  time: \$stop_time" >> \$x_test_out
+               echo "Start time  : \$start_time"   >> \$x_test_out
+               echo "Stop time   : \$stop_time"    >> \$x_test_out
+               echo "CVS checkout: \$cvs_checkout" >> \$x_test_out
                echo >> \$x_test_out
                echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
                echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
                if [ -f "\$corefile" ]; then
                   echo "@@@ CORE DUMPED" >> \$x_test_out
-                  if [ -d "$x_bin_dir" -a -f "$x_bin_dir/\$x_test" ]; then
-                     mv "\$corefile" "$x_bin_dir/\$x_test.core"
+                  if [ -d "\$bin_dir" -a -f "\$bin_dir/\$x_test" ]; then
+                     mv "\$corefile" "\$bin_dir/\$x_test.core"
                   else
                      rm -f "\$corefile"
                   fi

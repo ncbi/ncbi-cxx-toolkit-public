@@ -347,9 +347,16 @@ RunTest() {
    rm -f $x_tmp/\$\$.out
    rm -f \$x_test_out.\$\$
 
+   # CVS tree checkout date
+   cvs_checkout=''
+   if [ -f "\$root_dir/cvs_info" ] ; then
+      cvs_checkout=\`grep "Sources date" \$root_dir/cvs_info | sed 's/^.* : //'\`
+   fi
+
    # Write result of the test into the his output file
-   echo "Start time: \$start_time" >> \$x_test_out
-   echo "Stop  time: \$stop_time" >> \$x_test_out
+   echo "Start time  : \$start_time"   >> \$x_test_out
+   echo "Stop time   : \$stop_time"    >> \$x_test_out
+   echo "CVS checkout: \$cvs_checkout" >> \$x_test_out
    echo >> \$x_test_out
    echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
    echo "@@@ EXIT CODE: \$result" >> \$x_test_out
