@@ -253,7 +253,11 @@ public:
     /// to be aligned
     /// @param hits the list of user-specified constraints
     ///
-    void SetUserHits(CHitList& hits) { m_UserHits += hits; }
+    void SetUserHits(CHitList& hits) 
+    { 
+        m_UserHits.PurgeAllHits();
+        m_UserHits.Append(hits); 
+    }
 
     /// Set the expect value to use for local hits. When running blast 
     /// on the input sequences, keep hits that are this significant or better
@@ -473,6 +477,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/11/16 17:00:19  papadopo
+  Clear off user-supplied hits before replacing them
+
   Revision 1.5  2005/11/14 16:18:08  papadopo
   x_AssignDefaultResFreqs belongs with a different group of member functions
 
