@@ -64,7 +64,7 @@
 
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
-
+#include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -426,6 +426,138 @@ static int s_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
     return gi;
 }
 
+
+///return concatenated exon sequence
+///@param gap_char: gap character
+///@param feat: the feature containing this cds
+///@param feat_strand: the feature strand
+///@param range: the range list of seqloc
+///@param total_coding_len: the total exon length excluding intron
+///@param raw_cdr_product: the raw protein sequence
+///@return: the concatenated exon sequences with amino acid aligned to 
+///to the second base of a codon
+///
+static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,  
+                                    ENa_strand feat_strand, 
+                                    list<CRange<TSeqPos> >& range,
+                                    TSeqPos total_coding_len,
+                                    string& raw_cdr_product)
+{
+
+    string concat_exon(total_coding_len, ' ');
+    TSeqPos frame = 1;
+    const CCdregion& cdr = feat->GetData().GetCdregion();
+    if(cdr.IsSetFrame()){
+        frame = cdr.GetFrame();
+    }
+    TSeqPos num_base, num_coding_base;
+    TSeqPos coding_start_base;
+    if(feat_strand == eNa_strand_minus){
+        coding_start_base = total_coding_len - 1 - (frame -1);
+        num_base = total_coding_len - 1;
+        num_coding_base = 0;
+        
+    } else {
+        coding_start_base = 0; 
+        coding_start_base += frame - 1;
+        num_base = 0;
+                        num_coding_base = 0;
+    }
+    
+    ITERATE(list<CRange<TSeqPos> >, iter, range){
+        //note that feature on minus strand needs to be
+        //filled backward.
+        if(feat_strand != eNa_strand_minus){
+            for(TSeqPos i = 0; i < iter->GetLength(); i ++){
+                if(num_base >= coding_start_base){
+                    num_coding_base ++;
+                    if(num_coding_base % 3 == 2){
+                        //a.a to the 2nd base
+                        if(num_coding_base / 3 < raw_cdr_product.size()){
+                            //make sure the coding region is no
+                            //more than the protein seq as there
+                            //could errors in ncbi record
+                            concat_exon[num_base] 
+                                = raw_cdr_product[num_coding_base / 3];
+                        }                           
+                    }
+                }
+                num_base ++;
+            }    
+        } else {
+            
+            for(TSeqPos i = 0; i < iter->GetLength() &&
+                    num_base >= 0; i ++){
+                if(num_base <= coding_start_base){
+                    num_coding_base ++;
+                    if(num_coding_base % 3 == 2){
+                        //a.a to the 2nd base
+                        if(num_coding_base / 3 < 
+                           raw_cdr_product.size() &&
+                           coding_start_base > num_coding_base){
+                            //make sure the coding region is no
+                            //more than the protein seq as there
+                            //could errors in ncbi record
+                            concat_exon[num_base] 
+                                = raw_cdr_product[num_coding_base / 3];
+                        }                           
+                    }
+                }
+                num_base --;
+            }    
+        }
+    }
+    return concat_exon;
+}
+
+///return cds coded sequence and fill the id if found
+///@param genetic_code: the genetic code
+///@param feat: the feature containing this cds
+///@param scope: scope to fetch sequence
+///@param range: the range list of seqloc
+///@param handle: the bioseq handle
+///@param feat_strand: the feature strand
+///@param feat_id: the feature id to be filled
+///@return: the encoded protein sequence
+///
+static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat, 
+                               CScope& scope, list<CRange<TSeqPos> >& range,
+                               const CBioseq_Handle& handle, 
+                               ENa_strand feat_strand, string& feat_id)
+{
+    string raw_cdr_product = NcbiEmptyString;
+    if(feat->IsSetProduct() && feat->GetProduct().IsWhole()){
+        //show actual aa  if there is a cds product
+                        
+        const CSeq_id& productId = 
+            feat->GetProduct().GetWhole();
+        const CBioseq_Handle& productHandle 
+            = scope.GetBioseqHandle(productId );
+        feat_id = "CDS:" + 
+            GetTitle(productHandle).substr(0, k_FeatureIdLen);
+        productHandle.
+            GetSeqVector(CBioseq_Handle::eCoding_Iupac).
+            GetSeqData(0, productHandle.
+                       GetBioseqLength(), raw_cdr_product);
+    } else { 
+        CSeq_loc isolated_loc;
+        ITERATE(list<CRange<TSeqPos> >, iter, range){
+            isolated_loc.
+                Add(*(handle.GetRangeSeq_loc(iter->GetFrom(),
+                                             iter->GetTo(),
+                                             feat_strand)));
+        }
+        CGenetic_code gc;
+        CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
+        ce->Select(CGenetic_code::C_E::e_Id);
+        ce->SetId(genetic_code);
+        gc.Set().push_back(ce);
+        CSeqTranslator::Translate(isolated_loc, handle,
+                                  raw_cdr_product, &gc);
+    }
+    return raw_cdr_product;
+}
+
 ///fill the cds start positions (1 based)
 ///@param line: the input cds line
 ///@param concat_exon: exon only string
@@ -439,7 +571,8 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
                                    TSeqPos feat_aln_start_totalexon,
                                    ENa_strand seq_strand, 
                                    ENa_strand feat_strand,
-                                   list<TSeqPos>& start){
+                                   list<TSeqPos>& start)
+{
     size_t actual_line_len = 0;
     size_t aln_len = line.size();
     TSeqPos previous_num_letter = 0;
@@ -500,7 +633,7 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
                 } 
             }
         } else if (has_intron) {
-            start.push_back(0);  //sentinal for now show
+            start.push_back(0);  //sentinal for no show
         }
         prev_num += cur_num;
     }
@@ -845,7 +978,13 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 for (list<SAlnFeatureInfo*>::iterator 
                          iter=bioseqFeature[row].begin(); 
                      iter != bioseqFeature[row].end(); iter++){
-                    if ( curRange.IntersectingWith((*iter)->aln_range)){  
+                    //check blank string for cases where CDS is in range but
+                    //since it must align with the 2nd codon and is actually
+                    //not in range
+                    if (curRange.IntersectingWith((*iter)->aln_range) && 
+                        !(NStr::IsBlank((*iter)->feature_string.
+                                        substr(j,(int)actualLineLen)) &&
+                          m_AlignOption & eShowCdsFeature)){  
                         if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)
                            && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
                             char checkboxBuf[200];
@@ -1533,7 +1672,45 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                 max(seq_start, seq_stop));
             for (CFeat_CI feat(scope, *loc_ref, choice); feat; ++feat) {
                 const CSeq_loc& loc = feat->GetLocation();
-                ENa_strand feat_strand = GetStrand(loc);
+                bool has_id = false;
+                list<CSeq_loc_CI::TRange> isolated_range;
+                ENa_strand feat_strand = eNa_strand_plus, prev_strand;
+                bool first_loc = true, mixed_strand = false;
+                CRange<TSeqPos> feat_seq_range;
+                //isolate the seqloc corresponding to feature
+                //as this is easier to manipulate and remove seqloc that is
+                //not from the bioseq we are dealing with
+                for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
+                    if(loc_it.GetSeq_id().Match(*id)){
+                        isolated_range.push_back(loc_it.GetRange());
+                        if(first_loc){
+                            feat_seq_range = loc_it.GetRange();
+                        } else {
+                            feat_seq_range += loc_it.GetRange();
+                        }
+                        has_id = true;
+                        if(loc_it.IsSetStrand()){
+                            feat_strand = loc_it.GetStrand();
+                            if(feat_strand != eNa_strand_plus && 
+                               feat_strand != eNa_strand_minus){
+                                feat_strand = eNa_strand_plus;
+                            }
+                        } else {
+                            feat_strand = eNa_strand_plus;
+                        }
+                   
+                        if(!first_loc && prev_strand != feat_strand){
+                            mixed_strand = true;
+                        }
+                        first_loc = false;
+                        prev_strand = feat_strand;
+                    }
+                }
+                //give up if mixed strand or no id
+                if(!has_id || mixed_strand){
+                    continue;
+                }
+               
                 string featLable = NcbiEmptyString;
                 string featId;
                 char feat_char = ' ';
@@ -1546,7 +1723,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                 featId = featLable.substr(0, k_FeatureIdLen); //default
                 TSeqPos aln_stop = m_AV->GetAlnStop();  
                 SAlnFeatureInfo* featInfo = NULL;
-                CRange<TSeqPos> feat_seq_range = loc.GetTotalRange();
+               
                 //find the actual feature sequence start and stop 
                 if(m_AV->IsPositiveStrand(row)){
                     actual_feat_seq_start = 
@@ -1569,30 +1746,23 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     featInfo = new SAlnFeatureInfo;                 
                     feat_char = '^';
                     
-                } else if(choice == CSeqFeatData::e_Cdregion &&
-                          feat->IsSetProduct() &&
-                          feat->GetProduct().IsWhole()){
-                    
-                    //show actual aa  if there is a cds product
-                    
+                } else if(choice == CSeqFeatData::e_Cdregion){
+                     
+                    string raw_cdr_product = 
+                        s_GetCdsSequence(m_SlaveGeneticCode, feat, scope,
+                                         isolated_range, handle, feat_strand,
+                                         featId);
+                    if(raw_cdr_product == NcbiEmptyString){
+                        continue;
+                    }
+                    featInfo = new SAlnFeatureInfo;
+                          
                     //line represents the amino acid line starting covering 
                     //the whole alignment.  The idea is if there is no feature
                     //in some range, then fill it with space and this won't
                     //be shown 
-                    string line(aln_stop+1, ' ');   
-                    string raw_cdr_product = NcbiEmptyString;    
-                    const CSeq_id& productId = 
-                        feat->GetProduct().GetWhole();
-                    const CBioseq_Handle& productHandle 
-                        = scope.GetBioseqHandle(productId );
-                    featId = "CDS:" + 
-                        GetTitle(productHandle).substr(0, k_FeatureIdLen);
-                    productHandle.
-                        GetSeqVector(CBioseq_Handle::eCoding_Iupac).
-                        GetSeqData(0, productHandle.
-                                   GetBioseqLength(), raw_cdr_product);
-                    featInfo = new SAlnFeatureInfo;
                     
+                    string line(aln_stop+1, ' '); 
                     //pre-fill all cds region with intron char
                     for (TSeqPos i = feat_aln_from; i <= feat_aln_to; i ++){
                         line[i] = k_IntronChar;
@@ -1600,104 +1770,38 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     
                     //get total coding length
                     TSeqPos total_coding_len = 0;
-                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
-                        total_coding_len += loc_it.GetRange().GetLength();
-                    }    
+                    ITERATE(list<CSeq_loc_CI::TRange>, iter, isolated_range){
+                        total_coding_len += iter->GetLength(); 
+                    }
+                  
                     //fill concatenated exon (excluding intron)
                     //with product
                     //this is will be later used to
                     //fill the feature line
-
-                    string concat_exon(total_coding_len, ' ');
-                    char gap_char = m_AV->GetGapChar(row);   
-                    TSeqPos frame = 1;
-                    const CCdregion& cdr = feat->GetData().GetCdregion();
-                    if(cdr.IsSetFrame()){
-                        frame = cdr.GetFrame();
-                    }
-                    TSeqPos num_base, num_coding_base;
-                    TSeqPos coding_start_base;
-                    if(feat_strand == eNa_strand_minus){
-                        coding_start_base = total_coding_len - 1 - (frame -1);
-                        num_base = total_coding_len - 1;
-                        num_coding_base = 0;
-                        
-                    } else {
-                        coding_start_base = 0; 
-                        coding_start_base += frame - 1;
-                        num_base = 0;
-                        num_coding_base = 0;
-                    }
-                    
-                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
-                        //note that feature on minus strand needs to be
-                        //filled backward.
-                        if(feat_strand != eNa_strand_minus){
-                            for(TSeqPos i = 0; i < loc_it.GetRange().GetLength(); i ++){
-                                if(num_base >= coding_start_base){
-                                    num_coding_base ++;
-                                    if(num_coding_base % 3 == 2){
-                                        //a.a to the 2nd base
-                                        if(num_coding_base / 3 < raw_cdr_product.size()){
-                                            //make sure the coding region is no
-                                            //more than the protein seq as there
-                                            //could errors in ncbi record
-                                            concat_exon[num_base] 
-                                                = raw_cdr_product[num_coding_base / 3];
-                                        }                           
-                                    }
-                                }
-                                num_base ++;
-                            }    
-                        } else {
-                            
-                            for(TSeqPos i = 0; i < 
-                                    loc_it.GetRange().GetLength() &&
-                                    num_base >= 0; i ++){
-                                if(num_base <= coding_start_base){
-                                    num_coding_base ++;
-                                    if(num_coding_base % 3 == 2){
-                                        //a.a to the 2nd base
-                                        if(num_coding_base / 3 < 
-                                           raw_cdr_product.size() &&
-                                           coding_start_base > num_coding_base){
-                                            //make sure the coding region is no
-                                            //more than the protein seq as there
-                                            //could errors in ncbi record
-                                            concat_exon[num_base] 
-                                                = raw_cdr_product[num_coding_base / 3];
-                                        }                           
-                                    }
-                                }
-                                num_base --;
-                            }    
-                        }
-                    }
-                 
+                    char gap_char = m_AV->GetGapChar(row);
+                    string concat_exon = 
+                        s_GetConcatenatedExon(gap_char, feat, 
+                                              feat_strand, isolated_range,
+                                              total_coding_len,
+                                              raw_cdr_product);
                     TSeqPos feat_aln_start_totalexon = 0;
                     TSeqPos prev_feat_aln_start_totalexon = 0;
                     TSeqPos prev_feat_seq_stop = 0;
                     TSeqPos intron_size = 0;
                     bool is_first = true;
                     bool  is_first_exon_start = true;
-                    
-                    list<CSeq_loc_CI::TRange> isolated_range;
+               
                     //here things get complicated a bit. The idea is fill the
                     //whole feature line in alignment coordinates with
                     //amino acid on the second base of a condon
 
-                    //isolate the seqloc corresponding to feature
-                    //as this is easier to manipulate
-                    for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
-                        isolated_range.push_back(loc_it.GetRange());
-                    }
-
+                    //go through the feature seqloc and fill the feature line
+                    
                     //Need to reverse the seqloc order for minus strand
                     if(feat_strand == eNa_strand_minus){
                         isolated_range.reverse(); 
                     }
 
-                    //go through the feature seqloc and fill the feature line
                     ITERATE(list<CSeq_loc_CI::TRange>, iter, isolated_range){
 
                         //intron refers to the distance between two exons
@@ -2601,6 +2705,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.90  2005/11/16 17:43:29  jianye
+*remove irrelevant seqid in feature seqloc and show cds even with no product
+*
 *Revision 1.89  2005/11/14 21:32:45  ucko
 *Tweak CDisplaySeqalign::x_GetFeatureInfo not to assume size_type and
 *TSeqPos are the same.
