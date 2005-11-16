@@ -1,5 +1,5 @@
-#ifndef OBJISTR__HPP
-#define OBJISTR__HPP
+#ifndef SERIAL___OBJISTR__HPP
+#define SERIAL___OBJISTR__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -379,10 +379,16 @@ public:
     void HandleEOF(CEofException&);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    // deprecated; use GetStreamPos instead
+
+    /// @deprecated
+    ///   Use GetStreamPos() instead
+    /// @sa GetStreamPos()
     NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
     CNcbiStreampos GetStreamPos(void) const;
-    // deprecated; use SetStreamPos instead
+
+    /// @deprecated
+    ///  Use SetStreamPos() instead
+    /// @sa SetStreamPos() 
     NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
     void   SetStreamPos(CNcbiStreampos pos);
 
@@ -715,12 +721,15 @@ private:
 
 END_NCBI_SCOPE
 
-#endif  /* OBJISTR__HPP */
+#endif  /* SERIAL___OBJISTR__HPP */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.114  2005/11/16 16:27:26  vakatov
+* @deprecated Set/GetStreamOffset()
+*
 * Revision 1.113  2005/11/07 18:40:10  gouriano
 * Use Int8 in stream position calculations
 *
