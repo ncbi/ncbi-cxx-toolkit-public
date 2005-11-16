@@ -302,14 +302,13 @@ CHitList::SortByStartOffset()
     sort(m_List.begin(), m_List.end(), compare_hit_start());
 }
 
-CHitList&
-CHitList::operator+= (CHitList& hitlist)
+void
+CHitList::Append(CHitList& hitlist)
 {
     for (int i = 0; i < hitlist.Size(); i++) {
-        m_List.push_back(hitlist.m_List[i]);
+        AddToHitList(hitlist.GetHit(i));
         m_List.back().second = m_List.back().second->Copy();
     }
-    return *this;
 }
 
 END_SCOPE(cobalt)
@@ -317,6 +316,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/16 16:59:20  papadopo
+  replace += operator with Append member
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 

@@ -232,7 +232,7 @@ CMultiAligner::FindLocalHits()
     }
     //-------------------------------------------------------
 
-    m_CombinedHits += m_LocalHits;
+    m_CombinedHits.Append(m_LocalHits);
 }
 
 END_SCOPE(cobalt)
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.8  2005/11/16 16:59:20  papadopo
+  replace += operator with Append member
+
   Revision 1.7  2005/11/14 16:17:08  papadopo
   Assign default residue frequencies before domain residue frequencies,
   not after. This guarantees residue frequencies get assigned properly
