@@ -362,6 +362,21 @@ string CNetCacheClient::ServerVersion()
     return version;
 }
 
+CVersionInfo CNetCacheClient::ServerVersionInfo()
+{
+    string version = ServerVersion();
+
+    string::size_type pos = version.find("version=");
+    if (pos == string::npos) {
+        return CVersionInfo::kAny;
+    }
+    pos += 8;
+    version.erase(0, pos);
+
+    CVersionInfo info(version, "NetCache");
+    return info;
+}
+
 string CNetCacheClient::GetCommErrMsg()
 {
     string ret(m_CommErrMsg);
@@ -932,6 +947,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/11/16 17:40:25  kuznets
+ * +GetServerVersionInfo()
+ *
  * Revision 1.53  2005/10/26 19:09:35  kuznets
  * Bug fix: disconnect from server when throwing exception
  *

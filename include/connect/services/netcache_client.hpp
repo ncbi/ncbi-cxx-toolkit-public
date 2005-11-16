@@ -44,6 +44,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/version.hpp>
 #include <util/reader_writer.hpp>
 #include <util/transmissionrw.hpp>
 
@@ -239,6 +240,9 @@ public:
 
     /// Return version string
     string ServerVersion();
+
+    /// Return version of the server (parses output of ServerVersion())
+    CVersionInfo ServerVersionInfo();
 
 protected:
     /// Shutdown the server daemon.
@@ -553,6 +557,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/11/16 17:39:15  kuznets
+ * +GetServerVersionInfo()
+ *
  * Revision 1.44  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *
