@@ -179,10 +179,9 @@ public:
 
     /// Append one hitlist to another. The hits in the
     /// input list are duplicated
-    /// @param hitlist The lisqt to append [in]
-    /// @return the updated list
+    /// @param hitlist The list to append [in]
     ///
-    CHitList& operator+=(CHitList& hitlist);
+    void Append(CHitList& hitlist);
 
 private:
     TList m_List;  ///< current list of hits
@@ -196,6 +195,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/16 16:59:56  papadopo
+  replace += operatof with Append member
+
   Revision 1.4  2005/11/15 23:24:15  papadopo
   add doxygen
 
