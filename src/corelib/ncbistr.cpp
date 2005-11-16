@@ -899,7 +899,7 @@ void NStr::UIntToString(string&           out_str,
 string NStr::Int8ToString(Int8 value, TNumToStringFlags flags, int base)
 {
     string ret;
-    NStr::Int8ToString(ret, value, flags);
+    NStr::Int8ToString(ret, value, flags, base);
     return ret;
 }
 
@@ -1019,7 +1019,7 @@ void NStr::Int8ToString(string& out_str, Int8 svalue,
 string NStr::UInt8ToString(Uint8 value, TNumToStringFlags flags, int base)
 {
     string ret;
-    NStr::UInt8ToString(ret, value, flags);
+    NStr::UInt8ToString(ret, value, flags, base);
     return ret;
 }
 
@@ -2145,7 +2145,6 @@ TUnicodeSymbol CStringUTF8::CharToSymbol(char c, EEncoding encoding)
     case eEncoding_UTF8:
         NCBI_THROW2(CStringException, eBadArgs,
                     "Unacceptable character encoding", 0);
-        break;
     case eEncoding_Ascii:
     case eEncoding_ISO8859_1:
         break;
@@ -2157,7 +2156,6 @@ TUnicodeSymbol CStringUTF8::CharToSymbol(char c, EEncoding encoding)
     default:
         NCBI_THROW2(CStringException, eBadArgs,
                     "Unsupported character encoding", 0);
-        break;
     }
     return (TUnicodeSymbol)ch;
 }
@@ -2369,6 +2367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.169  2005/11/16 18:52:18  vakatov
+ * NStr::[U]Int8ToString() -- remember to use the "base" argument.
+ *
  * Revision 1.168  2005/11/15 16:14:11  vakatov
  * + CHECK_RANGE_U() to heed ICC warning "comparing unsigned with zero"
  *
