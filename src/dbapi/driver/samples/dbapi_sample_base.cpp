@@ -104,9 +104,11 @@ CDbapiSampleApp::ExitSample(void)
 CDbapiSampleApp::EServerType
 CDbapiSampleApp::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
+    if ( GetServerName() == "STRAUSS" ||
+         GetServerName() == "MOZART" ||
+         GetServerName().compare(0, 6, "BARTOK") == 0 ) {
         return eSybase;
-    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
+    } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0 ) {
         return eMsSql;
     }
 
@@ -190,10 +192,13 @@ CDbapiSampleApp::Run()
             SetDatabaseParameter("version", "100");
 //         } else if ( GetDriverName() == "ftds"  &&  GetServerType() == eMsSql ) {
 //             SetDatabaseParameter("version", "100");
-        } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) &&  
+        } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") &&  
                     GetServerType() == eSybase ) {
             // ftds forks with Sybase databases using protocol v42 only ...
             SetDatabaseParameter("version", "42");
+//         } else if ( GetDriverName() == "ftds63" &&
+//                     GetServerType() == eSybase ) {
+//             SetDatabaseParameter("version", "100");
         }
     } else {
         SetDatabaseParameter("version", m_TDSVersion);
@@ -485,6 +490,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/11/16 16:37:20  ssikorsk
+ * Handle Sybase server 'BARTOK'
+ *
  * Revision 1.10  2005/10/26 13:59:07  ucko
  * Use string::erase rather than string::clear for compatibility with GCC 2.95.
  *

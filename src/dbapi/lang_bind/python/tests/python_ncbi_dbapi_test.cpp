@@ -705,7 +705,9 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 CTestArguments::EServerType
 CTestArguments::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
+    if ( GetServerName() == "STRAUSS" ||
+         GetServerName() == "MOZART" ||
+         GetServerName().compare(0, 6, "BARTOK") == 0) {
         return eSybase;
     } else if ( NStr::EqualNocase( GetServerName(), 0, sizeof("MS_DEV") - 1, "MS_DEV") ) {
         return eMsSql;
@@ -717,7 +719,9 @@ CTestArguments::GetServerType(void) const
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ( GetDriverName() == "ctlib" && GetServerName() != "MOZART" ) {
+    if ( GetDriverName() == "ctlib" && 
+         GetServerName() != "MOZART" &&
+         GetServerName().compare(0, 6, "BARTOK") != 0 ) {
       m_DatabaseParameters["version"] = "125";
     } else if ( GetDriverName() == "dblib" && GetServerType() == eSybase ) {
         // Due to the bug in the Sybase 12.5 server, DBLIB cannot do
@@ -772,6 +776,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/11/16 16:34:53  ssikorsk
+* Handle Sybase server 'BARTOK'
+*
 * Revision 1.21  2005/10/24 13:07:51  ssikorsk
 * Added support for the ftds63 driver
 *

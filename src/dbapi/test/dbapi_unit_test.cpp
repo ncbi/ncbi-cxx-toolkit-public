@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 
 enum { max_text_size = 8000 };
 #define CONN_OWNERSHIP  eTakeOwnership
-static const char* msg_record_expected = "Record is expected";
+static const char* msg_record_expected = "Record expected";
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 // Patterns to test:
@@ -829,7 +829,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
         }
         
         if ( !exception_catched ) {
-            BOOST_FAIL("Exception CDB_ClientEx is expected.");
+            BOOST_FAIL("Exception CDB_ClientEx expected.");
         }
     }
     
@@ -1298,7 +1298,7 @@ CDBAPIUnitTest::Test_Cursor(void)
             // blobRs should be destroyed before auto_cursor ...
             auto_ptr<IResultSet> blobRs(auto_cursor->Open());
             if ( !blobRs->Next() ) {
-                BOOST_FAIL( msg_record_expected ); 
+                BOOST_FAIL( msg_record_expected );
             }
             ostream& out = auto_cursor->GetBlobOStream(1, sizeof(clob) - 1, eDisableLog);
             out.write(clob, sizeof(clob) - 1);
@@ -3180,7 +3180,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     add(tc);
 
     {
-        boost::unit_test::test_case* tc_parameters = 
+        boost::unit_test::test_case* tc_parameters =
             BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, DBAPIInstance);
         tc_parameters->depends_on(tc_init);
         add(tc_parameters);
@@ -3223,7 +3223,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(select_stmt_tc);
 
-        if ( args.GetServerType() == CTestArguments::eMsSql && 
+        if ( args.GetServerType() == CTestArguments::eMsSql &&
              args.GetDriverName() != "msdblib") {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmtXML, DBAPIInstance);
             tc->depends_on(tc_init);
@@ -3233,7 +3233,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
         // ctlib will work in case of protocol version 12.5 only
         // ftds + Sybase.and dblib won't work because of the early protocol versions.
-        if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) && 
+        if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
              args.GetServerType() == CTestArguments::eMsSql ) {
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Insert, DBAPIInstance);
             tc->depends_on(tc_init);
@@ -3250,20 +3250,20 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         tc->depends_on(tc_init);
         add(tc);
     }
-    
+
     // !!! ctlib/dblib do not work at the moment.
-    // !!! ftds works with MS SQL Server only at the moment. 
+    // !!! ftds works with MS SQL Server only at the moment.
 //     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
 //          args.GetServerType() == CTestArguments::eMsSql ) {
 //         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
 //         tc->depends_on(tc_init);
 //         add(tc);
 //     }
-    
+
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
-    
+
     // !!! There are still problems ...
     // !!! It does not work in case of a new FTDS driver.
 //     if ( args.GetDriverName() != "ctlib" &&
@@ -3273,16 +3273,18 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         tc->depends_on(tc_init);
 //         add(tc);
 //     }
-    
-    if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) && 
+
+    if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
          args.GetServerType() == CTestArguments::eMsSql ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_UNIQUE, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
     }
-    
+
     // !!! There are still problems ...
-    if ( args.GetDriverName() == "dblib" || args.GetDriverName() == "ftds") {
+    if ( args.GetDriverName() == "dblib" ||
+         args.GetDriverName() == "ftds" ||
+         args.GetDriverName() == "ftds63" ) {
         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Overflow, DBAPIInstance);
         tc->depends_on(tc_init);
         add(tc);
@@ -3363,9 +3365,12 @@ CTestArguments::CTestArguments(int argc, char * argv[])
 CTestArguments::EServerType
 CTestArguments::GetServerType(void) const
 {
-    if ( GetServerName() == "STRAUSS"  ||  GetServerName() == "MOZART" ) {
+    if ( GetServerName() == "STRAUSS" ||
+         GetServerName() == "MOZART" ||
+         GetServerName().compare(0, 6, "BARTOK") == 0 ) {
         return eSybase;
-    } else if ( GetServerName().substr(0, 6) == "MS_DEV" ) {
+    } else if ( GetServerName().compare(0, 6, "MS_DEV") == 0 ||
+                GetServerName().compare(0, 5, "MSSQL") == 0) {
         return eMsSql;
     }
 
@@ -3396,9 +3401,9 @@ CTestArguments::SetDatabaseParameters(void)
         m_DatabaseParameters["version"] = m_TDSVersion;
     }
 
-    if ( GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) {
-        m_DatabaseParameters["client_charset"] = "UTF-8";
-    }
+//     if ( GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) {
+//         m_DatabaseParameters["client_charset"] = "UTF-8";
+//     }
 }
 
 
@@ -3424,6 +3429,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.57  2005/11/16 16:40:04  ssikorsk
+ * Handle Sybase server 'BARTOK'
+ *
  * Revision 1.56  2005/10/31 17:26:43  ssikorsk
  * Disable Test_DateTime for all database drivers.
  *
