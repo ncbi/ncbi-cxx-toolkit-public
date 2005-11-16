@@ -152,7 +152,7 @@ protected:
     int          m_Major;       ///< Major number
     int          m_Minor;       ///< Minor number
     int          m_PatchLevel;  ///< Patch level
-    const string m_Name;        ///< Name
+    string       m_Name;        ///< Name
 };
 
 
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/11/16 16:19:42  kuznets
+ * CVersionInfo::m_Name removed const qualifier
+ *
  * Revision 1.18  2005/10/12 18:12:02  ivanov
  * CVersionInfo:: added default constructor
  *
