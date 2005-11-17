@@ -201,6 +201,7 @@ function CopyPtb(oShell, oTree, oTask)
         target_path += "\\" + conf;
         var source_file = oTask.ToolkitPath + "\\bin" + "\\project_tree_builder.exe";
         if (!oFso.FileExists(source_file)) {
+            WScript.Echo("WARNING: File not found: " + source_file);
             source_file = oTask.ToolkitPath;
             if (oTask.DllBuild) {
                 source_file += "\\dll";
@@ -244,6 +245,7 @@ function CopyDatatool(oShell, oTree, oTask)
         target_path += "\\" + conf;
         var source_file = oTask.ToolkitPath + "\\bin" + "\\datatool.exe";
         if (!oFso.FileExists(source_file)) {
+            WScript.Echo("WARNING: File not found: " + source_file);
             source_file = oTask.ToolkitPath;
             if (oTask.DllBuild) {
                 source_file += "\\dll";
