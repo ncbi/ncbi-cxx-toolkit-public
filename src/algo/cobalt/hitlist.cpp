@@ -307,7 +307,7 @@ CHitList::Append(CHitList& hitlist)
 {
     for (int i = 0; i < hitlist.Size(); i++) {
         AddToHitList(hitlist.GetHit(i));
-        m_List.back().second = m_List.back().second->Copy();
+        m_List.back().second = m_List.back().second->Clone();
     }
 }
 
@@ -316,6 +316,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/17 22:29:44  papadopo
+  rename Copy() to Clone()
+
   Revision 1.4  2005/11/16 16:59:20  papadopo
   replace += operator with Append member
 

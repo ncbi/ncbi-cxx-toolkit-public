@@ -273,14 +273,14 @@ CHit::ResolveSubHitConflicts(CSequence& seq1,
 }
 
 CHit *
-CHit::Copy()
+CHit::Clone()
 {
     CHit *new_hit = new CHit(m_SeqIndex1, m_SeqIndex2,
                              m_SeqRange1, m_SeqRange2,
                              m_Score, m_EditScript);
     if (HasSubHits()) {
         NON_CONST_ITERATE(TSubHit, itr, GetSubHit()) {
-            new_hit->InsertSubHit((*itr)->Copy());
+            new_hit->InsertSubHit((*itr)->Clone());
         }
     }
     return new_hit;
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/17 22:28:45  papadopo
+  rename Copy() to Clone()
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 
