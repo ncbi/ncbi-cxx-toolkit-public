@@ -330,7 +330,9 @@ bool CCyclicDepends::ExtendChains(const CProjKey&  proj_id,
         TProjects::const_iterator n = tree.find(depend_id);
         if (n == tree.end()) {
             //LOG_POST( Error << "Unknown project: " << depend_id.Id() );
-            return false;
+            //return false;
+            p = chains->erase(p);
+            continue;
         }
         const CProjItem& depend_project = n->second;
         if ( depend_project.m_Depends.empty() ) {
@@ -485,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/11/17 20:45:23  gouriano
+ * corrected dependency analysis when some projects are missing
+ *
  * Revision 1.8  2005/01/31 16:37:38  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *
