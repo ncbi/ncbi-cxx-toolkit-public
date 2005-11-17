@@ -94,6 +94,11 @@ for i in 'Debug' 'Release' ; do
       cd "$builddir"/compilers/$compiler/static/lib/$i$j
       cp -p *.lib "$target/$i$j"
     fi
+    if test -d "$builddir"/compilers/$compiler/dll/lib/$i$j ; then
+      makedir "$target/$i$j" -p
+      cd "$builddir"/compilers/$compiler/dll/lib/$i$j
+      cp -p *.lib "$target/$i$j"
+    fi
     if test -d "$builddir"/compilers/$compiler/dll/bin/$i$j ; then
       makedir "$target/$i$j" -p
       cd "$builddir"/compilers/$compiler/dll/bin/$i$j
