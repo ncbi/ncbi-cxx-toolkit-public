@@ -53,103 +53,6 @@ typedef struct SAlignHalf {
     TRange range;
 } SAlignHalf;
 
-/// callback structure used to sort lists of segments;
-/// sort by query index, using start offset and then end
-/// offset as a tiebreaker. For identical segments, use
-/// the other half of the alignment as a tiebreaker
-///
-struct compare_align_start {
-    bool operator()(const SAlignHalf& a, const SAlignHalf& b) const {
-        if (a.seq < b.seq)
-            return true;
-        if (a.seq > b.seq)
-            return false;
-
-        return (a.range.GetFrom() < b.range.GetFrom());
-    }
-};
-
-/// Compute the hit rate for each member of a collection of segments
-/// @param num_queries The number of input sequences [in]
-/// @param align_list The collection of segments [in/modified]
-///
-void 
-CMultiAligner::x_AssignHitRate()
-{
-    // The 'hit rate' for a segment is a scaling factor for
-    // the score of that segment, defined as the sum over
-    // all sequences of maxrate(i), i.e. the maximum percentage 
-    // of that segment that appears in any alignment occurring in
-    // the i_th sequence.
-    //
-    // This is an attempt to reward segments that are repeated
-    // in multiple query sequences (or, more accurately,
-    // to penalize segments that do not do so).
-
-    int num_queries = m_QueryData.size();
-    int num_hits = m_CombinedHits.Size();
-    int num_segs = 2 * num_hits;
-    CNcbiMatrix<int> best_overlap(num_segs, num_queries, 0);
-    vector<SAlignHalf> seg_list(num_segs);
-
-    for (int i = 0; i < num_hits; i++) {
-        CHit *hit = m_CombinedHits.GetHit(i);
-        seg_list[2*i].hit_num = 2 * i;
-        seg_list[2*i].seq = hit->m_SeqIndex1;
-        seg_list[2*i].other_seq = hit->m_SeqIndex2;
-        seg_list[2*i].range = hit->m_SeqRange1;
-
-        seg_list[2*i+1].hit_num = 2 * i + 1;
-        seg_list[2*i+1].seq = hit->m_SeqIndex2;
-        seg_list[2*i+1].other_seq = hit->m_SeqIndex1;
-        seg_list[2*i+1].range = hit->m_SeqRange2;
-    }
-
-    sort(seg_list.begin(), seg_list.end(), compare_align_start());
-
-    // For each segment in the list
-
-    for (int i = 0; i < num_segs; i++) {
-
-        // Walk forward from the segment in question until either
-        // the list runs out, we use up all the segments on one 
-        // query sequence, or segments in the list stop overlapping
-        // with the target segment. For each segment that qualifies, 
-        // compute the amount of overlap with the target segment and 
-        // update the current best hit rate for the query sequence
-        // to which the segment belongs. Note that a segment will
-        // always contribute to its own hitrate
-
-        for (int j = i; j < num_segs &&
-                     seg_list[j].seq == seg_list[i].seq &&
-                     seg_list[j].range.GetFrom() <= 
-                             seg_list[i].range.GetTo(); j++) {
-            SAlignHalf& align(seg_list[j]);
-            int overlap = min(seg_list[i].range.GetTo(), 
-                              align.range.GetTo()) - 
-                          align.range.GetFrom() + 1;
-            best_overlap(align.hit_num, seg_list[i].other_seq) = 
-                   max(best_overlap(align.hit_num, seg_list[i].other_seq), overlap);
-        }
-    }
-
-    // sum up all the best per-sequence rates, scale and set the hit rate.
-
-    for (int i = 0; i < num_hits; i++) {
-        double sum1 = 0.0, sum2 = 0.0;
-        CHit *hit = m_CombinedHits.GetHit(i);
-        for (int j = 0; j < num_queries; j++) {
-            sum1 += (double)best_overlap(2*i, j);
-            sum2 += (double)best_overlap(2*i+1, j);
-        }
-        sum1 = (sum1 / hit->m_SeqRange1.GetLength() + 1) / num_queries;
-        sum2 = (sum2 / hit->m_SeqRange2.GetLength() + 1) / num_queries;
-        hit->m_HitRate = 0.5 * (sum1 + sum2);
-
-        _ASSERT(hit->m_HitRate >= 1.0 / num_queries && hit->m_HitRate <= 1.0);
-    }
-}
-
 /// Find a maximum weight path in a directed acyclic graph
 /// @param nodes The graph [in/modified]
 /// @return Pointer to the first node in the optimal path
@@ -249,7 +152,7 @@ CMultiAligner::x_FindAlignmentSubsets()
         CHit *hit = m_CombinedHits.GetHit(i);
         nodes(hit->m_SeqIndex1, hit->m_SeqIndex2).push_back(SGraphNode(hit, i));
         nodes(hit->m_SeqIndex1, hit->m_SeqIndex2).back().best_score =
-                                      hit->m_BitScore * hit->m_HitRate;
+                                      hit->m_BitScore;
     }
 
     for (int i = 0; i < num_queries - 1; i++) {
@@ -299,12 +202,12 @@ CMultiAligner::x_FindConsistentHitSubset()
         printf("\n\nAlignments before graph phase:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf (%lf)\n",
+            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf\n",
                    hit->m_SeqIndex1,
                    hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
                    hit->m_SeqIndex2,
                    hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_BitScore, hit->m_BitScore * hit->m_HitRate);
+                   hit->m_BitScore);
         }
         printf("\n\n");
     }
@@ -312,8 +215,6 @@ CMultiAligner::x_FindConsistentHitSubset()
 
     // weight each alignment found by the number of sequences
     // that contain that alignment
-
-    // x_AssignHitRate();
 
     // For each pair of queries, find a maximal-scoring subset
     // of nonoverlapping alignments
@@ -325,12 +226,12 @@ CMultiAligner::x_FindConsistentHitSubset()
         printf("\n\nAlignments after graph phase:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf (%lf)\n",
+            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf\n",
                    hit->m_SeqIndex1,
                    hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
                    hit->m_SeqIndex2,
                    hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_BitScore, hit->m_BitScore * hit->m_HitRate);
+                   hit->m_BitScore);
         }
         printf("\n\n");
     }
@@ -339,21 +240,17 @@ CMultiAligner::x_FindConsistentHitSubset()
     // weight each surviving alignment by the number of sequences
     // that contain that alignment
 
-    // x_AssignHitRate();
-
     //--------------------------------------------------
     if (m_Verbose) {
         printf("Saved Segments:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf (%lf) ",
+            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf\n",
                    hit->m_SeqIndex1,
                    hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
                    hit->m_SeqIndex2,
                    hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_BitScore, 
-                   hit->m_BitScore * hit->m_HitRate);
-            printf("\n");
+                   hit->m_BitScore);
         }
         printf("\n\n");
     }
@@ -366,6 +263,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.7  2005/11/17 22:31:22  papadopo
+  remove hit rate computations
+
   Revision 1.6  2005/11/10 16:18:32  papadopo
   Allow hitlists to be regenerated cleanly
 
