@@ -222,7 +222,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,0,2) );
+    SetVersion( CVersionInfo(1,0,3) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -1099,6 +1099,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/11/17 20:46:53  gouriano
+ * Allow datatool to find out-of-tree ASN spec in ASN projects
+ *
  * Revision 1.63  2005/10/31 15:58:41  gouriano
  * Added list of "provided" requirements; so, all of them must be known
  *

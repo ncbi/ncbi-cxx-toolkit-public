@@ -430,6 +430,15 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         tool_cmd += NStr::Join(src.m_ImportModules, " ");
         tool_cmd += '"';
     }
+    if (!GetApp().m_BuildRoot.empty()) {
+        string src_dir = CDirEntry::ConcatPath(context.GetSrcRoot(), 
+            GetApp().GetConfig().GetString("ProjectTree", "src", ""));
+        if (CDirEntry(src_dir).Exists()) {
+            tool_cmd += " -opm \"";
+            tool_cmd += src_dir;
+            tool_cmd += '"';
+        }
+    }
     build_info->m_CommandLine = 
         "@echo on\n" + tool_exe_location + " " + tool_cmd;
 
@@ -461,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/11/17 20:46:53  gouriano
+ * Allow datatool to find out-of-tree ASN spec in ASN projects
+ *
  * Revision 1.41  2005/04/13 15:57:33  gouriano
  * Handle paths with spaces
  *

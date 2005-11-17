@@ -128,6 +128,20 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
     } else {
         m_StaticLibRoot = m_DynamicLibRoot = lib_dir;
     }
+// find sources
+    string t, try_dir, inc_dir;
+    for ( t = try_dir = m_StaticLibRoot; ; try_dir = t) {
+        inc_dir = CDirEntry::ConcatPath(try_dir, 
+            GetApp().GetConfig().GetString("ProjectTree", "include", ""));
+        if (CDirEntry(inc_dir).Exists()) {
+            m_SrcRoot = CDirEntry(inc_dir).GetDir();
+            break;
+        }
+        t = CDirEntry(try_dir).GetDir();
+        if (t == try_dir) {
+            break;
+        }
+    }
 
     // Generate include dirs:
     // Include dirs for appropriate src dirs
@@ -323,28 +337,18 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     string ext_inc;
     const CProjectItemsTree* all_projects = GetApp().GetCurrentBuildTree();
     if (all_projects) {
-        string t, try_dir, inc_dir;
-        for ( t = try_dir = m_StaticLibRoot;; ) {
-            inc_dir = CDirEntry::ConcatPath(try_dir, 
-                GetApp().GetConfig().GetString("ProjectTree", "include", ""));
-            if (CDirEntry(inc_dir).Exists()) {
-                try {
-                    ext_inc = CDirEntry::CreateRelativePath(m_ProjectDir, inc_dir);
-                } catch (CFileException&) {
-                    ext_inc = inc_dir;
-                }
-                ext_inc = CDirEntry::AddTrailingPathSeparator(ext_inc);
-                break;
+        string inc_dir = CDirEntry::ConcatPath(m_SrcRoot, 
+            GetApp().GetConfig().GetString("ProjectTree", "include", ""));
+        if (CDirEntry(inc_dir).Exists()) {
+            try {
+                ext_inc = CDirEntry::CreateRelativePath(m_ProjectDir, inc_dir);
+            } catch (CFileException&) {
+                ext_inc = inc_dir;
             }
-            t = CDirEntry(try_dir).GetDir();
-            if (t == try_dir) {
-                ext_inc = tree_inc;
-                break;
+            ext_inc = CDirEntry::AddTrailingPathSeparator(ext_inc);
+            if (NStr::CompareNocase(tree_inc, ext_inc) != 0) {
+                add_include_dirs_list.push_back( ext_inc );
             }
-            try_dir = t;
-        }
-        if (NStr::CompareNocase(tree_inc, ext_inc) != 0) {
-            add_include_dirs_list.push_back( ext_inc );
         }
     }
     //Leave only unique dirs and join them to string
@@ -1061,6 +1065,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/11/17 20:46:53  gouriano
+ * Allow datatool to find out-of-tree ASN spec in ASN projects
+ *
  * Revision 1.55  2005/10/31 19:55:03  gouriano
  * Added requirement negation option
  *
