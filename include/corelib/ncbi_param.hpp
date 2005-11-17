@@ -26,9 +26,14 @@
  *
  * ===========================================================================
  *
- * Author:  Aleksey Grichenko
+ * Authors:  Eugene Vasilchenko, Aleksey Grichenko
  *
+<<<<<<< ncbi_param.hpp
+ * File Description:
+ *   Parameters storage interface
+=======
  * Parameters storage interface
+>>>>>>> 1.3
  *
  */
 
@@ -87,6 +92,99 @@ BEGIN_NCBI_SCOPE
 ///
 /// NCBI_PARAM_DECL
 /// NCBI_PARAM_DEF
+///
+/// - Declare the parameter with NCBI_PARAM_DECL (NCBI_PARAM_ENUM_DECL for
+///   enums):
+///   NCBI_PARAM_DECL(int, MySection, MyIntParam);
+///   NCBI_PARAM_DECL(string, MySection, MyStrParam);
+///   NCBI_PARAM_ENUM_DECL(EMyEnum, MySection, MyEnumParam);
+///
+/// - Add parameter definition (this will also generate static data):
+///   NCBI_PARAM_DEF(int, MySection, MyIntParam, 12345);
+///   NCBI_PARAM_DEF(string, MySection, MyStrParam, "Default string value");
+///
+/// - For enum parameters define mappings between strings and values
+///   before defining the parameter:
+///   NCBI_PARAM_ENUM_ARRAY(EMyEnum, MySection, MyEnumParam)
+///   {
+///       {"My_A", eMyEnum_A},
+///       {"My_B", eMyEnum_B},
+///       {"My_C", eMyEnum_C}
+///   };
+///
+///   NCBI_PARAM_ENUM_DEF(EMyEnum, MySection, MyEnumParam, eMyEnum_B);
+///
+/// - Use NCBI_PARAM_TYPE() as parameter type:
+///   NCBI_PARAM_TYPE(MySection, MyIntParam)::GetDefault();
+///   typedef NCBI_PARAM_TYPE(MySection, MyStrParam) TMyStrParam;
+///   TMyStrParam str_param; str_param.Set("Local string value");
+///
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Helper functions for getting values from registry/environment
+///
+
+/// Get string configuration value.
+///
+/// @param section
+///   Check application configuration named section first if not null.
+/// @param variable
+///   Variable name within application section.
+///   If no value found in configuration file, environment variable with
+///   name section_variable or variable will be checked, depending on
+///   wether section is null.
+/// @param default_value
+///   If no value found neither in configuration file nor in environment,
+///   this value will be returned, or empty string if this value is null.
+/// @return
+///   string configuration value.
+/// @sa g_GetConfigInt(), g_GetConfigFlag()
+string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
+                                           const char* variable,
+                                           const char* default_value = 0);
+
+/// Get integer configuration value.
+///
+/// @param section
+///   Check application configuration named section first if not null.
+/// @param variable
+///   Variable name within application section.
+///   If no value found in configuration file, environment variable with
+///   name section_variable or variable will be checked, depending on
+///   wether section is null.
+/// @param default_value
+///   If no value found neither in configuration file nor in environment,
+///   this value will be returned.
+/// @return
+///   integer configuration value.
+/// @sa g_GetConfigString(), g_GetConfigFlag()
+int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
+                                     const char* variable,
+                                     int default_value = 0);
+
+/// Get boolean configuration value.
+///
+/// @param section
+///   Check application configuration named section first if not null.
+/// @param variable
+///   Variable name within application section.
+///   If no value found in configuration file, environment variable with
+///   name section_variable or variable will be checked, depending on
+///   wether section is null.
+/// @param default_value
+///   If no value found neither in configuration file nor in environment,
+///   this value will be returned.
+/// @return
+///   boolean configuration value.
+/// @sa g_GetConfigString(), g_GetConfigInt()
+bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
+                                       const char* variable,
+                                       bool default_value = false);
+
+
+/////////////////////////////////////////////////////////////////////////////
 ///
 /// Parameter declaration and definition macros
 ///
@@ -226,6 +324,20 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CParamBase
+///
+/// Base class to provide single static mutex for parameters.
+///
+
+class NCBI_XNCBI_EXPORT CParamBase
+{
+protected:
+    static SSystemFastMutex& s_GetLock(void);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CParam
 ///
 /// Parameter template.
@@ -239,7 +351,7 @@ public:
 ///
 
 template<class TDescription>
-class CParam
+class CParam : public CParamBase
 {
 public:
     typedef CParam<TDescription>                   TParam;
@@ -281,7 +393,6 @@ public:
 private:
     typedef CTls<TValueType> TTls;
 
-    static SSystemFastMutex& sx_GetLock    (void);
     static TValueType&       sx_GetDefault (void);
     static CRef<TTls>&       sx_GetTls     (void);
 
@@ -299,6 +410,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/11/17 18:45:53  grichenk
+ * Added comments and examples.
+ * Moved CParam<> static mutex to base class.
+ * Case insensitive parameter names.
+ * Moved GetConfigXXX to ncbi_param, renamed to g_GetConfig.
+ *
  * Revision 1.3  2005/11/15 17:46:40  grichenk
  * Redesigned enum parameters.
  * Moved implementation details to separate file.

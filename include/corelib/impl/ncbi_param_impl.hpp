@@ -28,14 +28,14 @@
  *
  * Author:  Aleksey Grichenko
  *
- * Parameters storage implementation
+ * File Description:
+ *   Parameters storage implementation
  *
  */
 
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
-#include <corelib/ncbi_config_value.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -199,7 +199,7 @@ CEnumParser<TEnum>::StringToEnum(const string& str,
                                  const TParamDesc& descr)
 {
     for (size_t i = 0;  i < descr.enums_size;  ++i) {
-        if ( NStr::Equal(str, descr.enums[i].alias) ) {
+        if ( NStr::EqualNocase(str, descr.enums[i].alias) ) {
             return descr.enums[i].value;
         }
     }
@@ -238,19 +238,10 @@ inline
 CParam<TDescription>::CParam<TDescription>(const string& section,
                                            const string& name)
 {
-    string str = GetConfigString
+    string str = g_GetConfigString
         (section, name,
          TParamParser::ValueToString(GetThreadDefault()));
     m_Value = TParamParser::StringToValue(str);
-}
-
-
-template<class TDescription>
-inline
-SSystemFastMutex& CParam<TDescription>::sx_GetLock(void)
-{
-    DEFINE_STATIC_FAST_MUTEX(s_ParamValueLock);
-    return s_ParamValueLock;
 }
 
 
@@ -264,10 +255,10 @@ CParam<TDescription>::sx_GetDefault(void)
 
     static bool initialized = false;
     if ( !initialized ) {
-        string config_value =
-            GetConfigString(TDescription::sm_ParamDescription.section,
-                            TDescription::sm_ParamDescription.name,
-                            "");
+        string config_value = g_GetConfigString
+            (TDescription::sm_ParamDescription.section,
+             TDescription::sm_ParamDescription.name,
+             "");
         if ( !config_value.empty() ) {
             s_Default =
                 TParamParser::StringToValue(config_value,
@@ -295,7 +286,7 @@ inline
 typename CParam<TDescription>::TValueType
 CParam<TDescription>::GetDefault(void)
 {
-    CFastMutexGuard guard(sx_GetLock());
+    CFastMutexGuard guard(s_GetLock());
     return sx_GetDefault();
 }
 
@@ -304,7 +295,7 @@ template<class TDescription>
 inline
 void CParam<TDescription>::SetDefault(const TValueType& val)
 {
-    CFastMutexGuard guard(sx_GetLock());
+    CFastMutexGuard guard(s_GetLock());
     sx_GetDefault() = val;
 }
 
@@ -314,7 +305,7 @@ inline
 typename CParam<TDescription>::TValueType
 CParam<TDescription>::GetThreadDefault(void)
 {
-    CFastMutexGuard guard(sx_GetLock());
+    CFastMutexGuard guard(s_GetLock());
     CRef<TTls>& tls = sx_GetTls();
     if ( tls ) {
         TValueType* v = tls->GetValue();
@@ -330,7 +321,7 @@ template<class TDescription>
 inline
 void CParam<TDescription>::SetThreadDefault(const TValueType& val)
 {
-    CFastMutexGuard guard(sx_GetLock());
+    CFastMutexGuard guard(s_GetLock());
     CRef<TTls>& tls = sx_GetTls();
     if ( !tls ) {
         tls.Reset(new TTls);
@@ -345,8 +336,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.1  2005/11/15 17:45:57  grichenk
- * Initial revision
+ * Revision 1.2  2005/11/17 18:45:53  grichenk
+ * Added comments and examples.
+ * Moved CParam<> static mutex to base class.
+ * Case insensitive parameter names.
+ * Moved GetConfigXXX to ncbi_param, renamed to g_GetConfig.
  *
  *
  * ===========================================================================
