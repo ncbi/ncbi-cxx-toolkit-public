@@ -105,10 +105,6 @@ public:
     /// Altschul statistics are available
     double m_BitScore;
  
-    /// Fraction (<=1.0) that downweights the alignment
-    /// score based on how other alignment (dis)agree with it
-    double m_HitRate;
- 
     /// The range of offsets on the first sequence
     TRange m_SeqRange1;
  
@@ -121,7 +117,7 @@ public:
     ///
     CHit(int seq1_index, int seq2_index) 
            : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
-             m_Score(0), m_BitScore(0.0), m_HitRate(1.0),
+             m_Score(0), m_BitScore(0.0), 
              m_SeqRange1(0,0), m_SeqRange2(0,0) {}
  
     /// Create an alignment from a BLAST hit
@@ -131,7 +127,7 @@ public:
     ///
     CHit(int seq1_index, int seq2_index, BlastHSP *hsp)
            : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
-             m_Score(hsp->score), m_BitScore(0.0), m_HitRate(1.0),
+             m_Score(hsp->score), m_BitScore(0.0),
              m_SeqRange1(hsp->query.offset, hsp->query.end - 1),
              m_SeqRange2(hsp->subject.offset, hsp->subject.end - 1),
              m_EditScript(hsp->gap_info) { VerifyHit(); }
@@ -148,7 +144,7 @@ public:
          TRange seq_range1, TRange seq_range2,
          int score, CEditScript edit_script)
         : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index),
-          m_Score(score), m_BitScore(0.0), m_HitRate(1.0),
+          m_Score(score), m_BitScore(0.0),
           m_SeqRange1(seq_range1), m_SeqRange2(seq_range2),
           m_EditScript(edit_script) { VerifyHit(); }
  
@@ -189,7 +185,7 @@ public:
     /// Produce an independent copy of a CHit
     /// @return Pointer to the copy
     ///
-    CHit * Copy();
+    CHit * Clone();
 
     /// Retrieve the seq1 range corresponding to a 
     /// specified seq2 range. Assumes traceback is valid
@@ -260,6 +256,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/17 22:32:18  papadopo
+  remove hit rate member; also change Copy() to Clone()
+
   Revision 1.3  2005/11/15 23:24:15  papadopo
   add doxygen
 
