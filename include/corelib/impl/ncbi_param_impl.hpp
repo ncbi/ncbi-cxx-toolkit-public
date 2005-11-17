@@ -235,8 +235,7 @@ CEnumParser<TEnum>::EnumToString(const TEnumType& val,
 
 template<class TDescription>
 inline
-CParam<TDescription>::CParam<TDescription>(const string& section,
-                                           const string& name)
+CParam<TDescription>::CParam(const string& section, const string& name)
 {
     string str = g_GetConfigString
         (section, name,
@@ -336,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/17 21:49:13  ucko
+ * Use standard syntax when defining CParam<>'s constructor.
+ *
  * Revision 1.2  2005/11/17 18:45:53  grichenk
  * Added comments and examples.
  * Moved CParam<> static mutex to base class.
