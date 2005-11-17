@@ -7,8 +7,8 @@ ulimit -n 1536 > /dev/null 2>&1
 
 
 driver_list="ctlib dblib ftds ftds63 odbc msdblib"
-# server_list="MS_DEV2 MOZART BARTOK_12"
-server_list="MS_DEV1 STRAUSS BARTOK"
+# server_list="MS_DEV2 BARTOK BARTOK_12"
+server_list="MS_DEV1 STRAUSS MOZART"
 # server_mssql="MS_DEV2"
 server_mssql="MS_DEV1"
 
@@ -188,8 +188,12 @@ EOF
 
                 # ODBC driver doen't support BCP at all.
                 if test $driver != "odbc" ; then
-                    cmd="dbapi_bcp -d $driver -S $server"
-                    RunSimpleTest "dbapi_bcp"
+                    if test $server != "MOZART" -a $server != "BARTOK" ; then 
+                        cmd="dbapi_bcp -d $driver -S $server"
+                        RunSimpleTest "dbapi_bcp"
+                    else
+                        sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -d $driver -S $server (skipped)"
+                    fi
                 fi
 
                 cmd="dbapi_testspeed -d $driver -S $server"
@@ -201,10 +205,11 @@ EOF
 
             # exclude "dbapi_cursor" from testing MS SQL with the "ftds" driver
             # MS SQL is already disabled for non-ftds drivers.
-            if test \( $driver != "ftds" -a $driver != "ftds63" -a \
+            if test \( \( $driver != "ftds" -a $driver != "ftds63" -a \
                         $driver != "odbc" -a $driver != "msdblib" \) -o \
                     \( $driver = "ftds" -a $server = $server_mssql \) -o \
-                    \( $driver = "ftds63" -a $server = $server_mssql \) ; then
+                    \( $driver = "ftds63" -a $server = $server_mssql \) \) -a \
+                    $server != "MOZART" -a $server != "BARTOK" ; then
                 cmd="dbapi_cursor -d $driver -S $server"
                 RunSimpleTest "dbapi_cursor"
             else
