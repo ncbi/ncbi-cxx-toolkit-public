@@ -405,11 +405,14 @@ END_NCBI_SCOPE
 
 /* @} */
 
-#include <corelib/ncbi_param_impl.hpp>
+#include <corelib/impl/ncbi_param_impl.hpp>
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/11/17 21:33:09  grichenk
+ * ncbi_param_impl.hpp moved to impl dir.
+ *
  * Revision 1.4  2005/11/17 18:45:53  grichenk
  * Added comments and examples.
  * Moved CParam<> static mutex to base class.
