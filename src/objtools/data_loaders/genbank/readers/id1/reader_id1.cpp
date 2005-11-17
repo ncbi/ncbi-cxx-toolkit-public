@@ -191,7 +191,8 @@ void CId1Reader::x_DisconnectAtSlot(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CConn_ServiceStream>& stream = m_Connections[conn];
     if ( stream.get() ) {
-        ERR_POST("CId1Reader: ID1 GenBank connection failed: reconnecting...");
+        LOG_POST(Warning << "CId1Reader: ID1"
+                 " GenBank connection failed: reconnecting...");
         stream.reset();
     }
 }

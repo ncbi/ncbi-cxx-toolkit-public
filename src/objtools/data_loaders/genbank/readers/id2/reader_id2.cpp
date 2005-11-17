@@ -241,7 +241,8 @@ void CId2Reader::x_DisconnectAtSlot(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
     if ( stream ) {
-        ERR_POST("CId2Reader: ID2 GenBank connection failed: reconnecting...");
+        LOG_POST(Warning << "CId2Reader: ID2"
+                 " GenBank connection failed: reconnecting...");
         stream.reset();
     }
 }
@@ -303,7 +304,13 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
         CDebugPrinter s;
         s << "CId2Reader: New connection to " << m_ServiceName << " opened.\n";
     }
-    x_InitConnection(*stream);
+    try {
+        x_InitConnection(*stream);
+    }
+    catch ( CException& exc ) {
+        NCBI_RETHROW(exc, CLoaderException, eNoConnection,
+                     "connection failed");
+    }
 
     return stream.release();
 }

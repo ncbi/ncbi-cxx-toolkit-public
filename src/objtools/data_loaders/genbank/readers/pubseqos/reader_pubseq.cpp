@@ -208,8 +208,8 @@ void CPubseqReader::x_DisconnectAtSlot(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CDB_Connection>& stream = m_Connections[conn];
     if ( stream ) {
-        ERR_POST("CPubseqReader: PubSeqOS GenBank connection failed: "
-                 "reconnecting...");
+        LOG_POST(Warning << "CPubseqReader: PubSeqOS"
+                 " GenBank connection failed: reconnecting...");
         stream.reset();
     }
 }

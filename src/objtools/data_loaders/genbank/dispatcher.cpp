@@ -812,7 +812,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
             }
             catch ( CLoaderException& exc ) {
                 if ( exc.GetErrCode() == exc.eNoConnection ) {
-                    ERR_POST("CReadDispatcher: Exception: "<<exc.what());
+                    LOG_POST(Warning<<
+                             "CReadDispatcher: Exception: "<<exc.what());
                     retry_count = kMax_Int;
                 }
                 else {
@@ -820,7 +821,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
                          !reader.MayBeSkippedOnErrors() ) {
                         throw;
                     }
-                    ERR_POST("CReadDispatcher: Exception: "<<exc.what());
+                    LOG_POST(Warning<<
+                             "CReadDispatcher: Exception: "<<exc.what());
                 }
             }
             catch ( exception& exc ) {
@@ -829,7 +831,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
                      !reader.MayBeSkippedOnErrors() ) {
                     throw;
                 }
-                ERR_POST("CReadDispatcher: Exception: "<<exc.what());
+                LOG_POST(Warning <<
+                         "CReadDispatcher: Exception: "<<exc.what());
             }
             if ( command.IsDone() ) {
                 return;

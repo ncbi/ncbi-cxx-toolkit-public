@@ -66,7 +66,9 @@ void CReader::SetInitialConnections(int max)
             conn.Release();
             return;
         }
-        catch ( ... ) {
+        catch ( CException& exc ) {
+            LOG_POST(Warning <<
+                     "CReader: cannot open initial connection: "<<exc.what());
             if ( attempt >= GetRetryCount() ) {
                 // this is the last attempt to establish connection
                 SetMaximumConnections(0);
@@ -83,6 +85,9 @@ int CReader::SetMaximumConnections(int max)
     if ( max > limit ) {
         max = limit;
     }
+    if ( max < 0 ) {
+        max = 0;
+    }
     int error_count = 0;
     while( GetMaximumConnections() < max ) {
         try {
@@ -90,8 +95,9 @@ int CReader::SetMaximumConnections(int max)
             error_count = 0;
         }
         catch ( exception& exc ) {
-            ERR_POST("CReader: cannot add connection: "<<exc.what());
-            if ( ++error_count >= 3 ) {
+            LOG_POST(Warning <<
+                     "CReader: cannot add connection: "<<exc.what());
+            if ( ++error_count >= GetRetryCount() ) {
                 if ( max > 0 && GetMaximumConnections() == 0 ) {
                     throw;
                 }
@@ -198,7 +204,8 @@ void CReader::x_AbortConnection(TConn conn)
 
 void CReader::x_DisconnectAtSlot(TConn conn)
 {
-    ERR_POST("CReader: GenBank connection failed: reconnecting...");
+    LOG_POST(Warning << "CReader:"
+             " GenBank connection failed: reconnecting...");
     x_RemoveConnectionSlot(conn);
     x_AddConnectionSlot(conn);
 }
