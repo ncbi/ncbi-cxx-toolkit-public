@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.401 2005/11/07 21:39:54 ucko Exp $
+#  $Id: configure.ac,v 1.402 2005/11/17 19:08:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2395,6 +2395,13 @@ if test "$ncbi_cv_cpp_gnu_varargs" = yes; then
       [Define to 1 if the preprocessor supports GNU-style variadic macros.])
 fi
 
+# Older versions of GCC accept __attribute__((__deprecated__)) but warn
+# that they don't understand it, which doesn't do us much good.
+case "$compiler:$compiler_version" in
+   GCC:2* | GCC:3[[01]]* )
+      ncbi_cv_c_deprecation_syntax=none
+      ;;
+esac
 AC_CACHE_CHECK([syntax for marking deprecated functions],
    ncbi_cv_c_deprecation_syntax,
    [AC_LINK_IFELSE([AC_LANG_PROGRAM(

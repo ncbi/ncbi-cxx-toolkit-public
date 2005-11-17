@@ -15702,6 +15702,13 @@ _ACEOF
 
 fi
 
+# Older versions of GCC accept __attribute__((__deprecated__)) but warn
+# that they don't understand it, which doesn't do us much good.
+case "$compiler:$compiler_version" in
+   GCC:2* | GCC:3[01]* )
+      ncbi_cv_c_deprecation_syntax=none
+      ;;
+esac
 echo "$as_me:$LINENO: checking syntax for marking deprecated functions" >&5
 echo $ECHO_N "checking syntax for marking deprecated functions... $ECHO_C" >&6
 if test "${ncbi_cv_c_deprecation_syntax+set}" = set; then
