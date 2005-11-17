@@ -1313,7 +1313,7 @@ bool BlockMultipleAlignment::DeleteAllBlocks(void)
 
 bool BlockMultipleAlignment::DeleteRow(unsigned int row)
 {
-    if (row < 0 || row >= NRows()) {
+    if (row >= NRows()) {
         ERRORMSG("BlockMultipleAlignment::DeleteRow() - row out of range");
         return false;
     }
@@ -1668,7 +1668,7 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(unsigned int f
             WARNINGMSG("Can't highlight alignment at master residue " << (i+1));
             anyError = true;
             // highlight unaligned residues, but master only
-            if (i >= 0 && i < master->Length())
+            if (i < master->Length())
                 GlobalMessenger()->AddHighlights(GetSequenceOfRow(0), i, i);
             continue;
         }
@@ -1901,6 +1901,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/11/17 22:25:42  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.78  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *

@@ -260,7 +260,7 @@ public:
     bool IsEditable(void) const { return isEditable; }
     const Sequence * GetSequenceForRow(unsigned int row) const
     {
-        if (row >= 0 && row < NRows())
+        if (row < NRows())
             return rows[row]->GetSequence();
         else
             return NULL;
@@ -302,6 +302,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.30  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

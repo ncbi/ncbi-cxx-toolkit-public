@@ -245,9 +245,7 @@ void Messenger::RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifi
 
 void Messenger::AddHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo)
 {
-    if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
-        seqIndexFrom >= sequence->Length() ||
-        seqIndexTo >= sequence->Length()) {
+    if (seqIndexFrom > seqIndexTo || seqIndexFrom >= sequence->Length() || seqIndexTo >= sequence->Length()) {
         ERRORMSG("Messenger::AddHighlights() - seqIndex out of range");
         return;
     }
@@ -299,9 +297,7 @@ void Messenger::KeepHighlightsOnlyOnSequence(const Sequence *sequence)
 
 void Messenger::RemoveHighlights(const Sequence *sequence, unsigned int seqIndexFrom, unsigned int seqIndexTo)
 {
-    if (seqIndexFrom < 0 || seqIndexTo < 0 || seqIndexFrom > seqIndexTo ||
-        seqIndexFrom >= sequence->Length() ||
-        seqIndexTo >= sequence->Length()) {
+    if (seqIndexFrom > seqIndexTo || seqIndexFrom >= sequence->Length() || seqIndexTo >= sequence->Length()) {
         ERRORMSG("Messenger::RemoveHighlights() - seqIndex out of range");
         return;
     }
@@ -325,8 +321,7 @@ void Messenger::RemoveHighlights(const Sequence *sequence, unsigned int seqIndex
 void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, unsigned int indexFrom, unsigned int indexTo,
     const StructureSet *set)
 {
-    if (indexFrom < 0 || indexTo < 0 || indexFrom > indexTo ||
-        indexFrom >= identifier->nResidues || indexTo >= identifier->nResidues) {
+    if (indexFrom > indexTo || indexFrom >= identifier->nResidues || indexTo >= identifier->nResidues) {
         ERRORMSG("Messenger::ToggleHighlights() - index out of range");
         return;
     }
@@ -582,6 +577,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.49  2005/10/28 17:06:12  thiessen
 * show only highlighted molecules when showing structure evidence
 *

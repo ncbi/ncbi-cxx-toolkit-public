@@ -203,8 +203,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
                 okay = (rangeToks.GetNextToken().ToULong(&from) &&
                             rangeToks.GetNextToken().ToULong(&to));
             }
-            if (!okay ||
-                    from < 0 || from >= (*s)->Length() || to < 0 || to >= (*s)->Length() || from > to) {
+            if (!okay || from >= (*s)->Length() || to >= (*s)->Length() || from > to) {
                 ADD_REPLY_ERROR(string("bad range value(s): ") + range.c_str());
                 continue;
             }
@@ -251,6 +250,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.13  2005/10/26 18:55:30  thiessen
 * better handling of -n option
 *

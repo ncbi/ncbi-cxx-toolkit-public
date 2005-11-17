@@ -359,7 +359,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
             realignSlaves.push_back(rowOrder[i + 1]);
 
     // do the realignment
-    if (realignSlaves.size() >= 0)
+    if (realignSlaves.size() > 0)
         sequenceViewer->alignmentManager->RealignSlaveSequences(alignment, realignSlaves);
 }
 
@@ -585,6 +585,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.61  2005/11/01 02:44:08  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

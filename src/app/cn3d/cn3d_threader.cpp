@@ -107,7 +107,7 @@ unsigned int LookupNCBIStdaaNumberFromThreaderResidueNumber(char r)
 {
     r = toupper((unsigned char) r);
     return LookupNCBIStdaaNumberFromCharacter(
-            (r >= 0 && r < (int)Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
+            ((int)r >= 0 && r < (int)Threader::ThreaderResidues.size()) ? Threader::ThreaderResidues[r] : 'X');
 }
 
 Threader::Threader(AlignmentManager *parentAlnMgr) :
@@ -997,7 +997,7 @@ cleanup:
 }
 
 static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBlockList& aBlocks,
-    unsigned int row, const vector < unsigned int >& residueNumbers, const Seq_Mtf *seqMtf)
+    unsigned int row, const vector < int >& residueNumbers, const Seq_Mtf *seqMtf)
 {
     double score = 0.0;
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks.end();
@@ -1067,7 +1067,7 @@ bool Threader::CalculateScores(const BlockMultipleAlignment *multiple, double we
     Rcx_Ptl *rcxPtl = NULL;
     Fld_Mtf *fldMtf = NULL;
     BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
-    vector < unsigned int > residueNumbers;
+    vector < int > residueNumbers;
     bool retval = false;
     unsigned int row;
 
@@ -1201,6 +1201,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.53  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *

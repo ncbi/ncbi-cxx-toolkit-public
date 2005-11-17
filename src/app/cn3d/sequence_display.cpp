@@ -109,7 +109,7 @@ bool DisplayRowFromAlignment::GetCharacterTraitsAt(
 DisplayRowFromSequence::DisplayRowFromSequence(const Sequence *s, unsigned int from, unsigned int to) :
     sequence(s), fromIndex(from), toIndex(to)
 {
-    if (from < 0 || from >= sequence->Length() || from > to || to < 0 || to >= sequence->Length())
+    if (from >= sequence->Length() || from > to || to >= sequence->Length())
         ERRORMSG("DisplayRowFromSequence::DisplayRowFromSequence() - from/to indexes out of range");
 }
 
@@ -232,7 +232,7 @@ void SequenceDisplay::AddRow(DisplayRow *row)
 
 BlockMultipleAlignment * SequenceDisplay::GetAlignmentForRow(unsigned int row) const
 {
-    if (row < 0 || row >= rows.size()) return NULL;
+    if (row >= rows.size()) return NULL;
     const DisplayRowFromAlignment *displayRow = dynamic_cast<const DisplayRowFromAlignment*>(rows[row]);
     if (displayRow) return displayRow->alignment;
     const DisplayRowFromString *stringRow = dynamic_cast<const DisplayRowFromString*>(rows[row]);
@@ -250,7 +250,7 @@ void SequenceDisplay::UpdateMaxRowWidth(void)
 
 void SequenceDisplay::AddRowFromAlignment(unsigned int row, BlockMultipleAlignment *fromAlignment)
 {
-    if (!fromAlignment || row < 0 || row >= fromAlignment->NRows()) {
+    if (!fromAlignment || row >= fromAlignment->NRows()) {
         ERRORMSG("SequenceDisplay::AddRowFromAlignment() failed");
         return;
     }
@@ -1289,7 +1289,7 @@ void SequenceDisplay::RowsRemoved(const vector < unsigned int >& rowsRemoved,
 bool SequenceDisplay::GetDisplayCoordinates(const Molecule *molecule, unsigned int seqIndex,
     BlockMultipleAlignment::eUnalignedJustification justification, unsigned int *column, unsigned int *row)
 {
-    if (!molecule || seqIndex < 0) return false;
+    if (!molecule) return false;
 
     unsigned int displayRow;
     const Sequence *seq;
@@ -1302,8 +1302,9 @@ bool SequenceDisplay::GetDisplayCoordinates(const Molecule *molecule, unsigned i
 
             const DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[displayRow]);
             if (alnRow) {
-                *column = alnRow->alignment->GetAlignmentIndex(alnRow->row, seqIndex, justification);
-                return (*column >= 0);
+                int c = alnRow->alignment->GetAlignmentIndex(alnRow->row, seqIndex, justification);
+                *column = c;
+                return (c >= 0);
             }
 
             const DisplayRowFromSequence *seqRow = dynamic_cast<DisplayRowFromSequence*>(rows[displayRow]);
@@ -1322,6 +1323,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.84  2005/11/01 02:44:07  thiessen
 * fix GCC warnings; switch threader to C++ PSSMs
 *

@@ -149,7 +149,7 @@ const Vector& Colors::Get(eColor which) const
 
 const Vector& Colors::Get(eColorCycle which, unsigned int n) const
 {
-    if (which >= 0 && which < eNumColorCycles && n >= 0)
+    if (which >= 0 && which < eNumColorCycles)
         return cycleColors[which][n % cycleColors[which].size()];
     ERRORMSG("Colors::Get() - bad eColorCycle " << (int) which);
     return cycleColors[0][0];
@@ -172,7 +172,7 @@ Vector Colors::Get(eColorMap which, double f) const
 
 const Vector* Colors::Get(eColorMap which, unsigned int index) const
 {
-    if (which < eNumColorMaps && index >= 0 && index < mapColors[which].size())
+    if (which < eNumColorMaps && index < mapColors[which].size())
         return &(mapColors[which][index]);
     else
         return NULL;
@@ -183,6 +183,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2005/11/17 22:25:42  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.21  2005/10/27 13:27:40  thiessen
 * add residue coloring scheme
 *

@@ -35,7 +35,6 @@
 #define CN3D_VECTORMATH__HPP
 
 #include <math.h>
-#include <stddef.h>
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbistl.hpp>
@@ -72,16 +71,16 @@ public:
     {
         return !(*this == other);
     }
-    double& operator [] (size_t i)
+    double& operator [] (unsigned int i)
     {
-		static double err = 0.0;
+	static double err = 0.0;
         if (i == 0) return x;
         else if (i == 1) return y;
         else if (i == 2) return z;
         else ERR_POST(ncbi::Error << "Vector operator [] access out of range : " << i);
         return err;
     }
-    double operator [] (size_t i) const
+    double operator [] (unsigned int i) const
     {
         if (i == 0) return x;
         else if (i == 1) return y;
@@ -188,18 +187,18 @@ public:
         for (int i=0; i<16; ++i) m[i]=o.m[i];
         return *this;
     }
-    double& operator [] (size_t i)
+    double& operator [] (unsigned int i)
     {
 		static double err = 0.0;
-        if (i > 15 || i < 0) {
+        if (i > 15) {
             ERR_POST(ncbi::Error << "Matrix operator [] access out of range : " << i);
             return err;
         }
         return m[i];
     }
-    double operator [] (size_t i) const
+    double operator [] (unsigned int i) const
     {
-        if (i > 15 || i < 0) {
+        if (i > 15) {
             ERR_POST(ncbi::Error << "Matrix operator [] access out of range : " << i);
             return 0.0;
         }
@@ -230,6 +229,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.16  2005/03/23 18:39:37  thiessen
 * split out RMSD calculator as function
 *

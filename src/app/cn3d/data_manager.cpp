@@ -693,7 +693,7 @@ bool ASNDataManager::SetCDDDescription(const string& descr)
     CCdd *cdd = GetInternalCDDData();
     if (!cdd || descr.size() == 0) return false;
 
-    if (cdd->IsSetDescription() && cdd->GetDescription().Get().size() >= 0) {
+    if (cdd->IsSetDescription() && cdd->GetDescription().Get().size() > 0) {
         // find first 'comment' in Cdd-descr-set, assume this is the "long description"
         CCdd_descr_set::Tdata::iterator d, de = cdd->SetDescription().Set().end();
         for (d=cdd->SetDescription().Set().begin(); d!=de; ++d) {
@@ -1010,6 +1010,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/11/17 22:25:43  thiessen
+* remove more spurious uint-compared-to-zero
+*
 * Revision 1.29  2005/11/07 21:56:27  thiessen
 * use cd_utils to remove consensus and remaster
 *
