@@ -440,7 +440,6 @@ private:
                              vector<SSegmentLoc>& filler_segs);
 
     void x_FindConsistentHitSubset();
-    void x_AssignHitRate();
     void x_FindAlignmentSubsets();
     SGraphNode * x_FindBestPath(vector<SGraphNode>& nodes);
 
@@ -477,6 +476,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.7  2005/11/17 22:32:41  papadopo
+  remove AssignHitRate
+
   Revision 1.6  2005/11/16 17:00:19  papadopo
   Clear off user-supplied hits before replacing them
 
