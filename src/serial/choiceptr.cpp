@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/11/17 20:23:59  vasilche
+* Removed requirement to inherit ChoicePointer type from CObject.
+* Prevent indexing ChoicePointer as class.
+*
 * Revision 1.31  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -183,8 +187,8 @@ BEGIN_NCBI_SCOPE
 
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo pointerType)
     : CParent(pointerType->GetSize(),
-              CTypeConverter<CPointerTypeInfo>::SafeCast(pointerType)->GetPointedType()->GetName(),
-              TConstObjectPtr(0), &CVoidTypeFunctions::Create, typeid(void),
+              "",
+              TConstObjectPtr(0), &CVoidTypeFunctions::Create, typeid(bool),
               &GetPtrIndex, &SetPtrIndex, &ResetPtrIndex)
 {
     SetPointerType(pointerType);
@@ -218,9 +222,11 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
                      "invalid argument: data must be CClassTypeInfo");
     const CClassTypeInfo* classType =
         CTypeConverter<CClassTypeInfo>::SafeCast(ptrType->GetPointedType());
+    /* Do we really need it to be CObject???
     if ( !classType->IsCObject() )
         NCBI_THROW(CSerialException,eInvalidData,
                      "invalid argument:: choice ptr type must be CObject");
+    */
     const CClassTypeInfo::TSubClasses* subclasses =
         classType->SubClasses();
     if ( !subclasses )
