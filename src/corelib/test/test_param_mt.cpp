@@ -131,6 +131,8 @@ bool CTestParamApp::Thread_Run(int idx)
     // Parameters should keep the value set during initialization
     _ASSERT(str_param1.Get() == kStrParam_Default);
     _ASSERT(str_param2.Get() == kStrParam_Default + str_idx);
+    // Restore thread default to global default for testing in ST mode
+    TParam_StrParam::SetThreadDefault(kStrParam_Default);
 
     // Set thread default value
     bool odd = idx % 2 != 0;
@@ -186,6 +188,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/17 23:14:54  grichenk
+ * Fixed test in ST mode
+ *
  * Revision 1.1  2005/11/17 19:15:23  grichenk
  * Initial revision
  *
