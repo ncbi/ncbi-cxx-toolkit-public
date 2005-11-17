@@ -76,7 +76,7 @@ LIB =	xcd_utils xbma_refiner xstruct_util xstruct_dp xstruct_thread \
 	xregexp xser xutil xconnect xncbi \
 	$(Z_LIB) $(PCRE_LIB)
 
-WXWIDGETS_INSTALL = $(HOME)/Programs/wxWidgets-2.6.2/install
+WXWIDGETS_INSTALL = $(HOME)/wxWidgets-install
 ifeq ($(DEBUG_SFX),Debug)
 	WXWIDGETS_CONFIG_DEBUG = --debug=yes
 else
