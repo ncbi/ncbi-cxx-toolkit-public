@@ -1017,11 +1017,10 @@ static double CalculatePSSMScore(const BlockMultipleAlignment::UngappedAlignedBl
 }
 
 static double CalculateContactScore(const BlockMultipleAlignment *multiple,
-    unsigned int row, const vector < unsigned int >& residueNumbers, const Fld_Mtf *fldMtf, const Rcx_Ptl *rcxPtl)
+    unsigned int row, const vector < int >& residueNumbers, const Fld_Mtf *fldMtf, const Rcx_Ptl *rcxPtl)
 {
     double score = 0.0;
-    int seqIndex1, seqIndex2, resNum1, resNum2, dist;
-	int i;
+    int seqIndex1, seqIndex2, resNum1, resNum2, dist, i;
 
     // for each res-res contact, convert seqIndexes of master into corresponding seqIndexes
     // of slave if they're aligned; add contact energies if so
@@ -1201,6 +1200,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2005/11/17 22:34:44  thiessen
+* fix vector type problem
+*
 * Revision 1.54  2005/11/17 22:25:43  thiessen
 * remove more spurious uint-compared-to-zero
 *
