@@ -320,12 +320,18 @@ public:
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
         }
+    // this structure is required to initialize pointers by null before reading
+    struct SInitializer
+    {
+        SInitializer() : data() {}
+        TElementType data;
+    };
     static void AddElementIn(const CContainerTypeInfo* containerType,
                              TObjectPtr containerPtr, CObjectIStream& in)
         {
-            TElementType data;
-            containerType->GetElementType()->ReadData(in, &data);
-            InsertElement(containerPtr, data);
+            SInitializer data;
+            containerType->GetElementType()->ReadData(in, &data.data);
+            InsertElement(containerPtr, data.data);
         }
 
     static void SetAddElementFunctions(CStlOneArgTemplate* info)
@@ -359,12 +365,18 @@ public:
             InsertElement(containerPtr,
                           CTypeConverter<TElementType>::Get(elementPtr));
         }
+    // this structure is required to initialize pointers by null before reading
+    struct SInitializer
+    {
+        SInitializer() : data() {}
+        TElementType data;
+    };
     static void AddElementIn(const CContainerTypeInfo* containerType,
                              TObjectPtr containerPtr, CObjectIStream& in)
         {
-            TElementType data;
-            containerType->GetElementType()->ReadData(in, &data);
-            InsertElement(containerPtr, data);
+            SInitializer data;
+            containerType->GetElementType()->ReadData(in, &data.data);
+            InsertElement(containerPtr, data.data);
         }
 
     static void SetAddElementFunctions(CStlOneArgTemplate* info)
@@ -773,6 +785,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2005/11/17 20:22:09  vasilche
+* Initialize pointers by null before reading.
+*
 * Revision 1.75  2005/04/26 14:18:49  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
