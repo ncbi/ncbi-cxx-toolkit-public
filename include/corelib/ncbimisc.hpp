@@ -880,12 +880,20 @@ void swap(NCBI_NS_NCBI::AutoPtr<P,D>& ptr1,
 }
 
 
+#if defined(NCBI_COMPILER_GCC)  &&  NCBI_COMPILER_VERSION < 340
+
+#define ArraySize(array) sizeof(array)/sizeof((array)[0])
+
+#else
+
 template<class Element, size_t Size>
 inline
 size_t ArraySize(const Element (&)[Size])
 {
     return Size;
 }
+
+#endif
 
 END_STD_SCOPE
 
@@ -896,6 +904,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.91  2005/11/17 18:41:27  grichenk
+ * Defined ArraySize macro for compilers not supporting ArraySize template.
+ *
  * Revision 1.90  2005/11/15 17:56:30  grichenk
  * Moved Beep to ncbi_os_mswin.hpp
  * Added ArraySize template
