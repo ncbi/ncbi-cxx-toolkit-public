@@ -144,6 +144,10 @@ public:
     {
         return s_DisabledPackages[config_name];
     }
+    const string& GetSrcRoot(void) const
+    {
+        return m_SrcRoot;
+    }
 
 private:
     // Prohibited to:
@@ -188,6 +192,7 @@ private:
     
     string m_StaticLibRoot;
     string m_DynamicLibRoot;
+    string m_SrcRoot;
     const CProjItem& m_Project;
 
     static map<string, set<string> > s_EnabledPackages;
@@ -542,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/11/17 20:43:59  gouriano
+ * Added SrcRoot
+ *
  * Revision 1.24  2005/04/07 16:58:36  gouriano
  * Make it possible to find and reference missing libraries
  * without creating project dependencies
