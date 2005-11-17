@@ -53,16 +53,22 @@ BEGIN_SCOPE(cobalt)
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 
+/// Create a new query sequence that is a subset of a previous
+/// query sequence
+/// @param loc_list List of previously generated sequence fragments [in/out]
+/// @param query Sequence that contains the current fragment [in]
+/// @param from Start offset of fragment [in]
+/// @param to End offset of fragment [in]
+/// @param seg_list List of simplified representations of 
+///                 previous fragments [in/out]
+/// @param query_index Ordinal ID of 'query'
+///
 void 
 CMultiAligner::x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query, 
                 TOffset from, TOffset to, vector<SSegmentLoc>& seg_list,
                 int query_index)
 {
-    // Note that the conventions for HSP offsets require that the 
-    // start offset be in the range [0,seq_size-1] but the
-    // ending offset is in [1,seq_size]. The object manager
-    // requires the former convention for all offsets, so the
-    // end offset must be decremented
+    // Note that all offsets are zero-based
 
     CRef<CSeq_loc> seqloc(new CSeq_loc());
     seqloc->SetInt().SetFrom(from);
@@ -76,6 +82,12 @@ CMultiAligner::x_AddNewSegment(TSeqLocVector& loc_list, SSeqLoc& query,
     seg_list.push_back(SSegmentLoc(query_index, from, to));
 }
 
+/// Turn all fragments of query sequence not already covered by
+/// a domain hit into a separate query sequence, used as input
+/// to a blast search
+/// @param filler_locs List of generated sequences [out]
+/// @param filler_segs Simplified representation of filler_locs [out]
+///
 void
 CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
                                   vector<SSegmentLoc>& filler_segs)
@@ -83,10 +95,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
     int num_queries = m_QueryData.size();
     vector<CRangeCollection<TOffset> > sorted_segs(num_queries);
 
-    // for each HSP in 'results', turn the query and subject
-    // ranges into SSegmentLocs, and insert both of these
-    // into a list that sorts by query index and then by 
-    // sequence start offset
+    // Merge the offset ranges of all the current domain hits
 
     for (int i = 0; i < m_CombinedHits.Size(); i++) {
         CHit *hit = m_CombinedHits.GetHit(i);
@@ -101,13 +110,15 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
         }
     }
 
-    // Now walk through the sorted list of hits and add
-    // one entry to filler_list whenever a query region
-    // is encountered that is not part of at least one hit
+    // For each query sequence, mark off the regions
+    // not covered by a domain hit
 
     for (int i = 0; i < num_queries; i++) {
         CRangeCollection<TOffset>& collection(sorted_segs[i]);
         TOffset seg_start = 0;
+
+        // Note that fragments of size less than kMinHitSize
+        // are ignored
 
         ITERATE(CRangeCollection<TOffset>, itr, collection) {
             if (itr->GetFrom() - seg_start > CHit::kMinHitSize + 1) {
@@ -116,6 +127,10 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
             }
             seg_start = itr->GetToOpen();
         }
+
+        // Handle the last fragment; this could actually
+        // envelop the entire sequence
+
         int seq_length = sequence::GetLength(*m_tQueries[i].seqloc,
                                              m_tQueries[i].scope);
 
@@ -137,6 +152,11 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
     }
 }
 
+/// Run blastp, aligning the collection of filler fragments
+/// against the entire input dataset
+/// @param filler_locs List of generated sequences [in]
+/// @param filler_segs Simplified representation of filler_locs [in]
+///
 void
 CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs, 
                                    vector<SSegmentLoc>& filler_segs)
@@ -150,16 +170,13 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     // deliberately set the cutoff e-value too high
     blastp_opts.SetEvalueThreshold(max(m_BlastpEvalue, 10.0));
     blastp_opts.SetSegFiltering(false);
-
-    // perform an all-against-all blastp search
-    // The list of segments is searched against the entire
-    // input dataset
-
     CBl2Seq blaster(filler_locs, m_tQueries, blastp_opts);
     blaster.PartialRun();
 
     BlastHSPResults *tmp_results = blaster.GetResults();
     _ASSERT(tmp_results);
+
+    // Convert each resulting HSP into a CHit object
 
     for (int i = 0; i < tmp_results->num_queries; i++) {
 
@@ -193,19 +210,24 @@ CMultiAligner::x_AlignFillerBlocks(TSeqLocVector& filler_locs,
     }
 }
 
-// see description in multi_aligner_priv.hpp
 void
 CMultiAligner::FindLocalHits()
 {
+    // Clear off previous state if it exists
+
     m_LocalHits.PurgeAllHits();
     if (m_DomainHits.Empty()) {
-        x_AssignDefaultResFreqs();
+
         m_CombinedHits.PurgeAllHits();
+
+        // Initialize the profile columns of the input sequences
+
+        x_AssignDefaultResFreqs();
     }
 
     // Produce another set of queries that consist of the 'filler'
     // in the input data, i.e. all stretches of all sequences not
-    // covered by at least one RPS blast hit. Then align all the
+    // covered by at least one domain hit. Then align all the
     // filler regions against each other and add any new HSPs to
     // 'results'
 
@@ -240,6 +262,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.9  2005/11/17 22:28:09  papadopo
+  fix documentation, add doxygen
+
   Revision 1.8  2005/11/16 16:59:20  papadopo
   replace += operator with Append member
 
