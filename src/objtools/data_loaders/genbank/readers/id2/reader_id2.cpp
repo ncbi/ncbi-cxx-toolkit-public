@@ -29,7 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_system.hpp> // for SleepSec
 
 #include <objtools/data_loaders/genbank/readers/id2/reader_id2.hpp>
@@ -75,18 +75,23 @@ BEGIN_SCOPE(objects)
 #define DEFAULT_TIMEOUT  20
 #define MAX_MT_CONN      5
 
+
+NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
+NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
+NCBI_PARAM_DECL(string, GENBANK, ID2_CGI_NAME);
+NCBI_PARAM_DECL(string, GENBANK, ID2_SERVICE_NAME);
+NCBI_PARAM_DECL(string, NCBI, SERVICE_NAME_ID2);
+
+NCBI_PARAM_DEF(int, GENBANK, ID2_DEBUG, 0);
+NCBI_PARAM_DEF(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 1);
+NCBI_PARAM_DEF(string, GENBANK, ID2_CGI_NAME, kEmptyStr);
+NCBI_PARAM_DEF(string, GENBANK, ID2_SERVICE_NAME, kEmptyStr);
+NCBI_PARAM_DEF(string, NCBI, SERVICE_NAME_ID2, DEFAULT_SERVICE);
+
 static int GetDebugLevel(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigInt("GENBANK", "ID2_DEBUG");
-        if ( value < 0 ) {
-            value = 0;
-        }
-        s_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(GENBANK, ID2_DEBUG) s_Value;
+    return s_Value.Get();
 }
 
 
@@ -95,16 +100,8 @@ static int GetDebugLevel(void)
 // 1 = do not use packets or get-chunks requests
 static size_t GetMaxChunksRequestSize(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigInt("GENBANK", "ID2_MAX_CHUNKS_REQUEST_SIZE", 1);
-        if ( value < 0 ) {
-            value = 1;
-        }
-        s_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE) s_Value;
+    return s_Value.Get();
 }
 
 
@@ -191,17 +188,16 @@ CId2Reader::CId2Reader(const TPluginManagerParamTree* params,
         CConfig::eErr_NoThrow,
         kEmptyStr);
     if ( m_ServiceName.empty() ) {
-        m_ServiceName = GetConfigString("GENBANK",
-                                        "ID2_CGI_NAME");
+        m_ServiceName =
+            NCBI_PARAM_TYPE(GENBANK, ID2_CGI_NAME)::GetDefault();
     }
     if ( m_ServiceName.empty() ) {
-        m_ServiceName = GetConfigString("GENBANK",
-                                        "ID2_SERVICE_NAME");
+        m_ServiceName =
+            NCBI_PARAM_TYPE(GENBANK, ID2_SERVICE_NAME)::GetDefault();
     }
     if ( m_ServiceName.empty() ) {
-        m_ServiceName = GetConfigString("NCBI",
-                                        "SERVICE_NAME_ID2",
-                                        DEFAULT_SERVICE);
+        m_ServiceName =
+            NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID2)::GetDefault();
     }
     m_Timeout = conf.GetInt(
         driver_name,

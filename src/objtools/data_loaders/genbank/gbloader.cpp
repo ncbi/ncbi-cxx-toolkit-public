@@ -30,7 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/genbank/gbloader_params.h>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
@@ -83,6 +83,11 @@ BEGIN_SCOPE(objects)
 //=======================================================================
 // GBLoader Public interface
 //
+
+
+NCBI_PARAM_DEF(string, GENBANK, LOADER_METHOD, kEmptyStr);
+typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
+
 
 #if defined(HAVE_PUBSEQ_OS)
 static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
@@ -420,8 +425,7 @@ bool CGBDataLoader::x_CreateReaders(const TParamTree* params)
     string str;
     if ( str.empty() ) {
         // try config first
-        string env_reader = GetConfigString("GENBANK", "LOADER_METHOD");
-        str = env_reader;
+        str = TGenbankLoaderMethod::GetDefault();
     }
     if ( str.empty() ) {
         str = GetParam(params, NCBI_GBLOADER_PARAM_READER_NAME);
@@ -440,10 +444,9 @@ void CGBDataLoader::x_CreateWriters(const TParamTree* params)
     string str = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
     if ( str.empty() ) {
         // try config first
-        string env_reader = GetConfigString("GENBANK", "LOADER_METHOD");
+        string env_reader = TGenbankLoaderMethod::GetDefault();
         NStr::ToLower(env_reader);
-        if ( env_reader == "cache" ||
-             NStr::StartsWith(env_reader, "cache;") ) {
+        if ( NStr::StartsWith(env_reader, "cache;") ) {
             str = "cache";
         }
     }
@@ -487,13 +490,18 @@ void CGBDataLoader::x_CreateWriters(const string& str,
 }
 
 
+#ifdef REGISTER_READER_ENTRY_POINTS
+NCBI_PARAM_DECL(bool, GENBANK, REGISTER_READERS);
+NCBI_PARAM_DEF(bool, GENBANK, REGISTER_READERS, true);
+#endif
+
 CRef<CPluginManager<CReader> > CGBDataLoader::x_GetReaderManager(void)
 {
     CRef<TReaderManager> manager(CPluginManagerGetter<CReader>::Get());
     _ASSERT(manager);
 
 #ifdef REGISTER_READER_ENTRY_POINTS
-    if ( GetConfigFlag("GENBANK", "REGISTER_READERS", true) ) {
+    if ( NCBI_PARAM_TYPE(GENBANK, REGISTER_READERS)::GetDefault() ) {
         GenBankReaders_Register_Id1();
         GenBankReaders_Register_Id2();
         GenBankReaders_Register_Cache();
@@ -513,7 +521,7 @@ CRef<CPluginManager<CWriter> > CGBDataLoader::x_GetWriterManager(void)
     _ASSERT(manager);
 
 #ifdef REGISTER_READER_ENTRY_POINTS
-    if ( GetConfigFlag("GENBANK", "REGISTER_READERS", true) ) {
+    if ( NCBI_PARAM_TYPE(GENBANK, REGISTER_READERS)::GetDefault() ) {
         GenBankWriters_Register_Cache();
     }
 #endif

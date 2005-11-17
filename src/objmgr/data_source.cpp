@@ -65,7 +65,7 @@
 #include <objmgr/impl/prefetch_impl.hpp>
 
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #include <algorithm>
 
@@ -1294,19 +1294,16 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
     lock.ReleaseLoadLock();
 }
 
+
+NCBI_PARAM_DECL(unsigned, OBJMGR, BLOB_CACHE);
+NCBI_PARAM_DEF(unsigned, OBJMGR, BLOB_CACHE, 10);
+
 static unsigned s_GetCacheSize(void)
 {
-    static unsigned sx_Value = kMax_UInt;
-    unsigned value = sx_Value;
-    if ( value == kMax_UInt ) {
-        value = GetConfigInt("OBJMGR", "BLOB_CACHE", 10);
-        if ( value == kMax_UInt ) {
-            --value;
-        }
-        sx_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(OBJMGR, BLOB_CACHE) sx_Value;
+    return sx_Value.Get();
 }
+
 
 void CDataSource::x_ReleaseLastTSELock(CRef<CTSE_Info> tse)
 {

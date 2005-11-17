@@ -29,7 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
 #include <objtools/data_loaders/genbank/readers/id1/reader_id1_entry.hpp>
@@ -93,18 +93,19 @@ static void SetRandomFail(CConn_ServiceStream& stream)
 #endif
 
 
+NCBI_PARAM_DECL(int, GENBANK, ID1_DEBUG);
+NCBI_PARAM_DECL(string, GENBANK, ID1_SERVICE_NAME);
+NCBI_PARAM_DECL(string, NCBI, SERVICE_NAME_ID1);
+
+NCBI_PARAM_DEF(int, GENBANK, ID1_DEBUG, 0);
+NCBI_PARAM_DEF(string, GENBANK, ID1_SERVICE_NAME, kEmptyStr);
+NCBI_PARAM_DEF(string, NCBI, SERVICE_NAME_ID1, DEFAULT_SERVICE);
+
+
 static int GetDebugLevel(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigInt("GENBANK", "ID1_DEBUG");
-        if ( value < 0 ) {
-            value = 0;
-        }
-        s_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(GENBANK, ID1_DEBUG) s_Value;
+    return s_Value.Get();
 }
 
 
@@ -142,13 +143,11 @@ CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
         CConfig::eErr_NoThrow,
         kEmptyStr);
     if ( m_ServiceName.empty() ) {
-        m_ServiceName = GetConfigString("GENBANK",
-                                        "ID1_SERVICE_NAME");
+        m_ServiceName =
+            NCBI_PARAM_TYPE(GENBANK, ID1_SERVICE_NAME)::GetDefault();
     }
     if ( m_ServiceName.empty() ) {
-        m_ServiceName = GetConfigString("NCBI",
-                                        "SERVICE_NAME_ID1",
-                                        DEFAULT_SERVICE);
+        m_ServiceName = NCBI_PARAM_TYPE(NCBI, SERVICE_NAME_ID1)::GetDefault();
     }
     m_Timeout = conf.GetInt(
         driver_name,

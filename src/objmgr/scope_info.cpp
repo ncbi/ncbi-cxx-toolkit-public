@@ -50,7 +50,7 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -63,30 +63,23 @@ BEGIN_SCOPE(objects)
 #endif
 
 
+NCBI_PARAM_DECL(bool, OBJMGR, SCOPE_AUTORELEASE);
+NCBI_PARAM_DEF(bool, OBJMGR, SCOPE_AUTORELEASE, true);
+
 static bool s_GetScopeAutoReleaseEnabled(void)
 {
-    static int sx_Value = -1;
-    int value = sx_Value;
-    if ( value < 0 ) {
-        value = GetConfigFlag("OBJMGR", "SCOPE_AUTORELEASE", true);
-        sx_Value = value;
-    }
-    return value != 0;
+    static NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE) sx_Value;
+    return sx_Value.Get();
 }
 
 
+NCBI_PARAM_DECL(unsigned, OBJMGR, SCOPE_AUTORELEASE_SIZE);
+NCBI_PARAM_DEF(unsigned, OBJMGR, SCOPE_AUTORELEASE_SIZE, 10);
+
 static unsigned s_GetScopeAutoReleaseSize(void)
 {
-    static unsigned sx_Value = kMax_UInt;
-    unsigned value = sx_Value;
-    if ( value == kMax_UInt ) {
-        value = GetConfigInt("OBJMGR", "SCOPE_AUTORELEASE_SIZE", 10);
-        if ( value == kMax_UInt ) {
-            --value;
-        }
-        sx_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(OBJMGR, SCOPE_AUTORELEASE_SIZE) sx_Value;
+    return sx_Value.Get();
 }
 
 
@@ -1753,6 +1746,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/11/17 18:47:18  grichenk
+* Replaced GetConfigXXX with CParam<>.
+*
 * Revision 1.29  2005/11/07 15:40:54  vasilche
 * Clean edited entries in ResetHistory().
 *

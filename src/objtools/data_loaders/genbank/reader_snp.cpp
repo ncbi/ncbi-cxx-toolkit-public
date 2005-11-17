@@ -29,7 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <objtools/data_loaders/genbank/processor.hpp> //for hooks
 
@@ -78,15 +78,13 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 // utility function
 
+NCBI_PARAM_DECL(bool, GENBANK, SNP_TABLE_STAT);
+NCBI_PARAM_DEF(bool, GENBANK, SNP_TABLE_STAT, false);
+
 static bool CollectSNPStat(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigFlag("GENBANK", "SNP_TABLE_STAT");
-        s_Value = value;
-    }
-    return value != 0;
+    static NCBI_PARAM_TYPE(GENBANK, SNP_TABLE_STAT) s_Value;
+    return s_Value.Get();
 }
 
 
@@ -208,6 +206,11 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 }
 
 
+#ifdef _DEBUG
+NCBI_PARAM_DECL(int, GENBANK, SNP_TABLE_DUMP);
+NCBI_PARAM_DEF(int, GENBANK, SNP_TABLE_DUMP, 0);
+#endif
+
 void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
                                               const CObjectInfo& /*ftable*/)
 {
@@ -224,18 +227,8 @@ void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
     }
     else {
 #ifdef _DEBUG
-        static int s_Value = -1;
-        int value = s_Value;
-        if ( value < 0 ) {
-            value =  GetConfigInt("GENBANK", "SNP_TABLE_DUMP");
-            if ( value < 0 ) {
-                value = 0;
-            }
-            s_Value = value;
-        }
-        int dump_feature = value;
-        if ( dump_feature > 0 ) {
-            --dump_feature;
+        static NCBI_PARAM_TYPE(GENBANK, SNP_TABLE_DUMP) s_Value;
+        if ( s_Value.Get() > 0 ) {
             NcbiCerr <<
                 "CSNP_Seq_feat_hook::ReadContainerElement: complex SNP: " <<
                 SSNP_Info::s_SNP_Type_Label[snp_type] << ":\n" << 
@@ -599,6 +592,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.25  2005/11/17 18:47:19  grichenk
+ * Replaced GetConfigXXX with CParam<>.
+ *
  * Revision 1.24  2005/11/15 15:56:13  vasilche
  * Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
  *

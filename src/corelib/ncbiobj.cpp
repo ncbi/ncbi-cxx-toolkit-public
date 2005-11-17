@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <corelib/ncbimempool.hpp>
 
 //#define USE_SINGLE_ALLOC
@@ -561,16 +561,15 @@ void CObject::DoDeleteThisObject(void)
 #endif
 }
 
+
+NCBI_PARAM_DECL(bool, NCBI, ABORT_ON_COBJECT_THROW);
+NCBI_PARAM_DEF(bool, NCBI, ABORT_ON_COBJECT_THROW, false);
+
 void CObjectException::x_InitErrCode(CException::EErrCode err_code)
 {
     CCoreException::x_InitErrCode(err_code);
-    static int sx_abort_on_throw = -1;
-    int abort_on_throw = sx_abort_on_throw;
-    if ( abort_on_throw < 0 ) {
-        sx_abort_on_throw = abort_on_throw =
-            GetConfigFlag("NCBI", "ABORT_ON_COBJECT_THROW");
-    }
-    if ( abort_on_throw ) {
+    static NCBI_PARAM_TYPE(NCBI, ABORT_ON_COBJECT_THROW) sx_abort_on_throw;
+    if ( sx_abort_on_throw.Get() ) {
         Abort();
     }
 }
@@ -584,15 +583,13 @@ void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 }
 
 
+NCBI_PARAM_DECL(bool, NCBI, ABORT_ON_NULL);
+NCBI_PARAM_DEF(bool, NCBI, ABORT_ON_NULL, false);
+
 void CObject::ThrowNullPointerException(void)
 {
-    static int sx_abort_on_null = -1;
-    int abort_on_null = sx_abort_on_null;
-    if ( abort_on_null < 0 ) {
-        sx_abort_on_null = abort_on_null =
-            GetConfigFlag("NCBI", "ABORT_ON_NULL");
-    }
-    if ( abort_on_null ) {
+    static NCBI_PARAM_TYPE(NCBI, ABORT_ON_NULL) sx_abort_on_null;
+    if ( sx_abort_on_null.Get() ) {
         Abort();
     }
     NCBI_THROW(CCoreException, eNullPtr, "Attempt to access NULL pointer.");
@@ -895,6 +892,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/11/17 18:47:18  grichenk
+ * Replaced GetConfigXXX with CParam<>.
+ *
  * Revision 1.51  2005/04/26 14:52:11  vasilche
  * Fixed warning.
  *

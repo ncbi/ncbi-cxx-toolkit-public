@@ -38,6 +38,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/plugin_manager.hpp>
+#include <corelib/ncbi_param.hpp>
 
 #if !defined(NDEBUG) && defined(DEBUG_SYNC)
 // for GBLOG_POST()
@@ -295,6 +296,8 @@ private:
     CGBDataLoader& operator=(const CGBDataLoader&);
 };
 
+
+NCBI_PARAM_DECL(string, GENBANK, LOADER_METHOD);
 
 END_SCOPE(objects)
 

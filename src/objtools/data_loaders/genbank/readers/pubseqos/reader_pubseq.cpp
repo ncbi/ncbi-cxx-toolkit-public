@@ -28,7 +28,7 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_config_value.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq_entry.hpp>
 #include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq_params.h>
@@ -75,18 +75,13 @@ static CAtomicCounter s_pubseq_readers;
 #endif
 
 #ifdef _DEBUG
+NCBI_PARAM_DECL(int, GENBANK, PUBSEQOS_DEBUG);
+NCBI_PARAM_DEF(int, GENBANK, PUBSEQOS_DEBUG, 0);
+
 static int GetDebugLevel(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigInt("GENBANK", "PUBSEQOS_DEBUG");
-        if ( value < 0 ) {
-            value = 0;
-        }
-        s_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(GENBANK, PUBSEQOS_DEBUG) s_Value;
+    return s_Value.Get();
 }
 #else
 # define GetDebugLevel() (0)

@@ -66,16 +66,16 @@
 #include <util/compress/zlib.hpp>
 #include <util/rwstream.hpp>
 
-#include <corelib/ncbi_config_value.hpp>
 #include <serial/pack_string.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-static const char* const GENBANK_SECTION = "GENBANK";
-static const char* const STRING_PACK_ENV = "SNP_PACK_STRINGS";
-static const char* const SNP_SPLIT_ENV = "SNP_SPLIT";
-static const char* const SNP_TABLE_ENV = "SNP_TABLE";
+NCBI_PARAM_DEF(bool, GENBANK, SNP_PACK_STRINGS, true);
+NCBI_PARAM_DEF(bool, GENBANK, SNP_SPLIT, true);
+NCBI_PARAM_DEF(bool, GENBANK, SNP_TABLE, true);
+NCBI_PARAM_DEF(bool, GENBANK, USE_MEMORY_POOL, true);
+NCBI_PARAM_DEF(int, GENBANK, READER_STATS, 0);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -197,16 +197,8 @@ inline
 int CProcessor::CollectStatistics(void)
 {
 #ifdef GB_COLLECT_STATS
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigInt("GENBANK", "READER_STATS");
-        if ( value < 0 ) {
-            value = 0;
-        }
-        s_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(GENBANK, READER_STATS) s_Value;
+    return s_Value.Get();
 #else
     return 0;
 #endif
@@ -305,50 +297,29 @@ void CProcessor::RegisterAllProcessors(CReadDispatcher& d)
 
 bool CProcessor::TryStringPack(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = CPackString::TryStringPack() &&
-            GetConfigFlag(GENBANK_SECTION, STRING_PACK_ENV, true);
-        s_Value = value;
-    }
-    return value != 0;
+    static NCBI_PARAM_TYPE(GENBANK, SNP_PACK_STRINGS) s_Value;
+    return s_Value.Get();
 }
 
 
 bool CProcessor::TrySNPSplit(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigFlag(GENBANK_SECTION, SNP_SPLIT_ENV, true);
-        s_Value = value;
-    }
-    return value != 0;
+    static NCBI_PARAM_TYPE(GENBANK, SNP_SPLIT) s_Value;
+    return s_Value.Get();
 }
 
 
 bool CProcessor::TrySNPTable(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigFlag(GENBANK_SECTION, SNP_TABLE_ENV, true);
-        s_Value = value;
-    }
-    return value != 0;
+    static NCBI_PARAM_TYPE(GENBANK, SNP_TABLE) s_Value;
+    return s_Value.Get();
 }
 
 
 static bool s_UseMemoryPool(void)
 {
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigFlag(GENBANK_SECTION, "USE_MEMORY_POOL", true);
-        s_Value = value;
-    }
-    return value != 0;
+    static NCBI_PARAM_TYPE(GENBANK, USE_MEMORY_POOL) s_Value;
+    return s_Value.Get();
 }
 
 

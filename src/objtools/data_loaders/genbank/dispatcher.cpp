@@ -37,7 +37,6 @@
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
-#include <corelib/ncbi_config_value.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -63,16 +62,8 @@ inline
 int CReadDispatcher::CollectStatistics(void)
 {
 #ifdef GB_COLLECT_STATS
-    static int s_Value = -1;
-    int value = s_Value;
-    if ( value < 0 ) {
-        value = GetConfigInt("GENBANK", "READER_STATS");
-        if ( value < 0 ) {
-            value = 0;
-        }
-        s_Value = value;
-    }
-    return value;
+    static NCBI_PARAM_TYPE(GENBANK, READER_STATS) s_Value;
+    return s_Value.Get();
 #else
     return 0;
 #endif

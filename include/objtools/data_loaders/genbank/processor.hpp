@@ -33,6 +33,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbi_param.hpp>
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -144,6 +145,13 @@ private:
                           STimeSizeStatistics& stat);
 };
 
+
+// Parameters' declarations
+NCBI_PARAM_DECL(bool, GENBANK, SNP_PACK_STRINGS);
+NCBI_PARAM_DECL(bool, GENBANK, SNP_SPLIT);
+NCBI_PARAM_DECL(bool, GENBANK, SNP_TABLE);
+NCBI_PARAM_DECL(bool, GENBANK, USE_MEMORY_POOL);
+NCBI_PARAM_DECL(int, GENBANK, READER_STATS);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
