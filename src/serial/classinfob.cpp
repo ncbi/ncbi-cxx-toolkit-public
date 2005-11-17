@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/11/17 20:24:42  vasilche
+* Use bool consistently to prevent indexing.
+*
 * Revision 1.25  2005/10/19 13:49:37  vasilche
 * Fixed MayContainType() for type graph with cycles.
 *
@@ -255,7 +258,7 @@ CClassTypeInfoBase::TClassesById& CClassTypeInfoBase::ClassesById(void)
             auto_ptr<TClassesById> keep(classes = new TClassesById);
             ITERATE ( TClasses, i , cc ) {
                 const CClassTypeInfoBase* info = *i;
-                if ( info->GetId() != typeid(void) ) {
+                if ( info->GetId() != typeid(bool) ) {
                     if ( !classes->insert(
                         TClassesById::value_type(&info->GetId(),
                                                  info)).second ) {

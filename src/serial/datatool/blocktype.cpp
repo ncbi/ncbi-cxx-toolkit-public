@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2005/11/17 20:24:42  vasilche
+* Use bool consistently to prevent indexing.
+*
 * Revision 1.61  2005/10/12 17:00:19  gouriano
 * Replace C_E class name in unisequence types by something more unique
 * Add typedef in generated code to provide backward compatibility
@@ -267,7 +270,7 @@ public:
     CAnyTypeClassInfo(const string& name, size_t count)
         : CClassTypeInfo(sizeof(AnyType) * count, name,
                          TObjectPtr(0), &CreateAnyTypeClass,
-                         typeid(void), &GetAnyTypeClassId)
+                         typeid(bool), &GetAnyTypeClassId)
         {
         }
 

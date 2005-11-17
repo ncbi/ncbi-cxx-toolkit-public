@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/11/17 20:24:42  vasilche
+* Use bool consistently to prevent indexing.
+*
 * Revision 1.7  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -158,7 +161,7 @@ static void ResetAsn(const CChoiceTypeInfo* /*choiceType*/,
 CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
 {
     return CreateChoiceInfo(name, sizeof(valnode),
-                            TConstObjectPtr(0), &CreateAsnStruct, typeid(void),
+                            TConstObjectPtr(0), &CreateAsnStruct, typeid(bool),
                             &WhichAsn, &SelectAsn, &ResetAsn);
 }
 
