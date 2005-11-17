@@ -90,9 +90,9 @@ typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
 
 
 #if defined(HAVE_PUBSEQ_OS)
-static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
+static const char* const DEFAULT_DRV_ORDER = "ID2:PUBSEQOS:ID1";
 #else
-static const char* const DEFAULT_DRV_ORDER = "ID1";
+static const char* const DEFAULT_DRV_ORDER = "ID2:ID1";
 #endif
 
 #define DEFAULT_ID_GC_SIZE 1000
