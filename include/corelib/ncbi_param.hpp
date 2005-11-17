@@ -28,12 +28,8 @@
  *
  * Authors:  Eugene Vasilchenko, Aleksey Grichenko
  *
-<<<<<<< ncbi_param.hpp
  * File Description:
  *   Parameters storage interface
-=======
- * Parameters storage interface
->>>>>>> 1.3
  *
  */
 
@@ -410,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/11/17 21:50:00  ucko
+ * Clean up gunk left over from a CVS merge.
+ *
  * Revision 1.5  2005/11/17 21:33:09  grichenk
  * ncbi_param_impl.hpp moved to impl dir.
  *
