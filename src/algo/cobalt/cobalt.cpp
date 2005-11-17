@@ -76,10 +76,12 @@ CMultiAligner::CMultiAligner(const char *matrix_name,
                               INT2_MAX, "BLOSUM62", NULL);
 }
 
+
 CMultiAligner::~CMultiAligner()
 {
     Blast_KarlinBlkFree(m_KarlinBlk);
 }
+
 
 void 
 CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
@@ -90,6 +92,7 @@ CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
         m_QueryData.push_back(CSequence(*itr));
     }
 }
+
 
 void
 CMultiAligner::SetScoreMatrix(const char *matrix_name)
@@ -108,6 +111,7 @@ CMultiAligner::SetScoreMatrix(const char *matrix_name)
         m_Aligner.SetScoreMatrix(&NCBISM_Pam250);
 }
 
+
 void
 CMultiAligner::Reset()
 {
@@ -119,9 +123,13 @@ CMultiAligner::Reset()
     m_UserHits.PurgeAllHits();
 }
 
+
 void 
 CMultiAligner::ComputeTree()
 {
+    // convert the current collection of pairwise
+    // hits into a distance matrix
+
     CDistances distances(m_QueryData, 
                          m_CombinedHits, 
                          m_Aligner.GetMatrix(),
@@ -146,6 +154,8 @@ CMultiAligner::ComputeTree()
         printf("\n\n");
     }
     //--------------------------------
+
+    // build the phylo tree associated with the matrix
 
     m_Tree.ComputeTree(distances.GetMatrix());
 
@@ -172,6 +182,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/11/17 22:30:35  papadopo
+  add a few comments
+
   Revision 1.2  2005/11/08 17:52:17  papadopo
   1. do not assume blast namespace
   2. move seqalign output to another file
