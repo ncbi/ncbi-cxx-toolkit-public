@@ -178,9 +178,6 @@ CMultiAligner::x_FindAlignmentSubsets()
 void
 CMultiAligner::x_FindConsistentHitSubset()
 {
-    if (m_CombinedHits.Size() < 2)
-        return;
-
     m_CombinedHits.MakeCanonical();
 
     //---------------------------------------
@@ -203,22 +200,6 @@ CMultiAligner::x_FindConsistentHitSubset()
     // of nonoverlapping alignments
 
     x_FindAlignmentSubsets();
-
-    //---------------------------------------
-    if (m_Verbose) {
-        printf("\n\nAlignments after graph phase:\n");
-        for (int i = 0; i < m_CombinedHits.Size(); i++) {
-            CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %d\n",
-                   hit->m_SeqIndex1,
-                   hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
-                   hit->m_SeqIndex2,
-                   hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_Score);
-        }
-        printf("\n\n");
-    }
-    //---------------------------------------
 
     //--------------------------------------------------
     if (m_Verbose) {
@@ -243,6 +224,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.9  2005/11/18 22:26:22  papadopo
+  always canonicalize the list of combined hits
+
   Revision 1.8  2005/11/18 20:21:30  papadopo
   1. Use raw score instead of bit scores in the graph phase
   2. Remove unneeded comments
