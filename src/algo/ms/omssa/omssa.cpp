@@ -279,7 +279,7 @@ CSearch::ReSearch(const int Number) const
         // look for hitset
         CRef <CMSHitSet> HitSet;
         HitSet = GetResponse()->FindHitSet(Number);
-        if(HitSet == null) return true;
+        if(HitSet.IsNull()) return true;
         if(HitSet->GetHits().empty()) return true;
         if((*HitSet->GetHits().begin())->GetEvalue() <= 
            GetSettings()->GetIterativesettings().GetResearchthresh())
@@ -771,7 +771,7 @@ int CSearch::Search(CRef <CMSRequest> MyRequestIn,
     bool TaxInfo(false);  // check to see if any tax information in blast library
 
 	// iterate through sequences
-	for(iSearch = 0; iSearch < Getnumseq(); iSearch++) {
+	for(iSearch = 0; rdfp->CheckOrFindOID(iSearch); iSearch++) {
 	    if(iSearch/10000*10000 == iSearch) ERR_POST(Info << "sequence " << 
 							iSearch);
 
@@ -1191,12 +1191,12 @@ void CSearch::SetResult(CMSPeakSet& PeakSet)
     // if iterative search, try to find hitset
     if(GetIterative()) {
         HitSet = SetResponse()->FindHitSet(Peaks->GetNumber());
-        if(HitSet == null)
+        if(HitSet.IsNull())
             ERR_POST(Warning << "unable to find matching hitset");
     }
 
     // create a hitset if necessary
-    if(HitSet == null) {
+    if(HitSet.IsNull()) {
         HitSet = new CMSHitSet;
         if(!HitSet) {
             ERR_POST(Error << "omssa: unable to allocate hitset");
@@ -1386,7 +1386,7 @@ void CSearch::WriteBioseqs(void)
 {
     ITERATE(CMSResponse::TOidSet, iOids, GetOidSet()) {
         CConstRef <CMSBioseq::TSeq> Bioseq(SetResponse()->SetBioseqs().GetBioseqByOid(*iOids));
-        if(Bioseq == null) {
+        if(Bioseq.IsNull()) {
             CRef <CMSBioseq> MSBioseq (new CMSBioseq);
             MSBioseq->SetSeq(*rdfp->GetBioseq(*iOids));
             MSBioseq->SetOid() = *iOids;
@@ -1640,6 +1640,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.68  2005/11/18 19:07:09  lewisg
+skip correctly over oids when masked
+
 Revision 1.67  2005/11/18 15:11:40  lewisg
 move code from CSearch into CMSPeak
 
