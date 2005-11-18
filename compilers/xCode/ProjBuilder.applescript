@@ -327,7 +327,7 @@ script ProjBuilder
 		
 		set isBundle to false
 		try -- are we building a loadable module?
-			if bundle of lib_info then set libraryStyle to "BUNDLE"
+			if bundle of lib_info then set libraryStyle to "DYNAMIC" --"BUNDLE"
 			set linkerFlags to "" -- do not suppress undefined symbols. Bundles should be fully resolved
 			--set linkerFlags to "-framework Carbon -framework AGL -framework OpenGL"
 			set symRoot to TheOUTPath & "/bin/$(CONFIGURATION)/Genome Workbench.app/Contents/MacOS/plugins"
@@ -629,6 +629,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/11/18 15:13:50  lebedev
+ * First round of changes for Xcode 2.2
+ *
  * Revision 1.36  2005/11/09 14:18:21  lebedev
  * gbench_monitor and gbench_feedback_agent added
  *
