@@ -1978,8 +1978,8 @@ _PSIScaleMatrix(const Uint1* query,
     int** scaled_pssm = NULL;
     int** pssm = NULL;
     double factor;
-    double factor_low = 0.0;
-    double factor_high = 0.0;
+    double factor_low = 1.0;
+    double factor_high = 1.0;
     double ideal_lambda = 0.0;      /* ideal value of ungapped lambda for
                                        underlying scoring matrix */
     double new_lambda = 0.0;        /* Karlin-Altschul parameter calculated 
@@ -2023,6 +2023,7 @@ _PSIScaleMatrix(const Uint1* query,
             if (first_time) {
                 factor_high = 1.0 + kPositScalingPercent;
                 factor = factor_high;
+                factor_low = 1.0;
                 too_high = TRUE;
                 first_time = FALSE;
             } else {
@@ -2207,7 +2208,7 @@ _PSIComputeScoreProbabilities(const int** pssm,                     /* [in] */
     }
 
     ASSERT(score_freqs->score_avg == 0.0);
-    for (s = min_score; s < max_score; s++) {
+    for (s = min_score; s <= max_score; s++) {
         score_freqs->score_avg += (s * score_freqs->sprob[s]);
     }
 
@@ -2377,6 +2378,10 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/11/18 20:09:45  camacho
+ * Fixes for backwards compatibility with C toolkit PSSM engine for certain corner
+ * cases.
+ *
  * Revision 1.56  2005/10/17 18:34:54  camacho
  * Remove abort() call when sequence weights are not checked
  *
