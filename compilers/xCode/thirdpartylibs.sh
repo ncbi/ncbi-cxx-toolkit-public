@@ -20,7 +20,7 @@ fi
 
 
 LIBS="
- giflib-4.1.3*http://cogent.dl.sourceforge.net/sourceforge/libungif
+ giflib-4.1.4*http://cogent.dl.sourceforge.net/sourceforge/libungif
  jpegsrc.v6b*http://www.ijg.org/files
  libpng-1.2.8-config*cogent.dl.sourceforge.net/sourceforge/libpng
  tiff-3.7.1*ftp://ftp.remotesensing.org/libtiff/old
@@ -63,19 +63,19 @@ for lib in $LIBS; do
 	if [ $name = "fltk-1.1.6-source" ]; then
 		name="fltk-1.1.6"
 		cd $name
-		echo "Applying patch: level 4"
-		patch -p1 <$NCBICPP/src/gui/patches/fltk/fltk-1.1.6-ncbi4.patch
+		echo "Applying patch: level 5"
+		patch -p1 <$NCBICPP/src/gui/patches/fltk/fltk-1.1.6-ncbi5.patch
 		
 		conf="--prefix="$DEST" --enable-shared --enable-threads --disable-localpng --disable-localjpeg --disable-localzlib"
 		CPPFLAGS="-I$DEST/include"
-		LDFLAGS="-L$DEST/lib"
+		LDFLAGS="-L$DEST/lib -lstdc++"
 		CFLAGS=$CPPFLAGS
 		CXXFLAGS="$CPPFLAGS $LDFLAGS"
 		export CPPFLAGS LDFLAGS CFLAGS CXXFLAGS
 		cd $TEMP
 	fi
 	
-	if [ $name = "giflib-4.1.3" ]; then
+	if [ $name = "giflib-4.1.4" ]; then
 		conf="--prefix="$DEST" --with-x=no"
 	fi
     
