@@ -212,7 +212,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                 CHit *new_hit = new CHit(seq1, seq2);
                 bool swap_ranges = (seq1 != hit->m_SeqIndex1);
                 
-                new_hit->m_BitScore = hit->m_BitScore;
+                new_hit->m_Score = hit->m_Score;
                 if (swap_ranges) {
                     new_hit->m_SeqRange1 = hit->m_SeqRange2;
                     new_hit->m_SeqRange2 = hit->m_SeqRange1;
@@ -261,13 +261,13 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
         printf("possible constraints (offsets wrt input profiles):\n");
         for (int i = 0; i < profile_hitlist.Size(); i++) {
             CHit *hit = profile_hitlist.GetHit(i);
-            if (hit->m_BitScore != 1.0)
-                printf("query %3d %4d - %4d query %3d %4d - %4d score %f %c\n",
+            if (hit->m_Score != 1)
+                printf("query %3d %4d - %4d query %3d %4d - %4d score %d %c\n",
                    hit->m_SeqIndex1, 
                    hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
                    hit->m_SeqIndex2, 
                    hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_BitScore,
+                   hit->m_Score,
                    hit->HasSubHits() ? 'd' : 'f');
         }
     }
@@ -297,7 +297,7 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                 (ghit->m_SeqRange1.GetTo() - ghit->m_SeqRange2.GetTo() ==
                  hit->m_SeqRange1.GetTo() - hit->m_SeqRange2.GetTo()) ) {
 
-                if (ghit->m_BitScore < hit->m_BitScore)
+                if (ghit->m_Score < hit->m_Score)
                     graph[i].hit = hit;
                 break;
             }
@@ -352,13 +352,13 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
                         list2.push_back(hit->m_SeqIndex2);
                 }
             }
-            graph[i].best_score = graph[i].hit->m_BitScore * 
+            graph[i].best_score = graph[i].hit->m_Score * 
                                   list1.size() * list2.size();
         }
     }
     else {
         NON_CONST_ITERATE(vector<SGraphNode>, itr, graph) {
-            itr->best_score = itr->hit->m_BitScore;
+            itr->best_score = itr->hit->m_Score;
         }
     }
 
@@ -778,7 +778,7 @@ CMultiAligner::x_FindConservedColumns(
     }
 
     for (i = 0; i < conserved.Size(); i++)
-        conserved.GetHit(i)->m_BitScore = 1.0;
+        conserved.GetHit(i)->m_Score = 1;
 
     //------------------------------
     if (m_Verbose) {
@@ -971,6 +971,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/18 20:20:29  papadopo
+  use raw scores instead of bit scores in constraints
+
   Revision 1.4  2005/11/08 19:49:19  papadopo
   fix solaris compile warnings
 
