@@ -71,9 +71,10 @@ CPsiBlastIterationState::HasMoreIterations() const
 bool
 CPsiBlastIterationState::HasConverged() const
 {
-    // For an uninitialized object (i.e.: one that hasn't been 'advanced'), 
-    // it doesn't make sense to have converged
-    if (m_PreviousData.empty() && m_CurrentData.empty()) {
+    // For an object that hasn't been 'advanced' or one that only has performed
+    // one iteration (i.e.: called Advance() once), it doesn't make sense to 
+    // have converged
+    if (m_IterationsDone <= 1) {
         return false;
     }
     // if the most current list of ids is empty, that means that no new
