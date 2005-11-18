@@ -17,7 +17,7 @@ SRC = omssacl
 
 # LIB = xomssa omssa xser xregexp $(PCRE_LIB) xutil xncbi
 LIB = xomssa omssa blast tables connect seqdb blastdb seqset seq seqcode \
- sequtil pub medline biblio general xser xregexp xutil xncbi
+ sequtil pub medline biblio general xser xregexp $(PCRE_LIB) xutil xncbi
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 
