@@ -42,6 +42,21 @@ for j in `otool -L 'Genome Workbench' | awk '/(netopt)|(sw)|(Users)/ {print $1}'
 done
 
 
+
+EXECS="
+ gbench_monitor
+ gbench_feedback_agent
+ gbench_plugin_scan"
+for exe in $EXECS; do
+	echo Patching: $exe
+	for j in `otool -L $exe | awk '/(netopt)|(sw)|(Users)/ {print $1}'`; do
+	        install_name_tool -change $j $EXEC_PATH/`basename $j` $exe
+	done	
+done
+
+
+
+
 cd ../../../../
 echo Creating disk image
 hdiutil create -srcfolder tmp  -volname GBENCH gbench.dmg
