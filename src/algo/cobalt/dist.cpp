@@ -44,6 +44,14 @@ Contents: Implementation of CDistances
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// Update the extent of a sequence that figures into its self
+/// score, based upon the sequence ranges of a pairwise alignment
+/// @param seq1 The current sequence range [in/out]
+/// @param align1 The range of the current alignment on sequence 1
+/// @param seq1_length Length of sequence 1
+/// @param align2 The range of the current alignment on sequence 2
+/// @param seq2_length Length of sequence 2
+///
 static void
 x_UpdateRanges(TRange& seq1,
                TRange align1,
@@ -68,7 +76,6 @@ void
 CDistances::x_GetSelfScores(vector<CSequence>& query_data, 
                             CHitList& hitlist,
                             SNCBIFullScoreMatrix& score_matrix,
-                            Blast_KarlinBlk *kbp,
                             vector<double>& self_score)
 {
     // Fill in the self scores for each sequence
@@ -83,6 +90,10 @@ CDistances::x_GetSelfScores(vector<CSequence>& query_data,
         self_score[i] = 0.0;
         seq_ranges[i].SetEmpty();
     }
+
+    // for each alignment between two sequences, extend
+    // the range of the alignment to left and right until
+    // one sequence or the other runs out
 
     for (int i = 0; i < hitlist.Size(); i++) {
         CHit *hit = hitlist.GetHit(i);
@@ -124,12 +135,7 @@ CDistances::x_GetSelfScores(vector<CSequence>& query_data,
             unsigned char c = query_data[i].GetLetter(j);
             score += score_matrix.s[c][c];
         }
-
-        // change the raw self-score into a bit score, making it
-        // directly comparable to the scores derived from BLAST alignments
-
-        self_score[i] = ((double)score * kbp->Lambda -
-                         kbp->logK) / NCBIMATH_LN2;
+        self_score[i] = score;
     }
 
 #if 0
@@ -150,33 +156,49 @@ CDistances::x_GetSelfScores(vector<CSequence>& query_data,
 void
 CDistances::ComputeMatrix(vector<CSequence>& query_data,
                           CHitList& hitlist,
-                          SNCBIFullScoreMatrix& score_matrix,
-                          Blast_KarlinBlk *kbp)
+                          SNCBIFullScoreMatrix& score_matrix)
 {
     int num_queries = query_data.size();
-
     vector<double> self_score(num_queries);
-    x_GetSelfScores(query_data, hitlist, score_matrix, kbp, self_score);
+
+    // Get the self score of each sequence
+
+    x_GetSelfScores(query_data, hitlist, score_matrix, self_score);
+
+    // All sequences start out equally far from each other
 
     m_Matrix.Resize(num_queries, num_queries);
     m_Matrix.Set(1.0);
+
+    // Every pairwise alignment pulls the two sequences involved
+    // in the alignment closer together. This formulation of
+    // pairwise distances amounts to calculating the average
+    // per-letter distance between the two sequences. See 
+    //
+    // Clarke et al, "Inferring Genome Trees by Using a Filter 
+    // to Eliminate Phylogenetically Discordant Sequences and 
+    // a Distance Matrix Based on Mean Normalized BLASTP Scores", 
+    // Jour. Bacteriology Apr. 2002 pp 2072-2080
 
     for (int i = 0; i < hitlist.Size(); i++) {
         CHit *hit = hitlist.GetHit(i);
         int j = hit->m_SeqIndex1;
         int k = hit->m_SeqIndex2;
-        double score = hit->m_BitScore * hit->m_HitRate;
 
         _ASSERT(j < k);
-        m_Matrix(j,k) -= 0.5 * score * 
+        m_Matrix(j,k) -= 0.5 * hit->m_Score * 
                      (1.0 / self_score[j] + 1.0 / self_score[k]);
     }
+
+    // Force distance matrix to be symmetric
 
     for (int i = 0; i < num_queries; i++) {
         m_Matrix(i, i) = 0.0;
         for (int j = 0; j < i; j++) {
+            // clamp to zero any distances that are too small
             if (fabs(m_Matrix(j, i)) < 1e-6)
                 m_Matrix(j, i) = 0;
+
             m_Matrix(i, j) = m_Matrix(j, i);
         }
     }
@@ -187,6 +209,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/18 20:18:35  papadopo
+  1. Use raw scores instead of bit scores
+  2. Add documentation, add doxygen
+
   Revision 1.4  2005/11/08 19:49:19  papadopo
   fix solaris compile warnings
 
