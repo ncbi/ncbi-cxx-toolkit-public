@@ -48,6 +48,10 @@ void CHit::AddUpSubHits()
 {
     _ASSERT(HasSubHits());
 
+    // Make the ranges of the hit into the bounding box
+    // on the ranges of all the subhits. Make its score
+    // the sum of the scores of all the subhits
+
     m_SeqRange1 = m_SubHit[0]->m_SeqRange1;
     m_SeqRange2 = m_SubHit[0]->m_SeqRange2;
     m_Score = m_SubHit[0]->m_Score;
@@ -75,6 +79,8 @@ CHit::GetRangeFromSeq2(TRange seq_range2,
     TOffset new_tback;
     TOffset target_off;
 
+    // Find the left endpoint of the range
+
     target_off = seq_range2.GetFrom();
     m_EditScript.FindOffsetFromSeq2(start_off, new_off, target_off,
                                     new_tback, true);
@@ -82,6 +88,8 @@ CHit::GetRangeFromSeq2(TRange seq_range2,
     seq_range1.SetFrom(new_off.first);
     new_seq_range2.SetFrom(new_off.second);
     tback_range.SetFrom(new_tback);
+
+    // Find the right endpoint of the range
 
     target_off = seq_range2.GetTo();
     m_EditScript.FindOffsetFromSeq2(start_off, new_off, target_off,
@@ -107,6 +115,8 @@ CHit::GetRangeFromSeq1(TRange seq_range1,
     TOffset new_tback;
     TOffset target_off;
 
+    // Find the left endpoint of the range
+
     target_off = seq_range1.GetFrom();
     m_EditScript.FindOffsetFromSeq1(start_off, new_off, target_off,
                                     new_tback, true);
@@ -114,6 +124,8 @@ CHit::GetRangeFromSeq1(TRange seq_range1,
     new_seq_range1.SetFrom(new_off.first);
     seq_range2.SetFrom(new_off.second);
     tback_range.SetFrom(new_tback);
+
+    // Find the right endpoint of the range
 
     target_off = seq_range1.GetTo();
     m_EditScript.FindOffsetFromSeq1(start_off, new_off, target_off,
@@ -140,6 +152,14 @@ CHit::VerifyHit()
 
 /// callback used for sorting HSP lists
 struct compare_hit_seq1_start {
+
+    /// functor that implements hit comparison
+    /// @param a First hit
+    /// @param b Second hit
+    /// @return true if a and b are sorted in order of
+    ///         increasing sequence 1 start offset, with 
+    ///         sequence1 end offset used as a tiebreaker
+    ///
     bool operator()(CHit * const& a, CHit * const& b) const {
         if (a->m_SeqRange1.GetFrom() < b->m_SeqRange1.GetFrom())
             return true;
@@ -150,23 +170,41 @@ struct compare_hit_seq1_start {
     }
 };
 
+
+/// Delete any hits from a list that are contained within
+/// higher-scoring hits. Only overlap on sequence 1 is considered.
+/// In practice, the hits refer to block alignments derived from
+/// RPS blast results, and sequence 2 is an RPS database sequence.
+/// It is sequence 1 that matters for later processing
+/// @param subhits The list of hits to process [in/modified]
+///
 static void
 x_RemoveEnvelopedSubHits(CHit::TSubHit& subhits)
 {
+    // order the hits by start offset of sequence 1
     sort(subhits.begin(), subhits.end(), compare_hit_seq1_start());
     int num_subhits = subhits.size();
 
     for (int i = 0; i < num_subhits - 1; i++) {
 
+        // skip hits that have already been deleted
+
         CHit *hit1 = subhits[i];
         if (hit1 == 0)
             continue;
 
+        // for all hits past hit i
+
         for (int j = i + 1; j < num_subhits; j++) {
+
+            // skip hits that have already been deleted
 
             CHit *hit2 = subhits[j];
             if (hit2 == 0)
                 continue;
+
+            // stop looking when hits that do not overlap at all
+            // on sequence 1 are encountered
 
             TRange& range1(hit1->m_SeqRange1);
             TRange& range2(hit2->m_SeqRange1);
@@ -174,6 +212,9 @@ x_RemoveEnvelopedSubHits(CHit::TSubHit& subhits)
                 range2.StrictlyBelow(range1)) {
                 break;
             }
+
+            // if the sequence 1 ranges overlap, delete the
+            // lower-scoring hit
 
             if (range1.Contains(range2) || range2.Contains(range1)) {
                 if (hit1->m_Score > hit2->m_Score) {
@@ -188,6 +229,8 @@ x_RemoveEnvelopedSubHits(CHit::TSubHit& subhits)
         }
     }
 
+    // compress the list of hits to remove null pointers
+
     int j = 0;
     for (int i = 0; i < num_subhits; i++) {
         if (subhits[i] != 0)
@@ -196,6 +239,7 @@ x_RemoveEnvelopedSubHits(CHit::TSubHit& subhits)
     if (j < num_subhits)
         subhits.resize(j);
 }
+
 
 void
 CHit::ResolveSubHitConflicts(CSequence& seq1,
@@ -206,9 +250,14 @@ CHit::ResolveSubHitConflicts(CSequence& seq1,
     if (m_SubHit.size() < 2)
         return;
 
+    // first remove subhits that are completely contained
+
     x_RemoveEnvelopedSubHits(m_SubHit);
 
     int num_subhits = m_SubHit.size();
+
+    // if there are still any conflicts, they are only between
+    // adjacent pairs of hits. For all such pairs...
 
     for (int i = 0; i < num_subhits - 1; i++) {
         CHit *hit1 = m_SubHit[i];
@@ -219,8 +268,14 @@ CHit::ResolveSubHitConflicts(CSequence& seq1,
         TRange& seq2range1(hit2->m_SeqRange1);
         TRange& seq2range2(hit2->m_SeqRange2);
 
+        // ignore pairs of hits that will never overlap
+        // on sequence 1
+
         if (seq1range1.StrictlyBelow(seq2range1))
             continue;
+
+        // there's an overlap. First assume the the first hit is
+        // shortened, and calculate the score of the resulting alignment
 
         TRange tback_range1;
         TRange new_q_range1(seq1range1.GetFrom(), seq2range1.GetFrom() - 1);
@@ -233,6 +288,8 @@ CHit::ResolveSubHitConflicts(CSequence& seq1,
                                                 seq1range2.GetFrom()),
                                     seq1, seq2_pssm, gap_open, gap_extend);
 
+        // repeat the process assuming the second hit is shortened
+
         TRange tback_range2;
         TRange new_q_range2(seq1range1.GetTo() + 1, seq2range1.GetTo());
         TRange new_s_range2;
@@ -244,6 +301,7 @@ CHit::ResolveSubHitConflicts(CSequence& seq1,
                                                 seq2range2.GetFrom()),
                                     seq1, seq2_pssm, gap_open, gap_extend);
 
+#if 0
         //------------------------------------------
         printf("fixup query %d db %d ", hit1->m_SeqIndex1, hit1->m_SeqIndex2);
         printf("hit1: qoff %d-%d dboff %d-%d score %d ",
@@ -256,6 +314,9 @@ CHit::ResolveSubHitConflicts(CSequence& seq1,
                hit2->m_Score);
         printf("\n");
         //------------------------------------------
+#endif
+
+        // keep the combination that scores the highest
 
         if (score1 + hit2->m_Score > hit1->m_Score + score2) {
             m_SubHit[i+1] = new CHit(hit2->m_SeqIndex1, hit2->m_SeqIndex2,
@@ -271,6 +332,7 @@ CHit::ResolveSubHitConflicts(CSequence& seq1,
         }
     }
 }
+
 
 CHit *
 CHit::Clone()
@@ -291,6 +353,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/18 20:19:02  papadopo
+  add documentation
+
   Revision 1.4  2005/11/17 22:28:45  papadopo
   rename Copy() to Clone()
 
