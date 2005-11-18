@@ -152,7 +152,7 @@ CMultiAligner::x_FindAlignmentSubsets()
         CHit *hit = m_CombinedHits.GetHit(i);
         nodes(hit->m_SeqIndex1, hit->m_SeqIndex2).push_back(SGraphNode(hit, i));
         nodes(hit->m_SeqIndex1, hit->m_SeqIndex2).back().best_score =
-                                      hit->m_BitScore;
+                                      hit->m_Score;
     }
 
     for (int i = 0; i < num_queries - 1; i++) {
@@ -183,38 +183,21 @@ CMultiAligner::x_FindConsistentHitSubset()
 
     m_CombinedHits.MakeCanonical();
 
-    for (int i = 0; i < m_CombinedHits.Size(); i++) {
-        CHit *hit = m_CombinedHits.GetHit(i);
-        hit->m_BitScore = (hit->m_Score * m_KarlinBlk->Lambda -
-                         m_KarlinBlk->logK) / NCBIMATH_LN2;
-    }
-    for (int i = 0; i < m_PatternHits.Size(); i++) {
-        CHit *hit = m_PatternHits.GetHit(i);
-        hit->m_BitScore = 1000.0;
-    }
-    for (int i = 0; i < m_UserHits.Size(); i++) {
-        CHit *hit = m_UserHits.GetHit(i);
-        hit->m_BitScore = 10000.0;
-    }
-
     //---------------------------------------
     if (m_Verbose) {
         printf("\n\nAlignments before graph phase:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf\n",
+            printf("query %2d %3d - %3d query %2d %3d - %3d score %d\n",
                    hit->m_SeqIndex1,
                    hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
                    hit->m_SeqIndex2,
                    hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_BitScore);
+                   hit->m_Score);
         }
         printf("\n\n");
     }
     //---------------------------------------
-
-    // weight each alignment found by the number of sequences
-    // that contain that alignment
 
     // For each pair of queries, find a maximal-scoring subset
     // of nonoverlapping alignments
@@ -226,31 +209,28 @@ CMultiAligner::x_FindConsistentHitSubset()
         printf("\n\nAlignments after graph phase:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf\n",
+            printf("query %2d %3d - %3d query %2d %3d - %3d score %d\n",
                    hit->m_SeqIndex1,
                    hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
                    hit->m_SeqIndex2,
                    hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_BitScore);
+                   hit->m_Score);
         }
         printf("\n\n");
     }
     //---------------------------------------
-
-    // weight each surviving alignment by the number of sequences
-    // that contain that alignment
 
     //--------------------------------------------------
     if (m_Verbose) {
         printf("Saved Segments:\n");
         for (int i = 0; i < m_CombinedHits.Size(); i++) {
             CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %lf\n",
+            printf("query %2d %3d - %3d query %2d %3d - %3d score %d\n",
                    hit->m_SeqIndex1,
                    hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
                    hit->m_SeqIndex2,
                    hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_BitScore);
+                   hit->m_Score);
         }
         printf("\n\n");
     }
@@ -263,6 +243,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.8  2005/11/18 20:21:30  papadopo
+  1. Use raw score instead of bit scores in the graph phase
+  2. Remove unneeded comments
+
   Revision 1.7  2005/11/17 22:31:22  papadopo
   remove hit rate computations
 
