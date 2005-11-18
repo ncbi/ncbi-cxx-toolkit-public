@@ -40,7 +40,6 @@ Contents: Interface for CDistances class
 #define _ALGO_COBALT_DIST_HPP_
 
 #include <util/math/matrix.hpp>
-#include <algo/blast/core/blast_stat.h>
 #include <algo/phy_tree/dist_methods.hpp>
 
 #include <algo/cobalt/base.hpp>
@@ -71,10 +70,9 @@ public:
     ///
     CDistances(vector<CSequence>& query_data,
                CHitList& hitlist, 
-               SNCBIFullScoreMatrix& score_matrix,
-               Blast_KarlinBlk *kbp)
+               SNCBIFullScoreMatrix& score_matrix)
     {
-        ComputeMatrix(query_data, hitlist, score_matrix, kbp);
+        ComputeMatrix(query_data, hitlist, score_matrix);
     }
 
     /// Destructor
@@ -88,13 +86,10 @@ public:
     ///                paris of the sequences in query_data [in]
     /// @param score_matrix log-odds score matrix to use in the
     ///                     distance calculations [in]
-    /// @param kbp Karlin-Altschul parameters to use in the 
-    ///            distance calculations [in]
     ///
     void ComputeMatrix(vector<CSequence>& query_data,
                        CHitList& hitlist, 
-                       SNCBIFullScoreMatrix& score_matrix,
-                       Blast_KarlinBlk *kbp);
+                       SNCBIFullScoreMatrix& score_matrix);
 
     /// Access the current distance matrix
     /// @return The distance matrix
@@ -110,14 +105,11 @@ private:
     ///                paris of the sequences in query_data [in]
     /// @param score_matrix log-odds score matrix to use in the
     ///                     distance calculations [in]
-    /// @param kbp Karlin-Altschul parameters to use in the 
-    ///            distance calculations [in]
     /// @param self_score The computed self scores [out]
     ///
     void x_GetSelfScores(vector<CSequence>& query_data,
                          CHitList& hitlist,
                          SNCBIFullScoreMatrix& score_matrix,
-                         Blast_KarlinBlk *kbp,
                          vector<double>& self_score);
 };
 
@@ -128,6 +120,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/18 20:15:12  papadopo
+  remove unneeded Karlin block
+
   Revision 1.3  2005/11/15 20:10:29  papadopo
   add doxygen
 
