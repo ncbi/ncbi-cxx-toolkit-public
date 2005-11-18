@@ -101,10 +101,6 @@ public:
     /// Score of alignment
     int m_Score;
  
-    /// Score of alignment assuming Karlin 
-    /// Altschul statistics are available
-    double m_BitScore;
- 
     /// The range of offsets on the first sequence
     TRange m_SeqRange1;
  
@@ -117,8 +113,7 @@ public:
     ///
     CHit(int seq1_index, int seq2_index) 
            : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
-             m_Score(0), m_BitScore(0.0), 
-             m_SeqRange1(0,0), m_SeqRange2(0,0) {}
+             m_Score(0), m_SeqRange1(0,0), m_SeqRange2(0,0) {}
  
     /// Create an alignment from a BLAST hit
     /// @param seq1_index Numerical identifier for first sequence [in]
@@ -127,7 +122,7 @@ public:
     ///
     CHit(int seq1_index, int seq2_index, BlastHSP *hsp)
            : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index), 
-             m_Score(hsp->score), m_BitScore(0.0),
+             m_Score(hsp->score),
              m_SeqRange1(hsp->query.offset, hsp->query.end - 1),
              m_SeqRange2(hsp->subject.offset, hsp->subject.end - 1),
              m_EditScript(hsp->gap_info) { VerifyHit(); }
@@ -144,7 +139,7 @@ public:
          TRange seq_range1, TRange seq_range2,
          int score, CEditScript edit_script)
         : m_SeqIndex1(seq1_index), m_SeqIndex2(seq2_index),
-          m_Score(score), m_BitScore(0.0),
+          m_Score(score),
           m_SeqRange1(seq_range1), m_SeqRange2(seq_range2),
           m_EditScript(edit_script) { VerifyHit(); }
  
@@ -229,9 +224,12 @@ public:
     ///
     void VerifyHit();
 
-    /// Modify the subhits within a CHit so that all sequence
-    /// ranges are disjoint. Assumes that seq1 is a sequence and
-    /// seq2 is a PSSM
+    /// If pairs of subhits have overlapping ranges, either delete
+    /// one or change one so that the overlap is avoided. Only the
+    /// sequence 1 range is checked for overlap; in practice, the hits 
+    /// refer to block alignments derived from RPS blast results, 
+    /// and sequence 2 is an RPS database sequence. It is sequence 1 
+    /// that matters for later processing
     /// @param seq1 The sequence data corresponding to the 
     ///             first sequence [in]
     /// @param seq2_pssm The PSSM for the second sequence [in]
@@ -256,6 +254,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/18 20:15:58  papadopo
+  remove m_BitScore
+
   Revision 1.4  2005/11/17 22:32:18  papadopo
   remove hit rate member; also change Copy() to Clone()
 
