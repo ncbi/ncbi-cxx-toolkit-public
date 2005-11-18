@@ -383,7 +383,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     if (index == len1 || index == len2) {
         if (edit_block != NULL)
             GapPrelimEditBlockAdd(edit_block, eGapAlignSub, index);
-        return best_dist;
+        return 0; /* This function returns number of differences, here it is zero. */
     }
 
     /* set up the memory pool */
