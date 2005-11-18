@@ -112,7 +112,18 @@ public:
     /// The Seq-align is of global type, with a single denseg
     /// @return The results
     ///
-    CRef<objects::CSeq_align> GetSeqalignResults() const;
+    CRef<objects::CSeq_align> GetSeqalignResults();
+
+    /// Retrieve a selection of the current aligned results, 
+    /// in Seq-align format. The Seq-align is of global type, 
+    /// with a single denseg. Columns that have gaps in all the
+    /// selected sequences are removed
+    /// @param indices List of ordinal IDs of sequences that the
+    ///                Seq-align will contain. Indices may appear
+    ///                in any order and may be repeated
+    /// @return The results
+    ///
+    CRef<objects::CSeq_align> GetSeqalignResults(vector<int>& indices);
 
     /// Retrieve the current aligned results in CSequence format.
     /// @return The results, on CSequence for each input sequence
@@ -414,7 +425,6 @@ private:
     CNWAligner::TScore m_GapExtend;
     CNWAligner::TScore m_EndGapOpen;
     CNWAligner::TScore m_EndGapExtend;
-    Blast_KarlinBlk *m_KarlinBlk;
 
     bool m_Verbose;
 
@@ -467,6 +477,9 @@ private:
                            vector<CTree::STreeLeaf>& node_list2,
                            CNcbiMatrix<CHitList>& pair_info,
                            int iteration);
+
+    CRef<objects::CSeq_align> x_GetSeqalign(vector<CSequence>& align,
+                                            vector<int>& indices);
 };
 
 END_SCOPE(cobalt)
@@ -476,6 +489,10 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.8  2005/11/18 20:14:47  papadopo
+  1. Remove unneeded Karlin block
+  2. Add member to retrieve a subset of the aligned results
+
   Revision 1.7  2005/11/17 22:32:41  papadopo
   remove AssignHitRate
 
