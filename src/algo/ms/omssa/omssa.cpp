@@ -312,25 +312,8 @@ void CSearch::Spectrum2Peak(CMSPeakSet& PeakSet)
 	    ERR_POST(Error << "omssa: unable to allocate CMSPeak");
 	    return;
 	}
-	if(Peaks->Read(*Spectrum, *GetSettings()) != 0) {
-	    ERR_POST(Error << "omssa: unable to read spectrum into CMSPeak");
-	    return;
-	}
-    Peaks->SetName().clear();
-	if(Spectrum->CanGetIds()) Peaks->SetName() = Spectrum->GetIds();
-	if(Spectrum->CanGetNumber())
-	    Peaks->SetNumber() = Spectrum->GetNumber();
-		
-	Peaks->Sort();
-	Peaks->SetComputedCharge(GetSettings()->GetChargehandling());
-	Peaks->InitHitList(GetSettings()->GetMinhit());
-	Peaks->CullAll(*GetSettings());
-		
-	if(Peaks->GetNum(MSCULLED1) < GetSettings()->GetMinspectra())
-	    {
-	    ERR_POST(Info << "omssa: not enough peaks in spectra");
-	    Peaks->SetError(eMSHitError_notenuffpeaks);
-	}
+
+    Peaks->ReadAndProcess(*Spectrum, *GetSettings());
 	PeakSet.AddPeak(Peaks);
 		
     }
@@ -1657,6 +1640,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.67  2005/11/18 15:11:40  lewisg
+move code from CSearch into CMSPeak
+
 Revision 1.66  2005/11/07 19:57:20  lewisg
 iterative search
 

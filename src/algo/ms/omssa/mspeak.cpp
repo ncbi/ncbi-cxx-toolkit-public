@@ -631,6 +631,31 @@ int CMSPeak::Read(const CMSSpectrum& Spectrum,
     return 0;
 }
 
+void 
+CMSPeak::ReadAndProcess(const CMSSpectrum& Spectrum,
+                        const CMSSearchSettings& Settings)
+{
+	if(Read(Spectrum, Settings) != 0) {
+	    ERR_POST(Error << "omssa: unable to read spectrum into CMSPeak");
+	    return;
+	}
+    SetName().clear();
+	if(Spectrum.CanGetIds()) SetName() = Spectrum.GetIds();
+	if(Spectrum.CanGetNumber())
+	    SetNumber() = Spectrum.GetNumber();
+		
+	Sort();
+	SetComputedCharge(Settings.GetChargehandling());
+	InitHitList(Settings.GetMinhit());
+	CullAll(Settings);
+		
+	if(GetNum(MSCULLED1) < Settings.GetMinspectra())
+	    {
+	    ERR_POST(Info << "omssa: not enough peaks in spectra");
+	    SetError(eMSHitError_notenuffpeaks);
+	}
+
+}
 
 const int CMSPeak::CountRange(const double StartFraction,
                               const double StopFraction) const

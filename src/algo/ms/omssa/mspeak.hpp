@@ -48,6 +48,7 @@
 
 #include "msms.hpp"
 #include "msladder.hpp"
+#include "SpectrumSet.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -688,6 +689,15 @@ public:
              const CMSSearchSettings& Settings);
 
     /**
+     * Read and process a spectrum set into a CMSPeak
+     * 
+     * @param Spectrum the spectrum itself
+     * @param Settings search settings, e.g. experimental tolerances
+     */
+    void ReadAndProcess(const CMSSpectrum& Spectrum,
+                       const CMSSearchSettings& Settings);
+
+    /**
      *  Write out a CMSPeak in dta format (useful for debugging)
      * 
      * @param FileOut the file to write out to
@@ -1095,6 +1105,8 @@ public:
                            const int TestMZ, 
                            const int tol) const;
 
+
+
 private:
     CMZI *MZI[MSNUMDATA]; // m/z values and intensities, sorted by m/z.  first is original, second is culled
     char *Used[MSNUMDATA];  // used to mark m/z values as used in a match
@@ -1390,6 +1402,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.35  2005/11/18 15:11:40  lewisg
+  move code from CSearch into CMSPeak
+
   Revision 1.34  2005/10/24 21:46:13  lewisg
   exact mass, peptide size limits, validation, code cleanup
 
