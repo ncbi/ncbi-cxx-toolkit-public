@@ -81,6 +81,7 @@ CMultiAligner::SetQueries(const blast::TSeqLocVector& queries)
 {
     Reset();
     m_tQueries = queries;
+    m_QueryData.clear();
     ITERATE(blast::TSeqLocVector, itr, queries) {
         m_QueryData.push_back(CSequence(*itr));
     }
@@ -174,6 +175,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/18 22:24:10  papadopo
+  in SetQueries, clear the old list of queries before creating the new list
+
   Revision 1.4  2005/11/18 20:17:34  papadopo
   remove handling of unneeded Karlin block
 
