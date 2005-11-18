@@ -119,7 +119,7 @@ public:
     ///
     static void ListTreeLeaves(const TPhyTreeNode *node,
                                vector<STreeLeaf>& node_list,
-                               double curr_dist);
+                               double curr_dist = 0);
 
     /// Traverse a tree below a given starting point, listing
     /// all edges encountered along the way. The length of each
@@ -152,6 +152,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/18 20:33:34  papadopo
+  set default bias for ListTreeLeaves
+
   Revision 1.3  2005/11/15 20:10:29  papadopo
   add doxygen
 
