@@ -68,18 +68,11 @@ CMultiAligner::CMultiAligner(const char *matrix_name,
     m_Aligner.SetStartWs(m_EndGapExtend);
     m_Aligner.SetEndWg(m_EndGapOpen);
     m_Aligner.SetEndWs(m_EndGapExtend);
-
-    m_KarlinBlk = Blast_KarlinBlkNew();
-    Blast_KarlinBlkGappedCalc(m_KarlinBlk, 
-                              -kDefaultGapOpen,
-                              -kDefaultGapExtend,
-                              INT2_MAX, "BLOSUM62", NULL);
 }
 
 
 CMultiAligner::~CMultiAligner()
 {
-    Blast_KarlinBlkFree(m_KarlinBlk);
 }
 
 
@@ -132,8 +125,7 @@ CMultiAligner::ComputeTree()
 
     CDistances distances(m_QueryData, 
                          m_CombinedHits, 
-                         m_Aligner.GetMatrix(),
-                         m_KarlinBlk);
+                         m_Aligner.GetMatrix());
 
     //--------------------------------
     if (m_Verbose) {
@@ -182,6 +174,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/18 20:17:34  papadopo
+  remove handling of unneeded Karlin block
+
   Revision 1.3  2005/11/17 22:30:35  papadopo
   add a few comments
 
