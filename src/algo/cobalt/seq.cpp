@@ -92,33 +92,48 @@ CSequence::GetPrintableLetter(int pos) const
 void 
 CSequence::Reset(const blast::SSeqLoc& seq_in)
 {
-    _ASSERT(seq_in.seqloc->IsWhole());
+    _ASSERT(seq_in.seqloc->IsWhole() || seq_in.seqloc->IsInt());
 
-    CBioseq_Handle bhandle = seq_in.scope->GetBioseqHandle(
-                                         seq_in.seqloc->GetWhole(),
-                                         CScope::eGetBioseq_All);
+    const CSeq_loc& seqloc = *seq_in.seqloc;
+    CBioseq_Handle bhandle;
+    if (seqloc.IsWhole()) {
+        bhandle = seq_in.scope->GetBioseqHandle(seqloc.GetWhole(),
+                                                CScope::eGetBioseq_All);
+    }
+    else if (seqloc.IsInt()) {
+        _ASSERT(seqloc.GetInt().IsSetId());
+        bhandle = seq_in.scope->GetBioseqHandle(seqloc.GetInt().GetId(),
+                                                CScope::eGetBioseq_All);
+    }
+
     CConstRef<CBioseq> bioseq = bhandle.GetCompleteBioseq();
-
     _ASSERT(bioseq->IsSetInst());
     const CBioseq::TInst& inst = bioseq->GetInst();
     _ASSERT(inst.IsSetSeq_data());
     const CSeq_data& seqdata = inst.GetSeq_data(); 
-    int seq_length;
 
+    CSeq_data converted;
+    const CSeq_data *data;
     if (!seqdata.IsNcbistdaa()) {
-        CSeq_data converted;
         CSeqportUtil::Convert(seqdata, &converted, CSeq_data::e_Ncbistdaa);
-
-        seq_length = converted.GetNcbistdaa().Get().size();
-        m_Sequence.resize(seq_length);
-        for (int i = 0; i < seq_length; i++)
-            m_Sequence[i] = converted.GetNcbistdaa().Get()[i];
+        data = &converted;
     }
     else {
-        seq_length = seqdata.GetNcbistdaa().Get().size();
-        m_Sequence.resize(seq_length);
-        for (int i = 0; i < seq_length; i++)
-            m_Sequence[i] = seqdata.GetNcbistdaa().Get()[i];
+        data = &seqdata;
+    }
+
+    int seq_length = data->GetNcbistdaa().Get().size();
+    int from = 0;
+    int to = seq_length - 1;
+    if (seqloc.IsInt()) {
+        from = seqloc.GetInt().GetFrom();
+        to = seqloc.GetInt().GetTo();
+        seq_length = to - from + 1;
+    }
+
+    m_Sequence.resize(seq_length);
+    for (int i = 0; i < seq_length; i++) {
+        m_Sequence[i] = data->GetNcbistdaa().Get()[from + i];
     }
 
     m_Freqs.Resize(seq_length, kAlphabetSize);
@@ -264,6 +279,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/11/18 22:27:08  papadopo
+  handle Seq_locs of type Seq_interval
+
   Revision 1.5  2005/11/08 19:49:19  papadopo
   fix solaris compile warnings
 

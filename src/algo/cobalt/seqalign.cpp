@@ -37,6 +37,7 @@ Contents: Seqalign output for a multiple sequence alignment
 
 #include <ncbi_pch.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
 /// @file seqalign.cpp
@@ -61,13 +62,21 @@ CMultiAligner::x_GetSeqalign(vector<CSequence>& align,
     CRef<CDense_seg> denseg(new CDense_seg);
     denseg->SetDim(num_queries);
 
+    vector<int> seq_off(num_queries, 0);
+
     for (int i = 0; i < num_queries; i++) {
-        CRef<CSeq_id> id(const_cast<CSeq_id *>(
-                       &m_tQueries[indices[i]].seqloc->GetWhole()));
-        denseg->SetIds().push_back(id);
+        const CSeq_loc& seqloc = *m_tQueries[indices[i]].seqloc;
+        if (seqloc.IsWhole()) {
+            CRef<CSeq_id> id(const_cast<CSeq_id *>(&seqloc.GetWhole()));
+            denseg->SetIds().push_back(id);
+        }
+        else if (seqloc.IsInt()) {
+            CRef<CSeq_id> id(const_cast<CSeq_id *>(&seqloc.GetInt().GetId()));
+            denseg->SetIds().push_back(id);
+            seq_off[i] = seqloc.GetInt().GetFrom();
+        }
     }
 
-    vector<int> seq_off(num_queries, 0);
     int num_seg = 0;
     int i, j, seg_len;
 
@@ -143,6 +152,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/18 22:27:25  papadopo
+  handle Seq_locs of type Seq_interval
+
   Revision 1.4  2005/11/18 20:25:22  papadopo
   Make main seqalign generator private, and add extra member to extract a subset of the complete aligned results
 
