@@ -29,6 +29,9 @@
  *
  */
 
+%ignore *::CStlClassInfoFunctions_set_SInitializer;
+%ignore *::CStlClassInfoFunctions_multiset_SInitializer;
+
 // Hide util/bitset/bm.h from SWIG
 #define BM__H__INCLUDED__
 
@@ -120,6 +123,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/11/19 21:27:26  jcherry
+ * %ignore CStlClassInfoFunctions_set::SInitializer and
+ * CStlClassInfoFunctions_multiset::SInitializer
+ *
  * Revision 1.9  2005/11/01 15:51:24  jcherry
  * CSymDustMasker::lcr changed to CSymDustMasker::perfect
  *
