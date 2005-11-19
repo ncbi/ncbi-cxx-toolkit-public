@@ -30,6 +30,13 @@
  */
 
 
+// Default assignment operator can't be used
+%ignore *::SNcbiParamDesc_GENBANK_LOADER_METHOD::sm_ParamDescription;
+
+// CScopeTransaction cannot be allocated dynamically
+%ignore *::CScopeTransaction;
+%ignore *::CScope::GetTransaction();
+
 // On Windows, SWIG strangely tries to wrap these private members
 %ignore ncbi::objects::CArticleIdSet_Base::m_set_State;
 %ignore ncbi::objects::CArticleIdSet_Base::m_data;
@@ -228,6 +235,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/19 21:28:50  jcherry
+ * CScopeTransaction-related, plus an unassignable public static data member
+ *
  * Revision 1.6  2005/09/15 16:30:49  jcherry
  * %ignore some private data members that are inexplicably wrapped on Windows
  *
