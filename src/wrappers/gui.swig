@@ -56,6 +56,7 @@
 %ignore ncbi::CEvent::GetRefs;
 %ignore ncbi::CEvent::AddRef;
 %ignore ncbi::CBookmark::SetRange;
+%ignore *::CPluginValue::SetDataHandle;
 
 // SWIG problem with non-member operators
 %ignore *::operator<<(CNcbiOstream& strm, TFileType& ftype);  // app_popup.hpp
@@ -318,6 +319,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/19 21:26:12  jcherry
+ * %ignore CPluginValue::SetDataHandle (not defined)
+ *
  * Revision 1.6  2005/10/21 15:22:08  jcherry
  * Wrap CGuiRegistry, despite nested classes problem
  *
