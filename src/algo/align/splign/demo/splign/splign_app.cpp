@@ -397,7 +397,8 @@ void CSplignApp::x_LogStatus(size_t model_id,
 }
 
 
-CRef<blast::CBlastOptionsHandle> CSplignApp::x_SetupBlastOptions(bool cross)
+CRef<blast::CBlastOptionsHandle> 
+CSplignApp::x_SetupBlastOptions(bool cross)
 {
     USING_SCOPE(blast);
 
@@ -845,7 +846,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
     if(m_AsnOut) {
         
         *m_AsnOut << MSerial_AsnText 
-                  << m_Formatter->AsSeqAlignSet(&splign_results)
+                  << *(m_Formatter->AsSeqAlignSet(&splign_results))
                   << endl;
     }
     
@@ -953,6 +954,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/11/21 14:16:10  kapustin
+ * Fix ASN output stream typo
+ *
  * Revision 1.53  2005/10/31 16:29:58  kapustin
  * Support traditional pairwise alignment text output
  *
