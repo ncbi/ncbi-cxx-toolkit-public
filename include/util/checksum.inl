@@ -51,6 +51,14 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum)
 }
 
 inline
+void CChecksum::AddChars(const char* str, size_t count)
+{
+    x_Update(str, count);
+    m_CharCount += count;
+}
+
+
+inline
 void CChecksum::AddLine(const char* line, size_t length)
 {
     AddChars(line, length);
@@ -79,22 +87,13 @@ bool CChecksum::ValidChecksumLine(const string& line) const
 }
 
 
-inline Uint4 CChecksum::GetChecksum() const
-{
-    _ASSERT(GetMethod() == eCRC32);
-    return m_Checksum.m_CRC32;
-}
-
-inline void CChecksum::GetMD5Digest(unsigned char digest[16]) const
-{
-    _ASSERT(GetMethod() == eMD5);
-    m_Checksum.m_MD5->Finalize(digest);
-}
-
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/11/21 14:30:36  vasilche
+* Implemented ZIP style CRC32.
+*
 * Revision 1.5  2003/07/29 22:11:42  vakatov
 * Typo fixed (extra return op)
 *
