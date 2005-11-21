@@ -606,7 +606,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
     }
 
     if (close  &&  uuu->can_connect != eCC_None  &&  !uuu->sock  &&
-        ((uuu->flags & fHCC_SureFlush)  ||  BUF_Size(www->w_buf))) {
+        ((uuu->flags & fHCC_SureFlush)  ||  BUF_Size(uuu->w_buf))) {
         /* "WRITE" mode and data (or just flag) pending */
         s_PreRead(uuu, timeout, 1/*drop_unread*/);
     }
@@ -983,6 +983,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.68  2005/11/21 21:09:31  lavr
+ * Fix compilation error
+ *
  * Revision 6.67  2005/11/21 21:04:05  lavr
  * Fix double flush error at Close
  *
