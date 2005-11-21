@@ -50,6 +50,11 @@ class NCBI_XALGOALIGN_EXPORT CSplignFormatter: public CObject
 {
 public:
 
+    enum EFlags {
+        fNone = 0,
+        fNoExonScores = 1
+    };
+
     CSplignFormatter(const CSplign::TResults& results);
     CSplignFormatter(const CSplign& splign);
 
@@ -58,7 +63,8 @@ public:
                    CConstRef<objects::CSeq_id> id2);
 
     // formatters
-    string AsExonTable(const CSplign::TResults* results = 0) const;
+    string AsExonTable(const CSplign::TResults* results = 0,
+                       EFlags flags = fNone) const;
 
     string AsAlignmentText(CRef<objects::CScope> scope,
                            const CSplign::TResults* results = 0) const;
@@ -91,6 +97,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/11/21 16:04:30  kapustin
+ * +CSplignFormatter::EFlags
+ *
  * Revision 1.13  2005/10/31 16:29:36  kapustin
  * Support traditional pairwise alignment text output
  *
