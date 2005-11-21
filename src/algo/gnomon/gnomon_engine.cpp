@@ -170,11 +170,33 @@ list<CGene> CGnomonEngine::GetGenes() const
     return m_data->m_parse->GetGenes();
 }
 
-int CGnomonEngine::PrintGenes(CUniqNumber& unumber, CNcbiOstream& to, CNcbiOstream& toprot, bool complete) const
+TSignedSeqPos CGnomonEngine::PartialModelStepBack(list<CGene>& genes) const
 {
-    if (m_data->m_parse.get()==NULL)
-        NCBI_THROW(CGnomonException, eGenericError, "gnomon not run");
-    return m_data->m_parse->PrintGenes(unumber,to,toprot,complete);
+    TSignedSeqPos right = m_data->m_ss->SeqMap(m_data->m_ss->SeqLen()-1,CSeqScores::eNoMove);
+    if (!genes.empty() && !genes.back().RightComplete()) {
+        TSignedSeqPos partial_start = genes.back().front().GetFrom();
+        genes.pop_back();
+            
+        if(!genes.empty()) { // end of the last complete gene
+            right = genes.back().back().GetTo();
+        } else {
+            if(int(partial_start) > m_data->m_ss->SeqMap(0,CSeqScores::eNoMove)+1000) {
+                right = partial_start-100;
+            } else {
+                return -1;   // calling program MUST be aware of this!!!!!!!
+            }
+        }
+    }
+    
+    return right;
+}
+
+void PrintGenes(const list<CGene>& genes, CUniqNumber& unumber, CNcbiOstream& to, CNcbiOstream& toprot)
+{
+    ITERATE (list<CGene>, it, genes) {
+        ++unumber;
+        it->Print(unumber, unumber, to, toprot);
+    }
 }
 
 void CGnomonEngine::PrintInfo() const
@@ -190,6 +212,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2005/11/21 21:33:45  chetvern
+ * Splitted CParse::PrintGenes into CGnomonEngine::PartialModelStepBack and PrintGenes function
+ *
  * Revision 1.4  2005/10/20 19:29:31  souvorov
  * Penalty for nonconsensus starts/stops/splices
  *

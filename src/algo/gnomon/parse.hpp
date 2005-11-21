@@ -45,7 +45,6 @@ class CParse
     public:
         CParse(const CSeqScores& ss);
         const CHMM_State* Path() const { return m_path; }
-        int PrintGenes(CUniqNumber& unumber, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout, bool complete = false) const;
         void PrintInfo() const;
         list<CGene> GetGenes() const;
         typedef list<CGene>::iterator TGenIt;
@@ -72,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/21 21:33:46  chetvern
+ * Splitted CParse::PrintGenes into CGnomonEngine::PartialModelStepBack and PrintGenes function
+ *
  * Revision 1.1  2005/09/15 21:28:07  chetvern
  * Sync with Sasha's working tree
  *

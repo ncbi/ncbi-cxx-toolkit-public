@@ -569,47 +569,6 @@ void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) co
     if((ii-CDS_Shift())%150 != 0) toprot << '\n';
 }
 
-int CParse::PrintGenes(CUniqNumber& unumber, CNcbiOstream& to, CNcbiOstream& toprot, bool complete) const
-{
-    list<CGene> genes = GetGenes();
-//    for(list<CGene>::iterator it = genes.begin(); it != genes.end();)
-//    {
-//        if(it->CDS().size() < 6) it = genes.erase(it);
-//        else ++it;
-//    }
-
-    TSignedSeqPos right = m_seqscr.SeqMap(m_seqscr.SeqLen()-1,CSeqScores::eNoMove);
-    if(complete && !genes.empty() && !genes.back().RightComplete())
-    {
-        TSignedSeqPos partial_start = genes.back().front().GetFrom();
-        genes.pop_back();
-            
-        if(!genes.empty()) // end of the last complete gene
-        {
-            right = genes.back().back().GetTo();
-        }
-        else
-        {
-            if(int(partial_start) > m_seqscr.SeqMap(0,CSeqScores::eNoMove)+1000)
-            {
-                right = partial_start-100;
-            }
-            else
-            {
-                return -1;   // calling program MUST be aware of this!!!!!!!
-            }
-        }
-    }
-    
-    for(list<CGene>::iterator it = genes.begin(); it != genes.end(); ++it)
-    {
-        ++unumber;
-        it->Print(unumber, unumber, to, toprot);
-    }
-
-    return right;
-}
-
 list<CGene> CParse::GetGenes() const
 {
     list<CGene> genes;
@@ -1191,6 +1150,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.11  2005/11/21 21:33:46  chetvern
+ * Splitted CParse::PrintGenes into CGnomonEngine::PartialModelStepBack and PrintGenes function
+ *
  * Revision 1.10  2005/10/20 19:33:16  souvorov
  * Nonconsensus starts/stops
  *
