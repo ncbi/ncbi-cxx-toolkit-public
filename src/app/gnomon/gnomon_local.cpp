@@ -62,7 +62,7 @@ void CGnomon_localApplication::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"gnomon_template");
 
-    arg_desc->AddKey("inp","inp","Input file for prediction",CArgDescriptions::eInputFile);
+    arg_desc->AddKey("inp","inp","Genomic sequence for prediction",CArgDescriptions::eInputFile);
 	arg_desc->AddKey("param","param","Organism specific parameters",CArgDescriptions::eString);
 	arg_desc->AddKey("mpp","mpp","Multiprotein penalty",CArgDescriptions::eDouble);
 	arg_desc->AddDefaultKey("from", "from","Start point",CArgDescriptions::eInteger,"0");
@@ -137,7 +137,7 @@ int CGnomon_localApplication::Run(void)
 
     gettimeofday(&t1, NULL);
     CUniqNumber unumber;
-    gnomon.PrintGenes(unumber);
+    PrintGenes(gnomon.GetGenes(),unumber);
     cout << "\n\n";
 //	parse.PrintInfo();
     gettimeofday(&t2, NULL);
@@ -162,6 +162,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/11/21 21:36:31  chetvern
+ * PrintGenes is standalone function now
+ *
  * Revision 1.3  2005/09/30 19:20:01  chetvern
  * removed use of a priori frameshifts
  *
