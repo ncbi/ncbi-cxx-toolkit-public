@@ -58,11 +58,15 @@ void CChecksumTestApp::Init(void)
     arg_desc->AddExtra(0, kMax_UInt, "files to process (stdin if none given)",
                        CArgDescriptions::eInputFile,
                        CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
+    arg_desc->AddFlag("print_tables",
+                      "Print CRC table for inclusion in C++ code");
 
     SetupArgDescriptions(arg_desc.release());
 }
 
-static void s_ComputeSums(CNcbiIstream& is, CChecksum& crc32,
+static void s_ComputeSums(CNcbiIstream& is,
+                          CChecksum& crc32,
+                          CChecksum& crc32zip,
                           CChecksum& md5)
 {
     while (!is.eof()) {
@@ -73,6 +77,7 @@ static void s_ComputeSums(CNcbiIstream& is, CChecksum& crc32,
 
         if (count) {
             crc32.AddChars(buf, count);
+            crc32zip.AddChars(buf, count);
             md5  .AddChars(buf, count);
         }
     }
@@ -83,8 +88,10 @@ static bool s_VerifySum(const string& s, const string& md5hex)
     cerr << "Input: \"" << NStr::PrintableString(s) << '\"' << endl;
     bool ok = true;
     CNcbiIstrstream is(s.data(), s.size());
-    CChecksum       new_crc32(CChecksum::eCRC32), new_md5(CChecksum::eMD5);
-    s_ComputeSums(is, new_crc32, new_md5);
+    CChecksum       new_crc32(CChecksum::eCRC32);
+    CChecksum       new_crc32zip(CChecksum::eCRC32ZIP);
+    CChecksum       new_md5(CChecksum::eMD5);
+    s_ComputeSums(is, new_crc32, new_crc32zip, new_md5);
 #if 0
     cerr << "Expected CRC32: " << hex << crc32 << endl;
     cerr << "Computed CRC32: " << hex << new_crc32.GetChecksum() << endl;
@@ -127,22 +134,32 @@ int CChecksumTestApp::Run(void)
                           "0123456789012345678901234567890",
                           "57edf4a22be3c955ac49da2e2107b67a");
         return !ok;
-    } else if (args.GetNExtra()) {
+    }
+    else if ( args["print_tables"] ) {
+        CChecksum::PrintTables(NcbiCout);
+    }
+    else if (args.GetNExtra()) {
         for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
             if (extra > 1) {
                 cout << endl;
             }
             cout << "File: " << args[extra].AsString() << endl;
             CNcbiIstream& is = args[extra].AsInputFile();
-            CChecksum crc32(CChecksum::eCRC32), md5(CChecksum::eMD5);
-            s_ComputeSums(is, crc32, md5);
+            CChecksum crc32(CChecksum::eCRC32);
+            CChecksum crc32zip(CChecksum::eCRC32ZIP);
+            CChecksum md5(CChecksum::eMD5);
+            s_ComputeSums(is, crc32, crc32zip, md5);
             crc32.WriteChecksumData(cout) << endl;
+            crc32zip.WriteChecksumData(cout) << endl;
             md5.  WriteChecksumData(cout) << endl;
         }
     } else {
-        CChecksum crc32(CChecksum::eCRC32), md5(CChecksum::eMD5);
-        s_ComputeSums(cin, crc32, md5);
+        CChecksum crc32(CChecksum::eCRC32);
+        CChecksum crc32zip(CChecksum::eCRC32ZIP);
+        CChecksum md5(CChecksum::eMD5);
+        s_ComputeSums(cin, crc32, crc32zip, md5);
         crc32.WriteChecksumData(cout) << endl;
+        crc32zip.WriteChecksumData(cout) << endl;
         md5.  WriteChecksumData(cout) << endl;
     }
     return 0;
@@ -157,6 +174,10 @@ int main(int argc, char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/11/21 14:34:01  vasilche
+* Check ZIP style CRC32.
+* Added option for printing CRC32 table code.
+*
 * Revision 1.2  2004/05/17 21:09:26  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
