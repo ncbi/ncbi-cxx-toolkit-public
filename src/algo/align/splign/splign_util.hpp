@@ -40,94 +40,6 @@
 BEGIN_NCBI_SCOPE
 
 
-#ifdef GENOME_PIPELINE
-
-//////////////////////////////////////
-// INF file readers and parsers
-
-class CInfTable
-{
-
-public:
-
-  CInfTable(size_t cols);
-  virtual ~CInfTable() {}
-
-  size_t Load(const string& filename);
-
-  struct SInfo {
-    enum EStrand {
-      eUnknown,
-      ePlus,
-      eMinus
-    } m_strand;
-    int m_polya_start;
-    int m_polya_end;
-    size_t m_size;
-
-    SInfo(): m_strand(eUnknown),
-	     m_polya_start(-1), m_polya_end(-1), m_size(0) {}
-  };
-
-  bool GetInfo(const string& id, SInfo& info);
-
-protected:
-
-  size_t m_cols; // number of columns
-  map<string, SInfo>  m_map;
-
-  vector<const char*> m_data;
-
-  const char*  x_GetCol(size_t col) {
-    return col < m_cols? m_data[col]: 0;
-  }
-
-  virtual bool x_ParseLine (const char* line,
-			    string& accession, SInfo& info) = 0;
-
-private:
-
-  bool x_ReadColumns(char* line);
-
-};
-
-
-class CInf_mRna: public CInfTable
-{
-
-public:
-
-  CInf_mRna(): CInfTable(11) {}
-  virtual ~CInf_mRna() {}
-
-protected:
-
-  virtual bool x_ParseLine (const char* line,
-			    string& accession, SInfo& info);
-};
-
-
-class CInf_EST: public CInfTable
-{
-
-public:
-
-  CInf_EST(): CInfTable(9) {}
-  virtual ~CInf_EST() {}
-
-protected:
-
-  virtual bool x_ParseLine (const char* line,
-			    string& accession, SInfo& info);
-};
-
-
-#endif // GENOME_PIPELINE
-
-
-/////////////////////
-// helpers
-
 void   CleaveOffByTail(CSplign::THitRefs* hitrefs, size_t polya_start);
 
 void   GetHitsMinMax(const CSplign::THitRefs& hitrefs,
@@ -155,6 +67,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/11/21 16:06:38  kapustin
+ * Move gpipe-sensitive items to the app level
+ *
  * Revision 1.9  2005/09/12 16:24:00  kapustin
  * Move compartmentization to xalgoalignutil.
  *

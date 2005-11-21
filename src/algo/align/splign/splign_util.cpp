@@ -195,150 +195,15 @@ void XFilter(CSplign::THitRefs* phitrefs)
 }
 
 
-#ifdef GENOME_PIPELINE
-
-CInfTable::CInfTable(size_t cols): m_cols(cols)
-{
-  m_data.resize(m_cols, 0);
-}
-
-
-size_t CInfTable::Load(const string& filename)
-{
-  ifstream ifs (filename.c_str());
-  size_t read = 0;
-  char line [1024];
-  while(ifs) {
-    line[0] = 0;
-    ifs.getline(line, sizeof line, '\n');
-    if(line[0]) {
-      if(line[0] != '#') {
-
-	if(!x_ReadColumns(line)) {
-	  return 0;
-	}
-
-	string accession;
-	SInfo info;
-	bool parsed = x_ParseLine(line, accession, info);
-	if(!parsed) {
-	  return 0;
-	}
-	m_map[accession] = info;
-	++read;
-      }
-    }
-  }
-  return read;
-}
-
-
-bool CInfTable::x_ReadColumns(char* line)
-{
-  char* p0 = line;
-  char* pe = p0 + strlen(line);
-  char* p = p0;
-  for(size_t i = 0; i < m_cols; ++i) {
-    p = find(p0, pe, '\t');
-    if(i+1 < m_cols && p == pe) {
-      return false;
-    }
-    m_data[i] = p0;
-    *p = 0;
-    p0 = p + 1;
-  }
-  return true;
-}
-
-
-bool CInfTable::GetInfo(const string& id, SInfo& info) {
-  map<string, SInfo>::const_iterator ii = m_map.find(id);
-  if(ii != m_map.end()) {
-    info = ii->second;
-    return true;
-  }
-  return false;
-}
-
-
-bool CInf_mRna::x_ParseLine (const char* line,
-			     string& accession, SInfo& info)
-{
-  if(!line || !*line) {
-    return false;
-  }
-
-  accession = x_GetCol(0);
-
-  const char* buf_size = x_GetCol(2);
-  sscanf(buf_size, "%d", &info.m_size);
-
-  const char* buf = x_GetCol(3);
-  SInfo::EStrand strand = SInfo::ePlus;
-  if(buf[0]=='m') {
-    strand = SInfo::eMinus;
-  }
-  buf = x_GetCol(4);
-  if(buf[0] != '-') {
-    char c;
-    sscanf(buf, "%d,%d%c",
-	   &info.m_polya_start,
-	   &info.m_polya_end,
-	   &c);
-    if(c == 'm') {
-      strand = SInfo::eMinus;
-    }
-  }
-  buf = x_GetCol(9);
-  if(strcmp(buf, "wrong_strand") == 0) {
-    strand = SInfo::eUnknown;
-  }
-  info.m_strand = strand;
-
-  return true;
-}
-
-
-bool CInf_EST::x_ParseLine (const char* line, string& accession, SInfo& info)
-{
-  if(!line || !*line) {
-    return false;
-  }
-
-  accession = x_GetCol(0);
-  const char* buf = x_GetCol(3);
-  switch(buf[0]) {
-      case '5': info.m_strand = SInfo::ePlus;    break;
-      case '3': info.m_strand = SInfo::eMinus;   break;
-      default:  info.m_strand = SInfo::eUnknown; break;
-  }
-
-  buf = x_GetCol(6);
-  if(buf[0] != '-') {
-    char c;
-    sscanf(buf, "%d,%d%c",
-	   &info.m_polya_start,
-	   &info.m_polya_end,
-	   &c);
-    if(c == 'm' && info.m_strand == SInfo::ePlus ||
-       c == 'p' && info.m_strand == SInfo::eMinus) {
-      info.m_strand = SInfo::eUnknown;
-    }
-  }
-
-  return true;
-}
-
-
-#endif // GENOME_PIPELINE
-
-
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2005/11/21 16:06:38  kapustin
+ * Move gpipe-sensitive items to the app level
+ *
  * Revision 1.16  2005/10/19 17:56:35  kapustin
  * Switch to using ObjMgr+LDS to load sequence data
  *

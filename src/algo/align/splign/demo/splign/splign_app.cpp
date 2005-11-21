@@ -786,6 +786,14 @@ void CSplignApp::x_GetBl2SeqHits(
 
 void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
 {
+
+    const CSplignFormatter::EFlags flags =
+#ifdef GENOME_PIPELINE
+        CSplignFormatter::fNone;
+#else
+        CSplignFormatter::fNoExonScores;
+#endif
+
     if(hitrefs.size() == 0) {
         return;
     }
@@ -841,7 +849,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args)
                    "Auto strand not yet implemented");
     }
         
-    cout << m_Formatter->AsExonTable(&splign_results) << flush;
+    cout << m_Formatter->AsExonTable(&splign_results, flags) << flush;
         
     if(m_AsnOut) {
         
@@ -954,6 +962,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/11/21 16:06:38  kapustin
+ * Move gpipe-sensitive items to the app level
+ *
  * Revision 1.54  2005/11/21 14:16:10  kapustin
  * Fix ASN output stream typo
  *

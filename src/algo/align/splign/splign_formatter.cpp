@@ -80,7 +80,8 @@ void CSplignFormatter::SetSeqIds(CConstRef<objects::CSeq_id> id1,
 }
 
 
-string CSplignFormatter::AsExonTable(const CSplign::TResults* results) const
+string CSplignFormatter::AsExonTable(
+    const CSplign::TResults* results, EFlags flags) const
 {
     if(results == 0) {
         results = &m_splign_results;
@@ -91,6 +92,8 @@ string CSplignFormatter::AsExonTable(const CSplign::TResults* results) const
 
     CNcbiOstrstream oss;
     oss.precision(3);
+
+    const bool print_exon_scores = (flags & fNoExonScores)? false: true;
     
     ITERATE(CSplign::TResults, ii, *results) {
         
@@ -124,9 +127,9 @@ string CSplignFormatter::AsExonTable(const CSplign::TResults* results) const
                 
                 oss << seg.m_annot << '\t';
                 oss << CNWAligner::s_RunLengthEncode(seg.m_details);
-#ifdef GENOME_PIPELINE
-                oss << '\t' << seg.m_score;
-#endif
+                if(print_exon_scores) {
+                    oss << '\t' << seg.m_score;
+                }
             }
             else {
 
@@ -140,9 +143,9 @@ string CSplignFormatter::AsExonTable(const CSplign::TResults* results) const
                     oss << "<M-Gap>\t";
                 }
                 oss << '-';
-#ifdef GENOME_PIPELINE
-                oss << "\t-";
-#endif
+                if(print_exon_scores) {
+                    oss << "\t-";
+                }
             }
             oss << endl;
         }
@@ -525,6 +528,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/11/21 16:06:38  kapustin
+ * Move gpipe-sensitive items to the app level
+ *
  * Revision 1.19  2005/10/31 20:49:38  ucko
  * Tweak to fix compilation on systems where TSeqPos and size_t are not
  * equivalent.
