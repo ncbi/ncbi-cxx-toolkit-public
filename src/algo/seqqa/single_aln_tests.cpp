@@ -235,8 +235,14 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         // count of transcript residues doing various things
         CAlnVec avec(exon.GetSegs().GetDenseg(), scope);
         avec.SetGapChar('-');
+        avec.SetEndChar('-');
         exon_match_count = 0;
-        bool in_cds = false;
+
+        // need to be careful here because segment may begin with gap
+        bool in_cds = has_cds
+            && avec.GetSeqStart(0) > cds_from
+            && avec.GetSeqStart(0) <= cds_to;
+
         for (TSeqPos i = 0;  i <= avec.GetAlnStop();  ++i) {
             bool gap_in_xcript  = avec.GetResidue(0, i) == '-';
             bool gap_in_genomic = avec.GetResidue(1, i) == '-';
@@ -483,6 +489,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/11/21 14:46:41  jcherry
+ * Fix for case where exon begins with gap
+ *
  * Revision 1.14  2005/06/23 20:23:49  jcherry
  * Deal with missing strands (assume they're plus)
  *
