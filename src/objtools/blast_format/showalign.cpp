@@ -780,9 +780,10 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         m_AV->GetWholeAlnSeqString(row, sequence[row], &insertAlnStart[row],
                                    &insertStart[row], &insertLength[row],
                                    (int)m_LineLen, &seqStarts[row], &seqStops[row]);
-        //make feature. Only for pairwise and untranslated for subject seq
+        //make feature. Only for pairwise and untranslated for subject nuc seq
         if(!(m_AlignOption & eMasterAnchored) && row > 0 &&
-           !(m_AlignOption & eMultiAlign) && m_AV->GetWidth(row) != 3){
+           !(m_AlignOption & eMultiAlign) && m_AV->GetWidth(row) != 3 &&
+           !(m_AlignType & eProt)){
             if(m_AlignOption & eShowCdsFeature){
                 x_GetFeatureInfo(bioseqFeature[row], *m_featScope, 
                                  CSeqFeatData::e_Cdregion, row, sequence[row]);
@@ -2705,6 +2706,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.91  2005/11/21 17:08:48  jianye
+*No feature retrieval for non-nuc-nuc alignment
+*
 *Revision 1.90  2005/11/16 17:43:29  jianye
 *remove irrelevant seqid in feature seqloc and show cds even with no product
 *
