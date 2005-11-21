@@ -327,6 +327,15 @@ void CAlignVec::Init()
     m_fshifts.clear();
 }
 
+void CAlignExon::Extend(const CAlignExon& e)
+{
+    m_limits.CombineWith(e.m_limits);
+    if (GetFrom() == e.GetFrom())
+        m_fsplice = e.m_fsplice;
+    if (GetTo() == e.GetTo())
+        m_ssplice = e.m_ssplice;
+}
+
 void CAlignVec::Extend(const CAlignVec& a)
 {
     CAlignVec tmp(*this);
@@ -337,20 +346,15 @@ void CAlignVec::Extend(const CAlignVec& a)
     int i;
     for(i = 0; a[i].GetTo() < tmp.front().GetFrom(); ++i) push_back(a[i]);
     if(a[i].GetFrom() <= tmp.front().GetFrom())
-    {
-        tmp.front().Limits().SetFrom( a[i].GetFrom() );
-        tmp.front().m_fsplice = a[i].m_fsplice;
-    }
+        tmp.front().Extend( a[i] );
+
     for(i = 0; i < (int)tmp.size(); ++i) push_back(tmp[i]);
     
     if(a.Limits().GetTo() > back().GetTo())
     {
         for(i = 0; a[i].GetTo() < back().GetFrom(); ++i);
         if(a[i].GetTo() >= back().GetTo())
-        {
-            back().Limits().SetTo( a[i].GetTo() );
-            back().m_ssplice = a[i].m_ssplice;
-        }
+            back().Extend( a[i] );
         for(++i; i < (int)a.size(); ++i) push_back(a[i]);
     }
     
@@ -729,11 +733,7 @@ void CClusterSet::InsertAlignment(const CAlignVec& a)
 {
     CCluster clust;
     clust.Insert(a);
-    InsertCluster(clust);
-}
 
-void CClusterSet::InsertCluster(CCluster clust)
-{
     pair<TIt,TIt> lim = equal_range(clust);
     for(TIt it = lim.first; it != lim.second;) {
         clust.Splice(const_cast<CCluster&>(*it));
@@ -743,12 +743,6 @@ void CClusterSet::InsertCluster(CCluster clust)
     const_cast<CCluster&>(*insert(lim.second,CCluster(clust.Limits()))).Splice(clust);
 }
 
-void CClusterSet::Init()
-{
-    clear();
-}
-
-
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 
@@ -757,6 +751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/11/21 21:34:25  chetvern
+ * Small changes in CAlignExon and CClusterSet interfaces
+ *
  * Revision 1.7  2005/11/15 21:03:05  souvorov
  * FShiftedLen is corrected
  *
