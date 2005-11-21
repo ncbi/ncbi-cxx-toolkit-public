@@ -61,10 +61,11 @@ public:
 
 
     /// Utility class to search sequences
-    class CSequenceFinder
+    class NCBI_LDS_EXPORT CSequenceFinder
     {
     public:
         CSequenceFinder(CLDS_Query& query);
+        ~CSequenceFinder();
 
         /// Find sequence
         void Find(const string&   seqid, 
@@ -196,6 +197,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/11/21 18:51:10  jcherry
+ * Added export specifier for CLDS_Query::CSequenceFinder, plus explicit
+ * destructor (required for export)
+ *
  * Revision 1.12  2005/10/21 14:37:57  ucko
  * Fix friend declaration to refer to CSequenceFinder (which needs it
  * when built with some compilers) rather than CSequenceQuery (which

@@ -325,6 +325,12 @@ CLDS_Query::CSequenceFinder::CSequenceFinder(CLDS_Query& query)
     m_CurTxt_idx.SetCondition(CBDB_FileCursor::eEQ);
 }
 
+
+CLDS_Query::CSequenceFinder::~CSequenceFinder()
+{
+}
+
+
 void CLDS_Query::CSequenceFinder::Find(const string&   seqid, 
                                        CLDS_Set*       obj_ids)
 {
@@ -648,6 +654,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/11/21 18:51:10  jcherry
+ * Added export specifier for CLDS_Query::CSequenceFinder, plus explicit
+ * destructor (required for export)
+ *
  * Revision 1.18  2005/10/20 15:34:08  kuznets
  * Implemented duplicate id check
  *
