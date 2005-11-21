@@ -64,6 +64,11 @@ public:
                              TTypeInfoCreator2 f);
     static TTypeInfo Get_multimap(TTypeInfo arg1, TTypeInfo arg2,
                                   TTypeInfoCreator2 f);
+    static TTypeInfo GetInfo(TTypeInfo& storage,
+                             TTypeInfo arg, TTypeInfoCreator1 f);
+    static TTypeInfo GetInfo(TTypeInfo& storage,
+                             TTypeInfo arg1, TTypeInfo arg2,
+                             TTypeInfoCreator2 f);
 
     // throw exceptions
     static void ThrowDuplicateElementError(void);
@@ -153,6 +158,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/11/21 16:18:06  vasilche
+* Implemented serialization of set and map with custom comparator.
+*
 * Revision 1.8  2004/04/02 16:57:35  gouriano
 * made it possible to create named CTypeInfo for containers
 *

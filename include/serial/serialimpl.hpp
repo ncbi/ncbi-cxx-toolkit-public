@@ -135,6 +135,16 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_STL_set(TypeMacro,TypeMacroArgs) \
     &NCBI_NS_NCBI::CStlClassInfo_set<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
 
+#define SERIAL_TYPE_STL_multiset2(TypeMacro,TypeMacroArgs,ComparatorType) \
+    NCBI_NS_STD::multiset<SERIAL_TYPE(TypeMacro)TypeMacroArgs, ComparatorType >
+#define SERIAL_REF_STL_multiset2(TypeMacro,TypeMacroArgs,ComparatorType) \
+    &NCBI_NS_NCBI::CStlClassInfo_multiset2<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+
+#define SERIAL_TYPE_STL_set2(TypeMacro,TypeMacroArgs,ComparatorType)    \
+    NCBI_NS_STD::set<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >
+#define SERIAL_REF_STL_set2(TypeMacro,TypeMacroArgs,ComparatorType)      \
+    &NCBI_NS_NCBI::CStlClassInfo_set2<SERIAL_TYPE(TypeMacro)TypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(TypeMacro)TypeMacroArgs
+
 #define SERIAL_TYPE_STL_multimap(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
     NCBI_NS_STD::multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
 #define SERIAL_REF_STL_multimap(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
@@ -144,6 +154,16 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
     NCBI_NS_STD::map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >
 #define SERIAL_REF_STL_map(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs) \
     CTypeRef(&NCBI_NS_NCBI::CStlClassInfo_map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
+
+#define SERIAL_TYPE_STL_multimap3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
+    NCBI_NS_STD::multimap<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs, ComparatorType >
+#define SERIAL_REF_STL_multimap3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
+    CTypeRef(NCBI_NS_NCBI::CStlClassInfo_multimap3<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
+
+#define SERIAL_TYPE_STL_map3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
+    NCBI_NS_STD::map<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs, ComparatorType >
+#define SERIAL_REF_STL_map3(KeyTypeMacro,KeyTypeMacroArgs,ValueTypeMacro,ValueTypeMacroArgs,ComparatorType) \
+    CTypeRef(NCBI_NS_NCBI::CStlClassInfo_map3<SERIAL_TYPE(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_TYPE(ValueTypeMacro)ValueTypeMacroArgs,ComparatorType >::GetTypeInfo, SERIAL_REF(KeyTypeMacro)KeyTypeMacroArgs,SERIAL_REF(ValueTypeMacro)ValueTypeMacroArgs)
 
 #define SERIAL_TYPE_STL_list(TypeMacro,TypeMacroArgs) \
     NCBI_NS_STD::list<SERIAL_TYPE(TypeMacro)TypeMacroArgs >

@@ -705,6 +705,64 @@ public:
         }
 };
 
+template<typename Data, typename Comparator>
+class CStlClassInfo_set2
+{
+public:
+    typedef set<Data, Comparator> TObjectType;
+
+    static TTypeInfo GetTypeInfo(TTypeInfo elementType)
+        {
+            static TTypeInfo info = 0;
+            return CStlClassInfoUtil::GetInfo(info,
+                                              elementType,
+                                              &CreateTypeInfo);
+        }
+    static CTypeInfo* CreateTypeInfo(TTypeInfo elementType)
+        {
+            CStlOneArgTemplate* info =
+                new CStlOneArgTemplate(sizeof(TObjectType), elementType,
+                                       true);
+
+            CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
+            CStlClassInfoFunctions_set<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
+            CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
+            CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
+
+            return info;
+        }
+};
+
+template<typename Data, typename Comparator>
+class CStlClassInfo_multiset2
+{
+public:
+    typedef multiset<Data, Comparator> TObjectType;
+
+    static TTypeInfo GetTypeInfo(TTypeInfo elementType)
+        {
+            static TTypeInfo info = 0;
+            return CStlClassInfoUtil::GetInfo(info,
+                                              elementType,
+                                              &CreateTypeInfo);
+        }
+    static CTypeInfo* CreateTypeInfo(TTypeInfo elementType)
+        {
+            CStlOneArgTemplate* info =
+                new CStlOneArgTemplate(sizeof(TObjectType), elementType,
+                                       true);
+
+            CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
+            CStlClassInfoFunctions_multiset<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
+            CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
+            CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
+
+            return info;
+        }
+};
+
 template<typename Key, typename Value>
 class CStlClassInfo_map
 {
@@ -775,6 +833,80 @@ public:
         }
 };
 
+template<typename Key, typename Value, typename Comparator>
+class CStlClassInfo_map3
+{
+public:
+    typedef map<Key, Value, Comparator> TObjectType;
+    typedef typename TObjectType::value_type TElementType;
+
+    static TTypeInfo GetTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
+        {
+            static TTypeInfo info = 0;
+            return CStlClassInfoUtil::GetInfo(info,
+                                              keyType, valueType,
+                                              &CreateTypeInfo);
+        }
+
+    static CTypeInfo* CreateTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
+        {
+            TElementType* dummy = 0;
+            CStlTwoArgsTemplate* info =
+                new CStlTwoArgsTemplate
+                (sizeof(TObjectType),
+                 keyType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->first),
+                 valueType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->second),
+                 true);
+            
+            CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
+            CStlClassInfoFunctions_set<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
+            CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
+            CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
+            
+            return info;
+        }
+};
+
+template<typename Key, typename Value, typename Comparator>
+class CStlClassInfo_multimap3
+{
+public:
+    typedef multimap<Key, Value, Comparator> TObjectType;
+    typedef typename TObjectType::value_type TElementType;
+
+    static TTypeInfo GetTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
+        {
+            static TTypeInfo info = 0;
+            return CStlClassInfoUtil::GetInfo(info,
+                                              keyType, valueType,
+                                              &CreateTypeInfo);
+        }
+
+    static CTypeInfo* CreateTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
+        {
+            TElementType* dummy = 0;
+            CStlTwoArgsTemplate* info =
+                new CStlTwoArgsTemplate
+                (sizeof(TObjectType),
+                 keyType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->first),
+                 valueType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->second),
+                 true);
+            
+            CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
+            CStlClassInfoFunctions_multiset<TObjectType>::SetAddElementFunctions(info);
+            CStlClassInfoFunctions<TObjectType>::SetCountFunctions(info);
+            CStlClassInfoFunctionsCI<TObjectType>::SetIteratorFunctions(info);
+            CStlClassInfoFunctionsI_set<TObjectType>::SetIteratorFunctions(info);
+            
+            return info;
+        }
+};
+
 END_NCBI_SCOPE
 
 #endif  /* STLTYPES__HPP */
@@ -785,6 +917,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2005/11/21 16:18:06  vasilche
+* Implemented serialization of set and map with custom comparator.
+*
 * Revision 1.76  2005/11/17 20:22:09  vasilche
 * Initialize pointers by null before reading.
 *

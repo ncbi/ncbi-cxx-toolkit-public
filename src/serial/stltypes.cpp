@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/11/21 16:18:06  vasilche
+* Implemented serialization of set and map with custom comparator.
+*
 * Revision 1.41  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -204,6 +207,7 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/stltypesimpl.hpp>
+#include <serial/serialimpl.hpp>
 #include <serial/exception.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/classinfohelper.hpp>
@@ -284,6 +288,31 @@ TTypeInfo CStlClassInfoUtil::Get_multimap(TTypeInfo arg1, TTypeInfo arg2,
                                           TTypeInfoCreator2 f)
 {
     return f(arg1, arg2);
+}
+
+TTypeInfo CStlClassInfoUtil::GetInfo(TTypeInfo& storage,
+                                     TTypeInfo arg, TTypeInfoCreator1 f)
+{
+    if ( !storage ) {
+        CMutexGuard guard(GetTypeInfoMutex());
+        if ( !storage ) {
+            storage = f(arg);
+        }
+    }
+    return storage;
+}
+
+TTypeInfo CStlClassInfoUtil::GetInfo(TTypeInfo& storage,
+                                     TTypeInfo arg1, TTypeInfo arg2,
+                                     TTypeInfoCreator2 f)
+{
+    if ( !storage ) {
+        CMutexGuard guard(GetTypeInfoMutex());
+        if ( !storage ) {
+            storage = f(arg1, arg2);
+        }
+    }
+    return storage;
 }
 
 void CStlClassInfoUtil::CannotGetElementOfSet(void)
