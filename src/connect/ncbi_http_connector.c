@@ -291,6 +291,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
         SOCK_Abort(uuu->sock);
         s_DropConnection(uuu, 0/*no wait*/);
         if (!s_Adjust(uuu, &null, drop_unread)) {
+            uuu->can_connect = eCC_None;
             status = eIO_Closed;
             break;
         }
@@ -492,8 +493,10 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         /* HTTP header read error; disconnect and try to use another server */
         SOCK_Abort(uuu->sock);
         s_DropConnection(uuu, 0/*no wait*/);
-        if (!s_Adjust(uuu, &redirect, drop_unread))
+        if (!s_Adjust(uuu, &redirect, drop_unread)) {
+            uuu->can_connect = eCC_None;
             break;
+        }
         assert(redirect == 0);
     }
     assert(redirect == 0);
@@ -589,7 +592,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
                                  const STimeout* timeout,
                                  int/*bool*/     close)
 {
-    size_t w_size = BUF_Size(uuu->w_buf);
+    size_t w_size;
 
     /* store timeouts for later use */
     if (timeout) {
@@ -603,7 +606,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
     }
 
     if (close  &&  uuu->can_connect != eCC_None  &&  !uuu->sock  &&
-        ((uuu->flags & fHCC_SureFlush)  ||  BUF_Size(uuu->w_buf))) {
+        ((uuu->flags & fHCC_SureFlush)  ||  BUF_Size(www->w_buf))) {
         /* "WRITE" mode and data (or just flag) pending */
         s_PreRead(uuu, timeout, 1/*drop_unread*/);
     }
@@ -611,6 +614,7 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
     assert(!uuu->sock);
 
     /* clear pending output data, if any */
+    w_size = BUF_Size(uuu->w_buf);
     if (w_size  &&  BUF_Read(uuu->w_buf, 0, w_size) != w_size) {
         CORE_LOG(eLOG_Error, "[HTTP]  Cannot drop output buffer");
         assert(0);
@@ -979,6 +983,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.67  2005/11/21 21:04:05  lavr
+ * Fix double flush error at Close
+ *
  * Revision 6.66  2005/08/12 16:11:21  lavr
  * Implement fHCC_Flushable
  *
