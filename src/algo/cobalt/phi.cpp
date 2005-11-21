@@ -47,10 +47,15 @@ Contents: Match PHI patterns against a list of sequences
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
+/// Intermediate representation of a pattern hit
 typedef struct SPatternHit {
-    int query_idx;
-    TRange hit;
+    int query_idx;       ///< query sequence containing the hit
+    TRange hit;          ///< range on query sequence where hit occurs
 
+    /// constructor
+    /// @param seq Sequence
+    /// @param range Offset range of hit
+    ///
     SPatternHit(int seq, TRange range)
         : query_idx(seq), hit(range) {}
 } SPatternHit;
@@ -64,6 +69,8 @@ CMultiAligner::FindPatternHits()
     if (m_PatternFile.empty())
         return;
 
+    // empty out existing list
+
     m_PatternHits.PurgeAllHits();
 
     CNcbiIfstream pattern_stream(m_PatternFile.c_str());
@@ -75,16 +82,26 @@ CMultiAligner::FindPatternHits()
     SPHIPatternSearchBlk *phi_pattern;
     Int4 hit_offsets[PHI_MAX_HIT];
 
+    // for each pattern
+
     for (int i = 0; !pattern_stream.eof(); i++) {
 
         vector<SPatternHit> phi_hits;
+
+        // precompile the pattern in preparation for running
+        // all sequences through it
 
         pattern_stream >> pattern;
         SPHIPatternSearchBlkNew((char *)pattern,
                                 FALSE, sbp, &phi_pattern, NULL);
         _ASSERT(phi_pattern != NULL);
 
+        // for each sequence
+
         for (int j = 0; j < num_queries; j++) {
+
+            // scan the sequence through the compiled pattern,
+            // saving any hits found
 
             Int4 twice_num_hits = ::FindPatternHits(hit_offsets, 
                                   (const Uint1 *)(m_QueryData[j].GetSequence()),
@@ -95,6 +112,10 @@ CMultiAligner::FindPatternHits()
                                                          hit_offsets[k])));
             }
         }
+
+        // for each hit to the same pattern by different sequences,
+        // create a pairwise alignment. Temporarily hijack the score
+        // of the alignment to store the identity of the pattern
 
         for (int j = 0; j < (int)phi_hits.size() - 1; j++) {
             for (int k = j + 1; k < (int)phi_hits.size(); k++) {
@@ -108,6 +129,8 @@ CMultiAligner::FindPatternHits()
                 }
             }
         }
+
+        // clean up the current pattern
 
         phi_pattern = SPHIPatternSearchBlkFree(phi_pattern);
     }
@@ -142,6 +165,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2005/11/21 21:03:00  papadopo
+  fix documentation, add doxygen
+
   Revision 1.4  2005/11/10 16:18:31  papadopo
   Allow hitlists to be regenerated cleanly
 

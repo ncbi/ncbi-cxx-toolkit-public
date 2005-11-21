@@ -47,6 +47,10 @@ BEGIN_SCOPE(cobalt)
 void 
 CEditScript::AddOps(EGapAlignOpType op_type, int num_ops)
 {
+    // add num_ops traceback operations, either as a 
+    // separate edit script operation or merged into
+    // the previous operation
+
     if (m_Script.empty()) {
         m_Script.push_back(STracebackOp(op_type, num_ops));
     }
@@ -176,7 +180,7 @@ CEditScript::FindOffsetFromSeq2(TOffsetPair start_offsets,
 
         if (itr->op_type == eGapAlignDel) {
 
-            // gap in query; if s_stop occurs in
+            // gap in query; if seq2_target occurs in
             // this link then either point beyond the
             // entire gap or exclude the entire gap
 
@@ -197,7 +201,7 @@ CEditScript::FindOffsetFromSeq2(TOffsetPair start_offsets,
         }
         else if (itr->op_type == eGapAlignSub) {
 
-            // substitutions; if s_stop does not occur in 
+            // substitutions; if seq2_target does not occur in 
             // this link, advance to the start of the next link
 
             if (s + itr->num_ops > seq2_target) {
@@ -214,7 +218,7 @@ CEditScript::FindOffsetFromSeq2(TOffsetPair start_offsets,
 
             // gap in subject; just skip to the start of
             // the next link, since this link will never 
-            // get to s_stop
+            // get to seq2_target
 
             q += itr->num_ops;
             curr_tback += itr->num_ops;
@@ -252,14 +256,14 @@ CEditScript::FindOffsetFromSeq1(TOffsetPair start_offsets,
 
             // gap in query; just skip to the start of
             // the next link, since this link will never 
-            // get to q_stop
+            // get to seq1_target
 
             s += itr->num_ops;
             curr_tback += itr->num_ops;
         }
         else if (itr->op_type == eGapAlignSub) {
 
-            // substitutions; if q_stop does not occur in 
+            // substitutions; if seq1_target does not occur in 
             // this link, advance to the start of the next link
 
             if (q + itr->num_ops > seq1_target) {
@@ -274,7 +278,7 @@ CEditScript::FindOffsetFromSeq1(TOffsetPair start_offsets,
         }
         else {
 
-            // gap in subject; if q_stop occurs in
+            // gap in subject; if seq1_target occurs in
             // this link then either point beyond the
             // entire gap or exclude the entire gap
 
@@ -472,6 +476,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/21 21:03:00  papadopo
+  fix documentation, add doxygen
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 

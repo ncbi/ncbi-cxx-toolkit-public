@@ -46,13 +46,6 @@ Contents: Code that deals with scoring and manipulating
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cobalt)
 
-typedef struct SAlignHalf {
-    int hit_num;
-    int seq;
-    int other_seq;
-    TRange range;
-} SAlignHalf;
-
 /// Find a maximum weight path in a directed acyclic graph
 /// @param nodes The graph [in/modified]
 /// @return Pointer to the first node in the optimal path
@@ -60,14 +53,16 @@ typedef struct SAlignHalf {
 CMultiAligner::SGraphNode * 
 CMultiAligner::x_FindBestPath(vector<SGraphNode>& nodes)
 {
-    // Solve the graph problem detailed in x_FillPairInfo
-    // below. nodes[] contains the alignments from which a 
-    // subset will be chosen, and nodes[i] also contains a 
-    // list of alignments that lie strictly to the right of 
-    // alignment i.
+    // Given the nodes of a directed acyclic graph, each
+    // contining a score and referring to a pairwise 
+    // alignment between two sequences, find the non-
+    // conflicting subset of the nodes that has the highest
+    // score. Note that the scores optimized here are
+    // local to the graph, and need not depend on the actual
+    // alignment to which a node points.
     //
-    // The algorithm is a simplified form of breadth-first
-    // search, which relies on the list of alignments being
+    // The algorithm is a simplified form of dynamic programming,
+    // which relies on the list of alignments being
     // in sorted order. Optimal paths are built right-to-left,
     // from the rightmost alignment to the leftmost. For each
     // node, optimal paths for all nodes to the right have
@@ -77,7 +72,6 @@ CMultiAligner::x_FindBestPath(vector<SGraphNode>& nodes)
     //
     // Each node stores the best score for the path starting at
     // that node, and each node lies on at most one optimal path. 
-    // The running time is O(number of edges in graph).
     //
     // This routine returns a linked list of structures that
     // give the alignments participating in the optimal path.
@@ -92,9 +86,9 @@ CMultiAligner::x_FindBestPath(vector<SGraphNode>& nodes)
 
     for (int i = num_nodes - 1; i >= 0; i--) {
 
-        // walk through the list of edges for this node. Find
-        // the node that is connected to the current node and
-        // whose score is highest, then attach the current node
+        // Find the node that lies strictly to the right of
+        // of node i and is the head of the currently highest-scoring
+        // collection of nodes. Then attach the current node
         // to it. Update the optimal score for the path that 
         // includes the current node
 
@@ -124,29 +118,28 @@ CMultiAligner::x_FindBestPath(vector<SGraphNode>& nodes)
     return best_node;
 }
 
-/// Find a nonintersecting subset of the pairwise alignments available
-/// between a collection of input sequences, and turn the alignments
-/// into dynamic programming constraints
-/// @param query_data The input sequences [in]
-/// @param pair_info 2-D array of pairwise information [in/modified]
-/// @param align_list The collection of pairwise alignments [in]
-/// 
 void 
 CMultiAligner::x_FindAlignmentSubsets()
 {
-    // align_list contains all of the alignments found by blast
-    // searches among all sequences, with the scores of these
-    // alignments scaled by their frequency of occurence.
-    //
-    // This routine, for each pair of sequences, chooses a subset
-    // of the available alignments for which 1) all alignments
+    // For each pair of sequences, chooses a subset of the 
+    // available alignments for which 1) all alignments
     // occur in order, without crossing, on both sequences; and
     // 2) the combined score of all alignments is as large as possible.
+    // The following relies on m_CombinedList being sorted in
+    // canonical order
 
     int num_queries = m_QueryData.size();
     CNcbiMatrix< vector<SGraphNode> > nodes(num_queries, num_queries);
 
+    // first group together alignments to the same pairs of
+    // sequences. Each such collection of alignments becomes
+    // a node in the graph for that sequence pair; the score
+    // of the node is the score of the hit it points to
+
     for (int i = 0; i < m_CombinedHits.Size(); i++) {
+
+        // assume all hits will be deleted
+
         m_CombinedHits.SetKeepHit(i, false);
 
         CHit *hit = m_CombinedHits.GetHit(i);
@@ -154,6 +147,9 @@ CMultiAligner::x_FindAlignmentSubsets()
         nodes(hit->m_SeqIndex1, hit->m_SeqIndex2).back().best_score =
                                       hit->m_Score;
     }
+
+    // now optimize the graph for each sequence pair
+    // separately
 
     for (int i = 0; i < num_queries - 1; i++) {
 
@@ -171,6 +167,8 @@ CMultiAligner::x_FindAlignmentSubsets()
             }
         }
     }
+
+    // Remove hits that do not lie on an optimal path
 
     m_CombinedHits.PurgeUnwantedHits();
 }
@@ -224,6 +222,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.10  2005/11/21 21:03:00  papadopo
+  fix documentation, add doxygen
+
   Revision 1.9  2005/11/18 22:26:22  papadopo
   always canonicalize the list of combined hits
 

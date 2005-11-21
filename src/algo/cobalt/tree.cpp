@@ -120,6 +120,11 @@ CTree::ListTreeLeaves(const TPhyTreeNode *node,
             double curr_dist)
 {
     if (node->IsLeaf()) {
+
+        // negative edge lengths are not valid, and we assume
+        // that distances closer to the root are weighted more
+        // heavily, hence the reciprocal
+
         if (curr_dist <= 0)
             node_list.push_back(STreeLeaf(node->GetValue().GetId(), 0.0));
         else
@@ -132,7 +137,12 @@ CTree::ListTreeLeaves(const TPhyTreeNode *node,
     while (child != node->SubNodeEnd()) {
         double new_dist = curr_dist;
 
-        _ASSERT((*child)->GetValue().GetDist() >= 0.0 || (*child)->IsLeaf());
+        // the fastme algorithm does not allow edges to have
+        // negative length unless they are leaf edges. We allow
+        // lengths that are slightly negative to account for
+        // roundoff effects
+
+        _ASSERT((*child)->GetValue().GetDist() >= -1e-6 || (*child)->IsLeaf());
         if ((*child)->GetValue().GetDist() > 0) {
             new_dist += (*child)->GetValue().GetDist();
         }
@@ -228,6 +238,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/21 21:03:00  papadopo
+  fix documentation, add doxygen
+
   Revision 1.3  2005/11/08 18:42:16  papadopo
   assert -> _ASSERT
 

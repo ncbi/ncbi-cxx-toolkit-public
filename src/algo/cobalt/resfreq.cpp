@@ -57,7 +57,10 @@ CProfileData::Load(EMapChoice choice,
     m_ResFreqMmap = 0;
     m_PssmMmap = new CMemoryFile(dbpath[0] + ".rps");
 
-    // Point to important locations in the PSSM file
+    // Point to important locations in the PSSM file. Note that 
+    // because only the PSSM file contains a list of where PSSMs
+    // start, the file must be opened even if residue freqs and
+    // not PSSMs are desired
    
     BlastRPSProfileHeader * profile_header = (BlastRPSProfileHeader *)
                                              m_PssmMmap->GetPtr();
@@ -67,6 +70,10 @@ CProfileData::Load(EMapChoice choice,
 
     switch (choice) {
     case eGetPssm:
+
+        // make a 2-D array pointing to the memory-mapped
+        // PSSM data
+
         m_SeqOffsets = profile_header->start_offsets;
         m_PssmRows = new Int4 * [num_rows];
         for (int i = 0; i < num_rows; i++) {
@@ -75,6 +82,13 @@ CProfileData::Load(EMapChoice choice,
         break;
 
     case eGetResFreqs:
+
+        // to avoid exhausting virtual memory, do not keep
+        // the residue frequency file and the PSSM file 
+        // simultaneously open. Instead, copy the list of
+        // offsets from the PSSM file, close the file, and
+        // then memory map the residue frequencies
+
         m_SeqOffsets = new Int4 [num_db_seqs + 1];
         memcpy(m_SeqOffsets, profile_header->start_offsets,
                                 (num_db_seqs + 1) * sizeof(Int4));
@@ -113,6 +127,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.4  2005/11/21 21:03:00  papadopo
+  fix documentation, add doxygen
+
   Revision 1.3  2005/11/10 15:38:26  papadopo
   Use custom header for CProfileData
 

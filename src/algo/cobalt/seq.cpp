@@ -94,6 +94,8 @@ CSequence::Reset(const blast::SSeqLoc& seq_in)
 {
     _ASSERT(seq_in.seqloc->IsWhole() || seq_in.seqloc->IsInt());
 
+    // find the bioseq to which the seqloc refers
+
     const CSeq_loc& seqloc = *seq_in.seqloc;
     CBioseq_Handle bhandle;
     if (seqloc.IsWhole()) {
@@ -105,12 +107,16 @@ CSequence::Reset(const blast::SSeqLoc& seq_in)
         bhandle = seq_in.scope->GetBioseqHandle(seqloc.GetInt().GetId(),
                                                 CScope::eGetBioseq_All);
     }
-
     CConstRef<CBioseq> bioseq = bhandle.GetCompleteBioseq();
+
+    // get to the sequence data in the bioseq
+
     _ASSERT(bioseq->IsSetInst());
     const CBioseq::TInst& inst = bioseq->GetInst();
     _ASSERT(inst.IsSetSeq_data());
     const CSeq_data& seqdata = inst.GetSeq_data(); 
+
+    // convert to ncbistdaa if necessary
 
     CSeq_data converted;
     const CSeq_data *data;
@@ -122,6 +128,8 @@ CSequence::Reset(const blast::SSeqLoc& seq_in)
         data = &seqdata;
     }
 
+    // work out the range on the sequence that will be used
+
     int seq_length = data->GetNcbistdaa().Get().size();
     int from = 0;
     int to = seq_length - 1;
@@ -131,19 +139,24 @@ CSequence::Reset(const blast::SSeqLoc& seq_in)
         seq_length = to - from + 1;
     }
 
+    // make a local copy of the sequence data
     m_Sequence.resize(seq_length);
     for (int i = 0; i < seq_length; i++) {
         m_Sequence[i] = data->GetNcbistdaa().Get()[from + i];
     }
 
+    // residue frequencies start off empty
+
     m_Freqs.Resize(seq_length, kAlphabetSize);
     m_Freqs.Set(0.0);
 }
+
 
 CSequence::CSequence(const blast::SSeqLoc& sl) 
 {
     Reset(sl);
 }
+
 
 void 
 CSequence::PropagateGaps(const CNWAligner::TTranscript& transcript,
@@ -151,8 +164,17 @@ CSequence::PropagateGaps(const CNWAligner::TTranscript& transcript,
 {
     int new_size = transcript.size();
 
+    // no gaps means nothing needs updating
+
+    if (new_size == GetLength()) {
+        return;
+    }
+
     vector<unsigned char> new_seq(new_size);
     TFreqMatrix new_freq(new_size, kAlphabetSize, 0.0);
+
+    // expand the sequence data and the profile columns
+    // to incorporate new gaps
 
     for (int i = 0, j = 0; i < new_size; i++) {
         if (transcript[i] == gap_choice) {
@@ -167,6 +189,8 @@ CSequence::PropagateGaps(const CNWAligner::TTranscript& transcript,
         }
     }
 
+    // replace class data
+
     m_Sequence.swap(new_seq);
     m_Freqs.Swap(new_freq);
 }
@@ -178,12 +202,18 @@ void CSequence::CompressSequences(vector<CSequence>& seq,
     int num_seqs = index_list.size();
     int new_length = 0;
 
+    // for each alignment column
+
     for (int i = 0; i < align_length; i++) {
         int j;
         for (j = 0; j < num_seqs; j++) {
             if (seq[index_list[j]].m_Sequence[i] != kGapChar)
                 break;
         }
+
+        // if the specified list of sequences do not all 
+        // have a gap character in column i, keep the column
+        
         if (j < num_seqs) {
             for (j = 0; j < num_seqs; j++) {
                 seq[index_list[j]].m_Sequence[new_length] =
@@ -196,6 +226,9 @@ void CSequence::CompressSequences(vector<CSequence>& seq,
             new_length++;
         }
     }
+
+    // if the length changed, shorten m_Sequence and m_Freqs
+
     if (new_length != align_length) {
         for (int i = 0; i < num_seqs; i++) {
             seq[index_list[i]].m_Sequence.resize(new_length);
@@ -279,6 +312,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.7  2005/11/21 21:03:00  papadopo
+  fix documentation, add doxygen
+
   Revision 1.6  2005/11/18 22:27:08  papadopo
   handle Seq_locs of type Seq_interval
 
