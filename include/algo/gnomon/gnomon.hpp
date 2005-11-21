@@ -82,11 +82,9 @@ public:
     CRef<objects::CSeq_annot> GetAnnot(void);
 
     list<CGene> GetGenes() const;
-    int PrintGenes(CUniqNumber& unumber, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout, bool complete = false) const;
+
+    TSignedSeqPos PartialModelStepBack(list<CGene>& genes) const;
     void PrintInfo() const;
-
-
-    //   friend void CAlignVec::GetScore(const CGnomonEngine& engine, bool uselims);
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -107,6 +105,8 @@ private:
     CRef<objects::CSeq_annot> m_Annot;
 };
 
+void PrintGenes(const list<CGene>& genes, CUniqNumber& unumber, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout);
+
 class NCBI_XALGOGNOMON_EXPORT CCodingPropensity {
 public:
 
@@ -123,6 +123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/11/21 21:25:54  chetvern
+ * Extracted PartialModelStepBack from PrintGenes
+ *
  * Revision 1.5  2005/10/20 19:34:46  souvorov
  * Penalty for nonconsensus starts/stops/splices
  *
