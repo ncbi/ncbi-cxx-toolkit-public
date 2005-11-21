@@ -32,7 +32,7 @@
 *   checksum (CRC32 or MD5) calculation class
 */
 
-#include <util/md5.hpp>
+#include <corelib/ncbistd.hpp>
 
 
 /** @addtogroup Checksum
@@ -42,6 +42,8 @@
 
 
 BEGIN_NCBI_SCOPE
+
+class CMD5;
 
 /// Checksum calculator
 ///
@@ -57,6 +59,7 @@ public:
         eNone,             // no checksum in file
         eCRC32,            // 32-bit Cyclic Redundancy Check
         eMD5,              // Message Digest version 5
+        eCRC32ZIP,         // Exact zip CRC32, slightly differs from eCRC32
         eDefault = eCRC32
     };
     enum {
@@ -68,11 +71,13 @@ public:
     ~CChecksum();
     CChecksum& operator=(const CChecksum& cks);
 
-    /// Initialize static tables used in checksum calculation
-    /// Call this method before first concurrent (muti-thread) use of 
-    /// CChecksum. It is safe to call this method repeatedly.
+    /// Initialize static tables used in checksum calculation.
+    /// There is no need to call this method since it's done internally.
     static void InitTables(void);
 
+    /// Print C++ code for CRC32 tables for direct inclusion into library.
+    /// It eliminates the need to initialize CRC32 tables.
+    static void PrintTables(CNcbiOstream& out);
 
     bool Valid(void) const;
     EMethod GetMethod(void) const;
@@ -108,11 +113,9 @@ private:
         CMD5* m_MD5;
     } m_Checksum;
 
-    static Uint4 sm_CRC32Table[256];
-    static Uint4 UpdateCRC32(Uint4 checksum, const char* str, size_t length);
-
     bool ValidChecksumLineLong(const char* line, size_t length) const;
 
+    void x_Update(const char* str, size_t length);
     void x_Free();
 };
 
@@ -146,6 +149,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/11/21 14:30:22  vasilche
+* Replaced inclusion of util/md5.hpp with forward declaration of CMD5.
+* Implemented ZIP style CRC32.
+*
 * Revision 1.9  2005/11/15 17:47:54  kuznets
 * InitTables made public to open a way to avoid MT races
 *
