@@ -117,9 +117,9 @@ public:
     bool operator<(const CAlignExon& p) const { return Precede(m_limits,p.m_limits); }
     
     const TSignedSeqRange& Limits() const { return m_limits; }
-          TSignedSeqRange& Limits()       { return m_limits; }
     TSignedSeqPos GetFrom() const { return m_limits.GetFrom(); }
     TSignedSeqPos GetTo() const { return m_limits.GetTo(); }
+    void Extend(const CAlignExon& e);
     void AddFrom(int d) { m_limits.SetFrom( m_limits.GetFrom() +d ); }
     void AddTo(int d) { m_limits.SetTo( m_limits.GetTo() +d ); }
 
@@ -309,21 +309,18 @@ NCBI_XALGOGNOMON_EXPORT CNcbiOstream& operator<<(CNcbiOstream& s, const CCluster
 
 class NCBI_XALGOGNOMON_EXPORT CClusterSet : public set<CCluster>
 {
- public:
+public:
     typedef set<CCluster>::iterator TIt;
     typedef set<CCluster>::const_iterator TConstIt;
-
+    
     CClusterSet() {}
     void InsertAlignment(const CAlignVec& a);
-    void InsertCluster(CCluster c);
-    void Init();
 };
 
 class CGene;
 
 class NCBI_XALGOGNOMON_EXPORT CExonData
 {
-    //    friend list<CGene> CParse::GetGenes() const;
 public:
     CExonData(TSignedSeqPos stt = 0, TSignedSeqPos stp = 0, int lf = 0, int rf = 0, string tp = kEmptyStr, int sl = 0, double sc = BadScore()) :
 	m_limits(stt,stp), 
@@ -357,7 +354,6 @@ private:
 
 class NCBI_XALGOGNOMON_EXPORT CGene : public vector<CExonData>
 {
-    //    friend list<CGene> CParse::GetGenes() const;
 public:
     CGene(EStrand s, bool l = true, bool r = true, int csf = 0, string cntg = "") : 
 	m_strand(s), m_cds_shift(csf), m_leftend(l), m_rightend(r), m_contig(cntg)
@@ -396,6 +392,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/11/21 21:28:38  chetvern
+ * Small changes in CAlignExon and CClusterSet interfaces
+ *
  * Revision 1.13  2005/10/21 15:21:46  souvorov
  * CAlignVec::SetLimits deleted
  *
