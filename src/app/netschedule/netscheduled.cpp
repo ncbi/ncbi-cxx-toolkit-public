@@ -70,7 +70,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.6.4  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.6.5  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -471,6 +471,9 @@ CNetScheduleServer::~CNetScheduleServer()
         case eIO_Timeout: \
             NCBI_THROW(CNetServiceException, \
                        eTimeout, "Communication timeout error"); \
+        case eIO_Closed: \
+            NCBI_THROW(CNetServiceException, \
+              eCommunicationError, "Communication error(socket closed)"); \
         default: \
             NCBI_THROW(CNetServiceException, \
               eCommunicationError, "Communication error"); \
@@ -499,7 +502,9 @@ void CNetScheduleServer::Process(SOCK sock)
         s_WaitForReadSocket(socket, m_InactivityTimeout);
 
         io_st = socket.ReadLine(tdata->auth);
-        JS_CHECK_IO_STATUS(io_st)
+        if (io_st != eIO_Success) {
+            return;
+        }
 
         if (tdata->auth == "netschedule_control" ||
             tdata->auth == "netschedule_admin") {
@@ -2431,6 +2436,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/11/21 14:26:28  kuznets
+ * Better handling of authentication errors (induced by LBSM and port scanners
+ *
  * Revision 1.58  2005/08/30 14:20:02  kuznets
  * Server version increment
  *
