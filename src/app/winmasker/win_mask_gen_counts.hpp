@@ -46,6 +46,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include "algo/winmask/seq_masker_ostat.hpp"
+#include "win_mask_config.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -57,6 +58,27 @@ BEGIN_NCBI_SCOPE
 class CWinMaskCountsGenerator
 {
 public:
+
+    /**\brief Exceptions that CWinMaskCountsGenerator may throw.
+    */
+    class GenCountsException : public CException
+    {
+        public:
+
+            /**\brief Error codes.
+            */
+            enum EErrCode
+            {
+                eNullGenome     /**< Genome has 0 size. */
+            };
+
+            /**\brief Return description string corresponding to an error code.
+               \return error string
+            */
+            virtual const char * GetErrCodeString() const;
+
+            NCBI_EXCEPTION_DEFAULT( GenCountsException, CException );
+    };
 
     /**
      **\brief Constructor.
@@ -81,6 +103,8 @@ public:
      **\param use_list true if input file contains the list of fasta
      **                file names; false if input is the name of the
      **                fasta file itself
+     **\param ids set of ids to consider
+     **\param exclude_ids set of ids to ignore
      **\param use_ba use bit array optimization for optimized binary
      **              unit counts format
      **
@@ -96,8 +120,8 @@ public:
                              Uint4 max_count,
                              bool check_duplicates,
                              bool use_list,
-                             const set< objects::CSeq_id_Handle > & ids,
-                             const set< objects::CSeq_id_Handle > & exclude_ids,
+                             const CWinMaskConfig::CIdSet * ids,
+                             const CWinMaskConfig::CIdSet * exclude_ids,
                              bool use_ba );
 
     /**
@@ -156,8 +180,8 @@ private:
     vector< Uint4 > score_counts;   /**<\internal counts table for each suffix */
     double th[4];                   /**<\internal percentages used to determine threshold scores */
 
-    const set< objects::CSeq_id_Handle > & ids;          /**<\internal set of ids to process */
-    const set< objects::CSeq_id_Handle > & exclude_ids;  /**<\internal set of ids to skip */
+    const CWinMaskConfig::CIdSet * ids;         /**<\internal set of ids to process */
+    const CWinMaskConfig::CIdSet * exclude_ids; /**<\internal set of ids to ignore */
 };
 
 END_NCBI_SCOPE
@@ -165,6 +189,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/11/21 16:49:15  morgulis
+ * 1. Fixed a bug causing infinite loop in the case of empty genome.
+ * 2. Added possibility to use substring matching with -ids and -exclude-ids
+ *    options.
+ *
  * Revision 1.8  2005/08/30 14:35:20  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.

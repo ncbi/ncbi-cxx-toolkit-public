@@ -41,37 +41,29 @@ USING_SCOPE(objects);
 
 //------------------------------------------------------------------------------
 bool CWinMaskUtil::consider( const CBioseq_Handle & bsh,
-                             const set< CSeq_id_Handle > & ids,
-                             const set< CSeq_id_Handle > & exclude_ids )
+                             const CWinMaskConfig::CIdSet * ids,
+                             const CWinMaskConfig::CIdSet * exclude_ids )
 {
-    if( ids.empty() && exclude_ids.empty() )
+    if( (ids == 0 || ids->empty()) && 
+        (exclude_ids == 0 || exclude_ids->empty()) ) {
         return true;
+    }
 
     bool result = true;
-    const CBioseq_Handle::TId& syns = bsh.GetId();
 
-    if( !ids.empty() )
+    if( ids != 0 && !ids->empty() )
     {
         result = false;
-        ITERATE( CBioseq_Handle::TId, iter, syns )
-        {
-            if( ids.find( *iter ) != ids.end() )
-            {
-                result = true;
-                break;
-            }
+
+        if( ids->find( bsh ) ) {
+            result = true;
         }
     }
 
-    if( !exclude_ids.empty() )
+    if( exclude_ids != 0 && !exclude_ids->empty() )
     {
-        ITERATE( CBioseq_Handle::TId, iter, syns )
-        {
-            if( exclude_ids.find( *iter ) != ids.end() )
-            {
-                result = false;
-                break;
-            }
+        if( exclude_ids->find( bsh ) ) {
+            result = false;
         }
     }
 
@@ -83,6 +75,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/11/21 16:49:15  morgulis
+ * 1. Fixed a bug causing infinite loop in the case of empty genome.
+ * 2. Added possibility to use substring matching with -ids and -exclude-ids
+ *    options.
+ *
  * Revision 1.2  2005/07/11 14:36:17  morgulis
  * Fixes for performance problems with large number of short sequences.
  * Windowmasker is now statically linked against object manager libs.

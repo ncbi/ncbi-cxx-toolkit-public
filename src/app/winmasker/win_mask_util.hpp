@@ -41,6 +41,8 @@
 #include <objmgr/seq_entry_handle.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include "win_mask_config.hpp"
+
 BEGIN_NCBI_SCOPE
 
 class CWinMaskUtil
@@ -54,8 +56,8 @@ class CWinMaskUtil
             ids and exclude_ids should not be simultaneousely non empty.
 
             \param bsh bioseq handle in question
-            \param ids list of seq ids to consider
-            \param exclude_ids list of seq ids excluded from consideration
+            \param ids set of seq ids to consider
+            \param exclude_ids set of seq ids excluded from consideration
             \return true if ids is not empty and bsh is among ids, or else
                          if exclude_ids is not empty and bsh is not among
                             exclude_ids;
@@ -63,8 +65,8 @@ class CWinMaskUtil
          */
         static bool consider( 
             const objects::CBioseq_Handle & bsh,
-            const set< objects::CSeq_id_Handle > & ids,
-            const set< objects::CSeq_id_Handle > & exclude_ids );
+            const CWinMaskConfig::CIdSet * ids,
+            const CWinMaskConfig::CIdSet * exclude_ids );
 };
 
 END_NCBI_SCOPE
@@ -74,6 +76,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/11/21 16:49:15  morgulis
+ * 1. Fixed a bug causing infinite loop in the case of empty genome.
+ * 2. Added possibility to use substring matching with -ids and -exclude-ids
+ *    options.
+ *
  * Revision 1.2  2005/07/11 14:36:17  morgulis
  * Fixes for performance problems with large number of short sequences.
  * Windowmasker is now statically linked against object manager libs.

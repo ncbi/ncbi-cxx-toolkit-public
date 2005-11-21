@@ -146,8 +146,8 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     Uint4 arg_max_count,
     bool arg_check_duplicates,
     bool arg_use_list,
-    const set< CSeq_id_Handle > & arg_ids,
-    const set< CSeq_id_Handle > & arg_exclude_ids,
+    const CWinMaskConfig::CIdSet * arg_ids,
+    const CWinMaskConfig::CIdSet * arg_exclude_ids,
     bool use_ba )
 :   input( arg_input ),
     ustat( CSeqMaskerOstatFactory::create( sformat, output, use_ba ) ),
@@ -219,11 +219,14 @@ void CWinMaskCountsGenerator::operator()()
             }
 
             cerr << "done." << endl;
-            // cerr << total << endl;
             genome_size = total;
+
+            if( genome_size == 0 ) {
+                NCBI_THROW( GenCountsException, eNullGenome, "" );
+            }
         }
 
-        for( unit_size = 15; unit_size >= 0; --unit_size ) {
+        for( unit_size = 15; unit_size > 0; --unit_size ) {
             if(   (genome_size>>(2*unit_size)) >= 5 ) {
                 break;
             }
@@ -473,12 +476,26 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
     }
 }
 
+//------------------------------------------------------------------------------
+const char * 
+CWinMaskCountsGenerator::GenCountsException::GetErrCodeString() const
+{
+    switch( GetErrCode() ) {
+        case eNullGenome: return "empty genome";
+        default: return CException::GetErrCodeString();
+    }
+}
 
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.16  2005/11/21 16:49:15  morgulis
+ * 1. Fixed a bug causing infinite loop in the case of empty genome.
+ * 2. Added possibility to use substring matching with -ids and -exclude-ids
+ *    options.
+ *
  * Revision 1.15  2005/08/30 14:35:20  morgulis
  * NMer counts optimization using bit arrays. Performance is improved
  * by about 20%.

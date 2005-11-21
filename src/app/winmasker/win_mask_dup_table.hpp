@@ -44,6 +44,8 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 
+#include "win_mask_config.hpp"
+
 BEGIN_NCBI_SCOPE
 
 /**
@@ -53,19 +55,25 @@ BEGIN_NCBI_SCOPE
  ** the fasta format. The function checks the input sequences for
  ** duplication and reports possible duplicates to the standard error.
  ** 
- **\param unput list of input file names
+ **\param input list of input file names
+ **\param ids set of ids to check
+ **\param exclude_ids set of ids to ignore
  **
  **/
-
 void CheckDuplicates( const vector< string > & input,
-                      const set< objects::CSeq_id_Handle > & ids,
-                      const set< objects::CSeq_id_Handle > & exclude_ids );
+                      const CWinMaskConfig::CIdSet * ids,
+                      const CWinMaskConfig::CIdSet * exclude_ids );
 
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/11/21 16:49:15  morgulis
+ * 1. Fixed a bug causing infinite loop in the case of empty genome.
+ * 2. Added possibility to use substring matching with -ids and -exclude-ids
+ *    options.
+ *
  * Revision 1.2  2005/03/24 16:50:21  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *

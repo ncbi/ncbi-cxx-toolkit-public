@@ -100,7 +100,9 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
       checkdup( args["checkdup"].AsBoolean() ),
       sformat( args["sformat"].AsString() ),
       smem( args["smem"].AsInteger() ),
-      use_ba( args["use_ba"].AsBoolean() )
+      ids( 0 ), exclude_ids( 0 ),
+      use_ba( args["use_ba"].AsBoolean() ),
+      text_match( args["text_match"].AsBoolean() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
 
@@ -146,11 +148,25 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
     if( use_dust && use_sdust )
         use_dust = false;
 
-    if( !ids_file_name.empty() )
-        FillIdList( ids_file_name, ids );
+    if( !ids_file_name.empty() ) {
+        if( text_match ) {
+            ids = new CIdSet_TextMatch;
+        }else {
+            ids = new CIdSet_SeqId;
+        }
 
-    if( !exclude_ids_file_name.empty() )
-        FillIdList( exclude_ids_file_name, exclude_ids );
+        FillIdList( ids_file_name, *ids );
+    }
+
+    if( !exclude_ids_file_name.empty() ) {
+        if( text_match ) {
+            exclude_ids = new CIdSet_TextMatch;
+        }else {
+            exclude_ids = new CIdSet_SeqId;
+        }
+
+        FillIdList( exclude_ids_file_name, *exclude_ids );
+    }
 
     _TRACE( "Leaving CWinMaskConfig::CWinMaskConfig" );
 }
@@ -164,7 +180,7 @@ void CWinMaskConfig::Validate() const
 
 //----------------------------------------------------------------------------
 void CWinMaskConfig::FillIdList( const string & file_name, 
-                                 set< objects::CSeq_id_Handle > & id_list )
+                                 CIdSet & id_list )
 {
     CNcbiIfstream file( file_name.c_str() );
     string line;
@@ -175,14 +191,7 @@ void CWinMaskConfig::FillIdList( const string & file_name,
             string::size_type stop( line.find_first_of( " \t" ) );
             string::size_type start( line[0] == '>' ? 1 : 0 );
             string id_str = line.substr( start, stop - start );
-            try {
-                CRef<CSeq_id> id(new CSeq_id(id_str));
-                id_list.insert(CSeq_id_Handle::GetHandle(*id));
-            } catch (CSeqIdException& e) {
-                LOG_POST(Error
-                         << "CWinMaskConfig::FillIdList(): can't understand id: "
-                         << id_str << ": " << e.what() << ": ignoring");
-            }
+            id_list.insert( id_str );
         }
     }
 }
@@ -206,11 +215,134 @@ const char * CWinMaskConfig::CWinMaskConfigException::GetErrCodeString() const
     }
 }
 
+//----------------------------------------------------------------------------
+void CWinMaskConfig::CIdSet_SeqId::insert( const string & id_str )
+{
+    try {
+        CRef<CSeq_id> id(new CSeq_id(id_str));
+        idset.insert(CSeq_id_Handle::GetHandle(*id));
+    } catch (CSeqIdException& e) {
+        LOG_POST(Error
+            << "CWinMaskConfig::FillIdList(): can't understand id: "
+            << id_str << ": " << e.what() << ": ignoring");
+    }
+}
+
+//----------------------------------------------------------------------------
+bool CWinMaskConfig::CIdSet_SeqId::find( 
+        const objects::CBioseq_Handle & bsh ) const
+{
+    const CBioseq_Handle::TId & syns = bsh.GetId();
+
+    ITERATE( CBioseq_Handle::TId, iter, syns )
+    {
+        if( idset.find( *iter ) != idset.end() ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//----------------------------------------------------------------------------
+const vector< Uint4 > 
+CWinMaskConfig::CIdSet_TextMatch::split( const string & id_str )
+{
+    vector< Uint4 > result;
+    string tmp = id_str;
+
+    if( !tmp.empty() && tmp[tmp.length() - 1] == '|' )
+        tmp = tmp.substr( 0, tmp.length() - 1 );
+
+    if( !tmp.empty() ) {
+        string::size_type pos = ( tmp[0] == '>' ) ? 1 : 0;
+        string::size_type len = tmp.length();
+
+        while( pos != string::npos && pos < len ) {
+            result.push_back( pos );
+
+            if( (pos = tmp.find_first_of( "|", pos )) != string::npos ) {
+                ++pos;
+            }
+        }
+    }
+
+    result.push_back( tmp.length() + 1 );
+    return result;
+}
+
+//----------------------------------------------------------------------------
+void CWinMaskConfig::CIdSet_TextMatch::insert( const string & id_str )
+{
+    Uint4 nwords = split( id_str ).size() - 1;
+
+    if( nwords == 0 ) {
+        LOG_POST( Error
+            << "CWinMaskConfig::CIdSet_TextMatch::insert(): bad id: "
+            << id_str << ": ignoring");
+    }
+
+    if( nword_sets_.size() < nwords ) {
+        nword_sets_.resize( nwords );
+    }
+
+    if( id_str[id_str.length() - 1] != '|' ) {
+        nword_sets_[nwords - 1].insert( id_str );
+    }else {
+        nword_sets_[nwords - 1].insert( 
+                id_str.substr( 0, id_str.length() - 1 ) );
+    }
+}
+
+//----------------------------------------------------------------------------
+bool CWinMaskConfig::CIdSet_TextMatch::find( 
+        const objects::CBioseq_Handle & bsh ) const
+{
+    CConstRef< CBioseq > seq = bsh.GetCompleteBioseq();
+    string id_str = CSeq_id::GetStringDescr( *seq, CSeq_id::eFormat_FastA );
+    return find( id_str );
+}
+
+//----------------------------------------------------------------------------
+inline bool CWinMaskConfig::CIdSet_TextMatch::find( 
+        const string & id_str, Uint4 nwords ) const
+{
+    return nword_sets_[nwords].find( id_str ) != nword_sets_[nwords].end();
+}
+
+//----------------------------------------------------------------------------
+bool CWinMaskConfig::CIdSet_TextMatch::find( const string & id_str ) const
+{
+    vector< Uint4 > word_starts = split( id_str );
+
+    for( Uint4 i = 0; 
+            i < nword_sets_.size() && i < word_starts.size() - 1; ++i ) {
+        if( !nword_sets_[i].empty() ) {
+            for( Uint4 j = 0; j < word_starts.size() - i - 1; ++j ) {
+                string pattern = id_str.substr(
+                        word_starts[j],
+                        word_starts[j + i + 1] - word_starts[j] - 1 );
+
+                if( find( pattern, i ) ) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.13  2005/11/21 16:49:15  morgulis
+ * 1. Fixed a bug causing infinite loop in the case of empty genome.
+ * 2. Added possibility to use substring matching with -ids and -exclude-ids
+ *    options.
+ *
  * Revision 1.12  2005/11/01 16:08:36  morgulis
  * Restored -dust_level option to windowmasker.
  *

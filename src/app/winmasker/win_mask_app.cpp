@@ -213,6 +213,9 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "ids", "id_list",
                              "file containing the list of ids to process",
                              CArgDescriptions::eString, "" );
+    arg_desc->AddDefaultKey( "text_match", "text_match_ids",
+                             "match ids as strings",
+                             CArgDescriptions::eBoolean, "F" );
     arg_desc->AddDefaultKey( "use_ba", "use_bit_array_optimization",
                              "whether to use extra bit array optimization "
                              "for optimized binary counts format",
@@ -338,8 +341,8 @@ int CWinMaskApplication::Run (void)
     Uint4 total = 0, total_masked = 0;
     CDustMasker * duster( 0 );
     CSDustMasker * sduster( 0 );
-    set< CSeq_id_Handle > ids( aConfig.Ids() );
-    set< CSeq_id_Handle > exclude_ids( aConfig.ExcludeIds() );
+    const CWinMaskConfig::CIdSet * ids( aConfig.Ids() );
+    const CWinMaskConfig::CIdSet * exclude_ids( aConfig.ExcludeIds() );
 
     if( aConfig.UseDust() )
         duster = new CDustMasker( aConfig.DustWindow(),
@@ -408,6 +411,11 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.16  2005/11/21 16:49:15  morgulis
+ * 1. Fixed a bug causing infinite loop in the case of empty genome.
+ * 2. Added possibility to use substring matching with -ids and -exclude-ids
+ *    options.
+ *
  * Revision 1.15  2005/11/01 16:08:36  morgulis
  * Restored -dust_level option to windowmasker.
  *
