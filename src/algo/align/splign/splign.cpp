@@ -214,44 +214,56 @@ void CSplign::x_LoadSequence(vector<char>* seq,
 {
     USING_SCOPE(objects);
 
-    if(m_Scope.IsNull()) {
-        NCBI_THROW(CAlgoAlignException, eInternal, 
-                   "Splign scope not set.");
-    }
-
-    if(retain) {
-        m_Scope->ResetHistory();
-    }
-
-    CBioseq_Handle bh = m_Scope->GetBioseqHandle(seqid);
-    if(bh) {
-
-        CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        const TSeqPos dim = sv.size();
-        if(dim == 0) {
-            NCBI_THROW(CAlgoAlignException, eNoData, 
-                       string("Sequence is empty: ") + seqid.AsFastaString());
-        }
-        if(finish > dim) {
-            finish = dim - 1;
-        }
-        if(start > finish) {
+    try {
+    
+        if(m_Scope.IsNull()) {
             NCBI_THROW(CAlgoAlignException, eInternal, 
-                       "Invalid sequence interval requested.");
+                       "Splign scope not set.");
         }
 
-        string s;
-        sv.GetSeqData(start, finish + 1, s);
-        seq->resize(1 + finish - start);
-        copy(s.begin(), s.end(), seq->begin());
-    }
-    else {
-        NCBI_THROW(CAlgoAlignException, eNoData, 
-                   string("ID not found: ") + seqid.AsFastaString());
-    }
+        CBioseq_Handle bh = m_Scope->GetBioseqHandle(seqid);
 
-    if(retain == false) {
-        m_Scope->RemoveFromHistory(bh);
+        if(retain) {
+            m_Scope->ResetHistory();
+        }
+
+        if(bh) {
+
+            CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+            const TSeqPos dim = sv.size();
+            if(dim == 0) {
+                NCBI_THROW(CAlgoAlignException, eNoData, 
+                           string("Sequence is empty: ") 
+                           + seqid.AsFastaString());
+            }
+            if(finish > dim) {
+                finish = dim - 1;
+            }
+            if(start > finish) {
+                NCBI_THROW(CAlgoAlignException, eInternal, 
+                           "Invalid sequence interval requested.");
+            }
+            
+            string s;
+            sv.GetSeqData(start, finish + 1, s);
+            seq->resize(1 + finish - start);
+            copy(s.begin(), s.end(), seq->begin());
+        }
+        else {
+            NCBI_THROW(CAlgoAlignException, eNoData, 
+                       string("ID not found: ") + seqid.AsFastaString());
+        }
+        
+        if(retain == false) {
+            m_Scope->RemoveFromHistory(bh);
+        }
+        
+    }
+    
+    catch(CAlgoAlignException& e) {
+        e.SetSeverity(eDiag_Fatal);
+        NCBI_RETHROW_SAME(e, "CSplign::x_LoadSequence(): "
+                          "Sequence data problem");
     }
 }
 
@@ -1666,6 +1678,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/11/21 14:24:00  kapustin
+ * Reset scope history after bioseq_handle is obtained
+ *
  * Revision 1.42  2005/10/31 16:29:53  kapustin
  * Retrieve parameter defaults with static member methods
  *
