@@ -44,7 +44,7 @@ extern "C" {
 #  include <sched.h>
 }
 #  define NCBI_SCHED_INIT() int spin_counter = 0
-#  define NCBI_SCHED_YIELD() if ( !(++spin_counter & 3) ) sched_yield()
+#  define NCBI_SCHED_YIELD() if ( !(++spin_counter & 31) ) sched_yield()
 #else
 #  define NCBI_SCHED_INIT()
 #  define NCBI_SCHED_YIELD()
@@ -369,6 +369,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2005/11/22 22:42:43  vasilche
+* Explicit specialization of operator<< for FManip.
+*
 * Revision 1.25  2005/10/18 16:36:03  rsmith
 * fix verify def under DARWIN
 *

@@ -457,11 +457,7 @@ public:
     ///
     /// For example, to set the message severity level to INFO:
     ///   CNcbiDiag() << Info << "My message";
-    const CNcbiDiag& Put(const FManip, const FManip& manip) const
-    {
-        return manip(*this);
-    }
-    const CNcbiDiag& Put(FManip, FManip& manip) const
+    inline const CNcbiDiag& operator<< (FManip manip) const
     {
         return manip(*this);
     }
@@ -476,7 +472,6 @@ public:
     {
         return Put(&x, x);
     }
-
 
     // Output manipulators for CNcbiDiag.
 
@@ -1222,6 +1217,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.89  2005/11/22 22:42:43  vasilche
+ * Explicit specialization of operator<< for FManip.
+ *
  * Revision 1.88  2005/11/22 16:36:37  vakatov
  * CNcbiDiag::operator<< related fixes to allow for the no-hassle
  * posting of exceptions derived from CException. Before, only the
