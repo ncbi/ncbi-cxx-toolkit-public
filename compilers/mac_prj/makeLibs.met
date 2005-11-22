@@ -2,7 +2,7 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "" -- full path of the patched FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
@@ -394,7 +394,6 @@ on SetProjectData()
 		AddSimpleProject("xobjwrite", {}, "objtools:writers")
 		AddSimpleProject("seqdb", {}, "objtools:readers:seqdb")
 		AddSimpleProject("xcddalignview", {}, "objtools:cddalignview")
-		AddSimpleProject("xflat", {}, "objtools:flat")
 		AddSimpleProject("lds", {}, "objtools:lds")
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
 		AddSimpleProject("xobjmanip", {}, "objtools:manip")
@@ -469,6 +468,7 @@ on SetProjectData()
 		AddGuiProject("w_flu", {}, "widgets:FLU")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
 		--AddProject(ProjectData("w_seq_graphic", {"fltk"}, {GuiFileDataExcept("widgets:seq_graphic", {"font_conf.cpp", "layout_conf.cpp", "render_policy_conf.cpp", "spacing_conf.cpp"})}))
+		AddGuiProject("w_seq_text", {}, "widgets:seq_text")
 		
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
 		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
@@ -478,7 +478,6 @@ on SetProjectData()
 		AddGuiProject("w_aln_table", {}, "widgets:aln_table")
 		AddGuiProject("w_workspace", {}, "widgets:workspace")
 		AddGuiProject("w_serial_browse", {}, "widgets:serial_browse")
-		AddGuiProject("w_feat_compare", {}, "widgets:feat_compare")
 		AddGuiProject("w_feat_table", {}, "widgets:feat_table")
 		AddGuiProject("w_controls", {}, "widgets:controls")
 		AddGuiProject("w_data", {}, "widgets:data")
@@ -497,6 +496,11 @@ on SetProjectData()
 				"fl_set_gray.cxx", "fl_vertex_quartz.cxx", "Fl_win32.cxx", "scandir_win32.c"})}))
 		set pCPlusPlusExt to saveCppExt
 		
+		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
+		AddSimpleProjectListFiles("data_handle", {}, "gui:core", {"data_handle__.cpp", "data_handle___.cpp"})
+		AddSimpleProjectListFiles("gbench_svc", {}, "gui:core", {"gbench_svc__.cpp", "gbench_svc___.cpp"})
+		AddSimpleProjectListFiles("gbench_svc_cli", {}, "gui:core", {"gbench_svc_cli.cpp", "gbench_svc_cli_.cpp"})
+		
 	end if
 	
 	if pCreatePluginLibs then
@@ -514,15 +518,12 @@ on SetProjectData()
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
 		
-		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
-		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
 			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "selection_service", "task_manager", "task_queue", "view_link", "view_composite"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images", "sqlitelib"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", Â
-			"gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "xflat", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_object_list", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gbench_svc", "gbench_svc_cli", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_object_list", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask"}, {}))
 		
 		-- PLUGINS --
 		
@@ -558,13 +559,13 @@ on SetProjectData()
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
 			{"gui_dlg_feat_search", "gui_dlg_seq_goto"})
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d"})
-		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_feat_compare", "w_feat_table"})
+		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_feat_table"})
 		AddPluginExcept("gui_view_text", {}, "plugins:view:text", Â
-			{"taxon1", "w_taxtree", "w_seq"}, Â
+			{"taxon1", "w_taxtree", "w_seq", "w_seq_text"}, Â
 			{"genbank_ff_formatter.cpp", "header_editor.cpp", "object_editor.cpp", "paragraph.cpp", "reference_editor.cpp", "view_genbank.cpp", "auth_form.cpp"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
 		
-		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree"})
+		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree", "data_handle"})
 		
 		(*
 		set proteusFiles to {Â
