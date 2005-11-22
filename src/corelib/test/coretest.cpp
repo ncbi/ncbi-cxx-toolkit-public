@@ -485,6 +485,10 @@ static void TestDiag(void)
     }}
     IgnoreDiagDieLevel(false);
     SetDiagDieLevel(prev_sev);
+
+    CStringException ex(DIAG_COMPILE_INFO, NULL,
+                        CStringException::eConvert, "A fake exception", 12345);
+    ERR_POST("A test on reporting of an exception" << ex);
 }
 
 
@@ -965,6 +969,10 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.100  2005/11/22 16:41:14  vakatov
+ * Test err.posting of the CException derived exceptions. Before, only the
+ * CException itself could be posted without additiional casting.
+ *
  * Revision 1.99  2005/11/07 23:28:34  vakatov
  * Recent fix in the registry code caught a bug in the test (ironic, isn't it?)
  *
