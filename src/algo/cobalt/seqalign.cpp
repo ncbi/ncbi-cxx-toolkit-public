@@ -156,6 +156,98 @@ CMultiAligner::x_GetSeqalign(vector<CSequence>& align,
 
 
 CRef<CSeq_align>
+CMultiAligner::GetSeqalignResults(CSeq_align& align,
+                                  vector<int>& indices)
+{
+    _ASSERT(align.GetType() == CSeq_align::eType_global);
+    _ASSERT(align.IsSetSegs());
+    _ASSERT(align.GetSegs().IsDenseg());
+
+    const CDense_seg& denseg = align.GetSegs().GetDenseg();
+    int num_queries = denseg.GetDim();
+    int num_segs = denseg.GetNumseg();
+
+    _ASSERT(!indices.empty());
+    int num_subset = indices.size();
+    for (int i = 0; i < num_subset; i++) {
+        _ASSERT(indices[i] >= 0 && indices[i] < num_queries);
+    }
+
+    // output Seqalign is of global type
+
+    CRef<CSeq_align> retval(new CSeq_align);
+    retval->SetType(CSeq_align::eType_global);
+    retval->SetDim(num_queries);
+
+    // and contains a single denseg
+
+    CRef<CDense_seg> new_denseg(new CDense_seg);
+    new_denseg->SetDim(num_subset);
+
+    // fill in the ID's of the sequences
+
+    for (int i = 0; i < num_subset; i++) {
+        CRef<CSeq_id> id(const_cast<CSeq_id *>
+                         (&(*denseg.GetIds()[indices[i]])));
+        new_denseg->SetIds().push_back(id);
+    }
+
+    // now build the rest of the denseg
+
+    int num_new_segs = 0;
+    const CDense_seg::TStarts& starts = denseg.GetStarts();
+    const CDense_seg::TLens& lens = denseg.GetLens();
+    CDense_seg::TStarts& new_starts = new_denseg->SetStarts();
+    CDense_seg::TLens& new_lens = new_denseg->SetLens();
+
+    for (int i = 0, j = 0; i < num_segs; i++) {
+
+        // skip segments that contain only gaps in all sequences
+
+        for (j = 0; j < num_subset; j++) {
+            if (starts[i * num_queries + indices[j]] != -1)
+                break;
+        }
+        if (j == num_subset)
+            continue;
+
+        // determine if the current segment has gaps in the same
+        // positions as the previous one. If so, just update the
+        // length of the previous segment
+
+        if (num_new_segs > 0) {
+            int off = i * num_queries;
+            int new_off = (num_new_segs - 1) * num_subset;
+
+            for (j = 0; j < num_subset; j++) {
+                if ((new_starts[new_off + j] == -1 &&
+                     starts[off + indices[j]] != -1) ||
+                    (new_starts[new_off + j] != -1 &&
+                     starts[off + indices[j]] == -1)) {
+                    break;
+                }
+            }
+            if (j == num_subset) {
+                new_lens.back() += lens[i];
+                continue;
+            }
+        }
+
+        // append segment i to the new list of segments
+
+        for (j = 0; j < num_subset; j++) {
+            new_starts.push_back(starts[i * num_queries + indices[j]]);
+        }
+        new_lens.push_back(lens[i]);
+        num_new_segs++;
+    }
+
+    new_denseg->SetNumseg(num_new_segs);
+    retval->SetSegs().SetDenseg(*new_denseg);
+    return retval;
+}
+
+CRef<CSeq_align>
 CMultiAligner::GetSeqalignResults()
 {
     int num_queries = m_Results.size();
@@ -198,6 +290,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.7  2005/11/22 18:41:33  papadopo
+  add function to retrieve a subset of a Seq-align
+
   Revision 1.6  2005/11/21 21:03:00  papadopo
   fix documentation, add doxygen
 
