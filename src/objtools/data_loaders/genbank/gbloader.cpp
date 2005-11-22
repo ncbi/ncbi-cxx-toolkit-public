@@ -703,6 +703,17 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
 }
 
 
+bool CGBDataLoader::HaveCache(TCacheType cache_type)
+{
+    typedef CReaderCacheManager::TCaches TCaches;
+    ITERATE(TCaches, it, m_CacheManager.GetCaches()) {
+        if ((it->m_Type & cache_type) != 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void CGBDataLoader::PurgeCache(TCacheType            cache_type,
                                time_t                access_timeout,

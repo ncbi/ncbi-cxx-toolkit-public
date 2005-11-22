@@ -219,6 +219,7 @@ public:
         fCache_Any  = CGBReaderCacheManager::fCache_Any
     };
     typedef CGBReaderCacheManager::TCacheType TCacheType;
+    bool HaveCache(TCacheType cache_type = fCache_Any);
     void PurgeCache(TCacheType            cache_type,
                     time_t                access_timeout = 0,
                     ICache::EKeepVersions keep_last_ver =
