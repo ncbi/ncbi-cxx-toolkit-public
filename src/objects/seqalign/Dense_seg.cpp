@@ -57,6 +57,20 @@ CDense_seg::~CDense_seg(void)
 }
 
 
+void CDense_seg::Assign(const CSerialObject& obj, ESerialRecursionMode how)
+{
+    /// do the base copy
+    CSerialObject::Assign(obj, how);
+
+    /// copy our specific items
+    if (GetTypeInfo() == obj.GetThisTypeInfo()) {
+        const CDense_seg& other = static_cast<const CDense_seg&>(obj);
+        m_set_State1[0] = other.m_set_State1[0];
+        m_Widths = other.m_Widths;
+    }
+}
+
+
 CDense_seg::TNumseg CDense_seg::CheckNumSegs() const
 {
     const CDense_seg::TStarts&  starts  = GetStarts();
@@ -1029,6 +1043,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/11/22 18:15:06  dicuccio
+* Added Assign()
+*
 * Revision 1.23  2005/07/13 18:57:01  jcherry
 * Fixed behavior of CDense_seg::Reverse when strands are not set
 *

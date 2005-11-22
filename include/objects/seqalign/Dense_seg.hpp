@@ -62,6 +62,9 @@ public:
     // destructor
     ~CDense_seg(void);
 
+    /// overloaded Assign()
+    void Assign(const CSerialObject& obj, ESerialRecursionMode how);
+
     typedef vector<int> TWidths;
 
     // optional
@@ -208,6 +211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/11/22 18:15:05  dicuccio
+* Added Assign()
+*
 * Revision 1.13  2005/03/02 14:58:58  dicuccio
 * Added CDense_seg::Compact(): merges abutting segments where appropriate
 *
