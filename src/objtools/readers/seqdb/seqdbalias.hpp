@@ -365,6 +365,8 @@ public:
     ///   The space delimited list of database names.
     /// @param prot_nucl
     ///   The type of sequences stored here.
+    /// @param alias_sets
+    ///   An alias file caching and combining layer.
     CSeqDBAliasNode(CSeqDBAtlas     & atlas,
                     const string    & name_list,
                     char              prot_nucl,
@@ -590,6 +592,8 @@ private:
     ///   Node history for cycle detection
     /// @param locked
     ///   The lock holder object for this thread
+    /// @param alias_sets
+    ///   An alias file caching and combining layer.
     CSeqDBAliasNode(CSeqDBAtlas           & atlas,
                     const CSeqDB_DirName  & dbpath,
                     const CSeqDB_BaseName & dbname,
@@ -999,6 +1003,8 @@ public:
     /// 
     /// @param afv
     ///   The alias file values will be returned here.
+    /// @param volset
+    ///   The set of database volumes
     void GetAliasFileValues(TAliasFileValues   & afv,
                             const CSeqDBVolSet & volset);
     
