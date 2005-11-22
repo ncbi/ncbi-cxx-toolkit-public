@@ -36,12 +36,7 @@ Contents: implementation of CSequence class
 ******************************************************************************/
 
 #include <ncbi_pch.hpp>
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
-#include <objects/seq/seqport_util.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-
+#include <objmgr/seq_vector.hpp>
 #include <algo/cobalt/seq.hpp>
 
 /// @file seq.cpp
@@ -94,55 +89,14 @@ CSequence::Reset(const blast::SSeqLoc& seq_in)
 {
     _ASSERT(seq_in.seqloc->IsWhole() || seq_in.seqloc->IsInt());
 
-    // find the bioseq to which the seqloc refers
-
-    const CSeq_loc& seqloc = *seq_in.seqloc;
-    CBioseq_Handle bhandle;
-    if (seqloc.IsWhole()) {
-        bhandle = seq_in.scope->GetBioseqHandle(seqloc.GetWhole(),
-                                                CScope::eGetBioseq_All);
-    }
-    else if (seqloc.IsInt()) {
-        _ASSERT(seqloc.GetInt().IsSetId());
-        bhandle = seq_in.scope->GetBioseqHandle(seqloc.GetInt().GetId(),
-                                                CScope::eGetBioseq_All);
-    }
-    CConstRef<CBioseq> bioseq = bhandle.GetCompleteBioseq();
-
-    // get to the sequence data in the bioseq
-
-    _ASSERT(bioseq->IsSetInst());
-    const CBioseq::TInst& inst = bioseq->GetInst();
-    _ASSERT(inst.IsSetSeq_data());
-    const CSeq_data& seqdata = inst.GetSeq_data(); 
-
-    // convert to ncbistdaa if necessary
-
-    CSeq_data converted;
-    const CSeq_data *data;
-    if (!seqdata.IsNcbistdaa()) {
-        CSeqportUtil::Convert(seqdata, &converted, CSeq_data::e_Ncbistdaa);
-        data = &converted;
-    }
-    else {
-        data = &seqdata;
-    }
-
-    // work out the range on the sequence that will be used
-
-    int seq_length = data->GetNcbistdaa().Get().size();
-    int from = 0;
-    int to = seq_length - 1;
-    if (seqloc.IsInt()) {
-        from = seqloc.GetInt().GetFrom();
-        to = seqloc.GetInt().GetTo();
-        seq_length = to - from + 1;
-    }
+    objects::CSeqVector sv(*seq_in.seqloc, *seq_in.scope);
 
     // make a local copy of the sequence data
+
+    int seq_length = sv.size();
     m_Sequence.resize(seq_length);
     for (int i = 0; i < seq_length; i++) {
-        m_Sequence[i] = data->GetNcbistdaa().Get()[from + i];
+        m_Sequence[i] = sv[i];
     }
 
     // residue frequencies start off empty
@@ -312,6 +266,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.8  2005/11/22 19:38:12  papadopo
+  use object manager to retrieve sequence data
+
   Revision 1.7  2005/11/21 21:03:00  papadopo
   fix documentation, add doxygen
 
