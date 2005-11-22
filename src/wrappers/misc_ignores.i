@@ -41,6 +41,10 @@
 %ignore ncbi::objects::CArticleIdSet_Base::m_set_State;
 %ignore ncbi::objects::CArticleIdSet_Base::m_data;
 
+// ... and these protected ones
+%ignore ncbi::COStreamBuffer::Skip;
+%ignore ncbi::COStreamBuffer::Reserve;
+
 // sequence_type type is a public typedef, but it's typedef'ed to
 // a private typedef (seq_t).
 %ignore ncbi::CSymDustMasker::operator();
@@ -235,6 +239,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/11/22 15:20:53  jcherry
+ * %ignore some protected methods that SWIG tries to wrap on Windows
+ *
  * Revision 1.7  2005/11/19 21:28:50  jcherry
  * CScopeTransaction-related, plus an unassignable public static data member
  *
