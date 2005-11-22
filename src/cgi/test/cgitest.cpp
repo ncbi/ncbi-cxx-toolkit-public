@@ -37,6 +37,7 @@
 #include <corelib/ncbireg.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/ncbicgir.hpp>
+#include <cgi/cgi_util.hpp>
 
 #include <algorithm>
 #include <time.h>
@@ -49,7 +50,6 @@
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix
 USING_NCBI_SCOPE;
-
 
 
 /////////////////////////////////
@@ -610,6 +610,222 @@ static void TestCgiResponse(const CNcbiArguments& args)
 }
 
 
+struct TVersion {
+    int major;
+    int minor;
+    int patch;
+};
+
+struct SUserAgent {
+    char*                         str;        // in
+    CCgiUserAgent::EBrowser       browser;    // out
+    TVersion                      browser_v;  // out
+    CCgiUserAgent::EBrowserEngine engine;     // out
+    TVersion                      engine_v;   // out
+    TVersion                      mozilla_v;  // out
+};
+
+const SUserAgent s_UserAgentTests[] = {
+
+    // VendorProduct tests
+
+    { "SomeUnknownBrowser/1.0",
+        CCgiUserAgent::eUnknown,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1}
+    },
+    { "Mozilla/5.0 (Windows) Firefox",
+        CCgiUserAgent::eFirefox,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/5.0 (Windows) Firefox;",
+        CCgiUserAgent::eFirefox,        {-1, -1, -1},
+        CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/5.0 (Windows) Firefox/1",
+        CCgiUserAgent::eFirefox,        { 1, -1, -1},
+        CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/4.0 (BeOS R4.5;US) Opera 3.62  [en]",
+        CCgiUserAgent::eOpera,          { 3, 62, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4, 0, -1}
+    },
+    { "Mozilla/5.0 (Windows; U; Windows NT 5.1; nl-NL; rv:1.7.5) Gecko/20041202 Firefox/1.0",
+        CCgiUserAgent::eFirefox,        { 1,  0, -1},
+        CCgiUserAgent::eEngine_Gecko,   { 1,  7,  5},
+        { 5, 0, -1}
+    },
+    { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; it-it) AppleWebKit/412 (KHTML, like Gecko) Safari/412",
+        CCgiUserAgent::eSafari,         {412, -1, -1},
+        CCgiUserAgent::eEngine_KHTML,   {412, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en-US) AppleWebKit/125.4 (KHTML, like Gecko, Safari) OmniWeb/v563.51",
+        CCgiUserAgent::eOmniWeb,        {563, 51, -1},
+        CCgiUserAgent::eEngine_KHTML,   {125,  4, -1},
+        { 5, 0, -1}
+    },
+
+    // AppComment tests
+
+    { "Mozilla/5.0 (compatible; iCab 3.0.1; Macintosh; U; PPC Mac OS X)",
+        CCgiUserAgent::eiCab,           { 3,  0,  1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/5.0 (compatible; iCab 3.0.1)",
+        CCgiUserAgent::eiCab,           { 3,  0,  1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/5.0 (compatible; Konqueror/3.1-rc3; i686 Linux; 20020515)",
+        CCgiUserAgent::eKonqueror,      { 3,  1, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/4.0 (compatible; MSIE 6.0; MSN 2.5; Windows 98)",
+        CCgiUserAgent::eIE,             { 6,  0, -1},
+        CCgiUserAgent::eEngine_IE,      { 6,  0, -1},
+        { 4, 0, -1}
+    },
+    { "Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)",
+        CCgiUserAgent::eIE,             { 7,  0, -1},
+        CCgiUserAgent::eEngine_IE,      { 7,  0, -1},
+        { 4, 0, -1}
+    },
+    { "Mozilla/4.0 (compatible; MSIE 6.0(en); Windows NT 5.1; Avant Browser [avantbrowser.com]; iOpus-I-M; QXW03416; .NET CLR 1.1.4322)",
+        CCgiUserAgent::eAvantBrowser,   {-1, -1, -1},
+        CCgiUserAgent::eEngine_IE,      { 6,  0, -1},
+        { 4, 0, -1}
+    },
+
+    // Mozilla compatible
+
+    { "Mozilla/5.0 (compatible; unknown; i686 Linux; 20020515)",
+        CCgiUserAgent::eMozillaCompatible, {-1, -1, -1},
+        CCgiUserAgent::eEngine_Unknown,    {-1, -1, -1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/6.2 [en] (Windows NT 5.1; U)",
+        CCgiUserAgent::eMozilla,        { 6,  2, -1},
+        CCgiUserAgent::eEngine_Gecko,   {-1, -1, -1},
+        { 6, 2, -1}
+    },
+
+     // Genuine Netscape/Mozilla
+
+    { "Mozilla/4.7 [en] (WinNT; U)",
+        CCgiUserAgent::eNetscape,       { 4,  7, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4, 7, -1}
+    },
+    { "Mozilla/4.7C-CCK-MCD {C-UDP; EBM-APPLE} (Macintosh; I; PPC)",
+        CCgiUserAgent::eNetscape,       { 4,  7, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        { 4, 7, -1}
+    },
+    { "Mozilla/5.0 (Windows; U; Windows NT 5.0; en-US; rv:1.0.1) Gecko/20020823 Netscape6/6.2.3",
+        CCgiUserAgent::eNetscape,       { 6,  2,  3},
+        CCgiUserAgent::eEngine_Gecko,   { 1,  0,  1},
+        { 5, 0, -1}
+    },
+    { "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.4.1) Gecko/20031008",
+        CCgiUserAgent::eMozilla,        { 5,  0, -1},
+        CCgiUserAgent::eEngine_Gecko,   { 1,  4,  1},
+        { 5, 0, -1}
+    },
+
+     // AppProduct token tests
+
+    { "Microsoft Internet Explorer/4.0b1 (Windows 95)",
+        CCgiUserAgent::eIE,             { 4,  0, -1 },
+        CCgiUserAgent::eEngine_IE,      { 4,  0, -1},
+        {-1, -1, -1}
+    },
+    { "Lynx/2.8.4rel.1 libwww-FM/2.14",
+        CCgiUserAgent::eLynx,           { 2,  8,  4},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1}
+    },
+    { "Avant Browser (http://www.avantbrowser.com)",
+        CCgiUserAgent::eAvantBrowser,   {-1, -1, -1},
+        CCgiUserAgent::eEngine_IE,      {-1, -1, -1},
+        {-1, -1, -1}
+    },
+    { "Opera/3.62 (Windows NT 5.0; U)  [en] (www.proxomitron.de)",
+        CCgiUserAgent::eOpera,          { 3, 62, -1},
+        CCgiUserAgent::eEngine_Unknown, {-1, -1, -1},
+        {-1, -1, -1}
+    }
+};
+
+
+void s_PrintUserAgentVersion(const string& name, TUserAgentVersion& v)
+{
+    cout << name;
+    if ( v.GetMajor() >= 0 ) {
+        cout << v.GetMajor();
+        if ( v.GetMinor() >= 0 ) {
+            cout << "." << v.GetMinor();
+            if ( v.GetPatchLevel() >= 0 ) {
+                cout << "." << v.GetPatchLevel() << endl;
+            }
+        }
+    }
+    cout << endl;
+}
+
+
+void TestUserAgent(void)
+{
+    CCgiUserAgent agent;
+
+    for (size_t i=0; i<sizeof(s_UserAgentTests)/sizeof(s_UserAgentTests[0]); i++) {
+        const SUserAgent* a = &s_UserAgentTests[i];
+        cout << a->str << endl; 
+        agent.Reset(a->str);
+
+        TUserAgentVersion v;
+
+        // Browser version
+
+        CCgiUserAgent::EBrowser b = agent.GetBrowser();
+        cout << "Browser        : " << b << endl;
+        v = agent.GetBrowserVersion();
+        s_PrintUserAgentVersion("Version        : ", v);
+        assert(a->browser == b);
+        assert(a->browser_v.major == v.GetMajor());
+        assert(a->browser_v.minor == v.GetMinor());
+        assert(a->browser_v.patch == v.GetPatchLevel());
+
+        // Engine version
+
+        CCgiUserAgent::EBrowserEngine e = agent.GetEngine();
+        v = agent.GetEngineVersion();
+        cout << "Engine         : " << e << endl;
+        s_PrintUserAgentVersion("Engine version : ", v);
+        assert(a->engine == e);
+        assert(a->engine_v.major == v.GetMajor());
+        assert(a->engine_v.minor == v.GetMinor());
+        assert(a->engine_v.patch == v.GetPatchLevel());
+
+        // Mozilla-compatible version
+
+        v = agent.GetMozillaVersion();
+        s_PrintUserAgentVersion("Mozilla version: ", v);
+        assert(a->mozilla_v.major == v.GetMajor());
+        assert(a->mozilla_v.minor == v.GetMinor());
+        assert(a->mozilla_v.patch == v.GetPatchLevel());
+
+        cout << endl;
+    }
+}
+
+
 /////////////////////////////////
 // Test CGI application
 //
@@ -626,6 +842,7 @@ int CTestApplication::Run(void)
 {
     TestCgi( GetArguments() );
     TestCgiResponse( GetArguments() );
+    TestUserAgent();
 
     return 0;
 }
@@ -643,18 +860,7 @@ CTestApplication::~CTestApplication()
 // MAIN
 //
 
-
-// Note that if the application's object ("theTestApplication") was defined
-// inside the scope of function "main()", then its destructor could be
-// called *before* destructors of other statically allocated objects
-// defined in other modules.
-// It would cause a premature closure of diag. stream, and disallow the
-// destructors of other projects to refer to this application object:
-//  - the singleton method CNcbiApplication::Instance() would return NULL, and
-//  - if there is a "raw"(direct) pointer to "theTestApplication" then it
-//    might cause a real trouble.
 static CTestApplication theTestApplication;
-
 
 int main(int argc, const char* argv[])
 {
@@ -666,6 +872,9 @@ int main(int argc, const char* argv[])
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.26  2005/11/22 12:38:32  ivanov
+ * + TestUserAgent()
+ *
  * Revision 1.25  2005/11/01 22:02:44  grichenk
  * Allow any number of ampersands in queries.
  *
