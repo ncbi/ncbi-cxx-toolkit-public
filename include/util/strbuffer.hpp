@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/11/22 16:43:11  vakatov
+* CIStreamBuffer::Get/SetStreamOffset() -- doxinen'ize the deprecation of.
+*
 * Revision 1.38  2005/11/07 18:39:33  gouriano
 * Use Int8 in stream position calculations
 *
@@ -261,10 +264,16 @@ public:
 
     // return: current line counter
     size_t GetLine(void) const THROWS1_NONE;
-    // deprecated; use GetStreamPos instead
+
+    /// @deprecated
+    ///   Use GetStreamPos() instead
+    /// @sa GetStreamPos()
     NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const THROWS1_NONE;
-    // deprecated; use SetStreamPos instead
-    NCBI_DEPRECATED void   SetStreamOffset(CNcbiStreampos pos);
+
+    /// @deprecated
+    ///  Use SetStreamPos() instead
+    /// @sa SetStreamPos() 
+    NCBI_DEPRECATED void SetStreamOffset(CNcbiStreampos pos);
 
     CNcbiStreampos GetStreamPos(void) const THROWS1_NONE;
     Int8 GetStreamPosAsInt8(void) const;
