@@ -125,6 +125,20 @@ public:
     ///
     CRef<objects::CSeq_align> GetSeqalignResults(vector<int>& indices);
 
+    /// Retrieve a selection of an input Seq_align,
+    /// in Seq-align format. The output Seq-align is of global type, 
+    /// with a single denseg. Columns that have gaps in all the
+    /// selected sequences are removed
+    /// @param indices List of ordinal IDs of sequences that the
+    ///                Seq-align will contain. Indices may appear
+    ///                in any order and may be repeated
+    /// @return The results
+    ///
+
+    static CRef<objects::CSeq_align> GetSeqalignResults(
+                                  objects::CSeq_align& align, 
+                                  vector<int>& indices);
+
     /// Retrieve the current aligned results in CSequence format.
     /// @return The results, on CSequence for each input sequence
     ///
@@ -489,6 +503,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.9  2005/11/22 18:40:35  papadopo
+  add static member that retrieves a subset of a Seq-align
+
   Revision 1.8  2005/11/18 20:14:47  papadopo
   1. Remove unneeded Karlin block
   2. Add member to retrieve a subset of the aligned results
