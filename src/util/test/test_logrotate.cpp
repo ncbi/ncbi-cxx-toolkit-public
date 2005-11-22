@@ -131,7 +131,9 @@ int CTestLogrotateApplication::Run(void)
         SleepMilliSec(s_Rand(256));
 #ifdef NCBI_OS_UNIX
         if (s_Signal) {
-            LOG_POST("Received signal " << s_Signal << "; rotating logs");
+            // dummy var, to avoid creating a diag template for 'volatile' type
+            int x_Signal = s_Signal;
+            LOG_POST("Received signal " << x_Signal << "; rotating logs");
             s_LogStream->Rotate();
             LOG_POST("Done rotating logs");
         }
@@ -167,6 +169,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/22 16:33:25  vakatov
+ * Use regular rather than ('volatile') var for the err.posting of s_Signal
+ *
  * Revision 1.6  2005/04/25 19:05:24  ivanov
  * Fixed compilation warnings on 64-bit Worshop compiler
  *
