@@ -415,7 +415,7 @@ s_SeqDB_FindOffsets(const char   * bp,
         if (found) {
             const char * p2 = p - 1;
             
-            while((p2 >= bp) && *p2 != '\n') {
+            while((p2 >= bp) && !SEQDB_ISEOL(*p2)) {
                 if ((*p2) != ' ' && (*p2) != '\t') {
                     found = false;
                     break;
@@ -429,7 +429,7 @@ s_SeqDB_FindOffsets(const char   * bp,
                 
                 offsets.push_back(p);
                 
-                for(p2 = p + keylen; p2 < ep && *p2 != '\n'; p2++)
+                for(p2 = p + keylen; p2 < ep && !SEQDB_ISEOL(*p2); p2++)
                     ;
                 
                 // And end of that line (or of the file).
@@ -596,7 +596,7 @@ void CSeqDBAliasNode::x_ReadValues(const CSeqDB_Path & path,
         
         const char * eolp = p;
         
-        while((eolp < ep) && (*eolp != '\n')) {
+        while((eolp < ep) && !SEQDB_ISEOL(*eolp)) {
             eolp++;
         }
         

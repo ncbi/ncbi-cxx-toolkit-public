@@ -658,6 +658,7 @@ void CSeqDBOIDList::x_ReadTextGiList(CSeqDBRawFile  & gilist,
             break;
             
         case '\n':
+        case '\r':
             // Allow for blank lines
             if (elem != 0) {
                 gis.push_back(elem);

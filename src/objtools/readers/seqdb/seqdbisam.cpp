@@ -710,7 +710,7 @@ int CSeqDBIsam::x_DiffCharLease(const string   & term_in,
 static inline char
 s_SeqDBIsam_NullifyEOLs(char c)
 {
-    if ((c == '\n') || (c == '\r')) {
+    if (SEQDB_ISEOL(c)) {
         return 0;
     } else {
         return c;

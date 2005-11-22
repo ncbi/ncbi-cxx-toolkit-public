@@ -639,6 +639,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                 break;
             
             case '\n':
+            case '\r':
                 // Skip blank lines by ignoring zero.
                 if (elem != 0) {
                     gis.push_back(elem);

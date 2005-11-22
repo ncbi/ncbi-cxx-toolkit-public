@@ -148,6 +148,10 @@ inline T SeqDB_GetBroken(const T * stdord_obj)
 #endif
 
 
+/// Macro for EOL chars.
+#define SEQDB_ISEOL(x) (((x) == '\n') || ((x) == '\r'))
+
+
 /// Higher Performance String Assignment
 /// 
 /// It looks like the default assignments and modifiers (ie insert,
