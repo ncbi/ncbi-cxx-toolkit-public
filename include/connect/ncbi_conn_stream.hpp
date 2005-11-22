@@ -94,7 +94,7 @@ const streamsize kConn_DefaultBufSize = 4096;
 
 /*
  * Helper hook-up class that installs default logging/registry/locking
- * (only if have not yet been installed explicitly by user).
+ * (but only if they have not yet been installed explicitly by user).
  */
 
 class NCBI_XCONNECT_EXPORT CConn_IOStreamBase
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.39  2005/11/22 20:51:49  lavr
+ * Added a note about auto-magic initing
+ *
  * Revision 6.38  2005/10/12 21:06:33  lavr
  * Deprecating CConn_MemoryStream::ToString(string&)
  * Introducing CConn_MemoryStream::ToString(string*)
