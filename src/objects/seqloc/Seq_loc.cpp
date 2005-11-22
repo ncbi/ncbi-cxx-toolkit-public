@@ -686,6 +686,7 @@ CSeq_loc_CI& CSeq_loc_CI::operator= (const CSeq_loc_CI& iter)
     m_LocList.clear();
     m_Location = iter.m_Location;
     m_EmptyFlag = iter.m_EmptyFlag;
+    m_CurLoc = m_LocList.end();
     ITERATE(TLocList, li, iter.m_LocList) {
         TLocList::iterator tmp = m_LocList.insert(m_LocList.end(), *li);
         if (iter.m_CurLoc == li)
@@ -2461,6 +2462,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.58  2005/11/22 20:11:06  grichenk
+ * Fixed assignment of iterator.
+ *
  * Revision 6.57  2005/06/21 14:20:53  ucko
  * Tweak CSeq_loc_CI::SLoc_Info::m_Fuzz's type to avoid GCC 3.0.4
  * optimizer crashes (probably brought on by the recent changes to CRef).
