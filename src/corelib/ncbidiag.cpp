@@ -1043,6 +1043,7 @@ bool CNcbiDiag::CheckFilters(void) const
         m_CheckFilters = true;
         return true;
     }
+
     EDiagSev current_sev = GetSeverity();
     if (current_sev == eDiag_Fatal) 
         return true;
@@ -1056,12 +1057,11 @@ bool CNcbiDiag::CheckFilters(void) const
     
     // check for post filter and severity
     return 
-     (s_PostFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject);
+        (s_PostFilter.Check(*this, this->GetSeverity()) != eDiagFilter_Reject);
 }
 
 
-
-const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
+const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
 {
     if ( !s_CheckDiagFilter(ex, GetSeverity(), GetFile()) ) {
         m_Buffer.Reset(*this);
@@ -1070,11 +1070,8 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
 
     m_CheckFilters = false;
 
-    {
-        ostrstream os;
-        os << '\n' << "NCBI C++ Exception:" << '\n';
-        *this << string(CNcbiOstrstreamToString(os));
-    }
+    *this << "\nNCBI C++ Exception:\n";
+
     const CException* pex;
     stack<const CException*> pile;
     // invert the order
@@ -1089,7 +1086,7 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
             pex->ReportExtra(os);
             if (os.pcount() != 0) {
                 text += " (";
-                text += (string)CNcbiOstrstreamToString(os);
+                text += (string) CNcbiOstrstreamToString(os);
                 text += ')';
             }
         }
@@ -1114,6 +1111,7 @@ const CNcbiDiag& CNcbiDiag::operator<< (const CException& ex) const
         *this << "    "; // indentation
         *this << report;
     }
+
     return *this;
 }
 
@@ -1496,6 +1494,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.96  2005/11/22 16:36:37  vakatov
+ * CNcbiDiag::operator<< related fixes to allow for the no-hassle
+ * posting of exceptions derived from CException. Before, only the
+ * CException itself could be posted without additiional casting.
+ *
  * Revision 1.95  2005/07/05 14:52:28  ivanov
  * Minor cosmetic
  *

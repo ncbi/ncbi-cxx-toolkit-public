@@ -100,14 +100,15 @@ private:
     const char*    m_Module;
     int            m_Line; 
 
-    const char*    m_CurrFunctName;
+    const   char*  m_CurrFunctName;
     mutable bool   m_Parsed;
     mutable string m_ClassName;
     mutable string m_FunctName;
 };
 
 
-/// Get current function name. Defined inside of either a method or a function body only.
+/// Get current function name.
+/// Defined inside of either a method or a function body only.
 // Based on boost's BOOST_CURRENT_FUNCTION
 
 #ifndef NDEBUG
@@ -386,7 +387,11 @@ private:
 };
 
 
+
+//
 class CException;
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -398,27 +403,26 @@ class CNcbiDiag
 {
 public:
     /// Constructor.
-    NCBI_XNCBI_EXPORT
-    CNcbiDiag(EDiagSev       sev        = eDiag_Error,  ///< Severity level
-              TDiagPostFlags post_flags = eDPF_Default  ///< What info.
-             );
+    NCBI_XNCBI_EXPORT  CNcbiDiag
+    (EDiagSev       sev        = eDiag_Error,  ///< Severity level
+     TDiagPostFlags post_flags = eDPF_Default  ///< What to post
+     );
 
 
-    /// Constructor -- includes file and line# information.
-    NCBI_XNCBI_EXPORT
-    CNcbiDiag(const CDiagCompileInfo& info,  ///< File, line and module
-              EDiagSev       sev          = eDiag_Error,  ///< Severity level
-              TDiagPostFlags post_flags   = eDPF_Default  ///< What info.
-             );
+    /// Constructor -- includes the file and line number info
+    NCBI_XNCBI_EXPORT  CNcbiDiag
+    (const CDiagCompileInfo& info,                      ///< File, line, module
+     EDiagSev                sev        = eDiag_Error,  ///< Severity level
+     TDiagPostFlags          post_flags = eDPF_Default  ///< What to post
+     );
 
     /// Destructor.
-    NCBI_XNCBI_EXPORT
-    ~CNcbiDiag(void);
+    NCBI_XNCBI_EXPORT ~CNcbiDiag(void);
 
-    /// Put object to be formatted to diagnostic stream.
+    /// Generic method to post to diagnostic stream.
     // Some compilers need to see the body right away, but others need
     // to meet CDiagBuffer first.
-    template<class X> const CNcbiDiag& operator<< (const X& x) const
+    template<class X> const CNcbiDiag& Put(const void*, const X& x) const
 #ifdef NCBI_COMPILER_MSVC
     {
         m_Buffer.Put(*this, x);
@@ -429,22 +433,50 @@ public:
 #  define NCBIDIAG_DEFER_GENERIC_PUT
 #endif
 
-    /// Insert specified error code into diagnostic stream.
+    /// Diagnostic stream manipulator
+    /// @sa Reset(), Endm()
+    /// @sa Info(), Warning(), Error(), Critical(), Fatal(), Trace()
+    typedef const CNcbiDiag& (*FManip)(const CNcbiDiag&);
+
+    /// Helper method to post error code and subcode to diagnostic stream.
     ///
     /// Example:
-    ///   CNcbiDiag() << ErrCode(5,3);
-    const CNcbiDiag& operator<< (const ErrCode& err_code) const;
+    ///   CNcbiDiag() << ErrCode(5,3) << "My message";
+    const CNcbiDiag& Put(const ErrCode*, const ErrCode& err_code) const;
 
-    /// Report specified exception to diagnostic stream.
-    NCBI_XNCBI_EXPORT
-    const CNcbiDiag& operator<< (const CException& ex) const;
-
-    /// Function-based manipulators.
-    const CNcbiDiag& operator<< (const CNcbiDiag& (*f)(const CNcbiDiag&))
-        const
-    {
-        return f(*this);
+    /// Helper method to post an exception to diagnostic stream.
+    ///
+    /// Example:
+    ///   CNcbiDiag() << ex;
+    template<class X> inline
+    const CNcbiDiag& Put(const CException* e, const X& x) const {
+        return x_Put(x);
     }
+
+    /// Helper method to handle various diagnostic stream manipulators.
+    ///
+    /// For example, to set the message severity level to INFO:
+    ///   CNcbiDiag() << Info << "My message";
+    const CNcbiDiag& Put(const FManip, const FManip& manip) const
+    {
+        return manip(*this);
+    }
+    const CNcbiDiag& Put(FManip, FManip& manip) const
+    {
+        return manip(*this);
+    }
+
+    /// Post the arguments
+    /// @sa Put()
+    template<class X> inline const CNcbiDiag& operator<< (const X& x) const
+    {
+        return Put(&x, x);
+    }
+    template<class X> inline const CNcbiDiag& operator<< (X& x) const
+    {
+        return Put(&x, x);
+    }
+
 
     // Output manipulators for CNcbiDiag.
 
@@ -454,28 +486,28 @@ public:
     /// Flush current message, start new one.
     friend const CNcbiDiag& Endm   (const CNcbiDiag& diag);
 
-    /// Flush current message, then  set a severity for the next diagnostic
-    /// message to Info.
+    /// Flush current message, then set a severity for the next diagnostic
+    /// message to INFO
     friend const CNcbiDiag& Info    (const CNcbiDiag& diag);
 
-    /// Flush current message, then  set a severity for the next diagnostic
-    /// message to Warning.
+    /// Flush current message, then set a severity for the next diagnostic
+    /// message to WARNING
     friend const CNcbiDiag& Warning (const CNcbiDiag& diag);
 
-    /// Flush current message, then  set a severity for the next diagnostic
-    /// message to Error.
+    /// Flush current message, then set a severity for the next diagnostic
+    /// message to ERROR
     friend const CNcbiDiag& Error   (const CNcbiDiag& diag);
 
-    /// Flush current message, then  set a severity for the next diagnostic
-    /// message to Critical.
+    /// Flush current message, then set a severity for the next diagnostic
+    /// message to CRITICAL ERROR
     friend const CNcbiDiag& Critical(const CNcbiDiag& diag);
 
-    /// Flush current message, then  set a severity for the next diagnostic
-    /// message to Fatal.
+    /// Flush current message, then set a severity for the next diagnostic
+    /// message to FATAL
     friend const CNcbiDiag& Fatal   (const CNcbiDiag& diag);
 
-    /// Flush current message, then  set a severity for the next diagnostic
-    /// message to Trace.
+    /// Flush current message, then set a severity for the next diagnostic
+    /// message to TRACE
     friend const CNcbiDiag& Trace   (const CNcbiDiag& diag);
 
     /// Get a common symbolic name for the severity levels.
@@ -568,29 +600,33 @@ public:
 
 private:
     enum EValChngFlags {
-        fFileIsChanged = 0x1,
-        fLineIsChanged = 0x2,
-        fModuleIsChanged = 0x4,
-        fClassIsChanged = 0x8,
+        fFileIsChanged     = 0x1,
+        fLineIsChanged     = 0x2,
+        fModuleIsChanged   = 0x4,
+        fClassIsChanged    = 0x8,
         fFunctionIsChanged = 0x10
     };
     typedef int TValChngFlags;
 
-    mutable EDiagSev       m_Severity;       ///< Severity level of current msg.
-    mutable int            m_ErrCode;        ///< Error code
-    mutable int            m_ErrSubCode;     ///< Error subcode
-            CDiagBuffer&   m_Buffer;         ///< This thread's error msg. buffer
-    mutable TDiagPostFlags m_PostFlags;      ///< Bitwise OR of "EDiagPostFlag"
-    mutable bool           m_CheckFilters;   ///< Is it necessary to check filters
+    mutable EDiagSev       m_Severity;     ///< Severity level of current msg
+    mutable int            m_ErrCode;      ///< Error code
+    mutable int            m_ErrSubCode;   ///< Error subcode
+            CDiagBuffer&   m_Buffer;       ///< This thread's error msg. buffer
+    mutable TDiagPostFlags m_PostFlags;    ///< Bitwise OR of "EDiagPostFlag"
+    mutable bool           m_CheckFilters; ///< Whether to apply filters
 
     CDiagCompileInfo       m_CompileInfo;
 
-    mutable string         m_File;           ///< File name
-    mutable size_t         m_Line;           ///< Line number
-    mutable string         m_Module;         ///< Module name
-    mutable string         m_Class;          ///< Class name
-    mutable string         m_Function;       ///< Function name
+    mutable string         m_File;         ///< File name
+    mutable size_t         m_Line;         ///< Line number
+    mutable string         m_Module;       ///< Module name
+    mutable string         m_Class;        ///< Class name
+    mutable string         m_Function;     ///< Function name
     mutable TValChngFlags  m_ValChngFlags;
+
+    /// Helper func for the exception-related Put()
+    /// @sa Put()
+    NCBI_XNCBI_EXPORT const CNcbiDiag& x_Put(const CException& ex) const;
 
     /// Private copy constructor to prohibit copy.
     CNcbiDiag(const CNcbiDiag&);
@@ -834,8 +870,8 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     void Write(string& str, TDiagWriteFlags flags = fNone) const;
     
     /// Write to stream.
-    CNcbiOstream& Write(CNcbiOstream& os, TDiagWriteFlags flags = fNone) const;
-    CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags flags = fNone) const;
+    CNcbiOstream& Write  (CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
+    CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
 };
 
 /// Insert message in output stream.
@@ -1026,19 +1062,18 @@ private:
     /// good reason to allow it, and out-of-order destruction is problematic.
     void  operator delete[] (void*)   { throw runtime_error("forbidden"); }
 
-    string            m_PostPrefix;         ///< Message prefix
-    list<string>      m_PrefixList;         ///< List of prefixs
-    TDiagPostFlags    m_PostFlags;          ///< Post flags
-    EDiagSev          m_PostSeverity;       ///< Post severity
-    EDiagSevChange    m_PostSeverityChange; ///< Severity change
-    EDiagSev          m_DieSeverity;        ///< Die level severity
-    EDiagTrace        m_TraceDefault;       ///< Default trace setting
-    bool              m_TraceEnabled;       ///< Trace enabled?
-    CDiagHandler*     m_Handler;            ///< Class handler
-    bool              m_CanDeleteHandler;   ///< Can handler be deleted?
-    CDiagErrCodeInfo* m_ErrCodeInfo;        ///< Error code information
-    bool              m_CanDeleteErrCodeInfo; 
-                                       ///< Can error code info. be deleted?
+    string            m_PostPrefix;            ///< Message prefix
+    list<string>      m_PrefixList;            ///< List of prefixs
+    TDiagPostFlags    m_PostFlags;             ///< Post flags
+    EDiagSev          m_PostSeverity;          ///< Post severity
+    EDiagSevChange    m_PostSeverityChange;    ///< Severity change
+    EDiagSev          m_DieSeverity;           ///< Die level severity
+    EDiagTrace        m_TraceDefault;          ///< Default trace setting
+    bool              m_TraceEnabled;          ///< Trace enabled?
+    CDiagHandler*     m_Handler;               ///< Class handler
+    bool              m_CanDeleteHandler;      ///< Can handler be deleted?
+    CDiagErrCodeInfo* m_ErrCodeInfo;           ///< Error code information
+    bool              m_CanDeleteErrCodeInfo;  ///< Can delete err code info?
 };
 
 
@@ -1155,8 +1190,6 @@ private:
 /// NcbiApplication can init itself only if registry key DIAG_MESSAGE_FILE
 /// section DEBUG) is specified. The value of this key should be a name 
 /// of the file with the error codes explanations.
-/// @sa
-///   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/programming_manual/diag.html#errcodes
 NCBI_XNCBI_EXPORT
 extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info,
                                bool              can_delete = true);
@@ -1189,6 +1222,11 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.88  2005/11/22 16:36:37  vakatov
+ * CNcbiDiag::operator<< related fixes to allow for the no-hassle
+ * posting of exceptions derived from CException. Before, only the
+ * CException itself could be posted without additiional casting.
+ *
  * Revision 1.87  2005/05/14 20:57:20  vakatov
  * SetDiagPostLevel() -- Special case:  eDiag_Trace to print all messages
  * and turn on the tracing

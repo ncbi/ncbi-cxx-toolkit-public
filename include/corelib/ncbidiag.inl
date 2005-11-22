@@ -228,7 +228,9 @@ inline const string& CDiagCompileInfo::GetFunction(void) const
 
 #ifdef NCBIDIAG_DEFER_GENERIC_PUT
 template<class X>
-inline const CNcbiDiag& CNcbiDiag::operator<< (const X& x) const {
+inline
+const CNcbiDiag& CNcbiDiag::Put(const void*, const X& x) const
+{
     m_Buffer.Put(*this, x);
     return *this;
 }
@@ -314,7 +316,7 @@ const char* CNcbiDiag::SeverityName(EDiagSev sev) {
 //  ErrCode - class for manipulator ErrCode
 
 inline
-const CNcbiDiag& CNcbiDiag::operator<< (const ErrCode& err_code) const
+const CNcbiDiag& CNcbiDiag::Put(const ErrCode*, const ErrCode& err_code) const
 {
     return SetErrorCode(err_code.m_Code, err_code.m_SubCode);
 }
@@ -588,6 +590,11 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/11/22 16:36:37  vakatov
+ * CNcbiDiag::operator<< related fixes to allow for the no-hassle
+ * posting of exceptions derived from CException. Before, only the
+ * CException itself could be posted without additiional casting.
+ *
  * Revision 1.50  2005/05/18 16:00:09  ucko
  * CDiagBuffer: note m_Stream's initial flags, and restore them on every
  * call to Flush to prevent settings from inadvertantly leaking between
