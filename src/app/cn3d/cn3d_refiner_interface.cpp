@@ -144,6 +144,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
 {
     if (!originalMultiple) return false;
 
+    unsigned int nRows;
     unsigned int nAlignedBlocks = originalMultiple->GetBlockMultipleAlignment()->NAlignedBlocks();
     if (nAlignedBlocks == 0) {
         ERRORMSG("Must have at least one aligned block to use the block aligner");
@@ -159,19 +160,52 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
         refinedMultiples->clear();
     }
 
+    string warnMsg;
+    set<unsigned int> sanityCheckFailures;
+    set<unsigned int>::iterator sit, sitEnd;
+    unsigned int j, nToRefine = m_blocksToRefine.size(), nToExclude = m_rowsToExclude.size();
+
+    // Make sure exclude rows are valid row IDs.
+    if (nToExclude > 0) {
+        nRows = originalMultiple->GetBlockMultipleAlignment()->NRows();
+        for (j = 0; j < nToExclude; ++j) {
+            if (m_rowsToExclude[j] >= nRows) {
+                sanityCheckFailures.insert(m_rowsToExclude[j]);
+            }
+        }
+        
+        sitEnd = sanityCheckFailures.end();
+        for (sit = sanityCheckFailures.begin(); sit != sitEnd; ++sit) {
+            warnMsg.append("   Request to exclude invalid row number " + NStr::UIntToString(*sit + 1) + " ignored./n");
+            m_rowsToExclude.erase(remove(m_rowsToExclude.begin(), m_rowsToExclude.end(), *sit));
+        }
+    }
+
+    // Make sure all blocks are valid.
+    if (nToRefine > 0) {
+
+        sanityCheckFailures.clear();
+        for (j = 0; j < nToRefine; ++j) {
+            if (m_blocksToRefine[j] >= nAlignedBlocks) {
+                sanityCheckFailures.insert(m_blocksToRefine[j]);
+            }
+        }
+        sitEnd = sanityCheckFailures.end();
+        for (sit = sanityCheckFailures.begin(); sit != sitEnd; ++sit) {
+            warnMsg.append("   Request to exclude invalid block number " + NStr::UIntToString(*sit + 1) + " ignored./n");
+            m_blocksToRefine.erase(remove(m_blocksToRefine.begin(), m_blocksToRefine.end(), *sit));
+        }
+        nToRefine = m_blocksToRefine.size();
+    }
+
+    // If no blocks explicitly set, refine 'em all.
+    if (nToRefine == 0) {
+        SetBlocksToRealign(nAlignedBlocks);
+    }
+
     // Show options dialog each time block aligner is run; recreates & initializes the refiner engine.
-
-    // A) The one-argument form of 'ConfigureRefiner' requires uses of 'SetBlocksToRealign', and optionally 
-    // 'SetRowsToExcludeFromLNO', to specify the refineable portions of the alignment.
+    // Frozen blocks and excluded rows must have been defined by this point!!!
     if (!ConfigureRefiner(parent)) return true;
-    //  Tell the refinement engine which blocks to refine/which rows to exclude from refinement.
-    SetBlocksToRealign(nAlignedBlocks);
-    //bool realignedBlocksSet = SetBlocksToRealign(const vector<unsigned int>& blocks, true);
-    //bool excludedRowsSet    = SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRows, true);
-
-
-    // B) With this form of 'ConfigureRefiner', can skip the above manual calls to SetBlocksToRealign/SetRowsToExcludeFromLNO
-    //if (!ConfigureRefiner(parent, const vector<unsigned int>* blocksToRealign, const vector<unsigned int>* rowsToExclude = NULL)) return true;
 
     if (!m_refinerEngine) {
         ERRORMSG("Error initializing alignment refinement engine");
@@ -220,79 +254,26 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
     return !errorsEncountered;
 }
 
-bool BMARefiner::SetBlocksToRealign(const vector<unsigned int>& blocks, bool clearOldList) {
+void BMARefiner::SetBlocksToRealign(unsigned int nAlignedBlocks) {
 
-    bool result = (m_refinerEngine != NULL);
-    align_refine::LeaveOneOutParams loo;
-
-    if (result) {
-        m_refinerEngine->GetLOOParams(loo);
-        if (clearOldList) loo.blocks.clear();
-
-        loo.blocks.insert(loo.blocks.begin(), blocks.begin(), blocks.end());
-
-        m_refinerEngine->SetLOOParams(loo);
-    }
-    return result;
-}
-
-bool BMARefiner::SetBlocksToRealign(unsigned int nAlignedBlocks) {
-
-    vector<unsigned int> blocks;
+    m_blocksToRefine.clear();
     for (unsigned int i = 0; i < nAlignedBlocks; ++i) {
-        blocks.push_back(i);
+        m_blocksToRefine.push_back(i);
     }
-    return SetBlocksToRealign(blocks, true);
 }
 
-bool BMARefiner::SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRows, bool clearOldList) {
+void BMARefiner::SetBlocksToRealign(const vector<unsigned int>& blocks, bool clearOldList) {
 
-    bool result = (m_refinerEngine != NULL);
-    align_refine::LeaveOneOutParams loo;
-
-    if (result) {
-        m_refinerEngine->GetLOOParams(loo);
-        if (clearOldList) loo.rowsToExclude.clear();
-
-        loo.rowsToExclude.insert(loo.rowsToExclude.begin(), excludedRows.begin(), excludedRows.end());
-
-        m_refinerEngine->SetLOOParams(loo);
-    }
-    return result;
+    if (clearOldList) m_blocksToRefine.clear();
+    m_blocksToRefine.insert(m_blocksToRefine.begin(), blocks.begin(), blocks.end());
 }
 
-bool BMARefiner::ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks)
-{
+void BMARefiner::SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRows, bool clearOldList) {
 
-    //  All blocks are refined; none frozen.
-    //  NOTE:  froms/tos fields of 'loo' are set w/i RefinerPhase::DoPhase
-    //         and rowsToExclude field is filled w/ structures & master as 
-    //         needed when making the RowSelector object.
-
-    if (!SetBlocksToRealign(nAlignedBlocks)) {
-        WARNINGMSG("ConfigureRefiner:  could not configure refiner to realign all blocks");
-    }
-    return ConfigureRefiner(parent);
+    if (clearOldList) m_rowsToExclude.clear();
+    m_rowsToExclude.insert(m_rowsToExclude.begin(), excludedRows.begin(), excludedRows.end());
 }
 
-bool BMARefiner::ConfigureRefiner(wxWindow* parent, const vector<unsigned int>* blocksToRealign, const vector<unsigned int>* rowsToExclude)
-{
-
-    //  Selected blocks are refined; others frozen.  
-    //  Selected rows do not undergo LOO/LNO refinement phase.
-    //  NOTE:  froms/tos fields of 'loo' are set w/i RefinerPhase::DoPhase
-    //         and rowsToExclude field is filled w/ structures & master as 
-    //         needed when making the RowSelector object.
-
-    if (blocksToRealign && !SetBlocksToRealign(*blocksToRealign, true)) {
-        WARNINGMSG("ConfigureRefiner:  could not configure blocks-to-realign list");
-    }
-    if (rowsToExclude && !SetRowsToExcludeFromLNO(*rowsToExclude, true)) {
-        WARNINGMSG("ConfigureRefiner:  could not configure rows-to-exclude list");
-    }
-
-    return ConfigureRefiner(parent);
-}
 
 bool BMARefiner::ConfigureRefiner(wxWindow* parent)
 {
@@ -304,12 +285,25 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent)
     //  case something else assumes the default is true.)
     be.editBlocks = false;
 
-    //  If a refiner exists, reuse it's parameters.
+    //  If a refiner exists, reuse it's parameters....
     if (m_refinerEngine) {
         genl.nCycles = m_refinerEngine->NumCycles();
         genl.nTrials = m_refinerEngine->NumTrials();
         m_refinerEngine->GetLOOParams(loo);
         m_refinerEngine->GetBEParams(be);
+    }
+
+    //  ... but update with the most recent info about blocks & rows to refine.
+    //  Selected blocks are refined; others frozen.  
+    //  Explicitly protected rows do not undergo LOO/LNO refinement phase.
+    loo.blocks.clear();
+    if (m_blocksToRefine.size() > 0) {
+        loo.blocks.insert(loo.blocks.begin(), m_blocksToRefine.begin(), m_blocksToRefine.end());
+    }
+
+    loo.rowsToExclude.clear();
+    if (m_rowsToExclude.size() > 0) {
+        loo.rowsToExclude.insert(loo.rowsToExclude.begin(), m_rowsToExclude.begin(), m_rowsToExclude.end());
     }
 
     //  Use a fixed column scoring method for now.
@@ -754,6 +748,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/11/22 19:06:35  lanczyck
+* make block/row selection work properly
+*
 * Revision 1.7  2005/11/03 00:20:29  lanczyck
 * modify refiner interface and set up of refiner engine to allow for block shrinking and/or to skip block expansion
 *

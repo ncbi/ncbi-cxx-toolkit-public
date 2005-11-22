@@ -62,26 +62,11 @@ public:
     typedef std::list < struct_util::AlignmentUtility * > AlignmentUtilityList;
     typedef AlignmentUtilityList::iterator AlignmentUtilityListIt;
 
-    // Refines an initial blocked multiple alignment according to parameters in
-    // a dialog filled in by user.  All non-master rows are refined unless user
-    // declares otherwise.  The output AlignmentList contains the results
-    // ordered from best to worst refined score (refiner engine 'owns' the alignments).
-    // If the refinement alignment algorithm fails, a null element is appended
-    // to the list.  Return 'false' only if all trials fail.
-    bool RefineMultipleAlignment(struct_util::AlignmentUtility *originalMultiple,
-        AlignmentUtilityList *refinedMultiples, wxWindow *parent);
-
-    //  In case it's desired to get info results/settings directly from the refiner engine.
-    const align_refine::CBMARefinerEngine* GetRefiner() {return m_refinerEngine;}
 
     //  Sets the align_refine::LeaveOneOutParams.blocks field.
     //  Only block numbers listed in the vector will be refined; any previous list
     //  of refined blocks is erased first (unless clearOldList is false).
-    //  Return false if couldn't set the blocks.
-    bool SetBlocksToRealign(const std::vector<unsigned int>& blocks, bool clearOldList = true);
-    //  Convenience method to specify all blocks for realignment (old list always cleared).
-    //  Return false if couldn't set the blocks.
-    bool SetBlocksToRealign(unsigned int nAlignedBlocks);
+    void SetBlocksToRealign(const std::vector<unsigned int>& blocks, bool clearOldList = true);
 
     //  Sets the align_refine::LeaveOneOutParams.rowsToExclude field.  (The master and
     //  if requested, structured rows, need not be excluded here -- they will be handled
@@ -89,22 +74,36 @@ public:
     //  Those row numbers listed in the vector will NOT be subjected to LOO/LNO refinement.
     //  Note that these rows are *not* excluded from block-size changing refinements.
     //  Any previous list of excluded rows is erased first (unless clearOldList is false).
-    //  Return false if couldn't set the rows to exclude.
-    bool SetRowsToExcludeFromLNO(const std::vector<unsigned int>& excludedRows, bool clearOldList = true);
+    void SetRowsToExcludeFromLNO(const std::vector<unsigned int>& excludedRows, bool clearOldList = true);
+
+    // Refines an initial blocked multiple alignment according to parameters in
+    // a dialog filled in by user.  Unless SetBlocksToRealign or SetRowsToExcludeFromLNO
+    // have been called prior to this method to 'freeze' blocks and rows during LNO, 
+    // all blocks and all non-master rows are refined.  (If LOO params 
+    // have been set to exclude structure rows, they are automatically excluded.)
+    // The output AlignmentList contains the results ordered from best to worst refined 
+    // score (refiner engine 'owns' the alignments).  If the refinement alignment 
+    // algorithm fails in a trial, a null element is appended to the list for that trial.  
+    // Return 'false' only if all trials fail.
+    bool RefineMultipleAlignment(struct_util::AlignmentUtility *originalMultiple, 
+        AlignmentUtilityList *refinedMultiples, wxWindow *parent);
+
+    //  In case it's desired to get info results/settings directly from the refiner engine.
+    const align_refine::CBMARefinerEngine* GetRefiner() {return m_refinerEngine;}
 
 private:
 
     align_refine::CBMARefinerEngine* m_refinerEngine;
+    std::vector<unsigned int> m_blocksToRefine;
+    std::vector<unsigned int> m_rowsToExclude;
 
-    // Brings up a dialog that lets the user set refinement parameters; returns false if cancelled
-    // initializes the refiner engine w/ values found in the dialog.  First version realigns all
-    // blocks and explicitly excludes no rows; second allows for flexibility in freezing blocks & rows.
-    bool ConfigureRefiner(wxWindow* parent, unsigned int nAlignedBlocks);
-    // Using the null defaults implies user will set blocks to realign/rows to exclude manually later.
-    bool ConfigureRefiner(wxWindow* parent,
-        const std::vector<unsigned int>* blocksToRealign, const std::vector<unsigned int>* rowsToExclude = NULL);
+    //  Convenience method to specify all blocks for realignment (old list always cleared).
+    void SetBlocksToRealign(unsigned int nAlignedBlocks);
 
-    //   Common core called by the two above wrappers.
+    // Brings up a dialog that lets the user set refinement parameters; returns false if cancelled.
+    // Initializes the refiner engine w/ values found in the dialog.  
+    // Realigns only blocks found in m_blocksToRefine during LNO.
+    // Explicitly excludes from LNO those rows found in m_rowsToExclude.
     bool ConfigureRefiner(wxWindow* parent);
 };
 
@@ -115,6 +114,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/11/22 19:06:35  lanczyck
+* make block/row selection work properly
+*
 * Revision 1.5  2005/11/04 12:27:49  thiessen
 * oops, missed another std::
 *
