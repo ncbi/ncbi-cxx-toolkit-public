@@ -63,7 +63,8 @@ public:
     ~CDense_seg(void);
 
     /// overloaded Assign()
-    void Assign(const CSerialObject& obj, ESerialRecursionMode how);
+    void Assign(const CSerialObject& obj,
+                ESerialRecursionMode how = eRecursive);
 
     typedef vector<int> TWidths;
 
@@ -211,6 +212,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/11/22 18:47:37  dicuccio
+* Restore default parameter for Assign()
+*
 * Revision 1.14  2005/11/22 18:15:05  dicuccio
 * Added Assign()
 *
