@@ -555,7 +555,7 @@ void CGene::Print(int gnum, int mnum, CNcbiOstream& to, CNcbiOstream& toprot) co
         to << '\n';
     }        
         
-    toprot << '>' << m_contig << ".";
+    toprot << '>' << m_contig << "." << gnum << "." << mnum << ".";
     toprot << gene_start << "." << gene_stop << "_"
            << ((Strand() == ePlus) ? "plus" : "minus")
            << " hmm" << mnum << '\n';
@@ -1150,6 +1150,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.12  2005/11/22 20:34:58  souvorov
+ * Minor change in protein fasta
+ *
  * Revision 1.11  2005/11/21 21:33:46  chetvern
  * Splitted CParse::PrintGenes into CGnomonEngine::PartialModelStepBack and PrintGenes function
  *
