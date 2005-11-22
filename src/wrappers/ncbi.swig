@@ -60,6 +60,9 @@ namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 // NCBI_DEPRECATED expands to gcc-specific "__attribute__(something)" on linux
 #define __attribute__(x)
 
+// Similarly for __declspec on Windows
+#define __declspec(x)
+
 %feature("autodoc");  // generate documentation for Python
 
 %include ncbi_stl.i
@@ -205,6 +208,9 @@ objtools/simple/simple_om.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/22 15:20:09  jcherry
+ * #define __declspec(x) to nothing
+ *
  * Revision 1.6  2005/11/10 19:10:53  jcherry
  * #define __attribute__(x) to nothing (for NCBI_DEPRECATED).
  * Conditionally wrap some additional blast format headers.
