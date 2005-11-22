@@ -39,6 +39,7 @@
 #include "hmm.hpp"
 #include "hmm_inlines.hpp"
 #include "gnomon_engine.hpp"
+#include <corelib/ncbifile.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -66,7 +67,7 @@ CGnomonEngine::CGnomonEngine(const string& modeldatafilename, const string& seqn
         m_data->m_gccontent = max(1,m_data->m_gccontent);
         m_data->m_gccontent = min(99,m_data->m_gccontent);
 
-        if(m_data->m_modeldatafilename.find("Human.inp") == m_data->m_modeldatafilename.length() - 9)
+        if (CDirEntry(m_data->m_modeldatafilename).GetName() == "Human.inp")
             m_data->m_donor.reset( new CMDD_Donor(modeldatafilename, m_data->m_gccontent) );
         else
             m_data->m_donor.reset( new CWAM_Donor<2>(modeldatafilename, m_data->m_gccontent) );
@@ -212,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2005/11/22 18:52:29  chetvern
+ * More robust check for 'Human.inp' parameter file
+ *
  * Revision 1.5  2005/11/21 21:33:45  chetvern
  * Splitted CParse::PrintGenes into CGnomonEngine::PartialModelStepBack and PrintGenes function
  *
