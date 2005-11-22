@@ -1,155 +1,46 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Aleksey Grichenko
-*
-* File Description:
-*   NCBI C++ CGI utils
-*
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Alexey Grichenko, Vladimir Ivanov
+ *
+ * File Description:   CGI related utility classes and functions
+ *
+ */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <cgi/cgi_exception.hpp>
 #include <cgi/cgi_util.hpp>
+#include <stdlib.h>
 
 BEGIN_NCBI_SCOPE
 
 
-///////////////////////////////////////////////////////
-//  CEmptyUrlEncoder::
+//////////////////////////////////////////////////////////////////////////////
 //
-
-string CEmptyUrlEncoder::EncodeUser(const string& user) const
-{
-    return user;
-}
-
-string CEmptyUrlEncoder::DecodeUser(const string& user) const
-{
-    return user;
-}
-
-
-string CEmptyUrlEncoder::EncodePassword(const string& password) const
-{
-    return password;
-}
-
-
-string CEmptyUrlEncoder::DecodePassword(const string& password) const
-{
-    return password;
-}
-
-
-string CEmptyUrlEncoder::EncodePath(const string& path) const
-{
-    return path;
-}
-
-
-string CEmptyUrlEncoder::DecodePath(const string& path) const
-{
-    return path;
-}
-
-
-string CEmptyUrlEncoder::EncodeArgName(const string& name) const
-{
-    return name;
-}
-
-
-string CEmptyUrlEncoder::DecodeArgName(const string& name) const
-{
-    return name;
-}
-
-
-string CEmptyUrlEncoder::EncodeArgValue(const string& value) const
-{
-    return value;
-}
-
-
-string CEmptyUrlEncoder::DecodeArgValue(const string& value) const
-{
-    return value;
-}
-
-
-///////////////////////////////////////////////////////
-//  CDefaultUrlEncoder::
-//
-
-CDefaultUrlEncoder::CDefaultUrlEncoder(EUrlEncode encode)
-    : m_Encode(encode)
-{
-    return;
-}
-
-
-string CDefaultUrlEncoder::EncodePath(const string& path) const
-{
-    return URL_EncodeString(path, eUrlEncode_Path);
-}
-
-
-string CDefaultUrlEncoder::DecodePath(const string& path) const
-{
-    return URL_DecodeString(path, eUrlEncode_Path);
-}
-
-
-string CDefaultUrlEncoder::EncodeArgName(const string& name) const
-{
-    return URL_EncodeString(name, m_Encode);
-}
-
-
-string CDefaultUrlEncoder::DecodeArgName(const string& name) const
-{
-    return URL_DecodeString(name, m_Encode);
-}
-
-
-string CDefaultUrlEncoder::EncodeArgValue(const string& value) const
-{
-    return URL_EncodeString(value, m_Encode);
-}
-
-
-string CDefaultUrlEncoder::DecodeArgValue(const string& value) const
-{
-    return URL_DecodeString(value, m_Encode);
-}
-
-
-///////////////////////////////////////////////////////
-//  CCgiArgs_Parser::
+// CCgiArgs_Parser
 //
 
 void CCgiArgs_Parser::SetQueryString(const string& query,
@@ -187,7 +78,6 @@ void CCgiArgs_Parser::x_SetIndexString(const string& query,
                     encoder.DecodeArgName(query.substr(beg, end - beg)),
                     kEmptyStr,
                     eArg_Index);
-
         beg = end + 1;
     }
 }
@@ -216,8 +106,8 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
     }}
 
     // If no '=' present in the parsed string then try to parse it as ISINDEX
-    if (query.find_first_of("&=") == NPOS
-        &&  query.find_first_of("+") != NPOS) {
+    if (query.find_first_of("&=") == NPOS  &&
+        query.find_first_of("+")  != NPOS) {
         x_SetIndexString(query, *encoder);
         return;
     }
@@ -272,8 +162,9 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
 }
 
 
-///////////////////////////////////////////////////////
-//  CCgiArgs::
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCgiArgs
 //
 
 CCgiArgs::CCgiArgs(void)
@@ -381,8 +272,9 @@ CCgiArgs::TArgs::iterator CCgiArgs::x_Find(const string& name)
 }
 
 
-///////////////////////////////////////////////////////
-//  CUrl::
+//////////////////////////////////////////////////////////////////////////////
+//
+// CUrl
 //
 
 CUrl::CUrl(void)
@@ -424,57 +316,6 @@ CUrl& CUrl::operator=(const CUrl& url)
 }
 
 
-void CUrl::x_SetScheme(const string& scheme,
-                       const IUrlEncoder& encoder)
-{
-    m_Scheme = scheme;
-}
-
-
-void CUrl::x_SetUser(const string& user,
-                     const IUrlEncoder& encoder)
-{
-    m_User = encoder.DecodeUser(user);
-}
-
-
-void CUrl::x_SetPassword(const string& password,
-                         const IUrlEncoder& encoder)
-{
-    m_Password = encoder.DecodePassword(password);
-}
-
-
-void CUrl::x_SetHost(const string& host,
-                     const IUrlEncoder& encoder)
-{
-    m_Host = host;
-}
-
-
-void CUrl::x_SetPort(const string& port,
-                     const IUrlEncoder& encoder)
-{
-    NStr::StringToInt(port);
-    m_Port = port;
-}
-
-
-void CUrl::x_SetPath(const string& path,
-                     const IUrlEncoder& encoder)
-{
-    m_Path = encoder.DecodePath(path);
-}
-
-
-void CUrl::x_SetArgs(const string& args,
-                     const IUrlEncoder& encoder)
-{
-    m_OrigArgs = args;
-    m_ArgsList.reset(new CCgiArgs(m_OrigArgs, &encoder));
-}
-
-
 void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
 {
     m_Scheme = kEmptyStr;
@@ -495,6 +336,7 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
     bool skip_path = false;
     SIZE_TYPE beg = 0;
     SIZE_TYPE pos = url.find_first_of(":@/?");
+
     while ( beg < url.size() ) {
         if (pos == NPOS) {
             if ( !skip_host ) {
@@ -629,42 +471,11 @@ string CUrl::ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
 }
 
 
-void CUrl::SetScheme(const string& value)
-{
-    m_Scheme = value;
-}
 
-
-void CUrl::SetUser(const string& value)
-{
-    m_User = value;
-}
-
-
-void CUrl::SetPassword(const string& value)
-{
-    m_Password = value;
-}
-
-
-void CUrl::SetHost(const string& value)
-{
-    m_Host = value;
-}
-
-
-void CUrl::SetPort(const string& value)
-{
-    NStr::StringToInt(value);
-    m_Port = value;
-}
-
-
-void CUrl::SetPath(const string& value)
-{
-    m_Path = value;
-}
-
+//////////////////////////////////////////////////////////////////////////////
+//
+// Url encode/decode
+//
 
 // Return integer (0..15) corresponding to the "ch" as a hex digit
 // Return -1 on error
@@ -910,6 +721,8 @@ extern string URL_EncodeString(const string& str,
     case eUrlEncode_Path:
         encode_table = s_EncodePath;
         break;
+    default:
+        _TROUBLE;
     }
 
     SIZE_TYPE pos;
@@ -947,13 +760,348 @@ IUrlEncoder* CUrl::GetDefaultEncoder(void)
 }
 
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCgiUserAgent
+//
+
+CCgiUserAgent::CCgiUserAgent(void)
+{
+    const char* user_agent = getenv("HTTP_USER_AGENT");
+    if (user_agent  &&  *user_agent) {
+        x_Parse(user_agent);
+    }
+}
+
+CCgiUserAgent::CCgiUserAgent(const string& user_agent)
+{
+    x_Parse(user_agent);
+}
+
+void CCgiUserAgent::x_Init(void)
+{
+    m_UserAgent.erase();
+    m_Browser = eUnknown;
+    m_BrowserVersion.SetVersion(-1, -1, -1);
+    m_Engine = eEngine_Unknown; 
+    m_EngineVersion.SetVersion(-1, -1, -1);
+    m_MozillaVersion.SetVersion(-1, -1, -1);
+}
+
+void CCgiUserAgent::Reset(const string& user_agent)
+{
+    x_Parse(user_agent);
+}
+
+//
+// Mozilla-compatible user agent always have next format:
+//     AppProduct (AppComment) *(VendorProduct|VendorComment)
+//
+
+// Search flags
+enum EUASearchFlags {
+    fAppProduct    = (1<<1), 
+    fAppComment    = (1<<2), 
+    fVendorProduct = (1<<3),
+    fProduct       = fAppProduct | fVendorProduct,
+    fApp           = fAppProduct | fAppComment,
+    fAny           = fAppProduct | fAppComment | fVendorProduct
+};
+typedef int TUASearchFlags; // Binary OR of "ESearchFlags"
+
+
+// Browser search information
+struct SBrowser {
+    CCgiUserAgent::EBrowser       type;   // Browser type
+    char*                         name;   // Browser search name
+    CCgiUserAgent::EBrowserEngine engine; // Browser engine
+    TUASearchFlags                flags;  // Search flags
+};
+
+// Browser search table (the order does matter!)
+const SBrowser s_Browsers[] = {
+
+    // Gecko-based
+
+    { CCgiUserAgent::eBeonex,       "Beonex",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eCamino,       "Camino",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eChimera,      "Chimera",          CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eEpiphany,     "Epiphany",         CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eFirefox,      "Firefox",          CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eGaleon,       "Galeon",           CCgiUserAgent::eEngine_Gecko,   fAny },
+    { CCgiUserAgent::eKMeleon,      "K-Meleon",         CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eMadfox,       "Madfox",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eMinimo,       "Minimo",           CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eNetscape,     "Netscape6",        CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eNetscape,     "Netscape7",        CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eNetscape,     "Netscape",         CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eNetscape,     "NS8",              CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+    { CCgiUserAgent::eSeaMonkey,    "SeaMonkey",        CCgiUserAgent::eEngine_Gecko,   fVendorProduct },
+
+    // IE-based
+
+    { CCgiUserAgent::eAvantBrowser, "Avant Browser",    CCgiUserAgent::eEngine_IE,      fAny },
+    { CCgiUserAgent::eCrazyBrowser, "Crazy Browser",    CCgiUserAgent::eEngine_IE,      fAppComment },
+    //{ CCgiUserAgent::eFoxie,        "",    CCgiUserAgent::eEngine_IE,        fAppComment },
+    { CCgiUserAgent::eIRider,       "iRider",           CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eMaxthon,      "Maxthon",          CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eMaxthon,      "MyIE2",            CCgiUserAgent::eEngine_IE,      fAppComment },
+    { CCgiUserAgent::eNetCaptor,    "NetCaptor",        CCgiUserAgent::eEngine_IE,      fAppComment },
+    // Check IE last, after all IE-based browsers
+    { CCgiUserAgent::eIE,           "Internet Explorer",CCgiUserAgent::eEngine_IE,      fProduct },
+    { CCgiUserAgent::eIE,           "MSIE",             CCgiUserAgent::eEngine_IE,      fApp },
+
+    // AppleQWebKit/KHTML-based
+
+    { CCgiUserAgent::eOmniWeb,      "OmniWeb",          CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
+    { CCgiUserAgent::eSafari,       "Safari",           CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
+    { CCgiUserAgent::eShiira,       "Shiira",           CCgiUserAgent::eEngine_KHTML,   fVendorProduct },
+
+    // Other
+
+    { CCgiUserAgent::eiCab,         "iCab",             CCgiUserAgent::eEngine_Unknown, fApp },
+    { CCgiUserAgent::eKonqueror,    "Konqueror",        CCgiUserAgent::eEngine_Unknown, fApp },
+    { CCgiUserAgent::eLynx,         "Lynx",             CCgiUserAgent::eEngine_Unknown, fAppProduct },
+    { CCgiUserAgent::eOpera,        "Opera",            CCgiUserAgent::eEngine_Unknown, fAny },
+    { CCgiUserAgent::eW3m,          "w3m",              CCgiUserAgent::eEngine_Unknown, fAppProduct }
+    // We have special case to detect Mozilla/Mozilla-based
+};
+const size_t kBrowserCount = sizeof(s_Browsers)/sizeof(s_Browsers[0]);
+
+
+SIZE_TYPE s_SkipDigits(const string& str, SIZE_TYPE pos)
+{
+    while ( isdigit((unsigned char)str[pos]) ) {
+        pos++;
+    }
+    return pos;
+}
+
+void s_ParseVersion(const string& token, SIZE_TYPE start_pos,
+                    TUserAgentVersion* version)
+{
+    // Some browsers have 'v' before version number
+    if ( token[start_pos] == 'v' ) {
+        start_pos++;
+    }
+    if ( !isdigit((unsigned char)token[start_pos]) ) {
+        return;
+    }
+    // Init version numbers
+    int major = -1;
+    int minor = -1;
+    int patch = -1;
+
+    // Parse version
+    SIZE_TYPE pos = s_SkipDigits(token, start_pos + 1);
+    if ( token[pos] == '.' ) {
+        minor = atoi(token.c_str() + pos + 1);
+        pos = s_SkipDigits(token, pos + 1);
+        if ( token[pos] == '.' ) {
+            patch = atoi(token.c_str() + pos + 1);
+        }
+    }
+    major = atoi(token.c_str() + start_pos);
+    // Store version
+    version->SetVersion(major, minor, patch);
+}
+
+
+void CCgiUserAgent::x_Parse(const string& user_agent)
+{
+    string search;
+
+    // Initialization
+    x_Init();
+    m_UserAgent = NStr::TruncateSpaces(user_agent);
+
+    // Check VendorProduct token first.
+    // If it matched some browser name, return it.
+
+    SIZE_TYPE pos = m_UserAgent.rfind(")", NPOS);
+    if (pos != NPOS) {
+        string token = m_UserAgent.substr(pos+1);
+        x_ParseToken(token, fVendorProduct);
+        // Try to determine Mozilla and engine versions below,
+        // and only than return.
+    }
+
+    // Handles browsers declaring Mozilla-compatible
+
+    if ( NStr::MatchesMask(m_UserAgent, "Mozilla/*") ) {
+        // Get Mozilla version
+        search = "Mozilla/";
+        s_ParseVersion(m_UserAgent, search.length(), &m_MozillaVersion);
+
+        // Get Mozilla engine version
+        search = "; rv:";
+        pos = m_UserAgent.find(search);
+        if (pos != NPOS) {
+            m_Engine = eEngine_Gecko;
+            pos += search.length();
+            s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+        }
+
+        // Ignore next code if the browser type already detected
+        if ( m_Browser == eUnknown ) {
+
+            // Check Mozilla-compatible
+            if ( NStr::MatchesMask(m_UserAgent, "Mozilla/*(compatible;*") ) {
+                // Browser.
+                m_Browser = eMozillaCompatible;
+                // Try to determine real browser using second entry
+                // in the AppComment token.
+                search = "(compatible;";
+                pos = m_UserAgent.find(search);
+                if (pos != NPOS) {
+                    pos += search.length();
+                    // Extract remains of AppComment
+                    // (can contain nested parenthesis)
+                    int par = 1;
+                    SIZE_TYPE end = pos;
+                    while (end < m_UserAgent.length()  &&  par) {
+                        if ( m_UserAgent[end] == ')' )
+                            par--;
+                        else if ( m_UserAgent[end] == '(' )
+                            par++;
+                        end++;
+                    }
+                    if ( end <= m_UserAgent.length() ) {
+                        string token = m_UserAgent.substr(pos, end-pos-1);
+                        x_ParseToken(token, fAppComment);
+                    }
+                }
+                // Real browser name not found
+                // Continue below to check product name
+            } 
+            
+            // Handles the real Mozilla (or old Netscape if version < 5.0)
+            else {
+                m_BrowserVersion = m_MozillaVersion;
+                // If product version < 5.0 -- we have Netscape
+                int major = m_BrowserVersion.GetMajor();
+                if ( (major < 0)  ||  (major < 5) ) {
+                    m_Browser = eNetscape;
+                } else { 
+                    m_Browser = eMozilla;
+                    m_Engine  = eEngine_Gecko;
+                }
+                // Stop
+                return;
+            }
+        }
+    }
+
+    // If none of the above matches, uses first product token in list
+
+    if ( m_Browser == eUnknown ) {
+        x_ParseToken(m_UserAgent, fAppProduct);
+    }
+
+    // Try to get engine version for IE-based browsers
+    if ( m_Engine == eEngine_IE ) {
+        if ( m_Browser == eIE ) {
+            m_EngineVersion = m_BrowserVersion;
+        } else {
+            search = " MSIE ";
+            pos = m_UserAgent.find(search);
+            if (pos != NPOS) {
+                pos += search.length();
+                s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+            }
+        }
+    }
+
+    // Determine engine for new Netscape's
+    if ( m_Browser == eNetscape ) {
+        // Netscape 6.0 Ö November 14, 2000 (based on Mozilla 0.7)
+        // Netscape 6.01 Ö February 9, 2001(based on Mozilla 0.7)
+        // Netscape 6.1 Ö August 8, 2001 (based on Mozilla 0.9.2.1)
+        // Netscape 6.2 Ö October 30, 2001 (based on Mozilla 0.9.4.1)
+        // Netscape 6.2.1 (based on Mozilla 0.9.4.1)
+        // Netscape 6.2.2 (based on Mozilla 0.9.4.1)
+        // Netscape 6.2.3 Ö May 15, 2002 (based on Mozilla 0.9.4.1)
+        // Netscape 7.0 Ö August 29, 2002 (based on Mozilla 1.0.1)
+        // Netscape 7.01 Ö December 10, 2002 (based on Mozilla 1.0.2)
+        // Netscape 7.02 Ö February 18, 2003 (based on Mozilla 1.0.2)
+        // Netscape 7.1 Ö June 30, 2003 (based on Mozilla 1.4)
+        // Netscape 7.2 Ö August 17, 2004 (based on Mozilla 1.7)
+        // Netscape Browser 0.5.6+ Ö November 30, 2004 (based on Mozilla Firefox 0.9.3)
+        // Netscape Browser 0.6.4 Ö January 7, 2005 (based on Mozilla Firefox 1.0)
+        // Netscape Browser 0.9.4 (8.0 Pre-Beta) Ö February 17, 2005 (based on Mozilla Firefox 1.0)
+        // Netscape Browser 0.9.5 (8.0 Pre-Beta) Ö February 23, 2005 (based on Mozilla Firefox 1.0)
+        // Netscape Browser 0.9.6 (8.0 Beta) Ö March 3, 2005 (based on Mozilla Firefox 1.0)
+        // Netscape Browser 8.0 Ö May 19, 2005 (based on Mozilla Firefox 1.0.3)
+        // Netscape Browser 8.0.1 Ö May 19, 2005 (based on Mozilla Firefox 1.0.4)
+        // Netscape Browser 8.0.2 Ö June 17, 2005 (based on Mozilla Firefox 1.0.4)
+        // Netscape Browser 8.0.3.1 Ö July 25, 2005 (based on Mozilla Firefox 1.0.6)
+        // Netscape Browser 8.0.3.3 Ö August 8, 2005 (based on Mozilla Firefox 1.0.6)
+        // Netscape Browser 8.0.4 Ö October 19, 2005 (based on Mozilla Firefox 1.0.7)
+
+        int major = m_BrowserVersion.GetMajor();
+        if ( major > 0 ) {
+            if ( (major < 1) || (major > 5) ) {
+                m_Engine = eEngine_Gecko;
+            }
+        }
+    }
+
+    // Try to get engine version for KHTML-based browsers
+    if ( m_Engine == eEngine_KHTML ) {
+        search = " AppleWebKit/";
+        pos = m_UserAgent.find(search);
+        if (pos != NPOS) {
+            pos += search.length();
+            s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+        }
+    }
+
+    return;
+}
+
+
+bool CCgiUserAgent::x_ParseToken(const string& token, int where)
+{
+    // Check all user agent signatures
+    for (size_t i = 0; i < kBrowserCount; i++) {
+        if ( !(s_Browsers[i].flags & where) ) {
+            continue;
+        }
+        string browser = s_Browsers[i].name;
+        SIZE_TYPE pos  = token.find(browser);
+        if ( pos != NPOS ) {
+            pos += browser.length();
+            if ( (pos == token.length())  ||
+                 !isalpha((unsigned char)token[pos]) ) {
+                // Browser
+                m_Browser = s_Browsers[i].type;
+                m_Engine  = s_Browsers[i].engine;
+                // Version.
+                // Second entry in token after space or '/'.
+                if ( (token[pos] == ' ')  || (token[pos] == '/') ) {
+                    s_ParseVersion(token, pos+1, &m_BrowserVersion);
+                }
+                // User agent found and parsed
+                return true;
+            }
+        }
+    }
+    // Not found
+    return false;
+}
+
+
 END_NCBI_SCOPE
-
-
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2005/11/22 12:37:20  ivanov
+* Added class CCgiUserAgent to parse user agent strings.
+* Moved inline function implementation to classes definition.
+* Some cosmetics.
+*
 * Revision 1.5  2005/11/08 20:30:04  grichenk
 * Added ampersand encoding flag
 *
