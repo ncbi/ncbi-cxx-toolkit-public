@@ -442,6 +442,48 @@ static const string& s_GetBondName(CSeqFeatData::TBond bond)
         CSeqFeatData::ENUM_METHOD_NAME(EBond)()->FindName(bond, true);
 }
                                     
+static void s_QualVectorToNote( 
+    const CFlatFeature::TQuals& qualVector,
+    bool noRedundancy,
+    string& note, 
+    string& punctuation,
+    bool& addPeriod) {
+
+    string qual, prefix;
+    ITERATE (CFlatFeature::TQuals, it, qualVector) {
+        qual = (*it)->GetValue();
+        
+        prefix.erase();
+        if (!note.empty()) {
+            prefix = punctuation;
+            if (!NStr::EndsWith(prefix, '\n')) {
+                prefix += (*it)->GetPrefix();
+            }
+        }
+        JoinString(note, prefix, qual, noRedundancy);
+        addPeriod = (*it)->GetAddPeriod();
+        punctuation = (*it)->GetSuffix();
+    }
+}
+
+static void s_NoteFinalize(
+   bool addPeriod,
+   string& noteStr,
+   CFlatFeature& flatFeature ) {
+   
+    if (!noteStr.empty()) {
+        if (addPeriod  &&  !NStr::EndsWith(noteStr, ".")) {
+
+            AddPeriod(noteStr);
+            TrimSpacesAndJunkFromEnds(noteStr, true);
+        }
+        // Policy change: expand tilde on both descriptors and features
+        ExpandTildes(noteStr, eTilde_newline);
+
+        CRef<CFormatQual> note(new CFormatQual("note", noteStr));
+        flatFeature.SetQuals().push_back(note);
+    }
+}
 
 // -- FeatureHeader
 
@@ -2358,44 +2400,26 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
     DO_NOTE(rrna_its);
     DO_NOTE(xtra_prod_quals);
     DO_NOTE(modelev);
-    if ( GetContext()->Config().GoQualsToNote() ) {
-        DO_NOTE(go_component);
-        DO_NOTE(go_function);
-        DO_NOTE(go_process);
-    }
 #undef DO_NOTE
 
     string notestr;
-    const string* suffix = &kEmptyStr;
+    string suffix = kEmptyStr;
     bool add_period = false;
 
-    string qual, prefix;
-    ITERATE (CFlatFeature::TQuals, it, qvec) {
-        qual = (*it)->GetValue();
-        
-        prefix.erase();
-        if (!notestr.empty()) {
-            prefix = *suffix;
-            if (!NStr::EndsWith(prefix, '\n')) {
-                prefix += (*it)->GetPrefix();
-            }
-        }
-        
-        JoinNoRedund(notestr, prefix, qual);
-        //notestr.append(prefix).append(qual);
-        add_period = (*it)->GetAddPeriod();
+    s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
 
-        suffix = &(*it)->GetSuffix();
-    }
+    if (GetContext()->Config().GoQualsToNote()) {
+        qvec.clear();
 
-    if (!notestr.empty()) {
-        if (add_period  &&  !NStr::EndsWith(notestr, '.') ) {
-            AddPeriod(notestr);
-        }
-        ExpandTildes(notestr, eTilde_newline);
-        CRef<CFormatQual> note(new CFormatQual("note", notestr));
-        ff.SetQuals().push_back(note);
+#define DO_NOTE(x) x_FormatNoteQual(eFQ_##x, #x, qvec)
+        DO_NOTE(go_component);
+        DO_NOTE(go_function);
+        DO_NOTE(go_process);
+#undef DO_NOTE
+
+        s_QualVectorToNote(qvec, false, notestr, suffix, add_period);
     }
+    s_NoteFinalize(add_period, notestr, ff);
 }
 
 
@@ -3650,42 +3674,17 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 #undef DO_NOTE
 
     string notestr;
-    const string* suffix = &kEmptyStr;
+    string suffix = kEmptyStr;
 
     if ( GetSource().CanGetGenome()  &&  
         GetSource().GetGenome() == CBioSource::eGenome_extrachrom ) {
         static const string kEOL = "\n";
         notestr += "extrachromosomal";
-        suffix = &kEOL;
+        suffix = kEOL;
     }
 
-    string prefix;
-    ITERATE (CFlatFeature::TQuals, it, qvec) {
-        string note = (*it)->GetValue();
-        add_period = (*it)->GetAddPeriod();
-        
-        prefix.erase();
-        if (!notestr.empty()) {
-            prefix = *suffix;
-            if (!NStr::EndsWith(prefix, '\n')) {
-                prefix += (*it)->GetPrefix();
-            }
-        }
-
-        JoinNoRedund(notestr, prefix, note);
-        suffix = &(*it)->GetSuffix();
-    }
-
-    if (!notestr.empty()) {
-        if (add_period  &&  !NStr::EndsWith(notestr, "...")) {
-            AddPeriod(notestr);
-        }
-        // Policy change: expand tilde on both descriptors and features
-        ExpandTildes(notestr, eTilde_newline);
-
-        CRef<CFormatQual> note(new CFormatQual("note", notestr));
-        ff.SetQuals().push_back(note);
-    }
+    s_QualVectorToNote(qvec, true, notestr, suffix, add_period);
+    s_NoteFinalize(add_period, notestr, ff);
 }
 
 
@@ -3754,6 +3753,17 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2005/11/23 16:26:21  ludwigf
+* CHANGED: Replaced calls to function "JoinNoRedund()" to call function
+* "JoinString()" instead.
+*
+* CHANGED: Policy when turning qualifiers into /note comments:
+* To paraphrase Jonathan, "If the contribution to /note comes from anything
+* other than go_ qualifiers then we don't want to bother the reader with
+* unnecessary redundancy. If the contribution does come from go_ qualifiers
+* then we want to keep any redundancy to educate submitters about the error
+* of their ways.".
+*
 * Revision 1.62  2005/11/16 15:09:41  ludwigf
 * ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
 *

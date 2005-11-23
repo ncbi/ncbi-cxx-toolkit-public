@@ -382,7 +382,7 @@ void CFlatStringListQVal::Format
 
     x_AddFQ(q, 
             (s_IsNote(flags, ctx) ? "note" : name),
-            JoinNoRedund(m_Value, "; "),
+            JoinString(m_Value, "; "),
             m_Style);
 }
 
@@ -977,6 +977,17 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/11/23 16:26:21  ludwigf
+* CHANGED: Replaced calls to function "JoinNoRedund()" to call function
+* "JoinString()" instead.
+*
+* CHANGED: Policy when turning qualifiers into /note comments:
+* To paraphrase Jonathan, "If the contribution to /note comes from anything
+* other than go_ qualifiers then we don't want to bother the reader with
+* unnecessary redundancy. If the contribution does come from go_ qualifiers
+* then we want to keep any redundancy to educate submitters about the error
+* of their ways.".
+*
 * Revision 1.32  2005/10/26 13:30:18  ludwigf
 * Removed qualifier "evidence".
 * Added qualifiers "experiment" and "inference".
