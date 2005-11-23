@@ -461,10 +461,6 @@ public:
     {
         return manip(*this);
     }
-    const CNcbiDiag& Put(FManip, FManip& manip) const
-    {
-        return manip(*this);
-    }
     inline const CNcbiDiag& operator<< (FManip manip) const
     {
         return manip(*this);
@@ -473,10 +469,6 @@ public:
     /// Post the arguments
     /// @sa Put()
     template<class X> inline const CNcbiDiag& operator<< (const X& x) const
-    {
-        return Put(&x, x);
-    }
-    template<class X> inline const CNcbiDiag& operator<< (X& x) const
     {
         return Put(&x, x);
     }
@@ -1225,6 +1217,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.91  2005/11/23 17:21:00  ucko
+ * Drop versions of << and Put that take non-const references, as they
+ * seem to be unnecessary and can confuse WorkShop 5.5 and MIPSpro.
+ *
  * Revision 1.90  2005/11/22 22:49:54  vasilche
  * Added Put(FManip) to make Sun CC happy.
  *
