@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.17 2005/11/08 13:40:50 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.18 2005/11/23 16:39:39 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -245,11 +245,12 @@ PC-Urn ::= SEQUENCE {
     label           VisibleString,                       -- Generic Name or Label for Display  [e.g., "Log P"]
     name            VisibleString              OPTIONAL, -- Qualified Name  [e.g., "XlogP"]
     datatype        PC-UrnDataType             OPTIONAL, -- Specific Data Type of Value  [e.g., binary]
-    parameters      VisibleString              OPTIONAL, -- Implementation Parameter or Name  [e.g., "E_XlogP"]
-    implementation  VisibleString              OPTIONAL, -- NCBI Implementation Name  [e.g., "10.25.2005"]
+    parameters      VisibleString              OPTIONAL, -- Implementation Parameter  [e.g., "metal=0"]
+    implementation  VisibleString              OPTIONAL, -- Implementation Name  [e.g., "E_XlogP"]
     version         VisibleString              OPTIONAL, -- Implementation Version  [e.g., "3.317"]
     software        VisibleString              OPTIONAL, -- Implementation Software  [e.g., "Cactvs"]
-    source          VisibleString              OPTIONAL  -- Implementation Organization  [e.g., "xemistry.com"]
+    source          VisibleString              OPTIONAL, -- Implementation Organization  [e.g., "xemistry.com"]
+    release         VisibleString              OPTIONAL  -- NCBI Implementation Release  [e.g., "10.25.2005"]
 }
 
 
@@ -657,6 +658,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.18  2005/11/23 16:39:39  bolton
+-- Minor change to support additional URN Release information.
+--
 -- Revision 1.17  2005/11/08 13:40:50  bolton
 -- Added two new InfoData value data types, OCTET STRING and BIT STRING.
 -- Updated the description of the URN definition to be consistent with actual
@@ -756,4 +760,5 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
