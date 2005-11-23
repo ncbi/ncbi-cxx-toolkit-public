@@ -660,8 +660,12 @@ void CCodeGenerator::GenerateModuleHPP(const string& path, list<string>& generat
                     "#define " << hppDefine << "\n"
                     "\n";
                 ns.Set(code->GetNamespace(), *out, true);
+                *out << '\n';
+                if (!CClassCode::GetExportSpecifier().empty()) {
+                    *out << CClassCode::GetExportSpecifier() << '\n';
+                }
                 *out <<
-                    "\nvoid " << current_module << "_RegisterModuleClasses(void);\n\n";
+                    "void " << current_module << "_RegisterModuleClasses(void);\n\n";
             }
         }
         if (out->is_open()) {
@@ -704,6 +708,11 @@ void CCodeGenerator::GenerateModuleCPP(const string& path, list<string>& generat
             isfound = true;
             if ( !out.get()  ||  !out->is_open()) {
                 filename = Path(path, current_module + "_module.cpp");
+                string module_inc =
+                    CDirEntry::ConcatPath( CDirEntry( code->GetUserHPPName() ).GetDir(),
+                                           current_module + "_module.hpp");
+                out_inc <<
+                    "#include " << code->Include(module_inc) << "\n";
                 out.reset(new CDelayedOfstream(filename.c_str()));
                 if (!out->is_open()) {
                     ERR_POST(Fatal << "Cannot create file: " << filename);
@@ -1030,6 +1039,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2005/11/23 16:52:37  gouriano
+* Add export specifier to RegisterModuleClasses
+*
 * Revision 1.64  2005/11/09 21:35:49  ucko
 * Allow GenerateModule[CH]PP to use CDelayedOfstream to avoid touching
 * the files they produce when their contents can stay unchanged.
