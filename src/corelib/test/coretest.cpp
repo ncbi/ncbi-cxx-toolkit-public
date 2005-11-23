@@ -839,7 +839,7 @@ static void TestHeapStack(void)
 }
 
 
-#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION < 300)
+#if (defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION < 300)) || defined(NCBI_COMPILER_MIPSPRO)
 # define NO_EMPTY_BASE_OPTIMIZATION
 #endif
 
@@ -969,6 +969,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.101  2005/11/23 17:11:54  ucko
+ * Define NO_EMPTY_BASE_OPTIMIZATION for MIPSpro.
+ *
  * Revision 1.100  2005/11/22 16:41:14  vakatov
  * Test err.posting of the CException derived exceptions. Before, only the
  * CException itself could be posted without additiional casting.
