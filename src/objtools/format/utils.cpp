@@ -213,7 +213,7 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     size_t strlen = str.length();
     size_t begin = 0;
     while (begin != strlen) {
-        char ch = str[begin];
+        unsigned char ch = str[begin];
         if (ch > ' ') {
             break;
         } else {
@@ -228,7 +228,7 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     size_t end = strlen - 1;
     bool has_period = false;
     while (end > begin) {
-        char ch = str[end];
+        unsigned char ch = str[end];
         if (ch <= ' '  ||  ch == '.'  ||  ch ==  ','  ||  ch == '~'  ||  ch == ';') {
             has_period = (has_period  ||  ch == '.');
             --end;
@@ -237,8 +237,14 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
         }
     }
 
-    str = str.substr(begin, end + 1);
-    if (has_period) {
+    if ( allow_ellipsis && (NPOS != NStr::Find(str, "...", end)) ) {
+
+        str = str.substr(begin, end + 1);
+        str += "...";
+
+    } else if (has_period) {
+
+        str = str.substr(begin, end + 1);
         str += '.';
     }
 }
@@ -254,7 +260,7 @@ static bool s_IsWholeWord(const string& str, size_t pos)
 }
 
 
-void JoinNoRedund(string& to, const string& prefix, const string& str)
+void JoinString(string& to, const string& prefix, const string& str, bool noRedundancy)
 {
     if ( str.empty() ) {
         return;
@@ -266,18 +272,20 @@ void JoinNoRedund(string& to, const string& prefix, const string& str)
     }
     
     size_t pos = NPOS;
-    for ( pos = NStr::Find(to, str);
-          pos != NPOS  &&  !s_IsWholeWord(to, pos);
-          pos += str.length());
-
-    if ( pos == NPOS  ||  !s_IsWholeWord(to, pos) ) {
-        to += prefix;
-        to += str;
+    if (noRedundancy) {
+        for ( pos = NStr::Find(to, str); pos != NPOS; pos += str.length()) {
+            if (s_IsWholeWord(to, pos)) {
+                return;
+            }
+        }        
     }
+
+    to += prefix;
+    to += str;
 }
 
 
-string JoinNoRedund(const list<string>& l, const string& delim)
+string JoinString(const list<string>& l, const string& delim, bool noRedundancy)
 {
     if ( l.empty() ) {
         return kEmptyStr;
@@ -286,7 +294,7 @@ string JoinNoRedund(const list<string>& l, const string& delim)
     string result = l.front();
     list<string>::const_iterator it = l.begin();
     while ( ++it != l.end() ) {
-        JoinNoRedund(result, delim, *it);
+        JoinString(result, delim, *it, noRedundancy);
     }
 
     return result;
@@ -681,6 +689,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/11/23 16:20:56  ludwigf
+* FIXED: Function "TrimSpacesAndJunkFromEnds()" would not respect parameter
+* "allow_ellipsis".
+* CHANGED: Function "JoinNoRedund()" is now function "JoinString()", taking
+* an extra parameter indicating whether to preserve or suppress redundancy
+* in strings.
+*
 * Revision 1.23  2005/06/03 17:01:02  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

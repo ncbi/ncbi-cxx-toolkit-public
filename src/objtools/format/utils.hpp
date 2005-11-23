@@ -56,8 +56,13 @@ void ExpandTildes(string& s, ETildeStyle style);
 void ConvertQuotes(string& str);
 string ConvertQuotes(const string& str);
 
-void JoinNoRedund(string& to, const string& prefix, const string& str);
-string JoinNoRedund(const list<string>& l, const string& delim);
+void JoinString(string& to, 
+                const string& prefix, 
+                const string& str, 
+                bool noRedundancy=true);
+string JoinString(const list<string>& l, 
+                  const string& delim, 
+                  bool noRedundancy=true);
 
 // Strips all spaces in string in following manner. If the function
 // meet several spaces (spaces and tabs) in succession it replaces them
@@ -136,6 +141,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2005/11/23 16:20:56  ludwigf
+* FIXED: Function "TrimSpacesAndJunkFromEnds()" would not respect parameter
+* "allow_ellipsis".
+* CHANGED: Function "JoinNoRedund()" is now function "JoinString()", taking
+* an extra parameter indicating whether to preserve or suppress redundancy
+* in strings.
+*
 * Revision 1.17  2005/03/28 17:25:28  shomrat
 * ExpandTilde optimization
 *
