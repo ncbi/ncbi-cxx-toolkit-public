@@ -108,8 +108,8 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     TDbxrefPair("SoyBase", CDbtag::eDbtagType_SoyBase),
     TDbxrefPair("SubtiList", CDbtag::eDbtagType_SubtiList),
     TDbxrefPair("UniGene", CDbtag::eDbtagType_UniGene),
-    TDbxrefPair("UniProt/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt),
-    TDbxrefPair("UniProt/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL),
+    TDbxrefPair("UniProtKB/Swiss-Prot", CDbtag::eDbtagType_UniProt_SwissProt),
+    TDbxrefPair("UniProtKB/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL),
     TDbxrefPair("UniSTS", CDbtag::eDbtagType_UniSTS),
     TDbxrefPair("VBASE2", CDbtag::eDbtagType_VBASE2),
     TDbxrefPair("WorfDB", CDbtag::eDbtagType_WorfDB),
@@ -506,6 +506,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.28  2005/11/23 16:28:26  ludwigf
+ * FIXED: Text strings identifying the UniProt databases.
+ *
  * Revision 6.27  2005/09/15 15:14:23  kskatz
  * Changed eDbTagType_GeneID dopt=graphics to dopt=full_report
  *
