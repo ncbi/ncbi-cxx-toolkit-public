@@ -63,6 +63,12 @@ BEGIN_SCOPE(Cn3D)
 
 //  These listed in order of enum BlockBoundaryAlgorithmMethod
 static const wxString blockEditAlgStrings[] = {"No", "Only expand", "Only shrink", "Expand and shrink"};
+static ProgressMeter* refinerProgressMeter = NULL;
+
+static void RefinerProgress(int counter) {
+    if (!refinerProgressMeter) return;
+    refinerProgressMeter->SetValue(counter);
+}
 
 class BMARefinerOptionsDialog : public wxDialog
 {
@@ -144,7 +150,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
 {
     if (!originalMultiple) return false;
 
-    unsigned int nRows;
+    unsigned int nRows = originalMultiple->GetBlockMultipleAlignment()->NRows();
     unsigned int nAlignedBlocks = originalMultiple->GetBlockMultipleAlignment()->NAlignedBlocks();
     if (nAlignedBlocks == 0) {
         ERRORMSG("Must have at least one aligned block to use the block aligner");
@@ -167,7 +173,6 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
 
     // Make sure exclude rows are valid row IDs.
     if (nToExclude > 0) {
-        nRows = originalMultiple->GetBlockMultipleAlignment()->NRows();
         for (j = 0; j < nToExclude; ++j) {
             if (m_rowsToExclude[j] >= nRows) {
                 sanityCheckFailures.insert(m_rowsToExclude[j]);
@@ -214,16 +219,22 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
 
     bool errorsEncountered = true;
 
+
     wxSetCursor(*wxHOURGLASS_CURSOR);
-    ProgressMeter wait(NULL, "Refinement in progress...", "Wait", 100);
-    wait.SetValue(50);
+    int meterMax = m_refinerEngine->NumTrials() * m_refinerEngine->NumCycles() * (nRows - nToExclude - 1);
+    if (meterMax > 0) {
+        refinerProgressMeter = new ProgressMeter(parent, "Refinement in progress...", "Wait", meterMax);
+        refinerProgressMeter->SetValue(0);
+    } else {
+        refinerProgressMeter = NULL;
+    }
 
     //  Execute the refinement...
     SetDialogSevereErrors(false);
-    align_refine::RefinerResultCode result = m_refinerEngine->Refine(originalMultiple);
+    align_refine::RefinerResultCode result = m_refinerEngine->Refine(originalMultiple, NULL, RefinerProgress);
     SetDialogSevereErrors(true);
 
-    wait.SetValue(90);
+//    refinerProgressMeter->SetValue(90);
 
     //  If requested, store results (in order of decreasing score so best alignment is first).
     if (result == align_refine::eRefinerResultOK) {
@@ -239,7 +250,13 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
         }
     }
 
-    wait.Show(false);
+//    refinerProgressMeter->Show(false);
+    if (refinerProgressMeter) {
+        refinerProgressMeter->Close(true);
+        refinerProgressMeter->Destroy();
+        refinerProgressMeter = NULL;
+    }
+
     wxSetCursor(wxNullCursor);
     SetDiagPostLevel(eDiag_Info);   // may be changed by refiner
 
@@ -297,8 +314,10 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent)
     //  Selected blocks are refined; others frozen.  
     //  Explicitly protected rows do not undergo LOO/LNO refinement phase.
     loo.blocks.clear();
+    be.editableBlocks.clear();
     if (m_blocksToRefine.size() > 0) {
         loo.blocks.insert(loo.blocks.begin(), m_blocksToRefine.begin(), m_blocksToRefine.end());
+        be.editableBlocks.insert(m_blocksToRefine.begin(), m_blocksToRefine.end());
     }
 
     loo.rowsToExclude.clear();
@@ -748,6 +767,10 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/11/23 01:03:04  lanczyck
+* freeze specified blocks in both LOO and BE phases;
+* add support for a callback for a progress meter
+*
 * Revision 1.8  2005/11/22 19:06:35  lanczyck
 * make block/row selection work properly
 *

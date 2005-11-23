@@ -48,6 +48,9 @@ USING_SCOPE(struct_util);
 
 BEGIN_SCOPE(align_refine)
 
+//  Definition of extern from RefinerDefs.hpp
+int refinerCallbackCounter = 0;
+
 CRowSelector* CBMARefinerLOOPhase::m_rowSelector = NULL;
 
 
@@ -151,7 +154,7 @@ void CBMARefinerPhase::ResetBase() {
 //  LOO Phase class methods
 //
 
-RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* detailsStream) {
+RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* detailsStream, TFProgressCallback callback) {
 
     //  Initialize everything from the base class.
     ResetBase();
@@ -220,6 +223,7 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
     sumShifts = 0;
     while (m_rowSelector->HasNext() && au) {
 
+        ++align_refine::refinerCallbackCounter;
         row = m_rowSelector->GetNext();
 
         if (row == 0) {
@@ -302,6 +306,10 @@ RefinerResultCode CBMARefinerLOOPhase::DoPhase(AlignmentUtility* au, ostream* de
             }
 
         } else {
+
+            if (callback) {
+                callback(align_refine::refinerCallbackCounter);
+            }
 
             SetDiagPostLevel(originalPostLevel);
             oldScore = score;
@@ -582,7 +590,7 @@ unsigned int CBMARefinerLOOPhase::AnalyzeRowShifts(const Ranges& before, const R
 //  Block Edit Phase class methods
 //
 
-RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostream* detailsStream) {
+RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostream* detailsStream, TFProgressCallback callback) {
 
     //  Initialize everything from the base class...
     ResetBase();
@@ -634,12 +642,16 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
 //    detailsStream << "        Initial blocks + maximal extent (PSSM coordinates):" << endl;
 //    detailsStream << blockEd.BoundsToString(8) << endl;
 
+    set<unsigned int>::const_iterator itEnd = m_blockEditParams.editableBlocks.end();
     nExtendable = blockEd.GetExtendableBlocks(eb, CBlockedAlignmentEditor::eEither);
     if (m_blockEditParams.algMethod != eSimpleShrink) {
 
         if (writeDetails) {
             TERSE_INFO_MESSAGE_CL("        Possible block extensions (PSSM coordinates):");
             for (unsigned j = 0; j < nExtendable; ++j) {
+                //  If not editing the block, skip.
+                if (m_blockEditParams.editableBlocks.find(eb[j].blockNum) == itEnd) continue;
+
                 if (detailsStream) detailsStream->setf(IOS_BASE::left, IOS_BASE::adjustfield);
                 TERSE_INFO_MESSAGE_CL("        BLOCK " << setw(4) << eb[j].blockNum+1 << " ["
                 << setw(4) << eb[j].from << ", " << setw(4) << eb[j].to << "]:  max N-extension = "
@@ -662,7 +674,7 @@ RefinerResultCode CBMARefinerBlockEditPhase::DoPhase(AlignmentUtility* au, ostre
                                                             ? CBlockedAlignmentEditor::eEither 
                                                             : CBlockedAlignmentEditor::eAny;
     nEditable = blockEd.GetExtendableBlocks(eb, eloc);
-    nChanged  = blockEd.MoveBlockBoundaries(*algorithm, eloc, &changedBlocks);
+    nChanged  = blockEd.MoveBlockBoundaries(*algorithm, eloc, &(m_blockEditParams.editableBlocks), &changedBlocks);
 
     //  NOTE:  if have deleted a block, some of the block indices may have been invalidated;
     //         either check after or in MoveBlockBoundaries have to reflect the new
@@ -852,6 +864,10 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/11/23 01:02:10  lanczyck
+ * freeze specified blocks in both LOO and BE phases;
+ * add support for a callback for a progress meter
+ *
  * Revision 1.9  2005/11/07 14:42:11  lanczyck
  * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
  *

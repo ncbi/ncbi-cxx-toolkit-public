@@ -37,6 +37,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <corelib/ncbistd.hpp>
 
 #include <algo/structure/bma_refine/BMAUtils.hpp>
@@ -103,10 +104,11 @@ public:
     //  Globally compute and execute all block boundary movements according to the 
     //  specific BlockBoundaryAlgorithm object passed in, which should already be
     //  configured with a ColumnScorer.  By default, 'eLoc' extends on either end of each block.
+    //  If 'editableBlocks' is non-NULL, blocks not in that list are not modified; if NULL, all are modifyable.
     //  Return number of blocks whose boundaries were changed, along w/ the specific
     //  block moves if 'changedBlocks' is non-NULL.
-    unsigned int MoveBlockBoundaries(BlockBoundaryAlgorithm& algorithm, ExtensionLoc eLoc = eEither,
-                                     vector<ExtendableBlock>* changedBlocks = NULL);
+    unsigned int MoveBlockBoundaries(BlockBoundaryAlgorithm& algorithm, ExtensionLoc eLoc, 
+                                     const set<unsigned int>* editableBlocks = NULL, vector<ExtendableBlock>* changedBlocks = NULL);
 
     //  Return true if the boundary moved.
     //  If shift > 0 and exceeds max extension, apply the maximal extension.  
@@ -148,6 +150,10 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2005/11/23 01:01:14  lanczyck
+* freeze specified blocks in both LOO and BE phases;
+* add support for a callback for a progress meter
+*
 * Revision 1.1  2005/06/28 13:45:25  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *

@@ -51,7 +51,7 @@ public:
 
 	virtual ~CBMARefinerCycle();
 
-    virtual RefinerResultCode DoCycle(AlignmentUtility* au, ostream* detailsStream);
+    virtual RefinerResultCode DoCycle(AlignmentUtility* au, ostream* detailsStream, TFProgressCallback callback);
 
     void SetVerbose(bool verbose = true);
 
@@ -91,6 +91,10 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/11/23 01:01:14  lanczyck
+ * freeze specified blocks in both LOO and BE phases;
+ * add support for a callback for a progress meter
+ *
  * Revision 1.1  2005/06/28 13:45:25  lanczyck
  * block multiple alignment refiner code from internal/structure/align_refine
  *

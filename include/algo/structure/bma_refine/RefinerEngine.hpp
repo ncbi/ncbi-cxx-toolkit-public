@@ -80,13 +80,13 @@ public:
     //  The 'originalAlignment' has NOT been modified!!
     //  **  Any existing data is immediately deleted:  m_originalAlignment 
     //      was cloned from 'originalAlignment', and is owned by the RefinerEngine.
-    RefinerResultCode Refine(AlignmentUtility* originalAlignment, ostream* detailsStream = NULL);
+    RefinerResultCode Refine(AlignmentUtility* originalAlignment, ostream* detailsStream = NULL, TFProgressCallback callback = NULL);
 
     //  For the input alignment, perform a series of refinement trials.
     //  Best final alignment from all trials replaces original alignment in 'cdd'.
     //  **  Any existing data is immediately deleted:  m_originalAlignment 
     //      was cloned from data in 'cdd', and is owned by the RefinerEngine.
-    RefinerResultCode Refine(ncbi::objects::CCdd& cdd, ostream* detailsStream = NULL);
+    RefinerResultCode Refine(ncbi::objects::CCdd& cdd, ostream* detailsStream = NULL, TFProgressCallback callback = NULL);
 
 
 private:
@@ -103,7 +103,7 @@ private:
     RefinedAlignments  m_perTrialResults;
 
     //  perform all refinement trials
-    RefinerResultCode RunTrials(ostream* detailsStream);   
+    RefinerResultCode RunTrials(ostream* detailsStream, TFProgressCallback callback);   
 
     //  Test if score deviation is smaller than threshold.
     //  Require a minimum # of trials to claim convergence.

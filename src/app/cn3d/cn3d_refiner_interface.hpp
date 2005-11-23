@@ -63,7 +63,7 @@ public:
     typedef AlignmentUtilityList::iterator AlignmentUtilityListIt;
 
 
-    //  Sets the align_refine::LeaveOneOutParams.blocks field.
+    //  Sets the align_refine::LeaveOneOutParams.blocks and align_refine::BlockEditingParams.editableBlocks fields.
     //  Only block numbers listed in the vector will be refined; any previous list
     //  of refined blocks is erased first (unless clearOldList is false).
     void SetBlocksToRealign(const std::vector<unsigned int>& blocks, bool clearOldList = true);
@@ -114,6 +114,10 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2005/11/23 01:03:04  lanczyck
+* freeze specified blocks in both LOO and BE phases;
+* add support for a callback for a progress meter
+*
 * Revision 1.6  2005/11/22 19:06:35  lanczyck
 * make block/row selection work properly
 *

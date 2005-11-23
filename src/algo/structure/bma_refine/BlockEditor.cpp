@@ -215,21 +215,26 @@ bool CBlockedAlignmentEditor::IsBlockExtendable(unsigned blockNum, ExtensionLoc 
 }
 
 unsigned int CBlockedAlignmentEditor::MoveBlockBoundaries(BlockBoundaryAlgorithm& algorithm, 
-                                                          ExtensionLoc eLoc,
+                                                          ExtensionLoc eLoc, const set<unsigned int>* editableBlocks, 
                                                           vector<ExtendableBlock>* changedBlocks) {
     bool moved;
     int nShift, cShift;
     unsigned int nChanged = 0, nEditable = 0, nMoved = 0, nDeleted = 0;
     ExtendableBlock thisBlock;
     vector<ExtendableBlock> extendableBlocks;
+    set<unsigned int>::const_iterator itEnd;
     map<unsigned int, ExtendableBlock> localChangedBlocks;
     map<unsigned int, ExtendableBlock>::iterator mapIt;
 
     nEditable = GetExtendableBlocks(extendableBlocks, eLoc);
+    if (editableBlocks) itEnd = editableBlocks->end();
 
     //  Find location of the new block boundaries...
     for (unsigned int i = 0; i < nEditable; ++i) {
         thisBlock = extendableBlocks[i];
+
+        //  Skip any block not declared editable.
+        if (editableBlocks && editableBlocks->find(thisBlock.blockNum) == itEnd) continue;
 
         //  No block in 'localChangedBlocks' can have nShift = cShift = 0.
         if (algorithm.GetNewBoundaries(thisBlock, *m_bma)) {
@@ -447,6 +452,10 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2005/11/23 01:02:10  lanczyck
+* freeze specified blocks in both LOO and BE phases;
+* add support for a callback for a progress meter
+*
 * Revision 1.4  2005/11/07 14:42:11  lanczyck
 * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
 *

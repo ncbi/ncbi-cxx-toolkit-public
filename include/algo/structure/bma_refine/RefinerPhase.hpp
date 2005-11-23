@@ -42,7 +42,6 @@ BEGIN_SCOPE(align_refine)
 
 class CBMARefinerPhase
 {
-
 protected:
 
     CBMARefinerPhase(bool saveBlockScores = true) : m_verbose(true), m_initialScore(REFINER_INVALID_SCORE), m_finalScore(REFINER_INVALID_SCORE), m_saveBlockScores(saveBlockScores) {};
@@ -58,7 +57,7 @@ public:
     virtual int  PhaseType() const = 0;
     virtual bool PhaseSkipped() const {return false;}
 
-    virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream) = 0;
+    virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream, TFProgressCallback callback) = 0;
 
     //  Check if the last invokation of 'DoPhase' modified the alignment detectably.
     //  Used by other objects to check convergence.  Most simply, this will return
@@ -137,7 +136,7 @@ public:
     virtual int  PhaseType() const {return eRefinerPhaseLOO;}
     virtual bool PhaseSkipped() const {return !m_looParams.doLOO;}
 
-    virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream);
+    virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream, TFProgressCallback callback);
 
     //  Currently, true if any detectable change is recorded.  Override to change.
     //  virtual bool MadeChange() const;
@@ -184,7 +183,7 @@ public:
     virtual int PhaseType() const {return eRefinerPhaseBE;}
     virtual bool PhaseSkipped() const {return !m_blockEditParams.editBlocks;}
 
-    virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream);
+    virtual RefinerResultCode DoPhase(AlignmentUtility* au, ostream* detailsStream, TFProgressCallback callback);
 
     //  Currently, true if any detectable change is recorded.  Override to change.
     //  virtual bool MadeChange() const;
@@ -208,6 +207,10 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/23 01:01:14  lanczyck
+ * freeze specified blocks in both LOO and BE phases;
+ * add support for a callback for a progress meter
+ *
  * Revision 1.2  2005/06/28 16:00:12  lanczyck
  * add virtual check to see if a phase was skipped or not
  *

@@ -95,7 +95,7 @@ TScoreType CBMARefinerCycle::GetFinalScore() const {
     return score;
 }
 
-RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detailsStream) {
+RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detailsStream, TFProgressCallback callback) {
 
     m_nextPhase = 0;
     ++m_cycleId;
@@ -110,7 +110,7 @@ RefinerResultCode CBMARefinerCycle::DoCycle(AlignmentUtility* au, ostream* detai
     TERSE_INFO_MESSAGE_CL("\n    Start Cycle = " << m_cycleId << "\n");
 
     for (unsigned int p = 0; p < nPhases; ++p) {
-        phaseResult = m_phases[p]->DoPhase(au, detailsStream);
+        phaseResult = m_phases[p]->DoPhase(au, detailsStream, callback);
         if (phaseResult != eRefinerResultOK && phaseResult != eRefinerResultPhaseSkipped) {
             return phaseResult;
         }
@@ -240,6 +240,10 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/11/23 01:02:10  lanczyck
+ * freeze specified blocks in both LOO and BE phases;
+ * add support for a callback for a progress meter
+ *
  * Revision 1.5  2005/11/07 14:42:11  lanczyck
  * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
  *

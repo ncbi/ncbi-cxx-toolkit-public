@@ -59,7 +59,7 @@ public:
 
     //  Modified alignment replaces old alignment in passed object.
     //  If final score is 'REFINER_INVALID_SCORE' there was a problem.
-    RefinerResultCode DoTrial(AlignmentUtility* au, ostream* details = NULL);
+    RefinerResultCode DoTrial(AlignmentUtility* au, ostream* details = NULL, TFProgressCallback callback = NULL);
 
     bool SavedIntermediateAlignments() const {return m_saveIntermediateAlignments;}
     void SaveIntermediateAlignments(bool save = true) {m_saveIntermediateAlignments = save;}
@@ -114,6 +114,10 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/11/23 01:01:14  lanczyck
+ * freeze specified blocks in both LOO and BE phases;
+ * add support for a callback for a progress meter
+ *
  * Revision 1.2  2005/10/19 16:44:04  lanczyck
  * promote the cyclesCreated local variable to be a class member
  *

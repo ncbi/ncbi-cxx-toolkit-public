@@ -54,7 +54,6 @@ USING_SCOPE(struct_util);
 
 BEGIN_SCOPE(align_refine)
 
-
 typedef double TScoreType;
 const TScoreType REFINER_INVALID_SCORE = kMin_Int;  // so can cast to int if need be...
 
@@ -166,6 +165,7 @@ struct BlockEditingParams {
     TScoreType extensionThreshold;    // column score required to extend
     TScoreType shrinkageThreshold;    // column score below which can shrink
     unsigned int minBlockSize;    // don't modify boundaries so block size < this value
+    set<unsigned int> editableBlocks;  // only edit these blocks (empty -> edit all blocks)
 
     //  for compound scoring, may have extra thresholds (e.g. from negScore, negRows...)
     double negScoreFraction;
@@ -219,6 +219,8 @@ struct BlockEditingParams {
         median = rhs.median;
         extendFirst = rhs.extendFirst;
         columnMethod2 = rhs.columnMethod2;
+
+        editableBlocks = rhs.editableBlocks;
     }
 };
 
@@ -250,6 +252,9 @@ struct RefinerAU {
     }
 };
 
+typedef void (* TFProgressCallback ) (int num);
+static TFProgressCallback refinerCallbackFunction;
+extern int refinerCallbackCounter;
 
 typedef vector< Block::Range > Ranges;
 typedef map< unsigned int, Ranges > RangeMap;
@@ -270,6 +275,10 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/11/23 01:01:14  lanczyck
+ * freeze specified blocks in both LOO and BE phases;
+ * add support for a callback for a progress meter
+ *
  * Revision 1.4  2005/10/05 13:55:08  lanczyck
  * new defaults for 3.3.3 parameters
  *

@@ -150,10 +150,10 @@ AlignmentUtility* CBMARefinerEngine::GetBestRefinedAlignment() const {
 /////////////////////////////////////////////////////////////////////////////
 //  Run a series of LOO-based refinement trials 
 
-RefinerResultCode CBMARefinerEngine::Refine(ncbi::objects::CCdd& cdd, ostream* detailsStream) {
+RefinerResultCode CBMARefinerEngine::Refine(ncbi::objects::CCdd& cdd, ostream* detailsStream, TFProgressCallback callback) {
 
     AlignmentUtility* originalAlignment = new AlignmentUtility(cdd.GetSequences(), cdd.GetSeqannot());
-    RefinerResultCode result = Refine(originalAlignment, detailsStream);
+    RefinerResultCode result = Refine(originalAlignment, detailsStream, callback);
 
 
     //  Install alignment w/ highest score in the original CD.
@@ -170,7 +170,7 @@ RefinerResultCode CBMARefinerEngine::Refine(ncbi::objects::CCdd& cdd, ostream* d
 }
 
 
-RefinerResultCode CBMARefinerEngine::Refine(AlignmentUtility* originalAlignment, ostream* detailsStream) {
+RefinerResultCode CBMARefinerEngine::Refine(AlignmentUtility* originalAlignment, ostream* detailsStream, TFProgressCallback callback) {
 
     // create AlignmentUtility class object; delete any existing data from prior runs.
     CleanUp(true);
@@ -184,11 +184,11 @@ RefinerResultCode CBMARefinerEngine::Refine(AlignmentUtility* originalAlignment,
         return eRefinerResultAlignmentUtilityError;
     }
 
-    return RunTrials(detailsStream);
+    return RunTrials(detailsStream, callback);
 }
 
    
-RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
+RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream, TFProgressCallback callback)
 {
     string message;
     bool converged = false;
@@ -197,7 +197,9 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
     RowScorer rowScorer;
 
     //  This is the object that undergoes refinement.
-    AlignmentUtility* au = NULL;  
+    AlignmentUtility* au = NULL; 
+
+    align_refine::refinerCallbackCounter = 0;
 
     //  Initialize the trial's cycles; 
     //  Required LOO/BE/... parameters need to have been set already.
@@ -226,7 +228,7 @@ RefinerResultCode CBMARefinerEngine::RunTrials(ostream* detailsStream)
             return eRefinerResultAlignmentUtilityError;
         }
 
-    	resultCode = m_trial->DoTrial(au, detailsStream);
+    	resultCode = m_trial->DoTrial(au, detailsStream, callback);
 
         LOG_MESSAGE_CL("\n    Trial " << i+1 << " results:\n");
         if (m_trial->NumCyclesRun() != m_trial->NumCycles()) {
