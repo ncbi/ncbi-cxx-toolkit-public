@@ -500,11 +500,34 @@ Uint4 s_CalcByteCRC32ZIP(size_t byte)
 
 void s_FillMultiBitsCRC(Uint4* table, size_t size)
 {
-    for ( size_t i = 0;  i < size;  ++i ) {
-        size_t bit = i & (i-1);
-        if ( i != bit ) {
-            table[i] = table[i^bit] ^ table[bit];
-        }
+    // Preconditions:
+    //  Entries at one-bit indexes (1<<k), are calculated.
+    for ( size_t i = 0;  i < size;  ++i ) { // order is significant
+        // Split bits of i into two parts:
+        //  lobit contains lowest bit set, or zero if no bits are set,
+        //  hibits contains all other bits.
+        size_t hibits = i & (i-1);
+        size_t lobit = i & ~(i-1);
+        // Because of:
+        //  1. i = lobit ^ hibits
+        //  2. lobit <= i
+        //  3. hibits <= i
+        // we can calculate entry at i by xoring entries at lobit and hibits
+        // There are 3 possible cases:
+        //  A. i = 0
+        //    In this case lobit = 0 and hibits = 0.
+        //    As a result table[0] will become 0, which is correct for CRC.
+        //  B. i = 1<<k
+        //    In this case lobit = i, and hibits = 0.
+        //    table[i] will become table[i] ^ table[0].
+        //    Because table[0] is 0 (see case A above),
+        //    table[i] will not change and will preserve precalculated value
+        //    (see Preconditions above).
+        //  C. all other i
+        //    In this case lobit < i, and hibits < i
+        //    It means the entries at lobit and hibits are calculated already
+        //    because of the order of iteration by i.
+        table[i] = table[lobit] ^ table[hibits];
     }
 }
 
@@ -572,6 +595,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/11/23 16:27:48  vasilche
+ * Commented algorithm used for CRC32 table calculation.
+ * Removed unnecessary check in the cycle.
+ *
  * Revision 1.13  2005/11/21 14:33:05  vasilche
  * Implemented ZIP style CRC32.
  * Use precalculated CRC32 table.
