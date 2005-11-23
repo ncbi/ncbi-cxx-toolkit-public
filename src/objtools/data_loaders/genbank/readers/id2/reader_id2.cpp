@@ -259,13 +259,13 @@ CConn_IOStream* CId2Reader::x_GetConnection(TConn conn)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CConn_IOStream>& stream = m_Connections[conn];
     if ( !stream.get() ) {
-        stream.reset(x_NewConnection());
+        stream.reset(x_NewConnection(conn));
     }
     return stream.get();
 }
 
 
-CConn_IOStream* CId2Reader::x_NewConnection(void)
+CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
 {
     if ( !m_NextConnectTime.IsEmpty() ) {
         int wait_seconds = 
@@ -280,7 +280,8 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
     
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s;
-        s << "CId2Reader: New connection to " << m_ServiceName << "...\n";
+        s << "CId2Reader(" << conn << "): "
+          << "New connection to " << m_ServiceName << "...\n";
     }
         
     STimeout tmout;
@@ -302,10 +303,17 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
 
     if ( GetDebugLevel() >= eTraceConn ) {
         CDebugPrinter s;
-        s << "CId2Reader: New connection to " << m_ServiceName << " opened.\n";
+        s << "CId2Reader(" << conn << "): "
+          << "New connection to " << m_ServiceName << " opened.\n";
+        // need to call CONN_Wait to force connection to open
+        CONN_Wait(stream->GetCONN(), eIO_Write, &tmout);
+        const char* descr = CONN_Description(stream->GetCONN());
+        if ( descr ) {
+            s << "  description: " << descr << "\n";
+        }
     }
     try {
-        x_InitConnection(*stream);
+        x_InitConnection(*stream, conn);
     }
     catch ( CException& exc ) {
         NCBI_RETHROW(exc, CLoaderException, eNoConnection,
@@ -319,7 +327,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
 #define MConnFormat MSerial_AsnBinary
 
 
-void CId2Reader::x_InitConnection(CNcbiIostream& stream)
+void CId2Reader::x_InitConnection(CNcbiIostream& stream, TConn conn)
 {
     // prepare init request
     CID2_Request req;
@@ -333,7 +341,7 @@ void CId2Reader::x_InitConnection(CNcbiIostream& stream)
     {{
         if ( GetDebugLevel() >= eTraceConn ) {
             CDebugPrinter s;
-            s << "CId2Reader(new): Sending";
+            s << "CId2Reader(" << conn << "): Sending";
             if ( GetDebugLevel() >= eTraceASN ) {
                 s << ": " << MSerial_AsnText << packet;
             }
@@ -345,7 +353,7 @@ void CId2Reader::x_InitConnection(CNcbiIostream& stream)
         stream << MConnFormat << packet << flush;
         if ( GetDebugLevel() >= eTraceConn ) {
             CDebugPrinter s;
-            s << "CId2Reader(new): Sent ID2-Request-Packet.\n";
+            s << "CId2Reader(" << conn << "): Sent ID2-Request-Packet.\n";
         }
         if ( !stream ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
@@ -358,12 +366,12 @@ void CId2Reader::x_InitConnection(CNcbiIostream& stream)
     {{
         if ( GetDebugLevel() >= eTraceConn ) {
             CDebugPrinter s;
-            s << "CId2Reader(new): Receiving ID2-Reply...\n";
+            s << "CId2Reader(" << conn << "): Receiving ID2-Reply...\n";
         }
         stream >> MConnFormat >> reply;
         if ( GetDebugLevel() >= eTraceConn   ) {
             CDebugPrinter s;
-            s << "CId2Reader(new): Received";
+            s << "CId2Reader(" << conn << "): Received";
             if ( GetDebugLevel() >= eTraceASN ) {
                 s << ": " << MSerial_AsnText << reply;
             }
