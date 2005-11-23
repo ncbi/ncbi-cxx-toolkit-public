@@ -544,7 +544,7 @@ script ProjBuilder
 			set theScript to theScript & "  m=\"" & asnName & "\"" & ret
 			
 			set theScript to theScript & "  echo Running Datatool" & ret
-			if asnName is "gui_project" or asnName is "data_handle" or asnName is "plugin" or asnName is "seqalign_ext" then -- Should use sed properly here (but how?)
+			if asnName is "gui_project" or asnName is "data_handle" or asnName is "plugin" or asnName is "gbench_svc" or asnName is "seqalign_ext" then -- Should use sed properly here (but how?)
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\([/a-z0-9_]*\\)/\\1.asn/g')\"" & ret
 			else
 				set theScript to theScript & "  M=\"\"" & ret
@@ -629,6 +629,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2005/11/23 16:30:54  lebedev
+ * reenable view_text; gbench_svc added
+ *
  * Revision 1.38  2005/11/18 16:02:32  lebedev
  * seq_text and data_handle added
  *

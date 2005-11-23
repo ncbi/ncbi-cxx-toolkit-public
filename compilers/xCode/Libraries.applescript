@@ -188,12 +188,11 @@ property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"DataHandle.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"DataHandle.cpp", "DataHandleAction.cpp", "DataHandleSelector.cpp", "DataHandleTransformer.cpp", "DataHandleViewer.cpp", "NCBI_Data_Handle_module.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
 property data_handle : {name:"data_handle", path:"gui:core", inc:{"data_handle__.cpp", "data_handle___.cpp"}, asn1:true, asn1Name:"data_handle"}
-
---property gbench_svc : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc__.cpp", "gbench_svc___.cpp"}, asn1:true, asn1Name:"gbench_svc"}
---property gbench_svc_cli : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc__.cpp", "gbench_svc___.cpp"}, asn1:true, asn1Name:"gbench_svc"}
+property gbench_svc : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc__.cpp", "gbench_svc___.cpp"}, asn1:true, asn1Name:"gbench_svc"}
+property gbench_svc_cli : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc.cpp", "gbench_svc_.cpp"}}
 
 property xgbplugin : {name:"xgbplugin", path:"gui:core", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true, asn1Name:"plugin"}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
@@ -260,7 +259,7 @@ property gui_view_graphic : {name:"gui_view_graphic", path:"gui:plugins:view:gra
 property gui_view_phylo_tree : {name:"gui_view_phylo_tree", path:"gui:plugins:view:phylo_tree"}
 property gui_view_table : {name:"gui_view_table", path:"gui:plugins:view:table"}
 property gui_view_taxplot : {name:"gui_view_taxplot", path:"gui:plugins:view:taxplot"}
-property gui_view_text : {name:"gui_view_text", path:"gui:plugins:view:text"}
+property gui_view_text : {name:"gui_view_text", path:"gui:plugins:view:text", exc:{"view_seq_text.cpp", "seq_text_view_base.cpp"}}
 property gui_view_validator : {name:"gui_view_validator", path:"gui:plugins:view:validator"}
 
 
@@ -303,9 +302,9 @@ property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncb
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", fworks:"OpenGL", req:true}
 property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_html, w_serial_browse}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
-property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project, data_handle}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
+property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project, data_handle, gbench_svc, gbench_svc_cli}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d, w_object_list}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
-property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
+property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_data, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xcache_bdb ncbi_bdb ncbi_xloader_genbank" & FLTK_LIBS, bundle:true, req:true}
@@ -325,7 +324,7 @@ property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi
 property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_misc gui_config" & FLTK_LIBS, bundle:true, req:true}
 property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq" & FLTK_LIBS, bundle:true, req:true}
 property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs" & FLTK_LIBS, bundle:true, req:true}
-property view_text : {name:"view_text", libs:{gui_view_text}, exc:{"view_seq_text.cpp"}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs" & FLTK_LIBS, bundle:true, req:true}
+property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs" & FLTK_LIBS, bundle:true, req:true}
 property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep:"ncbi_core ncbi_seq ncbi_validator gui_core gui_utils gui_widgets" & FLTK_LIBS, bundle:true, req:true}
 
 
@@ -346,6 +345,9 @@ property test_ncbi_process : {name:"test_ncbi_process", path:"corelib:test", inc
 property test_ncbi_os_unix : {name:"test_ncbi_os_unix", path:"corelib:test", inc:{"test_ncbi_os_unix.cpp"}, dep:"ncbi_core", req:false}
 property test_ncbi_limits : {name:"test_ncbi_limits", path:"corelib:test", inc:{"test_ncbi_limits.cpp"}, dep:"ncbi_core", req:false}
 property coretest : {name:"coretest", path:"corelib:test", inc:{"coretest.cpp"}, dep:"ncbi_core", req:false}
+-- object manager
+property test_objmgr : {name:"test_objmgr", path:"objmgr:test", inc:{"test_objmgr.cpp", "test_helper.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
+property test_objmgr_basic : {name:"test_objmgr_basic", path:"objmgr:test", inc:{"test_objmgr_basic.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 -- App
 --property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
@@ -389,7 +391,7 @@ property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_reg
 
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils", req:true}
 property gbench_monitor : {name:"gbench_monitor", path:"gui:gbench", inc:{"gbench_monitor.cpp"}, dep:"ncbi_core", req:true}
-property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench", inc:{"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:true}
+property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench", inc:{"gbench_feedback_agent.cpp", "feedback_wizard.cpp", "gbench_version.cpp"}, dep:"ncbi_core ncbi_general gui_core gui_utils gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:true}
 
 (* ====================================================================================================== *)
 
@@ -400,7 +402,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite,
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo}
+property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo}
 --property allCTools : {tests}
 
 
@@ -424,6 +426,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2005/11/23 16:30:54  lebedev
+ * reenable view_text; gbench_svc added
+ *
  * Revision 1.81  2005/11/18 16:48:02  lebedev
  * temporary disable seq_text
  *
