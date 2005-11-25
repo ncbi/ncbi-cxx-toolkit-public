@@ -259,7 +259,7 @@ property gui_view_graphic : {name:"gui_view_graphic", path:"gui:plugins:view:gra
 property gui_view_phylo_tree : {name:"gui_view_phylo_tree", path:"gui:plugins:view:phylo_tree"}
 property gui_view_table : {name:"gui_view_table", path:"gui:plugins:view:table"}
 property gui_view_taxplot : {name:"gui_view_taxplot", path:"gui:plugins:view:taxplot"}
-property gui_view_text : {name:"gui_view_text", path:"gui:plugins:view:text", exc:{"view_seq_text.cpp", "seq_text_view_base.cpp"}}
+property gui_view_text : {name:"gui_view_text", path:"gui:plugins:view:text"}
 property gui_view_validator : {name:"gui_view_validator", path:"gui:plugins:view:validator"}
 
 
@@ -426,6 +426,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.83  2005/11/25 16:13:43  lebedev
+ * Minor tweaks to libraries layout
+ *
  * Revision 1.82  2005/11/23 16:30:54  lebedev
  * reenable view_text; gbench_svc added
  *
