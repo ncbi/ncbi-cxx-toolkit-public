@@ -5,6 +5,8 @@
 
 REQUIRES = objects ctools C-Toolkit
 
+ASN_DEP = cdd
+
 LIB = xcd_utils
 
 SRC = \
