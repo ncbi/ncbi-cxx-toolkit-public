@@ -1214,6 +1214,9 @@ EIO_Status CPipe::Close(int* exitcode)
     m_ReadStatus  = eIO_Closed;
     m_WriteStatus = eIO_Closed;
 
+    m_PipeHandle->CloseHandle(eStdIn);
+    m_PipeHandle->CloseHandle(eStdOut);
+    m_PipeHandle->CloseHandle(eStdErr);
     return m_PipeHandle->Close(exitcode, m_CloseTimeout);
 }
 
@@ -1347,6 +1350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/11/26 03:20:59  lavr
+ * Close all open handles on CPipe::Close()
+ *
  * Revision 1.39  2005/06/28 16:26:57  lavr
  * Call CONNECT_InitInternal() for auto-magic init in ctors
  *
