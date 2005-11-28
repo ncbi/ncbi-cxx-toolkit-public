@@ -561,6 +561,10 @@ return 1;
         return 1;
     }}
     */
+    {{
+        CNetCacheClient nc_client(host, port, "test");
+        CVersionInfo vi(nc_client.ServerVersionInfo());
+    }}
 
     {{
         CNetCacheClient nc_client(host, port, "test");
@@ -575,8 +579,14 @@ return 1;
         size_t bsize;
         auto_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
 
+        cout << bsize << endl;
         assert(bsize == 0);
 
+        {{
+        CNetCacheClient nc_client(host, port, "test");
+        string owner = nc_client.GetOwner(key);
+        NcbiCout << owner << NcbiEndl;
+        }}
 
     }}
 
@@ -663,6 +673,8 @@ return 1;
 
     CNetCacheClient nc_client(host, port, "test");
     nc_client.Remove(key);
+
+    SleepMilliSec(1800);
 
     exists = s_CheckExists(host, port, key);
     assert(!exists);
@@ -777,6 +789,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/11/28 15:23:07  kuznets
+ * +test for GetOwner()
+ *
  * Revision 1.36  2005/09/21 18:45:33  ucko
  * Fix for latest API changes.
  *
