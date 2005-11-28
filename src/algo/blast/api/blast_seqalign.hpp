@@ -88,10 +88,29 @@ BLASTUngappedHspListToSeqAlign(EBlastProgramType program,
                                Int4 query_length, 
                                Int4 subject_length);
 
-/** @todo Kevin comment me please
- * @param result_type specify how to arrange the results in the return value
- * [in]
- */
+/// Convert traceback output into Seq-align format.
+/// 
+/// This converts the traceback stage output into a standard
+/// Seq-align.  The result_type argument indicates whether the
+/// seqalign is for a database search or a sequence comparison
+/// (eDatabaseSearch or eSequenceComparison).  The seqinfo_src
+/// argument is used to translate oids into Seq-ids.
+/// 
+/// @param hsp_results
+///   Results of a traceback search. [in]
+/// @param local_data
+///   The queries used to perform the search. [in]
+/// @param seqinfo_src
+///   Provides sequence identifiers and meta-data. [in]
+/// @param program
+///   The type of search done. [in]
+/// @param gapped
+///   True if this was a gapped search. [in]
+/// @param oof_mode
+///   True if out-of-frame matches are allowed. [in]
+/// @param result_type
+///   Specify how to arrange the results in the return value. [in]
+
 TSeqAlignVector
 LocalBlastResults2SeqAlign(BlastHSPResults   * hsp_results,
                            ILocalQueryData   & local_data,
@@ -110,6 +129,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/11/28 17:15:29  bealer
+* - Doxyg.
+*
 * Revision 1.32  2005/11/09 20:56:26  camacho
 * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
 * as CBl2Seq and reduce redundant code.
