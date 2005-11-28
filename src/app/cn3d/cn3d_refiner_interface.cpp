@@ -83,7 +83,7 @@ public:
 
         GeneralRefinerParams() {
             nTrials = 1;
-            nCycles = 1;
+            nCycles = 3;
             verbose = false;
             trialConvThold = 0.001;
         }
@@ -298,6 +298,11 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent)
     align_refine::LeaveOneOutParams loo;
     align_refine::BlockEditingParams be;
 
+    //  Set some defaults for LOO (these will be overriden if defined in
+    //  an existing refiner engine).
+    loo.nExt = 20;
+    loo.cExt = 20;
+
     //  By default, turn off block editing.  (Not changing in default BEP ctor in
     //  case something else assumes the default is true.)
     be.editBlocks = false;
@@ -437,6 +442,26 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     fullSeqCheck->SetValue(current_loo.fullSequence);
     item5->Add( fullSeqCheck, 0, wxALIGN_CENTER|wxALL, 5 );
 
+    //  Allow extension/contraction of footprint (N-terminus)
+    wxStaticText *item30 = new wxStaticText( panel, ID_TEXT, wxT("N-terminal footprint extension:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item30, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    nExtSpin = new IntegerSpinCtrl(panel,
+        -1000, 1000, 5, current_loo.nExt,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item5->Add(nExtSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item5->Add(nExtSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    //  Allow extension/contraction of footprint (C-terminus)
+    wxStaticText *item33 = new wxStaticText( panel, ID_TEXT, wxT("C-terminal footprint extension:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item33, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cExtSpin = new IntegerSpinCtrl(panel,
+        -1000, 1000, 5, current_loo.cExt,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    item5->Add(cExtSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    item5->Add(cExtSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
     //  LNO parameter (1 == L00; >1 = group size for running LNO)
     wxStaticText *item12 = new wxStaticText( panel, ID_TEXT, wxT("Group rows in sets of:"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
     item5->Add( item12, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
@@ -446,6 +471,14 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item5->Add(lnoSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item5->Add(lnoSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
+    //  Blank space
+    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item24, 0, wxALIGN_CENTER, 5 );
+    wxStaticText *item25 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item25, 0, wxALIGN_CENTER, 5 );
+    wxStaticText *item26 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item26, 0, wxALIGN_CENTER, 5 );
 
     //  Block aligner's loop percentile parameter
     wxStaticText *item15 = new wxStaticText( panel, ID_TEXT, wxT("Loop percentile:"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
@@ -477,16 +510,8 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item5->Add(loopCutoffSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item5->Add(loopCutoffSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    //  Blank space
-    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item24, 0, wxALIGN_CENTER, 5 );
-    wxStaticText *item25 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item25, 0, wxALIGN_CENTER, 5 );
-    wxStaticText *item26 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item26, 0, wxALIGN_CENTER, 5 );
-
     //  Seed for RNG to define order of leaving out rows (useful for debugging!!)
-    wxStaticText *item27 = new wxStaticText( panel, ID_TEXT, wxT("Random number seed (0 = default):"), wxDefaultPosition, wxDefaultSize, 0 );
+    wxStaticText *item27 = new wxStaticText( panel, ID_TEXT, wxT("Random number seed (0=no preference):"), wxDefaultPosition, wxDefaultSize, 0 );
     item5->Add( item27, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     rngSpin = new IntegerSpinCtrl(panel,
         0, 1000000000, 3727851, current_loo.seed,
@@ -495,32 +520,8 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item5->Add(rngSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item5->Add(rngSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
-    //  Allow extension/contraction of footprint (N-terminus)
-    wxStaticText *item30 = new wxStaticText( panel, ID_TEXT, wxT("N-terminal footprint extension:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item30, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    nExtSpin = new IntegerSpinCtrl(panel,
-        -1000, 1000, 5, current_loo.nExt,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item5->Add(nExtSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item5->Add(nExtSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
-    //  Allow extension/contraction of footprint (C-terminus)
-    wxStaticText *item33 = new wxStaticText( panel, ID_TEXT, wxT("C-terminal footprint extension:"), wxDefaultPosition, wxDefaultSize, 0 );
-    item5->Add( item33, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    cExtSpin = new IntegerSpinCtrl(panel,
-        -1000, 1000, 5, current_loo.cExt,
-        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
-        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item5->Add(cExtSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item5->Add(cExtSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
-
     item3->Add( item5, 0, wxALIGN_CENTER_VERTICAL, 0 );
 
-
-
-    //  ******  Until sort out how to install a refined alignment w/ new block structure,
-    //          ignore the fields for all block editing parameters!!!  *******
 
     //  Start GUI elements for block extension parameters.
     wxStaticBox *item37 = new wxStaticBox( panel, -1, wxT("Block Extension Parameters") );
@@ -767,6 +768,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/11/28 20:08:12  lanczyck
+* modify refiner defaults; reorder the LOO elements in the dialog as per curator comments
+*
 * Revision 1.9  2005/11/23 01:03:04  lanczyck
 * freeze specified blocks in both LOO and BE phases;
 * add support for a callback for a progress meter
