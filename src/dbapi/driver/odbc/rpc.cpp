@@ -43,10 +43,10 @@ BEGIN_NCBI_SCOPE
 //  CODBC_RPCCmd::
 //
 
-CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection* con, SQLHSTMT cmd,
-                         const string& proc_name, unsigned int nof_params) 
-: m_Connect(con)
-, m_Cmd(cmd)
+CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection* conn,
+                           const string& proc_name, 
+                           unsigned int nof_params) 
+: CStatementBase(*conn)
 , m_Query(proc_name)
 , m_Params(nof_params)
 , m_WasSent(false)
@@ -54,10 +54,9 @@ CODBC_RPCCmd::CODBC_RPCCmd(CODBC_Connection* con, SQLHSTMT cmd,
 , m_Recompile(false)
 , m_Res(0)
 , m_RowCount(-1)
-, m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_STMT, cmd, &con->m_Reporter)
 {
     string extra_msg = "Procedure Name: " + proc_name;
-    m_Reporter.SetExtraMsg( extra_msg );
+    SetDiagnosticInfo( extra_msg );
 
     return;
 }
@@ -101,10 +100,10 @@ bool CODBC_RPCCmd::Send()
 
         if (!x_AssignParams(q_str, main_exec_query, param_result_query, 
                           bindGuard, indicator)) {
-            SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+            ResetParams();
             m_HasFailed = true;
 
-            string err_message = "cannot assign params" + m_Reporter.GetExtraMsg();
+            string err_message = "cannot assign params" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420003 );
         }
     }
@@ -116,7 +115,7 @@ bool CODBC_RPCCmd::Send()
        q_str+= ";\nselect " + param_result_query;
    }
 
-    switch(SQLExecDirect(m_Cmd, (SQLCHAR*)q_str.c_str(), SQL_NTS)) {
+    switch(SQLExecDirect(GetHandle(), (SQLCHAR*)q_str.c_str(), SQL_NTS)) {
     case SQL_SUCCESS:
         m_hasResults= true;
         break;
@@ -128,26 +127,26 @@ bool CODBC_RPCCmd::Send()
         break;
 
     case SQL_ERROR:
-        m_Reporter.ReportErrors();
-        SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+        ReportErrors();
+        ResetParams();
         m_HasFailed = true;
         {
-            string err_message = "SQLExecDirect failed" + m_Reporter.GetExtraMsg();
+            string err_message = "SQLExecDirect failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_FATAL( err_message, 420001 );
         }
 
     case SQL_SUCCESS_WITH_INFO:
-        m_Reporter.ReportErrors();
+        ReportErrors();
         m_hasResults= true;
         break;
 
     case SQL_STILL_EXECUTING:
-        m_Reporter.ReportErrors();
-        SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+        ReportErrors();
+        ResetParams();
         m_HasFailed = true;
         {
             string err_message = "Some other query is executing on this connection" + 
-                m_Reporter.GetExtraMsg();
+                GetDiagnosticInfo();
             DATABASE_DRIVER_FATAL( err_message, 420002 );
         }
         
@@ -155,16 +154,16 @@ bool CODBC_RPCCmd::Send()
         m_HasFailed= true;
         {
             string err_message = "The statement handler is invalid (memory corruption suspected)" + 
-                m_Reporter.GetExtraMsg();
+                GetDiagnosticInfo();
             DATABASE_DRIVER_FATAL( err_message, 420004 );
         }
         
     default:
-        m_Reporter.ReportErrors();
-        SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+        ReportErrors();
+        ResetParams();
         m_HasFailed = true;
         {
-            string err_message = "Unexpected error" + m_Reporter.GetExtraMsg();
+            string err_message = "Unexpected error" + GetDiagnosticInfo();
             DATABASE_DRIVER_FATAL( err_message, 420005 );
         }
         
@@ -188,15 +187,12 @@ bool CODBC_RPCCmd::Cancel()
             m_Res = 0;
         }
         m_WasSent = false;
-        switch(SQLFreeStmt(m_Cmd, SQL_CLOSE)) {
-        case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
-        case SQL_SUCCESS:           break;
-        case SQL_ERROR:             m_Reporter.ReportErrors();
-        default:                    return false;
+        if ( !Close() ) {
+            return false;
         }
     }
 
-    SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+    ResetParams();
     m_Query.erase();
     return true;
 }
@@ -217,7 +213,7 @@ CDB_Result* CODBC_RPCCmd::Result()
     }
 
     if ( !m_WasSent ) {
-        string err_message = "a command has to be sent first" + m_Reporter.GetExtraMsg();
+        string err_message = "a command has to be sent first" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 420010 );
     }
 
@@ -230,43 +226,43 @@ CDB_Result* CODBC_RPCCmd::Result()
     char n_buff[64];
 
     while(m_hasResults) {
-        switch(SQLNumResultCols(m_Cmd, &nof_cols)) {
+        switch(SQLNumResultCols(GetHandle(), &nof_cols)) {
         case SQL_SUCCESS_WITH_INFO:
-            m_Reporter.ReportErrors();
+            ReportErrors();
 
         case SQL_SUCCESS:
             break;
 
         case SQL_ERROR:
-            m_Reporter.ReportErrors();
+            ReportErrors();
             {
-                string err_message = "SQLNumResultCols failed" + m_Reporter.GetExtraMsg();
+                string err_message = "SQLNumResultCols failed" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 420011 );
             }
         default:
             {
                 string err_message = "SQLNumResultCols failed (memory corruption suspected)" + 
-                    m_Reporter.GetExtraMsg();
+                    GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 420012 );
             }
         }
 
         if(nof_cols < 1) { // no data in this result set
             SQLINTEGER rc;
-            switch(SQLRowCount(m_Cmd, &rc)) {
+            switch(SQLRowCount(GetHandle(), &rc)) {
                 case SQL_SUCCESS_WITH_INFO:
-                    m_Reporter.ReportErrors(); 
+                    ReportErrors(); 
                 case SQL_SUCCESS: break;
                 case SQL_ERROR:
-                        m_Reporter.ReportErrors();
+                        ReportErrors();
                         {
-                            string err_message = "SQLRowCount failed" + m_Reporter.GetExtraMsg();
+                            string err_message = "SQLRowCount failed" + GetDiagnosticInfo();
                             DATABASE_DRIVER_ERROR( err_message, 420013 );
                         }
                 default:
                     {
                         string err_message = "SQLRowCount failed (memory corruption suspected)" + 
-                            m_Reporter.GetExtraMsg();
+                            GetDiagnosticInfo();
                         DATABASE_DRIVER_ERROR( err_message, 420014 );
                     }
             }
@@ -278,35 +274,35 @@ CDB_Result* CODBC_RPCCmd::Result()
 
         if(nof_cols == 1) { // it could be a status result
             SQLSMALLINT l;
-            switch(SQLColAttribute(m_Cmd, 1, SQL_DESC_LABEL, n_buff, 64, &l, 0)) {
-            case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+            switch(SQLColAttribute(GetHandle(), 1, SQL_DESC_LABEL, n_buff, 64, &l, 0)) {
+            case SQL_SUCCESS_WITH_INFO: ReportErrors();
             case SQL_SUCCESS:           break;
             case SQL_ERROR:
-                m_Reporter.ReportErrors();
+                ReportErrors();
                 {
-                    string err_message = "SQLColAttribute failed" + m_Reporter.GetExtraMsg();
+                    string err_message = "SQLColAttribute failed" + GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 420015 );
                 }
             default:
                 {
                     string err_message = "SQLColAttribute failed (memory corruption suspected)" + 
-                        m_Reporter.GetExtraMsg();
+                        GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 420016 );
                 }
             }
             
             if(strcmp(n_buff, "STpROCrETURNsTATUS") == 0) {//this is a status result
                 m_HasStatus= true;
-                m_Res= new CODBC_StatusResult(m_Cmd, m_Reporter);
+                m_Res= new CODBC_StatusResult(*this);
             }
         }
         if(!m_Res) {
             if(m_HasStatus) {
                 m_HasStatus= false;
-                m_Res= new CODBC_ParamResult(nof_cols, m_Cmd, m_Reporter);
+                m_Res= new CODBC_ParamResult(*this, nof_cols);
             }   
             else {
-                m_Res = new CODBC_RowResult(nof_cols, m_Cmd, m_Reporter, &m_RowCount);
+                m_Res = new CODBC_RowResult(*this, nof_cols, &m_RowCount);
             }
         }
         return Create_Result(*m_Res);
@@ -328,8 +324,8 @@ void CODBC_RPCCmd::DumpResults()
     while(m_WasSent) {
         dbres= Result();
         if(dbres) {
-            if(m_Connect->m_ResProc) {
-                m_Connect->m_ResProc->ProcessResult(*dbres);
+            if(GetConnection().m_ResProc) {
+                GetConnection().m_ResProc->ProcessResult(*dbres);
             }
             else {
                 while(dbres->Fetch());
@@ -364,7 +360,7 @@ void CODBC_RPCCmd::Release()
         Cancel();
         m_WasSent = false;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -372,11 +368,12 @@ void CODBC_RPCCmd::Release()
 CODBC_RPCCmd::~CODBC_RPCCmd()
 {
     try {
-        if (m_BR)
+        if (m_BR) {
             *m_BR = 0;
-        if (m_WasSent)
+        }
+        if (m_WasSent) {
             Cancel();
-        SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+        }
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -400,7 +397,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_Int& val = dynamic_cast<CDB_Int&> (param);
             type = "int";
             indicator[n]= 4;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SLONG, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_SLONG, 
                              SQL_INTEGER, 4, 0, val.BindVal(), 4, indicator+n);
             break;
         }
@@ -408,7 +405,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_SmallInt& val = dynamic_cast<CDB_SmallInt&> (param);
             type = "smallint";
             indicator[n]= 2;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SSHORT, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_SSHORT, 
                              SQL_SMALLINT, 2, 0, val.BindVal(), 2, indicator+n);
             break;
         }
@@ -416,7 +413,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_TinyInt& val = dynamic_cast<CDB_TinyInt&> (param);
             type = "tinyint";
             indicator[n]= 1;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_UTINYINT, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_UTINYINT, 
                              SQL_TINYINT, 1, 0, val.BindVal(), 1, indicator+n);
             break;
         }
@@ -424,7 +421,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_BigInt& val = dynamic_cast<CDB_BigInt&> (param);
             type = "numeric";
             indicator[n]= 8;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_SBIGINT, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_SBIGINT, 
                              SQL_NUMERIC, 18, 0, val.BindVal(), 18, indicator+n);
             
             break;
@@ -433,7 +430,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_Char& val = dynamic_cast<CDB_Char&> (param);
             type= "varchar(255)";
             indicator[n]= SQL_NTS;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
                              SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
             break;
         }
@@ -441,7 +438,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
             type = "varchar(255)";
             indicator[n]= SQL_NTS;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
                              SQL_VARCHAR, 255, 0, (void*)val.Value(), 256, indicator+n);
             break;
         }
@@ -450,7 +447,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             sprintf(tbuf,"varchar(%d)", val.Size());
             type= tbuf;
             indicator[n]= SQL_NTS;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_CHAR, 
                              SQL_VARCHAR, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
             break;
         }
@@ -458,7 +455,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_Binary& val = dynamic_cast<CDB_Binary&> (param);
             type = "varbinary(255)";
             indicator[n]= val.Size();
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
             break;
         }
@@ -466,7 +463,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_VarBinary& val = dynamic_cast<CDB_VarBinary&> (param);
             type = "varbinary(255)";
             indicator[n]= val.Size();
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, 255, 0, (void*)val.Value(), 255, indicator+n);
             break;
         }
@@ -475,7 +472,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             sprintf(tbuf,"varbinary(%d)", val.Size());
             type= tbuf;
             indicator[n]= val.DataSize();
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_BINARY, 
                              SQL_VARBINARY, val.Size(), 0, (void*)val.Value(), val.Size(), indicator+n);
             break;
         }
@@ -483,7 +480,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_Float& val = dynamic_cast<CDB_Float&> (param);
             type = "real";
             indicator[n]= 4;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_FLOAT, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_FLOAT, 
                              SQL_REAL, 4, 0, val.BindVal(), 4, indicator+n);
             break;
         }
@@ -491,7 +488,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
             CDB_Double& val = dynamic_cast<CDB_Double&> (param);
             type = "float";
             indicator[n]= 8;
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_DOUBLE, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_DOUBLE, 
                              SQL_FLOAT, 8, 0, val.BindVal(), 8, indicator+n);
             break;
         }
@@ -511,7 +508,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                 ts->fraction= 0;
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
                              SQL_TYPE_TIMESTAMP, 16, 0, (void*)ts, sizeof(SQL_TIMESTAMP_STRUCT), 
                              indicator+n);
             break;
@@ -533,7 +530,7 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
                 ts->fraction*= 1000000; /* MSSQL has a bug - it cannot handle fraction of msecs */
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
-            SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
+            SQLBindParameter(GetHandle(), n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
                              SQL_TYPE_TIMESTAMP, 23, 3, ts, sizeof(SQL_TIMESTAMP_STRUCT), 
                              indicator+n);
             break;
@@ -579,20 +576,20 @@ bool CODBC_RPCCmd::x_AssignParams(string& cmd, string& q_exec, string& q_select,
 
 bool CODBC_RPCCmd::xCheck4MoreResults()
 {
-    switch(SQLMoreResults(m_Cmd)) {
-    case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+    switch(SQLMoreResults(GetHandle())) {
+    case SQL_SUCCESS_WITH_INFO: ReportErrors();
     case SQL_SUCCESS:           return true;
     case SQL_NO_DATA:           return false;
     case SQL_ERROR:             
-        m_Reporter.ReportErrors();
+        ReportErrors();
         {
-            string err_message = "SQLMoreResults failed" + m_Reporter.GetExtraMsg();
+            string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420014 );
         }
     default:
         {
             string err_message = "SQLMoreResults failed (memory corruption suspected)" + 
-                m_Reporter.GetExtraMsg();
+                GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 420015 );
         }
     }
@@ -605,6 +602,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/11/28 13:22:59  ssikorsk
+ * Report SQL statement and database connection parameters in case
+ * of an error in addition to a server error message.
+ *
  * Revision 1.15  2005/11/02 16:46:21  ssikorsk
  * Pass context information with an error message of a database exception.
  *

@@ -48,21 +48,24 @@ BEGIN_NCBI_SCOPE
 //  CODBC_BCPInCmd::
 //
 
-CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* con,
-                               SQLHDBC       cmd,
+CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
+                               SQLHDBC          cmd,
                                const string&    table_name,
                                unsigned int     nof_columns) 
-: m_Connect(con), m_Cmd(cmd), m_Params(nof_columns)
-, m_WasSent(false), m_HasFailed(false)
-, m_HasTextImage(false), m_WasBound(false)
-, m_Reporter(&con->m_MsgHandlers, SQL_HANDLE_DBC, cmd, &con->m_Reporter)
+: CStatementBase(*conn)
+, m_Cmd(cmd)
+, m_Params(nof_columns)
+, m_WasSent(false)
+, m_HasFailed(false)
+, m_HasTextImage(false)
+, m_WasBound(false)
 {
     string extra_msg = "Table Name: " + table_name;
-    m_Reporter.SetExtraMsg( extra_msg );
+    SetDiagnosticInfo( extra_msg );
 
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
-        m_Reporter.ReportErrors();
-        string err_message = "bcp_init failed" + m_Reporter.GetExtraMsg();
+        ReportErrors();
+        string err_message = "bcp_init failed" + GetDiagnosticInfo();
         DATABASE_DRIVER_FATAL( err_message, 423001 );
     }
 }
@@ -157,7 +160,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
                 return false;
             }
             if (r != SUCCEED) {
-                m_Reporter.ReportErrors();
+                ReportErrors();
                 return false;
             }
         }
@@ -318,7 +321,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             return false;
         }
         if (r != SUCCEED) {
-            m_Reporter.ReportErrors();
+            ReportErrors();
             return false;
         }
     }
@@ -332,14 +335,14 @@ bool CODBC_BCPInCmd::SendRow()
     
     if (!x_AssignParams(param_buff)) {
         m_HasFailed = true;
-        string err_message = "cannot assign params" + m_Reporter.GetExtraMsg();
+        string err_message = "cannot assign params" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 423004 );
     }
 
     if (bcp_sendrow(m_Cmd) != SUCCEED) {
         m_HasFailed = true;
-        m_Reporter.ReportErrors();
-        string err_message = "bcp_sendrow failed" + m_Reporter.GetExtraMsg();
+        ReportErrors();
+        string err_message = "bcp_sendrow failed" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 423005 );
     }
     m_WasSent = true;
@@ -365,7 +368,7 @@ bool CODBC_BCPInCmd::SendRow()
                     l = s;
                 if (bcp_moretext(m_Cmd, (DBINT) l, (BYTE*) buff) != SUCCEED) {
                     m_HasFailed = true;
-                    m_Reporter.ReportErrors();
+                    ReportErrors();
 
                     string err_text;
                     if (param.GetType() == eDB_Text) {
@@ -373,7 +376,7 @@ bool CODBC_BCPInCmd::SendRow()
                     } else {
                         err_text = "bcp_moretext for image failed";
                     }
-                    string err_message = "bcp_sendrow failed" + m_Reporter.GetExtraMsg();
+                    string err_message = "bcp_sendrow failed" + GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 423006 );
                 }
                 if (!l)
@@ -403,7 +406,7 @@ bool CODBC_BCPInCmd::CompleteBatch()
     if(m_WasSent) {
         Int4 outrow = bcp_batch(m_Cmd);
         if(outrow == -1) {
-            m_Reporter.ReportErrors();
+            ReportErrors();
             return false;
         }
         return true;
@@ -418,7 +421,7 @@ bool CODBC_BCPInCmd::CompleteBCP()
         Int4 outrow = bcp_done(m_Cmd);
         m_WasSent= false;
         if(outrow == -1) {
-            m_Reporter.ReportErrors();
+            ReportErrors();
             return false;
         }
         return true;
@@ -434,7 +437,7 @@ void CODBC_BCPInCmd::Release()
         Cancel();
         m_WasSent = false;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -458,6 +461,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/11/28 13:22:59  ssikorsk
+ * Report SQL statement and database connection parameters in case
+ * of an error in addition to a server error message.
+ *
  * Revision 1.10  2005/11/02 16:46:21  ssikorsk
  * Pass context information with an error message of a database exception.
  *

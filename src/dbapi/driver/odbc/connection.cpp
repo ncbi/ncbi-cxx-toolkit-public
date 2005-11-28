@@ -39,15 +39,22 @@
 
 BEGIN_NCBI_SCOPE
 
-static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
-                                  SQLINTEGER size, bool is_text, bool logit, 
-                                  SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph);
-static bool ODBC_xSendDataGetId(SQLHSTMT cmd, SQLPOINTER* id, 
-                                CODBC_Reporter& rep);
+static bool ODBC_xSendDataPrepare(CODBC_Connection& conn, 
+                                  CDB_ITDescriptor& descr_in,
+                                  SQLINTEGER size, 
+                                  bool is_text, 
+                                  bool logit, 
+                                  SQLPOINTER id, 
+                                  SQLINTEGER* ph);
 
-CODBC_Connection::CODBC_Connection(CODBCContext* cntx, SQLHDBC con,
-                                   bool reusable, const string& pool_name):
-    m_Reporter(0, SQL_HANDLE_DBC, con, &cntx->GetReporter())
+static bool ODBC_xSendDataGetId(CODBC_Connection& conn, 
+                                SQLPOINTER* id);
+
+CODBC_Connection::CODBC_Connection(CODBCContext* cntx, 
+                                   SQLHDBC con,
+                                   bool reusable, 
+                                   const string& pool_name)
+: m_Reporter(0, SQL_HANDLE_DBC, con, &cntx->GetReporter())
 {
     m_Link     = con;
     m_Context  = cntx;
@@ -69,17 +76,10 @@ bool CODBC_Connection::IsAlive()
 CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
                                           unsigned int  nof_params)
 {
-    SQLHSTMT cmd;
-    SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
-    if(r == SQL_ERROR) {
-        m_Reporter.ReportErrors();
-    }
-
-    CODBC_LangCmd* lcmd = new CODBC_LangCmd(this, cmd, lang_query, nof_params);
+    CODBC_LangCmd* lcmd = new CODBC_LangCmd(this, lang_query, nof_params);
     m_CMDs.Add(lcmd);
     return lcmd;
 }
@@ -97,17 +97,10 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
 #if 0
     return 0;
 #else
-    SQLHSTMT cmd;
-    SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-
     string extra_msg = "RPC Command: " + rpc_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
-    if(r == SQL_ERROR) {
-        m_Reporter.ReportErrors();
-    }
-
-    CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(this, cmd, rpc_name, nof_args);
+    CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(this, rpc_name, nof_args);
     m_CMDs.Add(rcmd);
     return Create_RPCCmd(*rcmd);
 #endif
@@ -121,7 +114,7 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name,
     return 0; // not implemented
 #else
     if ( !m_BCPable ) {
-        string err_message = "No bcp on this connection" + m_Reporter.GetExtraMsg();
+        string err_message = "No bcp on this connection" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410003 );
     }
 
@@ -140,17 +133,12 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 #if 0
     return 0;
 #else
-    SQLHSTMT cmd;
-    SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \"" + query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
-    if(r == SQL_ERROR) {
-        m_Reporter.ReportErrors();
-    }
-
-    CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(this, cmd, cursor_name, query,
+    CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(this, 
+                                                cursor_name, 
+                                                query,
                                                 nof_params);
     m_CMDs.Add(ccmd);
     return Create_CursorCmd(*ccmd);
@@ -161,17 +149,11 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                                size_t data_size, bool log_it)
 {
-    SQLHSTMT cmd;
-    SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-
-    if(r == SQL_ERROR) {
-        m_Reporter.ReportErrors();
-    }
-
     CODBC_SendDataCmd* sd_cmd = 
-        new CODBC_SendDataCmd(this, cmd, 
+        new CODBC_SendDataCmd(this,
                               (CDB_ITDescriptor&)descr_in,  
-                              data_size, log_it);
+                              data_size, 
+                              log_it);
     m_CMDs.Add(sd_cmd);
     return Create_SendDataCmd(*sd_cmd);
 }
@@ -179,51 +161,34 @@ CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 
 bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
 {
-    SQLHSTMT cmd;
-    SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-
-    if(r == SQL_ERROR) {
-        m_Reporter.ReportErrors();
-    }
-
-    CODBC_Reporter lrep(&m_MsgHandlers, SQL_HANDLE_STMT, cmd);
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= img.Size();
     SQLINTEGER ph;
 
-    if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, false, log_it, p, lrep, &ph)) ||
-       (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
-        string err_message = "Cannot prepare a command" + m_Reporter.GetExtraMsg();
+    if((!ODBC_xSendDataPrepare(*this, (CDB_ITDescriptor&)desc, s, false, log_it, p, &ph)) ||
+       (!ODBC_xSendDataGetId( *this, &p ))) {
+        string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
-    return x_SendData(cmd, img, lrep);
+    return x_SendData(*this, img);
     
 }
 
 
 bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
 {
-    SQLHSTMT cmd;
-    SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-
-    if(r == SQL_ERROR) {
-        m_Reporter.ReportErrors();
-    }
-
-
-    CODBC_Reporter lrep(&m_MsgHandlers, SQL_HANDLE_STMT, cmd);
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= txt.Size();
     SQLINTEGER ph;
 
-    if((!ODBC_xSendDataPrepare(cmd, (CDB_ITDescriptor&)desc, s, true, log_it, p, lrep, &ph)) ||
-       (!ODBC_xSendDataGetId(cmd, &p, lrep))) {
-        string err_message = "Cannot prepare a command" + m_Reporter.GetExtraMsg();
+    if((!ODBC_xSendDataPrepare(*this, (CDB_ITDescriptor&)desc, s, true, log_it, p, &ph)) ||
+       (!ODBC_xSendDataGetId(*this, &p))) {
+        string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
-    return x_SendData(cmd, txt, lrep);
+    return x_SendData(*this, txt);
 }
 
 
@@ -326,18 +291,18 @@ CODBC_Connection::~CODBC_Connection()
             switch(SQLDisconnect(m_Link)) {
             case SQL_SUCCESS_WITH_INFO:
             case SQL_ERROR:
-                m_Reporter.ReportErrors();
+                ReportErrors();
             case SQL_SUCCESS:
                 break;
             default:
                 {
-                    string err_message = "SQLDisconnect failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                    string err_message = "SQLDisconnect failed (memory corruption suspected)" + GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 410009 );
                 }
             }
         }
         if(SQLFreeHandle(SQL_HANDLE_DBC, m_Link) == SQL_ERROR) {
-            m_Reporter.ReportErrors();
+            ReportErrors();
         }
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -357,10 +322,16 @@ bool CODBC_Connection::Abort()
 }
 
 
-static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
-                                  SQLINTEGER size, bool is_text, bool logit, 
-                                  SQLPOINTER id, CODBC_Reporter& rep, SQLINTEGER* ph)
+static bool ODBC_xSendDataPrepare(CODBC_Connection& conn, 
+                                  CDB_ITDescriptor& descr_in,
+                                  SQLINTEGER size, 
+                                  bool is_text, 
+                                  bool logit, 
+                                  SQLPOINTER id, 
+                                  SQLINTEGER* ph)
 {
+    CStatementBase stmt(conn);
+
     string q= "update ";
     q+= descr_in.TableName();
     q+= " set ";
@@ -371,22 +342,22 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
 
 #ifdef SQL_TEXTPTR_LOGGING
     if(!logit) {
-        switch(SQLSetStmtAttr(cmd, SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
+        switch(SQLSetStmtAttr(stmt.GetHandle(), SQL_TEXTPTR_LOGGING, /*SQL_SOPT_SS_TEXTPTR_LOGGING,*/
             (SQLPOINTER)SQL_TL_OFF, SQL_IS_INTEGER)) {
         case SQL_SUCCESS_WITH_INFO:
         case SQL_ERROR:
-            rep.ReportErrors();
+            stmt.ReportErrors();
         default: break;
         }
     }
 #endif
 
-    switch(SQLPrepare(cmd, (SQLCHAR*)q.c_str(), SQL_NTS)) {
+    switch(SQLPrepare(stmt.GetHandle(), (SQLCHAR*)q.c_str(), SQL_NTS)) {
     case SQL_SUCCESS_WITH_INFO:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     case SQL_SUCCESS: break;
     case SQL_ERROR:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     default: return false;
     }
             
@@ -394,74 +365,79 @@ static bool ODBC_xSendDataPrepare(SQLHSTMT cmd, CDB_ITDescriptor& descr_in,
     SQLUINTEGER par_size;
 
 #if 0
-    switch(SQLNumParams(cmd, &par_dig)) {
+    switch(SQLNumParams(stmt.GetHandle(), &par_dig)) {
     case SQL_SUCCESS: break;
     case SQL_SUCCESS_WITH_INFO:
     case SQL_ERROR:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     default: return false;
     }
 #endif
 
-    switch(SQLDescribeParam(cmd, 1, &par_type, &par_size, &par_dig, &par_null)){
+    switch(SQLDescribeParam(stmt.GetHandle(), 1, &par_type, &par_size, &par_dig, &par_null)){
     case SQL_SUCCESS_WITH_INFO:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     case SQL_SUCCESS: break;
     case SQL_ERROR:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     default: return false;
     }
 
-    *ph= SQL_LEN_DATA_AT_EXEC(size);
+    *ph = SQL_LEN_DATA_AT_EXEC(size);
 
-    switch(SQLBindParameter(cmd, 1, SQL_PARAM_INPUT, 
+    switch(SQLBindParameter(stmt.GetHandle(), 1, SQL_PARAM_INPUT, 
                      is_text? SQL_C_CHAR : SQL_C_BINARY, par_type,
                      // is_text? SQL_LONGVARCHAR : SQL_LONGVARBINARY,
                      size, 0, id, 0, ph)) {
     case SQL_SUCCESS_WITH_INFO:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     case SQL_SUCCESS: break;
     case SQL_ERROR:
-        rep.ReportErrors();
-    default: return false;
+        stmt.ReportErrors();
+    default: 
+        return false;
     }
         
 
     
-    switch(SQLExecute(cmd)) {
+    switch(SQLExecute(stmt.GetHandle())) {
     case SQL_NEED_DATA:
         return true;
     case SQL_SUCCESS_WITH_INFO:
     case SQL_ERROR:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     default:
         return false;
     }
 }
 
-static bool ODBC_xSendDataGetId(SQLHSTMT cmd, SQLPOINTER* id, 
-                                CODBC_Reporter& rep)
+static bool ODBC_xSendDataGetId(CODBC_Connection& conn, 
+                                SQLPOINTER* id)
 {
-    switch(SQLParamData(cmd, id)) {
+    CStatementBase stmt(conn);
+
+    switch(SQLParamData(stmt.GetHandle(), id)) {
     case SQL_NEED_DATA:
         return true;
     case SQL_SUCCESS_WITH_INFO:
     case SQL_ERROR:
-        rep.ReportErrors();
+        stmt.ReportErrors();
     default:
         return false;
     }
 }
 
-bool CODBC_Connection::x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Reporter& rep)
+bool CODBC_Connection::x_SendData(CODBC_Connection& conn, 
+                                  CDB_Stream& stream)
 {
+    CStatementBase stmt(conn);
     char buff[1801];
     size_t s;
 
-    while((s= stream.Read(buff, sizeof(buff))) != 0) {
-        switch(SQLPutData(cmd, (SQLPOINTER)buff, (SQLINTEGER)s)) {
+    while(( s = stream.Read(buff, sizeof(buff))) != 0 ) {
+        switch(SQLPutData(stmt.GetHandle(), (SQLPOINTER)buff, (SQLINTEGER)s)) {
         case SQL_SUCCESS_WITH_INFO:
-            rep.ReportErrors();
+            stmt.ReportErrors();
         case SQL_NEED_DATA:
             continue;
         case SQL_NO_DATA:
@@ -469,42 +445,42 @@ bool CODBC_Connection::x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Report
         case SQL_SUCCESS:
             break;
         case SQL_ERROR:
-            rep.ReportErrors();
+            stmt.ReportErrors();
         default:
             return false;
         }
     }
-    switch(SQLParamData(cmd, (SQLPOINTER*)&s)) {
-    case SQL_SUCCESS_WITH_INFO: rep.ReportErrors();
+    switch(SQLParamData(stmt.GetHandle(), (SQLPOINTER*)&s)) {
+    case SQL_SUCCESS_WITH_INFO: stmt.ReportErrors();
     case SQL_SUCCESS:           break;
     case SQL_NO_DATA:           return true;
     case SQL_NEED_DATA: 
         {
-            string err_message = "Not all the data were sent" + m_Reporter.GetExtraMsg();
+            string err_message = "Not all the data were sent" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 410044 );
         }
-    case SQL_ERROR:             rep.ReportErrors();
+    case SQL_ERROR:             stmt.ReportErrors();
     default:
         {
-            string err_message = "SQLParamData failed" + m_Reporter.GetExtraMsg();
+            string err_message = "SQLParamData failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 410045 );
         }
     }
     
     for(;;) {
-        switch(SQLMoreResults(cmd)) {
-        case SQL_SUCCESS_WITH_INFO: rep.ReportErrors();
+        switch(SQLMoreResults( stmt.GetHandle() )) {
+        case SQL_SUCCESS_WITH_INFO: stmt.ReportErrors();
         case SQL_SUCCESS:           continue;
         case SQL_NO_DATA:           break;
         case SQL_ERROR:             
             {
-                rep.ReportErrors();
-                string err_message = "SQLMoreResults failed" + m_Reporter.GetExtraMsg();
+                stmt.ReportErrors();
+                string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410014 );
             }
         default:
             {
-                string err_message = "SQLMoreResults failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410015 );
             }
         }
@@ -518,23 +494,63 @@ void CODBC_Connection::ODBC_SetTextImageSize(SQLUINTEGER nof_bytes) {}
 
 
 /////////////////////////////////////////////////////////////////////////////
+CStatementBase::CStatementBase(CODBC_Connection& conn)
+: m_ConnectPtr(&conn)
+, m_Reporter(&conn.m_MsgHandlers, SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
+{
+    SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_STMT, conn.m_Link, &m_Cmd);
+
+    if(rc == SQL_ERROR) {
+        conn.ReportErrors();
+    }
+    m_Reporter.SetHandle(m_Cmd);
+}
+
+CStatementBase::~CStatementBase(void)
+{
+    SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+}
+
+bool 
+CStatementBase::CheckRC(int rc) const
+{
+    switch (rc)
+    {
+    case SQL_SUCCESS:
+        return true;
+    case SQL_SUCCESS_WITH_INFO:
+    case SQL_ERROR:
+        ReportErrors();
+        break;
+    case SQL_INVALID_HANDLE:
+        {
+            string err_message = "Invalid handle" + GetDiagnosticInfo();
+            DATABASE_DRIVER_ERROR( err_message, 0 );
+        }
+        break;
+    }
+
+    return false;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 //
 //  CODBC_SendDataCmd::
 //
 
 CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn, 
-                                     SQLHSTMT cmd, 
                                      CDB_ITDescriptor& descr,
-                                     size_t nof_bytes, bool logit) :
-    m_Connect(conn), m_Cmd(cmd), m_Bytes2go(nof_bytes),
-    m_Reporter(&conn->m_MsgHandlers, SQL_HANDLE_STMT, cmd, &conn->m_Reporter)
+                                     size_t nof_bytes, 
+                                     bool logit) 
+: CStatementBase(*conn)
+, m_Bytes2go(nof_bytes)
 {
-    SQLPOINTER p= (SQLPOINTER)1;
-    if((!ODBC_xSendDataPrepare(cmd, descr, (SQLINTEGER)nof_bytes,
-                              false, logit, p, m_Reporter, &m_ParamPH)) ||
-       (!ODBC_xSendDataGetId(cmd, &p, m_Reporter))) {
+    SQLPOINTER p = (SQLPOINTER)1;
+    if((!ODBC_xSendDataPrepare(GetConnection(), descr, (SQLINTEGER)nof_bytes,
+                              false, logit, p, &m_ParamPH)) ||
+       (!ODBC_xSendDataGetId(GetConnection(), &p))) {
 
-        string err_message = "Cannot prepare a command" + m_Reporter.GetExtraMsg();
+        string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }   
 }
@@ -544,9 +560,9 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if(nof_bytes > m_Bytes2go) nof_bytes= m_Bytes2go;
     if(nof_bytes < 1) return 0;
     
-    switch(SQLPutData(m_Cmd, (SQLPOINTER)chunk_ptr, (SQLINTEGER)nof_bytes)) {
+    switch(SQLPutData(GetHandle(), (SQLPOINTER)chunk_ptr, (SQLINTEGER)nof_bytes)) {
     case SQL_SUCCESS_WITH_INFO:
-        m_Reporter.ReportErrors();
+        ReportErrors();
     case SQL_NEED_DATA:
     case SQL_NO_DATA:
     case SQL_SUCCESS:
@@ -554,43 +570,43 @@ size_t CODBC_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
         if(m_Bytes2go == 0) break;
         return nof_bytes;
     case SQL_ERROR:
-        m_Reporter.ReportErrors();
+        ReportErrors();
     default:
         return 0;
     }
 
     SQLPOINTER s= (SQLPOINTER)1;
-    switch(SQLParamData(m_Cmd, (SQLPOINTER*)&s)) {
-    case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+    switch(SQLParamData(GetHandle(), (SQLPOINTER*)&s)) {
+    case SQL_SUCCESS_WITH_INFO: ReportErrors();
     case SQL_SUCCESS:           break;
     case SQL_NO_DATA:           break;
     case SQL_NEED_DATA: 
         {
-            string err_message = "Not all the data were sent" + m_Reporter.GetExtraMsg();
+            string err_message = "Not all the data were sent" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 410044 );
         }
-    case SQL_ERROR:             m_Reporter.ReportErrors();
+    case SQL_ERROR:             ReportErrors();
     default:
         {
-            string err_message = "SQLParamData failed" + m_Reporter.GetExtraMsg();
+            string err_message = "SQLParamData failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 410045 );
         }
     }
 
     for(;;) {
-        switch(SQLMoreResults(m_Cmd)) {
-        case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
+        switch(SQLMoreResults(GetHandle())) {
+        case SQL_SUCCESS_WITH_INFO: ReportErrors();
         case SQL_SUCCESS:           continue;
         case SQL_NO_DATA:           break;
         case SQL_ERROR:             
             {
-                m_Reporter.ReportErrors();
-                string err_message = "SQLMoreResults failed" + m_Reporter.GetExtraMsg();
+                ReportErrors();
+                string err_message = "SQLMoreResults failed" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410014 );
             }
         default:
             {
-                string err_message = "SQLMoreResults failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                string err_message = "SQLMoreResults failed (memory corruption suspected)" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 410015 );
             }
         }
@@ -606,7 +622,7 @@ void CODBC_SendDataCmd::Release()
         xCancel();
         m_Bytes2go = 0;
     }
-    m_Connect->DropCmd(*this);
+    GetConnection().DropCmd(*this);
     delete this;
 }
 
@@ -614,24 +630,22 @@ void CODBC_SendDataCmd::Release()
 CODBC_SendDataCmd::~CODBC_SendDataCmd()
 {
     try {
-        if (m_Bytes2go > 0)
+        if (m_Bytes2go > 0) {
             xCancel();
-        if (m_BR)
+        }
+        if (m_BR) {
             *m_BR = 0;
-        SQLFreeHandle(SQL_HANDLE_STMT, m_Cmd);
+        }
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
 
 void CODBC_SendDataCmd::xCancel()
 {
-    switch(SQLFreeStmt(m_Cmd, SQL_CLOSE)) {
-    case SQL_SUCCESS_WITH_INFO: m_Reporter.ReportErrors();
-    case SQL_SUCCESS:           break;
-    case SQL_ERROR:             m_Reporter.ReportErrors();
-    default:                    return;
+    if ( !Close() ) {
+        return;
     }
-    SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS);
+    ResetParams();
 }
 
 END_NCBI_SCOPE
@@ -641,6 +655,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/11/28 13:22:59  ssikorsk
+ * Report SQL statement and database connection parameters in case
+ * of an error in addition to a server error message.
+ *
  * Revision 1.13  2005/11/02 16:46:21  ssikorsk
  * Pass context information with an error message of a database exception.
  *

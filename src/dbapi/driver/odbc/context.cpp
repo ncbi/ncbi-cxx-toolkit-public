@@ -78,7 +78,7 @@ CODBC_Reporter::GetExtraMsg(void) const
     return " " + m_ExtraMsg;
 }
 
-void CODBC_Reporter::ReportErrors()
+void CODBC_Reporter::ReportErrors(void) const
 {
     SQLINTEGER NativeError;
     SQLSMALLINT MsgLen;
@@ -170,7 +170,12 @@ void CODBC_Reporter::ReportErrors()
 
 
 CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn) 
-: m_Reporter(0, SQL_HANDLE_ENV, 0)
+: m_PacketSize(0)
+, m_LoginTimeout(0)
+, m_Timeout(0)
+, m_TextImageSize(0)
+, m_Reporter(0, SQL_HANDLE_ENV, 0)
+, m_UseDSN(use_dsn)
 {
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
@@ -182,13 +187,6 @@ CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn)
     m_Reporter.SetHandlerStack(&m_CntxHandlers);
 
     SQLSetEnvAttr(m_Context, SQL_ATTR_ODBC_VERSION, (SQLPOINTER)version, 0);
-
-
-    m_PacketSize= 0;
-    m_LoginTimeout= 0;
-    m_Timeout= 0;
-    m_TextImageSize= 0;
-    m_UseDSN= use_dsn;
 }
 
 
@@ -331,10 +329,10 @@ CODBCContext::~CODBCContext()
             CODBC_Connection* t_con = static_cast<CODBC_Connection*> (m_InUse.Get(i));
             delete t_con;
         }
-
-        SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
     }
     NCBI_CATCH_ALL( kEmptyStr )
+
+    SQLFreeHandle(SQL_HANDLE_ENV, m_Context);
 }
 
 
@@ -619,6 +617,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/11/28 13:22:59  ssikorsk
+ * Report SQL statement and database connection parameters in case
+ * of an error in addition to a server error message.
+ *
  * Revision 1.30  2005/11/02 16:46:21  ssikorsk
  * Pass context information with an error message of a database exception.
  *

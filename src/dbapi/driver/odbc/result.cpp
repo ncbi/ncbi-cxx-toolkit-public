@@ -77,13 +77,11 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
 
 
 CODBC_RowResult::CODBC_RowResult(
+    CStatementBase& stmt,
     SQLSMALLINT nof_cols,
-    SQLHSTMT cmd,
-    CODBC_Reporter& r,
     int* row_count
     )
-    : m_Cmd(cmd)
-    , m_Reporter(r)
+    : m_Stmt(stmt)
     , m_CurrItem(-1)
     , m_EOR(false)
     , m_RowCountPtr( row_count )
@@ -95,27 +93,27 @@ CODBC_RowResult::CODBC_RowResult(
 
     m_ColFmt = new SODBC_ColDescr[m_NofCols];
     for (unsigned int n = 0; n < m_NofCols; n++) {
-        switch(SQLDescribeCol(m_Cmd, n+1, m_ColFmt[n].ColumnName,
+        switch(SQLDescribeCol(GetHandle(), n+1, m_ColFmt[n].ColumnName,
                               ODBC_COLUMN_NAME_SIZE, &actual_name_size,
                               &m_ColFmt[n].DataType, &m_ColFmt[n].ColumnSize,
                               &m_ColFmt[n].DecimalDigits, &nullable)) {
         case SQL_SUCCESS_WITH_INFO:
-            m_Reporter.ReportErrors();
+            ReportErrors();
         case SQL_SUCCESS:
             continue;
         case SQL_ERROR:
-            m_Reporter.ReportErrors();
+            ReportErrors();
             {
-                string err_message = "SQLDescribeCol failed" + m_Reporter.GetExtraMsg();
+                string err_message = "SQLDescribeCol failed" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 420020 );
             }
         default:
             {
-                string err_message = "SQLDescribeCol failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                string err_message = "SQLDescribeCol failed (memory corruption suspected)" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 420021 );
             }
-	   }
-	}
+       }
+    }
 }
 
 
@@ -147,7 +145,7 @@ EDB_Type CODBC_RowResult::ItemDataType(unsigned int item_num) const
 {
     return item_num < m_NofCols ?
         s_GetDataType(m_ColFmt[item_num].DataType, m_ColFmt[item_num].DecimalDigits,
-			m_ColFmt[item_num].ColumnSize) :  eDB_UnsupportedType;
+            m_ColFmt[item_num].ColumnSize) :  eDB_UnsupportedType;
 }
 
 
@@ -155,9 +153,9 @@ bool CODBC_RowResult::Fetch()
 {
     m_CurrItem= -1;
     if (!m_EOR) {
-        switch (SQLFetch(m_Cmd)) {
+        switch (SQLFetch(GetHandle())) {
         case SQL_SUCCESS_WITH_INFO:
-            m_Reporter.ReportErrors();
+            ReportErrors();
         case SQL_SUCCESS:
             m_CurrItem = 0;
             if ( m_RowCountPtr != NULL ) {
@@ -168,14 +166,14 @@ bool CODBC_RowResult::Fetch()
             m_EOR = true;
             break;
         case SQL_ERROR:
-            m_Reporter.ReportErrors();
+            ReportErrors();
             {
-                string err_message = "SQLFetch failed" + m_Reporter.GetExtraMsg();
+                string err_message = "SQLFetch failed" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430003 );
             }
         default:
             {
-                string err_message = "SQLFetch failed (memory corruption suspected)" + m_Reporter.GetExtraMsg();
+                string err_message = "SQLFetch failed (memory corruption suspected)" + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430004 );
             }
         }
@@ -199,7 +197,7 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
 {
     SQLINTEGER f;
 
-    switch(SQLGetData(m_Cmd, m_CurrItem+1, target_type, buffer, buffer_size, &f)) {
+    switch(SQLGetData(GetHandle(), m_CurrItem+1, target_type, buffer, buffer_size, &f)) {
     case SQL_SUCCESS_WITH_INFO:
         switch(f) {
         case SQL_NO_TOTAL:
@@ -207,8 +205,8 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
         case SQL_NULL_DATA:
             return 0;
         default:
-			if(f < 0)
-				m_Reporter.ReportErrors();
+            if(f < 0)
+                ReportErrors();
             return (int)f;
         }
     case SQL_SUCCESS:
@@ -217,10 +215,10 @@ int CODBC_RowResult::xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
     case SQL_NO_DATA:
         return 0;
     case SQL_ERROR:
-        m_Reporter.ReportErrors();
+        ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed " + m_Reporter.GetExtraMsg();
+            string err_message = "SQLGetData failed " + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
@@ -276,7 +274,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -318,7 +316,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -351,7 +349,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -387,7 +385,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         }
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -414,7 +412,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -436,7 +434,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -453,7 +451,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -471,7 +469,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -488,7 +486,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
             break;
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -501,13 +499,13 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         switch (  item_buf->GetType()  ) {
         case eDB_Numeric: {
             SQL_NUMERIC_STRUCT v;
-			SQLHDESC hdesc;
-			SQLGetStmtAttr(m_Cmd, SQL_ATTR_APP_ROW_DESC,&hdesc, 0, NULL);
-			SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_TYPE,(VOID*)SQL_C_NUMERIC,0);
-			SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_PRECISION,
-					(VOID*)(m_ColFmt[m_CurrItem].ColumnSize),0);
-			SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_SCALE,
-					(VOID*)(m_ColFmt[m_CurrItem].DecimalDigits),0);
+            SQLHDESC hdesc;
+            SQLGetStmtAttr(GetHandle(), SQL_ATTR_APP_ROW_DESC,&hdesc, 0, NULL);
+            SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_TYPE,(VOID*)SQL_C_NUMERIC,0);
+            SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_PRECISION,
+                    (VOID*)(m_ColFmt[m_CurrItem].ColumnSize),0);
+            SQLSetDescField(hdesc,m_CurrItem+1,SQL_DESC_SCALE,
+                    (VOID*)(m_ColFmt[m_CurrItem].DecimalDigits),0);
 
             outlen= xGetData(SQL_ARD_TYPE, &v, sizeof(SQL_NUMERIC_STRUCT));
             if (outlen <= 0) item_buf->AssignNULL();
@@ -523,7 +521,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         }
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -538,10 +536,10 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
         case eDB_Text: {
             CDB_Stream* val = (CDB_Stream*) item_buf;
             for(;;) {
-                switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
+                switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
                 case SQL_SUCCESS_WITH_INFO:
                     if(f == SQL_NO_TOTAL) f= sizeof(buffer) - 1;
-                    else if(f < 0) m_Reporter.ReportErrors();
+                    else if(f < 0) ReportErrors();
                 case SQL_SUCCESS:
                     if(f > 0) {
                         if(f > sizeof(buffer)-1) f= sizeof(buffer)-1;
@@ -551,25 +549,25 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 case SQL_NO_DATA:
                     break;
                 case SQL_ERROR:
-                    m_Reporter.ReportErrors();
+                    ReportErrors();
                 default:
                     {
                         string err_message = "SQLGetData failed while retrieving text/image into CDB_Text" + 
-                            m_Reporter.GetExtraMsg();
+                            GetDiagnosticInfo();
                         DATABASE_DRIVER_ERROR( err_message, 430021 );
                     }
                 }
-				break;
+                break;
             }
             break;
         }
         case eDB_Image: {
             CDB_Stream* val = (CDB_Stream*) item_buf;
             for(;;) {
-                switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
+                switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
                 case SQL_SUCCESS_WITH_INFO:
                     if(f == SQL_NO_TOTAL || f > sizeof(buffer)) f= sizeof(buffer);
-                    else m_Reporter.ReportErrors();
+                    else ReportErrors();
                 case SQL_SUCCESS:
                     if(f > 0) {
                         if(f > sizeof(buffer)) f= sizeof(buffer);
@@ -579,21 +577,21 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
                 case SQL_NO_DATA:
                     break;
                 case SQL_ERROR:
-                    m_Reporter.ReportErrors();
+                    ReportErrors();
                 default:
                     {
                         string err_message = "SQLGetData failed while retrieving text/image into CDB_Image" + 
-                            m_Reporter.GetExtraMsg();
+                            GetDiagnosticInfo();
                         DATABASE_DRIVER_ERROR( err_message, 430022 );
                     }
                 }
-				break;
+                break;
             }
             break;
         }
         default:
             {
-                string err_message = wrong_type + m_Reporter.GetExtraMsg();
+                string err_message = wrong_type + GetDiagnosticInfo();
                 DATABASE_DRIVER_ERROR( err_message, 430020 );
             }
         }
@@ -601,7 +599,7 @@ CDB_Object* CODBC_RowResult::xLoadItem(CDB_Object* item_buf)
     }
     default:
         {
-            string err_message = "Unsupported column type" + m_Reporter.GetExtraMsg();
+            string err_message = "Unsupported column type" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 430025 );
         }
 
@@ -620,40 +618,40 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     case SQL_VARCHAR:
     case SQL_WVARCHAR: {
         outlen= xGetData(SQL_C_CHAR, buffer, sizeof(buffer));
-		if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
-			CDB_VarChar* val = (outlen < 0)
-				? new CDB_VarChar() : new CDB_VarChar(buffer, (size_t) outlen);
+        if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
+            CDB_VarChar* val = (outlen < 0)
+                ? new CDB_VarChar() : new CDB_VarChar(buffer, (size_t) outlen);
 
-			return val;
-		}
-		else {
-			CDB_LongChar* val = (outlen < 0)
-				? new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize) :
-				new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize,
-						buffer);
+            return val;
+        }
+        else {
+            CDB_LongChar* val = (outlen < 0)
+                ? new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize) :
+                new CDB_LongChar(m_ColFmt[m_CurrItem].ColumnSize,
+                        buffer);
 
-			return val;
-		}
+            return val;
+        }
 
     }
 
     case SQL_BINARY:
     case SQL_VARBINARY: {
         outlen= xGetData(SQL_C_BINARY, buffer, sizeof(buffer));
-		if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
-	        CDB_VarBinary* val = (outlen <= 0)
-		        ? new CDB_VarBinary() : new CDB_VarBinary(buffer, (size_t)outlen);
+        if(m_ColFmt[m_CurrItem].ColumnSize < 256) {
+            CDB_VarBinary* val = (outlen <= 0)
+                ? new CDB_VarBinary() : new CDB_VarBinary(buffer, (size_t)outlen);
 
-			return val;
-		}
-		else {
-			CDB_LongBinary* val = (outlen < 0)
-				? new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize) :
-				new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize,
-						buffer, (size_t) outlen);
+            return val;
+        }
+        else {
+            CDB_LongBinary* val = (outlen < 0)
+                ? new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize) :
+                new CDB_LongBinary(m_ColFmt[m_CurrItem].ColumnSize,
+                        buffer, (size_t) outlen);
 
-			return val;
-		}
+            return val;
+        }
     }
 
     case SQL_BIT: {
@@ -667,16 +665,16 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         outlen= xGetData(SQL_C_TYPE_TIMESTAMP, &v, sizeof(SQL_TIMESTAMP_STRUCT));
         if (outlen <= 0) {
             return (m_ColFmt[m_CurrItem].ColumnSize > 16 ||
-				m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime()) :
-				(CDB_Object*)(new CDB_SmallDateTime());
+                m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime()) :
+                (CDB_Object*)(new CDB_SmallDateTime());
         }
         else {
             CTime t((int)v.year, (int)v.month, (int)v.day,
                     (int)v.hour, (int)v.minute, (int)v.second,
                     (long)v.fraction);
             return (m_ColFmt[m_CurrItem].ColumnSize > 16 ||
-				m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime(t)) :
-				(CDB_Object*)(new CDB_SmallDateTime(t));
+                m_ColFmt[m_CurrItem].DecimalDigits > 0)? (CDB_Object*)(new CDB_DateTime(t)) :
+                (CDB_Object*)(new CDB_SmallDateTime(t));
         }
     }
 
@@ -735,10 +733,10 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         SQLINTEGER f;
 
         for(;;) {
-            switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
+            switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_CHAR, buffer, sizeof(buffer), &f)) {
             case SQL_SUCCESS_WITH_INFO:
                 if(f == SQL_NO_TOTAL) f= sizeof(buffer) - 1;
-                else if(f < 0) m_Reporter.ReportErrors();
+                else if(f < 0) ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
                     if(f > sizeof(buffer)-1) f= sizeof(buffer)-1;
@@ -748,11 +746,11 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             case SQL_NO_DATA:
                 break;
             case SQL_ERROR:
-                m_Reporter.ReportErrors();
+                ReportErrors();
             default:
                 {
                     string err_message = "SQLGetData failed while retrieving text into CDB_Text" + 
-                        m_Reporter.GetExtraMsg();
+                        GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 430023 );
                 }
             }
@@ -764,10 +762,10 @@ CDB_Object* CODBC_RowResult::xMakeItem()
         CDB_Image* val = new CDB_Image;
         SQLINTEGER f;
         for(;;) {
-            switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
+            switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, sizeof(buffer), &f)) {
             case SQL_SUCCESS_WITH_INFO:
                 if(f == SQL_NO_TOTAL) f= sizeof(buffer);
-                else if(f < 0) m_Reporter.ReportErrors();
+                else if(f < 0) ReportErrors();
             case SQL_SUCCESS:
                 if(f > 0) {
                     if(f > sizeof(buffer)) f= sizeof(buffer);
@@ -777,11 +775,11 @@ CDB_Object* CODBC_RowResult::xMakeItem()
             case SQL_NO_DATA:
                 break;
             case SQL_ERROR:
-                m_Reporter.ReportErrors();
+                ReportErrors();
             default:
                 {
                     string err_message = "SQLGetData failed while retrieving text into CDB_Image" + 
-                        m_Reporter.GetExtraMsg();
+                        GetDiagnosticInfo();
                     DATABASE_DRIVER_ERROR( err_message, 430024 );
                 }
             }
@@ -790,7 +788,7 @@ CDB_Object* CODBC_RowResult::xMakeItem()
     }
     default:
         {
-            string err_message = "Unsupported column type" + m_Reporter.GetExtraMsg();
+            string err_message = "Unsupported column type" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 430025 );
         }
 
@@ -822,7 +820,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
 
     if(is_null) *is_null= false;
 
-    switch(SQLGetData(m_Cmd, m_CurrItem+1, SQL_C_BINARY, buffer, buffer_size, &f)) {
+    switch(SQLGetData(GetHandle(), m_CurrItem+1, SQL_C_BINARY, buffer, buffer_size, &f)) {
     case SQL_SUCCESS_WITH_INFO:
         switch(f) {
         case SQL_NO_TOTAL:
@@ -836,7 +834,7 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
                 return (static_cast<size_t>(f) <= buffer_size) ? 
                     static_cast<size_t>(f) : buffer_size;
             }
-            m_Reporter.ReportErrors();
+            ReportErrors();
             return 0;
         }
     case SQL_SUCCESS:
@@ -853,10 +851,10 @@ size_t CODBC_RowResult::ReadItem(void* buffer,size_t buffer_size,bool* is_null)
         }
         return 0;
     case SQL_ERROR:
-        m_Reporter.ReportErrors();
+        ReportErrors();
     default:
         {
-            string err_message = "SQLGetData failed " + m_Reporter.GetExtraMsg();
+            string err_message = "SQLGetData failed " + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 430026 );
         }
     }
@@ -869,39 +867,39 @@ CDB_ITDescriptor* CODBC_RowResult::GetImageOrTextDescriptor(int item_no,
     char* buffer[128];
     SQLSMALLINT slp;
 
-    switch(SQLColAttribute(m_Cmd, item_no+1,
+    switch(SQLColAttribute(GetHandle(), item_no+1,
                            SQL_DESC_BASE_TABLE_NAME,
                            (SQLPOINTER)buffer, sizeof(buffer),
                            &slp, 0)) {
     case SQL_SUCCESS_WITH_INFO:
-        m_Reporter.ReportErrors();
+        ReportErrors();
     case SQL_SUCCESS:
         break;
     case SQL_ERROR:
-        m_Reporter.ReportErrors();
+        ReportErrors();
         return 0;
     default:
         {
-            string err_message = "SQLColAttribute failed" + m_Reporter.GetExtraMsg();
+            string err_message = "SQLColAttribute failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
     string base_table=(const char*)buffer;
 
-    switch(SQLColAttribute(m_Cmd, item_no+1,
+    switch(SQLColAttribute(GetHandle(), item_no+1,
                            SQL_DESC_BASE_COLUMN_NAME,
                            (SQLPOINTER)buffer, sizeof(buffer),
                            &slp, 0)) {
     case SQL_SUCCESS_WITH_INFO:
-        m_Reporter.ReportErrors();
+        ReportErrors();
     case SQL_SUCCESS:
         break;
     case SQL_ERROR:
-        m_Reporter.ReportErrors();
+        ReportErrors();
         return 0;
     default:
         {
-            string err_message = "SQLColAttribute failed" + m_Reporter.GetExtraMsg();
+            string err_message = "SQLColAttribute failed" + GetDiagnosticInfo();
             DATABASE_DRIVER_ERROR( err_message, 430027 );
         }
     }
@@ -933,8 +931,9 @@ CODBC_RowResult::~CODBC_RowResult()
             delete[] m_ColFmt;
             m_ColFmt = 0;
         }
-        if (!m_EOR)
-            SQLFreeStmt(m_Cmd, SQL_CLOSE);
+        if (!m_EOR) {
+            Close();
+        }
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -947,12 +946,29 @@ CODBC_RowResult::~CODBC_RowResult()
 //  CTL_CursorResult::
 //
 
+CODBC_StatusResult::CODBC_StatusResult(CStatementBase& stmt)
+: CODBC_RowResult(stmt, 1, NULL)
+{
+}
+
+CODBC_StatusResult::~CODBC_StatusResult()
+{
+}
+
 EDB_ResType CODBC_StatusResult::ResultType() const
 {
     return eDB_StatusResult;
 }
 
-CODBC_StatusResult::~CODBC_StatusResult()
+/////////////////////////////////////////////////////////////////////////////
+CODBC_ParamResult::CODBC_ParamResult(
+    CStatementBase& stmt,
+    SQLSMALLINT nof_cols)
+: CODBC_RowResult(stmt, nof_cols, NULL)
+{
+}
+
+CODBC_ParamResult::~CODBC_ParamResult()
 {
 }
 
@@ -961,9 +977,6 @@ EDB_ResType CODBC_ParamResult::ResultType() const
     return eDB_ParamResult;
 }
 
-CODBC_ParamResult::~CODBC_ParamResult()
-{
-}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -974,17 +987,16 @@ CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd)
 : m_Cmd(cmd)
 , m_Res(NULL)
 , m_EOR(false)
-, m_Reporter( cmd->m_Reporter )
 {
     try {
         m_Cmd->Send();
-		m_EOR = true;
+        m_EOR = true;
 
         while (m_Cmd->HasMoreResults()) {
             m_Res = m_Cmd->Result();
 
             if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-				m_EOR = false;
+                m_EOR = false;
                 return;
             }
 
@@ -996,7 +1008,7 @@ CODBC_CursorResult::CODBC_CursorResult(CODBC_LangCmd* cmd)
             }
         }
     } catch (const CDB_Exception& e) {
-        string err_message = "failed to get the results" + m_Reporter.GetExtraMsg();
+        string err_message = "failed to get the results" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422010 );
     }
 }
@@ -1039,38 +1051,38 @@ bool CODBC_CursorResult::Fetch()
         return false;
     }
 
-	try {
+    try {
         if (m_Res && m_Res->Fetch()) {
             return true;
         }
     } catch ( const CDB_Exception& ) {
-		delete m_Res;
-		m_Res = 0;
-	}
+        delete m_Res;
+        m_Res = 0;
+    }
 
     try {
         // finish this command
-		m_EOR = true;
+        m_EOR = true;
         if( m_Res ) {
-			delete m_Res;
-			m_Res = 0;
-			while (m_Cmd->HasMoreResults()) {
-				m_Res = m_Cmd->Result();
-				if (m_Res) {
-					while (m_Res->Fetch())
-						;
-					delete m_Res;
-					m_Res = 0;
-				}
-			}
-		}
+            delete m_Res;
+            m_Res = 0;
+            while (m_Cmd->HasMoreResults()) {
+                m_Res = m_Cmd->Result();
+                if (m_Res) {
+                    while (m_Res->Fetch())
+                        ;
+                    delete m_Res;
+                    m_Res = 0;
+                }
+            }
+        }
 
         // send the another "fetch cursor_name" command
         m_Cmd->Send();
         while (m_Cmd->HasMoreResults()) {
             m_Res = m_Cmd->Result();
             if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-				m_EOR = false;
+                m_EOR = false;
                 return m_Res->Fetch();
             }
             if ( m_Res ) {
@@ -1081,7 +1093,7 @@ bool CODBC_CursorResult::Fetch()
             }
         }
     } catch (const CDB_Exception& e) {
-        string err_message = "Failed to fetch the results" + m_Reporter.GetExtraMsg();
+        string err_message = "Failed to fetch the results" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422011 );
     }
     return false;
@@ -1135,7 +1147,7 @@ CODBC_CursorResult::~CODBC_CursorResult()
     try {
         if (m_Res) {
             delete m_Res;
-			m_Res = 0;
+            m_Res = 0;
         }
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -1149,6 +1161,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/11/28 13:22:59  ssikorsk
+ * Report SQL statement and database connection parameters in case
+ * of an error in addition to a server error message.
+ *
  * Revision 1.24  2005/11/02 16:46:21  ssikorsk
  * Pass context information with an error message of a database exception.
  *
