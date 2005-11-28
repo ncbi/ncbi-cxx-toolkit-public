@@ -63,7 +63,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.7  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.3.9  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -319,7 +319,8 @@ typedef enum {
     eLogging,
     eGetConfig,
     eGetStat,
-    eIsLock
+    eIsLock,
+    eGetBlobOwner
 } ENC_RequestType;
 
 
@@ -476,6 +477,9 @@ private:
 
     /// Process "GETCONF" request
     void ProcessGetConfig(CSocket& sock);
+
+    /// Process "GBOW" request
+    void ProcessGetBlobOwner(CSocket& sock, const SNC_Request& req);
 
     /// Process "GETSTAT" request
     void ProcessGetStat(CSocket& sock, const SNC_Request& req);
@@ -677,6 +681,9 @@ void CNetCacheServer::Process(SOCK sock)
                 case eGetStat:
                     stat.req_code = 'T';
                     ProcessGetStat(socket, tdata->req);
+                    break;
+                case eGetBlobOwner:
+                    ProcessGetBlobOwner(socket, tdata->req);
                     break;
                 case eVersion:
                     stat.req_code = 'V';
@@ -1017,6 +1024,21 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
     ba_descr.buf_size = GetTLS_Size() - 100;
 
     m_Cache->GetBlobAccess(req_id, 0, kEmptyStr, &ba_descr);
+
+    if (!ba_descr.blob_found) {
+blob_not_found:
+            string msg = "BLOB not found. ";
+            msg += req_id;
+            WriteMsg(sock, "ERR:", msg);
+            return;
+    }
+
+    if (ba_descr.blob_size == 0) {
+        WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
+        return;
+    }
+
+/*
     if (ba_descr.blob_size == 0) { // not found
         if (ba_descr.reader == 0) {
 blob_not_found:
@@ -1029,7 +1051,7 @@ blob_not_found:
         x_RegisterNoBlobErr(req.req_type, tdata.auth);
         return;
     }
-
+*/
     stat.blob_size = ba_descr.blob_size;
 
     if (ba_descr.reader == 0) {  // all in buffer
@@ -1264,6 +1286,29 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
 
 }
 
+void CNetCacheServer::ProcessGetBlobOwner(CSocket&           sock, 
+                                          const SNC_Request& req)
+{
+    const string& req_id = req.req_id;
+
+    if (req_id.empty()) {
+        WriteMsg(sock, "ERR:", "BLOB id is empty.");
+        return;
+    }
+    CNetCache_Key blob_id(req_id);
+    if (!x_CheckBlobId(sock, &blob_id, req_id))
+        return;
+
+    CIdBusyGuard guard(&m_UsedIds);
+    guard.Lock(req.req_id, m_InactivityTimeout);
+
+    string owner;
+    m_Cache->GetBlobOwner(req_id, 0, kEmptyStr, &owner);
+
+    WriteMsg(sock, "OK:", owner);
+}
+
+
 void CNetCacheServer::ProcessIsLock(CSocket& sock, const SNC_Request& req)
 {
     const string& req_id = req.req_id;
@@ -1358,6 +1403,8 @@ put_args_parse:
         s += 4;
 
 parse_blob_id:
+        req->req_id.erase();
+
         while (*s && isspace((unsigned char)(*s))) {
             ++s;
         }
@@ -1365,6 +1412,12 @@ parse_blob_id:
         req->req_id = s;
         return;
     }
+
+    if (strncmp(s, "GBOW", 4) == 0) {  // get blob owner
+        req->req_type = eGetBlobOwner;
+        s += 4;
+        goto parse_blob_id;
+    } // GBOW
 
     if (strncmp(s, "GET", 3) == 0) {
         req->req_type = eGet;
@@ -1994,6 +2047,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2005/11/28 15:20:30  kuznets
+ * Added new command to get owner of a BLOB
+ *
  * Revision 1.69  2005/11/15 13:39:14  kuznets
  * Print server statistics using IRegistry
  *
@@ -2157,49 +2213,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 1.15  2004/10/21 17:21:42  kuznets
  * Reallocated buffer replaced with TLS data
- *
- * Revision 1.14  2004/10/21 15:51:21  kuznets
- * removed unused variable
- *
- * Revision 1.13  2004/10/21 15:06:10  kuznets
- * New parameter run_purge_thread
- *
- * Revision 1.12  2004/10/21 13:39:27  kuznets
- * New parameters max_threads, init_threads
- *
- * Revision 1.11  2004/10/20 21:21:02  ucko
- * Make CNetCacheServer::ERequestType public so that struct Request can
- * make use of it when building with WorkShop.
- *
- * Revision 1.10  2004/10/20 14:50:22  kuznets
- * Code cleanup
- *
- * Revision 1.9  2004/10/20 13:45:37  kuznets
- * Disabled TCP/IP delay on write
- *
- * Revision 1.8  2004/10/19 18:20:26  kuznets
- * Use ReadPeek to avoid net delays
- *
- * Revision 1.7  2004/10/19 15:53:36  kuznets
- * Code cleanup
- *
- * Revision 1.6  2004/10/18 13:46:57  kuznets
- * Removed common buffer (was shared between threads)
- *
- * Revision 1.5  2004/10/15 14:34:46  kuznets
- * Fine tuning of networking, cleaning thread interruption, etc
- *
- * Revision 1.4  2004/10/04 12:33:24  kuznets
- * Complete implementation of GET/PUT
- *
- * Revision 1.3  2004/09/23 16:37:21  kuznets
- * Reflected changes in ncbi_config.hpp
- *
- * Revision 1.2  2004/09/23 14:17:36  kuznets
- * Fixed compilation bug
- *
- * Revision 1.1  2004/09/23 13:57:01  kuznets
- * Initial revision
  *
  *
  * ===========================================================================
