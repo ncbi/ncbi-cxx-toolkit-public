@@ -253,7 +253,6 @@ struct RefinerAU {
 };
 
 typedef void (* TFProgressCallback ) (int num);
-static TFProgressCallback refinerCallbackFunction;
 extern int refinerCallbackCounter;
 
 typedef vector< Block::Range > Ranges;
@@ -275,6 +274,9 @@ END_SCOPE(align_refine)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/11/28 21:47:40  lanczyck
+ * remove unnecessary static (?!) callback fn definition
+ *
  * Revision 1.5  2005/11/23 01:01:14  lanczyck
  * freeze specified blocks in both LOO and BE phases;
  * add support for a callback for a progress meter
