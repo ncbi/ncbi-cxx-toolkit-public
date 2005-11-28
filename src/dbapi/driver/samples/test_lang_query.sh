@@ -218,8 +218,14 @@ EOF
 
             cmd="dbapi_query -d $driver -S $server"
             RunSimpleTest "dbapi_query"
-            cmd="dbapi_send_data -d $driver -S $server"
-            RunSimpleTest "dbapi_send_data"
+
+            # Do not run dbapi_send_data with MOZART and BARTOK
+            if test $server != "MOZART" -a $server != "BARTOK" ; then
+                cmd="dbapi_send_data -d $driver -S $server"
+                RunSimpleTest "dbapi_send_data"
+            else
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_send_data -d $driver -S $server (skipped)"
+            fi
 
         done
 
