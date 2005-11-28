@@ -576,6 +576,7 @@ void SequenceViewerWindow::OnRefineAlignment(wxCommandEvent& event)
         ERRORMSG("SequenceViewerWindow::OnRefineAlignment() - no alignment!");
         return;
     }
+    ProcessCommand(MID_HIGHLIGHT_BLOCKS);
     sequenceViewer->alignmentManager->RefineAlignment();
 }
 
@@ -585,6 +586,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2005/11/28 22:19:44  thiessen
+* highlight blocks before running refiner
+*
 * Revision 1.62  2005/11/17 22:25:43  thiessen
 * remove more spurious uint-compared-to-zero
 *
