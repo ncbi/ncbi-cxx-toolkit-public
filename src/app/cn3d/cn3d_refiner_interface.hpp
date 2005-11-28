@@ -78,15 +78,17 @@ public:
 
     // Refines an initial blocked multiple alignment according to parameters in
     // a dialog filled in by user.  Unless SetBlocksToRealign or SetRowsToExcludeFromLNO
-    // have been called prior to this method to 'freeze' blocks and rows during LNO, 
-    // all blocks and all non-master rows are refined.  (If LOO params 
+    // have been called prior to this method to 'freeze' blocks and rows during LNO,
+    // all blocks and all non-master rows are refined.  (If LOO params
     // have been set to exclude structure rows, they are automatically excluded.)
-    // The output AlignmentList contains the results ordered from best to worst refined 
-    // score (refiner engine 'owns' the alignments).  If the refinement alignment 
-    // algorithm fails in a trial, a null element is appended to the list for that trial.  
+    // The output AlignmentList contains the results ordered from best to worst refined
+    // score (refiner engine 'owns' the alignments).  If the refinement alignment
+    // algorithm fails in a trial, a null element is appended to the list for that trial.
     // Return 'false' only if all trials fail.
-    bool RefineMultipleAlignment(struct_util::AlignmentUtility *originalMultiple, 
-        AlignmentUtilityList *refinedMultiples, wxWindow *parent);
+    bool RefineMultipleAlignment(struct_util::AlignmentUtility *originalMultiple,
+        AlignmentUtilityList *refinedMultiples,
+        wxWindow *parent,
+        const vector < string >& rowTitles);    // one per row, but only non-structured rows should have size>0
 
     //  In case it's desired to get info results/settings directly from the refiner engine.
     const align_refine::CBMARefinerEngine* GetRefiner() {return m_refinerEngine;}
@@ -101,10 +103,10 @@ private:
     void SetBlocksToRealign(unsigned int nAlignedBlocks);
 
     // Brings up a dialog that lets the user set refinement parameters; returns false if cancelled.
-    // Initializes the refiner engine w/ values found in the dialog.  
+    // Initializes the refiner engine w/ values found in the dialog.
     // Realigns only blocks found in m_blocksToRefine during LNO.
     // Explicitly excludes from LNO those rows found in m_rowsToExclude.
-    bool ConfigureRefiner(wxWindow* parent);
+    bool ConfigureRefiner(wxWindow* parent, const vector < string >& rowTitles);
 };
 
 END_SCOPE(Cn3D)
@@ -114,6 +116,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2005/11/28 21:14:38  thiessen
+* add block and row selection mechanism to refiner
+*
 * Revision 1.7  2005/11/23 01:03:04  lanczyck
 * freeze specified blocks in both LOO and BE phases;
 * add support for a callback for a progress meter

@@ -1655,6 +1655,20 @@ bool BlockMultipleAlignment::ClearMarks(void)
     return true;
 }
 
+void BlockMultipleAlignment::GetMarkedBlockNumbers(std::vector < unsigned int > *alignedBlockNumbers) const
+{
+    alignedBlockNumbers->resize(markBlocks.size());
+    unsigned int a = 0, i = 0;
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; ++b) {
+        if ((*b)->IsAligned()) {
+            if (markBlocks.find(*b) != markBlocks.end())
+                (*alignedBlockNumbers)[i++] = a;
+            ++a;
+        }
+    }
+}
+
 bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(unsigned int from, unsigned int to) const
 {
     const Sequence *master = GetMaster();
@@ -1901,6 +1915,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2005/11/28 21:14:38  thiessen
+* add block and row selection mechanism to refiner
+*
 * Revision 1.79  2005/11/17 22:25:42  thiessen
 * remove more spurious uint-compared-to-zero
 *

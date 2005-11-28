@@ -107,7 +107,11 @@ public:
     };
 
 
-    BMARefinerOptionsDialog(wxWindow* parent, const GeneralRefinerParams& current_genl, const align_refine::LeaveOneOutParams& current_loo, const align_refine::BlockEditingParams& current_be);
+    BMARefinerOptionsDialog(wxWindow* parent,
+        const GeneralRefinerParams& current_genl,
+        const align_refine::LeaveOneOutParams& current_loo,
+        const align_refine::BlockEditingParams& current_be,
+        const vector < string >& rowTitles);
     ~BMARefinerOptionsDialog(void);
 
     bool GetParameters(GeneralRefinerParams* genl_params, align_refine::LeaveOneOutParams* loo_params, align_refine::BlockEditingParams* be_params);
@@ -116,16 +120,20 @@ public:
 
 private:
 
+    const vector < string >& rowTitles;
+    vector < unsigned int > rowsToExclude;
+
     IntegerSpinCtrl *nCyclesSpin, *nTrialsSpin;
     IntegerSpinCtrl *lnoSpin, *loopExtensionSpin, *loopCutoffSpin, *rngSpin, *nExtSpin, *cExtSpin;
     IntegerSpinCtrl *minBlockSizeSpin, *medianSpin;
     FloatingPointSpinCtrl *loopPercentSpin, *rawVoteSpin, *weightedVoteSpin ;
-    wxCheckBox *fixStructCheck, *fullSeqCheck, *extendFirstCheck;
+    wxCheckBox *fixStructCheck, *fullSeqCheck, *extendFirstCheck, *allUnstSeqCheck;
     wxComboBox *esCombo;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnCombo(wxCommandEvent& event);
+    void OnCheck(wxCommandEvent& event);
     DECLARE_EVENT_TABLE()
 };
 
@@ -146,7 +154,7 @@ BMARefiner::~BMARefiner(void)
 
 
 bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
-    AlignmentUtilityList *refinedMultiples, wxWindow *parent)
+    AlignmentUtilityList *refinedMultiples, wxWindow *parent, const vector < string >& rowTitles)
 {
     if (!originalMultiple) return false;
 
@@ -178,7 +186,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
                 sanityCheckFailures.insert(m_rowsToExclude[j]);
             }
         }
-        
+
         sitEnd = sanityCheckFailures.end();
         for (sit = sanityCheckFailures.begin(); sit != sitEnd; ++sit) {
             warnMsg.append("   Request to exclude invalid row number " + NStr::UIntToString(*sit + 1) + " ignored./n");
@@ -210,7 +218,7 @@ bool BMARefiner::RefineMultipleAlignment(AlignmentUtility *originalMultiple,
 
     // Show options dialog each time block aligner is run; recreates & initializes the refiner engine.
     // Frozen blocks and excluded rows must have been defined by this point!!!
-    if (!ConfigureRefiner(parent)) return true;
+    if (!ConfigureRefiner(parent, rowTitles)) return true;
 
     if (!m_refinerEngine) {
         ERRORMSG("Error initializing alignment refinement engine");
@@ -292,7 +300,7 @@ void BMARefiner::SetRowsToExcludeFromLNO(const vector<unsigned int>& excludedRow
 }
 
 
-bool BMARefiner::ConfigureRefiner(wxWindow* parent)
+bool BMARefiner::ConfigureRefiner(wxWindow* parent, const vector < string >& rowTitles)
 {
     BMARefinerOptionsDialog::GeneralRefinerParams genl;
     align_refine::LeaveOneOutParams loo;
@@ -316,7 +324,7 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent)
     }
 
     //  ... but update with the most recent info about blocks & rows to refine.
-    //  Selected blocks are refined; others frozen.  
+    //  Selected blocks are refined; others frozen.
     //  Explicitly protected rows do not undergo LOO/LNO refinement phase.
     loo.blocks.clear();
     be.editableBlocks.clear();
@@ -335,7 +343,7 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent)
     be.columnMethod = align_refine::eCompoundScorer;
     be.columnScorerThreshold = 0;  //  this is the 'magic' PSSM score in the compound scorer
 
-    BMARefinerOptionsDialog dialog(parent, genl, loo, be);
+    BMARefinerOptionsDialog dialog(parent, genl, loo, be, rowTitles);
     bool ok = (dialog.ShowModal() == wxOK);
 
     //  Clear out any previous refiner run.
@@ -364,27 +372,33 @@ const int ID_FIX_STRUCT_CHECKBOX = 12004;
 const int ID_FULL_SEQ_CHECKBOX = 12005;
 const int ID_BE_COMBOBOX = 12006;
 const int ID_BEXTEND_FIRST_CHECKBOX = 12007;
+const int ID_ALL_UNST_SEQ_CHECKBOX = 12008;
 
 BEGIN_EVENT_TABLE(BMARefinerOptionsDialog, wxDialog)
     EVT_BUTTON(-1,  BMARefinerOptionsDialog::OnButton)
-//    EVT_CHECKBOX(ID_BEXTEND_CHECKBOX, BMARefinerOptionsDialog::OnCheck)
+    EVT_CHECKBOX(-1, BMARefinerOptionsDialog::OnCheck)
     EVT_COMBOBOX(ID_BE_COMBOBOX, BMARefinerOptionsDialog::OnCombo)
     EVT_CLOSE (     BMARefinerOptionsDialog::OnCloseWindow)
 END_EVENT_TABLE()
 
 
-BMARefinerOptionsDialog::BMARefinerOptionsDialog(
-    wxWindow* parent,  const GeneralRefinerParams& current_genl, const align_refine::LeaveOneOutParams& current_loo, const align_refine::BlockEditingParams& current_be) :
-        wxDialog(parent, -1, "Set Alignment Refiner Options", wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
+BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
+    const GeneralRefinerParams& current_genl,
+    const align_refine::LeaveOneOutParams& current_loo,
+    const align_refine::BlockEditingParams& current_be,
+    const vector < string >& titles) :
+        wxDialog(parent, -1, "Set Alignment Refiner Options", wxPoint(100,100), wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
+		rowTitles(titles)
 {
+    rowsToExclude = current_loo.rowsToExclude;
 
     wxPanel *panel = new wxPanel(this, -1);
 
     //  Dialog heading
-    wxBoxSizer *item1 = new wxBoxSizer( wxHORIZONTAL );
-    wxStaticText *item2 = new wxStaticText( panel, ID_TEXT, wxT("Alignment Refiner Options"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
-    item2->SetFont( wxFont( 16, wxROMAN, wxNORMAL, wxNORMAL ) );
-    item1->Add( item2, 0, wxALIGN_CENTER|wxALL, 15 );
+//    wxBoxSizer *item1 = new wxBoxSizer( wxHORIZONTAL );
+//    wxStaticText *item2 = new wxStaticText( panel, ID_TEXT, wxT("Alignment Refiner Options"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
+//    item2->SetFont( wxFont( 16, wxROMAN, wxNORMAL, wxNORMAL ) );
+//    item1->Add( item2, 0, wxALIGN_CENTER|wxALL, 15 );
 
     //  Cycles/trials
     wxStaticBox *item60 = new wxStaticBox( panel, -1, wxT("General Refiner Parameters") );
@@ -431,7 +445,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item5->Add( item7, 0, wxALIGN_CENTER|wxALL, 5 );
     fixStructCheck = new wxCheckBox( panel, ID_FIX_STRUCT_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     fixStructCheck->SetValue(!current_loo.fixStructures);
-    item5->Add( fixStructCheck, 0, wxALIGN_CENTER|wxALL, 5 );
+    item5->Add( fixStructCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     //  use entire sequence length, or restricted to aligned footprint
     wxStaticText *item9 = new wxStaticText( panel, ID_TEXT, wxT("Refine using full sequence:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -440,7 +454,16 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item5->Add( item10, 0, wxALIGN_CENTER|wxALL, 5 );
     fullSeqCheck = new wxCheckBox( panel, ID_FULL_SEQ_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     fullSeqCheck->SetValue(current_loo.fullSequence);
-    item5->Add( fullSeqCheck, 0, wxALIGN_CENTER|wxALL, 5 );
+    item5->Add( fullSeqCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
+
+    // align all non-structured rows?
+    wxStaticText *item90 = new wxStaticText( panel, ID_TEXT, wxT("Refine all unstructured rows:"), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item90, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxStaticText *item100 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    item5->Add( item100, 0, wxALIGN_CENTER|wxALL, 5 );
+    allUnstSeqCheck = new wxCheckBox( panel, ID_ALL_UNST_SEQ_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
+    allUnstSeqCheck->SetValue(true);
+    item5->Add( allUnstSeqCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     //  Allow extension/contraction of footprint (N-terminus)
     wxStaticText *item30 = new wxStaticText( panel, ID_TEXT, wxT("N-terminal footprint extension:"), wxDefaultPosition, wxDefaultSize, 0 );
@@ -528,67 +551,71 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
     item37->SetFont( wxFont( 10, wxROMAN, wxNORMAL, wxBOLD ) );
     wxStaticBoxSizer *item36 = new wxStaticBoxSizer( item37, wxVERTICAL );
 
-    wxFlexGridSizer *item38 = new wxFlexGridSizer( 3, 0, 0 );
+    wxFlexGridSizer *item38 = new wxFlexGridSizer( 2, 0, 0 );
     item38->AddGrowableCol( 1 );
 
     //  Allow block extension?
     int initialValue = (current_be.algMethod >= 0 && current_be.algMethod < align_refine::eGreedyExtend) ? (int) current_be.algMethod : 0;
     wxStaticText *item39 = new wxStaticText( panel, ID_TEXT, wxT("Change block model?"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item39, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    wxStaticText *item40 = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    item38->Add( item40, 0, wxALIGN_CENTER|wxALL, 5 );
     esCombo= new wxComboBox( panel, ID_BE_COMBOBOX, wxT(""), wxDefaultPosition, wxDefaultSize, sizeof(blockEditAlgStrings)/sizeof(blockEditAlgStrings[0]), blockEditAlgStrings, wxCB_READONLY );
     esCombo->SetValue(blockEditAlgStrings[initialValue]);
-    item38->Add( esCombo, 0, wxALIGN_CENTER|wxALL, 5 );
+    item38->Add( esCombo, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     //  Extend first?
     wxStaticText *item39b = new wxStaticText( panel, ID_TEXT, wxT("Extend first?"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item39b, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
-    wxStaticText *item40b = new wxStaticText( panel, ID_TEXT, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
-    item38->Add( item40b, 0, wxALIGN_CENTER|wxALL, 5 );
     extendFirstCheck = new wxCheckBox( panel, ID_BEXTEND_FIRST_CHECKBOX, wxT(""), wxDefaultPosition, wxDefaultSize, 0 );
     extendFirstCheck->SetValue(current_be.extendFirst);
-    item38->Add( extendFirstCheck, 0, wxALIGN_CENTER|wxALL, 5 );
+    item38->Add( extendFirstCheck, 0, wxALIGN_RIGHT|wxALL, 5 );
 
     //  Define a minimum block size (really only relevant for shrinking blocks...
     wxStaticText *item42 = new wxStaticText( panel, ID_TEXT, wxT("Minimum block size:"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item42, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxBoxSizer *hSizer = new wxBoxSizer(wxHORIZONTAL);
     minBlockSizeSpin = new IntegerSpinCtrl(panel,
         1, 100, 1, current_be.minBlockSize,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item38->Add(minBlockSizeSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item38->Add(minBlockSizeSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(minBlockSizeSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(minBlockSizeSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block extension/shrinkage threshold 1:  column of PSSM median score >= this value
     wxStaticText *item45 = new wxStaticText( panel, ID_TEXT, wxT("Median PSSM score threshold:"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item45, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    hSizer = new wxBoxSizer(wxHORIZONTAL);
     medianSpin = new IntegerSpinCtrl(panel,
         -20, 20, 1, current_be.median,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item38->Add(medianSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item38->Add(medianSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(medianSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(medianSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block extension/shrinkage threshold 2:  % rows w/ PSSM score >= 0 must exceed this value
     wxStaticText *item48 = new wxStaticText( panel, ID_TEXT, wxT("Voting percentage (% of rows vote to extend):"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item48, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    hSizer = new wxBoxSizer(wxHORIZONTAL);
     rawVoteSpin = new FloatingPointSpinCtrl(panel,
         0.0, 100.0, 1.0, 100.0*(1.0 - current_be.negRowsFraction),
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item38->Add(rawVoteSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item38->Add(rawVoteSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(rawVoteSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(rawVoteSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     //  Block extension/shrinkage threshold 3:  % of weight in column of PSSM median score >= 0 must exceed this value
     wxStaticText *item51 = new wxStaticText( panel, ID_TEXT, wxT("Weighted (by PSSM score) voting percentage:"), wxDefaultPosition, wxDefaultSize, 0 );
     item38->Add( item51, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    hSizer = new wxBoxSizer(wxHORIZONTAL);
     weightedVoteSpin = new FloatingPointSpinCtrl(panel,
         0.0, 100.0, 1.0, 100.0*(1.0 - current_be.negScoreFraction),
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
-    item38->Add(weightedVoteSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
-    item38->Add(weightedVoteSpin->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(weightedVoteSpin->GetTextCtrl(), 0, wxALIGN_RIGHT|wxLEFT|wxTOP|wxBOTTOM, 5);
+    hSizer->Add(weightedVoteSpin->GetSpinButton(), 0, wxALIGN_LEFT|wxRIGHT|wxTOP|wxBOTTOM, 5);
+    item38->Add(hSizer, 0, wxALIGN_RIGHT);
 
     item36->Add( item38, 0, wxALIGN_CENTER|wxALL, 5 );
 
@@ -608,7 +635,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(
 
     //  Place sub-sizers in outermost sizer.
     wxBoxSizer *item0 = new wxBoxSizer( wxVERTICAL );
-    item0->Add( item1, 0, wxALIGN_CENTER|wxALL, 5 );
+//    item0->Add( item1, 0, wxALIGN_CENTER|wxALL, 5 );
     item0->Add( item64, 0, wxALIGN_LEFT|wxALL, 5 );
     item0->Add( item3, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     item0->Add( item36, 0, wxALIGN_CENTER|wxALL, 5 );
@@ -682,6 +709,10 @@ bool BMARefinerOptionsDialog::GetParameters( GeneralRefinerParams* genl_params, 
     genl_params->nCycles = (unsigned int) nc;
 
     loo_params->fixStructures = !fixStructCheck->IsChecked();
+    if (allUnstSeqCheck->GetValue())
+        loo_params->rowsToExclude.clear();
+    else
+        loo_params->rowsToExclude = rowsToExclude;
     loo_params->fullSequence  = fullSeqCheck->IsChecked();
     result &= loopPercentSpin->GetDouble(&(loo_params->percentile));
     result &= lnoSpin->GetInteger(&lno);
@@ -743,6 +774,54 @@ void BMARefinerOptionsDialog::OnButton(wxCommandEvent& event)
     }
 }
 
+template < class C >
+inline bool VectorContains(const vector < C >& v, const C& c)
+{
+    for (unsigned int i=0; i<v.size(); ++i)
+        if (v[i] == c)
+            return true;
+    return false;
+}
+
+void BMARefinerOptionsDialog::OnCheck(wxCommandEvent& event)
+{
+    if (event.GetId() == ID_ALL_UNST_SEQ_CHECKBOX) {
+        if (!allUnstSeqCheck->GetValue()) { // if checkbox is turned off, then we need to select rows
+            map < unsigned int, unsigned int > choice2row;
+            wxArrayString choices;
+            wxArrayInt selected;
+            for (unsigned int i=0; i<rowTitles.size(); ++i) {
+                if (rowTitles[i].size() > 0) {  // only select on non-structured rows (assuming titles are set accordingly)
+                    choice2row[choices.GetCount()] = i;
+                    if (!VectorContains(rowsToExclude, i))
+                        selected.Add(choices.GetCount());
+                    choices.Add(rowTitles[i].c_str());
+                }
+            }
+            wxMultiChoiceDialog dialog(this, "Choose unstructured rows to align:", "Row Selection", choices,
+                wxCAPTION | wxOK | wxCENTRE);
+            dialog.SetSelections(selected);
+            while (dialog.ShowModal() == wxID_OK) {
+                rowsToExclude.clear();
+                selected = dialog.GetSelections();
+                // convert inclusion list -> exclusions
+                vector < bool > exclude(rowTitles.size(), true);
+                unsigned int i;
+                for (i=0; i<selected.GetCount(); ++i)
+                    exclude[choice2row.find(selected.Item(i))->second] = false;
+                for (i=0; i<rowTitles.size(); ++i)
+                    if (exclude[i] && rowTitles[i].size() > 0)
+                        rowsToExclude.push_back(i);
+                if (selected.size() == 0 && !fixStructCheck->IsChecked())
+                    ERRORMSG("Must select at least one unstructured row to refine when not refining structured rows");
+                else
+                    break;
+            }
+        }
+    } else
+        event.Skip();
+}
+
 void BMARefinerOptionsDialog::OnCombo(wxCommandEvent& event)
 {
     wxString comboValue = esCombo->GetValue();
@@ -768,6 +847,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/28 21:14:38  thiessen
+* add block and row selection mechanism to refiner
+*
 * Revision 1.10  2005/11/28 20:08:12  lanczyck
 * modify refiner defaults; reorder the LOO elements in the dialog as per curator comments
 *

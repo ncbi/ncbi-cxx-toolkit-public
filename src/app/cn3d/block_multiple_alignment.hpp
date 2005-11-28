@@ -215,6 +215,7 @@ public:
     // column is in fact an aligned block
     bool MarkBlock(unsigned int column);
     bool ClearMarks(void);  // remove all block flags
+    void GetMarkedBlockNumbers(std::vector < unsigned int > *alignedBlockNumbers) const;
 
     // this function does two things: it extracts from a multiple alignment all slave rows listed for
     // removal; and if pairwiseAlignments!=NULL, for each slave removed creates a new BlockMultipleAlignment
@@ -435,6 +436,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2005/11/28 21:14:38  thiessen
+* add block and row selection mechanism to refiner
+*
 * Revision 1.55  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *

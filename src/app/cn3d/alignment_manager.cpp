@@ -1173,8 +1173,8 @@ void AlignmentManager::RefineAlignment(void)
 
     // get info on current multiple alignment
     const BlockMultipleAlignment *multiple = GetCurrentMultipleAlignment();
-    if (multiple->NRows() < 2) {
-        ERRORMSG("AlignmentManager::RefineAlignment() - can't refine alignments with < 2 rows");
+    if (!multiple || multiple->NRows() < 2 || multiple->HasNoAlignedBlocks()) {
+        ERRORMSG("AlignmentManager::RefineAlignment() - can't refine alignments with < 2 rows or zero aligned blocks");
         return;
     }
 
@@ -1192,6 +1192,7 @@ void AlignmentManager::RefineAlignment(void)
     multiple->GetUngappedAlignedBlocks(&blocks);
     vector < unsigned int > rowOrder;
     sequenceViewer->GetCurrentDisplay()->GetRowOrder(multiple, &rowOrder);
+    vector < string > rowTitles(multiple->NRows());
 
     // fill out Seq-entry and Seq-annot based on current row ordering of the display (which may be different from BMA)
     for (unsigned int i=1; i<multiple->NRows(); ++i) {
@@ -1200,15 +1201,25 @@ void AlignmentManager::RefineAlignment(void)
         seqEntries.back()->SetSet().SetSeq_set().push_back(seq);
         CRef < CSeq_align > seqAlign(CreatePairwiseSeqAlignFromMultipleRow(multiple, blocks, rowOrder[i]));
         seqAnnots.back()->SetData().SetAlign().push_back(seqAlign);
+        if (multiple->GetSequenceOfRow(i)->identifier->pdbID.size() == 0)   // only include non-PDB sequences
+            rowTitles[i] = multiple->GetSequenceOfRow(i)->identifier->ToString();
     }
 
-    // create AlignmentUtility
+    // create AlignmentUtility and BMARefiner
     auto_ptr < struct_util::AlignmentUtility > au(new struct_util::AlignmentUtility(seqEntries, seqAnnots));
+    BMARefiner bmaRefiner;
+
+    // set blocks to realign, using marked blocks, if any; no marks -> realign all blocks
+    vector < unsigned int > marks;
+    multiple->GetMarkedBlockNumbers(&marks);
+    for (unsigned int i=0; i<marks.size(); ++i)
+        TRACEMSG("refining block " << (marks[i]+1));
+    if (marks.size() > 0)
+        bmaRefiner.SetBlocksToRealign(marks, true);
 
     // actually run the refiner
     BMARefiner::AlignmentUtilityList resultAUs;
-    BMARefiner bmaRefiner;
-    bool okay = bmaRefiner.RefineMultipleAlignment(au.get(), &resultAUs, NULL);
+    bool okay = bmaRefiner.RefineMultipleAlignment(au.get(), &resultAUs, NULL, rowTitles);
 
     if (okay) {
 
@@ -1250,6 +1261,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2005/11/28 21:14:38  thiessen
+* add block and row selection mechanism to refiner
+*
 * Revision 1.107  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
