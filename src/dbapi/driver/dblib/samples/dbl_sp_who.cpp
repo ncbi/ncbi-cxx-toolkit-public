@@ -41,11 +41,7 @@ int main()
     try {
         CDBLibContext my_context;
 
-#ifdef NCBI_OS_MSWIN
-        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
-#else
         CDB_Connection* con = my_context.Connect("SCHUMANN", "anyone", "allowed", 0);
-#endif
 
         CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
         rcmd->Send();
@@ -95,6 +91,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/11/28 16:58:06  ssikorsk
+ * Do not test dblib with MS SQL Server. It is not supposed to work.
+ *
  * Revision 1.12  2005/08/16 11:13:27  ssikorsk
  * Use SCHUMANN instead of BARTOK as a Sybase server.
  *
