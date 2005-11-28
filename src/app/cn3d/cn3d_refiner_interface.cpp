@@ -310,6 +310,8 @@ bool BMARefiner::ConfigureRefiner(wxWindow* parent, const vector < string >& row
     //  an existing refiner engine).
     loo.nExt = 20;
     loo.cExt = 20;
+    loo.percentile = 1.0;
+    loo.extension = 10;
 
     //  By default, turn off block editing.  (Not changing in default BEP ctor in
     //  case something else assumes the default is true.)
@@ -507,7 +509,7 @@ BMARefinerOptionsDialog::BMARefinerOptionsDialog(wxWindow* parent,
     wxStaticText *item15 = new wxStaticText( panel, ID_TEXT, wxT("Loop percentile:"), wxDefaultPosition, wxDefaultSize, wxALIGN_CENTRE );
     item5->Add( item15, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     loopPercentSpin = new FloatingPointSpinCtrl(panel,
-        0.0, 100.0, 0.5, 100.0*current_loo.percentile,
+        0.0, 100.0, 0.1, current_loo.percentile,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item5->Add(loopPercentSpin->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -725,7 +727,6 @@ bool BMARefinerOptionsDialog::GetParameters( GeneralRefinerParams* genl_params, 
     loo_params->seed = (unsigned int) sd;
     loo_params->extension = (unsigned int) lext;
     loo_params->cutoff = (unsigned int) cut;
-    loo_params->percentile /= 100.0;
 
     wxString comboValue = esCombo->GetValue();
     bool doExtend = (comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtend] || comboValue == blockEditAlgStrings[(int)align_refine::eSimpleExtendAndShrink]);
@@ -847,6 +848,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/11/28 22:43:26  thiessen
+* adjust block aligner parameter defaults
+*
 * Revision 1.11  2005/11/28 21:14:38  thiessen
 * add block and row selection mechanism to refiner
 *

@@ -86,7 +86,7 @@ private:
 BlockAligner::BlockAligner(void)
 {
     // default options
-    currentOptions.loopPercentile = 0.6;
+    currentOptions.loopPercentile = 1.0;
     currentOptions.loopExtension = 10;
     currentOptions.loopCutoff = 0;
     currentOptions.globalAlignment = false;
@@ -402,7 +402,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxStaticText *item4 = new wxStaticText( panel, ID_TEXT, wxT("Loop percentile:"), wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item4, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     fpPercent = new FloatingPointSpinCtrl(panel,
-        0.0, 100.0, 0.6, init.loopPercentile,
+        0.0, 100.0, 0.1, init.loopPercentile,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(fpPercent->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -512,6 +512,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/11/28 22:43:25  thiessen
+* adjust block aligner parameter defaults
+*
 * Revision 1.40  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
