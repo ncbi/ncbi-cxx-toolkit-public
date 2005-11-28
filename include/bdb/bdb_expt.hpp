@@ -127,24 +127,29 @@ public:
         eTransInProgress,
         eNull,
         eQueryError,
-        eQuerySyntaxError
+        eQuerySyntaxError,
+        eCannotOpenOverflowFile,
+        eOverflowFileIO
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eOverflow:          return "eOverflow";
-        case eType:              return "eType";
-        case eIdxSearch:         return "eIdxSearch";
-        case eInvalidValue:      return "eInvalidValue";
-        case eInvalidOperation:  return "eInvalidOperation";
-        case eInvalidType:  	 return "eInvalidType";
-        case eNull:              return "eNull";
-        case eTransInProgress:   return "eTransInProgress";
-        case eQueryError:        return "eQueryError";
-        case eQuerySyntaxError:  return "eQuerySyntaxError";
-        default:                 return  CException::GetErrCodeString();
+        case eOverflow:                return "eOverflow";
+        case eType:                    return "eType";
+        case eIdxSearch:               return "eIdxSearch";
+        case eInvalidValue:            return "eInvalidValue";
+        case eInvalidOperation:        return "eInvalidOperation";
+        case eInvalidType:  	       return "eInvalidType";
+        case eNull:                    return "eNull";
+        case eTransInProgress:         return "eTransInProgress";
+        case eQueryError:              return "eQueryError";
+        case eQuerySyntaxError:        return "eQuerySyntaxError";
+        case eCannotOpenOverflowFile:  return "eCannotOpenOverflowFile";
+        case eOverflowFileIO:          return "eOverflowFileIO";
+
+        default: return  CException::GetErrCodeString();
         }
     }
 
@@ -189,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/11/28 15:17:16  kuznets
+ * Added error codes for overflow file IO
+ *
  * Revision 1.19  2005/11/09 14:02:35  kuznets
  * +IsBufferSmall()
  *
