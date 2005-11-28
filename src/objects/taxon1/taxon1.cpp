@@ -1370,7 +1370,8 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
             }
         }
         // Partial tree is build, make a residue
-        if( pIt->GoRoot() ) {
+        if( tPartTree.GetRoot() ) {
+            pIt->GoRoot();
             bHasSiblings = true;
             if( pIt->GoChild() ) {
                 while( !pIt->GoSibling() ) {
@@ -1942,6 +1943,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.36  2005/11/28 18:55:23  domrach
+ * Checking of partial tree root corrected
+ *
  * Revision 6.35  2005/11/28 17:15:37  domrach
  * Check for empty partial tree
  *
