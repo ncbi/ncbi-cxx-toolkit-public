@@ -1274,6 +1274,7 @@ public:
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CSymLink --
@@ -1331,6 +1332,47 @@ public:
     virtual bool Copy(const string& new_path, TCopyFlags flags = fCF_Default,
                       size_t buf_size = 0);
 };
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CFileUtil --
+///
+/// Utility functions.
+
+class NCBI_XNCBI_EXPORT CFileUtil
+{
+public:
+    /// Get disk space information.
+    ///
+    /// Get information for the user associated with the calling thread only.
+    /// If per-user quotas are in use, that some returned values may be less
+    /// than the total number of free/total bytes on the disk.
+    /// @param path
+    ///   String that specifies filesystem for which information
+    ///   is to be returned. 
+    ///   Unix:
+    ///       The path name to any file/dir withing filesystem.
+    ///   MS Windows:
+    ///       The root directory of the disk, or UNC name. It must include
+    ///       a trailing backslash (for example, \\MyServer\MyShare\, C:\).
+    ///   The "." can be used to get disk space on current disk.
+    /// @param free
+    ///   Pointer to a variable that receives the amount of free space.
+    /// @param total
+    ///   Pointer to a variable that receives the total number of bytes
+    ///   on the disk.
+    /// @return
+    ///   TRUE if operation successful; FALSE, otherwise.
+    ///   In the last case, the values of requested parameters are undefined.
+    /// @sa 
+    ///   GetDiskInformation
+    static bool GetDiskSpace(const string& path,
+                             Uint8* free, Uint8* total = 0);
+};
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2479,6 +2521,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2005/11/28 16:14:38  ivanov
+ * + CFileUtil::GetDiskSpace
+ *
  * Revision 1.66  2005/08/11 11:27:17  ivanov
  * CDirEntry::GetObjectType -- return "eUnknown" for CDirEntry
  *

@@ -56,6 +56,7 @@ typedef unsigned int mode_t;
 #  include <fcntl.h>
 #  include <sys/time.h>
 #  include <sys/mman.h>
+#  include <sys/statvfs.h>
 #  include <utime.h>
 #  include <pwd.h>
 #  include <grp.h>
@@ -3138,6 +3139,30 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
 
 //////////////////////////////////////////////////////////////////////////////
 //
+// CFileUtil
+//
+
+bool CFileUtil::GetDiskSpace(const string& path,
+                             Uint8* free, Uint8* total)
+{
+#if defined(NCBI_OS_MSWIN)
+    return ::GetDiskFreeSpaceEx(path.c_str(),
+                                (PULARGE_INTEGER)free,
+                                (PULARGE_INTEGER)total, 0) != 0;
+#elif defined(NCBI_OS_UNIX)
+    struct statvfs st;
+    if (statvfs(path.c_str(), &st) == 0) {
+        *free = (Uint8)st.f_frsize * st.f_bavail;
+        *total = (Uint8)st.f_bsize * st.f_blocks;
+        return true;
+    }
+#endif
+    return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
 // CFileDeleteList / CFileDeleteAtExit
 //
 
@@ -3745,6 +3770,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.126  2005/11/28 16:14:36  ivanov
+ * + CFileUtil::GetDiskSpace
+ *
  * Revision 1.125  2005/09/29 13:35:17  ivanov
  * Define s_LastErrorMessage() only on MS Windows
  *
