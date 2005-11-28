@@ -450,19 +450,10 @@ bool CNetCacheClient::IsLocked(const string& key)
 
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
-        if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
-            string msg = "Server error:";
-            if (NStr::strncmp(answer.c_str(), "ERR:", 4) == 0) {
-                answer.erase(0, 4);
-            }
-            if (NStr::strncmp(answer.c_str(), "BLOB not found", 14) == 0) {
-                return false;
-            }
-            msg += answer;
-            NCBI_THROW(CNetCacheException, eServerError, msg);
+        bool blob_found = x_CheckErrTrim(answer);
+        if (!blob_found) {
+            return false;
         }
-
-
         const char* ans = answer.c_str();
         if (*ans == '1') {
             locked = true;
@@ -475,6 +466,29 @@ bool CNetCacheClient::IsLocked(const string& key)
     return locked;
 }
 
+string CNetCacheClient::GetOwner(const string& key)
+{
+    CheckConnect(key);
+    CSockGuard sg(*m_Sock);
+
+    string& request = m_Tmp;
+    MakeCommandPacket(&request, "GBOW ");
+    request += key;
+    WriteStr(request.c_str(), request.length() + 1);
+
+    WaitForServer();
+
+    string& answer = m_Tmp;
+    bool res = ReadStr(*m_Sock, &answer);
+    if (res) {
+        x_CheckErrTrim(answer);
+        return answer;
+    } else {
+        NCBI_THROW(CNetServiceException, 
+                   eCommunicationError, "Communication error");
+    }
+    return kEmptyStr;
+}
 
 IReader* CNetCacheClient::GetData(const string& key, 
                                   size_t*       blob_size,
@@ -507,21 +521,12 @@ IReader* CNetCacheClient::GetData(const string& key,
     string answer;
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
-        if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
-            string msg = "Server error:";
-            if (NStr::strncmp(answer.c_str(), "ERR:", 4) == 0) {
-                answer.erase(0, 4);
-            }
-            if (NStr::strncmp(answer.c_str(), "BLOB not found", 14) == 0) {
-                return NULL;
-            }
-            if (NStr::strncmp(answer.c_str(), "BLOB locked", 11) == 0) {
-                msg += answer;
-                NCBI_THROW(CNetCacheException, eBlobLocked, msg);
-            }
-            msg += answer;
-            NCBI_THROW(CNetCacheException, eServerError, msg);
+        bool blob_found = x_CheckErrTrim(answer);
+
+        if (!blob_found) {
+            return NULL;
         }
+
         if (blob_size) {
             string::size_type pos = answer.find("SIZE=");
             if (pos != string::npos) {
@@ -738,6 +743,28 @@ void CNetCacheClient::TransmitBuffer(const char* buf, size_t len)
     err_wrt.Flush();
 }
 
+bool CNetCacheClient::x_CheckErrTrim(string& answer)
+{
+    if (NStr::strncmp(answer.c_str(), "OK:", 3) == 0) {
+        answer.erase(0, 3);
+    } else {
+        string msg = "Server error:";
+        if (NStr::strncmp(answer.c_str(), "ERR:", 4) == 0) {
+            answer.erase(0, 4);
+        }
+        if (NStr::strncmp(answer.c_str(), "BLOB not found", 14) == 0) {
+            return false;
+        }
+        if (NStr::strncmp(answer.c_str(), "BLOB locked", 11) == 0) {
+            msg += answer;
+            NCBI_THROW(CNetCacheException, eBlobLocked, msg);
+        }
+
+        msg += answer;
+        NCBI_THROW(CNetCacheException, eServerError, msg);
+    }
+    return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -947,6 +974,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/11/28 15:22:22  kuznets
+ * +GetOwner() - get BLOB's owner
+ *
  * Revision 1.54  2005/11/16 17:40:25  kuznets
  * +GetServerVersionInfo()
  *

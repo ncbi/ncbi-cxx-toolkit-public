@@ -406,6 +406,26 @@ bool CNetCacheClient_LB::IsLocked(const string& key)
     return false;
 }
 
+string CNetCacheClient_LB::GetOwner(const string& key)
+{
+    if (!key.empty()) {
+        CNetCache_Key blob_key(key);
+        ++m_Requests;
+        if ((blob_key.hostname == m_Host) &&
+            (blob_key.port == m_Port)) {
+
+            CNC_BoolGuard bg(&m_StickToHost);
+            return TParent::GetOwner(key);
+        } else {
+            CNetCacheClient cl(m_ClientName);
+            cl.SetClientNameComment(m_ClientNameComment);
+            return cl.GetOwner(key);
+        }
+    } else {
+        _ASSERT(0);
+    }
+    return kEmptyStr;
+}
 
 void CNetCacheClient_LB::Remove(const string& key)
 {
@@ -492,6 +512,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/11/28 15:22:22  kuznets
+ * +GetOwner() - get BLOB's owner
+ *
  * Revision 1.27  2005/11/04 19:10:41  kuznets
  * Fixed bug with passing no-wait flag to the server
  *

@@ -178,6 +178,10 @@ public:
     virtual
     bool IsLocked(const string& key);
 
+    /// Retrieve BLOB's owner information as registered by the server
+    virtual
+    string GetOwner(const string& key);
+
     /// Status of GetData() call
     /// @sa GetData
     enum EReadResult {
@@ -292,6 +296,13 @@ protected:
 
     friend class CNetCache_WriterErrCheck;
 
+protected:
+    /// Check if server output starts with "ERR:", throws an exception
+    /// "OK:", "ERR:" prefixes are getting trimmed
+    ///
+    /// @return false if Blob not found error detected
+    bool x_CheckErrTrim(string& answer);
+
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
@@ -386,6 +397,10 @@ public:
     virtual
     bool IsLocked(const string& key);
 
+    virtual
+    string GetOwner(const string& key);
+
+
     virtual 
     void Remove(const string& key);
     virtual 
@@ -400,6 +415,7 @@ public:
 protected:
     virtual 
     void CheckConnect(const string& key);
+
 private:
     CNetCacheClient_LB(const CNetCacheClient_LB&);
     CNetCacheClient_LB& operator=(const CNetCacheClient_LB&);
@@ -557,6 +573,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/11/28 15:21:54  kuznets
+ * +GetOwner() - get BLOB's owner
+ *
  * Revision 1.45  2005/11/16 17:39:15  kuznets
  * +GetServerVersionInfo()
  *
