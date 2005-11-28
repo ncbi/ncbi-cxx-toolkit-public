@@ -188,6 +188,17 @@ public:
                            int            version,
                            const string&  subkey) = 0;
 
+    /// Retrieve BLOB owner
+    ///
+    /// @param owner
+    ///    BLOB owner (as used by method Store)
+    ///
+    /// @sa Store, GetWriteStream
+    virtual void GetBlobOwner(const string&  key,
+                              int            version,
+                              const string&  subkey,
+                              string*        owner) = 0;
+
     /// Fetch the BLOB
     ///
     /// @param key
@@ -231,6 +242,7 @@ public:
         char*      buf;
         size_t     buf_size;
         size_t     blob_size;
+        bool       blob_found;
     };
 
     /// Get BLOB access using BlobAccessDescr.
@@ -367,6 +379,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/11/28 15:16:07  kuznets
+ * +GetBlobOwner()
+ *
  * Revision 1.18  2005/08/01 16:50:09  kuznets
  * Added BLOB's owner to interface spec
  *
