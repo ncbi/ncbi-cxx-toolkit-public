@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.402 2005/11/17 19:08:20 ucko Exp $
+#  $Id: configure.ac,v 1.403 2005/11/28 19:09:02 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1924,7 +1924,8 @@ fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
-AC_CHECK_HEADERS(dlfcn.h ieeefp.h poll.h sys/sockio.h sys/sysinfo.h)
+AC_CHECK_HEADERS(dlfcn.h ieeefp.h poll.h sys/mount.h sys/sockio.h \
+                 sys/statvfs.h sys/sysinfo.h sys/vfs.h)
 # for FreeTDS 0.6x
 AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h \
                  netinet/in.h netinet/tcp.h \
@@ -2126,8 +2127,8 @@ AC_SEARCH_LIBS(sched_yield, rt,
 
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(atoll lchown getpagesize getpwuid gettimeofday getuid \
-               asprintf vasprintf vsnprintf strcasecmp strdup strtok_r sysmp \
-               timegm utimes lutimes)
+               asprintf vasprintf vsnprintf statfs statvfs \
+               strcasecmp strdup strtok_r sysmp timegm utimes lutimes)
 AC_LANG_POP(C)
 
 # We want the program to return 0, which is *false* in C.  Also, since
