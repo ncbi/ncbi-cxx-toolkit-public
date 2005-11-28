@@ -232,7 +232,7 @@ public:
                       const string&              blob_key,
                       int                        version,
                       const string&              subkey,
-                      CBDB_BLobStream*           blob_stream,
+//                      CBDB_BLobStream*           blob_stream,
                       SCacheDB&                  blob_db,
                       SCache_AttrDB&             attr_db,
                       int                        stamp_subkey,
@@ -244,7 +244,7 @@ public:
       m_BlobKey(blob_key),
       m_Version(version),
       m_SubKey(subkey),
-      m_BlobStream(blob_stream),
+//      m_BlobStream(blob_stream),
       m_BlobDB(blob_db),
       m_AttrDB(attr_db),
       m_Buffer(0),
@@ -266,42 +266,103 @@ public:
 
     virtual ~CBDB_CacheIWriter()
     {
-		if (!m_AttrUpdFlag || m_Buffer != 0) {
-			// Dumping the buffer
-			CFastMutexGuard guard(m_Cache.m_DB_Lock);
+        try {
+            bool upd_statistics = false;
+		    if (!m_AttrUpdFlag || m_Buffer != 0) {
 
-			CBDB_Transaction trans(*m_AttrDB.GetEnv(), BDB_TRAN_SYNC);
-			m_AttrDB.SetTransaction(&trans);
-			m_BlobDB.SetTransaction(&trans);
-
-			if (m_Buffer) {
-				_TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
-				m_BlobStream->SetTransaction(&trans);
-				m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
-                if (m_WSync == CBDB_Cache::eWriteSync) {
-    				m_BlobDB.Sync();
+			    // Dumping the buffer
+                try {
+                    if (m_Buffer) {
+                        m_Cache.Store(m_BlobKey,
+                                      m_Version,
+                                      m_SubKey,
+                                      m_Buffer,
+                                      m_BytesInBuffer,
+                                      m_TTL,
+                                      m_Owner);
+				        delete[] m_Buffer; m_Buffer = 0;
+                    }
+                } catch (CBDB_Exception& ) {
+                    m_Cache.KillBlob(m_BlobKey.c_str(), 
+                                     m_Version, 
+                                     m_SubKey.c_str(), 1);
+                    throw;
                 }
-				delete[] m_Buffer;
-			}
+/*
+			    CFastMutexGuard guard(m_Cache.m_DB_Lock);
 
-			if (!m_AttrUpdFlag) {
-				x_UpdateAttributes(trans);
-			}
+                try {
+                    CBDB_Cache::CCacheTransaction trans(m_Cache);
 
-			trans.Commit();
+			        if (m_Buffer) {
+				        _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+				        m_BlobStream->SetTransaction(&trans);
+				        m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
+                        if (m_WSync == CBDB_Cache::eWriteSync) {
+    				        m_BlobDB.Sync();
+                        }
+				        delete[] m_Buffer; m_Buffer = 0;
+			        }
 
-            m_Cache.x_PerformCheckPointNoLock(m_BytesInBuffer);
-		}
+			        if (!m_AttrUpdFlag) {
+				        x_UpdateAttributes(trans);
+			        }
 
-        delete m_BlobStream;
+			        trans.Commit();
 
-        // statistics
-        //
+                    m_Cache.x_PerformCheckPointNoLock(m_BytesInBuffer);
 
-        m_Cache.m_Statistics.AddStore(m_BlobStore,
-                                      m_BlobUpdate,
-                                      m_BlobSize,
-                                      m_Overflow);
+                } catch (CBDB_Exception& ) {
+                    m_Cache.KillBlobNoLock(m_BlobKey.c_str(), 
+                                          m_Version, 
+                                          m_SubKey.c_str(), 1);
+                    throw;
+                }
+*/
+		    }
+
+//            delete m_BlobStream;   m_BlobStream = 0;
+
+            if (m_OverflowFile) {
+                if (m_OverflowFile->is_open()) {
+                    m_OverflowFile->close();
+			        CFastMutexGuard guard(m_Cache.m_DB_Lock);
+                    CBDB_Cache::CCacheTransaction trans(m_Cache);
+                    try {
+                        x_UpdateAttributes(trans);
+                    } catch (exception& ) {
+                        m_Cache.KillBlob(m_BlobKey.c_str(),
+                                         m_Version,
+                                         m_SubKey.c_str(), 1);
+                        throw;
+                    }
+                    upd_statistics = true;
+                }
+                delete m_OverflowFile; m_OverflowFile = 0;
+            }
+
+            // statistics
+            //
+            if (upd_statistics) {
+                try {
+                    CFastMutexGuard guard(m_Cache.m_DB_Lock);
+                    m_Cache.m_Statistics.AddStore(m_BlobStore,
+                                                m_BlobUpdate,
+                                                m_BlobSize,
+                                                m_Overflow);
+                } catch (exception& ) {
+                    // ignore non critical exceptions
+                }
+            }
+
+        } catch (exception & ex) {
+            ERR_POST("Exception in ~CBDB_CacheIWriter() : " << ex.what()
+                     << " " << m_BlobKey);
+            // final attempt to avoid leaks
+            delete[] m_Buffer;
+//            delete   m_BlobStream;
+            delete   m_OverflowFile;
+        }
     }
 
     virtual ERW_Result Write(const void*  buf, 
@@ -315,9 +376,50 @@ public:
         if (count == 0)
             return eRW_Success;
 		m_AttrUpdFlag = false;
-
         m_BlobSize += count;
 
+        if (m_Buffer) {
+            unsigned int new_buf_length = m_BytesInBuffer + count;
+            if (new_buf_length <= m_Cache.GetOverflowLimit()) {
+                ::memcpy(m_Buffer + m_BytesInBuffer, buf, count);
+                m_BytesInBuffer = new_buf_length;
+                if (bytes_written) {
+                    *bytes_written = count;
+                }
+
+                return eRW_Success;
+            } else {
+                // Buffer overflow. Writing to file.
+                OpenOverflowFile();
+                if (m_OverflowFile) {
+                    if (m_BytesInBuffer) {
+                        try {
+                            x_WriteOverflow((const char*)m_Buffer,
+                                             m_BytesInBuffer);
+                        } 
+                        catch (exception& ) {
+                            delete[] m_Buffer; m_Buffer = 0;
+                            delete m_OverflowFile; m_OverflowFile = 0;
+                            throw;
+                        }
+                    }
+                    delete[] m_Buffer; m_Buffer = 0; m_BytesInBuffer = 0;
+                }
+            }
+
+        }
+        if (m_OverflowFile) {
+
+            _ASSERT(m_Buffer == 0);
+
+            x_WriteOverflow((char*)buf, count);
+            if (bytes_written) {
+                *bytes_written = count;
+            }
+            return eRW_Success;
+        }
+
+/*
         CFastMutexGuard guard(m_Cache.m_DB_Lock);
 
         unsigned int new_buf_length = m_BytesInBuffer + count;
@@ -337,8 +439,8 @@ public:
                 OpenOverflowFile();
                 if (m_OverflowFile) {
                     if (m_BytesInBuffer) {
-                        m_OverflowFile->write((char*)m_Buffer,
-                                              m_BytesInBuffer);
+                        x_WriteOverflow((const char*)m_Buffer,
+                                        m_BytesInBuffer);
                     }
                     delete[] m_Buffer;
                     m_Buffer = 0;
@@ -348,15 +450,13 @@ public:
         }
 
         if (m_OverflowFile) {
-            m_OverflowFile->write((char*)buf, count);
-            if ( m_OverflowFile->good() ) {
-                if (bytes_written) {
-                    *bytes_written = count;
-                }
-                return eRW_Success;
+            x_WriteOverflow((char*)buf, count);
+            if (bytes_written) {
+                *bytes_written = count;
             }
+            return eRW_Success;
         }
-
+*/
         return eRW_Error;
     }
 
@@ -367,60 +467,151 @@ public:
             return eRW_Success;
 
         m_Flushed = true;
-
         unsigned flushed_bytes = 0;
-        // Dumping the buffer
-        CFastMutexGuard guard(m_Cache.m_DB_Lock);
 
-        CBDB_Transaction trans(*m_AttrDB.GetEnv(), BDB_TRAN_SYNC);
-        m_AttrDB.SetTransaction(&trans);
-        m_BlobDB.SetTransaction(&trans);
+        // Dumping the buffer
 
         if (m_Buffer) {
-            _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
-            m_BlobStream->SetTransaction(&trans);
-            m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
-            delete[] m_Buffer;
-            m_Buffer = 0;
-            flushed_bytes = m_BytesInBuffer;
+
+            _ASSERT(m_OverflowFile == 0);
+
+            try {
+                m_Cache.Store(m_BlobKey,
+                                m_Version,
+                                m_SubKey,
+                                m_Buffer,
+                                m_BytesInBuffer,
+                                m_TTL,
+                                m_Owner);
+            } 
+            catch (exception&) {
+    			delete[] m_Buffer; m_Buffer = 0;
+                throw;
+            }
+
+			delete[] m_Buffer; m_Buffer = 0;
             m_BytesInBuffer = 0;
-        }
-        if (m_WSync == CBDB_Cache::eWriteSync) {
-    		m_BlobDB.Sync();
+            return eRW_Success;
         }
 
         if ( m_OverflowFile ) {
-            m_OverflowFile->flush();
-            if ( m_OverflowFile->bad() ) {
-                return eRW_Error;
-            }
-        }
-		
-		x_UpdateAttributes(trans);
 
-        trans.Commit();
+            _ASSERT(m_Buffer == 0);
+
+            try {
+                m_OverflowFile->flush();
+                if ( m_OverflowFile->bad() ) {
+                    m_OverflowFile->close();
+                    BDB_THROW(eOverflowFileIO, 
+                              "Error trying to flush an overflow file");
+                }
+
+                CFastMutexGuard guard(m_Cache.m_DB_Lock);
+                CBDB_Cache::CCacheTransaction trans(m_Cache);
+		        x_UpdateAttributes(trans);
+                trans.Commit();
+
+                try {
+                    m_Cache.m_Statistics.AddStore(m_BlobStore,
+                                                    m_BlobUpdate,
+                                                    m_BlobSize,
+                                                    m_Overflow);
+                } catch (exception&) {
+                    // ignore
+                }
+
+            } catch (CBDB_Exception& ) {
+                m_Cache.KillBlob(m_BlobKey.c_str(),
+                                 m_Version,
+                                 m_SubKey.c_str(), 1);
+                throw;
+            }
+
+
+        }
+/*
+        CFastMutexGuard guard(m_Cache.m_DB_Lock);
+
+        try {
+            CBDB_Cache::CCacheTransaction trans(m_Cache);
+
+            if (m_Buffer) {
+                _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+                m_BlobStream->SetTransaction(&trans);
+                m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
+                delete[] m_Buffer; m_Buffer = 0;
+                flushed_bytes = m_BytesInBuffer;
+                m_BytesInBuffer = 0;
+            }
+            if (m_WSync == CBDB_Cache::eWriteSync) {
+    		    m_BlobDB.Sync();
+            }
+
+            if ( m_OverflowFile ) {
+                m_OverflowFile->flush();
+                if ( m_OverflowFile->bad() ) {
+                    m_OverflowFile->close();
+                    BDB_THROW(eOverflowFileIO, 
+                              "Error trying to flush an overflow file");
+                }
+            }
+    		
+		    x_UpdateAttributes(trans);
+            trans.Commit();
+
+        } catch (CBDB_Exception& ) {
+            m_Cache.KillBlobNoLock(m_BlobKey.c_str(),
+                                   m_Version,
+                                   m_SubKey.c_str(), 1);
+            throw;
+        }
+
 
         m_Cache.x_PerformCheckPointNoLock(flushed_bytes);
-
+*/
         return eRW_Success;
     }
 private:
     void OpenOverflowFile()
     {
-        string path;
-        s_MakeOverflowFileName(path, m_Path, m_BlobKey, m_Version, m_SubKey);
-        _TRACE("LC: Making overflow file " << path);
+        s_MakeOverflowFileName(
+            m_OverflowFilePath, m_Path, m_BlobKey, m_Version, m_SubKey);
+
+        _TRACE("LC: Making overflow file " << m_OverflowFilePath);
         m_OverflowFile =
-            new CNcbiOfstream(path.c_str(),
+            new CNcbiOfstream(m_OverflowFilePath.c_str(),
                               IOS_BASE::out |
                               IOS_BASE::trunc |
                               IOS_BASE::binary);
-        if (!m_OverflowFile->is_open()) {
-            ERR_POST("LC Error:Cannot create overflow file " << path);
-            delete m_OverflowFile;
-            m_OverflowFile = 0;
+        if (!m_OverflowFile->is_open() || m_OverflowFile->bad()) {
+            delete m_OverflowFile; m_OverflowFile = 0;
+            string err = "LC: Cannot create overflow file ";
+            err += m_OverflowFilePath;
+            BDB_THROW(eCannotOpenOverflowFile, err);
         }
         m_Overflow = 1;
+    }
+
+    void x_WriteOverflow(const char* buf, streamsize count)
+    {
+        _ASSERT(m_OverflowFile);
+
+        if (!m_OverflowFile->is_open()) {
+            BDB_THROW(eOverflowFileIO, 
+                 "LC: Attempt to write to a non-open overflow file");
+        }
+        try {
+            m_Cache.WriteOverflow(*m_OverflowFile, 
+                                   m_OverflowFilePath, 
+                                   buf, count);
+        }
+        catch (exception&) {
+            // any error here is critical to the BLOB storage integrity
+            // if file IO error happens we delete BLOB altogether
+            m_Cache.KillBlob(
+                m_BlobKey.c_str(), m_Version, m_SubKey.c_str(), 1);
+            throw;
+        }
     }
 
 	void x_UpdateAttributes(CBDB_Transaction& trans)
@@ -505,14 +696,15 @@ private:
     string                m_BlobKey;
     int                   m_Version;
     string                m_SubKey;
-    CBDB_BLobStream*      m_BlobStream;
+//    CBDB_BLobStream*      m_BlobStream;
 
     SCacheDB&             m_BlobDB;
     SCache_AttrDB&        m_AttrDB;
 
-    unsigned char*        m_Buffer;
-    unsigned int          m_BytesInBuffer;
-    CNcbiOfstream*        m_OverflowFile;
+    unsigned char*           m_Buffer;
+    unsigned int             m_BytesInBuffer;
+    CNcbiOfstream*           m_OverflowFile;
+    string                   m_OverflowFilePath;
 
     int                   m_StampSubKey;
 	bool                  m_AttrUpdFlag; ///< Falgs attributes are up to date
@@ -651,7 +843,7 @@ void SBDB_CacheStatistics::ConvertToRegistry(IRWRegistry* reg) const
              NStr::UIntToString(blobs_purge_deleted_total), 0,
              "Total number of BLOBs deletes by garbage collector");
     reg->Set(sect_stat, "blobs_size_total",
-             NStr::UIntToString(blobs_size_total), 0,
+             NStr::UIntToString(unsigned(blobs_size_total)), 0,
              "Total size of all BLOBs ever stored");
     reg->Set(sect_stat, "blob_size_max_total",
              NStr::UIntToString(blob_size_max_total), 0,
@@ -1145,6 +1337,25 @@ void CBDB_Cache::GetStatistics(SBDB_CacheStatistics* cache_stat) const
     *cache_stat = m_Statistics;
 }
 
+void CBDB_Cache::KillBlobNoLock(const char*    key,
+                                int            version,
+                                const char*    subkey,
+                                int            overflow)
+{
+    CCacheTransaction trans(*this);
+    x_DropBlob(key, version, subkey, overflow);
+    trans.Commit();
+}
+
+void CBDB_Cache::KillBlob(const char*    key,
+                          int            version,
+                          const char*    subkey,
+                          int            overflow)
+{
+    CFastMutexGuard guard(m_DB_Lock);
+    KillBlobNoLock(key, version, subkey, overflow);
+}
+
 void CBDB_Cache::DropBlob(const string&  key,
                           int            version,
                           const string&  subkey,
@@ -1180,13 +1391,12 @@ void CBDB_Cache::DropBlob(const string&  key,
 
             }
 
-            if (!overflow) {
-                m_CacheDB->key = key;
-                m_CacheDB->version = version;
-                m_CacheDB->subkey = subkey;
+            m_CacheDB->key = key;
+            m_CacheDB->version = version;
+            m_CacheDB->subkey = subkey;
 
-                m_CacheDB->Delete(CBDB_RawFile::eIgnoreError);
-            }
+            m_CacheDB->Delete(CBDB_RawFile::eIgnoreError);
+
         } else {
             return;
         }
@@ -1195,13 +1405,7 @@ void CBDB_Cache::DropBlob(const string&  key,
     }}
 
     if (overflow) {
-        string path;
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
-
-        CDirEntry entry(path);
-        if (entry.Exists()) {
-            entry.Remove();
-        }
+        x_DropOverflow(key.c_str(), version, subkey.c_str());
     }
 
 }
@@ -1224,12 +1428,12 @@ void CBDB_Cache::Store(const string&  key,
     } else {
         DropBlob(key, version, subkey, true /*update*/);
     }
+    unsigned overflow = 0, old_overflow = 0;
 
+    {{
     CFastMutexGuard guard(m_DB_Lock);
 
     CCacheTransaction trans(*this);
-
-    unsigned overflow = 0;
 
     if (size < GetOverflowLimit()) {  // inline BLOB
 
@@ -1249,11 +1453,12 @@ void CBDB_Cache::Store(const string&  key,
                                    IOS_BASE::out |
                                    IOS_BASE::trunc |
                                    IOS_BASE::binary);
-        if (!oveflow_file.is_open()) {
-            ERR_POST("LC Error:Cannot create overflow file " << path);
-            return;
+        if (!oveflow_file.is_open() || oveflow_file.bad()) {
+            string err = "LC: Cannot create overflow file ";
+            err += path;
+            BDB_THROW(eCannotOpenOverflowFile, err);
         }
-        oveflow_file.write((char*)data, size);
+        WriteOverflow(oveflow_file, path, (const char*)data, size);
         overflow = 1;
     }
 
@@ -1283,6 +1488,8 @@ void CBDB_Cache::Store(const string&  key,
     cur.From << key << version << subkey;
 
     if (cur.Fetch() == eBDB_Ok) {
+        old_overflow = m_CacheAttrDB->overflow;
+
         m_CacheAttrDB->time_stamp = (unsigned)curr;
         m_CacheAttrDB->overflow = overflow;
         m_CacheAttrDB->ttl = time_to_live;
@@ -1296,7 +1503,6 @@ void CBDB_Cache::Store(const string&  key,
 
         blob_updated = 1;
         access_type = eBlobUpdate;
-
     } else {
         m_CacheAttrDB->key = key;
         m_CacheAttrDB->version = version;
@@ -1332,6 +1538,18 @@ void CBDB_Cache::Store(const string&  key,
         x_PerformCheckPointNoLock(size);
     }
 
+    }}
+
+
+    // check if BLOB shrinked in size but was an overflow
+    // and we need to delete the overflow file
+    //
+    if (overflow != old_overflow) {
+        if (old_overflow != 0) {
+            x_DropOverflow(key.c_str(), version, subkey.c_str());
+        }
+    }
+
 }
 
 
@@ -1358,6 +1576,25 @@ size_t CBDB_Cache::GetSize(const string&  key,
 
     return x_GetBlobSize(key.c_str(), version, subkey.c_str());
 }
+
+void CBDB_Cache::GetBlobOwner(const string&  key,
+                              int            version,
+                              const string&  subkey,
+                              string*        owner)
+{
+    _ASSERT(owner);
+
+    CFastMutexGuard guard(m_DB_Lock);
+
+    bool ret = x_FetchBlobAttributes(key, version, subkey);
+    if (ret == false) {
+        owner->erase();
+        return;
+    }
+
+    m_CacheAttrDB->owner_name.ToString(*owner);
+}
+
 
 bool CBDB_Cache::HasBlobs(const string&  key,
                           const string&  subkey)
@@ -1546,6 +1783,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     _ASSERT(blob_descr);
     blob_descr->reader = 0;
     blob_descr->blob_size = 0;
+    blob_descr->blob_found = false;
 
 	EBDB_ErrCode ret;
 
@@ -1573,6 +1811,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
                                key, version, subkey,
                                blob_descr->blob_size);
     if (blob_descr->reader) {
+        blob_descr->blob_found = true;
         return;
     }
 
@@ -1582,33 +1821,37 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     m_CacheDB->version = version;
     m_CacheDB->subkey = subkey;
 
+    if (blob_descr->buf && blob_descr->buf_size) {
+        // use speculative read (hope provided buffer is sufficient)
+        try {
+            char** ptr = &blob_descr->buf;
+            ret = m_CacheDB->Fetch((void**)ptr,
+                                   blob_descr->buf_size,
+                                   CBDB_RawFile::eReallocForbidden);
+            if (ret == eBDB_Ok) {
+                blob_descr->blob_found = true;
+                blob_descr->blob_size = m_CacheDB->LobSize();
+                return;
+            }
+        } 
+        catch (CBDB_Exception&) {
+        }
+    } 
+    
+    // speculative Fetch failed (or impossible), read it the another way
     ret = m_CacheDB->Fetch();
+
     if (ret != eBDB_Ok) {
         blob_descr->blob_size = 0;
         return;
     }
+    blob_descr->blob_found = true;
     blob_descr->blob_size = m_CacheDB->LobSize();
 
     // read the BLOB into a custom in-memory buffer
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
     blob_descr->reader =
         new CBDB_CacheIReader(*this, bstream, m_WSync);
-    return;
-
-    unsigned char* buf = new unsigned char[blob_descr->blob_size+1];
-
-    ret = m_CacheDB->GetData(buf, blob_descr->blob_size);
-    if (ret != eBDB_Ok) {
-        blob_descr->blob_size = 0;
-        return;
-    }
-
-    if ( m_TimeStampFlag & fTimeStampOnRead ) {
-        x_UpdateReadAccessTime(key, version, subkey);
-    }
-    blob_descr->reader =
-        new CBDB_CacheIReader(*this, buf, blob_descr->blob_size, m_WSync);
-
 }
 
 
@@ -1628,12 +1871,12 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
 
     DropBlob(key, version, subkey, true /*update*/);
 
-    CFastMutexGuard guard(m_DB_Lock);
-
+//    CFastMutexGuard guard(m_DB_Lock);
+/*
     m_CacheDB->key = key;
     m_CacheDB->version = version;
     m_CacheDB->subkey = subkey;
-
+*/
     if (m_MaxTimeout) {
         if (time_to_live > m_MaxTimeout) {
             time_to_live = m_MaxTimeout;
@@ -1644,14 +1887,14 @@ IWriter* CBDB_Cache::GetWriteStream(const string&    key,
         }
     }
 
-    CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
+//    CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
     return
         new CBDB_CacheIWriter(*this,
                               m_Path.c_str(),
                               key,
                               version,
                               subkey,
-                              bstream,
+//                              bstream,
                               *m_CacheDB,
                               *m_CacheAttrDB,
                               m_TimeStampFlag & fTrackSubKey,
@@ -1863,6 +2106,26 @@ const CBDB_Cache::TOwnerStatistics& CBDB_Cache::GetOwnerStatistics() const
 {
     return m_OwnerStatistics;
 }
+
+void CBDB_Cache::WriteOverflow(CNcbiOfstream& overflow_file,
+                               const string&  overflow_file_path,
+                               const char*    buf, 
+                               streamsize     count)
+{
+    overflow_file.write(buf, count);
+    if (overflow_file.bad()) {
+
+        overflow_file.close();
+
+        string err("Overflow file IO error ");
+        err += overflow_file_path;
+
+        x_DropOverflow(overflow_file_path.c_str());
+
+        BDB_THROW(eOverflowFileIO, err);
+    }
+}
+
 
 /// @internal
 ///
@@ -2444,13 +2707,9 @@ bool CBDB_Cache::x_RetrieveBlobAttributes(const string&  key,
 										  int*           overflow,
                                           unsigned int*  ttl)
 {
-    m_CacheAttrDB->key = key;
-    m_CacheAttrDB->version = version;
-    m_CacheAttrDB->subkey = subkey;
-
-    EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
-    if (ret != eBDB_Ok) {
-        return false;
+    bool ret = x_FetchBlobAttributes(key, version, subkey);
+    if (ret == false) {
+        return ret;
     }
 
 	*overflow = m_CacheAttrDB->overflow;
@@ -2467,6 +2726,49 @@ bool CBDB_Cache::x_RetrieveBlobAttributes(const string&  key,
 	return true;
 }
 
+bool CBDB_Cache::x_FetchBlobAttributes(const string&  key,
+                                       int            version,
+                                       const string&  subkey)
+{
+    m_CacheAttrDB->key = key;
+    m_CacheAttrDB->version = version;
+    m_CacheAttrDB->subkey = subkey;
+
+    EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
+    if (ret != eBDB_Ok) {
+        return false;
+    }
+    return true;
+}
+
+
+
+void CBDB_Cache::x_DropOverflow(const char*    key,
+                                int            version,
+                                const char*    subkey)
+{
+    string path;
+    try {
+        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
+        x_DropOverflow(path);
+    } catch (exception& ex) {  
+        ERR_POST("Blob Store: Cannot remove file: " << path 
+                 << " " << ex.what());
+    }
+}
+
+void CBDB_Cache::x_DropOverflow(const string&  file_path)
+{
+    try {
+        CDirEntry entry(file_path);
+        if (entry.Exists()) {
+            entry.Remove();
+        }
+    } catch (exception& ex) {  
+        ERR_POST("Blob Store: Cannot remove file: " << file_path 
+                 << " " << ex.what());
+    }
+}
 
 void CBDB_Cache::x_DropBlob(const char*    key,
                             int            version,
@@ -2481,20 +2783,18 @@ void CBDB_Cache::x_DropBlob(const char*    key,
     }
 
     if (overflow == 1) {
-        string path;
-        s_MakeOverflowFileName(path, m_Path, key, version, subkey);
-
-        CDirEntry entry(path);
-        if (entry.Exists()) {
-            entry.Remove();
-        }
-    } else {
-        m_CacheDB->key = key;
-        m_CacheDB->version = version;
-        m_CacheDB->subkey = subkey;
-
-        m_CacheDB->Delete(CBDB_RawFile::eIgnoreError);
+        x_DropOverflow(key, version, subkey);
     }
+
+    // delete blob from m_CacheDB even if it is marked as "overflow"
+    // old data maybe result of a BLOB grow from regular to overlow
+    //
+
+    m_CacheDB->key = key;
+    m_CacheDB->version = version;
+    m_CacheDB->subkey = subkey;
+
+    m_CacheDB->Delete(CBDB_RawFile::eIgnoreError);
 
     m_CacheAttrDB->key = key;
     m_CacheAttrDB->version = version;
@@ -2926,6 +3226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.126  2005/11/28 15:19:01  kuznets
+ * Improved overflow file management
+ *
  * Revision 1.125  2005/11/15 13:37:59  kuznets
  * Convert cache statistics to registry
  *
@@ -3209,109 +3512,6 @@ END_NCBI_SCOPE
  * Revision 1.33  2003/12/29 12:57:15  kuznets
  * Changes in Purge() method to make cursor loop lock independent
  * from the record delete function
- *
- * Revision 1.32  2003/12/16 13:45:11  kuznets
- * ICache implementation made transaction protected
- *
- * Revision 1.31  2003/12/08 16:13:15  kuznets
- * Added plugin mananger support
- *
- * Revision 1.30  2003/11/28 17:35:05  vasilche
- * Fixed new[]/delete discrepancy.
- *
- * Revision 1.29  2003/11/26 13:09:16  kuznets
- * Fixed bug in mutex locking
- *
- * Revision 1.28  2003/11/25 19:36:35  kuznets
- * + ICache implementation
- *
- * Revision 1.27  2003/11/06 14:20:38  kuznets
- * Warnings cleaned up
- *
- * Revision 1.26  2003/10/24 13:54:03  vasilche
- * Rolled back incorrect fix of PendingCount().
- *
- * Revision 1.25  2003/10/24 13:41:23  kuznets
- * Completed PendingCount implementaion
- *
- * Revision 1.24  2003/10/24 12:37:42  kuznets
- * Implemented cache locking using PID guard
- *
- * Revision 1.23  2003/10/23 13:46:38  vasilche
- * Implemented PendingCount() method.
- *
- * Revision 1.22  2003/10/22 19:08:29  vasilche
- * Added Flush() implementation.
- *
- * Revision 1.21  2003/10/21 12:11:27  kuznets
- * Fixed non-updated timestamp in Int cache.
- *
- * Revision 1.20  2003/10/20 20:44:20  vasilche
- * Added return true for overflow file read.
- *
- * Revision 1.19  2003/10/20 20:41:37  kuznets
- * Fixed bug in BlobCache::Read
- *
- * Revision 1.18  2003/10/20 20:35:33  kuznets
- * Blob cache Purge improved.
- *
- * Revision 1.17  2003/10/20 20:34:03  kuznets
- * Fixed bug with writing BLOB overflow attribute
- *
- * Revision 1.16  2003/10/20 20:15:30  kuznets
- * Fixed bug with expiration time retrieval
- *
- * Revision 1.15  2003/10/20 19:58:26  kuznets
- * Fixed bug in int cache expiration algorithm
- *
- * Revision 1.14  2003/10/20 17:53:03  kuznets
- * Dismissed blob cache entry overwrite protection.
- *
- * Revision 1.13  2003/10/20 16:34:20  kuznets
- * BLOB cache Store operation reimplemented to use external files.
- * BDB cache shared between tables by using common environment.
- * Overflow file limit set to 1M (was 2M)
- *
- * Revision 1.12  2003/10/17 14:11:41  kuznets
- * Implemented cached read from berkeley db BLOBs
- *
- * Revision 1.11  2003/10/16 19:29:18  kuznets
- * Added Int cache (AKA id resolution cache)
- *
- * Revision 1.10  2003/10/16 12:08:16  ucko
- * Address GCC 2.95 errors about missing sprintf declaration, and avoid
- * possible buffer overflows, by rewriting s_MakeOverflowFileName to use
- * C++ strings.
- *
- * Revision 1.9  2003/10/16 00:30:57  ucko
- * ios_base -> IOS_BASE (should fix GCC 2.95 build)
- *
- * Revision 1.8  2003/10/15 18:39:13  kuznets
- * Fixed minor incompatibility with the C++ language.
- *
- * Revision 1.7  2003/10/15 18:13:16  kuznets
- * Implemented new cache architecture based on combination of BDB tables
- * and plain files. Fixes the performance degradation in Berkeley DB
- * when it has to work with a lot of overflow pages.
- *
- * Revision 1.6  2003/10/06 16:24:19  kuznets
- * Fixed bug in Purge function
- * (truncated cache files with some parameters combination).
- *
- * Revision 1.5  2003/10/02 20:13:25  kuznets
- * Minor code cleanup
- *
- * Revision 1.4  2003/09/29 16:26:34  kuznets
- * Reflected ERW_Result rename + cleaned up 64-bit compilation
- *
- * Revision 1.3  2003/09/29 15:45:17  kuznets
- * Minor warning fixed
- *
- * Revision 1.2  2003/09/24 15:59:45  kuznets
- * Reflected changes in IReader/IWriter <util/reader_writer.hpp>
- *
- * Revision 1.1  2003/09/24 14:30:17  kuznets
- * Initial revision
  *
  *
  * ===========================================================================

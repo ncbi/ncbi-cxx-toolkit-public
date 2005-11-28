@@ -419,6 +419,11 @@ public:
                            int            version,
                            const string&  subkey);
 
+    virtual void GetBlobOwner(const string&  key,
+                              int            version,
+                              const string&  subkey,
+                              string*        owner);
+
     virtual bool Read(const string& key,
                       int           version,
                       const string& subkey,
@@ -474,7 +479,28 @@ public:
     {
         return m_Path + "<" + m_Name + ">";
     }
+protected:
 
+    /// Remove BLOB (using transaction) without updating statistics
+    /// (for error recovery situations)
+    /// No concurrent access locking
+    void KillBlobNoLock(const char*    key,
+                        int            version,
+                        const char*    subkey,
+                        int            overflow);
+    void KillBlob(const char*    key,
+                  int            version,
+                  const char*    subkey,
+                  int            overflow);
+
+    /// Write to the overflow file with error checking
+    /// If write failes, method deletes the file to avoid file system
+    /// space leak then throws an exception
+    ///
+    void WriteOverflow(CNcbiOfstream& overflow_file,
+                       const string&  overflow_file_path,
+                       const char*    buf, 
+                       streamsize     count);
 private:
     /// Return TRUE if cache item expired according to the current timestamp
     /// prerequisite: attributes record fetched to memory
@@ -520,15 +546,23 @@ private:
 	///
 	/// @return TRUE if the attribute record found
 	bool x_RetrieveBlobAttributes(const string&  key,
-                                 int            version,
-                                 const string&  subkey,
-								 int*           overflow,
-                                 unsigned int*  ttl);
+                                  int            version,
+                                  const string&  subkey,
+	 							  int*           overflow,
+                                  unsigned int*  ttl);
+
+	bool x_FetchBlobAttributes(const string&  key,
+                               int            version,
+                               const string&  subkey);
 
     void x_DropBlob(const char*    key,
                     int            version,
                     const char*    subkey,
                     int            overflow);
+    void x_DropOverflow(const char*    key,
+                        int            version,
+                        const char*    subkey);
+    void x_DropOverflow(const string&  file_path);
 
     void x_TruncateDB();
 
@@ -729,6 +763,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/11/28 15:18:33  kuznets
+ * Improved overflow file management
+ *
  * Revision 1.61  2005/11/15 13:37:49  kuznets
  * Convert cache statistics to registry
  *
