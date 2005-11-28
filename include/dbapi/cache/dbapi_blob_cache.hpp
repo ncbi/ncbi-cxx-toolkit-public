@@ -173,7 +173,10 @@ public:
                                int               version,
                                const string&     subkey,
                                BlobAccessDescr*  blob_descr);
-
+    virtual void GetBlobOwner(const string&  key,
+                              int            version,
+                              const string&  subkey,
+                              string*        owner);
 
     /// Specifics of this IWriter implementation is that IWriter::Flush here
     /// cannot be called twice, because it finalises transaction
@@ -300,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/11/28 15:28:42  kuznets
+ * +GetBlobOwner()
+ *
  * Revision 1.17  2005/08/01 16:50:40  kuznets
  * Added BLOB's owner
  *

@@ -1241,6 +1241,14 @@ bool CDBAPI_Cache::SameCacheParams(const TCacheParams* params) const
     return false;
 }
 
+void CDBAPI_Cache::GetBlobOwner(const string&  key,
+                                int            version,
+                                const string&  subkey,
+                                string*        owner)
+{
+    _ASSERT(owner);
+    owner->erase(); // not supported in this implementation
+}
 
 END_NCBI_SCOPE
 
@@ -1248,6 +1256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/11/28 15:28:59  kuznets
+ * +GetBlobOwner()
+ *
  * Revision 1.19  2005/08/01 16:50:56  kuznets
  * Added BLOB's owner
  *
