@@ -416,7 +416,6 @@ void CSeq_entry_Info::UpdateAnnotIndex(void) const
 {
     if ( x_DirtyAnnotIndex() ) {
         GetTSE_Info().UpdateAnnotIndex(*this);
-        _ASSERT(!x_DirtyAnnotIndex());
     }
 }
 
@@ -563,6 +562,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/11/28 20:16:52  vasilche
+ * Removed incorrect assertion. No mutex is locked so new data may appear.
+ *
  * Revision 1.30  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *
