@@ -88,7 +88,7 @@ public:
     bool RefineMultipleAlignment(struct_util::AlignmentUtility *originalMultiple,
         AlignmentUtilityList *refinedMultiples,
         wxWindow *parent,
-        const vector < string >& rowTitles);    // one per row, but only non-structured rows should have size>0
+        const std::vector < std::string >& rowTitles);    // one per row, but only non-structured rows should have size>0
 
     //  In case it's desired to get info results/settings directly from the refiner engine.
     const align_refine::CBMARefinerEngine* GetRefiner() {return m_refinerEngine;}
@@ -106,7 +106,7 @@ private:
     // Initializes the refiner engine w/ values found in the dialog.
     // Realigns only blocks found in m_blocksToRefine during LNO.
     // Explicitly excludes from LNO those rows found in m_rowsToExclude.
-    bool ConfigureRefiner(wxWindow* parent, const vector < string >& rowTitles);
+    bool ConfigureRefiner(wxWindow* parent, const std::vector < std::string >& rowTitles);
 };
 
 END_SCOPE(Cn3D)
@@ -116,6 +116,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/11/28 21:24:01  thiessen
+* whoops, forgot std::
+*
 * Revision 1.8  2005/11/28 21:14:38  thiessen
 * add block and row selection mechanism to refiner
 *
