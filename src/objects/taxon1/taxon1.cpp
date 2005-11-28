@@ -1370,21 +1370,22 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
             }
         }
         // Partial tree is build, make a residue
-        pIt->GoRoot();
-        bHasSiblings = true;
-        if( pIt->GoChild() ) {
-            while( !pIt->GoSibling() ) {
-                pNode = static_cast<CTaxon1Node*>( pIt->GetNode() );
-                if( pNode->IsJoinTerminal() || !pIt->GoChild() ) {
-                    bHasSiblings = false;
-                    break;
+        if( pIt->GoRoot() ) {
+            bHasSiblings = true;
+            if( pIt->GoChild() ) {
+                while( !pIt->GoSibling() ) {
+                    pNode = static_cast<CTaxon1Node*>( pIt->GetNode() );
+                    if( pNode->IsJoinTerminal() || !pIt->GoChild() ) {
+                        bHasSiblings = false;
+                        break;
+                    }
                 }
+                if( bHasSiblings ) {
+                    pIt->GoParent();
+                }
+                s_StoreResidueTaxid( pIt, ids_out );
             }
-            if( bHasSiblings ) {
-                pIt->GoParent();
-            }
-            s_StoreResidueTaxid( pIt, ids_out );
-        }	
+        }
     }
     return true;
 }
@@ -1941,6 +1942,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.35  2005/11/28 17:15:37  domrach
+ * Check for empty partial tree
+ *
  * Revision 6.34  2005/10/25 17:43:45  domrach
  * New orgname modifier conflict rules
  *
