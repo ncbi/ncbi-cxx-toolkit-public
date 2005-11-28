@@ -56,7 +56,16 @@ typedef unsigned int mode_t;
 #  include <fcntl.h>
 #  include <sys/time.h>
 #  include <sys/mman.h>
-#  include <sys/statvfs.h>
+#  ifdef HAVE_SYS_STATVFS_H
+#    include <sys/statvfs.h>
+#  endif
+#  include <sys/param.h>
+#  ifdef HAVE_SYS_MOUNT_H
+#    include <sys/mount.h>
+#  endif
+#  ifdef HAVE_SYS_VFS_H
+#    include <sys/vfs.h>
+#  endif
 #  include <utime.h>
 #  include <pwd.h>
 #  include <grp.h>
@@ -3149,10 +3158,22 @@ bool CFileUtil::GetDiskSpace(const string& path,
     return ::GetDiskFreeSpaceEx(path.c_str(),
                                 (PULARGE_INTEGER)free,
                                 (PULARGE_INTEGER)total, 0) != 0;
-#elif defined(NCBI_OS_UNIX)
+#elif defined(HAVE_STATVFS)
     struct statvfs st;
+    memset(&st, 0, sizeof(st));
     if (statvfs(path.c_str(), &st) == 0) {
-        *free = (Uint8)st.f_frsize * st.f_bavail;
+        if (st.f_frsize) {
+            *free = (Uint8)st.f_frsize * st.f_bavail;
+        } else {
+            *free = (Uint8)st.f_bsize * st.f_bavail;
+        }
+        *total = (Uint8)st.f_bsize * st.f_blocks;
+        return true;
+    }
+#elif defined(HAVE_STATFS)
+    struct statfs st;
+    if (statfs(path.c_str(), &st) == 0) {
+        *free = (Uint8)st.f_bsize * st.f_bavail;
         *total = (Uint8)st.f_bsize * st.f_blocks;
         return true;
     }
@@ -3770,6 +3791,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.127  2005/11/28 19:09:16  ucko
+ * Portability fixes to previous revision.
+ *
  * Revision 1.126  2005/11/28 16:14:36  ivanov
  * + CFileUtil::GetDiskSpace
  *
