@@ -71,16 +71,16 @@ public:
     ~CODBC_Reporter(void);
     
 public:
-    void ReportErrors(void);
+    void ReportErrors(void) const;
     void SetHandlerStack(CDBHandlerStack* hs) {
         m_HStack = hs;
     }
     void SetHandle(SQLHANDLE h) {
         m_Handle = h;
     }
-	void SetHandleType(SQLSMALLINT ht) {
-		m_HType = ht;
-	}
+    void SetHandleType(SQLSMALLINT ht) {
+        m_HType = ht;
+    }
     void SetExtraMsg(const string& em) {
         m_ExtraMsg = em;
     }
@@ -155,9 +155,9 @@ private:
     bool m_UseDSN;
 
     SQLHDBC x_ConnectToServer(const string&   srv_name,
-			       const string&   usr_name,
-			       const string&   passwd,
-			       TConnectionMode mode);
+                   const string&   usr_name,
+                   const string&   passwd,
+                   TConnectionMode mode);
     void xReportConError(SQLHDBC con);
 };
 
@@ -170,6 +170,7 @@ private:
 
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
 {
+    friend class CStatementBase;
     friend class CODBCContext;
     friend class CDB_Connection;
     friend class CODBC_LangCmd;
@@ -180,7 +181,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
 
 protected:
     CODBC_Connection(CODBCContext* cntx, SQLHDBC con,
-		     bool reusable, const string& pool_name);
+             bool reusable, const string& pool_name);
     virtual ~CODBC_Connection(void);
 
 protected:
@@ -233,8 +234,18 @@ protected:
     //          false - if not
     virtual bool Abort(void);
 
+protected:
+    string GetDiagnosticInfo(void) const
+    {
+        return m_Reporter.GetExtraMsg();
+    }
+    void ReportErrors(void)
+    {
+        m_Reporter.ReportErrors();
+    }
+
 private:
-    bool x_SendData(SQLHSTMT cmd, CDB_Stream& stream, CODBC_Reporter& rep);
+    bool x_SendData(CODBC_Connection& conn, CDB_Stream& stream);
 
     SQLHDBC         m_Link;
 
@@ -253,22 +264,81 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+class CStatementBase
+{
+public:
+    CStatementBase(CODBC_Connection& conn);
+    ~CStatementBase(void);
+
+public:
+    SQLHSTMT GetHandle(void) const
+    {
+        return m_Cmd;
+    }
+    CODBC_Connection& GetConnection(void)
+    {
+        return *m_ConnectPtr;
+    }
+    const CODBC_Connection& GetConnection(void) const
+    {
+        return *m_ConnectPtr;
+    }
+
+public:
+    void SetDiagnosticInfo(const string& msg)
+    {
+        m_Reporter.SetExtraMsg( msg );
+    }
+    string GetDiagnosticInfo(void) const
+    {
+        return m_Reporter.GetExtraMsg();
+    }
+    void ReportErrors(void) const
+    {
+        m_Reporter.ReportErrors();
+    }
+
+public:
+    // Do not throw exceptions in case of database errors.
+    // Exception will be thrown in case of a logical error only.
+    // Return false in case of a database error.
+    bool CheckRC(int rc) const;
+    bool Close(void) const
+    {
+        return CheckRC( SQLFreeStmt(m_Cmd, SQL_CLOSE) );
+    }
+    bool Unbind(void) const
+    {
+        return CheckRC( SQLFreeStmt(m_Cmd, SQL_UNBIND) );
+    }
+    bool ResetParams(void) const
+    {
+        return CheckRC( SQLFreeStmt(m_Cmd, SQL_RESET_PARAMS) );
+    }
+
+private:
+    CODBC_Connection* m_ConnectPtr;
+    SQLHSTMT m_Cmd;
+    CODBC_Reporter m_Reporter;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CODBC_LangCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd : 
+    public CStatementBase, 
+    public I_LangCmd
 {
     friend class CODBC_Connection;
     friend class CODBC_CursorCmd;
-	friend class CODBC_CursorResult;
+    friend class CODBC_CursorResult;
 
 protected:
     CODBC_LangCmd(
         CODBC_Connection* conn,
-        SQLHSTMT cmd,
         const string& lang_query,
         unsigned int nof_params
         );
@@ -293,12 +363,9 @@ private:
     bool x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER* indicator);
     bool xCheck4MoreResults(void);
 
-    CODBC_Connection* m_Connect;
-    SQLHSTMT          m_Cmd;
     string            m_Query;
     CDB_Params        m_Params;
     CODBC_RowResult*  m_Res;
-    CODBC_Reporter    m_Reporter;
     int               m_RowCount;
     bool              m_hasResults;
     bool              m_WasSent;
@@ -311,13 +378,16 @@ private:
 //  CODBC_RPCCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd : 
+    public CStatementBase, 
+    public I_RPCCmd
 {
     friend class CODBC_Connection;
     
 protected:
-    CODBC_RPCCmd(CODBC_Connection* con, SQLHSTMT cmd,
-               const string& proc_name, unsigned int nof_params);
+    CODBC_RPCCmd(CODBC_Connection* conn,
+                 const string& proc_name, 
+                 unsigned int nof_params);
     virtual ~CODBC_RPCCmd(void);
 
 protected:
@@ -339,19 +409,16 @@ protected:
 
 private:
     bool x_AssignParams(string& cmd, string& q_exec, string& q_select,
-		CMemPot& bind_guard, SQLINTEGER* indicator);
+        CMemPot& bind_guard, SQLINTEGER* indicator);
     bool xCheck4MoreResults(void);
 
-    CODBC_Connection* m_Connect;
-    SQLHSTMT          m_Cmd;
     string            m_Query;
     CDB_Params        m_Params;
-    CODBC_Reporter    m_Reporter;
     bool              m_WasSent;
     bool              m_HasFailed;
     bool              m_Recompile;
     bool              m_HasStatus;
-	bool              m_hasResults;
+    bool              m_hasResults;
     I_Result*         m_Res;
     int               m_RowCount;
 };
@@ -362,14 +429,17 @@ private:
 //  CODBC_CursorCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd : 
+    public CStatementBase, 
+    public I_CursorCmd
 {
     friend class CODBC_Connection;
     
 protected:
-    CODBC_CursorCmd(CODBC_Connection* conn, SQLHSTMT cmd,
-                  const string& cursor_name, const string& query,
-                  unsigned int nof_params);
+    CODBC_CursorCmd(CODBC_Connection* conn,
+                    const string& cursor_name, 
+                    const string& query,
+                    unsigned int nof_params);
     virtual ~CODBC_CursorCmd(void);
 
 protected:
@@ -377,9 +447,9 @@ protected:
     virtual CDB_Result* Open(void);
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
-				 bool log_it = true);
+                 bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
-					 bool log_it = true);
+                     bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount(void) const;
     virtual bool Close(void);
@@ -392,7 +462,6 @@ private:
     CODBC_LangCmd m_CursCmd;
     CODBC_LangCmd* m_LCmd;
 
-    CODBC_Connection* m_Connect;
     string          m_Name;
     unsigned int    m_FetchSize;
     bool            m_IsOpen;
@@ -400,8 +469,6 @@ private:
     bool            m_HasFailed;
     I_Result*       m_Res;
     int             m_RowCount;
-
-    CODBC_Reporter  m_Reporter;
 };
 
 
@@ -411,8 +478,11 @@ private:
 //
 //  CODBC_BCPInCmd::
 //
+// This class is not implemented yet ...
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd : 
+    public CStatementBase, 
+    public I_BCPInCmd
 {
     friend class CODBC_Connection;
     
@@ -432,16 +502,13 @@ protected:
 private:
     bool x_AssignParams(void* p);
 
-    CODBC_Connection* m_Connect;
-    SQLHDBC     m_Cmd;
+    SQLHDBC         m_Cmd;
     string          m_Query;
     CDB_Params      m_Params;
     bool            m_WasSent;
     bool            m_HasFailed;
-	bool            m_WasBound;
-	bool            m_HasTextImage;
-
-    CODBC_Reporter  m_Reporter;
+    bool            m_WasBound;
+    bool            m_HasTextImage;
 };
 
 
@@ -450,13 +517,17 @@ private:
 //  CODBC_SendDataCmd::
 //
 
-class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd : public I_SendDataCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd : 
+    public CStatementBase, 
+    public I_SendDataCmd
 {
     friend class CODBC_Connection;
     
 protected:
-    CODBC_SendDataCmd(CODBC_Connection* con, SQLHSTMT cmd, CDB_ITDescriptor& descr,
-                      size_t nof_bytes, bool logit);
+    CODBC_SendDataCmd(CODBC_Connection* con, 
+                      CDB_ITDescriptor& descr,
+                      size_t nof_bytes, 
+                      bool logit);
     virtual ~CODBC_SendDataCmd(void);
 
 protected:
@@ -466,11 +537,8 @@ protected:
 
 private:
     void xCancel(void);
-    CODBC_Connection* m_Connect;
-    SQLHSTMT          m_Cmd;
-    CODBC_Reporter    m_Reporter;
     size_t            m_Bytes2go;
-	SQLINTEGER        m_ParamPH;
+    SQLINTEGER        m_ParamPH;
 };
 
 
@@ -488,9 +556,8 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public I_Result
     
 protected:
     CODBC_RowResult(
+        CStatementBase& stmt,
         SQLSMALLINT nof_cols,
-        SQLHSTMT cmd,
-        CODBC_Reporter& r,
         int* row_count
         );
     virtual ~CODBC_RowResult(void);
@@ -512,14 +579,31 @@ protected:
                                                const string& cond);
     virtual bool            SkipItem(void);
 
-	int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
-		SQLINTEGER buffer_size);
+    int xGetData(SQLSMALLINT target_type, SQLPOINTER buffer,
+        SQLINTEGER buffer_size);
     CDB_Object* xLoadItem(CDB_Object* item_buf);
     CDB_Object* xMakeItem(void);
 
+protected:
+    SQLHSTMT GetHandle(void) const
+    {
+        return m_Stmt.GetHandle();
+    }
+    void ReportErrors(void)
+    {
+        m_Stmt.ReportErrors();
+    }
+    string GetDiagnosticInfo(void) const
+    {
+        return m_Stmt.GetDiagnosticInfo();
+    }
+    void Close(void)
+    {
+        m_Stmt.Close();
+    }
+
 private:
-    // data
-    SQLHSTMT          m_Cmd;
+    CStatementBase&   m_Stmt;
     // CODBC_Connection* m_Connect;
     int               m_CurrItem;
     bool              m_EOR;
@@ -534,7 +618,6 @@ private:
     } SODBC_ColDescr;
 
     SODBC_ColDescr* m_ColFmt;
-    CODBC_Reporter& m_Reporter;
     int* const      m_RowCountPtr;
 };
 
@@ -554,13 +637,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_StatusResult :  public CODBC_RowResult
     friend class CODBC_Connection;
     
 protected:
-    CODBC_StatusResult(
-        SQLHSTMT cmd,
-        CODBC_Reporter& r
-        )
-        : CODBC_RowResult(1, cmd, r, NULL)
-    {
-    }
+    CODBC_StatusResult(CStatementBase& stmt);
     virtual ~CODBC_StatusResult(void);
     
 protected:
@@ -574,13 +651,9 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_ParamResult :  public CODBC_RowResult
     
 protected:
     CODBC_ParamResult(
-        SQLSMALLINT nof_cols,
-        SQLHSTMT cmd,
-        CODBC_Reporter& r
-        )
-        : CODBC_RowResult(nof_cols, cmd, r, NULL)
-    {
-    }
+        CStatementBase& stmt,
+        SQLSMALLINT nof_cols
+        );
     virtual ~CODBC_ParamResult(void);
     
 protected:
@@ -610,12 +683,17 @@ protected:
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
     virtual bool            SkipItem(void);
 
+protected:
+    string GetDiagnosticInfo(void) const
+    {
+        return m_Cmd->GetDiagnosticInfo();
+    }
+
+protected:
     // data
     CODBC_LangCmd* m_Cmd;
     CDB_Result*  m_Res;
-	bool m_EOR;
-
-    CODBC_Reporter m_Reporter;
+    bool m_EOR;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -643,6 +721,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/11/28 13:54:58  ssikorsk
+ * Report SQL statement and database connection parameters in case
+ * of an error in addition to a server error message.
+ *
  * Revision 1.15  2005/11/02 16:38:59  ssikorsk
  * + CODBC_Reporter member to CODBC_CursorResult and CODBC_CursorCmd.
  *
