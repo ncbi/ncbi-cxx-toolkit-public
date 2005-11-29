@@ -2390,8 +2390,10 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
         m_AV = (*iterAv)->alnvec;
         const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
         if(isFirstAlnInList && (m_AlignOption&eShowBlastInfo)) {
-            x_PrintDefLine(bsp_handle, (*iterAv)->use_this_gi, out);
-            out<<"          Length="<<bsp_handle.GetBioseqLength()<<endl;
+            if(!(m_AlignOption & eShowNoDeflineInfo)){
+                x_PrintDefLine(bsp_handle, (*iterAv)->use_this_gi, out);
+                out<<"          Length="<<bsp_handle.GetBioseqLength()<<endl;
+            }
             if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
                && (m_AlignOption&eShowBl2seqLink)) {
                 const CBioseq_Handle& query_handle=m_AV->GetBioseqHandle(0);
@@ -2706,6 +2708,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.92  2005/11/29 16:54:30  jianye
+*add eShowNoDeflineInfo
+*
 *Revision 1.91  2005/11/21 17:08:48  jianye
 *No feature retrieval for non-nuc-nuc alignment
 *

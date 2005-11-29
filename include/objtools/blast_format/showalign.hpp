@@ -128,7 +128,9 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
         eTranslateNucToNucAlignment = (1 << 15), //nuecleotide to nucleotide
                                                 //alignment as translated
         eShowBl2seqLink = (1 << 16),    // Show web link to bl2seq
-        eDynamicFeature = (1 << 17)     //show dynamic feature line
+        eDynamicFeature = (1 << 17),    //show dynamic feature line
+        eShowNoDeflineInfo = (1 << 18)  //Don't show defline when eShowBlastInfo
+                                        //is chosen
     };
     
     ///Middle line style option
@@ -563,6 +565,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.40  2005/11/29 16:55:02  jianye
+*add eShowNoDeflineInfo
+*
 *Revision 1.39  2005/10/04 15:32:08  camacho
 *Fix errors in sample code
 *
