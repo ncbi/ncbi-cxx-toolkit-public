@@ -46,7 +46,7 @@ public:
 	void setId(int id)  {m_id = id;}
 	Block extend (int nExt, int cExt) const;
 	void extendSelf (int nExt, int cExt);
-
+	void addOffset(int nExt);
 	typedef set<Block> SortedBlocks;
 	static bool concatenate(const SortedBlocks& blocks, Block& comBlock);
 	//make sure this contain(this+delta); shrink it if necessary
@@ -117,7 +117,7 @@ public:
 	int getGapToCTerminal(int bn, int len=-1)const ;
 	bool isValid(int seqLen, int& errBlock) const;
 	bool overlap(const BlockModel& bm)const;
-
+	void addOffset(int nExt);
     string toString() const;
     static string toString(const BlockModel& bm);
 	

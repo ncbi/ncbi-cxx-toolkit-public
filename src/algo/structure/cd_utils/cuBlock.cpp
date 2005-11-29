@@ -160,6 +160,11 @@ void Block::extendSelf (int nExt, int cExt)
 	m_len = m_len + cExt - nExt;
 }
 
+void Block::addOffset(int nExt)
+{
+	m_start = m_start + nExt;
+}
+
 bool Block::concatenate(const SortedBlocks& blocks, Block& comBlock)
 {
 	if (blocks.size() ==0)
@@ -683,6 +688,14 @@ int BlockModel::getGapToCTerminal(int bn, int len)const
 	return gap;
 }
 
+void BlockModel::addOffset(int nExt)
+{
+	for (int i = 1; i < m_blocks.size(); i++)
+	{
+		m_blocks[i].addOffset(nExt);
+	}
+}
+
 bool  BlockModel::isValid(int seqLen, int& errBlock) const
 {
 	if (m_blocks.size() == 0)
@@ -916,6 +929,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/11/29 19:28:18  cliu
+ * add offset
+ *
  * Revision 1.2  2005/05/03 15:30:37  lanczyck
  * make 'getTotalBlockLength' const
  *
