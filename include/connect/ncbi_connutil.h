@@ -102,6 +102,15 @@ extern "C" {
 
 
 typedef enum {
+    eURL_Unspec = 0,
+    eURL_Https,
+    eURL_Http,
+    eURL_File,
+    eURL_Ftp
+} EURLScheme;
+
+
+typedef enum {
     eReqMethod_Any = 0,
     eReqMethod_Post,
     eReqMethod_Get
@@ -119,14 +128,18 @@ typedef enum {
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create
  *             it, and then fix (hard-code) some fields, if really necessary.
+ * NOTE:       "scheme", "user" and "pass" are reserved (unused) fields.
  */
 typedef struct {
     char           client_host[256]; /* effective client hostname            */
+    EURLScheme     scheme;           /* only pre-defined types (limited)     */
+    char           user[128];        /* username (if specified)              */
+    char           pass[128];        /* password (if any, clear text!!!)     */
     char           host[256];        /* host to connect to                   */
     unsigned short port;             /* port to connect to, host byte order  */
     char           path[1024];       /* service: path(e.g. to  a CGI script) */
     char           args[1024];       /* service: args(e.g. for a CGI script) */
-    EReqMethod     req_method;       /* method to use in the request         */
+    EReqMethod     req_method;       /* method to use in the request (HTTP)  */
     STimeout*      timeout;          /* ptr to i/o tmo (infinite if NULL)    */
     unsigned short max_try;          /* max. # of attempts to connect (>= 1) */
     char           http_proxy_host[256]; /* hostname of HTTP proxy server    */
@@ -138,7 +151,7 @@ typedef struct {
     int/*bool*/    lb_disable;       /* to disable local load-balancing      */
     const char*    http_user_header; /* user header to add to HTTP request   */
 
-    /* the following field(s) are for the internal use only! */
+    /* the following field(s) are for the internal use only -- don't touch!  */
     int/*bool*/    http_proxy_adjusted;
     STimeout       tmo;              /* default storage for finite timeout   */
     const char*    service;          /* service for which this info created  */
@@ -711,6 +724,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2005/11/29 21:32:07  lavr
+ * Reserve SConnNetInfo::scheme, user, and pass for future use
+ *
  * Revision 6.43  2005/11/29 19:51:51  lavr
  * +CRC32 (pure C interface; not a ZIP version)
  *

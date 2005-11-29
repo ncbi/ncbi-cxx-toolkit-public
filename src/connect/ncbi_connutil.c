@@ -118,6 +118,11 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     if (!SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host)))
         SOCK_gethostname(info->client_host, sizeof(info->client_host));
 
+    /* Future extentions, clear up for now */
+    info->scheme  = eURL_Unspec;
+    info->user[0] = '\0';
+    info->pass[0] = '\0';
+
     /* dispatcher host name */
     REG_VALUE(REG_CONN_HOST, info->host, DEF_CONN_HOST);
 
@@ -1748,6 +1753,9 @@ unsigned int CRC32_Update(unsigned int checksum, const void *ptr, size_t count)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.79  2005/11/29 21:32:31  lavr
+ * Reserve SConnNetInfo::scheme, user, and pass for future use
+ *
  * Revision 6.78  2005/11/29 19:54:49  lavr
  * +CRC32 API
  *
