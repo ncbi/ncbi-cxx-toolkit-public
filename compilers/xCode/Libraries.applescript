@@ -188,7 +188,7 @@ property xobjwrite : {name:"xobjwrite", path:"objtools:writers"}
 
 
 (* GUI Libraries *)
-property gui__core : {name:"gui__core", path:"gui:core", exc:{"DataHandle.cpp", "DataHandleAction.cpp", "DataHandleSelector.cpp", "DataHandleTransformer.cpp", "DataHandleViewer.cpp", "NCBI_Data_Handle_module.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
+property gui__core : {name:"gui__core", path:"gui:core", exc:{"GBenchInitReply.cpp", "GBenchServiceRequest.cpp", "GBenchVersionReply.cpp", "GBenchVersionRequest.cpp", "NCBI_GBenchService_module.cpp", "GBenchServiceReply.cpp", "DataHandle.cpp", "DataHandleAction.cpp", "DataHandleSelector.cpp", "DataHandleTransformer.cpp", "DataHandleViewer.cpp", "NCBI_Data_Handle_module.cpp", "GBenchVersionInfo.cpp", "GBenchInitRequest.cpp", "GBenchFeedbackRequest.cpp", "NCBI_GUI_Project_module.cpp", "NCBI_Plugin_module.cpp", "AlgoCommand.cpp", "DataCommand.cpp", "MRUCache.cpp", "MessageHistoryInfo.cpp", "MessageStatus.cpp", "PluginArg.cpp", "PluginArgSet.cpp", "PluginCache.cpp", "PluginCommand.cpp", "PluginCommandSet.cpp", "PluginDataFile.cpp", "PluginInfo.cpp", "PluginLibInfo.cpp", "PluginMRUEntry.cpp", "PluginMessage.cpp", "PluginMessageChain.cpp", "PluginObject.cpp", "PluginReply.cpp", "PluginReplyAction.cpp", "PluginRequest.cpp", "PluginValue.cpp", "PluginValueConstraint.cpp", "PluginValueRangeConstraint.cpp", "ViewCommand.cpp", "AbstractProjectItem.cpp", "FolderInfo.cpp", "GBProject.cpp", "GBProjectHandle.cpp", "GBWorkspace.cpp", "ProjectDescr.cpp", "ProjectFolder.cpp", "ProjectHistoryItem.cpp", "ProjectItem.cpp", "ViewDesc.cpp", "WorkspaceFolder.cpp", "PluginInfoSet.cpp", "ProjectAnnot.cpp", "message_queue.cpp", "gui_project__.cpp", "gui_project___.cpp", "data_handle__.cpp", "data_handle___.cpp", "gbench_svc__.cpp", "gbench_svc___.cpp", "gbench_svc_cli.cpp", "gbench_svc_cli_.cpp", "plugin__.cpp", "plugin___.cpp"}}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
 property data_handle : {name:"data_handle", path:"gui:core", inc:{"data_handle__.cpp", "data_handle___.cpp"}, asn1:true, asn1Name:"data_handle"}
 property gbench_svc : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc__.cpp", "gbench_svc___.cpp"}, asn1:true, asn1Name:"gbench_svc"}
@@ -355,7 +355,7 @@ property gi2taxid : {name:"gi2taxid", path:"app:gi2taxid", dep:"ncbi_core ncbi_g
 
 property id1_fetch : {name:"id1_fetch", path:"app:id1_fetch", inc:{"id1_fetch.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:{"id1_fetch_simple.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext", req:false}
-property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank", req:false}
+property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb", req:false}
 property blast_client : {name:"blast_client", path:"app:blast_client", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_algo ncbi_lds ncbi_xloader_genbank", req:false}
 
 property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", req:true}
@@ -426,6 +426,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.85  2005/11/29 13:31:32  lebedev
+ * objmgr_demo added
+ *
  * Revision 1.84  2005/11/29 13:13:38  lebedev
  * gbench_svc_cli added
  *
