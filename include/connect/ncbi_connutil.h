@@ -80,6 +80,9 @@
  *       StringToHostPort()
  *       HostPortToString()
  *
+ *    8.CRC32
+ *       CRC32_Update()
+ *
  */
 
 #include <connect/ncbi_buffer.h>
@@ -686,6 +689,17 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
  );
 
 
+/* Calculate/Update CRC32
+ * Return the checksum updated according to the contents of the block
+ * pointed to by "ptr" and having "count" bytes in it.
+ */
+extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
+(unsigned int checksum,  /* Checksum to update (start with 0) */
+ const void*  ptr,       /* Block of data                     */
+ size_t       count      /* Size of data                      */
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -697,6 +711,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2005/11/29 19:51:51  lavr
+ * +CRC32 (pure C interface; not a ZIP version)
+ *
  * Revision 6.42  2005/04/20 15:47:24  lavr
  * DEF_CONN_REQ_METHOD changed to ANY
  *
