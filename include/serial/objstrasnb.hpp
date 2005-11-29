@@ -43,9 +43,15 @@
 
 BEGIN_NCBI_SCOPE
 
-#define CHECK_INSTREAM_STATE      1
-#define CHECK_INSTREAM_LIMITS     0
-#define CHECK_OUTSTREAM_INTEGRITY 0
+#if defined(_DEBUG)
+#  define CHECK_INSTREAM_STATE      1
+#  define CHECK_INSTREAM_LIMITS     1
+#  define CHECK_OUTSTREAM_INTEGRITY 1
+#else
+#  define CHECK_INSTREAM_STATE      1
+#  define CHECK_INSTREAM_LIMITS     0
+#  define CHECK_OUTSTREAM_INTEGRITY 0
+#endif
 
 class NCBI_XSERIAL_EXPORT CAsnBinaryDefs
 {
@@ -144,6 +150,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/11/29 17:40:03  gouriano
+* Added more check in debug build
+*
 * Revision 1.13  2005/11/09 20:00:47  gouriano
 * Reviewed stream integrity checks to increase the number of them in Release mode
 *
