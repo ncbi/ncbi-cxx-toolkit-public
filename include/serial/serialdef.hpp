@@ -126,6 +126,7 @@ enum EPrimitiveValueType {
     ePrimitiveValueString,         // string|char*|const char*
     ePrimitiveValueEnum,           // enum
     ePrimitiveValueOctetString,    // vector<(signed|unsigned)? char>
+    ePrimitiveValueBitString,      //
     ePrimitiveValueOther
 };
 
@@ -190,6 +191,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.29  2004/03/25 15:56:28  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

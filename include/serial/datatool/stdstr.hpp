@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2005/11/29 17:40:57  gouriano
+* Added CBitString class
+*
 * Revision 1.10  2003/08/13 15:45:00  gouriano
 * implemented generation of code, which uses AnyContent objects
 *
@@ -167,6 +170,21 @@ class CAnyContentTypeStrings : public CStdTypeStrings
     typedef CStdTypeStrings CParent;
 public:
     CAnyContentTypeStrings(const string& type);
+
+    EKind GetKind(void) const;
+
+    string GetInitializer(void) const;
+    string GetResetCode(const string& var) const;
+
+    void GenerateTypeCode(CClassContext& ctx) const;
+
+};
+
+class CBitStringTypeStrings : public CStdTypeStrings
+{
+    typedef CStdTypeStrings CParent;
+public:
+    CBitStringTypeStrings(const string& type);
 
     EKind GetKind(void) const;
 

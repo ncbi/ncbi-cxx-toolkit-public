@@ -207,6 +207,7 @@ public:
     void WriteStd(const char* const data);
     void WriteStd(char* const data);
 
+    void WriteStd(const CBitString& data);
     // primitive writers
     // bool
     virtual void WriteBool(bool data) = 0;
@@ -251,6 +252,9 @@ public:
     // any content object
     virtual void WriteAnyContentObject(const CAnyContentObject& obj) = 0;
     virtual void CopyAnyContentObject(CObjectIStream& in) = 0;
+
+    virtual void WriteBitString(const CBitString& obj) = 0;
+    virtual void CopyBitString(CObjectIStream& in) = 0;
 
     // delayed buffer
     virtual bool Write(CByteSource& source);
@@ -547,6 +551,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.95  2005/11/07 18:40:10  gouriano
 * Use Int8 in stream position calculations
 *

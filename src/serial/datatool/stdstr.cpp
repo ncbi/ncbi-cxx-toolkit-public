@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2005/11/29 17:41:36  gouriano
+* Added CBitString class
+*
 * Revision 1.14  2004/05/17 21:03:14  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -258,6 +261,33 @@ string CAnyContentTypeStrings::GetResetCode(const string& var) const
 
 void CAnyContentTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
 {
+}
+
+
+CBitStringTypeStrings::CBitStringTypeStrings(const string& type)
+    : CParent(type)
+{
+}
+
+CTypeStrings::EKind CBitStringTypeStrings::GetKind(void) const
+{
+    return eKindOther;
+}
+
+string CBitStringTypeStrings::GetInitializer(void) const
+{
+    return string();
+}
+
+string CBitStringTypeStrings::GetResetCode(const string& var) const
+{
+//    return var+".clear();\n";
+    return var+".resize(0);\n";
+}
+
+void CBitStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
+{
+    ctx.HPPIncludes().insert("<vector>");
 }
 
 END_NCBI_SCOPE

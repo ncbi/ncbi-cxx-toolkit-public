@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/11/29 17:41:36  gouriano
+* Added CBitString class
+*
 * Revision 1.42  2005/09/16 13:04:23  gouriano
 * Corrected DTD for boolean type
 *
@@ -475,7 +478,8 @@ bool CRealDataType::CheckValue(const CDataValue& value) const
 {
     const CBlockDataValue* block = dynamic_cast<const CBlockDataValue*>(&value);
     if ( !block ) {
-        return dynamic_cast<const CDoubleDataValue*>(&value) != 0;
+        return  dynamic_cast<const CDoubleDataValue*>(&value) != 0  ||
+                dynamic_cast<const CIntDataValue*>(&value) != 0;
     }
     if ( block->GetValues().size() != 3 ) {
         value.Warning("wrong number of elements in REAL value");
@@ -490,7 +494,17 @@ bool CRealDataType::CheckValue(const CDataValue& value) const
 
 TObjectPtr CRealDataType::CreateDefault(const CDataValue& value) const
 {
-    return new double(dynamic_cast<const CDoubleDataValue&>(value).GetValue());
+    double d=0.;
+    const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
+    if (dbl) {
+        d = dbl->GetValue();
+    } else {
+        const CIntDataValue* i = dynamic_cast<const CIntDataValue*>(&value);
+        if (i) {
+            d = (double)(i->GetValue());
+        }
+    }
+    return new double(d);
 }
 
 string CRealDataType::GetDefaultString(const CDataValue& value) const
@@ -498,6 +512,11 @@ string CRealDataType::GetDefaultString(const CDataValue& value) const
     const CDoubleDataValue* dbl = dynamic_cast<const CDoubleDataValue*>(&value);
     if (dbl) {
         return NStr::DoubleToString(dbl->GetValue());
+    } else {
+        const CIntDataValue* i = dynamic_cast<const CIntDataValue*>(&value);
+        if (i) {
+            return NStr::DoubleToString((double)(i->GetValue()));
+        }
     }
     value.Warning("REAL value expected");
     return kEmptyStr;
@@ -670,6 +689,28 @@ bool CBitStringDataType::CheckValue(const CDataValue& value) const
     return true;
 }
 
+TTypeInfo CBitStringDataType::GetRealTypeInfo(void)
+{
+    if ( HaveModuleName() )
+        return UpdateModuleName(CStdTypeInfo<CBitString>::CreateTypeInfo());
+    return CStdTypeInfo<CBitString>::GetTypeInfo();
+}
+
+bool CBitStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
+{
+    return true;
+}
+
+AutoPtr<CTypeStrings> CBitStringDataType::GetFullCType(void) const
+{
+    return AutoPtr<CTypeStrings>(new CBitStringTypeStrings( GetDefaultCType() ));
+}
+
+const char* CBitStringDataType::GetDefaultCType(void) const
+{
+    return "ncbi::CBitString";
+}
+
 const char* CBitStringDataType::GetXMLContents(void) const
 {
     return "%BITS;";
@@ -693,6 +734,9 @@ const char* COctetStringDataType::GetDEFKeyword(void) const
 
 const char* COctetStringDataType::GetDefaultCType(void) const
 {
+    if (x_AsBitString()) {
+        return CBitStringDataType::GetDefaultCType();
+    }
     return "NCBI_NS_STD::vector<char>";
 }
 
@@ -715,6 +759,9 @@ bool COctetStringDataType::CheckValue(const CDataValue& value) const
 
 TTypeInfo COctetStringDataType::GetRealTypeInfo(void)
 {
+    if (x_AsBitString()) {
+        return CBitStringDataType::GetRealTypeInfo();
+    }
     if ( HaveModuleName() )
         return UpdateModuleName(CStdTypeInfo<vector<char> >::CreateTypeInfo());
     return CStdTypeInfo< vector<char> >::GetTypeInfo();
@@ -727,10 +774,19 @@ bool COctetStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 
 AutoPtr<CTypeStrings> COctetStringDataType::GetFullCType(void) const
 {
+    if (x_AsBitString()) {
+        return CBitStringDataType::GetFullCType();
+    }
     string charType = GetVar("_char");
     if ( charType.empty() )
         charType = "char";
     return AutoPtr<CTypeStrings>(new CVectorTypeStrings(charType));
+}
+
+bool COctetStringDataType::x_AsBitString(void) const
+{
+    string type = GetVar("_type");
+    return NStr::FindNoCase(type, "CBitString") != NPOS;
 }
 
 CIntDataType::CIntDataType(void)

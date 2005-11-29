@@ -936,6 +936,45 @@ void CObjectIStreamXml::SkipAnyContentObject(void)
     }
 }
 
+void CObjectIStreamXml::ReadBitString(CBitString& obj)
+{
+#if BITSTRING_AS_VECTOR
+    obj.clear();
+    BeginData();
+    size_t reserve;
+    const size_t step=128;
+    obj.reserve( reserve=step );
+    for (int c= GetHexChar(); c > 0; c= GetHexChar()) {
+        Uint1 byte = c;
+        for (Uint1 mask= 0x8; mask != 0; mask >>= 1) {
+            obj.push_back( (byte & mask) != 0 );
+            if (--reserve == 0) {
+                obj.reserve(obj.size() + (reserve=step));
+            }
+        }
+    }
+    obj.reserve(obj.size());
+#else
+    obj.resize(0);
+    BeginData();
+    CBitString::size_type len = 0;
+    for (int c= GetHexChar(); c > 0; c= GetHexChar()) {
+        Uint1 byte = c;
+        for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
+            if( (byte & mask) != 0 ) {
+                obj.set_bit(len);
+            }
+        }
+    }
+    obj.resize(len);
+#endif
+}
+
+void CObjectIStreamXml::SkipBitString(void)
+{
+    SkipByteBlock();
+}
+
 void CObjectIStreamXml::ReadString(string& str, EStringType type)
 {
     str.erase();
@@ -2222,21 +2261,23 @@ void CObjectIStreamXml::SkipNull(void)
 void CObjectIStreamXml::SkipByteBlock(void)
 {
     BeginData();
-    if ( m_Input.PeekChar() != '\'' )
-        ThrowError(fFormatError, "' expected");
-    m_Input.SkipChar();
     for ( ;; ) {
         char c = m_Input.GetChar();
-        if ( c >= '0' && c <= '9' ) {
+        if ( IsDigit(c) ) {
             continue;
         }
-        else if ( c >= 'A' && c <= 'Z' ) {
+        else if ( c >= 'A' && c <= 'F' ) {
             continue;
         }
-        else if ( c >= 'a' && c <= 'z' ) {
+        else if ( c >= 'a' && c <= 'f' ) {
             continue;
         }
-        else if ( c == '\'' ) {
+        else if ( c == '\r' || c == '\n' ) {
+            m_Input.SkipEndOfLine(c);
+            continue;
+        }
+        else if ( c == '<' ) {
+            m_Input.UngetChar(c);
             break;
         }
         else {
@@ -2244,9 +2285,6 @@ void CObjectIStreamXml::SkipByteBlock(void)
             ThrowError(fFormatError, "invalid char in octet string");
         }
     }
-    if ( m_Input.PeekChar() != 'H' )
-        ThrowError(fFormatError, "'H' expected");
-    m_Input.SkipChar();
 }
 
 END_NCBI_SCOPE
@@ -2254,6 +2292,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/11/29 17:43:15  gouriano
+* Added CBitString class
+*
 * Revision 1.82  2005/10/27 15:54:49  gouriano
 * Added support for various character encodings
 *

@@ -422,6 +422,18 @@ void CObjectIStream::SkipStd(const char* const& )
     SkipCString();
 }
 
+inline
+void CObjectIStream::ReadStd(CBitString& data)
+{
+    ReadBitString(data);
+}
+
+inline
+void CObjectIStream::SkipStd(CBitString& )
+{
+    SkipBitString();
+}
+
 
 inline
 bool GoodVisibleChar(char c)
@@ -568,6 +580,9 @@ void CStreamDelayBufferGuard::EndDelayBuffer(CDelayBuffer& buffer,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.32  2005/11/16 16:42:57  ucko
 * Reflect change in objistr.hpp's include guard.
 *

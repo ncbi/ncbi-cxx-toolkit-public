@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2005/11/29 17:43:15  gouriano
+* Added CBitString class
+*
 * Revision 1.82  2005/11/10 19:50:10  gouriano
 * Moved ReadByte into inl file
 *
@@ -1379,6 +1382,54 @@ bool CObjectIStreamAsnBinary::SkipAnyContent(void)
 void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
 {
     SkipAnyContent();
+}
+
+void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
+{
+    obj.clear();
+    ExpectSysTag(eBitString);
+    size_t length = ReadLength();
+    if (length == 0) {
+        return;
+    }
+    Uint1 unused = ReadByte();
+
+#if BITSTRING_AS_VECTOR
+    obj.reserve((--length)*8);
+#else
+    obj.resize((--length)*8);
+    CBitString::size_type len = 0;
+#endif
+
+    size_t count;
+    const size_t step = 128;
+    char bytes[step];
+    while ( length != 0 ) {
+        ReadBytes(bytes, count= min(length,step));
+        length -= count;
+        for (size_t i=0; i<count; ++i) {
+            Uint1 byte = bytes[i];
+#if BITSTRING_AS_VECTOR
+            for (Uint1 mask= 0x80; mask != 0; mask >>= 1) {
+                obj.push_back( (byte & mask) != 0 );
+            }
+#else
+            for (Uint1 mask= 0x80; mask != 0; mask >>= 1, ++len) {
+                if ((byte & mask) != 0 ) {
+                    obj.set_bit(len);
+                }
+            }
+#endif
+        }
+    }
+    obj.resize( obj.size() - unused);
+    EndOfTag();
+}
+
+void CObjectIStreamAsnBinary::SkipBitString(void)
+{
+    ExpectSysTag(eBitString);
+    SkipTagData();
 }
 
 CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)

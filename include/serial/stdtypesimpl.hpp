@@ -268,6 +268,13 @@ public:
     CPrimitiveTypeInfoAnyContent(void);
 };
 
+class NCBI_XSERIAL_EXPORT CPrimitiveTypeInfoBitString : public CPrimitiveTypeInfo
+{
+    typedef CPrimitiveTypeInfo CParent;
+public:
+    CPrimitiveTypeInfoBitString(void);
+};
+
 /* @} */
 
 
@@ -281,6 +288,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.13  2004/08/17 14:39:23  dicuccio
 * Added export specifiers
 *

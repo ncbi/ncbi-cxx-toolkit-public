@@ -69,6 +69,9 @@ public:
     bool SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
+    virtual void ReadBitString(CBitString& obj);
+    virtual void SkipBitString(void);
+
     EFixNonPrint FixNonPrint(EFixNonPrint how)
         {
             EFixNonPrint tmp = m_FixMethod;
@@ -254,6 +257,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.51  2005/11/09 20:00:47  gouriano
 * Reviewed stream integrity checks to increase the number of them in Release mode
 *

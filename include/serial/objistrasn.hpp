@@ -68,6 +68,9 @@ public:
     void SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
+    virtual void ReadBitString(CBitString& obj);
+    virtual void SkipBitString(void);
+
     EFixNonPrint FixNonPrint(EFixNonPrint how)
         {
             EFixNonPrint tmp = m_FixMethod;
@@ -219,6 +222,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.63  2005/08/17 18:17:03  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

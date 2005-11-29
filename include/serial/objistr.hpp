@@ -255,6 +255,9 @@ public:
     void SkipStd(char* const& );
     void SkipStd(const char* const& );
 
+    void ReadStd(CBitString& data);
+    void SkipStd(CBitString& data);
+
     // primitive readers
     // bool
     virtual bool ReadBool(void) = 0;
@@ -320,6 +323,9 @@ public:
     // any content object
     virtual void ReadAnyContentObject(CAnyContentObject& obj) = 0;
     virtual void SkipAnyContentObject(void) = 0;
+
+    virtual void ReadBitString(CBitString& obj) = 0;
+    virtual void SkipBitString(void) = 0;
 
     // octet string
     virtual void SkipByteBlock(void) = 0;
@@ -727,6 +733,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.115  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.114  2005/11/16 16:27:26  vakatov
 * @deprecated Set/GetStreamOffset()
 *

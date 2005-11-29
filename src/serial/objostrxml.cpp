@@ -677,9 +677,52 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
     x_EndNamespace(ns_name);
 }
 
-void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& /* in */)
+void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& in)
 {
-    ThrowError(fNotImplemented,"not yet");
+    CAnyContentObject obj;
+    in.ReadAnyContentObject(obj);
+    WriteAnyContentObject(obj);
+}
+
+void CObjectOStreamXml::WriteBitString(const CBitString& obj)
+{
+    static const char ToHex[] = "0123456789ABCDEF";
+    Uint1 data, mask;
+    bool done = false;
+#if BITSTRING_AS_VECTOR
+    for ( CBitString::const_iterator i = obj.begin(); !done; ) {
+        for (data=0, mask=0x8; !done && mask!=0; mask >>= 1) {
+            if (*i) {
+                data |= mask;
+            }
+            done = (++i == obj.end());
+        }
+        m_Output.WrapAt(78, false);
+        m_Output.PutChar(ToHex[data]);
+    }
+#else
+    CBitString::size_type i=0;
+    CBitString::size_type ilast = obj.size();
+    CBitString::enumerator e = obj.first();
+    while (!done) {
+        for (data=0, mask=0x8; !done && mask!=0; mask >>= 1) {
+            if (i == *e) {
+                data |= mask;
+                ++e;
+            }
+            done = (++i == ilast);
+        }
+        m_Output.WrapAt(78, false);
+        m_Output.PutChar(ToHex[data]);
+    }
+#endif
+}
+
+void CObjectOStreamXml::CopyBitString(CObjectIStream& in)
+{
+    CBitString obj;
+    in.ReadBitString(obj);
+    WriteBitString(obj);
 }
 
 void CObjectOStreamXml::WriteCString(const char* str)
@@ -1385,6 +1428,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2005/11/29 17:43:15  gouriano
+* Added CBitString class
+*
 * Revision 1.87  2005/10/27 15:54:49  gouriano
 * Added support for various character encodings
 *

@@ -234,6 +234,70 @@ void CObjectOStreamAsn::CopyAnyContentObject(CObjectIStream& )
         "unable to copy AnyContent object in ASN");
 }
 
+void CObjectOStreamAsn::WriteBitString(const CBitString& obj)
+{
+    static const char ToHex[] = "0123456789ABCDEF";
+    bool hex = false;
+#if BITSTRING_AS_VECTOR
+    hex = obj.size()%8 == 0;
+    m_Output.PutChar('\'');
+// CBitString is vector<bool>
+    if (hex) {
+        Uint1 data, mask;
+        for ( CBitString::const_iterator i = obj.begin(); i != obj.end(); ) {
+            for (data=0, mask=0x8; mask!=0; mask >>= 1, ++i) {
+                if (*i) {
+                    data |= mask;
+                }
+            }
+            m_Output.WrapAt(78, false);
+            m_Output.PutChar(ToHex[data]);
+        }
+    } else {
+        ITERATE ( CBitString, i, obj) {
+            m_Output.WrapAt(78, false);
+            m_Output.PutChar( *i ? '1' : '0');
+        }
+    }
+#else
+    CBitString::size_type i=0;
+    CBitString::size_type ilast = obj.size();
+    CBitString::enumerator e = obj.first();
+    hex = obj.size()%8 == 0;
+    m_Output.PutChar('\'');
+    if (hex) {
+        Uint1 data, mask;
+        while (i < ilast) {
+            for (data=0, mask=0x8; mask!=0; mask >>= 1, ++i) {
+                if (i == *e) {
+                    data |= mask;
+                    ++e;
+                }
+            }
+            m_Output.WrapAt(78, false);
+            m_Output.PutChar(ToHex[data]);
+        }
+    } else {
+        for (; i < ilast; ++i) {
+            m_Output.WrapAt(78, false);
+            m_Output.PutChar( (i == *e) ? '1' : '0');
+            if (i == *e) {
+                ++e;
+            }
+        }
+    }
+#endif
+    m_Output.PutChar('\'');
+    m_Output.PutChar(hex ? 'H' : 'B');
+}
+
+void CObjectOStreamAsn::CopyBitString(CObjectIStream& in)
+{
+    CBitString obj;
+    in.ReadBitString(obj);
+    WriteBitString(obj);
+}
+
 void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
 {
     size_t startLine = m_Output.GetLine();

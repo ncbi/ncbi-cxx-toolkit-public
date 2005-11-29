@@ -508,6 +508,123 @@ void CObjectIStreamAsn::SkipAnyContentObject(void)
     SkipAnyContent();
 }
 
+void CObjectIStreamAsn::ReadBitString(CBitString& obj)
+{
+#if BITSTRING_AS_VECTOR
+    obj.clear();
+// CBitString is vector<bool>
+    Expect('\'', true);
+    string data;
+    size_t reserve;
+    const size_t step=128;
+    data.reserve(reserve=step);
+    bool hex=false;
+    int c;
+    for ( ; !hex; hex= c > 0x1) {
+        c = GetHexChar();
+        if (c < 0) {
+            break;
+        }
+        data.append(1, char(c));
+        if (--reserve == 0) {
+            data.reserve(data.size() + (reserve=step));
+        }
+    }
+    if (c<0 && !hex) {
+        hex = m_Input.PeekChar() == 'H';
+    }
+    if (hex) {
+        obj.reserve( data.size() * 4 );
+        Uint1 byte;
+        ITERATE( string, i, data) {
+            byte = *i;
+            for (Uint1 mask= 0x8; mask != 0; mask >>= 1) {
+                obj.push_back( (byte & mask) != 0 );
+            }
+        }
+        if (c > 0) {
+            obj.reserve(obj.size() + (reserve=step));
+            for (c= GetHexChar(); c > 0; c= GetHexChar()) {
+                byte = c;
+                for (Uint1 mask= 0x8; mask != 0; mask >>= 1) {
+                    obj.push_back( (byte & mask) != 0 );
+                    if (--reserve == 0) {
+                        obj.reserve(obj.size() + (reserve=step));
+                    }
+                }
+            }
+        }
+        Expect('H');
+    } else {
+        obj.reserve( data.size() );
+        ITERATE( string, i, data) {
+            obj.push_back( *i != 0 );
+        }
+        Expect('B');
+    }
+    obj.reserve(obj.size());
+#else
+    obj.resize(0);
+    Expect('\'', true);
+    string data;
+    size_t reserve;
+    const size_t step=128;
+    data.reserve(reserve=step);
+    bool hex=false;
+    int c;
+    for ( ; !hex; hex= c > 0x1) {
+        c = GetHexChar();
+        if (c < 0) {
+            break;
+        }
+        data.append(1, char(c));
+        if (--reserve == 0) {
+            data.reserve(data.size() + (reserve=step));
+        }
+    }
+    if (c<0 && !hex) {
+        hex = m_Input.PeekChar() == 'H';
+    }
+    CBitString::size_type len = 0;
+    if (hex) {
+        Uint1 byte;
+        ITERATE( string, i, data) {
+            byte = *i;
+            for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
+                if ((byte & mask) != 0) {
+                    obj.set_bit(len);
+                }
+            }
+        }
+        if (c > 0) {
+            for (c= GetHexChar(); c > 0; c= GetHexChar()) {
+                byte = c;
+                for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
+                    if ((byte & mask) != 0) {
+                        obj.set_bit(len);
+                    }
+                }
+            }
+        }
+        Expect('H');
+    } else {
+        ITERATE( string, i, data) {
+            if ( *i != 0 ) {
+                obj.set_bit(len);
+            }
+            ++len;
+        }
+        Expect('B');
+    }
+    obj.resize(len);
+#endif
+}
+
+void CObjectIStreamAsn::SkipBitString(void)
+{
+    SkipByteBlock();
+}
+
 string CObjectIStreamAsn::ReadFileHeader()
 {
     CLightString id = ReadTypeId(SkipWhiteSpace());
@@ -920,10 +1037,10 @@ void CObjectIStreamAsn::SkipByteBlock(void)
         if ( c >= '0' && c <= '9' ) {
             continue;
         }
-        else if ( c >= 'A' && c <= 'Z' ) {
+        else if ( c >= 'A' && c <= 'F' ) {
             continue;
         }
-        else if ( c >= 'a' && c <= 'z' ) {
+        else if ( c >= 'a' && c <= 'f' ) {
             continue;
         }
         else if ( c == '\'' ) {
@@ -938,7 +1055,7 @@ void CObjectIStreamAsn::SkipByteBlock(void)
                 + NStr::IntToString(c));
         }
     }
-    Expect('H', true);
+    Expect('H', 'B', true);
 }
 
 void CObjectIStreamAsn::StartBlock(void)
@@ -1364,6 +1481,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.102  2005/11/29 17:43:15  gouriano
+* Added CBitString class
+*
 * Revision 1.101  2005/10/11 18:08:31  gouriano
 * Corrected handling CEofException
 *

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/11/29 17:40:57  gouriano
+* Added CBitString class
+*
 * Revision 1.17  2005/08/05 15:12:02  gouriano
 * Allow DEF file tuneups by data type, not only by name
 *
@@ -225,7 +228,7 @@ public:
     virtual const char* GetDEFKeyword(void) const;
 };
 
-class COctetStringDataType : public CStaticDataType {
+class CBitStringDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
@@ -239,14 +242,20 @@ public:
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
 };
 
-class CBitStringDataType : public COctetStringDataType {
-    typedef COctetStringDataType CParent;
+class COctetStringDataType : public CBitStringDataType {
+    typedef CBitStringDataType CParent;
 public:
     bool CheckValue(const CDataValue& value) const;
+    const CTypeInfo* GetRealTypeInfo(void);
+    bool NeedAutoPointer(const CTypeInfo* typeInfo) const;
+    AutoPtr<CTypeStrings> GetFullCType(void) const;
+    virtual const char* GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual void GetXMLSchemaContents(string& type, string& contents) const;
+private:
+    bool x_AsBitString(void) const;
 };
 
 class CIntDataType : public CStaticDataType {

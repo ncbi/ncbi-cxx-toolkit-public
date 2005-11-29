@@ -97,6 +97,9 @@ protected:
     virtual void WriteAnyContentObject(const CAnyContentObject& obj);
     virtual void CopyAnyContentObject(CObjectIStream& in);
 
+    virtual void WriteBitString(const CBitString& obj);
+    virtual void CopyBitString(CObjectIStream& in);
+
 #ifdef VIRTUAL_MID_LEVEL_IO
     virtual void WriteContainer(const CContainerTypeInfo* containerType,
                                 TConstObjectPtr containerPtr);
@@ -173,6 +176,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.49  2005/10/24 20:27:18  gouriano
 * Added option to write named integers by value only
 *

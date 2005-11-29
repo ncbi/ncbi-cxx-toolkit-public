@@ -38,6 +38,12 @@
 #include <serial/serialdef.hpp>
 #include <typeinfo>
 
+#define BITSTRING_AS_VECTOR    0
+
+#if !BITSTRING_AS_VECTOR
+#include <util/bitset/ncbi_bitset.hpp>
+#endif
+
 
 /** @addtogroup GenClassSupport
  *
@@ -46,6 +52,36 @@
 
 
 BEGIN_NCBI_SCOPE
+
+// CBitString
+#if BITSTRING_AS_VECTOR
+typedef std::vector< bool > CBitString;
+#else
+//typedef bm::bvector< > CBitString;
+
+// the following is a temporary workaround
+// until bvector has its own size/resize methods
+class CBitString : public bm::bvector< >
+{
+public:
+    typedef bm::id_t size_type;
+
+    CBitString(void)
+    {
+        m_size = 0;
+    }
+    size_type size(void) const
+    {
+        return m_size;
+    }
+    void resize(size_type n)
+    {
+        m_size = n;
+    }
+private:
+    size_type m_size;
+};
+#endif
 
 class CTypeInfo;
 class CClassTypeInfo;
@@ -522,6 +558,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.39  2005/05/09 18:45:08  ucko
 * Ensure that widely-included classes with virtual methods have virtual dtors.
 *

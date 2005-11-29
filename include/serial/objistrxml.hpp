@@ -88,6 +88,9 @@ protected:
     bool SkipAnyContent(void);
     virtual void SkipAnyContentObject(void);
 
+    virtual void ReadBitString(CBitString& obj);
+    virtual void SkipBitString(void);
+
     virtual void StartDelayBuffer(void);
     virtual CRef<CByteSource> EndDelayBuffer(void);
 
@@ -259,6 +262,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.42  2005/10/27 15:54:29  gouriano
 * Added support for various character encodings
 *

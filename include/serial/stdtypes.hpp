@@ -347,6 +347,14 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
+EMPTY_TEMPLATE
+class NCBI_XSERIAL_EXPORT CStdTypeInfo<CBitString>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+};
+
 
 /* @} */
 
@@ -361,6 +369,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.31  2004/03/25 15:57:55  gouriano
 * Added possibility to copy and compare serial object non-recursively
 *

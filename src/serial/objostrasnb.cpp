@@ -373,6 +373,64 @@ void CObjectOStreamAsnBinary::CopyAnyContentObject(CObjectIStream& )
         "unable to copy AnyContent object in ASN");
 }
 
+void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
+{
+    WriteSysTag(eBitString);
+    WriteLength((obj.size()+7)/8+1);
+    if (obj.size() == 0) {
+        return;
+    }
+    WriteByte(TByte(obj.size()%8 ? 8-obj.size()%8 : 0));
+    size_t reserve=128;
+    string bytes;
+    bytes.reserve(reserve);
+    Uint1 data, mask;
+    bool done=false;
+
+#if BITSTRING_AS_VECTOR
+    for ( CBitString::const_iterator i = obj.begin(); !done; ) {
+        for (data=0, mask=0x80; mask != 0 && !done; mask >>= 1) {
+            if (*i) {
+                data |= mask;
+            }
+            done = (++i == obj.end());
+        }
+        bytes.append(1, data);
+        if (--reserve == 0 || done) {
+            WriteBytes(bytes.data(),bytes.size());
+            bytes.clear();
+            reserve = bytes.capacity();
+        }
+    }
+#else
+    CBitString::size_type i=0;
+    CBitString::size_type ilast = obj.size();
+    CBitString::enumerator e = obj.first();
+    while (!done) {
+        for (data=0, mask=0x80; !done && mask!=0; mask >>= 1) {
+            if (i == *e) {
+                data |= mask;
+                ++e;
+            }
+            done = (++i == ilast);
+        }
+        bytes.append(1, data);
+        if (--reserve == 0 || done) {
+            WriteBytes(bytes.data(),bytes.size());
+            bytes.clear();
+            reserve = bytes.capacity();
+        }
+    }
+#endif
+}
+
+void CObjectOStreamAsnBinary::CopyBitString(CObjectIStream& in)
+{
+    CBitString obj;
+    in.ReadBitString(obj);
+    WriteBitString(obj);
+}
+
 void CObjectOStreamAsnBinary::WriteNumberValue(Int4 data)
 {
     size_t length;
@@ -1124,6 +1182,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.100  2005/11/29 17:43:15  gouriano
+* Added CBitString class
+*
 * Revision 1.99  2005/11/09 20:01:08  gouriano
 * Reviewed stream integrity checks to increase the number of them in Release mode
 *

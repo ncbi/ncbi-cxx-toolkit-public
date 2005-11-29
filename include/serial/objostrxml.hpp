@@ -139,6 +139,9 @@ protected:
     virtual void WriteAnyContentObject(const CAnyContentObject& obj);
     virtual void CopyAnyContentObject(CObjectIStream& in);
 
+    virtual void WriteBitString(const CBitString& obj);
+    virtual void CopyBitString(CObjectIStream& in);
+
     void WriteEscapedChar(char c);
     void WriteEncodedChar(const char*& src,
                           EStringType type = eStringTypeVisible);
@@ -307,6 +310,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.41  2005/10/27 15:54:29  gouriano
 * Added support for various character encodings
 *

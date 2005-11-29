@@ -1552,12 +1552,62 @@ CTypeInfo* CStdTypeInfo<ncbi::CAnyContentObject>::CreateTypeInfo(void)
     return new CPrimitiveTypeInfoAnyContent();
 }
 
+
+class CBitStringFunctions : public CPrimitiveTypeFunctions<CBitString>
+{
+public:
+    static TObjectPtr Create(TTypeInfo /*typeInfo*/,
+                             CObjectMemoryPool* /*memoryPool*/)
+        {
+            return new TObjectType();
+        }
+    static bool IsDefault(TConstObjectPtr objectPtr)
+        {
+            return Get(objectPtr) == TObjectType();
+        }
+    static void SetDefault(TObjectPtr objectPtr)
+        {
+            Get(objectPtr) = TObjectType();
+        }
+};
+
+CPrimitiveTypeInfoBitString::CPrimitiveTypeInfoBitString(void)
+    : CParent(sizeof(CBitString), ePrimitiveValueBitString)
+{
+    typedef CPrimitiveTypeFunctions<ncbi::CBitString> TFunctions;
+    SetMemFunctions(&CBitStringFunctions::Create,
+                    &CBitStringFunctions::IsDefault,
+                    &CBitStringFunctions::SetDefault,
+                    &TFunctions::Equals,
+                    &TFunctions::Assign);
+    SetIOFunctions(&TFunctions::Read,
+                   &TFunctions::Write,
+                   &TFunctions::Copy,
+                   &TFunctions::Skip);
+//    CPrimitiveTypeFunctions<CBitString>::SetMemFunctions(this);
+//    CPrimitiveTypeFunctions<CBitString>::SetIOFunctions(this);
+}
+
+TTypeInfo CStdTypeInfo<CBitString>::GetTypeInfo(void)
+{
+    static TTypeInfo info = CreateTypeInfo();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<CBitString>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoBitString();
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2005/11/29 17:43:15  gouriano
+* Added CBitString class
+*
 * Revision 1.46  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *

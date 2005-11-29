@@ -259,6 +259,12 @@ void CObjectOStream::WriteStd(char* const data)
 }
 
 inline
+void CObjectOStream::WriteStd(const CBitString& data)
+{
+    WriteBitString(data);
+}
+
+inline
 CObjectOStream::ByteBlock::ByteBlock(CObjectOStream& out, size_t length)
     : m_Stream(out), m_Length(length), m_Ended(false)
 {
@@ -412,6 +418,9 @@ bool CObjectOStream::GetWriteNamedIntegersByValue(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.26  2005/10/24 20:27:18  gouriano
 * Added option to write named integers by value only
 *

@@ -68,6 +68,9 @@ public:
     virtual void WriteAnyContentObject(const CAnyContentObject& obj);
     virtual void CopyAnyContentObject(CObjectIStream& in);
 
+    virtual void WriteBitString(const CBitString& obj);
+    virtual void CopyBitString(CObjectIStream& in);
+
     void WriteLongTag(ETagClass tag_class,
                       ETagConstructed tag_constructed,
                       TLongTag tag_value);
@@ -213,6 +216,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2005/11/29 17:42:49  gouriano
+* Added CBitString class
+*
 * Revision 1.50  2005/11/09 20:00:47  gouriano
 * Reviewed stream integrity checks to increase the number of them in Release mode
 *
