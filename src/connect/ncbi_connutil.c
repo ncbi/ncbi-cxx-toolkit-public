@@ -1699,9 +1699,58 @@ extern size_t HostPortToString(unsigned int   host,
 }
 
 
+
+/****************************************************************************
+ * CRC32
+ */
+
+
+/* Standard Ethernet/ZIP polynomial */
+#define CRC32_POLY 0x04C11DB7UL
+
+
+static unsigned int s_CRC32[256];
+
+static void s_CRC32_Init(void)
+{
+    size_t i;
+    if (s_CRC32[255])
+        return;
+    for (i = 0;  i < 256;  i++) {
+        unsigned int byteCRC = (unsigned int) i << 24;
+        int j;
+        for (j = 0;  j < 8;  j++) {
+            if (byteCRC & 0x80000000UL)
+                byteCRC = (byteCRC << 1) ^ CRC32_POLY;
+            else
+                byteCRC = (byteCRC << 1);
+        }
+        s_CRC32[i] = byteCRC;
+    }
+}
+
+
+unsigned int CRC32_Update(unsigned int checksum, const void *ptr, size_t count)
+{
+    const unsigned char* str = (const unsigned char*) ptr;
+    size_t j;
+
+    s_CRC32_Init();
+    for (j = 0;  j < count;  j++) {
+        size_t i = ((checksum >> 24) ^ *str++) & 0xFF;
+        checksum <<= 8;
+        checksum  ^= s_CRC32[i];
+    }
+    return checksum;
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.78  2005/11/29 19:54:49  lavr
+ * +CRC32 API
+ *
  * Revision 6.77  2005/08/18 19:00:13  lavr
  * Fix finishing-up bug in BASE64_Decode()
  *
