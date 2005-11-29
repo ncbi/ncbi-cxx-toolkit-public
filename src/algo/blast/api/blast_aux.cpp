@@ -184,8 +184,6 @@ CBlastHitSavingOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("total_hsp_limit", m_Ptr->total_hsp_limit);
     ddc.Log("hsp_range_max", m_Ptr->hsp_range_max);
     ddc.Log("culling_limit", m_Ptr->culling_limit);
-    ddc.Log("required_start", m_Ptr->required_start);
-    ddc.Log("required_end", m_Ptr->required_end);
     ddc.Log("expect_value", m_Ptr->expect_value);
     ddc.Log("cutoff_score", m_Ptr->cutoff_score);
     ddc.Log("percent_identity", m_Ptr->percent_identity);
@@ -683,6 +681,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.84  2005/11/29 17:28:02  camacho
+ * Remove BlastHitSavingOptions::required_{start,end}
+ *
  * Revision 1.83  2005/11/14 17:19:47  camacho
  * Handle CSeq_loc::{e_not_set,e_Empty} in CSeqLoc2BlastSeqLoc
  *

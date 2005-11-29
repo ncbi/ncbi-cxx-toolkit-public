@@ -233,14 +233,6 @@ public:
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
 
-    /// Start of the region required to be part of the alignment
-    int GetRequiredStart() const;
-    void SetRequiredStart(int s);
-
-    /// End of the region required to be part of the alignment
-    int GetRequiredEnd() const;
-    void SetRequiredEnd(int e);
-
     // Expect value cut-off threshold for an HSP, or a combined hit if sum
     // statistics is used
     double GetEvalueThreshold() const;
@@ -592,6 +584,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.112  2005/11/29 17:27:40  camacho
+* Remove BlastHitSavingOptions::required_{start,end}
+*
 * Revision 1.111  2005/09/28 18:21:33  camacho
 * Rearrangement of headers/functions to segregate object manager dependencies.
 *

@@ -316,11 +316,6 @@ typedef struct BlastHitSavingOptions {
    Int4 culling_limit; /**< If the query range of an HSP is contained in
                             at least this many higher-scoring HSPs, throw
                             away the HSP as redundant (turned off if zero) */
-   /* PSI-BLAST Hit saving options */
-   Int4 required_start;  /**< Start of the region required to be part of the
-                            alignment */
-   Int4 required_end;    /**< End of the region required to be part of the
-                            alignment */
 
    /********************************************************************/
    /* Merge all these in a structure for clarity? */

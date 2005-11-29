@@ -95,8 +95,6 @@ enum EBlastOptIdx {
     eBlastOpt_HitlistSize,
     eBlastOpt_MaxNumHspPerSequence,
     eBlastOpt_CullingLimit,
-    eBlastOpt_RequiredStart,
-    eBlastOpt_RequiredEnd,
     eBlastOpt_EvalueThreshold,
     eBlastOpt_CutoffScore,
     eBlastOpt_PercentIdentity,
@@ -1326,44 +1324,6 @@ CBlastOptions::SetCullingLimit(int s)
     }
 }
 
-int 
-CBlastOptions::GetRequiredStart() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetRequiredStart() not available.");
-    }
-    return m_Local->GetRequiredStart();
-}
-void 
-CBlastOptions::SetRequiredStart(int s)
-{
-    if (m_Local) {
-        m_Local->SetRequiredStart(s);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_RequiredStart, s);
-    }
-}
-
-int 
-CBlastOptions::GetRequiredEnd() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetRequiredEnd() not available.");
-    }
-    return m_Local->GetRequiredEnd();
-}
-void 
-CBlastOptions::SetRequiredEnd(int e)
-{
-    if (m_Local) {
-        m_Local->SetRequiredEnd(e);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_RequiredEnd, e);
-    }
-}
-
 double 
 CBlastOptions::GetEvalueThreshold() const
 {
@@ -1913,6 +1873,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2005/11/29 17:28:02  camacho
+* Remove BlastHitSavingOptions::required_{start,end}
+*
 * Revision 1.72  2005/10/05 17:45:28  camacho
 * + rcsid string
 *

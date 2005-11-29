@@ -108,10 +108,6 @@ CBlastRPSOptionsHandle::SetHitSavingOptionsDefaults()
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
     // and passed to the engine in the params structure
-
-    // not applicable
-    m_Opts->SetRequiredStart(0);
-    m_Opts->SetRequiredEnd(0);
 }
 
 void
@@ -136,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/11/29 17:28:02  camacho
+ * Remove BlastHitSavingOptions::required_{start,end}
+ *
  * Revision 1.14  2005/10/06 19:43:07  camacho
  * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
  * Fixes problem with uninitializes program and service name for CRemoteBlast.

@@ -175,14 +175,6 @@ public:
     int GetCullingLimit() const;
     void SetCullingLimit(int s);
 
-    /// Start of the region required to be part of the alignment
-    int GetRequiredStart() const;
-    void SetRequiredStart(int s);
-
-    /// End of the region required to be part of the alignment
-    int GetRequiredEnd() const;
-    void SetRequiredEnd(int e);
-
     // Expect value cut-off threshold for an HSP, or a combined hit if sum
     // statistics is used
     double GetEvalueThreshold() const;
@@ -961,30 +953,6 @@ inline void
 CBlastOptionsLocal::SetCullingLimit(int s)
 {
     m_HitSaveOpts->culling_limit = s;
-}
-
-inline int
-CBlastOptionsLocal::GetRequiredStart() const
-{
-    return m_HitSaveOpts->required_start;
-}
-
-inline void
-CBlastOptionsLocal::SetRequiredStart(int s)
-{
-    m_HitSaveOpts->required_start = s;
-}
-
-inline int
-CBlastOptionsLocal::GetRequiredEnd() const
-{
-    return m_HitSaveOpts->required_end;
-}
-
-inline void
-CBlastOptionsLocal::SetRequiredEnd(int e)
-{
-    m_HitSaveOpts->required_end = e;
 }
 
 inline double
