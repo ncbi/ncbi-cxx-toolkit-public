@@ -129,7 +129,6 @@ public:
 	void setOptions(const PssmMakerOptions& option);
 	//void SetIdentityFilterThreshold(double threshold){m_identityFilterThreshold = threshold;};
 	CRef<CPssmWithParameters> make();
-	BLAST_Matrix* makeBlastMatrix();
 	//applicable only to useConsensus=false, use trunct master as query
 	bool getTrunctMaster(CRef< CSeq_entry >& seqEntry);
 	const BlockModelPair& getGuideAlignment();
@@ -160,6 +159,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2005/11/29 19:29:16  cliu
+ * remove makeBlastMatrix
+ *
  * Revision 1.4  2005/08/25 20:22:48  cliu
  * conditionally skip long insert
  *

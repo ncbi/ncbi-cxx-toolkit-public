@@ -368,11 +368,6 @@ CRef<CPssmWithParameters> PssmMaker::make()
 	return pssmRef;
 }
 
-BLAST_Matrix*  PssmMaker::makeBlastMatrix()
-{
-	return PssmToBLAST_Matrix(*make());
-}
-
 void PssmMaker::modifyQuery(CRef< CSeq_entry > query)
 {
 	CBioseq& bioseq = query->SetSeq();
@@ -483,6 +478,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2005/11/29 19:30:42  cliu
+ * remove makeBlastMatrix
+ *
  * Revision 1.7  2005/09/26 14:42:34  camacho
  * Renamed blast_psi.hpp -> pssm_engine.hpp
  *
