@@ -51,7 +51,8 @@ public:
                                      unload_dll)
         {
         }
-    
+
+    virtual
     string GetDllName(const string&       /*interface_name*/,
                       const string&       driver_name  = kEmptyStr,
                       const CVersionInfo& version      = CVersionInfo::kAny)
@@ -61,14 +62,17 @@ public:
                                                           driver_name,
                                                           version);
         }
+    virtual
     string GetDllNameMask(const string&       /*interface_name*/,
                           const string&       driver_name = kEmptyStr,
-                          const CVersionInfo& version     = CVersionInfo::kAny)
+                          const CVersionInfo& version     = CVersionInfo::kAny,
+                          EVersionLocation    ver_lct     = eBeforeSuffix)
         const
         {
             return CPluginManager_DllResolver::GetDllNameMask("xreader",
                                                               driver_name,
-                                                              version);
+                                                              version,
+                                                              ver_lct);
         }
 };
 
