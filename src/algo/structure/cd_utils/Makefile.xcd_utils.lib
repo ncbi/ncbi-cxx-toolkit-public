@@ -3,7 +3,7 @@
 # Build library "xcd_utils"
 ##################################
 
-REQUIRES = objects ctools C-Toolkit
+REQUIRES = objects
 
 ASN_DEP = cdd
 
@@ -48,7 +48,7 @@ SRC = \
 	cuTaxTree \
 	cuSeqTreeAsnizer \
 	cuSeqTreeRootedLayout \
-	cuSeqTreeAPI
+	cuSeqTreeAPI 
 
 CPPFLAGS = $(ORIG_CPPFLAGS) \
 			$(NCBI_C_INCLUDE)
