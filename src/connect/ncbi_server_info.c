@@ -800,9 +800,9 @@ static const char kFIREWALL  [] = "FIREWALL";
 static const char kDNS       [] = "DNS";
 
 
-/* Note: be aware of "prefixness" of tag constants and order of
- * their appearance in the table below, as comparison is done via
- * "strncmp", which can result 'true' on a smaller fit fragment.
+/* Note: be aware of the "prefixness" of tag constants and the order of
+ * their appearances in the table below, as comparison is done via
+ * "strncasecmp", which can result 'true' on a smaller fit fragment.
  */
 static const SSERV_Attr s_SERV_Attr[] = {
     { fSERV_Ncbid,
@@ -826,17 +826,17 @@ static const SSERV_Attr s_SERV_Attr[] = {
        s_Http_SizeOf,       s_Http_Equal} },
 
     { fSERV_Http,
-      kHTTP,  sizeof(kHTTP) - 1,
+      kHTTP,       sizeof(kHTTP) - 1,
       {s_Http_Write,        s_Http_Read,
        s_Http_SizeOf,       s_Http_Equal} },
 
     { fSERV_Firewall,
-      kFIREWALL, sizeof(kFIREWALL) - 1,
+      kFIREWALL,   sizeof(kFIREWALL) - 1,
       {s_Firewall_Write,    s_Firewall_Read,
        s_Firewall_SizeOf,   s_Firewall_Equal} },
 
     { fSERV_Dns,
-      kDNS, sizeof(kDNS) - 1,
+      kDNS,        sizeof(kDNS) - 1,
       {s_Dns_Write,         s_Dns_Read,
        s_Dns_SizeOf,        0} }
 };
@@ -859,10 +859,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
         size_t i;
         for (i = 0;  i < sizeof(s_SERV_Attr)/sizeof(s_SERV_Attr[0]);  i++) {
             size_t len = s_SERV_Attr[i].tag_len;
-            if (strncmp(s_SERV_Attr[i].tag, tag, len) == 0)
-                if (!tag[len] || /* avoid prefix-only match */
-                    !(isalnum((unsigned char) tag[len]) || tag[len] == '_'))
-                    return &s_SERV_Attr[i];
+            if (strncasecmp(s_SERV_Attr[i].tag, tag, len) == 0
+                &&  (!tag[len]  ||  isspace((unsigned char) tag[len])))
+                return &s_SERV_Attr[i];
         }
     }
     return 0;
@@ -872,6 +871,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2005/11/29 19:56:33  lavr
+ * Changed service type tag comparison to be case-insensitive
+ *
  * Revision 6.56  2005/07/11 18:13:52  lavr
  * Introduce *Ex constructors to take additinal mem size to allocate at end
  *
