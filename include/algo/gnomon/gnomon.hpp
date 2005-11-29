@@ -105,6 +105,7 @@ private:
     CRef<objects::CSeq_annot> m_Annot;
 };
 
+NCBI_XALGOGNOMON_EXPORT
 void PrintGenes(const list<CGene>& genes, CUniqNumber& unumber, CNcbiOstream& to = cout, CNcbiOstream& toprot = cout);
 
 class NCBI_XALGOGNOMON_EXPORT CCodingPropensity {
@@ -123,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/11/29 15:21:37  jcherry
+ * Added export specifier
+ *
  * Revision 1.6  2005/11/21 21:25:54  chetvern
  * Extracted PartialModelStepBack from PrintGenes
  *
