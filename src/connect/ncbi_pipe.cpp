@@ -738,7 +738,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 close(fd_pipe_in[0]);
                 close(fd_pipe_in[1]);
             } else {
+#if 1
+                freopen("/dev/null", "r", stdin);
+#else
                 fclose(stdin);
+#endif
             }
             assert(CPipe::fStdOut_Close);
             if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
@@ -748,7 +752,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 close(fd_pipe_out[0]);
                 close(fd_pipe_out[1]);
             } else {
+#if 1
+                freopen("/dev/null", "w", stdout);
+#else
                 fclose(stdout);
+#endif
             }
             assert(!CPipe::fStdErr_Close);
             if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
@@ -758,7 +766,11 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                 close(fd_pipe_err[0]);
                 close(fd_pipe_err[1]);
             } else {
+#if 1
+                freopen("/dev/null", "a", stderr);
+#else
                 fclose(stderr);
+#endif
             }
 
             // Prepare program arguments
@@ -1350,6 +1362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/11/29 19:55:43  lavr
+ * When requested to close, reopen standard fds to /dev/null instead
+ *
  * Revision 1.40  2005/11/26 03:20:59  lavr
  * Close all open handles on CPipe::Close()
  *
