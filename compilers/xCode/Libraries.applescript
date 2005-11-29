@@ -192,7 +192,7 @@ property gui__core : {name:"gui__core", path:"gui:core", exc:{"DataHandle.cpp", 
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
 property data_handle : {name:"data_handle", path:"gui:core", inc:{"data_handle__.cpp", "data_handle___.cpp"}, asn1:true, asn1Name:"data_handle"}
 property gbench_svc : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc__.cpp", "gbench_svc___.cpp"}, asn1:true, asn1Name:"gbench_svc"}
-property gbench_svc_cli : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc.cpp", "gbench_svc_.cpp"}}
+property gbench_svc_cli : {name:"gbench_svc", path:"gui:core", inc:{"gbench_svc_cli.cpp", "gbench_svc_cli_.cpp"}}
 
 property xgbplugin : {name:"xgbplugin", path:"gui:core", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true, asn1Name:"plugin"}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
@@ -367,7 +367,7 @@ property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", r
 (* Demo GUI Applications *)
 property demo_seqgraphic : {name:"demo_seqgraphic", path:"gui:widgets:seq_graphic:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, fworks:"Carbon", req:true}
 property demo_crossaln : {name:"demo_crossaln", path:"gui:widgets:aln_crossaln:demo", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_widgets_aln gui_config ncbi_xloader_genbank" & FLTK_LIBS, fworks:"Carbon", req:true}
---property demo_seqtext : {name:"demo_seqtext", path:"gui:widgets:seq_text:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, fworks:"Carbon", req:true}
+property demo_seqtext : {name:"demo_seqtext", path:"gui:widgets:seq_text:demo", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_seq gui_config" & FLTK_LIBS, fworks:"Carbon", req:false}
 
 property demo_hitmatrix : {name:"demo_hitmatrix", path:"gui:widgets:hit_matrix:demo", dep:"ncbi_core ncbi_seq ncbi_seqext gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_config ncbi_xloader_genbank" & FLTK_LIBS, fworks:"Carbon", req:false}
 property demo_workspace : {name:"demo_workspace", path:"gui:widgets:workspace:demo", inc:{"demo_workspace.cpp"}, dep:"ncbi_core gui_core gui_utils gui_dialogs gui_widgets" & FLTK_LIBS, fworks:"Carbon", req:false}
@@ -407,7 +407,7 @@ property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedb
 
 
 -- Application packs
-property allApps : {gbench, demo_seqgraphic, demo_crossaln, demo_hitmatrix, demo_workspace, demo_win_manager, demo_phylo_tree, demo_serial_browse, demo_tooltip, demo_treebrowser, demo_table, demo_taxtree, demo_font, demo_gl3d, demo_spline, demo_tex, demo_tex_font, demo_gltest, demo_wcontrols, demo_wizard}
+property allApps : {gbench, demo_seqgraphic, demo_crossaln, demo_seqtext, demo_hitmatrix, demo_workspace, demo_win_manager, demo_phylo_tree, demo_serial_browse, demo_tooltip, demo_treebrowser, demo_table, demo_taxtree, demo_font, demo_gl3d, demo_spline, demo_tex, demo_tex_font, demo_gltest, demo_wcontrols, demo_wizard}
 --property allApps : {gui_demos}
 
 
@@ -426,6 +426,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.84  2005/11/29 13:13:38  lebedev
+ * gbench_svc_cli added
+ *
  * Revision 1.83  2005/11/25 16:13:43  lebedev
  * Minor tweaks to libraries layout
  *
