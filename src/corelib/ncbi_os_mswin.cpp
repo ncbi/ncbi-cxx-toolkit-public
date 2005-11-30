@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <corelib/ncbistr.hpp>
 #include "ncbi_os_mswin_p.hpp"
 
 
@@ -429,6 +430,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2005/11/30 17:05:14  kuznets
+ * include corelib/ncbistr.hpp
+ *
  * Revision 1.1  2005/11/30 11:52:28  ivanov
  * Initial draft revision
  *
