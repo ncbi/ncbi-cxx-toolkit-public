@@ -1,2 +1,3 @@
 [AddToProject]
 HeadersInInclude = *.hpp hash_impl/*.h
+SourceFiles = ncbi_os_mswin
