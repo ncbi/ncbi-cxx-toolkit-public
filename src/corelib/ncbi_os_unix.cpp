@@ -25,8 +25,7 @@
  *
  * Authors:  Anton Lavrentiev
  *
- * File Description:
- *   UNIX specifics
+ * File Description:   UNIX specifics
  *
  */
 
@@ -129,8 +128,12 @@ bool Daemonize(const char* logfile, TDaemonFlags flags)
 END_NCBI_SCOPE
 
 
-/* --------------------------------------------------------------------------
+/*
+ * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/11/30 11:53:29  ivanov
+ * Cosmetics
+ *
  * Revision 1.2  2004/05/14 13:59:26  gorelenk
  * Added include of ncbi_pch.hpp
  *
