@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.10 2005/11/08 13:12:49 bolton Exp $
+-- $Id: pcassay.asn,v 1.11 2005/11/30 22:42:18 ywang Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -83,7 +83,7 @@ PC-AssayResults ::= SEQUENCE {
                           inconclusive    (3),             --   Substance is Inconclusive
                           unspecified     (4)              --   Substance Outcome is Unspecified
                       }               DEFAULT unspecified,
-    rank              INTEGER                   DEFAULT 0, -- Numeric Rank of Assay Outcome (for result ordering)
+    rank              INTEGER                   OPTIONAL,  -- Numeric Rank of Assay Outcome (for result ordering)
                                                            --   Note: Larger numbers are more active
     data              SEQUENCE OF PC-AssayData  OPTIONAL,  -- Assay Data Reported for this SID (vector)
     url               VisibleString             OPTIONAL,  -- Depositor provided URL for this Result
@@ -244,6 +244,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.11  2005/11/30 22:42:18  ywang
+-- change rank to be optional
+--
 -- Revision 1.10  2005/11/08 13:12:49  bolton
 -- Added ability to provide publications at the assay description and assay
 -- result (per SID) level.  Also, minor changes to comments and object order.
