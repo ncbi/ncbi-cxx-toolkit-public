@@ -39,26 +39,6 @@
 extern "C" {
 #endif
 
-/** Auxiliary structure for dynamic programming gapped extension */
-typedef struct BlastGapDP {
-  Int4 best;            /**< score of best path that ends in a match
-                             at this position */
-  Int4 best_gap;        /**< score of best path that ends in a gap
-                             at this position */
-  Int4 best_decline;    /**< score of best path that ends in a decline
-                             at this position */
-} BlastGapDP;
-
-/** Reduced version of BlastGapDP, for alignments that 
- *  don't use a decline penalty
- */
-typedef struct {
-  Int4 best;            /**< score of best path that ends in a match
-                             at this position */
-  Int4 best_gap;        /**< score of best path that ends in a gap
-                             at this position */
-} BlastGapSmallDP;
-
 Int4
 ALIGN_EX(Uint1* A, Uint1* B, Int4 M, Int4 N, Int4* a_offset,
         Int4* b_offset, GapPrelimEditBlock *edit_block, 
@@ -159,6 +139,9 @@ void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/11/30 18:25:03  papadopo
+ * move BlastGapDP, remove BlastGapSmallDP
+ *
  * Revision 1.11  2005/05/02 13:07:34  madden
  * Remove Blast_CheckHSPsForCommonEndpoints
  *
