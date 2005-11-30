@@ -196,8 +196,14 @@ EOF
                     fi
                 fi
 
-                cmd="dbapi_testspeed -d $driver -S $server"
-                RunSimpleTest "dbapi_testspeed"
+                # Do not run dbapi_testspeed with MOZART and BARTOK
+                if test $server != "MOZART" -a $server != "BARTOK" ; then 
+                    cmd="dbapi_testspeed -d $driver -S $server"
+                    RunSimpleTest "dbapi_testspeed"
+                else
+                    sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -d $driver -S $server (skipped)"
+                fi
+
             else
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -d $driver -S $server (skipped)"
                 sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -d $driver -S $server (skipped)"
