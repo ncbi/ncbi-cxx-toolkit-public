@@ -53,6 +53,15 @@ extern "C" {
 /** Split subject sequences if longer than this */
 #define MAX_DBSEQ_LEN 5000000 
 
+/** Auxiliary structure for dynamic programming gapped extension */
+typedef struct {
+  Int4 best;            /**< score of best path that ends in a match
+                             at this position */
+  Int4 best_gap;        /**< score of best path that ends in a gap
+                             at this position */
+} BlastGapDP;
+
+
 /** Structure supporting the gapped alignment */
 typedef struct BlastGapAlignStruct {
    Boolean positionBased; /**< Is this PSI-BLAST? */
@@ -63,6 +72,8 @@ typedef struct BlastGapAlignStruct {
    GapPrelimEditBlock *rev_prelim_tback; /**< traceback from right extensions */
    SGreedyAlignMem* greedy_align_mem;/**< Preallocated memory for the greedy 
                                          gapped extension */
+   BlastGapDP* dp_mem; /**< scratch structures for dynamic programming */
+   Int4 dp_mem_alloc;  /**< current number of structures allocated */
    BlastScoreBlk* sbp; /**< Pointer to the scoring information block */
    Int4 gap_x_dropoff; /**< X-dropoff parameter to use */
    Int4 query_start; /**< query start offset of current alignment */
