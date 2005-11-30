@@ -28,12 +28,15 @@
  *
  * Author:  Denis Vakatov, Vladimir Ivanov
  *
- * File Description:
- *   Use this header in the place of <windows.h> to avoid various
- *   MS-Windows "popular" preprocessor macros which screw other people's
- *   code. -- This header redefines such macros with inline functions.
- *
  */
+
+/// @file ncbi_os_mswin.hpp
+///
+/// Defines MS Windows specifics. Use this header in the place
+/// of <windows.h> to avoid various MS-Windows "popular" preprocessor
+/// macros which screw other people's code. 
+/// This header redefines such macros with inline functions.
+
 
 #include <ncbiconf.h>
 #if !defined(NCBI_OS_MSWIN)
@@ -44,10 +47,16 @@
 #if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
 #define WIN32_LEAN_AND_MEAN
 #endif
+
 #include <windows.h>
 
-// GetObject
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// Redefined macros
+//
+
+// GetObject
 #ifdef GetObject
 #undef GetObject
 inline int GetObject(HGDIOBJ hGdiObj, int cbBuffer, LPVOID lpvObject)
@@ -85,6 +94,7 @@ inline void Yield(void)
 }
 #endif
 
+// Beep
 #if !defined(Beep)
 /// Avoid a silly name clash between MS-Win and C Toolkit headers.
 #  define Beep Beep
