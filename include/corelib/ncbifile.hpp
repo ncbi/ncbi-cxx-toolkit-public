@@ -74,7 +74,8 @@ public:
     enum EErrCode {
         eMemoryMap,
         eRelativePath,
-        eNotExists
+        eNotExists,
+        eDiskInfo
     };
 
     /// Translate from an error code value to its string representation.
@@ -84,6 +85,7 @@ public:
         case eMemoryMap:    return "eMemoryMap";
         case eRelativePath: return "eRelativePath";
         case eNotExists:    return "eNotExists";
+        case eDiskInfo:     return "eDiskInfo";
         default:            return CException::GetErrCodeString();
         }
     }
@@ -1335,16 +1337,26 @@ public:
 
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CFileUtil --
 ///
 /// Utility functions.
+/// 
+/// Throws an exceptions on error.
 
 class NCBI_XNCBI_EXPORT CFileUtil
 {
 public:
+
+    ///   Unix:
+    ///       The path name to any file/dir withing filesystem.
+    ///   MS Windows:
+    ///       The root directory of the disk, or UNC name. It must include
+    ///       a trailing backslash (for example, \\MyServer\MyShare\, C:\).
+    ///   The "." can be used to get disk space on current disk.
+    ///   GetDiskInformation
+
     /// Get disk space information.
     ///
     /// Get information for the user associated with the calling thread only.
@@ -1353,24 +1365,25 @@ public:
     /// @param path
     ///   String that specifies filesystem for which information
     ///   is to be returned. 
-    ///   Unix:
-    ///       The path name to any file/dir withing filesystem.
-    ///   MS Windows:
-    ///       The root directory of the disk, or UNC name. It must include
-    ///       a trailing backslash (for example, \\MyServer\MyShare\, C:\).
-    ///   The "." can be used to get disk space on current disk.
-    /// @param free
-    ///   Pointer to a variable that receives the amount of free space.
-    /// @param total
-    ///   Pointer to a variable that receives the total number of bytes
-    ///   on the disk.
     /// @return
-    ///   TRUE if operation successful; FALSE, otherwise.
-    ///   In the last case, the values of requested parameters are undefined.
+    ///   The amount of free space.
     /// @sa 
     ///   GetDiskInformation
-    static bool GetDiskSpace(const string& path,
-                             Uint8* free, Uint8* total = 0);
+    static Uint8 GetFreeDiskSpace(const string& path);
+
+    /// Get disk space information.
+    ///
+    /// Get information for the user associated with the calling thread only.
+    /// If per-user quotas are in use, that some returned values may be less
+    /// than the total number of free/total bytes on the disk.
+    /// @param path
+    ///   String that specifies filesystem for which information
+    ///   is to be returned. 
+    /// @return
+    ///   The amount of free space.
+    /// @sa 
+    ///   GetDiskInformation
+    static Uint8 GetTotalDiskSpace(const string& path);
 };
 
 
@@ -2521,6 +2534,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2005/11/30 12:01:21  ivanov
+ * CFileUtil:: split GetDiskSpace() to GetFreeDiskSpace() and
+ * GetTotalDiskSpace().
+ *
  * Revision 1.67  2005/11/28 16:14:38  ivanov
  * + CFileUtil::GetDiskSpace
  *
