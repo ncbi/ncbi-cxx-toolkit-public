@@ -37,16 +37,12 @@
 #include <stdio.h>
 
 #if defined(NCBI_OS_MSWIN)
-#  include <corelib/ncbi_os_mswin.hpp>
+#  include "ncbi_os_mswin_p.hpp"
 #  include <corelib/ncbi_limits.hpp>
 #  include <io.h>
 #  include <direct.h>
 #  include <sys/utime.h>
-// for _O_* flags
-#  include <fcntl.h>
-// for CDirEntry::GetOwner()
-#  include <accctrl.h>
-#  include <aclapi.h>
+#  include <fcntl.h> // for _O_* flags
 typedef unsigned int mode_t;
 
 #elif defined(NCBI_OS_UNIX)
@@ -631,9 +627,9 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 #endif
                                   '\0' };
 
-    list<string> head;              // already resolved to our satisfaction
-    list<string> tail;              // to resolve afterwards
-    string       current;           // to resolve next
+    list<string> head;            // already resolved to our satisfaction
+    list<string> tail;            // to resolve afterwards
+    string       current;         // to resolve next
     int          link_depth = 0;
 
     // Delete trailing slash for all pathes except similar to 'd:\'
@@ -769,6 +765,24 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
                         TMode* oth_mode, TSpecialModeBits* special) const
 {
+#ifdef NCBI_OS_MSWIN
+    // Try to get effective rights using access control list (DACL)
+    ACCESS_MASK mask = 0;
+    if ( CWinSecurity::GetFilePermissions(GetPath(), &mask) ) {
+        if (usr_mode) {
+            *usr_mode = (
+                (mask & FILE_READ_DATA  ? fRead    : 0) |
+                (mask & FILE_WRITE_DATA ? fWrite   : 0) |
+                (mask & FILE_EXECUTE    ? fExecute : 0) );
+        }
+        if (grp_mode) *grp_mode = 0;
+        if (oth_mode) *oth_mode = 0;
+        if (special)  *special  = 0;
+        return true;
+    }
+    // Failed, try general stat() method
+#endif
+
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
@@ -980,12 +994,6 @@ bool s_FileTimeToCTime(const FILETIME& filetime, CTime& t)
         t = newtime.GetGmtTime();
     }
     return true;
-}
-
-
-bool s_CTimeToFileTime(const CTime& t, FILETIME& filetime) 
-{
-    return false;
 }
 
 
@@ -1653,85 +1661,6 @@ bool CDirEntry::IsIdentical(const string& entry_name,
 }
 
 
-#if defined(NCBI_OS_MSWIN)
-
-// Helper function for GetOwner
-bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
-{
-    // Accordingly MSDN max account name size is 20, domain name size is 256.
-    #define MAX_ACCOUNT_LEN  256
-
-    char account_name[MAX_ACCOUNT_LEN];
-    char domain_name [MAX_ACCOUNT_LEN];
-    DWORD account_size = MAX_ACCOUNT_LEN;
-    DWORD domain_size  = MAX_ACCOUNT_LEN;
-    SID_NAME_USE use   = SidTypeUnknown;
-
-    if ( !LookupAccountSid(NULL /*local computer*/, sid, 
-                            account_name, (LPDWORD)&account_size,
-                            domain_name,  (LPDWORD)&domain_size,
-                            &use) ) {
-        return false;
-    }
-    // Save account information
-    if ( account )
-        *account = account_name;
-    if ( domain )
-        *domain = domain_name;
-
-    // Return result
-    return true;
-}
-
-
-// Helper function for SetOwner
-bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
-{
-    // Get priviledge unique identifier
-    LUID luid;
-    if ( !LookupPrivilegeValue(NULL, privilege, &luid) ) {
-        return false;
-    }
-
-    // Get current privilege setting
-
-    TOKEN_PRIVILEGES tp;
-    TOKEN_PRIVILEGES tp_prev;
-    DWORD            tp_prev_size = sizeof(TOKEN_PRIVILEGES);
-    
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Luid = luid;
-    tp.Privileges[0].Attributes = 0;
-
-    AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                            &tp_prev, &tp_prev_size);
-    if ( GetLastError() != ERROR_SUCCESS ) {
-        return false;
-    }
-
-    // Set privilege based on received setting
-
-    tp_prev.PrivilegeCount     = 1;
-    tp_prev.Privileges[0].Luid = luid;
-
-    if ( enable ) {
-        tp_prev.Privileges[0].Attributes |= (SE_PRIVILEGE_ENABLED);
-    } else {
-        tp_prev.Privileges[0].Attributes ^= 
-            (SE_PRIVILEGE_ENABLED & tp_prev.Privileges[0].Attributes);
-    }
-    AdjustTokenPrivileges(token, FALSE, &tp_prev, tp_prev_size,
-                            NULL, NULL);
-    if ( GetLastError() != ERROR_SUCCESS ) {
-        return false;
-    }
-
-    // Privilege settings changed
-    return true;
-}
-#endif
-
-
 bool CDirEntry::GetOwner(string* owner, string* group,
                          EFollowLinks follow) const
 {
@@ -1741,35 +1670,7 @@ bool CDirEntry::GetOwner(string* owner, string* group,
 
 #if defined(NCBI_OS_MSWIN)
 
-    PSID sid_owner;
-    PSID sid_group;
-    PSECURITY_DESCRIPTOR sd = NULL;
-
-    if ( GetNamedSecurityInfo(
-            (LPTSTR)GetPath().c_str(),
-            SE_FILE_OBJECT,
-            OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-            &sid_owner,
-            &sid_group,
-            NULL, NULL,
-            &sd ) != ERROR_SUCCESS ) {
-      return 1;
-    }
-    // Get owner
-    if ( owner  &&  !s_LookupAccountSid(sid_owner, owner) ) {
-        LocalFree(sd);
-        return false;
-    }
-    // Get group
-    if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
-        // This is not an error, because the group name on WINDOWS
-        // is an auxiliary information. Sometimes accounts can not
-        // belongs to groups, or we dont have permissions to get
-        // such information.
-        *group = kEmptyStr;
-    }
-    LocalFree(sd);
-    return true;
+    return CWinSecurity::GetFileOwner(GetPath(), owner, group);
 
 #elif defined(NCBI_OS_UNIX)
 
@@ -1811,102 +1712,8 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 {
 #if defined(NCBI_OS_MSWIN)
 
-    if ( owner.empty() ) {
-        return false;
-    }
-
-    // Get access token
-
-    HANDLE process = GetCurrentProcess();
-    if ( !process ) {
-        return false;
-    }
-    HANDLE token = INVALID_HANDLE_VALUE;
-    if ( !OpenProcessToken(process, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                           &token) ) {
-        return false;
-    }
-
-    // Enable privilegies, if failed try without it
-    s_EnablePrivilege(token, SE_TAKE_OWNERSHIP_NAME);
-    s_EnablePrivilege(token, SE_RESTORE_NAME);
-    s_EnablePrivilege(token, SE_BACKUP_NAME);
-
-    PSID  sid     = NULL;
-    char* domain  = NULL;
-    bool  success = true;
-
-    try {
-
-        //
-        // Get SID for new owner
-        //
-
-        // First call to LookupAccountName to get the buffer sizes
-        DWORD sid_size    = 0;
-        DWORD domain_size = 0;
-        SID_NAME_USE use  = SidTypeUnknown;
-        BOOL res;
-        res = LookupAccountName(NULL, owner.c_str(),
-                                NULL, &sid_size, 
-                                NULL, &domain_size, &use);
-        if ( !res  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER )
-            throw(0);
-
-        // Reallocate memory for the buffers
-        sid    = (PSID) malloc(sid_size);
-        domain = (char*)malloc(domain_size);
-        if ( !sid  || !domain ) {
-            throw(0);
-        }
-
-        // Second call to LookupAccountName to get the account info
-        if ( !LookupAccountName(NULL, owner.c_str(),
-                                sid, &sid_size, 
-                                domain, &domain_size, &use) ) {
-            // Unknown local user
-            throw(0);
-        }
-
-        //
-        // Change owner
-        //
-
-        // Security descriptor (absolute format)
-        UCHAR sd_abs_buf [SECURITY_DESCRIPTOR_MIN_LENGTH];
-        PSECURITY_DESCRIPTOR sd = (PSECURITY_DESCRIPTOR)&sd_abs_buf;
-
-        // Build security descriptor in absolute format
-        if ( !InitializeSecurityDescriptor(
-                sd, SECURITY_DESCRIPTOR_REVISION)) {
-            throw(0);
-        }
-        // Modify security descriptor owner.
-        // FALSE - because new owner was explicitly specified.
-        if ( !SetSecurityDescriptorOwner(sd, sid, FALSE)) {
-            throw(0);
-        }
-        // Check security descriptor
-        if ( !IsValidSecurityDescriptor(sd) ) {
-            throw(0);
-        }
-        // Set new security information for the file object
-        if ( !SetFileSecurity(GetPath().c_str(),
-                (SECURITY_INFORMATION)(OWNER_SECURITY_INFORMATION), sd) ) {
-            throw(0);
-        }
-    }
-    catch (int) {
-        success = false;
-    }
-
-    // Clean up
-    if ( sid )    free(sid);
-    if ( domain ) free(domain);
-    CloseHandle(token);
-
-    // Return result
-    return success;
+    // On MS Windows change we can change file owner only
+    return CWinSecurity::SetFileOwner(GetPath(), owner);
 
 #elif defined(NCBI_OS_UNIX)
 
@@ -2670,7 +2477,7 @@ void s_AddEntry(CDir::TEntries* contents, const string& base_path,
     }
 }
 
-#else //NCBI_OS_UNIX
+#else // NCBI_OS_UNIX
 
 #  define IS_RECURSIVE_ENTRY                   \
     ( (flags & CDir::fIgnoreRecursive)  &&     \
@@ -3151,34 +2958,66 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
 // CFileUtil
 //
 
-bool CFileUtil::GetDiskSpace(const string& path,
-                             Uint8* free, Uint8* total)
+Uint8 CFileUtil::GetFreeDiskSpace(const string& path)
 {
+    Uint8 free;
+
 #if defined(NCBI_OS_MSWIN)
-    return ::GetDiskFreeSpaceEx(path.c_str(),
-                                (PULARGE_INTEGER)free,
-                                (PULARGE_INTEGER)total, 0) != 0;
+    if ( !::GetDiskFreeSpaceEx(path.c_str(), (PULARGE_INTEGER)&free, 0, 0) ) {
+        NCBI_THROW(CFileException, eDiskInfo, 
+                   "CFileUtil::GetFreeDiskSpace: cannot get disk space");
+
+    }
 #elif defined(HAVE_STATVFS)
     struct statvfs st;
     memset(&st, 0, sizeof(st));
-    if (statvfs(path.c_str(), &st) == 0) {
-        if (st.f_frsize) {
-            *free = (Uint8)st.f_frsize * st.f_bavail;
-        } else {
-            *free = (Uint8)st.f_bsize * st.f_bavail;
-        }
-        *total = (Uint8)st.f_bsize * st.f_blocks;
-        return true;
+    if (statvfs(path.c_str(), &st) != 0) {
+        NCBI_THROW(CFileException, eDiskInfo, 
+                   "CFileUtil::GetFreeDiskSpace: cannot get disk space");
+    }
+    if (st.f_frsize) {
+        free = (Uint8)st.f_frsize * st.f_bavail;
+    } else {
+        free = (Uint8)st.f_bsize * st.f_bavail;
     }
 #elif defined(HAVE_STATFS)
     struct statfs st;
-    if (statfs(path.c_str(), &st) == 0) {
-        *free = (Uint8)st.f_bsize * st.f_bavail;
-        *total = (Uint8)st.f_bsize * st.f_blocks;
-        return true;
+    if (statfs(path.c_str(), &st) != 0) {
+        NCBI_THROW(CFileException, eDiskInfo, 
+                   "CFileUtil::GetFreeDiskSpace: cannot get disk space");
     }
+    free = (Uint8)st.f_bsize * st.f_bavail;
 #endif
-    return false;
+    return free;
+}
+
+
+Uint8 CFileUtil::GetTotalDiskSpace(const string& path)
+{
+    Uint8 total;
+
+#if defined(NCBI_OS_MSWIN)
+    if ( !::GetDiskFreeSpaceEx(path.c_str(), 0, (PULARGE_INTEGER)&total, 0) ){
+        NCBI_THROW(CFileException, eDiskInfo, 
+                   "CFileUtil::GetTotalDiskSpace: cannot get disk space");
+    }
+#elif defined(HAVE_STATVFS)
+    struct statvfs st;
+    memset(&st, 0, sizeof(st));
+    if (statvfs(path.c_str(), &st) != 0) {
+        NCBI_THROW(CFileException, eDiskInfo, 
+                   "CFileUtil::GetTotalDiskSpace: cannot get disk space");
+    }
+    total = (Uint8)st.f_bsize * st.f_blocks;
+#elif defined(HAVE_STATFS)
+    struct statfs st;
+    if (statfs(path.c_str(), &st) != 0) {
+        NCBI_THROW(CFileException, eDiskInfo, 
+                   "CFileUtil::GetTotalDiskSpace: cannot get disk space");
+    }
+    total = (Uint8)st.f_bsize * st.f_blocks;
+#endif
+    return total;
 }
 
 
@@ -3791,6 +3630,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.128  2005/11/30 11:59:53  ivanov
+ * Move some MS Windows specific code to ncbi_os_mswin.cpp.
+ * CDirEntry::GetMode() -- MSWin: try to get effective rights using DACL.
+ * CFileUtil:: split GetDiskSpace() to GetFreeDiskSpace() and
+ * GetTotalDiskSpace().
+ *
  * Revision 1.127  2005/11/28 19:09:16  ucko
  * Portability fixes to previous revision.
  *
