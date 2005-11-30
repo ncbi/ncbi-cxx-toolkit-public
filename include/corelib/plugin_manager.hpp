@@ -1100,7 +1100,7 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
                 if ( RegisterWithEntryPoint(ep, driver, version) ) {
                     m_RegisteredEntries.push_back(entry);
                 } else {
-                    ERR_POST(Warning << "Couldn't register an entry point "
+                    ERR_POST(Info << "Couldn't register an entry point "
                         "within a DLL '" << entry.dll->GetName() << "' "
                         "because either an entry point with the same name was already "
                         "registered or it does not provide an appropriate factory.");
@@ -1155,6 +1155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/11/30 19:25:03  ssikorsk
+ * Downgraded warning about duplicate driver factories to info-level.
+ *
  * Revision 1.53  2005/11/30 15:02:43  ssikorsk
  * 1) Trace CPluginManager calls.
  * 2) Minor code improvment.
