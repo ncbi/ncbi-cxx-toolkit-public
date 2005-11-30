@@ -321,13 +321,13 @@ public:
     TClass* CreateInstanceFromList
         (const TPluginManagerParamTree* params,
          const string&                  driver_list,
-         CVersionInfo                   version = GetDefaultDrvVers());
+         const CVersionInfo&            version = GetDefaultDrvVers());
 
     /// Detect driver from the parameters using the key to get list of drivers.
     TClass* CreateInstanceFromKey
         (const TPluginManagerParamTree* params,
          const string&                  driver_key,
-         CVersionInfo                   version = GetDefaultDrvVers());
+         const CVersionInfo&            version = GetDefaultDrvVers());
 
     /// Get class factory
     ///
@@ -680,10 +680,12 @@ template <class TClass>
 TClass* CPluginManager<TClass>::CreateInstanceFromList(
     const TPluginManagerParamTree* params,
     const string&                  driver_list,
-    CVersionInfo                   version)
+    const CVersionInfo&            version)
 {
     TClass* drv = 0;
 
+    _TRACE("Creating an instance of a driver having version " << 
+           version << " from a list " << driver_list);
     list<string> drivers;
     NStr::Split(driver_list, ":", drivers);
     ITERATE ( list<string>, it, drivers ) {
@@ -708,8 +710,10 @@ template <class TClass>
 TClass* CPluginManager<TClass>::CreateInstanceFromKey(
     const TPluginManagerParamTree* params,
     const string&                  driver_key,
-    CVersionInfo                   version)
+    const CVersionInfo&            version)
 {
+    _TRACE("Creating an instance of a driver having version " << 
+           version << " from a key " << driver_key);
     TClass* drv = 0;
     if ( !params ) {
         return drv;
@@ -728,13 +732,15 @@ TClass* CPluginManager<TClass>::CreateInstanceFromKey(
 template <class TClass>
 typename CPluginManager<TClass>::TClassFactory*
 CPluginManager<TClass>::GetFactory(const string&       driver,
-                                           const CVersionInfo& version)
+                                   const CVersionInfo& version)
 {
     CMutexGuard guard(m_Mutex);
 
     TClassFactory* cf = 0;
 
     // Search among already registered factories
+    _TRACE("Looking for an already loaded factory for driver " <<
+           driver << " having version " << version);
     cf = FindClassFactory(driver, version);
     if (cf) {
         return cf;
@@ -750,11 +756,15 @@ CPluginManager<TClass>::GetFactory(const string&       driver,
             // 1) Locate and load all appropriate DLLs.
             // 2) Register all compatible versions of factories. 
             //    Skip not compatible versions.
+            _TRACE("Trying to find appropriate files for driver " <<
+                   driver << " having version " << version);
             ResolveFile(driver, version);
 
             // Re-scanning factories...
             // Trying to find an appropriate factory.
             // Make a best match.
+            _TRACE("Trying to find an appropriate factory for driver " <<
+                   driver << " having version " << version);
             cf = FindClassFactory(driver, version);
             if (cf) {
                 return cf;
@@ -772,7 +782,7 @@ CPluginManager<TClass>::GetFactory(const string&       driver,
 template <class TClass>
 typename CPluginManager<TClass>::TClassFactory*
 CPluginManager<TClass>::FindClassFactory(const string&  driver,
-                                                 const CVersionInfo& version) const
+                                         const CVersionInfo& version) const
 {
     TClassFactory* best_factory = 0;
     int best_major = -1;
@@ -863,13 +873,17 @@ bool CPluginManager<TClass>::WillExtendCapabilities
                         CVersionInfo::eFullyCompatible)
                 ) {
                 return true;
+            } else {
+                _TRACE("Driver " << new_drv_info.name << " having version " << 
+                       new_drv_info.version << " is already registered and " <<
+                       "won't extend Plugin Manager's capabilities");
             }
         }
     }
     
     ERR_POST(Warning << "A duplicate driver factory was found. "
              "It will be ignored because it won't extend "
-             "Plugin Manager capabilities.");
+             "Plugin Manager's capabilities.");
 
     return false;
 }
@@ -881,6 +895,7 @@ bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
 
     typename TFactories::iterator it = m_Factories.find(&factory);
     if (it != m_Factories.end()) {
+        _TRACE("Unregistering factory");
         delete *it;
         m_Factories.erase(it);
     }
@@ -909,6 +924,8 @@ bool CPluginManager<TClass>::RegisterWithEntryPoint
 
         ITERATE(typename TDriverInfoList, it, drv_list) {
             if (it->factory) {
+                _TRACE("Registering factory for driver " << it->name << 
+                       " having version " << it->version);
                 RegisterFactory(*(it->factory));
             }
         }
@@ -983,6 +1000,8 @@ bool CPluginManager<TClass>::RegisterWithEntryPoint
         bool was_registered = false;
         ITERATE(typename TDriverInfoList, it, drv_list) {
             if (it->factory) {
+                _TRACE("Registering factory for driver " << it->name << 
+                       " having version " << it->version);
                 was_registered |= RegisterFactory(*(it->factory));
             }
         }
@@ -1021,7 +1040,7 @@ void CPluginManager<TClass>::AddDllSearchPath(const string& path)
 
 template <class TClass>
 void CPluginManager<TClass>::FreezeResolution(const string& driver,
-                                                      bool          value)
+                                              bool          value)
 {
     if (value) {
         m_FreezeResolutionDrivers.insert(driver);
@@ -1032,7 +1051,7 @@ void CPluginManager<TClass>::FreezeResolution(const string& driver,
 
 template <class TClass>
 void CPluginManager<TClass>::ResolveFile(const string&       driver,
-                                                 const CVersionInfo& version)
+                                         const CVersionInfo& version)
 {
     vector<CDllResolver*> resolvers;
 
@@ -1136,6 +1155,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/11/30 15:02:43  ssikorsk
+ * 1) Trace CPluginManager calls.
+ * 2) Minor code improvment.
+ *
  * Revision 1.52  2005/10/27 16:48:48  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
