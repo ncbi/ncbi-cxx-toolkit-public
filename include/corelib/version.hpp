@@ -193,6 +193,14 @@ bool operator<(const CVersionInfo& v1, const CVersionInfo& v2)
     return IsBetterVersion(v1, v2, best_major, best_minor, best_patch_level);
 }
 
+inline
+ostream& operator << (ostream& strm, const CVersionInfo& v)
+{
+    strm << v.GetMajor() << "." << v.GetMinor() << "." << v.GetPatchLevel();
+    
+    return strm;
+}
+
 /// Algorithm function to find version in the container
 ///
 /// Scans the provided iterator for version with the same major and
@@ -269,6 +277,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/11/30 14:58:50  ssikorsk
+ * Added a stream output operator for CVersionInfo
+ *
  * Revision 1.19  2005/11/16 16:19:42  kuznets
  * CVersionInfo::m_Name removed const qualifier
  *
