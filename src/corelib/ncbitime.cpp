@@ -1983,6 +1983,36 @@ CTime CFastLocalTime::GetLocalTime(void)
 }
 
 
+int CFastLocalTime::GetLocalTimezone(void)
+{
+#if !defined(TIMEZONE_IS_UNDEFINED)
+    // Get system timer
+    time_t timer = time(0);
+
+    // Avoid to make time tune up in first m_SecAfterHour for each hour
+    // Otherwise do this at each hours/timezone change.
+    if ( !m_IsTuneup ) {
+        if ( !m_LastTuneupTime  ||
+            ((timer / 3600 != m_LastTuneupTime / 3600)  &&
+             (timer % 3600 >  (time_t)m_SecAfterHour))
+#if !defined(TIMEZONE_IS_UNDEFINED)
+            ||  (TimeZone() != m_Timezone  ||  Daylight() != m_Daylight)
+#endif
+        ) {
+            x_Tuneup(timer);
+            // MT-Safe protect: copy tuned time to cached local time
+            CFastMutexGuard LOCK(s_FastLocalTimeMutex);
+            m_LocalTime   = m_TunedTime;
+            m_LastSysTime = m_LastTuneupTime;
+            return m_Timezone;
+        }
+    }
+#endif
+    // Return local timezone
+    return m_Timezone;
+}
+
+
 //=============================================================================
 //
 //  CStopWatch
@@ -2083,13 +2113,15 @@ void TuneupFastLocalTime(void)
 }
 
 
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2005/11/30 15:34:50  ivanov
+ * + CFastLocalTime::GetLocalTimezone()
+ *
  * Revision 1.66  2005/09/20 15:56:08  ivanov
  * CTime::SetDay() -- fix for backward compatibility after switching to
  * using bit fields class members.

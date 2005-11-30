@@ -1249,6 +1249,10 @@ public:
     /// Get local time
     CTime GetLocalTime(void);
 
+    /// Get difference between current local time and GMT time
+    /// (daylight information included)
+    int GetLocalTimezone(void);
+
     /// Do unscheduled check
     void Tuneup(void);
 
@@ -1987,6 +1991,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/11/30 15:34:59  ivanov
+ * + CFastLocalTime::GetLocalTimezone()
+ *
  * Revision 1.48  2005/09/06 12:11:34  ivanov
  * CTime: using bit fields and fixed-size types for class members
  *
