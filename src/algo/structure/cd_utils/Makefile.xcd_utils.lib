@@ -3,7 +3,7 @@
 # Build library "xcd_utils"
 ##################################
 
-REQUIRES = objects
+REQUIRES = objects C-Toolkit
 
 ASN_DEP = cdd
 
