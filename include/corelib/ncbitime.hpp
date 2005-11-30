@@ -1250,7 +1250,7 @@ public:
     CTime GetLocalTime(void);
 
     /// Get difference between current local time and GMT time
-    /// (daylight information included)
+    /// in seconds (daylight information included)
     int GetLocalTimezone(void);
 
     /// Do unscheduled check
@@ -1991,6 +1991,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/11/30 15:45:16  ivanov
+ * Added comment to CFastLocalTime::GetLocalTimezone()
+ * that it returns value in seconds
+ *
  * Revision 1.49  2005/11/30 15:34:59  ivanov
  * + CFastLocalTime::GetLocalTimezone()
  *
