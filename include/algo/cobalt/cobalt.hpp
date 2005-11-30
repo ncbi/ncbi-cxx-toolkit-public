@@ -189,7 +189,8 @@ public:
 
     /// Retrieve the current internally generated phylogenetic tree.
     /// Tree leaves each contain the index of the query sequence at that
-    /// leaf. The tree is strictly binary
+    /// leaf. The tree is strictly binary, and the tree root is not
+    /// associated with any sequence
     /// @return The tree
     ///
     const TPhyTreeNode *GetTree() const { return m_Tree.GetTree(); }
@@ -503,6 +504,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.10  2005/11/30 19:05:58  papadopo
+  document the tree output format
+
   Revision 1.9  2005/11/22 18:40:35  papadopo
   add static member that retrieves a subset of a Seq-align
 
