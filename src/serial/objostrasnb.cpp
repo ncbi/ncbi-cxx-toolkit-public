@@ -417,7 +417,7 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
         bytes.append(1, data);
         if (--reserve == 0 || done) {
             WriteBytes(bytes.data(),bytes.size());
-            bytes.clear();
+            bytes.erase();
             reserve = bytes.capacity();
         }
     }
@@ -1182,6 +1182,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.101  2005/12/01 14:26:03  vasilche
+* Replaced string::clear() -> erase() for GCC 2.95.
+*
 * Revision 1.100  2005/11/29 17:43:15  gouriano
 * Added CBitString class
 *
