@@ -149,7 +149,7 @@ class CBlastSeqVectorOM : public IBlastSeqVector
 public:
     CBlastSeqVectorOM(const CSeq_loc& seqloc, CScope& scope)
         : m_SeqLoc(seqloc), m_Scope(scope), m_SeqVector(seqloc, scope) {}
-
+    
     void SetCoding(CSeq_data::E_Choice coding) {
         m_SeqVector.SetCoding(coding);
     }
@@ -179,15 +179,26 @@ protected:
         x_SetStrand(eNa_strand_minus);
     }
     void x_SetStrand(ENa_strand s) {
+        // If the Seq-loc is on the minus strand and the user is
+        // asking for the minus strand, we change the user's request
+        // to the plus strand.  If we did not do this, we would get
+        // the plus strand (ie it would be reversed twice).
+        
+        if (eNa_strand_minus == s &&
+            eNa_strand_minus == m_SeqLoc.GetStrand()) {
+            s = eNa_strand_plus;
+        }
+        
         if (s != m_SeqVector.GetStrand()) {
             m_SeqVector = CSeqVector(m_SeqLoc, m_Scope,
                                      CBioseq_Handle::eCoding_Ncbi, s);
         }
     }
+    
 private:
-    const CSeq_loc& m_SeqLoc;
-    CScope& m_Scope;
-    CSeqVector  m_SeqVector;
+    const CSeq_loc & m_SeqLoc;
+    CScope         & m_Scope;
+    CSeqVector       m_SeqVector;
 };
 
 SBlastSequence
@@ -425,6 +436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2005/12/01 15:41:21  bealer
+* - Fix blastn strand handling error.
+*
 * Revision 1.62  2005/11/15 22:49:15  camacho
 * + function to build PSSM from PSI-BLAST results
 *

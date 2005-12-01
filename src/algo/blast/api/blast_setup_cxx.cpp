@@ -638,17 +638,23 @@ GetSequenceCompressedNucleotide(IBlastSeqVector& sv)
 static SBlastSequence
 GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
                                   EBlastEncoding encoding,
-                                  objects::ENa_strand strand,
+                                  objects::ENa_strand strand, 
                                   ESentinelType sentinel)
 {
     ASSERT(strand == eNa_strand_plus || strand == eNa_strand_minus);
-
+    
+    if (strand == eNa_strand_plus) {
+        sv.SetPlusStrand();
+    } else {
+        sv.SetMinusStrand();
+    }
+    
     Uint1* buf = NULL;          // buffer to write sequence
     Uint1* buf_var = NULL;      // temporary pointer to buffer
     TSeqPos buflen;             // length of buffer allocated
     TSeqPos i;                  // loop index of original sequence
     TAutoUint1Ptr safe_buf;     // contains buf to ensure exception safety
-
+    
     // We assume that this packs one base per byte in the requested encoding
     sv.SetCoding(CSeq_data::e_Ncbi4na);
     buflen = CalculateSeqBufferLength(sv.size(), encoding,
@@ -673,9 +679,10 @@ GetSequenceSingleNucleotideStrand(IBlastSeqVector& sv,
             *buf_var++ = sv[i];
         }
     }
+    
     if (sentinel == eSentinels)
         *buf_var++ = GetSentinelByte(encoding);
-
+    
     return SBlastSequence(safe_buf.release(), buflen);
 }
 
@@ -684,18 +691,18 @@ GetSequenceNucleotideBothStrands(IBlastSeqVector& sv,
                                  EBlastEncoding encoding, 
                                  ESentinelType sentinel)
 {
-    sv.SetPlusStrand();
-    SBlastSequence plus = 
-        GetSequenceSingleNucleotideStrand(sv, encoding, 
-                                          eNa_strand_plus, 
+    SBlastSequence plus =
+        GetSequenceSingleNucleotideStrand(sv,
+                                          encoding,
+                                          eNa_strand_plus,
                                           eNoSentinels);
-
-    sv.SetMinusStrand();
-    SBlastSequence minus = 
-        GetSequenceSingleNucleotideStrand(sv, encoding, 
+    
+    SBlastSequence minus =
+        GetSequenceSingleNucleotideStrand(sv,
+                                          encoding,
                                           eNa_strand_minus,
                                           eNoSentinels);
-
+    
     // Stitch the two together
     TSeqPos buflen = CalculateSeqBufferLength(sv.size(), encoding, 
                                               eNa_strand_both, sentinel);
@@ -739,7 +746,9 @@ GetSequence_OMF(IBlastSeqVector& sv, EBlastEncoding encoding,
         if (strand == eNa_strand_both) {
             return GetSequenceNucleotideBothStrands(sv, encoding, sentinel);
         } else {
-            return GetSequenceSingleNucleotideStrand(sv, encoding, strand,
+            return GetSequenceSingleNucleotideStrand(sv,
+                                                     encoding,
+                                                     strand,
                                                      sentinel);
         }
 
@@ -1197,6 +1206,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.101  2005/12/01 15:41:21  bealer
+ * - Fix blastn strand handling error.
+ *
  * Revision 1.100  2005/11/10 14:48:34  madden
  * Fix to SetupQueries_OMF if zero length query was included
  *
