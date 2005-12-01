@@ -185,6 +185,12 @@ CRef<objects::CScope>& CSplign::SetScope(void)
 }
 
 
+void CSplign::PreserveScope(bool preserve_scope)
+{
+    m_CanResetHistory = ! preserve_scope;
+}
+
+
 void CSplign::SetCompartmentPenalty(double penalty)
 {
     if(penalty < 0 || penalty > 1) {
@@ -223,7 +229,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
 
         CBioseq_Handle bh = m_Scope->GetBioseqHandle(seqid);
 
-        if(retain) {
+        if(retain && m_CanResetHistory) {
             m_Scope->ResetHistory();
         }
 
@@ -254,7 +260,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
                        string("ID not found: ") + seqid.AsFastaString());
         }
         
-        if(retain == false) {
+        if(retain == false && m_CanResetHistory) {
             m_Scope->RemoveFromHistory(bh);
         }
         
@@ -1678,6 +1684,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/12/01 18:31:55  kapustin
+ * +CSplign::PreserveScope()
+ *
  * Revision 1.43  2005/11/21 14:24:00  kapustin
  * Reset scope history after bioseq_handle is obtained
  *

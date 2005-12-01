@@ -64,6 +64,7 @@ public:
 
     CRef<objects::CScope>  GetScope(void) const;
     CRef<objects::CScope>& SetScope(void);
+    void   PreserveScope(bool preserve_scope = true);
 
     void   SetEndGapDetection(bool on);
     bool   GetEndGapDetection(void) const;
@@ -177,6 +178,7 @@ protected:
 
     // access to sequence data
     CRef<objects::CScope> m_Scope;
+    bool                  m_CanResetHistory;
 
     // alignment pattern
     vector<size_t> m_pattern;
@@ -242,6 +244,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2005/12/01 18:31:40  kapustin
+ * +CSplign::PreserveScope()
+ *
  * Revision 1.30  2005/10/31 16:29:10  kapustin
  * Retrieve parameter defaults with static member methods
  *
