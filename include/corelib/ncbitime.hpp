@@ -1296,7 +1296,7 @@ public:
     /// Constructor.
     /// Start timer if argument is true.
     /// @deprecated Use CStopWatch(EStat) constuctor instead.
-    NCBI_DEPRECATED CStopWatch(bool start);
+    CStopWatch(bool start) NCBI_DEPRECATED;
 
     /// Start the timer.
     void Start(void);
@@ -1836,8 +1836,7 @@ long CTimeSpan::GetNanoSecondsAfterSecond(void) const { return m_NanoSec; }
 inline
 double CTimeSpan::GetAsDouble(void) const
 {
-    double t = abs(m_Sec) + double(abs(m_NanoSec)) / kNanoSecondsPerSecond;
-    return (GetSign() == eNegative) ? -t : t;
+    return m_Sec + double(m_NanoSec) / kNanoSecondsPerSecond;
 }
 
 inline
@@ -2003,6 +2002,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/12/01 15:02:48  ucko
+ * Correct placement of NCBI_DEPRECATED, which some GCC versions
+ * (3.2.x and 3.3.x?) require to *follow* the declaration.
+ * Simplify logic in CTimeSpan::GetAsDouble, eliminating gratuitous use
+ * of abs().
+ *
  * Revision 1.51  2005/12/01 14:50:05  ivanov
  * CStopWatch::
  *     - added new constructor CStopWatch(EStart)
