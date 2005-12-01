@@ -365,7 +365,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     if (restart_code != 0) {
                         OnEvent(restart_code == kSR_Executable ?
                                 eExecutable : eWatchFile, restart_code);
-                        *result = restart_code;
+                        *result = (restart_code == kSR_WatchFile) ? 0
+                            : restart_code;
                         break;
                     }
                 }}
@@ -547,7 +548,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             if (restart_code != 0) {
                 OnEvent(restart_code == kSR_Executable ?
                         eExecutable : eWatchFile, restart_code);
-                *result = restart_code;
+                *result = (restart_code == kSR_WatchFile) ? 0 : restart_code;
                 break;
             }
         }}
@@ -571,6 +572,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.55  2005/12/01 19:45:57  vakatov
+ * Return with exit code zero rather than 112 when watch file has changed.
+ *
  * Revision 1.54  2005/03/24 01:23:44  vakatov
  * Fix accidental mix-up of 'flags' vs 'action' arg in calls to
  * CNcbiRegistry::Get*()
