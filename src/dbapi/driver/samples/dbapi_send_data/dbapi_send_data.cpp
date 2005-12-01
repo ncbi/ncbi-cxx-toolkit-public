@@ -95,9 +95,6 @@ CDbapiSendDataApp::RunSample(void)
 
         // Delete table from database
         DeleteTable(GetTableName());
-
-        // Drop lost tables.
-        DeleteLostTables();
     }
     catch ( CDB_Exception& e ) {
         CDB_UserHandler::GetDefault().HandleIt(&e);
@@ -116,6 +113,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/01 15:02:25  ssikorsk
+ * Do not delete *lost tables*. We use temporary tables now.
+ *
  * Revision 1.6  2005/08/24 12:43:15  ssikorsk
  * Use temporary table to store test data
  *
