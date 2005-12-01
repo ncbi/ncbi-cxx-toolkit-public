@@ -315,7 +315,13 @@ public:
     /// Close statement.
     virtual void Close() = 0;
 
-    /// Executes one or more SQL statements.
+    /// Sends an SQL statement for execution
+    ///
+    /// @param sql
+    ///   SQL statement to execute.
+    virtual void SendSql(const string& sql) = 0;
+
+	/// Executes one or more SQL statements.
     ///
     /// @param sql
     ///   SQL statement to execute.
@@ -776,6 +782,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2005/12/01 18:57:50  kholodov
+ * Added: SendSql() method
+ *
  * Revision 1.41  2005/10/20 15:50:23  kholodov
  * Added: set and get application name
  *

@@ -142,6 +142,16 @@ void CStatement::ClearParamList()
 
 void CStatement::Execute(const string& sql)
 {
+	x_Send(sql);
+}
+
+void CStatement::SendSql(const string& sql)
+{
+	x_Send(sql);
+}
+
+void CStatement::x_Send(const string& sql)
+{
     if( m_cmd != 0 ) {
         delete m_cmd;
         m_cmd = 0;
@@ -294,6 +304,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.32  2005/12/01 18:59:20  kholodov
+* Added: SendSql() method
+*
 * Revision 1.31  2005/11/02 15:02:25  ssikorsk
 * Catch all exceptions in destructors.
 *

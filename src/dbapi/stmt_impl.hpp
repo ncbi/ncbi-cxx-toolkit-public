@@ -59,7 +59,7 @@ public:
     virtual bool Failed();
     virtual int GetRowCount();
   
-    
+    virtual void SendSql(const string& sql);
     virtual void Execute(const string& sql);
     virtual void ExecuteUpdate(const string& sql);
     virtual IResultSet* ExecuteQuery(const string& sql);
@@ -100,6 +100,7 @@ public:
     }
 
 protected:    
+	void x_Send(const string& sql);
     void SetBaseCmd(I_BaseCmd *cmd) { m_cmd = cmd; }
     I_BaseCmd* GetBaseCmd() { return m_cmd; }
 
@@ -133,6 +134,9 @@ END_NCBI_SCOPE
 #endif // _STMT_IMPL_HPP_
 /*
 * $Log$
+* Revision 1.18  2005/12/01 18:59:20  kholodov
+* Added: SendSql() method
+*
 * Revision 1.17  2005/04/12 18:12:10  ssikorsk
 * Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
 *
