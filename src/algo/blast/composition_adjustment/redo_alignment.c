@@ -46,6 +46,10 @@ static char const rcsid[] =
 #include <algo/blast/composition_adjustment/smith_waterman.h>
 #include <algo/blast/composition_adjustment/compo_heap.h>
 
+/* The natural log of 2, defined in newer systems as M_LN2 in math.h, but
+   missing in older systems. */
+#define LOCAL_LN2 0.69314718055994530941723212145818
+
 /** Define COMPO_INTENSE_DEBUG to be true to turn on rigorous but
  * expensive consistency tests in the composition_adjustment
  * module.
@@ -671,9 +675,9 @@ s_WindowsFromProteinAligns(BlastCompo_Alignment * alignments,
     int window_index;  /* index of a window in the window list */
 
     /* new list of windows */
-    *nWindows = 0;
     s_WindowInfo ** windows =
         calloc(numQueries, sizeof(s_WindowInfo*));
+    *nWindows = 0;
     if (windows == NULL)
         goto error_return;
     *nWindows = numQueries;
@@ -866,7 +870,7 @@ s_IsContained(BlastCompo_Alignment * in_align,
     int subject_offset  = in_align->matchStart;
     int subject_end     = in_align->matchEnd;
     double score        = in_align->score;
-    double scoreThresh = score + KAPPA_BIT_TOL * M_LN2/lambda;
+    double scoreThresh = score + KAPPA_BIT_TOL * LOCAL_LN2/lambda;
 
     for (align = alignments;  align != NULL;  align = align->next ) {
         /* for all elements of alignments */
@@ -1005,7 +1009,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
         BlastCompo_Alignment * in_align;  /* the current alignment */
         int hsp_index;               /* index of the current alignment */
         /* data for the current window */
-        BlastCompo_SequenceData subject = {};
+        BlastCompo_SequenceData subject = {0,};
         BlastCompo_SequenceData * query;       /* query data for this window */
         /* the composition of this query */
         Blast_AminoAcidComposition * query_composition;  
@@ -1169,7 +1173,8 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
     for (window_index = 0;  window_index < nWindows;  window_index++) {
         /* for all window */
         s_WindowInfo * window = NULL; /* the current window */
-        BlastCompo_SequenceData subject = {};  /* subject data for this window */
+        BlastCompo_SequenceData subject = {0,}; 
+        /* subject data for this window */
         BlastCompo_SequenceData * query;       /* query data for this window */
         /* the composition of this query */
         Blast_AminoAcidComposition * query_composition;  
