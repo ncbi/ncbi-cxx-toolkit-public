@@ -180,8 +180,10 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
     friend class CODBC_SendDataCmd;
 
 protected:
-    CODBC_Connection(CODBCContext* cntx, SQLHDBC con,
-             bool reusable, const string& pool_name);
+    CODBC_Connection(CODBCContext* cntx, 
+                     SQLHDBC conn,
+                     bool reusable, 
+                     const string& pool_name);
     virtual ~CODBC_Connection(void);
 
 protected:
@@ -245,7 +247,7 @@ protected:
     }
 
 private:
-    bool x_SendData(CODBC_Connection& conn, CDB_Stream& stream);
+    bool x_SendData(CStatementBase& stmt, CDB_Stream& stream);
 
     SQLHDBC         m_Link;
 
@@ -487,8 +489,10 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd :
     friend class CODBC_Connection;
     
 protected:
-    CODBC_BCPInCmd(CODBC_Connection* con, SQLHDBC cmd,
-                 const string& table_name, unsigned int nof_columns);
+    CODBC_BCPInCmd(CODBC_Connection* conn, 
+                   SQLHDBC cmd,
+                   const string& table_name, 
+                   unsigned int nof_columns);
     virtual ~CODBC_BCPInCmd(void);
 
 protected:
@@ -524,7 +528,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd :
     friend class CODBC_Connection;
     
 protected:
-    CODBC_SendDataCmd(CODBC_Connection* con, 
+    CODBC_SendDataCmd(CODBC_Connection* conn, 
                       CDB_ITDescriptor& descr,
                       size_t nof_bytes, 
                       bool logit);
@@ -604,7 +608,6 @@ protected:
 
 private:
     CStatementBase&   m_Stmt;
-    // CODBC_Connection* m_Connect;
     int               m_CurrItem;
     bool              m_EOR;
     unsigned int      m_NofCols;
@@ -721,6 +724,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/12/01 14:33:32  ssikorsk
+ * Private method CODBC_Connection::x_SendData takes
+ * statement instead of connection as a parameter now.
+ *
  * Revision 1.16  2005/11/28 13:54:58  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.
