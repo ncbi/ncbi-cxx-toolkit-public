@@ -63,7 +63,7 @@
 #endif
 
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.3.9  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=1.4.0  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -810,42 +810,6 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
         const SBDB_CacheStatistics& cs = bdb_cache->GetStatistics();
         cs.ConvertToRegistry(&reg);
 
-/*
-    // print statistics
-
-    ios << "[bdb_stat]" << "\n\n";
-
-    x_PrintStatistics(ios, cs);
-
-    ios << "\n" << "[bdb_stat_hist]" << "\n\n";
-
-    x_PrintStatisticsHistogram(ios, cs.blob_size_hist);
-
-    ios << "\n\n";
-
-
-    bool owner_stat = bdb_cache->IsOwnerStatistics();
-
-    if (owner_stat) {
-        const CBDB_Cache::TOwnerStatistics& ost = 
-            bdb_cache->GetOwnerStatistics();
-
-        ITERATE(CBDB_Cache::TOwnerStatistics, it, ost) {
-            const string& oname = it->first;
-            ios << "[bdb_stat_" 
-                << (oname.empty() ? "noname" : oname) << "]" << "\n\n";
-            x_PrintStatistics(ios, it->second);
-
-            ios << "\n\n";
-
-            ios << "[bdb_stat_" 
-                << (oname.empty() ? "noname" : oname) << "_hist]" << "\n\n";
-
-            x_PrintStatisticsHistogram(ios, it->second.blob_size_hist);
-        }
-    }
-*/
-
     } catch(...) {
         bdb_cache->Unlock();
         throw;
@@ -855,58 +819,6 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
     reg.Write(ios,  CNcbiRegistry::fTransient | CNcbiRegistry::fPersistent);
 }
 
-/*
-void CNetCacheServer::x_PrintStatistics(CNcbiOstream&               ios, 
-                                        const SBDB_CacheStatistics& cs)
-{
-    ios << "blobs_stored_total = "   << cs.blobs_stored_total   << "\n";
-    ios << "blobs_overflow_total = " << cs.blobs_overflow_total << "\n";
-    ios << "blobs_updates_total = " << cs.blobs_updates_total << "\n";
-    ios << "blobs_never_read_total = " << cs.blobs_never_read_total << "\n";
-    ios << "blobs_read_total = " << cs.blobs_read_total << "\n";
-    ios << "blobs_expl_deleted_total = " << cs.blobs_expl_deleted_total << "\n";
-    ios << "blobs_purge_deleted_total = " << cs.blobs_purge_deleted_total << "\n";
-    ios << "blobs_size_total = " << unsigned(cs.blobs_size_total) << "\n";
-    ios << "blob_size_max_total = " << cs.blob_size_max_total << "\n";
-    ios << "blobs_db = " << cs.blobs_db << "\n";
-    ios << "blobs_size_db = " << unsigned(cs.blobs_size_db) << "\n";
-    ios << "err_protocol = " << cs.err_protocol << "\n";
-    ios << "err_communication = " << cs.err_communication << "\n";
-    ios << "err_internal = " << cs.err_internal << "\n";
-    ios << "err_no_blob = " << cs.err_no_blob << "\n";
-    ios << "err_blob_get = " << cs.err_blob_get << "\n";
-    ios << "err_blob_put = " << cs.err_blob_put << "\n";
-}
-*/
-
-/*
-void CNetCacheServer::x_PrintStatisticsHistogram(
-                        CNcbiOstream&                                   ios, 
-                        const SBDB_CacheStatistics::TBlobSizeHistogram& hist)
-{
-    // find the histogram's end
-
-    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator hist_end = 
-        hist.end();
-
-    ITERATE(SBDB_CacheStatistics::TBlobSizeHistogram, it, hist) {
-        if (it->second > 0) {
-            hist_end = it;
-        }
-    }
-
-    SBDB_CacheStatistics::TBlobSizeHistogram::const_iterator it = 
-        hist.begin();
-
-    for (; it != hist.end(); ++it) {
-        ios << "size  = " << it->first  << "\n";
-        ios << "count = " << it->second << "\n";
-        if (it == hist_end) {
-            break;
-        }
-    }
-}
-*/
 
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
@@ -1717,19 +1629,19 @@ SNC_ThreadData* CNetCacheServer::x_GetThreadData()
 }
 
 static
-SBDB_CacheStatistics::EErrGetPut s_GetStatType(ENC_RequestType   req_type)
+SBDB_CacheUnitStatistics::EErrGetPut s_GetStatType(ENC_RequestType   req_type)
 {
-    SBDB_CacheStatistics::EErrGetPut op;
+    SBDB_CacheUnitStatistics::EErrGetPut op;
     switch (req_type) {
     case ePut:
     case ePut2:
-        op = SBDB_CacheStatistics::eErr_Put;
+        op = SBDB_CacheUnitStatistics::eErr_Put;
         break;
     case eGet:
-        op = SBDB_CacheStatistics::eErr_Get;
+        op = SBDB_CacheUnitStatistics::eErr_Get;
         break;
     default:
-        op = SBDB_CacheStatistics::eErr_Unknown;
+        op = SBDB_CacheUnitStatistics::eErr_Unknown;
         break;
     }
     return op;
@@ -1743,7 +1655,7 @@ void CNetCacheServer::x_RegisterProtocolErr(
     if (!bdb_cache) {
         return;
     }
-    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    SBDB_CacheUnitStatistics::EErrGetPut op = s_GetStatType(req_type);
     bdb_cache->RegisterProtocolError(op, auth);
 }
 
@@ -1755,7 +1667,7 @@ void CNetCacheServer::x_RegisterInternalErr(
     if (!bdb_cache) {
         return;
     }
-    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    SBDB_CacheUnitStatistics::EErrGetPut op = s_GetStatType(req_type);
     bdb_cache->RegisterInternalError(op, auth);
 }
 
@@ -1766,7 +1678,7 @@ void CNetCacheServer::x_RegisterNoBlobErr(ENC_RequestType   req_type,
     if (!bdb_cache) {
         return;
     }
-    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    SBDB_CacheUnitStatistics::EErrGetPut op = s_GetStatType(req_type);
     bdb_cache->RegisterNoBlobError(op, auth);
 }
 
@@ -1778,7 +1690,7 @@ void CNetCacheServer::x_RegisterException(ENC_RequestType           req_type,
     if (!bdb_cache) {
         return;
     }
-    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    SBDB_CacheUnitStatistics::EErrGetPut op = s_GetStatType(req_type);
     switch (ex.GetErrCode()) {
     case CNetServiceException::eTimeout:
     case CNetServiceException::eCommunicationError:
@@ -1800,7 +1712,7 @@ void CNetCacheServer::x_RegisterException(ENC_RequestType           req_type,
     if (!bdb_cache) {
         return;
     }
-    SBDB_CacheStatistics::EErrGetPut op = s_GetStatType(req_type);
+    SBDB_CacheUnitStatistics::EErrGetPut op = s_GetStatType(req_type);
 
     switch (ex.GetErrCode()) {
     case CNetCacheException::eAuthenticationError:
@@ -2040,13 +1952,15 @@ int CNetCacheDApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default, "netcached.ini");
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2005/12/01 14:48:51  kuznets
+ * Improvements in collecting statistics
+ *
  * Revision 1.70  2005/11/28 15:20:30  kuznets
  * Added new command to get owner of a BLOB
  *
