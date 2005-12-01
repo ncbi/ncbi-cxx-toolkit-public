@@ -1141,7 +1141,7 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
 {
     Uint1 * query;             /* the query sequence */
     int queryLength;
-    //  Int4 queryLength;           /* the length of the query sequence */
+    /*  Int4 queryLength; */          /* the length of the query sequence */
     double initialUngappedLambda;
 
     /* YIKES! */
@@ -1417,6 +1417,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     BlastHSPList* thisMatch = NULL;  /* alignment data for the
                                       * current query-subject
                                       * match */
+    BlastCompo_Alignment * incoming_aligns;  /* existing algnments
+                                                for a match */
     Blast_GappingParamsContext gapping_params_context;
     int do_link_hsps;
 
@@ -1521,7 +1523,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         /* Get the sequence for this match */
         s_MatchingSequenceInitialize(&matchingSeq, program_number,
                                      seqSrc, gen_code_string, thisMatch->oid);
-        BlastCompo_Alignment * incoming_aligns =
+        incoming_aligns =
             s_ResultHspToDistinctAlign(queryInfo, thisMatch->hsp_array,
                                        thisMatch->hspcnt, localScalingFactor);
         if (SmithWaterman) {
