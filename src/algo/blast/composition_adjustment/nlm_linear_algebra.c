@@ -1,5 +1,3 @@
-static char const rcsid[] = "$Id$";
-
 /* ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -24,20 +22,20 @@ static char const rcsid[] = "$Id$";
 *
 * ===========================================================================*/
 
-/*****************************************************************************
-
-File name: nlm_numerics.c
-
-Author: E. Michael Gertz
-
-Contents: Basic matrix and vector operations for use in conjunction
-          with higher-level procedures in re_newton.c
-
-******************************************************************************/
+/** @file nlm_linear_algebra.c
+ *
+ * @author E. Michael Gertz
+ *
+ * Basic matrix and vector operations
+ */
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] =
+    "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <math.h>
 #include <stdlib.h>
-#include <algo/blast/core/blast_toolkit.h>
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
 
 /**
@@ -119,6 +117,52 @@ Nlm_DenseMatrixFree(double *** mat)
     *mat = NULL;
 }
 
+
+/**
+ * Create and return a new Int4 matrix.  Elements of the matrix A
+ * may be accessed as A[i][j]
+ *
+ * @param nrows     the number of rows for the new matrix.
+ * @param ncols     the number of columns for the new matrix.
+ */
+Int4 ** Nlm_Int4MatrixNew(int nrows, int ncols)
+{
+    int i;             /* iteration index */
+    Int4 ** mat;     /* the new matrix */
+
+    mat = (Int4 **) calloc(nrows, sizeof(Int4 *));
+    if (mat != NULL) {
+        mat[0] = (Int4 *) malloc((size_t) nrows *
+                                   (size_t) ncols * sizeof(Int4));
+        if (mat[0] != NULL) {
+            for (i = 1;  i < nrows;  i++) {
+                mat[i] = &mat[0][i * ncols];
+            }
+        } else {
+            free(mat);
+            mat = NULL;
+        }
+    }
+    return mat;
+}
+
+
+/**
+ * Free a matrix created by Nlm_DenseMatrixNew or
+ * Nlm_LtriangMatrixNew.
+ *
+ * @param mat       the matrix to be freed
+ * @return          always NULL
+ */
+void
+Nlm_Int4MatrixFree(Int4 *** mat)
+{
+    if(*mat != NULL) {
+        free((*mat)[0]);
+        free(*mat);
+    }
+    *mat = NULL;
+}
 
 /**
  * Accessing only the lower triangular elements of the symmetric,

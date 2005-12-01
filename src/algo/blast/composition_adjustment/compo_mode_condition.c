@@ -1,5 +1,3 @@
-static char const rcsid[] = "$Id$";
-
 /* ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,67 +31,73 @@ static char const rcsid[] = "$Id$";
  * should be applied for a pair of matching sequences.
  */
 
-#include <math.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algo/blast/core/blast_toolkit.h>
-#include <algo/blast/composition_adjustment/compo_mode_condition.h>
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] =
+    "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
+
+#include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
+#include <algo/blast/composition_adjustment/compo_mode_condition.h>
+#include <algo/blast/composition_adjustment/matrix_frequency_data.h>
 
-
-static double BLOSUM62_bg[COMPOSITION_ALPHABET_SIZE] =
-    { 0.0742356686, 0.0515874541, 0.0446395713, 0.0536092024, 0.0246865086,
-      0.0342500470, 0.0543174458, 0.0741431988, 0.0262119099, 0.0679331197,
-      0.0989057232, 0.0581774322, 0.0249972837, 0.0473970070, 0.0385382904,
-      0.0572279733, 0.0508996546, 0.0130298868, 0.0322925130, 0.0729201182
-    };
-  /* BLOSUM 62 is the correct bg */
-
-
+/* 180 degrees in half a circle */
 #define HALF_CIRCLE_DEGREES 180
+/* some digits of PI */
 #define PI 3.1415926543
+/* thresholds used to determine which composition mode to use */
 #define QUERY_MATCH_DISTANCE_THRESHOLD 0.16
 #define LENGTH_RATIO_THRESHOLD 3.0
 #define ANGLE_DEGREE_THRESHOLD 70.0
 
 
 /* type of function used to choose a mode for composition-based
- * statistics. The varables are Queryseq_length, Matchseq_length,
+ * statistics. The variables are Queryseq_length, Matchseq_length,
  * query_amino_count, match_amino_account and matrix_name.*/
-typedef int (*Condition) (int, int, const double *, const double *, 
-                          const char *);
+typedef ECompoAdjustModes
+(*Condition) (int, int, const double *, const double *,
+              const char *);
 
 
-/* If this function is used relative-entropy score adjustment is
+/* A function used to choose a mode for composition-based statistics.
+ * If this function is used relative-entropy score adjustment is
  * always applied, with a fixed value as the target relative entropy*/
-static int
+static ECompoAdjustModes
 TestToApplyREAdjustmentUnconditional(int Len_query,
                                      int Len_match,
                                      const double * P_query,
                                      const double * P_match,
                                      const char *matrix_name)
 {
+    /* Suppress unused variable warnings */
+    (void) Len_query;
+    (void) Len_match;
+    (void) P_query;
+    (void) P_match;
+    (void) matrix_name;
+
     return eUserSpecifiedRelEntropy;
 }
 
 
-/* Decide whether a relative-entropy score adjustment should be used
+/**
+ * A function used to choose a mode for composition-based statistics.
+ * Decide whether a relative-entropy score adjustment should be used
  * based on lengths and letter counts of the two matched sequences;
  * matrix_name is the underlying score matrix; for now only BLOSUM62
  * is supported */
-static int
+static ECompoAdjustModes
 TestToApplyREAdjustmentConditional(int Len_query,
                                    int Len_match,
                                    const double * P_query,
                                    const double * P_match,
                                    const char *matrix_name)
 {
-    int mode_value;              /* which relative entropy mode to
+    ECompoAdjustModes mode_value; /* which relative entropy mode to
                                      return */
     int i;                       /* loop indices */
-    double p_query[COMPOSITION_ALPHABET_SIZE];
-    double p_match[COMPOSITION_ALPHABET_SIZE]; /*letter probabilities
+    double p_query[COMPO_NUM_TRUE_AA];
+    double p_match[COMPO_NUM_TRUE_AA]; /*letter probabilities
                                                 for query and match*/
     const double *p_matrix;       /* letter probabilities used in
                                      constructing matrix name*/
@@ -113,7 +117,7 @@ TestToApplyREAdjustmentConditional(int Len_query,
 
     p_matrix = Blast_GetMatrixBackgroundFreq(matrix_name);
 
-    for (i = 0;  i < COMPOSITION_ALPHABET_SIZE;  i++) {
+    for (i = 0;  i < COMPO_NUM_TRUE_AA;  i++) {
         p_query[i] = P_query[i];
         p_match[i] = P_match[i];
         corr_factor +=
@@ -122,7 +126,6 @@ TestToApplyREAdjustmentConditional(int Len_query,
     D_m_mat = Blast_GetRelativeEntropy(p_match, p_matrix);
     D_q_mat = Blast_GetRelativeEntropy(p_query, p_matrix);
     D_m_q   = Blast_GetRelativeEntropy(p_match, p_query);
-    /* distance between match and query */
 
     angle =
         acos((D_m_mat * D_m_mat + D_q_mat * D_q_mat -
@@ -150,23 +153,9 @@ TestToApplyREAdjustmentConditional(int Len_query,
 }
 
 
-/* Retrieve the background letter probabilities implicitly used in
- * constructing the score matrix matrix_name*/
-const double *
-Blast_GetMatrixBackgroundFreq(const char *matrix_name)
-{
-    if (0 == strcmp(matrix_name, "BLOSUM62")) {
-        return BLOSUM62_bg;
-    } else {                    /* default */
-        fprintf(stderr, "matrix not supported, exit now! \n");
-        exit(1);
-    }
-}
-
-
-/* initialization of array of functions that can be used to decide
- * which optimization formulation should be used for score
- * adjustment */
+/**
+ * An array of functions that can be used to decide which optimization
+ * formulation should be used for score adjustment */
 static Condition Cond_func[] = {
     TestToApplyREAdjustmentConditional,
     TestToApplyREAdjustmentUnconditional,
@@ -174,14 +163,20 @@ static Condition Cond_func[] = {
 };
 
 
-/* Choose how the relative entropy should be constrained based on
- * properties of the two sequences to be aligned. length1 an length2
- * are the lengths of the two sequences; probArray1 and probArray2 are
- * arrays of probabilities of letters in each sequence, using the
- * 20-letter alphabet; matrixName is the name of the underlying 20x20
- * score matrix; testFunctionIndex allows different rules to be tested
- * for the relative entropy decision. */
-int
+/**
+ * Choose how the relative entropy should be constrained based on
+ * properties of the two sequences to be aligned.
+ *
+ * @param length1     length of the first sequence
+ * @param length2     length of the second sequence
+ * @param probArray1  arrays of probabilities for the first sequence, in
+ *                    a 20 letter amino-acid alphabet
+ * @param probArray2  arrays of probabilities for the other sequence
+ * @param matrixName  name of the scoring matrix
+ * @param testFunctionIndex    allows different rules to be tested
+ *                             for the relative entropy decision.
+ */
+ECompoAdjustModes
 Blast_ChooseCompoAdjustMode(int length1,
                             int length2,
                             const double * probArray1,

@@ -1,5 +1,3 @@
-static char const rcsid[] = "$Id$";
-
 /* ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -24,19 +22,11 @@ static char const rcsid[] = "$Id$";
 *
 * ===========================================================================*/
 
-#include <string.h>
-#include <assert.h>
-#include <math.h>
-#include <stdlib.h>
-#include <algo/blast/core/blast_toolkit.h>
-#include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
-#include <algo/blast/composition_adjustment/optimize_target_freq.h>
-
 /**
  * @file optimize_target_freq.c
  *
  * Author E. Michael Gertz
- * 
+ *
  * Routines for finding an optimal set of target frequencies for the
  * purpose of generating a compositionally adjusted score matrix.  The
  * function for performing this optimization is named
@@ -93,7 +83,18 @@ static char const rcsid[] = "$Id$";
  * (2005) Protein Database Searches Using Compositionally Adjusted
  * Substitution Matrices.  FEBS Journal, 272,5101-9.
  */
+#ifndef SKIP_DOXYGEN_PROCESSING
+static char const rcsid[] =
+    "$Id$";
+#endif /* SKIP_DOXYGEN_PROCESSING */
 
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+#include <stdlib.h>
+#include <algo/blast/core/ncbi_std.h>
+#include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
+#include <algo/blast/composition_adjustment/optimize_target_freq.h>
 
 /**
  * Compute the symmetric product A D A^T, where A is the matrix of
@@ -119,7 +120,7 @@ ScaledSymmetricProductA(double ** W, const double diagonal[], int alphsize)
     int rowW, colW;   /* iteration indices over the rows and columns of W */
     int i, j;         /* iteration indices over characters in the alphabet */
     int m;            /* The number of rows in A; also the size of W */
-    
+
     m = 2 * alphsize - 1;
 
     for (rowW = 0;  rowW < m;  rowW++) {
@@ -431,17 +432,17 @@ static ReNewtonSystem * ReNewtonSystemNew(int alphsize)
         newton_system->W = NULL;
         newton_system->Dinv = NULL;
         newton_system->grad_re = NULL;
-        
+
         newton_system->W = Nlm_LtriangMatrixNew(2 * alphsize);
-        if (newton_system->W == NULL) 
+        if (newton_system->W == NULL)
             goto error_return;
         newton_system->Dinv =
             (double *) malloc(alphsize * alphsize * sizeof(double));
-        if (newton_system->Dinv == NULL) 
+        if (newton_system->Dinv == NULL)
             goto error_return;
         newton_system->grad_re =
             (double *) malloc(alphsize * alphsize * sizeof(double));
-        if (newton_system->grad_re == NULL) 
+        if (newton_system->grad_re == NULL)
             goto error_return;
     }
     goto normal_return;
@@ -496,7 +497,7 @@ FactorReNewtonSystem(ReNewtonSystem * newton_system,
      *     (D     J^T)
      *     (J     0  ).
      *
-     * We block reduce the system to 
+     * We block reduce the system to
      *
      *     (D    J^T          )
      *     (0    -J D^{-1} J^T).
@@ -707,7 +708,7 @@ ComputeScoresFromProbs(double scores[],
  *                          this argument is ignored.
  * @param maxits    the maximum number of iterations permitted for the
  *                  optimization algorithm; a good value is 2000.
- * @param tol       the solution tolerance; the residuals of the optimization 
+ * @param tol       the solution tolerance; the residuals of the optimization
  *                  program must have Euclidean norm <= tol for the
  *                  algorithm to terminate.
  *
@@ -737,7 +738,7 @@ Blast_OptimizeTargetFrequencies(double x[],
     double ** grads = NULL;     /* gradients of the nonlinear
                                    functions at this iterate */
 
-    ReNewtonSystem * 
+    ReNewtonSystem *
         newton_system = NULL;   /* factored matrix of the linear
                                    system to be solved at this
                                    iteration */
@@ -773,13 +774,13 @@ Blast_OptimizeTargetFrequencies(double x[],
     if (workspace == NULL) goto error_return;
     grads = Nlm_DenseMatrixNew(2, n);
     if (grads == NULL) goto error_return;
-    
+
     ComputeScoresFromProbs(old_scores, alphsize, q, row_sums, col_sums);
 
     /* Use q as the initial value for x */
     memcpy(x, q, n * sizeof(double));
     its = 0;        /* Initialize the iteration count. Note that we may
-                       converge in zero iterations if the initial x is 
+                       converge in zero iterations if the initial x is
                        optimal. */
     while (its <= maxits) {
         /* Compute the residuals */
@@ -829,12 +830,12 @@ Blast_OptimizeTargetFrequencies(double x[],
     status = converged ? 0 : 1;
     *iterations = its;
     goto normal_return;
-    
+
 error_return:
     status = -1;
     *iterations = 0;
 normal_return:
-    
+
     Nlm_DenseMatrixFree(&grads);
     free(workspace);
     free(old_scores);
