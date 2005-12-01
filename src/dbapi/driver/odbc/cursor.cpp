@@ -201,7 +201,8 @@ CDB_SendDataCmd* CODBC_CursorCmd::SendDataCmd(unsigned int item_num, size_t size
     if(desc == 0) return 0;
     C_ITDescriptorGuard g((I_ITDescriptor*)desc);
 
-    // m_LCmd->Cancel();
+    // Next line will cause dbapi_unit_test to fail ...
+    m_LCmd->Cancel();
 
     return GetConnection().SendDataCmd((I_ITDescriptor&)*desc, size, log_it);
 }                       
@@ -362,6 +363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/01 14:42:33  ssikorsk
+ * Restored statement canceling in CODBC_CursorCmd::SendDataCmd
+ *
  * Revision 1.10  2005/11/28 13:22:59  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.
