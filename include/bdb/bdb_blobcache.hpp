@@ -37,6 +37,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <util/cache/icache.hpp>
 
@@ -45,7 +46,7 @@
 #include <bdb/bdb_env.hpp>
 #include <bdb/bdb_trans.hpp>
 
-#include <queue>
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 
@@ -109,14 +110,29 @@ class CPIDGuard;
 class CCacheCleanerThread;
 
 
-/// BDB cache statistics
+/// BDB cache access statistics
 ///
-struct NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
+struct SBDB_TimeAccessStatistics
+{
+    unsigned   day;
+    unsigned   hour;
+    unsigned   put_count;
+    unsigned   get_count;
+
+    SBDB_TimeAccessStatistics(unsigned d,   unsigned hr, 
+                              unsigned put, unsigned get)
+    : day(d), hour(hr), put_count(put), get_count(get)
+    {}
+};
+
+
+/// BDB cache statistics (covers one elemntary unit of measurements)
+///
+struct NCBI_BDB_CACHE_EXPORT SBDB_CacheUnitStatistics
 {
     /// Blob size to number of blobs
-    typedef map<unsigned, unsigned>     TBlobSizeHistogram;
-    /// Blob histogram history
-    typedef queue<TBlobSizeHistogram>   TBlobHistogramHistory;
+    typedef map<unsigned, unsigned>          TBlobSizeHistogram;
+    typedef deque<SBDB_TimeAccessStatistics> TTimeAccess;
 
 
     unsigned  blobs_stored_total;       ///< Total number of blobs
@@ -140,16 +156,20 @@ struct NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
     unsigned  err_blob_put;             ///< store errors
 
     TBlobSizeHistogram  blob_size_hist; ///< Blob size historgam
+    TTimeAccess         time_access;    ///< Hourly access history
 
 public:
-    SBDB_CacheStatistics();
+    SBDB_CacheUnitStatistics();
 
-    void AddStore(unsigned store, 
+    void Init();
+
+    void AddStore(time_t tm,
+                  unsigned store, 
                   unsigned update, 
                   unsigned blob_size, 
                   unsigned overflow);
 
-    void AddRead() { ++blobs_read_total; }
+    void AddRead(time_t tm);
     void AddExplDelete() { ++blobs_expl_deleted_total; }
     void AddPurgeDelete() { ++blobs_purge_deleted_total; }
     void AddNeverRead() { ++blobs_never_read_total; }
@@ -171,11 +191,60 @@ public:
     void AddToHistogram(TBlobSizeHistogram* hist, unsigned size);
 
     /// Convert statistics into registry sections and entries
-    void ConvertToRegistry(IRWRegistry* reg) const;
+    /// @param sect_name_postfix
+    ///     Registry section name postfix 
+    void ConvertToRegistry(IRWRegistry* reg, 
+                           const string& sect_name_postfix) const;
 
 private:
     void InitHistorgam(TBlobSizeHistogram* hist);
     void x_AddErrGetPut(EErrGetPut operation);
+};
+
+
+/// BDB cache statistics
+///
+///
+class NCBI_BDB_CACHE_EXPORT SBDB_CacheStatistics
+{
+public:
+    SBDB_CacheStatistics();
+
+    /// Drop all collected statistics
+    void Init();
+
+    void AddStore(const string& client,
+                  time_t        tm,
+                  unsigned      store, 
+                  unsigned      update, 
+                  unsigned      blob_size, 
+                  unsigned      overflow);
+
+    void AddRead(const string&        client, time_t tm);
+    void AddExplDelete(const string&  client);
+    void AddPurgeDelete(const string& client);
+    void AddNeverRead(const string&   client);
+
+
+    void AddInternalError(const string& client,
+                          SBDB_CacheUnitStatistics::EErrGetPut operation);
+    void AddProtocolError(const string& client,
+                          SBDB_CacheUnitStatistics::EErrGetPut operation);
+    void AddNoBlobError(const string& client,
+                        SBDB_CacheUnitStatistics::EErrGetPut operation);
+    void AddCommError(const string& client,
+                      SBDB_CacheUnitStatistics::EErrGetPut operation);
+
+
+    void ConvertToRegistry(IRWRegistry* reg) const;
+
+    SBDB_CacheUnitStatistics& GlobalStatistics() { return m_GlobalStat; }
+
+private:
+    typedef map<string, SBDB_CacheUnitStatistics> TOwnerStatMap;
+private:
+    SBDB_CacheUnitStatistics  m_GlobalStat; 
+    TOwnerStatMap             m_OwnerStatMap;
 };
 
 
@@ -187,10 +256,6 @@ private:
 ///
 class NCBI_BDB_CACHE_EXPORT CBDB_Cache : public ICache
 {
-public:
-    /// Statistics of cache access by client
-    typedef map<string, SBDB_CacheStatistics> TOwnerStatistics;
-
 public:
     CBDB_Cache();
     virtual ~CBDB_Cache();
@@ -353,8 +418,6 @@ public:
     /// Get max limit for read update
     unsigned GetTTL_Prolongation() const { return m_MaxTTL_prolong; }
 
-    /// Turn ON/OFF statistics by BLOB owners
-    void SetOwnerStat(bool on_off);
 
     /// Get cache operations statistics
     const SBDB_CacheStatistics& GetStatistics() const
@@ -373,27 +436,20 @@ public:
     /// Unlock cache access
     void Unlock();
 
-    /// Return TRUE if owner statistics is collected
-    /// (Non-syncronized)
-    bool IsOwnerStatistics() const;
-
-    /// Get owner statistics
-    const TOwnerStatistics& GetOwnerStatistics() const;
-
 
     // Error logging functions
 
-    void RegisterInternalError(SBDB_CacheStatistics::EErrGetPut operation, 
-                               const string&                    owner);
+    void RegisterInternalError(SBDB_CacheUnitStatistics::EErrGetPut operation,
+                               const string&                        owner);
 
-    void RegisterProtocolError(SBDB_CacheStatistics::EErrGetPut operation, 
-                               const string&                    owner);
+    void RegisterProtocolError(SBDB_CacheUnitStatistics::EErrGetPut operation, 
+                               const string&                        owner);
 
-    void RegisterNoBlobError(SBDB_CacheStatistics::EErrGetPut operation, 
-                             const string&                    owner);
+    void RegisterNoBlobError(SBDB_CacheUnitStatistics::EErrGetPut operation, 
+                             const string&                        owner);
 
-    void RegisterCommError(SBDB_CacheStatistics::EErrGetPut operation, 
-                           const string&                    owner);
+    void RegisterCommError(SBDB_CacheUnitStatistics::EErrGetPut operation, 
+                           const string&                        owner);
 
 
     // ICache interface
@@ -579,7 +635,7 @@ private:
                                     size_t&        file_length);
 
     /// update BLOB owners' statistics on BLOB delete
-    void x_UpdateOwnerStatOnDelete(bool expl_delete);
+    void x_UpdateOwnerStatOnDelete(const string& owner, bool expl_delete);
 
     /// Determines BLOB size (requires fetched attribute record)
     size_t x_GetBlobSize(const char* key,
@@ -679,12 +735,10 @@ private:
 
     /// Stat counters
     SBDB_CacheStatistics       m_Statistics;
-    /// Statistics by BLOB owners
-    TOwnerStatistics           m_OwnerStatistics;
-    /// Flag to collect owner statistics
-    bool                       m_CollectOwnerStat;
     /// used by x_UpdateOwnerStatOnDelete
     string                     m_TmpOwnerName;
+    /// Fast local timer
+    CFastLocalTime             m_LocalTimer;
 };
 
 
@@ -763,6 +817,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/12/01 14:37:48  kuznets
+ * Improvements in collecting statistics
+ *
  * Revision 1.62  2005/11/28 15:18:33  kuznets
  * Improved overflow file management
  *
