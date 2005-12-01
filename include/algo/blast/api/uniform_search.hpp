@@ -352,9 +352,37 @@ public:
 
 class ISearchFactory : public CObject {
 public:
+    /// Create a new search object with a sequence-based query.
+    ///
+    /// A search object will be constructed and configured for a
+    /// search using a query that consists of one or more sequences.
+    ///
+    /// @return
+    ///   A search object for a sequence search.
     virtual CRef<ISeqSearch>          GetSeqSearch()  = 0;
+    
+    /// Create a new search object with a pssm-based query.
+    ///
+    /// A search object will be constructed and configured for a
+    /// search using a PSSM query.
+    ///
+    /// @return
+    ///   A search object for a PSSM search.
     virtual CRef<IPssmSearch>         GetPssmSearch()  = 0;
-    virtual CRef<CBlastOptionsHandle> GetOptions(EProgram) = 0;
+    
+    /// Create a CBlastOptionsHandle
+    ///
+    /// This creates a CBlastOptionsHandle for the specified program
+    /// value.  The options can be used to configure a search created
+    /// by the GetSeqSearch() or GetPssmSearch() methods.  The search
+    /// object and the CBlastOptionsHandle object should be created by
+    /// the same ISearchFactory subclass.
+    ///
+    /// @param program
+    ///   The program type for this search.
+    /// @return
+    ///   An options handle object for this program and factory type.
+    virtual CRef<CBlastOptionsHandle> GetOptions(EProgram program) = 0;
 };
 
 
