@@ -1,6 +1,7 @@
 APP = blast2seq
 SRC = blast2seq blast_input
-LIB = xblast xnetblastcli xnetblast xalgodustmask seqdb blastdb scoremat \
+LIB = xblast composition_adjustment xnetblastcli xnetblast \
+      xalgodustmask seqdb blastdb scoremat \
       xobjsimple xobjutil xobjread tables $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
