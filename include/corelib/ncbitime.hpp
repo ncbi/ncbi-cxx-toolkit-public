@@ -1249,8 +1249,8 @@ public:
     /// Get local time
     CTime GetLocalTime(void);
 
-    /// Get difference between current local time and GMT time
-    /// in seconds (daylight information included)
+    /// Get difference in seconds between UTC and current local time
+    /// (daylight information included)
     int GetLocalTimezone(void);
 
     /// Do unscheduled check
@@ -1283,12 +1283,20 @@ private:
 class NCBI_XNCBI_EXPORT CStopWatch
 {
 public:
+    /// Defines how to create new timer.
+    enum EStart { 
+        eStart,   ///< Stat timer immediately after creating.
+        eStop     ///< Do not start timer, just create it.
+    };
+
     /// Constructor.
-    /// NB. Ctor doesn't start timer, it merely creates it.
-    CStopWatch(void);
+    /// NB. By default ctor doesn't start timer, it merely creates it.
+    CStopWatch(EStart state = eStop);
+
     /// Constructor.
     /// Start timer if argument is true.
-    CStopWatch(bool start);
+    /// @deprecated Use CStopWatch(EStat) constuctor instead.
+    NCBI_DEPRECATED CStopWatch(bool start);
 
     /// Start the timer.
     void Start(void);
@@ -1950,14 +1958,11 @@ bool CTimeSpan::operator<= (const CTimeSpan& t) const
 //
 
 inline
-CStopWatch::CStopWatch(void)
+CStopWatch::CStopWatch(EStart state)
 {
-}
-
-inline
-void CStopWatch::Start()
-{
-    m_Start = GetTimeMark();
+    if ( state = eStart ) {
+        Start();
+    }
 }
 
 inline
@@ -1967,6 +1972,13 @@ CStopWatch::CStopWatch(bool start)
         Start();
     }
 }
+
+inline
+void CStopWatch::Start()
+{
+    m_Start = GetTimeMark();
+}
+
 
 inline
 double CStopWatch::Elapsed() const
@@ -1991,6 +2003,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/12/01 14:50:05  ivanov
+ * CStopWatch::
+ *     - added new constructor CStopWatch(EStart)
+ *     - CStopWatch(bool) declared as deprecated
+ * CFastLocalTime::GetLocalTimezone() -- fixed comments
+ *
  * Revision 1.50  2005/11/30 15:45:16  ivanov
  * Added comment to CFastLocalTime::GetLocalTimezone()
  * that it returns value in seconds
