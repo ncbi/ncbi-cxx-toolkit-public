@@ -175,7 +175,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
     CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
     int gi = sequence::GetId(hand, sequence::eGetId_ForceGi).GetGi();
     int taxid = s_GetTaxId(hand);
-    if (!hand) {
+    if (taxid == 0) {
         throw runtime_error("CTestProtProd_EntrezNeighbors::RunTest: "
                             "taxid not found for " + id->GetSeqIdString(true));
     }
@@ -221,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/01 15:56:57  jcherry
+ * Test the taxid for zero, not the bioseq handle
+ *
  * Revision 1.3  2005/01/24 17:17:27  vasilche
  * Use bool operator to check handles.
  *
