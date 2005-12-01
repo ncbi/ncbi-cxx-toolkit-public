@@ -1965,14 +1965,6 @@ CStopWatch::CStopWatch(EStart state)
 }
 
 inline
-CStopWatch::CStopWatch(bool start)
-{
-    if ( start ) {
-        Start();
-    }
-}
-
-inline
 void CStopWatch::Start()
 {
     m_Start = GetTimeMark();
@@ -2002,6 +1994,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2005/12/01 15:55:02  ucko
+ * Move deprecated CStopWatch constructor to ncbitime.cpp to avoid
+ * widespread warnings.
+ *
  * Revision 1.53  2005/12/01 15:49:38  ucko
  * Fix typo (= for ==) in CStopWatch::CStopWatch(EStart).
  *
