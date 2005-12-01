@@ -1,7 +1,8 @@
 # $Id$
 
-SRC_C = blast_adjust_scores compo_mode_condition \
-	composition_adjustment nlm_linear_algebra optimize_target_freq
+SRC_C = compo_heap compo_mode_condition composition_adjustment \
+	matrix_frequency_data nlm_linear_algebra optimize_target_freq \
+	redo_alignment smith_waterman
 
 SRC   = $(SRC_C)
 
