@@ -6,7 +6,7 @@ APP = splign
 SRC = splign_app
 
 LIB = xalgoalignsplign xalgoalignutil xalgoalignnw \
-      xblast xalgodustmask seqdb xnetblastcli blastdb \
+      xblast composition_adjustment xalgodustmask seqdb xnetblastcli blastdb \
       ncbi_xloader_lds lds bdb \
       xnetblast scoremat xobjsimple xobjutil xobjread tables \
       $(OBJMGR_LIBS:%=%$(STATIC))
