@@ -12,7 +12,8 @@ SRC = struct_util_demo
 
 LIB = xstruct_util \
       xstruct_dp \
-      xblast seqdb blastdb xnetblastcli xnetblast tables xobjsimple xobjutil \
+      xblast composition_adjustment seqdb blastdb xnetblastcli xnetblast \
+      tables xobjsimple xobjutil \
       ncbimime \
       cdd \
       scoremat \

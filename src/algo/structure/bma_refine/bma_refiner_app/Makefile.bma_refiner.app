@@ -10,8 +10,8 @@ REQUIRES = objects
 LIB =   xbma_refiner \
         xstruct_util \
         xstruct_dp \
-        xblast seqdb blastdb xnetblastcli xnetblast tables \
-        xobjsimple xobjutil \
+        xblast composition_adjustment seqdb blastdb xnetblastcli xnetblast \
+        tables xobjsimple xobjutil \
         cdd \
         scoremat \
         cn3d \
