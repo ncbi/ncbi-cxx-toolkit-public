@@ -62,7 +62,7 @@ req: true  if required for a default build
 
 (* Libraries definitions *)
 -- Core
-property xncbi : {name:"xncbi", path:"corelib", exc:{"test_mt.cpp", "ncbi_os_mac.cpp", "ncbicfg.c.in"}}
+property xncbi : {name:"xncbi", path:"corelib", exc:{"test_mt.cpp", "ncbi_os_mac.cpp", "ncbi_os_mswin.cpp", "ncbicfg.c.in"}}
 property xcgi : {name:"xcgi", path:"cgi", exc:{"fcgi_run.cpp", "fcgibuf.cpp"}}
 property dbapi : {name:"dbapi", path:"dbapi"}
 property dbapi_cache : {name:"dbapi_cache", path:"dbapi:cache"}
@@ -91,6 +91,7 @@ property xalgoaligutil : {name:"xalgoaligutil", path:"algo:align:util"}
 property xalgoseq : {name:"xalgoseq", path:"algo:sequence"}
 property xalgoseqqa : {name:"xalgoseqqa", path:"algo:seqqa"}
 property blast : {name:"blast", path:"algo:blast:core"}
+property blast_composition : {name:"blast_composition", path:"algo:blast:composition_adjustment"}
 property xblast : {name:"xblast", path:"algo:blast:api"}
 property xalgognomon : {name:"xalgognomon", path:"algo:gnomon"}
 property xalgowinmask : {name:"xalgowinmask", path:"algo:winmask"}
@@ -275,7 +276,7 @@ property ncbi_image : {name:"ncbi_image", libs:{ximage}, dep:"ncbi_core" & IMG_L
 property ncbi_dbapi_driver : {name:"ncbi_dbapi_driver", libs:{dbapi_driver}, dep:"ncbi_core", req:true}
 property ncbi_dbapi : {name:"ncbi_dbapi", libs:{dbapi, dbapi_cache}, dep:"ncbi_core ncbi_dbapi_driver", req:true}
 property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", req:true}
-property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, xblast, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple", req:true}
+property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
@@ -426,6 +427,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2005/12/01 18:56:01  lebedev
+ * composition_adjustment added
+ *
  * Revision 1.85  2005/11/29 13:31:32  lebedev
  * objmgr_demo added
  *
