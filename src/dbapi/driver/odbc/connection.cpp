@@ -39,7 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static bool ODBC_xSendDataPrepare(CODBC_Connection& conn, 
+static bool ODBC_xSendDataPrepare(CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, 
                                   bool is_text, 
@@ -47,16 +47,16 @@ static bool ODBC_xSendDataPrepare(CODBC_Connection& conn,
                                   SQLPOINTER id, 
                                   SQLINTEGER* ph);
 
-static bool ODBC_xSendDataGetId(CODBC_Connection& conn, 
+static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id);
 
 CODBC_Connection::CODBC_Connection(CODBCContext* cntx, 
-                                   SQLHDBC con,
+                                   SQLHDBC conn,
                                    bool reusable, 
                                    const string& pool_name)
-: m_Reporter(0, SQL_HANDLE_DBC, con, &cntx->GetReporter())
+: m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx->GetReporter())
 {
-    m_Link     = con;
+    m_Link     = conn;
     m_Context  = cntx;
     m_Reusable = reusable;
     m_Pool     = pool_name;
@@ -76,6 +76,14 @@ bool CODBC_Connection::IsAlive()
 CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
                                           unsigned int  nof_params)
 {
+    // Original handle allocation logic ...
+//     SQLHSTMT cmd;
+//     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
+//
+//     if(r == SQL_ERROR) {
+//         m_Reporter.ReportErrors();
+//     }
+
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
@@ -97,6 +105,14 @@ CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
 #if 0
     return 0;
 #else
+    // Original handle allocation logic ...
+//     SQLHSTMT cmd;
+//     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
+//
+//     if(r == SQL_ERROR) {
+//         m_Reporter.ReportErrors();
+//     }
+
     string extra_msg = "RPC Command: " + rpc_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
@@ -133,7 +149,16 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
 #if 0
     return 0;
 #else
-    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \"" + query + "\"";
+    // Original handle allocation logic ...
+//     SQLHSTMT cmd;
+//     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
+//
+//     if(r == SQL_ERROR) {
+//         m_Reporter.ReportErrors();
+//     }
+
+    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
+        query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
     CODBC_CursorCmd* ccmd = new CODBC_CursorCmd(this, 
@@ -161,34 +186,38 @@ CDB_SendDataCmd* CODBC_Connection::SendDataCmd(I_ITDescriptor& descr_in,
 
 bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Image& img, bool log_it)
 {
+    CStatementBase stmt(*this);
+
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= img.Size();
     SQLINTEGER ph;
 
-    if((!ODBC_xSendDataPrepare(*this, (CDB_ITDescriptor&)desc, s, false, log_it, p, &ph)) ||
-       (!ODBC_xSendDataGetId( *this, &p ))) {
+    if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, false, log_it, p, &ph)) ||
+       (!ODBC_xSendDataGetId(stmt, &p ))) {
         string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
-    return x_SendData(*this, img);
+    return x_SendData(stmt, img);
     
 }
 
 
 bool CODBC_Connection::SendData(I_ITDescriptor& desc, CDB_Text& txt, bool log_it)
 {
+    CStatementBase stmt(*this);
+
     SQLPOINTER p= (SQLPOINTER)2;
     SQLINTEGER s= txt.Size();
     SQLINTEGER ph;
 
-    if((!ODBC_xSendDataPrepare(*this, (CDB_ITDescriptor&)desc, s, true, log_it, p, &ph)) ||
-       (!ODBC_xSendDataGetId(*this, &p))) {
+    if((!ODBC_xSendDataPrepare(stmt, (CDB_ITDescriptor&)desc, s, true, log_it, p, &ph)) ||
+       (!ODBC_xSendDataGetId(stmt, &p))) {
         string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
     }
 
-    return x_SendData(*this, txt);
+    return x_SendData(stmt, txt);
 }
 
 
@@ -321,8 +350,8 @@ bool CODBC_Connection::Abort()
     return false;
 }
 
-
-static bool ODBC_xSendDataPrepare(CODBC_Connection& conn, 
+static bool ODBC_xSendDataPrepare(// CODBC_Connection& conn, 
+                                  CStatementBase& stmt,
                                   CDB_ITDescriptor& descr_in,
                                   SQLINTEGER size, 
                                   bool is_text, 
@@ -330,8 +359,6 @@ static bool ODBC_xSendDataPrepare(CODBC_Connection& conn,
                                   SQLPOINTER id, 
                                   SQLINTEGER* ph)
 {
-    CStatementBase stmt(conn);
-
     string q= "update ";
     q+= descr_in.TableName();
     q+= " set ";
@@ -411,11 +438,9 @@ static bool ODBC_xSendDataPrepare(CODBC_Connection& conn,
     }
 }
 
-static bool ODBC_xSendDataGetId(CODBC_Connection& conn, 
+static bool ODBC_xSendDataGetId(CStatementBase& stmt,
                                 SQLPOINTER* id)
 {
-    CStatementBase stmt(conn);
-
     switch(SQLParamData(stmt.GetHandle(), id)) {
     case SQL_NEED_DATA:
         return true;
@@ -427,10 +452,9 @@ static bool ODBC_xSendDataGetId(CODBC_Connection& conn,
     }
 }
 
-bool CODBC_Connection::x_SendData(CODBC_Connection& conn, 
+bool CODBC_Connection::x_SendData(CStatementBase& stmt,
                                   CDB_Stream& stream)
 {
-    CStatementBase stmt(conn);
     char buff[1801];
     size_t s;
 
@@ -546,9 +570,9 @@ CODBC_SendDataCmd::CODBC_SendDataCmd(CODBC_Connection* conn,
 , m_Bytes2go(nof_bytes)
 {
     SQLPOINTER p = (SQLPOINTER)1;
-    if((!ODBC_xSendDataPrepare(GetConnection(), descr, (SQLINTEGER)nof_bytes,
+    if((!ODBC_xSendDataPrepare(*this, descr, (SQLINTEGER)nof_bytes,
                               false, logit, p, &m_ParamPH)) ||
-       (!ODBC_xSendDataGetId(GetConnection(), &p))) {
+       (!ODBC_xSendDataGetId(*this, &p))) {
 
         string err_message = "Cannot prepare a command" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR( err_message, 410035 );
@@ -655,6 +679,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/12/01 14:40:32  ssikorsk
+ * Staticfunctions ODBC_xSendDataPrepare and ODBC_xSendDataGetId take
+ * statement instead of connection as a parameter now.
+ *
  * Revision 1.14  2005/11/28 13:22:59  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.
