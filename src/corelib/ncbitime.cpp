@@ -2019,6 +2019,14 @@ int CFastLocalTime::GetLocalTimezone(void)
 //
 //=============================================================================
 
+// deprecated
+CStopWatch::CStopWatch(bool start)
+{
+    if ( start ) {
+        Start();
+    }
+}
+
 double CStopWatch::GetTimeMark()
 {
 #if defined(NCBI_OS_MSWIN)
@@ -2119,6 +2127,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2005/12/01 15:55:15  ucko
+ * Move deprecated CStopWatch constructor from ncbitime.hpp to avoid
+ * widespread warnings.
+ *
  * Revision 1.67  2005/11/30 15:34:50  ivanov
  * + CFastLocalTime::GetLocalTimezone()
  *
