@@ -68,7 +68,7 @@ extern "C" {
 */
 
 Int2
-Kappa_RedoAlignmentCore(EBlastProgramType program_number,
+Blast_RedoAlignmentCore(EBlastProgramType program_number,
                   BLAST_SequenceBlk * queryBlk,
                   BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
@@ -90,6 +90,9 @@ Kappa_RedoAlignmentCore(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/12/01 14:47:40  madden
+ * Renamed Kappa_RedoAlignmentCore as Blast_RedoAlignmentCore
+ *
  * Revision 1.9  2004/11/23 21:46:03  camacho
  * Brought up to date with current version of kappa.c [by Mike Gertz]
  *

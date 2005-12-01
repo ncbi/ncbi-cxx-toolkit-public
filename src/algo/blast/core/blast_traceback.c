@@ -38,7 +38,7 @@
  *                    for ( all HSP lists )
  *                        Blast_TracebackFromHSPList
  *            else if ( composition based statistics )
- *                Kappa_RedoAlignmentCore
+ *                Blast_RedoAlignmentCore
  *            else
  *                for ( all HSP lists )
  *                    if ( PHI BLAST) 
@@ -1011,7 +1011,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
               (ext_params->options->compositionBasedStats == TRUE || 
                ext_params->options->eTbackExt == eSmithWatermanTbck)) {
       status = 
-          Kappa_RedoAlignmentCore(program_number, query, query_info, sbp, 
+          Blast_RedoAlignmentCore(program_number, query, query_info, sbp, 
                                   hsp_stream, seq_src, gen_code_string,
                                   score_params, ext_params, hit_params, 
                                   psi_options, results); 
