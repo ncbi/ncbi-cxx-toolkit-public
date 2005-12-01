@@ -1959,7 +1959,7 @@ bool CTimeSpan::operator<= (const CTimeSpan& t) const
 inline
 CStopWatch::CStopWatch(EStart state)
 {
-    if ( state = eStart ) {
+    if ( state == eStart ) {
         Start();
     }
 }
@@ -2002,6 +2002,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/12/01 15:49:38  ucko
+ * Fix typo (= for ==) in CStopWatch::CStopWatch(EStart).
+ *
  * Revision 1.52  2005/12/01 15:02:48  ucko
  * Correct placement of NCBI_DEPRECATED, which some GCC versions
  * (3.2.x and 3.3.x?) require to *follow* the declaration.
