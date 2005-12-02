@@ -371,11 +371,17 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                                        const string& dberrstr,
                                        const string& /*oserrstr*/)
 {
+    string message = dberrstr;
+    
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
     CDBHandlerStack* hs   = link ?
         &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
+    if ( link ) {
+        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+    }
+    
     switch (dberr) {
     case SYBETIME:
     case SYBEFCON:
@@ -383,7 +389,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         {
             CDB_TimeoutEx to( kBlankCompileInfo,
                              0,
-                             dberrstr,
+                             message,
                              dberr);
             hs->PostMsg(&to);
         }
@@ -392,7 +398,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         if(dberr == 1205) {
             CDB_DeadlockEx dl( kBlankCompileInfo,
                               0,
-                              dberrstr);
+                              message);
             hs->PostMsg(&dl);
             return INT_CANCEL;
         }
@@ -407,7 +413,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         {
             CDB_ClientEx info( kBlankCompileInfo,
                          0,
-                         dberrstr,
+                         message,
                          eDiag_Info,
                          dberr);
             hs->PostMsg(&info);
@@ -420,7 +426,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         if ( dberr != 20018 ) {
             CDB_ClientEx err(kBlankCompileInfo,
                              0,
-                             dberrstr,
+                             message,
                              eDiag_Error,
                              dberr);
             hs->PostMsg(&err);
@@ -430,7 +436,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         {
             CDB_TimeoutEx to( kBlankCompileInfo,
                              0,
-                             dberrstr,
+                             message,
                              dberr);
             hs->PostMsg(&to);
         }
@@ -439,7 +445,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
         {
             CDB_ClientEx ftl( kBlankCompileInfo,
                          0,
-                         dberrstr,
+                         message,
                          eDiag_Fatal,
                          dberr);
             hs->PostMsg(&ftl);
@@ -459,6 +465,8 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                                         const string& procname,
                                         int           line)
 {
+    string message = msgtxt;
+    
     if (msgno == 5701  ||  msgno == 5703)
         return;
 
@@ -467,10 +475,16 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     CDBHandlerStack* hs   = link ?
         &link->m_MsgHandlers : &g_pContext->m_CntxHandlers;
 
+    if ( link ) {
+        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+    } else {
+        message += " SERVER: '" + srvname + "'";
+    }
+    
     if (msgno == 1205/*DEADLOCK*/) {
         CDB_DeadlockEx dl( kBlankCompileInfo,
                           0,
-                          string(srvname) + ": " + msgtxt);
+                          message);
         hs->PostMsg(&dl);
     } else {
         EDiagSev sev =
@@ -481,7 +495,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         if (!procname.empty()) {
             CDB_RPCEx rpc( kBlankCompileInfo,
                       0,
-                      string(srvname) + ": " + msgtxt,
+                      message,
                       sev,
                       msgno,
                       procname,
@@ -490,7 +504,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
         } else {
             CDB_DSEx m( kBlankCompileInfo,
                      0,
-                     string(srvname) + ": " + msgtxt,
+                     message,
                      sev,
                      msgno);
             hs->PostMsg(&m);
@@ -1113,6 +1127,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2005/12/02 14:15:01  ssikorsk
+ *  Log server and user names with error message.
+ *
  * Revision 1.58  2005/11/02 15:59:36  ucko
  * Revert previous change in favor of supplying empty compilation info
  * via a static constant.

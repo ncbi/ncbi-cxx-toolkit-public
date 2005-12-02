@@ -165,6 +165,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
             delete p_pot;
             DATABASE_DRIVER_ERROR( "Cannot install the server message callback", 100004 );
         }
+        // PushCntxMsgHandler();
     }
 
     if ( p_pot ) {
@@ -371,6 +372,7 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
     if (r == CS_SUCCEED  &&  p_pot != 0  &&  p_pot->NofItems() > 0) {
         CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
         EDiagSev sev = eDiag_Error;
+        
         if (msg->severity == CS_SV_INFORM) {
             sev = eDiag_Info;
         }
@@ -396,15 +398,22 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                                        CS_CLIENTMSG* msg)
 {
     CS_INT           outlen;
-    CPointerPot*        p_pot = 0;
+    CPointerPot*     p_pot = 0;
     CTL_Connection*  link = 0;
     CDBHandlerStack* hs;
-
+    string           message;
+    
+    if ( msg->msgstring ) {
+        message.append( msg->msgstring );
+    }
+    
+    // Retrieve CDBHandlerStack ...
     if (con != 0  &&
         ct_con_props(con, CS_GET, CS_USERDATA,
                      (void*) &link, (CS_INT) sizeof(link),
                      &outlen) == CS_SUCCEED  &&  link != 0) {
         hs = &link->m_MsgHandlers;
+        message += "SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
     }
     else if (cs_config(context, CS_GET, CS_USERDATA,
                        (void*) &p_pot, (CS_INT) sizeof(p_pot),
@@ -420,65 +429,88 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                  << "Severity:" << msg->severity
                  << " Msg # " << msg->msgnumber << endl
                  << msg->msgstring << endl;
+            
             if (msg->osstringlen > 1) {
                 cerr << "OS # "    << msg->osnumber
                      << " OS msg " << msg->osstring << endl;
             }
+            
             if (msg->sqlstatelen > 1  &&
                 (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
                 cerr << "SQL: " << msg->sqlstate << endl;
             }
         }
+        
         return true;
     }
 
-
+    // Process the message ...
     switch (msg->severity) {
     case CS_SV_INFORM: {
         CDB_ClientEx info( kBlankCompileInfo, 
                            0, 
-                           msg->msgstring, 
+                           message, 
                            eDiag_Info, 
                            msg->msgnumber);
+        
         hs->PostMsg(&info);
+        
         break;
     }
     case CS_SV_RETRY_FAIL: {
         CDB_TimeoutEx to( 
             kBlankCompileInfo, 
             0, 
-            msg->msgstring, 
+            message, 
             msg->msgnumber);
+        
         hs->PostMsg(&to);
-    if(con) {
-      CS_INT status;
-      if((ct_con_props(con, CS_GET, CS_LOGIN_STATUS, (CS_VOID*)&status, CS_UNUSED, NULL) != CS_SUCCEED) ||
-       (!status)) return false;
-
-      if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) return false;
-    }
-    else return false;
-    break;
+        
+        if( con ) {
+            CS_INT status;
+            if((ct_con_props(con, 
+                             CS_GET, 
+                             CS_LOGIN_STATUS, 
+                             (CS_VOID*)&status, 
+                             CS_UNUSED, 
+                             NULL) != CS_SUCCEED) ||
+                (!status)) {
+                return false;
+            }
+            
+            if(ct_cancel(con, (CS_COMMAND*)0, CS_CANCEL_ATTN) != CS_SUCCEED) {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+        
+        break;
     }
     case CS_SV_CONFIG_FAIL:
     case CS_SV_API_FAIL:
     case CS_SV_INTERNAL_FAIL: {
         CDB_ClientEx err( kBlankCompileInfo, 
                           0, 
-                          msg->msgstring, 
+                          message, 
                           eDiag_Error, 
                           msg->msgnumber);
+        
         hs->PostMsg(&err);
+        
         break;
     }
     default: {
         CDB_ClientEx ftl( 
             kBlankCompileInfo, 
             0, 
-            msg->msgstring, 
+            message, 
             eDiag_Fatal, 
             msg->msgnumber);
+        
         hs->PostMsg(&ftl);
+        
         break;
     }
     }
@@ -500,42 +532,63 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     CPointerPot*     p_pot = 0;
     CTL_Connection*  link = 0;
     CDBHandlerStack* hs;
+    string           message;
+    
+    if ( msg->text ) {
+        message += msg->text;
+    }
 
     if (con != 0  &&  ct_con_props(con, CS_GET, CS_USERDATA,
                                    (void*) &link, (CS_INT) sizeof(link),
                                    &outlen) == CS_SUCCEED  &&
         link != 0) {
+        
         hs = &link->m_MsgHandlers;
+        message += "SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
     }
-    else if (cs_config(context, CS_GET, CS_USERDATA,
-                       (void*) &p_pot, (CS_INT) sizeof(p_pot),
+    else if (cs_config(context, CS_GET, 
+                       CS_USERDATA,
+                       (void*) &p_pot, 
+                       (CS_INT) sizeof(p_pot),
                        &outlen) == CS_SUCCEED  &&
              p_pot != 0  &&  p_pot->NofItems() > 0) {
+        
         CTLibContext* drv = (CTLibContext*) p_pot->Get(0);
         hs = &drv->m_CntxHandlers;
+        
+        // Get server name from the message ...
+        message += "SERVER: '";
+        message.append( msg->svrname, msg->svrnlen );
+        message += "'";
     }
     else {
         cerr << "Message from the server ";
+        
         if (msg->svrnlen > 0) {
             cerr << "<" << msg->svrname << "> ";
         }
+        
         cerr << "msg # " << msg->msgnumber
              << " severity: " << msg->severity << endl;
+        
         if (msg->proclen > 0) {
             cerr << "Proc: " << msg->proc << " line: " << msg->line << endl;
         }
+        
         if (msg->sqlstatelen > 1  &&
             (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
             cerr << "SQL: " << msg->sqlstate << endl;
         }
+        
         cerr << msg->text << endl;
+        
         return true;
     }
 
     if (msg->msgnumber == 1205 /*DEADLOCK*/) {
         CDB_DeadlockEx dl(kBlankCompileInfo,
                           0, 
-                          "Server '" + string(msg->svrname) + "': " + msg->text);
+                          message);
         hs->PostMsg(&dl);
     }
     else {
@@ -547,30 +600,33 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         if (msg->proclen > 0) {
             CDB_RPCEx rpc(kBlankCompileInfo,
                           0,
-                          "Server '" + string(msg->svrname) + "': " + msg->text,
+                          message,
                           sev,
                           (int) msg->msgnumber,
                           msg->proc,
                           (int) msg->line);
+            
             hs->PostMsg(&rpc);
         }
         else if (msg->sqlstatelen > 1  &&
                  (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
             CDB_SQLEx sql(kBlankCompileInfo,
                           0,
-                          "Server '" + string(msg->svrname) + "': " + msg->text,
+                          message,
                           sev,
                           (int) msg->msgnumber,
                           (const char*) msg->sqlstate,
                           (int) msg->line);
+            
             hs->PostMsg(&sql);
         }
         else {
             CDB_DSEx m(kBlankCompileInfo,
                        0,
-                       "Server '" + string(msg->svrname) + "': " + msg->text,
+                       message,
                        sev,
                        (int) msg->msgnumber);
+            
             hs->PostMsg(&m);
         }
     }
@@ -1091,6 +1147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2005/12/02 14:16:14  ssikorsk
+ *  Log server and user names with error message.
+ *
  * Revision 1.50  2005/11/02 15:59:31  ucko
  * Revert previous change in favor of supplying empty compilation info
  * via a static constant.
