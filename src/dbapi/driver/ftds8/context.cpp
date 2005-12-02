@@ -309,11 +309,17 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
                                    const string& dberrstr,
                                    const string& /* oserrstr */)
 {
+    string message = dberrstr;
+    
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*> (dbgetuserdata(dblink)) : 0;
     CDBHandlerStack* hs   = link ?
         &link->m_MsgHandlers : &g_pTDSContext->m_CntxHandlers;
 
+    if ( link ) {
+        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+    }
+    
     switch (dberr) {
     case SYBETIME:
     case SYBEFCON:
@@ -321,7 +327,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         {
             CDB_TimeoutEx to(kBlankCompileInfo,
                              0,
-                             dberrstr,
+                             message,
                              dberr);
             hs->PostMsg(&to);
         }
@@ -330,7 +336,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         if(dberr == 1205) {
             CDB_DeadlockEx dl(kBlankCompileInfo,
                               0,
-                              dberrstr);
+                              message);
             hs->PostMsg(&dl);
             return INT_CANCEL;
         }
@@ -345,7 +351,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         {
             CDB_ClientEx info(kBlankCompileInfo,
                               0,
-                              dberrstr,
+                              message,
                               eDiag_Info,
                               dberr);
             hs->PostMsg(&info);
@@ -358,7 +364,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         {
             CDB_ClientEx err(kBlankCompileInfo,
                              0,
-                             dberrstr,
+                             message,
                              eDiag_Error,
                              dberr);
             hs->PostMsg(&err);
@@ -368,7 +374,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         {
             CDB_TimeoutEx to(kBlankCompileInfo,
                              0,
-                             dberrstr,
+                             message,
                              dberr);
             hs->PostMsg(&to);
         }
@@ -377,7 +383,7 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         {
             CDB_ClientEx ftl(kBlankCompileInfo,
                              0,
-                             dberrstr,
+                             message,
                              eDiag_Fatal,
                              dberr);
             hs->PostMsg(&ftl);
@@ -396,6 +402,8 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
                                     const string& procname,
                                     int           line)
 {
+    string message = msgtxt;
+    
     if (msgno == 5701  ||  msgno == 5703)
         return;
 
@@ -404,10 +412,16 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
     CDBHandlerStack* hs   = link ?
         &link->m_MsgHandlers : &g_pTDSContext->m_CntxHandlers;
 
+    if ( link ) {
+        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+    } else {
+        message += " SERVER: '" + srvname + "'";
+    }
+    
     if (msgno == 1205/*DEADLOCK*/) {
         CDB_DeadlockEx dl(kBlankCompileInfo,
                           0,
-                          string(srvname) + ": " + msgtxt);
+                          message);
         hs->PostMsg(&dl);
     } else {
         EDiagSev sev =
@@ -418,7 +432,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
         if (!procname.empty()) {
             CDB_RPCEx rpc(kBlankCompileInfo,
                           0,
-                          string(srvname) + ": " + msgtxt,
+                          message,
                           sev,
                           msgno,
                           procname,
@@ -427,7 +441,7 @@ void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
         } else {
             CDB_DSEx m(kBlankCompileInfo,
                        0,
-                       string(srvname) + ": " + msgtxt,
+                       message,
                        sev,
                        msgno);
             hs->PostMsg(&m);
@@ -692,6 +706,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/12/02 14:26:46  ssikorsk
+ * Log server and user names with error message.
+ *
  * Revision 1.51  2005/11/02 15:59:41  ucko
  * Revert previous change in favor of supplying empty compilation info
  * via a static constant.
