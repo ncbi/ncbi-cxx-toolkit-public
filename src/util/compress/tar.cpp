@@ -263,7 +263,7 @@ static void s_TarChecksum(TBlock* block, bool isgnu = false)
     // Compute the checksum
     memset(h->checksum, ' ', sizeof(h->checksum));
     unsigned long checksum = 0;
-    unsigned char* p = (unsigned char*) block->buffer;
+    const unsigned char* p = (const unsigned char*) block->buffer;
     for (size_t i = 0; i < sizeof(block->buffer); i++) {
         checksum += *p++;
     }
@@ -1080,7 +1080,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     s_NumToOctal(0,        h->mtime, sizeof(h->mtime)- 1);
     h->typeflag = link ? 'K' : 'L';
 
-    // NB: Old GNU magic protrudes into adjacent verion field
+    // NB: Old GNU magic protrudes into adjacent version field
     memcpy(h->magic, "ustar  ", 8); // 2 spaces and '\0'-terminated
 
     s_TarChecksum(block, true);
@@ -1269,16 +1269,14 @@ streamsize CTar::x_ExtractEntry(const CTarEntryInfo& info)
         if (!(m_Flags & fOverwrite)) {
             // Entry already exists, and cannot be changed
             extract = false;
-        } else { 
-            // The fOverwrite flag is set
-
+        } else { // The fOverwrite flag is set
             // Can update?
             if (((m_Flags & fUpdate) == fUpdate)  &&
                 (type != CTarEntryInfo::eDir)) {
-                // Update directories always, because archive can contains
-                // other subtree of existent destination directory.
+                // Update directories always, because archive can contain
+                // other subtree of existing destination directory.
                 time_t dst_time;
-                // Check that destination is not older that archive entry
+                // Check that destination is not older than the archive entry
                 if (dst->GetTimeT(&dst_time)  &&
                     dst_time >= info.GetModificationTime()) {
                     extract = false;
@@ -1672,6 +1670,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/12/02 05:43:32  lavr
+ * Few minor mods (comment fixes mostly)
+ *
  * Revision 1.36  2005/07/20 16:18:33  ivanov
  * CTar::x_ExtractEntry() --
  * - do not backup entries if only single fOverwrite flag is set;
@@ -1689,7 +1690,7 @@ END_NCBI_SCOPE
  * Fix archive flushing bug
  *
  * Revision 1.32  2005/07/12 11:19:03  ivanov
- * Added additional argument to used CDirEntry::Isnewer()
+ * Added additional argument to used CDirEntry::IsNewer()
  *
  * Revision 1.31  2005/06/24 12:54:13  ivanov
  * Heed Workshop compiler warnings
