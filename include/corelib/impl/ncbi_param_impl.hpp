@@ -106,7 +106,6 @@ public:
 // TLS cleanup function template
 
 template<class TValue>
-inline
 void g_ParamTlsValueCleanup(TValue* value, void*)
 {
     delete value;
@@ -245,7 +244,6 @@ CParam<TDescription>::CParam(const string& section, const string& name)
 
 
 template<class TDescription>
-inline
 typename CParam<TDescription>::TValueType&
 CParam<TDescription>::sx_GetDefault(void)
 {
@@ -271,7 +269,6 @@ CParam<TDescription>::sx_GetDefault(void)
 
 
 template<class TDescription>
-inline
 CRef<typename CParam<TDescription>::TTls>&
 CParam<TDescription>::sx_GetTls(void)
 {
@@ -335,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/02 21:32:52  vasilche
+ * Methods with static singleton variables should not be inlined.
+ *
  * Revision 1.3  2005/11/17 21:49:13  ucko
  * Use standard syntax when defining CParam<>'s constructor.
  *
