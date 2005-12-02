@@ -280,7 +280,7 @@ public:
     /// Close the archive making sure all pending output is flushed.
     ///
     /// Normally, direct call of this method need _not_ intersperse
-    /// successive archive manipulations with other methods, as they open
+    /// successive archive manipulations by other methods, as they open
     /// and close the archive automatically as necessary.  Rather, this
     /// call is to make sure the archive is complete earlier than it
     /// usually be done in the destructor of the CTar object.
@@ -321,7 +321,7 @@ public:
     /// Extract the entire archive (either in current directory or
     /// a directory specified by SetBaseDir()).
     ///
-    /// Extract all archive entries, which names match pre-set masks.
+    /// Extract all archive entries, which names match pre-set mask.
     /// @sa SetMask, SetBaseDir
     auto_ptr<TEntries> Extract(void);
 
@@ -329,13 +329,14 @@ public:
     ///
     /// @return
     ///   An array containing information on those archive entries
-    ///   which names match pre-set masks.
+    ///   which names match pre-set mask.
     /// @sa SetMask
     auto_ptr<TEntries> List(void);
 
     /// Verify archive integrity.
-    /// 
-    /// Emulate extracting files from archive without creating them on disk.
+    ///
+    /// Simulate extracting files from the archive without actually
+    /// creating them on disk.
     void Test(void);
 
     /// Return archive size as if input entries were put in it.
@@ -374,9 +375,9 @@ public:
     void SetMask(CMask *mask, EOwnership if_to_own = eNoOwnership,
                  NStr::ECase use_case = NStr::eCase);
 
-    /// Unset name masks.
+    /// Unset name mask.
     ///
-    /// Upon mask reset, all entries become subject to achive processing in
+    /// Upon mask reset, all entries become subject to archive processing in
     /// list/test/extract operations.
     /// @sa SetMask
     void UnsetMask();
@@ -582,6 +583,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/12/02 05:49:32  lavr
+ * Fix some comments
+ *
  * Revision 1.18  2005/07/06 17:58:25  ivanov
  * Removed Extract() with dir parameter again
  *
