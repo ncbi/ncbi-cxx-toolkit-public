@@ -97,22 +97,28 @@ IResultSet* CStatement::GetResultSet()
 
 bool CStatement::HasMoreResults() 
 {
-
-    bool more = GetBaseCmd()->HasMoreResults();
-    if( more ) {
-        if( GetBaseCmd()->HasFailed() ) {
-            SetFailed(true);
-            return false;
-        }
-        //Notify(CDbapiNewResultEvent(this));
-        CDB_Result *rs = GetBaseCmd()->Result();
-        CacheResultSet(rs); 
+    // This method may be called even before *execute*.
+    // We have to be prepared to verything.
+    bool more = (GetBaseCmd() != NULL);
+    
+    if (more) {
+        more = GetBaseCmd()->HasMoreResults();
+        if( more ) {
+            if( GetBaseCmd()->HasFailed() ) {
+                SetFailed(true);
+                return false;
+            }
+            //Notify(CDbapiNewResultEvent(this));
+            CDB_Result *rs = GetBaseCmd()->Result();
+            CacheResultSet(rs); 
 #if 0
-        if( rs == 0 ) {
-            m_rowCount = GetBaseCmd()->RowCount();
-        }
+            if( rs == 0 ) {
+                m_rowCount = GetBaseCmd()->RowCount();
+            }
 #endif
+        }
     }
+    
     return more;
 }
 
@@ -304,6 +310,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.33  2005/12/02 14:11:06  ssikorsk
+* Removed dependency of context for CStatement::HasMoreResults
+*
 * Revision 1.32  2005/12/01 18:59:20  kholodov
 * Added: SendSql() method
 *
