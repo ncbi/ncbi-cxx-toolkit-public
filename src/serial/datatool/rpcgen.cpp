@@ -342,8 +342,9 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
                 (*it)->GetType()->PrintASN(oss, 0);
                 string type = CNcbiOstrstreamToString(oss);
                 _ASSERT(type != "NULL");
-                ERR_POST(Warning << "Ignoring non-null init (type " << type
-                         << ") in " << m_Source.m_RequestChoiceType);
+                ERR_POST(Warning << m_Source.m_RequestChoiceType->GlobalName()
+                         << ": disabling special init handling because it"
+                         << " requires a payload of type " << type);
             }
         } else if (name == "fini") {
             if (dynamic_cast<const CNullDataType*>((*it)->GetType())) {
@@ -353,8 +354,9 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
                 (*it)->GetType()->PrintASN(oss, 0);
                 string type = CNcbiOstrstreamToString(oss);
                 _ASSERT(type != "NULL");
-                ERR_POST(Warning << "Ignoring non-null fini (type " << type
-                         << ") in " << m_Source.m_RequestChoiceType);
+                ERR_POST(Warning << m_Source.m_RequestChoiceType->GlobalName()
+                         << ": disabling special fini handling because it"
+                         << " requires a payload of type " << type);
             }
         }
     }
@@ -517,6 +519,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2005/12/02 21:50:07  ucko
+* Fix (and clarify) warnings emitted when init or fini requires a payload.
+*
 * Revision 1.14  2005/06/03 17:05:33  lavr
 * Explicit (unsigned char) casts in ctype routines
 *
