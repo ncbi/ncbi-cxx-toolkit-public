@@ -804,6 +804,7 @@ s_NewAlignmentFromGapAlign(BlastGapAlignStruct * gap_align,
                                   queryStart, queryEnd, queryIndex,
                                   matchStart, matchEnd, frame,
                                   gap_align->edit_script);
+    gap_align->edit_script = NULL;
     return obj;
 }
 
