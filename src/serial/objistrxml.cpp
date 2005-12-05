@@ -54,7 +54,7 @@ CObjectIStreamXml::CObjectIStreamXml(void)
       m_TagState(eTagOutside), m_Attlist(false),
       m_StdXml(false), m_EnforcedStdXml(false),
       m_Encoding( eEncoding_Unknown ),
-      m_StringEncoding( eEncoding_ISO8859_1 )
+      m_StringEncoding( eEncoding_Unknown )
 {
     m_Utf8Pos = m_Utf8Buf.begin();
 }
@@ -2292,6 +2292,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2005/12/05 20:08:07  gouriano
+* Changed default string encoding setting
+*
 * Revision 1.83  2005/11/29 17:43:15  gouriano
 * Added CBitString class
 *

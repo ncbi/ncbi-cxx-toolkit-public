@@ -69,7 +69,7 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
       m_RealFmt( eRealScientificFormat ),
-      m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_ISO8859_1 ),
+      m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_Unknown ),
       m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
       m_SkipIndent( false )
 {
@@ -1428,6 +1428,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2005/12/05 20:08:06  gouriano
+* Changed default string encoding setting
+*
 * Revision 1.88  2005/11/29 17:43:15  gouriano
 * Added CBitString class
 *
