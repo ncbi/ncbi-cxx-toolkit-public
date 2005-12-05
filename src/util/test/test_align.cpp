@@ -39,7 +39,9 @@
 #include <util/align_range.hpp>
 #include <util/align_range_coll.hpp>
 
-#include <boost/test/unit_test_result.hpp>
+#include <boost/version.hpp>
+#include <boost/test/unit_test_log.hpp>
+#include <boost/test/unit_test_suite.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -1211,14 +1213,23 @@ std::ofstream out("res.xml"); //TODO
 
 test_suite* init_unit_test_suite(int argc, char * argv[])
 {    
+#if BOOST_VERSION >= 103300
+    typedef boost::unit_test_framework::unit_test_log_t TLog; 
+    TLog& log = boost::unit_test_framework::unit_test_log;
+    log.set_stream(out);    
+    log.set_format(boost::unit_test_framework::XML);
+    log.set_threshold_level(boost::unit_test_framework::log_test_suites);
+#else
     typedef boost::unit_test_framework::unit_test_log TLog; 
     TLog& log = TLog::instance();
     log.set_log_stream(out);    
     log.set_log_format("XML");
     log.set_log_threshold_level(boost::unit_test_framework::log_test_suites);
+#endif
 
     //boost::unit_test_framework::unit_test_result::set_report_format("XML");
-    std::auto_ptr<test_suite> test(BOOST_TEST_SUITE("UTIL Align Range, Collection Unit Test." ));
+    test_suite* test
+        = BOOST_TEST_SUITE("UTIL Align Range, Collection Unit Test.");
 
     test_suite* ar_suite = BOOST_TEST_SUITE("CAlignRange Unit Test");
     ar_suite->add(BOOST_TEST_CASE(ncbi::AR_Test_SetGet));
@@ -1244,12 +1255,15 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
     ac_suite->add(BOOST_TEST_CASE(ncbi::AC_Test_Extender));    
     test->add(ac_suite);
 
-    return test.release();
+    return test;
 }
 
 
 /* ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/05 16:41:09  ucko
+ * Add support for Boost 1.33.x, which is now installed on Solaris 10.
+ *
  * Revision 1.2  2005/06/14 19:54:50  yazhuk
  * Fixed GCC warnings
  *
