@@ -146,8 +146,7 @@ private:
     void PatchLockSet(const TTSE_LockSet& orig_locks, 
                       TTSE_LockSet& new_locks);
 
-    CDataLoaderPatcher::TTSE_Lock
-    CDataLoaderPatcher::PatchLock(const TTSE_Lock& lock);
+    TTSE_Lock   PatchLock(const TTSE_Lock& lock);
 
 
     CDataLoaderPatcher(const string& loader_name,
@@ -185,6 +184,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.7  2005/12/05 19:45:58  rsmith
+ * take out illegal class sepcifier in class def.
+ *
  * Revision 1.6  2005/11/15 19:22:07  didenko
  * Added transactions and edit commands support
  *
