@@ -298,6 +298,8 @@ on SetProjectData()
 	
 	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "app:asn2asn", {"C++"}), commonObjLibs, {}))
 	
+	AddProject(DataPlusLibs(SimpleProjectData("asn2flat", "app:asn2flat", {"C++", "cmdline"}), objMgrLibs & {"xalnmgr"}, {}))
+	
 	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets", "libdl", "cmdline"}, {"test_validator"}), Â
 		objMgrLibs & {"xvalidate", "xobjutil", "submit"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
@@ -333,7 +335,6 @@ on SetProjectData()
 		AddAppProjectList("demo_timer", {"fltk", "images"}, "gui:widgets:fl:demo", {"timer_demo.cpp", "timer_demo_ui.cpp"}, {"gui_opengl", "gui_print", "w_fltk", "fltk", "gui_utils", "ximage", "xconnect", "xutil", "xncbi"} & CompressLibs, {})
 		
 	end if
-	
 end SetProjectData
 
 
