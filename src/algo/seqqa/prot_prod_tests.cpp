@@ -179,22 +179,37 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
         throw runtime_error("CTestProtProd_EntrezNeighbors::RunTest: "
                             "taxid not found for " + id->GetSeqIdString(true));
     }
+    const unsigned int kChunkSize = 50;
     CEntrez2Client e2c;
     vector<int> neigh;
     e2c.GetNeighbors(gi, "protein", "protein", neigh);
     vector<int> sp_neigh;
-    e2c.FilterIds(neigh, "protein", "srcdb_swiss-prot[PROP] NOT txid"
-                  + NStr::IntToString(taxid) + "[ORGN]", sp_neigh);
+    vector<int> neigh_subset;
+    neigh_subset.reserve(kChunkSize);
+    for (unsigned int start = 0; start < neigh.size(); start += kChunkSize) {
+        neigh_subset.clear();
+        for (unsigned int i = 0; i < kChunkSize; ++i) {
+            if (start + i == neigh.size()) {
+                break;
+            }
+            neigh_subset.push_back(neigh[start + i]);
+        }
+        e2c.FilterIds(neigh_subset, "protein", "srcdb_swiss-prot[PROP] NOT txid"
+                      + NStr::IntToString(taxid) + "[ORGN]", sp_neigh);
+        if (!sp_neigh.empty()) {
+            break;
+        }
+    }
     result->SetOutput_data().AddField("has_swissprot_neighbor_different_taxid",
                                       !sp_neigh.empty());
     if (!sp_neigh.empty()) {
         // Order not necessarily preserved by FilterIds, so figure out
         // which element of sp_neigh comes first in neigh
         map<int, unsigned int> index;
-        for (unsigned int i = 0;  i < neigh.size();  ++i) {
-            index[neigh[i]] = i;
+        for (unsigned int i = 0;  i < neigh_subset.size();  ++i) {
+            index[neigh_subset[i]] = i;
         }
-        unsigned int lowest_index = neigh.size();
+        unsigned int lowest_index = neigh_subset.size();
         int first_gi;
         for (unsigned int i = 0;  i < sp_neigh.size();  ++i) {
             if (index[sp_neigh[i]] < lowest_index) {
@@ -221,6 +236,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/12/05 15:13:08  jcherry
+ * Speed-up for entrez neighbors
+ *
  * Revision 1.4  2005/12/01 15:56:57  jcherry
  * Test the taxid for zero, not the bioseq handle
  *
