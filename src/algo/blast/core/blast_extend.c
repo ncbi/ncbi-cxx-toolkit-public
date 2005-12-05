@@ -281,7 +281,7 @@ static Int2
 s_NuclUngappedExtend(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, Int4** matrix, 
    Int4 q_off, Int4 s_off, Int4 X, 
-   BlastUngappedData** ungapped_data)
+   BlastUngappedData* ungapped_data)
 {
    Uint1* q;
    Int4 sum, score;
@@ -328,14 +328,8 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
       }
    }
    
-   if (ungapped_data) {
-      if ((*ungapped_data = (BlastUngappedData*) 
-              malloc(sizeof(BlastUngappedData))) == NULL)
-         return -1;
-      (*ungapped_data)->q_start = q_beg - query->sequence;
-      (*ungapped_data)->s_start = 
-         s_off - (q_off - (*ungapped_data)->q_start);
-   }
+   ungapped_data->q_start = q_beg - query->sequence;
+   ungapped_data->s_start = s_off - (q_off - ungapped_data->q_start);
 
    if (q_avail < s_avail) {
       sf = subject0 + (s_off + q_avail)/COMPRESSION_RATIO;
@@ -366,10 +360,8 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
          base--;
    }
    
-   if (ungapped_data) {
-      (*ungapped_data)->length = q_end - q_beg;
-      (*ungapped_data)->score = score;
-   }
+   ungapped_data->length = q_end - q_beg;
+   ungapped_data->score = score;
    
    return 0;
 }
@@ -413,6 +405,7 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
    Int4 diag, real_diag;
    Int4 s_pos;
    BlastUngappedData* ungapped_data;
+   BlastUngappedData dummy_ungapped_data;
    Int4 window_size = word_params->options->window_size;
    Boolean hit_ready;
    Boolean new_hit = FALSE, second_hit = FALSE;
@@ -450,8 +443,9 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
    if (hit_ready) {
       if (word_params->options->ungapped_extension) {
          /* Perform ungapped extension */
+         ungapped_data = &dummy_ungapped_data;
          s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
-                              -word_params->x_dropoff, &ungapped_data);
+                              -word_params->x_dropoff, ungapped_data);
       
          last_hit = ungapped_data->length + ungapped_data->s_start 
             + diag_table->offset;
@@ -459,13 +453,18 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
          ungapped_data = NULL;
          last_hit = s_pos;
       }
-      if (!ungapped_data || 
-          ungapped_data->score >= word_params->cutoff_score) {
+      if (ungapped_data == NULL) {
          BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
          /* Set the "saved" flag for this hit */
          hit_saved = ~LAST_HIT_MASK;
+      } else if (ungapped_data->score >= word_params->cutoff_score) {
+         BlastUngappedData *final_data = (BlastUngappedData *)malloc(
+                                                 sizeof(BlastUngappedData));
+         *final_data = *ungapped_data;
+         BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
+         /* Set the "saved" flag for this hit */
+         hit_saved = ~LAST_HIT_MASK;
       } else {
-         sfree(ungapped_data);
          /* Unset the "saved" flag for this hit */
          hit_saved = 0;
       }
@@ -552,6 +551,7 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
    Int4 stack_top;
    Int4 window_size;
    Boolean hit_ready = FALSE, two_hits;
+   BlastUngappedData dummy_ungapped_data;
    BlastUngappedData* ungapped_data = NULL;
 
    window_size = word_params->options->window_size;
@@ -592,21 +592,27 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
          if (hit_ready) {
             if (word_params->options->ungapped_extension) {
                /* Perform ungapped extension */
+               ungapped_data = &dummy_ungapped_data;
                s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
-                                    -word_params->x_dropoff, &ungapped_data);
+                                    -word_params->x_dropoff, ungapped_data);
       
                last_hit = ungapped_data->length + ungapped_data->s_start;
             } else {
                ungapped_data = NULL;
                last_hit = s_end;
             }
-            if (!ungapped_data || 
-                ungapped_data->score >= word_params->cutoff_score) {
+            if (ungapped_data == NULL) {
                BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
                /* Set the "saved" flag for this hit */
                hit_saved = ~LAST_HIT_MASK;
+            } else if (ungapped_data->score >= word_params->cutoff_score) {
+               BlastUngappedData *final_data = (BlastUngappedData *)malloc(
+                                                 sizeof(BlastUngappedData));
+               *final_data = *ungapped_data;
+               BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
+               /* Set the "saved" flag for this hit */
+               hit_saved = ~LAST_HIT_MASK;
             } else {
-               sfree(ungapped_data);
                /* Unset the "saved" flag for this hit */
                hit_saved = 0;
             }
@@ -654,20 +660,24 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
       hit_ready = TRUE;
       if (word_params->options->ungapped_extension) {
          /* Perform ungapped extension */
+         ungapped_data = &dummy_ungapped_data;
          s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
-                              -word_params->x_dropoff, &ungapped_data);
+                              -word_params->x_dropoff, ungapped_data);
          stack[stack_top].level = 
             (ungapped_data->length + ungapped_data->s_start);
       } else {
          ungapped_data = NULL;
       }
-      if (!ungapped_data || 
-          ungapped_data->score >= word_params->cutoff_score) {
-         BLAST_SaveInitialHit(init_hitlist, q_off, s_off, 
-                              ungapped_data);
+      if (ungapped_data == NULL) {
+         BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
+         stack[stack_top].level |= ~LAST_HIT_MASK;
+      } else if (ungapped_data->score >= word_params->cutoff_score) {
+         BlastUngappedData *final_data = (BlastUngappedData *)malloc(
+                                                 sizeof(BlastUngappedData));
+         *final_data = *ungapped_data;
+         BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
          stack[stack_top].level |= ~LAST_HIT_MASK;
       } else {
-         sfree(ungapped_data);
          /* Set hit length back to 0 after ungapped extension 
             failure */
          stack[stack_top].level &= LAST_HIT_MASK;
