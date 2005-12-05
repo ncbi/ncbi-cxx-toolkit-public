@@ -67,10 +67,10 @@
  */
 
 
-#if defined(HAVE_LIMITS) && !defined(NCBI_COMPILER_WORKSHOP)
+#if defined(HAVE_LIMITS)  &&  ( !defined(NCBI_COMPILER_WORKSHOP) || NCBI_COMPILER_VERSION >= 550)
 // Ideally, we would use std::numeric_limits<> whenever available.
-// However, certain compilers leave out support for extensions such as
-// long long, so we still have to use our implementation with them.
+// However, certain compiler versions leave out support for extensions such
+// as long long, so we still have to use our implementation with them.
 #  include <limits>
 #else
 
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2005/12/05 17:00:02  ucko
+ * WorkShop 5.5 (finally) introduced support for std::numeric_limits<long long>.
+ *
  * Revision 1.7  2004/06/01 12:09:45  kuznets
  * + get_limits
  *
