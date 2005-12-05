@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <boost/test/unit_test_result.hpp>
+// #include <boost/test/unit_test_result.hpp>
 
 #include "python_ncbi_dbapi_test.hpp"
 
@@ -766,16 +766,19 @@ init_unit_test_suite( int argc, char * argv[] )
     // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
     // boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
 
-    std::auto_ptr<test_suite> test(BOOST_TEST_SUITE( "DBAPI Unit Test." ));
+    test_suite* test = BOOST_TEST_SUITE("DBAPI Unit Test.");
 
     test->add(new ncbi::CPythonDBAPITestSuite(ncbi::CTestArguments(argc, argv)));
 
-    return test.release();
+    return test;
 }
 
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.23  2005/12/05 17:04:31  ucko
+* Add support for Boost 1.33.x, which is now installed on Solaris 10.
+*
 * Revision 1.22  2005/11/16 16:34:53  ssikorsk
 * Handle Sybase server 'BARTOK'
 *

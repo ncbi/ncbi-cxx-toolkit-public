@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiargs.hpp>
 
-#include <boost/test/unit_test_result.hpp>
+// #include <boost/test/unit_test_result.hpp>
 
 #include <ncbi_source_ver.h>
 #include <dbapi/dbapi.hpp>
@@ -3418,17 +3418,20 @@ init_unit_test_suite( int argc, char * argv[] )
     // boost::unit_test_framework::unit_test_log::instance().set_log_format( "XML" );
     // boost::unit_test_framework::unit_test_result::set_report_format( "XML" );
 
-    std::auto_ptr<test_suite> test(BOOST_TEST_SUITE( "DBAPI Unit Test." ));
+    test_suite* test = BOOST_TEST_SUITE("DBAPI Unit Test.");
 
     test->add(new ncbi::CDBAPITestSuite(ncbi::CTestArguments(argc, argv)));
 
-    return test.release();
+    return test;
 }
 
 
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.58  2005/12/05 17:02:33  ucko
+ * Add support for Boost 1.33.x, which is now installed on Solaris 10.
+ *
  * Revision 1.57  2005/11/16 16:40:04  ssikorsk
  * Handle Sybase server 'BARTOK'
  *

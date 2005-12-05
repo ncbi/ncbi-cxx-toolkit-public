@@ -46,6 +46,9 @@
 
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
+#ifndef BOOST_PARAM_TEST_CASE
+#  include <boost/test/parameterized_test.hpp>
+#endif
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -608,8 +611,12 @@ static void s_TestFastaRoundTrip(const char* s)
     }
 }
 
+#ifdef BOOST_AUTO_TC_REGISTRAR
+BOOST_AUTO_TC_REGISTRAR(s_FastaRoundTrip)
+#else
 static boost::unit_test::ut_detail::auto_unit_test_registrar
 s_FastaRoundTripRegistrar
+#endif
 (BOOST_PARAM_TEST_CASE(s_TestFastaRoundTrip, kTestFastaStrings + 0,
                        kTestFastaStrings + kNumFastaStrings));
 
@@ -681,6 +688,9 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/12/05 17:00:14  ucko
+* Add support for Boost 1.33.x, which is now installed on Solaris 10.
+*
 * Revision 1.3  2005/08/18 14:42:36  ucko
 * Verify special-casing of dbSNP IDs.
 *

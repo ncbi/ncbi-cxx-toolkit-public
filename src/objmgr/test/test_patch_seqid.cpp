@@ -41,8 +41,10 @@
 #include <objmgr/seq_id_translator.hpp>
 #include <objmgr/impl/tse_assigner.hpp>
 
+#include <boost/version.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/test/unit_test_result.hpp>
+#include <boost/test/unit_test_log.hpp>
+// #include <boost/test/unit_test_result.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -118,14 +120,22 @@ CNcbiOfstream out("res.xml"); //TODO
 
 test_suite* init_unit_test_suite(int argc, char * argv[])
 {    
+#if BOOST_VERSION >= 103300
+    typedef boost::unit_test_framework::unit_test_log_t TLog; 
+    TLog& log = boost::unit_test_framework::unit_test_log;
+    log.set_stream(out);    
+    log.set_format(boost::unit_test_framework::XML);
+    log.set_threshold_level(boost::unit_test_framework::log_test_suites);
+#else
     typedef boost::unit_test_framework::unit_test_log TLog; 
     TLog& log = TLog::instance();
     log.set_log_stream(out);    
     log.set_log_format("XML");
     log.set_log_threshold_level(boost::unit_test_framework::log_test_suites);
+#endif
 
     //boost::unit_test_framework::unit_test_result::set_report_format("XML");
-    std::auto_ptr<test_suite> test(BOOST_TEST_SUITE("Seq id patcher Unit Test." ));
+    test_suite* test = BOOST_TEST_SUITE("Seq id patcher Unit Test.");
 
     test_suite* idtr_suite = BOOST_TEST_SUITE("Simple SeqIdTranslator");
     idtr_suite->add(BOOST_TEST_CASE(ncbi::Test_SeqIdTranslator));
@@ -136,12 +146,15 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
     idtr_suite->add(BOOST_TEST_CASE(ncbi::Test_PatchSeqId_SeqIds));
     test->add(patch_suite);
 
-    return test.release();
+    return test;
 }
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2005/12/05 17:07:49  ucko
+* Add support for Boost 1.33.x, which is now installed on Solaris 10.
+*
 * Revision 1.3  2005/09/01 15:28:23  didenko
 * Added a test for patching a container of CSeq_id
 *
