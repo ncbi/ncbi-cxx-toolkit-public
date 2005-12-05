@@ -696,6 +696,17 @@ void CNetCacheClient::PrintStat(CNcbiOstream& out)
     PrintServerOut(out);
 }
 
+void CNetCacheClient::DropStat()
+{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    SendClientName();
+
+    const char command[] = "DROPSTAT";
+    WriteStr(command, sizeof(command));
+}
+
 
 void CNetCacheClient::Logging(bool on_off)
 {
@@ -974,6 +985,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/12/05 13:42:45  kuznets
+ * +DropStat()
+ *
  * Revision 1.55  2005/11/28 15:22:22  kuznets
  * +GetOwner() - get BLOB's owner
  *

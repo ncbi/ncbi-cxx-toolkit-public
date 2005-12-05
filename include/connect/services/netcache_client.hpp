@@ -267,6 +267,9 @@ protected:
     /// Print server statistics
     void PrintStat(CNcbiOstream& out);
 
+    /// Reinit server side statistics collector
+    void DropStat();
+
 protected:
 
     /// Set communication error message
@@ -573,6 +576,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/12/05 13:42:25  kuznets
+ * +DropStat()
+ *
  * Revision 1.46  2005/11/28 15:21:54  kuznets
  * +GetOwner() - get BLOB's owner
  *
