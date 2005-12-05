@@ -429,6 +429,9 @@ public:
     /// Thread safe (syncronized) operation
     void GetStatistics(SBDB_CacheStatistics* cache_stat) const;
 
+    /// Drop the previously collected statistics
+    void InitStatistics();
+
 
     /// Lock cache access
     void Lock();
@@ -817,6 +820,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/12/05 13:44:57  kuznets
+ * +InitStatistics()
+ *
  * Revision 1.63  2005/12/01 14:37:48  kuznets
  * Improvements in collecting statistics
  *

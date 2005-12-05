@@ -1445,6 +1445,12 @@ void CBDB_Cache::GetStatistics(SBDB_CacheStatistics* cache_stat) const
     *cache_stat = m_Statistics;
 }
 
+void CBDB_Cache::InitStatistics()
+{
+    CFastMutexGuard guard(m_DB_Lock);
+    m_Statistics.Init();
+}
+
 void CBDB_Cache::KillBlobNoLock(const char*    key,
                                 int            version,
                                 const char*    subkey,
@@ -3313,6 +3319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.128  2005/12/05 13:45:10  kuznets
+ * +InitStatistics()
+ *
  * Revision 1.127  2005/12/01 14:37:59  kuznets
  * Improvements in collecting statistics
  *
