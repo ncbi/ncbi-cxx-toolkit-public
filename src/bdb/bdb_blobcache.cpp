@@ -622,7 +622,7 @@ void SBDB_CacheUnitStatistics::Init()
     blobs_stored_total = blobs_updates_total = 
         blobs_never_read_total = blobs_expl_deleted_total = 
         blobs_purge_deleted_total = blobs_db =
-        blobs_overflow_total = blobs_read_total = 0;
+        blobs_overflow_total = blobs_read_total = blob_size_max_total = 0;
 
     err_protocol = err_internal = err_communication =
         err_no_blob = err_blob_get = err_blob_put = 0;
@@ -3319,6 +3319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.129  2005/12/05 16:05:11  kuznets
+ * Fixed uninitialized variable
+ *
  * Revision 1.128  2005/12/05 13:45:10  kuznets
  * +InitStatistics()
  *
