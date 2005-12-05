@@ -68,6 +68,7 @@ public:
     {
         CNetCacheClient::PrintStat(out);
     }
+    void DropStat() { CNetCacheClient::DropStat(); }
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -106,6 +107,7 @@ void CNetCacheControl::Init(void)
     arg_desc->AddFlag("v", "Server version");
     arg_desc->AddFlag("c", "Server config");
     arg_desc->AddFlag("t", "Server statistics");
+    arg_desc->AddFlag("d", "Drop server statistics");
 
     arg_desc->AddOptionalKey("log",
                              "server_logging",
@@ -116,6 +118,12 @@ void CNetCacheControl::Init(void)
                              "retry",
                              "Number of re-try attempts if connection failed",
                              CArgDescriptions::eInteger);
+
+    arg_desc->AddOptionalKey("owner",
+                             "owner",
+                             "Get BLOB's owner",
+                             CArgDescriptions::eString);
+
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -154,13 +162,32 @@ int CNetCacheControl::Run(void)
                  << (on_off ? "ON" : "OFF") << " on the server" << NcbiEndl;
     }
 
+    if (args["owner"]) {  // BLOB's owner
+        string key = args["owner"].AsString();
+        string owner = nc_client.GetOwner(key);
+        NcbiCout << "BLOB belongs to: [" << owner << "]" << NcbiEndl;
+    }
+
+
     if (args["c"]) {  // config
         nc_client.PrintConfig(NcbiCout);
     }
 
     if (args["t"]) {  // statistics
         nc_client.PrintStat(NcbiCout);
-        return 0;
+    }
+    if (args["d"]) {  // drop stat
+        nc_client.DropStat();
+        NcbiCout << "Drop statistics request has been sent to server" << NcbiEndl;
+    }
+
+    if (args["v"]) {
+        string version = nc_client.ServerVersion();
+        if (version.empty()) {
+            NcbiCout << "NetCache server communication error." << NcbiEndl;
+            return 1;
+        }
+        NcbiCout << version << NcbiEndl;
     }
 
     if (args["s"]) {  // shutdown
@@ -169,13 +196,6 @@ int CNetCacheControl::Run(void)
         return 0;
     }
 
-    string version = nc_client.ServerVersion();
-    if (version.empty()) {
-        NcbiCout << "NetCache server communication error." << NcbiEndl;
-        return 1;
-    }
-    NcbiCout << version << NcbiEndl;
-    
     return 0;
 }
 
@@ -189,6 +209,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/12/05 14:00:06  kuznets
+ * New options to control statistics collection
+ *
  * Revision 1.9  2005/08/08 14:55:05  kuznets
  * Minor tweak
  *
