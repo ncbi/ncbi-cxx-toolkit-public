@@ -320,7 +320,8 @@ typedef enum {
     eGetConfig,
     eGetStat,
     eIsLock,
-    eGetBlobOwner
+    eGetBlobOwner,
+    eDropStat
 } ENC_RequestType;
 
 
@@ -478,6 +479,9 @@ private:
     /// Process "GETCONF" request
     void ProcessGetConfig(CSocket& sock);
 
+    /// Process "DROPSTAT" request
+    void ProcessDropStat(CSocket& sock);
+
     /// Process "GBOW" request
     void ProcessGetBlobOwner(CSocket& sock, const SNC_Request& req);
 
@@ -534,12 +538,6 @@ private:
                     size_t   bytes);
 
     void x_CreateLog();
-/*
-    void x_PrintStatistics(CNcbiOstream& ios, const SBDB_CacheStatistics& cs);
-    void x_PrintStatisticsHistogram(
-                          CNcbiOstream&                                   ios, 
-                          const SBDB_CacheStatistics::TBlobSizeHistogram& hist);
-*/
 
     /// Check if we have active thread data for this thread.
     /// Setup thread data if we don't.
@@ -682,6 +680,10 @@ void CNetCacheServer::Process(SOCK sock)
                     stat.req_code = 'T';
                     ProcessGetStat(socket, tdata->req);
                     break;
+                case eDropStat:
+                    stat.req_code = 'D';
+                    ProcessDropStat(socket);
+                    break;
                 case eGetBlobOwner:
                     ProcessGetBlobOwner(socket, tdata->req);
                     break;
@@ -819,6 +821,13 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
     reg.Write(ios,  CNcbiRegistry::fTransient | CNcbiRegistry::fPersistent);
 }
 
+void CNetCacheServer::ProcessDropStat(CSocket& sock, const SNC_Request& req)
+{
+    CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
+    if (!bdb_cache) {
+        return;
+    }
+}
 
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const SNC_Request& req)
@@ -1308,7 +1317,7 @@ put_args_parse:
         req->req_type = eGetStat;
         s += 7;
         return;
-    } // GETCONF
+    } // GETSTAT
 
     if (strncmp(s, "ISLK", 4) == 0) {
         req->req_type = eIsLock;
@@ -1375,6 +1384,13 @@ parse_blob_id:
         s += 6;
         goto parse_blob_id;
     } // REMOVE
+
+    if (strncmp(s, "DROPSTAT", 8) == 0) {
+        req->req_type = eDropStat;
+        s += 8;
+        return;
+    } // DROPSTAT
+
 
     if (strncmp(s, "SHUTDOWN", 7) == 0) {
         req->req_type = eShutdown;
@@ -1958,6 +1974,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2005/12/05 13:45:54  kuznets
+ * Added command DROPSTAT
+ *
  * Revision 1.71  2005/12/01 14:48:51  kuznets
  * Improvements in collecting statistics
  *
