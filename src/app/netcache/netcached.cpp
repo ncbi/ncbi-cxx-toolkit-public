@@ -621,7 +621,7 @@ void CNetCacheServer::Process(SOCK sock)
     try {
         tdata->auth.erase();
         
-        CStopWatch              sw(false); // OFF by default
+        CStopWatch              sw(CStopWatch::eStop);
         bool is_log = IsLog();
 
         if (is_log) {
@@ -821,12 +821,13 @@ void CNetCacheServer::ProcessGetStat(CSocket& sock, const SNC_Request& req)
     reg.Write(ios,  CNcbiRegistry::fTransient | CNcbiRegistry::fPersistent);
 }
 
-void CNetCacheServer::ProcessDropStat(CSocket& sock, const SNC_Request& req)
+void CNetCacheServer::ProcessDropStat(CSocket& sock)
 {
     CBDB_Cache* bdb_cache = dynamic_cast<CBDB_Cache*>(m_Cache);
     if (!bdb_cache) {
         return;
     }
+	bdb_cache->InitStatistics();
 }
 
 
@@ -991,7 +992,7 @@ blob_not_found:
         }
 
         // translate BLOB fragment to the network
-        CStopWatch  sw(true);
+        CStopWatch  sw(CStopWatch::eStart);
 
         x_WriteBuf(sock, buf, ba_descr.blob_size);
 
@@ -1029,7 +1030,7 @@ blob_not_found:
             }
 
             // translate BLOB fragment to the network
-            CStopWatch  sw(true);
+            CStopWatch  sw(CStopWatch::eStart);
 
             x_WriteBuf(sock, buf, bytes_read);
 
@@ -1083,7 +1084,7 @@ void CNetCacheServer::ProcessPut(CSocket&              sock,
     do {
         size_t nn_read;
 
-        CStopWatch  sw(true);
+        CStopWatch  sw(CStopWatch::eStart);
 
         not_eof = ReadBuffer(sock, buf, buf_size, &nn_read);
 
@@ -1161,7 +1162,7 @@ void CNetCacheServer::ProcessPut2(CSocket&              sock,
     do {
         size_t nn_read = 0;
 
-        CStopWatch  sw(true);
+        CStopWatch  sw(CStopWatch::eStart);
 
         not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
 
@@ -1974,6 +1975,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2005/12/05 14:50:00  kuznets
+ * Fixed compilation problems
+ *
  * Revision 1.72  2005/12/05 13:45:54  kuznets
  * Added command DROPSTAT
  *
