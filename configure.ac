@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.403 2005/11/28 19:09:02 ucko Exp $
+#  $Id: configure.ac,v 1.404 2005/12/05 17:31:04 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3365,6 +3365,10 @@ fi
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
    NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
+   if test "$ncbi_compiler" = ICC -a -d "$NCBI_C_PATH/ncbi_icc"; then
+      NCBI_C_PATH=$NCBI_C_PATH/ncbi_icc
+   fi
+   
    NCBI_C_INCLUDE="-I$NCBI_C_PATH/include${bit64_sfx}"
    if test "$with_debug" = "no" ; then
      NCBI_C_LIBPATH="$NCBI_C_PATH/lib${bit64_sfx}"
@@ -4215,6 +4219,7 @@ else
 fi
 
 : ${LIBXML_PATH=$NCBI/libxml}
+# test -d "$LIBXML_PATH" || LIBXML_PATH=`xml2-config --prefix 2>/dev/null`
 vpath="$LIBXML_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}"
 test -d "$vpath"  &&  LIBXML_PATH=$vpath
 if test "$with_libxml" != "no"; then
@@ -4239,7 +4244,7 @@ if test "$with_libxml" != "no"; then
       : ${LIBXML_LIBPATH="-L$LIBXML_LIBPATH_ ${CONF_f_runpath}$LIBXML_LIBPATH_"}
       LIBXML_LIBS="$LIBXML_LIBPATH -lxml2"
    else
-      # LIBXML_INCLUDE=""
+      LIBXML_INCLUDE="-I/usr/include/libxml2"
       LIBXML_LIBS="-lxml2"
       in_path=
    fi
