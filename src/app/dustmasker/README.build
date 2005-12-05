@@ -23,7 +23,7 @@ Enter the toolkit distribution directory:
 
 Configure the toolkit with the following command:
 
-        ./configure --without-debug --with-optimization --with-projects=src/app/dustmasker/dustmasker.lst
+        ./configure --without-debug --with-optimization --without-odbc
 
 The configure script will create the build tree under <your_compiler_version>-Release/.
 
@@ -33,9 +33,11 @@ Enter the build directory:
 
         cd <your_compiler_version>-Release/build
 
-Make dustmasker application and all its dependencies:
+Build the NCBI C++ Toolkit:
 
-        make all_p
+        make all_r
 
-This will build the dustmasker executable in app/dustmasker/.
+5. The dustmasker executable can be found in directory:
+
+<your_compiler_version>-Release/bin/
 
