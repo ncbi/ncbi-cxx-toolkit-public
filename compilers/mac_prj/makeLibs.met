@@ -265,7 +265,7 @@ end EndsWith
 on SetProjectData()
 	
 	if pCreateCoreLibs then
-		AddSimpleProjectExceptFiles("xncbi", {"libdl"}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
+		AddSimpleProjectExceptFiles("xncbi", {"libdl"}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp", "ncbi_os_mswin.cpp"})
 		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
 		AddSimpleProject("dbapi", {}, "dbapi")
 		AddSimpleProject("dbapi_driver", {}, "dbapi:driver")
@@ -336,6 +336,7 @@ on SetProjectData()
 		AddSimpleProjectListFiles("xnetblastcli", {}, "objects:blast", {"blastclient", "blastclient_"})
 		AddObject("biotree")
 		AddObject("blastdb")
+		AddObject("blastxml")
 		AddObject("cdd")
 		AddObject("cn3d")
 		AddObject("docsum")
@@ -399,6 +400,7 @@ on SetProjectData()
 		AddSimpleProject("xobjmanip", {}, "objtools:manip")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
 		AddSimpleProject("seqdb", {}, "objtools:readers:seqdb")
+		AddSimpleProject("ncbi_xloader_patcher", {}, "objtools:data_loaders:patcher")
 		AddSimpleProject("xformat", {}, "objtools:format")
 		AddSimpleProject("xcleanup", {}, "objtools:cleanup")
 		
@@ -414,11 +416,15 @@ on SetProjectData()
 		
 		AddSimpleProject("xalgoalignutil", {}, "algo:align:util")
 		AddSimpleProject("xalgocontig_assembly", {}, "algo:align:contig_assembly")
+		AddSimpleProject("cobalt", {}, "algo:cobalt")
 		AddSimpleProject("xalgodustmask", {}, "algo:dustmask")
 		AddSimpleProject("xalgowinmask", {}, "algo:winmask")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xstruct_dp", {}, "algo:structure:struct_dp")
-		-- AddSimpleProject("xstruct_util", {}, "algo:structure:struct_util")
+		AddSimpleProject("xstruct_thread", {}, "algo:structure:threader")
+		AddSimpleProject("xstruct_util", {}, "algo:structure:struct_util")
+		AddSimpleProject("xbma_refiner", {}, "algo:structure:bma_refine")
+		--AddSimpleProject("xcd_utils", {}, "algo:structure:cd_utils")
 		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		AddSimpleProject("xalgophytree", {}, "algo:phy_tree")
 		AddSimpleProject("fastme", {}, "algo:phy_tree:fastme")
@@ -426,6 +432,7 @@ on SetProjectData()
 		AddSimpleProject("xalgoalignnw", {}, "algo:align:nw")
 		AddSimpleProject("xobjsimple", {}, "objtools:simple")
 		AddSimpleProject("xalgosplign", {}, "algo:align:splign")
+		AddSimpleProject("composition_adjustment", {}, "algo:blast:composition_adjustment")
 		set xblastfiles to {Â
 			mkFileData(gSourceDir & "algo:blast:api"), Â
 			mkFileData(gSourceDir & "algo:blast:core") Â
@@ -520,10 +527,10 @@ on SetProjectData()
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
-			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "selection_service", "task_manager", "task_queue", "view_link", "view_composite"})}
+			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "selection_service", "task_manager", "task_queue", "view_link", "view_composite", "dh_manager"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images", "sqlitelib"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gbench_svc", "gbench_svc_cli", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_object_list", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gbench_svc", "gbench_svc_cli", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk", "scoremat", "xalgoseq", "gui_graph", "gui_math", "xalgophytree", "fastme", "ncbi_xloader_lds", "w_serial_browse", "w_aln_table", "w_aln_data", "w_object_list", "seqalign_ext", "w_aln_multi", "w_seq_graphic", "w_controls", "w_data", "xalgodustmask", "xalgowinmask", "data_handle"}, {}))
 		
 		-- PLUGINS --
 		
@@ -535,7 +542,7 @@ on SetProjectData()
 			{"xloader_cdd", "cdd", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "xalgoalignutil", "xalgocontig_assembly", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb", "xobjsimple"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "xalgoalignutil", "xalgocontig_assembly", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb", "xobjsimple", "composition_adjustment"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
@@ -565,7 +572,7 @@ on SetProjectData()
 			{"genbank_ff_formatter.cpp", "header_editor.cpp", "object_editor.cpp", "paragraph.cpp", "reference_editor.cpp", "view_genbank.cpp", "auth_form.cpp"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"xvalidate"})
 		
-		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree", "data_handle"})
+		AddPlugin("gui_view_phylo_tree", {}, "plugins:view:phylo_tree", {"w_phylo_tree"})
 		
 		(*
 		set proteusFiles to {Â
