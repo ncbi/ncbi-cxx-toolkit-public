@@ -807,21 +807,24 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     }  //end of preparing row data
     bool colorMismatch = false; //color the mismatches
     //output identities info 
-    if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMultiAlign)) {
+    if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine) &&
+       !(m_AlignOption&eMultiAlign)) {
         int match = 0;
         int positive = 0;
         int gap = 0;
         int identity = 0;
         x_FillIdentityInfo(sequence[0], sequence[1], match, positive, middleLine);
-        identity = (match*100)/((int)aln_stop+1);
-        if(identity >= k_ColorMismatchIdentity && identity <100){
-            colorMismatch = true;
+        if(m_AlignOption & eShowBlastInfo){
+            identity = (match*100)/((int)aln_stop+1);
+            if(identity >= k_ColorMismatchIdentity && identity <100){
+                colorMismatch = true;
+            }
+            gap = x_GetNumGaps();
+            s_DisplayIdentityInfo(out, (int)aln_stop, identity, positive, match, gap,
+                                  m_AV->StrandSign(0), m_AV->StrandSign(1),
+                                  frame[0], frame[1], 
+                                  ((m_AlignType & eProt) != 0 ? true : false));
         }
-        gap = x_GetNumGaps();
-        s_DisplayIdentityInfo(out, (int)aln_stop, identity, positive, match, gap,
-                               m_AV->StrandSign(0), m_AV->StrandSign(1),
-                               frame[0], frame[1], 
-							   ((m_AlignType & eProt) != 0 ? true : false));
     }
     //output rows
     for(int j=0; j<=(int)aln_stop; j+=(int)m_LineLen){
@@ -2708,6 +2711,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.93  2005/12/05 22:33:49  jianye
+*show middle line independent of showblastinfo
+*
 *Revision 1.92  2005/11/29 16:54:30  jianye
 *add eShowNoDeflineInfo
 *
