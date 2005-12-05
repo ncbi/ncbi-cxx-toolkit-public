@@ -425,6 +425,58 @@ C* SerialClone(const C& src)
 //  I/O stream manipulators and helpers for serializable objects
 //
 
+// Helper base class
+class NCBI_XSERIAL_EXPORT MSerial_Flags
+{
+protected:
+    MSerial_Flags(unsigned long all, unsigned long flags);
+private:
+    MSerial_Flags(void) {}
+    MSerial_Flags(const MSerial_Flags&) {}
+    MSerial_Flags& operator= (const MSerial_Flags&) {return *this;}
+
+    void SetFlags(CNcbiIos& io) const;
+    unsigned long m_All;
+    unsigned long m_Flags;
+
+    friend CNcbiOstream& operator<< (CNcbiOstream& io, const MSerial_Flags& obj);
+    friend CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_Flags& obj);
+};
+
+inline
+CNcbiOstream& operator<< (CNcbiOstream& io, const MSerial_Flags& obj)
+{
+    obj.SetFlags(io);
+    return io;
+}
+inline
+CNcbiIstream& operator>> (CNcbiIstream& io, const MSerial_Flags& obj)
+{
+    obj.SetFlags(io);
+    return io;
+}
+
+// Formatting
+class NCBI_XSERIAL_EXPORT MSerial_Format : public MSerial_Flags
+{
+public:
+    explicit MSerial_Format(ESerialDataFormat fmt);
+};
+
+// Class member assignment verification
+class NCBI_XSERIAL_EXPORT MSerial_VerifyData : public MSerial_Flags
+{
+public:
+    explicit MSerial_VerifyData(ESerialVerifyData fmt);
+};
+
+// Default string encoding in XML streams
+class NCBI_XSERIAL_EXPORT MSerialXml_DefaultStringEncoding : public MSerial_Flags
+{
+public:
+    explicit MSerialXml_DefaultStringEncoding(EEncoding fmt);
+};
+
 // Formatting
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnText(CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_AsnBinary(CNcbiIos& io);
@@ -558,6 +610,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/12/05 20:10:18  gouriano
+* Added i/o stream manipulators with parameters for serializable objects
+*
 * Revision 1.40  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

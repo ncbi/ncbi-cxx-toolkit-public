@@ -39,6 +39,8 @@
 
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objostrxml.hpp>
+#include <serial/objistrxml.hpp>
 
 #include <serial/classinfob.hpp>
 
@@ -389,6 +391,7 @@ CAnyContentObject::GetAttributes(void) const
 #define  eVerify_Yes      (1l <<  9)
 #define  eVerify_DefValue (1l << 10)
 #define  eVerify_All      (eVerify_No | eVerify_Yes | eVerify_DefValue)
+#define  eEncoding_All    (255l << 16)
 
 static
 long& s_SerFlags(CNcbiIos& io)
@@ -409,7 +412,7 @@ long& s_SerFlags(CNcbiIos& io)
     return io.iword(s_SerIndex);
 }
 static
-ESerialDataFormat s_SerFormat(CNcbiIos& io)
+ESerialDataFormat s_FlagsToFormat(CNcbiIos& io)
 {
     switch (s_SerFlags(io) & eFmt_All) {
     case eFmt_AsnText:     return eSerial_AsnText;
@@ -418,9 +421,19 @@ ESerialDataFormat s_SerFormat(CNcbiIos& io)
     default:               return eSerial_None;
     }
 }
+static
+long s_FormatToFlags(ESerialDataFormat fmt)
+{
+    switch (fmt) {
+    case eSerial_AsnText:    return eFmt_AsnText;
+    case eSerial_AsnBinary:  return eFmt_AsnBinary;
+    case eSerial_Xml:        return eFmt_Xml;
+    default:                 return 0;
+    }
+}
 
 static
-ESerialVerifyData s_SerVerify(CNcbiIos& io)
+ESerialVerifyData s_FlagsToVerify(CNcbiIos& io)
 {
     switch (s_SerFlags(io) & eVerify_All) {
     case eVerify_No:       return eSerialVerifyData_No;
@@ -430,6 +443,69 @@ ESerialVerifyData s_SerVerify(CNcbiIos& io)
     }
 }
 
+static
+long s_VerifyToFlags(ESerialVerifyData fmt)
+{
+    switch (fmt) {
+    case eSerialVerifyData_Never:
+    case eSerialVerifyData_No:       return eVerify_No;
+    case eSerialVerifyData_Always:
+    case eSerialVerifyData_Yes:      return eVerify_Yes;
+    case eSerialVerifyData_DefValueAlways:
+    case eSerialVerifyData_DefValue: return eVerify_DefValue;
+    default:                         return 0;
+    }
+}
+
+static
+EEncoding s_FlagsToEncoding(CNcbiIos& io)
+{
+    long enc = (s_SerFlags(io) & eEncoding_All) >> 16;
+    switch (enc) {
+    default: return eEncoding_Unknown;
+    case 1:  return eEncoding_UTF8;
+    case 2:  return eEncoding_Ascii;
+    case 3:  return eEncoding_ISO8859_1;
+    case 4:  return eEncoding_Windows_1252;
+    }
+}
+
+static
+long s_EncodingToFlags(EEncoding fmt)
+{
+    long enc = 0;
+    switch (fmt) {
+    default:                     enc = 0; break;
+    case eEncoding_UTF8:         enc = 1; break;
+    case eEncoding_Ascii:        enc = 2; break;
+    case eEncoding_ISO8859_1:    enc = 3; break;
+    case eEncoding_Windows_1252: enc = 4; break;
+    }
+    return (enc << 16);
+}
+
+MSerial_Flags::MSerial_Flags(unsigned long all, unsigned long flags)
+    : m_All(all), m_Flags(flags)
+{
+}
+MSerial_Format::MSerial_Format(ESerialDataFormat fmt)
+    : MSerial_Flags(eFmt_All, s_FormatToFlags(fmt))
+{
+}
+
+MSerial_VerifyData::MSerial_VerifyData(ESerialVerifyData fmt)
+    : MSerial_Flags(eVerify_All, s_VerifyToFlags(fmt))
+{
+}
+
+MSerialXml_DefaultStringEncoding::MSerialXml_DefaultStringEncoding(EEncoding fmt)
+    : MSerial_Flags(eEncoding_All, s_EncodingToFlags(fmt))
+{
+}
+void MSerial_Flags::SetFlags(CNcbiIos& io) const
+{
+    s_SerFlags(io) = (s_SerFlags(io) & ~m_All) | m_Flags;
+}
 
 // Formatting
 CNcbiIos& MSerial_AsnText(CNcbiIos& io)
@@ -475,32 +551,48 @@ CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io)
 // Input/output
 CNcbiOstream& operator<< (CNcbiOstream& os, const CSerialObject& obj)
 {
-    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open(s_SerFormat(os), os) );
-    ostr->SetVerifyData(s_SerVerify(os));
+    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open( s_FlagsToFormat(os), os) );
+    ostr->SetVerifyData( s_FlagsToVerify(os) );
+    if (ostr->GetDataFormat() == eSerial_Xml) {
+        dynamic_cast<CObjectOStreamXml*>(ostr.get())->
+            SetDefaultStringEncoding( s_FlagsToEncoding(os) );
+    }
     ostr->Write(&obj,obj.GetThisTypeInfo());
     return os;
 }
 
 CNcbiIstream& operator>> (CNcbiIstream& is, CSerialObject& obj)
 {
-    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_SerFormat(is), is) );
-    istr->SetVerifyData(s_SerVerify(is));
+    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
+    istr->SetVerifyData(s_FlagsToVerify(is));
+    if (istr->GetDataFormat() == eSerial_Xml) {
+        dynamic_cast<CObjectIStreamXml*>(istr.get())->
+            SetDefaultStringEncoding( s_FlagsToEncoding(is) );
+    }
     istr->Read(&obj,obj.GetThisTypeInfo());
     return is;
 }
 
 CNcbiOstream& operator<< (CNcbiOstream& os, const CConstObjectInfo& obj)
 {
-    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open(s_SerFormat(os), os) );
-    ostr->SetVerifyData(s_SerVerify(os));
+    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open(s_FlagsToFormat(os), os) );
+    ostr->SetVerifyData(s_FlagsToVerify(os));
+    if (ostr->GetDataFormat() == eSerial_Xml) {
+        dynamic_cast<CObjectOStreamXml*>(ostr.get())->
+            SetDefaultStringEncoding( s_FlagsToEncoding(os) );
+    }
     ostr->Write(obj);
     return os;
 }
 
 CNcbiIstream& operator>> (CNcbiIstream& is, const CObjectInfo& obj)
 {
-    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_SerFormat(is), is) );
-    istr->SetVerifyData(s_SerVerify(is));
+    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_FlagsToFormat(is), is) );
+    istr->SetVerifyData(s_FlagsToVerify(is));
+    if (istr->GetDataFormat() == eSerial_Xml) {
+        dynamic_cast<CObjectIStreamXml*>(istr.get())->
+            SetDefaultStringEncoding( s_FlagsToEncoding(is) );
+    }
     istr->Read(obj);
     return is;
 }
@@ -511,6 +603,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2005/12/05 20:09:21  gouriano
+* Added i/o stream manipulators with parameters for serializable objects
+*
 * Revision 1.29  2005/02/01 21:53:12  grichenk
 * Fixed warnings
 *
