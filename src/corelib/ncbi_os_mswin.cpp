@@ -375,7 +375,7 @@ bool CWinSecurity::GetFilePermissions(const string& strPath,
 
 
 bool CWinSecurity::GetFilePermissions(const string& strPath,
-                                   ACCESS_MASK*  pPermissions)
+                                      ACCESS_MASK*  pPermissions)
 {
     return CWinSecurity::GetFilePermissions(strPath, kEmptyStr, pPermissions);
 }
@@ -420,6 +420,8 @@ bool CWinSecurity::GetFilePermissions(const string& strPath,
     }
     // Release file security descriptor
     CWinSecurity::FreeFileSD(pFileSD);
+    if ( !*pPermissions ) 
+        return false;
     return success;
 }
 
@@ -430,6 +432,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2005/12/05 19:23:50  ivanov
+ * CWinSecurity::GetFilePermissions() -- fast fix: return false
+ * if permissions is 0. Need to investigate.
+ *
  * Revision 1.2  2005/11/30 17:05:14  kuznets
  * include corelib/ncbistr.hpp
  *
