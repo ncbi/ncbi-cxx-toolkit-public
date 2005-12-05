@@ -8,7 +8,6 @@ services="
    NC_Geo          \
    NC_gMap         \
    NC_MapView      \
-   NC_NIHMS        \
    NC_PCAssayGraph \
    NC_PhyloTree    \
    NC_Sage         \
