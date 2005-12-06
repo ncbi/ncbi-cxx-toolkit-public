@@ -68,6 +68,8 @@ public:
     EDiagSev                GetSeverity (void) const;
     // Error code
     const string&           GetErrCode  (void) const;
+    unsigned int            GetErrIndex (void) const;
+    static unsigned int     GetErrCount(void);
     // Error group (SEQ_FEAT, SEQ_INST etc.)
     const string&           GetErrGroup (void) const;
     // Error message
@@ -83,6 +85,7 @@ public:
 
     // Convert Severity from enum to a string representation
     static const string& ConvertSeverity(EDiagSev sev);
+    static const string& ConvertErrCode(unsigned int);
 
     bool IsSetContext(void) const { return m_Ctx.NotEmpty(); }
     const CSeq_entry& GetContext(void) const { return *m_Ctx; }
@@ -386,6 +389,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2005/12/06 19:26:22  rsmith
+* Expose validator error codes. Allow conversion between codes and descriptions.
+*
 * Revision 1.20  2005/06/28 20:52:17  vasilche
 * Added forward declaration for CBioseq.
 *

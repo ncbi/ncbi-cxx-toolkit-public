@@ -176,7 +176,7 @@ CValidError_CI::CValidError_CI
     m_MinSeverity(minsev),
     m_MaxSeverity(maxsev)
 {
-    if ( !Filter(**m_Current) ) {
+    if ( IsValid()  &&  !Filter(**m_Current) ) {
         Next();
     }
 }
@@ -332,14 +332,31 @@ const string& CValidErrItem::ConvertSeverity(EDiagSev sev)
 }
 
 
-const string& CValidErrItem::GetErrCode(void) const
+const string& CValidErrItem::ConvertErrCode(unsigned int err)
 {
-    if (m_ErrIndex <= eErr_UNKNOWN) {
-        return sm_Terse [m_ErrIndex];
+    if (err <= eErr_UNKNOWN) {
+        return sm_Terse [err];
     }
     return sm_Terse [eErr_UNKNOWN];
 }
 
+
+const string& CValidErrItem::GetErrCode(void) const
+{
+    return ConvertErrCode(m_ErrIndex);
+}
+
+
+unsigned int CValidErrItem::GetErrIndex(void) const
+{
+    return m_ErrIndex;
+}
+
+
+unsigned int CValidErrItem::GetErrCount(void)
+{
+    return eErr_UNKNOWN + 1;
+}
 
 
 const string& CValidErrItem::GetErrGroup (void) const
@@ -1489,6 +1506,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2005/12/06 19:27:01  rsmith
+* Expose validator error codes. Allow conversion between codes and descriptions.
+*
 * Revision 1.61  2005/09/19 15:58:00  rsmith
 * + ImproperBondLocation to terse explanations.
 *
