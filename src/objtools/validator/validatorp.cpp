@@ -76,10 +76,13 @@
 
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/graph_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/scope.hpp>
 
@@ -474,9 +477,14 @@ void CValidError_imp::PostErr
     // Append Alignment label
     string desc = "ALIGNMENT: ";
     desc += align.ENUM_METHOD_NAME(EType)()->FindName(align.GetType(), true);
-    desc += ", dim=" + NStr::IntToString(align.GetDim());
+    try {
+        CSeq_align::TDim dim = align.GetDim();
+        desc += ", dim=" + NStr::IntToString(dim);
+    } catch ( const CUnassignedMember &e ) {
+        desc += ", dim=UNASSIGNED";
+    }
 
-    desc+= " SEGS: ";
+    desc += " SEGS: ";
     desc += align.GetSegs().SelectionName(align.GetSegs().Which());
 
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, *m_Scope);
@@ -556,9 +564,10 @@ bool CValidError_imp::Validate
         }
     }
     CValidError_feat feat_validator(*this);
-    for (CTypeConstIterator<CSeq_feat> fi(se); fi; ++fi) {
+    for (CFeat_CI fi(eh); fi; ++fi) {
+        const CSeq_feat& sf = fi->GetOriginalFeature();
         try {
-            feat_validator.ValidateSeqFeat(*fi);
+            feat_validator.ValidateSeqFeat(sf);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -569,7 +578,7 @@ bool CValidError_imp::Validate
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_Internal_Exception,
                 string("Exeption while validating feature. EXCEPTION: ") +
-                e.what(), *fi);
+                e.what(), sf);
             return true;
         }
     }
@@ -617,12 +626,13 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_bioseq bioseq_validator(*this);
-    for (CTypeConstIterator<CBioseq> bi(se); bi; ++bi) {
+    for (CBioseq_CI bi(eh); bi; ++bi) {
+        const CBioseq& bs = *bi->GetCompleteBioseq();
         try {
-            bioseq_validator.ValidateSeqIds(*bi);
-            bioseq_validator.ValidateInst(*bi);
-            bioseq_validator.ValidateBioseqContext(*bi);
-            bioseq_validator.ValidateHistory(*bi);
+            bioseq_validator.ValidateSeqIds(bs);
+            bioseq_validator.ValidateInst(bs);
+            bioseq_validator.ValidateBioseqContext(bs);
+            bioseq_validator.ValidateHistory(bs);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -633,7 +643,7 @@ bool CValidError_imp::Validate
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_Internal_Exception,
                 string("Exeption while validating bioseq. EXCEPTION: ") +
-                e.what(), *bi);
+                e.what(), bs);
             return true;
         }
     }
@@ -683,9 +693,10 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_align align_validator(*this);
-    for (CTypeConstIterator<CSeq_align> ai(se); ai; ++ai) {
+    for (CAlign_CI ai(eh); ai; ++ai) {
+        const CSeq_align& sa = ai.GetOriginalSeq_align();
         try {
-            align_validator.ValidateSeqAlign(*ai);
+            align_validator.ValidateSeqAlign(sa);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -696,7 +707,7 @@ bool CValidError_imp::Validate
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_Internal_Exception,
                 string("Exeption while validating alignment. EXCEPTION: ") +
-                e.what(), *ai);
+                e.what(), sa);
             return true;
         }
     }
@@ -709,9 +720,10 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_graph graph_validator(*this);
-    for (CTypeConstIterator<CSeq_graph> gi(se); gi; ++gi) {
+    for (CGraph_CI gi(eh); gi; ++gi) {
+        const CSeq_graph& sg = gi->GetOriginalGraph();
         try {
-            graph_validator.ValidateSeqGraph(*gi);
+            graph_validator.ValidateSeqGraph(sg);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -722,7 +734,7 @@ bool CValidError_imp::Validate
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_Internal_Exception,
                 string("Exeption while validating graph. EXCEPTION: ") +
-                e.what(), *gi);
+                e.what(), sg);
             return true;
         }
     }
@@ -743,9 +755,10 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_annot annot_validator(*this);
-    for (CTypeConstIterator<CSeq_annot> ni(se); ni; ++ni) {
+    for (CSeq_annot_CI ni(eh); ni; ++ni) {
+        const CSeq_annot& sn = *ni->GetCompleteSeq_annot();
         try {
-            annot_validator.ValidateSeqAnnot(*ni);
+            annot_validator.ValidateSeqAnnot(sn);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -756,7 +769,7 @@ bool CValidError_imp::Validate
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_Internal_Exception,
                 string("Exeption while validating annotation. EXCEPTION: ") +
-                e.what(), *ni);
+                e.what(), sn);
             return true;
         }
     }
@@ -770,9 +783,10 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_descr descr_validator(*this);
-    for (CTypeConstIterator<CSeq_descr> ei(se); ei; ++ei) {
+    for (CSeq_descr_CI ei(eh); ei; ++ei) {
+        const CSeq_descr& sd = *ei;
         try {
-            descr_validator.ValidateSeqDescr(*ei);
+            descr_validator.ValidateSeqDescr(sd);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -783,7 +797,7 @@ bool CValidError_imp::Validate
         } catch ( const exception& e ) {
             PostErr(eDiag_Fatal, eErr_Internal_Exception,
                 string("Exeption while validating annotation. EXCEPTION: ") +
-                e.what(), *ei);
+                e.what(), sd);
             return true;
         }
     }
@@ -1025,6 +1039,7 @@ bool s_GetDigits(const string& pages, string& digits)
             digits.erase();
             return false;
         }
+        ++pos;
     }
 
     return true;
@@ -2643,6 +2658,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2005/12/06 19:24:03  rsmith
+* fix bug in s_GetDigits.
+*
 * Revision 1.66  2005/06/28 17:37:53  shomrat
 * Errors from Seqdesc must contain a context
 *
