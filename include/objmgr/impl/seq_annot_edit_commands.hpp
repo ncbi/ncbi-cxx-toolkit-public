@@ -133,10 +133,8 @@ public:
         IEditSaver* saver = GetEditSaver(m_Handle.GetAnnot());
         if (!m_WasRemoved) {
             m_OldData = TResolver::GetData(m_Handle);
-            m_Handle.x_RealReplace(*m_Data);
-        } else {
-            m_Handle.GetAnnot().GetEditHandle().x_RealAdd(*m_Data);
         }
+        m_Handle.x_RealReplace(*m_Data);
         
         tr.AddCommand(CRef<IEditCommand>(this));       
         if (saver) {
@@ -274,6 +272,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2005/12/06 20:26:52  vasilche
+* Fixed Undo of deleted annotation.
+*
 * Revision 1.1  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *
