@@ -175,7 +175,12 @@ CParamParser< SParamDescription<bool> >::TValueType
 CParamParser< SParamDescription<bool> >::StringToValue(const string& str,
                                                        const TParamDesc&)
 {
-    return NStr::StringToBool(str);
+    try {
+        return NStr::StringToBool(str);
+    }
+    catch ( ... ) {
+        return NStr::StringToInt(str) != 0;
+    }
 }
 
 
@@ -332,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/12/06 18:56:17  grichenk
+ * Fixed parsing of numeric values in StringToValue() for bools.
+ *
  * Revision 1.4  2005/12/02 21:32:52  vasilche
  * Methods with static singleton variables should not be inlined.
  *
