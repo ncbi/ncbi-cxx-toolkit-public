@@ -353,7 +353,8 @@ void CTL_RPCCmd::Release()
     if ( m_WasSent) {
         try {
             Cancel();
-        } catch (CDB_Exception& ) {}
+        } catch ( const CDB_Exception& ) {
+        }
         m_WasSent = false;
     }
 
@@ -372,7 +373,8 @@ CTL_RPCCmd::~CTL_RPCCmd()
         if ( m_WasSent ) {
             try {
                 Cancel();
-            } catch (CDB_Exception& ) {}
+            } catch ( const CDB_Exception& ) {
+            }
         }
 
         ct_cmd_drop(m_Cmd);
@@ -415,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/12/06 19:13:08  ssikorsk
+ * Catch exceptions by const ref
+ *
  * Revision 1.12  2005/09/19 14:19:02  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
