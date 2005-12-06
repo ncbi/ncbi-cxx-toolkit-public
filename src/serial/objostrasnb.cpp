@@ -381,9 +381,9 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
         return;
     }
     WriteByte(TByte(obj.size()%8 ? 8-obj.size()%8 : 0));
-    size_t reserve=128;
-    string bytes;
-    bytes.reserve(reserve);
+    const size_t reserve=128;
+    char bytes[reserve];
+    size_t b=0;
     Uint1 data, mask;
     bool done=false;
 
@@ -395,11 +395,10 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
             }
             done = (++i == obj.end());
         }
-        bytes.append(1, data);
-        if (--reserve == 0 || done) {
-            WriteBytes(bytes.data(),bytes.size());
-            bytes.clear();
-            reserve = bytes.capacity();
+        bytes[b++] = data;
+        if (b==reserve || done) {
+            WriteBytes(bytes,b);
+            b=0;
         }
     }
 #else
@@ -414,11 +413,10 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
             }
             done = (++i == ilast);
         }
-        bytes.append(1, data);
-        if (--reserve == 0 || done) {
-            WriteBytes(bytes.data(),bytes.size());
-            bytes.erase();
-            reserve = bytes.capacity();
+        bytes[b++] = data;
+        if (b==reserve || done) {
+            WriteBytes(bytes,b);
+            b = 0;
         }
     }
 #endif
@@ -1182,6 +1180,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.102  2005/12/06 18:29:57  gouriano
+* Optimized writing bit string
+*
 * Revision 1.101  2005/12/01 14:26:03  vasilche
 * Replaced string::clear() -> erase() for GCC 2.95.
 *
