@@ -1021,6 +1021,7 @@ tdsdbopen(LOGINREC * login, char *server, int msdblib)
 	if (tds_connect(dbproc->tds_socket, connection) == TDS_FAIL) {
 		dbproc->tds_socket = NULL;
 		tds_free_connection(connection);
+		dbclose(dbproc);
 		return NULL;
 	}
 	tds_free_connection(connection);
@@ -1391,6 +1392,7 @@ dbresults(DBPROCESS * dbproc)
 				break;
 	
 			case TDS_DONE_RESULT:
+			case TDS_DONEPROC_RESULT:
 
 				/* A done token signifies the end of a logical command.
 				 * There are three possibilities:
@@ -1421,7 +1423,6 @@ dbresults(DBPROCESS * dbproc)
 				}
 				
 
-			case TDS_DONEPROC_RESULT:
 			case TDS_DONEINPROC_RESULT:
 
 				/* We should only return SUCCEED on a command within a */
@@ -2458,8 +2459,8 @@ dbcolinfo (DBPROCESS *dbproc, CI_TYPE type, DBINT column, DBINT computeid, DBCOL
 
 	strcpy(pdbcol->Name, dbcolname(dbproc, column));
 	strcpy(pdbcol->ActualName, dbcolname(dbproc, column));
-	strcpy(pdbcol->TableName, dbcoltablename(dbproc, column));
-	
+    strcpy(pdbcol->TableName, dbcoltablename(dbproc, column));
+
 	pdbcol->Type = dbcoltype(dbproc, column);
 	pdbcol->UserType = dbcolutype(dbproc, column);
 	pdbcol->MaxLength = dbcollen(dbproc, column);
@@ -4003,19 +4004,9 @@ dbretdata(DBPROCESS * dbproc, int retnum)
 		return NULL;
 
 	colinfo = param_info->columns[retnum - 1];
-	/* FIXME blob are stored is different way */
-	/* return &param_info->current_row[colinfo->column_offset]; */
-
-    /* Fix */
-	if (tds_get_null(param_info->current_row, retnum - 1)) {
-		return NULL;
-	}
-	if (is_blob_type(colinfo->column_type)) {
-		return (BYTE *) ((TDSBLOB *) (param_info->current_row + colinfo->column_offset))->textvalue;
-	}
-
-	return (BYTE *) & param_info->current_row[colinfo->column_offset];
-
+	if (is_blob_type(colinfo->column_type))
+		return (BYTE *) ((TDSBLOB *) &param_info->current_row[colinfo->column_offset])->textvalue;
+	return &param_info->current_row[colinfo->column_offset];
 }
 
 /**
@@ -4042,6 +4033,8 @@ dbretlen(DBPROCESS * dbproc, int retnum)
 		return -1;
 
 	colinfo = param_info->columns[retnum - 1];
+	if (tds_get_null(param_info->current_row, retnum - 1))
+		return 0;
 
 	return colinfo->column_cur_size;
 }
@@ -4124,14 +4117,14 @@ dbsqlok(DBPROCESS * dbproc)
 				if (done_flags & TDS_DONE_ERROR) {
 					tdsdump_log(TDS_DBG_FUNC, "dbsqlok() end status was error\n");
 
-					if (done_flags & TDS_DONE_MORE_RESULTS) {
-						dbproc->dbresults_state = _DB_RES_NEXT_RESULT;
-					} else {
-						dbproc->dbresults_state = _DB_RES_NO_MORE_RESULTS;
-					}
+                    if (done_flags & TDS_DONE_MORE_RESULTS) {
+                        dbproc->dbresults_state = _DB_RES_NEXT_RESULT;
+                    } else {
+                        dbproc->dbresults_state = _DB_RES_NO_MORE_RESULTS;
+                    }
 
 					return FAIL;
-				} else {
+                } else {
 					tdsdump_log(TDS_DBG_FUNC, "dbsqlok() end status was success\n");
 
 					dbproc->dbresults_state = _DB_RES_SUCCEED;
@@ -5438,6 +5431,7 @@ RETCODE
 dbwritetext(DBPROCESS * dbproc, char *objname, DBBINARY * textptr, DBTINYINT textptrlen, DBBINARY * timestamp, DBBOOL log,
 	    DBINT size, BYTE * text)
 {
+    int rc = 0;
 	char textptr_string[35];	/* 16 * 2 + 2 (0x) + 1 */
 	char timestamp_string[19];	/* 8 * 2 + 2 (0x) + 1 */
 
@@ -5447,8 +5441,14 @@ dbwritetext(DBPROCESS * dbproc, char *objname, DBBINARY * textptr, DBTINYINT tex
 	if (textptrlen > DBTXPLEN)
 		return FAIL;
 
-	dbconvert(dbproc, SYBBINARY, (BYTE *) textptr, textptrlen, SYBCHAR, (BYTE *) textptr_string, -1);
-	dbconvert(dbproc, SYBBINARY, (BYTE *) timestamp, 8, SYBCHAR, (BYTE *) timestamp_string, -1);
+	rc = dbconvert(dbproc, SYBBINARY, (BYTE *) textptr, textptrlen, SYBCHAR, (BYTE *) textptr_string, -1);
+    if ( rc == -1 ) {
+        return FAIL;
+    }
+	rc = dbconvert(dbproc, SYBBINARY, (BYTE *) timestamp, 8, SYBCHAR, (BYTE *) timestamp_string, -1);
+    if ( rc == -1 ) {
+        return FAIL;
+    }
 
 	dbproc->dbresults_state = _DB_RES_INIT;
 
@@ -5468,20 +5468,31 @@ dbwritetext(DBPROCESS * dbproc, char *objname, DBBINARY * textptr, DBTINYINT tex
 		return FAIL;
 	}
 
+    if (!dbproc->tds_socket->s) return FAIL;
+    dbproc->tds_socket->out_flag = 0x07;
+    dbproc->tds_socket->state = TDS_QUERYING;
+    tds_put_int(dbproc->tds_socket, size);
+
+    if (!text) {
+        dbproc->text_size = size;
+        dbproc->text_sent = 0;
+        return SUCCEED;
+    }
+
 	/* read the end token */
 	if (tds_process_simple_query(dbproc->tds_socket) != TDS_SUCCEED)
 		return FAIL;
 
-	dbproc->tds_socket->out_flag = 0x07;
-	dbproc->tds_socket->state = TDS_QUERYING;
-	tds_put_int(dbproc->tds_socket, size);
-
-	if (!text) {
-		dbproc->text_size = size;
-		dbproc->text_sent = 0;
-		return SUCCEED;
-	}
-
+//     dbproc->tds_socket->out_flag = 0x07;
+//     dbproc->tds_socket->state = TDS_QUERYING;
+//     tds_put_int(dbproc->tds_socket, size);
+//
+//     if (!text) {
+//         dbproc->text_size = size;
+//         dbproc->text_sent = 0;
+//         return SUCCEED;
+//     }
+    
 	tds_put_n(dbproc->tds_socket, text, size);
 	tds_flush_packet(dbproc->tds_socket);
 
@@ -5984,7 +5995,7 @@ dblastrow(DBPROCESS * dbproc)
 
 	tds = (TDSSOCKET *) dbproc->tds_socket;
 	resinfo = tds->res_info;
-	return resinfo->row_count;
+	return resinfo ? resinfo->row_count : 0;
 #if 0
 	DBINT result;
 

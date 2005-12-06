@@ -191,6 +191,7 @@ bcp_init(DBPROCESS * dbproc, const char *tblname, const char *hfile, const char 
 			curcol->on_server.column_size = resinfo->columns[i]->on_server.column_size;
 			curcol->char_conv = resinfo->columns[i]->char_conv;
 			memcpy(curcol->column_name, resinfo->columns[i]->column_name, resinfo->columns[i]->column_namelen);
+			memcpy(curcol->table_name, resinfo->columns[i]->table_name, resinfo->columns[i]->table_namelen);
 			curcol->column_nullable = resinfo->columns[i]->column_nullable;
 			curcol->column_identity = resinfo->columns[i]->column_identity;
 			curcol->column_timestamp = resinfo->columns[i]->column_timestamp;
@@ -237,7 +238,7 @@ bcp_collen(DBPROCESS * dbproc, DBINT varlen, int table_column)
 		return FAIL;
 	}
 
-	if (table_column < 0 || table_column > dbproc->bcpinfo->bindinfo->num_cols)
+	if (table_column <= 0 || table_column > dbproc->bcpinfo->bindinfo->num_cols)
 		return FAIL;
 
 	curcol = dbproc->bcpinfo->bindinfo->columns[table_column - 1];
@@ -457,7 +458,7 @@ bcp_colptr(DBPROCESS * dbproc, BYTE * colptr, int table_column)
 		return FAIL;
 	}
 
-	if (table_column < 0 || table_column > dbproc->bcpinfo->bindinfo->num_cols)
+	if (table_column <= 0 || table_column > dbproc->bcpinfo->bindinfo->num_cols)
 		return FAIL;
 
 	curcol = dbproc->bcpinfo->bindinfo->columns[table_column - 1];
@@ -2098,6 +2099,19 @@ _bcp_send_colmetadata(DBPROCESS * dbproc)
 	return SUCCEED;
 }
 
+static char *
+_bcp_fgets(char *buffer, size_t size, FILE *f)
+{
+	char *p = fgets(buffer, size, f);
+	if (p == NULL)
+		return p;
+
+	/* discard newline */
+	p = strchr(buffer, 0) - 1;
+	if (p >= buffer && *p == '\n')
+		*p = 0;
+	return buffer;
+}
 
 RETCODE
 bcp_readfmt(DBPROCESS * dbproc, char *filename)
@@ -2130,20 +2144,15 @@ bcp_readfmt(DBPROCESS * dbproc, char *filename)
 		return (FAIL);
 	}
 
-	if ((fgets(buffer, sizeof(buffer), ffile)) != (char *) NULL) {
-		buffer[strlen(buffer) - 1] = '\0';	/* discard newline */
+	if ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != (char *) NULL) {
 		lf_version = atof(buffer);
 	}
 
-	if ((fgets(buffer, sizeof(buffer), ffile)) != (char *) NULL) {
-		buffer[strlen(buffer) - 1] = '\0';	/* discard newline */
+	if ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != (char *) NULL) {
 		li_numcols = atoi(buffer);
 	}
 
-	while ((fgets(buffer, sizeof(buffer), ffile)) != (char *) NULL) {
-
-		buffer[strlen(buffer) - 1] = '\0';	/* discard newline */
-
+	while ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != (char *) NULL) {
 
 		if (topptr == (struct fflist *) NULL) {	/* first time */
 			if ((topptr = (struct fflist *) malloc(sizeof(struct fflist))) == (struct fflist *) NULL) {
@@ -2458,7 +2467,7 @@ bcp_bind(DBPROCESS * dbproc, BYTE * varaddr, int prefixlen, DBINT varlen,
 		return FAIL;
 	}
 
-	if (table_column > dbproc->bcpinfo->bindinfo->num_cols) {
+	if (table_column <= 0 || table_column > dbproc->bcpinfo->bindinfo->num_cols) {
 		return FAIL;
 	}
 
@@ -2834,13 +2843,10 @@ static int
 rtrim(char *istr, int ilen)
 {
 	char *t;
-	int olen = ilen;
 
-	for (t = istr + (ilen - 1); *t == ' '; t--) {
+	for (t = istr + ilen; --t > istr && *t == ' '; )
 		*t = '\0';
-		olen--;
-	}
-	return olen;
+	return t - istr + 1;
 }
 
 static RETCODE

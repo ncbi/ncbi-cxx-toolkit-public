@@ -179,8 +179,14 @@ dbrpcparam(DBPROCESS * dbproc, char *paramname, BYTE status, int type, DBINT max
 				maxlen = 255;
 		}
 	} else {
-		if (maxlen != -1)
+		/*
+		 * Well, maxlen should be used only for output parameter however it seems
+		 * that ms implementation wrongly require this 0 for NULL variable
+		 * input parameters, so fix it
+		 */
+		if (maxlen != -1 && maxlen != 0)
 			return FAIL;
+		maxlen = -1;
 	}
 
 	/* TODO add other tests for correctness */
@@ -297,7 +303,15 @@ param_row_alloc(TDSPARAMINFO * params, TDSCOLUMN * curcol, int param_num, void *
 	tdsdump_log(TDS_DBG_FUNC, "param_row_alloc(): doing data from value\n");
 	if (size > 0 && value) {
 		tdsdump_log(TDS_DBG_FUNC, "param_row_alloc(): copying %d bytes of data to parameter #%d\n", size, param_num);
-		memcpy(&params->current_row[curcol->column_offset], value, size);
+		if (!is_blob_type(curcol->column_type)) {
+			memcpy(&params->current_row[curcol->column_offset], value, size);
+		} else {
+			TDSBLOB *blob = (TDSBLOB *) &params->current_row[curcol->column_offset];
+			blob->textvalue = malloc(size);
+			if (!blob->textvalue)
+				return NULL;
+			memcpy(blob->textvalue, value, size);
+		}
 	}
 	else {
 		tdsdump_log(TDS_DBG_FUNC, "param_row_alloc(): setting parameter #%d to NULL\n", param_num);

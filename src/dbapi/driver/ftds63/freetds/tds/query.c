@@ -1100,7 +1100,6 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
 			
 		switch (curcol->column_varint_size) {
 		case 4:	/* It's a BLOB... */
-			blob = (TDSBLOB *) & (current_row[curcol->column_offset]);
 			/* mssql require only size */
 			tds_put_int(tds, colsize);
 			break;
@@ -1134,7 +1133,7 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
 #ifdef WORDS_BIGENDIAN
 			unsigned char buf[64];
 
-			if (tds->emul_little_endian && colsize < 64) {
+			if (tds->emul_little_endian && !converted && colsize < 64) {
 				tdsdump_log(TDS_DBG_INFO1, "swapping coltype %d\n",
 					    tds_get_conversion_type(curcol->column_type, colsize));
 				memcpy(buf, s, colsize);
@@ -1191,7 +1190,7 @@ tds_put_data(TDSSOCKET * tds, TDSCOLUMN * curcol, unsigned char *current_row, in
 #ifdef WORDS_BIGENDIAN
 			unsigned char buf[64];
 
-			if (tds->emul_little_endian && !is_numeric_type(curcol->column_type) && colsize < 64) {
+			if (tds->emul_little_endian && colsize < 64) {
 				tdsdump_log(TDS_DBG_INFO1, "swapping coltype %d\n",
 					    tds_get_conversion_type(curcol->column_type, colsize));
 				memcpy(buf, src, colsize);

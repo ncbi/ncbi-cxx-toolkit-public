@@ -87,29 +87,30 @@ static int tds_write_packet(TDSSOCKET * tds, unsigned char final);
 int
 tds_put_n(TDSSOCKET * tds, const void *buf, int n)
 {
-	int left;
-	const unsigned char *bufp = (const unsigned char *) buf;
+    int left;
+    const unsigned char *bufp = (const unsigned char *) buf;
 
-	assert(n >= 0);
+    assert(n >= 0);
 
-	for (; n;) {
-		left = tds->env->block_size - tds->out_pos;
-		if (left <= 0) {
-			tds_write_packet(tds, 0x0);
-			tds_init_write_buf(tds);
-			continue;
-		}
-		if (left > n)
-			left = n;
-		if (bufp) {
-			memcpy(tds->out_buf + tds->out_pos, bufp, left);
-			bufp += left;
-		} else {
-			memset(tds->out_buf + tds->out_pos, 0, left);
-		}
-		tds->out_pos += left;
-		n -= left;
-	}
+    for (; n;) {
+        left = tds->env->block_size - tds->out_pos;
+        if (left <= 0) {
+            tds_write_packet(tds, 0x0);
+            tds_init_write_buf(tds);
+            continue;
+        }
+        if (left > n)
+            left = n;
+        if (bufp) {
+            memcpy(tds->out_buf + tds->out_pos, bufp, left);
+            bufp += left;
+        } else {
+            memset(tds->out_buf + tds->out_pos, 0, left);
+        }
+        tds->out_pos += left;
+        n -= left;
+    }
+    
 	return 0;
 }
 
@@ -326,6 +327,10 @@ goodwrite(TDSSOCKET * tds)
 	int result = TDS_SUCCEED;
 	int retval;
 
+	/* Fix of SIGSEGV when FD_SET() called with negative fd (Sergey A. Cherukhin, 23/09/2005) */
+	if (TDS_IS_SOCKET_INVALID(tds->s))
+		return -1;
+
 	left = tds->out_pos;
 	p = tds->out_buf;
 
@@ -383,18 +388,18 @@ tds_write_packet(TDSSOCKET * tds, unsigned char final)
 	tdsdump_dump_buf(TDS_DBG_NETWORK, "Sending packet", tds->out_buf, tds->out_pos);
 
 #if !defined(WIN32) && !defined(MSG_NOSIGNAL)
-	oldsig = signal(SIGPIPE, SIG_IGN);
-	if (oldsig == SIG_ERR) {
-		tdsdump_log(TDS_DBG_WARN, "TDS: Warning: Couldn't set SIGPIPE signal to be ignored\n");
-	}
+    oldsig = signal(SIGPIPE, SIG_IGN);
+    if (oldsig == SIG_ERR) {
+        tdsdump_log(TDS_DBG_WARN, "TDS: Warning: Couldn't set SIGPIPE signal to be ignored\n");
+    }
 #endif
 
 	retcode = goodwrite(tds);
 
 #if !defined(WIN32) && !defined(MSG_NOSIGNAL)
-	if (signal(SIGPIPE, oldsig) == SIG_ERR) {
-		tdsdump_log(TDS_DBG_WARN, "TDS: Warning: Couldn't reset SIGPIPE signal to previous value\n");
-	}
+    if (signal(SIGPIPE, oldsig) == SIG_ERR) {
+        tdsdump_log(TDS_DBG_WARN, "TDS: Warning: Couldn't reset SIGPIPE signal to previous value\n");
+    }
 #endif
 
 	/* GW added in check for write() returning <0 and SIGPIPE checking */

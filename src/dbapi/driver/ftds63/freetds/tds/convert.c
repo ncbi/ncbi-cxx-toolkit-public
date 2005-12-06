@@ -2757,6 +2757,7 @@ tds_strftime(char *buf, size_t maxsize, const char *format, const TDSDATEREC * d
 
 	char *pz = NULL;
 
+	memset(&tm, 0, sizeof(tm));
 	tm.tm_sec = dr->second;
 	tm.tm_min = dr->minute;
 	tm.tm_hour = dr->hour;
@@ -2765,7 +2766,6 @@ tds_strftime(char *buf, size_t maxsize, const char *format, const TDSDATEREC * d
 	tm.tm_year = dr->year - 1900;
 	tm.tm_wday = dr->weekday;
 	tm.tm_yday = dr->dayofyear;
-	tm.tm_isdst = 0;
 
 	/* NOTE 2 in intentional. one more character is required because we replace %z with 3 digits */
 	our_format = (char *) malloc(strlen(format) + 2);
