@@ -1350,21 +1350,21 @@ CDBL_StatusResult::~CDBL_StatusResult()
 //  CTL_CursorResult::
 //
 
-CDBL_CursorResult::CDBL_CursorResult(CDB_LangCmd* cmd) :
-    m_Cmd(cmd), m_Res(0)
+CDBL_CursorResult::CDBL_CursorResult(CDB_LangCmd* cmd) 
+: m_Cmd(cmd)
+, m_Res(0)
 {
     try {
         m_Cmd->Send();
         while (m_Cmd->HasMoreResults()) {
-            m_Res = m_Cmd->Result();
-            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
+            SetResultSet( m_Cmd->Result() );
+            if (GetResultSet() && GetResultSet()->ResultType() == eDB_RowResult) {
                 return;
             }
-            if (m_Res) {
-                while (m_Res->Fetch())
+            if ( GetResultSet() ) {
+                while (GetResultSet()->Fetch())
                     continue;
-                delete m_Res;
-                m_Res = 0;
+                ClearResultSet();
             }
         }
     } catch ( const CDB_Exception& e ) {
@@ -1381,40 +1381,41 @@ EDB_ResType CDBL_CursorResult::ResultType() const
 
 unsigned int CDBL_CursorResult::NofItems() const
 {
-    return m_Res? m_Res->NofItems() : 0;
+    return GetResultSet()? GetResultSet()->NofItems() : 0;
 }
 
 
 const char* CDBL_CursorResult::ItemName(unsigned int item_num) const
 {
-    return m_Res ? m_Res->ItemName(item_num) : 0;
+    return GetResultSet() ? GetResultSet()->ItemName(item_num) : 0;
 }
 
 
 size_t CDBL_CursorResult::ItemMaxSize(unsigned int item_num) const
 {
-    return m_Res ? m_Res->ItemMaxSize(item_num) : 0;
+    return GetResultSet() ? GetResultSet()->ItemMaxSize(item_num) : 0;
 }
 
 
 EDB_Type CDBL_CursorResult::ItemDataType(unsigned int item_num) const
 {
-    return m_Res ? m_Res->ItemDataType(item_num) : eDB_UnsupportedType;
+    return GetResultSet() ? GetResultSet()->ItemDataType(item_num) : eDB_UnsupportedType;
 }
 
 
 bool CDBL_CursorResult::Fetch()
 {
-    if (!m_Res)
+    if ( !GetResultSet() )
         return false;
 
     try {
-        if (m_Res->Fetch())
+        if (GetResultSet()->Fetch())
             return true;
     }
     catch (CDB_ClientEx& ex) {
         if (ex.GetDBErrCode() == 200003) {
-            m_Res = 0;
+//             ClearResultSet();
+            m_Res = NULL;
         } else {
             DATABASE_DRIVER_ERROR( "Failed to fetch the results", 222011 );
         }
@@ -1423,29 +1424,22 @@ bool CDBL_CursorResult::Fetch()
     // try to get next cursor result
     try {
         // finish this command
-        delete m_Res;
+//         ClearResultSet();
+        if ( m_Res ) {
+            delete m_Res;
+        }
+        
         while (m_Cmd->HasMoreResults()) {
-            m_Res = m_Cmd->Result();
-            if (m_Res) {
-                while (m_Res->Fetch())
-                    continue;
-                delete m_Res;
-                m_Res = 0;
-            }
+            DumpResultSet();
         }
         // send the another "fetch cursor_name" command
         m_Cmd->Send();
         while (m_Cmd->HasMoreResults()) {
-            m_Res = m_Cmd->Result();
-            if (m_Res && m_Res->ResultType() == eDB_RowResult) {
-                return m_Res->Fetch();
+            SetResultSet( m_Cmd->Result() );
+            if (GetResultSet() && GetResultSet()->ResultType() == eDB_RowResult) {
+                return GetResultSet()->Fetch();
             }
-            if (m_Res) {
-                while (m_Res->Fetch())
-                    continue;
-                delete m_Res;
-                m_Res = 0;
-            }
+            FetchAllResultSet();
         }
     } catch ( const CDB_Exception& e ) {
         DATABASE_DRIVER_ERROR_EX( e, "Failed to fetch the results", 222011 );
@@ -1456,27 +1450,27 @@ bool CDBL_CursorResult::Fetch()
 
 int CDBL_CursorResult::CurrentItemNo() const
 {
-    return m_Res ? m_Res->CurrentItemNo() : -1;
+    return GetResultSet() ? GetResultSet()->CurrentItemNo() : -1;
 }
 
 
 int CDBL_CursorResult::GetColumnNum(void) const
 {
-    return m_Res ? m_Res->GetColumnNum() : -1;
+    return GetResultSet() ? GetResultSet()->GetColumnNum() : -1;
 }
 
 
 CDB_Object* CDBL_CursorResult::GetItem(CDB_Object* item_buff)
 {
-    return m_Res ? m_Res->GetItem(item_buff) : 0;
+    return GetResultSet() ? GetResultSet()->GetItem(item_buff) : 0;
 }
 
 
 size_t CDBL_CursorResult::ReadItem(void* buffer, size_t buffer_size,
                                    bool* is_null)
 {
-    if (m_Res) {
-        return m_Res->ReadItem(buffer, buffer_size, is_null);
+    if (GetResultSet()) {
+        return GetResultSet()->ReadItem(buffer, buffer_size, is_null);
     }
     if (is_null)
         *is_null = true;
@@ -1486,20 +1480,20 @@ size_t CDBL_CursorResult::ReadItem(void* buffer, size_t buffer_size,
 
 I_ITDescriptor* CDBL_CursorResult::GetImageOrTextDescriptor()
 {
-    return m_Res ? m_Res->GetImageOrTextDescriptor() : 0;
+    return GetResultSet() ? GetResultSet()->GetImageOrTextDescriptor() : 0;
 }
 
 
 bool CDBL_CursorResult::SkipItem()
 {
-    return m_Res ? m_Res->SkipItem() : false;
+    return GetResultSet() ? GetResultSet()->SkipItem() : false;
 }
 
 
 CDBL_CursorResult::~CDBL_CursorResult()
 {
     try {
-        delete m_Res;
+        ClearResultSet();
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -1514,17 +1508,18 @@ CDBL_CursorResult::~CDBL_CursorResult()
 CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
 {
 #if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE)
+
     DBCOL dbcol;
 
-    memset(&dbcol, 0, sizeof(dbcol));
+    memset(&dbcol, 0, sizeof(DBCOL));
     RETCODE res = dbcolinfo(dblink, CI_REGULAR, col_num, 0, &dbcol );
-    
-    CHECK_DRIVER_ERROR( 
-        res == FAIL, 
-        "Cannot get the DBCOLINFO*", 
+
+    CHECK_DRIVER_ERROR(
+        res == FAIL,
+        "Cannot get the DBCOLINFO*",
         280000 );
-    
-    if ( dbcol.TableName && *dbcol.TableName) {
+
+    if ( dbcol.TableName && *dbcol.TableName ) {
         m_ObjName += dbcol.TableName;
         m_ObjName += ".";
         m_ObjName += dbcol.ActualName;
@@ -1532,23 +1527,8 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
         m_ObjName.erase();
     }
     
-// #if defined(MS_DBLIB_IN_USE) || defined(FTDS_IN_USE) /*Text,Image*/
-//     const char* pColName = dbcolname(dblink,col_num);
-//
-//     CHECK_DRIVER_ERROR(
-//         pColName == NULL,
-//         "dbcolname() returns NULL",
-//         280000 );
-//
-//     // We have to use an offset in some undocumented structure
-//     // (obtained with the help of a debugger).
-//     // It may change in future MS dblib versions...
-//     const char* pTabName = *(char**)(pColName+50);
-//
-//     m_ObjName += pTabName;
-//     m_ObjName += ".";
-//     m_ObjName += pColName;
 #else
+
     DBCOLINFO* col_info = (DBCOLINFO*) dbcolname(dblink, col_num);
 
     CHECK_DRIVER_ERROR( 
@@ -1559,6 +1539,7 @@ CDBL_ITDescriptor::CDBL_ITDescriptor(DBPROCESS* dblink, int col_num)
     if (!x_MakeObjName(col_info)) {
         m_ObjName.erase();
     }
+    
 #endif
 
     DBBINARY* p = dbtxptr(dblink, col_num);
@@ -1638,6 +1619,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/12/06 19:31:15  ssikorsk
+ * Revamp code to use GetResultSet/SetResultSet/ClearResultSet
+ * methods instead of raw data access.
+ *
  * Revision 1.32  2005/11/02 14:16:59  ssikorsk
  * Rethrow catched CDB_Exception to preserve useful information.
  *

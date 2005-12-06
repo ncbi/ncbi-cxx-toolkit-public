@@ -45,14 +45,17 @@ BEGIN_NCBI_SCOPE
 
 CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection* conn, DBPROCESS* cmd,
                            const string& lang_query,
-                           unsigned int nof_params) :
-    m_Connect(conn), m_Cmd(cmd), m_Query(lang_query), m_Params(nof_params)
+                           unsigned int nof_params) 
+: m_Connect( conn )
+, m_Cmd( cmd )
+, m_Query( lang_query )
+, m_Params( nof_params )
+, m_WasSent( false )
+, m_HasFailed( false )
+, m_Res( 0 )
+, m_RowCount( -1 )
+, m_Status( 0 )
 {
-    m_WasSent   =  false;
-    m_HasFailed =  false;
-    m_Res       =  0;
-    m_RowCount  = -1;
-    m_Status    =  0;
 }
 
 
@@ -121,13 +124,12 @@ bool CDBL_LangCmd::WasSent() const
 bool CDBL_LangCmd::Cancel()
 {
     if (m_WasSent) {
-        if (m_Res) {
+        if ( GetResultSet() ) {
 #if 1 && defined(FTDS_IN_USE)
-            while (m_Res->Fetch())
+            while (GetResultSet()->Fetch())
                continue;
 #endif
-            delete m_Res;
-            m_Res = 0;
+            ClearResultSet();
         }
         m_WasSent = false;
         return (dbcancel(m_Cmd) == SUCCEED);
@@ -147,7 +149,7 @@ bool CDBL_LangCmd::WasCanceled() const
 
 CDB_Result* CDBL_LangCmd::Result()
 {
-    if (m_Res) {
+    if ( GetResultSet() ) {
         if(m_RowCount < 0) {
             m_RowCount = DBCOUNT(m_Cmd);
         }
@@ -155,12 +157,11 @@ CDB_Result* CDBL_LangCmd::Result()
 #if 1 && defined(FTDS_IN_USE)
         // This Fetch is required by FreeTDS v063
         // Useful stuff
-        while (m_Res->Fetch())
+        while (GetResultSet()->Fetch())
             continue;
 #endif
 
-        delete m_Res;
-        m_Res = 0;
+        ClearResultSet();
     }
 
     CHECK_DRIVER_ERROR( !m_WasSent, "a command has to be sent first", 220010 );
@@ -175,9 +176,9 @@ CDB_Result* CDBL_LangCmd::Result()
     }
 
     if ((m_Status & 0x10) != 0) { // we do have a compute result
-        m_Res = new CDBL_ComputeResult(m_Cmd, &m_Status);
+        SetResultSet( new CDBL_ComputeResult(m_Cmd, &m_Status) );
         m_RowCount= 1;
-        return Create_Result(*m_Res);
+        return Create_Result(*GetResultSet());
     }
 
     while ((m_Status & 0x1) != 0) {
@@ -186,18 +187,18 @@ CDB_Result* CDBL_LangCmd::Result()
             m_Status ^= 0x20;
             int n;
             if ((n = dbnumrets(m_Cmd)) > 0) {
-                m_Res = new CDBL_ParamResult(m_Cmd, n);
+                SetResultSet( new CDBL_ParamResult(m_Cmd, n) );
                 m_RowCount= 1;
-                return Create_Result(*m_Res);
+                return Create_Result(*GetResultSet());
             }
         }
 
         if ((m_Status & 0x40) != 0) { // check for ret status
             m_Status ^= 0x40;
             if (dbhasretstat(m_Cmd)) {
-                m_Res = new CDBL_StatusResult(m_Cmd);
+                SetResultSet( new CDBL_StatusResult(m_Cmd) );
                 m_RowCount= 1;
-                return Create_Result(*m_Res);
+                return Create_Result( *GetResultSet() );
             }
         }
 #endif
@@ -213,14 +214,15 @@ CDB_Result* CDBL_LangCmd::Result()
                 if (dbnumcols(m_Cmd) == 1) {
                     int ct = dbcoltype(m_Cmd, 1);
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
-                        m_Res = new CDBL_BlobResult(m_Cmd);
+                        SetResultSet( new CDBL_BlobResult(m_Cmd) );
                     }
                 }
 #endif
-                if (!m_Res)
-                    m_Res = new CDBL_RowResult(m_Cmd, &m_Status);
+                if ( !GetResultSet() ) {
+                    SetResultSet( new CDBL_RowResult(m_Cmd, &m_Status) );
+                }
                 m_RowCount= -1;
-                return Create_Result(*m_Res);
+                return Create_Result(*GetResultSet());
             } else {
                 m_RowCount = DBCOUNT(m_Cmd);
                 continue;
@@ -242,18 +244,18 @@ CDB_Result* CDBL_LangCmd::Result()
         m_Status = 4;
         int n = dbnumrets(m_Cmd);
         if (n > 0) {
-            m_Res = new CTDS_ParamResult(m_Cmd, n);
+            SetResultSet( new CTDS_ParamResult(m_Cmd, n) );
             m_RowCount = 1;
-            return Create_Result(*m_Res);
+            return Create_Result(*GetResultSet());
         }
     }
 
     if (m_Status == 4) {
         m_Status = 6;
         if (dbhasretstat(m_Cmd)) {
-            m_Res = new CTDS_StatusResult(m_Cmd);
+            SetResultSet( new CTDS_StatusResult(m_Cmd) );
             m_RowCount = 1;
-            return Create_Result(*m_Res);
+            return Create_Result(*GetResultSet());
         }
     }
 #endif
@@ -543,6 +545,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/12/06 19:30:32  ssikorsk
+ * Revamp code to use GetResultSet/SetResultSet/ClearResultSet
+ * methods instead of raw data access.
+ *
  * Revision 1.21  2005/10/31 12:24:32  ssikorsk
  * Do not use separate include files for the msdblib driver.
  *

@@ -45,10 +45,17 @@ BEGIN_NCBI_SCOPE
 //
 
 CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection* con, DBPROCESS* cmd,
-                         const string& proc_name, unsigned int nof_params) :
-    m_Connect(con), m_Cmd(cmd), m_Query(proc_name), m_Params(nof_params),
-    m_WasSent(false), m_HasFailed(false), m_Recompile(false), m_Res(0),
-    m_RowCount(-1), m_Status(0)
+                         const string& proc_name, unsigned int nof_params) 
+: m_Connect(con)
+, m_Cmd(cmd)
+, m_Query(proc_name)
+, m_Params(nof_params)
+, m_WasSent(false)
+, m_HasFailed(false)
+, m_Recompile(false)
+, m_Res(0)
+, m_RowCount(-1)
+, m_Status(0)
 {
     return;
 }
@@ -76,8 +83,8 @@ bool CDBL_RPCCmd::Send()
         Cancel();
     } else {
 #if 1 && defined(FTDS_IN_USE)
-        if (m_Res) {
-            while (m_Res->Fetch())
+        if ( GetResultSet() ) {
+            while (GetResultSet()->Fetch())
                 continue;
         }
 #endif
@@ -116,14 +123,13 @@ bool CDBL_RPCCmd::WasSent() const
 bool CDBL_RPCCmd::Cancel()
 {
     if (m_WasSent) {
-        if (m_Res) {
+        if (GetResultSet()) {
 #if 1 && defined(FTDS_IN_USE)
-            while (m_Res->Fetch())
+            while (GetResultSet()->Fetch())
                 continue;
 #endif
 
-            delete m_Res;
-            m_Res = 0;
+            ClearResultSet();
         }
         m_WasSent = false;
         return dbcancel(m_Cmd) == SUCCEED;
@@ -141,18 +147,17 @@ bool CDBL_RPCCmd::WasCanceled() const
 
 CDB_Result* CDBL_RPCCmd::Result()
 {
-    if (m_Res) {
+    if ( GetResultSet() ) {
         if(m_RowCount < 0) {
             m_RowCount = DBCOUNT(m_Cmd);
         }
 
 #if 1 && defined(FTDS_IN_USE)
-        while (m_Res->Fetch())
+        while (GetResultSet()->Fetch())
             continue;
 #endif
 
-        delete m_Res;
-        m_Res = 0;
+        ClearResultSet();
     }
 
     if (!m_WasSent) {
@@ -169,9 +174,9 @@ CDB_Result* CDBL_RPCCmd::Result()
     }
 
     if ((m_Status & 0x10) != 0) { // we do have a compute result
-        m_Res = new CDBL_ComputeResult(m_Cmd, &m_Status);
+        SetResultSet( new CDBL_ComputeResult(m_Cmd, &m_Status) );
         m_RowCount= 1;
-        return Create_Result(*m_Res);
+        return Create_Result(*GetResultSet());
     }
 
     while ((m_Status & 0x1) != 0) {
@@ -183,14 +188,14 @@ CDB_Result* CDBL_RPCCmd::Result()
                 if (dbnumcols(m_Cmd) == 1) {
                     int ct = dbcoltype(m_Cmd, 1);
                     if ((ct == SYBTEXT) || (ct == SYBIMAGE)) {
-                        m_Res = new CDBL_BlobResult(m_Cmd);
+                        SetResultSet( new CDBL_BlobResult(m_Cmd) );
                     }
                 }
 #endif
-                if (!m_Res)
-                    m_Res = new CDBL_RowResult(m_Cmd, &m_Status);
+                if (!GetResultSet())
+                    SetResultSet( new CDBL_RowResult(m_Cmd, &m_Status) );
                 m_RowCount= -1;
-                return Create_Result(*m_Res);
+                return Create_Result(*GetResultSet());
             } else {
                 m_RowCount = DBCOUNT(m_Cmd);
                 continue;
@@ -211,18 +216,18 @@ CDB_Result* CDBL_RPCCmd::Result()
         m_Status = 4;
         int n = dbnumrets(m_Cmd);
         if (n > 0) {
-            m_Res = new CDBL_ParamResult(m_Cmd, n);
+            SetResultSet( new CDBL_ParamResult(m_Cmd, n) );
             m_RowCount= 1;
-            return Create_Result(*m_Res);
+            return Create_Result(*GetResultSet());
         }
     }
 
     if (m_Status == 4) {
         m_Status = 6;
         if (dbhasretstat(m_Cmd)) {
-            m_Res = new CDBL_StatusResult(m_Cmd);
+            SetResultSet( new CDBL_StatusResult(m_Cmd) );
             m_RowCount= 1;
-            return Create_Result(*m_Res);
+            return Create_Result(*GetResultSet());
         }
     }
 
@@ -450,6 +455,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/12/06 19:31:42  ssikorsk
+ * Revamp code to use GetResultSet/SetResultSet/ClearResultSet
+ * methods instead of raw data access.
+ *
  * Revision 1.21  2005/10/31 12:20:42  ssikorsk
  * Do not use separate include files for msdblib.
  *
