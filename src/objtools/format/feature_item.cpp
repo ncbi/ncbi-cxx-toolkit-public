@@ -1233,37 +1233,75 @@ void CFeatureItem::x_AddCdregionQuals
 }
 
 
+static int s_GetOverlap( CConstRef<CSeq_feat> feat ) 
+{
+    if (feat->CanGetLocation()) {
+
+        const CSeq_loc& location = feat->GetLocation();
+        switch( location.Which() ) {
+
+            case CSeq_loc_Base::e_Int: {
+                const CSeq_interval& interval = location.GetInt();
+                if ( interval.CanGetFrom() && interval.CanGetTo() ) {
+                    return int(interval.GetTo() - interval.GetFrom() );
+                }
+                break;
+            }
+            case CSeq_loc_Base::e_Whole: {
+                const CSeq_id& whole = location.GetWhole(); 
+                return numeric_limits<int>::max();
+            }
+
+        }
+    }
+    return 0;
+}
+
 static const CSeq_feat* s_GetBestProtFeature(const CBioseq_Handle& seq)
 {
+    //
+    //  The best protein feature is defined as the one that has the most overlap
+    //  with the given DNA.
+    //  If there is a tie between two protein features in overlap then the one with
+    //  the higher processing status is declared the winner.
+    //
     SAnnotSelector sel(CSeqFeatData::e_Prot);
     sel.SetLimitTSE(seq.GetTSE_Handle());
 
     CConstRef<CSeq_feat> best;
-    CProt_ref::TProcessed best_processed = CProt_ref::eProcessed_transit_peptide;    
+    CProt_ref::TProcessed best_processed = CProt_ref::eProcessed_transit_peptide;
+    int best_overlap = 0;
+
     for (CFeat_CI it(seq, sel); it; ++it) {
+
         if (best.Empty()) {
+
             best.Reset(&it->GetOriginalFeature());
             best_processed = it->GetData().GetProt().GetProcessed();
-            if (best_processed == CProt_ref::eProcessed_not_set) {
-                const CSeq_loc& loc = best->GetLocation();
-                if (loc.IsWhole()  ||
-                    (loc.GetStart(eExtreme_Positional) == 0  &&
-                    loc.GetStop(eExtreme_Positional) == seq.GetInst_Length() - 1)) {
-                    break;
-                }
-            }
+            best_overlap = s_GetOverlap(best);
+
         } else {
-            CProt_ref::TProcessed processed = it->GetData().GetProt().GetProcessed();
-            if (processed < best_processed) {
+            
+            CConstRef<CSeq_feat> current;
+            current.Reset( &it->GetOriginalFeature() );
+            int current_overlap = s_GetOverlap(current);
+            CProt_ref::TProcessed current_processed = it->GetData().GetProt().GetProcessed();
+
+            if ( best_overlap < current_overlap ) {
+
+                best_overlap = current_overlap;
+                best_processed = current_processed;
                 best.Reset(&it->GetOriginalFeature());
-                best_processed = processed;
+
+            } else if ( (best_overlap == current_overlap) && (best_processed < current_processed) ) {
+            
+                best_processed = current_processed;
+                best.Reset(&it->GetOriginalFeature());
             }
         }
     }
-
     return best.GetPointerOrNull();
 }
-
 
 const CProt_ref* CFeatureItem::x_AddProteinQuals(CBioseq_Handle& prot) const
 {
@@ -3771,6 +3809,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2005/12/06 18:54:39  ludwigf
+* CHANGED: Definition of "Best" in s_GetBestProtFeature(). "Best" now means
+* "most overlapped", followed by processing status as a tie breaker.
+*
 * Revision 1.65  2005/12/06 18:01:57  ludwigf
 * FIXED: Added feature qualifier "evidence".
 * I had removed that qualifier a few weeks back, thus making it illegal not
