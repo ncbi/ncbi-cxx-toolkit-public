@@ -353,6 +353,11 @@ protected:
     virtual void Release(void);
 
 private:
+    I_Result* GetResultSet(void) const;
+    void SetResultSet(I_Result* res);
+    void ClearResultSet(void);
+    
+private:
     bool x_AssignParams(void);
 
     CDBL_Connection* m_Connect;
@@ -399,6 +404,11 @@ protected:
     virtual void SetRecompile(bool recompile = true);
     virtual void Release(void);
 
+private:
+    I_Result* GetResultSet(void) const;
+    void SetResultSet(I_Result* res);
+    void ClearResultSet(void);
+    
 private:
     bool x_AssignParams(char* param_buff);
     
@@ -450,6 +460,11 @@ protected:
     virtual bool Close(void);
     virtual void Release(void);
 
+private:
+    CDBL_CursorResult* GetResultSet(void) const;
+    void SetResultSet(CDBL_CursorResult* res);
+    void ClearResultSet(void);
+    
 private:
     bool x_AssignParams(void);
     I_ITDescriptor* x_GetITDescriptor(unsigned int item_num);
@@ -742,6 +757,14 @@ protected:
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void);
     virtual bool            SkipItem(void);
 
+private:
+    CDB_Result* GetResultSet(void) const;
+    void SetResultSet(CDB_Result* res);
+    void ClearResultSet(void);
+    void DumpResultSet(void);
+    void FetchAllResultSet(void);
+    
+private:
     // data
     CDB_LangCmd* m_Cmd;
     CDB_Result*  m_Res;
@@ -853,6 +876,114 @@ NCBI_EntryPoint_xdbapi_dblib(
 
 #endif
 
+inline
+I_Result* 
+CDBL_LangCmd::GetResultSet(void) const
+{
+    return m_Res;
+}
+
+inline
+void 
+CDBL_LangCmd::SetResultSet(I_Result* res)
+{
+    m_Res = res;
+}
+
+inline
+void 
+CDBL_LangCmd::ClearResultSet(void)
+{
+    delete m_Res;
+    m_Res = NULL;
+}
+
+inline
+CDBL_CursorResult* 
+CDBL_CursorCmd::GetResultSet(void) const
+{
+    return m_Res;
+}
+
+inline
+void 
+CDBL_CursorCmd::SetResultSet(CDBL_CursorResult* res)
+{
+    m_Res = res;
+}
+
+inline
+void 
+CDBL_CursorCmd::ClearResultSet(void)
+{
+    delete m_Res;
+    m_Res = NULL;
+}
+
+inline
+CDB_Result* 
+CDBL_CursorResult::GetResultSet(void) const
+{
+    return m_Res;
+}
+
+inline
+void 
+CDBL_CursorResult::SetResultSet(CDB_Result* res)
+{
+    m_Res = res;
+}
+
+inline
+void 
+CDBL_CursorResult::ClearResultSet(void)
+{
+   delete m_Res;
+    m_Res = NULL;
+}
+
+inline
+void 
+CDBL_CursorResult::DumpResultSet(void)
+{
+    SetResultSet( m_Cmd->Result() );
+    FetchAllResultSet();
+}
+
+inline
+void
+CDBL_CursorResult::FetchAllResultSet(void)
+{
+    if (GetResultSet()) {
+        while (GetResultSet()->Fetch())
+            continue;
+        ClearResultSet();
+    }
+}
+
+inline
+I_Result* 
+CDBL_RPCCmd::GetResultSet(void) const
+{
+    return m_Res;
+}
+
+inline
+void 
+CDBL_RPCCmd::SetResultSet(I_Result* res)
+{
+    m_Res = res;
+}
+
+inline
+void 
+CDBL_RPCCmd::ClearResultSet(void)
+{
+    delete m_Res;
+    m_Res = NULL;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -863,6 +994,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/12/06 19:21:52  ssikorsk
+ * Added private methods GetResultSet/SetResultSet/ClearResultSet
+ * to all *command* classes
+ *
  * Revision 1.28  2005/10/31 12:16:00  ssikorsk
  * Merged msdblib/interfaces.hpp into dblib/interfaces.hpp
  *
