@@ -686,10 +686,10 @@ void CObjectOStreamXml::CopyAnyContentObject(CObjectIStream& in)
 
 void CObjectOStreamXml::WriteBitString(const CBitString& obj)
 {
+#if BITSTRING_AS_VECTOR
     static const char ToHex[] = "0123456789ABCDEF";
     Uint1 data, mask;
     bool done = false;
-#if BITSTRING_AS_VECTOR
     for ( CBitString::const_iterator i = obj.begin(); !done; ) {
         for (data=0, mask=0x8; !done && mask!=0; mask >>= 1) {
             if (*i) {
@@ -704,16 +704,12 @@ void CObjectOStreamXml::WriteBitString(const CBitString& obj)
     CBitString::size_type i=0;
     CBitString::size_type ilast = obj.size();
     CBitString::enumerator e = obj.first();
-    while (!done) {
-        for (data=0, mask=0x8; !done && mask!=0; mask >>= 1) {
-            if (i == *e) {
-                data |= mask;
-                ++e;
-            }
-            done = (++i == ilast);
-        }
+    for (; i < ilast; ++i) {
         m_Output.WrapAt(78, false);
-        m_Output.PutChar(ToHex[data]);
+        m_Output.PutChar( (i == *e) ? '1' : '0');
+        if (i == *e) {
+            ++e;
+        }
     }
 #endif
 }
@@ -1428,6 +1424,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2005/12/06 18:30:57  gouriano
+* Serialize bit strings as sequence of 0 and 1
+*
 * Revision 1.89  2005/12/05 20:08:06  gouriano
 * Changed default string encoding setting
 *

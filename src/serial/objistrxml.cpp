@@ -940,6 +940,9 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
 {
 #if BITSTRING_AS_VECTOR
     obj.clear();
+    if (EndOpeningTagSelfClosed()) {
+        return;
+    }
     BeginData();
     size_t reserve;
     const size_t step=128;
@@ -956,14 +959,20 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
     obj.reserve(obj.size());
 #else
     obj.resize(0);
+    if (EndOpeningTagSelfClosed()) {
+        return;
+    }
     BeginData();
     CBitString::size_type len = 0;
-    for (int c= GetHexChar(); c > 0; c= GetHexChar()) {
-        Uint1 byte = c;
-        for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
-            if( (byte & mask) != 0 ) {
-                obj.set_bit(len);
-            }
+    for ( ;; ++len) {
+        char c = m_Input.GetChar();
+        if (c == '1') {
+            obj.set_bit(len);
+        } else if (c != '0') {
+            m_Input.UngetChar(c);
+            if ( c == '<' )
+                break;
+            ThrowError(fFormatError, "invalid char in bit string");
         }
     }
     obj.resize(len);
@@ -2292,6 +2301,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2005/12/06 18:30:57  gouriano
+* Serialize bit strings as sequence of 0 and 1
+*
 * Revision 1.84  2005/12/05 20:08:07  gouriano
 * Changed default string encoding setting
 *
