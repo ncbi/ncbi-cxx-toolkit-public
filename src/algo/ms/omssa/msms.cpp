@@ -243,7 +243,7 @@ CFormicAcid::CFormicAcid(void)
 CArgC::CArgC(void)
 {
     CleaveAt = "\x010";
-    CleaveOffset = "\x01";
+    CleaveOffset = "\x00";
     CheckProline = true;
     kCleave = 1;
     TopDown = false;
@@ -631,6 +631,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.30  2005/12/06 18:51:02  lewisg
+  arg-c cuts at c terminus
+
   Revision 1.29  2005/11/07 19:57:20  lewisg
   iterative search
 
