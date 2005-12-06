@@ -947,7 +947,7 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
     size_t reserve;
     const size_t step=128;
     obj.reserve( reserve=step );
-    for (int c= GetHexChar(); c > 0; c= GetHexChar()) {
+    for (int c= GetHexChar(); c >= 0; c= GetHexChar()) {
         Uint1 byte = c;
         for (Uint1 mask= 0x8; mask != 0; mask >>= 1) {
             obj.push_back( (byte & mask) != 0 );
@@ -969,6 +969,10 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
         if (c == '1') {
             obj.set_bit(len);
         } else if (c != '0') {
+            if (IsWhiteSpace(c)) {
+                --len;
+                continue;
+            }
             m_Input.UngetChar(c);
             if ( c == '<' )
                 break;
@@ -2301,6 +2305,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2005/12/06 20:04:06  gouriano
+* Correction and optimization of bit string reading
+*
 * Revision 1.85  2005/12/06 18:30:57  gouriano
 * Serialize bit strings as sequence of 0 and 1
 *

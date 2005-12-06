@@ -544,7 +544,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         }
         if (c > 0) {
             obj.reserve(obj.size() + (reserve=step));
-            for (c= GetHexChar(); c > 0; c= GetHexChar()) {
+            for (c= GetHexChar(); c >= 0; c= GetHexChar()) {
                 byte = c;
                 for (Uint1 mask= 0x8; mask != 0; mask >>= 1) {
                     obj.push_back( (byte & mask) != 0 );
@@ -590,19 +590,27 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         Uint1 byte;
         ITERATE( string, i, data) {
             byte = *i;
-            for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
-                if ((byte & mask) != 0) {
-                    obj.set_bit(len);
-                }
-            }
-        }
-        if (c > 0) {
-            for (c= GetHexChar(); c > 0; c= GetHexChar()) {
-                byte = c;
+            if (byte) {
                 for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
                     if ((byte & mask) != 0) {
                         obj.set_bit(len);
                     }
+                }
+            } else {
+                len += 4;
+            }
+        }
+        if (c > 0) {
+            for (c= GetHexChar(); c >= 0; c= GetHexChar()) {
+                byte = c;
+                if (byte) {
+                    for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
+                        if ((byte & mask) != 0) {
+                            obj.set_bit(len);
+                        }
+                    }
+                } else {
+                    len += 4;
                 }
             }
         }
@@ -1481,6 +1489,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.103  2005/12/06 20:04:06  gouriano
+* Correction and optimization of bit string reading
+*
 * Revision 1.102  2005/11/29 17:43:15  gouriano
 * Added CBitString class
 *

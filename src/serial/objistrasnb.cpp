@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2005/12/06 20:04:06  gouriano
+* Correction and optimization of bit string reading
+*
 * Revision 1.83  2005/11/29 17:43:15  gouriano
 * Added CBitString class
 *
@@ -1414,10 +1417,14 @@ void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
                 obj.push_back( (byte & mask) != 0 );
             }
 #else
-            for (Uint1 mask= 0x80; mask != 0; mask >>= 1, ++len) {
-                if ((byte & mask) != 0 ) {
-                    obj.set_bit(len);
+            if (byte) {
+                for (Uint1 mask= 0x80; mask != 0; mask >>= 1, ++len) {
+                    if ((byte & mask) != 0 ) {
+                        obj.set_bit(len);
+                    }
                 }
+            } else {
+                len += 4;
             }
 #endif
         }
