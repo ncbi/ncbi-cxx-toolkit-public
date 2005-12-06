@@ -319,11 +319,11 @@ size_t CMemStore::Truncate(size_t size)
     if (nof_bytes >= m_Size) {
         for ( ;  m_Last != NULL;  m_Last = m_Current) {
             m_Current = m_Last->prev;
-            delete m_Last->body;
+            delete [] m_Last->body;
             delete m_Last;
         }
-	m_First = m_Last = m_Current = 0;        
-	m_BlockPos = m_Pos = m_Size = 0;
+    	m_First = m_Last = m_Current = 0;        
+    	m_BlockPos = m_Pos = m_Size = 0;
         return 0;
     }
 
@@ -331,12 +331,13 @@ size_t CMemStore::Truncate(size_t size)
         TSize n = m_BlockSize - m_Last->free_space;
         if (n <= nof_bytes) {
             // we have to delete the whole block
-            delete m_Last->body;
+            delete [] m_Last->body;
             SMemBlock* t = m_Last->prev;
             if ( t ) {
                 t->next = 0;
             }
             delete m_Last;
+            _ASSERT(m_Last != t);
             m_Last = t;
             nof_bytes -= n;
             m_Size    -= n;
@@ -426,13 +427,14 @@ size_t CMemStore::Insert(const void* buff, size_t size)
         TSize k      = m_BlockSize - t_block->free_space;
         memcpy(&m_Current->body[f_free], t_block->body, k);
         m_Current->free_space -= k;
+        _ASSERT(m_Current->next != t_block->next);
         m_Current->next = t_block->next;
         if (m_Current->next) {
             m_Current->next->prev = m_Current;
         } else {
             m_Last = m_Current;
         }
-        delete t_block->body;
+        delete [] t_block->body;
         delete t_block;
     }
     return n;
@@ -495,8 +497,9 @@ size_t CMemStore::Delete(size_t size)
         else
             m_First = m_Current;
 
+        _ASSERT(m_Current->prev != t_block->prev);
         m_Current->prev = t_block->prev;
-        delete t_block->body;
+        delete [] t_block->body;
         delete t_block;
         m_Pos     -= n;
         m_Size    -= n;
@@ -530,6 +533,7 @@ CMemStore::~CMemStore()
             m_Current = m_Last->prev;
             delete [] m_Last->body;
             delete m_Last;
+            _ASSERT(m_Last != m_Current);
             m_Last = m_Current;
         }
     }
@@ -544,6 +548,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/06 19:24:57  ssikorsk
+ * Fixed deleting of character buffers
+ *
  * Revision 1.10  2005/11/02 14:32:39  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
