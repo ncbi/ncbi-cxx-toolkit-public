@@ -697,7 +697,6 @@ void CObjectOStreamXml::WriteBitString(const CBitString& obj)
             }
             done = (++i == obj.end());
         }
-        m_Output.WrapAt(78, false);
         m_Output.PutChar(ToHex[data]);
     }
 #else
@@ -705,7 +704,6 @@ void CObjectOStreamXml::WriteBitString(const CBitString& obj)
     CBitString::size_type ilast = obj.size();
     CBitString::enumerator e = obj.first();
     for (; i < ilast; ++i) {
-        m_Output.WrapAt(78, false);
         m_Output.PutChar( (i == *e) ? '1' : '0');
         if (i == *e) {
             ++e;
@@ -1424,6 +1422,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.91  2005/12/06 21:03:52  gouriano
+* Corrected writing bit strings
+*
 * Revision 1.90  2005/12/06 18:30:57  gouriano
 * Serialize bit strings as sequence of 0 and 1
 *
