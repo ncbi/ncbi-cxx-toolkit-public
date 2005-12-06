@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2005/12/06 21:05:42  gouriano
+* Corrected XML schema definition of bit string
+*
 * Revision 1.43  2005/11/29 17:41:36  gouriano
 * Added CBitString class
 *
@@ -718,8 +721,13 @@ const char* CBitStringDataType::GetXMLContents(void) const
 
 void CBitStringDataType::GetXMLSchemaContents(string& type, string& contents) const
 {
-    type = "xs:hexBinary";
-    contents.erase();
+    type.erase();
+    contents =
+        "  <xs:simpleType>\n"
+        "    <xs:restriction base=\"xs:string\">\n"
+        "      <xs:pattern value=\"([0-1])*\"/>\n"
+        "    </xs:restriction>\n"
+        "  </xs:simpleType>\n";
 }
 
 const char* COctetStringDataType::GetASNKeyword(void) const
