@@ -62,7 +62,7 @@ BEGIN_SCOPE(objects)
  * @endcode
  */
 
-class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
+class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
 
   public:
     // Defines
@@ -565,6 +565,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.41  2005/12/06 17:10:08  jcherry
+*NCBI_XALNUTIL_EXPORT -> NCBI_XBLASTFORMAT_EXPORT
+*
 *Revision 1.40  2005/11/29 16:55:02  jianye
 *add eShowNoDeflineInfo
 *
