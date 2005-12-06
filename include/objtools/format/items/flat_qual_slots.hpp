@@ -62,6 +62,7 @@ enum EFeatureQualifier {
     eFQ_EC_number,
     eFQ_encodes,
     eFQ_estimated_length,
+    eFQ_evidence,
     eFQ_experiment,
     eFQ_exception,
     eFQ_exception_note,
@@ -245,6 +246,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2005/12/06 18:01:57  ludwigf
+* FIXED: Added feature qualifier "evidence".
+* I had removed that qualifier a few weeks back, thus making it illegal not
+* only for the future (what I had intended), but also retroactively for the
+* time when it was perfectly legal (which I had _not_ intended).
+*
 * Revision 1.9  2005/11/16 15:09:42  ludwigf
 * ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
 *

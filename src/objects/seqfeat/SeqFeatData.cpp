@@ -431,6 +431,7 @@ START_SUBTYPE(gene)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);	
@@ -607,6 +608,7 @@ START_SUBTYPE(mRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(exception);
     ADD_QUAL(function);
@@ -650,6 +652,7 @@ START_SUBTYPE(rRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -669,6 +672,7 @@ START_SUBTYPE(snRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -688,6 +692,7 @@ START_SUBTYPE(scRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -707,6 +712,7 @@ START_SUBTYPE(snoRNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -726,6 +732,7 @@ START_SUBTYPE(otherRNA)  //  a.k.a. misc_RNA
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -759,6 +766,7 @@ START_SUBTYPE(attenuator)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -776,6 +784,7 @@ START_SUBTYPE(C_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -794,6 +803,7 @@ START_SUBTYPE(CAAT_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -812,6 +822,7 @@ START_SUBTYPE(Imp_CDS)
     ADD_QUAL(codon);
     ADD_QUAL(codon_start);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(exception);
     ADD_QUAL(function);
@@ -839,6 +850,7 @@ START_SUBTYPE(conflict)
     ADD_QUAL(citation);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -855,6 +867,7 @@ START_SUBTYPE(D_loop)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -870,6 +883,7 @@ START_SUBTYPE(D_segment)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -888,6 +902,7 @@ START_SUBTYPE(enhancer)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -905,6 +920,7 @@ START_SUBTYPE(exon)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -925,6 +941,7 @@ START_SUBTYPE(GC_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -940,6 +957,7 @@ START_SUBTYPE(iDNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -959,6 +977,7 @@ START_SUBTYPE(intron)
     ADD_QUAL(citation);
     ADD_QUAL(cons_splice);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -977,6 +996,7 @@ START_SUBTYPE(J_segment)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -995,6 +1015,7 @@ START_SUBTYPE(LTR)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1013,6 +1034,7 @@ START_SUBTYPE(mat_peptide)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1034,6 +1056,7 @@ START_SUBTYPE(misc_binding)
     ADD_QUAL(bound_moiety);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1052,6 +1075,7 @@ START_SUBTYPE(misc_difference)
     ADD_QUAL(clone);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1070,6 +1094,7 @@ START_SUBTYPE(misc_feature)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1091,6 +1116,7 @@ START_SUBTYPE(misc_recomb)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1108,6 +1134,7 @@ START_SUBTYPE(misc_RNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1127,6 +1154,7 @@ START_SUBTYPE(misc_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1146,6 +1174,7 @@ START_SUBTYPE(misc_structure)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1163,6 +1192,7 @@ START_SUBTYPE(modified_base)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(frequency);
     ADD_QUAL(gene);
@@ -1183,6 +1213,7 @@ START_SUBTYPE(N_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1202,6 +1233,7 @@ START_SUBTYPE(old_sequence)
     ADD_QUAL(citation);
     ADD_QUAL(compare);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1218,6 +1250,7 @@ START_SUBTYPE(polyA_signal)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1233,6 +1266,7 @@ START_SUBTYPE(polyA_site)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1248,6 +1282,7 @@ START_SUBTYPE(precursor_RNA)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1268,6 +1303,7 @@ START_SUBTYPE(prim_transcript)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1287,6 +1323,7 @@ START_SUBTYPE(primer_bind)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1303,6 +1340,7 @@ START_SUBTYPE(promoter)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1324,6 +1362,7 @@ START_SUBTYPE(protein_bind)
     ADD_QUAL(bound_moiety);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1341,6 +1380,7 @@ START_SUBTYPE(RBS)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1357,6 +1397,7 @@ START_SUBTYPE(repeat_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1381,6 +1422,7 @@ START_SUBTYPE(repeat_unit)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -1403,6 +1445,7 @@ START_SUBTYPE(rep_origin)
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
     ADD_QUAL(direction);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1419,6 +1462,7 @@ START_SUBTYPE(S_region)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1437,6 +1481,7 @@ START_SUBTYPE(satellite)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(gene);
     ADD_QUAL(inference);
@@ -1458,6 +1503,7 @@ START_SUBTYPE(sig_peptide)
     ADD_QUAL(allele);
     ADD_QUAL(citation);
     ADD_QUAL(db_xref);
+    ADD_QUAL(evidence);
     ADD_QUAL(experiment);
     ADD_QUAL(function);
     ADD_QUAL(gene);
@@ -2135,6 +2181,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.28  2005/12/06 18:01:57  ludwigf
+* FIXED: Added feature qualifier "evidence".
+* I had removed that qualifier a few weeks back, thus making it illegal not
+* only for the future (what I had intended), but also retroactively for the
+* time when it was perfectly legal (which I had _not_ intended).
+*
 * Revision 6.27  2005/11/16 15:09:41  ludwigf
 * ADDED: New GB qualifiers "/ribosomal_slippage" and "/trans_plicing".
 *

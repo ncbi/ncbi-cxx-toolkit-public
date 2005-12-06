@@ -2006,6 +2006,7 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
         DO_IMPORT(direction),
         DO_IMPORT(EC_number),
         DO_IMPORT(estimated_length),
+        DO_IMPORT(evidence),
         DO_IMPORT(experiment),
         DO_IMPORT(frequency),
         DO_IMPORT(function),
@@ -2155,7 +2156,15 @@ void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
                         x_AddQual(slot, new CFlatStringQVal(*i, CFormatQual::eUnquoted));
                     }
                 }
-                break;
+            }}
+            break;
+        case eFQ_evidence:
+            {{
+                if ( val == "EXPERIMENTAL" ) {
+                    x_AddQual(eFQ_experiment, new CFlatExperimentQVal());
+                } else if ( val == "NOT_EXPERIMENTAL" ) {
+                    x_AddQual(eFQ_inference, new CFlatInferenceQVal());
+                }
             }}
             break;
         default:
@@ -2295,6 +2304,7 @@ void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(cons_splice);
     DO_QUAL(direction);
     DO_QUAL(function);
+    DO_QUAL(evidence);
     DO_QUAL(experiment);
     DO_QUAL(inference);
     DO_QUAL(exception);
@@ -3761,6 +3771,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2005/12/06 18:01:57  ludwigf
+* FIXED: Added feature qualifier "evidence".
+* I had removed that qualifier a few weeks back, thus making it illegal not
+* only for the future (what I had intended), but also retroactively for the
+* time when it was perfectly legal (which I had _not_ intended).
+*
 * Revision 1.64  2005/12/06 16:37:47  ludwigf
 * FIXED: CFeatureItem::x_AddExceptionQuals() would not handle /exception on
 * mRNA correctly. While at it, I rearranged the code somewhat to make the
