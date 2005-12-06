@@ -240,7 +240,12 @@ protected:
 
 private:
     bool x_AssignParams(void);
+    CTL_Connection& GetConnection(void)
+    {
+        return *m_Connect;
+    }
 
+private:
     CTL_Connection* m_Connect;
     CS_COMMAND*     m_Cmd;
     string          m_Query;
@@ -286,7 +291,12 @@ protected:
 
 private:
     bool x_AssignParams(void);
+    CTL_Connection& GetConnection(void)
+    {
+        return *m_Connect;
+    }
 
+private:
     CTL_Connection* m_Connect;
     CS_COMMAND*     m_Cmd;
     string          m_Query;
@@ -331,6 +341,12 @@ protected:
 private:
     bool x_AssignParams(bool just_declare = false);
     I_ITDescriptor*   x_GetITDescriptor(unsigned int item_num);
+    CTL_Connection& GetConnection(void)
+    {
+        return *m_Connect;
+    }
+    
+private:
     CTL_Connection*   m_Connect;
     CS_COMMAND*       m_Cmd;
     string            m_Name;
@@ -370,7 +386,12 @@ protected:
 
 private:
     bool x_AssignParams(void);
+    CTL_Connection& GetConnection(void)
+    {
+        return *m_Connect;
+    }
 
+private:
     CTL_Connection* m_Connect;
     CS_BLKDESC*     m_Cmd;
     string          m_Query;
@@ -404,6 +425,12 @@ protected:
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual void   Release(void);
+
+private:
+    CTL_Connection& GetConnection(void)
+    {
+        return *m_Connect;
+    }
 
 private:
     CTL_Connection* m_Connect;
@@ -607,6 +634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/12/06 19:20:02  ssikorsk
+ * Added private method GetConnection to all *command* classes
+ *
  * Revision 1.20  2005/10/20 13:01:04  ssikorsk
  * - CTLibContext::m_AppName
  * - CTLibContext::m_HostName
