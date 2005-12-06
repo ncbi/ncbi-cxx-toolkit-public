@@ -637,12 +637,13 @@ void CMasterContext::x_SetBaseName(void)
     if (!seg_name.empty()  &&  NStr::EndsWith(seg_name, '1')  &&
         parent_name.length() == seg_name.length()  &&
         NStr::EndsWith(parent_name, '1')) {
-        for (size_t pos = parent_name.length() - 2; pos >= 0; --pos) {
+        size_t pos  = parent_name.length() - 2;
+        for ( /*noop*/; pos >= 0; --pos) {
             if (parent_name[pos] != '0') {
                 break;
             }
-            parent_name.erase(pos + 1);
         }
+        parent_name.erase(pos + 1);
     }
 
     m_BaseName = parent_name;
@@ -656,6 +657,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2005/12/06 15:33:35  ludwigf
+* FIXED: CMasterContext::x_SetBaseName() would sometimes retain an unwanted
+* suffix when computing the base name.
+*
 * Revision 1.40  2005/08/24 13:36:35  dicuccio
 * Resolve bioseq-handle against full scope, not just TSE
 *
