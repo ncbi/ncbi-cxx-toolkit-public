@@ -143,8 +143,8 @@ CDB_Result* CDBL_CursorCmd::Open()
     buff = "fetch " + m_Name;
 
     m_LCmd = m_Connect->LangCmd(buff);
-    m_Res = new CDBL_CursorResult(m_LCmd);
-    return Create_Result(*m_Res);
+    SetResultSet( new CDBL_CursorResult(m_LCmd) );
+    return Create_Result( *GetResultSet() );
 }
 
 
@@ -156,10 +156,11 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
     try {
         while(m_LCmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(m_LCmd->Result());
-            if (r.get()) {
-                while (r->Fetch())
-                    continue;
-            }
+            // Not in ftds8 ...
+//             if (r.get()) {
+//                 while (r->Fetch())
+//                     continue;
+//             }
         }
 
         string buff = upd_query + " where current of " + m_Name;
@@ -184,11 +185,11 @@ bool CDBL_CursorCmd::Update(const string&, const string& upd_query)
 
 I_ITDescriptor* CDBL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
 {
-    if(!m_IsOpen || (m_Res == 0)) {
+    if(!m_IsOpen || (GetResultSet() == 0)) {
         return 0;
     }
-    while ( static_cast<unsigned int>(m_Res->CurrentItemNo()) < item_num ) {
-        if(!m_Res->SkipItem()) return 0;
+    while ( static_cast<unsigned int>(GetResultSet()->CurrentItemNo()) < item_num ) {
+        if(!GetResultSet()->SkipItem()) return 0;
     }
     
     I_ITDescriptor* desc= new CDBL_ITDescriptor(m_Cmd, item_num+1);
@@ -206,10 +207,11 @@ bool CDBL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
         // For some starnge reason this code does not work with Sybase dblib ...
         while(m_LCmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(m_LCmd->Result());
-            if (r.get()) {
-                while (r->Fetch())
-                    continue;
-            }
+            // Not in ftds8 ...
+//             if (r.get()) {
+//                 while (r->Fetch())
+//                     continue;
+//             }
         }
 #endif        
         return m_Connect->x_SendData(*desc, data, log_it);
@@ -247,10 +249,12 @@ bool CDBL_CursorCmd::Delete(const string& table_name)
     try {
         while(m_LCmd->HasMoreResults()) {
             auto_ptr<CDB_Result> r(m_LCmd->Result());
-            if (r.get()) {
-                while (r->Fetch())
-                    continue;
-            }
+            // Not in ftds8 ...
+//             if (r.get()) {
+// 
+//                 while (r->Fetch())
+//                     continue;
+//             }
         }
 
         string buff = "delete " + table_name + " where current of " + m_Name;
@@ -288,10 +292,7 @@ bool CDBL_CursorCmd::Close()
     if (!m_IsOpen)
         return false;
 
-    if (m_Res) {
-        delete m_Res;
-        m_Res = 0;
-    }
+    ClearResultSet();
 
     if (m_LCmd)
         delete m_LCmd;
@@ -551,6 +552,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2005/12/06 19:29:21  ssikorsk
+ * Revamp code to use GetResultSet/SetResultSet methods
+ * instead of raw data access.
+ *
  * Revision 1.21  2005/11/02 14:16:59  ssikorsk
  * Rethrow catched CDB_Exception to preserve useful information.
  *

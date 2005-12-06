@@ -201,8 +201,8 @@ CDB_Result::CDB_Result(I_Result* r)
 {
     CHECK_DRIVER_ERROR( !r, "No valid result provided", 200004 );
 
-    m_Res = r;
-    m_Res->Acquire((CDB_BaseEnt**) &m_Res);
+    SetResultSet( r );
+    GetResultSet()->Acquire((CDB_BaseEnt**) &m_Res);
 }
 
 
@@ -212,85 +212,85 @@ CDB_Result::CDB_Result(I_Result* r)
     
 EDB_ResType CDB_Result::ResultType() const
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->ResultType();
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->ResultType();
 }
 
 unsigned int CDB_Result::NofItems() const
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->NofItems();
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->NofItems();
 }
 
 const char* CDB_Result::ItemName(unsigned int item_num) const
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->ItemName(item_num);
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->ItemName(item_num);
 }
 
 size_t CDB_Result::ItemMaxSize(unsigned int item_num) const
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->ItemMaxSize(item_num);
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->ItemMaxSize(item_num);
 }
 
 EDB_Type CDB_Result::ItemDataType(unsigned int item_num) const
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->ItemDataType(item_num);
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->ItemDataType(item_num);
 }
 
 bool CDB_Result::Fetch()
 {
-    // CHECK_RESULT(m_Res);
-    if ( !m_Res ) {
-        return false;
-    }
-    return m_Res->Fetch();
+    CHECK_RESULT( GetResultSet() );
+//     if ( !GetResultSet() ) {
+//         return false;
+//     }
+    return GetResultSet()->Fetch();
 }
 
 int CDB_Result::CurrentItemNo() const
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->CurrentItemNo();
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->CurrentItemNo();
 }
 
 int CDB_Result::GetColumnNum(void) const
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->GetColumnNum();
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->GetColumnNum();
 }
 
 CDB_Object* CDB_Result::GetItem(CDB_Object* item_buf)
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->GetItem(item_buf);
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->GetItem(item_buf);
 }
 
 size_t CDB_Result::ReadItem(void* buffer, size_t buffer_size, bool* is_null)
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->ReadItem(buffer, buffer_size, is_null);
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->ReadItem(buffer, buffer_size, is_null);
 }
 
 I_ITDescriptor* CDB_Result::GetImageOrTextDescriptor()
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->GetImageOrTextDescriptor();
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->GetImageOrTextDescriptor();
 }
 
 bool CDB_Result::SkipItem()
 {
-    CHECK_RESULT(m_Res);
-    return m_Res->SkipItem();
+    CHECK_RESULT( GetResultSet() );
+    return GetResultSet()->SkipItem();
 }
 
 
 CDB_Result::~CDB_Result()
 {
     try {
-        if ( m_Res ) {
-            m_Res->Release();
+        if ( GetResultSet() ) {
+            GetResultSet()->Release();
         }
     }
     NCBI_CATCH_ALL( kEmptyStr )
@@ -722,6 +722,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/12/06 19:27:31  ssikorsk
+ * Revamp code to use GetResultSet/SetResultSet methods
+ * instead of raw data access.
+ *
  * Revision 1.20  2005/11/02 14:32:39  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
