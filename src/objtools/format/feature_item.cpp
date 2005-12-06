@@ -1416,39 +1416,47 @@ void CFeatureItem::x_AddExceptionQuals(CBioseqContext& ctx) const
         except_text = m_Feat->GetExcept_text();
     }
     
-    // /exception currently legal only on cdregion
-    if ( m_Feat->GetData().IsCdregion()  ||  !cfg.DropIllegalQuals() ) {
-        // exception flag is set, but no exception text supplied
-        
-        //
-        //  here used to be code doctoring things up in case the exception flag was set
-        //  but no exception text was supplied. Now supposed to caught by validation.
-        //  Removed 2005-10-18 (fl).
-        //
+    // /exception currently legal only on cdregion and mRNA
+    bool isCdregion = m_Feat->GetData().IsCdregion();
+    bool ismRna = ( m_Feat->GetData().IsRna() ?
+        (m_Feat->GetData().GetRna().CanGetType() ?
+            m_Feat->GetData().GetRna().GetType() == CRNA_ref_Base::eType_mRNA :
+            false) :
+        false);
 
-        if ( cfg.DropIllegalQuals() ) {
-            string except = except_text;
-            s_ParseException(except, except_text, note_text, ctx);
+    if ( isCdregion || ismRna ) {
+        //
+        // exception qualifier is legal, may have to be mapped to /ribosomal_slippage
+        // or /trans_splicing:
+        //
+        if ( except_text == "ribosomal slippage" ) {
+            x_AddQual(eFQ_ribosomal_slippage, new CFlatBoolQVal(true));
         }
-    } else if ( !except_text.empty() ) {
-        note_text = except_text;
-        except_text.erase();
+        else if ( except_text == "trans-splicing" ) {
+            x_AddQual(eFQ_trans_splicing, new CFlatBoolQVal(true));
+        }
+        else if ( ! except_text.empty() ) {
+            x_AddQual(eFQ_exception, new CFlatStringQVal(except_text));
+        }
+    } 
+    else if ( ! cfg.DropIllegalQuals() ) {
+        //
+        // exception qualifier is not legal; we dump it to the flat file without any
+        // modifications:
+        //
+        if ( !except_text.empty() ) {
+            x_AddQual(eFQ_exception, new CFlatStringQVal(except_text));
+        }
     }
-
-    if ( !except_text.empty() ) {
-
-      if ( except_text == "ribosomal slippage" ) {
-        x_AddQual(eFQ_ribosomal_slippage, new CFlatBoolQVal(true));
-      }
-      else if ( except_text == "trans-splicing" ) {
-        x_AddQual(eFQ_trans_splicing, new CFlatBoolQVal(true));
-      }
-      else {
-        x_AddQual(eFQ_exception, new CFlatStringQVal(except_text));
-      }
-    }
-    if ( !note_text.empty() ) {
-        x_AddQual(eFQ_exception_note, new CFlatStringQVal(note_text));
+    else {
+        //
+        // exception qualifier is not legal; we add its string value to the /notes:
+        //
+        string except = except_text;
+        s_ParseException(except, except_text, note_text, ctx);
+        if ( !note_text.empty() ) {
+            x_AddQual(eFQ_exception_note, new CFlatStringQVal(note_text));
+        }
     }
 }
 
@@ -3753,6 +3761,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/12/06 16:37:47  ludwigf
+* FIXED: CFeatureItem::x_AddExceptionQuals() would not handle /exception on
+* mRNA correctly. While at it, I rearranged the code somewhat to make the
+* underlying motivation more evident.
+*
 * Revision 1.63  2005/11/23 16:26:21  ludwigf
 * CHANGED: Replaced calls to function "JoinNoRedund()" to call function
 * "JoinString()" instead.
