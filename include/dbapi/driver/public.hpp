@@ -197,6 +197,16 @@ public:
     virtual ~CDB_Result();
 
 private:
+    I_Result* GetResultSet(void) const
+    {
+        return m_Res;
+    }
+    void SetResultSet(I_Result* res)
+    {
+        m_Res = res;
+    }
+    
+private:
     I_Result* m_Res;
 
     // The constructor should be called by "I_***Cmd" only!
@@ -497,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/12/06 19:17:30  ssikorsk
+ * Added GetResultSet/SetResultSet methods to CDB_Result
+ *
  * Revision 1.17  2005/10/20 13:23:14  ssikorsk
  * Changed interface version from 2.0.0 to 2.1.0
  *
