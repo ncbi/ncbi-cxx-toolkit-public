@@ -66,10 +66,13 @@ namespace {
             env_var += section;
             env_var += '_';
             env_var += variable;
+            NStr::ToUpper(env_var);
             value = getenv(env_var.c_str());
         }
         else {
-            value = getenv(variable);
+            string var = variable;
+            NStr::ToUpper(var);
+            value = getenv(var.c_str());
         }
         return value;
     }
@@ -310,6 +313,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2005/12/07 18:11:21  grichenk
+ * Convert names of environment variables to upper case.
+ *
  * Revision 1.1  2005/11/17 18:43:46  grichenk
  * Initial revision
  *
