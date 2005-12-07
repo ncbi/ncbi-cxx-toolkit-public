@@ -83,8 +83,8 @@ void BTRefsToHits(const CSplign::THitRefs& src, vector<CHit>* dst)
         CHit& h = (*dst)[i];
         const CSplign::THitRef& bt = src[i];
 
-        h.m_Query = bt->GetQueryId()->GetSeqIdString(true);
-        h.m_Subj = bt->GetSubjId()->GetSeqIdString(true);
+        h.m_Query = bt->GetQueryId()->AsFastaString();
+        h.m_Subj = bt->GetSubjId()->AsFastaString();
         h.m_Idnty = bt->GetIdentity();
         h.m_MM = bt->GetMismatches();
         h.m_Gaps = bt->GetGaps();
@@ -122,18 +122,25 @@ void BTRefsToHits(const CSplign::THitRefs& src, vector<CHit>* dst)
 }
 
 
-CConstRef<objects::CSeq_id> CreateSeqId(const string& str)
+CConstRef<objects::CSeq_id> CreateSeqId(const string& strid)
 {
     USING_SCOPE(objects);
     CConstRef<objects::CSeq_id> rv;
+
     try {
-        rv.Reset(new CSeq_id(str));
+        rv.Reset(new CSeq_id(strid));
     }
-    catch(CException&) {
-        rv.Reset(new CSeq_id(CSeq_id::e_Local, str));
+    catch(CSeqIdException& e) {
+        if(e.GetErrCode() == CSeqIdException::eFormat) {
+            rv.Reset(new CSeq_id(CSeq_id::e_Local, strid));
+        }
+        else {
+            throw;
+        }
     }
     return rv;
 }
+
 
 void HitsToBTRefs(const vector<CHit>& src, CSplign::THitRefs* dst)
 {
@@ -201,6 +208,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2005/12/07 15:49:30  kapustin
+ * Use FASTA-style IDs when converting to strings
+ *
  * Revision 1.17  2005/11/21 16:06:38  kapustin
  * Move gpipe-sensitive items to the app level
  *
