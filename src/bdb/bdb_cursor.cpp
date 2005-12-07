@@ -515,7 +515,7 @@ EBDB_ErrCode CBDB_FileCursor::Fetch(EFetchDirection fdir)
     if (fdir == eDefault)
         fdir = m_FetchDirection;
 
-    unsigned int flag;
+    unsigned int flag = 0;
     switch (fdir) {
     case eForward:
         flag = DB_NEXT;
@@ -577,7 +577,7 @@ CBDB_FileCursor::Fetch(EFetchDirection fdir,
     if (fdir == eDefault)
         fdir = m_FetchDirection;
 
-    unsigned int flag;
+    unsigned int flag = 0;
     switch (fdir) {
     case eForward:
         flag = DB_NEXT;
@@ -717,6 +717,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/12/07 03:07:39  dicuccio
+ * Trivial fix: initialize some uninitialized variables
+ *
  * Revision 1.20  2005/09/23 13:53:42  kuznets
  * Fixed a bug when fetching a BLOB with cursor
  *
