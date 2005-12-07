@@ -38,9 +38,6 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <connect/services/netcache_client.hpp>
-//#include <connect/ncbi_socket.hpp>
-//#include <connect/ncbi_core_cxx.hpp>
-//#include <connect/ncbi_types.h>
 
 
 USING_NCBI_SCOPE;
@@ -170,6 +167,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/07 19:05:13  kuznets
+ * Cosmetics
+ *
  * Revision 1.1  2005/12/07 19:02:57  kuznets
  * Initial revision
  *
