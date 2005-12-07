@@ -168,7 +168,7 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
 //
 
 CCgiArgs::CCgiArgs(void)
-    : m_Case(NStr::eNocase),
+    : m_Case(NStr::eCase),
       m_IsIndex(false)
 {
     return;
@@ -237,10 +237,10 @@ string CCgiArgs::GetQueryString(EAmpEncoding amp_enc,
 }
 
 
-void CCgiArgs::SetValue(const string& name, const string value)
+void CCgiArgs::SetValue(const string& name, const string& value)
 {
     m_IsIndex = false;
-    TArgs::iterator it = x_Find(name);
+    iterator it = FindFirst(name);
     if (it != m_Args.end()) {
         it->value = value;
     }
@@ -250,9 +250,10 @@ void CCgiArgs::SetValue(const string& name, const string value)
 }
 
 
-CCgiArgs::TArgs::const_iterator CCgiArgs::x_Find(const string& name) const
+CCgiArgs::iterator CCgiArgs::x_Find(const string& name,
+                                    iterator start)
 {
-    ITERATE(TArgs, it, m_Args) {
+    for(iterator it = start; it != m_Args.end(); ++it) {
         if ( NStr::Equal(it->name, name, m_Case) ) {
             return it;
         }
@@ -261,9 +262,10 @@ CCgiArgs::TArgs::const_iterator CCgiArgs::x_Find(const string& name) const
 }
 
 
-CCgiArgs::TArgs::iterator CCgiArgs::x_Find(const string& name)
+CCgiArgs::const_iterator CCgiArgs::x_Find(const string& name,
+                                          const_iterator start) const
 {
-    NON_CONST_ITERATE(TArgs, it, m_Args) {
+    for(const_iterator it = start; it != m_Args.end(); ++it) {
         if ( NStr::Equal(it->name, name, m_Case) ) {
             return it;
         }
@@ -1097,6 +1099,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2005/12/07 20:29:55  grichenk
+* Use string& rather than string in arguments.
+* Added public methods FindFirst() and FindNext().
+* Made arguments names case sensitive by default.
+*
 * Revision 1.6  2005/11/22 12:37:20  ivanov
 * Added class CCgiUserAgent to parse user agent strings.
 * Moved inline function implementation to classes definition.

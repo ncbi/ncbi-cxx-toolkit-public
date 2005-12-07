@@ -261,25 +261,27 @@ public:
     /// Name-value pair.
     struct SCgiArg
     {
-        SCgiArg(string aname, string avalue)
+        SCgiArg(const string& aname, const string& avalue)
             : name(aname), value(avalue) { }
         string name;
         string value;
     };
-    typedef SCgiArg    TArg;
-    typedef list<TArg> TArgs;
+    typedef SCgiArg               TArg;
+    typedef list<TArg>            TArgs;
+    typedef TArgs::iterator       iterator;
+    typedef TArgs::const_iterator const_iterator;
 
     /// Check if an argument with the given name exists.
     bool IsSetValue(const string& name) const
-        { return x_Find(name) != m_Args.end(); }
+        { return FindFirst(name) != m_Args.end(); }
 
-    /// Get value for the given name. Undefined behaviour if the name
-    /// does not exist.
-    const string& GetValue(const string& name) const
-        { return x_Find(name)->value; }
+    /// Get value for the given name. finds first of the arguments with the
+    //// given name. If the name does not exist, is_found is set to false.
+    const string& GetValue(const string& name, bool* is_found = 0) const;
 
-    /// Set new value for the existing argument or add a new argument.
-    void SetValue(const string& name, const string value);
+    /// Set new value for the first argument with the given name or
+    /// add a new argument.
+    void SetValue(const string& name, const string& value);
 
     /// Get the const list of arguments.
     const TArgs& GetArgs(void) const 
@@ -288,6 +290,22 @@ public:
     /// Get the list of arguments.
     TArgs& GetArgs(void) 
         { return m_Args; }
+
+    /// Find the first argument with the given name. If not found, return
+    /// GetArgs().end().
+    iterator FindFirst(const string& name);
+
+    /// Take argument name from the iterator, find next argument with the same
+    /// name, return GetArgs().end() if not found.
+    iterator FindNext(iterator iter);
+
+    /// Find the first argument with the given name. If not found, return
+    /// GetArgs().end().
+    const_iterator FindFirst(const string& name) const;
+
+    /// Take argument name from the iterator, find next argument with the same
+    /// name, return GetArgs().end() if not found.
+    const_iterator FindNext(const_iterator iter) const;
 
     /// Select case sensitivity of arguments' names.
     void SetCase(NStr::ECase name_case)
@@ -299,8 +317,8 @@ protected:
                              const string& value,
                              EArgType      arg_type);
 private:
-    TArgs::iterator x_Find(const string& name);
-    TArgs::const_iterator x_Find(const string& name) const;
+    iterator x_Find(const string& name, iterator start);
+    const_iterator x_Find(const string& name, const_iterator start) const;
 
     NStr::ECase m_Case;
     bool        m_IsIndex;
@@ -604,11 +622,55 @@ void CUrl::x_SetArgs(const string& args,
 }
 
 
+inline
+const string& CCgiArgs::GetValue(const string& name, bool* is_found) const
+{
+    const_iterator iter = FindFirst(name);
+    if ( is_found ) {
+        *is_found = iter != m_Args.end();
+    }
+    return iter != m_Args.end() ? iter->value : kEmptyStr;
+}
+
+
+inline
+CCgiArgs::const_iterator CCgiArgs::FindFirst(const string& name) const
+{
+    return x_Find(name, m_Args.begin());
+}
+
+
+inline
+CCgiArgs::iterator CCgiArgs::FindFirst(const string& name)
+{
+    return x_Find(name, m_Args.begin());
+}
+
+
+inline
+CCgiArgs::const_iterator CCgiArgs::FindNext(const_iterator iter) const
+{
+    return x_Find(iter->name, iter);
+}
+
+
+inline
+CCgiArgs::iterator CCgiArgs::FindNext(iterator iter)
+{
+    return x_Find(iter->name, iter);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/07 20:29:55  grichenk
+ * Use string& rather than string in arguments.
+ * Added public methods FindFirst() and FindNext().
+ * Made arguments names case sensitive by default.
+ *
  * Revision 1.7  2005/11/22 12:37:20  ivanov
  * Added class CCgiUserAgent to parse user agent strings.
  * Moved inline function implementation to classes definition.
@@ -621,6 +683,11 @@ END_NCBI_SCOPE
  * Added ampersand encoding flag
  *
  * $Log$
+ * Revision 1.8  2005/12/07 20:29:55  grichenk
+ * Use string& rather than string in arguments.
+ * Added public methods FindFirst() and FindNext().
+ * Made arguments names case sensitive by default.
+ *
  * Revision 1.7  2005/11/22 12:37:20  ivanov
  * Added class CCgiUserAgent to parse user agent strings.
  * Moved inline function implementation to classes definition.
