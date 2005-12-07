@@ -168,7 +168,7 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
 //
 
 CCgiArgs::CCgiArgs(void)
-    : m_Case(NStr::eCase),
+    : m_Case(NStr:eNocase),
       m_IsIndex(false)
 {
     return;
@@ -1099,6 +1099,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2005/12/07 22:38:58  grichenk
+* Reverted to case-insensitive names
+*
 * Revision 1.7  2005/12/07 20:29:55  grichenk
 * Use string& rather than string in arguments.
 * Added public methods FindFirst() and FindNext().
