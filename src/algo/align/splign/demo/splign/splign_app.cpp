@@ -260,6 +260,39 @@ void CSplignApp::Init()
 }
 
 
+CSplign::THitRef CSplignApp::s_ReadBlastHit(const string& m8)
+{
+    THitRef rv (new CBlastTabular(m8.c_str()));
+
+#ifdef SPLIGNAPP_UNDECORATED_ARE_LOCALS
+    // make seq-id local if no type specified in the original m8
+    string::const_iterator ie = m8.end(), i0 = m8.begin(), i1 = i0;
+    while(i1 != ie && *i1 !='\t') ++i1;
+    if(i1 != ie) {
+        string::const_iterator i2 = ++i1;
+        while(i2 != ie && *i2 !='\t') ++i2;
+        if(i2 != ie) {
+            if(find(i0, i1, '|') == i1) {
+                const string strid = rv->GetQueryId()->GetSeqIdString(true);
+                CRef<CSeq_id> seqid (new CSeq_id(CSeq_id::e_Local, strid));
+                rv->SetQueryId(seqid);
+            }
+            if(find(i1, i2, '|') == i2) {
+                const string strid = rv->GetSubjId()->GetSeqIdString(true);
+                CRef<CSeq_id> seqid (new CSeq_id(CSeq_id::e_Local, strid));
+                rv->SetSubjId(seqid);
+            }
+            return rv;
+        }
+    }
+    const string errmsg = string("Incorrectly formatted blast hit:\n") + m8;
+    NCBI_THROW(CSplignAppException, eBadData, errmsg);
+#else
+    return rv;
+#endif
+}
+
+
 bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 {
     hitrefs->resize(0);
@@ -274,7 +307,7 @@ bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
 
         if(m_firstline.size()) {
 
-            THitRef hitref (new CBlastTabular(m_firstline.c_str()));
+            THitRef hitref (s_ReadBlastHit(m_firstline));
             query = hitref->GetQueryId();
             subj  = hitref->GetSubjId();
             m_PendingHits.push_back(hitref);
@@ -293,7 +326,7 @@ bool CSplignApp::x_GetNextPair(istream& ifs, THitRefs* hitrefs)
             while(*p == ' ' || *p == '\t') ++p;
             if(*p == 0) continue; // skip empty lines
             
-            THitRef hit (new CBlastTabular(p));
+            THitRef hit (s_ReadBlastHit(p));
             if(query.IsNull()) {
                 query = hit->GetQueryId();
             }
@@ -962,6 +995,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/12/07 15:51:34  kapustin
+ * +CSplignApp::s_ReadBlastHit()
+ *
  * Revision 1.55  2005/11/21 16:06:38  kapustin
  * Move gpipe-sensitive items to the app level
  *

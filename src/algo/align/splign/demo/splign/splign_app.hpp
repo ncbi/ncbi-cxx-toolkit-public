@@ -86,6 +86,8 @@ protected:
                           blast::TSeqLocVector& queries,
                           THitRefs* phitrefs);
 
+    static THitRef s_ReadBlastHit(const string& m8);
+
     CNcbiOstream*                    m_AsnOut;
     CNcbiOstream*                    m_AlnOut;
 
@@ -115,6 +117,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/12/07 15:51:34  kapustin
+ * +CSplignApp::s_ReadBlastHit()
+ *
  * Revision 1.16  2005/10/31 16:29:58  kapustin
  * Support traditional pairwise alignment text output
  *
