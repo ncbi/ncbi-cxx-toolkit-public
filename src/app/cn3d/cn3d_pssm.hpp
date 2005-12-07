@@ -41,20 +41,18 @@
 
 #include <objects/scoremat/PssmWithParameters.hpp>
 
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(cd_utils)
+class PssmMaker;
+END_SCOPE(cd_utils)
+END_NCBI_SCOPE
+
 
 BEGIN_SCOPE(Cn3D)
 
 class BlockMultipleAlignment;
 
 class PSSMWrapper{
-public:
-    PSSMWrapper(const BlockMultipleAlignment *bma);
-
-    const ncbi::objects::CPssmWithParameters& GetPSSM(void) const { return *pssm; }
-    void OutputPSSM(ncbi::CNcbiOstream& os) const;
-
-    int GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIndex) const;
-
 private:
     const BlockMultipleAlignment *multiple;
     ncbi::CRef < ncbi::objects::CPssmWithParameters > pssm;
@@ -63,7 +61,17 @@ private:
     typedef std::vector < int > Column;
     std::vector < Column > scaledMatrix;
     int scalingFactor;
-    void UnpackMatrix(void);
+    std::vector < int > master2consensus, consensus2master;
+    void UnpackMatrix(ncbi::cd_utils::PssmMaker& pm);
+
+public:
+    PSSMWrapper(const BlockMultipleAlignment *bma);
+
+    int GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIndex) const;
+    void OutputPSSM(ncbi::CNcbiOstream& os) const;
+
+    const ncbi::objects::CPssmWithParameters& GetPSSM(void) const { return *pssm; }
+    int MapConsensusToMaster(unsigned int consensusIndex) const { return consensus2master[consensusIndex]; }
 };
 
 END_SCOPE(Cn3D)
@@ -73,6 +81,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/12/07 18:58:17  thiessen
+* toss my BMA->PSIMsa conversion, use PssmMaker instead to generate consensus-based PSSMs
+*
 * Revision 1.5  2005/11/05 12:09:40  thiessen
 * special handling of B,Z,U
 *

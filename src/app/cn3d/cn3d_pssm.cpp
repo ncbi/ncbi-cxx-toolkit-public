@@ -37,12 +37,10 @@
 #include <serial/serial.hpp>
 #include <serial/objostrasn.hpp>
 
-#include <algo/blast/api/pssm_input.hpp>
-#include <algo/blast/api/pssm_engine.hpp>
-#include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/core/blast_encoding.h>
-
 #include <objects/scoremat/scoremat__.hpp>
+
+#include <algo/structure/cd_utils/cuCdCore.hpp>
+#include <algo/structure/cd_utils/cuPssmMaker.hpp>
 
 #include "cn3d_pssm.hpp"
 #include "block_multiple_alignment.hpp"
@@ -60,339 +58,56 @@ BEGIN_SCOPE(Cn3D)
 
 #define PTHROW(stream) NCBI_THROW(CException, eUnknown, stream)
 
-class Cn3DPSSMInput : public IPssmInputData
-{
-private:
-    const BlockMultipleAlignment *bma;
-    unsigned char *masterNCBIStdaa;
-    unsigned int masterLength;
-
-    PSIMsa *data;
-    PSIBlastOptions *options;
-    PSIDiagnosticsRequest diag;
-
-public:
-    Cn3DPSSMInput(const BlockMultipleAlignment *b);
-    ~Cn3DPSSMInput(void);
-
-    // IPssmInputData required functions
-    void Process(void) { }  // all done in c'tor
-    unsigned char * GetQuery(void) { return masterNCBIStdaa; }
-    unsigned int GetQueryLength(void) { return masterLength; }
-    PSIMsa * GetData(void) { return data; }
-    const PSIBlastOptions* GetOptions(void) { return options; }
-    const char * GetMatrixName(void) { return "BLOSUM62"; }
-    const PSIDiagnosticsRequest * GetDiagnosticsRequest(void) { return &diag; }
-};
-
-static const unsigned char gap = LookupNCBIStdaaNumberFromCharacter('-');
-
-static void FillInAlignmentData(const BlockMultipleAlignment *bma, PSIMsa *data)
-{
-    if (data->dimensions->query_length != bma->GetMaster()->Length() || data->dimensions->num_seqs != bma->NRows() - 1)
-        PTHROW("FillInAlignmentData() - data array size mismatch");
-
-    BlockMultipleAlignment::ConstBlockList blocks;
-    bma->GetBlocks(&blocks);
-
-    unsigned int b, row, column, masterStart, masterWidth, slaveStart, slaveWidth, left=0, right, middle=0;
-    const Block::Range *range;
-    const Sequence *seq;
-
-    for (b=0; b<blocks.size(); ++b) {
-        const Block& block = *(blocks[b]);
-
-        seq = bma->GetSequenceOfRow(0);
-        range = block.GetRangeOfRow(0);
-        if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
-                range->to < range->from - 1 ||
-                range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(0)->to + 1)) ||
-                (b == blocks.size() - 1 && range->to != (int)seq->Length() - 1))
-            PTHROW("FillInAlignmentData() - master range error");
-        masterStart = range->from;
-        masterWidth = range->to - range->from + 1;
-
-        for (row=0; row<bma->NRows(); row++) {
-            seq = bma->GetSequenceOfRow(row);
-            range = block.GetRangeOfRow(row);
-            if (range->from < 0 || range->from > (int)seq->Length() || range->to < -1 || range->to >= (int)seq->Length() ||
-                    range->to < range->from - 1 ||
-                    range->from != ((b == 0) ? 0 : (blocks[b - 1]->GetRangeOfRow(row)->to + 1)) ||
-                    (b == blocks.size() - 1 && range->to != (int)seq->Length() - 1))
-                PTHROW("FillInAlignmentData() - slave range error");
-            slaveStart = range->from;
-            slaveWidth = range->to - range->from + 1;
-
-            for (column=0; column<masterWidth; ++column) {
-                PSIMsaCell& cell = data->data[row][masterStart + column];
-
-                // same # residues in both master and slave
-                if (slaveWidth == masterWidth) {
-                    cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[slaveStart + column]);
-                    cell.is_aligned = true;
-                }
-
-                // left tail
-                else if (b == 0) {
-                    // truncate left end of sequence
-                    if (slaveWidth > masterWidth) {
-                        cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[slaveWidth - masterWidth + column]);
-                        cell.is_aligned = true;
-                    } else {
-                        // residues to the right
-                        if (column >= masterWidth - slaveWidth) {
-                            cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[column - (masterWidth - slaveWidth)]);
-                            cell.is_aligned = true;
-                        }
-                        // pad left with unaligned gaps
-                        else {
-                            cell.letter = gap;
-                            cell.is_aligned = false;
-                        }
-                    }
-                }
-
-                // right tail
-                else if (b == blocks.size() - 1) {
-                    // truncate right end of sequence
-                    if (slaveWidth > masterWidth) {
-                        cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[slaveStart + column]);
-                        cell.is_aligned = true;
-                    } else {
-                        // residues to the left
-                        if (column < slaveWidth) {
-                            cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[slaveStart + column]);
-                            cell.is_aligned = true;
-                        }
-                        // pad left with unaligned gaps
-                        else {
-                            cell.letter = gap;
-                            cell.is_aligned = false;
-                        }
-                    }
-                }
-
-                // more residues in master than slave: split and pad middle with (aligned) gaps
-                else if (slaveWidth < masterWidth) {
-                    if (column == 0) {
-                        left = (slaveWidth + 1) / 2;    // +1 means left gets more in uneven split
-                        middle = masterWidth - slaveWidth;
-                        right = slaveWidth - left;
-                    }
-                    if (column < left)
-                        cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[slaveStart + column]);
-                    else if (column < left + middle)
-                        cell.letter = gap;
-                    else
-                        cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[slaveStart + column - middle]);
-                    cell.is_aligned = true;             // even gaps are aligned in these regions
-                }
-
-                // more residues in slave than master: truncate middle of slave
-                else {  // slaveWidth > masterWidth
-                    if (column == 0) {
-                        left = (masterWidth + 1) / 2;   // +1 means left gets more in uneven split
-                        right = masterWidth - left;
-                    }
-                    if (column < left)
-                        cell.letter = LookupNCBIStdaaNumberFromCharacter(seq->sequenceString[slaveStart + column]);
-                    else
-                        cell.letter = LookupNCBIStdaaNumberFromCharacter(
-                            seq->sequenceString[slaveStart + slaveWidth - masterWidth + column]);
-                    cell.is_aligned = true;
-                }
-            }
-        }
-    }
-}
-
-double GetStandardProbability(char ch)
-{
-    typedef map < char, double > CharDoubleMap;
-    static CharDoubleMap standardProbabilities;
-
-    if (standardProbabilities.size() == 0) {  // initialize static stuff
-        if (BLASTAA_SIZE != 26) {
-            ERRORMSG("GetStandardProbability() - confused by BLASTAA_SIZE != 26");
-            return 0.0;
-        }
-        double *probs = BLAST_GetStandardAaProbabilities();
-        for (unsigned int i=0; i<26; ++i) {
-            standardProbabilities[LookupCharacterFromNCBIStdaaNumber(i)] = probs[i];
-#ifdef DEBUG_PSSM
-            TRACEMSG("standard probability " << LookupCharacterFromNCBIStdaaNumber(i) << " : " << probs[i]);
-#endif
-        }
-        sfree(probs);
-    }
-
-    CharDoubleMap::const_iterator f = standardProbabilities.find(toupper((unsigned char) ch));
-    if (f != standardProbabilities.end())
-        return f->second;
-    WARNINGMSG("GetStandardProbability() - unknown residue character " << ch);
-    return 0.0;
-}
-
-static double CalculateInformationContent(const PSIMsa *data, bool ignoreMaster)
-{
-    double infoContent = 0.0;
-
-    typedef map < unsigned char, unsigned int > ColumnProfile;
-    ColumnProfile profile;
-    ColumnProfile::iterator p, pe;
-    unsigned int nRes;
-
-#ifdef DEBUG_PSSM
-    CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
-#endif
-
-    for (unsigned int c=0; c<data->dimensions->query_length; ++c) {
-
-        profile.clear();
-        nRes = 0;
-
-        // build profile
-        for (unsigned int r=(ignoreMaster ? 1 : 0); r<=data->dimensions->num_seqs; ++r) {
-            if (data->data[r][c].letter != gap) {                       // don't include gaps
-                p = profile.find(data->data[r][c].letter);
-                if (p == profile.end())
-                    profile[data->data[r][c].letter] = 1;
-                else
-                    ++(p->second);
-                ++nRes;
-            }
-        }
-
-#ifdef DEBUG_PSSM
-        if (ofs)
-            ofs << "column " << (c+1) << ", total " << nRes;
-        double columnContent = 0.0;
-#endif
-
-        // do info content
-        static const double ln2 = log(2.0), threshhold = 0.0001;
-        for (p=profile.begin(), pe=profile.end(); p!=pe; ++p) {
-            double expFreq = GetStandardProbability(LookupCharacterFromNCBIStdaaNumber(p->first));
-            if (expFreq > threshhold) {
-                double obsFreq = 1.0 * p->second / nRes,
-                       freqRatio = obsFreq / expFreq;
-                if (freqRatio > threshhold) {
-                    infoContent += obsFreq * log(freqRatio) / ln2;
-
-#ifdef DEBUG_PSSM
-                    columnContent += obsFreq * log(freqRatio) / ln2;
-                    if (ofs)
-                        ofs << ", " << LookupCharacterFromNCBIStdaaNumber(p->first) << '(' << p->second << ") "
-                            << setprecision(3) << (obsFreq * log(freqRatio) / ln2);
-#endif
-                }
-            }
-        }
-#ifdef DEBUG_PSSM
-        if (ofs)
-            ofs << ", sum info: " << setprecision(6) << columnContent << '\n';
-#endif
-    }
-
-    TRACEMSG("information content: " << infoContent);
-    return infoContent;
-}
-
-Cn3DPSSMInput::Cn3DPSSMInput(const BlockMultipleAlignment *b) : bma(b)
-{
-    TRACEMSG("Creating Cn3DPSSMInput structure");
-
-    // encode master
-    masterLength = bma->GetMaster()->Length();
-    masterNCBIStdaa = new unsigned char[masterLength];
-    for (unsigned int i=0; i<masterLength; ++i)
-        masterNCBIStdaa[i] = LookupNCBIStdaaNumberFromCharacter(bma->GetMaster()->sequenceString[i]);
-
-    // create PSIMsa
-    PSIMsaDimensions dim;
-    dim.query_length = bma->GetMaster()->Length();
-    dim.num_seqs = bma->NRows() - 1;    // not including master
-    data = PSIMsaNew(&dim);
-    FillInAlignmentData(bma, data);
-
-    // set up PSIDiagnosticsRequest
-    diag.information_content = false;
-    diag.residue_frequencies = false;
-    diag.weighted_residue_frequencies = false;
-    diag.frequency_ratios = true;      // true to match cdtree
-    diag.gapless_column_weights = false;
-
-    // create PSIBlastOptions
-    PSIBlastOptionsNew(&options);
-    options->nsg_compatibility_mode = false;    // false for now, since we're not using a consensus
-    double infoContent = CalculateInformationContent(data, false);
-    if      (infoContent > 84  ) options->pseudo_count = 10;
-    else if (infoContent > 55  ) options->pseudo_count =  7;
-    else if (infoContent > 43  ) options->pseudo_count =  5;
-    else if (infoContent > 41.5) options->pseudo_count =  4;
-    else if (infoContent > 40  ) options->pseudo_count =  3;
-    else if (infoContent > 39  ) options->pseudo_count =  2;
-    else                         options->pseudo_count =  1;
-
-#ifdef DEBUG_PSSM
-    CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
-    if (ofs) {
-//        diag.residue_frequencies = true;
-        ofs << "information content: " << setprecision(6) << infoContent << '\n'
-            << "pseudocount: " << options->pseudo_count << '\n'
-            << "query length: " << GetQueryLength() << '\n'
-            << "query: ";
-        for (unsigned int i=0; i<GetQueryLength(); ++i)
-            ofs << LookupCharacterFromNCBIStdaaNumber(GetQuery()[i]);
-        ofs << "\nmatrix name: " << GetMatrixName() << '\n'
-            << "options->pseudo_count: " << options->pseudo_count << '\n'
-            << "options->inclusion_ethresh: " << options->inclusion_ethresh << '\n'
-            << "options->use_best_alignment: " << (int) options->use_best_alignment << '\n'
-            << "options->nsg_compatibility_mode: " << (int) options->nsg_compatibility_mode << '\n'
-            << "options->impala_scaling_factor: " << options->impala_scaling_factor << '\n'
-            << "diag->information_content: " << (int) GetDiagnosticsRequest()->information_content << '\n'
-            << "diag->residue_frequencies: " << (int) GetDiagnosticsRequest()->residue_frequencies << '\n'
-            << "diag->weighted_residue_frequencies: " << (int) GetDiagnosticsRequest()->weighted_residue_frequencies << '\n'
-            << "diag->frequency_ratios: " << (int) GetDiagnosticsRequest()->frequency_ratios << '\n'
-            << "diag->gapless_column_weights: " << (int) GetDiagnosticsRequest()->gapless_column_weights << '\n'
-            << "num_seqs: " << data->dimensions->num_seqs << ", query_length: " << data->dimensions->query_length << '\n';
-        for (unsigned int row=0; row<=data->dimensions->num_seqs; ++row) {
-            for (unsigned int column=0; column<data->dimensions->query_length; ++column)
-                ofs << LookupCharacterFromNCBIStdaaNumber(data->data[row][column].letter);
-            ofs << '\n';
-        }
-        for (unsigned int row=0; row<=data->dimensions->num_seqs; ++row) {
-            for (unsigned int column=0; column<data->dimensions->query_length; ++column)
-                ofs << (data->data[row][column].is_aligned ? 'A' : 'U');
-            ofs << '\n';
-        }
-    }
-#endif
-}
-
-Cn3DPSSMInput::~Cn3DPSSMInput(void)
-{
-    PSIMsaFree(data);
-    PSIBlastOptionsFree(options);
-    delete[] masterNCBIStdaa;
-}
-
 PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
 {
 #ifdef DEBUG_PSSM
     {{
-        CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out);
+        CNcbiOfstream ofs("pssm.txt", IOS_BASE::out);
     }}
 #endif
 
     try {
         TRACEMSG("Creating PSSM...");
-        Cn3DPSSMInput input(bma);
-        CPssmEngine engine(&input);
-        pssm = engine.Run();
+
+        // construct a "fake" CD to pass to PssmMaker
+        cd_utils::CCdCore c;
+        c.SetName("fake");
+
+        // construct Seq-entry from sequences in current alignment
+        CRef < CSeq_entry > seq(new CSeq_entry);
+        seq->SetSeq().Assign(multiple->GetMaster()->bioseqASN.GetObject());
+        c.SetSequences().SetSet().SetSeq_set().push_back(seq);
+
+        // construct Seq-annot from rows in the alignment
+        c.SetSeqannot().push_back(CRef<CSeq_annot>(new CSeq_annot));
+        BlockMultipleAlignment::UngappedAlignedBlockList blocks;
+        bma->GetUngappedAlignedBlocks(&blocks);
+
+        // fill out Seq-entry and Seq-annot based on BMA (row order is irrelevant here)
+        for (unsigned int i=1; i<bma->NRows(); ++i) {
+            seq.Reset(new CSeq_entry);
+            seq->SetSeq().Assign(multiple->GetSequenceOfRow(i)->bioseqASN.GetObject());
+            c.SetSequences().SetSet().SetSeq_set().push_back(seq);
+            CRef < CSeq_align > seqAlign(CreatePairwiseSeqAlignFromMultipleRow(bma, blocks, i));
+            c.SetSeqannot().front()->SetData().SetAlign().push_back(seqAlign);
+        }
+
+        // use PssmMaker to create PSSM using consensus
+        cd_utils::PssmMaker pm(&c, true, true);
+        pssm = pm.make();
+
+        // blast functions require a master (query) sequence to be present; give it a recognizable id
+        if (!pssm->GetPssm().IsSetQuery() || !pssm->GetPssm().GetQuery().IsSeq())
+            PTHROW("PssmWithParameters from cd_utils::PssmMaker() doesn't contain the master/query sequence");
+        CRef < CSeq_id > id(new CSeq_id);
+        id->SetLocal().SetStr("consensus");
+        pssm->SetPssm().SetQuery().SetSeq().SetId().push_front(id);
+
+        // for efficient score lookup
+        UnpackMatrix(pm);
 
 #ifdef DEBUG_PSSM
-        CNcbiOfstream ofs("psimsa.txt", IOS_BASE::out | IOS_BASE::app);
+        CNcbiOfstream ofs("pssm.txt", IOS_BASE::out | IOS_BASE::app);
         if (ofs) {
             CObjectOStreamAsn oosa(ofs, false);
             oosa << *pssm;
@@ -481,18 +196,12 @@ PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
         }
 #endif
 
-        UnpackMatrix();
-
-        // blast functions require a master (query) sequence to be present
-        if (!pssm->GetPssm().IsSetQuery())
-            pssm->SetPssm().SetQuery().SetSeq().Assign(bma->GetMaster()->bioseqASN.GetObject());
-
     } catch (exception& e) {
         ERRORMSG("PSSMWrapper::PSSMWrapper() failed with exception: " << e.what());
     }
 }
 
-void PSSMWrapper::UnpackMatrix(void)
+void PSSMWrapper::UnpackMatrix(ncbi::cd_utils::PssmMaker& pm)
 {
     if (!pssm->GetPssm().IsSetFinalData())
         PTHROW("UnpackMatrix() - pssm must have finalData");
@@ -530,6 +239,19 @@ void PSSMWrapper::UnpackMatrix(void)
             }
         }
     }
+
+    // map multiple's master <-> consensus position
+    if (pm.getConsensus().size() != pssm->GetPssm().GetNumColumns())
+        PTHROW("Consensus sequence does not match PSSM size");
+    TRACEMSG("master length: " << multiple->GetMaster()->Length() << ", consensus length: " << pm.getConsensus().size());
+    cd_utils::BlockModelPair bmp(pm.getGuideAlignment());   // consensus is slave
+    consensus2master.resize(pm.getConsensus().size());
+    for (i=0; i<pm.getConsensus().size(); ++i)
+        consensus2master[i] = bmp.mapToMaster(i);
+    bmp.reverse();  // so that master is consensus, slave is multiple's master
+    master2consensus.resize(multiple->GetMaster()->Length());
+    for (i=0; i<multiple->GetMaster()->Length(); ++i)
+        master2consensus[i] = bmp.mapToMaster(i);
 }
 
 void PSSMWrapper::OutputPSSM(ncbi::CNcbiOstream& os) const
@@ -552,21 +274,29 @@ int PSSMWrapper::GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIn
         ERRORMSG("PSSMWrapper::GetPSSMScore() - invalid parameters");
         return kMin_Int;
     }
-    double scaledScore;
-    switch (ncbistdaa) {
-        case 2:  // B -> average D/N
-            scaledScore = ((double) (scaledMatrix[realMasterIndex][4] + scaledMatrix[realMasterIndex][13])) / 2;
-            break;
-        case 23: // Z -> average E/Q
-            scaledScore = ((double) (scaledMatrix[realMasterIndex][5] + scaledMatrix[realMasterIndex][15])) / 2;
-            break;
-        case 24: // U -> C
-            scaledScore = scaledMatrix[realMasterIndex][3];
-            break;
-        default:
-            scaledScore = scaledMatrix[realMasterIndex][ncbistdaa];
+
+    // maps to a position in the consensus/pssm
+    int consensusIndex = master2consensus[realMasterIndex];
+    if (consensusIndex >= 0) {
+        double scaledScore;
+        switch (ncbistdaa) {
+            case 2:  // B -> average D/N
+                scaledScore = ((double) (scaledMatrix[consensusIndex][4] + scaledMatrix[consensusIndex][13])) / 2;
+                break;
+            case 23: // Z -> average E/Q
+                scaledScore = ((double) (scaledMatrix[consensusIndex][5] + scaledMatrix[consensusIndex][15])) / 2;
+                break;
+            case 24: // U -> C
+                scaledScore = scaledMatrix[consensusIndex][3];
+                break;
+            default:
+                scaledScore = scaledMatrix[consensusIndex][ncbistdaa];
+        }
+        return Round(scaledScore / scalingFactor);
     }
-    return Round(scaledScore / scalingFactor);
+
+    // use simple blosum62 score if outside the consensus/pssm
+    return GetBLOSUM62Score(LookupCharacterFromNCBIStdaaNumber(ncbistdaa), multiple->GetMaster()->sequenceString[realMasterIndex]);
 }
 
 END_SCOPE(Cn3D)
@@ -574,6 +304,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2005/12/07 18:58:17  thiessen
+* toss my BMA->PSIMsa conversion, use PssmMaker instead to generate consensus-based PSSMs
+*
 * Revision 1.15  2005/11/05 12:09:40  thiessen
 * special handling of B,Z,U
 *
