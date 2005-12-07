@@ -29,6 +29,11 @@
  *
  */
 
+/// @file netcache_client_sample1.cpp
+/// NetCache sample: 
+///    illustrates client creattion and simple store/load scenario.
+
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -167,6 +172,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/07 19:21:16  kuznets
+ * Comments
+ *
  * Revision 1.2  2005/12/07 19:05:13  kuznets
  * Cosmetics
  *
