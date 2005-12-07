@@ -75,6 +75,7 @@ CSplignSimple::CSplignSimple(const CSeq_loc &transcript,
     CRef<CSplicedAligner> aligner(new CSplicedAligner16);
     m_Splign->SetAligner() = aligner;
     m_Splign->SetScope().Reset(&scope);
+    m_Splign->PreserveScope();
 }
 
 
@@ -170,6 +171,9 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.19  2005/12/07 15:49:58  kapustin
+* Protect scope by default
+*
 * Revision 1.18  2005/10/19 17:56:35  kapustin
 * Switch to using ObjMgr+LDS to load sequence data
 *
