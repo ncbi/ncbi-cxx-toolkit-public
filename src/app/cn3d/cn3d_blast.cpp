@@ -138,6 +138,8 @@ static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAli
     bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
     bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
     bioseq.SetInst().SetLength(ts->toIndex - ts->fromIndex + 1);
+    TRACEMSG("slave " << ts->originalFullSequence->identifier->ToString()
+        << " from " << (ts->fromIndex+1) << " to " << (ts->toIndex+1) << "; length " << bioseq.GetInst().GetLength());
     bioseq.SetInst().SetSeq_data().SetNcbistdaa().Set().resize(ts->toIndex - ts->fromIndex + 1);
     for (int j=ts->fromIndex; j<=ts->toIndex; ++j)
         bioseq.SetInst().SetSeq_data().SetNcbistdaa().Set()[j - ts->fromIndex] =
@@ -168,15 +170,62 @@ static inline bool GetLocalID(const CSeq_id& sid, int *localID)
     return true;
 }
 
-static bool SeqIdMatchesMaster(const CSeq_id& sid, const Sequence *master, bool usePSSM)
+static bool SeqIdMatchesMaster(const CSeq_id& sid, bool usePSSM)
 {
-    // if blast-sequence-vs-pssm, master will be Sequence master
+    // if blast-sequence-vs-pssm, master will be consensus
     if (usePSSM)
-        return (master->identifier->MatchesSeqId(sid));
+        return (sid.IsLocal() && sid.GetLocal().IsStr() && sid.GetLocal().GetStr() == "consensus");
 
     // if blast-two-sequences, master will be local id -1
     else
         return IsLocalID(sid, -1);
+}
+
+static void MapBlockFromConsensusToMaster(int consensusStart, int slaveStart, int length,
+    BlockMultipleAlignment *newAlignment, const BlockMultipleAlignment *multiple)
+{
+    // get mapping of each position of consensus -> master on this block
+    vector < int > masterLoc(length);
+    int i;
+    for (i=0; i<length; ++i)
+        masterLoc[i] = multiple->GetPSSM().MapConsensusToMaster(consensusStart + i);
+
+    UngappedAlignedBlock *subBlock = NULL;
+    for (i=0; i<length; ++i) {
+
+        // is this the start of a sub-block?
+        if (!subBlock && masterLoc[i] >= 0) {
+            subBlock = new UngappedAlignedBlock(newAlignment);
+            subBlock->SetRangeOfRow(0, masterLoc[i], masterLoc[i]);
+            subBlock->SetRangeOfRow(1, slaveStart + i, slaveStart + i);
+            subBlock->width = 1;
+        }
+
+        // continue existing sub-block
+        if (subBlock) {
+
+            // is this the end of a sub-block?
+            if (i == length - 1 ||                      // last position of block
+                masterLoc[i + 1] < 0 ||                 // next position is unmapped
+                masterLoc[i + 1] != masterLoc[i] + 1)   // next position is discontinuous
+            {
+                newAlignment->AddAlignedBlockAtEnd(subBlock);
+                subBlock = NULL;
+            }
+
+            // extend block by one
+            else {
+                const Block::Range *range = subBlock->GetRangeOfRow(0);
+                subBlock->SetRangeOfRow(0, range->from, range->to + 1);
+                range = subBlock->GetRangeOfRow(1);
+                subBlock->SetRangeOfRow(1, range->from, range->to + 1);
+                ++(subBlock->width);
+            }
+        }
+    }
+
+    if (subBlock)
+        ERRORMSG("MapBlockFromConsensusToMaster() - unterminated sub-block");
 }
 
 void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *multiple,
@@ -306,24 +355,29 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                     if (!ds.IsSetDim() || ds.GetDim() != 2 || ds.GetIds().size() != 2 ||
                             (int)ds.GetLens().size() != ds.GetNumseg() || (int)ds.GetStarts().size() != 2 * ds.GetNumseg()) {
                         ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (denseg dims)");
-                    } else if (!SeqIdMatchesMaster(ds.GetIds().front().GetObject(), master, usePSSM) ||
+                    } else if (!SeqIdMatchesMaster(ds.GetIds().front().GetObject(), usePSSM) ||
                                !IsLocalID(ds.GetIds().back().GetObject(), localID)) {
                         ERRORMSG("CreateNewPairwiseAlignmentsByBlast() - returned alignment format error (ids)");
                     } else {
+
                         // unpack segs
                         CDense_seg::TStarts::const_iterator s = ds.GetStarts().begin();
                         CDense_seg::TLens::const_iterator l, le = ds.GetLens().end();
                         for (l=ds.GetLens().begin(); l!=le; ++l) {
                             int masterStart = *(s++), slaveStart = *(s++);
                             if (masterStart >= 0 && slaveStart >= 0) {  // skip gaps
-                                if (!usePSSM)
-                                    masterStart += masterTS->fromIndex;
                                 slaveStart += subjectTSs[localID]->fromIndex;
-                                UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment.get());
-                                newBlock->SetRangeOfRow(0, masterStart, masterStart + (*l) - 1);
-                                newBlock->SetRangeOfRow(1, slaveStart, slaveStart + (*l) - 1);
-                                newBlock->width = *l;
-                                newAlignment->AddAlignedBlockAtEnd(newBlock);
+
+                                if (usePSSM) {
+                                    MapBlockFromConsensusToMaster(masterStart, slaveStart, *l, newAlignment.get(), multiple);
+                                } else {
+                                    masterStart += masterTS->fromIndex;
+                                    UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment.get());
+                                    newBlock->SetRangeOfRow(0, masterStart, masterStart + (*l) - 1);
+                                    newBlock->SetRangeOfRow(1, slaveStart, slaveStart + (*l) - 1);
+                                    newBlock->width = *l;
+                                    newAlignment->AddAlignedBlockAtEnd(newBlock);
+                                }
                             }
                         }
                     }
@@ -457,11 +511,39 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
         << nSelfHits << '/' << multiple->NRows() << ')' << setprecision(6));
 }
 
+double GetStandardProbability(char ch)
+{
+    typedef map < char, double > CharDoubleMap;
+    static CharDoubleMap standardProbabilities;
+
+    if (standardProbabilities.size() == 0) {  // initialize static stuff
+        if (BLASTAA_SIZE != 26) {
+            ERRORMSG("GetStandardProbability() - confused by BLASTAA_SIZE != 26");
+            return 0.0;
+        }
+        double *probs = BLAST_GetStandardAaProbabilities();
+        for (unsigned int i=0; i<26; ++i) {
+            standardProbabilities[LookupCharacterFromNCBIStdaaNumber(i)] = probs[i];
+//            TRACEMSG("standard probability " << LookupCharacterFromNCBIStdaaNumber(i) << " : " << probs[i]);
+        }
+        sfree(probs);
+    }
+
+    CharDoubleMap::const_iterator f = standardProbabilities.find(toupper((unsigned char) ch));
+    if (f != standardProbabilities.end())
+        return f->second;
+    WARNINGMSG("GetStandardProbability() - unknown residue character " << ch);
+    return 0.0;
+}
+
 END_SCOPE(Cn3D)
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2005/12/07 18:58:43  thiessen
+* map results from consensus-based PSSMs
+*
 * Revision 1.44  2005/11/16 22:01:08  thiessen
 * fix for result list issues
 *
