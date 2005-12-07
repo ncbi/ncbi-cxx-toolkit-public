@@ -1445,6 +1445,45 @@ static void s_ParseException
 }
 
 
+static int s_ScoreSeqIdHandle(const CSeq_id_Handle& idh)
+{
+    CConstRef<CSeq_id> id = idh.GetSeqId();
+    CRef<CSeq_id> id_non_const
+        (const_cast<CSeq_id*>(id.GetPointer()));
+    return CSeq_id::Score(id_non_const);
+}
+
+
+CSeq_id_Handle s_FindBestIdChoice(const CBioseq_Handle::TId& ids)
+{
+    //
+    //  Objective:
+    //  Find the best choice among a given subset of id types. I.e. if a certain
+    //  id scores well but is not of a type we approve of, we still reject it.
+    //
+    CBestChoiceTracker< CSeq_id_Handle, int (*)(const CSeq_id_Handle&) > 
+        tracker(s_ScoreSeqIdHandle);
+
+    ITERATE( CBioseq_Handle::TId, it, ids ) {
+        switch( (*it).Which() ) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+            case CSeq_id::e_Gi:
+            case CSeq_id::e_Other:
+            case CSeq_id::e_General:
+            case CSeq_id::e_Tpg:
+            case CSeq_id::e_Tpe:
+            case CSeq_id::e_Tpd:
+            case CSeq_id::e_Gpipe:
+                tracker(*it);
+                break;
+        }
+    }
+    return tracker.GetBestChoice();
+}
+
+
 void CFeatureItem::x_AddExceptionQuals(CBioseqContext& ctx) const
 {
     string except_text, note_text;
@@ -1499,70 +1538,35 @@ void CFeatureItem::x_AddExceptionQuals(CBioseqContext& ctx) const
 }
 
 
-static int s_ScoreSeqIdHandle(const CSeq_id_Handle& idh)
-{
-    CConstRef<CSeq_id> id = idh.GetSeqId();
-    CRef<CSeq_id> id_non_const
-        (const_cast<CSeq_id*>(id.GetPointer()));
-    return CSeq_id::Score(id_non_const);
-}
-
-
 void CFeatureItem::x_AddProductIdQuals(CBioseq_Handle& prod, EFeatureQualifier slot) const
 {
+    //
+    //  Objective (according to the C toolkit):
+    //  We need one (and only one) /xxx_id tag. If there are multiple ids 
+    //  available, try and pick the "best" one.
+    //  In addition, if an id of type GI is available, turn it into a /db_xref 
+    //  tag, regardless of whether we already used it for the /xxx_id tag
+    //  or not.
+    //
+
     if (!prod) {
         return;
     }
-
     const CBioseq_Handle::TId& ids = prod.GetId();
     if (ids.empty()) {
         return;
     }
 
-    // the product id (transcript or protein) is set to the best id
-    CSeq_id_Handle best = FindBestChoice(ids, s_ScoreSeqIdHandle);
-    if (best) {
-        switch (best.Which()) {
-        case CSeq_id::e_Genbank:
-        case CSeq_id::e_Embl:
-        case CSeq_id::e_Ddbj:
-        case CSeq_id::e_Gi:
-        case CSeq_id::e_Other:
-        case CSeq_id::e_General:
-        case CSeq_id::e_Tpg:
-        case CSeq_id::e_Tpe:
-        case CSeq_id::e_Tpd:
-        case CSeq_id::e_Gpipe:
-            // these are the only types we allow as product ids
-            break;
-        default:
-            best.Reset();
-        }
-    }
+    CSeq_id_Handle best = s_FindBestIdChoice(ids);
     if (!best) {
         return;
     }
     x_AddQual(slot, new CFlatSeqIdQVal(*best.GetSeqId()));
     
     ITERATE (CBioseq_Handle::TId, it, ids) {
-        CSeq_id::E_Choice choice = it->Which();
-        if (choice != CSeq_id::e_Genbank  &&
-            choice != CSeq_id::e_Embl  &&
-            choice != CSeq_id::e_Ddbj  &&
-            choice != CSeq_id::e_Gi  &&
-            choice != CSeq_id::e_Other  &&
-            choice != CSeq_id::e_General  &&
-            choice != CSeq_id::e_Tpg  &&
-            choice != CSeq_id::e_Tpe  &&
-            choice != CSeq_id::e_Tpd  &&
-            choice != CSeq_id::e_Gpipe) {
+        if ( it->Which() != CSeq_id::e_Gi ) {
             continue;
         }
-        if (*it == best) {
-            // we've already done 'best'. 
-            continue;
-        }
-        
         CConstRef<CSeq_id> id = it->GetSeqId();
         if (!id->IsGeneral()) {
             x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*id, id->IsGi()));
@@ -3809,6 +3813,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2005/12/07 16:11:09  ludwigf
+* CHANGED: In CFeatureItem::x_AddProductIdQuals(), modified the policy for
+* adding /protein_id, /transaction_id, ..., /db_xref tags to agree with the
+* corresponding policy in the C toolkit. See comments for details.
+*
 * Revision 1.66  2005/12/06 18:54:39  ludwigf
 * CHANGED: Definition of "Best" in s_GetBestProtFeature(). "Best" now means
 * "most overlapped", followed by processing status as a tie breaker.
