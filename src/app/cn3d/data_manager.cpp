@@ -96,6 +96,26 @@ void ASNDataManager::Load(void)
     cddUpdates = NULL;
     dataChanged = 0;
 
+    // remove consensus sequence, then do a check over the whole tree to make sure any reference to it is gone
+/*
+    if (GetInternalCDDData()) {
+        RemoveConsensusFromCDD();
+        for (CTypeConstIterator < CSeq_id > i(ConstBegin(*(GetInternalCDDData()))); i; ++i) {
+            if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
+                ERRORMSG("ASNDataManager::Load() - consensus still referenced in the data: " << i.GetContext());
+                break;
+            }
+        }
+    } else if (mimeData.NotEmpty()) {
+        for (CTypeConstIterator < CSeq_id > i(ConstBegin(mimeData.GetObject())); i; ++i) {
+            if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
+                ERRORMSG("ASNDataManager::Load() - a consensus is present in the data: " << i.GetContext());
+                break;
+            }
+        }
+    }
+*/
+
     // mime
     if (mimeData.NotEmpty()) {
         if (mimeData->IsEntrez()) {
@@ -248,24 +268,6 @@ void ASNDataManager::Load(void)
             sequenceAlignments->push_back(CRef < CSeq_annot > (new CSeq_annot()));
             // copy list of valid alignments only
             sequenceAlignments->front()->SetData().SetAlign() = validAlignments;
-        }
-    }
-
-    // remove consensus sequence, then do a check over the whole tree to make sure any reference to it is gone
-    if (GetInternalCDDData()) {
-        RemoveConsensusFromCDD();
-        for (CTypeConstIterator < CSeq_id > i(ConstBegin(*(GetInternalCDDData()))); i; ++i) {
-            if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
-                ERRORMSG("ASNDataManager::Load() - consensus still referenced in the data: " << i.GetContext());
-                break;
-            }
-        }
-    } else if (mimeData.NotEmpty()) {
-        for (CTypeConstIterator < CSeq_id > i(ConstBegin(mimeData.GetObject())); i; ++i) {
-            if (i->IsLocal() && i->GetLocal().IsStr() && i->GetLocal().GetStr() == "consensus") {
-                ERRORMSG("ASNDataManager::Load() - a consensus is present in the data: " << i.GetContext());
-                break;
-            }
         }
     }
 }
@@ -1010,6 +1012,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/12/08 14:29:55  thiessen
+* remove consensus before any other parsing
+*
 * Revision 1.30  2005/11/17 22:25:43  thiessen
 * remove more spurious uint-compared-to-zero
 *
