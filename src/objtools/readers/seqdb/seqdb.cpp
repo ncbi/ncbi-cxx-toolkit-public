@@ -587,7 +587,7 @@ CSeqDB::GiToBioseq(int gi) const
     int oid(0);
     
     if (m_Impl->GiToOid(gi, oid)) {
-        bs = m_Impl->GetBioseq(oid, 0, true);
+        bs = m_Impl->GetBioseq(oid, gi, true);
     }
     
     m_Impl->Verify();
