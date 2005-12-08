@@ -209,7 +209,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                                        :"Client-Mode: STATEFUL_CAPABLE\r\n") &&
         ConnNetInfo_OverrideUserHeader(net_info,
                                        "Dispatch-Mode: INFORMATION_ONLY\r\n")){
-        ConnNetInfo_OverrideUserHeader
+        ConnNetInfo_ExtendUserHeader
             (net_info, "User-Agent: NCBIServiceDispatcher/"
              DISP_PROTOCOL_VERSION
 #ifdef NCBI_CXX_TOOLKIT
@@ -509,6 +509,9 @@ extern void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.69  2005/12/08 03:52:28  lavr
+ * Do not override User-Agent but extend it
+ *
  * Revision 6.68  2005/07/11 18:23:14  lavr
  * Break grounds for receiving wildcard matches via HTTP header tags
  *
