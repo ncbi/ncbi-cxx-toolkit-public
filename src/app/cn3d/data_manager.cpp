@@ -97,7 +97,6 @@ void ASNDataManager::Load(void)
     dataChanged = 0;
 
     // remove consensus sequence, then do a check over the whole tree to make sure any reference to it is gone
-/*
     if (GetInternalCDDData()) {
         RemoveConsensusFromCDD();
         for (CTypeConstIterator < CSeq_id > i(ConstBegin(*(GetInternalCDDData()))); i; ++i) {
@@ -114,7 +113,6 @@ void ASNDataManager::Load(void)
             }
         }
     }
-*/
 
     // mime
     if (mimeData.NotEmpty()) {
@@ -1012,6 +1010,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/12/08 14:30:22  thiessen
+* whoops, forgot to uncomment some stuff
+*
 * Revision 1.31  2005/12/08 14:29:55  thiessen
 * remove consensus before any other parsing
 *
