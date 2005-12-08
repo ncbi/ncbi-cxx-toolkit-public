@@ -183,15 +183,15 @@ public:
         CSeqChunkData(CRef<CSeqDB>     seqdb,
                       const CSeq_id_Handle & sih,
                       int              oid,
-                      int              begin,
-                      int              end)
+                      TSeqPos          begin,
+                      TSeqPos          end)
             : m_SeqDB(seqdb), m_OID(oid), m_SIH(sih), m_Begin(begin), m_End(end)
         {
         }
         
         /// Default constructor; required by std::map.
         CSeqChunkData()
-            : m_Begin(-1)
+            : m_Begin(kInvalidSeqPos)
         {
         }
         
@@ -222,7 +222,7 @@ public:
         }
         
         /// Get the starting offset of this sequence.
-        int GetPosition()
+        TSeqPos GetPosition()
         {
             return m_Begin;
         }
@@ -238,10 +238,10 @@ public:
         CSeq_id_Handle     m_SIH;
         
         /// The coordinate of the start of the region to build.
-        int                m_Begin;
+        TSeqPos            m_Begin;
         
         /// The coordinate of the end of the region to build.
-        int                m_End;
+        TSeqPos            m_End;
         
         /// Holds the sequence literal once it is built.
         CRef<CSeq_literal> m_Literal;
@@ -283,7 +283,7 @@ public:
         }
         
         /// Get the length of the sequence.
-        int GetLength()
+        TSeqPos GetLength()
         {
             return m_Length;
         }
@@ -302,10 +302,10 @@ public:
         ///   The offset into the sequence of the end of this chunk.
         /// @return
         ///   An object representing the specified range of sequence data.
-        CSeqChunkData BuildDataChunk(int id, int begin, int end);
+        CSeqChunkData BuildDataChunk(int id, TSeqPos begin, TSeqPos end);
 
         /// Add an empty CDelta_seq to the Seq-entry in m_TSE.
-        void AddDelta(int begin, int end);
+        void AddDelta(TSeqPos begin, TSeqPos end);
 
         /// Add this sequence's identifiers to a lookup table.
         ///
@@ -325,7 +325,7 @@ public:
         CRef<CSeq_entry> m_TSE;
         
         /// Sequence length in bases
-        int m_Length;
+        TSeqPos m_Length;
 
         /// Database reference
         CRef<CSeqDB> m_SeqDB;
@@ -369,10 +369,10 @@ private:
     /// actual data is not built, just a description that identifies
     /// the sequence and the range of that sequence's data represented
     /// by this chunk.
-    void x_AddSplitSeqChunk(TChunks        & chunks,
-                            CCachedSeqData & seqdata,
-                            int              begin,
-                            int              end);
+    void x_AddSplitSeqChunk(TChunks&              chunks,
+                            const CSeq_id_Handle& id,
+                            TSeqPos               begin,
+                            TSeqPos               end);
     
     const string    m_DBName;      ///< Blast database name
     EDbType         m_DBType;      ///< Is this database protein or nucleotide?
@@ -407,6 +407,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.24  2005/12/08 14:28:16  vasilche
+ * Use TSeqPos for sequence length.
+ * Pepresent sequences as raw Seq-data when they are short enough.
+ *
  * Revision 1.23  2005/11/08 21:03:49  camacho
  * doxygen fixes
  *

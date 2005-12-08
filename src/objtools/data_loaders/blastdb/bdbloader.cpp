@@ -184,7 +184,7 @@ void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
     
     if (m_SeqDB->GetSequenceType() == CSeqDB::eProtein) {
         const char * buffer(0);
-        int          length(0);
+        TSeqPos      length(0);
         length = m_SeqDB->GetSequence(m_OID, & buffer);
         
         _ASSERT((m_End-m_Begin) <= length);
@@ -203,7 +203,7 @@ void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
         int nucl_code(kSeqDBNuclNcbiNA8);
         
         const char * buffer(0);
-        int          length(0);
+        TSeqPos      length(0);
         length = m_SeqDB->GetAmbigSeq(m_OID, & buffer, nucl_code, m_Begin, m_End);
         
         _ASSERT((m_End-m_Begin) == length);
@@ -211,9 +211,9 @@ void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
         vector<char> v4;
         v4.reserve((length+1)/2);
         
-        int length_whole = length & -2;
+        TSeqPos length_whole = length & -2;
         
-        for(int i = 0; i < length_whole; i += 2) {
+        for(TSeqPos i = 0; i < length_whole; i += 2) {
             v4.push_back((buffer[i] << 4) | buffer[i+1]);
         }
         if (length_whole != length) {
@@ -233,45 +233,44 @@ void CBlastDbDataLoader::CSeqChunkData::BuildLiteral()
     m_Literal.Reset(literal);
 }
 
-void CBlastDbDataLoader::CCachedSeqData::AddDelta(int begin, int end)
-{
-    CRef<CSeq_literal> segment(new CSeq_literal);
-    segment->SetLength(end - begin);
-    
-    CRef<CDelta_seq> dseq(new CDelta_seq);
-    dseq->SetLiteral(*segment);
-    
-    CDelta_ext & delta = m_TSE->SetSeq().SetInst().SetExt().SetDelta();
-    delta.Set().push_back(dseq);
-}
-
 void CBlastDbDataLoader::x_SplitSeqData(TChunks        & chunks,
                                         CCachedSeqData & seqdata)
 {
-    int length = seqdata.GetLength();
-    
-    for(int i = 0; i<length; i += kSequenceSliceSize) {
-        int j = length;
-        
-        if ((j - i) > kSequenceSliceSize) {
-            j = i + kSequenceSliceSize;
+    CSeq_inst& inst = seqdata.GetTSE()->SetSeq().SetInst();
+    TSeqPos length = seqdata.GetLength();
+    if ( length <= kSequenceSliceSize ) {
+        // single Seq-data, no need to use Delta
+        inst.SetRepr(CSeq_inst::eRepr_raw);
+        x_AddSplitSeqChunk(chunks, seqdata.GetSeqIdHandle(), 0, length);
+    }
+    else {
+        // multiple Seq-data, we'll have to use Delta
+        inst.SetRepr(CSeq_inst::eRepr_delta);
+        CDelta_ext::Tdata& delta = inst.SetExt().SetDelta().Set();
+        for( TSeqPos pos = 0; pos < length; pos += kSequenceSliceSize) {
+            TSeqPos end = length;
+            if ((end - pos) > kSequenceSliceSize) {
+                end = pos + kSequenceSliceSize;
+            }
+            x_AddSplitSeqChunk(chunks, seqdata.GetSeqIdHandle(), pos, end);
+            CRef<CDelta_seq> dseq(new CDelta_seq);
+            dseq->SetLiteral().SetLength(end - pos);
+            delta.push_back(dseq);
         }
-        
-        x_AddSplitSeqChunk(chunks, seqdata, i, j);
     }
 }
 
-void CBlastDbDataLoader::x_AddSplitSeqChunk(TChunks        & chunks,
-                                            CCachedSeqData & seqdata,
-                                            int              begin,
-                                            int              end)
+void CBlastDbDataLoader::x_AddSplitSeqChunk(TChunks&              chunks,
+                                            const CSeq_id_Handle& id,
+                                            TSeqPos               begin,
+                                            TSeqPos               end)
 {
     // Create location for the chunk
     CTSE_Chunk_Info::TLocationSet loc_set;
     CTSE_Chunk_Info::TLocationRange rg =
         CTSE_Chunk_Info::TLocationRange(begin, end-1);
     
-    CTSE_Chunk_Info::TLocation loc(seqdata.GetSeqIdHandle(), rg);
+    CTSE_Chunk_Info::TLocation loc(id, rg);
     loc_set.push_back(loc);
     
     // Create new chunk for the data
@@ -279,7 +278,6 @@ void CBlastDbDataLoader::x_AddSplitSeqChunk(TChunks        & chunks,
     
     // Add seq-data
     chunk->x_AddSeq_data(loc_set);
-    seqdata.AddDelta(begin, end);
 
     chunks.push_back(chunk);
 }
@@ -513,6 +511,10 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.36  2005/12/08 14:28:16  vasilche
+ * Use TSeqPos for sequence length.
+ * Pepresent sequences as raw Seq-data when they are short enough.
+ *
  * Revision 1.35  2005/10/28 18:33:10  vasilche
  * Fixed selection of correct defline for gis.
  *
