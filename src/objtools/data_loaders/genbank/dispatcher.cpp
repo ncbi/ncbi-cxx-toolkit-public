@@ -799,7 +799,10 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
 #ifdef GB_COLLECT_STATS
                 bool collect_stat = CollectStatistics() > 0;
                 CReaderRequestResult::CRecurse r(command.GetResult());
-                CStopWatch sw(collect_stat);
+                CStopWatch sw;
+                if ( collect_stat ) {
+                    sw.Start();
+                }
 #endif
                 if ( !command.Execute(reader) ) {
                     retry_count = kMax_Int;
