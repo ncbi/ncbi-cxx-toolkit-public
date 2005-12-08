@@ -369,7 +369,7 @@ bool CFlatSeqLoc::x_Add
                     oss << (html ? "&gt" : ">") << pnt;
                     break;
                 case CInt_fuzz::eLim_lt:
-                    oss << (html ? "&lt" : "<") << pnt;
+                    oss << (html ? "&lt" : "<") << ((pnt > 3) ? pnt : 1);
                     break;
                 case CInt_fuzz::eLim_tr:
                     oss << pnt << '^' << pnt + 1;
@@ -431,6 +431,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/12/08 17:25:58  ludwigf
+* FIXED: Display of the left boundary of a "left fuzzy" location interval was
+* off if the frame did not start at position 1.
+*
 * Revision 1.19  2005/04/07 18:22:46  shomrat
 * Decrease the number of string constructions
 *
