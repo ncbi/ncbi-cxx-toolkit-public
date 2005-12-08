@@ -476,13 +476,18 @@ CBioseq_Info::TInst_Repr CBioseq_Info::GetInst_Repr(void) const
 
 void CBioseq_Info::SetInst_Repr(TInst_Repr v)
 {
-    m_Object->SetInst().SetRepr(v);;
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    m_Object->SetInst().SetRepr(v);
+    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Repr()
 {
-    if (IsSetInst_Repr())
+    if (IsSetInst_Repr()) {
+        CFastMutexGuard guard(m_SeqMap_Mtx);
         m_Object->SetInst().ResetRepr();
+        m_SeqMap.Reset();
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -509,13 +514,18 @@ CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
 
 void CBioseq_Info::SetInst_Mol(TInst_Mol v)
 {
-    m_Object->SetInst().SetMol(v);;
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    m_Object->SetInst().SetMol(v);
+    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Mol()
 {
-    if (IsSetInst_Mol())
+    if (IsSetInst_Mol()) {
+        CFastMutexGuard guard(m_SeqMap_Mtx);
         m_Object->SetInst().ResetMol();
+        m_SeqMap.Reset();
+    }
 }
 
 
@@ -543,13 +553,18 @@ CBioseq_Info::TInst_Length CBioseq_Info::GetInst_Length(void) const
 
 void CBioseq_Info::SetInst_Length(TInst_Length v)
 {
-    m_Object->SetInst().SetLength(v);;
+    CFastMutexGuard guard(m_SeqMap_Mtx);
+    m_Object->SetInst().SetLength(v);
+    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Length()
 {
-    if (IsSetInst_Length())
+    if (IsSetInst_Length()) {
+        CFastMutexGuard guard(m_SeqMap_Mtx);
         m_Object->SetInst().ResetLength();
+        m_SeqMap.Reset();
+    }
 }
 
 CBioseq_Info::TInst_Length CBioseq_Info::GetBioseqLength(void) const
@@ -587,7 +602,7 @@ const CBioseq_Info::TInst_Fuzz& CBioseq_Info::GetInst_Fuzz(void) const
 
 void CBioseq_Info::SetInst_Fuzz(TInst_Fuzz& v)
 {
-    m_Object->SetInst().SetFuzz(v);;
+    m_Object->SetInst().SetFuzz(v);
 }
 
 void CBioseq_Info::ResetInst_Fuzz()
@@ -620,7 +635,7 @@ CBioseq_Info::TInst_Topology CBioseq_Info::GetInst_Topology(void) const
 
 void CBioseq_Info::SetInst_Topology(TInst_Topology v)
 {
-    m_Object->SetInst().SetTopology(v);;
+    m_Object->SetInst().SetTopology(v);
 }
 
 void CBioseq_Info::ResetInst_Topology()
@@ -653,7 +668,7 @@ CBioseq_Info::TInst_Strand CBioseq_Info::GetInst_Strand(void) const
 
 void CBioseq_Info::SetInst_Strand(TInst_Strand v)
 {
-    m_Object->SetInst().SetStrand(v);;
+    m_Object->SetInst().SetStrand(v);
 }
 
 void CBioseq_Info::ResetInst_Strand()
@@ -687,14 +702,19 @@ const CBioseq_Info::TInst_Seq_data& CBioseq_Info::GetInst_Seq_data(void) const
 
 void CBioseq_Info::SetInst_Seq_data(TInst_Seq_data& v)
 {
+    CFastMutexGuard guard(m_SeqMap_Mtx);
     m_Seq_dataChunks.clear();
-    m_Object->SetInst().SetSeq_data(v);;
+    m_Object->SetInst().SetSeq_data(v);
+    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Seq_data()
 {
-    if (IsSetInst_Seq_data())
+    if (IsSetInst_Seq_data()) {
+        CFastMutexGuard guard(m_SeqMap_Mtx);
         m_Object->SetInst().ResetSeq_data();
+        m_SeqMap.Reset();
+    }
 }
 
 
@@ -722,14 +742,19 @@ const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
 
 void CBioseq_Info::SetInst_Ext(TInst_Ext& v)
 {
+    CFastMutexGuard guard(m_SeqMap_Mtx);
     m_Seq_dataChunks.clear();
     m_Object->SetInst().SetExt(v);
+    m_SeqMap.Reset();
 }
 
 void CBioseq_Info::ResetInst_Ext()
 {
-    if (IsSetInst_Ext())
+    if (IsSetInst_Ext()) {
+        CFastMutexGuard guard(m_SeqMap_Mtx);
         m_Object->SetInst().ResetExt();
+        m_SeqMap.Reset();
+    }
 }
 
 
@@ -759,12 +784,16 @@ const CBioseq_Info::TInst_Hist& CBioseq_Info::GetInst_Hist(void) const
 void CBioseq_Info::SetInst_Hist(TInst_Hist& v)
 {
     m_AssemblyChunk = -1;
-    m_Object->SetInst().SetHist(v);;
+    m_Object->SetInst().SetHist(v);
 }
+
+
 void CBioseq_Info::ResetInst_Hist()
 {
-    if (IsSetInst_Hist())
+    if (IsSetInst_Hist()) {
+        m_AssemblyChunk = -1;
         m_Object->SetInst().ResetHist();
+    }
 }
 
 
@@ -1085,6 +1114,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2005/12/08 14:31:01  vasilche
+* Reset CSeqMap when Bioseq.inst is changed.
+*
 * Revision 1.33  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *
