@@ -101,7 +101,7 @@ CPubseqReader::CPubseqReader(int max_connections,
     : m_Server(server) , m_User(user), m_Password(pswd),
       m_Context(0), m_AllowGzip(false)
 {
-    if ( max_connections <= 0 ) {
+    if ( max_connections == 0 ) {
         max_connections = DEFAULT_NUM_CONN;
     }
     if ( m_Server.empty() ) {

@@ -55,24 +55,31 @@ CReader::~CReader(void)
 
 void CReader::SetInitialConnections(int max)
 {
+    bool open_initial_connection = true;
+    if ( max < 0 ) {
+        open_initial_connection = false;
+        max = -max;
+    }
     if ( SetMaximumConnections(max) <= 0 ) {
         NCBI_THROW(CLoaderException, eConnectionFailed,
                    "Maximum connection is zero");
     }
-    for ( int attempt = 1; ; ++attempt ) {
-        try {
-            CConn conn(this);
-            x_ConnectAtSlot(conn);
-            conn.Release();
-            return;
-        }
-        catch ( CException& exc ) {
-            LOG_POST(Warning <<
-                     "CReader: cannot open initial connection: "<<exc.what());
-            if ( attempt >= GetRetryCount() ) {
-                // this is the last attempt to establish connection
-                SetMaximumConnections(0);
-                throw;
+    if ( open_initial_connection ) {
+        for ( int attempt = 1; ; ++attempt ) {
+            try {
+                CConn conn(this);
+                x_ConnectAtSlot(conn);
+                conn.Release();
+                return;
+            }
+            catch ( CException& exc ) {
+                LOG_POST(Warning<<"CReader: "
+                         "cannot open initial connection: "<<exc.what());
+                if ( attempt >= GetRetryCount() ) {
+                    // this is the last attempt to establish connection
+                    SetMaximumConnections(0);
+                    throw;
+                }
             }
         }
     }

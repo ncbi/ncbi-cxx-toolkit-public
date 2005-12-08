@@ -121,7 +121,7 @@ CId1Reader::CId1Reader(int max_connections)
     : m_ServiceName(DEFAULT_SERVICE),
       m_Timeout(DEFAULT_TIMEOUT)
 {
-    if ( max_connections <= 0 ) {
+    if ( max_connections == 0 ) {
         max_connections = DEFAULT_NUM_CONN;
     }
     SetInitialConnections(max_connections);

@@ -164,7 +164,7 @@ CId2Reader::CId2Reader(int max_connections)
       m_AvoidRequest(0)
 {
     m_RequestSerialNumber.Set(1);
-    if ( max_connections <= 0 ) {
+    if ( max_connections == 0 ) {
         max_connections = DEFAULT_NUM_CONN;
     }
     SetInitialConnections(max_connections);
