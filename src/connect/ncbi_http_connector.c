@@ -137,9 +137,6 @@ static int/*bool*/ s_Adjust(SHttpConnector* uuu,
     }
 
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
-
-    if (uuu->net_info->debug_printout)
-        ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
     return 1/*success*/;
 }
 
@@ -192,6 +189,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu, int/*bool*/ drop_unread)
                  "\r\n");
             reset_user_header = 1;
         }
+        if (uuu->net_info->debug_printout)
+            ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
         /* connect & send HTTP header */
         uuu->sock = URL_Connect
             (uuu->net_info->host,       uuu->net_info->port,
@@ -947,8 +946,6 @@ extern CONNECTOR HTTP_CreateConnectorEx
     uuu->net_info        = net_info ?
         ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
     ConnNetInfo_AdjustForHttpProxy(uuu->net_info);
-    if (uuu->net_info->debug_printout)
-        ConnNetInfo_Log(uuu->net_info, CORE_GetLOG());
 
     uuu->parse_http_hdr  = parse_http_hdr;
     uuu->adjust_net_info = adjust_net_info;
@@ -983,6 +980,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.69  2005/12/08 03:53:23  lavr
+ * Log connection parameters right before use
+ *
  * Revision 6.68  2005/11/21 21:09:31  lavr
  * Fix compilation error
  *
