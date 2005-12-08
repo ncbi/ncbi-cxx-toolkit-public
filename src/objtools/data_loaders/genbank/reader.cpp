@@ -53,9 +53,9 @@ CReader::~CReader(void)
 }
 
 
-void CReader::SetInitialConnections(int max)
+void CReader::SetInitialConnections(int max,
+                                    bool open_initial_connection)
 {
-    bool open_initial_connection = true;
     if ( max < 0 ) {
         open_initial_connection = false;
         max = -max;

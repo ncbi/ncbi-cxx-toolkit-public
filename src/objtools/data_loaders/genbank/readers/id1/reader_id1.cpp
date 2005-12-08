@@ -132,11 +132,6 @@ CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
                        const string& driver_name)
 {
     CConfig conf(params);
-    TConn max_connections = conf.GetInt(
-        driver_name,
-        NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN,
-        CConfig::eErr_NoThrow,
-        DEFAULT_NUM_CONN);
     m_ServiceName = conf.GetString(
         driver_name,
         NCBI_GBLOADER_READER_ID1_PARAM_SERVICE_NAME,
@@ -154,7 +149,17 @@ CId1Reader::CId1Reader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_ID1_PARAM_TIMEOUT,
         CConfig::eErr_NoThrow,
         DEFAULT_TIMEOUT);
-    SetInitialConnections(max_connections);
+    TConn max_connections = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_ID1_PARAM_NUM_CONN,
+        CConfig::eErr_NoThrow,
+        DEFAULT_NUM_CONN);
+    bool open_initial_connection = conf.GetBool(
+        driver_name,
+        NCBI_GBLOADER_READER_ID1_PARAM_PREOPEN,
+        CConfig::eErr_NoThrow,
+        true);
+    SetInitialConnections(max_connections, open_initial_connection);
 }
 
 

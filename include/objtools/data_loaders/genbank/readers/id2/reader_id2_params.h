@@ -39,6 +39,8 @@
 
 /* Maximum number of simultaneous connection to id2 server */
 #define NCBI_GBLOADER_READER_ID2_PARAM_NUM_CONN "no_conn"
+/* Whether to open first connection immediately or not (default: true) */
+#define NCBI_GBLOADER_READER_ID2_PARAM_PREOPEN "preopen"
 /* NCBI service name to connect to */
 #define NCBI_GBLOADER_READER_ID2_PARAM_SERVICE_NAME "service"
 /* Timeout of network connections in seconds */

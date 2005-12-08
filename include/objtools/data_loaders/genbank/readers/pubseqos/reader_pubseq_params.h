@@ -39,6 +39,8 @@
 
 /* Maximum number of simultaneous connection to PUBSEQ_OS server */
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_NUM_CONN "no_conn"
+/* Whether to open first connection immediately or not (default: true) */
+#define NCBI_GBLOADER_READER_PUBSEQ_PARAM_PREOPEN  "preopen"
 /* PUBSEQ_OS server name */
 #define NCBI_GBLOADER_READER_PUBSEQ_PARAM_SERVER   "server"
 /* PUBSEQ_OS login name */

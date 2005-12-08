@@ -139,7 +139,7 @@ public:
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
 
-    void SetInitialConnections(int max);
+    void SetInitialConnections(int max, bool open_initial_connection = true);
     int SetMaximumConnections(int max);
     int GetMaximumConnections(void) const;
     virtual int GetMaximumConnectionsLimit(void) const;
