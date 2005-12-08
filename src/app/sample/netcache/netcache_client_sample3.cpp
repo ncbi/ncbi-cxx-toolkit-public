@@ -23,16 +23,19 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko
+ * Authors:  Maxim Didenko, Vladimir Ivanov, Anatoliy Kuznetsov
  *
  * File Description:  NetCache Sample (uses CNetCacheNSStorage)
  *
  */
 
-/// @file netcache_client_sample2.cpp
+/// @file netcache_client_sample3.cpp
 /// NetCache sample: 
 ///    illustrates client creattion and simple store/load scenario
-///    using C++ compatible streams.
+///    using C++ compatible streams and ZIP compression.
+///    In some cases compression can dramatically reduce 
+///    network and storage overhead of NetCache.
+///
 
 
 #include <ncbi_pch.hpp>
@@ -42,7 +45,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
-#include <util/compress/zip.hpp>
+#include <util/compress/zlib.hpp>
 
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netcache_nsstorage_imp.hpp>
@@ -149,11 +152,12 @@ int CSampleNetCacheClient::Run(void)
     // Store the BLOB
     string key;
     CNcbiOstream& os = storage.CreateOStream(key);
+
+    // initialize compression stream
     {{
         CCompressionOStream os_zip(os, new CZipStreamCompressor(),
                                 CCompressionStream::fOwnWriter);
         os_zip << test_data;
-        os_zip.close();
     }}
 
     // Reset the storage so we can reuse it to get the data back from 
@@ -169,6 +173,9 @@ int CSampleNetCacheClient::Run(void)
         CNcbiIstream& is = storage.GetIStream(key);
         string res;
         {{
+            // construct decompresion stream
+            // decompression MUST match compression 
+            // CZipStreamCompressor - CZipStreamDecompressor
             CCompressionIStream is_zip(is, new CZipStreamDecompressor(),
                                        CCompressionStream::fOwnReader);
             getline(is_zip, res);
@@ -193,14 +200,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/08 17:22:58  kuznets
+ * Added sample3 to the build, fixed bugs, added comments
+ *
  * Revision 1.1  2005/12/08 17:08:21  ivanov
  * Initial revision
- *
- * Revision 1.2  2005/12/08 16:53:48  kuznets
- * Comments, clean-up
- *
- * Revision 1.1  2005/12/08 15:52:14  didenko
- * Added sample for CNetCacheNSStorage class
  *
  * ===========================================================================
  */
