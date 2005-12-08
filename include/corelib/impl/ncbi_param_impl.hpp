@@ -308,7 +308,7 @@ CParam<TDescription>::GetThreadDefault(void)
 {
     CFastMutexGuard guard(s_GetLock());
     CRef<TTls>& tls = sx_GetTls();
-    if ( tls ) {
+    if ( tls.NotEmpty() ) {
         TValueType* v = tls->GetValue();
         if ( v ) {
             return *v;
@@ -337,6 +337,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/12/08 16:40:34  ucko
+ * Fix compilation under GCC 2.95, which gets confused when trying to
+ * use a CRef<>& type as a bool.
+ *
  * Revision 1.5  2005/12/06 18:56:17  grichenk
  * Fixed parsing of numeric values in StringToValue() for bools.
  *
