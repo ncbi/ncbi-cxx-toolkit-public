@@ -184,6 +184,60 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiArgsException --
+///
+///   Exceptions to be used by CGI arguments parser.
+///
+
+class CCgiArgsException : public CCgiException
+{
+public:
+    /// Bad (malformed or missing) HTTP request components
+    enum EErrCode {
+        eFormat,     //< Format of arguments
+        eValue,      //< Invalid argument value
+        eName        //< Argument does not exist
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch ( GetErrCode() ) {
+        case eFormat:    return "Misformatted CGI query string";
+        case eValue:     return "Invalid argument value";
+        case eName:      return "Unknown argument name";
+        default:         return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CCgiArgsException, CCgiException);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiArgsParserException --
+///
+///   Exceptions used by CGI arguments parser when the error has occured while
+///   parsing the arguments.
+///
+
+class CCgiArgsParserException : public CParseTemplException<CCgiArgsException>
+{
+public:
+    /// @sa CCgiArgsException
+    enum EErrCode {
+        eFormat     = CCgiArgsException::eFormat,
+        eValue      = CCgiArgsException::eValue
+        // WARNING:  no enums not listed in "CCgiArgsException::EErrCode"
+        //           can be here -- unless you re-implement GetErrCodeString()
+    };
+
+    NCBI_EXCEPTION_DEFAULT2
+    (CCgiArgsParserException, CParseTemplException<CCgiArgsException>,
+     std::string::size_type);
+};
+
+
 END_NCBI_SCOPE
 
 
@@ -193,6 +247,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/08 21:33:20  grichenk
+ * Added CCgiArgsException and CCgiArgsParserException
+ *
  * Revision 1.6  2005/10/17 16:46:40  grichenk
  * Added CCgiArgs_Parser base class.
  * Redesigned CCgiRequest to use CCgiArgs_Parser.

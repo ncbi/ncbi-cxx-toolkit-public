@@ -276,7 +276,8 @@ public:
         { return FindFirst(name) != m_Args.end(); }
 
     /// Get value for the given name. finds first of the arguments with the
-    //// given name. If the name does not exist, is_found is set to false.
+    /// given name. If the name does not exist, is_found is set to false.
+    /// If is_found is null, CCgiArgsException is thrown.
     const string& GetValue(const string& name, bool* is_found = 0) const;
 
     /// Set new value for the first argument with the given name or
@@ -297,7 +298,7 @@ public:
 
     /// Take argument name from the iterator, find next argument with the same
     /// name, return GetArgs().end() if not found.
-    iterator FindNext(iterator iter);
+    iterator FindNext(const iterator& iter);
 
     /// Find the first argument with the given name. If not found, return
     /// GetArgs().end().
@@ -305,7 +306,7 @@ public:
 
     /// Take argument name from the iterator, find next argument with the same
     /// name, return GetArgs().end() if not found.
-    const_iterator FindNext(const_iterator iter) const;
+    const_iterator FindNext(const const_iterator& iter) const;
 
     /// Select case sensitivity of arguments' names.
     void SetCase(NStr::ECase name_case)
@@ -317,8 +318,9 @@ protected:
                              const string& value,
                              EArgType      arg_type);
 private:
-    iterator x_Find(const string& name, iterator start);
-    const_iterator x_Find(const string& name, const_iterator start) const;
+    iterator x_Find(const string& name, const iterator& start);
+    const_iterator x_Find(const string& name,
+                          const const_iterator& start) const;
 
     NStr::ECase m_Case;
     bool        m_IsIndex;
@@ -623,17 +625,6 @@ void CUrl::x_SetArgs(const string& args,
 
 
 inline
-const string& CCgiArgs::GetValue(const string& name, bool* is_found) const
-{
-    const_iterator iter = FindFirst(name);
-    if ( is_found ) {
-        *is_found = iter != m_Args.end();
-    }
-    return iter != m_Args.end() ? iter->value : kEmptyStr;
-}
-
-
-inline
 CCgiArgs::const_iterator CCgiArgs::FindFirst(const string& name) const
 {
     return x_Find(name, m_Args.begin());
@@ -648,14 +639,14 @@ CCgiArgs::iterator CCgiArgs::FindFirst(const string& name)
 
 
 inline
-CCgiArgs::const_iterator CCgiArgs::FindNext(const_iterator iter) const
+CCgiArgs::const_iterator CCgiArgs::FindNext(const const_iterator& iter) const
 {
     return x_Find(iter->name, iter);
 }
 
 
 inline
-CCgiArgs::iterator CCgiArgs::FindNext(iterator iter)
+CCgiArgs::iterator CCgiArgs::FindNext(const iterator& iter)
 {
     return x_Find(iter->name, iter);
 }
@@ -666,6 +657,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/12/08 21:33:20  grichenk
+ * Added CCgiArgsException and CCgiArgsParserException
+ *
  * Revision 1.8  2005/12/07 20:29:55  grichenk
  * Use string& rather than string in arguments.
  * Added public methods FindFirst() and FindNext().
@@ -683,6 +677,9 @@ END_NCBI_SCOPE
  * Added ampersand encoding flag
  *
  * $Log$
+ * Revision 1.9  2005/12/08 21:33:20  grichenk
+ * Added CCgiArgsException and CCgiArgsParserException
+ *
  * Revision 1.8  2005/12/07 20:29:55  grichenk
  * Use string& rather than string in arguments.
  * Added public methods FindFirst() and FindNext().

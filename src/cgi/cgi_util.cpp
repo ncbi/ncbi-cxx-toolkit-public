@@ -67,7 +67,7 @@ void CCgiArgs_Parser::x_SetIndexString(const string& query,
     for (SIZE_TYPE beg = 0; beg < len; ) {
         SIZE_TYPE end = query.find('+', beg);
         if (end == beg  ||  end == len-1) {
-            NCBI_THROW2(CCgiParseException, eFormat,
+            NCBI_THROW2(CCgiArgsParserException, eFormat,
                 "Invalid delimiter: \"" + query + "\"", end+1);
         }
         if (end == NPOS) {
@@ -99,7 +99,7 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
         // No spaces are allowed in the parsed string
         SIZE_TYPE err_pos = query.find_first_of(" \t\r\n");
         if (err_pos != NPOS) {
-            NCBI_THROW2(CCgiParseException, eFormat,
+            NCBI_THROW2(CCgiArgsParserException, eFormat,
                 "Space character in query: \"" + query + "\"",
                 err_pos+1);
         }
@@ -127,7 +127,7 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
         // parse and URL-decode name
         SIZE_TYPE mid = query.find_first_of("=&", beg);
         if (mid == beg) {
-            NCBI_THROW2(CCgiParseException, eFormat,
+            NCBI_THROW2(CCgiArgsParserException, eFormat,
                         "Invalid delimiter: \"" + query + "\"", mid+1);
         }
         if (mid == NPOS) {
@@ -142,7 +142,7 @@ void CCgiArgs_Parser::SetQueryString(const string& query,
             mid++;
             SIZE_TYPE end = query.find_first_of(" &", mid);
             if (end != NPOS  &&  query[end] != '&') {
-                NCBI_THROW2(CCgiParseException, eFormat,
+                NCBI_THROW2(CCgiArgsParserException, eFormat,
                             "Invalid delimiter: \"" + query + "\"", end+1);
             }
             if (end == NPOS) {
@@ -237,6 +237,20 @@ string CCgiArgs::GetQueryString(EAmpEncoding amp_enc,
 }
 
 
+const string& CCgiArgs::GetValue(const string& name, bool* is_found) const
+{
+    const_iterator iter = FindFirst(name);
+    if ( is_found ) {
+        *is_found = iter != m_Args.end();
+        return *is_found ? iter->value : kEmptyStr;
+    }
+    else if (iter != m_Args.end()) {
+        return iter->value;
+    }
+    NCBI_THROW(CCgiArgsException, eName, "Argument not found: " + name);
+}
+
+
 void CCgiArgs::SetValue(const string& name, const string& value)
 {
     m_IsIndex = false;
@@ -251,7 +265,7 @@ void CCgiArgs::SetValue(const string& name, const string& value)
 
 
 CCgiArgs::iterator CCgiArgs::x_Find(const string& name,
-                                    iterator start)
+                                    const iterator& start)
 {
     for(iterator it = start; it != m_Args.end(); ++it) {
         if ( NStr::Equal(it->name, name, m_Case) ) {
@@ -263,7 +277,7 @@ CCgiArgs::iterator CCgiArgs::x_Find(const string& name,
 
 
 CCgiArgs::const_iterator CCgiArgs::x_Find(const string& name,
-                                          const_iterator start) const
+                                          const const_iterator& start) const
 {
     for(const_iterator it = start; it != m_Args.end(); ++it) {
         if ( NStr::Equal(it->name, name, m_Case) ) {
@@ -392,7 +406,7 @@ void CUrl::SetUrl(const string& url, const IUrlEncoder* encoder)
                         continue;
                     }
                     else {
-                        NCBI_THROW2(CCgiParseException, eFormat,
+                        NCBI_THROW2(CCgiArgsParserException, eValue,
                             "Invalid port value: \"" + url + "\"", beg+1);
                     }
                 }
@@ -548,7 +562,7 @@ extern string URL_DecodeString(const string& str,
         (encode_flag == eUrlEncode_PercentOnly)
         ? eUrlDecode_Percent : eUrlDecode_All);
     if (err_pos != 0) {
-        NCBI_THROW2(CCgiParseException, eFormat,
+        NCBI_THROW2(CCgiArgsParserException, eFormat,
                     "URL_DecodeString(\"" + NStr::PrintableString(str) + "\")",
                     err_pos);
     }
@@ -1099,6 +1113,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2005/12/08 21:33:21  grichenk
+* Added CCgiArgsException and CCgiArgsParserException
+*
 * Revision 1.9  2005/12/07 23:06:31  vasilche
 * Fixed typo.
 *
