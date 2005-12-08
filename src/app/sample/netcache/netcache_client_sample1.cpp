@@ -31,7 +31,7 @@
 
 /// @file netcache_client_sample1.cpp
 /// NetCache sample: 
-///    illustrates client creattion and simple store/load scenario.
+///    illustrates client construction and simple store/load scenario.
 
 
 #include <ncbi_pch.hpp>
@@ -83,10 +83,6 @@ void CSampleNetCacheClient::Init(void)
                              "LBSM service name",
                              CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("hostport",
-                             "host_post",
-                             "NetCache server network address (host:port)",
-                             CArgDescriptions::eString);
 
     
     // Setup arg.descriptions for this application
@@ -105,39 +101,11 @@ int CSampleNetCacheClient::Run(void)
         string service_name = args["service"].AsString();
         nc_client.reset(
             new CNetCacheClient_LB("nc_client_sample1", service_name));
-    } else {
-        if (args["hostport"]) {
-            // use direct network address
-            string host_port = args["hostport"].AsString();
-            string host, port_str;
-            NStr::SplitInTwo(host_port, ":", host, port_str);
-            if (host.empty()) {
-                ERR_POST("Invalid net address: empty host name");
-                return 1;
-            }
-            if (port_str.empty()) {
-                ERR_POST("Invalid net address: empty port");
-                return 1;
-            }
-            
-            unsigned port = NStr::StringToInt(port_str);
-            if (port == 0) {
-                ERR_POST("Invalid net address: port is zero");
-                return 1;
-            }
-
-            nc_client.reset(
-                new CNetCacheClient(host, port, "nc_client_sample1"));
-
-
-        } else {
-            ERR_POST("Invalid network address. Use -service OR -hostport options.");
+    } 
+    else {
+            ERR_POST("Invalid network address. Use -service option.");
             return 1;
-        }
     }
-
-
-
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 
@@ -172,6 +140,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/08 16:06:16  kuznets
+ * Made sample simplier (only LB client illustrated)
+ *
  * Revision 1.3  2005/12/07 19:21:16  kuznets
  * Comments
  *
