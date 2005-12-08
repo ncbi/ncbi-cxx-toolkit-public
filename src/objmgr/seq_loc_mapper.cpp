@@ -2056,7 +2056,8 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
 
 CRef<CSeq_align> CSeq_loc_Mapper::x_MapSeq_align(const CSeq_align& src_align)
 {
-    CSeq_align_Mapper aln_mapper(src_align, m_UseWidth, &m_Scope.GetScope());
+    CSeq_align_Mapper aln_mapper(src_align, m_UseWidth,
+                                 m_Scope.GetScopeOrNull());
     aln_mapper.Convert(*this);
     return aln_mapper.GetDstAlign();
     /*
@@ -2076,6 +2077,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2005/12/08 17:33:17  vasilche
+* Fixed exception with null scope where it's optional.
+*
 * Revision 1.42  2005/09/22 20:49:33  grichenk
 * Adjust segment length when mapping alignment between nuc and prot.
 *
