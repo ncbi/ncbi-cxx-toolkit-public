@@ -138,8 +138,9 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
     iter->type     = types;
     iter->host     = (preferred_host == SERV_LOCALHOST
                       ? SOCK_gethostbyname(0) : preferred_host);
-    iter->pref     = 0.01*(preference < 0.0   ? 0.0   :
-                           preference > 100.0 ? 100.0 : preference);
+    iter->pref     = (preference < 0.0
+                      ? -1.0
+                      : 0.01 * (preference > 100.0 ? 100.0 : preference));
     iter->n_skip   = 0;
     iter->a_skip   = 0;
     iter->skip     = 0;
@@ -593,6 +594,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.69  2005/12/08 03:54:15  lavr
+ * Allow negative preference for internal "latch" mode
+ *
  * Revision 6.68  2005/08/31 19:25:16  lavr
  * Fix number of bytes written in new referer
  *
