@@ -40,68 +40,67 @@ BEGIN_NCBI_SCOPE
 
 string CWinSecurity::GetUserName(void)
 {
-    char  strUserName[UNLEN + 1];
-    DWORD dwUserName = UNLEN + 1;
+    char  name[UNLEN + 1];
+    DWORD name_size = UNLEN + 1;
 
-    if ( !::GetUserName(strUserName, &dwUserName) ) {
+    if ( !::GetUserName(name, &name_size) ) {
         return kEmptyStr;
     }
-    return strUserName;
+    return name;
 }
 
 
-PSID CWinSecurity::GetUserSID(const string& strUserName)
+PSID CWinSecurity::GetUserSID(const string& username)
 {
-
-    if ( strUserName.empty() ) {
+    string x_username = username.empty() ? GetUserName() : username;
+    if ( x_username.empty() ) {
         return NULL;
     }
-	
-    PSID         pUserSID  = NULL;
-    DWORD        cbUserSID = 0;
-    char*        pszDomain = NULL;
-    DWORD        cbDomain  = 0;
-    SID_NAME_USE snuType   = SidTypeUnknown;
+
+    PSID         sid         = NULL;
+    DWORD        sid_size    = 0;
+    char*        domain      = NULL;
+    DWORD        domain_size = 0;
+    SID_NAME_USE use         = SidTypeUnknown;
 
     try {
         // First call to LookupAccountName to get the buffer sizes
-        BOOL bRet = ::LookupAccountName(NULL, strUserName.c_str(),
-                                        pUserSID, &cbUserSID,
-                                        pszDomain, &cbDomain, &snuType);
-        if ( !bRet  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
+        BOOL ret = LookupAccountName(NULL, x_username.c_str(),
+                                     sid, &sid_size,
+                                     domain, &domain_size, &use);
+        if ( !ret  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
             return NULL;
         }
         // Reallocate memory for the buffers
-        pUserSID  = (PSID)malloc(cbUserSID);
-        pszDomain = (char*)malloc(cbDomain);
-        if ( !pUserSID  || !pszDomain ) {
+        sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
+        domain = (char*)malloc(domain_size);
+        if ( !sid  || !domain ) {
             throw(0);
         }
         // Second call to LookupAccountName to get the account info
-        bRet = ::LookupAccountName(NULL, strUserName.c_str(),
-                                   pUserSID, &cbUserSID,
-                                   pszDomain, &cbDomain, &snuType);
-        if ( !bRet ) {
+        ret = LookupAccountName(NULL, x_username.c_str(),
+                                sid, &sid_size,
+                                domain, &domain_size, &use);
+        if ( !ret ) {
             // Unknown local user
             throw(0);
         }
     }
     catch (int) {
-        if ( pUserSID ) free(pUserSID);
-        pUserSID = NULL;
+        if ( sid ) LocalFree(sid);
+        sid = NULL;
     }
-
     // Clean up
-    if ( pszDomain ) free(pszDomain);
+    if ( domain ) free(domain);
 
-    return pUserSID;
+    return sid;
 }
 
 
-void CWinSecurity::FreeUserSID(PSID pUserSID)
+void CWinSecurity::FreeUserSID(PSID sid)
 {
-    if ( pUserSID ) {
-        free(pUserSID);
+    if ( sid ) {
+        LocalFree(sid);
     }
 }
 
@@ -112,8 +111,8 @@ bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
     // Accordingly MSDN max account name size is 20, domain name size is 256.
     #define MAX_ACCOUNT_LEN  256
 
-    char account_name[MAX_ACCOUNT_LEN];
-    char domain_name [MAX_ACCOUNT_LEN];
+    char  account_name[MAX_ACCOUNT_LEN];
+    char  domain_name [MAX_ACCOUNT_LEN];
     DWORD account_size = MAX_ACCOUNT_LEN;
     DWORD domain_size  = MAX_ACCOUNT_LEN;
     SID_NAME_USE use   = SidTypeUnknown;
@@ -130,7 +129,6 @@ bool s_LookupAccountSid(PSID sid, string* account, string* domain = 0)
     if ( domain )
         *domain = domain_name;
 
-    // Return result
     return true;
 }
 
@@ -155,14 +153,14 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
     tp.Privileges[0].Attributes = 0;
 
     AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                            &tp_prev, &tp_prev_size);
+                          &tp_prev, &tp_prev_size);
     if ( GetLastError() != ERROR_SUCCESS ) {
         return false;
     }
 
     // Set privilege based on received setting
 
-    tp_prev.PrivilegeCount     = 1;
+    tp_prev.PrivilegeCount = 1;
     tp_prev.Privileges[0].Luid = luid;
 
     if ( enable ) {
@@ -171,12 +169,10 @@ bool s_EnablePrivilege(HANDLE token, LPCTSTR privilege, BOOL enable = TRUE)
         tp_prev.Privileges[0].Attributes ^= 
             (SE_PRIVILEGE_ENABLED & tp_prev.Privileges[0].Attributes);
     }
-    AdjustTokenPrivileges(token, FALSE, &tp_prev, tp_prev_size,
-                            NULL, NULL);
+    AdjustTokenPrivileges(token, FALSE, &tp_prev, tp_prev_size, NULL, NULL);
     if ( GetLastError() != ERROR_SUCCESS ) {
         return false;
     }
-
     // Privilege settings changed
     return true;
 }
@@ -191,13 +187,10 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
     PSECURITY_DESCRIPTOR sd = NULL;
 
     if ( GetNamedSecurityInfo(
-            (LPSTR)objname.c_str(),
-            objtype,
+            (LPSTR)objname.c_str(), objtype,
             OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-            &sid_owner,
-            &sid_group,
-            NULL, NULL,
-            &sd ) != ERROR_SUCCESS ) {
+            &sid_owner, &sid_group, NULL, NULL, &sd )
+            != ERROR_SUCCESS ) {
       return false;
     }
     // Get owner
@@ -207,9 +200,9 @@ bool CWinSecurity::GetObjectOwner(const string&  objname,
     }
     // Get group
     if ( group  &&  !s_LookupAccountSid(sid_group, group) ) {
-        // This is not an error, because the group name on WINDOWS
+        // This is not an error, because the group name on Windows
         // is an auxiliary information. Sometimes accounts can not
-        // belongs to groups, or we dont have permissions to get
+        // belongs to groups, or we don't have permissions to get
         // such information.
         *group = kEmptyStr;
     }
@@ -225,13 +218,9 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
     }
 
     // Get access token
-
-    HANDLE process = GetCurrentProcess();
-    if ( !process ) {
-        return false;
-    }
     HANDLE token = INVALID_HANDLE_VALUE;
-    if ( !OpenProcessToken(process, TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+    if ( !OpenProcessToken(GetCurrentProcess(),
+                           TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
                            &token) ) {
         return false;
     }
@@ -251,9 +240,9 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
         // Get SID for new owner
         //
 
-        // First call to LookupAccountName to get the buffer sizes
-        DWORD sid_size    = 0;
-        DWORD domain_size = 0;
+        // First call to LookupAccountName() to get the buffer sizes
+        DWORD        sid_size    = 0;
+        DWORD        domain_size = 0;
         SID_NAME_USE use  = SidTypeUnknown;
         BOOL res;
         res = LookupAccountName(NULL, owner.c_str(),
@@ -263,7 +252,7 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
             throw(0);
 
         // Reallocate memory for the buffers
-        sid    = (PSID) malloc(sid_size);
+        sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
         domain = (char*)malloc(domain_size);
         if ( !sid  || !domain ) {
             throw(0);
@@ -310,12 +299,46 @@ bool CWinSecurity::SetFileOwner(const string& filename, const string& owner)
     }
 
     // Clean up
-    if ( sid )    free(sid);
+    if ( sid )    LocalFree(sid);
     if ( domain ) free(domain);
     CloseHandle(token);
 
     // Return result
     return success;
+}
+
+
+#define FILE_SECURITY_INFO (OWNER_SECURITY_INFORMATION | \
+                            GROUP_SECURITY_INFORMATION | \
+                            DACL_SECURITY_INFORMATION)
+
+
+PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)
+{
+    if ( path.empty() ) {
+        return NULL;
+    }
+    PSECURITY_DESCRIPTOR sid = NULL;
+    DWORD size               = 0;
+    DWORD size_need          = 0;
+
+    if ( !GetFileSecurity(path.c_str(), FILE_SECURITY_INFO,
+                          sid, size, &size_need) ) {
+        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+            return NULL;
+        }
+        // Allocate memory for the buffer
+        sid = (PSECURITY_DESCRIPTOR) LocalAlloc(LMEM_FIXED, size_need);
+        if ( !sid ) {
+            return NULL;
+        }
+        size = size_need;
+        if ( !GetFileSecurity(path.c_str(), FILE_SECURITY_INFO,
+                              sid, size, &size_need) ) {
+            return NULL;
+        }
+    }
+    return sid;
 }
 
 
@@ -326,9 +349,9 @@ bool CWinSecurity::GetFileDACL(const string& strPath,
         return false;
     }
     DWORD dwRet = 0;
-    dwRet = ::GetNamedSecurityInfo((LPSTR)strPath.c_str(), SE_FILE_OBJECT,
-                                   DACL_SECURITY_INFORMATION,
-                                   NULL, NULL, pDACL, NULL, pFileSD);
+    dwRet = GetNamedSecurityInfo((LPSTR)strPath.c_str(), SE_FILE_OBJECT,
+                                 FILE_SECURITY_INFO,
+                                 NULL, NULL, pDACL, NULL, pFileSD);
     if (dwRet != ERROR_SUCCESS) {
         pFileSD = NULL;
         pDACL   = NULL;
@@ -337,91 +360,75 @@ bool CWinSecurity::GetFileDACL(const string& strPath,
 }
 
 
-void CWinSecurity::FreeFileSD(PSECURITY_DESCRIPTOR pFileSD)
+void CWinSecurity::FreeFileSD(PSECURITY_DESCRIPTOR sd)
 {
-    if ( pFileSD ) {
-        LocalFree(pFileSD);
+    if ( sd ) {
+        LocalFree(sd);
     }
 }
 
 
-bool CWinSecurity::GetFilePermissions(const string& strPath,
-                                      const string& strUserName,
-                                      ACCESS_MASK*  pPermissions)
+// We don't use GetEffectiveRightsFromAcl() here, because it is very limited
+// and very often works incorrect. Microsoft don't recommend to use it.
+// So, permission can be taken for the current process thread owner only :(
+
+bool CWinSecurity::GetFilePermissions(const string& path,
+                                      ACCESS_MASK*  permissions)
 {
-    if ( !pPermissions ) {
-        return false;
-    }
-    // Get user name
-    string strUser = strUserName;
-    if ( strUser.empty() ) {
-        strUser = CWinSecurity::GetUserName();
-        if ( strUser.empty() ) {
-            return false;
-        }
-    }
-    // Get user SID
-    PSID pUserSID = CWinSecurity::GetUserSID(strUser);
-    if ( !pUserSID ) {
-        return false;
-    }
-    // Get file permissions
-    bool res = 
-        CWinSecurity::GetFilePermissions(strPath, pUserSID, pPermissions);
-    // Free user SID
-    CWinSecurity::FreeUserSID(pUserSID);
-    return res;
-}
-
-
-bool CWinSecurity::GetFilePermissions(const string& strPath,
-                                      ACCESS_MASK*  pPermissions)
-{
-    return CWinSecurity::GetFilePermissions(strPath, kEmptyStr, pPermissions);
-}
-
-
-bool CWinSecurity::GetFilePermissions(const string& strPath,
-                                      PSID          pUserSID,
-                                      ACCESS_MASK*  pPermissions)
-{
-    if ( !pUserSID  ||  !pPermissions ) {
+    if ( !permissions ) {
         return false;
     }
     // Get DACL for the file
-    PACL                 pFileDACL = NULL;
-    PSECURITY_DESCRIPTOR pFileSD = NULL;
+    PSECURITY_DESCRIPTOR sd = GetFileSD(path);
 
-    if ( !CWinSecurity::GetFileDACL(strPath, &pFileSD, &pFileDACL) ) {
+    if ( !sd ) {
         if ( GetLastError() == ERROR_ACCESS_DENIED ) {
-            *pPermissions = 0;  
+            *permissions = 0;  
             return true;
         }
         return false;
     }
+
+    HANDLE token = INVALID_HANDLE_VALUE;
     bool success = true;
 
-    if ( !pFileDACL ) {
-        // DACL doesn't exists - all permissions enabled
-        *pPermissions = FILE_ALL_ACCESS;
-    } else {
-        // Build the trustee from SID
-        PTRUSTEE pTrustee = new TRUSTEE();
-        if ( !pTrustee ) {
-            success = false;
-        } else {
-            ::BuildTrusteeWithSid(pTrustee, pUserSID);
-            // Get the effective rights for the user
-            if (::GetEffectiveRightsFromAcl(pFileDACL, pTrustee, pPermissions)
-                != ERROR_SUCCESS) {
-                success = false;
-            }
+    try {
+        // Perform security impersonation of the user and
+        // open current thread token
+
+        if ( !ImpersonateSelf(SecurityImpersonation) ) {
+            throw(0);
+        }
+        if ( !OpenThreadToken(GetCurrentThread(),
+                              TOKEN_DUPLICATE | TOKEN_QUERY,
+                              FALSE, &token) ) {
+            throw(0);
+        }
+        RevertToSelf();
+
+        DWORD access = MAXIMUM_ALLOWED;
+        GENERIC_MAPPING mapping;
+        memset(&mapping, 0, sizeof(GENERIC_MAPPING));
+
+        PRIVILEGE_SET  privileges;
+        DWORD          privileges_size = sizeof(PRIVILEGE_SET);
+        BOOL           status = true;
+
+        if ( !AccessCheck(sd, token, access, &mapping,
+                        &privileges, &privileges_size, permissions,
+                        &status)  ||  !status ) {
+            throw(0);
         }
     }
-    // Release file security descriptor
-    CWinSecurity::FreeFileSD(pFileSD);
-    if ( !*pPermissions ) 
-        return false;
+    catch (int) {
+        *permissions = 0;
+        success = false;
+    }
+
+    // Clean up
+    CloseHandle(token);
+    FreeFileSD(sd);
+
     return success;
 }
 
@@ -432,6 +439,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2005/12/08 14:15:49  ivanov
+ * Rewritten CWinSecurity::GetFilePermissions() using AccessCheck()
+ * instead of GetEffectiveRightsFromAcl(), which is not recommended to use.
+ * Some code cleanup.
+ *
  * Revision 1.3  2005/12/05 19:23:50  ivanov
  * CWinSecurity::GetFilePermissions() -- fast fix: return false
  * if permissions is 0. Need to investigate.
