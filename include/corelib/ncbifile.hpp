@@ -799,8 +799,10 @@ public:
 
     /// Get permission mode(s) of a directory entry.
     ///
-    /// On WINDOWS, there is only the "user_mode" permission setting,
+    /// On WINDOWS: There is only the "user_mode" permission setting,
     /// and "group_mode" and "other_mode" settings will be ignored.
+    /// The "user_mode" will be combined with effective permissions for
+    /// the current process owner on specified directory entry.
     /// @return
     ///   TRUE upon successful retrieval of permission mode(s),
     ///   FALSE otherwise.
@@ -2534,6 +2536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2005/12/08 14:12:15  ivanov
+ * Minor comment fix for CDirEntry::GetMode()
+ *
  * Revision 1.68  2005/11/30 12:01:21  ivanov
  * CFileUtil:: split GetDiskSpace() to GetFreeDiskSpace() and
  * GetTotalDiskSpace().
