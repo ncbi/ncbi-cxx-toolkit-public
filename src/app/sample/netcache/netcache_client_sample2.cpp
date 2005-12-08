@@ -29,9 +29,10 @@
  *
  */
 
-/// @file netcache_client_sample1.cpp
+/// @file netcache_client_sample2.cpp
 /// NetCache sample: 
-///    illustrates client creattion and simple store/load scenario.
+///    illustrates client creattion and simple store/load scenario
+///    using C++ compatible streams.
 
 
 #include <ncbi_pch.hpp>
@@ -183,6 +184,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/08 16:53:48  kuznets
+ * Comments, clean-up
+ *
  * Revision 1.1  2005/12/08 15:52:14  didenko
  * Added sample for CNetCacheNSStorage class
  *
