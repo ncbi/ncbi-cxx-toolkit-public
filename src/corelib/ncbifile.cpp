@@ -765,24 +765,6 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
                         TMode* oth_mode, TSpecialModeBits* special) const
 {
-#ifdef NCBI_OS_MSWIN
-    // Try to get effective rights using access control list (DACL)
-    ACCESS_MASK mask = 0;
-    if ( CWinSecurity::GetFilePermissions(GetPath(), &mask) ) {
-        if (usr_mode) {
-            *usr_mode = (
-                (mask & FILE_READ_DATA  ? fRead    : 0) |
-                (mask & FILE_WRITE_DATA ? fWrite   : 0) |
-                (mask & FILE_EXECUTE    ? fExecute : 0) );
-        }
-        if (grp_mode) *grp_mode = 0;
-        if (oth_mode) *oth_mode = 0;
-        if (special)  *special  = 0;
-        return true;
-    }
-    // Failed, try general stat() method
-#endif
-
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
@@ -806,7 +788,28 @@ bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
                      (st.st_mode & S_IEXEC  ? fExecute           : 0) |
 #endif
                      0);
+
+#ifdef NCBI_OS_MSWIN
+        // Try to get effective access rights on this file object for
+        // the current process owner.
+        ACCESS_MASK mask = 0;
+        if ( CWinSecurity::GetFilePermissions(GetPath(), &mask) ) {
+            TMode mode = ( (mask & FILE_READ_DATA  ? fRead    : 0) |
+                           (mask & FILE_WRITE_DATA ? fWrite   : 0) |
+                           (mask & FILE_EXECUTE    ? fExecute : 0) );
+            // Drop user permissions disabled in the access mask
+            *usr_mode &= mode;
+        }
+#endif
     }
+
+#ifdef NCBI_OS_MSWIN
+    if (grp_mode) *grp_mode = 0;
+    if (oth_mode) *oth_mode = 0;
+    if (special)  *special  = 0;
+
+#else
+
     // Group
     if (grp_mode) {
         *grp_mode = (
@@ -849,6 +852,8 @@ bool CDirEntry::GetMode(TMode* usr_mode, TMode* grp_mode,
 #endif
                     0);
     }
+#endif // NCBI_OS_MSWIN
+
     return true;
 }
 
@@ -3630,6 +3635,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.129  2005/12/08 14:19:45  ivanov
+ * MS Windows: CDirEntry::GetMode():
+ *     Combine _stat() permissions with effective user permissions.
+ *     Always assign 0 to group/other/special modes.
+ *
  * Revision 1.128  2005/11/30 11:59:53  ivanov
  * Move some MS Windows specific code to ncbi_os_mswin.cpp.
  * CDirEntry::GetMode() -- MSWin: try to get effective rights using DACL.
