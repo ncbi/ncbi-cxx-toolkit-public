@@ -175,7 +175,12 @@ static STimeSizeStatistics s_Stat_SNP_Read;
 #define GB_STATS_START()                                \
     bool collect_stat = CollectStatistics() > 0;        \
     CReaderRequestResult::CRecurse r(result);           \
-    CStopWatch sw(collect_stat)
+    CStopWatch sw;                                      \
+    do {                                                \
+        if ( collect_stat ) {                           \
+            sw.Start();                                 \
+        }                                               \
+    } while ( 0 )
 
 #define GB_STATS_STOP(action, stat, size)               \
     do {                                                \
