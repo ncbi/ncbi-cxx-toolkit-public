@@ -105,7 +105,7 @@ int CSampleNetCacheClient::Run(void)
         // create load balanced client
         string service_name = args["service"].AsString();
         nc_client.reset(
-            new CNetCacheClient_LB("nc_client_sample1", service_name));
+            new CNetCacheClient_LB("nc_client_sample2", service_name));
     } else {
         if (args["hostport"]) {
             // use direct network address
@@ -128,7 +128,7 @@ int CSampleNetCacheClient::Run(void)
             }
 
             nc_client.reset(
-                new CNetCacheClient(host, port, "nc_client_sample1"));
+                new CNetCacheClient(host, port, "nc_client_sample2"));
 
 
         } else {
@@ -184,6 +184,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/08 17:27:29  kuznets
+ * Cosmetics
+ *
  * Revision 1.2  2005/12/08 16:53:48  kuznets
  * Comments, clean-up
  *
