@@ -82,6 +82,8 @@ gui/config/theme_set.hpp
 
 gui/core/AbstractProjectItem.hpp
 gui/core/AbstractProjectItem_.hpp
+gui/core/DataHandle.hpp
+gui/core/DataHandle_.hpp
 gui/core/FolderInfo.hpp
 gui/core/FolderInfo_.hpp
 gui/core/GBProject.hpp
@@ -149,6 +151,7 @@ gui/core/algo_plugin.hpp
 gui/core/data_factory.hpp
 gui/core/data_plugin.hpp
 gui/core/data_store.hpp
+gui/core/dh_manager.hpp
 gui/core/doc_exception.hpp
 gui/core/doc_manager.hpp
 gui/core/docmgr_view.hpp
@@ -174,6 +177,7 @@ gui/core/plugin_utils.hpp
 gui/core/project_manager.hpp
 // Seems to be dead
 //gui/core/registry.hpp
+gui/core/selection_service.hpp
 gui/core/task_manager.hpp
 gui/core/task_queue.hpp
 gui/core/version.hpp
@@ -319,6 +323,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/09 17:53:54  jcherry
+ * Added some headers from gui/core
+ *
  * Revision 1.7  2005/11/19 21:26:12  jcherry
  * %ignore CPluginValue::SetDataHandle (not defined)
  *
