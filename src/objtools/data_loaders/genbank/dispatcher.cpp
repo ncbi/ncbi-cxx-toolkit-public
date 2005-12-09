@@ -92,6 +92,7 @@ void CReadDispatcher::InsertReader(TLevel level, CRef<CReader> reader)
         return;
     }
 
+    reader->OpenInitialConnection();
     m_Readers[level] = reader;
     reader->m_Dispatcher = this;
 }

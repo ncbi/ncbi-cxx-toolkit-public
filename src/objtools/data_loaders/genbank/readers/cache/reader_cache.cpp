@@ -158,7 +158,7 @@ void CCacheHolder::SetBlobCache(ICache* blob_cache)
 
 CCacheReader::CCacheReader(void)
 {
-    SetInitialConnections(1);
+    SetMaximumConnections(1);
 }
 
 

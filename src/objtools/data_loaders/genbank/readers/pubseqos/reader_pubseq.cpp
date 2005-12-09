@@ -123,7 +123,7 @@ CPubseqReader::CPubseqReader(int max_connections,
     }
 #endif
 
-    SetInitialConnections(max_connections);
+    SetMaximumConnections(max_connections);
 }
 
 
@@ -169,13 +169,15 @@ CPubseqReader::CPubseqReader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_NUM_CONN,
         CConfig::eErr_NoThrow,
         DEFAULT_NUM_CONN);
+    SetMaximumConnections(max_connections);
     bool open_initial_connection = conf.GetBool(
         driver_name,
         NCBI_GBLOADER_READER_PUBSEQ_PARAM_PREOPEN,
         CConfig::eErr_NoThrow,
         true);
-    SetInitialConnections(max_connections, open_initial_connection);
+    SetPreopenConnection(open_initial_connection);
 }
+
 
 CPubseqReader::~CPubseqReader()
 {

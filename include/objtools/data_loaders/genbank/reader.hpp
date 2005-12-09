@@ -139,10 +139,13 @@ public:
                           TChunkId chunk_id,
                           CLoadLockBlob& blob);
 
-    void SetInitialConnections(int max, bool open_initial_connection = true);
     int SetMaximumConnections(int max);
     int GetMaximumConnections(void) const;
     virtual int GetMaximumConnectionsLimit(void) const;
+
+    void SetPreopenConnection(bool preopen = true);
+    bool GetPreopenConnection(void) const;
+    void OpenInitialConnection(void);
 
     class CConn
     {
@@ -202,9 +205,13 @@ private:
     void x_AddConnection(void);
     void x_RemoveConnection(void);
 
+    // parameters
+    TConn            m_MaxConnections;
+    bool             m_PreopenConnection;
+
+    // current state
+    TConn            m_NextNewConnection;
     typedef list<TConn> TFreeConnections;
-    CAtomicCounter   m_NumConnections;
-    CAtomicCounter   m_NextConnection;
     TFreeConnections m_FreeConnections;
     CMutex           m_ConnectionsMutex;
     CSemaphore       m_NumFreeConnections;

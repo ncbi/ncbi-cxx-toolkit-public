@@ -41,10 +41,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CReader::CReader(void)
-    : m_Dispatcher(0), m_NumFreeConnections(0, 1000)
+    : m_Dispatcher(0),
+      m_MaxConnections(0),
+      m_PreopenConnection(true),
+      m_NextNewConnection(0),
+      m_NumFreeConnections(0, 1000)
 {
-    m_NumConnections.Set(0);
-    m_NextConnection.Set(0);
 }
 
 
@@ -53,18 +55,9 @@ CReader::~CReader(void)
 }
 
 
-void CReader::SetInitialConnections(int max,
-                                    bool open_initial_connection)
+void CReader::OpenInitialConnection(void)
 {
-    if ( max < 0 ) {
-        open_initial_connection = false;
-        max = -max;
-    }
-    if ( SetMaximumConnections(max) <= 0 ) {
-        NCBI_THROW(CLoaderException, eConnectionFailed,
-                   "Maximum connection is zero");
-    }
-    if ( open_initial_connection ) {
+    if ( GetMaximumConnections() > 0 && GetPreopenConnection() ) {
         for ( int attempt = 1; ; ++attempt ) {
             try {
                 CConn conn(this);
@@ -77,12 +70,23 @@ void CReader::SetInitialConnections(int max,
                          "cannot open initial connection: "<<exc.what());
                 if ( attempt >= GetRetryCount() ) {
                     // this is the last attempt to establish connection
-                    SetMaximumConnections(0);
                     throw;
                 }
             }
         }
     }
+}
+
+
+void CReader::SetPreopenConnection(bool preopen)
+{
+    m_PreopenConnection = preopen;
+}
+
+
+bool CReader::GetPreopenConnection(void) const
+{
+    return m_PreopenConnection;
 }
 
 
@@ -120,7 +124,7 @@ int CReader::SetMaximumConnections(int max)
 
 int CReader::GetMaximumConnections(void) const
 {
-    return m_NumConnections.Get();
+    return m_MaxConnections;
 }
 
 
@@ -133,10 +137,11 @@ int CReader::GetMaximumConnectionsLimit(void) const
 void CReader::x_AddConnection(void)
 {
     CMutexGuard guard(m_ConnectionsMutex);
-    TConn conn = m_NextConnection.Add(1);
+    TConn conn = m_NextNewConnection++;
     x_AddConnectionSlot(conn);
     x_ReleaseConnection(conn, true);
-    _VERIFY(m_NumConnections.Add(1) > 0);
+    ++m_MaxConnections;
+    _ASSERT(m_MaxConnections > 0);
 }
 
 
@@ -144,7 +149,8 @@ void CReader::x_RemoveConnection(void)
 {
     TConn conn = x_AllocConnection(true);
     CMutexGuard guard(m_ConnectionsMutex);
-    _VERIFY(m_NumConnections.Add(-1) != TNCBIAtomicValue(-1));
+    _ASSERT(m_MaxConnections > 0);
+    --m_MaxConnections;
     x_RemoveConnectionSlot(conn);
 }
 
@@ -201,7 +207,8 @@ void CReader::x_AbortConnection(TConn conn)
         catch ( ... ) {
             // ignore
         }
-        _VERIFY(m_NumConnections.Add(-1) != TNCBIAtomicValue(-1));
+        _ASSERT(m_MaxConnections > 0);
+        --m_MaxConnections;
         x_AddConnection();
         return;
     }
