@@ -105,9 +105,8 @@ string CRefArgs::GetQueryString(const string& referrer) const
                 return url.GetArgs().GetValue(it->second);
             }
         }
-    } catch (CCgiParseException& ex) {
-        CException& e = ex;
-        ERR_POST(Warning << "Ignoring malformed HTTP referrer " << e);
+    } catch (CCgiArgsException& ex) {
+        ERR_POST(Warning << "Ignoring malformed HTTP referrer " << ex);
     }
     return kEmptyStr;
 }
@@ -142,6 +141,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.9  2005/12/09 01:28:00  vakatov
+* CRefArgs::GetQueryString() -- catch CCgiArgsException instead
+* CCgiParseException
+*
 * Revision 1.8  2005/11/08 20:17:11  vakatov
 * CRefArgs::GetQueryString() -- ignore malformed HTTP referrer, with
 * a warning.
