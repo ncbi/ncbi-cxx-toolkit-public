@@ -1252,8 +1252,8 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     try {
         parser.SetQueryString(str);
     }
-    catch (CCgiParseException& e) {
-        return e.GetPos();
+    catch (CCgiArgsParserException& ae) {
+        return ae.GetPos();
     }
     return 0;
 }
@@ -1265,8 +1265,8 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
     try {
         parser.SetQueryString(str);
     }
-    catch (CCgiParseException& e) {
-        return e.GetPos();
+    catch (CCgiArgsParserException& ae) {
+        return ae.GetPos();
     }
     return 0;
 }
@@ -1326,6 +1326,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.101  2005/12/09 01:35:37  vakatov
+* CCgiRequest::ParseEntries/Indexes() -- catch CCgiArgsParserException
+* instead of CCgiParseException
+*
 * Revision 1.100  2005/10/17 16:46:43  grichenk
 * Added CCgiArgs_Parser base class.
 * Redesigned CCgiRequest to use CCgiArgs_Parser.
