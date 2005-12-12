@@ -325,7 +325,7 @@ property view_graphic : {name:"view_graphic", libs:{gui_view_graphic}, dep:"ncbi
 property view_phylotree : {name:"view_phylotree", libs:{gui_view_phylo_tree}, dep:"ncbi_core ncbi_algo ncbi_misc ncbi_seq ncbi_seqext gui_core gui_utils gui_widgets gui_widgets_misc gui_config" & FLTK_LIBS, bundle:true, req:true}
 property view_table : {name:"view_table", libs:{gui_view_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_aln gui_widgets_seq" & FLTK_LIBS, bundle:true, req:true}
 property view_taxplot : {name:"view_taxplot", libs:{gui_view_taxplot}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_misc gui_dialogs" & FLTK_LIBS, bundle:true, req:true}
-property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs" & FLTK_LIBS, bundle:true, req:true}
+property view_text : {name:"view_text", libs:{gui_view_text}, dep:"ncbi_core ncbi_pub ncbi_seq ncbi_seqext ncbi_general gui_core gui_utils gui_widgets gui_widgets_seq gui_dialogs gui_config" & FLTK_LIBS, bundle:true, req:true}
 property view_validator : {name:"view_validator", libs:{gui_view_validator}, dep:"ncbi_core ncbi_seq ncbi_validator gui_core gui_utils gui_widgets" & FLTK_LIBS, bundle:true, req:true}
 
 
@@ -427,6 +427,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2005/12/12 13:36:22  lebedev
+ * view_text += gui_config
+ *
  * Revision 1.86  2005/12/01 18:56:01  lebedev
  * composition_adjustment added
  *
