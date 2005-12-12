@@ -139,7 +139,7 @@ on clicked theObject
 	if name of theObject is "otherLibs" then -- install 3rd party libs
 		-- first, be sure the C++ Toolkit path is set correctly
 		set TheNCBIPath to contents of text field "pathNCBI" of tab view item "tab1" of tab view "theTab" of window "Main"
-		if (do shell script "file " & TheNCBIPath & "/include/ncbiconf.h") contains "No such file or directory" then
+		if x_NoSuchPath(TheNCBIPath & "/include/ncbiconf.h") then
 			x_ShowAlert("NCBI C++ Toolkit was not found at " & TheNCBIPath)
 			return
 		end if
@@ -299,7 +299,7 @@ end idle
 (* Launch shell script to install third party libraries *)
 on x_Install3rdPartyLibs()
 	set libScriptTmpDir to contents of text field "tmp_dir" of window "install_libs"
-	if (do shell script "file " & libScriptTmpDir) contains "No such file or directory" then
+	if x_NoSuchPath(libScriptTmpDir) then
 		display dialog "Temporary directory was not found at:" & return & libScriptTmpDir buttons {"OK"} default button 1 with icon caution
 		return
 	end if
@@ -542,39 +542,39 @@ on ValidatePaths()
 	end if
 	
 	-- check paths"
-	if (do shell script "file " & ThePCREPath & "/include/tiff.h") contains "No such file or directory" then
-		return "Lib TIFF installation was not found at " & ThePCREPath
-	end if
-	
-	if (do shell script "file " & ThePCREPath & "/include/jpeglib.h") contains "No such file or directory" then
-		--return "Lib JPEG installation was not found at " & ThePCREPath
-	end if
-	
-	if (do shell script "file " & ThePCREPath & "/include/png.h") contains "No such file or directory" then
-		return "Lib PNG installation was not found at " & ThePCREPath
-	end if
-	
-	if (do shell script "file " & ThePCREPath & "/include/gif_lib.h") contains "No such file or directory" then
-		--return "Lib GIF installation was not found at " & ThePCREPath
-	end if
-	
-	if (do shell script "file " & TheSQLPath & "/include/sqlite.h") contains "No such file or directory" then
-		return "SQLite installation was not found at " & TheSQLPath
-	end if
-	
-	if (do shell script "file " & TheBDBPath & "/include/db.h") contains "No such file or directory" then
-		return "Berkeley DB installation was not found at " & TheBDBPath
-	end if
-	
-	if (do shell script "file " & TheFLTKPath & "/include/FL/Fl.H") contains "No such file or directory" then
-		return "FLTK installation was not found at " & TheFLTKPath
-	end if
-	
-	if (do shell script "file " & TheNCBIPath & "/include/ncbiconf.h") contains "No such file or directory" then
+	if x_NoSuchPath(TheNCBIPath & "/include/ncbiconf.h") then
 		return "NCBI C++ Toolkit was not found at " & TheNCBIPath
 	end if
 	
-	if (do shell script "file " & TheOUTPath) does not contain ": directory" then
+	if x_NoSuchPath(ThePCREPath & "/include/tiff.h") then
+		return "Lib TIFF installation was not found at " & ThePCREPath
+	end if
+	
+	if x_NoSuchPath(ThePCREPath & "/include/jpeglib.h") then
+		return "Lib JPEG installation was not found at " & ThePCREPath
+	end if
+	
+	if x_NoSuchPath(ThePCREPath & "/include/png.h") then
+		return "Lib PNG installation was not found at " & ThePCREPath
+	end if
+	
+	if x_NoSuchPath(ThePCREPath & "/include/gif_lib.h") then
+		return "Lib GIF installation was not found at " & ThePCREPath
+	end if
+	
+	if x_NoSuchPath(TheSQLPath & "/include/sqlite.h") then
+		return "SQLite installation was not found at " & TheSQLPath
+	end if
+	
+	if x_NoSuchPath(TheBDBPath & "/include/db.h") then
+		return "Berkeley DB installation was not found at " & TheBDBPath
+	end if
+	
+	if x_NoSuchPath(TheFLTKPath & "/include/FL/Fl.H") then
+		return "FLTK installation was not found at " & TheFLTKPath
+	end if
+	
+	if x_NoSuchPath(TheOUTPath) then
 		do shell script "mkdir " & TheOUTPath
 		x_AddtoLog("The Output folder was created at: " & TheOUTPath)
 		do shell script "mkdir " & TheOUTPath & "/cfg"
@@ -593,6 +593,18 @@ on ValidatePaths()
 	
 	return "" -- no errors found
 end ValidatePaths
+
+
+(* Checks if path/file exists *)
+on x_NoSuchPath(thePath)
+	set posix_path to thePath as POSIX file
+	try
+		info for posix_path
+		return false
+	on error
+		return true
+	end try
+end x_NoSuchPath
 
 
 (* Display a message box *)
@@ -629,6 +641,9 @@ end x_SaveTableData
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/12/12 18:42:17  lebedev
+ * Rework the check for files/folders to exist (10.4 change)
+ *
  * Revision 1.16  2005/06/15 15:33:34  lebedev
  * A few validation checks added for 3rd party libs build script
  *
