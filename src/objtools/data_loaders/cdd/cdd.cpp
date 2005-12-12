@@ -127,8 +127,8 @@ CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
     // save our entry in all relevant places
     load_lock->SetSeq_entry(*entry);
-    locks.insert(load_lock);
     load_lock.SetLoaded();
+    locks.insert(load_lock);
     return locks;
 }
 
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/12/12 15:01:36  vasilche
+ * Call CTSE_LoadLock::SetLoaded() before using as CTSE_Lock.
+ *
  * Revision 1.13  2005/12/12 14:42:15  jcherry
  * Use new "notag" cgi parameter to eliminate html tags
  *
