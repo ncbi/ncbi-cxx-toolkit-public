@@ -55,5 +55,7 @@
 
 /* Size of id resolution GC queues */
 #define NCBI_GBLOADER_PARAM_ID_GC_SIZE "ID_GC_SIZE"
+/* Whether to open first connection immediately or not (default: true) */
+#define NCBI_GBLOADER_PARAM_PREOPEN  "preopen"
 
 #endif

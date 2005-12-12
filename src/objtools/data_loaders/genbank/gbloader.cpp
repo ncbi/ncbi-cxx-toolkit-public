@@ -65,14 +65,6 @@
 
 #include <algorithm>
 
-/*
-#if defined(NCBI_OS_MAC)
-#   include <types.h>
-#else
-#   include <sys/types.h>
-#endif
-*/
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -94,6 +86,8 @@ static const char* const DEFAULT_DRV_ORDER = "ID2:PUBSEQOS:ID1";
 #else
 static const char* const DEFAULT_DRV_ORDER = "ID2:ID1";
 #endif
+
+#define GBLOADER_NAME "GBLOADER"
 
 #define DEFAULT_ID_GC_SIZE 1000
 
@@ -130,13 +124,102 @@ private:
 };
 
 
+CGBLoaderParams::CGBLoaderParams(void)
+    : m_ReaderName(),
+      m_ReaderPtr(0),
+      m_ParamTree(0),
+      m_Preopen(ePreopenByConfig)
+{
+}
+
+
+CGBLoaderParams::CGBLoaderParams(const string& reader_name)
+    : m_ReaderName(reader_name),
+      m_ReaderPtr(0),
+      m_ParamTree(0),
+      m_Preopen(ePreopenByConfig)
+{
+}
+
+
+CGBLoaderParams::CGBLoaderParams(CReader* reader_ptr)
+    : m_ReaderName(),
+      m_ReaderPtr(reader_ptr),
+      m_ParamTree(0),
+      m_Preopen(ePreopenByConfig)
+{
+}
+
+
+CGBLoaderParams::CGBLoaderParams(const TParamTree* param_tree)
+    : m_ReaderName(),
+      m_ReaderPtr(0),
+      m_ParamTree(param_tree),
+      m_Preopen(ePreopenByConfig)
+{
+}
+
+
+CGBLoaderParams::CGBLoaderParams(EPreopenConnection preopen)
+    : m_ReaderName(),
+      m_ReaderPtr(0),
+      m_ParamTree(0),
+      m_Preopen(preopen)
+{
+}
+
+
+CGBLoaderParams::~CGBLoaderParams(void)
+{
+}
+
+
+CGBLoaderParams::CGBLoaderParams(const CGBLoaderParams& params)
+    : m_ReaderName(params.m_ReaderName),
+      m_ReaderPtr(params.m_ReaderPtr),
+      m_ParamTree(params.m_ParamTree),
+      m_Preopen(params.m_Preopen)
+{
+}
+
+
+CGBLoaderParams& CGBLoaderParams::operator=(const CGBLoaderParams& params)
+{
+    if ( this != &params ) {
+        m_ReaderName = params.m_ReaderName;
+        m_ReaderPtr = params.m_ReaderPtr;
+        m_ParamTree = params.m_ParamTree;
+        m_Preopen = params.m_Preopen;
+    }
+    return *this;
+}
+
+
+void CGBLoaderParams::SetReaderPtr(CReader* reader_ptr)
+{
+    m_ReaderPtr = reader_ptr;
+}
+
+
+CReader* CGBLoaderParams::GetReaderPtr(void) const
+{
+    return m_ReaderPtr.GetNCPointerOrNull();
+}
+
+
+void CGBLoaderParams::SetParamTree(const TPluginManagerParamTree* param_tree)
+{
+    m_ParamTree = param_tree;
+}
+
+
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    CReader*        driver,
+    CReader*        reader,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TReaderPtrMaker maker(Ref(driver));
+    TGBMaker maker(reader);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -144,7 +227,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 
 string CGBDataLoader::GetLoaderNameFromArgs(CReader* /*driver*/)
 {
-    return "GBLOADER";
+    return GBLOADER_NAME;
 }
 
 
@@ -154,7 +237,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TReaderNameMaker maker(reader_name);
+    TGBMaker maker(reader_name);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -162,7 +245,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 
 string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/)
 {
-    return "GBLOADER";
+    return GBLOADER_NAME;
 }
 
 
@@ -172,7 +255,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TParamMaker maker(params);
+    TGBMaker maker(&params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -180,34 +263,34 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 
 string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& /* params */)
 {
-    return "GBLOADER";
+    return GBLOADER_NAME;
+}
+
+
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const CGBLoaderParams& params,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
+{
+    TGBMaker maker(params);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
+}
+
+
+string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& /*params*/)
+{
+    return GBLOADER_NAME;
 }
 
 
 CGBDataLoader::CGBDataLoader(const string& loader_name,
-                             CRef<CReader> reader)
+                             const CGBLoaderParams& params)
   : CDataLoader(loader_name)
 {
     GBLOG_POST( "CGBDataLoader");
-    x_CreateDriver(reader);
-}
-
-
-CGBDataLoader::CGBDataLoader(const string& loader_name,
-                             const string& reader_name)
-  : CDataLoader(loader_name)
-{
-    GBLOG_POST( "CGBDataLoader");
-    x_CreateDriver(reader_name);
-}
-
-
-CGBDataLoader::CGBDataLoader(const string&     loader_name,
-                             const TParamTree& params)
-  : CDataLoader(loader_name)
-{
-    GBLOG_POST( "CGBDataLoader");
-    x_CreateDriver(GetLoaderParams(&params));
+    x_CreateDriver(params);
 }
 
 
@@ -346,81 +429,87 @@ string CGBDataLoader::GetParam(const TParamTree* params,
 }
 
 
-void CGBDataLoader::x_CreateDriver(CReader* reader)
-{
-    m_LoadMapSeq_ids.SetMaxSize(DEFAULT_ID_GC_SIZE);
-    m_LoadMapSeq_ids2.SetMaxSize(DEFAULT_ID_GC_SIZE);
-    m_LoadMapBlob_ids.SetMaxSize(DEFAULT_ID_GC_SIZE);
-    if ( reader ) {
-        m_Dispatcher = new CReadDispatcher;
-        m_Dispatcher->InsertReader(1, Ref(reader));
-    }
-    else {
-        x_CreateDriver(kEmptyStr);
-    }
-}
-
-
-void CGBDataLoader::x_CreateDriver(const string& reader_name)
+void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
 {
     auto_ptr<TParamTree> app_params;
-    CNcbiApplication* app = CNcbiApplication::Instance();
-    if ( app ) {
-        app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
+    const TParamTree* gb_params = 0;
+    if ( params.GetParamTree() ) {
+        gb_params = params.GetParamTree();
     }
-    else if ( !reader_name.empty() ) {
-        app_params.reset(new TParamTree);
-    }
-    if ( !reader_name.empty() ) {
-        SetParam(GetLoaderParams(app_params.get()),
-                 NCBI_GBLOADER_PARAM_READER_NAME,
-                 reader_name);
-        string writer_name = reader_name;
-        NStr::ToLower(writer_name);
-        if ( writer_name == "cache" ||
-             NStr::StartsWith(writer_name, "cache;") ) {
-            writer_name = "cache";
-            SetParam(GetLoaderParams(app_params.get()),
-                     NCBI_GBLOADER_PARAM_WRITER_NAME,
-                     writer_name);
+    else {
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if ( app ) {
+            app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
+            gb_params = GetLoaderParams(app_params.get());
         }
     }
-    x_CreateDriver(app_params.get());
-}
-
-
-void CGBDataLoader::x_CreateDriver(const TParamTree* params)
-{
-    params = GetLoaderParams(params);
-
-    {{
-        size_t queue_size;
+    
+    size_t queue_size = DEFAULT_ID_GC_SIZE;
+    if ( gb_params ) {
         try {
-            string param = GetParam(params, NCBI_GBLOADER_PARAM_ID_GC_SIZE);
-            if ( param.empty() ) {
-                queue_size = DEFAULT_ID_GC_SIZE;
-            }
-            else {
+            string param = GetParam(gb_params, NCBI_GBLOADER_PARAM_ID_GC_SIZE);
+            if ( !param.empty() ) {
                 queue_size = NStr::StringToUInt(param);
             }
         }
         catch ( ... ) {
-            queue_size = DEFAULT_ID_GC_SIZE;
         }
-        m_LoadMapSeq_ids.SetMaxSize(queue_size);
-        m_LoadMapSeq_ids2.SetMaxSize(queue_size);
-        m_LoadMapBlob_ids.SetMaxSize(queue_size);
-    }}
-
+    }
+    m_LoadMapSeq_ids.SetMaxSize(queue_size);
+    m_LoadMapSeq_ids2.SetMaxSize(queue_size);
+    m_LoadMapBlob_ids.SetMaxSize(queue_size);
+    
     m_Dispatcher = new CReadDispatcher;
+    
+    // now we create readers & writers
+    if ( params.GetReaderPtr() ) {
+        // explicit reader specified
+        CRef<CReader> reader(params.GetReaderPtr());
+        reader->OpenInitialConnection(false);
+        m_Dispatcher->InsertReader(1, reader);
+        return;
+    }
 
-    if ( x_CreateReaders(params) ) {
-        x_CreateWriters(params);
+    CGBLoaderParams::EPreopenConnection preopen =
+        params.GetPreopenConnection();
+    if ( preopen == CGBLoaderParams::ePreopenByConfig && gb_params ) {
+        try {
+            string param = GetParam(gb_params, NCBI_GBLOADER_PARAM_PREOPEN);
+            if ( !param.empty() ) {
+                if ( NStr::StringToBool(param) )
+                    preopen = CGBLoaderParams::ePreopenAlways;
+                else
+                    preopen = CGBLoaderParams::ePreopenNever;
+            }
+        }
+        catch ( ... ) {
+        }
+    }
+    
+    if ( !gb_params ) {
+        app_params.reset(new TParamTree);
+        gb_params = GetLoaderParams(app_params.get());
+    }
+
+    if ( !params.GetReaderName().empty() ) {
+        string reader_name = params.GetReaderName();
+        NStr::ToLower(reader_name);
+        if ( x_CreateReaders(reader_name, gb_params, preopen) ) {
+            if ( reader_name == "cache" ||
+                 NStr::StartsWith(reader_name, "cache;") ) {
+                x_CreateWriters("cache", gb_params);
+            }
+        }
+    }
+    else {
+        if ( x_CreateReaders(GetReaderName(gb_params), gb_params, preopen) ) {
+            x_CreateWriters(GetWriterName(gb_params), gb_params);
+        }
     }
 }
 
 
-bool CGBDataLoader::x_CreateReaders(const TParamTree* params)
+string CGBDataLoader::GetReaderName(const TParamTree* params) const
 {
     string str;
     if ( str.empty() ) {
@@ -435,11 +524,11 @@ bool CGBDataLoader::x_CreateReaders(const TParamTree* params)
         str = DEFAULT_DRV_ORDER;
     }
     NStr::ToLower(str);
-    return x_CreateReaders(str, params);
+    return str;
 }
 
 
-void CGBDataLoader::x_CreateWriters(const TParamTree* params)
+string CGBDataLoader::GetWriterName(const TParamTree* params) const
 {
     string str = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
     if ( str.empty() ) {
@@ -451,12 +540,13 @@ void CGBDataLoader::x_CreateWriters(const TParamTree* params)
         }
     }
     NStr::ToLower(str);
-    x_CreateWriters(str, params);
+    return str;
 }
 
 
 bool CGBDataLoader::x_CreateReaders(const string& str,
-                                    const TParamTree* params)
+                                    const TParamTree* params,
+                                    CGBLoaderParams::EPreopenConnection preopen)
 {
     vector<string> str_list;
     NStr::Tokenize(str, ";", str_list, NStr::eNoMergeDelims);
@@ -464,6 +554,9 @@ bool CGBDataLoader::x_CreateReaders(const string& str,
     for ( size_t i = 0; i < str_list.size(); ++i ) {
         CRef<CReader> reader(x_CreateReader(str_list[i], params));
         if( reader ) {
+            if ( preopen != CGBLoaderParams::ePreopenNever ) {
+                reader->OpenInitialConnection(preopen == CGBLoaderParams::ePreopenAlways);
+            }
             m_Dispatcher->InsertReader(i, reader);
             ++reader_count;
         }

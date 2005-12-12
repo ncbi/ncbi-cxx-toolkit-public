@@ -55,9 +55,9 @@ CReader::~CReader(void)
 }
 
 
-void CReader::OpenInitialConnection(void)
+void CReader::OpenInitialConnection(bool force)
 {
-    if ( GetMaximumConnections() > 0 && GetPreopenConnection() ) {
+    if ( GetMaximumConnections() > 0 && (force || GetPreopenConnection()) ) {
         for ( int attempt = 1; ; ++attempt ) {
             try {
                 CConn conn(this);

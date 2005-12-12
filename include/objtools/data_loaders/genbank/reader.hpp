@@ -145,7 +145,7 @@ public:
 
     void SetPreopenConnection(bool preopen = true);
     bool GetPreopenConnection(void) const;
-    void OpenInitialConnection(void);
+    void OpenInitialConnection(bool force);
 
     class CConn
     {

@@ -109,6 +109,67 @@ private:
 
 // Parameter names used by loader factory
 
+class NCBI_XLOADER_GENBANK_EXPORT CGBLoaderParams
+{
+public:
+    // possible parameters
+    typedef string TReaderName;
+    typedef CReader* TReaderPtr;
+    typedef TPluginManagerParamTree TParamTree;
+    typedef const TPluginManagerParamTree* TParamTreePtr;
+    enum EPreopenConnection {
+        ePreopenNever,
+        ePreopenAlways,
+        ePreopenByConfig
+    };
+
+    // no options
+    CGBLoaderParams(void);
+    // one option
+    CGBLoaderParams(const string& reader_name);
+    CGBLoaderParams(TReaderPtr reader_ptr);
+    CGBLoaderParams(TParamTreePtr param_tree);
+    CGBLoaderParams(EPreopenConnection preopen);
+
+    ~CGBLoaderParams(void);
+    // copy
+    CGBLoaderParams(const CGBLoaderParams&);
+    CGBLoaderParams& operator=(const CGBLoaderParams&);
+
+    void SetReaderName(const string& reader_name)
+        {
+            m_ReaderName = reader_name;
+        }
+    const string& GetReaderName(void) const
+        {
+            return m_ReaderName;
+        }
+
+    void SetReaderPtr(CReader* reader_ptr);
+    CReader* GetReaderPtr(void) const;
+
+    void SetParamTree(const TParamTree* params);
+    const TParamTree* GetParamTree(void) const
+        {
+            return m_ParamTree;
+        }
+    
+    void SetPreopenConnection(EPreopenConnection preopen = ePreopenAlways)
+        {
+            m_Preopen = preopen;
+        }
+    EPreopenConnection GetPreopenConnection(void) const
+        {
+            return m_Preopen;
+        }
+
+private:
+    string m_ReaderName;
+    CRef<CReader> m_ReaderPtr;
+    const TParamTree* m_ParamTree;
+    EPreopenConnection m_Preopen;
+};
+
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
 {
 public:
@@ -146,7 +207,7 @@ public:
         CReader* reader = 0,
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
-        static string GetLoaderNameFromArgs(CReader* reader = 0);
+    static string GetLoaderNameFromArgs(CReader* reader = 0);
 
     // Select reader by name. If failed, select default reader.
     // Reader name may be the same as in environment: PUBSEQOS, ID1 etc.
@@ -169,6 +230,15 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const TParamTree& params);
+
+    // Setup loader using param tree. If tree is null or failed to find params,
+    // use environment or select default reader.
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        const CGBLoaderParams& params,
+        CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(const CGBLoaderParams& params);
 
     virtual CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
     CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
@@ -235,19 +305,11 @@ protected:
                               TBlobContentsMask sr_mask);
 
 private:
-    typedef CParamLoaderMaker<CGBDataLoader, CRef<CReader> > TReaderPtrMaker;
-    typedef CParamLoaderMaker<CGBDataLoader, const string&> TReaderNameMaker;
-    typedef CParamLoaderMaker<CGBDataLoader, const TParamTree&> TParamMaker;
-    friend class CParamLoaderMaker<CGBDataLoader, CRef<CReader> >;
-    friend class CParamLoaderMaker<CGBDataLoader, const string&>;
-    friend class CParamLoaderMaker<CGBDataLoader, const TParamTree&>;
+    typedef CParamLoaderMaker<CGBDataLoader, const CGBLoaderParams&> TGBMaker;
+    friend class CParamLoaderMaker<CGBDataLoader, const CGBLoaderParams&>;
 
     CGBDataLoader(const string&     loader_name,
-                  CRef<CReader>     reader);
-    CGBDataLoader(const string&     loader_name,
-                  const string&     reader_name);
-    CGBDataLoader(const string&     loader_name,
-                  const TParamTree& params);
+                  const CGBLoaderParams& params);
 
     // Find GB loader params in the tree or return the original tree.
     const TParamTree* x_GetLoaderParams(const TParamTree* params) const;
@@ -275,13 +337,13 @@ private:
     // private code
     //
 
-    void x_CreateDriver(CReader* reader);
-    void x_CreateDriver(const string& reader_name);
-    void x_CreateDriver(const TParamTree* params);
+    void x_CreateDriver(const CGBLoaderParams& params);
 
-    bool x_CreateReaders(const TParamTree* params);
-    void x_CreateWriters(const TParamTree* params);
-    bool x_CreateReaders(const string& str, const TParamTree* params);
+    string GetReaderName(const TParamTree* params) const;
+    string GetWriterName(const TParamTree* params) const;
+    bool x_CreateReaders(const string& str,
+                         const TParamTree* params,
+                         CGBLoaderParams::EPreopenConnection preopen);
     void x_CreateWriters(const string& str, const TParamTree* params);
     CReader* x_CreateReader(const string& names, const TParamTree* params = 0);
     CWriter* x_CreateWriter(const string& names, const TParamTree* params = 0);
