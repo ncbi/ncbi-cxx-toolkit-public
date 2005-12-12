@@ -136,20 +136,9 @@ void CGridWorkerApp_Impl::Init()
     IRWRegistry& reg = m_App.GetConfig();
     reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
 
-    bool cache_input =
-        reg.GetBool("netcache_client", "cache_input", false, 
-                    0, CNcbiRegistry::eReturn);
-    bool cache_output =
-        reg.GetBool("netcache_client", "cache_output", false, 
-                    0, CNcbiRegistry::eReturn);
-
-    CNetCacheNSStorage::TCacheFlags flags = 0;
-    if (cache_input) flags |= CNetCacheNSStorage::eCacheInput;
-    if (cache_output) flags |= CNetCacheNSStorage::eCacheOutput;
-
     if (!m_StorageFactory.get()) 
         m_StorageFactory.reset(
-                   new CNetScheduleStorageFactory_NetCache(reg, flags)
+                   new CNetScheduleStorageFactory_NetCache(reg)
                               );
     if (!m_ClientFactory.get()) 
         m_ClientFactory.reset(
@@ -343,6 +332,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2005/12/12 15:13:16  didenko
+ * Now CNetScheduleStorageFactory_NetCache class reads all init
+ * parameters from the registry
+ *
  * Revision 6.5  2005/08/15 19:08:43  didenko
  * Changed NetScheduler Storage parameters
  *

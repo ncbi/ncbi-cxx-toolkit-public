@@ -39,13 +39,12 @@ BEGIN_NCBI_SCOPE
 //
 
 CNetScheduleStorageFactory_NetCache::
-        CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
-                                            CNetCacheNSStorage::TCacheFlags flags,
-                                            const string& temp_dir)
-
-            : m_Registry(reg), m_CacheFlags(flags), 
-              m_TempDir(temp_dir)
+CNetScheduleStorageFactory_NetCache(const IRegistry& reg)
+    : m_Registry(reg)
 {
+    const string& m_TempDir = 
+        m_Registry.GetString(kNetCacheDriverName, "tmp_dir", ".");
+
     m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
     vector<string> masks;
     masks.push_back( CNetCacheNSStorage::sm_InputBlobCachePrefix + "*" );
@@ -81,8 +80,19 @@ CNetScheduleStorageFactory_NetCache::CreateInstance(void)
                    "Couldn't create NetCache client."
                    "Check registry.");
 
+    bool cache_input =
+        m_Registry.GetBool("netcache_client", "cache_input", false, 
+                           0, CNcbiRegistry::eReturn);
+    bool cache_output =
+        m_Registry.GetBool("netcache_client", "cache_output", false, 
+                           0, CNcbiRegistry::eReturn);
+ 
+    CNetCacheNSStorage::TCacheFlags flags = 0;
+    if (cache_input) flags |= CNetCacheNSStorage::eCacheInput;
+    if (cache_output) flags |= CNetCacheNSStorage::eCacheOutput;
+
     return new CNetCacheNSStorage(nc_client.release(),
-                                  m_CacheFlags, 
+                                  flags, 
                                   m_TempDir);
 }
 
@@ -130,6 +140,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2005/12/12 15:13:16  didenko
+ * Now CNetScheduleStorageFactory_NetCache class reads all init
+ * parameters from the registry
+ *
  * Revision 6.3  2005/08/15 19:08:43  didenko
  * Changed NetScheduler Storage parameters
  *

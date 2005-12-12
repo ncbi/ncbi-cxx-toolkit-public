@@ -50,9 +50,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleStorageFactory_NetCache
 {
 public:
     
-    CNetScheduleStorageFactory_NetCache(const IRegistry& reg,
-                                        CNetCacheNSStorage::TCacheFlags = 0x0,
-                                        const string& temp_dir = ".");
+    explicit CNetScheduleStorageFactory_NetCache(const IRegistry& reg);
 
     virtual ~CNetScheduleStorageFactory_NetCache() {}
 
@@ -62,7 +60,6 @@ private:
     typedef CPluginManager<CNetCacheClient> TPMNetCache;
     TPMNetCache                      m_PM_NetCache;
     const IRegistry&                 m_Registry;
-    CNetCacheNSStorage::TCacheFlags  m_CacheFlags;  
     string                           m_TempDir;
 };
 
@@ -117,6 +114,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/12/12 15:13:16  didenko
+ * Now CNetScheduleStorageFactory_NetCache class reads all init
+ * parameters from the registry
+ *
  * Revision 1.8  2005/08/15 19:08:43  didenko
  * Changed NetScheduler Storage parameters
  *
