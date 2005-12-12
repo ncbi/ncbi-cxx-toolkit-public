@@ -1232,6 +1232,42 @@ Int2 BLAST_InitDefaultOptions(EBlastProgramType program_number,
 
 }
 
+/**  Checks that the extension and scoring options are consistent with each other
+ * @param program_number identifies the program [in]
+ * @param ext_options the extension options [in]
+ * @param score_options the scoring options [in]
+ * @param blast_msg returns a message on errors. [in|out]
+ * @return zero on success, an error code otherwise. 
+ */
+static Int2 s_BlastExtensionScoringOptionsValidate(EBlastProgramType program_number,
+                           const BlastExtensionOptions* ext_options,
+                           const BlastScoringOptions* score_options, 
+                           Blast_Message* *blast_msg)
+{
+    if (ext_options == NULL || score_options == NULL)
+        return -1;
+
+    if (program_number == eBlastTypeBlastn)
+    {
+        if (score_options->gap_open == 0 && score_options->gap_extend == 0)
+        {
+	    if (ext_options->ePrelimGapExt != eGreedyWithTracebackExt && 
+                ext_options->ePrelimGapExt != eGreedyExt && 
+                ext_options->eTbackExt != eGreedyTbck)
+	    {
+			Int4 code=2;
+			Int4 subcode=1;
+			Blast_MessageWrite(blast_msg, eBlastSevWarning, code, subcode, 
+                            "Greedy extension must be used if gap existence and extension options are zero");
+			return (Int2) code;
+	    }
+	}
+    }
+
+    return 0;
+}
+                   
+
 Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastExtensionOptions* ext_options,
                            const BlastScoringOptions* score_options, 
@@ -1257,6 +1293,11 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
    if ((status = BlastHitSavingOptionsValidate(program_number, hit_options,
                                                blast_msg)) != 0)
        return status;
+   if ((status = s_BlastExtensionScoringOptionsValidate(program_number, ext_options,
+                                               score_options, blast_msg)) != 0)
+       return status;
+
+   
 
    return status;
 }
@@ -1265,6 +1306,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.176  2005/12/12 13:38:27  madden
+ * Add call to s_BlastExtensionScoringOptionsValidate to BLAST_ValidateOptions to check that scoring and extension options are consistent
+ *
  * Revision 1.175  2005/11/16 14:27:03  madden
  * Fix spelling in CRN
  *
