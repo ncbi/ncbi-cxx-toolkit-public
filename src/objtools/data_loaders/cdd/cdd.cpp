@@ -109,6 +109,7 @@ CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
     string params("uid=");
     params += NStr::IntToString(cdd_id);
     params += "&getcseq";
+    params += "&notag";  // tell server not to wrap ASN.1 in html tags
     CConn_HttpStream inHttp(url);
     inHttp << params;
 
@@ -198,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/12/12 14:42:15  jcherry
+ * Use new "notag" cgi parameter to eliminate html tags
+ *
  * Revision 1.12  2005/10/26 14:36:44  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *
