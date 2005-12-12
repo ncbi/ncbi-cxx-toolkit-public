@@ -227,9 +227,15 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         }
         if (cds_to >= exon.GetSeqStart(0)
             && cds_to <= exon.GetSeqStop(0)) {
+            unsigned int downstream_intron_count = disc.size() - exon_index - 1;
             result->SetOutput_data()
                 .AddField("introns_3_prime_of_stop",
-                          (int) disc.size() - exon_index - 1);
+                          (int) downstream_intron_count);
+            if (downstream_intron_count > 0) {
+                result->SetOutput_data()
+                    .AddField("dist_stop_to_exon_end",
+                              int(exon.GetSeqStop(0) - cds_to));
+            }
         }
 
         // count of transcript residues doing various things
@@ -489,6 +495,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/12/12 20:19:46  jcherry
+ * Added test "dist_stop_to_exon_end" for cases with introns
+ * 3' of translational stop
+ *
  * Revision 1.15  2005/11/21 14:46:41  jcherry
  * Fix for case where exon begins with gap
  *
