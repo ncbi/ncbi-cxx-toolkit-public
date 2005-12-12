@@ -742,8 +742,8 @@ public: \
     virtual const char* GetErrCodeString(void) const \
     { \
         switch (GetErrCode()) { \
-        case eErrno: return "eErrno"; \
-        default:     return CException::GetErrCodeString(); \
+        case CParent::eErrno: return "eErrno"; \
+        default:              return CException::GetErrCodeString(); \
         } \
     }
 
@@ -871,7 +871,7 @@ public:
 // to let them satisfy TErrorStr without a wrapper.  However, they
 // don't all agree on what form the wrapper should take. :-/
 #ifdef NCBI_COMPILER_GCC
-inline int         NcbiErrnoCode(void)      { return ::errno; }
+inline int         NcbiErrnoCode(void)      { return errno; }
 inline const char* NcbiErrnoStr(int errnum) { return ::strerror(errnum); }
 #  define NCBI_ERRNO_CODE_WRAPPER NCBI_NS_NCBI::NcbiErrnoCode
 #  define NCBI_ERRNO_STR_WRAPPER  NCBI_NS_NCBI::NcbiErrnoStr
@@ -1115,6 +1115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/12/12 14:00:29  ivanov
+ * Fixed compile errors in previous revision
+ *
  * Revision 1.63  2005/12/12 13:47:54  ivanov
  * CErrnoTemplExceptionEx:
  *     - added new parameter: wrapper for error code
