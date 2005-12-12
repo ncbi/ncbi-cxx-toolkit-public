@@ -132,34 +132,18 @@ bool
 CBlastOptionsLocal::Validate() const
 {
     Blast_Message* blmsg = NULL;
-    string msg;
-    EBlastProgramType program = GetProgramType();
 
-    if (BlastScoringOptionsValidate(program, m_ScoringOpts, &blmsg)) {
-        s_BlastMessageToException(&blmsg, "Scoring options validation failed");
+    if (BLAST_ValidateOptions(GetProgramType(), m_ExtnOpts, 
+                                       m_ScoringOpts, 
+                                       m_LutOpts,
+                                       m_InitWordOpts,
+                                       m_HitSaveOpts,
+                                       &blmsg)) {
+        s_BlastMessageToException(&blmsg, "Options validation failed");
+        return false;
     }
-
-    if (LookupTableOptionsValidate(program, m_LutOpts, &blmsg)) {
-        s_BlastMessageToException(&blmsg, 
-                                  "Lookup table options validation failed");
-    }
-
-    if (BlastInitialWordOptionsValidate(program, m_InitWordOpts, &blmsg)) {
-        s_BlastMessageToException(&blmsg, 
-                                  "Word finder options validation failed");
-    }
-
-    if (BlastHitSavingOptionsValidate(program, m_HitSaveOpts, &blmsg)) {
-        s_BlastMessageToException(&blmsg, 
-                                  "Hit saving options validation failed");
-    }
-
-    if (BlastExtensionOptionsValidate(program, m_ExtnOpts, &blmsg)) {
-        s_BlastMessageToException(&blmsg, 
-                                  "Extension options validation failed");
-    }
-
-    return true;
+    else
+        return true;
 }
 
 void
