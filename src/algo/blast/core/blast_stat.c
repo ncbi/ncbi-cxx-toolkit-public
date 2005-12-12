@@ -3008,9 +3008,12 @@ Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
          }
 
          if (!found)
-         {
-             *gap_existence = gap_existence_max;
-             *gap_extension = gap_extension_max;
+         {   /* If values are above max, then use. Otherwise set max values. */
+             if (*gap_existence < gap_existence_max || *gap_extension < gap_extension_max)
+             { 
+                 *gap_existence = gap_existence_max;
+                 *gap_extension = gap_extension_max;
+             }
          }
          status = 0;
    }
@@ -4304,6 +4307,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.137  2005/12/12 13:39:14  madden
+ * Correction on how gap costs are set if they exceed maximum
+ *
  * Revision 1.136  2005/11/14 15:55:42  madden
  * Correct comment
  *
