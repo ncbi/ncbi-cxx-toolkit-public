@@ -5,10 +5,8 @@ ASN_DEP = seq
 APP = dustmasker
 SRC = main dust_mask_app
 
-LIB = xalgodustmask \
-      xblast composition_adjustment xobjsimple xnetblastcli xnetblast \
-      scoremat seqdb blastdb tables \
-      xobjread xobjutil $(OBJMGR_LIBS)
+LIB = xalgodustmask xobjread xobjutil $(OBJMGR_LIBS:%=%$(STATIC))
+
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CXXFLAGS = $(FAST_CXXFLAGS)
