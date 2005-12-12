@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <bdb/bdb_expt.hpp>
+#include <corelib/ncbidbg.hpp>
 
 #include <db.h>
 
@@ -83,6 +84,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/12 14:12:23  ivanov
+ * + #include <corelib/ncbidbg.hpp>
+ *
  * Revision 1.6  2005/12/12 13:49:38  ivanov
  * + CBDB_StrErrAdapt::GetErrCode()
  * Renamed CBDB_StrErrAdapt::streror() -> GetErrCodeString()
