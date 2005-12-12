@@ -47,7 +47,6 @@ BEGIN_NCBI_SCOPE
  */
 
 
-
 /// Base BDB exception class
 
 class CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
@@ -56,17 +55,18 @@ class CBDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 };
 
 
-
 /// Auxiliary exception class to wrap up Berkeley DB strerror function
 /// 
 
 class NCBI_BDB_EXPORT CBDB_StrErrAdapt
 {
 public:
-    static const char* strerror(int errnum);
+    // Dummy method.
+    // The real error code pass over from CBDB_ErrnoException constructor.
+    static int GetErrCode(void);
+    // Get error message
+    static const char* GetErrCodeString(int errnum);
 };
-
-
 
 
 /// BDB errno exception class. 
@@ -80,10 +80,10 @@ public:
 /// BDB error codes.
 
 class NCBI_BDB_EXPORT CBDB_ErrnoException : 
-    public CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::strerror>
+    public CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::GetErrCode, CBDB_StrErrAdapt::GetErrCodeString>
 {
 public:
-    typedef CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::strerror>
+    typedef CErrnoTemplExceptionEx<CBDB_Exception, CBDB_StrErrAdapt::GetErrCode, CBDB_StrErrAdapt::GetErrCodeString>
             CParent;
 
     /// Exception types
@@ -149,7 +149,7 @@ public:
         case eCannotOpenOverflowFile:  return "eCannotOpenOverflowFile";
         case eOverflowFileIO:          return "eOverflowFileIO";
 
-        default: return  CException::GetErrCodeString();
+        default: return CException::GetErrCodeString();
         }
     }
 
@@ -174,7 +174,7 @@ public:
     do { \
         if ( errnum ) { \
             std::string message = "BerkeleyDB error:"; \
-            message.append(CBDB_StrErrAdapt::strerror(errnum)); \
+            message.append(CBDB_StrErrAdapt::GetErrCodeString(errnum)); \
             if (x_db_object__) { \
                 message.append(" Object:'"); \
                 message.append(x_db_object__); \
@@ -194,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/12/12 13:51:14  ivanov
+ * CBDB_ErrnoException:: Reflect changes in the CErrnoTemplExceptionEx
+ *
  * Revision 1.20  2005/11/28 15:17:16  kuznets
  * Added error codes for overflow file IO
  *
