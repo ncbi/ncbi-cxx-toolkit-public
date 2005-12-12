@@ -122,11 +122,13 @@ CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
     if (info) {
         entry.Reset(&info->SetBlob());
     }
-    if (entry) {
-        load_lock->SetSeq_entry(*entry);
-        locks.insert(load_lock);
+    if (!entry) {
+        load_lock.SetLoaded();
+        return locks;
     }
+    load_lock->SetSeq_entry(*entry);
     load_lock.SetLoaded();
+    locks.insert(load_lock);
     return locks;
 }
 
@@ -209,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/12/12 15:22:09  vasilche
+ * Call CTSE_LoadLock.SetLoaded() before taking CTSE_Lock.
+ *
  * Revision 1.11  2005/10/26 14:36:45  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *

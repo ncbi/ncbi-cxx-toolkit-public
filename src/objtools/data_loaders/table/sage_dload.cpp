@@ -307,20 +307,23 @@ CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
         annot->SetData().SetFtable().push_back(feat);
     }
 
-    if (annot) {
-        // we then add the object to the data loader
-        // we need to create a dummy TSE for it first
-        CRef<CSeq_entry> entry(new CSeq_entry());
-        entry->SetSet().SetSeq_set();
-        entry->SetSet().SetAnnot().push_back(annot);
-
-        load_lock->SetSeq_entry(*entry);
-        locks.insert(load_lock);
-        _TRACE("CSageDataLoader(): loaded "
-            << annot->GetData().GetFtable().size()
-            << " features for " << idh.AsString());
+    if (!annot) {
+        load_lock.SetLoaded();
+        return locks;
     }
+
+    // we then add the object to the data loader
+    // we need to create a dummy TSE for it first
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSet().SetSeq_set();
+    entry->SetSet().SetAnnot().push_back(annot);
+    
+    load_lock->SetSeq_entry(*entry);
     load_lock.SetLoaded();
+    locks.insert(load_lock);
+    _TRACE("CSageDataLoader(): loaded "
+           << annot->GetData().GetFtable().size()
+           << " features for " << idh.AsString());
     return locks;
 }
 
@@ -403,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/12/12 15:22:09  vasilche
+ * Call CTSE_LoadLock.SetLoaded() before taking CTSE_Lock.
+ *
  * Revision 1.16  2005/10/26 14:36:45  vasilche
  * Updated for new CBlobId interface. Fixed load lock logic.
  *
