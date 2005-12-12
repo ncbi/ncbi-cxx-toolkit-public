@@ -690,7 +690,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
                 // no specific assignments for DF-DM yet
             case 'F': case 'G': case 'H': case 'I': 
             case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
-            case 'N': case 'R': case 'T': case 'V': return eAcc_gb_est;
+            case 'N': case 'R': case 'T': case 'V':
+            case 'W':                               return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
             case 'S':                               return eAcc_gb_con;
@@ -1289,13 +1290,15 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
 
 
 SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const string& s,
-                            bool allow_partial_failure)
+                                 bool allow_partial_failure)
 {
     string ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
     list<string> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
-    if (fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0])) {
-        // NCBI_THROW(CSeqIdException, eFormat, "Malformatted ID list" + ss);
+    if ((fasta_pieces.size() < 2  ||  isdigit((unsigned char)ss[0]))
+        &&  ss.find_first_not_of(kDigits) != NPOS) {
+        // In this context, it's probably reasonable to expect GIs to be
+        // tagged with gi| and to treat untagged numeric IDs as local.
         CRef<CSeq_id> id(new CSeq_id);
         try {
             id->Set(ss);
@@ -1605,6 +1608,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.116  2005/12/12 15:47:00  ucko
+ * IdentifyAccession: DW has been allocated to GenBank ESTs.
+ * ParseFastaIds: treat untagged numeric IDs as local IDs rather than GIs.
+ *
  * Revision 6.115  2005/09/21 13:51:59  ucko
  * IdentifyAccession: DV -> eAcc_gb_est.
  *
