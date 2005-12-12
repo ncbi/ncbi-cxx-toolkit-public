@@ -46,6 +46,9 @@
 #include <stdexcept>
 #include <typeinfo>
 
+#ifdef NCBI_OS_MSWIN
+#  include <corelib/ncbi_os_mswin.hpp>
+#endif
 
 /** @addtogroup Exception
  *
@@ -148,7 +151,7 @@ const string& DbgPrint(const CDiagCompileInfo& info,
 ///   SetThrowTraceAbort(), DoThrowTraceAbort()
 template<typename T>
 inline
-const T& DbgPrintP(const CDiagCompileInfo& info, const T& e, const char* e_str)
+const T& DbgPrintP(const CDiagCompileInfo& info, const T& e,const char* e_str)
 {
     CNcbiDiag(info, eDiag_Trace) << e_str << ": " << e;
     DoThrowTraceAbort();
@@ -437,8 +440,8 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 /// Generic macro to make an exception, given the exception class,
 /// previous exception , error code and message string.
-#define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message) \
-    exception_class(DIAG_COMPILE_INFO,                                        \
+#define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)\
+    exception_class(DIAG_COMPILE_INFO,                                       \
         &(prev_exception), exception_class::err_code, (message))
 
 /// Generic macro to re-throw an exception.
@@ -663,14 +666,8 @@ const TTo* UppermostCast(const TFrom& from)
     return typeid(from) == typeid(TTo) ? dynamic_cast<const TTo*>(&from) : 0;
 }
 
-/// Helper macro for default exception implementation.
-/// @sa
-///   NCBI_EXCEPTION_DEFAULT
-#define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
-    { \
-        x_Init(info, message, prev_exception); \
-        x_InitErrCode((CException::EErrCode) err_code); \
-    } \
+
+#define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class) \
     exception_class(const exception_class& other) \
        : base_class(other) \
     { \
@@ -683,7 +680,8 @@ public: \
     TErrCode GetErrCode(void) const \
     { \
         return typeid(*this) == typeid(exception_class) ? \
-            (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid; \
+            (TErrCode) this->x_GetErrCode() : \
+            (TErrCode) CException::eInvalid; \
     } \
 protected: \
     exception_class(void) {} \
@@ -691,6 +689,17 @@ protected: \
     { \
         return new exception_class(*this); \
     } \
+
+
+/// Helper macro for default exception implementation.
+/// @sa
+///   NCBI_EXCEPTION_DEFAULT
+#define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
+    { \
+        x_Init(info, message, prev_exception); \
+        x_InitErrCode((CException::EErrCode) err_code); \
+    } \
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class) \
 private: \
     /* for the sake of semicolon at the end of macro...*/ \
     static void xx_unused_##exception_class(void)
@@ -719,30 +728,24 @@ public:                                                             \
         this->x_Init(info, message, prev_exception); \
         this->x_InitErrCode((typename CException::EErrCode) err_code); \
     } \
-    exception_class(const exception_class& other) \
-       : base_class(other) \
-    { \
-        x_Assign(other); \
-    } \
-    virtual ~exception_class(void) throw() {} \
-    virtual const char* GetType(void) const {return #exception_class;} \
-    typedef int TErrCode; \
-    TErrCode GetErrCode(void) const \
-    { \
-        return typeid(*this) == typeid(exception_class) ? \
-            (TErrCode) this->x_GetErrCode() : \
-            (TErrCode) CException::eInvalid; \
-    } \
-protected: \
-    exception_class(void) {} \
-    virtual const CException* x_Clone(void) const \
-    { \
-        return new exception_class(*this); \
-    } \
-private: \
-    /* for the sake of semicolon at the end of macro...*/ \
-   // static void xx_unused_##exception_class(void)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class)
 
+
+/// Helper macro added to support errno based templatized exceptions.
+#define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(exception_class, base_class) \
+    { \
+        this->x_Init(info, message, prev_exception); \
+        this->x_InitErrCode((typename CException::EErrCode) err_code); \
+    } \
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class) \
+public: \
+    virtual const char* GetErrCodeString(void) const \
+    { \
+        switch (GetErrCode()) { \
+        case eErrno: return "eErrno"; \
+        default:     return CException::GetErrCodeString(); \
+        } \
+    }
 
 
 /// Exception bug workaround for GCC version less than 3.00.
@@ -865,31 +868,54 @@ public:
 
 
 // Some implementations return char*, so strict compilers may refuse
-// to let them satisfy TStrerror without a wrapper.  However, they
+// to let them satisfy TErrorStr without a wrapper.  However, they
 // don't all agree on what form the wrapper should take. :-/
 #ifdef NCBI_COMPILER_GCC
-inline
-const char* NcbiStrerror(int errnum) { return ::strerror(errnum); }
-#  define NCBI_STRERROR_WRAPPER NCBI_NS_NCBI::NcbiStrerror
+inline int         NcbiErrnoCode(void)      { return ::errno; }
+inline const char* NcbiErrnoStr(int errnum) { return ::strerror(errnum); }
+#  define NCBI_ERRNO_CODE_WRAPPER NCBI_NS_NCBI::NcbiErrnoCode
+#  define NCBI_ERRNO_STR_WRAPPER  NCBI_NS_NCBI::NcbiErrnoStr
 #else
-class CStrErrAdapt
+class CErrnoAdapt
 {
 public:
-    static const char* strerror(int errnum) { return ::strerror(errnum); }
+    static int GetErrCode(void)
+        { return errno; }
+    static const char* GetErrCodeString(int errnum) 
+        { return ::strerror(errnum); }
 };
-#  define NCBI_STRERROR_WRAPPER NCBI_NS_NCBI::CStrErrAdapt::strerror
+#  define NCBI_ERRNO_CODE_WRAPPER NCBI_NS_NCBI::CErrnoAdapt::GetErrCode
+#  define NCBI_ERRNO_STR_WRAPPER  NCBI_NS_NCBI::CErrnoAdapt::GetErrCodeString
+#endif
+
+// MS Windows API errors
+#ifdef NCBI_OS_MSWIN
+class CLastErrorAdapt
+{
+public:
+    static int GetErrCode(void)
+        { return GetLastError(); }
+    static const char* GetErrCodeString(int errnum);
+};
+#  define NCBI_LASTERROR_CODE_WRAPPER \
+    NCBI_NS_NCBI::CLastErrorAdapt::GetErrCode
+#  define NCBI_LASTERROR_STR_WRAPPER  \
+    NCBI_NS_NCBI::CLastErrorAdapt::GetErrCodeString
 #endif
 
 
 /////////////////////////////////////////////////////////////////////////////
 // Auxiliary exception classes:
 //   CErrnoException
+//   CErrnoException_Win
 //   CParseException
 //
 
+/// Define function type for "error code" function.
+typedef int (*TErrorCode)(void);
 
-/// Define function type for "strerror" function.
-typedef const char* (*TStrerror)(int errnum);
+/// Define function type for "error str" function.
+typedef const char* (*TErrorStr)(int errnum);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -898,7 +924,9 @@ typedef const char* (*TStrerror)(int errnum);
 ///
 /// Define template class for easy generation of Errno-like exception classes.
 
-template <class TBase, TStrerror PErrstr=NCBI_STRERROR_WRAPPER >
+template <class TBase, 
+          TErrorCode PErrCode=NCBI_ERRNO_CODE_WRAPPER,
+          TErrorStr  PErrStr=NCBI_ERRNO_STR_WRAPPER >
 class CErrnoTemplExceptionEx : EXCEPTION_VIRTUAL_BASE public TBase
 {
 public:
@@ -923,10 +951,9 @@ public:
           : TBase(info, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message)
-    {
-        m_Errno = errno;
-        this->x_Init(info, message + ": " + PErrstr(m_Errno),
-                     prev_exception);
+     {
+        m_Errno = PErrCode();
+        this->x_Init(info, message, prev_exception);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
@@ -936,17 +963,17 @@ public:
                            EErrCode err_code, const string& message,
                            int errnum)
           : TBase(info, prev_exception,
-            (typename TBase::EErrCode)(CException::eInvalid),
-            message),
+                 (typename TBase::EErrCode)(CException::eInvalid),
+                  message),
             m_Errno(errnum)
     {
-        this->x_Init(info, message + ": " + PErrstr(m_Errno),
-                     prev_exception);
+        this->x_Init(info, message, prev_exception);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
     /// Copy constructor.
-    CErrnoTemplExceptionEx(const CErrnoTemplExceptionEx<TBase, PErrstr>& other)
+    CErrnoTemplExceptionEx(
+        const CErrnoTemplExceptionEx<TBase, PErrCode, PErrStr>& other)
         : TBase( other)
     {
         m_Errno = other.m_Errno;
@@ -959,7 +986,7 @@ public:
     /// Report error number on stream.
     virtual void ReportExtra(ostream& out) const
     {
-        out << "m_Errno = " << m_Errno;
+        out << "errno = " << m_Errno <<  ": " << PErrStr(m_Errno);
     }
 
     // Attributes.
@@ -969,10 +996,11 @@ public:
 
     typedef int TErrCode;
     /// Get error code.
+
     TErrCode GetErrCode(void) const
     {
         return typeid(*this) ==
-            typeid(CErrnoTemplExceptionEx<TBase, PErrstr>) ?
+            typeid(CErrnoTemplExceptionEx<TBase, PErrCode, PErrStr>) ?
                (TErrCode) this->x_GetErrCode() :
                (TErrCode) CException::eInvalid;
     }
@@ -982,16 +1010,16 @@ public:
 
 protected:
     /// Constructor.
-    CErrnoTemplExceptionEx(void) { m_Errno = errno; }
+    CErrnoTemplExceptionEx(void) { m_Errno = PErrCode(); }
 
     /// Helper clone method.
     virtual const CException* x_Clone(void) const
     {
-        return new CErrnoTemplExceptionEx<TBase, PErrstr>(*this);
+        return new CErrnoTemplExceptionEx<TBase, PErrCode, PErrStr>(*this);
     }
 
 private:
-    int m_Errno;        ///< Error number
+    int m_Errno;  ///< Error number
 };
 
 
@@ -1003,21 +1031,47 @@ private:
 /// Define template class for easy generation of Errno-like exception classes.
 
 template<class TBase> class CErrnoTemplException :
-                        public CErrnoTemplExceptionEx<TBase, NCBI_STRERROR_WRAPPER>
+    public CErrnoTemplExceptionEx<TBase,
+                                  NCBI_ERRNO_CODE_WRAPPER,
+                                  NCBI_ERRNO_STR_WRAPPER>
 {
 public:
     /// Parent class type.
-    typedef CErrnoTemplExceptionEx<TBase, NCBI_STRERROR_WRAPPER> CParent;
+    typedef CErrnoTemplExceptionEx<TBase, NCBI_ERRNO_CODE_WRAPPER, NCBI_ERRNO_STR_WRAPPER> CParent;
 
     /// Constructor.
-    CErrnoTemplException<TBase>(const CDiagCompileInfo& info,
-        const CException* prev_exception,
-        typename CParent::EErrCode err_code,const string& message)
+    CErrnoTemplException<TBase>(const CDiagCompileInfo&    info,
+                                const CException*          prev_exception,
+                                typename CParent::EErrCode err_code,
+                                const string&              message)
         : CParent(info, prev_exception,
-                 (typename CParent::EErrCode) CException::eInvalid, message)
-    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(CErrnoTemplException<TBase>,
-                                                CParent)
+                 (typename CParent::EErrCode)CException::eInvalid, message)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException<TBase>, CParent)
 };
+
+
+#ifdef NCBI_OS_MSWIN
+template<class TBase> class CErrnoTemplException_Win :
+    public CErrnoTemplExceptionEx<TBase,
+                                  NCBI_LASTERROR_CODE_WRAPPER,
+                                  NCBI_LASTERROR_STR_WRAPPER>
+{
+public:
+    /// Parent class type.
+    typedef CErrnoTemplExceptionEx<TBase, NCBI_LASTERROR_CODE_WRAPPER, NCBI_LASTERROR_STR_WRAPPER> CParent;
+
+    /// Constructor.
+    CErrnoTemplException_Win<TBase>(const CDiagCompileInfo&    info,
+                                    const CException*          prev_exception,
+                                    typename CParent::EErrCode err_code,
+                                    const string&              message)
+        : CParent(info, prev_exception,
+                 (typename CParent::EErrCode)CException::eInvalid, message)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException_Win<TBase>, CParent)
+};
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
 
 
 /// Throw exception with extra parameter.
@@ -1061,6 +1115,16 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/12/12 13:47:54  ivanov
+ * CErrnoTemplExceptionEx:
+ *     - added new parameter: wrapper for error code
+ *     - fixed error with incorrect printing errror code if throw
+ *       an exception like:
+ *           NCBI_THROW(CErrnoTemplException<...>, eErrno, msg);
+ *     - moved printing errno information to ReportExtra().
+ * Added new class CErrnoTemplException_Win and corresponding wrappers.
+ * Moved common code to NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO.
+ *
  * Revision 1.62  2005/08/15 15:08:11  lavr
  * Typo in comment
  *

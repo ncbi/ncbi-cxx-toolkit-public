@@ -38,14 +38,12 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-
 #include <stack>
-#ifdef NCBI_OS_MSWIN
-#  include <corelib/ncbi_os_mswin.hpp>
-#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -108,10 +106,10 @@ CException::CException(const CDiagCompileInfo& info,
                        EErrCode err_code, 
                        const string& message,
                        EDiagSev severity )
-: m_Severity(severity)
-, m_ErrCode(err_code)
-, m_Predecessor(0)
-, m_InReporter(false)
+: m_Severity(severity),
+  m_ErrCode(err_code),
+  m_Predecessor(0),
+  m_InReporter(false)
 {
     x_Init(info, message,prev_exception);
 }
@@ -124,11 +122,11 @@ CException::CException(const CException& other)
 }
 
 CException::CException(void)
-: m_Severity(eDiag_Error)
-, m_Line(-1)
-, m_ErrCode(CException::eInvalid)
-, m_Predecessor(0)
-, m_InReporter(false)
+: m_Severity(eDiag_Error),
+  m_Line(-1),
+  m_ErrCode(CException::eInvalid),
+  m_Predecessor(0),
+  m_InReporter(false)
 {
 // this only is called in case of multiple inheritance
 }
@@ -266,7 +264,8 @@ CException::TErrCode CException::GetErrCode (void) const
 
 void CException::x_ReportToDebugger(void) const
 {
-#ifdef NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)  &&  defined(_DEBUG)
+    // On MS Windows print out reported information into debug output window
     ostrstream os;
     os << "NCBI C++ Exception:" << '\n';
     os <<
@@ -275,7 +274,7 @@ void CException::x_ReportToDebugger(void) const
         GetMsg() << "\" ";
     ReportExtra(os);
     os << '\n';
-    OutputDebugString(((string)CNcbiOstrstreamToString(os)).c_str());
+    ::OutputDebugString(((string)CNcbiOstrstreamToString(os)).c_str());
 #endif
     DoThrowTraceAbort();
 }
@@ -466,12 +465,47 @@ const char* CCoreException::GetErrCodeString(void) const
 }
 
 
+#if defined(NCBI_OS_MSWIN)
+
+// MT: Store pointer to the last error message in TLS
+static CSafeStaticRef< CTls<char*> > s_TlsErrorMessage;
+
+const char* CLastErrorAdapt::GetErrCodeString(int errnum)
+{
+    char** p = s_TlsErrorMessage->GetValue();
+    if (p && *p) {
+        LocalFree(*p);
+    }
+    char* ptr = NULL;
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                  FORMAT_MESSAGE_FROM_SYSTEM | 
+                  FORMAT_MESSAGE_IGNORE_INSERTS,
+                  NULL, errnum, 
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                  (LPTSTR)&ptr, 0, NULL);
+    s_TlsErrorMessage->SetValue(&ptr);
+    return ptr;
+}
+
+#endif 
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/12/12 13:48:06  ivanov
+ * CErrnoTemplExceptionEx:
+ *     - added new parameter: wrapper for error code
+ *     - fixed error with incorrect printing errror code if throw
+ *       an exception like:
+ *           NCBI_THROW(CErrnoTemplException<...>, eErrno, msg);
+ *     - moved printing errno information to ReportExtra().
+ * Added new class CErrnoTemplException_Win and corresponding wrappers.
+ * Moved common code to NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO.
+ *
  * Revision 1.45  2005/05/16 10:56:06  ssikorsk
  * Added m_Severity to the CException class
  *
