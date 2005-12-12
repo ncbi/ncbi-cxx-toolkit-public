@@ -40,10 +40,18 @@
 BEGIN_NCBI_SCOPE
 
 
-const char* CBDB_StrErrAdapt::strerror(int errnum)
+int CBDB_StrErrAdapt::GetErrCode(void)
+{ 
+    _TROUBLE;
+    return 0;
+};
+
+
+const char* CBDB_StrErrAdapt::GetErrCodeString(int errnum)
 {
     return ::db_strerror(errnum);
 }
+
 
 const char* CBDB_ErrnoException::GetErrCodeString(void) const
 {
@@ -75,6 +83,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/12/12 13:49:38  ivanov
+ * + CBDB_StrErrAdapt::GetErrCode()
+ * Renamed CBDB_StrErrAdapt::streror() -> GetErrCodeString()
+ *
  * Revision 1.5  2005/11/09 14:02:16  kuznets
  * +IsBufferSmall()
  *
