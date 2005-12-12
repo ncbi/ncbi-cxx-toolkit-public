@@ -3297,11 +3297,12 @@ s_ForecastBlockPattern
         line_counter += llp->num_appearances;
     }
     if (line_counter - line_start == block_size) {
-        if (llp->next == NULL) {
-            return line_start;
-        }
-        llp = llp->next;
-        if (llp->lengthrepeats == NULL) {
+        /* we've found a combination of groups of similarly sized lines
+         * that add up to the desired block size - is the next line blank,
+         * or are there additional non-blank lines?
+         */
+        if (llp == NULL /* The block ended with the last line in the file */
+            || llp->lengthrepeats == NULL) { /* or the next line is blank */
             return line_start;
         }
     }
@@ -3798,6 +3799,13 @@ s_BlockIsConsistent
         cp = lip->data;
         if (has_ids) {
             len = strcspn (cp, " \t\r");
+            if (first_block && len == strlen (cp)) {
+                /* PHYLIP IDs are exactly 10 characters long
+                 * and may not have a space between the ID and
+                 * the sequence.
+                 */
+                len = 10;
+            }
             tmp_id = (char *) malloc ( (len + 1) * sizeof (char));
             if (tmp_id == NULL) {
                 return eFalse;
@@ -3841,6 +3849,13 @@ s_BlockIsConsistent
         cp = lip->data;
         if (has_ids) {
             len = strcspn (cp, " \t\r");
+            if (first_block && len == strlen (cp)) {
+                /* PHYLIP IDs are exactly 10 characters long
+                 * and may not have a space between the ID and
+                 * the sequence.
+                 */
+                len = 10;
+            }        
             tmp_id = (char *) malloc ( (len + 1) * sizeof (char));
             if (tmp_id == NULL) {
                 return eFalse;
@@ -3901,6 +3916,13 @@ s_ProcessBlockLines
             pos = 0;
             if (this_block_has_ids) {
                 len = strcspn (linestring, " \t\r");
+                if (first_block && len == strlen (linestring)) {
+                    /* PHYLIP IDs are exactly ten characters long,
+                     * and may not have a space before the start of
+                     * the sequence data.
+                     */
+                    len = 10;
+                }
                 this_id = (char *) malloc (len + 1);
                 if (this_id == NULL) {
                     return;
@@ -3909,7 +3931,7 @@ s_ProcessBlockLines
                 this_id [len] = 0;
                 cp = linestring + len;
                 pos += len;
-                len = strspn (linestring, " \t\r");
+                len = strspn (cp, " \t\r");
                 cp += len;
                 pos += len;
                 /* Check for duplicate IDs in the first block */
@@ -5994,6 +6016,12 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/12/12 13:35:30  bollin
+ * changed alignment reader code to handle PHYLIP IDs when there are no spaces
+ * between the IDs and the sequence.  Note - if there are spaces in the sequence
+ * this will not work - the first part of the sequence will be assumed to be part
+ * of the sequence ID.
+ *
  * Revision 1.26  2005/10/21 15:19:13  bollin
  * added a function to allow the missing, match, and gap characters to be
  * specified in a NEXUS comment for an alignment file
