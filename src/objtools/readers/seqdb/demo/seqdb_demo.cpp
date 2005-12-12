@@ -36,27 +36,37 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Demo case base class.
 class ISeqDBDemoCase : public CObject {
 public:
+    /// Destructor
     virtual ~ISeqDBDemoCase()
     {
     }
+    
+    /// Show description for this test case.
     virtual void DisplayHelp() = 0;
+    
+    /// Run this test case.
     virtual void Run() = 0;
 };
 
+/// Demo for GetSequence() methods.
 class CSeqDBDemo_GetSequence : public ISeqDBDemoCase {
 public:
+    /// Destructor
     virtual ~CSeqDBDemo_GetSequence()
     {
     }
     
+    /// Show description for this test case.
     virtual void DisplayHelp()
     {
         cout << "    GetSequence() provides a basic interface to fetch\n"
              << "    a sequence from a SeqDB object given an OID.\n";
     }
     
+    /// Run this test case.
     virtual void Run()
     {
         CSeqDB nr("nr", CSeqDB::eProtein);
@@ -88,12 +98,15 @@ public:
     }
 };
 
+/// Demo for simple (single threaded) iteration methods.
 class CSeqDBDemo_SimpleIteration : public ISeqDBDemoCase {
 public:
+    /// Destructor
     virtual ~CSeqDBDemo_SimpleIteration()
     {
     }
     
+    /// Show description for this test case.
     virtual void DisplayHelp()
     {
         cout << "    CheckOrFindOID() provides a simple OID based iteration\n"
@@ -103,6 +116,7 @@ public:
              << "    the count and the combined length of the first 1000.\n";
     }
     
+    /// Run this test case.
     virtual void Run()
     {
         CSeqDB sp("swissprot", CSeqDB::eProtein);
@@ -129,12 +143,15 @@ public:
     }
 };
 
+/// Demo for chunk iteration methods.
 class CSeqDBDemo_ChunkIteration : public ISeqDBDemoCase {
 public:
+    /// Destructor
     virtual ~CSeqDBDemo_ChunkIteration()
     {
     }
     
+    /// Show description for this test case.
     virtual void DisplayHelp()
     {
         cout << "    GetNextOIDChunk() provides versatile iteration meant\n"
@@ -149,6 +166,7 @@ public:
              << "    by setting the size of the vector on input.\n";
     }
     
+    /// Run this test case.
     virtual void Run()
     {
         CSeqDB sp("swissprot", CSeqDB::eProtein);
@@ -236,6 +254,7 @@ public:
     }
     
 private:
+    /// Use this OID as part of the set.
     void x_UseOID(CSeqDB   & sp,
                   int        oid,
                   int      & oid_count,
@@ -247,12 +266,15 @@ private:
     }
 };
 
+/// Demo for fetching a bioseq from a seqid methods.
 class CSeqDBDemo_SeqidToBioseq : public ISeqDBDemoCase {
 public:
+    /// Destructor
     virtual ~CSeqDBDemo_SeqidToBioseq()
     {
     }
     
+    /// Show description for this test case.
     virtual void DisplayHelp()
     {
         cout << "    SeqidToBioseq() provides a basic interface to fetch\n"
@@ -261,6 +283,7 @@ public:
              << "    the database.\n";
     }
     
+    /// Run this test case.
     virtual void Run()
     {
         CSeqDB sp("swissprot", CSeqDB::eProtein);
@@ -289,6 +312,7 @@ public:
     }
 };
 
+/// Run one or more test cases.
 extern "C"
 int main(int argc, char ** argv)
 {
