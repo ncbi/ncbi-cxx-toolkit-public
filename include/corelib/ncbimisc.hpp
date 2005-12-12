@@ -239,6 +239,16 @@ private:
 template <class X>
 class auto_ptr
 {
+    // temporary class for auto_ptr copying
+    template<class Y>
+    struct auto_ptr_ref
+    {
+        auto_ptr_ref(auto_ptr<Y>& ptr)
+            : m_AutoPtr(ptr)
+		{
+		}
+        auto_ptr<Y>& m_AutoPtr;
+    };
 public:
     typedef X element_type;         ///< Define element_type
 
@@ -260,6 +270,16 @@ public:
             m_Ptr = a.release();
         }
         return *this;
+    }
+
+    auto_ptr(auto_ptr_ref<X> ref)
+        : m_Ptr(ref.m_AutoPtr.release())
+    {
+    }
+    template <typename Y>
+    operator auto_ptr_ref<Y>()
+    {
+        return auto_ptr_ref<Y>(*this);
     }
 
     /// Destructor.
@@ -904,6 +924,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2005/12/12 15:07:48  vasilche
+ * Added auto_ptr_ref<> for safe rvalue to lvalue conversion.
+ *
  * Revision 1.91  2005/11/17 18:41:27  grichenk
  * Defined ArraySize macro for compilers not supporting ArraySize template.
  *
