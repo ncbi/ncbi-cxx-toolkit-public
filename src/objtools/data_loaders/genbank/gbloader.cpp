@@ -215,11 +215,12 @@ void CGBLoaderParams::SetParamTree(const TPluginManagerParamTree* param_tree)
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    CReader*        reader,
+    CReader*        reader_ptr,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TGBMaker maker(reader);
+    CGBLoaderParams params(reader_ptr);
+    TGBMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -237,7 +238,8 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TGBMaker maker(reader_name);
+    CGBLoaderParams params(reader_name);
+    TGBMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -251,11 +253,12 @@ string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/)
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    const TParamTree& params,
+    const TParamTree& param_tree,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority  priority)
 {
-    TGBMaker maker(&params);
+    CGBLoaderParams params(&param_tree);
+    TGBMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
