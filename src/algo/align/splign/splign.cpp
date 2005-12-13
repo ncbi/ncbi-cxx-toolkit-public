@@ -631,7 +631,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
     if(smax > range_right) {
         smax = range_right;
     }
-    
+
     m_genomic.clear();
     x_LoadSequence(&m_genomic, *(phitrefs->front()->GetSubjId()), 
                    smin, smax, true);
@@ -1502,11 +1502,15 @@ void CSplign::x_ProcessTermSegm(SSegment** term_segs, Uint1 side) const
 
 Uint4 CSplign::x_GetGenomicExtent(const Uint4 query_len) const 
 {
-    const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) 
-        * m_max_genomic_ext;
-    const double rv = k * pow(query_len, 1. / kPower);
-
-    return Uint4(rv);
+    if(query_len >= kNonCoveredEndThreshold) {
+        return GetMaxGenomicExtent();
+    }
+    else {
+        const double k = pow(kNonCoveredEndThreshold, - 1. / kPower) 
+            * m_max_genomic_ext;
+        const double rv = k * pow(query_len, 1. / kPower);
+        return Uint4(rv);
+    }
 }
 
 
@@ -1684,6 +1688,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/12/13 18:41:22  kapustin
+ * Limit space to look beyond blast hit boundary with the max genomic extent for non-covered queries above kNonCoveredEndThreshold
+ *
  * Revision 1.44  2005/12/01 18:31:55  kapustin
  * +CSplign::PreserveScope()
  *
