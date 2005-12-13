@@ -98,7 +98,7 @@ IResultSet* CStatement::GetResultSet()
 bool CStatement::HasMoreResults() 
 {
     // This method may be called even before *execute*.
-    // We have to be prepared to verything.
+    // We have to be prepared for everything.
     bool more = (GetBaseCmd() != NULL);
     
     if (more) {
@@ -211,7 +211,7 @@ bool CStatement::HasRows()
 IWriter* CStatement::GetBlobWriter(CDB_ITDescriptor &d, size_t blob_size, EAllowLog log_it)
 {
     delete m_wr;
-    m_wr = new CBlobWriter(GetConnection()->GetCDB_Connection(), d, blob_size, log_it == eEnableLog);
+    m_wr = new CxBlobWriter(GetConnection()->GetCDB_Connection(), d, blob_size, log_it == eEnableLog);
     return m_wr;
 }
 
@@ -310,6 +310,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.34  2005/12/13 17:25:32  kholodov
+* Modified: Execute() method deprecated
+*
 * Revision 1.33  2005/12/02 14:11:06  ssikorsk
 * Removed dependency of context for CStatement::HasMoreResults
 *

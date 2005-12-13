@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2005/12/13 17:25:32  kholodov
+* Modified: Execute() method deprecated
+*
 * Revision 1.7  2004/04/26 14:16:56  kholodov
 * Modified: recreate the command objects each time the Get...() is called
 *
@@ -93,6 +96,7 @@ protected:
 
     CDB_RPCCmd* GetRpcCmd();
 
+    virtual void SendSql(const string& /*sql*/);
     virtual void Execute(const string& /*sql*/) {}
     virtual void ExecuteUpdate(const string& /*sql*/) {}
     virtual IResultSet* ExecuteQuery(const string& /*sql*/) { return 0; }
