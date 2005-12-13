@@ -454,6 +454,25 @@ void Serial_FilterObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>
     } while (readall);
 }
 
+// Scan input stream, finding objects that are not derived from CSerialObject
+template<typename TRoot, typename TObject>
+void Serial_FilterStdObjects(CObjectIStream& in, CSerial_FilterObjectsHook<TObject>* hook,
+                          bool readall=true)
+{
+    CObjectTypeInfo root = CType<TRoot>();
+    root.SetLocalReadHook(in, new CSerial_FilterRootHook);
+    CObjectTypeInfo request = CStdTypeInfo<TObject>::GetTypeInfo();
+    request.SetLocalSkipHook(in, hook);
+    do {
+        TRoot obj;
+        try {
+            in >> obj;
+        } catch ( CEofException& ) {
+            return;
+        }
+    } while (readall);
+}
+
 
 
 
@@ -470,6 +489,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2005/12/13 14:40:43  gouriano
+* Added possibility to scan input stream for objects of std type
+*
 * Revision 1.16  2004/06/14 17:20:58  gouriano
 * Added possibility to scan input stream finding objects of a specific type
 *
