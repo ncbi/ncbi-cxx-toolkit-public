@@ -29,67 +29,6 @@
 *   
 * File Description:  Callable statement implementation
 *
-*
-* $Log$
-* Revision 1.18  2005/11/02 15:02:25  ssikorsk
-* Catch all exceptions in destructors.
-*
-* Revision 1.17  2005/04/12 18:12:10  ssikorsk
-* Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
-*
-* Revision 1.16  2004/09/22 14:27:57  kholodov
-* Modified: reference to unused basetmpl.hpp removed
-*
-* Revision 1.15  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.14  2004/04/26 14:16:56  kholodov
-* Modified: recreate the command objects each time the Get...() is called
-*
-* Revision 1.13  2004/04/12 14:25:33  kholodov
-* Modified: resultset caching scheme, fixed single connection handling
-*
-* Revision 1.12  2004/04/08 15:56:58  kholodov
-* Multiple bug fixes and optimizations
-*
-* Revision 1.11  2004/03/12 16:27:09  sponomar
-* correct nested querys
-*
-* Revision 1.9  2004/02/26 18:52:34  kholodov
-* Added: more trace messages
-*
-* Revision 1.8  2002/12/05 17:37:23  kholodov
-* Fixed: potential memory leak in CStatement::HasMoreResults() method
-* Modified: getter and setter name for the internal CDB_Result pointer.
-*
-* Revision 1.7  2002/10/03 18:50:00  kholodov
-* Added: additional TRACE diagnostics about object deletion
-* Fixed: setting parameters in IStatement object is fully supported
-* Added: IStatement::ExecuteLast() to execute the last statement with
-* different parameters if any
-*
-* Revision 1.6  2002/09/09 20:48:57  kholodov
-* Added: Additional trace output about object life cycle
-* Added: CStatement::Failed() method to check command status
-*
-* Revision 1.5  2002/05/16 22:11:11  kholodov
-* Improved: using minimum connections possible
-*
-* Revision 1.4  2002/04/05 19:33:08  kholodov
-* Added: ExecuteUpdate() to skip all resultsets returned (if any)
-*
-* Revision 1.3  2002/02/08 21:29:54  kholodov
-* SetDataBase() restored, connection cloning algorithm changed
-*
-* Revision 1.2  2002/02/05 17:24:02  kholodov
-* Put into NCBI scope
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
-*
 */
 
 #include <ncbi_pch.hpp>
@@ -190,4 +129,74 @@ void CCallableStatement::Close()
     FreeResources();
 }    
 
+void CCallableStatement::SendSql(const string& /*sql*/)
+{
+}
+
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.19  2005/12/13 19:11:47  ucko
+* Actually define [IC]CallableStatement::SendSql, and move CVS logs to the end.
+*
+* Revision 1.18  2005/11/02 15:02:25  ssikorsk
+* Catch all exceptions in destructors.
+*
+* Revision 1.17  2005/04/12 18:12:10  ssikorsk
+* Added SetAutoClearInParams and IsAutoClearInParams functions to IStatement
+*
+* Revision 1.16  2004/09/22 14:27:57  kholodov
+* Modified: reference to unused basetmpl.hpp removed
+*
+* Revision 1.15  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.14  2004/04/26 14:16:56  kholodov
+* Modified: recreate the command objects each time the Get...() is called
+*
+* Revision 1.13  2004/04/12 14:25:33  kholodov
+* Modified: resultset caching scheme, fixed single connection handling
+*
+* Revision 1.12  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
+* Revision 1.11  2004/03/12 16:27:09  sponomar
+* correct nested querys
+*
+* Revision 1.9  2004/02/26 18:52:34  kholodov
+* Added: more trace messages
+*
+* Revision 1.8  2002/12/05 17:37:23  kholodov
+* Fixed: potential memory leak in CStatement::HasMoreResults() method
+* Modified: getter and setter name for the internal CDB_Result pointer.
+*
+* Revision 1.7  2002/10/03 18:50:00  kholodov
+* Added: additional TRACE diagnostics about object deletion
+* Fixed: setting parameters in IStatement object is fully supported
+* Added: IStatement::ExecuteLast() to execute the last statement with
+* different parameters if any
+*
+* Revision 1.6  2002/09/09 20:48:57  kholodov
+* Added: Additional trace output about object life cycle
+* Added: CStatement::Failed() method to check command status
+*
+* Revision 1.5  2002/05/16 22:11:11  kholodov
+* Improved: using minimum connections possible
+*
+* Revision 1.4  2002/04/05 19:33:08  kholodov
+* Added: ExecuteUpdate() to skip all resultsets returned (if any)
+*
+* Revision 1.3  2002/02/08 21:29:54  kholodov
+* SetDataBase() restored, connection cloning algorithm changed
+*
+* Revision 1.2  2002/02/05 17:24:02  kholodov
+* Put into NCBI scope
+*
+* Revision 1.1  2002/01/30 14:51:21  kholodov
+* User DBAPI implementation, first commit
+*
+* ===========================================================================
+*/
