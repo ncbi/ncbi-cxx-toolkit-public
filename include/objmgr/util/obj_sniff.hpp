@@ -106,7 +106,7 @@ public:
 
 
 public:
-    CObjectsSniffer() : m_DiscardCurrObj(false), m_StreamPos(0) {}
+    CObjectsSniffer() : m_StreamPos(0), m_DiscardCurrObj(false) {}
     virtual ~CObjectsSniffer() {}
 
     /// Add new possible type to the recognition list.
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/12/13 21:21:15  vasilche
+ * Fixed order of members initialization.
+ *
  * Revision 1.18  2005/12/05 19:46:56  rsmith
  * initialize m_StreamPos
  *
