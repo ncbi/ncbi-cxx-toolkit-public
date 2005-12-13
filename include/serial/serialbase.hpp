@@ -57,30 +57,7 @@ BEGIN_NCBI_SCOPE
 #if BITSTRING_AS_VECTOR
 typedef std::vector< bool > CBitString;
 #else
-//typedef bm::bvector< > CBitString;
-
-// the following is a temporary workaround
-// until bvector has its own size/resize methods
-class CBitString : public bm::bvector< >
-{
-public:
-    typedef bm::id_t size_type;
-
-    CBitString(void)
-    {
-        m_size = 0;
-    }
-    size_type size(void) const
-    {
-        return m_size;
-    }
-    void resize(size_type n)
-    {
-        m_size = n;
-    }
-private:
-    size_type m_size;
-};
+typedef bm::bvector< > CBitString;
 #endif
 
 class CTypeInfo;
@@ -610,6 +587,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/12/13 21:12:05  gouriano
+* Corrected definition of bit string class
+*
 * Revision 1.41  2005/12/05 20:10:18  gouriano
 * Added i/o stream manipulators with parameters for serializable objects
 *
