@@ -5227,6 +5227,188 @@ void BitListTest()
 }
 */
 
+void ResizeTest()
+{
+    {{
+    bvect bv(0);
+    assert(bv.any() == false);
+    assert(bv.count() == 0);
+    }}
+
+    {{
+    bvect bv1(10);
+    bvect bv2(bv1);
+    assert(bv1.size() == bv2.size());
+    }}
+
+    {{
+    bvect bv(10);
+    assert(bv.any() == false);
+    assert(bv.count() == 0);
+    bv.invert();
+    unsigned cnt = bv.count();
+    assert(cnt == 10);
+    }}
+
+    {{
+    bvect bv1(10);
+    bv1.set(1);
+    bvect bv2(0);
+
+    assert(bv1.size() == 10);
+    assert(bv2.size() == 0);
+    assert(bv1.count() == 1);
+    assert(bv2.count() == 0);
+    
+    bv1.swap(bv2);
+
+    assert(bv2.size() == 10);
+    assert(bv2.count() == 1);
+    assert(bv1.size() == 0);
+    assert(bv1.count() == 0);
+
+    }}
+
+    {{
+    bvect bv1;
+    bv1.set(65536);
+    bv1.set(100);
+    assert(bv1.size() == bm::id_max);
+    assert(bv1.count() == 2);
+    bv1.resize(101);
+    assert(bv1.size() == 101);
+    assert(bv1.count() == 1);
+    {{
+    bm::id_t f = bv1.get_first();
+    assert(f == 100);
+    f = bv1.get_next(f);
+    assert(f == 0);
+    }}
+
+    bv1.resize(10);
+    assert(bv1.size() == 10);
+    assert(bv1.count() == 0);
+    bm::id_t f = bv1.get_first();
+    assert(f == 0);
+    }}
+
+    {{
+    bvect bv;
+    bv.stat();
+    bv.set(100);
+    bv.set(65536 + 10);
+    bv.stat();
+    bv.set_range(0, 65536*10, false);
+    bv.stat();
+    }}
+
+    // test logical operations
+
+    {{
+    bvect bv1(65536 * 10);
+    bvect bv2(65536 * 100);
+    bv1.set(5);
+    bv2.set(5);
+    bv2.set(65536 * 2);
+    bv2 &= bv1;
+    assert(bv2.size() == 65536 * 100);
+    assert(bv2.count() == 1);
+    assert(bv2.get_first() == 5);
+    }}
+
+    {{
+    bvect bv1(10);
+    bvect bv2;
+    bv1.set(5);
+    bv2.set(5);
+    bv2.set(65536 * 2);
+    bv1 &= bv2;
+    assert(bv1.size() == bv2.size());
+    assert(bv1.count() == 1);
+    assert(bv1.get_first() == 5);
+    }}
+
+    {{
+    bvect bv1(10);
+    bvect bv2;
+    bv1.set(5);
+    bv2.set(6);
+    bv2.set(65536 * 2);
+    bv1 |= bv2;
+    assert(bv1.size() == bv2.size());
+    assert(bv1.count() == 3);
+    }}
+
+    // comparison test
+
+    {{
+    int cmp;
+    bvect bv1(10);
+    bvect bv2;
+    bv2.set(65536 * 2);
+
+    cmp = bv1.compare(bv2);
+    assert(cmp < 0);
+
+    bv1.set(5);
+    assert(cmp < 0);
+    cmp = bv1.compare(bv2);
+    assert(cmp > 0);
+    cmp = bv2.compare(bv1);
+    assert(cmp < 0);
+
+    }}
+
+    // inserter
+
+    {{
+    bvect bv1(10);
+    {
+        bvect::insert_iterator it(bv1);
+        *it = 100 * 65536;
+    }
+    assert(bv1.size() ==  100 * 65536 + 1);
+    }}
+
+    // serialization
+
+    {{
+    bvect bv1(10);
+    bv1.set(5);
+    struct bvect::statistics st1;
+    bv1.calc_stat(&st1);
+
+    unsigned char* sermem = new unsigned char[st1.max_serialize_mem];
+    unsigned slen2 = bm::serialize(bv1, sermem);
+
+    bvect bv2(0);
+    bm::deserialize(bv2, sermem);
+    delete [] sermem;
+
+    assert(bv2.size() == 10);
+    assert(bv2.count() == 1);
+    assert(bv2.get_first() == 5);
+    
+    }}
+
+    {{
+    bvect bv1(10);
+    bv1.set(5);
+    unsigned int arg[] = { 10, 65536, 65537, 65538 * 10000 };
+    unsigned* it1 = arg;
+    unsigned* it2 = arg + 4;
+    combine_or(bv1, it1, it2);
+    assert(bv1.size() == 65538 * 10000 + 1);
+    bvect::enumerator en = bv1.first();
+    while (en.valid())
+    {
+        cout << *en << " ";
+        ++en;
+    }
+    }}
+
+}
+
 
 int main(void)
 {
@@ -5237,11 +5419,19 @@ int main(void)
 
     CalcBeginMask();
     CalcEndMask();
+/*
+    unsigned a = bm::id_max / 65536;
 
+    bvect bv(BM_BIT, bm::gap_len_table<true>::_len, 65536*10);
+    bm::id_t c = bv.capacity();
+    bv.set(bm::id_max-1);
+*/
 
 //   cout << sizeof(__int64) << endl;
 
 //   ::srand((unsigned)::time(NULL));
+
+    ResizeTest();
 
      MiniSetTest();
 
