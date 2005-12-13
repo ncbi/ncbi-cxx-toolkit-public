@@ -1850,7 +1850,7 @@ private:
                 unsigned nbit = unsigned(prev & bm::set_block_mask);
 
                 int no_more_blocks;
-                const bm::word_t* block = 
+                bm::word_t* block = 
                     blockman_.get_block(nblock, &no_more_blocks);
 
                 if (no_more_blocks) 
