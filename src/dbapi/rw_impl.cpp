@@ -38,18 +38,18 @@
 
 BEGIN_NCBI_SCOPE
 
-CBlobReader::CBlobReader(CResultSet *rs) 
+CxBlobReader::CxBlobReader(CResultSet *rs) 
 : m_rs(rs)
 {
 
 }
 
-CBlobReader::~CBlobReader()
+CxBlobReader::~CxBlobReader()
 {
 
 }
   
-ERW_Result CBlobReader::Read(void*   buf,
+ERW_Result CxBlobReader::Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read)
 {
@@ -68,34 +68,34 @@ ERW_Result CBlobReader::Read(void*   buf,
 
 }
 
-ERW_Result CBlobReader::PendingCount(size_t* /* count */)
+ERW_Result CxBlobReader::PendingCount(size_t* /* count */)
 {
     return eRW_NotImplemented;
 }
 
 //------------------------------------------------------------------------------------------------
 
-CBlobWriter::CBlobWriter(CDB_CursorCmd* curCmd,
+CxBlobWriter::CxBlobWriter(CDB_CursorCmd* curCmd,
                          unsigned int item_num,
                          size_t datasize, 
                          bool log_it) 
 {
-    dataCmd = curCmd->SendDataCmd(item_num, datasize, log_it);
+    m_dataCmd = curCmd->SendDataCmd(item_num, datasize, log_it);
 }
 
-CBlobWriter::CBlobWriter(CDB_Connection* conn,
+CxBlobWriter::CxBlobWriter(CDB_Connection* conn,
                          CDB_ITDescriptor &d,
                          size_t blobsize, 
                          bool log_it) 
 {
-    dataCmd = conn->SendDataCmd(d, blobsize, log_it);
+    m_dataCmd = conn->SendDataCmd(d, blobsize, log_it);
 }
 
-ERW_Result CBlobWriter::Write(const void* buf,
+ERW_Result CxBlobWriter::Write(const void* buf,
                               size_t      count,
                               size_t*     bytes_written)
 {
-    size_t bPut = dataCmd->SendChunk(buf, count);
+    size_t bPut = m_dataCmd->SendChunk(buf, count);
 
     if( bytes_written != 0 )
         *bytes_written = bPut;
@@ -106,15 +106,15 @@ ERW_Result CBlobWriter::Write(const void* buf,
         return eRW_Success;
 }
 
-ERW_Result CBlobWriter::Flush()
+ERW_Result CxBlobWriter::Flush()
 {
     return eRW_NotImplemented;
 }
 
-CBlobWriter::~CBlobWriter()
+CxBlobWriter::~CxBlobWriter()
 {
     try {
-        delete dataCmd;
+        delete m_dataCmd;
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -123,6 +123,9 @@ CBlobWriter::~CBlobWriter()
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.4  2005/12/13 17:27:04  kholodov
+* Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
+*
 * Revision 1.3  2005/11/02 15:02:25  ssikorsk
 * Catch all exceptions in destructors.
 *

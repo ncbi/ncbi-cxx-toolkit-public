@@ -278,7 +278,7 @@ istream& CResultSet::GetBlobIStream(size_t buf_size)
 IReader* CResultSet::GetBlobReader()
 {
     delete m_rd;
-    m_rd = new CBlobReader(this);
+    m_rd = new CxBlobReader(this);
 
     return m_rd;
 }
@@ -422,6 +422,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.43  2005/12/13 17:27:04  kholodov
+* Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
+*
 * Revision 1.42  2005/11/02 15:02:25  ssikorsk
 * Catch all exceptions in destructors.
 *

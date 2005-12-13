@@ -132,7 +132,7 @@ private:
     bool m_bindBlob;
     bool m_disableBind;
     bool m_wasNull;
-    CBlobReader *m_rd;
+    CxBlobReader *m_rd;
     int m_totalRows;
 
 };
@@ -142,6 +142,9 @@ private:
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.20  2005/12/13 17:27:04  kholodov
+* Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
+*
 * Revision 1.19  2005/05/25 21:02:54  kholodov
 * Added: select ownership for IResultSetMetaData object
 *

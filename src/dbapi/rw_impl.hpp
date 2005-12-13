@@ -42,12 +42,12 @@ BEGIN_NCBI_SCOPE
 class CDB_SendDataCmd;
 class CResultSet;
 
-class CBlobReader : public IReader
+class CxBlobReader : public IReader
 {
 public:
-    CBlobReader(class CResultSet *rs);
+    CxBlobReader(class CResultSet *rs);
 
-    virtual ~CBlobReader();
+    virtual ~CxBlobReader();
   
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
@@ -62,16 +62,16 @@ private:
 
 class CDB_ITDescriptor;
 
-class CBlobWriter : public IWriter
+class CxBlobWriter : public IWriter
 {
 public:
 
-    CBlobWriter(CDB_Connection* conn,
+    CxBlobWriter(CDB_Connection* conn,
                 CDB_ITDescriptor &d,
                 size_t blobsize, 
                 bool log_it);
 
-    CBlobWriter(CDB_CursorCmd* curCmd,
+    CxBlobWriter(CDB_CursorCmd* curCmd,
                 unsigned int item_num,
                 size_t datasize, 
                 bool log_it);
@@ -82,11 +82,11 @@ public:
 
     virtual ERW_Result Flush(void);
 
-    virtual ~CBlobWriter();
+    virtual ~CxBlobWriter();
 
 private:
 
-    CDB_SendDataCmd *dataCmd;
+    CDB_SendDataCmd *m_dataCmd;
 };
 
 END_NCBI_SCOPE
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2005/12/13 17:27:04  kholodov
+* Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
+*
 * Revision 1.3  2005/01/31 14:21:46  kholodov
 * Added: use of CDB_ITDescriptor for writing BLOBs
 *
