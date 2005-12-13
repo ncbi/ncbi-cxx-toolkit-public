@@ -23,7 +23,7 @@
  *
  * ===========================================================================*/
 /**
- * @file kappa_common.h
+ * @file redo_alignment.h
  * @author Alejandro Schaffer, E. Michael Gertz
  *
  * Definitions used to redo a set of alignments, using either
@@ -33,7 +33,7 @@
  * Definitions with the prefix 'BlastCompo_' are primarily intended for use
  * by glue code that interfaces with this module, i.e. the definitions
  * need to be externally available so that glue code may be written, but
- * are not intended for general use. 
+ * are not intended for general use.
  */
 #ifndef __REDO_ALIGNMENT__
 #define __REDO_ALIGNMENT__
@@ -77,7 +77,7 @@ void BlastCompo_AlignmentsFree(BlastCompo_Alignment ** palign,
                                void (*free_context)(void*));
 
 /** Parameters used to compute gapped alignments */
-struct BlastCompo_GappingParams {
+typedef struct BlastCompo_GappingParams {
     int gap_open;        /**< penalty for opening a gap */
     int gap_extend;      /**< penalty for extending a gapped alignment by
                               one residue */
@@ -87,8 +87,7 @@ struct BlastCompo_GappingParams {
                               path is no longer searched */
     void * context;      /**< a pointer to any additional gapping parameters
                               that may be needed by the calling routine. */
-};
-typedef struct BlastCompo_GappingParams BlastCompo_GappingParams;
+} BlastCompo_GappingParams;
 
 
 /**
@@ -135,12 +134,14 @@ typedef struct BlastCompo_SequenceData {
 typedef struct BlastCompo_MatchingSequence {
   Int4          length;         /**< length of this matching sequence */
   Int4          index;          /**< index of this sequence in the database */
-  void * local_data;
+  void * local_data;            /**< holds any sort of data that is
+                                     necessary for callbacks to access
+                                     the sequence */
 } BlastCompo_MatchingSequence;
 
 
 /** Collected information about a query */
-struct BlastCompo_QueryInfo {
+typedef struct BlastCompo_QueryInfo {
     int origin;               /**< origin of the query in a
                                    concatenated query */
     BlastCompo_SequenceData seq;   /**< sequence data for the query */
@@ -148,8 +149,7 @@ struct BlastCompo_QueryInfo {
                                                    the query */
     double eff_search_space;  /**< effective search space of searches
                                    involving this query */
-};
-typedef struct BlastCompo_QueryInfo BlastCompo_QueryInfo;
+} BlastCompo_QueryInfo;
 
 
 /** Callbacks **/
@@ -255,35 +255,60 @@ new_xdrop_align_type(BlastCompo_Alignment **palign,
                      BlastCompo_GappingParams * gapping_params,
                      ECompoAdjustModes whichMode);
 
+/** Function type: free traceback data in a BlastCompo_Alignment.
+ *
+ *  @param traceback_data   data (of unknown type) to be freed
+ */
+typedef void free_align_traceback_type(void * traceback_data);
+
 /** Callbacks used by Blast_RedoOneMatch and
  * Blast_RedoOneMatchSmithWaterman routines */
-struct Blast_RedoAlignCallbacks {
+typedef struct Blast_RedoAlignCallbacks {
+    /** @sa calc_lambda_type */
     calc_lambda_type * calc_lambda;
+    /** @sa get_range_type */
     get_range_type * get_range;
+    /** @sa redo_one_alignment_type */
     redo_one_alignment_type * redo_one_alignment;
+    /** @sa new_xdrop_align_type */
     new_xdrop_align_type * new_xdrop_align;
-    void (*free_align_traceback)(void*);
-};
-typedef struct Blast_RedoAlignCallbacks Blast_RedoAlignCallbacks;
+    /** @sa free_align_traceback_type */
+    free_align_traceback_type * free_align_traceback;
+} Blast_RedoAlignCallbacks;
 
 /** A parameter block for the Blast_RedoOneMatch and
  * Blast_RedoOneMatchSmithWaterman routines */
-struct Blast_RedoAlignParams {
+typedef struct Blast_RedoAlignParams {
+    /** information about the scoring matrix used */
     Blast_MatrixInfo * matrix_info;
+    /** parameters for performing a gapped aligment */
     BlastCompo_GappingParams * gapping_params;
+    /** composition adjustment mode */
     int adjustParameters;
+    /** true if the search is position-based */
     int positionBased;
+    /** number of pseudocounts to use in relative-entropy based
+        composition adjustment. */
     int RE_pseudocounts;
+    /** true if the subject is translated */
     int subject_is_translated;
+    /** length of the concatenated query, or just the length of the
+        query if not concatenated */
     int ccat_query_length;
+    /** cutoff score for saving alignments when HSP linking is used */
     int cutoff_s;
+    /** cutoff evalue for saving alignments */
     double cutoff_e;
+    /** if true, then HSP linking and sum statistics are used to computed
+        evalues */
     int do_link_hsps;
+    /** statistical parameter */
     double Lambda;
+    /** statistical parameter */
     double logK;
+    /** callback functions used by the Blast_RedoAlign* functions */
     const Blast_RedoAlignCallbacks * callbacks;
-};
-typedef struct Blast_RedoAlignParams Blast_RedoAlignParams;
+} Blast_RedoAlignParams;
 
 
 NCBI_XBLAST_EXPORT

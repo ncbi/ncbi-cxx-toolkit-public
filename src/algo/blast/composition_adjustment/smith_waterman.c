@@ -598,10 +598,9 @@ Blast_ForbiddenRangesClear(Blast_ForbiddenRanges * self)
 /** Add some ranges to self
  * @param self          an instance of Blast_ForbiddenRanges [in][out]
  * @param queryStart    start of the alignment in the query sequence
- * @param queryAlignmentExtent  length of the alignment in the query sequence
+ * @param queryEnd      the end of the alignment in the query sequence
  * @param matchStart    start of the alignment in the subject sequence
- * @param matchAlignmentExtent  length of the alignment in the
- *                              subject sequence
+ * @param matchEnd      the end of the alignment in the subject sequence
  */
 int
 Blast_ForbiddenRangesPush(Blast_ForbiddenRanges * self,

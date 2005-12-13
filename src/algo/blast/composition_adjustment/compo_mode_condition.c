@@ -41,17 +41,17 @@ static char const rcsid[] =
 #include <algo/blast/composition_adjustment/compo_mode_condition.h>
 #include <algo/blast/composition_adjustment/matrix_frequency_data.h>
 
-/* 180 degrees in half a circle */
+/** 180 degrees in half a circle */
 #define HALF_CIRCLE_DEGREES 180
-/* some digits of PI */
+/** some digits of PI */
 #define PI 3.1415926543
-/* thresholds used to determine which composition mode to use */
+/** thresholds used to determine which composition mode to use */
 #define QUERY_MATCH_DISTANCE_THRESHOLD 0.16
 #define LENGTH_RATIO_THRESHOLD 3.0
 #define ANGLE_DEGREE_THRESHOLD 70.0
 
 
-/* type of function used to choose a mode for composition-based
+/** type of function used to choose a mode for composition-based
  * statistics. The variables are Queryseq_length, Matchseq_length,
  * query_amino_count, match_amino_account and matrix_name.*/
 typedef ECompoAdjustModes

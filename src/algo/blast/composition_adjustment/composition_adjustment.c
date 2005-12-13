@@ -63,23 +63,23 @@ static int alphaConvert[COMPO_PROTEIN_ALPHABET] =
  * not be attained. */
 static const int kCompositionMargin = 20;
 
-#define SCORE_BOUND            0.0000000001 /* average scores below 
-                                               -SCORE_BOUND are considered
-                                               effectively nonnegative, and
-                                               Newton's method will
-                                               will terminate */
-#define LAMBDA_STEP_FRACTION   0.5          /* default step fraction in
-                                               Newton's method */
-#define INITIAL_LAMBDA         1.0          /* initial value for Newton's
-                                               method */
-#define LAMBDA_ITERATION_LIMIT 300          /* iteration limit for Newton's
-                                               method. */
-#define LAMBDA_ERROR_TOLERANCE 0.0000001    /* bound on error for estimating
-                                               lambda */
+#define SCORE_BOUND            0.0000000001 /**< average scores below 
+                                                 -SCORE_BOUND are considered
+                                                 effectively nonnegative, and
+                                                 Newton's method will
+                                                 will terminate */
+#define LAMBDA_STEP_FRACTION   0.5          /**< default step fraction in
+                                                 Newton's method */
+#define INITIAL_LAMBDA         1.0          /**< initial value for Newton's
+                                                 method */
+#define LAMBDA_ITERATION_LIMIT 300          /**< iteration limit for Newton's
+                                                 method. */
+#define LAMBDA_ERROR_TOLERANCE 0.0000001    /**< bound on error for estimating
+                                                 lambda */
 
-/* bound on error for Newton's method */
+/** bound on error for Newton's method */
 static const double kCompoAdjustErrTolerance = 0.00000001;
-/* iteration limit for Newton's method */
+/** iteration limit for Newton's method */
 static const int kCompoAdjustIterationLimit = 2000;
 /** relative entropy of BLOSUM62 */
 static const double kFixedReBlosum62 = 0.44;
@@ -142,7 +142,7 @@ Blast_ApplyPseudocounts(double * probs_with_pseudo,
  * equals (within numerical precision) 1.0.
  *
  * @param score        the new score matrix [out]
- * @param alphasize    the number of rows and columns of score
+ * @param alphsize     the number of rows and columns of score
  * @param freq         a matrix of target frequencies [in]
  * @param row_sum      sum of each row of freq [in]
  * @param col_sum      sum of each column of freq[in]
@@ -466,10 +466,6 @@ s_GetMatrixScoreProbs(double **scoreProb, int * obs_min, int * obs_max,
  * @param rows              the number of rows in matrix.
  * @param subjectProbArray  is an array containing the probability of
  *                          occurrence of each residue in the subject
- * @param queryProbArray    is an array containing the probability of
- *                          occurrence of each residue in the query
- * @param scoreProb         is an array of probabilities for each score
- *                          that is to be used as a field in return_sfp
  * @return 0 on success, -1 on out-of-memory
  */
 static int
@@ -515,7 +511,8 @@ s_GetPssmScoreProbs(double ** scoreProb, int * obs_min, int * obs_max,
  * score frequencies.
  *
  * @param matrix       the preallocated matrix
- * @param matrixName   the score frequencies
+ * @param alphsize     the size of the alphabet for this matrix
+ * @param freq         a set of score frequencies
  * @param Lambda       the desired scale of the matrix
  */
 void
@@ -1266,7 +1263,7 @@ Blast_CompositionMatrixAdj(int length1,
  * @param queryLength             length of the query sequence
  * @param subject_composition     composition of the subject (database)
  *                                sequence
- * @param queryLength             length of the subject sequence
+ * @param subjectLength           length of the subject sequence
  * @param matrixInfo    information about the underlying,
  *                      non-adjusted, scoring matrix.
  * @param RE_rule       the rule to use for computing the scoring
@@ -1277,14 +1274,14 @@ Blast_CompositionMatrixAdj(int length1,
  *                      adjustment
  * @param *whichMode    which mode of compositional adjustment was
  *                      actually used
- * @calc_lambda         a function that can calculate the statistical
+ * @param calc_lambda   a function that can calculate the statistical
  *                      parameter Lambda from a set of score
  *                      frequencies.
  * @return              0 for success, 1 for failure to converge,
  *                      -1 for out of memory
  */
 int
-Blast_AdjustScores(int ** matrix,
+Blast_AdjustScores(Int4 ** matrix,
                    const Blast_AminoAcidComposition * query_composition,
                    int queryLength,
                    const Blast_AminoAcidComposition * subject_composition,

@@ -147,6 +147,7 @@ typedef struct BlastHitSavingParameters {
                          to attempt linking on if sum stats are used.*/
    Int4 cutoff_score_max; /**< Raw cutoff score corresponding to the e-value 
                          provided by user, cutoff_score should always <= this. */
+   double cutoff_evalue_prelim;
    BlastLinkHSPParameters* link_hsp_params; /**< Parameters for linking HSPs
                                                with sum statistics; linking 
                                                is not done if NULL. */
@@ -355,6 +356,7 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
         const BlastHitSavingOptions* options, 
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         Int4 avg_subject_length,
+        Int4 compositionBasedStats,
         BlastHitSavingParameters* *parameters);
 
 /** Updates cutoff scores in hit saving parameters. 

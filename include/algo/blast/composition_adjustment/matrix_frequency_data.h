@@ -23,13 +23,13 @@
  *
  * ===========================================================================*/
 /**
- * @file joint_probs.h
+ * @file matrix_frequency_data.h
  * @author Alejandro Schaffer, E. Michael Gertz
  *
  * Definitions used to get joint probabilities for a scoring matrix
  */
-#ifndef __BLAST_JOINT_PROBS__
-#define __BLAST_JOINT_PROBS__
+#ifndef __MATRIX_FREQUENCY_DATA__
+#define __MATRIX_FREQUENCY_DATA__
 
 #include <algo/blast/core/blast_export.h>
 

@@ -202,16 +202,16 @@ Nlm_FactorLtriangPosDef(double ** A, int n)
 
 
 /**
- * Solve the linear system L L\T y = b, where L is a non-singular
+ * Solve the linear system \f$ L L^T y = b \f$, where L is a non-singular
  * lower triangular matrix, usually computed using
  * the Nlm_FactorLtriangPosDef routine.
  *
  * @param x         on entry, the right hand size of the linear system
- *                  L L\T y = b; on exit the solution
+ *                  L L^T y = b; on exit the solution
  * @param n         the size of x
  * @param L         a non-singular lower triangular matrix
  */
-void Nlm_SolveLtriangPosDef(double * x, int n,
+void Nlm_SolveLtriangPosDef(double x[], int n,
                             double ** L )
 {
     int i, j;                   /* iteration indices */
@@ -249,7 +249,7 @@ void Nlm_SolveLtriangPosDef(double * x, int n,
  * @param n      the length of v
  */
 double
-Nlm_EuclideanNorm(const double * v, int n)
+Nlm_EuclideanNorm(const double v[], int n)
 {
     double sum   = 1.0;   /* sum of squares of elements in v */
     double scale = 0.0;   /* a scale factor for the elements in v */
@@ -276,8 +276,9 @@ Nlm_EuclideanNorm(const double * v, int n)
  * @param y         a vector
  * @param x         another vector
  * @param n         the length of x and y
+ * @param alpha     a scale factor
  */
-void Nlm_AddVectors(double * y, int n, double alpha, const double * x)
+void Nlm_AddVectors(double y[], int n, double alpha, const double x[])
 {
     int i;                     /* iteration index */
 
@@ -297,7 +298,7 @@ void Nlm_AddVectors(double * y, int n, double alpha, const double * x)
  * @param max       a nonnegative scalar
  */
 double
-Nlm_StepBound(const double * x, int n, const double * step_x, double max)
+Nlm_StepBound(const double x[], int n, const double step_x[], double max)
 {
     int i;                 /* iteration index */
     double alpha = max;    /* current largest permitted step */

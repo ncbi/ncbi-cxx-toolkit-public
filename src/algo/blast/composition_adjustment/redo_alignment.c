@@ -22,7 +22,7 @@
 *
 * ===========================================================================*/
 
-/** @file kappa_common.c
+/** @file redo_alignment.c
  *
  * @author Alejandro Schaffer, E. Michael Gertz
  *
@@ -46,8 +46,8 @@ static char const rcsid[] =
 #include <algo/blast/composition_adjustment/smith_waterman.h>
 #include <algo/blast/composition_adjustment/compo_heap.h>
 
-/* The natural log of 2, defined in newer systems as M_LN2 in math.h, but
-   missing in older systems. */
+/** The natural log of 2, defined in newer systems as M_LN2 in math.h, but
+    missing in older systems. */
 #define LOCAL_LN2 0.69314718055994530941723212145818
 
 /** Define COMPO_INTENSE_DEBUG to be true to turn on rigorous but
@@ -130,6 +130,9 @@ BlastCompo_AlignmentNew(int score,
  *
  * @param palign            pointer to the head of a singly linked list
  *                          of alignments.
+ * @param free_context      a function capable of freeing the context
+ *                          field of an alignment, or NULL if the
+ *                          context field should not be freed
  */
 void
 BlastCompo_AlignmentsFree(BlastCompo_Alignment ** palign,
@@ -846,9 +849,11 @@ s_EvalueFromScore(int score, double Lambda, double logK, double searchsp)
 #define KAPPA_BIT_TOL 2.0
 
 
+/** Test of whether one set of HSP bounds is contained in another */
 #define KAPPA_CONTAINED_IN_HSP(a,b,c,d,e,f) \
 ((a <= c && b >= c) && (d <= f && e >= f))
-#define KAPPA_SIGN(a) ((a > 0) ? 1 : ((a < 0) ? -1 : 0))
+/** A macro that defines the mathematical "sign" function */
+#define KAPPA_SIGN(a) (((a) > 0) ? 1 : (((a) < 0) ? -1 : 0))
 /**
  * Return true if an alignment is contained in a previously-computed
  * alignment of sufficiently high score.
@@ -957,7 +962,7 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
  * @param hspcnt           length of incoming_aligns
  * @param matchingSeq      the database sequence
  * @param ccat_query_length  the length of the concatenated query
- * @param query            information about all queries
+ * @param query_info       information about all queries
  * @param numQueries       the number of queries
  * @param matrix           the scoring matrix
  * @param NRrecord         a workspace used to adjust the composition.
@@ -1105,7 +1110,7 @@ function_level_cleanup:
  * @param incoming_aligns  a list of existing alignments
  * @param hspcnt           length of incoming_aligns
  * @param matchingSeq      the database sequence
- * @param query            information about all queries
+ * @param query_info       information about all queries
  * @param numQueries       the number of queries
  * @param matrix           the scoring matrix
  * @param NRrecord         a workspace used to adjust the composition.

@@ -22,7 +22,7 @@
 *
 * ===========================================================================*/
 
-/** @file joint_probs.c
+/** @file matrix_frequency_data.c
  *
  * @author Yi-Kuo Yu, Alejandro Schaffer, E. Michael Gertz
  *
@@ -158,6 +158,7 @@ static double BLOSUM62_bg[COMPO_NUM_TRUE_AA] =
     };
 
 
+/** Return true if frequency data is available for the given matrix name. */
 int Blast_FrequencyDataIsAvailable(const char *matrix_name)
 {
     return NULL != Blast_GetMatrixBackgroundFreq(matrix_name);

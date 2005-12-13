@@ -65,7 +65,7 @@ static char const rcsid[] =
 /** @sa HEAP_RESIZE_FACTOR */
 #define HEAP_MIN_RESIZE 100
 
-/* Return -1/0/1 if a is less than/equal to/greater than b. */
+/** Return -1/0/1 if a is less than/equal to/greater than b. */
 #define CMP(a,b) ((a)>(b) ? 1 : ((a)<(b) ? -1 : 0))
 
 
@@ -75,7 +75,7 @@ static char const rcsid[] =
  * BlastCompo_HeapRecord represents all alignments of a query sequence
  * to a particular matching sequence.
  */
-struct BlastCompo_HeapRecord {
+typedef struct BlastCompo_HeapRecord {
     double        bestEvalue;     /**< best (smallest) evalue of all
                                        alignments in the record */
     int           bestScore;      /**< best (largest) score; used to
@@ -84,8 +84,7 @@ struct BlastCompo_HeapRecord {
     int           subject_index;  /**< index of the subject sequence in
                                        the database */
     void *        theseAlignments;  /**< a collection of alignments */
-};
-typedef struct BlastCompo_HeapRecord BlastCompo_HeapRecord;
+} BlastCompo_HeapRecord;
 
 
 /** Compare two records in the heap.  */
@@ -345,7 +344,7 @@ s_CompHeapRecordInsertAtEnd(BlastCompo_HeapRecord **array,
  * @param eValue            the best evalue among the alignments
  * @param score             the best score among the alignments
  * @param subject_index     the index of the subject sequence in the database
- * @param discardedAlignment   a collection of alignments that must be
+ * @param discardedAlignments  a collection of alignments that must be
  *                             deleted (passed back to the calling routine
  *                             as this routine does know how to delete them)
  * @return 0 on success,  -1 for out of memory */

@@ -91,7 +91,11 @@ typedef struct BlastCompo_Heap {
     double worstEvalue;         /**< the worst (biggest) evalue currently in
                                     the heap */
 
+    /** If the data is currently stored in an array, this field points to
+        the data.  Otherwise, it is NULL */
     struct BlastCompo_HeapRecord *array;
+    /** If the data is currently stored in as a heap, this field points to
+        the data.  Otherwise, it is NULL */
     struct BlastCompo_HeapRecord *heapArray;
 } BlastCompo_Heap;
 

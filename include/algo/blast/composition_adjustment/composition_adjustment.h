@@ -36,7 +36,7 @@
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/compo_mode_condition.h>
 
-/* Number of standard amino acids */
+/** Number of standard amino acids */
 #define COMPO_NUM_TRUE_AA 20
 
 #ifdef __cplusplus
@@ -51,20 +51,20 @@ enum { eGapChar = 0, eBchar = 2, eDchar = 4, eEchar = 5, eNchar = 13,
 
 /**
  * Represents the composition of an amino-acid sequence */
-struct Blast_AminoAcidComposition {
+typedef struct Blast_AminoAcidComposition {
     double prob[26];         /**< probabilities of each amino acid, including
                                   nonstandard amino acids */
     int numTrueAminoAcids;   /**< number of true amino acids in the sequence,
                                   omitting X characters */
-};
-typedef struct Blast_AminoAcidComposition Blast_AminoAcidComposition;
+} Blast_AminoAcidComposition;
 
 NCBI_XBLAST_EXPORT
 void
 Blast_ReadAaComposition(Blast_AminoAcidComposition * composition,
                            const Uint1 * sequence, int length);
 
-struct Blast_MatrixInfo {
+/** Information about a amino-acid substitution matrix */
+typedef struct Blast_MatrixInfo {
     char * matrixName;         /**< name of the matrix */
     Int4    **startMatrix;     /**< Rescaled values of the original matrix */
     double **startFreqRatios;  /**< frequency ratios used to calculate matrix
@@ -74,8 +74,7 @@ struct Blast_MatrixInfo {
     int      positionBased;    /**< is the matrix position-based */
     double   ungappedLambda;   /**< ungapped Lambda value for this matrix
                                     in standard context */
-};
-typedef struct Blast_MatrixInfo Blast_MatrixInfo;
+} Blast_MatrixInfo;
 
 NCBI_XBLAST_EXPORT
 Blast_MatrixInfo * Blast_MatrixInfoNew(int rows, int positionBased);
@@ -127,7 +126,7 @@ void Blast_GetCompositionRange(int * pleft, int * pright,
                                int start, int finish);
 NCBI_XBLAST_EXPORT
 int
-Blast_CompositionBasedStats(Int4 ** matrix, double * LambdaRatio,
+Blast_CompositionBasedStats(int ** matrix, double * LambdaRatio,
                             const Blast_MatrixInfo * ss,
                             const double queryProb[], const double resProb[],
                             double (*calc_lambda)(double*,int,int,double));

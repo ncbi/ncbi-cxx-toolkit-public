@@ -44,9 +44,9 @@
 /** Minimum score in a matrix */
 #define COMPO_SCORE_MIN INT2_MIN
 
-/* An collection of constants that specify all permissible
+/** An collection of constants that specify all permissible
  * modes of composition adjustment */
-enum ECompoAdjustModes {
+typedef enum ECompoAdjustModes {
     eNoCompositionAdjustment       = (-1),
     eCompoKeepOldMatrix            = 0,
     eUnconstrainedRelEntropy       = 1,
@@ -54,7 +54,6 @@ enum ECompoAdjustModes {
     eRelEntropyOldMatrixOldContext = 3,
     eUserSpecifiedRelEntropy       = 4,
     eNumCompoAdjustModes
-};
-typedef enum ECompoAdjustModes ECompoAdjustModes;
+} ECompoAdjustModes;
 
 #endif
