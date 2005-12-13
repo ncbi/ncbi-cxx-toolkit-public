@@ -879,7 +879,7 @@ public:
     bvector& operator=(const bvector<Alloc, MS>& bvect)
     {
         clear(true); // memory free cleaning
-        blockman_.reserve_top_blocks(blockman_.top_block_size());
+        resize(bvect.size());
         bit_or(bvect);
         return *this;
     }
