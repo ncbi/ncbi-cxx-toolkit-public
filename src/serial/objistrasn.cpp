@@ -564,6 +564,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
     }
     obj.reserve(obj.size());
 #else
+    obj.clear();
     obj.resize(0);
     Expect('\'', true);
     string data;
@@ -588,6 +589,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
     CBitString::size_type len = 0;
     if (hex) {
         Uint1 byte;
+        obj.resize(4*data.size());
         ITERATE( string, i, data) {
             byte = *i;
             if (byte) {
@@ -602,6 +604,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         }
         if (c > 0) {
             for (c= GetHexChar(); c >= 0; c= GetHexChar()) {
+                obj.resize( 4 + obj.size());
                 byte = c;
                 if (byte) {
                     for (Uint1 mask= 0x8; mask != 0; mask >>= 1, ++len) {
@@ -616,6 +619,7 @@ void CObjectIStreamAsn::ReadBitString(CBitString& obj)
         }
         Expect('H');
     } else {
+        obj.resize(data.size());
         ITERATE( string, i, data) {
             if ( *i != 0 ) {
                 obj.set_bit(len);
@@ -1489,6 +1493,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2005/12/13 21:11:25  gouriano
+* Corrected reading of bit strings
+*
 * Revision 1.103  2005/12/06 20:04:06  gouriano
 * Correction and optimization of bit string reading
 *

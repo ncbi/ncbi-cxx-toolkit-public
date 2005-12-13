@@ -958,6 +958,7 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
     }
     obj.reserve(obj.size());
 #else
+    obj.clear();
     obj.resize(0);
     if (EndOpeningTagSelfClosed()) {
         return;
@@ -967,6 +968,7 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
     for ( ;; ++len) {
         char c = m_Input.GetChar();
         if (c == '1') {
+            obj.resize(len+1);
             obj.set_bit(len);
         } else if (c != '0') {
             if (IsWhiteSpace(c)) {
@@ -2305,6 +2307,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2005/12/13 21:11:25  gouriano
+* Corrected reading of bit strings
+*
 * Revision 1.86  2005/12/06 20:04:06  gouriano
 * Correction and optimization of bit string reading
 *
