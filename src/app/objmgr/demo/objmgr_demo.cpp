@@ -465,6 +465,7 @@ int CDemoApp::Run(void)
     CRef<CObjectManager> pOm = CObjectManager::GetInstance();
 
     CRef<CGBDataLoader> gb_loader;
+    bool other_loaders = false;
     if ( args["loader"] ) {
         string genbank_readers = args["loader"].AsString();
         if ( genbank_readers != "-" ) {
@@ -495,6 +496,7 @@ int CDemoApp::Run(void)
         }
         CLDS_DataLoader::RegisterInObjectManager(*pOm, *lds_db,
                                                  CObjectManager::eDefault);
+        other_loaders = true;
         lds_db.release();
     }
 #endif
@@ -518,6 +520,7 @@ int CDemoApp::Run(void)
         }
         CBlastDbDataLoader::RegisterInObjectManager
             (*pOm, db, type, CObjectManager::eDefault, 88);
+        other_loaders = true;
     }
 
     // Create a new scope.
@@ -563,7 +566,7 @@ int CDemoApp::Run(void)
             NcbiCout << "    " << it->AsString() << NcbiEndl;
         }
     }
-    if ( gb_loader ) {
+    if ( gb_loader && !other_loaders ) {
         try {
             CDataLoader::TBlobId blob_id = gb_loader->GetBlobId(idh);
             if ( !blob_id ) {
@@ -1165,6 +1168,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.109  2005/12/13 20:52:11  vasilche
+* Do not use CGBDataLoader if other loader is attached.
+*
 * Revision 1.108  2005/10/26 14:36:50  vasilche
 * Updated for new CBlobId interface.
 *
