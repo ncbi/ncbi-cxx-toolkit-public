@@ -60,7 +60,7 @@ CAlnMixSegments::Build(bool gap_join,
 {
     m_AlnMixSequences->InitRowsStartIts();
     m_AlnMixSequences->InitExtraRowsStartIts();
-#if _DEBUG
+#if _DEBUG && _ALNMGR_DEBUG
     m_AlnMixSequences->RowsStartItsContsistencyCheck(0);
 #endif
 
@@ -569,6 +569,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/12/13 23:07:59  todorov
+* Perform m_AlnMixSequences->RowsStartItsContsistencyCheck(0);
+* only #if _DEBUG && _ALNMGR_DEBUG
+*
 * Revision 1.6  2005/07/14 23:09:48  todorov
 * Added refernces for easier code reading and debugging.  Added a _DEBUG
 * directive in addition to _ALNMGR_TRACE
