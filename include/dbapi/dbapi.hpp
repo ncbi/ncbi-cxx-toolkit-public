@@ -315,17 +315,18 @@ public:
     /// Close statement.
     virtual void Close() = 0;
 
-    /// Sends an SQL statement for execution
+    /// Sends one or more SQL statements to the SQL server
     ///
     /// @param sql
     ///   SQL statement to execute.
     virtual void SendSql(const string& sql) = 0;
 
-	/// Executes one or more SQL statements.
+	/// Sends one or more SQL statements to the SQL server (replaced by the SendSql())
     ///
     /// @param sql
     ///   SQL statement to execute.
-    virtual void Execute(const string& sql) = 0;
+	/// @deprecated
+    NCBI_DEPRECATED virtual void Execute(const string& sql) = 0;
 
     /// Executes SQL statement with no results returned.
     ///
@@ -446,6 +447,7 @@ public:
 
 protected:
     // Mask unused methods
+    virtual void SendSql(const string& /*sql*/);
     virtual void Execute(const string& /*sql*/);
     virtual void ExecuteUpdate(const string& /*sql*/);
     virtual IResultSet* ExecuteQuery(const string& /*sql*/);
@@ -782,6 +784,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/12/13 17:20:08  kholodov
+ * Modified: Execute() method deprecated
+ *
  * Revision 1.42  2005/12/01 18:57:50  kholodov
  * Added: SendSql() method
  *
