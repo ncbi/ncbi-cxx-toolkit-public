@@ -451,7 +451,7 @@ public:
             }
         #endif
 
-            typename blocks_manager_type* bman = &(this->bv_->blockman_);
+            blocks_manager_type* bman = &(this->bv_->blockman_);
             bm::word_t*** blk_root = bman->blocks_root();
 
             this->block_idx_ = this->position_= 0;
