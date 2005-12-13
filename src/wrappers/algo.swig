@@ -123,6 +123,7 @@ algo/blast/api/phiblast_nucl_options.hpp
 algo/blast/api/phiblast_prot_options.hpp
 algo/blast/api/psi_pssm_input.hpp
 algo/blast/api/psibl2seq.hpp
+algo/blast/api/psiblast_iteration.hpp
 algo/blast/api/psiblast_options.hpp
 algo/blast/api/pssm_input.hpp
 algo/blast/api/remote_blast.hpp
@@ -159,6 +160,7 @@ algo/phy_tree/dist_methods.hpp
 algo/phy_tree/phy_node.hpp
 
 algo/winmask/seq_masker.hpp
+algo/winmask/seq_masker_cache_boost.hpp
 algo/winmask/seq_masker_istat.hpp
 algo/winmask/seq_masker_istat_ascii.hpp
 algo/winmask/seq_masker_istat_bin.hpp
@@ -275,6 +277,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/12/13 22:50:28  jcherry
+ * Added headers
+ *
  * Revision 1.12  2005/10/28 15:49:25  jcherry
  * Removed two blast headers that are now private.  Added some others.
  *

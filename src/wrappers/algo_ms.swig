@@ -31,6 +31,10 @@
 
 %%
 
+objects/omssa/MSBioseq.hpp
+objects/omssa/MSBioseqSet.hpp
+objects/omssa/MSBioseqSet_.hpp
+objects/omssa/MSBioseq_.hpp
 objects/omssa/MSCalcCharge.hpp
 objects/omssa/MSCalcCharge_.hpp
 objects/omssa/MSCalcPlusOne.hpp
@@ -47,6 +51,10 @@ objects/omssa/MSHits.hpp
 objects/omssa/MSHits_.hpp
 objects/omssa/MSIonType.hpp
 objects/omssa/MSIonType_.hpp
+objects/omssa/MSIterativeSettings.hpp
+objects/omssa/MSIterativeSettings_.hpp
+objects/omssa/MSMassSet.hpp
+objects/omssa/MSMassSet_.hpp
 objects/omssa/MSMZHit.hpp
 objects/omssa/MSMZHit_.hpp
 objects/omssa/MSMod.hpp
@@ -70,6 +78,8 @@ objects/omssa/MSResponse_.hpp
 objects/omssa/MSSearch.hpp
 objects/omssa/MSSearchSettings.hpp
 objects/omssa/MSSearchSettings_.hpp
+objects/omssa/MSSearchSettingsSet.hpp
+objects/omssa/MSSearchSettingsSet_.hpp
 objects/omssa/MSSearchType.hpp
 objects/omssa/MSSearchType_.hpp
 objects/omssa/MSSearch_.hpp
@@ -88,6 +98,9 @@ objects/omssa/OMSSA_module.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/13 22:50:28  jcherry
+ * Added headers
+ *
  * Revision 1.3  2005/10/27 12:37:18  jcherry
  * Added *_module.hpp
  *

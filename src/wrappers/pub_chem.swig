@@ -115,6 +115,8 @@ objects/pcassay/PC_AssayDescription.hpp
 objects/pcassay/PC_AssayDescription_.hpp
 objects/pcassay/PC_AssayResults.hpp
 objects/pcassay/PC_AssayResults_.hpp
+objects/pcassay/PC_AssayResultsSet.hpp
+objects/pcassay/PC_AssayResultsSet_.hpp
 objects/pcassay/PC_AssaySubmit.hpp
 objects/pcassay/PC_AssaySubmit_.hpp
 objects/pcassay/PC_IntegerMinMax.hpp
@@ -130,6 +132,9 @@ objects/pcassay/NCBI_PCAssay_module.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/13 22:50:28  jcherry
+ * Added headers
+ *
  * Revision 1.3  2005/10/27 12:37:18  jcherry
  * Added *_module.hpp
  *

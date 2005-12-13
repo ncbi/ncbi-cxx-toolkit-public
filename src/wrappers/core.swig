@@ -190,6 +190,7 @@ util/dictionary.hpp
 //util/weakmap.hpp
 connect/email_diag_handler.hpp
 connect/ncbi_conn_exception.hpp
+connect/ncbi_conn_reader_writer.hpp
 connect/ncbi_conn_stream.hpp
 connect/ncbi_core_cxx.hpp
 connect/ncbi_namedpipe.hpp
@@ -197,6 +198,7 @@ connect/ncbi_namedpipe_connector.hpp
 connect/ncbi_pipe.hpp
 connect/ncbi_pipe_connector.hpp
 connect/ncbi_socket.hpp
+connect/ncbi_socket_unix.hpp
 connect/threaded_server.hpp
 serial/aliasinfo.hpp
 serial/asntypes.hpp
@@ -317,6 +319,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/13 22:50:28  jcherry
+ * Added headers
+ *
  * Revision 1.10  2005/08/16 15:18:46  jcherry
  * Hide util/align_range_coll.hpp from SWIG
  *
