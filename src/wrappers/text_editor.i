@@ -74,7 +74,8 @@ CTextEditor::EditFile(const string& fname, EBackground bg, long line_num)
     if (bg == eAlways || (bg == eGuess && env.Get("DISPLAY") != "")) {
         // Known backgroundable editors.  gvim backgrounds itself
         // (unfortunately for non-background editing) so it's not listed.
-        if (editor == "emacs" || editor == "xemacs" || editor == "nedit") {
+        if (editor == "emacs" || editor == "xemacs" ||
+            editor == "emacsclient" || editor == "nedit") {
             do_background = true;
         }
     }
@@ -138,6 +139,9 @@ inline void CTextEditor::EditText(const string& orig_text,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/13 22:49:22  jcherry
+ * Added emacsclient to background-capable text editor list
+ *
  * Revision 1.2  2005/05/22 13:26:54  jcherry
  * Restored file deletion on exit, now that the class is in corelib
  *
