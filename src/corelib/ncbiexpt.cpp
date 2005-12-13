@@ -478,11 +478,20 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
     }
     char* ptr = NULL;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                  FORMAT_MESSAGE_FROM_SYSTEM | 
+                  FORMAT_MESSAGE_FROM_SYSTEM     |
+                  FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                   FORMAT_MESSAGE_IGNORE_INSERTS,
-                  NULL, errnum, 
+                  "%0", errnum, 
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                   (LPTSTR)&ptr, 0, NULL);
+    // Remove trailing dots and spaces
+    size_t pos = strlen(ptr);
+    if ( pos ) {
+        while (--pos  &&  (ptr[pos] == '.' || ptr[pos] == ' ')) {
+            ptr[pos] = '\0';
+        }
+    }
+    // Save pointer
     s_TlsErrorMessage->SetValue(&ptr);
     return ptr;
 }
@@ -496,6 +505,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/12/13 18:52:29  ivanov
+ * CLastErrorAdapt::GetErrCodeString() - remove trailing
+ * line brakes, dots and spaces in the generated message.
+ *
  * Revision 1.46  2005/12/12 13:48:06  ivanov
  * CErrnoTemplExceptionEx:
  *     - added new parameter: wrapper for error code
