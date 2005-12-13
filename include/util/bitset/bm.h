@@ -119,6 +119,8 @@ public:
 
     typedef Alloc  allocator_type;
     typedef blocks_manager<Alloc, MS>  blocks_manager_type;
+    /** Type used to count bits in the bit vector */
+    typedef bm::id_t                   size_type; 
 
     /*!
        @brief Structure with statistical information about bitset's memory 
@@ -796,7 +798,7 @@ public:
 #ifdef BMCOUNTOPT
     bvector(strategy          strat      = BM_BIT,
             const gap_word_t* glevel_len = bm::gap_len_table<true>::_len,
-            bm::id_t          bv_size    = bm::id_max,
+            size_type         bv_size    = bm::id_max,
             const Alloc&      alloc      = Alloc()) 
     : count_(0),
       count_is_valid_(true),
@@ -805,8 +807,8 @@ public:
       size_(bv_size)
     {}
 
-    bvector(bm::id_t          bv_size,
-        bm::strategy          strat      = BM_BIT,
+    bvector(size_type         bv_size,
+            bm::strategy      strat      = BM_BIT,
             const gap_word_t* glevel_len = bm::gap_len_table<true>::_len,
             const Alloc&      alloc = Alloc()) 
     : count_(0),
@@ -846,7 +848,7 @@ public:
     */
     bvector(strategy          strat      = BM_BIT,
             const gap_word_t* glevel_len = bm::gap_len_table<true>::_len,
-            bm::id_t          bv_size    = bm::id_max,
+            size_type         bv_size    = bm::id_max,
             const Alloc&      alloc      = Alloc()) 
     : blockman_(glevel_len, bv_size, alloc),
       new_blocks_strat_(strat),
@@ -856,7 +858,7 @@ public:
     /*!
         \brief Constructs bvector class
     */
-    bvector(bm::id_t          bv_size,
+    bvector(size_type         bv_size,
             strategy          strat      = BM_BIT,
             const gap_word_t* glevel_len = bm::gap_len_table<true>::_len,
             const Alloc&      alloc      = Alloc()) 
@@ -1089,7 +1091,7 @@ public:
     /**
         \brief Returns bvector's capacity (number of bits it can store)
     */
-    bm::id_t capacity() const 
+    size_type capacity() const 
     {
         return blockman_.capacity();
     }
@@ -1097,7 +1099,7 @@ public:
     /*!
         \brief return current size of the vector (bits)
     */
-    bm::id_t size() const 
+    size_type size() const 
     {
         return size_;
     }
@@ -1106,7 +1108,7 @@ public:
         \brief Change size of the bvector
         \param new_size - new size in bits
     */
-    void resize(bm::id_t new_size)
+    void resize(size_type new_size)
     {
         if (size_ == new_size) return; // nothing to do
         if (size_ < new_size) // size grows 
@@ -2513,7 +2515,7 @@ private:
 
     blocks_manager_type  blockman_;         //!< bitblocks manager
     strategy             new_blocks_strat_; //!< block allocation strategy
-    bm::id_t             size_;             //!< size in bits
+    size_type            size_;             //!< size in bits
 };
 
 
