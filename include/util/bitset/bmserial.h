@@ -145,7 +145,7 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
 {
     BM_ASSERT(temp_block);
     
-    typedef typename BV::blocks_manager blocks_manager_type;
+    typedef typename BV::blocks_manager_type blocks_manager_type;
     const blocks_manager_type& bman = bv.get_blocks_manager();
 
     gap_word_t*  gap_temp_block = (gap_word_t*) temp_block;
@@ -155,22 +155,34 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
 
     // Header
 
+    unsigned char header_flag = 0;
+    if (bv.size() == bm::id_max) // no dynamic resize
+    {
+        header_flag |= 1;
+    }
+    else 
+    {
+        header_flag |= (1 << 1);
+    }
+
+    enc.put_8(header_flag);
+
     ByteOrder bo = globals<true>::byte_order();
-        
-    enc.put_8(1);
     enc.put_8((unsigned char)bo);
 
     unsigned i,j;
 
     // keep GAP levels information
     enc.put_16(bman.glen(), bm::gap_levels);
-/*     
-    for (i = 0; i < bm::gap_levels; ++i)
+
+    // save size (only if bvector has been down-sized)
+    if (header_flag & (1 << 1)) 
     {
-        enc.put_16(bman.glen()[i]);
+        enc.put_32(bv.size());
     }
-*/
-    // Blocks.
+
+
+    // save blocks.
 
     for (i = 0; i < bm::set_total_blocks; ++i)
     {
@@ -316,7 +328,7 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
 template<class BV>
 unsigned serialize(BV& bv, unsigned char* buf)
 {
-    typename BV::blocks_manager& bman = bv.get_blocks_manager();
+    typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
 
     return serialize(bv, buf, bman.check_allocate_tempblock());
 }
@@ -339,7 +351,7 @@ unsigned serialize(BV& bv, unsigned char* buf)
 template<class BV>
 unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
 {
-    typedef typename BV::blocks_manager blocks_manager_type;
+    typedef typename BV::blocks_manager_type blocks_manager_type;
     blocks_manager_type& bman = bv.get_blocks_manager();
 
     typedef typename BV::allocator_type allocator_type;
@@ -362,11 +374,10 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
 
     // Reading header
 
-    // unsigned char stype =  
-    dec.get_8();
+    unsigned char header_flag =  dec.get_8();
     ByteOrder bo = (bm::ByteOrder)dec.get_8();
 
-    assert(bo == bo_current); // TO DO: Add Byte-Order convertions here
+    BM_ASSERT(bo == bo_current); // TO DO: Add Byte-Order convertions here
 
     unsigned i;
 
@@ -376,6 +387,16 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
     {
         glevels[i] = dec.get_16();
     }
+
+    if (header_flag & (1 << 1))
+    {
+        unsigned bv_size = dec.get_32();
+        if (bv_size > bv.size())
+        {
+            bv.resize(bv_size);
+        }
+    }
+
 
     // Reading blocks
 
@@ -467,11 +488,9 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
                 blk = bman.get_allocator().alloc_bit_block();
                 bman.set_block(i, blk);
                 dec.get_32(blk, bm::set_block_size);
-                //dec.memcpy(blk, sizeof(bm::word_t) * bm::set_block_size);
                 continue;                
             }
             dec.get_32(temp_block, bm::set_block_size);
-            //dec.memcpy(temp_block, sizeof(bm::word_t) * bm::set_block_size);
             bv.combine_operation_with_block(i, 
                                             temp_block, 
                                             0, BM_OR);

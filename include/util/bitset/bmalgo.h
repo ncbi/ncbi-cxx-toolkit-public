@@ -354,8 +354,8 @@ void distance_operation(const BV& bv1,
                         distance_metric_descriptor* dmit,
                         distance_metric_descriptor* dmit_end)
 {
-    const typename BV::blocks_manager& bman1 = bv1.get_blocks_manager();
-    const typename BV::blocks_manager& bman2 = bv2.get_blocks_manager();
+    const typename BV::blocks_manager_type& bman1 = bv1.get_blocks_manager();
+    const typename BV::blocks_manager_type& bman2 = bv2.get_blocks_manager();
     
     bm::word_t* temp_blk = 0;
     
@@ -517,12 +517,16 @@ bm::id_t count_or(const BV& bv1, const BV& bv2)
     \internal
 */
 template<class It>
-It block_range_scan(It  first, It last, unsigned nblock)
+It block_range_scan(It  first, It last, unsigned nblock, unsigned* max_id)
 {
     It right;
     for (right = first; right != last; ++right)
     {
-        unsigned nb = unsigned((*right) >> bm::set_block_shift);
+        unsigned v = unsigned(*right);
+        BM_ASSERT(v < bm::id_max);
+        if (v >= *max_id)
+            *max_id = v;
+        unsigned nb = v >> bm::set_block_shift;
         if (nb != nblock)
             break;
     }
@@ -545,12 +549,16 @@ It block_range_scan(It  first, It last, unsigned nblock)
 template<class BV, class It>
 void combine_or(BV& bv, It  first, It last)
 {
-    typename BV::blocks_manager& bman = bv.get_blocks_manager();
+    typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
+    unsigned max_id = bv.size();
 
     while (first < last)
     {
         unsigned nblock = unsigned((*first) >> bm::set_block_shift);     
-        It right = block_range_scan(first, last, nblock);
+        It right = block_range_scan(first, last, nblock, &max_id);
+
+        if (max_id >= bv.size())
+            bv.resize(max_id + 1);
 
         // now we have one in-block array of bits to set
         
@@ -617,12 +625,16 @@ void combine_or(BV& bv, It  first, It last)
 template<class BV, class It>
 void combine_xor(BV& bv, It  first, It last)
 {
-    typename BV::blocks_manager& bman = bv.get_blocks_manager();
+    typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
+    unsigned max_id = bv.size();
 
     while (first < last)
     {
         unsigned nblock = unsigned((*first) >> bm::set_block_shift);     
-        It right = block_range_scan(first, last, nblock);
+        It right = block_range_scan(first, last, nblock, &max_id);
+
+        if (max_id >= bv.size())
+            bv.resize(max_id + 1);
 
         // now we have one in-block array of bits to set
         
@@ -695,11 +707,15 @@ template<class BV, class It>
 void combine_sub(BV& bv, It  first, It last)
 {
     typename BV::blocks_manager& bman = bv.get_blocks_manager();
+    unsigned max_id = bv.size();
 
     while (first < last)
     {
         unsigned nblock = unsigned((*first) >> bm::set_block_shift);     
-        It right = block_range_scan(first, last, nblock);
+        It right = block_range_scan(first, last, nblock, &max_id);
+
+        if (max_id >= bv.size())
+            bv.resize(max_id + 1);
 
         // now we have one in-block array of bits to set
         
@@ -793,10 +809,10 @@ void combine_and(BV& bv, It  first, It last)
 template<class BV>
 bm::id_t count_intervals(const BV& bv)
 {
-    const typename BV::blocks_manager& bman = bv.get_blocks_manager();
+    const typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
 
     bm::word_t*** blk_root = bman.get_rootblock();
-    typename BV::blocks_manager::block_count_change_func func(bman);
+    typename BV::blocks_manager_type::block_count_change_func func(bman);
     for_each_block(blk_root, bman.top_block_size(), bm::set_array_size, func);
 
     return func.count();        
