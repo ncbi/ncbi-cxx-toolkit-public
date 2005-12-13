@@ -422,11 +422,11 @@ void Blast_HSPListPHIGetBitScores(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
     
 /** Discard the HSPs above the e-value threshold from the HSP list 
  * @param hsp_list List of HSPs for one subject sequence [in] [out]
- * @param expect_value the e-value cut-off [in]
+ * @param hit_options Options block containing the e-value cut-off [in]
 */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list, 
-                               double expect_value);
+                               BlastHitSavingOptions* hit_options);
 
 /** Cleans out the NULLed out HSP's from the HSP array that
  * is part of the BlastHSPList.

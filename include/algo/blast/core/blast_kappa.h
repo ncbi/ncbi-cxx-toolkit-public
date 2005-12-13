@@ -67,7 +67,7 @@ extern "C" {
  * @return 0 on success, otherwise failure.
 */
 
-int
+Int2
 Blast_RedoAlignmentCore(EBlastProgramType program_number,
                   BLAST_SequenceBlk * queryBlk,
                   BlastQueryInfo* query_info,
@@ -90,8 +90,9 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
- * Revision 1.11  2005/12/13 17:50:17  gertz
- * Doxygen fixes.
+ * Revision 1.12  2005/12/13 17:57:21  gertz
+ * Revert accidental checkin of the previous revision (cvs commit was run in
+ * the wrong directory.)
  *
  * Revision 1.10  2005/12/01 14:47:40  madden
  * Renamed Kappa_RedoAlignmentCore as Blast_RedoAlignmentCore
