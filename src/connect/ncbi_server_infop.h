@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Denis Vakatov
+ * Author:  Anton Lavrentiev
  *
  * File Description:
  *   NCBI server meta-address info (private part)
@@ -48,43 +48,54 @@ int/*bool*/ SERV_SetLocalServerDefault(int/*bool*/ onoff);
 /* Constructors for the various types of NCBI server meta-addresses
  */
 SSERV_Info* SERV_CreateNcbidInfoEx
-(unsigned int   host,           /* network byte order                        */
- unsigned short port,           /* host byte order                           */
- const char*    args,
- size_t         add
+(unsigned int      host,        /* network byte order                        */
+ unsigned short    port,        /* host byte order                           */
+ const char*       args,
+ size_t            add
  );
 
 SSERV_Info* SERV_CreateStandaloneInfoEx
-(unsigned int   host,           /* network byte order                        */
- unsigned short port,           /* host byte order                           */
- size_t         add
+(unsigned int      host,        /* network byte order                        */
+ unsigned short    port,        /* host byte order                           */
+ size_t            add
  );
 
 SSERV_Info* SERV_CreateHttpInfoEx
-(ESERV_Type     type,           /* verified, must be one of fSERV_Http*      */
- unsigned int   host,           /* network byte order                        */
- unsigned short port,           /* host byte order                           */
- const char*    path,
- const char*    args,
- size_t         add
+(ESERV_Type        type,        /* verified, must be one of fSERV_Http*      */
+ unsigned int      host,        /* network byte order                        */
+ unsigned short    port,        /* host byte order                           */
+ const char*       path,
+ const char*       args,
+ size_t            add
  );
 
 SSERV_Info* SERV_CreateFirewallInfoEx
-(unsigned int   host,           /* original server's host in net byte order  */
- unsigned short port,           /* original server's port in host byte order */
- ESERV_Type     type,           /* type of original server, wrapped into     */
- size_t         add
+(unsigned int      host,        /* original server's host in net byte order  */
+ unsigned short    port,        /* original server's port in host byte order */
+ ESERV_Type        type,        /* type of original server, wrapped into     */
+ size_t            add
  );
 
 SSERV_Info* SERV_CreateDnsInfoEx
-(unsigned int   host,           /* the only parameter                        */
- size_t         add
+(unsigned int      host,        /* the only parameter                        */
+ size_t            add
  );
 
 
 SSERV_Info* SERV_ReadInfoEx
-(const char*    info_str,
- size_t         add
+(const char*       info_str,
+ const char*       name
+ );
+
+
+SSERV_Info* SERV_CopyInfoEx
+(const SSERV_Info* orig,
+ const char*       name
+ );
+
+
+const char* SERV_NameOfInfo
+(const SSERV_Info* info
  );
 
 
@@ -96,6 +107,10 @@ SSERV_Info* SERV_ReadInfoEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2005/12/14 21:24:23  lavr
+ * Name parameter for SERV_ReadInfoEx() (instead of "add")
+ * +SERV_CopyInfoEx(), +SERV_NameOfInfo()
+ *
  * Revision 6.5  2005/07/11 18:13:52  lavr
  * Introduce *Ex constructors to take additinal mem size to allocate at end
  *
