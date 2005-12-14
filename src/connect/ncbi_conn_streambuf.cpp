@@ -137,14 +137,17 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         CT_INT_TYPE b;
         size_t n_write;
         // send buffer
-        if (!pptr()  &&  !CT_EQ_INT_TYPE(c, CT_EOF)) {
+        if (pptr()) {
+            n_write = pptr() - m_WriteBuf;
+            b = CT_EOF;
+        } else if (CT_EQ_INT_TYPE(c, CT_EOF)) {
+            n_write = 0;
+            b = CT_EOF;
+        } else {
             *m_WriteBuf = c;
             n_write = 1;
             c = CT_EOF;
             b = c;
-        } else {
-            n_write = pptr() - m_WriteBuf;
-            b = CT_EOF;
         }
         if (n_write) {
             size_t n_written;
@@ -347,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2005/12/14 22:24:55  lavr
+ * Fix a bug in CConn_Streambuf::overflow()
+ *
  * Revision 6.56  2005/12/14 21:34:57  lavr
  * Create streambuf initially unbuffered for write so that first
  * output would cause an overflow and open an underlying connection
