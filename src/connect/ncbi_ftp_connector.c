@@ -410,7 +410,7 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
     if (BUF_Read(xxx->wbuf, s, size) == size  &&
         SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout) == eIO_Success) {
         char* c;
-        if ((c = memchr(s, '\n', size)) != 0) {
+        if ((c = (char*) memchr(s, '\n', size)) != 0) {
             if (c != s  &&  c[-1] == '\r')
                 c--;
             *c = '\0';
@@ -538,7 +538,7 @@ static EIO_Status s_VT_Write
     if (!xxx->cntl)
         return eIO_Closed;
 
-    if ((c = memchr((const char*) buf, '\n', size)) != 0  &&
+    if ((c = (const char*) memchr((const char*) buf, '\n', size)) != 0  &&
         c < (const char*) buf + size - 1) {
         return eIO_Unknown;
     }
@@ -744,6 +744,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2005/12/14 21:31:04  lavr
+ * Two explicit (char*) casts added
+ *
  * Revision 1.14  2005/06/08 20:42:05  lavr
  * Use safer memmove() instead of strcpy() in PASV parsing
  *
