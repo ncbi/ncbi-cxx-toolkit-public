@@ -250,12 +250,22 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
     if (len >= sizeof(service_name)  &&
         strncasecmp(text, service_name, sizeof(service_name) - 1) == 0) {
         if (iter->mask) {
+            char* c;
             if (data->name)
                 free((void*) data->name);
             text += sizeof(service_name) - 1;
             while (*text  &&  isspace((unsigned char)(*text)))
                 text++;
-            data->name = strdup(text);
+            if ((c = strdup(text)) != 0) {
+                while (*c) {
+                    if (!isalnum((unsigned char) *c)  &&  *c != '_') {
+                        *c = '\0';
+                        break;
+                    } else
+                        c++;
+                }
+            }
+            data->name = c;
         }
     } else if (len >= sizeof(server_info) &&
         strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
@@ -267,11 +277,9 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
         text += sizeof(server_info) - 1;
         if (sscanf(text, "%u: %n", &d1, &d2) < 1)
             return 0/*not updated*/;
-        info = SERV_ReadInfoEx(text + d2, strlen(name) + 1);
-        if (info) {
+        if ((info = SERV_ReadInfoEx(text + d2, name)) != 0) {
             assert(info->rate != 0.0);
             info->time += now; /* expiration time now */
-            strcpy((char*) info + SERV_SizeOfInfo(info), name);
             if (s_AddServerInfo(data, info))
                 return 1/*updated*/;
             free(info);
@@ -509,6 +517,9 @@ extern void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.70  2005/12/14 21:33:15  lavr
+ * Use new SERV_ReadInfoEx() prototype
+ *
  * Revision 6.69  2005/12/08 03:52:28  lavr
  * Do not override User-Agent but extend it
  *
