@@ -65,7 +65,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     m_WriteBuf = buf_size ? m_ReadBuf + m_BufSize            : 0;
 
     setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);  // Empty get area
-    setp(m_WriteBuf, m_WriteBuf + buf_size); // Put area (if any)
+    setp(0, 0);                              // Non-buffered here (just as yet)
 
     SCONN_Callback cb;
     cb.func = x_OnClose;
@@ -134,9 +134,19 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         return CT_EOF;
 
     if ( m_WriteBuf ) {
+        CT_INT_TYPE b;
+        size_t n_write;
         // send buffer
-        size_t n_write = pptr() - m_WriteBuf;
-        if ( n_write ) {
+        if (!pptr()  &&  !CT_EQ_INT_TYPE(c, CT_EOF)) {
+            *m_WriteBuf = c;
+            n_write = 1;
+            c = CT_EOF;
+            b = c;
+        } else {
+            n_write = pptr() - m_WriteBuf;
+            b = CT_EOF;
+        }
+        if (n_write) {
             size_t n_written;
             n_write *= sizeof(CT_CHAR_TYPE);
             LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf, n_write,
@@ -157,6 +167,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         // store char
         if ( !CT_EQ_INT_TYPE(c, CT_EOF) )
             return sputc(CT_TO_CHAR_TYPE(c));
+        else if ( !CT_EQ_INT_TYPE(b, CT_EOF) )
+            return b;
     } else if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // send char
         size_t n_written;
@@ -335,6 +347,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.56  2005/12/14 21:34:57  lavr
+ * Create streambuf initially unbuffered for write so that first
+ * output would cause an overflow and open an underlying connection
+ *
  * Revision 6.55  2005/05/17 00:19:18  lavr
  * OnClose safety hook added; GPos bug fixed
  *
