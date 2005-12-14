@@ -31,12 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "../ncbi_servicep.h"
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
+#include <connect/ncbi_service.h>
+#include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <util/request_control.hpp>
 
@@ -667,6 +667,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/12/14 22:03:01  lavr
+ * ESERV_SpecialType reinstated public
+ *
  * Revision 1.19  2005/12/14 21:32:36  lavr
  * Include private ncbi_servicep.h for fSERV_Promiscuous
  *

@@ -89,6 +89,14 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 #define SERV_LOCALHOST ((unsigned int)(~0UL))
 #define SERV_ANYHOST   0             /* default, may be used as just 0       */
 
+/* Special "type" bit values that may be combined with server types */
+typedef enum {
+    /* Do reverse DNS translation of the would-be resulting info */
+    fSERV_ReverseDns  = 0x40000000,
+    /* Allows to get even dead services (but not off ones!) */
+    fSERV_Promiscuous = 0x20000000 /* also: all preference params are ignored*/
+} ESERV_SpecialType;
+
 /* Simplified (uncluttered) type to use in 'skip' parameter below */
 typedef const SSERV_Info* SSERV_InfoCPtr;
 
@@ -200,6 +208,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2005/12/14 22:03:53  lavr
+ * ESERV_SpecialType reinstated public
+ *
  * Revision 6.42  2005/12/14 21:17:09  lavr
  * ESERV_SpecialType made private (moved to ncbi_servicep.h in source tree)
  * SSERV_InfoCPtr introduced;  some API usage comments extended/corrected

@@ -79,15 +79,6 @@ struct SSERV_IterTag {
 };
 
 
-/* Special "type" bit values that may be combined with server types */
-typedef enum {
-    /* Do reverse DNS translation of the would-be resulting info */
-    fSERV_ReverseDns  = 0x40000000,
-    /* Allows to get even dead services (but not off ones!) */
-    fSERV_Promiscuous = 0x20000000 /* also: all preference params are ignored*/
-} ESERV_SpecialType;
-
-
 /* Modified "fast track" routine for obtaining of a server info in one-shot.
  * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
  *
@@ -197,6 +188,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2005/12/14 22:04:01  lavr
+ * ESERV_SpecialType reinstated public
+ *
  * Revision 6.34  2005/12/14 21:27:49  lavr
  * SERV_GetInfoP() and SERV_OpenP():  New signatures (changed parameteres)
  *

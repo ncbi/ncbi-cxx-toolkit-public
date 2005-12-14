@@ -31,12 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "../ncbi_servicep.h"
 #include <corelib/ncbistd.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <util/transmissionrw.hpp>
-#include "../ncbi_servicep.h"
 
 #include <memory>
 
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/12/14 22:02:48  lavr
+ * ESERV_SpecialType reinstated public
+ *
  * Revision 1.29  2005/12/14 21:31:53  lavr
  * Use new SERV_OpenP() signature
  *
