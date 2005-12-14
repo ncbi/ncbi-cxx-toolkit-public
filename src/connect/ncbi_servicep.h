@@ -54,41 +54,49 @@ typedef struct {
 } SSERV_VTable;
 
 
-
 /* Iterator structure
  */
 struct SSERV_IterTag {
-    const char*       name;  /* requested service name, private storage   */
-    TSERV_Type        type;  /* requested server type(s)                  */
-    unsigned int      host;  /* preferred host to select, network b.o.    */
-    double            pref;  /* range [0..100] %%                         */
-    size_t          n_skip;  /* actual number of servers in the array     */
-    size_t          a_skip;  /* number of allocated slots in the array    */
-    SSERV_Info**      skip;  /* servers to skip (followed by names [opt]) */
-    const SSERV_Info* last;  /* last server info taken out                */
+    const char*       name;  /* requested service name, private storage      */
+    TSERV_Type        type;  /* requested server type(s)                     */
+    unsigned int      host;  /* preferred host to select, network b.o.       */
+    unsigned short    port;  /* preferred port to select, host b.o.          */
+    double            pref;  /* range [0..100] %%                            */
+    size_t          n_skip;  /* actual number of servers in the array        */
+    size_t          a_skip;  /* number of allocated slots in the array       */
+    SSERV_Info**      skip;  /* servers to skip (followed by names [opt])    */
+    const SSERV_Info* last;  /* last server info taken out                   */
 
-    const SSERV_VTable* op;  /* table of virtual functions                */
+    const SSERV_VTable* op;  /* table of virtual functions                   */
 
-    void*             data;  /* private data field                        */
-    unsigned        mask:1;  /* whether name is to be treated as mask     */
-    unsigned    external:1;  /* whether this is an external request       */
-    const char*        arg;  /* argument to match; original pointer       */
-    size_t          arglen;  /* == 0 for NULL pointer above               */
-    const char*        val;  /* value to match; original pointer          */
-    size_t          vallen;  /* == 0 for NULL pointer above               */
+    void*             data;  /* private data field                           */
+    unsigned        mask:1;  /* whether the name is to be treated as a mask  */
+    unsigned    external:1;  /* whether this is an external request          */
+    const char*        arg;  /* argument to match; original pointer          */
+    size_t          arglen;  /* == 0 for NULL pointer above                  */
+    const char*        val;  /* value to match; original pointer             */
+    size_t          vallen;  /* == 0 for NULL pointer above                  */
 };
 
 
-/* Modified 'fast track' routine for obtaining of a service info in one-shot.
+/* Special "type" bit values that may be combined with server types */
+typedef enum {
+    /* Do reverse DNS translation of the would-be resulting info */
+    fSERV_ReverseDns  = 0x40000000,
+    /* Allows to get even dead services (but not off ones!) */
+    fSERV_Promiscuous = 0x20000000 /* also: all preference params are ignored*/
+} ESERV_SpecialType;
+
+
+/* Modified "fast track" routine for obtaining of a server info in one-shot.
  * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
- * For now, this call is to exclusively support MYgethostbyname() replacement
- * of standard gethostbyname() libcall in Apache Web daemon (see in daemons/).
  *
- * CAUTION: unlike "service" parameter, "arg" and "val" are not copied from,
- *          but the orignal pointers get stored -- take this into account
- *          while dealing with dynamically allocated strings in the slow
- *          "iterator" version of the call below -- the pointers must remain
- *          valid as long as the iterator stays open (i.e. until SERV_Close()).
+ * CAUTION: unlike 'service' parameter, 'arg' and 'val' are not copied from,
+ *          but the original pointers to them get stored -- take this into
+ *          account while dealing with dynamically allocated strings in the
+ *          slow iterative version of the call below -- the pointers must
+ *          remain valid as long as the iterator stays open (i.e. until
+ *          SERV_Close() gets called).
  *
  * NOTE: Preference 0.0 does not prohibit the preferred_host to be selected;
  *       nor preference 100.0 ultimately opts for the preferred_host; rather,
@@ -96,28 +104,38 @@ struct SSERV_IterTag {
  *       probability when all other conditions for favoring the host are
  *       optimal, i.e. preference 0.0 actually means not to favor the preferred
  *       host at all, while 100.0 means to opt for that as much as possible.
+ * NOTE: Preference < 0 is a special value that means to latch the preferred
+ *       host[:port] if the service exists out there, regardless of the load
+ *       (but taking into account the server disposition [working/non-working]
+ *       only -- servers, which are down, don't get returned).
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
-(const char*         service,       /* service name                          */
- TSERV_Type          types,         /* mask of type(s) of servers requested  */
- unsigned int        preferred_host,/* preferred host to use service on, nbo */
- double              preference,    /* [0=min..100=max] preference in %%     */
- int/*bool*/         external,      /* whether mapping is not local to NCBI  */
- SConnNetInfo*       net_info,      /* for connection to dispatcher, m.b. 0  */
- const char*         arg,           /* environment variable name to search   */
- const char*         val            /* environment variable value to match   */
+(const char*          service,       /* service name (may not be a mask)     */
+ TSERV_Type           types,         /* mask of type(s) of servers requested */
+ unsigned int         preferred_host,/* preferred host to use service on, nbo*/
+ unsigned short       preferred_port,/* preferred port to use service on, hbo*/
+ double               preference,    /* [0,100] preference in %, or -1(latch)*/
+ const SConnNetInfo*  net_info,      /* for connection to dispatcher, m.b. 0 */
+ const SSERV_InfoCPtr skip[],        /* array of servers NOT to select       */
+ size_t               n_skip,        /* number of servers in preceding array */
+ int/*bool*/          external,      /* whether mapping is not local to NCBI */
+ const char*          arg,           /* environment variable name to search  */
+ const char*          val            /* environment variable value to match  */
  );
 
-/* same as the above but creates an iterator to get services one by one */
+/* same as the above but creates an iterator to get the servers one by one */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
-(const char*         service,
- TSERV_Type          type,
- unsigned int        preferred_host,
- double              preference,
- int/*bool*/         external,
- SConnNetInfo*       net_info,
- const char*         arg,
- const char*         val
+(const char*          service,       /* service name (can be a mask)         */
+ TSERV_Type           types,
+ unsigned int         preferred_host,
+ unsigned short       preferred_port,
+ double               preference,
+ const SConnNetInfo*  net_info,
+ const SSERV_InfoCPtr skip[],
+ size_t               n_skip,
+ int/*bool*/          external,
+ const char*          arg,
+ const char*          val
  );
 
 
@@ -179,6 +197,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2005/12/14 21:27:49  lavr
+ * SERV_GetInfoP() and SERV_OpenP():  New signatures (changed parameteres)
+ *
  * Revision 6.33  2005/07/11 18:49:11  lavr
  * Hashed preference generation algorithm retired (proven to fail often)
  *
