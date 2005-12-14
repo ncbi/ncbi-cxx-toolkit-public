@@ -74,19 +74,26 @@ private:
 
 
 
-CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys)
-: m_DB(0),
+CBDB_RawFile::CBDB_RawFile(EDuplicateKeys dup_keys, EDBType db_type)
+: m_DB_Type(db_type),
+  m_DB(0),
   m_DBT_Key(0),
   m_DBT_Data(0),
   m_Env(0),
   m_Trans(0),
   m_TransAssociation(CBDB_Transaction::eFullAssociation),
+  m_RecLen(0),
   m_DB_Attached(false),
   m_ByteSwapped(false),
   m_PageSize(0),
   m_CacheSize(256 * 1024),
   m_DuplicateKeys(dup_keys)
 {
+    if (m_DB_Type == eQueue)
+    {
+        dup_keys = eDuplicatesDisable;
+    }
+
     try
     {
         m_DBT_Key = new DBT;
@@ -119,7 +126,6 @@ CBDB_RawFile::~CBDB_RawFile()
         
         // If we are here we can try to communicate by throwing
         // an exception. It's illegal, but situation is bad enough already
-        
         BDB_THROW(eTransInProgress, 
                   "Cannot close the file while transaction is in progress.");
     }
@@ -176,7 +182,8 @@ void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 void CBDB_RawFile::Open(const char* filename,
                         const char* database,
                         EOpenMode   open_mode,
-                        bool        support_dirty_read)
+                        bool        support_dirty_read,
+                        unsigned    rec_len)
 {
     if ( !m_FileName.empty() )
         Close();
@@ -184,7 +191,7 @@ void CBDB_RawFile::Open(const char* filename,
     if (!database  ||  !*database)
         database = 0; // database = kDefaultDatabase;
 
-    x_Open(filename, database, open_mode, support_dirty_read);
+    x_Open(filename, database, open_mode, support_dirty_read, rec_len);
 
     m_FileName = filename;
     if (database)
@@ -194,7 +201,9 @@ void CBDB_RawFile::Open(const char* filename,
 }
 
 
-void CBDB_RawFile::Reopen(EOpenMode open_mode, bool support_dirty_read)
+void CBDB_RawFile::Reopen(EOpenMode open_mode, 
+                          bool      support_dirty_read,
+                          unsigned  rec_len)
 {
     _ASSERT(!m_FileName.empty());
 
@@ -208,7 +217,7 @@ void CBDB_RawFile::Reopen(EOpenMode open_mode, bool support_dirty_read)
     BDB_CHECK(ret, m_FileName.c_str());
     x_Open(m_FileName.c_str(),
            !m_Database.empty() ? m_Database.c_str() : 0,
-           open_mode, support_dirty_read);
+           open_mode, support_dirty_read, rec_len);
 }
 
 
@@ -288,7 +297,7 @@ void CBDB_RawFile::x_RemoveTransaction(CBDB_Transaction* trans)
 
 
 
-void CBDB_RawFile::x_CreateDB()
+void CBDB_RawFile::x_CreateDB(unsigned rec_len)
 {
     _ASSERT(m_DB == 0);
     _ASSERT(!m_DB_Attached);
@@ -298,7 +307,9 @@ void CBDB_RawFile::x_CreateDB()
     int ret = db_create(&m_DB, m_Env ? m_Env->GetEnv() : 0, 0);
     BDB_CHECK(ret, 0);
 
-    SetCmp(m_DB);
+    if (m_DB_Type == eBtree) {
+        SetCmp(m_DB);
+    }
 
     if ( m_PageSize ) {
         ret = m_DB->set_pagesize(m_DB, m_PageSize);
@@ -315,6 +326,13 @@ void CBDB_RawFile::x_CreateDB()
         BDB_CHECK(ret, 0);
     }
 
+    if (m_DB_Type == eQueue) {
+        _ASSERT(rec_len);
+        m_RecLen = rec_len;
+        ret = m_DB->set_re_len(m_DB, rec_len);
+        BDB_CHECK(ret, 0);
+    }
+
     guard.release();
 }
 
@@ -322,11 +340,12 @@ void CBDB_RawFile::x_CreateDB()
 void CBDB_RawFile::x_Open(const char* filename,
                           const char* database,
                           EOpenMode   open_mode,
-                          bool        support_dirty_read)
+                          bool        support_dirty_read,
+                          unsigned    rec_len)
 {   
     int ret;    
     if (m_DB == 0) {
-        x_CreateDB();
+        x_CreateDB(rec_len);
     }
 
     if (open_mode == eCreate) {
@@ -361,11 +380,25 @@ void CBDB_RawFile::x_Open(const char* filename,
             open_flags |= DB_DIRTY_READ;
         }
 
+
+        DBTYPE db_type;
+        switch (m_DB_Type) {
+        case eBtree:
+            db_type = DB_BTREE;
+            break;
+        case eQueue:
+            db_type = DB_QUEUE;
+            m_RecLen = rec_len;
+            break;
+        default:
+            _ASSERT(0);
+        }
+
         ret = m_DB->open(m_DB,
                          txn,
                          filename,
                          database,             // database name
-                         DB_BTREE,
+                         db_type,
                          open_flags,
                          kOpenFileMask
                         );
@@ -395,13 +428,13 @@ void CBDB_RawFile::x_Open(const char* filename,
                 m_DB = 0;
 
                 x_SetByteSwapped(m_ByteSwapped);
-                x_CreateDB();
+                x_CreateDB(rec_len);
 
                 ret = m_DB->open(m_DB,
                                  txn,
                                  filename,
                                  database, // database name
-                                 DB_BTREE,
+                                 db_type,
                                  open_flags,
                                  kOpenFileMask);
                 BDB_CHECK(ret, filename);
@@ -512,11 +545,23 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
         }
     }
 
+    DBTYPE db_type;
+    switch (m_DB_Type) {
+    case eBtree:
+        db_type = DB_BTREE;
+        break;
+    case eQueue:
+        db_type = DB_QUEUE;
+        break;
+    default:
+        _ASSERT(0);
+    }
+
     int ret = m_DB->open(m_DB,
                          txn,
                          filename,
                          database,        // database name
-                         DB_BTREE,
+                         db_type,
                          open_flags,
                          kOpenFileMask);
     if ( ret ) {
@@ -560,8 +605,8 @@ void CBDB_RawFile::x_SetByteSwapped(bool bswp)
 //
 
 
-CBDB_File::CBDB_File(EDuplicateKeys dup_keys)
-    : CBDB_RawFile(dup_keys),
+CBDB_File::CBDB_File(EDuplicateKeys dup_keys, EDBType db_type)
+    : CBDB_RawFile(dup_keys, db_type),
       m_KeyBuf(new CBDB_BufferManager),
       m_BufsAttached(false),
       m_BufsCreated(false),
@@ -641,13 +686,22 @@ void CBDB_File::BindData(const char* field_name,
 void CBDB_File::Open(const char* filename,
                      const char* database,
                      EOpenMode   open_mode,
-                     bool        support_dirty_read)
+                     bool        support_dirty_read,
+                     unsigned    rec_len)
 {
     if ( IsOpen() )
         Close();
-
-    CBDB_RawFile::Open(filename, database, open_mode, support_dirty_read);
     x_CheckConstructBuffers();
+
+    if (m_DB_Type == eQueue) {
+        DisableDataPacking();
+        if (m_DataBuf.get()) {
+            rec_len = m_DataBuf->ComputeBufferSize();
+        }
+    }
+
+    CBDB_RawFile::Open(filename, database, 
+                        open_mode, support_dirty_read, rec_len);
 
     m_DB->app_private = (void*) m_KeyBuf.get();
 
@@ -656,7 +710,13 @@ void CBDB_File::Open(const char* filename,
 
 void CBDB_File::Reopen(EOpenMode open_mode, bool support_dirty_read)
 {
-    CBDB_RawFile::Reopen(open_mode, support_dirty_read);
+    unsigned rec_len = 0;
+    if (m_DB_Type == eQueue) {
+        if (m_DataBuf.get()) {
+            rec_len = m_DataBuf->ComputeBufferSize();
+        }
+    }
+    CBDB_RawFile::Reopen(open_mode, support_dirty_read, rec_len);
     m_DB->app_private = (void*) m_KeyBuf.get();
     if ( m_DataBuf.get() ) {
         m_DataBuf->SetAllNull();
@@ -701,7 +761,7 @@ void CBDB_File::Verify(const char* filename,
                        FILE* backup)
 {
     if (m_DB == 0) {
-        x_CreateDB();
+        x_CreateDB(0);
     }
     x_CheckConstructBuffers();
     m_DB->app_private = (void*) m_KeyBuf.get();
@@ -797,6 +857,15 @@ EBDB_ErrCode CBDB_File::Insert(EAfterWrite write_flag)
     return x_Write(flags, write_flag);
 }
 
+unsigned CBDB_File::Append(EAfterWrite write_flag)
+{
+    unsigned int flags = DB_APPEND;
+    x_Write(flags, write_flag);
+    unsigned rec_id;
+    memcpy(&rec_id, m_DBT_Key->data, sizeof(rec_id));
+    return rec_id;
+}
+
 
 EBDB_ErrCode CBDB_File::UpdateInsert(EAfterWrite write_flag)
 {
@@ -834,6 +903,7 @@ void CBDB_File::Discard()
 
 void CBDB_File::SetCmp(DB* db)
 {
+    _ASSERT(m_DB_Type == eBtree);
     BDB_CompareFunction func = m_KeyBuf->GetCompareFunction();
     _ASSERT(func);
     int ret = db->set_bt_compare(db, func);
@@ -905,7 +975,9 @@ CBDB_Field& CBDB_File::GetField(TUnifiedFieldIndex idx)
 
 void CBDB_File::DisableDataPacking()
 {
-    m_DataBuf->SetPackable(false); // disable packing
+    if (m_DataBuf.get()) {
+        m_DataBuf->SetPackable(false); // disable packing
+    }
 }
 
 void CBDB_File::CopyFrom(const CBDB_File& dbf)
@@ -1165,6 +1237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/12/14 19:26:42  kuznets
+ * Added support for queue db type
+ *
  * Revision 1.55  2005/09/22 13:37:44  kuznets
  * Implemented reading BLOBs in cursors
  *
@@ -1244,98 +1319,6 @@ END_NCBI_SCOPE
  * Minor implementation changes: DBT size passed to underlying buffer
  * manager in order to better detect c-strings.
  *
- * Revision 1.29  2003/12/16 13:43:35  kuznets
- * + CBDB_RawFile::x_RemoveTransaction
- *
- * Revision 1.28  2003/12/12 19:12:21  kuznets
- * Fixed bug in transactional file opening
- *
- * Revision 1.27  2003/12/12 14:09:12  kuznets
- * Changed file opening code to work correct in transactional environment.
- *
- * Revision 1.26  2003/12/10 19:14:08  kuznets
- * Added support of berkeley db transactions
- *
- * Revision 1.25  2003/10/15 18:11:00  kuznets
- * Several functions(Close, Delete) received optional parameter to ignore
- * errors (if any).
- *
- * Revision 1.24  2003/09/17 18:18:21  kuznets
- * Fixed some memory allocation bug in key cloning.
- *
- * Revision 1.23  2003/09/16 20:17:40  kuznets
- * CBDB_File: added methods to clone (and then destroy) DBT Key.
- *
- * Revision 1.22  2003/09/12 18:06:13  kuznets
- * Commenented out usage of the default sub-database name when no name is supplied.
- * When "database" argument is NULL BerkeleyDB create files of a slightly less-complex
- * structure which should have positive effect on performance and may cure some
- * problems.
- *
- * Revision 1.21  2003/09/11 16:34:35  kuznets
- * Implemented byte-order independence.
- *
- * Revision 1.20  2003/08/27 20:02:57  kuznets
- * Added DB_ENV support
- *
- * Revision 1.19  2003/07/23 20:21:43  kuznets
- * Implemented new improved scheme for setting BerkeleyDB comparison function.
- * When table has non-segmented key the simplest(and fastest) possible function
- * is assigned (automatically without reloading CBDB_File::SetCmp function).
- *
- * Revision 1.18  2003/07/23 18:08:48  kuznets
- * SetCacheSize function implemented
- *
- * Revision 1.17  2003/07/22 19:21:19  kuznets
- * Implemented support of attachable berkeley db files
- *
- * Revision 1.16  2003/07/22 15:15:02  kuznets
- * + RawFile::CountRecs() function
- *
- * Revision 1.15  2003/07/21 18:33:28  kuznets
- * Fixed bug with duplicate key tables
- *
- * Revision 1.14  2003/07/18 20:11:32  kuznets
- * Implemented ReadWrite or Create open mode.
- *
- * Revision 1.13  2003/07/16 13:33:33  kuznets
- * Added error condition if cursor is created on unopen file.
- *
- * Revision 1.12  2003/07/09 14:29:24  kuznets
- * Added support of files with duplicate access keys. (DB_DUP mode)
- *
- * Revision 1.11  2003/07/02 17:55:35  kuznets
- * Implementation modifications to eliminated direct dependency from <db.h>
- *
- * Revision 1.10  2003/06/25 16:35:56  kuznets
- * Bug fix: data file gets created even if eCreate flag was not specified.
- *
- * Revision 1.9  2003/06/10 20:08:27  kuznets
- * Fixed function names.
- *
- * Revision 1.8  2003/05/27 18:43:45  kuznets
- * Fixed some compilation problems with GCC 2.95
- *
- * Revision 1.7  2003/05/09 13:44:57  kuznets
- * Fixed a bug in cursors based on BLOB storage
- *
- * Revision 1.6  2003/05/05 20:15:32  kuznets
- * Added CBDB_BLobFile
- *
- * Revision 1.5  2003/05/02 14:11:59  kuznets
- * + UpdateInsert method
- *
- * Revision 1.4  2003/04/30 20:25:42  kuznets
- * Bug fix
- *
- * Revision 1.3  2003/04/29 19:07:22  kuznets
- * Cosmetics..
- *
- * Revision 1.2  2003/04/28 14:51:55  kuznets
- * #include directives changed to conform the NCBI policy
- *
- * Revision 1.1  2003/04/24 16:34:30  kuznets
- * Initial revision
  *
  * ===========================================================================
  */

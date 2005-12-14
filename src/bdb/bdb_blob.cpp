@@ -43,8 +43,9 @@ BEGIN_NCBI_SCOPE
 //  CBDB_BLobFile::
 //
 
-CBDB_BLobFile::CBDB_BLobFile(EDuplicateKeys dups)
-    : CBDB_File(dups)
+CBDB_BLobFile::CBDB_BLobFile(EDuplicateKeys dups,
+                             EDBType        db_type)
+    : CBDB_File(dups, db_type)
 { 
     DisableDataBufProcessing();
 }
@@ -96,6 +97,17 @@ EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size) {
 
     EBDB_ErrCode ret = CBDB_File::Insert();
     return ret;
+}
+
+unsigned CBDB_BLobFile::Append(const void* data, size_t size)
+{
+    _ASSERT(m_DB_Type = eQueue);
+    _ASSERT(size <= GetRecLen());
+
+    m_DBT_Data->data = const_cast<void*> (data);
+    m_DBT_Data->size = m_DBT_Data->ulen = (unsigned)size;
+
+    return CBDB_File::Append();
 }
 
 EBDB_ErrCode CBDB_BLobFile::UpdateInsert(const void* data, size_t size)
@@ -398,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/12/14 19:26:42  kuznets
+ * Added support for queue db type
+ *
  * Revision 1.22  2005/09/19 13:02:41  dicuccio
  * Add fag to permit duplicate keys in a BLob file
  *

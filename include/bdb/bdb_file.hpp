@@ -72,6 +72,7 @@ class NCBI_BDB_EXPORT CBDB_RawFile
 public:
     static const char kDefaultDatabase[];  // = "_table"
 
+    /// BDB file open mode
     enum EOpenMode {
         eReadWrite,
         eReadOnly,
@@ -79,11 +80,21 @@ public:
         eReadWriteCreate //!< read-write, create if it doesn't exist
     };
 
+    /// Berkeley DB database type
+    enum EDBType {
+        eBtree,
+        eQueue
+    };
+
+    /// BLOB read mode, controld data buffer reallocation when
+    /// there is not enough space in buffer
+    ///
     enum EReallocMode {
         eReallocAllowed,
         eReallocForbidden
     };
 
+    /// Control key duplicates in Btree
     enum EDuplicateKeys {
         eDuplicatesDisable,
         eDuplicatesEnable
@@ -95,7 +106,8 @@ public:
     };
 
 public:
-    CBDB_RawFile(EDuplicateKeys dup_keys=eDuplicatesDisable);
+    CBDB_RawFile(EDuplicateKeys dup_keys = eDuplicatesDisable,
+                 EDBType        db_type  = eBtree);
     virtual ~CBDB_RawFile();
 
     /// Associate file with environment. Should be called before 
@@ -107,20 +119,25 @@ public:
     CBDB_Env* GetEnv() { return m_Env; }
 
     /// Open file with specified access mode
-    void Open(const char* filename, EOpenMode open_mode, 
-              bool support_dirty_read = false);
+    void Open(const char* filename, 
+              EOpenMode   open_mode, 
+              bool        support_dirty_read = false,
+              unsigned    rec_len = 0);
     /// Open file with specified filename and database name.
     /// (Berkeley DB supports having several database tables in one file.) 
     void Open(const char* filename, const char* database,
-              EOpenMode open_mode,
-              bool      support_dirty_read = false);
+              EOpenMode   open_mode,
+              bool        support_dirty_read = false,
+              unsigned    rec_len = 0);
     /// Attach class to external BerkeleyDB file instance.
     /// Note: Should be already open.
     void Attach(CBDB_RawFile& bdb_file);
     /// Close file
     void Close();
     /// Reopen database file. (Should be already open).
-    void Reopen(EOpenMode open_mode, bool support_dirty_read = false);
+    void Reopen(EOpenMode open_mode, 
+                bool      support_dirty_read = false,
+                unsigned  rec_len = 0);
 
     /// Remove the database specified by the filename and database arguments
     void Remove(const char* filename, const char* database = 0);
@@ -178,6 +195,10 @@ public:
     /// Get current transaction
     CBDB_Transaction* GetTransaction() { return m_Trans; }
 
+    /// Get record length 
+    /// Works for fixed length record DBs only (Queue)
+    unsigned GetRecLen() const;
+
 private:
     CBDB_RawFile(const CBDB_RawFile&);
     CBDB_RawFile& operator= (const CBDB_RawFile&);
@@ -185,13 +206,17 @@ private:
 protected:
     void x_Open(const char* filename, const char* database,
                 EOpenMode open_mode,
-                bool      support_dirty_read);
+                bool      support_dirty_read,
+                unsigned  rec_len);
     void x_Create(const char* filename, const char* database);
 
     void x_Close(EIgnoreError close_mode);
 
-    // Create m_DB member, set page, cache parameters
-    void x_CreateDB();
+    /// Create m_DB member, set page, cache parameters
+    ///
+    /// @param rec_len 
+    ///    record length (must be non zero for Queue type)
+    void x_CreateDB(unsigned rec_len);
 
     void x_RemoveTransaction(CBDB_Transaction* trans);
     
@@ -211,12 +236,14 @@ protected:
 	virtual void x_SetByteSwapped(bool bswp);
 
 protected:
+    EDBType           m_DB_Type;
     DB*               m_DB;
     DBT*              m_DBT_Key;
     DBT*              m_DBT_Data;
     CBDB_Env*         m_Env;
     CBDB_Transaction* m_Trans;
     int               m_TransAssociation;
+    unsigned          m_RecLen;
 
 private:
     bool             m_DB_Attached;  //!< TRUE if m_DB doesn't belong here
@@ -244,18 +271,21 @@ private:
 class NCBI_BDB_EXPORT CBDB_File : public CBDB_RawFile
 {
 public:
-    CBDB_File(EDuplicateKeys dup_keys = eDuplicatesDisable);
+    CBDB_File(EDuplicateKeys dup_keys = eDuplicatesDisable,
+              EDBType        db_type  = eBtree);
 
     /// Open file with specified access mode
     void Open(const char* filename, 
               EOpenMode   open_mode, 
-              bool        support_dirty_read = false);
+              bool        support_dirty_read = false,
+              unsigned    rec_len = 0);
 
     /// Open file with specified filename and database name.
     /// (Berkeley DB supports having several database tables in one file.) 
     void Open(const char* filename, const char* database,
-              EOpenMode open_mode,
-              bool      support_dirty_read = false);
+              EOpenMode   open_mode,
+              bool        support_dirty_read = false,
+              unsigned    rec_len = 0);
     /// Reopen the db file
     void Reopen(EOpenMode open_mode, bool support_dirty_read = false);
 
@@ -278,6 +308,12 @@ public:
 
     /// Insert new record
     EBDB_ErrCode Insert(EAfterWrite write_flag = eDiscardData);
+
+    /// Append record to the queue
+    /// (works only for DB_QUEUE database type)
+    ///
+    /// @return record number (auto increment)
+    unsigned Append(EAfterWrite write_flag = eDiscardData);
 
     /// Delete record corresponding to the current key value.
     EBDB_ErrCode Delete(EIgnoreError on_error=eThrowOnError);
@@ -487,11 +523,19 @@ CBDB_File::TUnifiedFieldIndex BDB_GetUFieldIdx(int fidx, bool key)
 
 inline 
 void CBDB_RawFile::Open(
-        const char* filename, EOpenMode open_mode, bool support_dirty_read)
+        const char* filename, EOpenMode open_mode, 
+        bool support_dirty_read,
+        unsigned rec_len)
 {
-    Open(filename, 0, open_mode, support_dirty_read);
+    Open(filename, 0, open_mode, support_dirty_read, rec_len);
 }
 
+inline
+unsigned CBDB_RawFile::GetRecLen() const
+{
+    _ASSERT(m_DB_Type == eQueue);
+    return m_RecLen;
+}
 
 inline 
 const string& CBDB_RawFile::FileName() const
@@ -529,9 +573,10 @@ bool CBDB_RawFile::IsAttached() const
 
 inline 
 void CBDB_File::Open(
-  const char* filename, EOpenMode open_mode, bool support_dirty_read)
+  const char* filename, EOpenMode open_mode, 
+  bool support_dirty_read, unsigned rec_len)
 {
-    Open(filename, 0, open_mode, support_dirty_read);
+    Open(filename, 0, open_mode, support_dirty_read, rec_len);
 }
 
 
@@ -556,6 +601,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/12/14 19:26:22  kuznets
+ * Added support for queue db type
+ *
  * Revision 1.42  2005/09/22 13:37:30  kuznets
  * Implemented reading BLOBs in cursors
  *
@@ -595,99 +643,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.30  2004/05/06 18:17:58  rotmistr
  * Cursor Update/Delete implemented
- *
- * Revision 1.29  2004/03/08 13:31:58  kuznets
- * CBDB_File some methods made public
- *
- * Revision 1.28  2004/02/13 15:00:12  kuznets
- * + typedef TUnifiedFieldIndex plus methods to work with fields in CBDB_File
- *
- * Revision 1.27  2003/12/29 13:23:01  kuznets
- * Added support for transaction protected cursors.
- *
- * Revision 1.26  2003/12/22 18:53:50  kuznets
- * Added legacy(c-string) string format check flag.
- *
- * Revision 1.25  2003/12/16 13:42:58  kuznets
- * Added internal method to close association between transaction object
- * and BDB file object when transaction goes out of scope.
- *
- * Revision 1.24  2003/12/10 19:13:27  kuznets
- * Added support of berkeley db transactions
- *
- * Revision 1.23  2003/10/27 14:20:31  kuznets
- * + Buffer manager accessor functions for CBDB_File
- *
- * Revision 1.22  2003/10/16 19:26:07  kuznets
- * Added field comparison limit to the fields manager
- *
- * Revision 1.21  2003/10/15 18:10:09  kuznets
- * Several functions(Close, Delete) received optional parameter to ignore
- * errors (if any).
- *
- * Revision 1.20  2003/09/26 21:08:30  kuznets
- * Comments reformatting for doxygen
- *
- * Revision 1.19  2003/09/17 18:16:21  kuznets
- * Some class functions migrated into the public scope.
- *
- * Revision 1.18  2003/09/16 20:17:29  kuznets
- * CBDB_File: added methods to clone (and then destroy) DBT Key.
- *
- * Revision 1.17  2003/09/11 16:34:13  kuznets
- * Implemented byte-order independence.
- *
- * Revision 1.16  2003/08/27 20:02:10  kuznets
- * Added DB_ENV support
- *
- * Revision 1.15  2003/07/23 20:21:27  kuznets
- * Implemented new improved scheme for setting BerkeleyDB comparison function.
- * When table has non-segmented key the simplest(and fastest) possible function
- * is assigned (automatically without reloading CBDB_File::SetCmp function).
- *
- * Revision 1.14  2003/07/23 18:07:56  kuznets
- * Implemented couple new functions to work with attached files
- *
- * Revision 1.13  2003/07/22 19:21:04  kuznets
- * Implemented support of attachable berkeley db files
- *
- * Revision 1.12  2003/07/22 15:14:33  kuznets
- * + RawFile::CountRecs() function
- *
- * Revision 1.11  2003/07/18 20:11:05  kuznets
- * Added ReadWrite or Create open mode, added several accessor methods, Sync() method.
- *
- * Revision 1.10  2003/07/09 14:29:01  kuznets
- * Added support of files with duplicate access keys. (DB_DUP mode)
- *
- * Revision 1.9  2003/07/02 17:53:59  kuznets
- * Eliminated direct dependency from <db.h>
- *
- * Revision 1.8  2003/06/27 18:57:16  dicuccio
- * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
- *
- * Revision 1.7  2003/06/10 20:07:27  kuznets
- * Fixed header files not to repeat information from the README file
- *
- * Revision 1.6  2003/06/03 18:50:09  kuznets
- * Added dll export/import specifications
- *
- * Revision 1.5  2003/05/27 16:13:21  kuznets
- * Destructors of key classes declared virtual to make GCC happy
- *
- * Revision 1.4  2003/05/05 20:14:41  kuznets
- * Added CBDB_BLobFile, CBDB_File changed to support more flexible data record
- * management.
- *
- * Revision 1.3  2003/05/02 14:14:18  kuznets
- * new method UpdateInsert
- *
- * Revision 1.2  2003/04/29 16:48:31  kuznets
- * Fixed minor warnings in Sun Workshop compiler
- *
- * Revision 1.1  2003/04/24 16:31:16  kuznets
- * Initial revision
- *
  *
  * ===========================================================================
  */

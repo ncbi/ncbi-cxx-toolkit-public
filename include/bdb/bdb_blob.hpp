@@ -57,7 +57,9 @@ class NCBI_BDB_EXPORT CBDB_BLobFile : public CBDB_File
 {
 public:
 
-    CBDB_BLobFile(EDuplicateKeys dup_keys=eDuplicatesDisable);
+    CBDB_BLobFile(EDuplicateKeys dup_keys = eDuplicatesDisable,
+                  EDBType        db_type  = eBtree);
+
 
     /// Insert BLOB into the database
     ///
@@ -65,6 +67,8 @@ public:
     /// @param data BLOB data
     /// @param size data size in bytes
     EBDB_ErrCode Insert(const void* data, size_t size);
+
+    unsigned Append(const void* data, size_t size);
 
     /// Insert or update BLOB 
     ///
@@ -244,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/12/14 19:26:22  kuznets
+ * Added support for queue db type
+ *
  * Revision 1.17  2005/09/19 13:02:41  dicuccio
  * Add fag to permit duplicate keys in a BLob file
  *
