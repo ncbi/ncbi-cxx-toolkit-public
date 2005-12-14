@@ -56,18 +56,19 @@ extern "C" {
 /* Server types
  */
 typedef enum {
-    fSERV_Ncbid      = 0x1,
-    fSERV_Standalone = 0x2,
-    fSERV_HttpGet    = 0x4,
-    fSERV_HttpPost   = 0x8,
-    fSERV_Http       = fSERV_HttpGet | fSERV_HttpPost,
-    fSERV_Firewall   = 0x10,
-    fSERV_Dns        = 0x20
+    fSERV_Ncbid           = 0x01,
+    fSERV_Standalone      = 0x02,
+    fSERV_HttpGet         = 0x04,
+    fSERV_HttpPost        = 0x08,
+    fSERV_Http            = fSERV_HttpGet | fSERV_HttpPost,
+    fSERV_Firewall        = 0x10,
+    fSERV_Dns             = 0x20
+    /* reserved             0x40 */
 } ESERV_Type;
 
 #define fSERV_Any           0
 #define fSERV_StatelessOnly 0x80
-typedef unsigned int TSERV_Type;  /* bit-wise OR of "ESERV_Type" flags */
+typedef unsigned int        TSERV_Type; /* bit-wise OR of "ESERV_Type" flags */
 
 
 /* Flags to specify the algorithm for selecting the most preferred
@@ -125,7 +126,8 @@ typedef struct {
 } SSERV_FirewallInfo;
 
 typedef struct {
-    char         pad[8];        /* reserved for the future use, must be zero */
+    char/*bool*/ name;          /* name presence flag                        */
+    char         pad[7];        /* reserved for the future use, must be zero */
 } SSERV_DnsInfo;
 
 
@@ -356,6 +358,13 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_ReadInfo
  );
 
 
+/* Make (a free()'able) copy of a server info.
+ */
+extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_CopyInfo
+(const SSERV_Info* info
+ );
+
+
 /* Return an actual size (in bytes) the server info occupies
  * (to be used for copying info structures in whole).
  */
@@ -383,6 +392,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_EqualInfo
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2005/12/14 21:20:59  lavr
+ * +SERV_CopyInfo(); DNS type to have name presence flag
+ *
  * Revision 6.37  2003/04/09 19:05:48  siyan
  * Added doxygen support
  *
