@@ -139,15 +139,15 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         // send buffer
         if (pptr()) {
             n_write = pptr() - m_WriteBuf;
-            b = CT_EOF;
+            b = c;
         } else if (CT_EQ_INT_TYPE(c, CT_EOF)) {
             n_write = 0;
             b = CT_EOF;
         } else {
             *m_WriteBuf = c;
             n_write = 1;
-            c = CT_EOF;
             b = c;
+            c = CT_EOF;
         }
         if (n_write) {
             size_t n_written;
@@ -350,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2005/12/14 22:29:01  lavr
+ * Fix another extra flush bug in CConn_Streambuf::overflow()
+ *
  * Revision 6.57  2005/12/14 22:24:55  lavr
  * Fix a bug in CConn_Streambuf::overflow()
  *
