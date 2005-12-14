@@ -83,8 +83,8 @@ char* SERV_ServiceName(const char* service)
 
 static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
 {
+    size_t n;
     if (info->type == fSERV_Firewall) {
-        size_t n;
         for (n = 0; n < iter->n_skip; n++) {
             SSERV_Info* temp = iter->skip[n];
             if (temp->type == fSERV_Firewall &&
@@ -102,15 +102,13 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
     }
     if (iter->n_skip == iter->a_skip) {
         SSERV_Info** temp;
-        size_t n = iter->a_skip + 10;
-
+        n = iter->a_skip + 10;
         if (iter->skip)
             temp = (SSERV_Info**) realloc(iter->skip, sizeof(*temp) * n);
         else
             temp = (SSERV_Info**) malloc(sizeof(*temp) * n);
         if (!temp)
             return 0;
-
         iter->skip = temp;
         iter->a_skip = n;
     }
@@ -119,13 +117,20 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
 }
 
 
-static SERV_ITER s_Open(const char* service, TSERV_Type types,
-                        unsigned int preferred_host, double preference,
-                        const SConnNetInfo* net_info,
-                        const SSERV_Info* const skip[], size_t n_skip,
-                        SSERV_Info** info, HOST_INFO* host_info,
-                        unsigned/*bool*/ ismask, unsigned/*bool*/ external,
-                        const char* arg, const char* val)
+static SERV_ITER s_Open(const char*          service,
+                        unsigned/*bool*/     ismask,
+                        TSERV_Type           types,
+                        unsigned int         preferred_host,
+                        unsigned short       preferred_port,
+                        double               preference,
+                        const SConnNetInfo*  net_info,
+                        const SSERV_InfoCPtr skip[],
+                        size_t               n_skip,
+                        unsigned/*bool*/     external,
+                        const char*          arg,
+                        const char*          val,
+                        SSERV_Info**         info,
+                        HOST_INFO*           host_info)
 {
     const char* s = ismask ? strdup(service) : s_ServiceName(service, 0);
     const SSERV_VTable* op;
@@ -138,6 +143,7 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
     iter->type     = types;
     iter->host     = (preferred_host == SERV_LOCALHOST
                       ? SOCK_gethostbyname(0) : preferred_host);
+    iter->port     = preferred_port;
     iter->pref     = (preference < 0.0
                       ? -1.0
                       : 0.01 * (preference > 100.0 ? 100.0 : preference));
@@ -157,18 +163,19 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
     if (n_skip) {
         size_t i;
         for (i = 0; i < n_skip; i++) {
-            size_t skipinfolen = SERV_SizeOfInfo(skip[i]);
-            SSERV_Info*   temp = (SSERV_Info*) malloc(skipinfolen + 1);
+            const char* name = (skip[i]->type == fSERV_Dns ?
+                                SERV_NameOfInfo(skip[i]) : "");
+            SSERV_Info* temp = SERV_CopyInfoEx(skip[i], name);
+            if (temp) {
+                temp->time = (TNCBI_Time)(-1);
+                if (!s_AddSkipInfo(iter, temp)) {
+                    free(temp);
+                    temp = 0;
+                }
+            }
             if (!temp) {
                 SERV_Close(iter);
                 return 0;
-            }
-            *((char*) temp + skipinfolen) = '\0';
-            memcpy(temp, skip[i], skipinfolen);
-            temp->time = (TNCBI_Time)(-1);
-            if (!s_AddSkipInfo(iter, temp)) {
-                free(temp);
-                SERV_Close(iter);
             }
         }
     }
@@ -185,8 +192,8 @@ static SERV_ITER s_Open(const char* service, TSERV_Type types,
             iter->type |= fSERV_StatelessOnly;
         if (net_info->firewall)
             iter->type |= fSERV_Firewall;
-        if ((net_info->lb_disable ||
-             !(op = SERV_LBSMD_Open(iter, info, host_info))) &&
+        if ((net_info->lb_disable
+             ||  !(op = SERV_LBSMD_Open(iter, info, host_info)))  &&
             !(op = SERV_DISPD_Open(iter, net_info, info, host_info))) {
             SERV_Close(iter);
             return 0;
@@ -208,52 +215,73 @@ SERV_ITER SERV_OpenSimple(const char* service)
 }
 
 
-SERV_ITER SERV_Open(const char* service,
-                    TSERV_Type types, unsigned int preferred_host,
+SERV_ITER SERV_Open(const char*         service,
+                    TSERV_Type          types,
+                    unsigned int        preferred_host,
                     const SConnNetInfo* net_info)
 {
-    return s_Open(service, types, preferred_host, 0.0/*preference*/,
-                  net_info, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*host_info*/,
-                  0/*not mask*/, 0/*not external*/,
-                  0/*arg*/, 0/*val*/);
+    return s_Open(service, 0/*not mask*/, types,
+                  preferred_host, 0/*port*/, 0.0/*preference*/,
+                  net_info, 0/*skip*/, 0/*n_skip*/,
+                  0/*not external*/, 0/*arg*/, 0/*val*/,
+                  0/*info*/, 0/*host_info*/);
 }
 
 
-SERV_ITER SERV_OpenEx(const char* service,
-                      TSERV_Type types, unsigned int preferred_host,
-                      const SConnNetInfo* net_info,
-                      const SSERV_Info* const skip[], size_t n_skip)
+SERV_ITER SERV_OpenEx(const char*          service,
+                      TSERV_Type           types,
+                      unsigned int         preferred_host,
+                      const SConnNetInfo*  net_info,
+                      const SSERV_InfoCPtr skip[],
+                      size_t               n_skip)
 {
-    return s_Open(service, types, preferred_host, 0.0/*preference*/,
-                  net_info, skip, n_skip, 0/*info*/, 0/*host_info*/,
-                  0/*not mask*/, 0/*not external*/,
-                  0/*arg*/, 0/*val*/);
+    return s_Open(service, 0/*not mask*/, types,
+                  preferred_host, 0/*port*/, 0.0/*preference*/,
+                  net_info, skip, n_skip,
+                  0/*not external*/, 0/*arg*/, 0/*val*/,
+                  0/*info*/, 0/*host_info*/);
 }
 
 
-SERV_ITER SERV_OpenP(const char* service, TSERV_Type types,
-                     unsigned int preferred_host, double preference,
-                     int/*bool*/ external, SConnNetInfo* net_info,
-                     const char* arg, const char* val)
+SERV_ITER SERV_OpenP(const char*          service,
+                     TSERV_Type           types,
+                     unsigned int         preferred_host,
+                     unsigned short       preferred_port,
+                     double               preference,
+                     const SConnNetInfo*  net_info,
+                     const SSERV_InfoCPtr skip[],
+                     size_t               n_skip,
+                     int/*bool*/          external,
+                     const char*          arg,
+                     const char*          val)
 {
-    return s_Open(service, types, preferred_host, preference,
-                  net_info, 0/*skip*/, 0/*n_skip*/, 0/*info*/, 0/*host_info*/,
-                  strpbrk(service, "?*") != 0, external,
-                  arg, val);
+    return s_Open(service, strpbrk(service, "?*") != 0, types,
+                  preferred_host, preferred_port, preference,
+                  net_info, skip, n_skip,
+                  external, arg, val,
+                  0/*info*/, 0/*host_info*/);
 }
 
 
-static SSERV_Info* s_GetInfo(const char* service, TSERV_Type types,
-                             unsigned int preferred_host, double preference,
-                             const SConnNetInfo* net_info,
-                             const SSERV_Info* const skip[], size_t n_skip,
-                             HOST_INFO* host_info, unsigned /*bool*/ external,
-                             const char* arg, const char* val)
+static SSERV_Info* s_GetInfo(const char*          service,
+                             TSERV_Type           types,
+                             unsigned int         preferred_host,
+                             unsigned short       preferred_port,
+                             double               preference,
+                             const SConnNetInfo*  net_info,
+                             const SSERV_InfoCPtr skip[],
+                             size_t               n_skip,
+                             int /*bool*/         external,
+                             const char*          arg,
+                             const char*          val,
+                             HOST_INFO*           host_info)
 {
     SSERV_Info* info = 0;
-    SERV_ITER iter= s_Open(service, types, preferred_host, preference,
-                           net_info, skip, n_skip, &info, host_info,
-                           0/*not mask*/, external, arg, val);
+    SERV_ITER iter = s_Open(service, 0/*not mask*/, types,
+                            preferred_host, preferred_port, preference,
+                            net_info, skip, n_skip,
+                            external, arg, val,
+                            &info, host_info);
     if (iter && !info && iter->op && iter->op->GetNextInfo)
         info = (*iter->op->GetNextInfo)(iter, host_info);
     SERV_Close(iter);
@@ -261,36 +289,52 @@ static SSERV_Info* s_GetInfo(const char* service, TSERV_Type types,
 }
 
 
-SSERV_Info* SERV_GetInfo(const char* service, TSERV_Type types,
-                         unsigned int preferred_host,
+SSERV_Info* SERV_GetInfo(const char*         service,
+                         TSERV_Type          types,
+                         unsigned int        preferred_host,
                          const SConnNetInfo* net_info)
 {
-    return s_GetInfo(service, types, preferred_host, 0.0/*preference*/,
-                     net_info, 0/*skip*/, 0/*n_skip*/, 0/*host_info*/,
-                     0/*not external*/, 0/*arg*/, 0/*val*/);
+    return s_GetInfo(service, types,
+                     preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
+                     net_info, 0/*skip*/, 0/*n_skip*/,
+                     0/*not external*/, 0/*arg*/, 0/*val*/,
+                     0/*host_info*/);
 }
 
 
-SSERV_Info* SERV_GetInfoEx(const char* service, TSERV_Type types,
-                           unsigned int preferred_host,
-                           const SConnNetInfo* net_info,
-                           const SSERV_Info* const skip[], size_t n_skip,
-                           HOST_INFO* host_info)
+SSERV_Info* SERV_GetInfoEx(const char*          service,
+                           TSERV_Type           types,
+                           unsigned int         preferred_host,
+                           const SConnNetInfo*  net_info,
+                           const SSERV_InfoCPtr skip[],
+                           size_t               n_skip,
+                           HOST_INFO*           host_info)
 {
-    return s_GetInfo(service, types, preferred_host, 0.0/*preference*/,
-                     net_info, skip, n_skip, host_info,
-                     0/*not external*/, 0/*arg*/, 0/*val*/);
+    return s_GetInfo(service, types,
+                     preferred_host, 0/*preferred_host*/, 0.0/*preference*/,
+                     net_info, skip, n_skip,
+                     0/*not external*/, 0/*arg*/, 0/*val*/,
+                     host_info);
 }
 
 
-SSERV_Info* SERV_GetInfoP(const char* service, TSERV_Type types,
-                          unsigned int preferred_host, double preference,
-                          int/*bool*/ external, SConnNetInfo* net_info,
-                          const char* arg,const char* val)
+SSERV_Info* SERV_GetInfoP(const char*          service,
+                          TSERV_Type           types,
+                          unsigned int         preferred_host,
+                          unsigned short       preferred_port,
+                          double               preference,
+                          const SConnNetInfo*  net_info,
+                          const SSERV_InfoCPtr skip[],
+                          size_t               n_skip,
+                          int/*bool*/          external, 
+                          const char*          arg,
+                          const char*          val)
 {
-    return s_GetInfo(service, types, preferred_host, preference,
-                     net_info, 0/*skip*/, 0/*n_skip*/, 0/*host_info*/,
-                     external, arg, val);
+    return s_GetInfo(service, types,
+                     preferred_host, preferred_port, preference,
+                     net_info, skip, n_skip,
+                     external, arg, val,
+                     0/*host_info*/);
 }
 
 
@@ -317,7 +361,7 @@ static void s_SkipSkip(SERV_ITER iter)
 }
 
 
-static const SSERV_Info* s_GetNextInfo(SERV_ITER iter,
+static const SSERV_Info* s_GetNextInfo(SERV_ITER  iter,
                                        HOST_INFO* host_info)
 {
     SSERV_Info* info = 0;
@@ -336,7 +380,8 @@ static const SSERV_Info* s_GetNextInfo(SERV_ITER iter,
 }
 
 
-const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER iter, HOST_INFO* host_info)
+const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER  iter,
+                                     HOST_INFO* host_info)
 {
     return iter && iter->op ? s_GetNextInfo(iter, host_info) : 0;
 }
@@ -356,8 +401,7 @@ const char* SERV_MapperName(SERV_ITER iter)
 
 const char* SERV_CurrentName(SERV_ITER iter)
 {
-    const char* name =
-        iter->last? (const char*) iter->last + SERV_SizeOfInfo(iter->last) : 0;
+    const char* name = SERV_NameOfInfo(iter->last);
     return name  &&  *name ? name : iter->name;
 }
 
@@ -594,6 +638,11 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.70  2005/12/14 21:29:46  lavr
+ * SERV_GetInfoP() and SERV_OpenP():  New signatures (changed parameteres)
+ * SERV_CurrentName(), s_Open(): to use new SERV_NameOfInfo()
+ * s_Open(): to use new SERV_CopyInfoEx()
+ *
  * Revision 6.69  2005/12/08 03:54:15  lavr
  * Allow negative preference for internal "latch" mode
  *
