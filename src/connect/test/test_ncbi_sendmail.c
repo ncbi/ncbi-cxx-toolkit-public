@@ -101,11 +101,11 @@ int main(int argc, const char* argv[])
 
     if (argc > 1) {
         CORE_LOG(eLOG_Note, "Special test requested");
-        if ((fp = fopen(argv[1], "rb")) != 0  &&
-            fseek(fp, 0, SEEK_END) == 0       &&
-            (m = ftell(fp)) != (size_t)(-1)   &&
-            fseek(fp, 0, SEEK_SET) == 0       &&
-            (huge_body = malloc(m + 1)) != 0  &&
+        if ((fp = fopen(argv[1], "rb")) != 0          &&
+            fseek(fp, 0, SEEK_END) == 0               &&
+            (m = ftell(fp)) != (size_t)(-1)           &&
+            fseek(fp, 0, SEEK_SET) == 0               &&
+            (huge_body = (char*) malloc(m + 1)) != 0  &&
             fread(huge_body, m, 1, fp) == 1) {
             huge_body[m] = '\0';
             CORE_LOGF(eLOG_Note, ("Sending file (%lu bytes)",
@@ -283,6 +283,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2005/12/14 21:44:55  lavr
+ * Prettier formatting only
+ *
  * Revision 6.16  2005/07/11 18:24:51  lavr
  * Spell ADDEND
  *
