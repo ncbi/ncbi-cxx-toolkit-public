@@ -59,59 +59,53 @@ struct SSERV_IterTag;
 typedef struct SSERV_IterTag* SERV_ITER;
 
 
-/* Create an iterator for the iterative server lookup.
- * Connection information 'net_info' can be a NULL pointer, which means
- * not to make any network connections (only LBSMD will be consulted). If
- * 'net_info' is not NULL, LBSMD is consulted first (unless 'net_info->lb_disable'
+/* Create an iterator for sequential server lookup.
+ * Connection information 'net_info' can be a NULL pointer, which means not to
+ * make any network connections (only LBSMD will be consulted).  If 'net_info'
+ * is not NULL, LBSMD is consulted first (unless 'net_info->lb_disable'
  * is non-zero, meaning to skip LBSMD), and then DISPD is consulted (using
- * the information provided) but only if mapping with LBSMD (if any)
- * has failed. This scheme permits to use any combination of service mappers.
- * Note that if 'info' is not NULL then non-zero value of 'info->stateless'
- * forces 'types' to have 'fSERV_StatelessOnly' set.
- * NB: 'nbo' in comments denotes parameters coming in network byte order.
+ * the connection information provided) but only if mapping with LBSMD (if
+ * any occurred) has failed.  This scheme permits to use any combination of
+ * the service mappers (local/network-based).  Note that if 'net_info' is
+ * not NULL then non-zero value of 'net_info->stateless' forces 'types' to
+ * have the 'fSERV_StatelessOnly' bit set implicitly.
+ * NB: 'nbo' in comments denotes parameters coming in network byte order;
+ *     'hbo' stands for 'host byte order'.
  */
 
 /* Allocate an iterator and consult either local database (if present),
  * or network database, using all default communication parameters
- * found in registry and environment variables (implicit parameter
- * 'info' found in two subsequent variations of this call is filled out
- * internally by ConnNetInfo_Create(service) and then automatically used).
+ * found both in registry and environment variables (here the implicit
+ * parameter 'net_info', which has to be explicitly passed in the two
+ * subsequent variations of this call, is filled out internally by
+ * ConnNetInfo_Create(service), and then automatically used).
  * NOTE that no preferred host (0) is set in the resultant iterator.
  */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
-(const char*         service        /* service name                          */
+(const char*          service        /* service name                         */
  );
 
+/* Special values for 'preferred_host' parameter */
+#define SERV_LOCALHOST ((unsigned int)(~0UL))
+#define SERV_ANYHOST   0             /* default, may be used as just 0       */
 
-/* Special values for preferred_host parameter */
-#define SERV_LOCALHOST  ((unsigned int)(~0UL))
-#define SERV_ANYHOST    0           /* default, may be used as just 0 in code*/
-
-
-/* Special "type" bit values that may be combined with server types */
-typedef enum {
-    /* Do reverse DNS translation of the resulting info */
-    fSERV_ReverseDns  = 0x40000000,
-    /* Allows to get even dead services (not off ones!) */
-    fSERV_Promiscuous = 0x20000000
-} ESERV_SpecialType;
-
+/* Simplified (uncluttered) type to use in 'skip' parameter below */
+typedef const SSERV_Info* SSERV_InfoCPtr;
 
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenEx
-(const char*         service,       /* service name                          */
- TSERV_Type          types,         /* mask of type(s) of servers requested  */
- unsigned int        preferred_host,/* preferred host to use service on, nbo */
- const SConnNetInfo* net_info,      /* connection information                */
- const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
- size_t              n_skip         /* number of servers in preceding array  */
+(const char*          service,       /* service name                         */
+ TSERV_Type           types,         /* mask of type(s) of servers requested */
+ unsigned int         preferred_host,/* preferred host to use service on, nbo*/
+ const SConnNetInfo*  net_info,      /* connection information               */
+ const SSERV_InfoCPtr skip[],        /* array of servers NOT to select       */
+ size_t               n_skip         /* number of servers in preceding array */
  );
 
-
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
-(const char*         service,
- TSERV_Type          types,
- unsigned int        preferred_host,
- const SConnNetInfo* net_info
+(const char*          service,
+ TSERV_Type           types,
+ unsigned int         preferred_host,
+ const SConnNetInfo*  net_info
 );
 
 
@@ -125,74 +119,73 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_Open
  * host information is allocated, and pointer to it is stored in 'host_info'.
  * Using this information, various host parameters like load, host
  * environment, number of CPUs can be retrieved (see ncbi_host_info.h).
- * NOTE:  Application program should NOT destroy returned server info:
+ * NOTE:  Application program should NOT destroy the returned server info:
  *        it will be freed automatically upon iterator destruction.
- *        On the other hand, host information has to be explicitly free()'d
- *        when no longer needed.
+ *        On the other hand, the returned host information has to be
+ *        explicitly free()'d when no longer needed.
  * NOTE:  Returned server info is valid only until either of the two events:
  *        1) SERV_GetNextInfo[Ex] is called for the same iterator again;
  *        2) iterator closed (SERV_Close() called).
  */
 extern NCBI_XCONNECT_EXPORT const SSERV_Info* SERV_GetNextInfoEx
-(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
- HOST_INFO*          host_info      /* ptr to store host info at [may be 0]  */
+(SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
+ HOST_INFO*           host_info      /* ptr to store host info at [may be 0] */
  );
-
 
 extern NCBI_XCONNECT_EXPORT const SSERV_Info* SERV_GetNextInfo
-(SERV_ITER           iter
+(SERV_ITER            iter
  );
 
 
-/* This is a 'fast track' routine equivalent to creation of an iterator
+/* This is a "fast track" routine equivalent to creation of an iterator
  * as with SERV_OpenEx() and then taking an info as with SERV_GetNextInfoEx().
  * However, this call is optimized for an application, which only needs
  * a single entry (the first one), and which is not interested in iterating
- * over all available entries. Both returned server info and env have to be
- * explicitly free()'d by the application when no longer needed.
- * Note that env is only supplied if the function returns a non-NULL result.
+ * over all available entries.  Both returned server info and environment have
+ * to be explicitly free()'d by the application when no longer needed.
+ * Note that the host environment is supplied only if the function
+ * returns a non-NULL result.
  */
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoEx
-(const char*         service,       /* service name                          */
- TSERV_Type          types,         /* mask of type(s) of servers requested  */
- unsigned int        preferred_host,/* preferred host to use service on, nbo */
- const SConnNetInfo* net_info,      /* connection information                */
- const SSERV_Info*   const skip[],  /* array of servers NOT to select        */
- size_t              n_skip,        /* number of servers in preceding array  */
- HOST_INFO*          host_info      /* ptr to store host info at [may be 0]  */
+(const char*          service,       /* service name                         */
+ TSERV_Type           types,         /* mask of type(s) of servers requested */
+ unsigned int         preferred_host,/* preferred host to use service on, nbo*/
+ const SConnNetInfo*  net_info,      /* connection information               */
+ const SSERV_InfoCPtr skip[],        /* array of servers NOT to select       */
+ size_t               n_skip,        /* number of servers in preceding array */
+ HOST_INFO*           host_info      /* ptr to store host info at [may be 0] */
  );
-
 
 extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfo
-(const char*         service,
- TSERV_Type          types,
- unsigned int        preferred_host,
- const SConnNetInfo* net_info
+(const char*          service,
+ TSERV_Type           types,
+ unsigned int         preferred_host,
+ const SConnNetInfo*  net_info
  );
 
 
-/* Penalize server returned last from SERV_GetNextInfo[Ex]().
+/* Penalize the server returned last from SERV_GetNextInfo[Ex]().
  * Return 0 if failed, 1 if successful.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Penalize
-(SERV_ITER           iter,          /* handle obtained via 'SERV_Open*' call */
- double              fine           /* fine in a range [0=min..100=max] (%%) */
+(SERV_ITER            iter,          /* handle obtained via 'SERV_Open*' call*/
+ double               fine           /* fine in a range [0=min..100=max] (%%)*/
  );
 
 
-/* Reset the iterator to the state as if it'd just been opened.
- * Caution: All previously obtained with this iterator pointers (if any)
- * to server descriptors (SSERV_Info*) become invalid.
+/* Reset the iterator to the state as if it has just been opened.
+ * CAUTION:  All pointers to server descriptors (SSERV_Info*), if any
+ * previously obtained with this iterator, get invalidated by this call.
  */
 extern NCBI_XCONNECT_EXPORT void SERV_Reset
-(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
+(SERV_ITER            iter           /* handle obtained via 'SERV_Open*' call*/
  );
 
 
-/* Deallocate the iterator. Must be called to finish lookup process.
+/* Deallocate the iterator.  Must be called to finish the lookup process.
  */
 extern NCBI_XCONNECT_EXPORT void SERV_Close
-(SERV_ITER           iter           /* handle obtained via 'SERV_Open*' call */
+(SERV_ITER            iter           /* handle obtained via 'SERV_Open*' call*/
  );
 
 
@@ -207,6 +200,10 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2005/12/14 21:17:09  lavr
+ * ESERV_SpecialType made private (moved to ncbi_servicep.h in source tree)
+ * SSERV_InfoCPtr introduced;  some API usage comments extended/corrected
+ *
  * Revision 6.41  2005/10/03 15:55:22  lavr
  * Change ESERV_SpecialType::fSERV_Promiscuous to fit "signed int"
  *
