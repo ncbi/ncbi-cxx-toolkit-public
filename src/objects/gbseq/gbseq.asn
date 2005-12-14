@@ -1,8 +1,9 @@
---$Revision: 6.5 $
+--$Revision: 6.6 $
 --*********************************************************
 --
 -- ASN.1 and XML for the components of a GenBank format sequence
 -- J.Ostell 2002
+-- Updated 14 December 2005
 --
 --*********************************************************
 
@@ -86,28 +87,12 @@ BEGIN
 GBSeq ::= SEQUENCE {
 	locus VisibleString ,
 	length INTEGER ,
-	strandedness INTEGER {
-		not-set (0) ,
-		single-stranded (1) ,
-		double-stranded (2) ,
-		mixed-stranded (3) } DEFAULT not-set ,
-	moltype INTEGER {
-		nucleic-acid (0) ,
-		dna (1) ,
-		rna (2) ,
-		trna (3) ,
-		rrna (4) ,
-		mrna (5) ,
-		urna (6) ,
-		snrna (7) ,
-		snorna (8) ,
-		peptide (9) } DEFAULT nucleic-acid ,
-	topology INTEGER {
-		linear (1) ,
-		circular (2) } DEFAULT linear ,
+	strandedness VisibleString OPTIONAL ,
+	moltype VisibleString ,
+	topology VisibleString OPTIONAL ,
 	division VisibleString ,
 	update-date VisibleString ,
-	create-date VisibleString ,
+	create-date VisibleString OPTIONAL ,
 	update-release VisibleString OPTIONAL ,
 	create-release VisibleString OPTIONAL ,
 	definition VisibleString ,
@@ -116,12 +101,13 @@ GBSeq ::= SEQUENCE {
 	accession-version VisibleString OPTIONAL ,
 	other-seqids SEQUENCE OF GBSeqid OPTIONAL ,
 	secondary-accessions SEQUENCE OF GBSecondary-accn OPTIONAL,
+	project VisibleString OPTIONAL ,
 	keywords SEQUENCE OF GBKeyword OPTIONAL ,
 	segment VisibleString OPTIONAL ,
-	source VisibleString ,
-	organism VisibleString ,
-	taxonomy VisibleString ,
-	references SEQUENCE OF GBReference ,
+	source VisibleString OPTIONAL ,
+	organism VisibleString OPTIONAL ,
+	taxonomy VisibleString OPTIONAL ,
+	references SEQUENCE OF GBReference OPTIONAL ,
 	comment VisibleString OPTIONAL ,
 	primary VisibleString OPTIONAL ,
 	source-db VisibleString OPTIONAL ,
@@ -138,26 +124,36 @@ GBSeq ::= SEQUENCE {
 
 	GBReference ::= SEQUENCE {
 		reference VisibleString ,
+		position VisibleString OPTIONAL ,
 		authors SEQUENCE OF GBAuthor OPTIONAL ,
 		consortium VisibleString OPTIONAL ,
 		title VisibleString OPTIONAL ,
 		journal VisibleString ,
-		medline INTEGER OPTIONAL ,
+		xref SET OF GBXref OPTIONAL ,
 		pubmed INTEGER OPTIONAL ,
 		remark VisibleString OPTIONAL }
 
 	GBAuthor ::= VisibleString
 
+    GBXref ::= SEQUENCE {
+		dbname VisibleString ,
+		id VisibleString }
+
 	GBFeature ::= SEQUENCE {
 		key VisibleString ,
 		location VisibleString ,
 		intervals SEQUENCE OF GBInterval OPTIONAL ,
+		operator VisibleString OPTIONAL ,
+		partial5 BOOLEAN OPTIONAL ,
+		partial3 BOOLEAN OPTIONAL ,
 		quals SEQUENCE OF GBQualifier OPTIONAL }
 
 	GBInterval ::= SEQUENCE {
 		from INTEGER OPTIONAL ,
 		to INTEGER OPTIONAL ,
 		point INTEGER OPTIONAL ,
+		iscomp BOOLEAN OPTIONAL ,
+		interbp BOOLEAN OPTIONAL ,
 		accession VisibleString }
 
 	GBQualifier ::= SEQUENCE {
