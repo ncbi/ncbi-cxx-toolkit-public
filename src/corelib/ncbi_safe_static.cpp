@@ -45,6 +45,25 @@
 BEGIN_NCBI_SCOPE
 
 
+CSafeStaticLifeSpan::CSafeStaticLifeSpan(ELifeSpan span, int adjust)
+    : m_LifeSpan(int(span) + adjust)
+{
+    if (adjust >= 5000  ||  adjust <= -5000) {
+        ERR_POST(Warning
+            << "CSafeStaticLifeSpan level adjustment out of range: "
+            << adjust);
+    }
+    _ASSERT(adjust > -5000  &&  adjust < 5000);
+}
+
+
+CSafeStaticLifeSpan& CSafeStaticLifeSpan::GetDefault(void)
+{
+    static CSafeStaticLifeSpan s_DefaultSpan(eLifeSpan_Normal);
+    return s_DefaultSpan;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CSafeStaticPtr_Base::
@@ -82,6 +101,13 @@ void CSafeStaticPtr_Base::Init_Unlock(bool mutex_locked)
         s_MutexLocked = false;
         s_Mutex.Unlock();
     }
+}
+
+
+int CSafeStaticPtr_Base::x_GetCreationOrder(void)
+{
+    static CAtomicCounter s_CreationOrder;
+    return s_CreationOrder.Add(1);
 }
 
 
@@ -124,9 +150,8 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
     assert(sm_RefCount == 0);
 
     // Call Cleanup() for all variables registered
-    while ( !sm_Stack->empty() ) {
-        sm_Stack->top()->Cleanup();
-        sm_Stack->pop();
+    NON_CONST_ITERATE(TStack, it, *sm_Stack) {
+        (*it)->Cleanup();
     }
 
     delete sm_Stack;
@@ -158,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/14 17:12:41  grichenk
+ * Added life span parameter for safe static objects.
+ *
  * Revision 1.7  2004/05/14 13:59:26  gorelenk
  * Added include of ncbi_pch.hpp
  *

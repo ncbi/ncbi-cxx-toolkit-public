@@ -44,9 +44,42 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <stack>
+#include <set>
 
 BEGIN_NCBI_SCOPE
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CSafeStaticLifeSpan::
+//
+//    Class for specifying safe static object life span.
+//
+
+class NCBI_XNCBI_EXPORT CSafeStaticLifeSpan
+{
+public:
+    // Predefined life spans for the safe static objects
+    enum ELifeSpan {
+        eLifeSpan_Shortest = -20000,
+        eLifeSpan_Short    = -10000,
+        eLifeSpan_Normal   = 0,
+        eLifeSpan_Long     = 10000,
+        eLifeSpan_Longest  = 20000,
+    };
+    // Constructs a life span object from basic level and adjustment.
+    // Generates warning (and assertion in debug mode) if the adjustment
+    // argument is too big (<= -5000 or >= 5000).
+    CSafeStaticLifeSpan(ELifeSpan span, int adjust = 0);
+
+    int GetLifeSpan(void) const { return m_LifeSpan; }
+
+    // Get default life span (set to eLifeSpan_Normal).
+    static CSafeStaticLifeSpan& GetDefault(void);
+
+private:
+    int m_LifeSpan;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -65,11 +98,20 @@ public:
     typedef void (*FSelfCleanup)(void** ptr);
     typedef void (*FUserCleanup)(void*  ptr);
 
-    // Set user-provided cleanup function to be executed on destruction
+    // Life span
+    typedef CSafeStaticLifeSpan TLifeSpan;
+
+    // Set user-provided cleanup function to be executed on destruction.
+    // Life span allows to control destruction of objects. Objects with
+    // the same life span are destroyed in the order reverse to their
+    // creation order.
     CSafeStaticPtr_Base(FSelfCleanup self_cleanup,
-                        FUserCleanup user_cleanup = 0)
+                        FUserCleanup user_cleanup = 0,
+                        TLifeSpan life_span = TLifeSpan::GetDefault())
         : m_SelfCleanup(self_cleanup),
-          m_UserCleanup(user_cleanup)
+          m_UserCleanup(user_cleanup),
+          m_LifeSpan(life_span.GetLifeSpan()),
+          m_CreationOrder(x_GetCreationOrder())
     {}
 
 protected:
@@ -83,8 +125,14 @@ protected:
     void Init_Unlock(bool mutex_locked);
 
 private:
-    FSelfCleanup m_SelfCleanup;  // Derived class' cleanup function
-    FUserCleanup m_UserCleanup;  // User-provided  cleanup function
+    friend class CSafeStatic_Less;
+
+    FSelfCleanup m_SelfCleanup;   // Derived class' cleanup function
+    FUserCleanup m_UserCleanup;   // User-provided  cleanup function
+    int          m_LifeSpan;      // Life span of the object
+    int          m_CreationOrder; // Creation order of the object
+
+    static int x_GetCreationOrder(void);
 
     // To be called by CSafeStaticGuard on the program termination
     friend class CSafeStaticGuard;
@@ -96,6 +144,22 @@ private:
 
 };
 
+
+// Comparison for safe static ptrs. Defines order of objects' destruction:
+// short living objects go first; if life span of several objects is the same,
+// the order of destruction is reverse to the order of their creation.
+class CSafeStatic_Less
+{
+public:
+    typedef CSafeStaticPtr_Base* TPtr;
+    bool operator()(const TPtr& ptr1, const TPtr& ptr2) const
+    {
+        if (ptr1->m_LifeSpan == ptr2->m_LifeSpan) {
+            return ptr1->m_CreationOrder > ptr2->m_CreationOrder;
+        }
+        return ptr1->m_LifeSpan < ptr2->m_LifeSpan;
+    }
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -112,9 +176,13 @@ template <class T>
 class CSafeStaticPtr : public CSafeStaticPtr_Base
 {
 public:
-    // Set the cleanup function to be called on variable destruction
-    CSafeStaticPtr(FUserCleanup user_cleanup = 0)
-        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup)
+    typedef CSafeStaticLifeSpan TLifeSpan;
+
+    // Set the cleanup function to be called on variable destruction,
+    // default life span is normal.
+    CSafeStaticPtr(FUserCleanup user_cleanup = 0,
+                   TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup, life_span)
     {}
 
     // Create the variable if not created yet, return the reference
@@ -164,9 +232,13 @@ template <class T>
 class CSafeStaticRef : public CSafeStaticPtr_Base
 {
 public:
-    // Set the cleanup function to be called on variable destruction
-    CSafeStaticRef(FUserCleanup user_cleanup = 0)
-        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup)
+    typedef CSafeStaticLifeSpan TLifeSpan;
+
+    // Set the cleanup function to be called on variable destruction,
+    // default life span is normal.
+    CSafeStaticRef(FUserCleanup user_cleanup = 0,
+                   TLifeSpan life_span = TLifeSpan::GetDefault())
+        : CSafeStaticPtr_Base(SelfCleanup, user_cleanup, life_span)
     {}
 
     // Create the variable if not created yet, return the reference
@@ -225,7 +297,7 @@ public:
         if ( !sm_Stack ) {
             Get();
         }
-        sm_Stack->push(ptr);
+        sm_Stack->insert(ptr);
     }
 
 private:
@@ -233,7 +305,7 @@ private:
     static CSafeStaticGuard* Get(void);
 
     // Stack to keep registered variables.
-    typedef stack<CSafeStaticPtr_Base*> TStack;
+    typedef multiset<CSafeStaticPtr_Base*, CSafeStatic_Less> TStack;
     static TStack* sm_Stack;
 
     // Reference counter. The stack is destroyed when
@@ -364,6 +436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/12/14 17:12:41  grichenk
+ * Added life span parameter for safe static objects.
+ *
  * Revision 1.13  2004/11/30 15:07:05  dicuccio
  * Replaced ncbithr.hpp with ncbimtx.hpp in include list
  *
