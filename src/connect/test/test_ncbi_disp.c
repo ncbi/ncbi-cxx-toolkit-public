@@ -56,8 +56,10 @@ int main(int argc, const char* argv[])
                           local ? "locally" : "randomly"));
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     if ((local &&
-         (iter = SERV_OpenP(service, fSERV_Any, SERV_LOCALHOST, 0.0,
-                            0, 0/*net_info*/, 0, 0)) != 0) ||
+         (iter = SERV_OpenP(service, fSERV_Any,
+                            SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                            0/*net_info*/, 0/*skip*/, 0/*n_skip*/,
+                            0/*external*/, 0/*arg*/, 0/*val*/)) != 0) ||
         (!local && (iter = SERV_OpenSimple(service)) != 0)) {
         HOST_INFO hinfo;
         CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
@@ -126,6 +128,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2005/12/14 21:45:39  lavr
+ * Adjust to use new SERV_OpenP() prototype
+ *
  * Revision 6.18  2005/07/11 18:49:15  lavr
  * Hashed preference generation algorithm retired (proven to fail often)
  *
