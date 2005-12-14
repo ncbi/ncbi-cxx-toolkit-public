@@ -99,6 +99,15 @@ void ResetFields(CCdCore* cd) {
         cd->ResetDistance();
         cd->ResetFeatures();
         cd->EraseUID();
+		list< CRef< CCdd_descr > >& cdDescrList = cd->SetDescription().Set();
+		list< CRef< CCdd_descr > >::iterator lit = cdDescrList.begin();
+		while (lit != cdDescrList.end())
+		{
+			if ((*lit)->IsRepeats())
+				lit = cdDescrList.erase(lit);
+			else
+				lit++;
+		}
     }
 }
 
@@ -882,6 +891,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2005/12/14 20:23:13  cliu
+ * remove repeats.
+ *
  * Revision 1.11  2005/11/14 19:30:52  lanczyck
  * Add IBM algorithm
  *
