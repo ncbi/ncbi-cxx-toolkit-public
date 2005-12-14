@@ -190,13 +190,15 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    if (score_params->reward % 2 == 1) {
       reward = 2*score_params->reward;
       penalty = -2*score_params->penalty;
-      Xdrop = 2*ext_params->gap_x_dropoff;
+      Xdrop = 2*MAX(ext_params->gap_x_dropoff,
+                    ext_params->gap_x_dropoff_final);
       gap_open = 2*score_params->gap_open;
       gap_extend = 2*score_params->gap_extend;
    } else {
       reward = score_params->reward;
       penalty = -score_params->penalty;
-      Xdrop = ext_params->gap_x_dropoff;
+      Xdrop = MAX(ext_params->gap_x_dropoff,
+                  ext_params->gap_x_dropoff_final);
       gap_open = score_params->gap_open;
       gap_extend = score_params->gap_extend;
    }
