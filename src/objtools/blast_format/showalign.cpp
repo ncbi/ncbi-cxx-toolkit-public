@@ -807,8 +807,8 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     }  //end of preparing row data
     bool colorMismatch = false; //color the mismatches
     //output identities info 
-    if((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine) &&
-       !(m_AlignOption&eMultiAlign)) {
+    if(((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine))
+       && !(m_AlignOption&eMultiAlign)) {
         int match = 0;
         int positive = 0;
         int gap = 0;
@@ -2711,6 +2711,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.94  2005/12/14 20:44:40  jianye
+*clarify the and/or condition
+*
 *Revision 1.93  2005/12/05 22:33:49  jianye
 *show middle line independent of showblastinfo
 *
