@@ -326,7 +326,7 @@ const char* CORE_SendMailEx(const char*          to,
                             const char*          body,
                             const SSendMailInfo* uinfo)
 {
-    static const STimeout zero;
+    static const STimeout zero = {0, 0};
     const SSendMailInfo* info;
     SSendMailInfo ainfo;
     char buffer[1024];
@@ -519,6 +519,9 @@ const char* CORE_SendMailEx(const char*          to,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2005/12/14 21:26:39  lavr
+ * CORE_SendMailEx(): Explicit init of static zero timeout
+ *
  * Revision 6.25  2005/08/30 18:06:23  lavr
  * Do not treat single quotes specially
  *
