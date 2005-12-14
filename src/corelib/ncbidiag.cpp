@@ -40,6 +40,9 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbi_process.hpp>
+#include <corelib/ncbi_param.hpp>
+#include <corelib/ncbiapp.hpp>
 #include "ncbidiag_p.hpp"
 #include <stdlib.h>
 #include <time.h>
@@ -235,6 +238,127 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 
 
 ///////////////////////////////////////////////////////
+//  CDiagContext::
+
+
+NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
+NCBI_PARAM_DEF(bool, Diag, AutoWrite_Context, false);
+typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
+
+CDiagContext::CDiagContext(void)
+    : m_UID(0)
+{
+}
+
+
+CDiagContext::~CDiagContext(void)
+{
+}
+
+
+CDiagContext::TUID CDiagContext::GetUID(void) const
+{
+    if ( !m_UID ) {
+        CMutexGuard LOCK(s_DiagMutex);
+        if ( !m_UID ) {
+            x_CreateUID();
+            if ( TAutoWrite_Context::GetDefault() ) {
+                x_PrintMessage("start");
+            }
+        }
+    }
+    return m_UID;
+}
+
+
+string CDiagContext::GetStringUID(void) const
+{
+    return NStr::Int8ToString(GetUID(), 0, 16);
+}
+
+
+void CDiagContext::x_CreateUID(void) const
+{
+    Int8 pid = CProcess::GetCurrentPid();
+    time_t t = time(0);
+    // just a stub, must be rewritten
+    m_UID = ((pid & 0xFFFF) << 32) + (t & 0xFFFFFFFF);
+}
+
+
+void CDiagContext::SetAutoWrite(bool value)
+{
+    TAutoWrite_Context::SetDefault(value);
+}
+
+
+void CDiagContext::SetProperty(const string& name, const string& value)
+{
+    {{
+        CMutexGuard LOCK(s_DiagMutex);
+        m_Properties[name] = value;
+    }}
+    if ( TAutoWrite_Context::GetDefault() ) {
+        x_PrintMessage(name + "=" + value);
+    }
+}
+
+
+string CDiagContext::GetProperty(const string name) const
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    TProperties::const_iterator prop = m_Properties.find(name);
+    return prop != m_Properties.end() ? prop->second : kEmptyStr;
+}
+
+
+void CDiagContext::PrintProperties(void) const
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    ITERATE(TProperties, prop, m_Properties) {
+        x_PrintMessage(prop->first + "=" + prop->second);
+    }
+}
+
+
+void CDiagContext::PrintExit(void) const
+{
+    // Write "exit" if the context has been initialized
+    if ( m_UID  &&  TAutoWrite_Context::GetDefault() ) {
+        x_PrintMessage("exit");
+    }
+}
+
+
+void CDiagContext::x_PrintMessage(const string& message) const
+{
+    string data = GetStringUID() + "#" +
+        NStr::IntToString(CDiagBuffer::GetProcessPostNumber(false)) +
+        "::" + message;
+    SDiagMessage mess(eDiag_Info,
+                      data.c_str(), data.size(),
+                      0, 0, // file, line
+                      eDPF_OmitInfoSev | eDPF_OmitSeparator);
+    if ( CDiagBuffer::sm_Handler ) {
+        CMutexGuard LOCK(s_DiagMutex);
+        if ( CDiagBuffer::sm_Handler ) {
+            CDiagBuffer::sm_Handler->Post(mess);
+        }
+    }
+}
+
+
+CDiagContext& GetDiagContext(void)
+{
+    // Make the context live longer than other diag safe-statics
+    static CSafeStaticPtr<CDiagContext> s_DiagContext(0,
+        CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long));
+
+    return s_DiagContext.Get();
+}
+
+
+///////////////////////////////////////////////////////
 //  CDiagBuffer::
 
 #if defined(NDEBUG)
@@ -246,9 +370,34 @@ EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Warning;
 EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
                                                   // to be set on first request
 
-TDiagPostFlags CDiagBuffer::sm_PostFlags          =
-    eDPF_Prefix | eDPF_Severity | eDPF_ErrCode | eDPF_ErrSubCode | 
-    eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation | eDPF_ErrCodeUseSeverity;
+NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
+NCBI_PARAM_DEF(bool, Diag, Old_Post_Format, true);
+typedef NCBI_PARAM_TYPE(Diag, Old_Post_Format) TOldPostFormatParam;
+
+inline
+TDiagPostFlags& CDiagBuffer::sx_GetPostFlags(void)
+{
+    static const TDiagPostFlags s_OldDefaultPostFlags =
+        eDPF_Prefix | eDPF_Severity | eDPF_ErrorID | 
+        eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation | eDPF_ErrCodeUseSeverity;
+    static const TDiagPostFlags s_NewDefaultPostFlags =
+        s_OldDefaultPostFlags |
+#if defined(NCBI_THREADS)
+        eDPF_TID | eDPF_ThreadPostNumber |
+#endif
+        eDPF_PID | eDPF_ProcessPostNumber;
+    static TDiagPostFlags s_PostFlags = TOldPostFormatParam::GetDefault() ?
+        s_OldDefaultPostFlags : s_NewDefaultPostFlags;
+    return s_PostFlags;
+}
+
+
+TDiagPostFlags& CDiagBuffer::s_GetPostFlags(void)
+{
+    return sx_GetPostFlags();
+}
+
+
 TDiagPostFlags CDiagBuffer::sm_TraceFlags         = eDPF_Trace;
 
 EDiagSev       CDiagBuffer::sm_DieSeverity        = eDiag_Fatal;
@@ -270,7 +419,11 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 
 
 CDiagBuffer::CDiagBuffer(void)
-    : m_Stream(new CNcbiOstrstream), m_InitialStreamFlags(m_Stream->flags())
+    : m_Stream(new CNcbiOstrstream),
+      m_InitialStreamFlags(m_Stream->flags()),
+      m_PID(CProcess::GetCurrentPid()),
+      m_TID(CThread::GetSelf()),
+      m_ThreadPostCount(0)
 {
     m_Diag = 0;
 }
@@ -281,6 +434,10 @@ CDiagBuffer::~CDiagBuffer(void)
     if (m_Diag  ||  dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount())
         Abort();
 #endif
+    if (m_TID == 0) {
+        // Main thread
+        GetDiagContext().PrintExit();
+    }
     delete m_Stream;
     m_Stream = 0;
 }
@@ -290,8 +447,9 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
     if ( CDiagBuffer::sm_Handler ) {
         CMutexGuard LOCK(s_DiagMutex);
         if ( CDiagBuffer::sm_Handler ) {
-            mess.m_Prefix = GetDiagBuffer().m_PostPrefix.empty() ?
-                0 : GetDiagBuffer().m_PostPrefix.c_str();
+            CDiagBuffer& diag_buf = GetDiagBuffer();
+            mess.m_Prefix = diag_buf.m_PostPrefix.empty() ?
+                0 : diag_buf.m_PostPrefix.c_str();
             CDiagBuffer::sm_Handler->Post(mess);
         }
     }
@@ -330,53 +488,59 @@ void CDiagBuffer::Flush(void)
 
     CNcbiOstrstream* ostr = dynamic_cast<CNcbiOstrstream*>(m_Stream);
     EDiagSev sev = m_Diag->GetSeverity();
+    const char* message = 0;
+    size_t size = 0;
     if ( ostr->pcount() ) {
-        const char* message = ostr->str();
-        size_t size = ostr->pcount();
+        message = ostr->str();
+        size = ostr->pcount();
         ostr->rdbuf()->freeze(false);
-        TDiagPostFlags flags = m_Diag->GetPostFlags();
-        if (sev == eDiag_Trace) {
-            flags |= sm_TraceFlags;
-        } else if (sev == eDiag_Fatal) {
-            // normally only happens once, so might as well pull everything
-            // in for the record...
-            flags |= sm_TraceFlags | eDPF_Trace;
-        }
+    }
+    TDiagPostFlags flags = m_Diag->GetPostFlags();
+    if (sev == eDiag_Trace) {
+        flags |= sm_TraceFlags;
+    } else if (sev == eDiag_Fatal) {
+        // normally only happens once, so might as well pull everything
+        // in for the record...
+        flags |= sm_TraceFlags | eDPF_Trace;
+    }
 
-        if (  m_Diag->CheckFilters()  ) {
-            string dest;
-            if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
-                string src(message, size);
-                NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", dest);
-                message = dest.c_str();
-                size = dest.length();
-            }
-            SDiagMessage mess(sev, message, size,
-                              m_Diag->GetFile(), 
-                              m_Diag->GetLine(), 
-                              flags,
-                              NULL, 
-                              m_Diag->GetErrorCode(), 
-                              m_Diag->GetErrorSubCode(), 
-                              NULL,
-                              m_Diag->GetModule(), 
-                              m_Diag->GetClass(),
-                              m_Diag->GetFunction());
-            DiagHandler(mess);
+    if (  m_Diag->CheckFilters()  ) {
+        string dest;
+        if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
+            string src(message, size);
+            NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", dest);
+            message = dest.c_str();
+            size = dest.length();
         }
+        SDiagMessage mess(sev, message, size,
+                            m_Diag->GetFile(),
+                            m_Diag->GetLine(),
+                            flags,
+                            NULL,
+                            m_Diag->GetErrorCode(),
+                            m_Diag->GetErrorSubCode(),
+                            NULL,
+                            m_Diag->GetModule(),
+                            m_Diag->GetClass(),
+                            m_Diag->GetFunction(),
+                            m_PID, m_TID,
+                            GetProcessPostNumber(true),
+                            ++m_ThreadPostCount,
+                            GetFastCGIIteration());
+        DiagHandler(mess);
+    }
 
 #if defined(NCBI_COMPILER_KCC)
-        // KCC's implementation of "freeze(false)" makes the ostrstream buffer
-        // stuck.  We need to replace the frozen stream with the new one.
-        delete ostr;
-        m_Stream = new CNcbiOstrstream;
+    // KCC's implementation of "freeze(false)" makes the ostrstream buffer
+    // stuck.  We need to replace the frozen stream with the new one.
+    delete ostr;
+    m_Stream = new CNcbiOstrstream;
 #else
-        // reset flags to initial value
-        m_Stream->flags(m_InitialStreamFlags);
+    // reset flags to initial value
+    m_Stream->flags(m_InitialStreamFlags);
 #endif
 
-        Reset(*m_Diag);
-    }
+    Reset(*m_Diag);
 
     if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace) {
         m_Diag = 0;
@@ -433,6 +597,13 @@ void CDiagBuffer::UpdatePrefix(void)
 }
 
 
+int CDiagBuffer::GetProcessPostNumber(bool inc)
+{
+    static CAtomicCounter s_ProcessPostCount;
+    return inc ? s_ProcessPostCount.Add(1) : s_ProcessPostCount.Get();
+}
+
+
 ///////////////////////////////////////////////////////
 //  CDiagMessage::
 
@@ -470,6 +641,15 @@ CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
 
 CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
                                     TDiagWriteFlags flags) const
+{
+    return TOldPostFormatParam::GetDefault() ?
+        x_OldWrite(os, flags) : x_NewWrite(os, flags);
+
+}
+
+
+CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
+                                       TDiagWriteFlags flags) const
 {
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
@@ -615,6 +795,167 @@ CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
 }
 
 
+CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
+                                       TDiagWriteFlags flags) const
+{
+    // UID
+    bool print_uid = IsSetDiagPostFlag(eDPF_UID, m_Flags);
+    if ( print_uid ) {
+        os << GetDiagContext().GetStringUID() << " ";
+    }
+    // Date & time
+    if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
+        static const char timefmt[] = "%D %T ";
+        time_t t = time(0);
+        char datetime[32];
+        struct tm* tm;
+#ifdef HAVE_LOCALTIME_R
+        struct tm temp;
+        localtime_r(&t, &temp);
+        tm = &temp;
+#else
+        tm = localtime(&t);
+#endif /*HAVE_LOCALTIME_R*/
+        NStr::strftime(datetime, sizeof(datetime), timefmt, tm);
+        os << datetime;
+    }
+    // PID/TID
+    bool print_pid = IsSetDiagPostFlag(eDPF_PID, m_Flags);
+    if ( print_pid ) {
+        os << "P:" << m_PID;
+        if ( IsSetDiagPostFlag(eDPF_TID, m_Flags) ) {
+            os << "/" << m_TID;
+        }
+        os << " ";
+    }
+    // FastCGI iteration
+    bool print_iter = IsSetDiagPostFlag(eDPF_Iteration, m_Flags);
+    if ( print_iter ) {
+        os << "I:" << m_Iteration << " ";
+    }
+    // Post number
+    bool print_proc_post = IsSetDiagPostFlag(eDPF_ProcessPostNumber, m_Flags);
+    if ( print_proc_post ) {
+        os << "#" << m_ProcPost;
+        if ( IsSetDiagPostFlag(eDPF_ThreadPostNumber, m_Flags) ) {
+            os << "/" << m_ThrPost;
+        }
+        os << " ";
+    }
+    // <module>-<err_code>.<err_subcode> or <module>-<err_text>
+    bool print_err_id =
+        ((m_Module  &&  *m_Module) ||
+         m_ErrCode  ||  m_ErrSubCode  ||  m_ErrText)
+        && IsSetDiagPostFlag(eDPF_ErrorID, m_Flags);
+
+    if (print_err_id) {
+        if (m_Module  &&  *m_Module) {
+            os << m_Module;
+        }
+        if (m_ErrCode  ||  m_ErrSubCode || m_ErrText) {
+            if (m_ErrText) {
+                os << "(" << m_ErrText << ")";
+            } else {
+                os << "(" << m_ErrCode << '.' << m_ErrSubCode << ")";
+            }
+        }
+        os << " ";
+    }
+    // "<file>"
+    bool print_file = (m_File  &&  *m_File  &&
+                       IsSetDiagPostFlag(eDPF_File, m_Flags));
+    if ( print_file ) {
+        const char* x_file = m_File;
+        if ( !IsSetDiagPostFlag(eDPF_LongFilename, m_Flags) ) {
+            for (const char* s = m_File;  *s;  s++) {
+                if (*s == '/'  ||  *s == '\\'  ||  *s == ':')
+                    x_file = s + 1;
+            }
+        }
+        os << '"' << x_file << '"';
+    }
+
+    // , line <line>
+    bool print_line = (m_Line  &&  IsSetDiagPostFlag(eDPF_Line, m_Flags));
+    if ( print_line )
+        os << (print_file ? ", line " : "line ") << m_Line;
+
+    // :
+    if (print_file  ||  print_line)
+        os << ": ";
+
+    // Get error code description
+    bool have_description = false;
+    SDiagErrCodeDescription description;
+    if ((m_ErrCode  ||  m_ErrSubCode)  &&
+        (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags)  || 
+         IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags)  ||
+         IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags))  &&
+         IsSetDiagErrCodeInfo()) {
+
+        CDiagErrCodeInfo* info = GetDiagErrCodeInfo();
+        if ( info  && 
+             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode), 
+                                  &description) ) {
+            have_description = true;
+            if (IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags) && 
+                description.m_Severity != -1 )
+                m_Severity = (EDiagSev)description.m_Severity;
+        }
+    }
+
+    // <severity>:
+    if (IsSetDiagPostFlag(eDPF_Severity, m_Flags)  &&
+        (m_Severity != eDiag_Info || !IsSetDiagPostFlag(eDPF_OmitInfoSev)))
+        os << CNcbiDiag::SeverityName(m_Severity) << ": ";
+
+    // Class::Function
+    bool print_location =
+        ((m_Class     &&  *m_Class ) ||
+         (m_Function  &&  *m_Function))
+        && IsSetDiagPostFlag(eDPF_Location, m_Flags);
+
+    if (print_location) {
+        // Class:: Class::Function() ::Function()
+        if (m_Class  &&  *m_Class) {
+            os << m_Class;
+        }
+        os << "::";
+        if (m_Function  &&  *m_Function) {
+            os << m_Function << "() ";
+        }
+    }
+    if ( !IsSetDiagPostFlag(eDPF_OmitSeparator, m_Flags) ) {
+        os << "--- ";
+    }
+
+    // [<prefix1>::<prefix2>::.....]
+    if (m_Prefix  &&  *m_Prefix  &&  IsSetDiagPostFlag(eDPF_Prefix, m_Flags))
+        os << '[' << m_Prefix << "] ";
+
+    // <message>
+    if (m_BufferLen)
+        os.write(m_Buffer, m_BufferLen);
+
+    // <err_code_message> and <err_code_explanation>
+    if (have_description) {
+        if (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags) &&
+            !description.m_Message.empty())
+            os << NcbiEndl << description.m_Message << ' ';
+        if (IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags) &&
+            !description.m_Explanation.empty())
+            os << NcbiEndl << description.m_Explanation;
+    }
+
+    // Endl
+    if ((flags & fNoEndl) == 0) {
+        os << NcbiEndl;
+    }
+
+    return os;
+}
+
+
 ///////////////////////////////////////////////////////
 //  CDiagAutoPrefix::
 
@@ -675,17 +1016,17 @@ static void s_UnsetDiagPostFlag(TDiagPostFlags& flags, EDiagPostFlag flag)
 
 extern TDiagPostFlags SetDiagPostAllFlags(TDiagPostFlags flags)
 {
-    return s_SetDiagPostAllFlags(CDiagBuffer::sm_PostFlags, flags);
+    return s_SetDiagPostAllFlags(CDiagBuffer::sx_GetPostFlags(), flags);
 }
 
 extern void SetDiagPostFlag(EDiagPostFlag flag)
 {
-    s_SetDiagPostFlag(CDiagBuffer::sm_PostFlags, flag);
+    s_SetDiagPostFlag(CDiagBuffer::sx_GetPostFlags(), flag);
 }
 
 extern void UnsetDiagPostFlag(EDiagPostFlag flag)
 {
-    s_UnsetDiagPostFlag(CDiagBuffer::sm_PostFlags, flag);
+    s_UnsetDiagPostFlag(CDiagBuffer::sx_GetPostFlags(), flag);
 }
 
 
@@ -734,6 +1075,25 @@ extern void PopDiagPostPrefix(void)
         buf.m_PrefixList.pop_back();
         buf.UpdatePrefix();
     }
+}
+
+
+static int& s_GetFastCGIIteration(void)
+{
+    static int s_FastCGIIteration = 0;
+    return s_FastCGIIteration;
+}
+
+
+extern int GetFastCGIIteration(void)
+{
+    return s_GetFastCGIIteration();
+}
+
+
+extern void SetFastCGIIteration(int iter)
+{
+    s_GetFastCGIIteration() = iter;
 }
 
 
@@ -1180,7 +1540,7 @@ CDiagRestorer::CDiagRestorer(void)
     const CDiagBuffer& buf  = GetDiagBuffer();
     m_PostPrefix            = buf.m_PostPrefix;
     m_PrefixList            = buf.m_PrefixList;
-    m_PostFlags             = buf.sm_PostFlags;
+    m_PostFlags             = buf.sx_GetPostFlags();
     m_PostSeverity          = buf.sm_PostSeverity;
     m_PostSeverityChange    = buf.sm_PostSeverityChange;
     m_DieSeverity           = buf.sm_DieSeverity;
@@ -1202,7 +1562,7 @@ CDiagRestorer::~CDiagRestorer(void)
         CDiagBuffer& buf          = GetDiagBuffer();
         buf.m_PostPrefix          = m_PostPrefix;
         buf.m_PrefixList          = m_PrefixList;
-        buf.sm_PostFlags          = m_PostFlags;
+        buf.sx_GetPostFlags()     = m_PostFlags;
         buf.sm_PostSeverity       = m_PostSeverity;
         buf.sm_PostSeverityChange = m_PostSeverityChange;
         buf.sm_DieSeverity        = m_DieSeverity;
@@ -1494,6 +1854,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.97  2005/12/14 19:02:32  grichenk
+ * Redesigned format of messages, added new values.
+ * Added CDiagContext.
+ *
  * Revision 1.96  2005/11/22 16:36:37  vakatov
  * CNcbiDiag::operator<< related fixes to allow for the no-hassle
  * posting of exceptions derived from CException. Before, only the

@@ -107,6 +107,7 @@ class CDiagBuffer
 
 private:
     friend class CDiagRestorer;
+    friend class CDiagContext;
 
     const CNcbiDiag*   m_Diag;    // present user
     CNcbiOstream*      m_Stream;  // storage for the diagnostic message
@@ -120,6 +121,14 @@ private:
     typedef list<string> TPrefixList;
     TPrefixList m_PrefixList;
 
+    typedef int TTID;
+    typedef int TPID;
+    // Cached thread ID
+    TTID m_TID;
+    // Cached process ID
+    TPID m_PID;
+    // Count of posted messages for the thread
+    int  m_ThreadPostCount;
 
     CDiagBuffer(void);
 
@@ -150,8 +159,13 @@ private:
     void UpdatePrefix(void);
 
     // the bitwise OR combination of "EDiagPostFlag"
+    // Hidden inside the function to adjust default flags depending on
+    // registry/environment.
+    // inline version
+    static TDiagPostFlags& sx_GetPostFlags(void);
+    // non-inline version
     NCBI_XNCBI_EXPORT
-    static TDiagPostFlags sm_PostFlags;
+    static TDiagPostFlags& s_GetPostFlags(void);
     // extra flags ORed in for traces
     static TDiagPostFlags sm_TraceFlags;
 
@@ -183,6 +197,9 @@ private:
     // Error codes info
     static CDiagErrCodeInfo* sm_ErrCodeInfo;
     static bool              sm_CanDeleteErrCodeInfo;
+
+    // Increment process post number, return the new value
+    static int GetProcessPostNumber(bool inc);
 };
 
 extern CDiagBuffer& GetDiagBuffer(void);
@@ -301,7 +318,7 @@ inline int CNcbiDiag::GetErrorSubCode(void) const {
 
 inline TDiagPostFlags CNcbiDiag::GetPostFlags(void) const {
     return (m_PostFlags & eDPF_Default) ?
-        (m_PostFlags | CDiagBuffer::sm_PostFlags) & ~eDPF_Default :
+        (m_PostFlags | CDiagBuffer::s_GetPostFlags()) & ~eDPF_Default :
         m_PostFlags;
 }
 
@@ -330,6 +347,14 @@ bool operator< (const ErrCode& ec1, const ErrCode& ec2)
 }
 
 
+inline
+void CNcbiDiag::x_EndMess(void) const
+{
+    m_Buffer.EndMess(*this);
+    m_Buffer.SetDiag(*this);
+}
+
+
 ///////////////////////////////////////////////////////
 //  Other CNcbiDiag:: manipulators
 
@@ -342,44 +367,47 @@ const CNcbiDiag& Reset(const CNcbiDiag& diag)  {
 
 inline
 const CNcbiDiag& Endm(const CNcbiDiag& diag)  {
+    if ( !diag.m_Buffer.m_Diag
+        && (diag.GetErrorCode() || diag.GetErrorSubCode()) ) {
+        diag.m_Buffer.SetDiag(diag);
+    }
     diag.m_Buffer.EndMess(diag);
-    diag.SetErrorCode(0, 0);
     return diag;
 }
 
 inline
 const CNcbiDiag& Info(const CNcbiDiag& diag)  {
-    diag << Endm;
+    diag.x_EndMess();
     diag.m_Severity = eDiag_Info;
     return diag;
 }
 inline
 const CNcbiDiag& Warning(const CNcbiDiag& diag)  {
-    diag << Endm;
+    diag.x_EndMess();
     diag.m_Severity = eDiag_Warning;
     return diag;
 }
 inline
 const CNcbiDiag& Error(const CNcbiDiag& diag)  {
-    diag << Endm;
+    diag.x_EndMess();
     diag.m_Severity = eDiag_Error;
     return diag;
 }
 inline
 const CNcbiDiag& Critical(const CNcbiDiag& diag)  {
-    diag << Endm;
+    diag.x_EndMess();
     diag.m_Severity = eDiag_Critical;
     return diag;
 }
 inline
 const CNcbiDiag& Fatal(const CNcbiDiag& diag)  {
-    diag << Endm;
+    diag.x_EndMess();
     diag.m_Severity = eDiag_Fatal;
     return diag;
 }
 inline
 const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
-    diag << Endm;
+    diag.x_EndMess();
     diag.m_Severity = eDiag_Trace;
     return diag;
 }
@@ -396,8 +424,11 @@ void CDiagBuffer::Reset(const CNcbiDiag& diag) {
 
 inline
 void CDiagBuffer::EndMess(const CNcbiDiag& diag) {
-    if (&diag == m_Diag)
-        Flush();
+    if (&diag == m_Diag) {
+        // Flush();
+        Detach(&diag);
+        diag.SetErrorCode(0, 0);
+    }
 }
 
 inline
@@ -421,7 +452,7 @@ bool CDiagBuffer::GetTraceEnabled(void) {
 inline
 bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags) {
     if (flags & eDPF_Default)
-        flags |= CDiagBuffer::sm_PostFlags;
+        flags |= CDiagBuffer::s_GetPostFlags();
     return (flags & flag) != 0;
 }
 
@@ -439,7 +470,12 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            const char* err_text,
                            const char* module, 
                            const char* nclass, 
-                           const char* function)
+                           const char* function,
+                           TPID        pid,
+                           TTID        tid,
+                           int         proc_post,
+                           int         thr_post,
+                           int         iter)
 {
     m_Severity   = severity;
     m_Buffer     = buf;
@@ -454,6 +490,11 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
     m_Module     = module;
     m_Class      = nclass;
     m_Function   = function;
+    m_PID        = pid;
+    m_TID        = tid;
+    m_ProcPost   = proc_post;
+    m_ThrPost    = thr_post;
+    m_Iteration  = iter;
 }
 
 
@@ -590,6 +631,10 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/12/14 19:02:32  grichenk
+ * Redesigned format of messages, added new values.
+ * Added CDiagContext.
+ *
  * Revision 1.51  2005/11/22 16:36:37  vakatov
  * CNcbiDiag::operator<< related fixes to allow for the no-hassle
  * posting of exceptions derived from CException. Before, only the

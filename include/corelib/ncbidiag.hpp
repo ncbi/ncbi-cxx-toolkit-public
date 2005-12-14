@@ -179,7 +179,8 @@ private:
 /// @sa
 ///   LOG_POST_EX macro
 #define LOG_POST(message)                            \
-    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log) \
+    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error,           \
+      eDPF_Log | eDPF_OmitSeparator)                 \
       << message                                     \
       << NCBI_NS_NCBI::Endm )
 
@@ -198,7 +199,8 @@ private:
 /// @sa
 ///   LOG_POST
 #define LOG_POST_EX(err_code, err_subcode, message)         \
-    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error, eDPF_Log)        \
+    ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error,                  \
+      eDPF_Log | eDPF_OmitSeparator)                        \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message << NCBI_NS_NCBI::Endm )
 
@@ -275,32 +277,40 @@ enum EDiagPostFlag {
     eDPF_Line               = 0x4, ///< Set by default #if _DEBUG; else not set
     eDPF_Prefix             = 0x8, ///< Set by default (always)
     eDPF_Severity           = 0x10,  ///< Set by default (always)
-    eDPF_ErrCode            = 0x20,  ///< Set by default (always)
-    eDPF_ErrSubCode         = 0x40,  ///< Set by default (always)
+    eDPF_ErrorID            = 0x20,  ///< Module, error code and subcode
+    eDPF_DateTime           = 0x80,  ///< Include date and time
     eDPF_ErrCodeMessage     = 0x100, ///< Set by default (always)
     eDPF_ErrCodeExplanation = 0x200, ///< Set by default (always)
     eDPF_ErrCodeUseSeverity = 0x400, ///< Set by default (always)
-    eDPF_DateTime           = 0x80,  ///< Include date and time
-    eDPF_Location           = 0x800, ///< Include module, class and function
+    eDPF_Location           = 0x800, ///< Include class and function
                                      ///< if any, not set by default
+    eDPF_PID                = 0x1000,  ///< Process ID
+    eDPF_TID                = 0x2000,  ///< Thread ID
+    eDPF_ProcessPostNumber  = 0x4000,  ///< Post number in process
+    eDPF_ThreadPostNumber   = 0x8000,  ///< Post number in thread
+    eDPF_Iteration          = 0x10000, ///< Post number in thread
+    eDPF_UID                = 0x20000, ///< UID of the log
 
+    eDPF_ErrCode            = eDPF_ErrorID,  ///< @deprecated
+    eDPF_ErrSubCode         = eDPF_ErrorID,  ///< @deprecated
     /// All flags (except for the "unusual" ones!)
-    eDPF_All                = 0x3FFF,
-
-    // "Unusual" flags -- not included in "eDPF_All"
-    eDPF_OmitInfoSev        = 0x4000, ///< No sev. indication if eDiag_Info 
-    eDPF_PreMergeLines      = 0x10000,///< Remove EOLs before calling handler
-    eDPF_MergeLines         = 0x20000,///< Ask diag.handlers to remove EOLs
+    eDPF_All                = 0xFFFFF,
 
     /// Default flags to use when tracing.
-    eDPF_Trace              = 0x81F,
+    eDPF_Trace              = 0xF81F,
 
     /// Print the posted message only; without severity, location, prefix, etc.
     eDPF_Log                = 0x0,
 
+    // "Unusual" flags -- not included in "eDPF_All"
+    eDPF_PreMergeLines      = 0x100000, ///< Remove EOLs before calling handler
+    eDPF_MergeLines         = 0x200000, ///< Ask diag.handlers to remove EOLs
+    eDPF_OmitInfoSev        = 0x400000, ///< No sev. indication if eDiag_Info 
+    eDPF_OmitSeparator      = 0x800000, ///< No '---' separator before message
+
     /// Use global default flags (merge with).
     /// @sa SetDiagPostFlag(), UnsetDiagPostFlag(), IsSetDiagPostFlag()
-    eDPF_Default            = 0x8000
+    eDPF_Default            = 0x10000000
 };
 
 typedef int TDiagPostFlags;  ///< Binary OR of "EDiagPostFlag"
@@ -387,6 +397,61 @@ private:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CDiagContext --
+///
+/// NCBI diagnostic context. Storage for application-wide properties.
+
+class CDiagContext
+{
+public:
+    CDiagContext(void);
+    ~CDiagContext(void);
+
+    typedef Int8 TUID;
+    /// Return (create if not created yet) unique diagnostic ID.
+    /// Prints start message if AutoWrite flag is set.
+    TUID GetUID(void) const;
+    /// Return string representation of UID
+    string GetStringUID(void) const;
+
+    /// Set AutoWrite flag. If set, each property is posted to the current
+    /// diag stream when a new value is set.
+    NCBI_XNCBI_EXPORT
+    void SetAutoWrite(bool value);
+
+    /// Set application context property by name.
+    /// Write property to the log if AutoPrint flag is set.
+    NCBI_XNCBI_EXPORT
+    void SetProperty(const string& name, const string& value);
+
+    /// Get application context property by name, return empty string if the
+    /// property is not set.
+    NCBI_XNCBI_EXPORT
+    string GetProperty(const string name) const;
+
+    /// Forced dump of all set properties regardless of the AutoPrint flag.
+    NCBI_XNCBI_EXPORT
+    void PrintProperties(void) const;
+
+    // Print exit message if AutoPrint flag is set.
+    void PrintExit(void) const;
+
+private:
+    // Initialize UID
+    void x_CreateUID(void) const;
+    // Write message to the log using current handler
+    void x_PrintMessage(const string& message) const;
+
+    typedef map<string, string> TProperties;
+
+    mutable TUID m_UID;
+    TProperties  m_Properties;
+};
+
+
+NCBI_XNCBI_EXPORT CDiagContext& GetDiagContext(void);
 
 //
 class CException;
@@ -619,6 +684,10 @@ private:
     mutable string         m_Function;     ///< Function name
     mutable TValChngFlags  m_ValChngFlags;
 
+    /// Private replacement for Endm called from manipulators. Unlike Endm,
+    /// does not reset ErrCode if buffer is not set.
+    void x_EndMess(void) const;
+
     /// Helper func for the exception-related Put()
     /// @sa Put()
     NCBI_XNCBI_EXPORT const CNcbiDiag& x_Put(const CException& ex) const;
@@ -691,6 +760,13 @@ extern void PushDiagPostPrefix(const char* prefix);
 NCBI_XNCBI_EXPORT
 extern void PopDiagPostPrefix(void);
 
+/// Get iteration number for FastCGI applications. Not MT-safe.
+NCBI_XNCBI_EXPORT
+extern int GetFastCGIIteration(void);
+
+/// Set iteration number for FastCGI applications. Not MT-safe.
+NCBI_XNCBI_EXPORT
+extern void SetFastCGIIteration(int iter);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -824,15 +900,23 @@ extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 /// NOTE 2:  By default, the errors will be written to standard error stream.
 
 struct NCBI_XNCBI_EXPORT SDiagMessage {
+    typedef int TPID; ///< Process ID
+    typedef int TTID; ///< Thread ID
+
     /// Initalize SDiagMessage fields.
     SDiagMessage(EDiagSev severity, const char* buf, size_t len,
                  const char* file = 0, size_t line = 0,
                  TDiagPostFlags flags = eDPF_Default, const char* prefix = 0,
                  int err_code = 0, int err_subcode = 0,
-                 const char* err_text = 0,
-                 const char* module   = 0,
-                 const char* nclass   = 0, 
-                 const char* function = 0);
+                 const char* err_text  = 0,
+                 const char* module    = 0,
+                 const char* nclass    = 0, 
+                 const char* function  = 0,
+                 TPID        pid       = 0,
+                 TTID        tid       = 0,
+                 int         proc_post = 0,
+                 int         thr_post  = 0,
+                 int         iter      = 0);
 
     mutable EDiagSev m_Severity;   ///< Severity level
     const char*      m_Buffer;     ///< Not guaranteed to be '\0'-terminated!
@@ -848,6 +932,11 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     const char*      m_Prefix;     ///< Prefix string
     const char*      m_ErrText;    ///< Sometimes 'error' has no numeric code,
                                    ///< but can be represented as text
+    TPID             m_PID;        ///< Process ID
+    TTID             m_TID;        ///< Thread ID
+    int              m_ProcPost;   ///< Number of the post in the process
+    int              m_ThrPost;    ///< Number of the post in the thread
+    int              m_Iteration;  ///< FastCGI iteration
 
     // Compose a message string in the standard format(see also "flags"):
     //    "<file>", line <line>: <severity>: [<prefix>] <message> [EOL]
@@ -866,7 +955,11 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     
     /// Write to stream.
     CNcbiOstream& Write  (CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
+    /// For compatibility x_Write selects old or new message formatting
+    /// depending on DIAG_OLD_POST_FORMAT parameter.
     CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
+    CNcbiOstream& x_OldWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
+    CNcbiOstream& x_NewWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
 };
 
 /// Insert message in output stream.
@@ -1217,6 +1310,10 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.92  2005/12/14 19:02:32  grichenk
+ * Redesigned format of messages, added new values.
+ * Added CDiagContext.
+ *
  * Revision 1.91  2005/11/23 17:21:00  ucko
  * Drop versions of << and Put that take non-const references, as they
  * seem to be unnecessary and can confuse WorkShop 5.5 and MIPSpro.
