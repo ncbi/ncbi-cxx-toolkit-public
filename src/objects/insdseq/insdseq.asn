@@ -1,9 +1,9 @@
---$Revision: 1.5 $
+--$Revision: 1.6 $
 --************************************************************************
 --
 -- ASN.1 and XML for the components of a GenBank/EMBL/DDBJ sequence record
 -- The International Nucleotide Sequence Database (INSD) collaboration
--- Version 1.3, 1 June 2004
+-- Version 1.4, 19 September 2005
 --
 --************************************************************************
 
@@ -28,7 +28,7 @@ BEGIN
 --    http://www.ncbi.nlm.nih.gov/projects/collab/FT/index.html
 --
 --    URLs for DDBJ, EMBL, and GenBank Release Notes :
---    http://www.ddbj.nig.ac.jp/ddbjnew/ddbj_relnote.html
+--    ftp://ftp.ddbj.nig.ac.jp/database/ddbj/ddbjrel.txt
 --    http://www.ebi.ac.uk/embl/Documentation/Release_notes/current/relnotes.html
 --    ftp://ftp.ncbi.nih.gov/genbank/gbrel.txt
 --
@@ -96,7 +96,7 @@ INSDSeq ::= SEQUENCE {
 	topology VisibleString OPTIONAL ,
 	division VisibleString ,
 	update-date VisibleString ,
-	create-date VisibleString ,
+	create-date VisibleString OPTIONAL ,
 	update-release VisibleString OPTIONAL ,
 	create-release VisibleString OPTIONAL ,
 	definition VisibleString ,
@@ -105,6 +105,7 @@ INSDSeq ::= SEQUENCE {
 	accession-version VisibleString OPTIONAL ,
 	other-seqids SEQUENCE OF INSDSeqid OPTIONAL ,
 	secondary-accessions SEQUENCE OF INSDSecondary-accn OPTIONAL,
+	project VisibleString OPTIONAL ,
 	keywords SEQUENCE OF INSDKeyword OPTIONAL ,
 	segment VisibleString OPTIONAL ,
 	source VisibleString OPTIONAL ,
@@ -125,28 +126,94 @@ INSDSeq ::= SEQUENCE {
 
 	INSDKeyword ::= VisibleString
 
+-- INSDReference_position contains a string value indicating the
+-- basepair span(s) to which a reference applies. The allowable
+-- formats are:
+-- 
+--   X..Y  : Where X and Y are integers separated by two periods,
+--           X >= 1 , Y <= sequence length, and X <= Y 
+--
+--           Multiple basepair spans can exist, separated by a
+--           semi-colon and a space. For example : 10..20; 100..500
+--             
+--   sites : The string literal 'sites', indicating that a reference
+--           provides sequence annotation information, but the specific
+--           basepair spans are either not captured, or were too numerous
+--           to record.
+-- 
+--           The 'sites' literal string is singly occuring, and
+--            cannot be used in conjunction with any X..Y basepair spans.
+-- 
+--   References that lack an INSDReference_position element apply
+--   to the entire sequence.
+
 	INSDReference ::= SEQUENCE {
 		reference VisibleString ,
+		position VisibleString OPTIONAL ,
 		authors SEQUENCE OF INSDAuthor OPTIONAL ,
 		consortium VisibleString OPTIONAL ,
 		title VisibleString OPTIONAL ,
 		journal VisibleString ,
-		medline INTEGER OPTIONAL ,
+		xref SET OF INSDXref OPTIONAL ,
 		pubmed INTEGER OPTIONAL ,
 		remark VisibleString OPTIONAL }
 
 	INSDAuthor ::= VisibleString
 
+-- INSDXref provides a method for referring to records in
+-- other databases. INSDXref_dbname is a string value that
+-- provides the name of the database, and INSDXref_dbname
+-- is a string value that provides the record's identifier
+-- in that database.
+
+    INSDXref ::= SEQUENCE {
+		dbname VisibleString ,
+		id VisibleString }
+
+-- INSDFeature_operator contains a string value describing
+-- the relationship among a set of INSDInterval within
+-- INSDFeature_intervals. The allowable formats are:
+-- 
+--   join :  The string literal 'join' indicates that the
+--           INSDInterval intervals are biologically joined
+--           together into a contiguous molecule.
+-- 
+--   order : The string literal 'order' indicates that the
+--           INSDInterval intervals are in the presented
+--           order, but they are not necessarily contiguous.
+-- 
+--   Either 'join' or 'order' is required if INSDFeature_intervals
+--   is comprised of more than one INSDInterval .
+
 	INSDFeature ::= SEQUENCE {
 		key VisibleString ,
 		location VisibleString ,
 		intervals SEQUENCE OF INSDInterval OPTIONAL ,
+		operator VisibleString OPTIONAL ,
+		partial5 BOOLEAN OPTIONAL ,
+		partial3 BOOLEAN OPTIONAL ,
 		quals SEQUENCE OF INSDQualifier OPTIONAL }
+
+-- INSDInterval_iscomp is a boolean indicating whether
+-- an INSDInterval_from / INSDInterval_to location
+-- represents a location on the complement strand.
+-- When INSDInterval_iscomp is TRUE, it essentially
+-- confirms that a 'from' value which is greater than
+-- a 'to' value is intentional, because the location
+-- is on the opposite strand of the presented sequence.
+
+-- INSDInterval_interbp is a boolean indicating whether
+-- a feature (such as a restriction site) is located
+-- between two adjacent basepairs. When INSDInterval_iscomp
+-- is TRUE, the 'from' and 'to' values must differ by
+-- exactly one base.
 
 	INSDInterval ::= SEQUENCE {
 		from INTEGER OPTIONAL ,
 		to INTEGER OPTIONAL ,
 		point INTEGER OPTIONAL ,
+		iscomp BOOLEAN OPTIONAL ,
+		interbp BOOLEAN OPTIONAL ,
 		accession VisibleString }
 
 	INSDQualifier ::= SEQUENCE {
