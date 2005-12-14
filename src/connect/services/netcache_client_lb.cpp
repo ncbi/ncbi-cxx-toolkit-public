@@ -86,12 +86,12 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
                              string*          err_msg)
 {
     if (s_ConnectClient(nc_client, host, port, to)) {
-        LOG_POST(Warning << "Service " << service_name 
-                         << " cannot be found using load balancer"
-                         << " reserve service used " 
+        LOG_POST(Warning << "Service " << service_name
+                         << " cannot be found using load balancer; "
+                         << " reserve service used "
                          << host << ":" << port);
         return true;
-    } 
+    }
     *err_msg += ". Reserve netcache instance at ";
     *err_msg += host;
     *err_msg += ":";
@@ -122,11 +122,13 @@ NetCache_ConfigureWithLB(
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
 #if 0
-    SERV_ITER srv_it = SERV_Open(service_name.c_str(),
-        fSERV_Any, SERV_LOCALHOST, net_info);
+    SERV_ITER srv_it = SERV_Open(service_name.c_str(), fSERV_Any,
+                                 SERV_LOCALHOST, net_info);
 #else
-    SERV_ITER srv_it = SERV_OpenP(service_name.c_str(),
-        fSERV_Any, SERV_LOCALHOST, 90.0, 0, net_info, 0, 0);
+    SERV_ITER srv_it = SERV_OpenP(service_name.c_str(), fSERV_Any,
+                                  SERV_LOCALHOST, 0/*port*/, 90.0,
+                                  net_info, 0/*skip*/, 0/*n_skip*/,
+                                  0/*external*/, 0/*arg*/, 0/*val*/);
 #endif
     ConnNetInfo_Destroy(net_info);
 
@@ -163,7 +165,7 @@ NetCache_ConfigureWithLB(
 
         // failed to find any server responding under the service name
 
-        err_msg += " Failed to find alive netcache server for .";
+        err_msg += "Failed to find alive netcache server for ";
         err_msg += service_name;
     }
 
@@ -512,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2005/12/14 21:31:53  lavr
+ * Use new SERV_OpenP() signature
+ *
  * Revision 1.28  2005/11/28 15:22:22  kuznets
  * +GetOwner() - get BLOB's owner
  *
