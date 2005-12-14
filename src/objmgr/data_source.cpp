@@ -1049,6 +1049,9 @@ SSeqMatch_DS CDataSource::x_GetSeqMatch(const CSeq_id_Handle& idh,
                 continue;
             if ( ret && ret.m_Seq_id.IsBetter(*hit) ) // worse hit
                 continue;
+            ITERATE ( TTSE_LockSet, it, locks ) {
+                it->second->x_GetRecords(*hit, true);
+            }
             TTSE_Lock new_tse = x_FindBestTSE(*hit, locks);
             if ( new_tse ) {
                 ret.m_TSE_Lock = new_tse;
