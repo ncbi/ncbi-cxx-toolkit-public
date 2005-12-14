@@ -165,6 +165,39 @@ struct TestDBF2 : public CBDB_File
     }
 };
 
+
+struct TestQueue : public CBDB_File
+{
+    CBDB_FieldInt4        key;
+
+    CBDB_FieldInt4        v1;
+    CBDB_FieldInt4        v2;
+
+    TestQueue() 
+        : CBDB_File(CBDB_RawFile::eDuplicatesDisable, CBDB_RawFile::eQueue)
+    {
+        DisableNull();
+        BindKey("key", &key);
+
+        BindData("v1", &v1);
+        BindData("v2", &v2);
+    }
+};
+
+struct TestQueueBlob : public CBDB_BLobFile
+{
+    CBDB_FieldInt4        key;
+
+
+    TestQueueBlob() 
+        : CBDB_BLobFile(CBDB_RawFile::eDuplicatesDisable, 
+                        CBDB_RawFile::eQueue)
+    {
+        BindKey("key", &key);
+    }
+};
+
+
 // Utility function to check record consistency 
 void ValidateRecord(const TestDBF2& dbf2, unsigned i)
 {
@@ -1909,6 +1942,72 @@ static void s_TEST_db_multimap(void)
 
 }
 
+static void s_TEST_BDB_Queue()
+{
+    cout << "======== Queue test." << endl;
+
+    TestQueue  db_q;
+
+    db_q.Open("db_queue.que", CBDB_File::eCreate);
+
+    vector<unsigned> recs;
+    for (int i = 0; i < 100; ++i) {
+        db_q.v1 = i;
+        db_q.v2 = i * 10;
+
+        unsigned rec_id = db_q.Append();
+        recs.push_back(rec_id);
+        cout << rec_id << endl;
+    }
+
+    EBDB_ErrCode ret;
+    db_q.key = recs[1];
+    ret = db_q.Fetch();
+    assert (ret == eBDB_Ok);
+
+    int v1 = db_q.v1;
+    int v2 = db_q.v2;
+
+    cout << v1 << " " << v2 << endl;
+    assert(v1 == 1);
+    assert(v2 == 10);
+
+
+
+    db_q.key = 99999900;
+    ret = db_q.Fetch();
+    assert (ret != eBDB_Ok);
+
+    db_q.key = recs[0];
+    db_q.Delete();
+    
+    db_q.key = recs[0];
+    ret = db_q.Fetch();
+    assert (ret != eBDB_Ok);
+
+
+
+    {{
+    TestQueueBlob db_q_blob;
+    const char* szTest = "Hello queue!";
+    unsigned len = strlen(szTest)+1;
+    db_q_blob.Open("db_queue_blob.que", CBDB_File::eCreate, 
+                   false /*disable dirty reads*/, 100 /*max record length*/);
+
+    unsigned rec_id = db_q_blob.Append(szTest, len);
+    cout << rec_id << endl;
+    char szBuf[100];
+
+    EBDB_ErrCode ret;
+    db_q_blob.key = rec_id;
+    ret = db_q_blob.GetData(szBuf, 100);
+    cout << szBuf << endl;
+
+    }}
+
+    cout << "======== Queue test ok." << endl;
+}
+
 static void s_TEST_ICache(void)
 {
     cout << "======== ICache test." << endl;
@@ -2038,6 +2137,8 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_Types();
 
+        s_TEST_BDB_Queue();
+
         s_TEST_BDB_IdTable_Fill();
 
         // s_TEST_BDB_IdTable_Fill2();
@@ -2099,6 +2200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2005/12/14 19:27:08  kuznets
+ * +test for queue db type
+ *
  * Revision 1.61  2005/08/29 16:14:55  kuznets
  * Added thread test for BDB transactions
  *
