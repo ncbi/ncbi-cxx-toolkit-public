@@ -393,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2005/12/15 15:13:50  lavr
+ * Line wrap
+ *
  * Revision 6.48  2005/10/12 21:05:15  lavr
  * Deprecating CConn_MemoryStream::ToString(string&)
  * Introducing CConn_MemoryStream::ToString(string*)
@@ -410,7 +413,8 @@ END_NCBI_SCOPE
  * CConn_MemoryStream::"string conversions" to do flush first
  *
  * Revision 6.43  2005/02/25 16:50:50  lavr
- * CConn_MemoryStream::dtor() to explicitly call Cleanup() to avoid using dead members
+ * CConn_MemoryStream::dtor() to explicitly call
+ * Cleanup() to avoid using dead members
  *
  * Revision 6.42  2004/12/09 13:36:04  lavr
  * MSVC compilation fix
