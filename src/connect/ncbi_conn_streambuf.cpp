@@ -65,7 +65,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
     m_WriteBuf = buf_size ? m_ReadBuf + m_BufSize            : 0;
 
     setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);  // Empty get area
-    setp(0, 0);                              // Non-buffered here (just as yet)
+    setp(m_WriteBuf, m_WriteBuf + buf_size); // Put area (if any)
 
     SCONN_Callback cb;
     cb.func = x_OnClose;
@@ -134,22 +134,9 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         return CT_EOF;
 
     if ( m_WriteBuf ) {
-        CT_INT_TYPE b;
-        size_t n_write;
         // send buffer
-        if (pptr()) {
-            n_write = pptr() - m_WriteBuf;
-            b = c;
-        } else if (CT_EQ_INT_TYPE(c, CT_EOF)) {
-            n_write = 0;
-            b = CT_EOF;
-        } else {
-            *m_WriteBuf = c;
-            n_write = 1;
-            b = c;
-            c = CT_EOF;
-        }
-        if (n_write) {
+        size_t n_write = pptr() - m_WriteBuf;
+        if ( n_write ) {
             size_t n_written;
             n_write *= sizeof(CT_CHAR_TYPE);
             LOG_IF_ERROR(CONN_Write(m_Conn, m_WriteBuf, n_write,
@@ -170,8 +157,6 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         // store char
         if ( !CT_EQ_INT_TYPE(c, CT_EOF) )
             return sputc(CT_TO_CHAR_TYPE(c));
-        else if ( !CT_EQ_INT_TYPE(b, CT_EOF) )
-            return b;
     } else if ( !CT_EQ_INT_TYPE(c, CT_EOF) ) {
         // send char
         size_t n_written;
@@ -350,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2005/12/15 15:14:10  lavr
+ * Rollback to R6.55
+ *
  * Revision 6.58  2005/12/14 22:29:01  lavr
  * Fix another extra flush bug in CConn_Streambuf::overflow()
  *
