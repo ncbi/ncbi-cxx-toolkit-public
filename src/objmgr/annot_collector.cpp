@@ -932,8 +932,14 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
         const CSeq_id_Handle& master_id = bh.GetSeq_id_Handle();
         CHandleRange master_range;
         master_range.AddRange(range, strand);
+
+        int depth = m_Selector->m_ResolveDepth;
+        bool depth_is_set = depth >= 0 && depth < kMax_Int;
+        bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+
         bool found = false;
-        {{
+
+        if ( !exact_depth || depth == 0 ) {
             if ( m_Selector->m_LimitObjectType == SAnnotSelector::eLimit_None ) {
                 // any data source
                 const CTSE_Handle& tse = bh.GetTSE_Handle();
@@ -1028,18 +1034,20 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                     }
                 }
             }
-        }}
+        }
         bool deeper = !x_NoMoreObjects() &&
             !(found && m_Selector->m_AdaptiveDepth) &&
             m_Selector->m_ResolveMethod != SAnnotSelector::eResolve_None  &&
-            m_Selector->m_ResolveDepth > 0 &&
+            depth > 0 &&
             bh.GetSeqMap().HasSegmentOfType(CSeqMap::eSeqRef);
         if ( deeper ) {
             CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
             master_loc_empty->SetEmpty(const_cast<CSeq_id&>(*master_id.GetSeqId()));
-            
-            SSeqMapSelector sel(CSeqMap::fFindRef,
-                                m_Selector->m_ResolveDepth-1);
+            CSeqMap::TFlags flags = CSeqMap::fFindRef;
+            if ( exact_depth ) {
+                flags |= CSeqMap::fFindExactLevel;
+            }
+            SSeqMapSelector sel(flags, depth-1);
             if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
                 sel.SetLimitTSE(bh.GetTSE_Handle());
             }
@@ -1103,11 +1111,15 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
             x_GetTSE_Info();
         }
 
+        int depth = m_Selector->m_ResolveDepth;
+        bool depth_is_set = depth >= 0 && depth < kMax_Int;
+        bool exact_depth = m_Selector->GetExactDepth() && depth_is_set;
+
         bool found = x_SearchLoc(master_loc, 0, 0, true);
         bool deeper = !x_NoMoreObjects() &&
             !(found && m_Selector->m_AdaptiveDepth) &&
             m_Selector->m_ResolveMethod != SAnnotSelector::eResolve_None  &&
-            m_Selector->m_ResolveDepth > 0;
+            depth > 0;
         if ( deeper ) {
             ITERATE ( CHandleRangeMap::TLocMap, idit, master_loc.GetMap() ) {
                 CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first,
@@ -1132,10 +1144,12 @@ void CAnnot_Collector::x_Initialize(const SAnnotSelector& selector,
                 
                 CHandleRange::TRange idrange =
                     idit->second.GetOverlappingRange();
-                SSeqMapSelector sel(CSeqMap::fFindRef,
-                                    m_Selector->m_ResolveDepth-1);
-                if ( m_Selector->m_ResolveMethod ==
-                    SAnnotSelector::eResolve_TSE ) {
+                CSeqMap::TFlags flags = CSeqMap::fFindRef;
+                if ( exact_depth ) {
+                    flags |= CSeqMap::fFindExactLevel;
+                }
+                SSeqMapSelector sel(flags, depth-1);
+                if ( m_Selector->m_ResolveMethod == SAnnotSelector::eResolve_TSE ) {
                     sel.SetLimitTSE(bh.GetTSE_Handle());
                 }
                 CSeqMap_CI smit(bh, sel, idrange.GetFrom());
@@ -2227,6 +2241,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2005/12/15 21:38:52  vasilche
+* Implemented exact resolve depth in annot iterators.
+*
 * Revision 1.68  2005/10/31 19:24:55  vasilche
 * Fixed strand filtering when iterating over interval in OverlapIntervals mode.
 *
