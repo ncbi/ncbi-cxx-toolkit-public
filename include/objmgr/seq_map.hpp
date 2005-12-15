@@ -122,14 +122,15 @@ public:
 
     /// Segment type flags
     enum EFlags {
-        fFindData     = (1<<0),
-        fFindGap      = (1<<1),
-        fFindLeafRef  = (1<<2),
-        fFindInnerRef = (1<<3),
-        fFindRef      = (fFindLeafRef | fFindInnerRef),
-        fFindAny      = fFindData | fFindGap | fFindRef,
-        fFindAnyLeaf  = fFindData | fFindGap | fFindLeafRef,
-        fDefaultFlags = fFindAnyLeaf
+        fFindData       = (1<<0),
+        fFindGap        = (1<<1),
+        fFindLeafRef    = (1<<2),
+        fFindInnerRef   = (1<<3),
+        fFindExactLevel = (1<<4),
+        fFindRef        = (fFindLeafRef | fFindInnerRef),
+        fFindAny        = fFindData | fFindGap | fFindRef,
+        fFindAnyLeaf    = fFindData | fFindGap | fFindLeafRef,
+        fDefaultFlags   = fFindAnyLeaf
     };
     typedef int TFlags;
 

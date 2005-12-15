@@ -160,9 +160,13 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             return *this;
         }
 
+    size_t GetResolveCount(void) const
+        {
+            return m_MaxResolveCount;
+        }
     bool CanResolve(void) const
         {
-            return m_MaxResolveCount > 0;
+            return GetResolveCount() > 0;
         }
 
     void PushResolve(void)
@@ -637,6 +641,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2005/12/15 19:15:19  vasilche
+* Added CSeqMap::fFindExactLevel flag.
+*
 * Revision 1.24  2005/06/29 16:10:10  vasilche
 * Removed declarations of obsolete methods.
 *

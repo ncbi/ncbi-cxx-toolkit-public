@@ -486,6 +486,10 @@ bool CSeqMap_CI::x_Prev(void)
 
 bool CSeqMap_CI::x_Found(void) const
 {
+    if ( (GetFlags() & CSeqMap::fFindExactLevel) &&
+         m_Selector.GetResolveCount() != 0 ) {
+        return false;
+    }
     switch ( x_GetSegment().m_SegType ) {
     case CSeqMap::eSeqRef:
         if ( (GetFlags() & CSeqMap::fFindLeafRef) != 0 ) {
@@ -566,6 +570,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/12/15 19:15:19  vasilche
+* Added CSeqMap::fFindExactLevel flag.
+*
 * Revision 1.38  2005/04/05 13:41:41  vasilche
 * Avoid creation of CTSE_Handle until necessary.
 *
