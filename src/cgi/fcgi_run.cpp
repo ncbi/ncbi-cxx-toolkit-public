@@ -320,9 +320,15 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         // Make sure to restore old diagnostic state after each iteration
         CDiagRestorer diag_restorer;
 
-        // Show PID and iteration # in all of the the diagnostics (as prefix)
-        const string prefix(prefix_pid + NStr::IntToString(m_Iteration));
-        PushDiagPostPrefix(prefix.c_str());
+        if ( CDiagContext::IsSetOldPostFormat() ) {
+            // Old format uses prefix for iteration
+            const string prefix(prefix_pid + NStr::IntToString(m_Iteration));
+            PushDiagPostPrefix(prefix.c_str());
+        }
+        else {
+            // Show PID and iteration # in all of the the diagnostics
+            SetFastCGIIteration(m_Iteration);
+        }
 
         _TRACE("CCgiApplication::FastCGI: " << m_Iteration
                << " iteration of " << max_iterations);
@@ -572,6 +578,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.56  2005/12/15 20:24:45  grichenk
+ * Use SetFastCGIIteration to set iteration.
+ *
  * Revision 1.55  2005/12/01 19:45:57  vakatov
  * Return with exit code zero rather than 112 when watch file has changed.
  *
