@@ -53,6 +53,7 @@ BEGIN_NCBI_SCOPE
 class CCgiServerContext;
 class CCgiStatistics;
 class CCgiWatchFile;
+class ICgiSession;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -216,7 +217,10 @@ protected:
     /// the CCgiApplication.
     void SetCafService(CCookieAffinity* caf);
 
+
 protected:
+
+    virtual ICgiSession* GetSessionImpl() const;
 
     /// Bit flags for CCgiRequest
     int                       m_RequestFlags;
@@ -335,6 +339,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2005/12/15 18:21:15  didenko
+* Added CGI session support
+*
 * Revision 1.47  2005/05/31 13:37:59  didenko
 * Made m_RequestFlags a protected member
 *

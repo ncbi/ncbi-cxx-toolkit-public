@@ -47,6 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class ICgiSession;
 
 class NCBI_XCGI_EXPORT CCgiResponse
 {
@@ -118,6 +119,19 @@ protected:
     // Prohibit copy constructor and assignment operator
     CCgiResponse(const CCgiResponse&);
     CCgiResponse& operator= (const CCgiResponse&);
+
+private:
+    ICgiSession* m_Session;
+    string m_SessionCookieName;
+    string m_SessionCookieDomain;
+    string m_SessionCookiePath;
+
+public:
+    void x_RegisterSessionImpl(ICgiSession& session, 
+                               const string& cookie_name,
+                               const string& cookie_domain,
+                               const string& cookie_path);
+
 };
 
 
@@ -198,6 +212,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.19  2005/12/15 18:21:15  didenko
+ * Added CGI session support
+ *
  * Revision 1.18  2005/11/08 20:30:41  grichenk
  * Added SetLocation(CUrl)
  *

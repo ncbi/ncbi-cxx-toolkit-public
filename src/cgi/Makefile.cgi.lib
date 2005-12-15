@@ -5,7 +5,7 @@
 #################################
 
 SRC = ncbicgi cgiapp cgictx ncbicgir ncbires ref_args cgi_run cgi_util \
-      cgi_serial
+      cgi_serial cgi_session
 LIB = xcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)

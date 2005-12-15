@@ -36,6 +36,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
+#include <cgi/cgi_session.hpp>
 
 #ifdef NCBI_OS_UNIX
 #  include <unistd.h>
@@ -97,6 +98,15 @@ int CCgiApplication::Run(void)
         m_Context.reset( CreateContext() );
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
+        string cname = GetConfig().GetString("SESSION-COOKIE", "Name", 
+                                              "ncbi_sessionid");
+        string cdomain = GetConfig().GetString("SESSION-COOKIE", "Domain", 
+                                                ".ncbi.nlm.nih.gov");
+        string cpath = GetConfig().GetString("SESSION-COOKIE", "Path","/");
+        ICgiSession* session = GetSessionImpl();
+        m_Context->GetRequest().x_RegisterSessionImpl(*session, cname);
+        m_Context->GetResponse().x_RegisterSessionImpl(*session,
+                                                       cname, cdomain, cpath);
         result = ProcessRequest(*m_Context);
         _TRACE("CCgiApplication::Run: flushing");
         m_Context->GetResponse().Flush();
@@ -567,6 +577,10 @@ CCgiStatistics* CCgiApplication::CreateStat()
     return new CCgiStatistics(*this);
 }
 
+ICgiSession* CCgiApplication::GetSessionImpl() const 
+{
+    return 0;
+}
 
 void CCgiApplication::x_AddLBCookie()
 {
@@ -629,7 +643,6 @@ void CCgiApplication::x_AddLBCookie()
 
     GetContext().GetResponse().Cookies().Add(cookie);
 }
-
 
 
 ///////////////////////////////////////////////////////
@@ -807,6 +820,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.63  2005/12/15 18:21:15  didenko
+* Added CGI session support
+*
 * Revision 1.62  2005/05/31 13:37:59  didenko
 * Made m_RequestFlags a protected member
 *

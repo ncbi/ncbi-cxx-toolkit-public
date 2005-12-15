@@ -546,7 +546,7 @@ typedef list<string>                                     TCgiIndexes;
 class CNcbiArguments;
 class CNcbiEnvironment;
 class CTrackingEnvHolder;
-
+class ICgiSession;
 
 
 ///////////////////////////////////////////////////////
@@ -653,6 +653,14 @@ public:
     const TCgiIndexes& GetIndexes(void) const;
     TCgiIndexes& GetIndexes(void);
 
+    enum ESessionCreateMode {
+        eCreateIfNotExist,
+        eDontCreateIfNotExist
+    };
+    /// Get session
+    ///
+    ICgiSession& GetSession(ESessionCreateMode mode = eCreateIfNotExist) const;
+
     /// Return pointer to the input stream.
     ///
     /// Return NULL if the input stream is absent, or if it has been
@@ -741,7 +749,16 @@ private:
     CCgiRequest(const CCgiRequest&);
     CCgiRequest& operator= (const CCgiRequest&);
 
+    string x_RetrieveSessionId() const;
+
     mutable auto_ptr<CTrackingEnvHolder> m_TrackingEnvHolder;
+    ICgiSession* m_Session;
+    string m_SessionCookieName;
+
+public:
+    void x_RegisterSessionImpl(ICgiSession& session, 
+                               const string& cookie_name);
+
 };  // CCgiRequest
 
 
@@ -912,6 +929,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.81  2005/12/15 18:21:15  didenko
+* Added CGI session support
+*
 * Revision 1.80  2005/10/13 18:30:15  grichenk
 * Added cgi_util with CCgiArgs and CUrl.
 * Moved URL encoding/decoding functions to cgi_util.

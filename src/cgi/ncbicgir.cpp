@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <cgi/ncbicgir.hpp>
 #include <cgi/cgi_exception.hpp>
+#include <cgi/cgi_session.hpp>
 #include <time.h>
 
 // Mac OS has unistd.h, but STDOUT_FILENO is not defined
@@ -68,7 +69,8 @@ inline bool s_ZeroTime(const tm& date)
 CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
     : m_IsRawCgi(false),
       m_Output(os ? os : &NcbiCout),
-      m_OutputFD(os ? ofd : STDOUT_FILENO) // "os" is NOT a typo
+      m_OutputFD(os ? ofd : STDOUT_FILENO), // "os" is NOT a typo
+      m_Session(NULL)
 {
     return;
 }
@@ -183,7 +185,20 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     if ( !HaveHeaderValue(sm_ContentTypeName) ) {
         os << sm_ContentTypeName << ": " << sm_ContentTypeDefault << HTTP_EOL;
     }
-
+    
+    if (m_Session && m_Session->GetStatus() != ICgiSession::eNotLoaded) {
+        CCgiCookie cookie(m_SessionCookieName,
+                          m_Session->GetSessionId(), 
+                          m_SessionCookieDomain,
+                          m_SessionCookiePath);
+        if (m_Session->GetStatus() == ICgiSession::eDeleted) {
+            CTime exp(CTime::eCurrent, CTime::eGmt);
+            exp.AddMinute(-5);
+            cookie.SetExpTime(exp);
+        }
+        const_cast<CCgiResponse*>(this)->Cookies().Add(cookie);
+    }
+    
     // Cookies (if any)
     if ( !Cookies().Empty() ) {
         os << m_Cookies;
@@ -207,6 +222,17 @@ void CCgiResponse::Flush(void) const
     out() << NcbiFlush;
 }
 
+void CCgiResponse::x_RegisterSessionImpl(ICgiSession& session,
+                                         const string& cookie_name,
+                                         const string& cookie_domain,
+                                         const string& cookie_path)
+{
+    _ASSERT(!m_Session);
+    m_Session = &session;
+    m_SessionCookieName = cookie_name;
+    m_SessionCookieDomain = cookie_domain;
+    m_SessionCookiePath = cookie_path;
+}
 
 END_NCBI_SCOPE
 
@@ -214,6 +240,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.24  2005/12/15 18:21:15  didenko
+* Added CGI session support
+*
 * Revision 1.23  2005/11/08 20:30:49  grichenk
 * Added SetLocation(CUrl)
 *

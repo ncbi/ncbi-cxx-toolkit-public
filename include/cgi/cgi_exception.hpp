@@ -109,8 +109,10 @@ public:
         eEntry,      //< Entry value
         eAttribute,  //< Entry attribute
         eFormat,     //< Format or encoding
-        eData        //< Syntaxically correct but contains odd data (from the
+        eData,       //< Syntaxically correct but contains odd data (from the
                      //< point of view of particular CGI application)
+        eSessionImpNotRegistred,
+        eSessionDoesnotExist
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -122,6 +124,8 @@ public:
         case eAttribute: return "Bad part attribute in multipart HTTP request";
         case eFormat:    return "Misformatted data in HTTP request";
         case eData:      return "Unexpected or inconsistent HTTP request";
+        case eSessionImpNotRegistred: return "Session implementaion is not registred";
+        case eSessionDoesnotExist: return "Session does not exsit";
         default:         return CException::GetErrCodeString();
         }
     }
@@ -247,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/15 18:21:15  didenko
+ * Added CGI session support
+ *
  * Revision 1.7  2005/12/08 21:33:20  grichenk
  * Added CCgiArgsException and CCgiArgsParserException
  *
