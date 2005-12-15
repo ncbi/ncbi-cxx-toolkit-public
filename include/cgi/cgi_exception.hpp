@@ -202,7 +202,8 @@ public:
     enum EErrCode {
         eFormat,     //< Format of arguments
         eValue,      //< Invalid argument value
-        eName        //< Argument does not exist
+        eName,       //< Argument does not exist
+        eNoArgs      //< CUrl contains no arguments
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -210,6 +211,7 @@ public:
         case eFormat:    return "Misformatted CGI query string";
         case eValue:     return "Invalid argument value";
         case eName:      return "Unknown argument name";
+        case eNoArgs:    return "Arguments list is empty";
         default:         return CException::GetErrCodeString();
         }
     }
@@ -251,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/12/15 21:53:38  grichenk
+ * Check if ArgsList is initialized (initialize in non-const GetArgs())
+ *
  * Revision 1.8  2005/12/15 18:21:15  didenko
  * Added CGI session support
  *

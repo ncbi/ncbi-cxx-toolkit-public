@@ -487,6 +487,16 @@ string CUrl::ComposeUrl(CCgiArgs::EAmpEncoding amp_enc,
 }
 
 
+const CCgiArgs& CUrl::GetArgs(void) const
+{
+    if ( !m_ArgsList.get() ) {
+        NCBI_THROW(CCgiArgsException, eNoArgs,
+            "The URL has no arguments");
+    }
+    return *m_ArgsList;
+}
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -1113,6 +1123,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2005/12/15 21:53:38  grichenk
+* Check if ArgsList is initialized (initialize in non-const GetArgs())
+*
 * Revision 1.10  2005/12/08 21:33:21  grichenk
 * Added CCgiArgsException and CCgiArgsParserException
 *

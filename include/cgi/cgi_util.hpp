@@ -396,12 +396,10 @@ public:
         { return m_ArgsList.get() != 0; }
 
     /// Get const list of arguments
-    const CCgiArgs& GetArgs(void) const
-        { return *m_ArgsList; }
+    const CCgiArgs& GetArgs(void) const;
 
     /// Get list of arguments
-    CCgiArgs& GetArgs(void)
-        { return *m_ArgsList; }
+    CCgiArgs& GetArgs(void);
 
     CUrl(const CUrl& url);
     CUrl& operator=(const CUrl& url);
@@ -625,6 +623,16 @@ void CUrl::x_SetArgs(const string& args,
 
 
 inline
+CCgiArgs& CUrl::GetArgs(void)
+{
+    if ( !m_ArgsList.get() ) {
+        x_SetArgs(kEmptyStr, *GetDefaultEncoder());
+    }
+    return *m_ArgsList;
+}
+
+
+inline
 CCgiArgs::const_iterator CCgiArgs::FindFirst(const string& name) const
 {
     return x_Find(name, m_Args.begin());
@@ -657,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/12/15 21:53:38  grichenk
+ * Check if ArgsList is initialized (initialize in non-const GetArgs())
+ *
  * Revision 1.9  2005/12/08 21:33:20  grichenk
  * Added CCgiArgsException and CCgiArgsParserException
  *
@@ -677,6 +688,9 @@ END_NCBI_SCOPE
  * Added ampersand encoding flag
  *
  * $Log$
+ * Revision 1.10  2005/12/15 21:53:38  grichenk
+ * Check if ArgsList is initialized (initialize in non-const GetArgs())
+ *
  * Revision 1.9  2005/12/08 21:33:20  grichenk
  * Added CCgiArgsException and CCgiArgsParserException
  *
