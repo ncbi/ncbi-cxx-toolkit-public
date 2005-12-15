@@ -107,7 +107,7 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
     typedef CSeqMap::TFlags TFlags;
 
     SSeqMapSelector(void);
-    SSeqMapSelector(CSeqMap::EFlags flags, size_t resolve_count = 0);
+    SSeqMapSelector(TFlags flags, size_t resolve_count = 0);
 
     /// Find segment containing the position
     SSeqMapSelector& SetPosition(TSeqPos pos)
@@ -641,6 +641,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2005/12/15 21:32:51  vasilche
+* Fixed argument type EFlags -> TFlags.
+*
 * Revision 1.25  2005/12/15 19:15:19  vasilche
 * Added CSeqMap::fFindExactLevel flag.
 *

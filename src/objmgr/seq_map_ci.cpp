@@ -61,7 +61,7 @@ SSeqMapSelector::SSeqMapSelector(void)
 }
 
 
-SSeqMapSelector::SSeqMapSelector(CSeqMap::EFlags flags, size_t resolve_count)
+SSeqMapSelector::SSeqMapSelector(TFlags flags, size_t resolve_count)
     : m_Position(0),
       m_Length(kInvalidSeqPos),
       m_MinusStrand(false),
@@ -570,6 +570,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/12/15 21:32:51  vasilche
+* Fixed argument type EFlags -> TFlags.
+*
 * Revision 1.39  2005/12/15 19:15:19  vasilche
 * Added CSeqMap::fFindExactLevel flag.
 *
