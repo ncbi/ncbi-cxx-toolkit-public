@@ -2037,9 +2037,9 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
         if ( !F_ISSET(flags, fCF_Overwrite) ) {
             return false;
         }
-        // Copy only if destination is older, otherwise just remove source
+        // Copy only if destination is older
         if ( F_ISSET(flags, fCF_Update)  &&  !src.IsNewer(dst.GetPath(),0) ) {
-            return src.Remove();
+            return true;
         }
         // Backup destination entry first
         if ( F_ISSET(flags, fCF_Backup) ) {
@@ -2745,10 +2745,10 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
             if ( !F_ISSET(flags, fCF_Overwrite) ) {
                 return false;
             }
-            // Copy only if destination is older, otherwise just remove source
+            // Copy only if destination is older
             if ( F_ISSET(flags, fCF_Update)  &&
                  !src.IsNewer(dst.GetPath(), 0) ) {
-                return src.Remove(eRecursive);
+                return true;
             }
             // Backup destination entry first
             if ( F_ISSET(flags, fCF_Backup) ) {
@@ -2915,9 +2915,9 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
         if ( !F_ISSET(flags, fCF_Overwrite) ) {
             return false;
         }
-        // Copy only if destination is older, otherwise just remove source
+        // Copy only if destination is older
         if ( F_ISSET(flags, fCF_Update)  &&  !IsNewer(dst.GetPath(), 0)) {
-            return Remove();
+            return true;
         }
         // Backup destination entry first
         if ( F_ISSET(flags, fCF_Backup) ) {
@@ -3635,6 +3635,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.130  2005/12/15 19:12:57  ivanov
+ * *::Copy() -- cut & paste bug: do not remove source file on fCF_Update
+ *
  * Revision 1.129  2005/12/08 14:19:45  ivanov
  * MS Windows: CDirEntry::GetMode():
  *     Combine _stat() permissions with effective user permissions.
