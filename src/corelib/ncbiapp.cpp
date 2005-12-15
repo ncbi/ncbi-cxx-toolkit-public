@@ -274,6 +274,9 @@ int CNcbiApplication::AppMain
         }
     }
     SetProgramDisplayName(appname);
+    if ( !CDiagContext::IsSetOldPostFormat() ) {
+        GetDiagContext().SetProperty("AppName", appname);
+    }
 
     // Make sure we have something as our 'real' executable's name.
     // though if it does not contain a full path it won't be much use.
@@ -1006,6 +1009,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.112  2005/12/15 20:25:07  grichenk
+ * Set AppName diag context property.
+ *
  * Revision 1.111  2005/11/17 18:47:18  grichenk
  * Replaced GetConfigXXX with CParam<>.
  *
