@@ -68,6 +68,7 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false),
+      m_ExactDepth(false),
       m_ExcludeExternal(false),
       m_CollectSeq_annots(false)
 {
@@ -91,6 +92,7 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false),
+      m_ExactDepth(false),
       m_ExcludeExternal(false),
       m_CollectSeq_annots(false)
 {
@@ -110,6 +112,7 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_MaxSize(kMax_UInt),
       m_NoMapping(false),
       m_AdaptiveDepth(false),
+      m_ExactDepth(false),
       m_ExcludeExternal(false),
       m_CollectSeq_annots(false)
 {
@@ -141,6 +144,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
         m_NoMapping = sel.m_NoMapping;
         m_AdaptiveDepth = sel.m_AdaptiveDepth;
+        m_ExactDepth = sel.m_ExactDepth;
         m_ExcludeExternal = sel.m_ExcludeExternal;
         m_CollectSeq_annots = sel.m_CollectSeq_annots;
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
@@ -615,6 +619,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2005/12/15 21:33:55  vasilche
+* Added SetExactDepth() option.
+* Fixed constness of getters.
+*
 * Revision 1.28  2005/10/31 20:02:47  vasilche
 * Fixed SAnnotSelector::IncludedFeat*type() when annot type is not set.
 *

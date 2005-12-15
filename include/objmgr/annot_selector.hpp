@@ -164,7 +164,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
-    EOverlapType GetOverlapType(void)
+    EOverlapType GetOverlapType(void) const
         {
             return m_OverlapType;
         }
@@ -182,7 +182,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return SetOverlapType(eOverlap_TotalRange);
         }
 
-    ESortOrder GetSortOrder(void)
+    ESortOrder GetSortOrder(void) const
         {
             return m_SortOrder;
         }
@@ -192,7 +192,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
-    EResolveMethod GetResolveMethod(void)
+    EResolveMethod GetResolveMethod(void) const
         {
             return m_ResolveMethod;
         }
@@ -214,7 +214,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return SetResolveMethod(eResolve_All);
         }
 
-    int GetResolveDepth(void)
+    int GetResolveDepth(void) const
         {
             return m_ResolveDepth;
         }
@@ -225,7 +225,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     typedef vector<SAnnotTypeSelector> TAdaptiveTriggers;
-    bool GetAdaptiveDepth(void)
+    bool GetAdaptiveDepth(void) const
         {
             return m_AdaptiveDepth;
         }
@@ -236,9 +236,19 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
     SAnnotSelector& SetAdaptiveTrigger(const SAnnotTypeSelector& sel);
 
+    SAnnotSelector& SetExactDepth(bool value = true)
+        {
+            m_ExactDepth = value;
+            return *this;
+        }
+    bool GetExactDepth(void) const
+        {
+            return m_ExactDepth;
+        }
+
     /// set maximum count of annotations to find
     /// if max_size == 0 - no limit
-    size_t GetMaxSize(void)
+    size_t GetMaxSize(void) const
         {
             return m_MaxSize;
         }
@@ -276,7 +286,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector& SetLimitSeqEntry(const CSeq_entry_Handle& limit);
     SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot_Handle& limit);
 
-    EUnresolvedFlag GetUnresolvedFlag(void)
+    EUnresolvedFlag GetUnresolvedFlag(void) const
         {
             return m_UnresolvedFlag;
         }
@@ -356,7 +366,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool ExcludedTSE(const CSeq_entry_Handle& tse) const;
 
     // No locations mapping flag. Set to true by CAnnot_CI.
-    bool GetNoMapping(void)
+    bool GetNoMapping(void) const
         {
             return m_NoMapping;
         }
@@ -410,11 +420,12 @@ protected:
     TAnnotsNames          m_ExcludeAnnotsNames;
     bool                  m_NoMapping;
     bool                  m_AdaptiveDepth;
+    bool                  m_ExactDepth;
     bool                  m_ExcludeExternal;
     bool                  m_CollectSeq_annots;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
-    TAnnotTypesBitset        m_AnnotTypesBitset;
+    TAnnotTypesBitset     m_AnnotTypesBitset;
 };
 
 
@@ -427,6 +438,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/12/15 21:33:55  vasilche
+* Added SetExactDepth() option.
+* Fixed constness of getters.
+*
 * Revision 1.47  2005/04/11 17:51:38  grichenk
 * Fixed m_CollectSeq_annots initialization.
 * Avoid copying SAnnotSelector in CAnnotTypes_CI.
