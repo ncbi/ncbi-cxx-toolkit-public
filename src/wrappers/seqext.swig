@@ -171,14 +171,17 @@ objmgr/annot_types_ci.hpp
 objmgr/bioseq_ci.hpp
 objmgr/bioseq_handle.hpp
 objmgr/bioseq_set_handle.hpp
+objmgr/blob_id.hpp
 objmgr/data_loader.hpp
 objmgr/data_loader_factory.hpp
+objmgr/edit_saver.hpp
 objmgr/feat_ci.hpp
 objmgr/graph_ci.hpp
 objmgr/object_manager.hpp
 objmgr/objmgr_exception.hpp
 objmgr/objmgr_version.hpp
 objmgr/scope.hpp
+objmgr/scope_transaction.hpp
 objmgr/seq_align_handle.hpp
 objmgr/seq_annot_ci.hpp
 objmgr/seq_annot_handle.hpp
@@ -189,6 +192,7 @@ objmgr/seq_feat_handle.hpp
 objmgr/seq_graph_handle.hpp
 objects/seq/seq_id_handle.hpp
 objects/seq/seq_id_mapper.hpp
+objmgr/seq_id_translator.hpp
 objmgr/seq_loc_mapper.hpp
 objmgr/seq_map.hpp
 objmgr/seq_map_ci.hpp
@@ -205,6 +209,8 @@ objmgr/util/obj_sniff.hpp
 objmgr/util/sequence.hpp
 objmgr/util/weight.hpp
 objmgr/util/seq_loc_util.hpp
+
+objtools/cleanup/cleanup.hpp
 
 objtools/edit/edit_exception.hpp
 objtools/edit/promote.hpp
@@ -314,6 +320,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/12/15 20:31:24  jcherry
+ * Added headers
+ *
  * Revision 1.11  2005/09/27 18:18:36  jcherry
  * Fixed wrapping of operator<<(CFlatItemOStream& os, const IFlatItem* item)
  *

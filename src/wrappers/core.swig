@@ -141,6 +141,7 @@ corelib/ncbitime.hpp
 corelib/ncbiutil.hpp
 corelib/plugin_manager.hpp
 corelib/plugin_manager_impl.hpp
+corelib/syslog.hpp
 corelib/version.hpp
 util/compress/bzip2.hpp
 util/compress/compress.hpp
@@ -171,10 +172,12 @@ util/range_coll.hpp
 util/rangemap.hpp
 util/reader_writer.hpp
 util/regexp.hpp
+util/request_control.hpp
 util/resize_iter.hpp
 util/resource_pool.hpp
 util/rwstream.hpp
 util/rwstreambuf.hpp
+util/sgml_entity.hpp
 util/smalldns.hpp
 util/static_map.hpp
 util/static_set.hpp
@@ -182,8 +185,12 @@ util/strbuffer.hpp
 util/stream_utils.hpp
 util/strsearch.hpp
 util/thread_pool.hpp
+util/transmissionrw.hpp
+// util/unicode.hpp and util/utf8.hpp both define ncbi::utf8::eSkip
+//util/unicode.hpp
 util/utf8.hpp
 util/util_exception.hpp
+util/weakmap.hpp
 util/cache/icache.hpp
 util/dictionary.hpp
 // weakmap.inl won't compile
@@ -319,6 +326,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/12/15 20:31:24  jcherry
+ * Added headers
+ *
  * Revision 1.11  2005/12/13 22:50:28  jcherry
  * Added headers
  *

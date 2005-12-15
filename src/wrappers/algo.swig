@@ -66,6 +66,9 @@ VECTOR_CREF(vector_CRef_CSeq_align, ncbi::objects::CSeq_align);
 %ignore ncbi::CSymDustMasker::GetMaskedInts(objects::CSeq_id& seq_id,
                                             const sequence_type& seq);
 
+%ignore ncbi::gnomon::operator>>;
+%ignore ncbi::gnomon::operator<<;
+
 
 %%
 
@@ -123,6 +126,7 @@ algo/blast/api/phiblast_nucl_options.hpp
 algo/blast/api/phiblast_prot_options.hpp
 algo/blast/api/psi_pssm_input.hpp
 algo/blast/api/psibl2seq.hpp
+algo/blast/api/psiblast.hpp
 algo/blast/api/psiblast_iteration.hpp
 algo/blast/api/psiblast_options.hpp
 algo/blast/api/pssm_input.hpp
@@ -153,6 +157,7 @@ algo/blast/api/uniform_search.hpp
 algo/dustmask/symdust.hpp
 algo/gnomon/gnomon.hpp
 algo/gnomon/gnomon_exception.hpp
+algo/gnomon/gnomon_model.hpp
 // next two trouble for Perl?
 //algo/phy_tree/bio_tree.hpp
 //algo/phy_tree/bio_tree_conv.hpp
@@ -277,6 +282,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/12/15 20:31:24  jcherry
+ * Added headers
+ *
  * Revision 1.13  2005/12/13 22:50:28  jcherry
  * Added headers
  *
