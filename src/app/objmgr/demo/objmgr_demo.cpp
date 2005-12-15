@@ -1059,47 +1059,63 @@ int CDemoApp::Run(void)
             TSeqPos actual_length = actual_end; actual_length -= range_from;
             const CSeqMap& seq_map = handle.GetSeqMap();
             NcbiCout << "Mol type: " << seq_map.GetMol() << NcbiEndl;
-            for (size_t levels = 0;  levels < 4;  ++levels) {
+            for (size_t level = 0;  level < 5;  ++level) {
+                NcbiCout << "Level " << level << NcbiEndl;
                 TSeqPos total_length = 0;
+                CSeqMap::TFlags flags =
+                    CSeqMap::fDefaultFlags | CSeqMap::fFindExactLevel;
                 CSeqMap::const_iterator seg =
                     seq_map.ResolvedRangeIterator(&scope,
                                                   range_from,
                                                   range_length,
-                                                  eNa_strand_plus, levels);
-                _ASSERT(seg.GetPosition() == range_from);
+                                                  eNa_strand_plus,
+                                                  level,
+                                                  flags);
+                _ASSERT(level || seg.GetPosition() == range_from);
                 for ( ;  seg;  ++seg ) {
+                    NcbiCout << " @" << seg.GetPosition() << "-" <<
+                        seg.GetEndPosition() << " +" <<
+                        seg.GetLength() << ": ";
                     switch (seg.GetType()) {
                     case CSeqMap::eSeqRef:
+                        NcbiCout << "ref: " <<
+                            seg.GetRefSeqid().AsString();
                         break;
                     case CSeqMap::eSeqData:
+                        NcbiCout << "data: ";
+                        break;
                     case CSeqMap::eSeqGap:
+                        NcbiCout << "gap: ";
                         break;
                     case CSeqMap::eSeqEnd:
+                        NcbiCout << "end: ";
                         _ASSERT("Unexpected END segment" && 0);
                         break;
                     default:
+                        NcbiCout << "?: ";
                         _ASSERT("Unexpected segment type" && 0);
                         break;
                     }
                     total_length += seg.GetLength();
+                    NcbiCout << NcbiEndl;
                 }
-                _ASSERT(total_length == actual_length);
+                _ASSERT(level || total_length == actual_length);
                 _ASSERT(seg.GetPosition() == actual_end);
                 _ASSERT(seg.GetLength() == 0);
-                total_length = 0;
+                TSeqPos new_length = 0;
                 for ( --seg; seg; --seg ) {
                     _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
-                    total_length += seg.GetLength();
+                    new_length += seg.GetLength();
                 }
-                _ASSERT(total_length == actual_length);
-                _ASSERT(seg.GetPosition() == range_from);
+                _ASSERT(total_length == new_length);
+                _ASSERT(level || seg.GetPosition() == range_from);
                 _ASSERT(seg.GetLength() == 0);
-                total_length = 0;
+                new_length = 0;
                 for ( ++seg; seg; ++seg ) {
                     _ASSERT(seg.GetType() != CSeqMap::eSeqEnd);
-                    total_length += seg.GetLength();
+                    new_length += seg.GetLength();
                 }
-                _ASSERT(total_length == actual_length);
+                _ASSERT(total_length == new_length);
                 _ASSERT(seg.GetPosition() == actual_end);
                 _ASSERT(seg.GetLength() == 0);
             }
@@ -1168,6 +1184,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2005/12/15 19:15:54  vasilche
+* Check exact level CSeqMap iteration.
+*
 * Revision 1.109  2005/12/13 20:52:11  vasilche
 * Do not use CGBDataLoader if other loader is attached.
 *
