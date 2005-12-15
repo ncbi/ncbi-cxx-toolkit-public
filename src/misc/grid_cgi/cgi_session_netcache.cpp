@@ -60,7 +60,7 @@ CCgiSession_Netcache::~CCgiSession_Netcache()
 void CCgiSession_Netcache::CreateNewSession()
 {
     m_Blobs.clear();
-    m_SessionId.clear();
+    m_SessionId.erase();
     x_Reset();
     m_SessionId = m_Storage->CreateEmptyBlob();
     m_Status = eLoaded;
@@ -70,7 +70,7 @@ void CCgiSession_Netcache::CreateNewSession()
 ICgiSession::EStatus CCgiSession_Netcache::LoadSession(const string& sessionid)
 {
     m_Blobs.clear();
-    m_SessionId.clear();
+    m_SessionId.erase();
     x_Reset();
     string master_value;
     try {
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/15 21:56:16  ucko
+ * Use string::erase rather than string::clear for GCC 2.95 compatibility.
+ *
  * Revision 1.1  2005/12/15 18:21:16  didenko
  * Added CGI session support
  *
