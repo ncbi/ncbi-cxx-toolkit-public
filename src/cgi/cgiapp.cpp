@@ -198,7 +198,7 @@ CNcbiResource& CCgiApplication::x_GetResource( void ) const
 
 void CCgiApplication::Init(void)
 {
-    // Convert multi-line diagnostic messages into one-line ones by default
+    // Convert multi-line diagnostic messages into one-line ones by default.
     SetDiagPostFlag(eDPF_PreMergeLines);
     SetDiagPostFlag(eDPF_MergeLines);
 
@@ -455,6 +455,12 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
 
     TDiagPostFlags defaults = (eDPF_Prefix | eDPF_Severity
                                | eDPF_ErrCode | eDPF_ErrSubCode);
+
+    if ( !CDiagContext::IsSetOldPostFormat() ) {
+        defaults |= (eDPF_UID | eDPF_PID | eDPF_Iteration |
+            eDPF_SerialNo | eDPF_ErrorID);
+    }
+
     TDiagPostFlags new_flags = 0;
 
     bool   is_set;
@@ -475,6 +481,14 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
         s_FlagMap["all"]         = eDPF_All;
         s_FlagMap["trace"]       = eDPF_Trace;
         s_FlagMap["log"]         = eDPF_Log;
+        s_FlagMap["errorid"]     = eDPF_ErrorID;
+        s_FlagMap["location"]    = eDPF_Location;
+        s_FlagMap["pid"]         = eDPF_PID;
+        s_FlagMap["tid"]         = eDPF_TID;
+        s_FlagMap["serial"]      = eDPF_SerialNo;
+        s_FlagMap["serial_thr"]  = eDPF_SerialNo_Thread;
+        s_FlagMap["iteration"]   = eDPF_Iteration;
+        s_FlagMap["uid"]         = eDPF_UID;
     }
     list<string> flags;
     NStr::Split(format, " ", flags);
@@ -820,6 +834,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.64  2005/12/15 20:24:11  grichenk
+* More diag formatting flags. More default diag flags for new-style formatting.
+*
 * Revision 1.63  2005/12/15 18:21:15  didenko
 * Added CGI session support
 *
