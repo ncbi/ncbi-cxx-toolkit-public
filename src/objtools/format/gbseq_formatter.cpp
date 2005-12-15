@@ -145,18 +145,18 @@ CGBSeq::TStrandedness s_GBSeqStrandedness(CSeq_inst::TStrand strand)
 {
     switch ( strand ) {
     case CSeq_inst::eStrand_ss:
-        return CGBSeq::eStrandedness_single_stranded;
+        return "single";  // eStrandedness_single_stranded
     case CSeq_inst::eStrand_ds:
-        return CGBSeq::eStrandedness_double_stranded;
+        return "double";  // eStrandedness_double_stranded
     case CSeq_inst::eStrand_mixed:
-        return CGBSeq::eStrandedness_mixed_stranded;
+        return "mixed";  // eStrandedness_mixed_stranded
     case CSeq_inst::eStrand_other:
     case CSeq_inst::eStrand_not_set:
     default:
         break;
     }
 
-    return CGBSeq::eStrandedness_not_set;
+    return "?";  // eStrandedness_not_set;
 }
 
 
@@ -164,42 +164,42 @@ CGBSeq::TMoltype s_GBSeqMoltype(CMolInfo::TBiomol biomol)
 {
     switch ( biomol ) {
     case CMolInfo::eBiomol_unknown:
-        return CGBSeq::eMoltype_nucleic_acid;
+        return "?";  // eMoltype_nucleic_acid
     case CMolInfo::eBiomol_genomic:
     case CMolInfo::eBiomol_other_genetic:
     case CMolInfo::eBiomol_genomic_mRNA:
-        return CGBSeq::eMoltype_dna;
+        return "DNA";  // eMoltype_dna
     case CMolInfo::eBiomol_pre_RNA:
     case CMolInfo::eBiomol_cRNA:
     case CMolInfo::eBiomol_transcribed_RNA:
-        return CGBSeq::eMoltype_rna;
+        return "RNA";  // eMoltype_rna
     case CMolInfo::eBiomol_mRNA:
-        return CGBSeq::eMoltype_mrna;
+        return "mRNA";  // eMoltype_mrna
     case CMolInfo::eBiomol_rRNA:
-        return CGBSeq::eMoltype_rrna;
+        return "rRNA";  // eMoltype_rrna
     case CMolInfo::eBiomol_tRNA:
-        return CGBSeq::eMoltype_trna;
+        return "tRNA";  // eMoltype_trna
     case CMolInfo::eBiomol_snRNA:
-        return CGBSeq::eMoltype_urna;
+        return "uRNA";  // eMoltype_urna
     case CMolInfo::eBiomol_scRNA:
-        return CGBSeq::eMoltype_snrna;
+        return "snRNA";  // eMoltype_snrna
     case CMolInfo::eBiomol_peptide:
-        return CGBSeq::eMoltype_peptide;
+        return "AA";  // eMoltype_peptide
     case CMolInfo::eBiomol_snoRNA:
-        return CGBSeq::eMoltype_snorna;
+        return "snoRNA";  // eMoltype_snorna
     default:
         break;
     }
-    return CGBSeq::eMoltype_nucleic_acid;
+    return "?";  // eMoltype_nucleic_acid
 }
 
 
 CGBSeq::TTopology s_GBSeqTopology(CSeq_inst::TTopology topology)
 {
     if ( topology == CSeq_inst::eTopology_circular ) {
-        return CGBSeq::eTopology_circular;
+        return "circular";  // eTopology_circular
     }
-    return CGBSeq::eTopology_linear;
+    return "linear";  // eTopology_linear
 }
 
 
@@ -385,9 +385,9 @@ void CGBSeqFormatter::FormatReference
     if ( !journal.empty() ) {
         gbref->SetJournal(journal);
     }
-    if ( ref.GetMUID() != 0 ) {
+    /*if ( ref.GetMUID() != 0 ) {
         gbref->SetMedline(ref.GetMUID());
-    }
+    }*/
     if ( ref.GetPMID() != 0 ) {
         gbref->SetPubmed(ref.GetPMID());
     }
@@ -598,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/12/15 15:56:40  lebedev
+* Fix for asn-spec change in gbseq.asn (enums -> strings)
+*
 * Revision 1.10  2005/06/22 14:34:36  vasilche
 * Use CSynonymsSet::GetSeq_id_Handle() instead of access to internal members.
 *
