@@ -30,6 +30,8 @@
  *
  */
 
+%ignore ncbi::gnomon::CAlignVec::GetScore;
+
 %ignore ncbi::objects::CAnnotObject_Info::GetObject;
 %ignore ncbi::objects::CAnnotObject_Info::GetObjectPointer;
 
@@ -75,6 +77,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/12/15 20:30:11  jcherry
+ * %ignore ncbi::gnomon::CAlignVec::GetScore
+ *
  * Revision 1.13  2005/11/14 15:10:40  jcherry
  * Don't %ignore CObjectIStreamAsnBinary methods (problem fixed)
  *
