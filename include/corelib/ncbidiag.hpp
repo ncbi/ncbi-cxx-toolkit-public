@@ -286,9 +286,9 @@ enum EDiagPostFlag {
                                      ///< if any, not set by default
     eDPF_PID                = 0x1000,  ///< Process ID
     eDPF_TID                = 0x2000,  ///< Thread ID
-    eDPF_ProcessPostNumber  = 0x4000,  ///< Post number in process
-    eDPF_ThreadPostNumber   = 0x8000,  ///< Post number in thread
-    eDPF_Iteration          = 0x10000, ///< Post number in thread
+    eDPF_SerialNo           = 0x4000,  ///< Serial # of the post, process-wide
+    eDPF_SerialNo_Thread    = 0x8000,  ///< Serial # of the post, in the thread
+    eDPF_Iteration          = 0x10000, ///< fcgi iteration number
     eDPF_UID                = 0x20000, ///< UID of the log
 
     eDPF_ErrCode            = eDPF_ErrorID,  ///< @deprecated
@@ -437,6 +437,10 @@ public:
 
     // Print exit message if AutoPrint flag is set.
     void PrintExit(void) const;
+
+    /// Check old/new format flag (for compatibility only)
+    NCBI_XNCBI_EXPORT
+    static bool IsSetOldPostFormat(void);
 
 private:
     // Initialize UID
@@ -1310,6 +1314,11 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.93  2005/12/15 20:22:54  grichenk
+ * Added CDiagContext::IsSetOldPostFormat().
+ * Renamed some flags.
+ * Fixed problem with empty lines if severity is below allowed.
+ *
  * Revision 1.92  2005/12/14 19:02:32  grichenk
  * Redesigned format of messages, added new values.
  * Added CDiagContext.

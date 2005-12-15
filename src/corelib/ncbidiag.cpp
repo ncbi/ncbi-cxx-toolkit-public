@@ -76,6 +76,19 @@ extern "C" {
 #endif
 
 
+///////////////////////////////////////////////////////
+//  Output format parameters
+
+// Use old output format if the flag is set
+NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
+NCBI_PARAM_DEF(bool, Diag, Old_Post_Format, true);
+typedef NCBI_PARAM_TYPE(Diag, Old_Post_Format) TOldPostFormatParam;
+
+// Auto-print context properties on set/change.
+NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
+NCBI_PARAM_DEF(bool, Diag, AutoWrite_Context, false);
+typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
+
 
 ///////////////////////////////////////////////////////
 //  Static variables for Trace and Post filters
@@ -241,10 +254,6 @@ static CSafeStaticPtr<CDiagRecycler> s_DiagRecycler;
 //  CDiagContext::
 
 
-NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
-NCBI_PARAM_DEF(bool, Diag, AutoWrite_Context, false);
-typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
-
 CDiagContext::CDiagContext(void)
     : m_UID(0)
 {
@@ -348,6 +357,12 @@ void CDiagContext::x_PrintMessage(const string& message) const
 }
 
 
+bool CDiagContext::IsSetOldPostFormat(void)
+{
+    return TOldPostFormatParam::GetDefault();
+}
+
+
 CDiagContext& GetDiagContext(void)
 {
     // Make the context live longer than other diag safe-statics
@@ -370,10 +385,6 @@ EDiagSev       CDiagBuffer::sm_PostSeverity       = eDiag_Warning;
 EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
                                                   // to be set on first request
 
-NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
-NCBI_PARAM_DEF(bool, Diag, Old_Post_Format, true);
-typedef NCBI_PARAM_TYPE(Diag, Old_Post_Format) TOldPostFormatParam;
-
 inline
 TDiagPostFlags& CDiagBuffer::sx_GetPostFlags(void)
 {
@@ -383,9 +394,9 @@ TDiagPostFlags& CDiagBuffer::sx_GetPostFlags(void)
     static const TDiagPostFlags s_NewDefaultPostFlags =
         s_OldDefaultPostFlags |
 #if defined(NCBI_THREADS)
-        eDPF_TID | eDPF_ThreadPostNumber |
+        eDPF_TID | eDPF_SerialNo_Thread |
 #endif
-        eDPF_PID | eDPF_ProcessPostNumber;
+        eDPF_PID | eDPF_SerialNo;
     static TDiagPostFlags s_PostFlags = TOldPostFormatParam::GetDefault() ?
         s_OldDefaultPostFlags : s_NewDefaultPostFlags;
     return s_PostFlags;
@@ -483,7 +494,8 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 
 void CDiagBuffer::Flush(void)
 {
-    if ( !m_Diag )
+    // Do nothing if diag severity is lower than allowed
+    if ( !m_Diag  ||  m_Diag->GetSeverity() < sm_PostSeverity )
         return;
 
     CNcbiOstrstream* ostr = dynamic_cast<CNcbiOstrstream*>(m_Stream);
@@ -644,7 +656,6 @@ CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
 {
     return TOldPostFormatParam::GetDefault() ?
         x_OldWrite(os, flags) : x_NewWrite(os, flags);
-
 }
 
 
@@ -834,10 +845,10 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         os << "I:" << m_Iteration << " ";
     }
     // Post number
-    bool print_proc_post = IsSetDiagPostFlag(eDPF_ProcessPostNumber, m_Flags);
+    bool print_proc_post = IsSetDiagPostFlag(eDPF_SerialNo, m_Flags);
     if ( print_proc_post ) {
         os << "#" << m_ProcPost;
-        if ( IsSetDiagPostFlag(eDPF_ThreadPostNumber, m_Flags) ) {
+        if ( IsSetDiagPostFlag(eDPF_SerialNo_Thread, m_Flags) ) {
             os << "/" << m_ThrPost;
         }
         os << " ";
@@ -1854,6 +1865,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.98  2005/12/15 20:22:54  grichenk
+ * Added CDiagContext::IsSetOldPostFormat().
+ * Renamed some flags.
+ * Fixed problem with empty lines if severity is below allowed.
+ *
  * Revision 1.97  2005/12/14 19:02:32  grichenk
  * Redesigned format of messages, added new values.
  * Added CDiagContext.
