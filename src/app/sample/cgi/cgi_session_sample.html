@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Sample CGI Session</title>
+  </head>
+
+  <body>
+	 <form method="post" action="<@SELF_URL@>">
+    <h3><@SESSION_ID@></h3>
+		<INPUT TYPE="submit" NAME="DelSession" VALUE="Delete Session">
+		<INPUT TYPE="submit" NAME="CrtSession" VALUE="Create New Session">
+	 
+	 <hr>
+	 <@SESSION_VARS@>
+		<br>
+
+	 Set Attribute:<br>
+
+		<p>
+		  Name:   <INPUT TYPE="text" NAME="aname" VALUE="<@ATTR_NAME@>">   
+		  Value:  <INPUT TYPE="text" NAME="avalue" VALUE="<@ATTR_VALUE@>">
+		<p>
+		  <INPUT TYPE="submit" NAME="SUBMIT" VALUE="Submit">
+		  <INPUT TYPE="reset"  VALUE="Reset">
+
+	 </form>
+	 
+    <hr>
+    <address><a href="mailto:didenko@ncbi.nlm.nih.gov">Maxim Didenko</a></address>
+<!-- Created: Wed Dec 14 12:41:03 EST 2005 -->
+<!-- hhmts start -->
+Last modified: Thu Dec 15 09:58:31 EST 2005
+<!-- hhmts end -->
+  </body>
+</html>
