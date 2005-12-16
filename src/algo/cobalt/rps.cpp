@@ -99,6 +99,11 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                                vector<SSegmentLoc>& blocklist,
                                CProfileData& profile_data)
 {
+    // scale up the gap penalties used by the aligner, to match
+    // the scaling used by the RPS PSSMs
+
+    /// @todo FIXME the scale factor should be chosen dynamically
+    
     m_Aligner.SetWg(kRpsScaleFactor * m_GapOpen);
     m_Aligner.SetWs(kRpsScaleFactor * m_GapExtend);
     m_Aligner.SetStartWg(kRpsScaleFactor / 2 * m_GapOpen);
@@ -106,6 +111,8 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
     m_Aligner.SetEndWg(kRpsScaleFactor / 2 * m_GapOpen);
     m_Aligner.SetEndWs(kRpsScaleFactor * m_GapExtend);
     m_Aligner.SetEndSpaceFree(false, false, false, false);
+
+    // for each RPS hit
 
     for (int i = 0; i < rps_hits.Size(); i++) {
 
@@ -140,6 +147,10 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
         _ASSERT(itr != blocklist.end() &&
                target.seq_index == itr->seq_index);
+
+        // walk up to the first block that is not
+        // in front of the alignment
+
         while (itr != blocklist.end() &&
                itr->seq_index == target.seq_index &&
                itr->GetTo() < target.GetFrom()) {
@@ -168,6 +179,12 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
     
             int left_fudge, right_fudge;
 
+            // calculate how much extra room on the query sequence
+            // to allow for realignment. The size of the 'fudge' 
+            // to the left is the different between the length of
+            // the loop region to the left and the length of the
+            // previous fudge, up to a limit of kMaxFudge
+
             if (itr == blocklist.begin() || 
                 prev_itr == blocklist.begin() ||
                 prev_itr->seq_index != db_seq) {
@@ -178,6 +195,9 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                         prev_itr->GetTo() - last_fudge - 1;
                 left_fudge = min(left_fudge, kMaxFudge);
             }
+
+            // The extra room on the right is half the length
+            // of the loop region to the right, up to the same limit
 
             if (itr == blocklist.end() || 
                 next_itr == blocklist.end() ||
@@ -197,16 +217,20 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
     
             hit->GetRangeFromSeq2(s_range, q_range, new_s_range, tback_range);
 
+            // pre-advance the iterators
+
             itr++;
             prev_itr++;
             next_itr++;
     
-            // Throw away alignments whose query range is two
-            // letters or less
+            // Throw away alignments whose query range is too small
     
             if (q_range.GetLength() <= CHit::kMinHitSize)
                 continue;
     
+            // or for which the difference between query and database
+            // regions is too large (i.e. query sequence has a big gap)
+
             if (s_range.GetLength() > 3 * q_range.GetLength() / 2) {
                 printf("ignore aligning query %d %d-%d db %d block %d-%d\n",
                        hit->m_SeqIndex1, q_range.GetFrom(), q_range.GetTo(),
@@ -220,6 +244,7 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                               q_range.GetTo() + right_fudge));
 
             // Now realign the block to the query sequence
+
             m_Aligner.SetSequences((const int **)(pssm + s_range.GetFrom()),
                           s_range.GetLength(),
                           (const char *)query.GetSequence() + q_range.GetFrom(),
@@ -240,7 +265,7 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
 
                 hit->GetRangeFromSeq2(s_range, q_range, s_range, tback_range);
 
-                // throw away alignments that are mostly gaps
+                // throw away alignments that are too small
 
                 if (q_range.GetLength() <= CHit::kMinHitSize || 
                     s_range.GetLength() <= CHit::kMinHitSize)
@@ -296,6 +321,8 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                         score -= m_Aligner.GetWg();
                 }
 
+                // throw away alignments that are too small
+
                 q_range.Set(q_start, q_stop);
                 s_range.Set(s_start, s_stop);
                 if (q_range.GetLength() <= CHit::kMinHitSize || 
@@ -309,11 +336,15 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
                                  TRange(first_tback, last_tback));
             }
 
+            // save the new block alignment
+
             hit->InsertSubHit(new CHit(hit->m_SeqIndex1,
                                        hit->m_SeqIndex2,
                                        q_range, s_range,
                                        score, final_script));
         }
+
+        // finish processing hit i
 
         if (hit->HasSubHits()) {
             hit->ResolveSubHitConflicts(query, pssm,
@@ -326,7 +357,13 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
         }
     }
 
+    // remove RPS hits that do not have block alignments,
+    // or were deleted for some other reason
+
     rps_hits.PurgeUnwantedHits();
+
+    // restore the original gap penalties
+
     m_Aligner.SetWg(m_GapOpen);
     m_Aligner.SetWs(m_GapExtend);
     m_Aligner.SetStartWg(m_EndGapOpen);
@@ -344,12 +381,17 @@ CMultiAligner::x_FindRPSHits(CHitList& rps_hits)
     CBlastRPSOptionsHandle rps_opts;
 
     // deliberately set the cutoff e-value too high
+
     rps_opts.SetEvalueThreshold(max(m_RPSEvalue, 10.0));
     rps_opts.SetSegFiltering(false);
+
+    // run RPS blast
 
     CBlastSeqSrc seq_src(SeqDbBlastSeqSrcInit(m_RPSdb.c_str(), TRUE));
     CDbBlast blaster(m_tQueries, seq_src, rps_opts);
     blaster.PartialRun();
+
+    // copy out the results
 
     BlastHSPResults *blast_results = blaster.GetResults();
     _ASSERT(blast_results);
@@ -408,6 +450,8 @@ CMultiAligner::x_AssignRPSResFreqs(CHitList& rps_hits,
     }
 
     rps_hits.SortByScore();
+
+    // for each hit
 
     for (int i = 0; i < rps_hits.Size(); i++) {
         CHit *hit = rps_hits.GetHit(i);
@@ -511,13 +555,20 @@ CMultiAligner::FindDomainHits()
         m_Freqfile.empty()) {
         return;
     }
+
+    // empty previously found hits
+
     m_DomainHits.PurgeAllHits();
     m_CombinedHits.PurgeAllHits();
+
+    // run RPS blast
 
     x_FindRPSHits(m_DomainHits);
         
     vector<SSegmentLoc> blocklist;
     x_LoadBlockBoundaries(m_Blockfile, blocklist);
+
+    // Load the RPS PSSMs and perform block realignment
 
     CProfileData profile_data;
     profile_data.Load(CProfileData::eGetPssm, m_RPSdb);
@@ -553,11 +604,19 @@ CMultiAligner::FindDomainHits()
 
     x_AssignDefaultResFreqs();
 
+    // propagate the residue frequencies of the best
+    // RPS hits onto the query sequences
+
     profile_data.Load(CProfileData::eGetResFreqs, m_RPSdb, m_Freqfile);
     x_AssignRPSResFreqs(m_DomainHits, profile_data);
     profile_data.Clear();
 
+    // Connect together RPS hits to the same region of the
+    // same database sequence
+
     m_DomainHits.MatchOverlappingSubHits(m_CombinedHits);
+
+    // Remove the scaling on the scores
 
     const int kRpsScale = CMultiAligner::kRpsScaleFactor;
     for (int i = 0; i < m_CombinedHits.Size(); i++) {
@@ -596,6 +655,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.8  2005/12/16 23:33:18  papadopo
+  add documentation
+
   Revision 1.7  2005/11/14 16:17:08  papadopo
   Assign default residue frequencies before domain residue frequencies,
   not after. This guarantees residue frequencies get assigned properly
