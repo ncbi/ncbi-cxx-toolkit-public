@@ -105,7 +105,7 @@ void CMultiApplication::Init(void)
     arg_desc->AddDefaultKey("ccc", "conserved_cutoff", 
                      "Minimum average score needed for a multiple alignment "
                      "column to be considered as conserved",
-                     CArgDescriptions::eDouble, "2.0");
+                     CArgDescriptions::eDouble, "0.67");
     arg_desc->AddDefaultKey("dfb", "domain_res_boost", 
                      "When assigning domain residue frequencies, the amount of "
                      "extra weight (0..1) to give the actual sequence letter "
@@ -122,9 +122,16 @@ void CMultiApplication::Init(void)
     arg_desc->AddDefaultKey("v", "verbose", 
                      "verbose output",
                      CArgDescriptions::eBoolean, "F");
+    arg_desc->AddDefaultKey("iter", "iterate", 
+                     "look for conserved columns and iterate if "
+                     "any are found",
+                     CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("matrix", "matrix", 
                      "score matrix to use",
                      CArgDescriptions::eString, "BLOSUM62");
+    arg_desc->AddDefaultKey("pseudo", "pseudocount", 
+                     "Pseudocount constant",
+                     CArgDescriptions::eDouble, "2.0");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -179,9 +186,11 @@ int CMultiApplication::Run(void)
                           -args["e1"].AsInteger(),
                           -args["g0"].AsInteger(),
                           -args["e0"].AsInteger(),
+                          args["iter"].AsBoolean(),
                           args["evalue2"].AsDouble(),
                           args["ccc"].AsDouble(),
-                          args["ffb"].AsDouble());
+                          args["ffb"].AsDouble(),
+                          args["pseudo"].AsDouble());
 
     blast::TSeqLocVector queries = x_GetSeqLocFromStream(
                                               args["i"].AsInputFile(), 
@@ -240,6 +249,9 @@ int main(int argc, const char* argv[])
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.3  2005/12/16 23:31:50  papadopo
+  make iteration optional, add pseudocount input
+
   Revision 1.2  2005/11/08 17:44:18  papadopo
   1. Do not automatically assume blast namespace
   2. Fix rcsid
