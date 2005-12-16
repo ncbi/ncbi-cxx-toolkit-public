@@ -91,7 +91,11 @@ CMultiAligner::FindPatternHits()
         // precompile the pattern in preparation for running
         // all sequences through it
 
+        pattern[0] = 0;
         pattern_stream >> pattern;
+        if (pattern[0] == 0)
+            break;
+
         SPHIPatternSearchBlkNew((char *)pattern,
                                 FALSE, sbp, &phi_pattern, NULL);
         _ASSERT(phi_pattern != NULL);
@@ -156,7 +160,7 @@ CMultiAligner::FindPatternHits()
     //------------------------------------------------
 
     for (int i = 0; i < m_PatternHits.Size(); i++) {
-        m_PatternHits.GetHit(i)->m_Score = 1000;
+        m_PatternHits.GetHit(i)->m_Score = 1;
     }
 }
 
@@ -165,6 +169,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/12/16 23:32:55  papadopo
+  protect against empty patterns; also assign a small score to pattern hits so they do *not* override other alignments
+
   Revision 1.5  2005/11/21 21:03:00  papadopo
   fix documentation, add doxygen
 
