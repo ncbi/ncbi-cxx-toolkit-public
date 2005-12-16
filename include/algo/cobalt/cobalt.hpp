@@ -79,12 +79,14 @@ public:
     ///                   or end of a sequence [in]
     /// @param end_gap_extend Penalty for extending a gap at the 
     ///                   beginning or end of a sequence [in]
+    /// @param iterate True if conserved columns should be detected and
+    ///                the alignment recomputed if any are found [in]
     /// @param blastp_evalue When running blast on the input sequences,
     ///                   keep hits that are this significant or better
     ///                   (i.e. have e-value this much or lower) [in]
     /// @param conserved_cutoff When looking for conserved columns, consider
-    ///                   a column conserved if it manages a per-residue
-    ///                   sum of pairs score of at least this much [in]
+    ///                   a column conserved if it manages a score
+    ///                   of at least this much [in]
     /// @param filler_resfreq_boost When assigning residue frequencies to 
     ///                   portions of sequences not covered by domain
     ///                   hits, upweight the frequency associated with the
@@ -92,14 +94,19 @@ public:
     ///                   Values range from 0 to 1; 0 implies using only
     ///                   background frequencies, 1 uses no background
     ///                   frequencies at all [in]
+    /// @param pseudocount An additional factor that downweights the value
+    ///                    of actual sequence data when computing column-
+    ///                    wise scores (higher = more downweighting) [in]
     CMultiAligner(const char *matrix_name = "BLOSUM62",
                   CNWAligner::TScore gap_open = kDefaultGapOpen,
                   CNWAligner::TScore gap_extend = kDefaultGapExtend,
                   CNWAligner::TScore end_gap_open = kDefaultGapOpen,
                   CNWAligner::TScore end_gap_extend = kDefaultGapExtend,
+                  bool iterate = false,
                   double blastp_evalue = 0.01,
-                  double conserved_cutoff = 2.0,
-                  double filler_resfreq_boost = 1.0
+                  double conserved_cutoff = 0.67,
+                  double filler_resfreq_boost = 1.0,
+                  double pseudocount = 2.0
                   );
 
     /// Destructor
@@ -300,29 +307,39 @@ public:
     void SetConservedCutoff(double cutoff) { m_ConservedCutoff = cutoff; }
 
     /// Set the open penalty for internal gaps
-    /// @score The penalty
+    /// @param score The penalty
     ///
     void SetGapOpen(CNWAligner::TScore score) { m_GapOpen = score; }
 
     /// Set the extend penalty for internal gaps
-    /// @score The penalty
+    /// @param score The penalty
     ///
     void SetGapExtend(CNWAligner::TScore score) { m_GapExtend = score; }
 
     /// Set the open penalty for initial/terminal gaps
-    /// @score The penalty
+    /// @param score The penalty
     ///
     void SetEndGapOpen(CNWAligner::TScore score) { m_EndGapOpen = score; }
 
     /// Set the extend penalty for initial/terminal gaps
-    /// @score The penalty
+    /// @param score The penalty
     ///
     void SetEndGapExtend(CNWAligner::TScore score) { m_EndGapExtend = score; }
 
     /// Turn the output of internal aligner state on/off
-    /// @verbose true to turn on verbose logging, false to turn it off
+    /// @param verbose true to turn on verbose logging, false to turn it off
     ///
     void SetVerbose(bool verbose) { m_Verbose = verbose; }
+
+    /// Set the pseudocount factor to use
+    /// @param pseudocount The factor
+    ///
+    void SetPseudocount(double pseudocount) { m_Pseudocount = pseudocount; }
+
+    /// Turn iteration on or off
+    /// @param iterate True if iteration is allowed
+    ///
+    void SetIterate(bool iterate) { m_Iterate = iterate; }
 
     // ---------------- Running the aligner -----------------------
 
@@ -436,12 +453,14 @@ private:
     CTree m_Tree;
     CPSSMAligner m_Aligner;
     double m_ConservedCutoff;
+    double m_Pseudocount;
     CNWAligner::TScore m_GapOpen;
     CNWAligner::TScore m_GapExtend;
     CNWAligner::TScore m_EndGapOpen;
     CNWAligner::TScore m_EndGapExtend;
 
     bool m_Verbose;
+    bool m_Iterate;
 
     void x_LoadBlockBoundaries(string blockfile,
                       vector<SSegmentLoc>& blocklist);
@@ -476,11 +495,11 @@ private:
                             vector<CSequence>& query_data,
                             CNcbiMatrix<CHitList>& pair_info,
                             int iteration);
-    int x_RealignSequences(const TPhyTreeNode *input_cluster,
-                           vector<CSequence>& alignment,
-                           CNcbiMatrix<CHitList>& pair_info,
-                           int sp_score,
-                           int iteration);
+    double x_RealignSequences(const TPhyTreeNode *input_cluster,
+                              vector<CSequence>& alignment,
+                              CNcbiMatrix<CHitList>& pair_info,
+                              double score,
+                              int iteration);
     void x_AlignProfileProfile(vector<CTree::STreeLeaf>& node_list1,
                                vector<CTree::STreeLeaf>& node_list2,
                                vector<CSequence>& alignment,
@@ -492,6 +511,9 @@ private:
                            vector<CTree::STreeLeaf>& node_list2,
                            CNcbiMatrix<CHitList>& pair_info,
                            int iteration);
+    double x_GetScoreOneCol(vector<CSequence>& align, 
+                            int col);
+    double x_GetScore(vector<CSequence>& align);
 
     CRef<objects::CSeq_align> x_GetSeqalign(vector<CSequence>& align,
                                             vector<int>& indices);
@@ -504,6 +526,12 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.11  2005/12/16 23:39:04  papadopo
+  1. Make iteration optional, add pseudocount parameter
+  2. Change the default conserved cutoff to account for a different
+     score calculation method
+  3. Fix doxygen
+
   Revision 1.10  2005/11/30 19:05:58  papadopo
   document the tree output format
 
