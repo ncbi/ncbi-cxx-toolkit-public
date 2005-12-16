@@ -399,19 +399,20 @@ bool CSimpleBlobStore::Fini(void)
                 " = @key AND " + m_NumColName + " > @n";
             m_Cmd= m_Con->LangCmd(s, 2);
         }
+        else {
+            string s= "delete " + m_TableName + " where " + m_KeyColName +
+                " = @key AND " + m_NumColName + " > @n";
+            m_Cmd= m_Con->LangCmd(s, 2);
+        }
+        m_Cmd->SetParam("@key", &m_Key);
+        m_Cmd->BindParam("@n", &m_RowNum);
+        m_Cmd->Send(); // sending command
+        m_Cmd->DumpResults(); // we don't expect any useful results
+        delete m_Cmd;
+        m_Cmd= 0;
+        return true;
     }
-    else {
-        string s= "delete " + m_TableName + " where " + m_KeyColName +
-            " = @key AND " + m_NumColName + " > @n";
-        m_Cmd= m_Con->LangCmd(s, 2);
-    }
-    m_Cmd->SetParam("@key", &m_Key);
-    m_Cmd->BindParam("@n", &m_RowNum);
-    m_Cmd->Send(); // sending command
-    m_Cmd->DumpResults(); // we don't expect any useful results
-    delete m_Cmd;
-    m_Cmd= 0;
-    return true;
+    return false;
 }
 
 /***************************************************************************************
