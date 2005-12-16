@@ -91,6 +91,8 @@ CSequence::Reset(const blast::SSeqLoc& seq_in)
 
     objects::CSeqVector sv(*seq_in.seqloc, *seq_in.scope);
 
+    _ASSERT(sv.IsProtein());
+
     // make a local copy of the sequence data
 
     int seq_length = sv.size();
@@ -266,6 +268,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.9  2005/12/16 23:34:19  papadopo
+  protect against non-protein-sequence inputs
+
   Revision 1.8  2005/11/22 19:38:12  papadopo
   use object manager to retrieve sequence data
 
