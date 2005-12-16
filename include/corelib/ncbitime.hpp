@@ -1301,11 +1301,15 @@ public:
     /// Start the timer.
     void Start(void);
 
-    /// Return time elapsed since last Start() or Restart() call (in seconds).
+    /// Return time elapsed since Start() or Restart() call (in seconds).
     /// Result is underfined if Start() or Restart() wasn't previously called.
     double Elapsed(void) const;
 
-    /// Return time elapsed since last Start() or Restart() call (in seconds).
+    /// Suspend the timer.
+    /// Next Start() call continue to count time accured before.
+    void Stop(void);
+
+    /// Return time elapsed since Start() or Restart() call (in seconds).
     /// Start new timer after that.
     /// Result is underfined if Start() or Restart() wasn't previously called.
     double Restart(void);
@@ -1350,6 +1354,7 @@ protected:
 
 private:
     double m_Start;  ///< Start time value.
+    double m_Total;  ///< Accumulated elapsed time.
 };
 
 
@@ -1959,6 +1964,7 @@ bool CTimeSpan::operator<= (const CTimeSpan& t) const
 inline
 CStopWatch::CStopWatch(EStart state)
 {
+    m_Total = 0;
     if ( state == eStart ) {
         Start();
     }
@@ -1974,14 +1980,24 @@ void CStopWatch::Start()
 inline
 double CStopWatch::Elapsed() const
 {
-    return GetTimeMark() - m_Start;
+    return m_Total + GetTimeMark() - m_Start;
 }
+
+
+inline
+void CStopWatch::Stop()
+{
+    m_Total += Elapsed();
+}
+
 
 inline
 double CStopWatch::Restart()
 {
     double previous = m_Start;
-    return (m_Start = GetTimeMark()) - previous;
+    double elapsed = m_Total + (m_Start = GetTimeMark()) - previous;
+    m_Total = 0;
+    return elapsed;
 }
 
 inline 
@@ -1994,6 +2010,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2005/12/16 18:03:29  ivanov
+ * + CStopWatch::Stop() to suspend a "timer"
+ *
  * Revision 1.54  2005/12/01 15:55:02  ucko
  * Move deprecated CStopWatch constructor to ncbitime.cpp to avoid
  * widespread warnings.

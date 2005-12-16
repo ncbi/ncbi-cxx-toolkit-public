@@ -2022,7 +2022,8 @@ int CFastLocalTime::GetLocalTimezone(void)
 // deprecated
 CStopWatch::CStopWatch(bool start)
 {
-    if ( start ) {
+    m_Total = 0;
+   if ( start ) {
         Start();
     }
 }
@@ -2127,6 +2128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2005/12/16 18:03:51  ivanov
+ * + CStopWatch::Stop() to suspend a "timer"
+ *
  * Revision 1.68  2005/12/01 15:55:15  ucko
  * Move deprecated CStopWatch constructor from ncbitime.hpp to avoid
  * widespread warnings.
