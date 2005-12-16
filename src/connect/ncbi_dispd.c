@@ -34,6 +34,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_dispd.h"
+#include "ncbi_lb.h"
 #include "ncbi_priv.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
@@ -43,13 +44,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#if 0/*defined(_DEBUG) && !defined(NDEBUG)*/
-#  define SERV_DISPD_DEBUG 1
-#endif /*_DEBUG && !NDEBUG*/
-
 /* Lower bound of up-to-date/out-of-date ratio */
 #define SERV_DISPD_STALE_RATIO_OK  0.8
-/* Default rate increase if svc runs locally */
+/* Default rate increase 20% if svc runs locally */
 #define SERV_DISPD_LOCAL_SVC_BONUS 1.2
 
 
@@ -77,53 +74,47 @@ extern "C" {
 int g_NCBIConnectRandomSeed = 0;
 
 
-typedef struct {
-    SSERV_Info*   info;
-    double        status;
-} SDISPD_Node;
+struct SDISPD_Data {
+    int/*bool*/    disp_fail;
+    SConnNetInfo*  net_info;
+    SLB_Candidate* cand;
+    size_t         n_cand;
+    size_t         a_cand;
+    const char*    name;
+};
 
 
-typedef struct {
-    int/*bool*/   disp_fail;
-    SConnNetInfo* net_info;
-    SDISPD_Node*  s_node;
-    size_t        n_node;
-    size_t        a_node;
-    const char*   name;
-} SDISPD_Data;
-
-
-static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
+static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
 {
     size_t i;
 
     /* First check that the new server info updates an existing one */
-    for (i = 0; i < data->n_node; i++) {
-        if (SERV_EqualInfo(data->s_node[i].info, info)) {
+    for (i = 0; i < data->n_cand; i++) {
+        if (SERV_EqualInfo(data->cand[i].info, info)) {
             /* Replace older version */
-            free(data->s_node[i].info);
-            data->s_node[i].info = info;
+            free((void*) data->cand[i].info);
+            data->cand[i].info = info;
             return 1;
         }
     }
 
     /* Next, add new service to the list */
-    if (data->n_node == data->a_node) {
-        size_t n = data->a_node + 10;
-        SDISPD_Node* temp;
+    if (data->n_cand == data->a_cand) {
+        size_t n = data->a_cand + 10;
+        SLB_Candidate* temp;
 
-        if (data->s_node)
-            temp = (SDISPD_Node*) realloc(data->s_node, sizeof(*temp) * n);
+        if (data->cand)
+            temp = (SLB_Candidate*) realloc(data->cand, sizeof(*temp) * n);
         else
-            temp = (SDISPD_Node*) malloc(sizeof(*temp) * n);
+            temp = (SLB_Candidate*) malloc (            sizeof(*temp) * n);
         if (!temp)
             return 0;
 
-        data->s_node = temp;
-        data->a_node = n;
+        data->cand = temp;
+        data->a_cand = n;
     }
 
-    data->s_node[data->n_node++].info = info;
+    data->cand[data->n_cand++].info = info;
     return 1;
 }
 
@@ -155,7 +146,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             void*         iter,
                             unsigned int  n)
 {
-    SDISPD_Data* data = (SDISPD_Data*)((SERV_ITER) iter)->data;
+    struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
     return data->disp_fail ? 0/*failed*/ : 1/*try again*/;
 }
 
@@ -165,10 +156,10 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     static const char service[]  = "service";
     static const char address[]  = "address";
     static const char platform[] = "platform";
-    SDISPD_Data* data = (SDISPD_Data*) iter->data;
-    SConnNetInfo *net_info = data->net_info;
+    struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
+    SConnNetInfo* net_info = data->net_info;
     CONNECTOR conn = 0;
-    const char *arch;
+    const char* arch;
     unsigned int ip;
     char addr[64];
     char* s;
@@ -236,7 +227,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     /* This will also send all the HTTP data, and trigger header callback */
     CONN_Flush(c);
     CONN_Close(c);
-    return ((SDISPD_Data*) iter->data)->n_node != 0;
+    return data->n_cand != 0;
 }
 
 
@@ -244,7 +235,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
 {
     static const char service_name[] = "Service: ";
     static const char server_info[] = "Server-Info-";
-    SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     size_t len = strlen(text);
 
     if (len >= sizeof(service_name)  &&
@@ -317,22 +308,23 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
 }
 
 
-static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
+static int/*bool*/ s_IsUpdateNeeded(struct SDISPD_Data *data)
 {
     double status = 0.0, total = 0.0;
 
-    if (data->n_node) {
+    if (data->n_cand) {
         TNCBI_Time t = (TNCBI_Time) time(0);
         size_t i = 0;
-        while (i < data->n_node) {
-            SSERV_Info* info = data->s_node[i].info;
+        while (i < data->n_cand) {
+            const SSERV_Info* info = data->cand[i].info;
 
             total += info->rate;
             if (info->time < t) {
-                if (i < --data->n_node)
-                    memmove(data->s_node + i, data->s_node + i + 1,
-                            (data->n_node - i)*sizeof(*data->s_node));
-                free(info);
+                if (i < --data->n_cand) {
+                    memmove(data->cand + i, data->cand + i + 1,
+                            sizeof(*data->cand)*(data->n_cand - i));
+                }
+                free((void*) info);
             } else {
                 status += info->rate;
                 i++;
@@ -340,14 +332,20 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
         }
     }
 
-    return total == 0.0 ? 1 : (status/total < SERV_DISPD_STALE_RATIO_OK);
+    return total == 0.0 ? 1 : status/total < SERV_DISPD_STALE_RATIO_OK;
+}
+
+
+static SLB_Candidate* s_GetCandidate(void* user_data, size_t n)
+{
+    struct SDISPD_Data* data = (struct SDISPD_Data*) user_data;
+    return n < data->n_cand ? &data->cand[n] : 0;
 }
 
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
-    double total = 0.0, point = 0.0, access = 0.0, p = 0.0, status;
-    SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     SSERV_Info* info;
     size_t i;
 
@@ -356,78 +354,19 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     if (s_IsUpdateNeeded(data) && !s_Resolve(iter))
         return 0;
-    assert(data->n_node != 0);
+    assert(data->n_cand != 0);
 
-    for (i = 0; i < data->n_node; i++) {
-        info = data->s_node[i].info;
-        status = info->rate;
-        assert(status != 0.0);
-
-        if (iter->host == info->host  ||
-            (!iter->host  &&
-             info->locl  &&  info->coef < 0.0)) {
-            if (iter->pref  ||  info->coef <= 0.0) {
-                status *= SERV_DISPD_LOCAL_SVC_BONUS;
-                if (access < status &&
-                    (iter->pref  ||  info->coef < 0.0)) {
-                    access =  status;
-                    point  =  total + status; /* Latch this local server */
-                    p      = -info->coef;
-                    assert(point > 0.0);
-                }
-            } else
-                status *= info->coef;
-        }
-        total                 += status;
-        data->s_node[i].status = total;
+    for (i = 0; i < data->n_cand; i++) {
+        data->cand[i].status = data->cand[i].info->rate;
+    }
+    i = LB_Select(iter, data, s_GetCandidate, SERV_DISPD_LOCAL_SVC_BONUS);
+    info = (SSERV_Info*) data->cand[i].info;
+    info->rate = data->cand[i].status;
+    if (i < --data->n_cand) {
+        memmove(data->cand + i, data->cand + i + 1,
+                (data->n_cand - i)*sizeof(*data->cand));
     }
 
-    if (point > 0.0  &&  iter->pref) {
-        if (total != access) {
-            p = SERV_Preference(iter->pref, access/total, data->n_node);
-#ifdef SERV_DISPD_DEBUG
-            CORE_LOGF(eLOG_Note, ("(P = %lf, A = %lf, T = %lf, N = %d)"
-                                  " -> Pref = %lf", iter->pref,
-                                  access, total, (int) data->n_node, p));
-#endif /*SERV_DISPD_DEBUG*/
-            status = total*p;
-            p = total*(1.0 - p)/(total - access);
-            for (i = 0; i < data->n_node; i++) {
-                data->s_node[i].status *= p;
-                if (p*point <= data->s_node[i].status) 
-                    data->s_node[i].status += status - p*access;
-            }
-#ifdef SERV_DISPD_DEBUG
-            for (i = 0; i < data->n_node; i++) {
-                char addr[16];
-                SOCK_ntoa(data->s_node[i].info->host, addr, sizeof(addr));
-                status = data->s_node[i].status -
-                    (i ? data->s_node[i-1].status : 0.0);
-                CORE_LOGF(eLOG_Note, ("%s %lf %.2lf%%", addr,
-                                      status, status/total*100.0));
-            }
-#endif /*SERV_DISPD_DEBUG*/
-        }
-        point = -1.0;
-    }
-
-    /* We take pre-chosen local server only if its status is not less than
-       p% of the average remaining status; otherwise, we ignore the server,
-       and apply the generic procedure by seeding a random point. */
-    if (point <= 0.0 || access*(data->n_node - 1) < p*0.01*(total - access))
-        point = (total * rand()) / (double) RAND_MAX;
-    for (i = 0; i < data->n_node; i++) {
-        if (point <= data->s_node[i].status)
-            break;
-    }
-    assert(i < data->n_node);
-
-    info = data->s_node[i].info;
-    info->rate = data->s_node[i].status - (i ? data->s_node[i-1].status : 0.0);
-    if (i < --data->n_node) {
-        memmove(data->s_node + i, data->s_node + i + 1,
-                (data->n_node - i)*sizeof(*data->s_node));
-    }
     if (host_info)
         *host_info = 0;
 
@@ -437,13 +376,13 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
 static void s_Reset(SERV_ITER iter)
 {
-    SDISPD_Data* data = (SDISPD_Data*) iter->data;
-    if (data && data->s_node) {
+    struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
+    if (data  &&  data->cand) {
         size_t i;
-        assert(data->a_node);
-        for (i = 0; i < data->n_node; i++)
-            free(data->s_node[i].info);
-        data->n_node = 0;
+        assert(data->a_cand);
+        for (i = 0; i < data->n_cand; i++)
+            free((void*) data->cand[i].info);
+        data->n_cand = 0;
         if (data->name) {
             free((void*) data->name);
             data->name = 0;
@@ -454,10 +393,10 @@ static void s_Reset(SERV_ITER iter)
 
 static void s_Close(SERV_ITER iter)
 {
-    SDISPD_Data* data = (SDISPD_Data*) iter->data;
-    assert(!data->n_node && !data->name);/*s_Reset() had to be called before */
-    if (data->s_node)
-        free(data->s_node);
+    struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
+    assert(!data->n_cand && !data->name);/*s_Reset() had to be called before */
+    if (data->cand)
+        free(data->cand);
     ConnNetInfo_Destroy(data->net_info);
     free(data);
     iter->data = 0;
@@ -473,9 +412,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                     const SConnNetInfo* net_info,
                                     SSERV_Info** info, HOST_INFO* u/*unused*/)
 {
-    SDISPD_Data* data;
+    struct SDISPD_Data* data;
 
-    if (!(data = (SDISPD_Data*) calloc(1, sizeof(*data))))
+    if (!(data = (struct SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
     if (g_NCBI_ConnectRandomSeed == 0) {
         g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
@@ -517,6 +456,9 @@ extern void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.71  2005/12/16 16:00:16  lavr
+ * Take advantage of new generic LB API
+ *
  * Revision 6.70  2005/12/14 21:33:15  lavr
  * Use new SERV_ReadInfoEx() prototype
  *
