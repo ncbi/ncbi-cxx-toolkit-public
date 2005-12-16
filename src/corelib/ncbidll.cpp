@@ -44,6 +44,9 @@
 #  endif
 #  ifdef HAVE_DLFCN_H
 #    include <dlfcn.h>
+#    ifndef RTLD_LOCAL /* missing on Cygwin? */
+#      define RTLD_LOCAL 0
+#    endif
 #  endif
 #else
 #  error "Class CDll defined only for MS Windows and UNIX platforms"
@@ -417,6 +420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/12/16 16:38:54  ucko
+ * Default RTLD_LOCAL to 0 as needed (on Cygwin?)
+ *
  * Revision 1.31  2005/06/24 11:49:21  ivanov
  * Heed Workshop compiler warnings in CDll constructors
  *
