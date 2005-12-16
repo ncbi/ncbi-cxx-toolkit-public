@@ -396,12 +396,12 @@ bool CSimpleBlobStore::Fini(void)
             }
             s+= " where " + m_KeyColName + " = @key AND " + m_NumColName +
                 " = @n delete " + m_TableName + " where " + m_KeyColName +
-                " = @key AND " + m_NumColName + " > @n";
+                " = @key AND " + m_NumColName + " >= @n AND 0 != " +  m_NumColName;
             m_Cmd= m_Con->LangCmd(s, 2);
         }
         else {
             string s= "delete " + m_TableName + " where " + m_KeyColName +
-                " = @key AND " + m_NumColName + " > @n";
+                " = @key AND " + m_NumColName + " >= @n and 0 != " +  m_NumColName;
             m_Cmd= m_Con->LangCmd(s, 2);
         }
         m_Cmd->SetParam("@key", &m_Key);
