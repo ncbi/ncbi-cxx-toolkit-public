@@ -238,7 +238,6 @@ public:
     
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const;
     
-    void GetScore(const CGnomonEngine& engine, bool uselims = false);
     template <class Vec>
     void GetSequence(const Vec& seq, Vec& mrna, TIVec* mrnamap = 0, bool cdsonly = false) const;                     
     
@@ -392,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/12/16 14:29:13  chetvern
+ * remove extra method declaration
+ *
  * Revision 1.14  2005/11/21 21:28:38  chetvern
  * Small changes in CAlignExon and CClusterSet interfaces
  *
