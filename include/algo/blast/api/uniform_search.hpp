@@ -142,71 +142,6 @@ private:
 };
 
 
-/// Error or Warning Message from search.
-/// 
-/// This class encapsulates a single error or warning message returned
-/// from a search.  These include conditions detected by the algorithm
-/// where no exception is thrown, but which impact the completeness or
-/// accuracy of search results.  One example might be a completely
-/// masked query.
-
-class CSearchMessage : public CObject {
-public:
-    CSearchMessage(EBlastSeverity   severity,
-                   int              error_id,
-                   const string   & message)
-        : m_Severity(severity), m_ErrorId(error_id), m_Message(message)
-    {
-    }
-    
-    CSearchMessage()
-        : m_Severity(EBlastSeverity(0)), m_ErrorId(0)
-    {
-    }
-    
-    EBlastSeverity GetSeverity() const
-    {
-        return m_Severity;
-    }
-    
-    string GetSeverityString() const
-    {
-        return GetSeverityString(m_Severity);
-    }
-    
-    static string GetSeverityString(EBlastSeverity severity)
-    {
-        switch(severity) {
-        case eBlastSevInfo:    return "Informational Message";
-        case eBlastSevWarning: return "Warning";
-        case eBlastSevError:   return "Error";
-        case eBlastSevFatal:   return "Fatal Error";
-        }
-        return "Message";
-    }
-    
-    int GetErrorId() const
-    {
-        return m_ErrorId;
-    }
-    
-    string GetMessage() const
-    {
-        return GetSeverityString() + ": " + m_Message;
-    }
-    
-private:
-    /// Prohibit assignment operator
-    CSearchMessage & operator =(const CSearchMessage &);
-    /// Prohibit copy constructor 
-    CSearchMessage(CSearchMessage&);
-    
-    EBlastSeverity m_Severity;
-    int            m_ErrorId;
-    string         m_Message;
-};
-
-
 /// Search Results for One Query.
 /// 
 /// This class encapsulates all the search results and related data
@@ -214,9 +149,9 @@ private:
 
 class NCBI_XBLAST_EXPORT CSearchResults : public CObject {
 public:
-    typedef vector< CRef<CSearchMessage> > TErrors;
     
-    CSearchResults(CRef<objects::CSeq_align_set> align, const TErrors & errs)
+    CSearchResults(CRef<objects::CSeq_align_set> align, 
+                   const TQueryMessages & errs)
         : m_Alignment(align), m_Errors(errs)
     {
     }
@@ -228,7 +163,7 @@ public:
     
     CConstRef<objects::CSeq_id> GetSeqId() const;
     
-    TErrors GetErrors(int min_severity = eBlastSevError) const;
+    TQueryMessages GetErrors(int min_severity = eBlastSevError) const;
 
 #if 0
     /// Retrieve the query regions which were masked by BLAST
@@ -239,7 +174,7 @@ public:
 private:
     CRef<objects::CSeq_align_set> m_Alignment;
     
-    TErrors m_Errors;
+    TQueryMessages m_Errors;
 };
 
 
@@ -250,13 +185,11 @@ private:
 
 class NCBI_XBLAST_EXPORT CSearchResultSet {
 public:
-    typedef vector< vector< CRef< CSearchMessage > > > TMessages;
-    
     CSearchResultSet()
     {
     }
     
-    CSearchResultSet(TSeqAlignVector aligns, TMessages msg_vec);
+    CSearchResultSet(TSeqAlignVector aligns, TSearchMessages msg_vec);
     
     CSearchResults & operator[](int i)
     {

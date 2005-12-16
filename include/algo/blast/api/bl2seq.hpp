@@ -138,9 +138,8 @@ public:
     /// (to be used after PartialRun() method)
     BlastHSPResults* GetResults() const;
 
-    /// Returns error messages/warnings. Caller is responsible for deallocating
-    /// return value if any
-    Blast_Message* GetErrorMessage() const;
+    /// Returns error messages/warnings.
+    void GetMessages(TSearchMessages& messages) const;
 
 protected:
     /// Process the queries, do setup, and build the lookup table.
@@ -178,6 +177,8 @@ private:
 
     /// Stores any warnings emitted during query setup
     CBlast_Message                      mi_clsBlastMessage;
+
+    TSearchMessages                     m_Messages;
 
     /// Results for all queries and subjects together
     BlastHSPResults*                    mi_pResults;
@@ -272,6 +273,12 @@ inline BlastHSPResults* CBl2Seq::GetResults() const
     return mi_pResults;
 }
 
+inline void
+CBl2Seq::GetMessages(TSearchMessages& messages) const
+{
+    messages = m_Messages;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -281,6 +288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2005/12/16 20:51:34  camacho
+* Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
+*
 * Revision 1.44  2005/09/28 18:21:33  camacho
 * Rearrangement of headers/functions to segregate object manager dependencies.
 *

@@ -39,6 +39,7 @@
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/api/blast_exception.hpp>
+#include <algo/blast/api/blast_types.hpp>
 
 // Object includes
 #include <objects/seqloc/Seq_loc.hpp>
@@ -236,7 +237,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                  EBlastProgramType prog, 
                  objects::ENa_strand strand_opt,
                  const Uint1* genetic_code,
-                 Blast_Message** blast_msg);
+                 TSearchMessages& messages);
 
 /** Object manager free version of SetupSubjects
  * @param subjects Vector of subject locations [in]
@@ -351,7 +352,8 @@ GetSubjectEncoding(EBlastProgramType program);
 BLAST_SequenceBlk*
 SafeSetupQueries(const IBlastQuerySource& queries,
                  const CBlastOptions* options,
-                 const BlastQueryInfo* query_info);
+                 const BlastQueryInfo* query_info,
+                 TSearchMessages& messages);
 
 BlastQueryInfo*
 SafeSetupQueryInfo(const IBlastQuerySource& queries, 
@@ -366,6 +368,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2005/12/16 20:51:18  camacho
+* Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
+*
 * Revision 1.54  2005/11/15 22:43:47  camacho
 * Fix comment
 *

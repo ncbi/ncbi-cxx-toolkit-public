@@ -452,6 +452,31 @@ CDbBlast::x_InitHSPStream()
     }
 }
 
+/// Auxiliary function to convert TSearchMessages into Blast_Message*
+static Blast_Message*
+s_ConvertMessagesToC(const TSearchMessages& msgs)
+{
+    Blast_Message* retval = 0;
+    EBlastSeverity sev = eBlastSevInfo;
+    string msg;
+    int query_num = 1;
+
+    ITERATE(TSearchMessages, sm, msgs) {
+        ITERATE(TQueryMessages, qm, *sm) {
+            if (sev < (*qm)->GetSeverity()) {
+                sev = (*qm)->GetSeverity();
+            }
+            msg += "Query number " + NStr::IntToString(query_num) + ": " +
+                (*qm)->GetMessage() + " ";
+        }
+        query_num++;
+    }
+
+    if ( !msg.empty() ) {
+        Blast_MessageWrite(&retval, sev, 0, 0, msg.c_str());
+    }
+    return retval;
+}
 
 void CDbBlast::SetupSearch()
 {
@@ -511,8 +536,10 @@ void CDbBlast::SetupSearch()
             TAutoUint1ArrayPtr gc = 
                 FindGeneticCode(kOptions.GetQueryGeneticCode());
             SetupQueryInfo(m_tQueries, prog, strand_opt, &m_iclsQueryInfo);
+            TSearchMessages msgs;
             SetupQueries(m_tQueries, m_iclsQueryInfo, &m_iclsQueries, 
-                         prog, strand_opt, gc.get(), &blast_message);
+                         prog, strand_opt, gc.get(), msgs);
+            blast_message = s_ConvertMessagesToC(msgs);
         } else {
             x_SetupQueryDataStructuresFromInterface();
         }
@@ -770,6 +797,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.85  2005/12/16 20:51:18  camacho
+ * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
+ *
  * Revision 1.84  2005/10/25 14:19:02  camacho
  * Perform repeats filtering as part of set up
  *

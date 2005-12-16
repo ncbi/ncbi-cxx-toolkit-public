@@ -35,6 +35,7 @@
 #ifndef ALGO_BLAST_API___BLAST_QUERY_DATA_HPP
 #define ALGO_BLAST_API___BLAST_QUERY_DATA_HPP
 
+#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/core/blast_def.h>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -71,12 +72,30 @@ public:
     
     /// Get the length of the sequence indicated by index.
     virtual int GetSeqLength(int index) = 0;
+
+    /// Retrieve error/warning messages
+    void GetMessages(TSearchMessages& messages) {
+        messages = m_Messages;
+    }
+
+    void GetQueryMessages(int index, TQueryMessages& qmsgs) {
+        if (index < 0 || index > GetNumQueries()) {
+            throw std::out_of_range("Index " + NStr::IntToString(index) +
+                                    " out of range (" +
+                                    NStr::IntToString(GetNumQueries()) + 
+                                    " max)");
+        }
+        qmsgs = m_Messages[index];
+    }
     
 protected:
     /// Data member to cache the BLAST_SequenceBlk
     CBLAST_SequenceBlk m_SeqBlk;
     /// Data member to cache the BlastQueryInfo
     CBlastQueryInfo m_QueryInfo;
+
+    /// Error/warning messages are stored here
+    TSearchMessages m_Messages;
 };
 
 class IRemoteQueryData : public CObject

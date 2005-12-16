@@ -129,11 +129,12 @@ CSearchResults::GetFilteredQueryRegions(TSeqLocInfoVector& flt_query_regions)
 }
 #endif
 
-CSearchResults::TErrors CSearchResults::GetErrors(int min_severity) const
+TQueryMessages
+CSearchResults::GetErrors(int min_severity) const
 {
-    TErrors errs;
+    TQueryMessages errs;
     
-    ITERATE(TErrors, iter, m_Errors) {
+    ITERATE(TQueryMessages, iter, m_Errors) {
         if ((**iter).GetSeverity() >= min_severity) {
             errs.push_back(*iter);
         }
@@ -188,7 +189,7 @@ CSearchResultSet::operator[](const objects::CSeq_id & ident)
 }
 
 CSearchResultSet::CSearchResultSet(TSeqAlignVector             aligns,
-                                   CSearchResultSet::TMessages msg_vec)
+                                   TSearchMessages msg_vec)
 {
     _ASSERT(aligns.size() == msg_vec.size());
     

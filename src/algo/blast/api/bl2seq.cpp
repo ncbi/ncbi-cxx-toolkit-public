@@ -157,6 +157,7 @@ CBl2Seq::x_ResetQueryDs()
     mi_clsQueries.Reset();
     mi_clsQueryInfo.Reset();
     mi_clsBlastMessage.Reset();
+    m_Messages.clear();
     mi_pScoreBlock = BlastScoreBlkFree(mi_pScoreBlock);
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
     mi_pLookupSegments = BlastSeqLocFree(mi_pLookupSegments);
@@ -213,7 +214,7 @@ CBl2Seq::SetupSearch()
         
         SetupQueryInfo(m_tQueries, prog, strand_opt, &mi_clsQueryInfo);
         SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
-                     prog, strand_opt, gc.get(), &mi_clsBlastMessage);
+                     prog, strand_opt, gc.get(), m_Messages);
 
         Blast_Message* blmsg = NULL;
         double scale_factor = 1.0;
@@ -319,19 +320,6 @@ CBl2Seq::x_Results2SeqAlign()
                                       eSequenceComparison);
 }
 
-Blast_Message* 
-CBl2Seq::GetErrorMessage() const
-{
-    Blast_Message* retval = NULL;
-    if (((Blast_Message*)mi_clsBlastMessage) != NULL) {
-        int unused_fields = 0;  // code and subcode are not used
-        Blast_MessageWrite(&retval, mi_clsBlastMessage->severity,
-                           unused_fields, unused_fields,
-                           mi_clsBlastMessage->message);
-    }
-    return retval;
-}
-
 TSeqLocInfoVector
 CBl2Seq::GetFilteredQueryRegions() const
 {
@@ -351,6 +339,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.87  2005/12/16 20:51:18  camacho
+ * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
+ *
  * Revision 1.86  2005/11/09 20:56:26  camacho
  * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
  * as CBl2Seq and reduce redundant code.

@@ -128,10 +128,10 @@ SetupQueries(const TSeqLocVector& queries,
              EBlastProgramType prog,
              ENa_strand strand_opt,
              const Uint1* genetic_code,
-             Blast_Message** blast_msg)
+             TSearchMessages& messages)
 {
     SetupQueries_OMF(CBlastQuerySourceOM(queries), qinfo, seqblk, prog, 
-                     strand_opt, genetic_code, blast_msg);
+                     strand_opt, genetic_code, messages);
 }
 
 void
@@ -436,6 +436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2005/12/16 20:51:18  camacho
+* Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
+*
 * Revision 1.63  2005/12/01 15:41:21  bealer
 * - Fix blastn strand handling error.
 *

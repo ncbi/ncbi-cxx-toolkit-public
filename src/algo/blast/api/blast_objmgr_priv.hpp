@@ -37,6 +37,7 @@
 #include "blast_setup.hpp"
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
+#include <algo/blast/api/blast_types.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -137,7 +138,7 @@ SetupQueries(const TSeqLocVector& queries,
              EBlastProgramType prog, 
              objects::ENa_strand strand_opt,
              const Uint1* genetic_code,
-             Blast_Message** blast_msg);
+             TSearchMessages& messages);
 
 /** Sets up internal subject data structure for the BLAST search.
  * @param subjects Vector of subject locations [in]

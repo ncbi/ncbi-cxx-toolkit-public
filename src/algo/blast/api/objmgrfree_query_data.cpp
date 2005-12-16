@@ -109,7 +109,8 @@ CObjMgrFree_LocalQueryData::GetSequenceBlk()
         if (m_BioseqSet.NotEmpty()) {
             m_SeqBlk.Reset(SafeSetupQueries(*m_QuerySource,
                                             m_Options,
-                                            GetQueryInfo()));
+                                            GetQueryInfo(),
+                                            m_Messages));
         } else {
             NCBI_THROW(CBlastException, eInvalidArgument,
                        "Missing source data in " +

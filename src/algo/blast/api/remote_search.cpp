@@ -248,7 +248,7 @@ s_BuildResultsRemote(CRemoteBlast & rb)
     // 4. If a single query fails, how do we avoid pairing the fatal
     //    error message with non-failing requests.
     
-    vector< CRef<CSearchMessage> > msgs;
+    TQueryMessages msgs;
     CRef<CSearchMessage> msg;
     
     // Convert warnings and errors into CSearchMessage objects.
@@ -269,7 +269,7 @@ s_BuildResultsRemote(CRemoteBlast & rb)
     // Cascade the messages -- this will result in a lot of CRef<>
     // sharing but hopefully not too much actual computation.
     
-    CSearchResultSet::TMessages msg_vec;
+    TSearchMessages msg_vec;
     
     for(size_t i = 0; i<aligns.size(); i++) {
         msg_vec.push_back(msgs);

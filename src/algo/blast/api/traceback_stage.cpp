@@ -265,7 +265,7 @@ CBlastTracebackSearch::Run()
     // preliminary stage does; they should be saved and returned here
     // if they have not been returned or reported yet.
     
-    CSearchResultSet::TMessages empty_msgs(aligns.size());
+    TSearchMessages empty_msgs(aligns.size());
     
     return CSearchResultSet(aligns, empty_msgs);
 }

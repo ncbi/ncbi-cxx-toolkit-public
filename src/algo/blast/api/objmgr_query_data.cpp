@@ -275,7 +275,8 @@ CObjMgr_LocalQueryData::GetSequenceBlk()
         if (m_Queries || m_SeqLocs) {
             m_SeqBlk.Reset(SafeSetupQueries(*m_QuerySource, 
                                             m_Options, 
-                                            GetQueryInfo()));
+                                            GetQueryInfo(),
+                                            m_Messages));
         } else {
             abort();
         }

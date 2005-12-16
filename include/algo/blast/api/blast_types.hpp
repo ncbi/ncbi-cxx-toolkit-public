@@ -38,6 +38,7 @@
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
+#include <algo/blast/core/blast_message.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -67,6 +68,77 @@ enum EProgram {
     eBlastProgramMax    ///< Undefined program
 };
 
+/// Error or Warning Message from search.
+/// 
+/// This class encapsulates a single error or warning message returned
+/// from a search.  These include conditions detected by the algorithm
+/// where no exception is thrown, but which impact the completeness or
+/// accuracy of search results.  One example might be a completely
+/// masked query.
+
+class CSearchMessage : public CObject {
+public:
+    CSearchMessage(EBlastSeverity   severity,
+                   int              error_id,
+                   const string   & message)
+        : m_Severity(severity), m_ErrorId(error_id), m_Message(message)
+    {
+    }
+    
+    CSearchMessage()
+        : m_Severity(EBlastSeverity(0)), m_ErrorId(0)
+    {
+    }
+    
+    EBlastSeverity GetSeverity() const
+    {
+        return m_Severity;
+    }
+
+    void SetSeverity(EBlastSeverity sev) { m_Severity = sev; }
+    
+    string GetSeverityString() const
+    {
+        return GetSeverityString(m_Severity);
+    }
+    
+    static string GetSeverityString(EBlastSeverity severity)
+    {
+        switch(severity) {
+        case eBlastSevInfo:    return "Informational Message";
+        case eBlastSevWarning: return "Warning";
+        case eBlastSevError:   return "Error";
+        case eBlastSevFatal:   return "Fatal Error";
+        }
+        return "Message";
+    }
+    
+    int GetErrorId() const
+    {
+        return m_ErrorId;
+    }
+
+    string& SetMessage(void) { return m_Message; }
+    
+    string GetMessage() const
+    {
+        return GetSeverityString() + ": " + m_Message;
+    }
+    
+private:
+    EBlastSeverity m_Severity;
+    int            m_ErrorId;
+    string         m_Message;
+};
+
+/// typedef for the messages for an individual query sequence
+typedef vector< CRef<CSearchMessage> > TQueryMessages;
+
+/// typedef for the messages for an entire BLAST search, which could be
+/// comprised of multiple query sequences
+typedef vector<TQueryMessages> TSearchMessages;
+
+
 /// Specifies the style of Seq-aligns that should be built from the
 /// internal BLAST data structures
 enum EResultType {
@@ -85,6 +157,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2005/12/16 20:51:34  camacho
+* Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
+*
 * Revision 1.21  2005/11/09 20:56:26  camacho
 * Refactorings to allow CPsiBl2Seq to produce Seq-aligns in the same format
 * as CBl2Seq and reduce redundant code.

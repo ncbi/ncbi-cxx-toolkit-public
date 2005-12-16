@@ -336,11 +336,12 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                  EBlastProgramType prog,
                  ENa_strand strand_opt,
                  const Uint1* genetic_code,
-                 Blast_Message** blast_msg)
+                 TSearchMessages& messages)
 {
     ASSERT(seqblk);
-    ASSERT(blast_msg);
     ASSERT( !queries.Empty() );
+    messages.clear();
+    messages.resize(queries.Size());
 
     EBlastEncoding encoding = GetQueryEncoding(prog);
     
@@ -360,23 +361,16 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 
     CBlastMaskLoc mask(BlastMaskLocNew(qinfo->num_queries*kNumContexts));
 
-    int index = 0;
-    string error_string;
-
-    // to keep track of the query position in its vector for error reporting
-    int query_num = 0;  
-    
-    for(TSeqPos j = 0; j < queries.Size(); j++) {
+    for(TSeqPos index = 0; index < queries.Size(); index++) {
         ENa_strand strand = eNa_strand_unknown;
         BlastSeqLoc* bsl_tmp=NULL;
         try {
-            query_num++;
 
             if ((is_na || translate) &&
                 (strand_opt == eNa_strand_unknown || 
                  strand_opt == eNa_strand_both)) 
             {
-                strand = queries.GetStrand(j);
+                strand = queries.GetStrand(index);
                 // The default for nucleotide queries is both strands
                 // FIXME: this should be handled inside the GetStrand() call
                 // above
@@ -387,11 +381,11 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                 strand = strand_opt;
             }
             
-            bsl_tmp = CSeqLoc2BlastSeqLoc(queries.GetMask(j));
+            bsl_tmp = CSeqLoc2BlastSeqLoc(queries.GetMask(index));
             
             BlastSeqLoc_RestrictToInterval(&bsl_tmp,
-                   queries.GetSeqLoc(j)->GetStart(eExtreme_Positional),
-                   queries.GetSeqLoc(j)->GetStop(eExtreme_Positional));
+                   queries.GetSeqLoc(index)->GetStart(eExtreme_Positional),
+                   queries.GetSeqLoc(index)->GetStop(eExtreme_Positional));
             
             SBlastSequence sequence;
             
@@ -403,10 +397,10 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 
                 // Get both strands of the original nucleotide sequence with
                 // sentinels
-                sequence = queries.GetBlastSequence(j, encoding, strand, 
+                sequence = queries.GetBlastSequence(index, encoding, strand, 
                                                     eSentinels);
                 
-                int na_length = queries.GetLength(j);
+                int na_length = queries.GetLength(index);
                 Uint1* seqbuf_rev = NULL;  // negative strand
                 if (strand == eNa_strand_both)
                    seqbuf_rev = sequence.data.get() + na_length + 1;
@@ -434,7 +428,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                        strand == eNa_strand_plus ||
                        strand == eNa_strand_minus);
                 
-                sequence = queries.GetBlastSequence(j, encoding, strand, 
+                sequence = queries.GetBlastSequence(index, encoding, strand, 
                                                     eSentinels);
                 
                 int idx = (strand == eNa_strand_minus) ? 
@@ -447,7 +441,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
             } else {
 
                 string warnings;
-                sequence = queries.GetBlastSequence(j,
+                sequence = queries.GetBlastSequence(index,
                                                     encoding,
                                                     eNa_strand_unknown,
                                                     eSentinels,
@@ -457,24 +451,23 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                 memcpy(&buf.get()[offset], sequence.data.get(), 
                        sequence.length);
                 if ( !warnings.empty() ) {
-                    error_string += warnings + " ";
+                    // FIXME: is index this the right value for the 2nd arg?
+                    CRef<CSearchMessage> m
+                        (new CSearchMessage(eBlastSevWarning, index, warnings));
+                    messages[index].push_back(m);
                 }
             }
 
         } catch (const CException& e) {
-            error_string += 
-                "Query number " + NStr::IntToString(query_num) + ": ";
-            error_string += e.ReportThis(eDPF_ErrCodeExplanation) + " ";
+            // FIXME: is index this the right value for the 2nd arg?
+            CRef<CSearchMessage> m
+                (new CSearchMessage(eBlastSevWarning, index, 
+                                    e.ReportThis(eDPF_ErrCodeExplanation)));
+            messages[index].push_back(m);
         }
         s_AddMask(prog, mask, index, bsl_tmp, strand,
                       BlastQueryInfoGetQueryLength(qinfo, prog, index));
-        ++index;
         ctx_index += kNumContexts;
-    }
-
-    if (error_string.size() != 0) {
-        Blast_MessageWrite(blast_msg, eBlastSevWarning, 0, 0,
-                           error_string.c_str());
     }
 
     if (BlastSeqBlkNew(seqblk) < 0) {
@@ -1152,30 +1145,18 @@ GetNumberOfContexts(EBlastProgramType p)
 BLAST_SequenceBlk*
 SafeSetupQueries(const IBlastQuerySource& queries,
                  const CBlastOptions* options,
-                 const BlastQueryInfo* query_info)
+                 const BlastQueryInfo* query_info,
+                 TSearchMessages& messages)
 {
     ASSERT(options);
     ASSERT(query_info);
     ASSERT( !queries.Empty() );
 
     CBLAST_SequenceBlk retval;
-    Blast_Message* blast_msg = NULL;
     TAutoUint1ArrayPtr gc = FindGeneticCode(options->GetQueryGeneticCode());
 
     SetupQueries_OMF(queries, query_info, &retval, options->GetProgramType(), 
-                     options->GetStrandOption(), gc.get(), &blast_msg);
-
-    string error_message;
-    if (blast_msg) {
-        error_message = blast_msg->message;
-        Blast_MessageFree(blast_msg);
-    }
-    if (retval.Get() == NULL) {
-        error_message += "\nblast::SetupQueries failure";
-    }
-    if ( !error_message.empty() ) {
-        NCBI_THROW(CBlastException, eInvalidArgument, error_message);
-    }
+                     options->GetStrandOption(), gc.get(), messages);
 
     return retval.Release();
 }
@@ -1206,6 +1187,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.102  2005/12/16 20:51:18  camacho
+ * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
+ *
  * Revision 1.101  2005/12/01 15:41:21  bealer
  * - Fix blastn strand handling error.
  *
