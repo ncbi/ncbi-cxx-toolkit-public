@@ -49,17 +49,21 @@ CMultiAligner::CMultiAligner(const char *matrix_name,
                              CNWAligner::TScore gap_extend,
                              CNWAligner::TScore end_gap_open,
                              CNWAligner::TScore end_gap_extend,
+                             bool iterate,
                              double blastp_evalue,
                              double conserved_cutoff,
-                             double filler_res_boost)
+                             double filler_res_boost,
+                             double pseudocount)
     : m_BlastpEvalue(blastp_evalue),
       m_LocalResFreqBoost(filler_res_boost),
       m_ConservedCutoff(conserved_cutoff),
+      m_Pseudocount(pseudocount),
       m_GapOpen(gap_open),
       m_GapExtend(gap_extend),
       m_EndGapOpen(end_gap_open),
       m_EndGapExtend(end_gap_extend),
-      m_Verbose(false)
+      m_Verbose(false),
+      m_Iterate(iterate)
 {
     SetScoreMatrix(matrix_name);
     m_Aligner.SetWg(m_GapOpen);
@@ -175,6 +179,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/12/16 23:33:51  papadopo
+  make iteration optional, add pseudocount parameter
+
   Revision 1.5  2005/11/18 22:24:10  papadopo
   in SetQueries, clear the old list of queries before creating the new list
 
