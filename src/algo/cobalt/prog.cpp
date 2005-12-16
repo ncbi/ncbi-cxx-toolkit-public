@@ -284,6 +284,13 @@ CMultiAligner::x_FindConstraints(vector<size_t>& constraint,
         int i;
         for (i = 0; i < (int)graph.size(); i++) {
             CHit *ghit = graph[i].hit;
+            if ((ghit->m_SeqRange1.StrictlyBelow(hit->m_SeqRange1) &&
+                 ghit->m_SeqRange2.StrictlyBelow(hit->m_SeqRange2)) ||
+                (hit->m_SeqRange1.StrictlyBelow(ghit->m_SeqRange1) && 
+                 hit->m_SeqRange2.StrictlyBelow(ghit->m_SeqRange2)) ) {
+                 continue;
+            }
+
             if ((abs(ghit->m_SeqRange1.GetFrom() - 
                      hit->m_SeqRange1.GetFrom()) <= kMinAlignLength / 2 ||
                  abs(ghit->m_SeqRange1.GetTo() - 
@@ -532,12 +539,72 @@ CMultiAligner::x_AlignProfileProfile(
     //-------------------------------------------
 }
 
-int
+
+static const int kNumClasses = 10;
+static const double kDerivedFreqs[kNumClasses] = {
+        0.000000, 0.019250, 0.073770, 0.052030, 0.228450,
+        0.084020, 0.021990, 0.207660, 0.108730, 0.204100
+};
+static const int kRes2Class[kAlphabetSize] = {
+        0, 7, 9, 1, 9, 9, 5, 2, 6, 4, 8, 4, 4,
+        9, 3, 9, 8, 7, 7, 4, 5, 0, 5, 9, 0, 0
+};
+
+double
+CMultiAligner::x_GetScoreOneCol(vector<CSequence>& align, int col)
+{
+    int count[kNumClasses];
+    double freq[kNumClasses];
+    int num_queries = align.size();
+
+    double r = 1.0 / num_queries;
+
+    for (int j = 0; j < kNumClasses; j++)
+        count[j] = 0;
+
+    for (int j = 0; j < num_queries; j++)
+        count[kRes2Class[align[j].GetLetter(col)]]++;
+
+    for (int j = 1; j < kNumClasses; j++)
+        freq[j] = count[j] * r;
+
+    double H1 = 0;
+    double H2 = 0;
+    double H3 = 0;
+    for (int j = 1; j < kNumClasses; j++) {
+        if (count[j] > 0 && kDerivedFreqs[j] > 0) {
+            H1 += freq[j] * log((num_queries - 1)/m_Pseudocount + 
+                                (count[j] - 1)/kDerivedFreqs[j]);
+
+            H2 += freq[j];
+            H3 += kDerivedFreqs[j];
+        }
+    }
+
+    return H1 - H2 * log((num_queries - 1) * 
+                         (m_Pseudocount+H3)/m_Pseudocount);
+}
+
+
+double
+CMultiAligner::x_GetScore(vector<CSequence>& align)
+{
+    int align_len = align[0].GetLength();
+    double H = 0;
+
+    for (int i = 0; i < align_len; i++)
+        H += x_GetScoreOneCol(align, i);
+
+    return H;
+}
+
+
+double
 CMultiAligner::x_RealignSequences(
                    const TPhyTreeNode *input_cluster,
                    vector<CSequence>& alignment,
                    CNcbiMatrix<CHitList>& pair_info,
-                   int sp_score,
+                   double score,
                    int iteration)
 {
     int num_queries = m_QueryData.size();
@@ -587,26 +654,16 @@ CMultiAligner::x_RealignSequences(
     x_AlignProfileProfile(cluster_seq_list, other_seq_list,
                           tmp_align, pair_info, iteration);
 
-    int new_sp_score = 0;
-    for (int i = 0; i < num_queries - 1; i++) {
-        for (int j = i + 1; j < num_queries; j++) {
-            new_sp_score += CSequence::GetPairwiseScore(
-                                    tmp_align[i],
-                                    tmp_align[j],
-                                    m_Aligner.GetMatrix(),
-                                    m_Aligner.GetWg(),
-                                    m_Aligner.GetWs());
-        }
-    }
+    double new_score = x_GetScore(tmp_align);
     if (m_Verbose)
-        printf("realigned SP score = %d\n\n", new_sp_score);
+        printf("realigned score = %f\n\n", new_score);
 
-    if (new_sp_score > sp_score) {
-        sp_score = new_sp_score;
+    if (new_score > score) {
+        score = new_score;
         alignment.swap(tmp_align);
     }
 
-    return sp_score;
+    return score;
 }
 
 void
@@ -647,148 +704,88 @@ CMultiAligner::x_FindConservedColumns(
 {
     int num_queries = new_alignment.size();
     int align_length = new_alignment[0].GetLength();
-    vector<double> avg_sp(align_length);
+    vector<double> hvec(align_length);
     vector<TRange> chosen_cols;
-    const TNCBIScore (*matrix)[NCBI_FSM_DIM] = m_Aligner.GetMatrix().s;
+    int i, j, k, m;
 
-    for (int j = 0; j < align_length; j++) {
-
-        int k;
-
-        // Columns containing gaps cannot be conserved
-
-        for (k = 0; k < num_queries; k++) {
-            if (new_alignment[k].GetLetter(j) == CSequence::kGapChar)
-                break;
-        }
-        if (k < num_queries) {
-            avg_sp[j] = -999;
-            continue;
-        }
-
-        // calculate the sum-of-pairs score for the column
-
-        double sp_score = 0;
-        for (k = 0; k < num_queries - 1; k++) {
-            for (int m = k + 1; m < num_queries; m++) {
-                double accum = 0;
-                CSequence::TFreqMatrix& matrix1 = new_alignment[k].GetFreqs();
-                CSequence::TFreqMatrix& matrix2 = new_alignment[m].GetFreqs();
-
-                double diff_freq1[kAlphabetSize];
-                double diff_freq2[kAlphabetSize];
-
-                for (int n = 0; n < kAlphabetSize; n++) {
-                    if (matrix1(j, n) < matrix2(j, n)) {
-                        accum += matrix1(j, n) * matrix[n][n];
-                        diff_freq1[n] = 0.0;
-                        diff_freq2[n] = matrix2(j, n) - matrix1(j, n);
-                    }
-                    else {
-                        accum += matrix2(j, n) * matrix[n][n];
-                        diff_freq1[n] = matrix1(j, n) - matrix2(j, n);
-                        diff_freq2[n] = 0.0;
-                     }
-                }
-
-                double sum = 0.0; 
-                for (int n = 0; n < kAlphabetSize; n++) {
-                    sum += diff_freq1[n];
-                }
-                if (sum > 0) {
-                    for (int n = 0; n < kAlphabetSize; n++)
-                        diff_freq1[n] /= sum;
-
-                    for (int n = 0; n < kAlphabetSize; n++) {
-                        for (int p = 0; p < kAlphabetSize; p++) {
-                            accum += diff_freq1[n] * diff_freq2[p] *
-                                     matrix[n][p];
-                        }
-                    }
-                }
-
-                sp_score += accum;
-            }
-        }
-
-        // divide by the number of pairs in the column, to
-        // get an 'average' sum of pairs score
-
-        sp_score = sp_score / (num_queries * (num_queries - 1)/2);
-
-        avg_sp[j] = sp_score;
-
-        // if this average is high enough, this column is 
-        // considered conserved. Find the offset into each 
-        // unaligned sequence that corresponds to column j 
-        // in the alignment, and save it
-
-        if (sp_score >= m_ConservedCutoff) {
+    for (i = 0; i < align_length; i++) {
+        hvec[i] = x_GetScoreOneCol(new_alignment, i);
+    }
+    for (i = 0; i < align_length; i++) {
+        if (hvec[i] >= m_ConservedCutoff) {
             if (!chosen_cols.empty() &&
-                chosen_cols.back().GetTo() == j - 1) {
-                chosen_cols.back().SetTo(j);
+                 chosen_cols.back().GetTo() == i-1) {
+                chosen_cols.back().SetTo(i);
             }
             else {
-                chosen_cols.push_back(TRange(j, j));
+                chosen_cols.push_back(TRange(i, i));
             }
         }
     }
-
-    int i = 0;
-    for (int j = 0; j < (int)chosen_cols.size(); j++) {
+    for (i = j = 0; j < (int)chosen_cols.size(); j++) {
         if (chosen_cols[j].GetLength() > 1) {
-            if (m_Verbose) {
-                printf("constraint at position %3d - %3d\n",
-                        chosen_cols[j].GetFrom(), chosen_cols[j].GetTo());
-            }
             chosen_cols[i++] = chosen_cols[j];
         }
     }
     chosen_cols.resize(i);
 
+    if (m_Verbose) {
+        for (i = 0; i < (int)chosen_cols.size(); i++) {
+            printf("constraint at position %3d - %3d\n",
+                chosen_cols[i].GetFrom(), chosen_cols[i].GetTo());
+        }
+    }
+
     vector<TRange> range_nogap(num_queries);
 
-    for (int j = 0; j < (int)chosen_cols.size(); j++) {
+    for (i = 0; i < (int)chosen_cols.size(); i++) {
 
-        TRange& curr_range = chosen_cols[j];
+        TRange& curr_range = chosen_cols[i];
+        int start = curr_range.GetFrom();
+        int length = curr_range.GetLength();
 
-        for (int k = 0; k < num_queries; k++) {
+        for (j = 0; j < num_queries; j++) {
+
+            for (k = 0; k < length; k++) {
+                if (new_alignment[j].GetLetter(start+k) == CSequence::kGapChar)
+                    break;
+            }
+            if (k < length) {
+                range_nogap[j].SetEmpty();
+                continue;
+            }
 
             int offset1 = -1;
-            int m;
             for (m = 0; m <= curr_range.GetFrom(); m++) {
-                if (new_alignment[k].GetLetter(m) != CSequence::kGapChar)
+                if (new_alignment[j].GetLetter(m) != CSequence::kGapChar)
                     offset1++;
             }
 
             int offset2 = offset1;
             for (; m <= curr_range.GetTo(); m++) {
-                if (new_alignment[k].GetLetter(m) != CSequence::kGapChar)
+                if (new_alignment[j].GetLetter(m) != CSequence::kGapChar)
                     offset2++;
             }
-            range_nogap[k].Set(offset1, offset2);
+            range_nogap[j].Set(offset1, offset2);
         }
 
-        for (int k = 0; k < num_queries - 1; k++) {
-            for (int m = k + 1; m < num_queries; m++) {
-                conserved.AddToHitList(new CHit(k, m, range_nogap[k],
-                                 range_nogap[m], 1, CEditScript()));
+        for (k = 0; k < num_queries - 1; k++) {
+            for (m = k + 1; m < num_queries; m++) {
+                if (!range_nogap[k].Empty() && !range_nogap[m].Empty()) {
+                    conserved.AddToHitList(new CHit(k, m, range_nogap[k],
+                                                    range_nogap[m], 1000, 
+                                                    CEditScript()));
+                }
             }
         }
     }
 
-    for (i = 0; i < conserved.Size(); i++)
-        conserved.GetHit(i)->m_Score = 1;
-
     //------------------------------
     if (m_Verbose) {
-        printf("Per-column average sum of pairs:\n");
-        for (int j = 0; j < align_length; j++) {
-            if (avg_sp[j] == -999)
-                printf("     . ");
-            else
-                printf("%6.2f ", avg_sp[j]);
-            if ((j+1)%10 == 0)
+        printf("Per-column score\n");
+        for (i = 0; i < align_length; i++) {
+            printf("%6.2f ", hvec[i]);
+            if ((i+1)%10 == 0)
                 printf("\n");
         }
         printf("\n");
@@ -805,8 +802,8 @@ CMultiAligner::x_BuildAlignmentIterative(
     int iteration = 0;
     int conserved_cols;
     int new_conserved_cols;
-    int new_sp_score;
-    int best_sp_score = INT4_MIN;
+    double new_score;
+    double best_score = INT4_MIN;
 
     CNcbiMatrix<CHitList> pair_info(num_queries, num_queries, CHitList());
     for (int i = 0; i < m_CombinedHits.Size(); i++) {
@@ -824,35 +821,28 @@ CMultiAligner::x_BuildAlignmentIterative(
 
     while (1) {
 
-        int realign_sp_score = 0;
-        for (int i = 0; i < num_queries - 1; i++) {
-            for (int j = i + 1; j < num_queries; j++) {
-                realign_sp_score += CSequence::GetPairwiseScore(
-                                        tmp_aligned[i],
-                                        tmp_aligned[j],
-                                        m_Aligner.GetMatrix(),
-                                        m_Aligner.GetWg(),
-                                        m_Aligner.GetWs());
-            }
-        }
+        double realign_score = x_GetScore(tmp_aligned);
+        if (m_Verbose)
+            printf("start score: %f\n", realign_score);
+
         for (int i = 0; i < 5; i++) {
-            new_sp_score = realign_sp_score;
+            new_score = realign_score;
             for (int j = 0; j < (int)edges.size() &&
                            edges[j].distance >= cluster_cutoff; j++) {
 
-                new_sp_score = x_RealignSequences(edges[j].node,
-                                                  tmp_aligned,
-                                                  pair_info, 
-                                                  new_sp_score, 
-                                                  iteration);
+                new_score = x_RealignSequences(edges[j].node,
+                                               tmp_aligned,
+                                               pair_info, 
+                                               new_score, 
+                                               iteration);
             }
 
-            if (new_sp_score - realign_sp_score <= 
-                             0.02 * abs(realign_sp_score))
+            if (new_score - realign_score <= 0.02 * fabs(realign_score)) {
                 break;
-            realign_sp_score = new_sp_score;
+            }
+            realign_score = new_score;
         }
-        realign_sp_score = max(realign_sp_score, new_sp_score);
+        realign_score = max(realign_score, new_score);
 
         //-------------------------------------------------
         if (m_Verbose) {
@@ -862,16 +852,19 @@ CMultiAligner::x_BuildAlignmentIterative(
                 }
                 printf("\n");
             }
-            printf("sum of pairs = %d\n", realign_sp_score);
+            printf("score = %f\n", realign_score);
         }
         //-------------------------------------------------
 
-        if (realign_sp_score > best_sp_score) {
+        if (realign_score > best_score) {
             if (m_Verbose) {
                 printf("REPLACE ALIGNMENT\n\n");
             }
-            best_sp_score = realign_sp_score;
-            m_Results = tmp_aligned;
+            best_score = realign_score;
+            m_Results = tmp_aligned;    // will always happen at least once
+
+            if (!m_Iterate)
+                break;
         }
 
         // recompute the conserved columns based on the new alignment
@@ -971,6 +964,17 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2005/12/16 23:37:37  papadopo
+  1. Switch from a sum-of-pairs method to a modified entropy calculation
+     for detecting conserved columns
+  2. Allow columns to be conserved even if one or more of the sequences
+     contain a gap at that position. Pairwise constraints are simply
+     not made if one of the sequences has a gap
+  3. when building the graph for consistent constraints, do not merge
+     hits into a previously added graph node unless the hits actually
+     overlap the graph node
+  4. Make conserved colmns / iteration optional, add pseudocount parameter
+
   Revision 1.5  2005/11/18 20:20:29  papadopo
   use raw scores instead of bit scores in constraints
 
