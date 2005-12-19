@@ -107,8 +107,8 @@ typedef struct BlastLookupTable {
                                 (wordsize*charsize) bits should be discarded. */
     Int4 word_length;      /**< Length in bases of the full word match 
                                 required to trigger extension */
-    Int4 wordsize;         /**< number of full bytes in a full word */
-    Int4 reduced_wordsize; /**< number of bytes in a word stored in the LUT */
+    Int4 lut_word_length;  /**< Length in bases of a word indexed by the
+                                lookup table */
     Int4 charsize;         /**< number of bits for a base/residue */
     Int4 scan_step;        /**< number of bases between successive words */
     Int4 alphabet_size;    /**< number of letters in the alphabet */
@@ -208,11 +208,16 @@ Int4 BlastAaLookupNew(const LookupTableOptions* opt, BlastLookupTable* * lut);
 /** Create a new lookup table.
   * @param opt pointer to lookup table options structure [in]
   * @param lut handle to lookup table [in/modified]
+  * @param approx_num_entries an estimate of the number of words
+  *        to be added to the lookup table. Only used for nucleotide
+  *        lookup tables [in]
   * @param is_protein boolean indicating protein or nucleotide [in]
   * @return 0 if successful, nonzero on failure
   */
   
-Int4 LookupTableNew(const LookupTableOptions* opt, BlastLookupTable* * lut, 
+Int4 LookupTableNew(const LookupTableOptions* opt, 
+                    BlastLookupTable* * lut, 
+                    Int4 approx_num_entries,
 		    Boolean is_protein);
 
 /** Free the lookup table.
