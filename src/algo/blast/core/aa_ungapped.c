@@ -127,7 +127,7 @@ BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    }
    else {
       lookup = (BlastLookupTable *)lookup_wrap->lut;
-      wordsize = lookup->wordsize;
+      wordsize = lookup->word_length;
    }
    last_offset  = subject->length - wordsize;
    use_pssm = (rps_lookup != NULL) || (lookup->use_pssm);
@@ -265,7 +265,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    }
    else {
       lookup = (BlastLookupTable *)lookup_wrap->lut;
-      wordsize = lookup->wordsize;
+      wordsize = lookup->word_length;
    }
    last_offset  = subject->length - wordsize;
    use_pssm = (rps_lookup != NULL) || (lookup->use_pssm);
