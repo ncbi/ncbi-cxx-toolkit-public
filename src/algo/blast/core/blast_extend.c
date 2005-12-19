@@ -306,7 +306,6 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
       remainder = 3;
    }
    
-   /* Find where positive scoring starts & ends within the word hit */
    score = 0;
    sum = 0;
 
@@ -815,30 +814,17 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
    Boolean extend_partial_byte = FALSE;
    Uint4 min_step = 0;
    Uint1 template_length = 0;
+   BlastLookupTable* lookup = (BlastLookupTable*)lookup_wrap->lut;
 
-   if (lookup_wrap->lut_type == MB_LOOKUP_TABLE) {
-      BlastMBLookupTable* mb_lt = (BlastMBLookupTable*)lookup_wrap->lut;
-      word_length = mb_lt->word_length;
-      reduced_wordsize = 
-         (word_length - COMPRESSION_RATIO + 1)/COMPRESSION_RATIO;
-      compressed_wordsize = mb_lt->compressed_wordsize;
-      extend_partial_byte = !mb_lt->variable_wordsize;
-      /* When ungapped extension is not performed, the hit will be new only if
-         it more than scan_step away from the previous hit. */
-      if(!word_params->options->ungapped_extension)
-         min_step = mb_lt->scan_step;
-      template_length = mb_lt->template_length;
-   } else {
-      BlastLookupTable* lookup = (BlastLookupTable*)lookup_wrap->lut;
-      word_length = lookup->word_length;
-      reduced_wordsize = lookup->wordsize;
-      compressed_wordsize = lookup->reduced_wordsize;
-      extend_partial_byte = !lookup->variable_wordsize;
-      /* When ungapped extension is not performed, the hit will be new only if
-         it more than scan_step away from the previous hit. */
-      if(!word_params->options->ungapped_extension)
-         min_step = lookup->scan_step;
-   }
+   ASSERT(lookup_wrap->lut_type != MB_LOOKUP_TABLE);
+   word_length = lookup->word_length;
+   reduced_wordsize = (word_length-(COMPRESSION_RATIO-1))/ COMPRESSION_RATIO;
+   compressed_wordsize = lookup->lut_word_length / COMPRESSION_RATIO;
+   extend_partial_byte = !lookup->variable_wordsize;
+   /* When ungapped extension is not performed, the hit will be new only if
+      it more than scan_step away from the previous hit. */
+   if(!word_params->options->ungapped_extension)
+      min_step = lookup->scan_step;
 
    extra_bytes_needed = reduced_wordsize - compressed_wordsize;
 
@@ -929,7 +915,7 @@ Int2 BlastNaWordFinder(BLAST_SequenceBlk* subject,
    Int4 hits_extended = 0;
    Int4 start_offset, last_start, next_start;
 
-   last_start = subject->length - COMPRESSION_RATIO*lookup->wordsize;
+   last_start = subject->length - lookup->lut_word_length;
    start_offset = 0;
 
    while (start_offset <= last_start) {
@@ -1137,47 +1123,30 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
    Int4 subject_length = subject->length;
    Int4 hits_extended = 0;
 
+   ASSERT(mb_lt->discontiguous ||
+          word_params->extension_method == eRightAndLeft);
+
    start_offset = 0;
    if (mb_lt->discontiguous) {
       last_start = subject_length - mb_lt->template_length;
       last_end = subject_length;
    } else {
       last_end = subject_length;
-      switch (word_params->extension_method) {
-      case eRightAndLeft: case eUpdateDiag:
-         /* Look for matches all the way to the end of the sequence. */
-         last_start = 
-            last_end - COMPRESSION_RATIO*mb_lt->compressed_wordsize;
-         break;
-      case eRight:
-         /* Need to leave word_length to the end of the sequence for extension
-            to the right. */
-         if (mb_lt->variable_wordsize)
-            last_end -= last_end%COMPRESSION_RATIO;
-         last_start = last_end - mb_lt->word_length;
-         last_end = last_start + mb_lt->compressed_wordsize*COMPRESSION_RATIO;
-         break;
-      default: 
-         abort();  /* All the relevant cases should be handled above, otherwise variables may not be properly set
-                      for the rest of the funciton. */ 
-         break;
-      }
+      last_start = last_end - mb_lt->lut_word_length;
    }
 
    /* start_offset points to the beginning of the word */
    while ( start_offset <= last_start ) {
+
       /* Set the last argument's value to the end of the last word,
          without the extra bases for the discontiguous case */
       next_start = last_end;
       if (mb_lt->discontiguous) {
          hitsfound = MB_DiscWordScanSubject(lookup_wrap, subject, start_offset,
                         offset_pairs, max_hits, &next_start);
-      } else if (word_params->extension_method == eRightAndLeft) {
+      } else {
          hitsfound = MB_AG_ScanSubject(lookup_wrap, subject, start_offset, 
                         offset_pairs, max_hits, &next_start);
-      } else {
-         hitsfound = MB_ScanSubject(lookup_wrap, subject, start_offset, 
-	                     offset_pairs, max_hits, &next_start);
       }
 
       switch (word_params->extension_method) {
@@ -1186,12 +1155,6 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
             BlastNaExtendRightAndLeft(offset_pairs, hitsfound, word_params,
                                       lookup_wrap, query, subject, 
                                       matrix, ewp, init_hitlist);
-         break;
-      case eRight:
-         hits_extended += 
-            BlastNaExtendRight(offset_pairs, hitsfound, word_params, 
-                               lookup_wrap, query, subject, 
-                               matrix, ewp, init_hitlist);
          break;
       case eUpdateDiag:
           hits_extended += 
@@ -1237,7 +1200,7 @@ Int2 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    Int4 hits_extended = 0;
 
    start_offset = 0;
-   end_offset = subject->length - COMPRESSION_RATIO*lookup->reduced_wordsize;
+   end_offset = subject->length - lookup->lut_word_length;
 
    /* start_offset points to the beginning of the word; end_offset is the
       beginning of the last word */
