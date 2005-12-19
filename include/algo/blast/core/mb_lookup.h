@@ -102,12 +102,10 @@ typedef enum {
 
 /** The lookup table structure used for Mega BLAST, generally with width 12 */
 typedef struct BlastMBLookupTable {
-   Int4 hashsize;       /**< = 2^(8*width) */ 
-   Int4 mask;           /**< hashsize - 1 */
-   Int4 compressed_wordsize;/**< Number of bytes in intersection between 
-                               consecutive words */
-   Int4 word_length;      /**< The length of the initial word without the 
-                             extra part */
+   Int4 word_length;      /**< number of exact letter matches that will trigger
+                             an ungapped extension */
+   Int4 lut_word_length;  /**< number of letters in a lookup table word */
+   Int4 hashsize;       /**< = 4^(lut_word_length) */ 
    Boolean discontiguous; /**< Are discontiguous words used? */
    Uint1 template_length; /**< Length of the discontiguous word template */
    EDiscTemplateType template_type; /**< Type of the discontiguous 
@@ -123,6 +121,7 @@ typedef struct BlastMBLookupTable {
    Int4* next_pos;    /**< Extra positions stored here     */
    Int4* next_pos2;   /**< Extra positions for the second template */
    Int4 num_unique_pos_added; /**< Number of positions added to the l.t. */
+   Int4 num_words_added; /**< Number of words added to the l.t. */
    PV_ARRAY_TYPE *pv_array;/**< Presence vector, used for quick presence 
                               check */
    Int4 pv_array_bts; /**< The exponent of 2 by which pv_array is smaller than
@@ -142,33 +141,18 @@ typedef struct BlastMBLookupTable {
  *        e.g. [0,length-1] for full sequence. NULL means no sequence. [in]
  * @param mb_lt_ptr Pointer to the lookup table to be created [out]
  * @param lookup_options Options for lookup table creation [in]
+ * @param approx_table_entries An estimate of the number of words
+ *        that must be added to the lookup table [in]
  */
 Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                        BlastMBLookupTable** mb_lt_ptr,
-                       const LookupTableOptions* lookup_options);
+                       const LookupTableOptions* lookup_options,
+                       Int4 approx_table_entries);
 
 /** 
  * Deallocate memory used by the Mega BLAST lookup table
  */
 BlastMBLookupTable* MBLookupTableDestruct(BlastMBLookupTable* mb_lt);
-
-/** Scan the compressed subject sequence, returning all word hits, using the
- * old MegaBLAST approach - looking up words at every byte (4 bases) of the 
- * sequence. Lookup table is presumed to have a traditional MegaBLAST 
- * structure.
- * @param lookup Pointer to the (wrapper to) lookup table [in]
- * @param subject The (compressed) sequence to be scanned for words [in]
- * @param start_offset The offset into the sequence in actual coordinates [in]
- * @param offset_pairs Array of query and subject positions where words are 
- *                     found [out]
- * @param max_hits The allocated size of the above arrays - how many offsets 
- *        can be returned [in]
- * @param end_offset Where the scanning should stop [in], has stopped [out]
-*/
-Int4 MB_ScanSubject(const LookupTableWrap* lookup,
-       const BLAST_SequenceBlk* subject, Int4 start_offset,
-       BlastOffsetPair* NCBI_RESTRICT offset_pairs, Int4 max_hits,
-       Int4* end_offset);
 
 /** Scan the compressed subject sequence, returning all word hits, looking up 
  * discontiguous words. Lookup table is presumed to have a traditional 
