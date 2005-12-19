@@ -1296,7 +1296,7 @@ public:
     /// Constructor.
     /// Start timer if argument is true.
     /// @deprecated Use CStopWatch(EStat) constuctor instead.
-    CStopWatch(bool start) NCBI_DEPRECATED;
+    NCBI_DEPRECATED_CTOR(CStopWatch(bool start));
 
     /// Start the timer.
     void Start(void);
@@ -2010,6 +2010,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2005/12/19 18:02:01  ucko
+ * Use NCBI_DEPRECATED_CTOR in CStopWatch to restore compatibility with
+ * MS Visual Studio 2005.
+ *
  * Revision 1.55  2005/12/16 18:03:29  ivanov
  * + CStopWatch::Stop() to suspend a "timer"
  *
