@@ -14,7 +14,7 @@
  *  Although all reasonable efforts have been taken to ensure the accuracy
  *  and reliability of the software and data, the NLM and the U.S.
  *  Government do not and cannot warrant the performance or results that
- *  may be obtained by using this software or data. The NLM and the U.S.
+ *  may be obtained by using this software or data. caThe NLM and the U.S.
  *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
  *  purpose.
@@ -79,24 +79,28 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
 
     auto_ptr<IReader> reader;
     if (key.empty()) 
-        return reader;
+        NCBI_THROW(CNetCacheNSStorageException,
+                   eBlobNotFound, "Requested blob is not found.");
     int try_count = 0;
     while(1) {
         try {
             reader.reset(m_NCClient->GetData(key, &blob_size, mode));
             break;
-        }
-        catch (CNetCacheException& ex) {
-            if (ex.GetErrCode() == CNetServiceException::eTimeout) {
+        } catch(CNetCacheException& ex1) {
+            if(ex1.GetErrCode() != CNetCacheException::eBlobLocked) 
+                throw;
 
-                ERR_POST("Communication Error : " << ex.what());
-                if (++try_count >= 2)
-                    throw;
-                SleepMilliSec(1000 + try_count*2000);
-            } else if(ex.GetErrCode() == CNetCacheException::eBlobLocked) {
-                NCBI_THROW(CNetScheduleStorageException,
-                   eBlocked, "Requested blob is blocked by another process.");
-            }
+            NCBI_RETHROW(ex1, CNetScheduleStorageException, eBlocked, 
+                       "Requested blob is blocked by another process.");
+
+        } catch (CNetServiceException& ex) {
+            if (ex.GetErrCode() != CNetServiceException::eTimeout) 
+                throw;
+            
+            ERR_POST("Communication Error : " << ex.what());
+            if (++try_count >= 2)
+                throw;
+            SleepMilliSec(1000 + try_count*2000);
         }
     }
     if (!reader.get()) {
@@ -113,10 +117,6 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
     if (blob_size) *blob_size = 0;
     size_t b_size = 0;
     auto_ptr<IReader> reader = x_GetReader(key, b_size, lockMode);
-    if (!reader.get()) {
-        m_IStream.reset(new CNcbiIstrstream("",0));
-        return *m_IStream;
-    }
 
     if (blob_size) *blob_size = b_size;
     if (m_CacheFlags & eCacheInput) {
@@ -151,23 +151,20 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
 string CNetCacheNSStorage::GetBlobAsString(const string& data_id)
 {
     size_t b_size = 0;
-    try {
+    //    try {
         auto_ptr<IReader> reader = x_GetReader(data_id, b_size, eLockWait);
-        if (!reader.get())
-            return data_id;
         AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
         if( reader->Read(buf.get(), b_size) != eRW_Success )
-            return data_id;
+            NCBI_THROW(CNetScheduleStorageException,
+                       eReader, "Reader couldn't read a blob.");
         buf.get()[b_size] = 0;   
+        return string(buf.get());
 
-        string ret(buf.get());
-        return ret;
-
-    } catch (CNetCacheNSStorageException& ex) {
-        if (ex.GetErrCode() == CNetCacheNSStorageException::eBlobNotFound)
-            return data_id;
-        throw;
-    }
+        //    } catch (CNetCacheNSStorageException& ex) {
+        //        if (ex.GetErrCode() == CNetCacheNSStorageException::eBlobNotFound)
+        //            return "";//data_id;
+        //        throw;
+        //    }
 }
 
 CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
@@ -188,7 +185,7 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
                 ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2)
                     throw;
-            SleepMilliSec(1000 + try_count*2000);
+                SleepMilliSec(1000 + try_count*2000);
             }
         }
         if (!writer.get()) {
@@ -292,6 +289,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/12/19 16:52:38  didenko
+ * Improved exceptions handling
+ *
  * Revision 1.15  2005/10/26 19:08:08  kuznets
  * Bug fix: incorrect exception catch
  *
