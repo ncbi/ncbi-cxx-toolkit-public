@@ -405,7 +405,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
         const LookupTableOptions* lookup_options,
         Int4 approx_table_entries)
 {
-   Int4 pv_shift, pv_size;
+   Int4 pv_size;
    Int2 status = 0;
    BlastMBLookupTable* mb_lt;
    const Int4 kAlphabetSize = BLAST2NA_SIZE;
