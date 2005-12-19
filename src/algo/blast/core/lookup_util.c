@@ -191,7 +191,6 @@ Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_width)
 {
    Int4 extra = 1;
    Uint1 remainder;
-   Int4 stride;
 
    remainder = word_size % COMPRESSION_RATIO;
 
