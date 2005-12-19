@@ -78,6 +78,7 @@ extern const Uint1 IUPACNA_TO_NCBI4NA[];
 /** Translates between ncbieaa and ncbistdaa. */
 extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 
+#define BLAST2NA_SIZE 4     /**< Size of compressed nucleic acid alphabet */
 #define BLASTNA_SIZE 16     /**< Size of nucleic acid alphabet */
 #define BLASTAA_SIZE 26     /**< Size of aminoacid alphabet */
 
@@ -97,6 +98,9 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/19 16:19:18  papadopo
+ * add define for size of ncbi2na alphabet
+ *
  * Revision 1.6  2005/05/10 16:07:35  camacho
  * Changed *_ENCODING #defines to EBlastEncoding enumeration
  *
