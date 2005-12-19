@@ -41,6 +41,7 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/lookup_wrap.h>
+#include <algo/blast/core/lookup_util.h>
 #include <algo/blast/core/blast_lookup.h>
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/phi_lookup.h>
