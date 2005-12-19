@@ -430,7 +430,7 @@ static NCBI_INLINE Int2
 Na_LookupComputeIndex(BlastLookupTable* lookup, Uint1* word, Int4* index)
 {
    Int4 i;
-   Int4 wordsize = lookup->reduced_wordsize*COMPRESSION_RATIO; /* i.e. 8 or 4 */
+   Int4 wordsize = lookup->lut_word_length;
 
    *index = 0;
    for (i = 0; i < wordsize; ++i) {
