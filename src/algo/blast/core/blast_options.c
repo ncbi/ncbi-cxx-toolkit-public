@@ -990,14 +990,6 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 		return (Int2) code;
 	}
 
-   if (options->lut_type == MB_LOOKUP_TABLE && options->word_size < 12 && 
-       options->mb_template_length == 0) {
-      Blast_MessageWrite(blast_msg, eBlastSevError, code, subcode, 
-                         "Word size must be 12 or greater with megablast"
-                         " lookup table");
-      return (Int2) code;
-   }
-
    if (program_number == eBlastTypeBlastn && options->mb_template_length > 0) {
       if (!s_DiscWordOptionsValidate(options->word_size,
               options->mb_template_length, options->mb_template_type)) {
@@ -1306,6 +1298,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.177  2005/12/19 16:11:12  papadopo
+ * no minimum value for megablast word size need be enforced; the engine will switch to a standard lookup table if the specified word size is too small
+ *
  * Revision 1.176  2005/12/12 13:38:27  madden
  * Add call to s_BlastExtensionScoringOptionsValidate to BLAST_ValidateOptions to check that scoring and extension options are consistent
  *
