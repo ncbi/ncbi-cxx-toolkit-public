@@ -86,12 +86,20 @@ void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet);
  * @param var_words If true, and word_size is divisible by 4, partial bytes 
  *                  need not be checked to test the length of the 
  *                  exact match [in]
- * @param lut_type  What kind of lookup table is used (based on 4-mers, 8-mers 
- *                  or 12-mers) [in]
+ * @param lut_width How many letters are in a lookup table entry [in]
  * @return          The stride necessary to find all exact matches of a given
  *                  word size.
  */
-Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type);
+Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_width);
+
+/** Given a list of query locations, estimate the number of words
+ * that would need to be added to a lookup table. The estimate is
+ * currently intended for nucleotide locations, and ignores ambiguities
+ * and the actual width of a lookup table word
+ * @param location A linked list of locations to index [in]
+ * @return The apprixomate number of lookup table entries
+ */
+Int4 EstimateNumTableEntries(BlastSeqLoc* location);
 
 #ifdef __cplusplus
 }
