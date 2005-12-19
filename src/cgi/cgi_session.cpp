@@ -29,11 +29,186 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbitime.hpp>
+
 #include <cgi/cgi_session.hpp>
+#include <cgi/ncbicgi.hpp>
+#include <cgi/cgi_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
-ICgiSession::~ICgiSession()
+const string CCgiSession::kDefaultSessionIdName = "ncbi_sessionid";
+const string CCgiSession::kDefaultSessionCookieDomain = ".ncbi.nlm.nih.gov";
+const string CCgiSession::kDefaultSessionCookiePath = "/";
+
+CCgiSession::CCgiSession(const CCgiRequest& request, 
+                         ICgiSession_Impl* impl, 
+                         EOwnership impl_owner,
+                         ECookieSupport cookie_sup)
+    : m_Request(request), m_Impl(impl), m_CookieSupport(cookie_sup),
+      m_SessionIdName(kDefaultSessionIdName),
+      m_SessionCookieDomain(kDefaultSessionCookieDomain),
+      m_SessionCookiePath(kDefaultSessionCookiePath)
+{
+    if (impl_owner == eTakeOwnership)
+        m_ImplGuard.reset(m_Impl);
+    m_Status = m_Impl ? eNotLoaded : eImplNotSet;
+}
+
+CCgiSession::~CCgiSession()
+{
+    if (m_Status == eLoaded || m_Status == eNew) {
+        try {
+            m_Impl->Reset();
+        } catch(...) {}
+    }
+}
+
+const string& CCgiSession::GetId() const
+{
+    if (m_SessionId.empty()) {
+        const_cast<CCgiSession*>(this)->m_SessionId = x_RetrieveSessionId();
+        if (m_SessionId.empty())
+            NCBI_THROW(CCgiSessionException, eSessionId,
+                       "SessioId can not be retrieved from the cgi request");
+    }
+    return m_SessionId;
+}
+
+void CCgiSession::SetId(const string& id)
+{
+    if (m_SessionId == id) 
+        return;
+    if (m_Status == eLoaded || m_Status == eNew) {
+        m_Impl->Reset();
+        m_Status = eNotLoaded;
+    }
+    m_SessionId = id;
+}
+
+void CCgiSession::Load()
+{
+    if (m_Status == eLoaded || m_Status == eNew)
+        return;
+    if (m_Status == eImplNotSet)
+        NCBI_THROW(CCgiSessionException, eImplNotSet,
+                   "The session implemetatin is not set");
+    if (m_Status == eDeleted)
+        NCBI_THROW(CCgiSessionException, eDeleted,
+                   "Can not load deleted session");
+    if (m_Impl->LoadSession(GetId()))
+        m_Status = eLoaded;
+    else m_Status = eNotLoaded;
+}
+
+void CCgiSession::CreateNewSession()
+{
+    if (m_Status == eLoaded || m_Status == eNew)
+        m_Impl->Reset();
+    if (m_Status == eImplNotSet)
+        NCBI_THROW(CCgiSessionException, eImplNotSet,
+                   "The session implemetatin is not set");
+    m_SessionId = m_Impl->CreateNewSession();
+    m_Status = eNew;
+}
+
+void CCgiSession::GetAttributeNames(TNames& names) const
+{
+    x_Load();
+    m_Impl->GetAttributeNames(names);
+}
+
+CNcbiIstream& CCgiSession::GetAttrIStream(const string& name, 
+                                          size_t* size)
+{
+    Load();
+    return m_Impl->GetAttrIStream(name, size);
+}
+
+CNcbiOstream& CCgiSession::GetAttrOStream(const string& name)
+{
+    Load();
+    return m_Impl->GetAttrOStream(name);
+}
+
+void CCgiSession::SetAttribute(const string& name, const string& value)
+{
+    Load();
+    m_Impl->SetAttribute(name,value);
+}
+
+void CCgiSession::GetAttribute(const string& name, string& value) const
+{
+    x_Load();
+    m_Impl->GetAttribute(name, value);
+}
+
+void CCgiSession::RemoveAttribute(const string& name)
+{
+    Load();
+    m_Impl->RemoveAttribute(name);
+}
+
+void CCgiSession::DeleteSession()
+{
+    if (m_SessionId.empty()) {
+        m_SessionId = x_RetrieveSessionId();
+        if (m_SessionId.empty())
+            return;
+    }
+    Load();
+    m_Impl->DeleteSession();
+    m_Status = eDeleted;
+}
+
+
+const CCgiCookie * const CCgiSession::GetSessionCookie() const
+{
+    if (m_CookieSupport == eDonotUseCookie ||
+        (m_Status != eLoaded && m_Status != eNew && m_Status != eDeleted))
+        return NULL;
+
+    if (!m_SessionCookie.get()) {
+        const_cast<CCgiSession*>(this)->
+            m_SessionCookie.reset(new CCgiCookie(m_SessionIdName,
+                                                 m_SessionId,
+                                                 m_SessionCookieDomain,
+                                                 m_SessionCookiePath));
+        if (m_Status == eDeleted) {
+            CTime exp(CTime::eCurrent, CTime::eGmt);
+            exp.AddMinute(-5);
+            const_cast<CCgiSession*>(this)->
+                m_SessionCookie->SetExpTime(exp);
+        }
+        
+    }
+    return m_SessionCookie.get();
+}
+
+string CCgiSession::x_RetrieveSessionId() const
+{
+    if (m_CookieSupport == eUseCookie) {
+        const CCgiCookies& cookies = m_Request.GetCookies();
+        const CCgiCookie* cookie = cookies.Find(m_SessionIdName, "", ""); 
+
+        if (cookie) {
+            return cookie->GetValue();
+        }
+    }
+    bool is_found = false;
+    const CCgiEntry& entry = m_Request.GetEntry(m_SessionIdName, &is_found);
+    if (is_found)
+        return entry.GetValue();
+    return "";
+}
+
+void CCgiSession::x_Load() const
+{
+    const_cast<CCgiSession*>(this)->Load();
+}
+
+///////////////////////////////////////////////////////////
+ICgiSession_Impl::~ICgiSession_Impl()
 {
 }
 
@@ -42,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/19 16:55:04  didenko
+ * Improved CGI Session implementation
+ *
  * Revision 1.1  2005/12/15 18:21:15  didenko
  * Added CGI session support
  *

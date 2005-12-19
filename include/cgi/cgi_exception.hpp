@@ -124,8 +124,6 @@ public:
         case eAttribute: return "Bad part attribute in multipart HTTP request";
         case eFormat:    return "Misformatted data in HTTP request";
         case eData:      return "Unexpected or inconsistent HTTP request";
-        case eSessionImpNotRegistred: return "Session implementaion is not registred";
-        case eSessionDoesnotExist: return "Session does not exsit";
         default:         return CException::GetErrCodeString();
         }
     }
@@ -244,6 +242,37 @@ public:
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiSessionException --
+///
+///   Exceptions used by CGI session
+
+class CCgiSessionException : public CCgiException
+{
+public:
+    enum EErrCode {
+        eSessionId,     ///< SessionId is not spesified
+        eImplNotSet,    ///< Session implementaion is not set
+        eDeleted,       ///< Session has been deleted
+        eSessionDoesnotExist, ///< Session does not exsit;
+        eImplException  ///< Implementation exception
+    };
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch ( GetErrCode() ) {
+        case eSessionId:      return "SessionId is not spesified";
+        case eImplNotSet:     return "Session implementaion is not set";
+        case eDeleted:        return "Session has been deleted";
+        case eSessionDoesnotExist: return "Session does not exsit";
+        case eImplException:  return "Implementaion exception";
+        default:         return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CCgiSessionException, CCgiException);
+};
+
 END_NCBI_SCOPE
 
 
@@ -253,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/12/19 16:55:03  didenko
+ * Improved CGI Session implementation
+ *
  * Revision 1.9  2005/12/15 21:53:38  grichenk
  * Check if ArgsList is initialized (initialize in non-const GetArgs())
  *

@@ -31,6 +31,7 @@
 */
 
 #include <stddef.h>
+#include <corelib/ncbiexpt.hpp>
 
 #include <cgi/cgi_session.hpp>
 
@@ -43,17 +44,15 @@ BEGIN_NCBI_SCOPE
 class IRegistry;
 class INetScheduleStorage;
 
-class NCBI_XGRIDCGI_EXPORT CCgiSession_Netcache : public ICgiSession
+class NCBI_XGRIDCGI_EXPORT CCgiSession_Netcache : public ICgiSession_Impl
 {
 public:
     CCgiSession_Netcache(const IRegistry&);
 
     virtual ~CCgiSession_Netcache();
 
-    virtual void CreateNewSession();
-    virtual EStatus LoadSession(const string& sessionid);
-    virtual string GetSessionId() const;
-    virtual EStatus GetStatus() const ;
+    virtual string CreateNewSession();
+    virtual bool LoadSession(const string& sessionid);
 
     virtual void GetAttributeNames(TNames& names) const;
 
@@ -67,19 +66,43 @@ public:
     virtual void RemoveAttribute(const string& name);
     virtual void DeleteSession();
 
+    virtual void Reset();
 private:
     typedef map<string,string> TBlobs;
-
-    void x_Reset();
 
     string m_SessionId;    
     auto_ptr<INetScheduleStorage> m_Storage;
     
     TBlobs m_Blobs;    
     bool m_Dirty;
-    EStatus m_Status;
+
+    bool m_Loaded;
     
+    void x_CheckStatus() const;
+
+    CCgiSession_Netcache(const CCgiSession_Netcache&);
+    CCgiSession_Netcache& operator=(const CCgiSession_Netcache&);
 };
+
+class CCgiSessionNCException : public CException
+{
+public:
+    enum EErrCode {
+        eNotLoaded,
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eNotLoaded: return "eNotLoaded";
+        default:      return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CCgiSessionNCException, CException);
+};
+
 
 END_NCBI_SCOPE
 
@@ -90,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/19 16:55:04  didenko
+ * Improved CGI Session implementation
+ *
  * Revision 1.1  2005/12/15 18:21:15  didenko
  * Added CGI session support
  *

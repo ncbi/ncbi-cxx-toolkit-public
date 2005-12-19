@@ -36,7 +36,6 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
-#include <cgi/cgi_session.hpp>
 
 #ifdef NCBI_OS_UNIX
 #  include <unistd.h>
@@ -98,15 +97,6 @@ int CCgiApplication::Run(void)
         m_Context.reset( CreateContext() );
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
-        string cname = GetConfig().GetString("SESSION-COOKIE", "Name", 
-                                              "ncbi_sessionid");
-        string cdomain = GetConfig().GetString("SESSION-COOKIE", "Domain", 
-                                                ".ncbi.nlm.nih.gov");
-        string cpath = GetConfig().GetString("SESSION-COOKIE", "Path","/");
-        ICgiSession* session = GetSessionImpl();
-        m_Context->GetRequest().x_RegisterSessionImpl(*session, cname);
-        m_Context->GetResponse().x_RegisterSessionImpl(*session,
-                                                       cname, cdomain, cpath);
         result = ProcessRequest(*m_Context);
         _TRACE("CCgiApplication::Run: flushing");
         m_Context->GetResponse().Flush();
@@ -591,7 +581,8 @@ CCgiStatistics* CCgiApplication::CreateStat()
     return new CCgiStatistics(*this);
 }
 
-ICgiSession* CCgiApplication::GetSessionImpl() const 
+ICgiSession_Impl* 
+CCgiApplication::GetSessionImpl(CCgiSessionParameters&) const 
 {
     return 0;
 }
@@ -834,6 +825,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.65  2005/12/19 16:55:04  didenko
+* Improved CGI Session implementation
+*
 * Revision 1.64  2005/12/15 20:24:11  grichenk
 * More diag formatting flags. More default diag flags for new-style formatting.
 *

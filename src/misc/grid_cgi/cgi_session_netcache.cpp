@@ -34,7 +34,6 @@
 #include <corelib/ncbistr.hpp>
 
 #include <cgi/ncbicgi.hpp>
-#include <cgi/cgiapp.hpp>
 
 #include <misc/grid_cgi/cgi_session_netcache.hpp>
 
@@ -44,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 
 CCgiSession_Netcache::CCgiSession_Netcache(const IRegistry& conf) 
-    : m_Dirty(false), m_Status(eNotLoaded)
+    : m_Dirty(false), m_Loaded(false)
 {
     CNetScheduleStorageFactory_NetCache factory(conf);
     m_Storage.reset(factory.CreateInstance());
@@ -53,35 +52,35 @@ CCgiSession_Netcache::CCgiSession_Netcache(const IRegistry& conf)
 CCgiSession_Netcache::~CCgiSession_Netcache()
 {
     try {
-        x_Reset();
+        Reset();
     } catch (...) {}
 }
 
-void CCgiSession_Netcache::CreateNewSession()
+string CCgiSession_Netcache::CreateNewSession()
 {
     m_Blobs.clear();
     m_SessionId.erase();
-    x_Reset();
+    Reset();
     m_SessionId = m_Storage->CreateEmptyBlob();
-    m_Status = eLoaded;
+    m_Loaded = true;
+    return m_SessionId;
 }
 
 
-ICgiSession::EStatus CCgiSession_Netcache::LoadSession(const string& sessionid)
+bool CCgiSession_Netcache::LoadSession(const string& sessionid)
 {
     m_Blobs.clear();
     m_SessionId.erase();
-    x_Reset();
+    Reset();
+    m_Loaded = false;
     string master_value;
     try {
         master_value = m_Storage->GetBlobAsString(sessionid);
     }
     catch(...) {
-        m_Status = eNotLoaded;
-        return m_Status;
+        return false;
     }
     m_SessionId = sessionid;
-    m_Status = eLoaded;
     list<string> pairs;
     NStr::Split(master_value, ";", pairs);
     ITERATE(list<string>, it, pairs) {
@@ -89,22 +88,12 @@ ICgiSession::EStatus CCgiSession_Netcache::LoadSession(const string& sessionid)
         NStr::SplitInTwo(*it, "|", blobname, blobid);
         m_Blobs[blobname] = blobid;          
     }
-    return m_Status;
+    m_Loaded = true;
+    return m_Loaded;
 }
-
-string CCgiSession_Netcache::GetSessionId() const
-{
-    return m_SessionId;
-}
-
-ICgiSession::EStatus CCgiSession_Netcache::GetStatus() const
-{
-    return m_Status;
-}
-
 void CCgiSession_Netcache::GetAttributeNames(TNames& names) const
 {
-    if (m_Status != eLoaded) return;
+    x_CheckStatus();
     ITERATE(TBlobs, it, m_Blobs) {
         names.push_back(it->first);
     }
@@ -113,13 +102,12 @@ void CCgiSession_Netcache::GetAttributeNames(TNames& names) const
 CNcbiIstream& CCgiSession_Netcache::GetAttrIStream(const string& name, 
                                                    size_t* size)
 {
-    static CNcbiIstrstream sEmptyStream("",0);
-    if (size) *size = 0;
-    if (m_Status != eLoaded) return sEmptyStream;
+    x_CheckStatus();
 
-    x_Reset();
+    Reset();
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
+        static CNcbiIstrstream sEmptyStream("",0);
         if (size) *size = 0;
         return sEmptyStream;
     }
@@ -127,7 +115,8 @@ CNcbiIstream& CCgiSession_Netcache::GetAttrIStream(const string& name,
 }
 CNcbiOstream& CCgiSession_Netcache::GetAttrOStream(const string& name)
 {
-    x_Reset();
+    x_CheckStatus();
+    Reset();
     m_Dirty = true;
     string& blobid = m_Blobs[name];
     return m_Storage->CreateOStream(blobid);
@@ -135,18 +124,18 @@ CNcbiOstream& CCgiSession_Netcache::GetAttrOStream(const string& name)
 
 void CCgiSession_Netcache::SetAttribute(const string& name, const string& value)
 {
-    if (m_Status != eLoaded) return;
-    x_Reset();
+    x_CheckStatus();
+    Reset();
     m_Dirty = true;
     string& blobid = m_Blobs[name];
     CNcbiOstream& os = m_Storage->CreateOStream(blobid);
     os << value;
-    x_Reset();
+    Reset();
 }
 void CCgiSession_Netcache::GetAttribute(const string& name, string& value) const
 {
-    if (m_Status != eLoaded) return;
-    const_cast<CCgiSession_Netcache*>(this)->x_Reset();
+    x_CheckStatus();
+    const_cast<CCgiSession_Netcache*>(this)->Reset();
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
         value = "";
@@ -157,31 +146,32 @@ void CCgiSession_Netcache::GetAttribute(const string& name, string& value) const
 
 void CCgiSession_Netcache::RemoveAttribute(const string& name)
 {
-    if (m_Status != eLoaded) return;
+     x_CheckStatus();
     TBlobs::iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end())
         return;           
-    x_Reset(); 
+    Reset(); 
     string blobid = i->second;
     m_Blobs.erase(i);
     m_Storage->DeleteBlob(blobid);
     m_Dirty = true;
-    x_Reset();
+    Reset();
 }
 void CCgiSession_Netcache::DeleteSession()
 {
-    if (m_Status != eLoaded) return;
-    x_Reset();
+    x_CheckStatus();
+    Reset();
     ITERATE(TBlobs, it, m_Blobs) {
         m_Storage->DeleteBlob(it->second);
     }
     m_Storage->DeleteBlob(m_SessionId);
-    m_Status = eDeleted;
+    m_Loaded = false;
 }
 
 
-void CCgiSession_Netcache::x_Reset()
+void CCgiSession_Netcache::Reset()
 {
+    if (!m_Loaded) return;
     m_Storage->Reset();
     if (m_Dirty) {
         string master_value;
@@ -198,6 +188,13 @@ void CCgiSession_Netcache::x_Reset()
 }
 
 
+void CCgiSession_Netcache::x_CheckStatus() const
+{
+    if (!m_Loaded)
+        NCBI_THROW(CCgiSessionNCException,
+                   eNotLoaded, "The Session is not loaded.");
+}
+
 END_NCBI_SCOPE
 
 /* @} */
@@ -206,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/19 16:55:04  didenko
+ * Improved CGI Session implementation
+ *
  * Revision 1.2  2005/12/15 21:56:16  ucko
  * Use string::erase rather than string::clear for GCC 2.95 compatibility.
  *

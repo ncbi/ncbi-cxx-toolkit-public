@@ -186,17 +186,11 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         os << sm_ContentTypeName << ": " << sm_ContentTypeDefault << HTTP_EOL;
     }
     
-    if (m_Session && m_Session->GetStatus() != ICgiSession::eNotLoaded) {
-        CCgiCookie cookie(m_SessionCookieName,
-                          m_Session->GetSessionId(), 
-                          m_SessionCookieDomain,
-                          m_SessionCookiePath);
-        if (m_Session->GetStatus() == ICgiSession::eDeleted) {
-            CTime exp(CTime::eCurrent, CTime::eGmt);
-            exp.AddMinute(-5);
-            cookie.SetExpTime(exp);
+    if (m_Session) {
+        const CCgiCookie * const scookie = m_Session->GetSessionCookie();
+        if (scookie) {
+            const_cast<CCgiResponse*>(this)->Cookies().Add(*scookie);
         }
-        const_cast<CCgiResponse*>(this)->Cookies().Add(cookie);
     }
     
     // Cookies (if any)
@@ -222,24 +216,15 @@ void CCgiResponse::Flush(void) const
     out() << NcbiFlush;
 }
 
-void CCgiResponse::x_RegisterSessionImpl(ICgiSession& session,
-                                         const string& cookie_name,
-                                         const string& cookie_domain,
-                                         const string& cookie_path)
-{
-    _ASSERT(!m_Session);
-    m_Session = &session;
-    m_SessionCookieName = cookie_name;
-    m_SessionCookieDomain = cookie_domain;
-    m_SessionCookiePath = cookie_path;
-}
-
 END_NCBI_SCOPE
 
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2005/12/19 16:55:04  didenko
+* Improved CGI Session implementation
+*
 * Revision 1.24  2005/12/15 18:21:15  didenko
 * Added CGI session support
 *

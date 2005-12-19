@@ -57,6 +57,7 @@
 BEGIN_NCBI_SCOPE
 
 class CTime;
+class CCgiSession;
 
 ///////////////////////////////////////////////////////
 ///
@@ -546,7 +547,6 @@ typedef list<string>                                     TCgiIndexes;
 class CNcbiArguments;
 class CNcbiEnvironment;
 class CTrackingEnvHolder;
-class ICgiSession;
 
 
 ///////////////////////////////////////////////////////
@@ -659,7 +659,7 @@ public:
     };
     /// Get session
     ///
-    ICgiSession& GetSession(ESessionCreateMode mode = eCreateIfNotExist) const;
+    CCgiSession& GetSession(ESessionCreateMode mode = eCreateIfNotExist) const;
 
     /// Return pointer to the input stream.
     ///
@@ -752,12 +752,10 @@ private:
     string x_RetrieveSessionId() const;
 
     mutable auto_ptr<CTrackingEnvHolder> m_TrackingEnvHolder;
-    ICgiSession* m_Session;
-    string m_SessionCookieName;
+    CCgiSession* m_Session;
 
 public:
-    void x_RegisterSessionImpl(ICgiSession& session, 
-                               const string& cookie_name);
+    void x_SetSession(CCgiSession& session);
 
 };  // CCgiRequest
 
@@ -923,12 +921,19 @@ inline int CCgiRequest::GetInputFD(void) const {
     return m_InputFD;
 }
 
+inline void CCgiRequest::x_SetSession(CCgiSession& session)
+{
+    m_Session = &session;
+}
 
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.82  2005/12/19 16:55:03  didenko
+* Improved CGI Session implementation
+*
 * Revision 1.81  2005/12/15 18:21:15  didenko
 * Added CGI session support
 *

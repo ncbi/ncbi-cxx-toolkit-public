@@ -1322,44 +1322,29 @@ void CCgiRequest::Deserialize(CNcbiIstream& is, TFlags flags)
 }
 
 
-ICgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
+CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 {
-    if(!m_Session) 
-        NCBI_THROW(CCgiRequestException, eSessionImpNotRegistred, 
-                   "Overload CCgiApplication::RegisterSessionImpl method");
-    string sessionid = x_RetrieveSessionId();
-    ICgiSession::EStatus status = m_Session->LoadSession(sessionid);
-    if (status == ICgiSession::eNotLoaded && mode != eCreateIfNotExist) {
-        NCBI_THROW(CCgiRequestException, eSessionDoesnotExist, 
-                   "sessionid is empty and mode is not set to eCreateIfNotExist");
+
+    _ASSERT(m_Session);
+    try {
+        m_Session->Load();
+    } catch (CCgiSessionException& ex) {
+        if (ex.GetErrCode() != CCgiSessionException::eSessionId) {
+            NCBI_RETHROW(ex, CCgiSessionException, eImplException, 
+                         "Session implementaion error");
+        }
     }
-    if (status == ICgiSession::eNotLoaded)
-        m_Session->CreateNewSession();
+    if (m_Session->GetStatus() != CCgiSession::eLoaded) {
+        if (mode != eCreateIfNotExist)
+            NCBI_THROW(CCgiSessionException, eSessionDoesnotExist, 
+                       "Session doesnot exist.");
+        else
+            m_Session->CreateNewSession();
+    }
+
     return *m_Session;
 }
 
-void CCgiRequest::x_RegisterSessionImpl(ICgiSession& session,
-                                        const string& cookie_name)
-{
-    _ASSERT(!m_Session);
-    m_Session = &session;
-    m_SessionCookieName = cookie_name;
-}
-
-string CCgiRequest::x_RetrieveSessionId() const
-{
-    const CCgiCookies& cookies = GetCookies();
-    const CCgiCookie* cookie = cookies.Find(m_SessionCookieName, "", ""); 
-
-    if (cookie) {
-        return cookie->GetValue();
-    }
-    bool is_found = false;
-    const CCgiEntry& entry = GetEntry(m_SessionCookieName, &is_found);
-    if (is_found)
-        return entry.GetValue();
-    return "";
-}
 
 END_NCBI_SCOPE
 
@@ -1368,6 +1353,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.103  2005/12/19 16:55:04  didenko
+* Improved CGI Session implementation
+*
 * Revision 1.102  2005/12/15 18:21:15  didenko
 * Added CGI session support
 *

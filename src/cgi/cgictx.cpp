@@ -35,6 +35,8 @@
 #include <corelib/ncbireg.hpp>
 #include <cgi/ncbires.hpp>
 #include <cgi/cgictx.hpp>
+#include <cgi/cgi_util.hpp>
+#include <cgi/cgi_session.hpp>
 #include <cgi/cgiapp.hpp>
 
 #ifdef NCBI_OS_UNIX
@@ -110,6 +112,7 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                                 inp, flags, ifd, errbuf_size)),
       m_Response(out, ofd)
 {
+    x_InitSession();
     return;
 }
 
@@ -122,7 +125,26 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
       m_Response(os, -1)
 {
     m_Request->Deserialize(*is,flags);
+    x_InitSession();
     return;
+}
+void CCgiContext::x_InitSession()
+{
+    CCgiSessionParameters params;
+    ICgiSession_Impl* impl = m_App.GetSessionImpl(params);
+    m_Session.reset(new CCgiSession(*m_Request, 
+                                    impl,
+                                    params.m_ImplOwner,
+                                    params.m_CookieEnabled ? 
+                                    CCgiSession::eUseCookie :
+                                    CCgiSession::eDonotUseCookie)
+                    );
+    m_Session->SetSessionIdName(params.m_SessionIdName);
+    m_Session->SetSessionCookieDomain(params.m_SessionCookieDomain);
+    m_Session->SetSessionCookiePath(params.m_SessionCookiePath);
+
+    m_Request->x_SetSession(*m_Session);
+    m_Response.x_SetSession(*m_Session);
 }
 
 CCgiContext::~CCgiContext(void)
@@ -254,7 +276,6 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
     return m_SelfURL;
 }
 
-
 CCgiContext::TStreamStatus
 CCgiContext::GetStreamStatus(STimeout* timeout) const
 {
@@ -300,6 +321,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.44  2005/12/19 16:55:04  didenko
+* Improved CGI Session implementation
+*
 * Revision 1.43  2005/05/31 13:40:11  didenko
 * Added an optional parameter CCgiRequest::TFlags to the constructor of CCgiContext
 *

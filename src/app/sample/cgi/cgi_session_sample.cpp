@@ -53,7 +53,7 @@ public:
     virtual int  ProcessRequest(CCgiContext& ctx);
 
 protected:
-    ICgiSession* GetSessionImpl() const;
+    virtual ICgiSession_Impl* GetSessionImpl(CCgiSessionParameters&) const;
 
 private:
     // These 2 functions just demonstrate the use of cmd-line argument parsing
@@ -74,16 +74,18 @@ void CCgiSessionSampleApplication::Init()
     x_SetupArgs();
 }
 
-ICgiSession* CCgiSessionSampleApplication::GetSessionImpl() const
+ICgiSession_Impl* 
+CCgiSessionSampleApplication::GetSessionImpl(CCgiSessionParameters& params) const
 {
     static auto_ptr<CCgiSession_Netcache> session(new CCgiSession_Netcache(GetConfig()));
+    params.SetImplOwnership(eNoOwnership);
     return session.get();
 }
 
 
 struct SSessionVarTableCtx 
 {
-    SSessionVarTableCtx(const ICgiSession& session) 
+    SSessionVarTableCtx(const CCgiSession& session) 
         : m_Session(session)
     {
         m_Session.GetAttributeNames(m_Names);
@@ -93,8 +95,8 @@ struct SSessionVarTableCtx
     {
     }
 
-    const ICgiSession& m_Session;
-    typedef ICgiSession::TNames TNames;
+    const CCgiSession& m_Session;
+    typedef CCgiSession::TNames TNames;
     TNames m_Names;
     TNames::const_iterator m_CurName;          
 };
@@ -133,27 +135,23 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
 
-    ICgiSession& session = request.GetSession();
+    CCgiSession& session = request.GetSession();
     
     string modify_attr_name;
     string modify_attr_value;
-    bool is_session_deleted = false;
 
-    {
     bool is_sess_cmd_set = false;
     string cmd = request.GetEntry("DelSession", &is_sess_cmd_set);
     if (is_sess_cmd_set) {
         session.DeleteSession();
-        is_session_deleted = true;
     } else {
         cmd = request.GetEntry("CrtSession", &is_sess_cmd_set);
         if (is_sess_cmd_set) {
             session.CreateNewSession();
         }
     }
-    }        
     
-    if ( !is_session_deleted ) {
+    if ( session.GetStatus() != CCgiSession::eDeleted ) {
         bool is_name = false;
         string aname = request.GetEntry("aname", &is_name);
         bool is_value = false;
@@ -163,9 +161,9 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
             os << avalue;
             //session.SetAttribute(aname, avalue);
         } 
-        ICgiSession::TNames names;
+        CCgiSession::TNames names;
         session.GetAttributeNames(names);
-        ITERATE(ICgiSession::TNames, it, names) {
+        ITERATE(CCgiSession::TNames, it, names) {
             bool is_set;
             string action = *it + "_action";
             string avalue = request.GetEntry(action, &is_set);
@@ -183,6 +181,7 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
 
     // Create a HTML page (using template HTML file "cgi_sample.html")
     auto_ptr<CHTMLPage> page;
+    auto_ptr<SSessionVarTableCtx> session_ctx;
     try {
         const string& html = GetConfig().GetString("html", "template",
                                                    "cgi_session_sample.html");
@@ -197,26 +196,29 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
     }
  
 
-    SSessionVarTableCtx session_ctx(session);
-    try {
-        if (!is_session_deleted) {
+    try {        
+        if (session.GetStatus() != CCgiSession::eDeleted) {
+            session_ctx.reset(new SSessionVarTableCtx(session));
             page->AddTagMap("session_vars_hook", 
                             CreateTagMapper(s_SessionVarRowHook,
-                                            &session_ctx));
+                                            &*session_ctx));
 
             page->AddTagMap("SESSION_ID", 
-                            new CHTMLPlainText(session.GetSessionId()));
+                            new CHTMLPlainText(session.GetId()));
+            string cmd = "?" + session.GetSessionIdName() + "=" 
+                + session.GetId();
+
+            page->AddTagMap("ATTR_NAME", 
+                            new CHTMLPlainText(modify_attr_name));
+            page->AddTagMap("ATTR_VALUE", 
+                            new CHTMLPlainText(modify_attr_value));
+            string surl = ctx.GetSelfURL() + cmd;
+            page->AddTagMap("SELF_URL", new CHTMLPlainText(surl));
         } else {
             page->AddTagMap("SESSION_ID", 
                             new CHTMLPlainText("Session has been deleted"));
-        }        
-        page->AddTagMap("ATTR_NAME", 
-                        new CHTMLPlainText(modify_attr_name));
-        page->AddTagMap("ATTR_VALUE", 
-                        new CHTMLPlainText(modify_attr_value));
+        } 
 
-        CHTMLPlainText* self_url = new CHTMLPlainText(ctx.GetSelfURL());
-        page->AddTagMap("SELF_URL", self_url);
     }
     catch (exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
@@ -305,6 +307,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/19 16:55:04  didenko
+ * Improved CGI Session implementation
+ *
  * Revision 1.1  2005/12/15 18:22:31  didenko
  * Added cgi session sample
  *

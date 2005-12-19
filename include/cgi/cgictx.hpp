@@ -37,6 +37,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
+#include <cgi/cgi_session.hpp>
 #include <connect/ncbi_types.h>
 
 
@@ -48,6 +49,7 @@
 
 BEGIN_NCBI_SCOPE
 
+class CUrl;
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -110,6 +112,40 @@ private:
 };
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CCgiSessionParameters:
+//
+
+class CCgiContext;
+class CCgiSessionParameters
+{
+public:
+
+    void SetImplOwnership(EOwnership owner) { m_ImplOwner = owner; }
+    void DisableCookie() { m_CookieEnabled = false; }
+    void SetSessionIdName(const string& name) { m_SessionIdName = name; }
+    void SetSessionCookieDomain(const string& domain) 
+    { m_SessionCookieDomain = domain; }
+    void SetSessionCookiePath(const string& path)
+    { m_SessionCookiePath = path; }
+
+private:
+
+    friend class CCgiContext;
+    CCgiSessionParameters() : 
+        m_ImplOwner(eTakeOwnership), m_CookieEnabled(true),
+        m_SessionIdName(CCgiSession::kDefaultSessionIdName), 
+        m_SessionCookieDomain(CCgiSession::kDefaultSessionCookieDomain),
+        m_SessionCookiePath(CCgiSession::kDefaultSessionCookiePath) {}
+
+    EOwnership m_ImplOwner;
+    bool m_CookieEnabled;
+    string m_SessionIdName;
+    string m_SessionCookieDomain;
+    string m_SessionCookiePath;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -215,10 +251,12 @@ public:
 
 private:
     CCgiServerContext& x_GetServerContext(void) const;
+    void x_InitSession();
 
     CCgiApplication&      m_App;
     auto_ptr<CCgiRequest> m_Request;  // CGI request  information
     CCgiResponse          m_Response; // CGI response information
+    auto_ptr<CCgiSession> m_Session;  // CGI session
 
     // message buffer
     typedef list< AutoPtr<CCtxMsg> > TMessages;
@@ -352,6 +390,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2005/12/19 16:55:03  didenko
+* Improved CGI Session implementation
+*
 * Revision 1.32  2005/05/31 13:40:10  didenko
 * Added an optional parameter CCgiRequest::TFlags to the constructor of CCgiContext
 *

@@ -53,7 +53,8 @@ BEGIN_NCBI_SCOPE
 class CCgiServerContext;
 class CCgiStatistics;
 class CCgiWatchFile;
-class ICgiSession;
+class ICgiSession_Impl;
+class CCgiSessionParameters;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -137,6 +138,8 @@ public:
     ///
     virtual const CArgs& GetArgs(void) const;
 
+    virtual ICgiSession_Impl* GetSessionImpl(CCgiSessionParameters&) const;
+
 protected:
     /// This method is called if an exception is thrown during the processing
     /// of HTTP request. OnEvent() will be called after this method.
@@ -219,8 +222,6 @@ protected:
 
 
 protected:
-
-    virtual ICgiSession* GetSessionImpl() const;
 
     /// Bit flags for CCgiRequest
     int                       m_RequestFlags;
@@ -339,6 +340,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2005/12/19 16:55:03  didenko
+* Improved CGI Session implementation
+*
 * Revision 1.48  2005/12/15 18:21:15  didenko
 * Added CGI session support
 *

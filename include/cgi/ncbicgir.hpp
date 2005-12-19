@@ -47,7 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class ICgiSession;
+class CCgiSession;
 
 class NCBI_XCGI_EXPORT CCgiResponse
 {
@@ -121,17 +121,11 @@ protected:
     CCgiResponse& operator= (const CCgiResponse&);
 
 private:
-    ICgiSession* m_Session;
-    string m_SessionCookieName;
-    string m_SessionCookieDomain;
-    string m_SessionCookiePath;
+    const CCgiSession* m_Session;
 
 public:
-    void x_RegisterSessionImpl(ICgiSession& session, 
-                               const string& cookie_name,
-                               const string& cookie_domain,
-                               const string& cookie_path);
-
+    void x_SetSession(const CCgiSession& session);
+        
 };
 
 
@@ -203,6 +197,11 @@ inline CNcbiOstream& CCgiResponse::WriteHeader(void) const
     return WriteHeader(out());
 }
 
+inline void CCgiResponse::x_SetSession(const CCgiSession& session)
+{
+    m_Session = &session;
+}
+
 
 END_NCBI_SCOPE
 
@@ -212,6 +211,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/12/19 16:55:04  didenko
+ * Improved CGI Session implementation
+ *
  * Revision 1.19  2005/12/15 18:21:15  didenko
  * Added CGI session support
  *

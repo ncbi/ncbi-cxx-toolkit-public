@@ -33,6 +33,7 @@
 #include <stddef.h>
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbimisc.hpp>
 
 #include <list>
 #include <string>
@@ -45,38 +46,163 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XCGI_EXPORT ICgiSession 
+class ICgiSession_Impl;
+class CCgiRequest;
+class CCgiCookie;
+
+class NCBI_XCGI_EXPORT CCgiSession 
 {
 public:
     typedef list<string> TNames;
 
+    static const string kDefaultSessionIdName;
+    static const string kDefaultSessionCookieDomain;
+    static const string kDefaultSessionCookiePath;
+
     /// Session status
     enum EStatus {
+        eNew,        ///< The session has just been created
         eLoaded,     ///< The session is loaded
         eNotLoaded,  ///< The session has not been loaded yet
-        eDeleted     ///< The session is deleted
+        eDeleted,    ///< The session is deleted
+        eImplNotSet  ///< The CGI application didn't set the session
+                     ///  implementation
     };
 
-    virtual ~ICgiSession();
+    /// Specifies if a client session cookie can be used to transfer
+    /// a session id between request
+    enum ECookieSupport {
+        eUseCookie,     ///< A session cookie will be add to a response
+        eDonotUseCookie ///< A sesion cookie will not be add to a response
+    };
+    
+    CCgiSession(const CCgiRequest& request, 
+                ICgiSession_Impl* impl, 
+                EOwnership impl_owner = eTakeOwnership,
+                ECookieSupport cookie_sup = eUseCookie);
 
-    /// Create a new empty session
+    ~CCgiSession();
+
+    /// Get a session id. Throws an exception if an id is not set and
+    /// can not be retrived from the cgi request.
+    const string& GetId() const;
+
+    /// Set session id. 
+    /// If the session was previously loaded it will be closed
+    void SetId(const string& id);
+
+    /// Load the sesion. Throws an exception if an id is not set and
+    /// can not be retrived from the cgi request.
+    void Load();
+
+    /// Create a new session. 
+    /// If the session was previously loaded it will be closed
+    void CreateNewSession();
+
+    /// Retrieve a list of attributes names attached to this session
+    /// Throws an exception if the session is not loaded
     ///
-    virtual void CreateNewSession() = 0;
+    void GetAttributeNames(TNames& names) const;
+
+    /// Get an input stream for an attribute with the given name
+    /// If the attribute does not exist the empty stream is returned
+    /// Throws an exception if the session is not loaded
+    ///
+    CNcbiIstream& GetAttrIStream(const string& name, 
+                                 size_t* size = 0);
+
+    /// Get an output stream for an attribute with the given name
+    /// If the attribute does not exist it will be create and added 
+    /// to the session. If the attribute exists its content will be
+    /// overwritten.
+    /// Throws an exception if the session is not loaded
+    ///
+    CNcbiOstream& GetAttrOStream(const string& name);
+
+    /// Set a string attribute
+    /// Throws an exception if the session is not loaded
+    ///
+    void SetAttribute(const string& name, const string& value);
+
+    /// Get a string attribute. If the attribute does not exist an empty
+    /// string is returned
+    /// Throws an exception if the session is not loaded
+    ///
+    void GetAttribute(const string& name, string& value) const;
+
+    /// Remove an attribute from the session
+    /// Throws an exception if the session is not loaded
+    ///
+    void RemoveAttribute(const string& name);
+
+    /// Delete the current session
+    /// Throws an exception if the session is not loaded
+    ///
+    void DeleteSession();
+
+
+    /// Get a session status
+    EStatus GetStatus() const;
+
+    /// Get a session id name. This name is used as a cookie name for
+    /// a session cookie.
+    ///
+    const string& GetSessionIdName() const;
+    
+    /// Set a session id name
+    void SetSessionIdName(const string& name);
+
+    
+
+    /// Set a session cookie domain
+    void SetSessionCookieDomain(const string& domain);
+
+    /// Set a session cookie path
+    void SetSessionCookiePath(const string& path);
+    
+    /// Get a session cookie. Returns NULL if a session
+    /// is not load or a cookie support is disable.
+    const CCgiCookie * const GetSessionCookie() const;
+    
+private:
+    const CCgiRequest& m_Request;
+    ICgiSession_Impl* m_Impl;
+    auto_ptr<ICgiSession_Impl> m_ImplGuard;
+    ECookieSupport m_CookieSupport;
+
+    string m_SessionId;
+
+    string m_SessionIdName;
+    string m_SessionCookieDomain;
+    string m_SessionCookiePath;
+    auto_ptr<CCgiCookie> m_SessionCookie;
+    EStatus m_Status;
+
+    string x_RetrieveSessionId() const;
+    void x_Load() const;
+private:
+    CCgiSession(const CCgiSession&);
+    CCgiSession& operator=(const CCgiSession&);
+};
+
+
+class NCBI_XCGI_EXPORT ICgiSession_Impl
+{
+public:
+    typedef CCgiSession::TNames TNames;
+
+    virtual ~ICgiSession_Impl();
+
+    /// Create a new empty session. Returns a new
+    /// session id
+    ///
+    virtual string CreateNewSession() = 0;
 
     /// Load a session this the given session id from
     /// the underlying storage. If the session with given id
     /// is not found it returns eNotLoaded status.
     ///
-    virtual EStatus LoadSession(const string& sessionid) = 0;
-
-    /// Get a session id string. If the session is not load yet
-    /// it returns an empty string.
-    ///
-    virtual string GetSessionId() const = 0;
-
-    /// Get the session status
-    ///
-    virtual EStatus GetStatus() const = 0;
+    virtual bool LoadSession(const string& sessionid) = 0;
 
     /// Retrieve a list of attributes names attached to this session
     ///
@@ -110,8 +236,40 @@ public:
 
     /// Delete the current session
     virtual void DeleteSession() = 0;
-    
+
+    /// Reset the session. The an implementation should close 
+    /// all input/ouptut streams here.
+    virtual void Reset() = 0;
 };
+
+/////////////////////////////////////////////////////////////////////
+
+inline 
+CCgiSession::EStatus CCgiSession::GetStatus() const
+{
+    return m_Status;
+}
+inline
+const string& CCgiSession::GetSessionIdName() const
+{
+    return m_SessionIdName;
+}
+inline
+void CCgiSession::SetSessionIdName(const string& name)
+{
+    m_SessionIdName = name;
+}
+inline
+void CCgiSession::SetSessionCookieDomain(const string& domain)
+{
+    m_SessionCookieDomain = domain;
+}
+inline
+void CCgiSession::SetSessionCookiePath(const string& path)
+{
+    m_SessionCookiePath = path;
+}
+
 
 END_NCBI_SCOPE
 
@@ -122,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/19 16:55:03  didenko
+ * Improved CGI Session implementation
+ *
  * Revision 1.1  2005/12/15 18:21:15  didenko
  * Added CGI session support
  *
