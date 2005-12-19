@@ -24,9 +24,9 @@
  * ===========================================================================*/
 /**
  * @file composition_constants.h
- * @author E. Michael Gertz, Alejandro Schaffer, Yi-Kuo Yu
- *
  * Constants used in compositional score matrix adjustment
+ *
+ * @author E. Michael Gertz, Alejandro Schaffer, Yi-Kuo Yu
  */
 
 

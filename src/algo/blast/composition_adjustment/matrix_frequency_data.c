@@ -23,10 +23,9 @@
 * ===========================================================================*/
 
 /** @file matrix_frequency_data.c
+ * Joint probabilities for specific matrices.
  *
  * @author Yi-Kuo Yu, Alejandro Schaffer, E. Michael Gertz
- *
- * Joint probabilities for specific matrices.
  */
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
@@ -38,10 +37,10 @@ static char const rcsid[] =
 #include <algo/blast/composition_adjustment/composition_constants.h>
 #include <algo/blast/composition_adjustment/matrix_frequency_data.h>
 
-/* bound on error for sum of probabilities*/
+/** bound on error for sum of probabilities*/
 static const double kProbSumTolerance = 0.000000001;
 
-/* Joint probabilities for BLOSUM62 */
+/** Joint probabilities for BLOSUM62 */
 static double
 BLOSUM62_JOINT_PROBS[COMPO_NUM_TRUE_AA][COMPO_NUM_TRUE_AA]
 = {
@@ -149,7 +148,7 @@ BLOSUM62_JOINT_PROBS[COMPO_NUM_TRUE_AA][COMPO_NUM_TRUE_AA]
 
 
 
-/* Background frequencies for BLOSUM62 */
+/** Background frequencies for BLOSUM62 */
 static double BLOSUM62_bg[COMPO_NUM_TRUE_AA] =
     { 0.0742356686, 0.0515874541, 0.0446395713, 0.0536092024, 0.0246865086,
       0.0342500470, 0.0543174458, 0.0741431988, 0.0262119099, 0.0679331197,
@@ -158,15 +157,14 @@ static double BLOSUM62_bg[COMPO_NUM_TRUE_AA] =
     };
 
 
-/** Return true if frequency data is available for the given matrix name. */
+/* Documented in matrix_frequency_data.h. */
 int Blast_FrequencyDataIsAvailable(const char *matrix_name)
 {
     return NULL != Blast_GetMatrixBackgroundFreq(matrix_name);
 }
 
 
-/** Retrieve the background letter probabilities implicitly used in
- * constructing the score matrix matrix_name. */
+/* Documented in matrix_frequency_data.h. */
 const double *
 Blast_GetMatrixBackgroundFreq(const char *matrix_name)
 {
@@ -179,15 +177,7 @@ Blast_GetMatrixBackgroundFreq(const char *matrix_name)
 }
 
 
-/**
- * Get joint probabilities for the named matrix.
- *
- * @param probs        the joint probabilities [out]
- * @param row_sums     sum of the values in each row of probs [out]
- * @param col_sums     sum of the values in each column of probs [out]
- * @param matrixName   the name of the matrix sought [in]
- * @returns 0 if successful; -1 if the named matrix is not known.
- */
+/* Documented in matrix_frequency_data.h. */
 int
 Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
                              double col_sums[], const char *matrixName)

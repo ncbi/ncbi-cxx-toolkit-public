@@ -24,9 +24,6 @@
 
 /**
  * @file optimize_target_freq.c
- *
- * Author E. Michael Gertz
- *
  * Routines for finding an optimal set of target frequencies for the
  * purpose of generating a compositionally adjusted score matrix.  The
  * function for performing this optimization is named
@@ -82,6 +79,8 @@
  * Agarwala, Aleksandr Morgulis, Alejandro Schaffer and Yi-Kuo Yu
  * (2005) Protein Database Searches Using Compositionally Adjusted
  * Substitution Matrices.  FEBS Journal, 272,5101-9.
+ *
+ * @author E. Michael Gertz
  */
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
@@ -687,42 +686,7 @@ ComputeScoresFromProbs(double scores[],
 }
 
 
-/**
- * Find an optimal set of target frequencies for the purpose of
- * generating a compositionally adjusted score matrix.
- *
- * @param x           On exit, the optimal set of target frequencies,
- *                    interpreted as a two dimensional array in
- *                    row-major order.  x need not be initialized on
- *                    entry; any initial value will be ignored.
- * @param alphsize    the size of the alphabet for this optimization
- *                    problem.
- * @param *iterations the total number of iterations used in finding
- *                    the target frequencies
- * @param q           a set of target frequencies from a standard
- *                    matrix
- * @param row_sums    the required row sums for the target frequencies;
- *                    the composition of one of the sequences being compared.
- * @param col_sums    the required column sums for the target frequencies;
- *                    the composition of the other sequence being compared.
- * @param constrain_rel_entropy   if true, constrain the relative
- *                                entropy of the optimal target
- *                                frequencies to equal
- *                                relative_entropy
- * @param relative_entropy  if constrain_rel_entropy is true, then this
- *                          is the required relative entropy for the
- *                          optimal target frequencies.  Otherwise,
- *                          this argument is ignored.
- * @param maxits    the maximum number of iterations permitted for the
- *                  optimization algorithm; a good value is 2000.
- * @param tol       the solution tolerance; the residuals of the optimization
- *                  program must have Euclidean norm <= tol for the
- *                  algorithm to terminate.
- *
- * @returns         if an optimal set of target frequencies is
- *                  found, then 0, if the iteration failed to
- *                  converge, then 1, if there was some error, then -1.
- */
+/* Documented in optimized_target_freq.h */
 int
 Blast_OptimizeTargetFrequencies(double x[],
                                 int alphsize,

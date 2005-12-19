@@ -24,8 +24,6 @@
  * ===========================================================================*/
 /**
  * @file redo_alignment.h
- * @author Alejandro Schaffer, E. Michael Gertz
- *
  * Definitions used to redo a set of alignments, using either
  * composition matrix adjustment or the Smith-Waterman algorithm (or
  * both.)
@@ -34,6 +32,8 @@
  * by glue code that interfaces with this module, i.e. the definitions
  * need to be externally available so that glue code may be written, but
  * are not intended for general use.
+ *
+ * @author Alejandro Schaffer, E. Michael Gertz
  */
 #ifndef __REDO_ALIGNMENT__
 #define __REDO_ALIGNMENT__
@@ -65,6 +65,10 @@ typedef struct BlastCompo_Alignment {
                                               list */
 } BlastCompo_Alignment;
 
+
+/**
+ * Create a new BlastCompo_Alignment; parameters to this function
+ * correspond directly to fields of BlastCompo_Alignment */
 NCBI_XBLAST_EXPORT
 BlastCompo_Alignment *
 BlastCompo_AlignmentNew(int score,
@@ -73,8 +77,21 @@ BlastCompo_AlignmentNew(int score,
                         int matchStart, int matchEnd, int frame,
                         void * context);
 
+
+/**
+ * Recursively free all alignments in the singly linked list whose
+ * head is *palign. Set *palign to NULL.
+ *
+ * @param palign            pointer to the head of a singly linked list
+ *                          of alignments.
+ * @param free_context      a function capable of freeing the context
+ *                          field of an alignment, or NULL if the
+ *                          context field should not be freed
+ */
+NCBI_XBLAST_EXPORT
 void BlastCompo_AlignmentsFree(BlastCompo_Alignment ** palign,
                                void (*free_context)(void*));
+
 
 /** Parameters used to compute gapped alignments */
 typedef struct BlastCompo_GappingParams {
@@ -261,6 +278,7 @@ new_xdrop_align_type(BlastCompo_Alignment **palign,
  */
 typedef void free_align_traceback_type(void * traceback_data);
 
+
 /** Callbacks used by Blast_RedoOneMatch and
  * Blast_RedoOneMatchSmithWaterman routines */
 typedef struct Blast_RedoAlignCallbacks {
@@ -276,41 +294,42 @@ typedef struct Blast_RedoAlignCallbacks {
     free_align_traceback_type * free_align_traceback;
 } Blast_RedoAlignCallbacks;
 
+
 /** A parameter block for the Blast_RedoOneMatch and
  * Blast_RedoOneMatchSmithWaterman routines */
 typedef struct Blast_RedoAlignParams {
-    /** information about the scoring matrix used */
-    Blast_MatrixInfo * matrix_info;
-    /** parameters for performing a gapped aligment */
-    BlastCompo_GappingParams * gapping_params;
-    /** composition adjustment mode */
-    int adjustParameters;
-    /** true if the search is position-based */
-    int positionBased;
-    /** number of pseudocounts to use in relative-entropy based
-        composition adjustment. */
-    int RE_pseudocounts;
-    /** true if the subject is translated */
-    int subject_is_translated;
-    /** length of the concatenated query, or just the length of the
-        query if not concatenated */
-    int ccat_query_length;
-    /** cutoff score for saving alignments when HSP linking is used */
-    int cutoff_s;
-    /** cutoff evalue for saving alignments */
-    double cutoff_e;
-    /** if true, then HSP linking and sum statistics are used to computed
-        evalues */
-    int do_link_hsps;
-    /** statistical parameter */
-    double Lambda;
-    /** statistical parameter */
-    double logK;
-    /** callback functions used by the Blast_RedoAlign* functions */
-    const Blast_RedoAlignCallbacks * callbacks;
+    Blast_MatrixInfo * matrix_info;  /**< information about the scoring
+                                          matrix used */
+    BlastCompo_GappingParams *
+        gapping_params;              /**< parameters for performing a
+                                          gapped aligment */
+    int adjustParameters;   /**< composition adjustment mode */
+    int positionBased;      /**< true if the search is position-based */
+    int RE_pseudocounts;    /**< number of pseudocounts to use in
+                                 relative-entropy based composition
+                                 adjustment. */
+    int subject_is_translated; /** true if the subject is translated */
+    int ccat_query_length;  /**< length of the concatenated query, or
+                                just the length of the query if not
+                                concatenated */
+    int cutoff_s;           /**< cutoff score for saving alignments when
+                                 HSP linking is used */
+    double cutoff_e;        /**< cutoff evalue for saving alignments */
+    int do_link_hsps;       /**< if true, then HSP linking and sum
+                               statistics are used to computed evalues */
+    double Lambda;          /**< statistical parameter */
+    double logK;            /**< statistical parameter */
+    const Blast_RedoAlignCallbacks *
+        callbacks;                     /**< callback functions used by
+                                            the Blast_RedoAlign* functions */
 } Blast_RedoAlignParams;
 
 
+/** Create new Blast_RedoAlignParams object.  The parameters of this
+ * function correspond directly to the fields of
+ * Blast_RedoAlignParams.  The new Blast_RedoAlignParams object takes
+ * possession of *pmatrix_info and *pgapping_params, so these values
+ * are set to NULL on exit. */
 NCBI_XBLAST_EXPORT
 Blast_RedoAlignParams *
 Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
@@ -322,22 +341,74 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          double logK,
                          const Blast_RedoAlignCallbacks * callbacks);
 
+
+/** Free a set of Blast_RedoAlignParams */
 NCBI_XBLAST_EXPORT
 void Blast_RedoAlignParamsFree(Blast_RedoAlignParams ** pparams);
 
+
+/**
+ * Recompute all alignments for one query/subject pair using the
+ * Smith-Waterman algorithm and possibly also composition-based
+ * statistics or composition-based matrix adjustment.
+ *
+ * @param alignments       an array of lists containing the newly
+ *                         computed alignments.  There is one array
+ *                         element for each query in the original
+ *                         search
+ * @param params           parameters used to redo the alignments
+ * @param incoming_aligns  a list of existing alignments
+ * @param hspcnt           length of incoming_aligns
+ * @param matchingSeq      the database sequence
+ * @param query_info       information about all queries
+ * @param numQueries       the number of queries
+ * @param matrix           the scoring matrix
+ * @param NRrecord         a workspace used to adjust the composition.
+ * @param forbidden        a workspace used to hold forbidden ranges
+ *                         for the Smith-Waterman algorithm.
+ * @param significantMatches   an array of heaps of alignments for
+ *                             query-subject pairs that have already
+ *                             been redone; used to terminate the
+ *                             Smith-Waterman algorithm early if it is
+ *                             clear that the current match is not
+ *                             significant enough to be saved.
+ *
+ * @return 0 on success, -1 on out-of-memory
+ */
 NCBI_XBLAST_EXPORT
 int Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                     Blast_RedoAlignParams * params,
-                                    BlastCompo_Alignment * in_aligns,
+                                    BlastCompo_Alignment * incoming_aligns,
                                     int hspcnt,
                                     BlastCompo_MatchingSequence * matchingSeq,
-                                    BlastCompo_QueryInfo query[],
+                                    BlastCompo_QueryInfo query_info[],
                                     int numQueries,
                                     int ** matrix,
                                     Blast_CompositionWorkspace * NRrecord,
                                     Blast_ForbiddenRanges * forbidden,
                                     BlastCompo_Heap * significantMatches);
 
+
+/**
+ * Recompute all alignments for one query/subject pair using
+ * composition-based statistics or composition-based matrix adjustment.
+ *
+ * @param alignments       an array of lists containing the newly
+ *                         computed alignments.  There is one array
+ *                         element for each query in the original
+ *                         search
+ * @param params           parameters used to redo the alignments
+ * @param incoming_aligns  a list of existing alignments
+ * @param hspcnt           length of incoming_aligns
+ * @param matchingSeq      the database sequence
+ * @param ccat_query_length  the length of the concatenated query
+ * @param query_info       information about all queries
+ * @param numQueries       the number of queries
+ * @param matrix           the scoring matrix
+ * @param NRrecord         a workspace used to adjust the composition.
+ *
+ * @return 0 on success, -1 on out-of-memory
+ */
 NCBI_XBLAST_EXPORT
 int Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                        Blast_RedoAlignParams * params,
@@ -345,11 +416,15 @@ int Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                        int hspcnt,
                        BlastCompo_MatchingSequence * matchingSeq,
                        int ccat_query_length,
-                       BlastCompo_QueryInfo query[],
+                       BlastCompo_QueryInfo query_info[],
                        int numQueries,
                        int ** matrix,
                        Blast_CompositionWorkspace * NRrecord);
 
+
+/** Return true if a heuristic determines that it is unlikely to be
+ * worthwhile to redo a query-subject pair with the given evalue; used
+ * to terminate the main loop for redoing all alignments early. */
 NCBI_XBLAST_EXPORT
 int BlastCompo_EarlyTermination(double evalue,
                                 BlastCompo_Heap significantMatches[],

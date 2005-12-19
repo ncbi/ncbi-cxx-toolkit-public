@@ -24,9 +24,9 @@
  * ===========================================================================*/
 /**
  * @file matrix_frequency_data.h
- * @author Alejandro Schaffer, E. Michael Gertz
- *
  * Definitions used to get joint probabilities for a scoring matrix
+ *
+ * @author Alejandro Schaffer, E. Michael Gertz
  */
 #ifndef __MATRIX_FREQUENCY_DATA__
 #define __MATRIX_FREQUENCY_DATA__
@@ -37,13 +37,27 @@
 extern "C" {
 #endif
 
+/**
+ * Get joint probabilities for the named matrix.
+ *
+ * @param probs        the joint probabilities [out]
+ * @param row_sums     sum of the values in each row of probs [out]
+ * @param col_sums     sum of the values in each column of probs [out]
+ * @param matrixName   the name of the matrix sought [in]
+ * @returns 0 if successful; -1 if the named matrix is not known.
+ */
 NCBI_XBLAST_EXPORT
 int Blast_GetJointProbsForMatrix(double ** probs, double row_sums[],
                                  double col_sums[], const char *matrixName);
 
+
+/** Return true if frequency data is available for the given matrix name. */
 NCBI_XBLAST_EXPORT
 const double * Blast_GetMatrixBackgroundFreq(const char *matrix_name);
 
+
+/** Retrieve the background letter probabilities implicitly used in
+ * constructing the score matrix matrix_name. */
 NCBI_XBLAST_EXPORT
 int Blast_FrequencyDataIsAvailable(const char *matrix_name);
 

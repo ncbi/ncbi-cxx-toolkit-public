@@ -24,10 +24,10 @@
  * ===========================================================================*/
 
 /** @file compo_heap.h
- * @author Alejandro Schaffer, E. Michael Gertz
- *
  * Declares a "heap" data structure that is used to store computed alignments
  * when composition adjustment of scoring matrices is used.
+ *
+ * @author Alejandro Schaffer, E. Michael Gertz
  */
 
 #ifndef __COMPO_HEAP__
@@ -100,24 +100,75 @@ typedef struct BlastCompo_Heap {
 } BlastCompo_Heap;
 
 
+/** Return true if self may insert a match that had the given eValue,
+ * score and subject_index.
+ *
+ *  @param self           a BlastCompo_Heap
+ *  @param eValue         the evalue to be tested.
+ *  @param score          the score to be tested
+ *  @param subject_index  the subject_index to be tested.
+ */
 NCBI_XBLAST_EXPORT
 int BlastCompo_HeapWouldInsert(BlastCompo_Heap * self, double eValue,
                                int score, int subject_index);
+
+
+/**
+ * Try to insert a collection of alignments into a heap.
+ *
+ * @param self              the heap
+ * @param alignments        a collection of alignments, in an unspecified
+ *                          format
+ * @param eValue            the best evalue among the alignments
+ * @param score             the best score among the alignments
+ * @param subject_index     the index of the subject sequence in the database
+ * @param discardedAligns   a collection of alignments that must be
+ *                          deleted (passed back to the calling routine
+ *                          as this routine does know how to delete them)
+ * @return 0 on success,  -1 for out of memory
+ */
 NCBI_XBLAST_EXPORT
 int BlastCompo_HeapInsert(BlastCompo_Heap * self, void * alignments,
                            double eValue, int score, int
                            subject_index, void ** discardedAligns);
 
+
+/**
+ * Return true if only matches with evalue <= self->ecutoff may be
+ * inserted.
+ *
+ * @param self          a BlastCompo_Heap
+ */
 NCBI_XBLAST_EXPORT
 int BlastCompo_HeapFilledToCutoff(const BlastCompo_Heap * self);
 
+
+/** Initialize a new BlastCompo_Heap; parameters to this function correspond
+ * directly to fields in the BlastCompo_Heap 
+ *
+ * @return 0 on success,  -1 for out of memory
+ */
 NCBI_XBLAST_EXPORT
 int BlastCompo_HeapInitialize(BlastCompo_Heap * self, int heapThreshold,
                               double ecutoff);
 
-NCBI_XBLAST_EXPORT
-void BlastCompo_HeapRelease(BlastCompo_Heap * self);
 
+/**
+ * Release the storage associated with the fields of a BlastCompo_Heap. Don't
+ * delete the BlastCompo_Heap structure itself.
+ *
+ * @param self          BlastCompo_Heap whose storage will be released
+ */
+NCBI_XBLAST_EXPORT void BlastCompo_HeapRelease(BlastCompo_Heap * self);
+
+
+/**
+ * Remove and return the element in the BlastCompo_Heap with largest
+ * (worst) evalue; ties are broken according to the order specified
+ * by the s_CompoHeapRecordCompare routine.
+ *
+ * @param self           a BlastCompo_Heap
+ */
 NCBI_XBLAST_EXPORT
 void * BlastCompo_HeapPop(BlastCompo_Heap * self);
 

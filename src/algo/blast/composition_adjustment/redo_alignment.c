@@ -23,12 +23,11 @@
 * ===========================================================================*/
 
 /** @file redo_alignment.c
- *
- * @author Alejandro Schaffer, E. Michael Gertz
- *
  * Routines for redoing a set of alignments, using either
  * composition matrix adjustment or the Smith-Waterman algorithm (or
  * both.)
+ *
+ * @author Alejandro Schaffer, E. Michael Gertz
  */
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
@@ -97,9 +96,7 @@ typedef struct s_WindowInfo
 } s_WindowInfo;
 
 
-/**
- * Create a new BlastCompo_Alignment; parameters to this function
- * correspond directly to fields of BlastCompo_Alignment */
+/* Documented in redo_alignment.h. */
 BlastCompo_Alignment *
 BlastCompo_AlignmentNew(int score,
                            ECompoAdjustModes comp_adjustment_mode,
@@ -124,16 +121,7 @@ BlastCompo_AlignmentNew(int score,
 }
 
 
-/**
- * Recursively free all alignments in the singly linked list whose
- * head is *palign. Set *palign to NULL.
- *
- * @param palign            pointer to the head of a singly linked list
- *                          of alignments.
- * @param free_context      a function capable of freeing the context
- *                          field of an alignment, or NULL if the
- *                          context field should not be freed
- */
+/* Documented in redo_alignment.h. */
 void
 BlastCompo_AlignmentsFree(BlastCompo_Alignment ** palign,
                              void (*free_context)(void*))
@@ -205,6 +193,8 @@ s_AlignmentsAreSorted(BlastCompo_Alignment * alignments)
 }
 
 
+/** Calculate the length of a list of BlastCompo_Alignment objects.
+ *  This is an O(n) operation */
 static int
 s_DistinctAlignmentsLength(BlastCompo_Alignment * list) 
 {
@@ -216,11 +206,16 @@ s_DistinctAlignmentsLength(BlastCompo_Alignment * list)
 }
 
 
+/**
+ * Sort a list of Blast_Compo_Alignment objects, using s_AlignmentCmp 
+ * comparison function.  The mergesort sorting algorithm is used.
+ *
+ * @param *plist        the list to be sorted
+ * @param hspcnt        the length of the list
+ */
 static void
 s_DistinctAlignmentsSort(BlastCompo_Alignment ** plist, int hspcnt)
 {
-    /* mergesort */
-
     if (COMPO_INTENSE_DEBUG) {
         assert(s_DistinctAlignmentsLength(*plist) == hspcnt);
     }
@@ -326,13 +321,16 @@ s_AlignmentCopy(const BlastCompo_Alignment * align)
  *
  * @param p_newAlign        on input the alignment that may be added to
  *                          the list; on output NULL
- * @param p_oldAlignment    on input the existing list of alignments;
+ * @param p_oldAlignments   on input the existing list of alignments;
  *                          on output the new list
+ * @param free_align_context    a routine to be used to free the context 
+ *                              field of an alignment, if any alignment is
+ *                              freed; may be NULL
  */
 static void
 s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
                    BlastCompo_Alignment **p_oldAlignments,
-                   void free_align_tracebacks(void *))
+                   void free_align_context(void *))
 {
     /* Deference the input parameters. */
     BlastCompo_Alignment * newAlign      = *p_newAlign;
@@ -376,7 +374,7 @@ s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
                      align->matchEnd == newAlign->matchEnd))) {
                 /* The alignment shares an end with newAlign; */
                 /* delete it. */
-                BlastCompo_AlignmentsFree(&align, free_align_tracebacks);
+                BlastCompo_AlignmentsFree(&align, free_align_context);
             } else { /* The alignment does not share an end with newAlign; */
                 /* add it to the output list. */
                 *tail =  align;
@@ -386,7 +384,7 @@ s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
         } /* end while align != NULL */
         *p_oldAlignments = newAlign;
     } else { /* do not include_new_align */
-        BlastCompo_AlignmentsFree(&newAlign, free_align_tracebacks);
+        BlastCompo_AlignmentsFree(&newAlign, free_align_context);
     } /* end else do not include newAlign */
 }
 
@@ -896,7 +894,7 @@ s_IsContained(BlastCompo_Alignment * in_align,
 }
 
 
-/** Free a set of Blast_RedoAlignParams */
+/* Documented in redo_alignment.h. */
 void
 Blast_RedoAlignParamsFree(Blast_RedoAlignParams ** pparams)
 {
@@ -908,11 +906,8 @@ Blast_RedoAlignParamsFree(Blast_RedoAlignParams ** pparams)
     }
 }
 
-/** Create new Blast_RedoAlignParams object.  The parameters of this
- * function correspond directly to the fields of
- * Blast_RedoAlignParams.  The new Blast_RedoAlignParams object takes
- * possession of *pmatrix_info and *pgapping_params, so these values
- * are set to NULL on exit. */
+
+/* Documented in redo_alignment.h. */
 Blast_RedoAlignParams *
 Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          BlastCompo_GappingParams ** pgapping_params,
@@ -949,26 +944,7 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
 }
 
 
-/**
- * Recompute all alignments for one query/subject pair using
- * composition-based statistics or composition-based matrix adjustment.
- *
- * @param alignments       an array of lists containing the newly
- *                         computed alignments.  There is one array
- *                         element for each query in the original
- *                         search
- * @param params           parameters used to redo the alignments
- * @param incoming_aligns  a list of existing alignments
- * @param hspcnt           length of incoming_aligns
- * @param matchingSeq      the database sequence
- * @param ccat_query_length  the length of the concatenated query
- * @param query_info       information about all queries
- * @param numQueries       the number of queries
- * @param matrix           the scoring matrix
- * @param NRrecord         a workspace used to adjust the composition.
- *
- * @return 0 on success, -1 on out-of-memory
- */
+/* Documented in redo_alignment.h. */
 int
 Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                    Blast_RedoAlignParams * params,
@@ -1097,34 +1073,7 @@ function_level_cleanup:
 }
 
 
-/**
- * Recompute all alignments for one query/subject pair using the
- * Smith-Waterman algorithm and possibly also composition-based
- * statistics or composition-based matrix adjustment.
- *
- * @param alignments       an array of lists containing the newly
- *                         computed alignments.  There is one array
- *                         element for each query in the original
- *                         search
- * @param params           parameters used to redo the alignments
- * @param incoming_aligns  a list of existing alignments
- * @param hspcnt           length of incoming_aligns
- * @param matchingSeq      the database sequence
- * @param query_info       information about all queries
- * @param numQueries       the number of queries
- * @param matrix           the scoring matrix
- * @param NRrecord         a workspace used to adjust the composition.
- * @param forbidden        a workspace used to hold forbidden ranges
- *                         for the Smith-Waterman algorithm.
- * @param significantMatches   an array of heaps of alignments for
- *                             query-subject pairs that have already
- *                             been redone; used to terminate the
- *                             Smith-Waterman algorithm early if it is
- *                             clear that the current match is not
- *                             significant enough to be saved.
- *
- * @return 0 on success, -1 on out-of-memory
- */
+/* Documented in redo_alignment.h. */
 int
 Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                 Blast_RedoAlignParams * params,
@@ -1345,9 +1294,7 @@ function_level_cleanup:
 }
 
 
-/** Return true if a heuristic determines that it is unlikely to be
- * worthwhile to redo a query-subject pair with the given evalue; used
- * to terminate the main loop for redoing all alignments early. */
+/* Documented in redo_alignment.h. */
 int
 BlastCompo_EarlyTermination(double evalue,
                             BlastCompo_Heap significantMatches[],

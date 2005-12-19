@@ -24,10 +24,10 @@
  * ===========================================================================*/
 /**
  * @file compo_mode_condition.h
- * @author Alejandro Schaffer, Yi-Kuo Yu
- *
  * Declarations of functions used to choose the mode for
  * composition-based statistics.
+ *
+ * @author Alejandro Schaffer, Yi-Kuo Yu
  */
 
 #ifndef __COMPO_MODE_CONDITION__
@@ -41,6 +41,20 @@ extern "C" {
 
 #include <algo/blast/composition_adjustment/composition_constants.h>
 
+
+/**
+ * Choose how the relative entropy should be constrained based on
+ * properties of the two sequences to be aligned.
+ *
+ * @param length1     length of the first sequence
+ * @param length2     length of the second sequence
+ * @param probArray1  arrays of probabilities for the first sequence, in
+ *                    a 20 letter amino-acid alphabet
+ * @param probArray2  arrays of probabilities for the other sequence
+ * @param matrixName  name of the scoring matrix
+ * @param testFunctionIndex    allows different rules to be tested
+ *                             for the relative entropy decision.
+ */
 NCBI_XBLAST_EXPORT
 ECompoAdjustModes
 Blast_ChooseCompoAdjustMode(int length1, int length2,

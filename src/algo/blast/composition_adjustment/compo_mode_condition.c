@@ -24,11 +24,10 @@
 
 /**
  * @file compo_mode_condition.c
- *
- * Authors: Alejandro Schaffer, Yi-Kuo Yu
- *
  * Functions to test whether conditional score matrix adjustment
  * should be applied for a pair of matching sequences.
+ *
+ * Authors: Alejandro Schaffer, Yi-Kuo Yu
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -59,7 +58,7 @@ typedef ECompoAdjustModes
               const char *);
 
 
-/* A function used to choose a mode for composition-based statistics.
+/** A function used to choose a mode for composition-based statistics.
  * If this function is used relative-entropy score adjustment is
  * always applied, with a fixed value as the target relative entropy*/
 static ECompoAdjustModes
@@ -163,19 +162,7 @@ static Condition Cond_func[] = {
 };
 
 
-/**
- * Choose how the relative entropy should be constrained based on
- * properties of the two sequences to be aligned.
- *
- * @param length1     length of the first sequence
- * @param length2     length of the second sequence
- * @param probArray1  arrays of probabilities for the first sequence, in
- *                    a 20 letter amino-acid alphabet
- * @param probArray2  arrays of probabilities for the other sequence
- * @param matrixName  name of the scoring matrix
- * @param testFunctionIndex    allows different rules to be tested
- *                             for the relative entropy decision.
- */
+/* Documented in compo_mode_condition.h. */
 ECompoAdjustModes
 Blast_ChooseCompoAdjustMode(int length1,
                             int length2,

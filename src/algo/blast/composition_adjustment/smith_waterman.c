@@ -24,8 +24,9 @@
 
 /**
  * @file smith_waterman.c
- *
  * Routines for computing rigorous, Smith-Waterman alignments.
+ *
+ * @author Alejandro Schaffer, E. Michael Gertz
  */
 #ifndef SKIP_DOXYGEN_PROCESSING
 static char const rcsid[] =
@@ -46,22 +47,10 @@ typedef struct SwGapInfo {
 
 /**
  * Compute the score and right-hand endpoints of the locally optimal
- * Smith-Waterman alignment.
- *
- * @param *score            the computed score
- * @param *matchSeqEnd      the right-hand end of the alignment in the
- *                          database sequence
- * @param *queryEnd         the right-hand end of the alignment in the
- *                          query sequence
- * @param matchSeq          the database sequence data
- * @param matchSeqLength    length of matchSeq
- * @param query             the query sequence data
- * @param queryLength       length of query
- * @param matrix            amino-acid scoring matrix
- * @param gapOpen           penalty for opening a gap
- * @param gapExtend         penalty for extending a gap by one amino acid
- * @param positionSpecific  determines whether matrix is position
- *                          specific or not
+ * Smith-Waterman alignment. Called by Blast_SmithWatermanScoreOnly
+ * when there are no forbidden ranges.  nonempty.  See
+ * Blast_SmithWatermanScoreOnly for the meaning of the parameters to
+ * this routine.
  */
 static int
 BLbasicSmithWatermanScoreOnly(int *score, int *matchSeqEnd, int *queryEnd,
@@ -152,28 +141,9 @@ BLbasicSmithWatermanScoreOnly(int *score, int *matchSeqEnd, int *queryEnd,
 
 /**
  * Find the left-hand endpoints of the locally optimal Smith-Waterman
- * alignment given the score and right-hand endpoints computed by
- * BLbasicSmithWatermanScoreOnly.
- *
- * @param *score_out        the score of the optimal alignment -- should
- *                          equal score_in.
- * @param *matchSeqStart    the left-hand endpoint of the alignment in
- *                          the database sequence
- * @param *queryStart       the right-hand endpoint of the alignment
- *                          in the query sequence
- * @param matchSeq          the database sequence data
- * @param matchSeqLength    length of matchSeq
- * @param query             the query sequence data
- * @param matrix            amino-acid scoring matrix
- * @param gapOpen           penalty for opening a gap
- * @param gapExtend         penalty for extending a gap by one amino acid
- * @param matchSeqEnd       right-hand endpoint of the alignment in
- *                          the database sequence
- * @param queryEnd          right-hand endpoint of the alignment in
- *                          the query
- * @param score_in          the score of the alignment
- * @param positionSpecific  determines whether matrix is position
- *                          specific or not
+ * alignment. Called by Blast_SmithWatermanFindStart when there are no
+ * forbidden ranges.  See Blast_SmithWatermanFindStartfor the meaning
+ * of the parameters to this routine.
  */
 static int
 BLSmithWatermanFindStart(int *score_out,
@@ -270,24 +240,9 @@ BLSmithWatermanFindStart(int *score_out,
 /**
  * Compute the score and right-hand endpoints of the locally optimal
  * Smith-Waterman alignment, subject to the restriction that some
- * ranges are forbidden.
- *
- * @param *score            the computed score
- * @param *matchSeqEnd      the right-hand end of the alignment in the
- *                          database sequence
- * @param *queryEnd         the right-hand end of the alignment in the
- *                          query sequence
- * @param matchSeq          the database sequence data
- * @param matchSeqLength    length of matchSeq
- * @param query             the query sequence data
- * @param queryLength       length of query
- * @param matrix            amino-acid scoring matrix
- * @param gapOpen           penalty for opening a gap
- * @param gapExtend         penalty for extending a gap by one amino acid
- * @param numForbidden      number of forbidden ranges [in]
- * @param forbiddenRanges   lists areas that should not be aligned [in]
- * @param positionSpecific  determines whether matrix is position
- *                          specific or not
+ * ranges are forbidden.  Called by Blast_SmithWatermanScoreOnly when
+ * forbiddenRanges is nonempty.  See Blast_SmithWatermanScoreOnly for
+ * the meaning of the parameters to this routine.
  */
 static int
 BLspecialSmithWatermanScoreOnly(int *score, int *matchSeqEnd, int *queryEnd,
@@ -393,30 +348,9 @@ BLspecialSmithWatermanScoreOnly(int *score, int *matchSeqEnd, int *queryEnd,
 /**
  * Find the left-hand endpoints of the locally optimal Smith-Waterman
  * alignment, subject to the restriction that certain ranges may not
- * be aligned, given the score and right-hand endpoints computed by
- * BLspecialSmithWatermanScoreOnly.
- *
- * @param *score_out        the score of the optimal alignment -- should
- *                          equal score_in.
- * @param *matchSeqStart    the left-hand endpoint of the alignment in
- *                          the database sequence
- * @param *queryStart       the right-hand endpoint of the alignment
- *                          in the query sequence
- * @param matchSeq          the database sequence data
- * @param matchSeqLength    length of matchSeq
- * @param query             the query sequence data
- * @param matrix            amino-acid scoring matrix
- * @param gapOpen           penalty for opening a gap
- * @param gapExtend         penalty for extending a gap by one amino acid
- * @param matchSeqEnd       right-hand endpoint of the alignment in
- *                          the database sequence
- * @param queryEnd          right-hand endpoint of the alignment in
- *                          the query
- * @param score_in          the score of the alignment
- * @param numForbidden      number of forbidden ranges
- * @param forbiddenRanges   lists areas that should not be aligned
- * @param positionSpecific  determines whether matrix is position
- *                          specific or not
+ * be aligned. Called by Blast_SmithWatermanFindStart if
+ * forbiddenRanges is nonempty.  See Blast_SmithWatermanFindStartfor
+ * the meaning of the parameters to this routine.
  */
 static int
 BLspecialSmithWatermanFindStart(int * score_out,
@@ -526,12 +460,7 @@ BLspecialSmithWatermanFindStart(int * score_out,
 }
 
 
-/**
- * Release the storage associated with the fields of self, but do not
- * delete self
- *
- * @param self          an instance of Blast_ForbiddenRanges [in][out]
- */
+/* Documented in smith_waterman.h. */
 void
 Blast_ForbiddenRangesRelease(Blast_ForbiddenRanges * self)
 {
@@ -544,14 +473,7 @@ Blast_ForbiddenRangesRelease(Blast_ForbiddenRanges * self)
 }
 
 
-/**
- * Initialize a new, empty Blast_ForbiddenRanges
- *
- * @param self              object to be initialized
- * @param capacity          the number of ranges that may be stored
- *                          (must be at least as long as the length
- *                           of the query)
- */
+/* Documented in smith_waterman.h. */
 int
 Blast_ForbiddenRangesInitialize(Blast_ForbiddenRanges * self,
                                 int capacity)
@@ -583,9 +505,8 @@ error_return:
 }
 
 
-/** Reset self to be empty */
-void
-Blast_ForbiddenRangesClear(Blast_ForbiddenRanges * self)
+/* Documented in smith_waterman.h. */
+void Blast_ForbiddenRangesClear(Blast_ForbiddenRanges * self)
 {
     int f;
     for (f = 0;  f < self->capacity;  f++) {
@@ -595,13 +516,7 @@ Blast_ForbiddenRangesClear(Blast_ForbiddenRanges * self)
 }
 
 
-/** Add some ranges to self
- * @param self          an instance of Blast_ForbiddenRanges [in][out]
- * @param queryStart    start of the alignment in the query sequence
- * @param queryEnd      the end of the alignment in the query sequence
- * @param matchStart    start of the alignment in the subject sequence
- * @param matchEnd      the end of the alignment in the subject sequence
- */
+/* Documented in smith_waterman.h. */
 int
 Blast_ForbiddenRangesPush(Blast_ForbiddenRanges * self,
                           int queryStart,
@@ -630,12 +545,7 @@ Blast_ForbiddenRangesPush(Blast_ForbiddenRanges * self,
 }
 
 
-/**
- * Calls BLbasicSmithWatermanScoreOnly if forbiddenRanges is empty and
- * calls BLspecialSmithWatermanScoreOnly otherwise.  See
- * BLspecialSmithWatermanScoreOnly for the meaning of the parameters
- * to this routine.
- */
+/* Documented in smith_waterman.h. */
 int
 Blast_SmithWatermanScoreOnly(int *score,
                              int *matchSeqEnd, int *queryEnd,
@@ -669,12 +579,7 @@ Blast_SmithWatermanScoreOnly(int *score,
 }
 
 
-/**
- * Calls BLSmithWatermanFindStart if forbiddenRanges is empty and
- * calls BLspecialSmithWatermanFindStart otherwise. See
- * BLspecialSmithWatermanFindStart for the meaning of the parameters
- * to this routine.
- */
+/* Documented in smith_waterman.h. */
 int
 Blast_SmithWatermanFindStart(int * score_out,
                              int *matchSeqStart,

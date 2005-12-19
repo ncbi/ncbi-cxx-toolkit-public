@@ -23,10 +23,10 @@
 * ===========================================================================*/
 
 /** @file compo_heap.c
- * @author E. Michael Gertz, Alejandro Schaffer
- *
  * Defines a "heap" data structure that is used to store computed alignments
  * when composition adjustment of scoring matrices is used.
+ *
+ * @author E. Michael Gertz, Alejandro Schaffer
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -44,9 +44,11 @@ static char const rcsid[] =
  * module.
  *
  * This macro is usually used as part of a C-conditional
+ * @code
  * if (COMPO_INTENSE_DEBUG) {
  *     perform expensive tests 
  * }
+ * @endcode
  * The C compiler will then validate the code to perform the tests, but
  * will almost always strip the code if COMPO_INTENSE_DEBUG is false.
  */
@@ -250,14 +252,7 @@ s_ConvertToHeap(BlastCompo_Heap * self)
 }
 
 
-/** Return true if self may insert a match that had the given eValue,
- * score and subject_index.
- *
- *  @param self           a BlastCompo_Heap
- *  @param eValue         the evalue to be tested.
- *  @param score          the score to be tested
- *  @param subject_index  the subject_index to be tested.
- */
+/* Documented in compo_heap.h. */
 int
 BlastCompo_HeapWouldInsert(BlastCompo_Heap * self,
                            double eValue,
@@ -335,19 +330,7 @@ s_CompHeapRecordInsertAtEnd(BlastCompo_HeapRecord **array,
 }
 
 
-/**
- * Try to insert a collection of alignments into a heap.
- *
- * @param self              the heap
- * @param alignments        a collection of alignments, in an unspecified
- *                          format
- * @param eValue            the best evalue among the alignments
- * @param score             the best score among the alignments
- * @param subject_index     the index of the subject sequence in the database
- * @param discardedAlignments  a collection of alignments that must be
- *                             deleted (passed back to the calling routine
- *                             as this routine does know how to delete them)
- * @return 0 on success,  -1 for out of memory */
+/* Documented in compo_heap.h. */
 int
 BlastCompo_HeapInsert(BlastCompo_Heap * self,
                       void * alignments,
@@ -422,12 +405,7 @@ BlastCompo_HeapInsert(BlastCompo_Heap * self,
 }
 
 
-/**
- * Return true if only matches with evalue <= self->ecutoff may be
- * inserted.
- *
- * @param self          a BlastCompo_Heap
- */
+/* Documented in compo_heap.h. */
 int
 BlastCompo_HeapFilledToCutoff(const BlastCompo_Heap * self)
 {
@@ -436,10 +414,7 @@ BlastCompo_HeapFilledToCutoff(const BlastCompo_Heap * self)
 }
 
 
-/** Initialize a new BlastCompo_Heap; parameters to this function correspond
- * directly to fields in the BlastCompo_Heap 
- *
- * @return 0 on success,  -1 for out of memory */
+/* Documented in compo_heap.h. */
 int
 BlastCompo_HeapInitialize(BlastCompo_Heap * self, int heapThreshold,
                           double ecutoff)
@@ -457,12 +432,7 @@ BlastCompo_HeapInitialize(BlastCompo_Heap * self, int heapThreshold,
 }
 
 
-/**
- * Release the storage associated with the fields of a BlastCompo_Heap. Don't
- * delete the BlastCompo_Heap structure itself.
- *
- * @param self          BlastCompo_Heap whose storage will be released
- */
+/* Documented in compo_heap.h. */
 void
 BlastCompo_HeapRelease(BlastCompo_Heap * self)
 {
@@ -474,13 +444,7 @@ BlastCompo_HeapRelease(BlastCompo_Heap * self)
 }
 
 
-/**
- * Remove and return the element in the BlastCompo_Heap with largest
- * (worst) evalue; ties are broken according to the order specified
- * by the s_CompoHeapRecordCompare routine.
- *
- * @param self           a BlastCompo_Heap
- */
+/* Documented in compo_heap.h. */
 void *
 BlastCompo_HeapPop(BlastCompo_Heap * self)
 {
