@@ -141,12 +141,10 @@ s_GetBestExtensionMethod(const LookupTableWrap* lookup_wrap)
                retval = eRight;
          break;
      case MB_LOOKUP_TABLE:
-         if (((BlastMBLookupTable*)lookup_wrap->lut)->ag_scanning_mode == TRUE)
-               retval = eRightAndLeft;
-         else if (((BlastMBLookupTable*)lookup_wrap->lut)->template_length > 0)
+         if (((BlastMBLookupTable*)lookup_wrap->lut)->template_length > 0)
                retval = eUpdateDiag;   /* Used for discontiguous megablast. */
          else
-               retval = eRight;
+               retval = eRightAndLeft;
          break;
    }
    ASSERT(retval != eMaxSeedExtensionMethod);
@@ -826,6 +824,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/12/19 16:12:30  papadopo
+ * remove the possibility of specifying eRight for megablast extension method
+ *
  * Revision 1.12  2005/11/16 14:27:03  madden
  * Fix spelling in CRN
  *
