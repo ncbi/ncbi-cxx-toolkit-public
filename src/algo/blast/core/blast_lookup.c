@@ -225,13 +225,9 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
  
       switch (lookup->word_length) {
       case 4:
-         lookup->lut_word_length = 4;
-         break;
       case 5:
-         lookup->lut_word_length = 5;
-         break;
       case 6:
-         lookup->lut_word_length = 5;
+         lookup->lut_word_length = lookup->word_length;
          break;
       case 7:
          if (approx_table_entries < kSmallQueryCutoff / 2)
@@ -349,10 +345,12 @@ Int4 _BlastAaLookupFinalize(BlastLookupTable* lookup)
   Int4 i;
   Int4 overflow_cells_needed=0;
   Int4 overflow_cursor = 0;
+  Int4 longest_chain=0;
+#ifdef LOOKUP_VERBOSE
   Int4 backbone_occupancy=0;
   Int4 thick_backbone_occupancy=0;
   Int4 num_overflows=0;
-  Int4 longest_chain=0;
+#endif
   
 /* allocate the new lookup table */
  lookup->thick_backbone = (LookupBackboneCell *)
@@ -1033,7 +1031,6 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    Int4 index;
    PV_ARRAY_TYPE *pv_array;
    Int4 total_hits = 0;
-   Int4 i;
    Int4 scan_step;
    Int4 mask;
    Int4 lut_word_length;
