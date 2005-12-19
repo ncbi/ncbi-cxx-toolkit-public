@@ -877,6 +877,18 @@ ssize_t CRawPointer::Sub(const void* first, const void* second)
         (static_cast<const char*> (first) - static_cast<const char*> (second));
 }
 
+/// Macro used to mark a constructor as deprecated.
+///
+/// The correct syntax for this varies from compiler to compiler:
+/// older versions of GCC (prior to 3.4) require NCBI_DEPRECATED to
+/// follow any relevant constructor declarations, but Microsoft Visual
+/// Studio 2005 requires it to precede any relevant declarations,
+/// whether or not they are for constructors.
+#ifdef NCBI_COMPILER_MSVC
+#  define NCBI_DEPRECATED_CTOR(decl) NCBI_DEPRECATED decl
+#else
+#  define NCBI_DEPRECATED_CTOR(decl) decl NCBI_DEPRECATED
+#endif
 
 END_NCBI_SCOPE
 
@@ -924,6 +936,10 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2005/12/19 18:01:31  ucko
+ * Introduce a special NCBI_DEPRECATED_CTOR macro to work around a
+ * fundamental incompatibility between GCC 3.2/3.3 and MS Visual Studio 2005.
+ *
  * Revision 1.92  2005/12/12 15:07:48  vasilche
  * Added auto_ptr_ref<> for safe rvalue to lvalue conversion.
  *
