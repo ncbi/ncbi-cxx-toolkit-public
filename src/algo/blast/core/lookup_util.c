@@ -187,37 +187,29 @@ void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet)
   return;
 }
 
-Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_type)
+Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_width)
 {
-   Int4 lut_width;
    Int4 extra = 1;
    Uint1 remainder;
    Int4 stride;
 
-   if (lut_type == MB_LOOKUP_TABLE)
-      lut_width = 12;
-   else if (word_size >= 8)
-      lut_width = 8;
-   else
-      lut_width = 4;
-
    remainder = word_size % COMPRESSION_RATIO;
 
-   if (var_words && (remainder == 0) )
+   if (var_words && remainder == 0)
       extra = COMPRESSION_RATIO;
 
-   stride = word_size - lut_width + extra;
+   return word_size - lut_width + extra;
+}
 
-   remainder = stride % 4;
+Int4 EstimateNumTableEntries(BlastSeqLoc* location)
+{
+   Int4 num_entries = 0;
+   BlastSeqLoc *loc = location;
 
-   /*
-    The resulting stride is rounded to a number divisible by 4 
-    for all values except 6 and 7. This is done because scanning database 
-    with a stride divisible by 4 does not require splitting bytes of 
-    compressed sequences. For values 6 and 7 however the advantage of a 
-    larger stride outweighs the disadvantage of splitting the bytes.
-    */
-   if (stride > 8 || (stride > 4 && remainder == 1) )
-      stride -= remainder;
-   return stride;
+   while (loc) {
+       num_entries += loc->ssr->right - loc->ssr->left;
+       loc = loc->next;
+   }
+
+   return num_entries;
 }
