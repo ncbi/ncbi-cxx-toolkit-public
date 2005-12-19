@@ -95,27 +95,6 @@ public:
     /// Use the specified RID to get results for an existing search.
     CRemoteBlast(const string & RID);
     
-    /// Create a blastp (protein) search.
-    CRemoteBlast(CBlastProteinOptionsHandle * algo_opts);
-    
-    /// Create a blastn (nucleotide) search.
-    CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts);
-    
-    /// Create a blastx (translated query) search.
-    CRemoteBlast(CBlastxOptionsHandle * algo_opts);
-    
-    /// Create a tblastn (translated database) search.
-    CRemoteBlast(CTBlastnOptionsHandle * algo_opts);
-    
-    /// Create a tblastx search, translating both query and database.
-    CRemoteBlast(CTBlastxOptionsHandle * algo_opts);
-    
-    /// Create a Discontiguous Megablast search.
-    CRemoteBlast(CDiscNucleotideOptionsHandle * algo_opts);
-    
-    /// Create a PSI-Blast search (only protein is supported).
-    CRemoteBlast(CPSIBlastOptionsHandle * algo_opts);
-    
     /// Create a search using any kind of options handle.
     CRemoteBlast(CBlastOptionsHandle * any_opts);
     
@@ -128,9 +107,6 @@ public:
     
     /// Set the name of the database to search against.
     void SetDatabase(const string & x);
-    
-    /// Alternate interface to set database name.
-    void SetDatabase(const char * x);
     
     /// Restrict search to sequences matching this Entrez query.
     void SetEntrezQuery(const char * x);
@@ -520,6 +496,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/12/19 21:47:25  bealer
+ * - Remove (no longer needed) per-search-type constructors for CRemoteBlast.
+ * - Add timing info to the verbose output for CRemoteBlast network ops.
+ *
  * Revision 1.25  2005/10/17 13:47:58  camacho
  * Remove deprecated CRemoteBlast::SetMatrixTable method
  *

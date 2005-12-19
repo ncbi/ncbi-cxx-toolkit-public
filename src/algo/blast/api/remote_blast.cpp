@@ -180,7 +180,17 @@ CRemoteBlast::x_SendRequest(CRef<objects::CBlast4_request_body> body)
     CRef<CBlast4_reply> reply(new CBlast4_reply);
     
     try {
+        CStopWatch sw(CStopWatch::eStart);
+        
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Starting network transaction (" << sw.Elapsed() << ")" << endl;
+        }
+        
         CBlast4Client().Ask(*request, *reply);
+        
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Done network transaction (" << sw.Elapsed() << ")" << endl;
+        }
     }
     catch(const CEofException&) {
         NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
@@ -601,6 +611,7 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts)
     string p;
     string s;
     opts->GetOptions().GetRemoteProgramAndService_Blast3(p, s);
+    
     x_Init(opts, p, s);
 }
 
@@ -772,19 +783,6 @@ void CRemoteBlast::SetQueries(CRef<objects::CPssmWithParameters> pssm)
     m_QSR->SetService(new_service);
 }
 
-void CRemoteBlast::SetDatabase(const char * x)
-{
-    if (!x) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                   "NULL specified for database.");
-    }
-        
-    CRef<CBlast4_subject> subject_p(new CBlast4_subject);
-    subject_p->SetDatabase(x);
-    m_QSR->SetSubject(*subject_p);
-    m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
-}
-
 string CRemoteBlast::GetErrors(void)
 {
     if (m_Errs.empty()) {
@@ -827,62 +825,11 @@ const vector<string> & CRemoteBlast::GetErrorVector()
     return m_Errs;
 }
 
-CRemoteBlast::CRemoteBlast(CBlastNucleotideOptionsHandle * algo_opts)
-{
-    string service;
-    
-    switch(algo_opts->GetFactorySetting()) {
-    case eBlastn:
-        service = "plain";
-        break;
-        
-    case eMegablast:
-        service = "megablast";
-        break;
-        
-    default:
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                   "Unknown nucleotide type specified.");
-    }
-    
-    x_Init(algo_opts, "blastn", service.c_str());
-}
-
 CRemoteBlast::CRemoteBlast(const string & RID)
 {
     x_Init(RID);
 }
     
-CRemoteBlast::CRemoteBlast(CBlastProteinOptionsHandle * algo_opts)
-{
-    x_Init(algo_opts, "blastp", "plain");
-}
-    
-CRemoteBlast::CRemoteBlast(CBlastxOptionsHandle * algo_opts)
-{
-    x_Init(algo_opts, "blastx", "plain");
-}
-    
-CRemoteBlast::CRemoteBlast(CTBlastnOptionsHandle * algo_opts)
-{
-    x_Init(algo_opts, "tblastn", "plain");
-}
-    
-CRemoteBlast::CRemoteBlast(CTBlastxOptionsHandle * algo_opts)
-{
-    x_Init(algo_opts, "tblastx", "plain");
-}
-    
-CRemoteBlast::CRemoteBlast(CDiscNucleotideOptionsHandle * algo_opts)
-{
-    x_Init(algo_opts, "blastn", "megablast");
-}
-    
-CRemoteBlast::CRemoteBlast(CPSIBlastOptionsHandle * algo_opts)
-{
-    x_Init(algo_opts, "blastp", "psi");
-}
-
 CRemoteBlast::CRemoteBlast(CBlastOptionsHandle * algo_opts)
 {
     x_Init(algo_opts);
@@ -905,9 +852,13 @@ void CRemoteBlast::SetDatabase(const string & x)
 {
     if (x.empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument,
-                   "Empty string specified for database.");
+                   "NULL specified for database.");
     }
-    SetDatabase(x.c_str());
+        
+    CRef<CBlast4_subject> subject_p(new CBlast4_subject);
+    subject_p->SetDatabase(x);
+    m_QSR->SetSubject(*subject_p);
+    m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
 }
 
 void CRemoteBlast::SetEntrezQuery(const char * x)
@@ -1094,6 +1045,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2005/12/19 21:47:25  bealer
+* - Remove (no longer needed) per-search-type constructors for CRemoteBlast.
+* - Add timing info to the verbose output for CRemoteBlast network ops.
+*
 * Revision 1.34  2005/10/26 15:39:24  camacho
 * Refactoring of PSI-BLAST validation functions
 *
