@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 class IRegistry;
 class IBlobStorage;
 
-class NCBI_XGRIDCGI_EXPORT CCgiSession_Netcache : public ICgiSession_Impl
+class NCBI_XGRIDCGI_EXPORT CCgiSession_Netcache : public ICgiSessionStorage
 {
 public:
     CCgiSession_Netcache(const IRegistry&);
@@ -54,14 +54,14 @@ public:
     virtual string CreateNewSession();
     virtual bool LoadSession(const string& sessionid);
 
-    virtual void GetAttributeNames(TNames& names) const;
+    virtual TNames GetAttributeNames(void) const;
 
     virtual CNcbiIstream& GetAttrIStream(const string& name,
                                          size_t* size = 0);
     virtual CNcbiOstream& GetAttrOStream(const string& name);
 
     virtual void SetAttribute(const string& name, const string& value);
-    virtual void GetAttribute(const string& name, string& value) const;  
+    virtual string GetAttribute(const string& name) const;  
 
     virtual void RemoveAttribute(const string& name);
     virtual void DeleteSession();
@@ -113,6 +113,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/20 20:36:02  didenko
+ * Comments cosmetics
+ * Small interace changes
+ *
  * Revision 1.3  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

@@ -90,12 +90,14 @@ bool CCgiSession_Netcache::LoadSession(const string& sessionid)
     m_Loaded = true;
     return m_Loaded;
 }
-void CCgiSession_Netcache::GetAttributeNames(TNames& names) const
+CCgiSession::TNames CCgiSession_Netcache::GetAttributeNames() const
 {
+    TNames names;
     x_CheckStatus();
     ITERATE(TBlobs, it, m_Blobs) {
         names.push_back(it->first);
     }
+    return names;
 }
 
 CNcbiIstream& CCgiSession_Netcache::GetAttrIStream(const string& name, 
@@ -131,16 +133,15 @@ void CCgiSession_Netcache::SetAttribute(const string& name, const string& value)
     os << value;
     Reset();
 }
-void CCgiSession_Netcache::GetAttribute(const string& name, string& value) const
+string CCgiSession_Netcache::GetAttribute(const string& name) const
 {
     x_CheckStatus();
     const_cast<CCgiSession_Netcache*>(this)->Reset();
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
-        value = "";
-        return;
+        return "";
     }
-    value = m_Storage->GetBlobAsString(i->second);
+    return m_Storage->GetBlobAsString(i->second);
 }
 
 void CCgiSession_Netcache::RemoveAttribute(const string& name)
@@ -202,6 +203,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/12/20 20:36:02  didenko
+ * Comments cosmetics
+ * Small interace changes
+ *
  * Revision 1.4  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

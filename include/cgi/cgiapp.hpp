@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 class CCgiServerContext;
 class CCgiStatistics;
 class CCgiWatchFile;
-class ICgiSession_Impl;
+class ICgiSessionStorage;
 class CCgiSessionParameters;
 
 
@@ -138,7 +138,13 @@ public:
     ///
     virtual const CArgs& GetArgs(void) const;
 
-    virtual ICgiSession_Impl* GetSessionImpl(CCgiSessionParameters&) const;
+    /// Get instance of CGI session storage interface. 
+    /// If the CGI application needs to use CGI session it should overwrite 
+    /// this metod and return an instance of an implementation of 
+    /// ICgiSessionStorage interface. 
+    /// @param params
+    ///  Optional parameters
+    virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters& params) const;
 
 protected:
     /// This method is called if an exception is thrown during the processing
@@ -340,6 +346,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.50  2005/12/20 20:36:02  didenko
+* Comments cosmetics
+* Small interace changes
+*
 * Revision 1.49  2005/12/19 16:55:03  didenko
 * Improved CGI Session implementation
 *

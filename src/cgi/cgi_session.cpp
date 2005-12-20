@@ -42,7 +42,7 @@ const string CCgiSession::kDefaultSessionCookieDomain = ".ncbi.nlm.nih.gov";
 const string CCgiSession::kDefaultSessionCookiePath = "/";
 
 CCgiSession::CCgiSession(const CCgiRequest& request, 
-                         ICgiSession_Impl* impl, 
+                         ICgiSessionStorage* impl, 
                          EOwnership impl_owner,
                          ECookieSupport cookie_sup)
     : m_Request(request), m_Impl(impl), m_CookieSupport(cookie_sup),
@@ -112,10 +112,10 @@ void CCgiSession::CreateNewSession()
     m_Status = eNew;
 }
 
-void CCgiSession::GetAttributeNames(TNames& names) const
+CCgiSession::TNames CCgiSession::GetAttributeNames() const
 {
     x_Load();
-    m_Impl->GetAttributeNames(names);
+    return m_Impl->GetAttributeNames();
 }
 
 CNcbiIstream& CCgiSession::GetAttrIStream(const string& name, 
@@ -137,10 +137,10 @@ void CCgiSession::SetAttribute(const string& name, const string& value)
     m_Impl->SetAttribute(name,value);
 }
 
-void CCgiSession::GetAttribute(const string& name, string& value) const
+string CCgiSession::GetAttribute(const string& name) const
 {
     x_Load();
-    m_Impl->GetAttribute(name, value);
+    return m_Impl->GetAttribute(name);
 }
 
 void CCgiSession::RemoveAttribute(const string& name)
@@ -164,7 +164,7 @@ void CCgiSession::DeleteSession()
 
 const CCgiCookie * const CCgiSession::GetSessionCookie() const
 {
-    if (m_CookieSupport == eDonotUseCookie ||
+    if (m_CookieSupport == eNoCookie ||
         (m_Status != eLoaded && m_Status != eNew && m_Status != eDeleted))
         return NULL;
 
@@ -208,7 +208,7 @@ void CCgiSession::x_Load() const
 }
 
 ///////////////////////////////////////////////////////////
-ICgiSession_Impl::~ICgiSession_Impl()
+ICgiSessionStorage::~ICgiSessionStorage()
 {
 }
 
@@ -217,6 +217,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/20 20:36:02  didenko
+ * Comments cosmetics
+ * Small interace changes
+ *
  * Revision 1.2  2005/12/19 16:55:04  didenko
  * Improved CGI Session implementation
  *

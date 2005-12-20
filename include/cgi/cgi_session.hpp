@@ -30,14 +30,10 @@
 *
 */
 
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbimisc.hpp>
+/// @file cgi_session.hpp
+/// API to store CGI session data between Web requests.
 
-#include <list>
-#include <string>
-#include <memory>
-
-#include <stddef.h>
+#include <corelib/ncbistd.hpp>
 
 /** @addtogroup CGI
  *
@@ -47,10 +43,19 @@
 
 BEGIN_NCBI_SCOPE
 
-class ICgiSession_Impl;
+// fwd-decl
+class ICgiSessionStorage;
 class CCgiRequest;
 class CCgiCookie;
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCgiSession --
+///
+///   Facilitate the transfer of session ID between Web requests.
+///   Store and retrieve the CGI session data from an external
+///   data storage using the session ID.
+///
 class NCBI_XCGI_EXPORT CCgiSession 
 {
 public:
@@ -67,108 +72,121 @@ public:
         eNotLoaded,  ///< The session has not been loaded yet
         eDeleted,    ///< The session is deleted
         eImplNotSet  ///< The CGI application didn't set the session
-                     ///  implementation
+                     ///< implementation
     };
 
     /// Specifies if a client session cookie can be used to transfer
-    /// a session id between request
+    /// session id between requests
     enum ECookieSupport {
-        eUseCookie,     ///< A session cookie will be add to a response
-        eDonotUseCookie ///< A sesion cookie will not be add to a response
+        eUseCookie,  ///< A session cookie will     be added to the response
+        eNoCookie    ///< A session cookie will not be added to the response
     };
-    
-    CCgiSession(const CCgiRequest& request, 
-                ICgiSession_Impl* impl, 
-                EOwnership impl_owner = eTakeOwnership,
-                ECookieSupport cookie_sup = eUseCookie);
+
+    CCgiSession(const CCgiRequest&  request, 
+                ICgiSessionStorage* impl, 
+                EOwnership          impl_ownership = eTakeOwnership,
+                ECookieSupport      cookie_support = eUseCookie);
 
     ~CCgiSession();
 
-    /// Get a session id. Throws an exception if an id is not set and
-    /// can not be retrived from the cgi request.
-    const string& GetId() const;
+    /// Get session ID.
+    /// @throw CCgiSessionException if session ID is not set and it
+    ///        can not be retrieved from CGI request too.
+    const string& GetId(void) const;
 
-    /// Set session id. 
-    /// If the session was previously loaded it will be closed
-    void SetId(const string& id);
+    /// Set session ID. 
+    /// The previously loaded session (if any) will be closed.
+    void SetId(const string& session_id);
 
-    /// Load the sesion. Throws an exception if an id is not set and
-    /// can not be retrived from the cgi request.
-    void Load();
+    /// Load the session.
+    /// @throw CCgiSessionException if session ID is not set and it
+    ///        can not be retrieved from CGI request too.
+    void Load(void);
 
-    /// Create a new session. 
-    /// If the session was previously loaded it will be closed
-    void CreateNewSession();
+    /// Create new session. 
+    /// The previously loaded session (if any) will be closed.
+    void CreateNewSession(void);
 
-    /// Retrieve a list of attributes names attached to this session
-    /// Throws an exception if the session is not loaded
-    ///
-    void GetAttributeNames(TNames& names) const;
+    /// Retrieve names of all attributes attached to this session.
+    /// @throw CCgiSessionException if the session is not loaded.
+    TNames GetAttributeNames(void) const;
 
-    /// Get an input stream for an attribute with the given name
-    /// If the attribute does not exist the empty stream is returned
-    /// Throws an exception if the session is not loaded
-    ///
-    CNcbiIstream& GetAttrIStream(const string& name, 
-                                 size_t* size = 0);
+    /// Get input stream to read an attribute's data from.
+    /// @param[in] name
+    ///  Name of the attribute
+    /// @param[out] size
+    ///  Size of the attribute's data
+    /// @return 
+    ///  Stream to read attribute's data from.If the attribute does not exist, 
+    ///  then return an empty stream.
+    /// @throw CCgiSessionException if the session is not loaded.
+    CNcbiIstream& GetAttrIStream(const string& name, size_t* size = NULL);
 
-    /// Get an output stream for an attribute with the given name
-    /// If the attribute does not exist it will be create and added 
+    /// Get output stream to write an attribute's data to.
+    /// If the attribute does not exist it will be created and added 
     /// to the session. If the attribute exists its content will be
     /// overwritten.
-    /// Throws an exception if the session is not loaded
-    ///
+    /// @param[in] name
+    ///  Name of the attribute
+    /// @throw CCgiSessionException if the session is not loaded.
     CNcbiOstream& GetAttrOStream(const string& name);
 
-    /// Set a string attribute
-    /// Throws an exception if the session is not loaded
-    ///
+    /// Set attribute data as a string.
+    /// @param[in] name
+    ///  Name of the attribute to set
+    /// @param[in] value
+    ///  Value to set the attribute data to
+    /// @throw CCgiSessionException if the session is not loaded.
     void SetAttribute(const string& name, const string& value);
 
-    /// Get a string attribute. If the attribute does not exist an empty
-    /// string is returned
-    /// Throws an exception if the session is not loaded
-    ///
-    void GetAttribute(const string& name, string& value) const;
+    /// Get attribute data as string.
+    /// @param[in] name
+    ///  Name of the attribute to retrieve
+    /// @return
+    ///  Attribute's data, or empty string if the attribute does not exist.
+    /// @throw CCgiSessionException if the session is not loaded.
+    string GetAttribute(const string& name) const;
 
-    /// Remove an attribute from the session
-    /// Throws an exception if the session is not loaded
-    ///
+    /// Remove attribute from the session.
+    /// @param[in] name
+    ///  Name of the attribute to remove
+    /// @throw CCgiSessionException if the session is not loaded.
     void RemoveAttribute(const string& name);
 
-    /// Delete the current session
-    /// Throws an exception if the session is not loaded
-    ///
-    void DeleteSession();
+    /// Delete current session
+    /// @throw CCgiSessionException if the session is not loaded.
+    void DeleteSession(void);
 
+    /// Get current status of the session.
+    EStatus GetStatus(void) const;
 
-    /// Get a session status
-    EStatus GetStatus() const;
+    /// Get name for session ID.
+    /// @sa SetSessionIdName
+    const string& GetSessionIdName(void) const;
 
-    /// Get a session id name. This name is used as a cookie name for
-    /// a session cookie.
-    ///
-    const string& GetSessionIdName() const;
-    
-    /// Set a session id name
+    /// Set name for session ID.
+    /// This name is used as a cookie name for a session cookie.
     void SetSessionIdName(const string& name);
 
-    
-
-    /// Set a session cookie domain
+    /// Set session cookie domain
+    /// @sa SetSessionIdName
     void SetSessionCookieDomain(const string& domain);
 
-    /// Set a session cookie path
+    /// Set session cookie path
+    /// @sa SetSessionIdName
     void SetSessionCookiePath(const string& path);
-    
-    /// Get a session cookie. Returns NULL if a session
-    /// is not load or a cookie support is disable.
-    const CCgiCookie * const GetSessionCookie() const;
+
+    /// Get a cookie pertaining to the session. May create new cookie,
+    /// if needed and allowed to.
+    /// @return
+    ///  Session CGI cookie; 
+    ///  NULL if no session is loaded or if cookie support is disabled.
+    const CCgiCookie* const GetSessionCookie(void) const;
     
 private:
     const CCgiRequest& m_Request;
-    ICgiSession_Impl* m_Impl;
-    auto_ptr<ICgiSession_Impl> m_ImplGuard;
+    ICgiSessionStorage* m_Impl;
+    auto_ptr<ICgiSessionStorage> m_ImplGuard;
     ECookieSupport m_CookieSupport;
 
     string m_SessionId;
@@ -187,55 +205,74 @@ private:
 };
 
 
-class NCBI_XCGI_EXPORT ICgiSession_Impl
+/////////////////////////////////////////////////////////////////////////////
+///
+/// ICgiSessionStogage --
+///
+///   Implement data storage and retrieval for CCgiSession.
+///   @sa CCgiSession
+///
+
+
+class NCBI_XCGI_EXPORT ICgiSessionStorage
 {
 public:
     typedef CCgiSession::TNames TNames;
 
-    virtual ~ICgiSession_Impl();
+    virtual ~ICgiSessionStorage();
 
-    /// Create a new empty session. Returns a new
-    /// session id
-    ///
+    /// Create a new empty session. 
+    /// @return ID of the new session
     virtual string CreateNewSession() = 0;
 
-    /// Load a session this the given session id from
-    /// the underlying storage. If the session with given id
-    /// is not found it returns eNotLoaded status.
-    ///
+    /// Load the session
+    /// @param[in]
+    ///  ID of the session
+    /// @return true if the session was loaded, false otherwise
     virtual bool LoadSession(const string& sessionid) = 0;
 
-    /// Retrieve a list of attributes names attached to this session
-    ///
-    virtual void GetAttributeNames(TNames& names) const = 0;
+    /// Retrieve names of all attributes attached to this session.
+    virtual TNames GetAttributeNames(void) const = 0;
 
-    /// Get an input stream for an attribute with the given name
-    /// If the attribute does not exist the empty stream is returned
-    ///
+    /// Get input stream to read an attribute's data from.
+    /// @param[in] name
+    ///  Name of the attribute
+    /// @param[out] size
+    ///  Size of the attribute's data
+    /// @return 
+    ///  Stream to read attribute's data from.If the attribute does not exist, 
+    ///  then return an empty stream.
     virtual CNcbiIstream& GetAttrIStream(const string& name, 
                                          size_t* size = 0) = 0;
 
-    /// Get an output stream for an attribute with the given name
-    /// If the attribute does not exist it will be create and added 
+    /// Get output stream to write an attribute's data to.
+    /// If the attribute does not exist it will be created and added 
     /// to the session. If the attribute exists its content will be
     /// overwritten.
-    ///
+    /// @param[in] name
+    ///  Name of the attribute
     virtual CNcbiOstream& GetAttrOStream(const string& name) = 0;
 
-    /// Set a string attribute
-    ///
+    /// Set attribute data as a string.
+    /// @param[in] name
+    ///  Name of the attribute to set
+    /// @param[in] value
+    ///  Value to set the attribute data to
     virtual void SetAttribute(const string& name, const string& value) = 0;
 
-    /// Get a string attribute. If the attribute does not exist an empty
-    /// string is returned
-    ///
-    virtual void GetAttribute(const string& name, string& value) const = 0;
+    /// Get attribute data as string.
+    /// @param[in] name
+    ///  Name of the attribute to retrieve
+    /// @return
+    ///  Attribute's data, or empty string if the attribute does not exist.
+    virtual string GetAttribute(const string& name) const = 0;
 
-    /// Remove an attribute from the session
-    ///
+    /// Remove attribute from the session.
+    /// @param[in] name
+    ///  Name of the attribute to remove
     virtual void RemoveAttribute(const string& name) = 0;
 
-    /// Delete the current session
+    /// Delete current session
     virtual void DeleteSession() = 0;
 
     /// Reset the session. The an implementation should close 
@@ -281,6 +318,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/20 20:36:02  didenko
+ * Comments cosmetics
+ * Small interace changes
+ *
  * Revision 1.3  2005/12/20 01:28:46  ucko
  * +<memory> for auto_ptr<>, and rearrange other headers slightly.
  *

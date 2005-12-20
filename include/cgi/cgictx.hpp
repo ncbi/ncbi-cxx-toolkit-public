@@ -112,41 +112,6 @@ private:
 };
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CCgiSessionParameters:
-//
-
-class CCgiContext;
-class CCgiSessionParameters
-{
-public:
-
-    void SetImplOwnership(EOwnership owner) { m_ImplOwner = owner; }
-    void DisableCookie() { m_CookieEnabled = false; }
-    void SetSessionIdName(const string& name) { m_SessionIdName = name; }
-    void SetSessionCookieDomain(const string& domain) 
-    { m_SessionCookieDomain = domain; }
-    void SetSessionCookiePath(const string& path)
-    { m_SessionCookiePath = path; }
-
-private:
-
-    friend class CCgiContext;
-    CCgiSessionParameters() : 
-        m_ImplOwner(eTakeOwnership), m_CookieEnabled(true),
-        m_SessionIdName(CCgiSession::kDefaultSessionIdName), 
-        m_SessionCookieDomain(CCgiSession::kDefaultSessionCookieDomain),
-        m_SessionCookiePath(CCgiSession::kDefaultSessionCookiePath) {}
-
-    EOwnership m_ImplOwner;
-    bool m_CookieEnabled;
-    string m_SessionIdName;
-    string m_SessionCookieDomain;
-    string m_SessionCookiePath;
-};
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CCgiContext::
@@ -273,6 +238,57 @@ private:
 }; 
 
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CCgiSessionParameters:
+//  This class is used to pass additional optional parameters from a CGI
+//  application to CGI session
+
+class CCgiSessionParameters
+{
+public:
+
+    /// Spescify which class is responsible for Session Storage destruction
+    /// if set to eTakeOwnership, then a CGI session will delete it, otherwise
+    /// the CGI application should do it. 
+    /// Default the CGI session takes responsibility.
+    void SetImplOwnership(EOwnership owner) { m_ImplOwner = owner; }
+    
+    /// Do not use a cookie to transfer session id between requests
+    /// By default cookie is enabled
+    void DisableCookie() { m_CookieEnabled = false; }
+
+    /// Set name of the cookie with session id. 
+    /// Default: ncbi_sessionid
+    void SetSessionIdName(const string& name) { m_SessionIdName = name; }
+
+    /// Set session cookie's domain
+    /// Default: .ncbi.nlm.nih.gov
+    void SetSessionCookieDomain(const string& domain)       
+    { m_SessionCookieDomain = domain; }
+
+    /// Set session cookie's path
+    /// Default: /
+    void SetSessionCookiePath(const string& path)
+    { m_SessionCookiePath = path; }
+
+private:
+
+    // Only CgiContext can create an instance of this class
+    friend class CCgiContext;
+    CCgiSessionParameters() : 
+        m_ImplOwner(eTakeOwnership), m_CookieEnabled(true),
+        m_SessionIdName(CCgiSession::kDefaultSessionIdName), 
+        m_SessionCookieDomain(CCgiSession::kDefaultSessionCookieDomain),
+        m_SessionCookiePath(CCgiSession::kDefaultSessionCookiePath) {}
+
+    EOwnership m_ImplOwner;
+    bool m_CookieEnabled;
+    string m_SessionIdName;
+    string m_SessionCookieDomain;
+    string m_SessionCookiePath;
+};
+
 /* @} */
 
 
@@ -390,6 +406,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.34  2005/12/20 20:36:02  didenko
+* Comments cosmetics
+* Small interace changes
+*
 * Revision 1.33  2005/12/19 16:55:03  didenko
 * Improved CGI Session implementation
 *

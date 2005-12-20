@@ -53,7 +53,7 @@ public:
     virtual int  ProcessRequest(CCgiContext& ctx);
 
 protected:
-    virtual ICgiSession_Impl* GetSessionImpl(CCgiSessionParameters&) const;
+    virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters&) const;
 
 private:
     // These 2 functions just demonstrate the use of cmd-line argument parsing
@@ -74,8 +74,8 @@ void CCgiSessionSampleApplication::Init()
     x_SetupArgs();
 }
 
-ICgiSession_Impl* 
-CCgiSessionSampleApplication::GetSessionImpl(CCgiSessionParameters& params) const
+ICgiSessionStorage* 
+CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params) const
 {
     static auto_ptr<CCgiSession_Netcache> session(new CCgiSession_Netcache(GetConfig()));
     params.SetImplOwnership(eNoOwnership);
@@ -86,9 +86,8 @@ CCgiSessionSampleApplication::GetSessionImpl(CCgiSessionParameters& params) cons
 struct SSessionVarTableCtx 
 {
     SSessionVarTableCtx(const CCgiSession& session) 
-        : m_Session(session)
+        : m_Session(session), m_Names(session.GetAttributeNames())
     {
-        m_Session.GetAttributeNames(m_Names);
         m_CurName = m_Names.begin();
     }
     ~SSessionVarTableCtx() 
@@ -113,7 +112,7 @@ CNCBINode* s_SessionVarRowHook(CHTMLPage* page,
     page->AddTagMap("name",  new CHTMLText(name));
     string value;
     try {
-        ctx->m_Session.GetAttribute(name, value);
+        value = ctx->m_Session.GetAttribute(name);
     } catch(...) {
         value = "Not found";
     }
@@ -161,8 +160,7 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
             os << avalue;
             //session.SetAttribute(aname, avalue);
         } 
-        CCgiSession::TNames names;
-        session.GetAttributeNames(names);
+        CCgiSession::TNames names( session.GetAttributeNames() );
         ITERATE(CCgiSession::TNames, it, names) {
             bool is_set;
             string action = *it + "_action";
@@ -172,7 +170,7 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
                     session.RemoveAttribute(*it);
                 else if (avalue == "Modify") {
                     modify_attr_name = *it;
-                    session.GetAttribute(modify_attr_name, modify_attr_value);
+                    modify_attr_value = session.GetAttribute(modify_attr_name);
                 }
             }
         }
@@ -307,6 +305,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/20 20:36:02  didenko
+ * Comments cosmetics
+ * Small interace changes
+ *
  * Revision 1.2  2005/12/19 16:55:04  didenko
  * Improved CGI Session implementation
  *

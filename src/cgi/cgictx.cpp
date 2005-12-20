@@ -131,13 +131,13 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
 void CCgiContext::x_InitSession()
 {
     CCgiSessionParameters params;
-    ICgiSession_Impl* impl = m_App.GetSessionImpl(params);
+    ICgiSessionStorage* impl = m_App.GetSessionStorage(params);
     m_Session.reset(new CCgiSession(*m_Request, 
                                     impl,
                                     params.m_ImplOwner,
                                     params.m_CookieEnabled ? 
                                     CCgiSession::eUseCookie :
-                                    CCgiSession::eDonotUseCookie)
+                                    CCgiSession::eNoCookie)
                     );
     m_Session->SetSessionIdName(params.m_SessionIdName);
     m_Session->SetSessionCookieDomain(params.m_SessionCookieDomain);
@@ -321,6 +321,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.45  2005/12/20 20:36:02  didenko
+* Comments cosmetics
+* Small interace changes
+*
 * Revision 1.44  2005/12/19 16:55:04  didenko
 * Improved CGI Session implementation
 *

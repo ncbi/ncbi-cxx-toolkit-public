@@ -581,8 +581,8 @@ CCgiStatistics* CCgiApplication::CreateStat()
     return new CCgiStatistics(*this);
 }
 
-ICgiSession_Impl* 
-CCgiApplication::GetSessionImpl(CCgiSessionParameters&) const 
+ICgiSessionStorage* 
+CCgiApplication::GetSessionStorage(CCgiSessionParameters&) const 
 {
     return 0;
 }
@@ -825,6 +825,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.66  2005/12/20 20:36:02  didenko
+* Comments cosmetics
+* Small interace changes
+*
 * Revision 1.65  2005/12/19 16:55:04  didenko
 * Improved CGI Session implementation
 *
