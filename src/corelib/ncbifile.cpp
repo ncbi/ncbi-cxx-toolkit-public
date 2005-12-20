@@ -699,7 +699,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                 // Leave out, since we already have content
                 continue;
 #ifdef DISK_SEPARATOR
-            } else if (last[last.size()-1] == DISK_SEPARATOR) {
+            } else if (!last.empty() && last[last.size()-1] == DISK_SEPARATOR) {
                 // Allow almost anything right after a volume specification
 #endif
             } else if (next.empty()) {
@@ -3635,6 +3635,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.131  2005/12/20 15:51:43  gouriano
+ * Added safety check
+ *
  * Revision 1.130  2005/12/15 19:12:57  ivanov
  * *::Copy() -- cut & paste bug: do not remove source file on fCF_Update
  *
