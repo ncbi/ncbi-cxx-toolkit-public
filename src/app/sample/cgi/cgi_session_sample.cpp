@@ -110,12 +110,7 @@ CNCBINode* s_SessionVarRowHook(CHTMLPage* page,
     
     const string& name = *(ctx->m_CurName);
     page->AddTagMap("name",  new CHTMLText(name));
-    string value;
-    try {
-        value = ctx->m_Session.GetAttribute(name);
-    } catch(...) {
-        value = "Not found";
-    }
+    string value = ctx->m_Session.GetAttribute(name);
     page->AddTagMap("value",  new CHTMLText(value));
 
     ++(ctx->m_CurName);
@@ -305,6 +300,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/20 21:17:27  didenko
+ * Cosmetics
+ *
  * Revision 1.3  2005/12/20 20:36:02  didenko
  * Comments cosmetics
  * Small interace changes
