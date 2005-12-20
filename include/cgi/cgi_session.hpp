@@ -30,13 +30,14 @@
 *
 */
 
-#include <stddef.h>
-
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimisc.hpp>
 
 #include <list>
 #include <string>
+#include <memory>
+
+#include <stddef.h>
 
 /** @addtogroup CGI
  *
@@ -280,6 +281,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/20 01:28:46  ucko
+ * +<memory> for auto_ptr<>, and rearrange other headers slightly.
+ *
  * Revision 1.2  2005/12/19 16:55:03  didenko
  * Improved CGI Session implementation
  *
