@@ -52,33 +52,35 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Reader-writer based stream buffer.
+/// Reader-writer based stream buffer
 
 class NCBI_XUTIL_EXPORT CRWStreambuf : public CRWStreambufBase
 {
 public:
     /// Which of the objects (passed in the constructor) should be
     /// deleted on this object's destruction.
-    /// NOTE:  if the reader and writer are in fact the same object, it will
-    ///        not be deleted twice.
+    /// NOTE:  if the reader and writer are in fact the same object,
+    ///        it will _not_ be deleted twice.
     enum EFlags {
         fOwnReader     = 1 << 1,    // own the underlying reader
         fOwnWriter     = 1 << 2,    // own the underlying writer
         fOwnAll        = fOwnReader + fOwnWriter,
         fLogExceptions = 1 << 8
     };
-    typedef int TFlags;     // bitwise OR of EOwnership
+    typedef int TFlags;             // bitwise OR of EFlags
 
 
-    CRWStreambuf(IReaderWriter* rw = 0,
+    CRWStreambuf(IReaderWriter* rw       = 0,
                  streamsize     buf_size = 0,
                  CT_CHAR_TYPE*  buf      = 0,
                  TFlags         flags    = 0);
+
     CRWStreambuf(IReader*       r,
                  IWriter*       w,
                  streamsize     buf_size = 0,
                  CT_CHAR_TYPE*  buf      = 0,
                  TFlags         flags    = 0);
+
     virtual ~CRWStreambuf();
 
 protected:
@@ -113,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/12/20 13:45:14  lavr
+ * Formatting/commenting
+ *
  * Revision 1.9  2005/08/12 16:10:35  lavr
  * [TE]Ownership -> [TE]Flags, +fLogExceptions
  *
