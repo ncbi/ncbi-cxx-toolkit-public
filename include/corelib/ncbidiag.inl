@@ -123,10 +123,10 @@ private:
 
     typedef int TTID;
     typedef int TPID;
-    // Cached thread ID
-    TTID m_TID;
     // Cached process ID
     TPID m_PID;
+    // Cached thread ID
+    TTID m_TID;
     // Count of posted messages for the thread
     int  m_ThreadPostCount;
 
@@ -631,6 +631,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/12/20 16:16:02  grichenk
+ * Fixed warnings
+ *
  * Revision 1.52  2005/12/14 19:02:32  grichenk
  * Redesigned format of messages, added new values.
  * Added CDiagContext.
