@@ -43,21 +43,22 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
                        int            oid_end,
                        bool           use_mmap,
                        CSeqDBGiList * gi_list)
-    : m_Atlas        (use_mmap, & m_FlushCB),
-      m_DBNames      (db_name_list),
-      m_Aliases      (m_Atlas, db_name_list, prot_nucl),
-      m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl, gi_list),
-      m_RestrictBegin(oid_begin),
-      m_RestrictEnd  (oid_end),
-      m_NextChunkOID (0),
-      m_NumSeqs      (0),
-      m_NumOIDs      (0),
-      m_TotalLength  (0),
-      m_VolumeLength (0),
-      m_SeqType      (prot_nucl),
-      m_OidListSetup (false),
-      m_UserGiList   (gi_list),
-      m_HeaderCache  (256)
+    : m_Atlas           (use_mmap, & m_FlushCB),
+      m_DBNames         (db_name_list),
+      m_Aliases         (m_Atlas, db_name_list, prot_nucl),
+      m_VolSet          (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl, gi_list),
+      m_RestrictBegin   (oid_begin),
+      m_RestrictEnd     (oid_end),
+      m_NextChunkOID    (0),
+      m_NumSeqs         (0),
+      m_NumOIDs         (0),
+      m_TotalLength     (0),
+      m_VolumeLength    (0),
+      m_SeqType         (prot_nucl),
+      m_OidListSetup    (false),
+      m_UserGiList      (gi_list),
+      m_HeaderCache     (256),
+      m_NeedTotalsScan  (false)
 {
     INIT_CLASS_MARK();
     
@@ -88,10 +89,19 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     
     try {
         if (gi_list || m_Aliases.NeedTotalsScan(m_VolSet)) {
-            x_ScanTotals();
+            m_NeedTotalsScan = true;
+        }
+        
+        if ((! m_OidListSetup) && (oid_begin || oid_end)) {
+            m_NeedTotalsScan = true;
+        }
+        
+        if (m_NeedTotalsScan) {
+            CSeqDBLockHold locked(m_Atlas);
+            x_ScanTotals(locked);
         } else {
-            m_NumSeqs      = x_GetNumSeqs();
-            m_TotalLength  = x_GetTotalLength();
+            m_NumSeqs     = x_GetNumSeqs();
+            m_TotalLength = x_GetTotalLength();
         }
     }
     catch(CSeqDBException & e) {
@@ -122,6 +132,18 @@ void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
         if (m_RestrictBegin > m_RestrictEnd) {
             m_RestrictBegin = m_RestrictEnd;
         }
+    }
+    
+    if (oid_begin || oid_end) {
+        m_NeedTotalsScan = true;
+    }
+    
+    // There may be several uncommon cases where this does an extra,
+    // unnecessary, OID scan.  But only the first OID really costs
+    // much time.
+    
+    if (m_NeedTotalsScan) {
+        x_ScanTotals(locked);
     }
 }
 
@@ -912,14 +934,14 @@ void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)
     m_Aliases.GetAliasFileValues(afv, m_VolSet);
 }
 
-void CSeqDBImpl::x_ScanTotals()
+void CSeqDBImpl::x_ScanTotals(CSeqDBLockHold & locked)
 {
-    CSeqDBLockHold locked(m_Atlas);
-    
     int   oid_count(0);
     Uint8 base_count(0);
     
     const CSeqDBVol * volp = 0;
+    
+    m_Atlas.Lock(locked);
     
     for(int oid = 0; x_CheckOrFindOID(oid, locked); oid++) {
         ++ oid_count;

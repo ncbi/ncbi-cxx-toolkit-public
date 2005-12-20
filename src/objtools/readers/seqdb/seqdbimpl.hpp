@@ -622,7 +622,7 @@ private:
     /// number of (included) sequences and bases from the OID mask and
     /// sequence lengths.  It stores the computed values in m_NumSeqs
     /// and m_TotalLength.
-    void x_ScanTotals();
+    void x_ScanTotals(CSeqDBLockHold & locked);
     
     /// This callback functor allows the atlas code flush any cached
     /// region holds prior to garbage collection.
@@ -681,6 +681,9 @@ private:
     
     /// Cache header data for sequences.
     mutable CSeqDBSimpleCache<int, CRef<CBlast_def_line_set> > m_HeaderCache;
+
+    /// True if this configuration cannot deduce totals without a scan.
+    bool m_NeedTotalsScan;
 };
 
 END_NCBI_SCOPE
