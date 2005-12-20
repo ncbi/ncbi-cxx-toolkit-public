@@ -340,8 +340,8 @@ void CCodeGenerator::GenerateCode(void)
 
     GenerateDoxygenGroupDescription(module_names);
     GenerateCombiningFile(module_inc, module_src);
-    listGenerated.merge(module_inc);
-    listGenerated.merge(module_src);
+	listGenerated.insert(listGenerated.end(), module_inc.begin(), module_inc.end());
+	listGenerated.insert(listGenerated.end(), module_src.begin(), module_src.end());
     GenerateFileList(listGenerated, listUntouched);
     GenerateCvsignore(outdir_cpp, outdir_hpp, listGenerated, module_names);
     GenerateClientCode();
@@ -1039,6 +1039,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2005/12/20 13:58:57  gouriano
+* Replaced list::merge by more appropriate list::insert
+*
 * Revision 1.65  2005/11/23 16:52:37  gouriano
 * Add export specifier to RegisterModuleClasses
 *

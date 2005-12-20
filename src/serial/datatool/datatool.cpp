@@ -559,7 +559,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
         if (split_names) {
             list<string> t;
             NStr::Split(*n, " ", t);
-            names.merge(t);
+            names.insert(names.end(), t.begin(), t.end());
         } else {
             names.push_back(*n);
         }
@@ -630,6 +630,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.88  2005/12/20 13:58:57  gouriano
+* Replaced list::merge by more appropriate list::insert
+*
 * Revision 1.87  2005/11/08 19:24:55  gouriano
 * Set default string encoding of XML streams
 *
