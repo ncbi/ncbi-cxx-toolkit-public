@@ -60,7 +60,7 @@ CBlobWriter::CBlobWriter(CDB_Connection* con, ItDescriptorMaker* d_maker,
     m_dMaker= d_maker;
     m_Limit= (image_limit > 1)? image_limit : (16*1024*1024);
     m_LogIt= ((flags & fLogBlobs) != 0);
-    m_DelDesc= ((flags & fOwnCon) != 0);
+    m_DelDesc= ((flags & fOwnDescr) != 0);
     m_DelCon=  ((flags & fOwnCon) != 0);
 }
 
@@ -389,19 +389,19 @@ bool CSimpleBlobStore::Fini(void)
     if(m_nofDataCols > 0) {
         delete m_Cmd;
         int i= m_ImageNum % m_nofDataCols;
-        if(i || m_RowNum.Value() == 0) { // we need to clean-up the current row
+        if(i || m_ImageNum == 0) { // we need to clean-up the current row
             string s= "update " + m_TableName + " set";
             for(int j= i; j < m_nofDataCols; j++) {
                 s+= ((i != j)? ", ":" ") + m_DataColName[j] + " = NULL";
             }
             s+= " where " + m_KeyColName + " = @key AND " + m_NumColName +
                 " = @n delete " + m_TableName + " where " + m_KeyColName +
-                " = @key AND " + m_NumColName + " >= @n AND 0 != " +  m_NumColName;
+                " = @key AND " + m_NumColName + " > @n";
             m_Cmd= m_Con->LangCmd(s, 2);
         }
         else {
             string s= "delete " + m_TableName + " where " + m_KeyColName +
-                " = @key AND " + m_NumColName + " >= @n and 0 != " +  m_NumColName;
+                " = @key AND " + m_NumColName + " > @n";
             m_Cmd= m_Con->LangCmd(s, 2);
         }
         m_Cmd->SetParam("@key", &m_Key);
