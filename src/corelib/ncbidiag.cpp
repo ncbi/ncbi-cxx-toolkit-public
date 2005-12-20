@@ -432,8 +432,8 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
       m_InitialStreamFlags(m_Stream->flags()),
-      m_PID(CProcess::GetCurrentPid()),
       m_TID(CThread::GetSelf()),
+      m_PID(CProcess::GetCurrentPid()),
       m_ThreadPostCount(0)
 {
     m_Diag = 0;
@@ -1865,6 +1865,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.99  2005/12/20 16:06:46  ivanov
+ * Get rid of GCC compiler warning in CDiagBuffer ctor
+ *
  * Revision 1.98  2005/12/15 20:22:54  grichenk
  * Added CDiagContext::IsSetOldPostFormat().
  * Renamed some flags.
