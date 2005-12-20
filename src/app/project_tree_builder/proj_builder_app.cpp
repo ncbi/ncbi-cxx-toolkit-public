@@ -768,7 +768,7 @@ void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
 {
     configs->clear();
-    string config_str = GetConfig().GetString("msvc7", "Configurations", "");
+    string config_str = GetConfig().GetString(MSVC_REG_SECTION, "Configurations", "");
     list<string> configs_list;
     NStr::Split(config_str, LIST_SEPARATOR, configs_list);
     LoadConfigInfoByNames(GetConfig(), configs_list, configs);
@@ -781,24 +781,24 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
         m_MsvcRegSettings.reset(new CMsvc7RegSettings());
     
         m_MsvcRegSettings->m_Version = 
-            GetConfig().GetString("msvc7", "Version", "7.10");
+            GetConfig().GetString(MSVC_REG_SECTION, "Version", "");
 
         GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
 
         m_MsvcRegSettings->m_CompilersSubdir  = 
-            GetConfig().GetString("msvc7", "compilers", "msvc710_prj");
+            GetConfig().GetString(MSVC_REG_SECTION, "compilers", "");
     
         m_MsvcRegSettings->m_ProjectsSubdir  = 
-            GetConfig().GetString("msvc7", "Projects", "build");
+            GetConfig().GetString(MSVC_REG_SECTION, "Projects", "build");
 
         m_MsvcRegSettings->m_MakefilesExt = 
-            GetConfig().GetString("msvc7", "MakefilesExt", "msvc");
+            GetConfig().GetString(MSVC_REG_SECTION, "MakefilesExt", "msvc");
 
         m_MsvcRegSettings->m_MetaMakefile = 
-            GetConfig().GetString("msvc7", "MetaMakefile", "");
+            GetConfig().GetString(MSVC_REG_SECTION, "MetaMakefile", "");
 
         m_MsvcRegSettings->m_DllInfo = 
-            GetConfig().GetString("msvc7", "DllInfo", "");
+            GetConfig().GetString(MSVC_REG_SECTION, "DllInfo", "");
     }
     return *m_MsvcRegSettings;
 }
@@ -1099,6 +1099,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2005/12/20 19:35:51  gouriano
+ * Use MSVC non-version-specific defines
+ *
  * Revision 1.64  2005/11/17 20:46:53  gouriano
  * Allow datatool to find out-of-tree ASN spec in ASN projects
  *
