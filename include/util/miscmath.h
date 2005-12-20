@@ -1,5 +1,5 @@
-#ifndef UTIL_MATH___MISCMATH__HPP
-#define UTIL_MATH___MISCMATH__HPP
+#ifndef UTIL___MISCMATH__HPP
+#define UTIL___MISCMATH__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -61,9 +61,14 @@ double NCBI_ErfC(double x);
 }
 #endif
 
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/20 22:18:18  vakatov
+ * Moved from <util/math/> to <util/>
+ *
  * Revision 1.2  2005/08/15 19:10:02  ucko
  * Take care to ensure proper linkage in all cases.
  *
@@ -73,4 +78,4 @@ double NCBI_ErfC(double x);
  * ===========================================================================
  */
 
-#endif  /* UTIL_MATH___MISCMATH__HPP */
+#endif  /* UTIL___MISCMATH__HPP */
