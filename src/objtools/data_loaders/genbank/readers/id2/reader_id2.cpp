@@ -76,6 +76,28 @@ BEGIN_SCOPE(objects)
 #define MAX_MT_CONN      5
 
 
+//#define GENBANK_ID2_RANDOM_FAILS 1
+#define GENBANK_ID2_RANDOM_FAILS_FREQUENCY 20
+#define GENBANK_ID2_RANDOM_FAILS_RECOVER 6 // new + write + read
+
+#ifdef GENBANK_ID2_RANDOM_FAILS
+static void SetRandomFail(CNcbiIostream& stream)
+{
+    static int fail_recover = GENBANK_ID2_RANDOM_FAILS_RECOVER;
+    if ( fail_recover > 0 ) {
+        --fail_recover;
+        return;
+    }
+    if ( random() % GENBANK_ID2_RANDOM_FAILS_FREQUENCY == 0 ) {
+        fail_recover = GENBANK_ID2_RANDOM_FAILS_RECOVER;
+        stream.setstate(ios::badbit);
+    }
+}
+#else
+# define SetRandomFail(stream) do{}while(0)
+#endif
+
+
 NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
 NCBI_PARAM_DECL(string, GENBANK, ID2_CGI_NAME);
@@ -303,8 +325,10 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
         stream.reset
             (new CConn_ServiceStream(m_ServiceName, fSERV_Any, 0, 0, &tmout));
     }
+    SetRandomFail(*stream);
     if ( stream->bad() ) {
-        NCBI_THROW(CLoaderException, eNoConnection, "connection failed");
+        NCBI_THROW(CLoaderException, eNoConnection,
+                   "initialization of connection failed");
     }
 
     if ( GetDebugLevel() >= eTraceConn ) {
@@ -323,7 +347,7 @@ CConn_IOStream* CId2Reader::x_NewConnection(TConn conn)
     }
     catch ( CException& exc ) {
         NCBI_RETHROW(exc, CLoaderException, eNoConnection,
-                     "connection failed");
+                     "initialization of connection failed");
     }
 
     return stream.release();
@@ -362,7 +386,7 @@ void CId2Reader::x_InitConnection(CNcbiIostream& stream, TConn conn)
             s << "CId2Reader(" << conn << "): Sent ID2-Request-Packet.\n";
         }
         if ( !stream ) {
-            NCBI_THROW(CLoaderException, eLoaderFailed,
+            NCBI_THROW(CLoaderException, eConnectionFailed,
                        "stream is bad after sending");
         }
     }}
@@ -936,6 +960,7 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
     CNcbiIostream& stream = *x_GetConnection(conn);
     // send request
     {{
+        SetRandomFail(stream);
         if ( GetDebugLevel() >= eTraceConn ) {
             CDebugPrinter s;
             s << "CId2Reader(" << conn <<"): Sending";
@@ -954,8 +979,8 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
                 "Sent ID2-Request-Packet.\n";
         }
         if ( !stream ) {
-            ERR_POST("CId2Reader: stream is bad after sending");
-            return;
+            NCBI_THROW(CLoaderException, eConnectionFailed,
+                       "stream is bad after sending");
         }
     }}
 
@@ -969,17 +994,17 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
                 "Receiving ID2-Reply...\n";
         }
         try {
+            SetRandomFail(stream);
             stream >> MConnFormat >> reply;
         }
         catch ( CException& exc ) {
-            ERR_POST("CId2Reader: "
-                     "reply deserialization failed: "<<exc.what());
             stream.setstate(ios::badbit);
-            return;
+            NCBI_RETHROW(exc, CLoaderException, eConnectionFailed,
+                         "reply deserialization failed");
         }
         if ( !stream ) {
-            ERR_POST("CId2Reader: stream is bad after receiving");
-            return;
+            NCBI_THROW(CLoaderException, eConnectionFailed,
+                       "stream is bad after receiving");
         }
         if ( GetDebugLevel() >= eTraceConn   ) {
             CDebugPrinter s;
