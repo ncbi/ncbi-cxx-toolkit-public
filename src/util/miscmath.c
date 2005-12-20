@@ -29,7 +29,7 @@
 
 #ifndef HAVE_ERF
 #define NEED_EXP
-#endifb
+#endif
 
 #ifdef WORDS_BIGENDIAN
 #define __HI(x) *(int*)&x
@@ -473,6 +473,9 @@ double NCBI_ErfC(double x)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/12/20 22:39:19  vakatov
+* Typo fixed
+*
 * Revision 1.2  2005/12/20 22:27:34  vakatov
 * <util/math/miscmath.h> moved to <util/miscmath.h>
 *
