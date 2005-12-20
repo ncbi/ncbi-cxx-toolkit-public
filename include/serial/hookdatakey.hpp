@@ -74,6 +74,14 @@ private:
 
     struct Compare
     {
+        bool operator()(const TValue& v1, const TValue& v2) const
+            {
+                return v1.first < v2.first;
+            }
+	bool operator()(const THookData* key, const TValue& value) const
+            {
+                return key < value.first;
+            }
         bool operator()(const TValue& value, const THookData* key) const
             {
                 return value.first < key;
@@ -118,6 +126,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2005/12/20 13:57:44  gouriano
+* Modified Compare to please MS Visual Studio 2005
+*
 * Revision 1.5  2003/07/29 18:59:21  vasilche
 * Fixed compilation errors.
 *
