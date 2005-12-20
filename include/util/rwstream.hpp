@@ -75,7 +75,7 @@ public:
     }
 
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    ~CRStream()
+    virtual ~CRStream()
     {
         rdbuf(0);
     }
@@ -102,7 +102,7 @@ public:
     }
 
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    ~CWStream()
+    virtual ~CWStream()
     {
         rdbuf(0);
     }
@@ -129,7 +129,7 @@ public:
     }
 
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
-    ~CRWStream()
+    virtual ~CRWStream()
     {
         rdbuf(0);
     }
@@ -146,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/20 13:44:53  lavr
+ * Declare (optional) dtors as (explicitly) virtual
+ *
  * Revision 1.10  2005/08/12 18:46:32  lavr
  * Fix ctor's parameter description
  *
