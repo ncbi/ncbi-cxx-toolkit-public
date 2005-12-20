@@ -40,7 +40,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbifloat.h>
-#include <util/math/miscmath.h>
+#include <util/miscmath.h>
 #include <algo/blast/core/ncbi_math.h>
 
 #include <fstream>
@@ -1640,6 +1640,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.69  2005/12/20 22:27:34  vakatov
+<util/math/miscmath.h> moved to <util/miscmath.h>
+
 Revision 1.68  2005/11/18 19:07:09  lewisg
 skip correctly over oids when masked
 

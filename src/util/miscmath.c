@@ -23,13 +23,13 @@
 */
 
 #include <ncbiconf.h>
-#include <util/math/miscmath.h>
+#include <util/miscmath.h>
 
 #include <math.h>
 
 #ifndef HAVE_ERF
 #define NEED_EXP
-#endif
+#endifb
 
 #ifdef WORDS_BIGENDIAN
 #define __HI(x) *(int*)&x
@@ -473,6 +473,9 @@ double NCBI_ErfC(double x)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/12/20 22:27:34  vakatov
+* <util/math/miscmath.h> moved to <util/miscmath.h>
+*
 * Revision 1.1  2005/08/12 14:58:33  ucko
 * Ensure that implementations of erf and erfc are always available.
 *
