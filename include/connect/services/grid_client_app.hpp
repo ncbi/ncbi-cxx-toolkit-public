@@ -58,7 +58,7 @@ class NCBI_XCONNECT_EXPORT CGridClientApp : public CNcbiApplication
 {
 public:
     CGridClientApp(CNetScheduleClient* ns_client = NULL, 
-                   INetScheduleStorage* storage = NULL);
+                   IBlobStorage*       storage = NULL);
 
     /// If you override this method, do call CGridClientApp::Init()
     /// from inside your overriding method.    
@@ -81,8 +81,8 @@ public:
 private:
 
     auto_ptr<CNetScheduleClient> m_NSClient;
-    auto_ptr<INetScheduleStorage> m_NSStorage;
-    auto_ptr<CGridClient> m_GridClient;
+    auto_ptr<IBlobStorage>       m_NSStorage;
+    auto_ptr<CGridClient>        m_GridClient;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -92,6 +92,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.3  2005/04/07 16:46:28  didenko
  * + Program Version checking
  *

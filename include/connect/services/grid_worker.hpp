@@ -42,9 +42,9 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/blob_storage.hpp>
 #include <connect/connect_export.h>
-#include <connect/services/netschedule_client.hpp>
-#include <connect/services/netschedule_storage.hpp>
+#include <connect/services/ns_client_factory.hpp>
 #include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -160,13 +160,13 @@ public:
 
     /// Get a stream with input data for a job. Stream is based on network
     /// data storage (NetCache). Size of the input data can be determined 
-    /// using GetInputBlobSize. Will throw a CNetScheduleStorageException 
+    /// using GetInputBlobSize. Will throw a CNetCacheStorageException 
     /// exception with code eBlocked if the mode parameter is set to 
-    /// INetScheduleStorage::eLockNoWait and a blob is blocked by 
+    /// IBlobStorage::eLockNoWait and a blob is blocked by 
     /// another process.
     ///
-    CNcbiIstream& GetIStream(INetScheduleStorage::ELockMode mode =
-                             INetScheduleStorage::eLockWait);
+    CNcbiIstream& GetIStream(IBlobStorage::ELockMode mode =
+                             IBlobStorage::eLockWait);
 
     /// Get the size of an input stream
     ///
@@ -343,7 +343,7 @@ public:
     /// Construct a worker node using class factories
     ///
     CGridWorkerNode(IWorkerNodeJobFactory&      job_creator,
-                    INetScheduleStorageFactory& ns_storage_creator,
+                    IBlobStorageFactory& ns_storage_creator,
                     INetScheduleClientFactory&  ns_client_creator);
 
     virtual ~CGridWorkerNode();
@@ -435,7 +435,7 @@ public:
    
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
-    INetScheduleStorageFactory&  m_NSStorageFactory;
+    IBlobStorageFactory&         m_NSStorageFactory;
     INetScheduleClientFactory&   m_NSClientFactory;
 
     auto_ptr<CNetScheduleClient> m_NSReadClient;
@@ -467,7 +467,7 @@ private:
         CMutexGuard guard(m_JobFactoryMutex);
         return m_JobFactory.CreateInstance();
     }
-    INetScheduleStorage* CreateStorage()
+    IBlobStorage* CreateStorage()
     {
         CMutexGuard guard(m_StorageFactoryMutex);
         return  m_NSStorageFactory.CreateInstance();
@@ -515,6 +515,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.29  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *

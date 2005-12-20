@@ -1,3 +1,6 @@
+#ifndef CONNECT_SERVICES__NS_CLIENT_FACTORY_HPP
+#define CONNECT_SERVICES__NS_CLIENT_FACTORY_HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -9,7 +12,7 @@
  *  the author's official duties as a United States Government employee and
  *  thus cannot be copyrighted.  This software/database is freely available
  *  to the public for use. The National Library of Medicine and the U.S.
- *   Government have not placed any restriction on its use or reproduction.
+ *  Government have not placed any restriction on its use or reproduction.
  *
  *  Although all reasonable efforts have been taken to ensure the accuracy
  *  and reliability of the software and data, the NLM and the U.S.
@@ -25,53 +28,79 @@
  *
  * Authors:  Maxim Didenko
  *
- * File Description:
- *
  */
 
-#include <ncbi_pch.hpp>
-#include <connect/services/grid_client.hpp>
-#include <connect/services/grid_client_app.hpp>
-#include <connect/services/ns_client_factory.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/plugin_manager.hpp>
+#include <corelib/ncbiexpt.hpp>
+#include <connect/services/netschedule_client.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
 
-CGridClientApp::CGridClientApp(CNetScheduleClient* ns_client, 
-                               IBlobStorage*       storage)
-: m_NSClient(ns_client), m_NSStorage(storage)
+/// NetSchedule Client Factory interface
+///
+/// @sa CNetScheduleClient
+///
+class INetScheduleClientFactory
 {
-}
+public:
+    virtual ~INetScheduleClientFactory() {}
+    /// Create a NetSchedule client
+    ///
+    virtual CNetScheduleClient* CreateInstance(void) = 0;
+};
 
-CGridClientApp::~CGridClientApp()
+/////////////////////////////////////////////////////////////////////////////
+//
+/// @internal
+class NCBI_XCONNECT_EXPORT CNetScheduleClientFactory 
+    : public INetScheduleClientFactory
 {
-}
+public:
+    CNetScheduleClientFactory(const IRegistry& reg);
+    virtual ~CNetScheduleClientFactory() {}
 
-void CGridClientApp::Init(void)
+    virtual CNetScheduleClient* CreateInstance(void);
+
+private:
+    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
+    TPMNetSchedule   m_PM_NetSchedule;
+    const IRegistry& m_Registry;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+/// @internal
+class CNSClientFactoryException : public CException
 {
-    CNcbiApplication::Init();
-    if (!m_NSClient.get()) {
-        CNetScheduleClientFactory cf(GetConfig());
-        m_NSClient.reset(cf.CreateInstance());
-        m_NSClient->SetProgramVersion(GetProgramVersion());
+public:
+    enum EErrCode {
+        eNSClientIsNotCreated,
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eNSClientIsNotCreated: 
+            return "eNSClientIsNotCreatedError";
+        default:      return CException::GetErrCodeString();
+        }
     }
-    if( !m_NSStorage.get()) {
-        CBlobStorageFactory_NetCache cf(GetConfig());
-        m_NSStorage.reset(cf.CreateInstance());
-    }
-    m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
-                                       CGridClient::eAutomaticCleanup, 
-                                       CGridClient::eProgressMsgOn));
-}
+
+    NCBI_EXCEPTION_DEFAULT(CNSClientFactoryException, CException);
+};
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2005/12/20 17:26:22  didenko
+ * Revision 1.1  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
  * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
@@ -79,21 +108,8 @@ END_NCBI_SCOPE
  * to separate files
  * Moved CNetScheduleClientFactory to separate files
  *
- * Revision 1.5  2005/08/15 19:08:43  didenko
- * Changed NetScheduler Storage parameters
- *
- * Revision 1.4  2005/05/10 14:14:33  didenko
- * Added blob caching
- *
- * Revision 1.3  2005/04/20 19:25:59  didenko
- * Added support for progress messages passing from a worker node to a client
- *
- * Revision 1.2  2005/04/07 16:47:03  didenko
- * + Program Version checking
- *
- * Revision 1.1  2005/03/25 16:25:41  didenko
- * Initial version
- *
  * ===========================================================================
  */
- 
+
+
+#endif // CONNECT_SERVICES__NS_CLIENT_FACTORY_HPP

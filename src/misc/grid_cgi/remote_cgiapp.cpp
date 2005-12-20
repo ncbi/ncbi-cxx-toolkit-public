@@ -101,7 +101,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 CRemoteCgiApp::CRemoteCgiApp( 
-                   INetScheduleStorageFactory* storage_factory,
+                   IBlobStorageFactory* storage_factory,
                    INetScheduleClientFactory* client_factory)
     : m_WorkerNodeContext(NULL)
 {
@@ -203,6 +203,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.3  2005/09/30 14:58:56  didenko
  * Added optional parameter to PutProgressMessage methods which allows
  * sending progress messages regardless of the rate control.

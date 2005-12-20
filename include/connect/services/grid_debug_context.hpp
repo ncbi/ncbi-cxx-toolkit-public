@@ -33,10 +33,12 @@
  *    NetSchedule Worker Node implementation
  */
 
-#include <connect/services/netschedule_storage.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/blob_storage.hpp>
+
+#include <connect/connect_export.h>
 
 #include <map>
 
@@ -54,7 +56,7 @@ public:
         eGDC_Execute
     };
 
-    static CGridDebugContext& Create(eMode, INetScheduleStorageFactory& );
+    static CGridDebugContext& Create(eMode, IBlobStorageFactory& );
     static CGridDebugContext* GetInstance();
 
     ~CGridDebugContext();
@@ -77,7 +79,7 @@ public:
 
 
 private:
-    CGridDebugContext(eMode, INetScheduleStorageFactory&);
+    CGridDebugContext(eMode, IBlobStorageFactory&);
     static auto_ptr<CGridDebugContext> sm_Instance;
 
     eMode m_Mode;
@@ -85,7 +87,7 @@ private:
     string m_SPid;
 
     CMutex                      m_StorageFactoryMutex;  
-    INetScheduleStorageFactory& m_StorageFactory;
+    IBlobStorageFactory&        m_StorageFactory;
 
     map<string,string> m_Blobs;
     map<string,string>::const_iterator m_CurrentJob;
@@ -94,7 +96,7 @@ private:
     CGridDebugContext& operator=(const CGridDebugContext&);
 
     void x_DumpBlob(const string& blob_id, const string& fname);
-    INetScheduleStorage* CreateStorage()
+    IBlobStorage* CreateStorage()
     {
         CMutexGuard guard(m_StorageFactoryMutex);
         return  m_StorageFactory.CreateInstance();
@@ -107,6 +109,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.1  2005/05/23 15:51:13  didenko
  * Moved grid_control_thread.hpp grid_debug_context.hpp from
  * srv/connect/service

@@ -27,93 +27,29 @@
  * ===========================================================================
  *
  * Authors:  Maxim Didenko
- *
+ *         DEPRICATED
  */
 
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_config.hpp>
-#include <corelib/plugin_manager.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <connect/services/netcache_nsstorage_imp.hpp>
-#include <connect/services/netcache_client.hpp>
-#include <connect/services/netschedule_client.hpp>
-
+#include <connect/services/blob_storage_netcache.hpp>
+#include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class NCBI_XCONNECT_EXPORT CNetScheduleStorageFactory_NetCache 
-    : public INetScheduleStorageFactory
-{
-public:
-    
-    explicit CNetScheduleStorageFactory_NetCache(const IRegistry& reg);
-
-    virtual ~CNetScheduleStorageFactory_NetCache() {}
-
-    virtual INetScheduleStorage* CreateInstance(void);
-
-private:
-    typedef CPluginManager<CNetCacheClient> TPMNetCache;
-    TPMNetCache                      m_PM_NetCache;
-    const IRegistry&                 m_Registry;
-    string                           m_TempDir;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class NCBI_XCONNECT_EXPORT CNetScheduleClientFactory 
-    : public INetScheduleClientFactory
-{
-public:
-    CNetScheduleClientFactory(const IRegistry& reg);
-    virtual ~CNetScheduleClientFactory() {}
-
-    virtual CNetScheduleClient* CreateInstance(void);
-
-private:
-    typedef CPluginManager<CNetScheduleClient> TPMNetSchedule;
-    TPMNetSchedule   m_PM_NetSchedule;
-    const IRegistry& m_Registry;
-};
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-/// @internal
-class NCBI_XCONNECT_EXPORT CGridFactoriesException : public CException
-{
-public:
-    enum EErrCode {
-        eNSClientIsNotCreated,
-        eNCClientIsNotCreated
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eNSClientIsNotCreated: 
-            return "eNSClientIsNotCreatedError";
-        case eNCClientIsNotCreated: 
-            return "eNCClientIsNotCreatedError";
-        default:      return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CGridFactoriesException, CException);
-};
+typedef CBlobStorageFactory_NetCache CNetScheduleStorageFactory_NetCache;
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.9  2005/12/12 15:13:16  didenko
  * Now CNetScheduleStorageFactory_NetCache class reads all init
  * parameters from the registry

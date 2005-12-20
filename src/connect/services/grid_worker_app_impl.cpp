@@ -37,9 +37,8 @@
 #include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 #include <connect/services/grid_worker_app_impl.hpp>
-#include <connect/services/grid_default_factories.hpp>
-#include <connect/services/netcache_nsstorage_imp.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_control_thread.hpp>
 
@@ -114,7 +113,7 @@ enum ELoggingType {
 CGridWorkerApp_Impl::CGridWorkerApp_Impl(
                                CNcbiApplication& app,
                                IWorkerNodeJobFactory* job_factory, 
-                               INetScheduleStorageFactory* storage_factory,
+                               IBlobStorageFactory*   storage_factory,
                                INetScheduleClientFactory* client_factory)
 : m_JobFactory(job_factory), m_StorageFactory(storage_factory),
   m_ClientFactory(client_factory), m_App(app), m_SingleThreadForced(false)
@@ -138,7 +137,7 @@ void CGridWorkerApp_Impl::Init()
 
     if (!m_StorageFactory.get()) 
         m_StorageFactory.reset(
-                   new CNetScheduleStorageFactory_NetCache(reg)
+                   new CBlobStorageFactory_NetCache(reg)
                               );
     if (!m_ClientFactory.get()) 
         m_ClientFactory.reset(
@@ -332,6 +331,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 6.6  2005/12/12 15:13:16  didenko
  * Now CNetScheduleStorageFactory_NetCache class reads all init
  * parameters from the registry

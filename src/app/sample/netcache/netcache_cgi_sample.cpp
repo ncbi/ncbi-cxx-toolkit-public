@@ -38,9 +38,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
-#include <connect/services/netcache_client.hpp>
-#include <connect/services/netcache_nsstorage_imp.hpp>
-#include <connect/services/grid_default_factories.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 #include <html/html.hpp>
 #include <html/page.hpp>
@@ -72,7 +70,7 @@ private:
     void x_SetupArgs(void);
     void x_LookAtArgs(void);
 
-    auto_ptr<INetScheduleStorage> m_Storage;
+    auto_ptr<IBlobStorage> m_Storage;
     string m_HtmlTempl;
 };
 
@@ -96,11 +94,11 @@ void CCgiSampleApplication::Init()
 
 void CCgiSampleApplication::x_InitStorage()
 {
-    CNetScheduleStorageFactory_NetCache factory(GetConfig());
+    CBlobStorageFactory_NetCache factory(GetConfig());
     m_Storage.reset(factory.CreateInstance());
 }
 
-const string kSessionId = "ncbi_sessionid";
+const string kSessionId = "nsessionid";
 
 int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 {
@@ -247,6 +245,14 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.1  2005/12/12 15:18:08  didenko
  * Added new sample which shows how the NetCache can be used from a cgi application.
  *

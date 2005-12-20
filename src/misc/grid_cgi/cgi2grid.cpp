@@ -36,8 +36,8 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/netschedule_client.hpp>
-#include <connect/services/netschedule_storage.hpp>
-#include <connect/services/grid_default_factories.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
+#include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -78,14 +78,14 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
                                        const string&       return_url)
 {
     auto_ptr<CNetScheduleClient> ns_client;
-    auto_ptr<INetScheduleStorage> ns_storage;
+    auto_ptr<IBlobStorage> ns_storage;
     auto_ptr<CGridClient> grid_client;
 
     CNetScheduleClientFactory cfc(app.GetConfig());
     ns_client.reset(cfc.CreateInstance());
     ns_client->SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
 
-    CNetScheduleStorageFactory_NetCache cfs(app.GetConfig());
+    CBlobStorageFactory_NetCache cfs(app.GetConfig());
     ns_storage.reset(cfs.CreateInstance());
     grid_client.reset(new CGridClient(*ns_client, *ns_storage,
                                       CGridClient::eManualCleanup,
@@ -115,6 +115,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.2  2005/08/15 21:05:50  ucko
  * Adjust for CNetScheduleStorageFactory_NetCache API changes.
  *

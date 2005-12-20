@@ -125,7 +125,7 @@ const string& CWorkerNodeJobContext::GetClientName()const
     return m_WorkerNode.GetClientName();
 }
 
-CNcbiIstream& CWorkerNodeJobContext::GetIStream(INetScheduleStorage::ELockMode mode)
+CNcbiIstream& CWorkerNodeJobContext::GetIStream(IBlobStorage::ELockMode mode)
 {   
     _ASSERT(m_ThreadContext);
     return m_ThreadContext->GetIStream(mode);
@@ -268,7 +268,7 @@ void CWorkerNodeRequest::Process(void)
 //
 //     CGridWorkerNode       -- 
 CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
-                                 INetScheduleStorageFactory& storage_factory,
+                                 IBlobStorageFactory&        storage_factory,
                                  INetScheduleClientFactory&  client_factory)
     : m_JobFactory(job_factory),
       m_NSStorageFactory(storage_factory),
@@ -569,6 +569,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.34  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *

@@ -34,7 +34,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbireg.hpp>
 
-#include <connect/services/netcache_nsstorage_imp.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 #include <test/test_assert.h>  /* This header must go last */
 
@@ -93,14 +93,14 @@ int CTestNSStorage::Run(void)
     const string& host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
 
-    auto_ptr<INetScheduleStorage> storage1(
-                   new CNetCacheNSStorage( 
+    auto_ptr<IBlobStorage> storage1(
+                   new CBlobStorage_NetCache( 
                           new CNetCacheClient( host, port, "client1" )
                           )
                    );
 
-    auto_ptr<INetScheduleStorage> storage2(
-                   new CNetCacheNSStorage( 
+    auto_ptr<IBlobStorage> storage2(
+                   new CBlobStorage_NetCache( 
                           new CNetCacheClient( host, port, "client2" )
                           )
                    );
@@ -112,9 +112,9 @@ int CTestNSStorage::Run(void)
 
     try {
         CNcbiIstream& is = storage2->GetIStream(blobid, &blobsize,
-                               INetScheduleStorage::eLockNoWait );
-    } catch( CNetScheduleStorageException& ex ) {
-        if( ex.GetErrCode() == CNetScheduleStorageException::eBlocked ) {
+                               IBlobStorage::eLockNoWait );
+    } catch( CBlobStorageException& ex ) {
+        if( ex.GetErrCode() == CBlobStorageException::eBlocked ) {
             cout << "Blob : " << blobid << " is blocked" << endl;
         } else {
             throw;
@@ -144,6 +144,14 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 6.2  2005/10/27 13:15:45  kuznets
  * Fixed bug with exception handling and memory management
  *

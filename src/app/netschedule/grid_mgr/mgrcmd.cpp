@@ -38,8 +38,7 @@
 #include <html/page.hpp>
 #include <html/html.hpp>
 
-#include <connect/services/netcache_nsstorage_imp.hpp>
-#include <connect/services/netcache_client.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 #include <memory>
 #include <list>
@@ -611,11 +610,11 @@ CNCBINode* CTestRWNCCommand::CreateView(CCgiContext& ctx)
 
     TCgiEntriesCI it = entries.find("cache");
     string cache_val = "false";
-    CNetCacheNSStorage::TCacheFlags flags = 0;
+    CBlobStorage_NetCache::TCacheFlags flags = 0;
     if( it != entries.end() ) {
         cache_val = (*it).second.GetValue();
         if (cache_val == "true")
-            flags = CNetCacheNSStorage::eCacheBoth;
+            flags = CBlobStorage_NetCache::eCacheBoth;
     }
 
     it = entries.find("type");
@@ -630,9 +629,9 @@ CNCBINode* CTestRWNCCommand::CreateView(CCgiContext& ctx)
         temp_dir = (*it).second.GetValue();
     
     
-    CNetCacheNSStorage storage( new CNetCacheClient_LB("TestDmaxCl", "NC_test"), 
-                                flags,
-                                temp_dir);
+    CBlobStorage_NetCache storage( new CNetCacheClient_LB("TestDmaxCl", "NC_test"), 
+                                   flags,
+                                   temp_dir);
 
     if (type == "write") {
         CNcbiOstream& os = storage.CreateOStream(blob_id);
@@ -673,6 +672,14 @@ CNCBINode* CTestRWNCCommand::CreateView(CCgiContext& ctx)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.8  2005/10/31 19:28:51  kuznets
  * Implemented WEB interface to netcache statistics
  *

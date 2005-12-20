@@ -75,7 +75,7 @@ CWorkerNodeJobContext& CGridThreadContext::GetJobContext()
 }
 
 /// @internal
-CNcbiIstream& CGridThreadContext::GetIStream(INetScheduleStorage::ELockMode mode)
+CNcbiIstream& CGridThreadContext::GetIStream(IBlobStorage::ELockMode mode)
 {
     _ASSERT(m_JobContext);
     if (m_Reader.get()) {
@@ -83,7 +83,7 @@ CNcbiIstream& CGridThreadContext::GetIStream(INetScheduleStorage::ELockMode mode
                                     &m_JobContext->SetJobInputBlobSize(),
                                     mode);
     }
-    NCBI_THROW(CNetScheduleStorageException,
+    NCBI_THROW(CBlobStorageException,
                eReader, "Reader is not set.");
 }
 /// @internal
@@ -93,7 +93,7 @@ CNcbiOstream& CGridThreadContext::GetOStream()
     if (m_Writer.get()) {
         return m_Writer->CreateOStream(m_JobContext->SetJobOutput());
     }
-    NCBI_THROW(CNetScheduleStorageException,
+    NCBI_THROW(CBlobStorageException,
                eWriter, "Writer is not set.");
 }
 /// @internal
@@ -143,7 +143,7 @@ void CGridThreadContext::SetJobRunTimeout(unsigned time_to_run)
         } 
     }
     else {
-        NCBI_THROW(CNetScheduleStorageException,
+        NCBI_THROW(CBlobStorageException,
                    eWriter, "Reporter is not set.");
     }
 }
@@ -266,6 +266,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 6.10  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *

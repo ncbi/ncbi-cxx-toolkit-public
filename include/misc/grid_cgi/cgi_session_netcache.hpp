@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 class IRegistry;
-class INetScheduleStorage;
+class IBlobStorage;
 
 class NCBI_XGRIDCGI_EXPORT CCgiSession_Netcache : public ICgiSession_Impl
 {
@@ -71,7 +71,7 @@ private:
     typedef map<string,string> TBlobs;
 
     string m_SessionId;    
-    auto_ptr<INetScheduleStorage> m_Storage;
+    auto_ptr<IBlobStorage> m_Storage;
     
     TBlobs m_Blobs;    
     bool m_Dirty;
@@ -113,6 +113,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.2  2005/12/19 16:55:04  didenko
  * Improved CGI Session implementation
  *

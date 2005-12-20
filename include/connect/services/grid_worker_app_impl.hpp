@@ -65,7 +65,7 @@ public:
 
     CGridWorkerApp_Impl(CNcbiApplication& app,
                         IWorkerNodeJobFactory* job_factory, 
-                        INetScheduleStorageFactory* storage_factory = NULL,
+                        IBlobStorageFactory*   storage_factory = NULL,
                         INetScheduleClientFactory* client_factory = NULL);
 
     ~CGridWorkerApp_Impl();
@@ -78,14 +78,14 @@ public:
     
 
     IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
-    INetScheduleStorageFactory& GetStorageFactory() 
+    IBlobStorageFactory& GetStorageFactory() 
                                            { return *m_StorageFactory; }
     INetScheduleClientFactory&  GetClientFactory()
                                            { return *m_ClientFactory; }
 
 private:
     auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
-    auto_ptr<INetScheduleStorageFactory> m_StorageFactory;
+    auto_ptr<IBlobStorageFactory>        m_StorageFactory;
     auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
 
     auto_ptr<CGridWorkerNode>                m_WorkerNode;
@@ -127,6 +127,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.2  2005/07/26 15:25:00  didenko
  * Added logging type parameter
  *

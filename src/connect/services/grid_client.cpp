@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 //////////////////////////////////////////////////////////////////////////////
 //
 CGridClient::CGridClient(CNetScheduleClient& ns_client, 
-                         INetScheduleStorage& storage,
+                         IBlobStorage& storage,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg)
 : m_NSClient(ns_client), m_NSStorage(storage)
@@ -137,7 +137,7 @@ CNetScheduleClient::EJobStatus CGridJobStatus::GetStatus()
     return status;
 }
 
-CNcbiIstream& CGridJobStatus::GetIStream(INetScheduleStorage::ELockMode mode)
+CNcbiIstream& CGridJobStatus::GetIStream(IBlobStorage::ELockMode mode)
 {
     return m_GridClient.GetStorage().GetIStream(m_Output,&m_BlobSize,
                                                 mode);
@@ -170,6 +170,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.5  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *

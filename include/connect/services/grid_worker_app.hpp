@@ -91,7 +91,7 @@ public:
     };
 
     CGridWorkerApp(IWorkerNodeJobFactory* job_factory, 
-                   INetScheduleStorageFactory* storage_factory = NULL,
+                   IBlobStorageFactory*   storage_factory = NULL,
                    INetScheduleClientFactory* client_factory = NULL,
                    ESignalHandling signal_handling = eStandardSignalHandling);
     virtual ~CGridWorkerApp();
@@ -135,6 +135,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.10  2005/05/25 18:52:37  didenko
  * Moved grid worker node application functionality to the separate class
  *

@@ -37,15 +37,14 @@
 
 #include <misc/grid_cgi/cgi_session_netcache.hpp>
 
-#include <connect/services/netcache_client.hpp>
-#include <connect/services/grid_default_factories.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 BEGIN_NCBI_SCOPE
 
 CCgiSession_Netcache::CCgiSession_Netcache(const IRegistry& conf) 
     : m_Dirty(false), m_Loaded(false)
 {
-    CNetScheduleStorageFactory_NetCache factory(conf);
+    CBlobStorageFactory_NetCache factory(conf);
     m_Storage.reset(factory.CreateInstance());
 }
 
@@ -203,6 +202,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.3  2005/12/19 16:55:04  didenko
  * Improved CGI Session implementation
  *

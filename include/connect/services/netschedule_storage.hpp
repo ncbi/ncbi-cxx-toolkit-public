@@ -28,140 +28,33 @@
  *
  * Authors:  Maxim Didneko, Anatoliy Kuznetsov
  *
- * File Description:  NetSchedule shared storage interface
+ * File Description:  
+ *      DEPRICATED
  *
  */
 
-#include <connect/connect_export.h>
-#include <corelib/ncbistr.hpp>
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbiexpt.hpp>
+#include <corelib/blob_storage.hpp>
+#include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE
 
-
-/** @addtogroup NetScheduleClient
- *
- * @{
- */
-
-
-/// NetSchedule Storage interface
-///
-/// This interface is used by Worker Node and Worker 
-/// Node client to retrive and store data to/from external storage
-//
-class NCBI_XCONNECT_EXPORT INetScheduleStorage
-{
-public:
-    enum ELockMode {
-        eLockWait,   ///< waits for BLOB to become available
-        eLockNoWait  ///< throws an exception immediately if BLOB locked
-    };
-
-    virtual ~INetScheduleStorage() {}
-
-    virtual string        GetBlobAsString(const string& data_id) = 0;
-    virtual CNcbiIstream& GetIStream(const string& data_id, 
-                                     size_t* blob_size = 0,
-                                     ELockMode lockMode = eLockWait) = 0;
-    virtual CNcbiOstream& CreateOStream(string& data_id) = 0;
-
-    virtual string CreateEmptyBlob() = 0;
-    virtual void DeleteBlob(const string& data_id) = 0;
-
-    virtual void Reset() = 0;
-
-};
-
-
-/// NetSchedule Storage Factory interafce
-///
-/// @sa INetScheduleStorage
-///
-class INetScheduleStorageFactory
-{
-public:
-    virtual ~INetScheduleStorageFactory() {}
-    /// Create a NetSchedule storage
-    ///
-    virtual INetScheduleStorage* CreateInstance(void) = 0;
-};
-
-class CNetScheduleClient;
-/// NetSchedule Client Factory interface
-///
-/// @sa CNetScheduleClient
-///
-class INetScheduleClientFactory
-{
-public:
-    virtual ~INetScheduleClientFactory() {}
-    /// Create a NetSchedule client
-    ///
-    virtual CNetScheduleClient* CreateInstance(void) = 0;
-};
-
-class NCBI_XCONNECT_EXPORT CNetScheduleStorageException : public CException
-{
-public:
-    enum EErrCode {
-        eReader,
-        eWriter,
-        eBlocked
-    };
-
-    virtual const char* GetErrCodeString(void) const
-    {
-        switch (GetErrCode())
-        {
-        case eReader:  return "eReaderError";
-        case eWriter:  return "eWriterError";
-        case eBlocked: return "eBlocked";
-        default:       return CException::GetErrCodeString();
-        }
-    }
-
-    NCBI_EXCEPTION_DEFAULT(CNetScheduleStorageException, CException);
-};
-
-class NCBI_XCONNECT_EXPORT CNullStorage : public INetScheduleStorage
-{
-public:
-    virtual ~CNullStorage() {}
-
-    virtual string        GetBlobAsString( const string& data_id)
-    {
-        return data_id;
-    }
-
-    virtual CNcbiIstream& GetIStream(const string&,
-                                     size_t* blob_size = 0,
-                                     ELockMode lockMode = eLockWait)
-    {
-        if (blob_size) *blob_size = 0;
-        NCBI_THROW(CNetScheduleStorageException,
-                   eReader, "Empty Storage reader.");
-    }
-    virtual CNcbiOstream& CreateOStream(string&)
-    {
-        NCBI_THROW(CNetScheduleStorageException,
-                   eWriter, "Empty Storage writer.");
-    }
-
-    virtual string CreateEmptyBlob() { return kEmptyStr; };
-    virtual void DeleteBlob(const string& data_id) {}
-    virtual void Reset() {};
-};
-
-
-/* @} */
+typedef IBlobStorage INetScheduleStorage;
+typedef IBlobStorageFactory INetScheduleStorageFactory;
+typedef CBlobStorageException CNetScheduleStorageException;
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.10  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *

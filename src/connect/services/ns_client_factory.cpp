@@ -31,71 +31,12 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <connect/services/grid_default_factories.hpp>
+#include <connect/services/ns_client_factory.hpp>
 
 BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 //
-
-CNetScheduleStorageFactory_NetCache::
-CNetScheduleStorageFactory_NetCache(const IRegistry& reg)
-    : m_Registry(reg)
-{
-    const string& m_TempDir = 
-        m_Registry.GetString(kNetCacheDriverName, "tmp_dir", ".");
-
-    m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
-    vector<string> masks;
-    masks.push_back( CNetCacheNSStorage::sm_InputBlobCachePrefix + "*" );
-    masks.push_back( CNetCacheNSStorage::sm_OutputBlobCachePrefix + "*" );
-    CDir curr_dir(m_TempDir);
-    CDir::TEntries dir_entries = curr_dir.GetEntries(masks, 
-                                                     CDir::eIgnoreRecursive);
-    ITERATE( CDir::TEntries, it, dir_entries) {
-        (*it)->Remove(CDirEntry::eNonRecursive);
-    }
-}
-
-INetScheduleStorage* 
-CNetScheduleStorageFactory_NetCache::CreateInstance(void)
-{
-    CConfig conf(m_Registry);
-    const CConfig::TParamTree* param_tree = conf.GetTree();
-    const TPluginManagerParamTree* netcache_tree = 
-            param_tree->FindSubNode(kNetCacheDriverName);
-
-    auto_ptr<CNetCacheClient> nc_client;
-    if (netcache_tree) {
-        nc_client.reset( 
-            m_PM_NetCache.CreateInstance(
-                    kNetCacheDriverName,
-                    TPMNetCache::GetDefaultDrvVers(),
-                    netcache_tree)
-            );
-    }
-    if (!nc_client.get())
-        NCBI_THROW(CGridFactoriesException,
-                   eNCClientIsNotCreated, 
-                   "Couldn't create NetCache client."
-                   "Check registry.");
-
-    bool cache_input =
-        m_Registry.GetBool("netcache_client", "cache_input", false, 
-                           0, CNcbiRegistry::eReturn);
-    bool cache_output =
-        m_Registry.GetBool("netcache_client", "cache_output", false, 
-                           0, CNcbiRegistry::eReturn);
- 
-    CNetCacheNSStorage::TCacheFlags flags = 0;
-    if (cache_input) flags |= CNetCacheNSStorage::eCacheInput;
-    if (cache_output) flags |= CNetCacheNSStorage::eCacheOutput;
-
-    return new CNetCacheNSStorage(nc_client.release(),
-                                  flags, 
-                                  m_TempDir);
-}
-
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -126,7 +67,7 @@ CNetScheduleClient* CNetScheduleClientFactory::CreateInstance(void)
         ret->ActivateRequestRateControl(false);
     }
     if (!ret.get())
-        NCBI_THROW(CGridFactoriesException,
+        NCBI_THROW(CNSClientFactoryException,
                    eNSClientIsNotCreated, 
                    "Couldn't create NetSchedule client."
                    "Check registry.");
@@ -140,18 +81,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 6.4  2005/12/12 15:13:16  didenko
- * Now CNetScheduleStorageFactory_NetCache class reads all init
- * parameters from the registry
- *
- * Revision 6.3  2005/08/15 19:08:43  didenko
- * Changed NetScheduler Storage parameters
- *
- * Revision 6.2  2005/07/28 11:27:20  ssikorsk
- * Replaced using of TInterfaceVersion traits with GetDefaultDrvVers() method call.
- *
- * Revision 6.1  2005/05/10 15:15:14  didenko
- * Added clean up procedure
+ * Revision 6.1  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
  *
  * ===========================================================================
  */

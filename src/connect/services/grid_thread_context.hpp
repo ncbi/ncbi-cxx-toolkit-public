@@ -53,7 +53,7 @@ public:
     void CloseStreams();
     void Reset();
 
-    CNcbiIstream& GetIStream(INetScheduleStorage::ELockMode);
+    CNcbiIstream& GetIStream(IBlobStorage::ELockMode);
     CNcbiOstream& GetOStream();
     void PutProgressMessage(const string& msg, bool send_immediately);
 
@@ -69,9 +69,9 @@ public:
 private:
     CWorkerNodeJobContext*        m_JobContext;
     auto_ptr<CNetScheduleClient>  m_Reporter;
-    auto_ptr<INetScheduleStorage> m_Reader;
-    auto_ptr<INetScheduleStorage> m_Writer;
-    auto_ptr<INetScheduleStorage> m_ProgressWriter;
+    auto_ptr<IBlobStorage>        m_Reader;
+    auto_ptr<IBlobStorage>        m_Writer;
+    auto_ptr<IBlobStorage>        m_ProgressWriter;
     CRequestRateControl           m_RateControl; 
 
     CGridThreadContext(const CGridThreadContext&);
@@ -83,6 +83,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 6.5  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *

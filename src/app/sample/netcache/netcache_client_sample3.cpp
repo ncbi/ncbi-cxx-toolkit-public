@@ -47,8 +47,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <util/compress/zlib.hpp>
 
-#include <connect/services/netcache_client.hpp>
-#include <connect/services/netcache_nsstorage_imp.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -147,7 +146,7 @@ int CSampleNetCacheClient::Run(void)
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
 
     // storage takes respnsibility of deleting NetCache client
-    CNetCacheNSStorage storage( nc_client.release() );
+    CBlobStorage_NetCache storage( nc_client.release() );
     
     // Store the BLOB
     string key;
@@ -182,7 +181,7 @@ int CSampleNetCacheClient::Run(void)
         }}
         NcbiCout << res << NcbiEndl;
         
-    } catch(CNetScheduleStorageException& ex) {
+    } catch(CBlobStorageException& ex) {
         ERR_POST(ex.what());
         return 1;
     }
@@ -200,6 +199,14 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.3  2005/12/08 17:27:29  kuznets
  * Cosmetics
  *

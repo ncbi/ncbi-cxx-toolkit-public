@@ -32,7 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <connect/services/grid_default_factories.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
+#include <connect/services/ns_client_factory.hpp>
 
 #include <misc/grid_cgi/grid_cgiapp.hpp>
 
@@ -180,7 +181,7 @@ void CGridCgiApplication::InitGridClient()
         m_NSClient->SetProgramVersion(GetProgramVersion());
     }
     if( !m_NSStorage.get()) {
-        CNetScheduleStorageFactory_NetCache cf(GetConfig());
+        CBlobStorageFactory_NetCache cf(GetConfig());
         m_NSStorage.reset(cf.CreateInstance());
     }
     m_GridClient.reset(new CGridClient(*m_NSClient, *m_NSStorage,
@@ -409,6 +410,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.25  2005/08/16 16:18:21  didenko
  * Added new expect_complete parameter
  *

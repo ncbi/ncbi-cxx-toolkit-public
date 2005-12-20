@@ -14,7 +14,7 @@
  *  Although all reasonable efforts have been taken to ensure the accuracy
  *  and reliability of the software and data, the NLM and the U.S.
  *  Government do not and cannot warrant the performance or results that
- *  may be obtained by using this software or data. caThe NLM and the U.S.
+ *  may be obtained by using this software or data. The NLM and the U.S.
  *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
  *  purpose.
@@ -23,26 +23,28 @@
  *
  * ===========================================================================
  *
- * Authors:  Maxim Didenko, Anatoliy Kuznetsov
+ * Authors:  Maxim Didenko
  *
  * File Description:
  *
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
-#include <connect/services/netcache_nsstorage_imp.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <util/rwstream.hpp>
-
 
 BEGIN_NCBI_SCOPE
 
-const string CNetCacheNSStorage::sm_InputBlobCachePrefix = ".nc_cache_input.";
-const string CNetCacheNSStorage::sm_OutputBlobCachePrefix = ".nc_cache_output.";
+//////////////////////////////////////////////////////////////////////////////
+//
+
+const string CBlobStorage_NetCache::sm_InputBlobCachePrefix = ".nc_cache_input.";
+const string CBlobStorage_NetCache::sm_OutputBlobCachePrefix = ".nc_cache_output.";
 
 
-CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client,
+CBlobStorage_NetCache::CBlobStorage_NetCache(CNetCacheClient* nc_client,
                                        TCacheFlags flags,
                                        const string&  temp_dir)
     : m_NCClient(nc_client), 
@@ -53,22 +55,22 @@ CNetCacheNSStorage::CNetCacheNSStorage(CNetCacheClient* nc_client,
 }
 
 
-CNetCacheNSStorage::~CNetCacheNSStorage() 
+CBlobStorage_NetCache::~CBlobStorage_NetCache() 
 {
     try {
         Reset();
     } catch (...) {}
 }
 
-void CNetCacheNSStorage::x_Check()
+void CBlobStorage_NetCache::x_Check()
 {
     if ( (m_IStream.get() && !(m_CacheFlags & eCacheInput)) || 
          (m_OStream.get() || (m_CacheFlags & eCacheOutput) && m_CreatedBlobId) )
-        NCBI_THROW(CNetCacheNSStorageException,
+        NCBI_THROW(CNetCacheStorageException,
                    eBusy, "Communication channel is already in use.");
 }
 
-auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
+auto_ptr<IReader> CBlobStorage_NetCache::x_GetReader(const string& key,
                                                   size_t& blob_size,
                                                   ELockMode lockMode)
 {
@@ -79,7 +81,7 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
 
     auto_ptr<IReader> reader;
     if (key.empty()) 
-        NCBI_THROW(CNetCacheNSStorageException,
+        NCBI_THROW(CNetCacheStorageException,
                    eBlobNotFound, "Requested blob is not found.");
     int try_count = 0;
     while(1) {
@@ -90,7 +92,7 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
             if(ex1.GetErrCode() != CNetCacheException::eBlobLocked) 
                 throw;
 
-            NCBI_RETHROW(ex1, CNetScheduleStorageException, eBlocked, 
+            NCBI_RETHROW(ex1, CBlobStorageException, eBlocked, 
                        "Requested blob is blocked by another process.");
 
         } catch (CNetServiceException& ex) {
@@ -104,13 +106,13 @@ auto_ptr<IReader> CNetCacheNSStorage::x_GetReader(const string& key,
         }
     }
     if (!reader.get()) {
-        NCBI_THROW(CNetCacheNSStorageException,
+        NCBI_THROW(CNetCacheStorageException,
                    eBlobNotFound, "Requested blob is not found.");
     }
     return reader;
 }
 
-CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
+CNcbiIstream& CBlobStorage_NetCache::GetIStream(const string& key,
                                              size_t* blob_size,
                                              ELockMode lockMode)
 {
@@ -123,8 +125,8 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
         auto_ptr<fstream> fstr(CFile::CreateTmpFileEx(m_TempDir,sm_InputBlobCachePrefix));
         if( !fstr.get() || !fstr->good()) {
             fstr.reset();
-            NCBI_THROW(CNetScheduleStorageException,
-                       eReader, "Reader couldn't create a temporary file.");
+            NCBI_THROW(CBlobStorageException, eReader, 
+                       "Reader couldn't create a temporary file.");
         }
 
         char buf[1024];
@@ -140,7 +142,7 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
                                      CRWStreambuf::fOwnReader));
         if( !m_IStream.get() || !m_IStream->good()) {
             m_IStream.reset();
-            NCBI_THROW(CNetScheduleStorageException,
+            NCBI_THROW(CBlobStorageException,
                        eReader, "Reader couldn't create a input stream.");
         }
 
@@ -148,14 +150,14 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
     return *m_IStream;
 }
 
-string CNetCacheNSStorage::GetBlobAsString(const string& data_id)
+string CBlobStorage_NetCache::GetBlobAsString(const string& data_id)
 {
     size_t b_size = 0;
     //    try {
         auto_ptr<IReader> reader = x_GetReader(data_id, b_size, eLockWait);
         AutoPtr<char, ArrayDeleter<char> > buf(new char[b_size+1]);
         if( reader->Read(buf.get(), b_size) != eRW_Success )
-            NCBI_THROW(CNetScheduleStorageException,
+            NCBI_THROW(CBlobStorageException,
                        eReader, "Reader couldn't read a blob.");
         buf.get()[b_size] = 0;   
         return string(buf.get());
@@ -167,7 +169,9 @@ string CNetCacheNSStorage::GetBlobAsString(const string& data_id)
         //    }
 }
 
-CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
+CNcbiOstream& CBlobStorage_NetCache::CreateOStream(string& key,
+                                                   ELockMode)
+
 {
     x_Check();
     if (!(m_CacheFlags & eCacheOutput)) {
@@ -189,14 +193,14 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
             }
         }
         if (!writer.get()) {
-            NCBI_THROW(CNetScheduleStorageException,
+            NCBI_THROW(CBlobStorageException,
                        eWriter, "Writer couldn't be created.");
         }
         m_OStream.reset( new CWStream(writer.release(), 0,0, 
                                       CRWStreambuf::fOwnWriter));
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
-            NCBI_THROW(CNetScheduleStorageException,
+            NCBI_THROW(CBlobStorageException,
                        eWriter, "Writer couldn't create an ouput stream.");
         }
 
@@ -205,14 +209,14 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
         m_OStream.reset(CFile::CreateTmpFileEx(m_TempDir,sm_OutputBlobCachePrefix));        
         if( !m_OStream.get() || !m_OStream->good()) {
             m_OStream.reset();
-            NCBI_THROW(CNetScheduleStorageException,
+            NCBI_THROW(CBlobStorageException,
                        eWriter, "Writer couldn't create a temporary file.");
         }
     }
     return *m_OStream;
 }
 
-string CNetCacheNSStorage::CreateEmptyBlob()
+string CBlobStorage_NetCache::CreateEmptyBlob()
 {
     x_Check();
     if (m_NCClient.get())
@@ -220,14 +224,14 @@ string CNetCacheNSStorage::CreateEmptyBlob()
     return kEmptyStr;
 
 }
-void CNetCacheNSStorage::DeleteBlob(const string& data_id)
+void CBlobStorage_NetCache::DeleteBlob(const string& data_id)
 {
     x_Check();
     if (!data_id.empty() && m_NCClient.get()) 
         m_NCClient->Remove(data_id);
 }
 
-void CNetCacheNSStorage::Reset()
+void CBlobStorage_NetCache::Reset()
 {
     m_IStream.reset();
     try {
@@ -249,7 +253,7 @@ void CNetCacheNSStorage::Reset()
                 }
             }
             if (!writer.get()) {
-                NCBI_THROW(CNetScheduleStorageException,
+                NCBI_THROW(CBlobStorageException,
                            eWriter, "Writer couldn't be created.");
             }
             fstream* fstr = dynamic_cast<fstream*>(m_OStream.get());
@@ -260,11 +264,11 @@ void CNetCacheNSStorage::Reset()
                 while( !fstr->eof() ) {
                     fstr->read(buf, sizeof(buf));
                     if( writer->Write(buf, fstr->gcount()) != eRW_Success)
-                        NCBI_THROW(CNetScheduleStorageException,
+                        NCBI_THROW(CBlobStorageException,
                                    eWriter, "Couldn't write to Writer.");
                 }
             } else {
-                NCBI_THROW(CNetScheduleStorageException,
+                NCBI_THROW(CBlobStorageException,
                            eWriter, "Wrong cast.");
             }
             m_CreatedBlobId = NULL;
@@ -273,7 +277,7 @@ void CNetCacheNSStorage::Reset()
         if (m_OStream.get() && !(m_CacheFlags & eCacheOutput)) {
             m_OStream->flush();
             if (!m_OStream->good()) {
-                NCBI_THROW(CNetScheduleStorageException,
+                NCBI_THROW(CBlobStorageException,
                            eWriter, m_NCClient->GetCommErrMsg());
             }
         }
@@ -284,60 +288,83 @@ void CNetCacheNSStorage::Reset()
     m_OStream.reset();
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+//
+
+CBlobStorageFactory_NetCache::
+CBlobStorageFactory_NetCache(const IRegistry& reg)
+    : m_Registry(reg)
+{
+    const string& m_TempDir = 
+        m_Registry.GetString(kNetCacheDriverName, "tmp_dir", ".");
+
+    m_PM_NetCache.RegisterWithEntryPoint(NCBI_EntryPoint_xnetcache);
+    vector<string> masks;
+    masks.push_back( CBlobStorage_NetCache::sm_InputBlobCachePrefix + "*" );
+    masks.push_back( CBlobStorage_NetCache::sm_OutputBlobCachePrefix + "*" );
+    CDir curr_dir(m_TempDir);
+    CDir::TEntries dir_entries = curr_dir.GetEntries(masks, 
+                                                     CDir::eIgnoreRecursive);
+    ITERATE( CDir::TEntries, it, dir_entries) {
+        (*it)->Remove(CDirEntry::eNonRecursive);
+    }
+}
+
+IBlobStorage* 
+CBlobStorageFactory_NetCache::CreateInstance(void)
+{
+    CConfig conf(m_Registry);
+    const CConfig::TParamTree* param_tree = conf.GetTree();
+    const TPluginManagerParamTree* netcache_tree = 
+            param_tree->FindSubNode(kNetCacheDriverName);
+
+    auto_ptr<CNetCacheClient> nc_client;
+    if (netcache_tree) {
+        nc_client.reset( 
+            m_PM_NetCache.CreateInstance(
+                    kNetCacheDriverName,
+                    TPMNetCache::GetDefaultDrvVers(),
+                    netcache_tree)
+            );
+    }
+    if (!nc_client.get())
+        NCBI_THROW(CNetCacheStorageFactoryException,
+                   eNCClientIsNotCreated, 
+                   "Couldn't create NetCache client."
+                   "Check registry.");
+
+    bool cache_input =
+        m_Registry.GetBool("netcache_client", "cache_input", false, 
+                           0, CNcbiRegistry::eReturn);
+    bool cache_output =
+        m_Registry.GetBool("netcache_client", "cache_output", false, 
+                           0, CNcbiRegistry::eReturn);
+ 
+    CBlobStorage_NetCache::TCacheFlags flags = 0;
+    if (cache_input) flags |= CBlobStorage_NetCache::eCacheInput;
+    if (cache_output) flags |= CBlobStorage_NetCache::eCacheOutput;
+
+    return new CBlobStorage_NetCache(nc_client.release(),
+                                     flags, 
+                                     m_TempDir);
+}
+
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.16  2005/12/19 16:52:38  didenko
- * Improved exceptions handling
- *
- * Revision 1.15  2005/10/26 19:08:08  kuznets
- * Bug fix: incorrect exception catch
- *
- * Revision 1.14  2005/10/26 16:37:44  didenko
- * Added for non-blocking read for netschedule storage
- *
- * Revision 1.13  2005/08/15 19:08:44  didenko
- * Changed NetScheduler Storage parameters
- *
- * Revision 1.12  2005/08/12 13:32:16  didenko
- * Added call to Reset method form destructor
- * Improved error handling
- *
- * Revision 1.11  2005/06/08 16:21:58  didenko
- * Fixed the wrong error message
- *
- * Revision 1.10  2005/06/06 15:33:27  didenko
- * Improved errors handling and exceptiona reporting
- *
- * Revision 1.9  2005/06/01 20:28:37  didenko
- * Fixed a bug with exceptions reporting
- *
- * Revision 1.8  2005/05/10 15:15:14  didenko
- * Added clean up procedure
- *
- * Revision 1.7  2005/05/10 14:11:22  didenko
- * Added blob caching
- *
- * Revision 1.6  2005/04/20 19:23:47  didenko
- * Added GetBlobAsString, GreateEmptyBlob methods
- * Remave RemoveData to DeleteBlob
- *
- * Revision 1.5  2005/04/12 15:12:42  didenko
- * Added handling an empty netcache key in GetIStream method
- *
- * Revision 1.4  2005/03/29 14:10:54  didenko
- * + removing a date from the storage
- *
- * Revision 1.3  2005/03/28 14:40:39  didenko
- * Cosmetics
- *
- * Revision 1.2  2005/03/22 20:45:13  didenko
- * Got ride from warning on ICC
- *
- * Revision 1.1  2005/03/22 20:18:25  didenko
- * Initial version
+ * Revision 6.1  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
  *
  * ===========================================================================
  */

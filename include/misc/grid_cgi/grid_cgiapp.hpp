@@ -264,7 +264,7 @@ private:
     bool x_CheckJobStatus(CGridCgiContext& grid_ctx);
 
     auto_ptr<CNetScheduleClient> m_NSClient;
-    auto_ptr<INetScheduleStorage> m_NSStorage;
+    auto_ptr<IBlobStorage> m_NSStorage;
     auto_ptr<CGridClient> m_GridClient;
     
 };
@@ -277,6 +277,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.19  2005/08/16 16:18:21  didenko
  * Added new expect_complete parameter
  *

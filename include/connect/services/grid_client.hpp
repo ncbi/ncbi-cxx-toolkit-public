@@ -36,9 +36,10 @@
 
 
 #include <corelib/ncbistre.hpp>
+#include <corelib/blob_storage.hpp>
+
 #include <connect/connect_export.h>
 #include <connect/services/netschedule_client.hpp>
-#include <connect/services/netschedule_storage.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -132,8 +133,8 @@ public:
     /// data storage (NetCache). Size of the input data can be determined 
     /// using GetInputBlobSize
     ///
-    CNcbiIstream& GetIStream(INetScheduleStorage::ELockMode = 
-                             INetScheduleStorage::eLockWait);
+    CNcbiIstream& GetIStream(IBlobStorage::ELockMode = 
+                             IBlobStorage::eLockWait);
 
     /// Get the size of an input stream
     ///
@@ -197,7 +198,7 @@ public:
     ///     done or canceled
     ///
     CGridClient(CNetScheduleClient& ns_client, 
-                INetScheduleStorage& storage,
+                IBlobStorage& storage,
                 ECleanUp cleanup,
                 EProgressMsg progress_msg);
 
@@ -231,11 +232,11 @@ public:
     void RemoveDataBlob(const string& data_key);
 
     CNetScheduleClient&  GetNSClient() { return m_NSClient; }
-    INetScheduleStorage& GetStorage()  { return m_NSStorage; }
+    IBlobStorage& GetStorage()  { return m_NSStorage; }
 
 private:
     CNetScheduleClient&  m_NSClient;
-    INetScheduleStorage& m_NSStorage;
+    IBlobStorage& m_NSStorage;
 
     string                     m_Input;
     auto_ptr<CGridJobSubmiter> m_JobSubmiter;
@@ -255,6 +256,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 1.6  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *

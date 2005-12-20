@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES__NETCACHE_NSSTORAGE_IMP__HPP
-#define CONNECT_SERVICES__NETCACHE_NSSTORAGE_IMP__HPP
+#ifndef CONNECT_SERVICES__BLOB_STORAGE_NETCACHE_HPP
+#define CONNECT_SERVICES__BLOB_STORAGE_NETCACHE_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -29,10 +29,14 @@
  * Authors:  Maxim Didenko
  *
  */
-#include <corelib/ncbimisc.hpp>
-#include <corelib/ncbistre.hpp>
-#include <connect/services/netschedule_storage.hpp>
+
+#include <corelib/ncbireg.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <corelib/plugin_manager.hpp>
+#include <corelib/ncbiexpt.hpp>
+#include <corelib/blob_storage.hpp>
 #include <connect/services/netcache_client.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -42,9 +46,9 @@ BEGIN_NCBI_SCOPE
  */
 
 
-/// NetCache based job info storage for grid worker node
+/// NetCache based blob storage
 ///
-class NCBI_XCONNECT_EXPORT CNetCacheNSStorage : public INetScheduleStorage
+class NCBI_XCONNECT_EXPORT CBlobStorage_NetCache : public IBlobStorage
 {
 public:
     
@@ -55,18 +59,19 @@ public:
     };
     typedef unsigned int TCacheFlags;
 
-    CNetCacheNSStorage(CNetCacheClient* nc_client, 
-                       TCacheFlags flags = 0x0,
-                       const string& temp_dir = ".");
+    CBlobStorage_NetCache(CNetCacheClient* nc_client, 
+                          TCacheFlags flags = 0x0,
+                          const string& temp_dir = ".");
 
-    virtual ~CNetCacheNSStorage(); 
+    virtual ~CBlobStorage_NetCache(); 
 
     virtual string        GetBlobAsString(const string& data_id);
 
     virtual CNcbiIstream& GetIStream(const string& data_id,
                                      size_t* blob_size = 0,
-                                     ELockMode lockMode = eLockWait);
-    virtual CNcbiOstream& CreateOStream(string& data_id);
+                                     ELockMode lock_mode = eLockWait);
+    virtual CNcbiOstream& CreateOStream(string& data_id,
+                                        ELockMode lock_mode = eLockNoWait);
 
     virtual string CreateEmptyBlob();
     virtual void DeleteBlob(const string& data_id);
@@ -91,7 +96,7 @@ private:
     string   m_TempDir;
 };
 
-class CNetCacheNSStorageException : public CNetScheduleStorageException
+class CNetCacheStorageException : public CBlobStorageException
 {
 public:
     enum EErrCode {
@@ -105,59 +110,73 @@ public:
         {
         case eBlobNotFound: return "eBlobNotFoundError";
         case eBusy:         return "eBusy";
-        default:      return CNetScheduleStorageException::GetErrCodeString();
+        default:      return CBlobStorageException::GetErrCodeString();
         }
     }
 
-    NCBI_EXCEPTION_DEFAULT(CNetCacheNSStorageException, CNetScheduleStorageException);
+    NCBI_EXCEPTION_DEFAULT(CNetCacheStorageException, 
+                           CBlobStorageException);
 };
 
-/* @} */
+/////////////////////////////////////////////////////////////////////////////
+//
+/// @internal
+class NCBI_XCONNECT_EXPORT CBlobStorageFactory_NetCache 
+    : public IBlobStorageFactory
+{
+public:
+    
+    explicit CBlobStorageFactory_NetCache(const IRegistry& reg);
+
+    virtual ~CBlobStorageFactory_NetCache() {}
+
+    virtual IBlobStorage* CreateInstance(void);
+
+private:
+    typedef CPluginManager<CNetCacheClient> TPMNetCache;
+    TPMNetCache                      m_PM_NetCache;
+    const IRegistry&                 m_Registry;
+    string                           m_TempDir;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+//
+/// @internal
+class CNetCacheStorageFactoryException : public CException
+{
+public:
+    enum EErrCode {
+        eNCClientIsNotCreated
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eNCClientIsNotCreated: 
+            return "eNCClientIsNotCreatedError";
+        default:      return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNetCacheStorageFactoryException, CException);
+};
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.12  2005/10/26 16:37:44  didenko
- * Added for non-blocking read for netschedule storage
- *
- * Revision 1.11  2005/08/15 19:08:43  didenko
- * Changed NetScheduler Storage parameters
- *
- * Revision 1.10  2005/05/10 15:15:14  didenko
- * Added clean up procedure
- *
- * Revision 1.9  2005/05/10 14:11:22  didenko
- * Added blob caching
- *
- * Revision 1.8  2005/04/20 19:23:47  didenko
- * Added GetBlobAsString, GreateEmptyBlob methods
- * Remave RemoveData to DeleteBlob
- *
- * Revision 1.7  2005/04/12 15:11:12  didenko
- * Changed CRStream and CWStream to CNcbiIstream and CNcbiOstream
- *
- * Revision 1.6  2005/03/29 14:10:16  didenko
- * + removing a date from the storage
- *
- * Revision 1.5  2005/03/28 14:38:04  didenko
- * Cosmetics
- *
- * Revision 1.4  2005/03/23 13:10:32  kuznets
- * documented and doxygenized
- *
- * Revision 1.3  2005/03/22 21:42:50  didenko
- * Got rid of warnning on Sun WorkShop
- *
- * Revision 1.2  2005/03/22 20:35:56  didenko
- * Make it compile under CGG
- *
- * Revision 1.1  2005/03/22 20:17:55  didenko
- * Initial version
+ * Revision 1.1  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
  *
  * ===========================================================================
  */
 
 
-#endif // CONNECT_SERVICES__NETCACHE_NSSTORAGE_IMP__HPP
+#endif // CONNECT_SERVICES__BLOB_STORAGE_NETCACHE_HPP

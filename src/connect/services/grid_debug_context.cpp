@@ -44,7 +44,7 @@ auto_ptr<CGridDebugContext> CGridDebugContext::sm_Instance;
 
 /// @internal
 CGridDebugContext& CGridDebugContext::Create(eMode mode,
-                                             INetScheduleStorageFactory& factory)
+                                             IBlobStorageFactory& factory)
 {
     sm_Instance.reset(new CGridDebugContext(mode,factory));
     return *sm_Instance;
@@ -56,7 +56,7 @@ CGridDebugContext* CGridDebugContext::GetInstance()
 }
 
 CGridDebugContext::CGridDebugContext(eMode mode, 
-                                     INetScheduleStorageFactory& factory)
+                                     IBlobStorageFactory& factory)
     : m_Mode(mode), m_StorageFactory(factory)
 {
     TPid cur_pid = CProcess::GetCurrentPid();
@@ -76,7 +76,7 @@ int CGridDebugContext::SetExecuteList(const string& files)
 {
     vector<string> vfiles;
     NStr::Tokenize(files, " ,;", vfiles);
-    auto_ptr<INetScheduleStorage> storage(CreateStorage());
+    auto_ptr<IBlobStorage> storage(CreateStorage());
     m_Blobs.clear();
     ITERATE(vector<string>, it, vfiles) {
         string fname = NStr::TruncateSpaces(*it);
@@ -174,10 +174,10 @@ void CGridDebugContext::DumpProgressMessage(const string& job_key,
 
 void CGridDebugContext::x_DumpBlob(const string& blob_id, const string& fname)
 {
-    auto_ptr<INetScheduleStorage> storage(CreateStorage());
+    auto_ptr<IBlobStorage> storage(CreateStorage());
     size_t blob_size = 0;
     CNcbiIstream& is = storage->GetIStream(blob_id, &blob_size, 
-                                           INetScheduleStorage::eLockWait);
+                                           IBlobStorage::eLockWait);
     CNcbiOfstream ofile( fname.c_str() );
     char buf[1024];
     while( !is.eof() ) {
@@ -191,6 +191,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2005/12/20 17:26:22  didenko
+ * Reorganized netschedule storage facility.
+ * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
+ * renamed INetScheduleStorageFactory to IBlobStorageFactory and moved it to corelib
+ * renamed CNetScheduleNSStorage_NetCache to CBlobStorage_NetCache and moved it
+ * to separate files
+ * Moved CNetScheduleClientFactory to separate files
+ *
  * Revision 6.3  2005/10/26 16:37:44  didenko
  * Added for non-blocking read for netschedule storage
  *
