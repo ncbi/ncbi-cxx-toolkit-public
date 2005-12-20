@@ -37,7 +37,6 @@
 
 #define MSVC_PROJECT_PLATFORM       "Win32"
 #define MSVC_PROJECT_PROJECT_TYPE   "Visual C++"
-#define MSVC_PROJECT_VERSION        "7.10"
 #define MSVC_PROJECT_KEYWORD_WIN32  "Win32Proj"
 
 /// _MasterProject defines
@@ -46,8 +45,6 @@
 
 
 /// MSVC 7.10 solution defines
-#define MSVC_SOLUTION_HEADER_LINE   \
-                "Microsoft Visual Studio Solution File, Format Version 8.00"
 #define MSVC_SOLUTION_ROOT_GUID     "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 
 #define MSVC_DEFAULT_LIBS_TAG       "DefaultLibs"
@@ -56,9 +53,25 @@
 #define LIST_SEPARATOR      " \t\n\r,;"
 
 
+#if _MSC_VER >= 1400
+#define MSVC_REG_SECTION            "msvc800exp"
+#define MSVC_PROJECT_VERSION        "8.00"
+#define MSVC_SOLUTION_HEADER_LINE   \
+                "Microsoft Visual Studio Solution File, Format Version 9.00"
+#else
+#define MSVC_REG_SECTION            "msvc7"
+#define MSVC_PROJECT_VERSION        "7.10"
+#define MSVC_SOLUTION_HEADER_LINE   \
+                "Microsoft Visual Studio Solution File, Format Version 8.00"
+#endif
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/20 19:34:44  gouriano
+ * Added MSVC 800 defines
+ *
  * Revision 1.6  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *
