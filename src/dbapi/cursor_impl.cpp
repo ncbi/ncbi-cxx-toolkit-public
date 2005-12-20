@@ -188,8 +188,13 @@ void CCursor::Action(const CDbapiEvent& e)
 }
 
 END_NCBI_SCOPE
+
+
 /*
 * $Log$
+* Revision 1.20  2005/12/20 22:44:13  vakatov
+* Ended EOL at EOF
+*
 * Revision 1.19  2005/12/13 17:27:04  kholodov
 * Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
 *
@@ -257,7 +262,4 @@ END_NCBI_SCOPE
 *
 * Revision 1.1  2001/11/30 16:30:05  kholodov
 * Snapshot of the first draft of dbapi lib
-*
-*
-*
 */
