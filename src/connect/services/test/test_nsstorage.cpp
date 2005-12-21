@@ -111,7 +111,7 @@ int CTestNSStorage::Run(void)
     size_t blobsize;
 
     try {
-        CNcbiIstream& is = storage2->GetIStream(blobid, &blobsize,
+        /*CNcbiIstream& is = */storage2->GetIStream(blobid, &blobsize,
                                IBlobStorage::eLockNoWait );
     } catch( CBlobStorageException& ex ) {
         if( ex.GetErrCode() == CBlobStorageException::eBlocked ) {
@@ -144,6 +144,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2005/12/21 15:51:58  kuznets
+ * Fixed compilation warning
+ *
  * Revision 6.3  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
