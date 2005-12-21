@@ -57,6 +57,7 @@ USING_SCOPE(blast);
 static void s_SplitCommandLine(string s, vector<string>& result)
 {
     bool in_quotes = false;
+    char quote_char;
     bool in_space = true;
     // tack on a space so we can deal with end generically
     s += ' ';
@@ -76,8 +77,19 @@ static void s_SplitCommandLine(string s, vector<string>& result)
                 item.erase();
                 in_space = false;
             }
-            if (c == '\'') {
-                in_quotes = !in_quotes;
+            if (c == '\'' || c == '"') {
+                if (in_quotes) {
+                    if (c == quote_char) {
+                        // end quote
+                        in_quotes = false;
+                    } else {
+                        // one kind of quote inside of the other
+                        item += c;
+                    }
+                } else {
+                    in_quotes = true;
+                    quote_char = c;
+                }
             } else {
                 item += c;
             }
@@ -735,6 +747,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/21 19:41:23  jcherry
+ * Give significance to double quotes (like single quotes) in
+ * blast parameter strings
+ *
  * Revision 1.7  2005/10/06 19:02:59  jcherry
  * Use version numbers when printing accessions to diagnostic output
  *
