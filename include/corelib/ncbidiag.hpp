@@ -168,9 +168,9 @@ private:
 ///
 /// @sa
 ///   ERR_POST_EX macro
-#define ERR_POST(message)                        \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO) \
-      << message                                 \
+#define ERR_POST(message)                                 \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef() \
+      << message                                          \
       << NCBI_NS_NCBI::Endm )
 
 
@@ -180,7 +180,7 @@ private:
 ///   LOG_POST_EX macro
 #define LOG_POST(message)                            \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error,           \
-      eDPF_Log | eDPF_OmitSeparator)                 \
+      eDPF_Log | eDPF_OmitSeparator).GetRef()        \
       << message                                     \
       << NCBI_NS_NCBI::Endm )
 
@@ -189,7 +189,7 @@ private:
 /// @sa
 ///   ERR_POST
 #define ERR_POST_EX(err_code, err_subcode, message)         \
-    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO)            \
+    ( NCBI_NS_NCBI::CNcbiDiag(DIAG_COMPILE_INFO).GetRef()   \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message                                            \
       << NCBI_NS_NCBI::Endm )
@@ -200,7 +200,7 @@ private:
 ///   LOG_POST
 #define LOG_POST_EX(err_code, err_subcode, message)         \
     ( NCBI_NS_NCBI::CNcbiDiag(eDiag_Error,                  \
-      eDPF_Log | eDPF_OmitSeparator)                        \
+      eDPF_Log | eDPF_OmitSeparator).GetRef()               \
       << NCBI_NS_NCBI::ErrCode( (err_code), (err_subcode) ) \
       << message << NCBI_NS_NCBI::Endm )
 
@@ -487,6 +487,11 @@ public:
 
     /// Destructor.
     NCBI_XNCBI_EXPORT ~CNcbiDiag(void);
+
+    /// Some compilers (e.g. GCC 3.4.0) fail to use temporary objects as
+    /// function arguments if there's no public copy constructor.
+    /// Rather than using the temporary, get a reference from this method.
+    const CNcbiDiag& GetRef(void) const { return *this; }
 
     /// Generic method to post to diagnostic stream.
     // Some compilers need to see the body right away, but others need
@@ -964,6 +969,7 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     CNcbiOstream& x_OldWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     CNcbiOstream& x_NewWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
+    string x_GetModule(void) const;
 };
 
 /// Insert message in output stream.
@@ -1314,6 +1320,11 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.94  2005/12/21 18:17:04  grichenk
+ * Fixed output of module/class/function by adding GetRef().
+ * Fixed width for UID.
+ * Use source directory as module name if no module is set at compile time.
+ *
  * Revision 1.93  2005/12/15 20:22:54  grichenk
  * Added CDiagContext::IsSetOldPostFormat().
  * Renamed some flags.

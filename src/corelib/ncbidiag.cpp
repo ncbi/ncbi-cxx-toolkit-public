@@ -43,6 +43,7 @@
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbifile.hpp>
 #include "ncbidiag_p.hpp"
 #include <stdlib.h>
 #include <time.h>
@@ -282,7 +283,9 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
 
 string CDiagContext::GetStringUID(void) const
 {
-    return NStr::Int8ToString(GetUID(), 0, 16);
+    char buf[13];
+    sprintf(buf, "%012s", NStr::Int8ToString(GetUID(), 0, 16).c_str());
+    return string(buf);
 }
 
 
@@ -659,6 +662,34 @@ CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
 }
 
 
+string SDiagMessage::x_GetModule(void) const
+{
+    if ( m_Module && *m_Module ) {
+        return string(m_Module);
+    }
+    if ( !m_File || !(*m_File) ) {
+        return kEmptyStr;
+    }
+    char sep_chr = CDirEntry::GetPathSeparator();
+    const char* last_sep = strrchr(m_File, sep_chr);
+    if ( !last_sep || !*last_sep ) {
+        return kEmptyStr;
+    }
+    const char* sep = strchr(m_File, sep_chr);
+    while (sep < last_sep) {
+        _ASSERT(sep && *sep);
+        const char* next_sep = strchr(sep+1, sep_chr);
+        if (next_sep == last_sep) {
+            string ret(sep+1, next_sep - sep - 1);
+            NStr::ToUpper(ret);
+            return ret;
+        }
+        sep = next_sep;
+    }
+    return kEmptyStr;
+}
+
+
 CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
                                        TDiagWriteFlags flags) const
 {
@@ -742,8 +773,9 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
     }
 
     // Module::Class::Function -
+    bool have_module = (m_Module && *m_Module) || (m_File && *m_File);
     bool print_location =
-        ((m_Module    &&  *m_Module) ||
+        ( have_module ||
          (m_Class     &&  *m_Class ) ||
          (m_Function  &&  *m_Function))
         && IsSetDiagPostFlag(eDPF_Location, m_Flags);
@@ -754,8 +786,8 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
         // Module::Function() Function()
         bool need_double_colon = false;
 
-        if (m_Module  &&  *m_Module) {
-            os << m_Module;
+        if ( have_module ) {
+            os << x_GetModule();
             need_double_colon = true;
         }
 
@@ -854,14 +886,15 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
         os << " ";
     }
     // <module>-<err_code>.<err_subcode> or <module>-<err_text>
+    bool have_module = (m_Module && *m_Module) || (m_File && *m_File);
     bool print_err_id =
-        ((m_Module  &&  *m_Module) ||
+        ( have_module ||
          m_ErrCode  ||  m_ErrSubCode  ||  m_ErrText)
         && IsSetDiagPostFlag(eDPF_ErrorID, m_Flags);
 
     if (print_err_id) {
-        if (m_Module  &&  *m_Module) {
-            os << m_Module;
+        if ( have_module ) {
+            os << x_GetModule();
         }
         if (m_ErrCode  ||  m_ErrSubCode || m_ErrText) {
             if (m_ErrText) {
@@ -1865,6 +1898,11 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.100  2005/12/21 18:17:05  grichenk
+ * Fixed output of module/class/function by adding GetRef().
+ * Fixed width for UID.
+ * Use source directory as module name if no module is set at compile time.
+ *
  * Revision 1.99  2005/12/20 16:06:46  ivanov
  * Get rid of GCC compiler warning in CDiagBuffer ctor
  *

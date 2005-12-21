@@ -274,9 +274,6 @@ int CNcbiApplication::AppMain
         }
     }
     SetProgramDisplayName(appname);
-    if ( !CDiagContext::IsSetOldPostFormat() ) {
-        GetDiagContext().SetProperty("AppName", appname);
-    }
 
     // Make sure we have something as our 'real' executable's name.
     // though if it does not contain a full path it won't be much use.
@@ -395,6 +392,12 @@ int CNcbiApplication::AppMain
                 LoadConfig(*m_Config, &x_conf);
             } else {
                 LoadConfig(*m_Config, NULL);
+            }
+
+            // IsSetOldPostFormat() uses the registry and should not be
+            // called before LoadConfig().
+            if ( !CDiagContext::IsSetOldPostFormat() ) {
+                GetDiagContext().SetProperty("AppName", appname);
             }
 
             // Setup the standard features from the config file.
@@ -1009,6 +1012,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.113  2005/12/21 18:17:04  grichenk
+ * Fixed output of module/class/function by adding GetRef().
+ * Fixed width for UID.
+ * Use source directory as module name if no module is set at compile time.
+ *
  * Revision 1.112  2005/12/15 20:25:07  grichenk
  * Set AppName diag context property.
  *
