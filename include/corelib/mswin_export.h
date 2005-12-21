@@ -780,6 +780,14 @@
 #  define NCBI_XALNMGR_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library xblastformat
+ */
+#ifdef NCBI_XBLASTFORMAT_EXPORTS
+#  define NCBI_XBLASTFORMAT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XBLASTFORMAT_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library xcgi
  */
 #ifdef NCBI_XCGI_EXPORTS
@@ -1152,7 +1160,6 @@
 #define NCBI_TEST_MT_EXPORT
 #define NCBI_XALNUTIL_EXPORT
 #define NCBI_XALNTOOL_EXPORT
-#define NCBI_XBLASTFORMAT_EXPORT
 
 
 #endif  /*  CORELIB___MSWIN_EXPORT__H  */
@@ -1164,6 +1171,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.105  2005/12/21 15:09:13  jcherry
+ * Added NCBI_XBLASTFORMAT_EXPORT(S)
+ *
  * Revision 1.104  2005/10/18 20:33:56  ucko
  * Add NCBI_CLEANUP_EXPORTS to NCBI_SEQEXT_EXPORTS.
  *
