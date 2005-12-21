@@ -474,9 +474,11 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
         return CLDS_DataLoader::RegisterInObjectManager(om).GetLoader();
     }
     // Parse params, select constructor
+/*    
     const string& database_str =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_Database, false, kEmptyStr);
+*/
     const string& db_path =
         GetParam(GetDriverName(), params,
                  kCFParam_LDS_DbPath, false, kEmptyStr);
@@ -520,7 +522,9 @@ CDataLoader* CLDS_DataLoaderCF::CreateAndRegister(
             om,
             db_path,
             GetIsDefault(params),
-            GetPriority(params)).GetLoader();
+            GetPriority(params),
+            recurse_subdir,
+            control_sum).GetLoader();
     }
     // IsDefault and Priority arguments may be specified
     return CLDS_DataLoader::RegisterInObjectManager(
@@ -551,6 +555,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/12/21 15:27:17  kuznets
+ * Fixed recursion and control sum parameters
+ *
  * Revision 1.36  2005/11/15 16:51:48  kuznets
  * Bug fix: convert search string to upper case when index screening
  *
