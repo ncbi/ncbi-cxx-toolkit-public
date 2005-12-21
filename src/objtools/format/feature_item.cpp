@@ -1248,7 +1248,7 @@ static int s_GetOverlap( CConstRef<CSeq_feat> feat )
                 break;
             }
             case CSeq_loc_Base::e_Whole: {
-                const CSeq_id& whole = location.GetWhole(); 
+//                const CSeq_id& whole = location.GetWhole(); 
                 return numeric_limits<int>::max();
             }
 
@@ -2495,10 +2495,6 @@ void CFeatureItem::x_FormatQual
         it->second->Format(qvec, name, *GetContext(), flags);
         ++it;
     }
-    /*pair<TQCI, TQCI> range = const_cast<const TQuals&>(m_Quals).GetQuals(slot);
-    for (TQCI it = range.first;  it != range.second;  ++it) {
-        it->second->Format(qvec, name, *GetContext(), flags);
-    }*/
 }
 
 
@@ -3813,6 +3809,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2005/12/21 13:54:18  ludwigf
+* FIXED: Disabled variable declaration that would result in a compiler
+* warning.
+*
 * Revision 1.67  2005/12/07 16:11:09  ludwigf
 * CHANGED: In CFeatureItem::x_AddProductIdQuals(), modified the policy for
 * adding /protein_id, /transaction_id, ..., /db_xref tags to agree with the
