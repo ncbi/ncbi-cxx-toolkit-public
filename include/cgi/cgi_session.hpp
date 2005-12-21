@@ -35,6 +35,8 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <memory>
+
 /** @addtogroup CGI
  *
  * @{
@@ -318,6 +320,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/12/21 14:35:05  ucko
+ * Restore include of <memory> for auto_ptr<>!
+ *
  * Revision 1.4  2005/12/20 20:36:02  didenko
  * Comments cosmetics
  * Small interace changes
