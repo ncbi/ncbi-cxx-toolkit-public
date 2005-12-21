@@ -204,7 +204,6 @@ int CDBAPI_CacheTest::Run(void)
             }
     
             auto_ptr<IReader> rdr(blob_cache->GetReadStream("key_big", 1, ""));
-            unsigned bn = 0;
             
             ERW_Result r;
             size_t rd;
@@ -245,6 +244,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/21 14:48:40  kuznets
+ * warning fixed
+ *
  * Revision 1.3  2005/11/15 17:05:21  ssikorsk
  * Load ncbi_xcache_dbapi dynamically
  *

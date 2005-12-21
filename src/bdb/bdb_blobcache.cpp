@@ -397,7 +397,6 @@ public:
             return eRW_Success;
 
         m_Flushed = true;
-        unsigned flushed_bytes = 0;
 
         // Dumping the buffer
 
@@ -3319,6 +3318,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.130  2005/12/21 14:45:11  kuznets
+ * warning fixed
+ *
  * Revision 1.129  2005/12/05 16:05:11  kuznets
  * Fixed uninitialized variable
  *

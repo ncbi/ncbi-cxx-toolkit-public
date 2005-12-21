@@ -1118,7 +1118,6 @@ public:
         }
         else // shrink
         {
-            bm::id_t old_size = size_;
             set_range(new_size, size_ - 1, false); // clear the tail
             size_ = new_size;
         }
