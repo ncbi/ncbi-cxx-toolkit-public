@@ -104,6 +104,9 @@ private:
     CRef<SInternalData>             m_InternalData;
     const CBlastOptionsMemento*     m_OptsMemento; // the options memento...
     
+    /// Warnings and Errors
+    TSearchMessages m_Messages;
+    
     // Wrapped C objects
     
     // The output of traceback, I think...

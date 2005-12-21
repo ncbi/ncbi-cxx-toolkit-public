@@ -147,17 +147,23 @@ CBlastTracebackSearch::SetResultType(EResultType type)
 }
 
 void
-CBlastTracebackSearch::x_Init(CRef<IQueryFactory> qf,
-                              CRef<CBlastOptions> opts,
-                              const string& dbname)
+CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
+                              CRef<CBlastOptions>   opts,
+                              const string        & dbname)
 {
     opts->Validate();
-
+    
     // 1. Initialize the query data (borrow it from the factory)
     CRef<ILocalQueryData> query_data(qf->MakeLocalQueryData(&*opts));
     m_InternalData->m_Queries = query_data->GetSequenceBlk();
     m_InternalData->m_QueryInfo = query_data->GetQueryInfo();
-
+    
+    query_data->GetMessages(m_Messages);
+    
+    if (m_Messages.size() < query_data->GetNumQueries()) {
+        m_Messages.resize(query_data->GetNumQueries());
+    }
+    
     // 2. Take care of any rps information
     if (Blast_ProgramIsRpsBlast(opts->GetProgramType())) {
         m_InternalData->m_RpsData =
@@ -260,14 +266,11 @@ CBlastTracebackSearch::Run()
            m_Options->GetOutOfFrameMode(),
            m_ResultType);
     
-    // The code should probably capture and return errors here; the
-    // traceback stage does not seem to produce messages, but the
-    // preliminary stage does; they should be saved and returned here
-    // if they have not been returned or reported yet.
+    // The preliminary stage also produces errors and warnings; they
+    // should be copied from that code to this class somehow, and
+    // returned here if they have not been returned or reported yet.
     
-    TSearchMessages empty_msgs(aligns.size());
-    
-    return CSearchResultSet(aligns, empty_msgs);
+    return CSearchResultSet(aligns, m_Messages);
 }
 
 END_SCOPE(blast)
