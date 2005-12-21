@@ -105,7 +105,7 @@ TBLASTX alignments</a>";
 
 /** This class contains misc functions for displaying BLAST results. */
 
-class CBlastFormatUtil 
+class NCBI_XBLASTFORMAT_EXPORT CBlastFormatUtil 
 {
    
 public:
@@ -314,7 +314,8 @@ public:
 /// CDisplaySeqalign code uses a direct 2 dimensional array of integers, which 
 /// is allocated, populated and freed manually inside different CDisplaySeqalign
 /// methods.
-class CBlastFormattingMatrix : public CNcbiMatrix<int> {
+class NCBI_XBLASTFORMAT_EXPORT
+CBlastFormattingMatrix : public CNcbiMatrix<int> {
 public:
     /// Constructor - allocates the matrix with appropriate size and populates
     /// with the values retrieved from a scoring matrix, passed in as a 
@@ -327,6 +328,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.19  2005/12/21 15:18:13  jcherry
+Added export specifiers
+
 Revision 1.18  2005/10/07 17:30:08  camacho
 Doxygen fixes
 

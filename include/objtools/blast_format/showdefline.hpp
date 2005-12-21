@@ -60,7 +60,7 @@ BEGIN_SCOPE(objects)
  * sbd.DisplayBlastDefline(out);
  * @endcode
  */
-class CShowBlastDefline 
+class NCBI_XBLASTFORMAT_EXPORT CShowBlastDefline 
 {
 
 public:
@@ -303,6 +303,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.7  2005/12/21 15:18:13  jcherry
+Added export specifiers
+
 Revision 1.6  2005/07/21 16:24:50  dondosha
 Added 3 static functions for extraction of defline parts
 

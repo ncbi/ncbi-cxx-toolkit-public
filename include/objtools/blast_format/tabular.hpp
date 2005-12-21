@@ -50,7 +50,7 @@ USING_SCOPE(objects);
 
 /// Class containing information needed for tabular formatting of BLAST 
 /// results.
-class CBlastTabularInfo : public CObject 
+class NCBI_XBLASTFORMAT_EXPORT CBlastTabularInfo : public CObject 
 {
 public:
     /// In what form should the sequence identifiers be shown?
@@ -500,6 +500,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/12/21 15:18:13  jcherry
+* Added export specifiers
+*
 * Revision 1.7  2005/08/08 18:23:45  dondosha
 * Added option to use different separators between fields; added doxygen comments
 *

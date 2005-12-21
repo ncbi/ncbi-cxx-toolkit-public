@@ -61,7 +61,7 @@ BEGIN_SCOPE(objects)
  * @endcode
  */
 
-class CVecscreen{
+class NCBI_XBLASTFORMAT_EXPORT CVecscreen {
 public:
   
     ///vector match defines
@@ -194,6 +194,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.4  2005/12/21 15:18:13  jcherry
+*Added export specifiers
+*
 *Revision 1.3  2005/09/27 16:25:39  zaretska
 *~CVS: ----------------------------------------------------------------------
 *added new functions ProcessSeqAlign() and  VecscreenPrint()

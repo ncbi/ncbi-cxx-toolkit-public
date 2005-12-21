@@ -114,6 +114,7 @@ public:
 /// @param bxmlout XML BLAST output object [in] [out]
 /// @param data Data structure containing all information necessary to
 ///             produce a BLAST XML report. 
+NCBI_XBLASTFORMAT_EXPORT
 void BlastXML_FormatReport(CBlastOutput& bxmlout, 
                            const IBlastXMLReportData* data);
 
@@ -125,6 +126,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/12/21 15:18:13  jcherry
+* Added export specifiers
+*
 * Revision 1.5  2005/10/17 19:35:39  camacho
 * Fix compiler warning
 *
