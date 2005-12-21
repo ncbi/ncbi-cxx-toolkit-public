@@ -643,6 +643,7 @@ CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
     CSeqVector vec = xcript_hand.GetSeqVector();
     vec.SetIupacCoding();
 
+    // Look for ORFs starting with any sense codon
     vector<CRef<CSeq_loc> > orfs;
     COrf::FindOrfs(vec, orfs);
     TSeqPos max_orf_length_forward = 0;
@@ -666,6 +667,33 @@ CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
                                       int(largest_forward_orf_end));
     result->SetOutput_data().AddField("max_orf_length_either_strand",
                                       int(max_orf_length_either));
+
+    // Look for ORFs starting with ATG
+    orfs.clear();
+    vector<string> allowable_starts;
+    allowable_starts.push_back("ATG");
+    COrf::FindOrfs(vec, orfs, 3, 1, allowable_starts);
+    max_orf_length_forward = 0;
+    max_orf_length_either = 0;
+    ITERATE (vector<CRef<CSeq_loc> >, orf, orfs) {
+        TSeqPos orf_length = sequence::GetLength(**orf, 0);
+        max_orf_length_either = max(max_orf_length_either, orf_length);
+        if ((*orf)->GetInt().GetStrand() != eNa_strand_minus) {
+            if (orf_length > max_orf_length_forward) {
+                max_orf_length_forward = orf_length;
+                largest_forward_orf_end = (*orf)->GetInt().GetTo();
+            }
+            max_orf_length_forward = max(max_orf_length_forward, orf_length);
+        }
+    }
+
+    result->SetOutput_data().AddField("max_atg_orf_length_forward_strand",
+                                      int(max_orf_length_forward));
+    result->SetOutput_data().AddField("largest_forward_atg_orf_end_pos",
+                                      int(largest_forward_orf_end));
+    result->SetOutput_data().AddField("max_atg_orf_length_either_strand",
+                                      int(max_orf_length_either));
+
     return ref;
 }
 
@@ -700,6 +728,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/12/21 16:06:52  jcherry
+ * Added ORF search that requires ATG starts
+ *
  * Revision 1.15  2005/10/19 18:27:13  jcherry
  * Don't call CSeq_loc::CheckId on cds location in s_CodingPropensity; this
  * is unaware of equivalence of identifiers
