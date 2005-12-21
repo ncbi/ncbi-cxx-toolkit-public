@@ -837,19 +837,39 @@ void CValidError_imp::Validate(const CSeq_annot& sa, CScope* scope)
     CValidError_annot annot_validator(*this);
     annot_validator.ValidateSeqAnnot(sa);
 
-    CValidError_feat feat_validator(*this);
-    for (CTypeConstIterator <CSeq_feat> fi (sa); fi; ++fi) {
-        feat_validator.ValidateSeqFeat(*fi);
-    }
+    CSeq_annot_Handle ah = scope->GetSeq_annotHandle(sa);
+    switch (sa.GetData().Which()) {
+    case CSeq_annot::TData::e_Ftable :
+        {
+            CValidError_feat feat_validator(*this);
+            // for (CTypeConstIterator <CSeq_feat> fi (sa); fi; ++fi) {
+            for (CFeat_CI fi (ah); fi; ++fi) {
+                const CSeq_feat& sf = fi->GetOriginalFeature();
+                feat_validator.ValidateSeqFeat(sf);
+            }
+        }
+        break;
 
-    CValidError_align align_validator(*this);
-    for (CTypeConstIterator <CSeq_align> ai (sa); ai; ++ai) {
-        align_validator.ValidateSeqAlign(*ai);
-    }
+    case CSeq_annot::TData::e_Align :
+        {
+            CValidError_align align_validator(*this);
+            // for (CTypeConstIterator <CSeq_align> ai (sa); ai; ++ai) {
+            for (CAlign_CI ai(ah); ai; ++ai) {
+                const CSeq_align& sa = ai.GetOriginalSeq_align();
+                align_validator.ValidateSeqAlign(sa);
+            }
+        }
+        break;
 
-    CValidError_graph graph_validator(*this);
-    for (CTypeConstIterator <CSeq_graph> gi (sa); gi; ++gi) {
-        graph_validator.ValidateSeqGraph(*gi);
+    case CSeq_annot::TData::e_Graph :
+        {
+            CValidError_graph graph_validator(*this);
+            // for (CTypeConstIterator <CSeq_graph> gi (sa); gi; ++gi) {
+            for (CGraph_CI gi(ah); gi; ++gi) {
+                const CSeq_graph& sg = gi->GetOriginalGraph();
+                graph_validator.ValidateSeqGraph(sg);
+            }
+        }
     }
 }
 
@@ -1526,7 +1546,7 @@ static bool s_IsRefSeqInSep(const CSeq_entry& se, CScope& scope)
 
 static bool s_IsHtgInSep(const CSeq_entry& se, CScope& scope)
 {
-    for (CTypeConstIterator<CSeqdesc> it(se); it; ++it) {
+    for (CSeqdesc_CI it(scope.GetSeq_entryHandle(se)); it; ++it) {
         if (!it->IsMolinfo()) {
             continue;
         }
@@ -2658,6 +2678,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2005/12/21 14:27:19  rsmith
+* replace more CTypeConstIterator with obj man iterators.
+*
 * Revision 1.67  2005/12/06 19:24:03  rsmith
 * fix bug in s_GetDigits.
 *
