@@ -1305,7 +1305,6 @@ MakeTupleFromResult(IResultSet& rs)
         case eDB_LongChar :
             {
                 string str = value.GetString();
-                size_t str_size = str.size();
                 tuple[i] = pythonpp::CString( str );
             }
             // tuple[i] = pythonpp::CString( value.GetString() );
@@ -2583,6 +2582,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/12/21 15:23:22  ssikorsk
+* Get rid of warnings
+*
 * Revision 1.26  2005/10/24 13:17:53  ssikorsk
 * Added support for the ftds63 driver
 *
