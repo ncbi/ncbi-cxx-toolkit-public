@@ -325,8 +325,19 @@ void CFlatGatherer::x_GatherReferences(const CSeq_loc& loc, TReferences& refs) c
                   .SetResolveCount(1)
                   .SetLimitTSE(m_Current->GetTopLevelEntry());
             for (CSeqMap_CI smit(seqmap, &scope, mapsel); smit; ++smit) {
-                // NB: search already limited to TSE
-                CBioseq_Handle part = scope.GetBioseqHandle(smit.GetRefSeqid());
+                // NB: search already limited to TSE ...
+                CBioseq_Handle part;
+                try {
+                    // ... but not necessarily to just references, it seems.
+                    // The following line has been observed to throw almost
+                    // every time when run against a pool of sample files.
+                    part = scope.GetBioseqHandle(smit.GetRefSeqid());
+                }
+                catch ( ... ) {
+                    // Seemingly not a reference. Nothing to do in this 
+                    // iteration.
+                    continue;
+                }
                 if (part) {
                     for (CSeqdesc_CI dit(CSeq_descr_CI(part, 1), CSeqdesc::e_Pub); dit; ++dit) {
                         const CPubdesc& pubdesc = dit->GetPub();
@@ -1624,6 +1635,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2005/12/21 14:06:39  ludwigf
+* FIXED: Reference gathering for "-style master", which would throw an
+* exception in most of my test cases.
+*
 * Revision 1.52  2005/11/01 19:30:20  ludwigf
 * FIXED: The default source should only be created if the format differs from
 * "ftable"  *and*  the mode differs from "dump".
