@@ -49,7 +49,6 @@ void CLDS_Management::SyncWithDir(const string&      dir_name,
 {
     CLDS_Set files_deleted;
     CLDS_Set files_updated;
-    SLDS_TablesCollection& db = m_lds_db.GetTables();
 
     CLDS_File aFile(m_lds_db);
     bool rec = (recurse == eRecurseSubDirs);
@@ -153,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/21 15:07:22  kuznets
+ * warning fixed
+ *
  * Revision 1.3  2005/10/20 15:34:08  kuznets
  * Implemented duplicate id check
  *
