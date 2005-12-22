@@ -106,7 +106,6 @@ CBlastNucleotideOptionsHandle::SetLookupTableDefaults()
     SetLookupTableType(NA_LOOKUP_TABLE);
     SetWordSize(BLAST_WORDSIZE_NUCL);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTN);
-    SetVariableWordSize(BLAST_VARWORD_NUCL);
 }
 
 void 
@@ -116,7 +115,6 @@ CBlastNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetWordSize(BLAST_WORDSIZE_MEGABLAST);
     m_Opts->SetWordThreshold(BLAST_WORD_THRESHOLD_MEGABLAST);
     m_Opts->SetMBMaxPositions(INT4_MAX);
-    SetVariableWordSize(BLAST_VARWORD_MEGABLAST);
 }
 
 void
@@ -232,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/12/22 14:02:14  papadopo
+ * remove variable-wordsize-related code
+ *
  * Revision 1.24  2005/11/29 17:28:02  camacho
  * Remove BlastHitSavingOptions::required_{start,end}
  *

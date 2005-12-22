@@ -142,9 +142,6 @@ public:
     int GetMBMaxPositions() const;
     void SetMBMaxPositions(int m);
 
-    bool GetVariableWordSize() const;
-    void SetVariableWordSize(bool val = true);
-
     bool GetFullByteScan() const;
     void SetFullByteScan(bool val = true);
 
@@ -584,6 +581,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.113  2005/12/22 14:02:57  papadopo
+* remove variable-wordsize-related code
+*
 * Revision 1.112  2005/11/29 17:27:40  camacho
 * Remove BlastHitSavingOptions::required_{start,end}
 *

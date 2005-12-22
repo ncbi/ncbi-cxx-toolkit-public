@@ -210,7 +210,6 @@ x_LookupTableOptions_cmp(const LookupTableOptions* a,
     if (a->mb_template_type != b->mb_template_type) return false;
     if (a->max_num_patterns != b->max_num_patterns) return false;
     if (x_safe_strcmp(a->phi_pattern, b->phi_pattern) != 0) return false;
-    if (a->variable_wordsize != b->variable_wordsize) return false;
     return true;
 }
 

@@ -108,7 +108,6 @@ CLookupTableOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) co
     ddc.Log("mb_template_length", m_Ptr->mb_template_length);
     ddc.Log("mb_template_type", m_Ptr->mb_template_type);
     ddc.Log("max_positions", m_Ptr->max_positions);
-    ddc.Log("variable_wordsize", m_Ptr->variable_wordsize);
     ddc.Log("full_byte_scan", m_Ptr->full_byte_scan);
 }
 
@@ -681,6 +680,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.85  2005/12/22 14:02:14  papadopo
+ * remove variable-wordsize-related code
+ *
  * Revision 1.84  2005/11/29 17:28:02  camacho
  * Remove BlastHitSavingOptions::required_{start,end}
  *

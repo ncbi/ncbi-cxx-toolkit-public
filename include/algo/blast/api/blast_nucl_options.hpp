@@ -83,11 +83,6 @@ public:
     /// @param ws WordSize [in]
     void SetWordSize(int ws) 
     { 
-        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
-            if (GetLookupTableType() == MB_LOOKUP_TABLE && 
-                ws % COMPRESSION_RATIO != 0)
-                SetVariableWordSize(false);
-        }
         m_Opts->SetWordSize(ws); 
     }
 
@@ -139,14 +134,6 @@ public:
     void SetRepeatFilteringDB(const char* db) { m_Opts->SetRepeatFilteringDB(db); }
 
     /******************* Initial word options ***********************/
-
-    /// Returns VariableWordSize
-    bool GetVariableWordSize() const { return m_Opts->GetVariableWordSize(); }
-    /// Sets VariableWordSize
-    /// @param val VariableWordSize [in]
-    void SetVariableWordSize(bool val = true) { 
-        m_Opts->SetVariableWordSize(val); 
-    }
 
     /// Returns UngappedExtension
     bool GetUngappedExtension() const { return m_Opts->GetUngappedExtension();}
@@ -275,6 +262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/12/22 14:02:57  papadopo
+ * remove variable-wordsize-related code
+ *
  * Revision 1.27  2005/08/01 12:55:01  madden
  * Change SetGapExtnAlgorithm and SetGapTracebackAlgorithm so they do not change gap costs
  *

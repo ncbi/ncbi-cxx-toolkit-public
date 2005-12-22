@@ -84,7 +84,6 @@ enum EBlastOptIdx {
     eBlastOpt_WindowSize,
     eBlastOpt_SeedContainerType,
     eBlastOpt_SeedExtensionMethod,
-    eBlastOpt_VariableWordSize,
     eBlastOpt_FullByteScan,
     eBlastOpt_UngappedExtension,
     eBlastOpt_XDropoff,
@@ -763,25 +762,6 @@ CBlastOptions::SetMBMaxPositions(int m)
     }
     if (m_Remote) {
         m_Remote->SetValue(eBlastOpt_MBMaxPositions, m);
-    }
-}
-
-bool 
-CBlastOptions::GetVariableWordSize() const
-{
-    if (! m_Local) {
-        x_Throwx("Error: GetVariableWordSize() not available.");
-    }
-    return m_Local->GetVariableWordSize();
-}
-void 
-CBlastOptions::SetVariableWordSize(bool val)
-{
-    if (m_Local) {
-        m_Local->SetVariableWordSize(val);
-    }
-    if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_VariableWordSize, val);
     }
 }
 
@@ -1873,6 +1853,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2005/12/22 14:02:14  papadopo
+* remove variable-wordsize-related code
+*
 * Revision 1.73  2005/11/29 17:28:02  camacho
 * Remove BlastHitSavingOptions::required_{start,end}
 *

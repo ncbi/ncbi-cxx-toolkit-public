@@ -87,9 +87,6 @@ public:
     int GetMBMaxPositions() const;
     void SetMBMaxPositions(int m);
 
-    bool GetVariableWordSize() const;
-    void SetVariableWordSize(bool val = true);
-
     bool GetFullByteScan() const;
     void SetFullByteScan(bool val = true);
 
@@ -481,18 +478,6 @@ inline void
 CBlastOptionsLocal::SetMBMaxPositions(int m)
 {
     m_LutOpts->max_positions = m;
-}
-
-inline bool
-CBlastOptionsLocal::GetVariableWordSize() const
-{
-    return m_LutOpts->variable_wordsize ? true: false;
-}
-
-inline void
-CBlastOptionsLocal::SetVariableWordSize(bool val)
-{
-    m_LutOpts->variable_wordsize = val;
 }
 
 inline bool

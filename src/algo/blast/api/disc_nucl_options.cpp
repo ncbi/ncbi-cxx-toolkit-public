@@ -59,7 +59,6 @@ CDiscNucleotideOptionsHandle::SetMBLookupTableDefaults()
     SetTemplateLength(21);
     SetWordSize(BLAST_WORDSIZE_NUCL);
     SetFullByteScan(true);
-    SetVariableWordSize(BLAST_VARWORD_NUCL);
 }
 
 void 
@@ -103,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/12/22 14:02:15  papadopo
+ * remove variable-wordsize-related code
+ *
  * Revision 1.12  2005/10/06 19:43:07  camacho
  * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
  * Fixes problem with uninitializes program and service name for CRemoteBlast.
