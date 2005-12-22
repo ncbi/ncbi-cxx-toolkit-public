@@ -38,9 +38,6 @@
 
 USING_NCBI_SCOPE;
 
-
-DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
-
 const string   kStrParam_Default  = "StrParam Default";
 const bool     kBoolParam_Default = false;
 const unsigned kUIntParam_Default = 123;
@@ -63,6 +60,8 @@ NCBI_PARAM_DEF_EX(int, ParamTest, NoThreadParam, 0, eParam_NoThread);
 NCBI_PARAM_DEF_EX(int, ParamTest, NoLoadParam, 0, eParam_NoLoad);
 
 
+// User-defined type
+
 struct STestStruct
 {
     STestStruct(void) : first(0), second(0) {}
@@ -72,13 +71,13 @@ struct STestStruct
     int first, second;
 };
 
-istream& operator>>(istream& in, STestStruct val)
+CNcbiIstream& operator>>(CNcbiIstream& in, STestStruct val)
 {
     in >> val.first >> val.second;
     return in;
 }
 
-ostream& operator<<(ostream& out, const STestStruct val)
+CNcbiOstream& operator<<(CNcbiOstream& out, const STestStruct val)
 {
     out << val.first << ' ' << val.second;
     return out;
@@ -204,6 +203,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/22 21:19:18  grichenk
+ * Cosmetic improvements.
+ *
  * Revision 1.3  2005/12/22 16:56:24  grichenk
  * Added NoThread and NoLoad flags.
  *
