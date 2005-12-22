@@ -266,8 +266,8 @@ CBlastTracebackSearch::Run()
     // should be copied from that code to this class somehow, and
     // returned here if they have not been returned or reported yet.
     
-    if (m_Messages.size() < (size_t)query_data->GetNumQueries()) {
-        m_Messages.resize(query_data->GetNumQueries());
+    if (m_Messages.size() < aligns.size()) {
+        m_Messages.resize(aligns.size());
     }
     
     return CSearchResultSet(aligns, m_Messages);
