@@ -199,8 +199,6 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
       lookup->charsize = ilog2(kAlphabetSize) + 1;
       lookup->word_length = opt->word_size;
   
-      lookup->backbone_size = 0;
-      lookup->scan_step = 0;
       for(i=0;i<lookup->word_length;i++)
          lookup->backbone_size |= (kAlphabetSize - 1) << (i * lookup->charsize);
       lookup->backbone_size += 1;
@@ -251,9 +249,6 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
             lookup->lut_word_length = 8;
          break;
       case 11:
-         /* for the default blastn word size, scanning will take
-            place at stride 4 whether the AG version is used or
-            not, so it's more efficient to use the ordinary scanner */
          lookup->lut_word_length = 8;
          lookup->ag_scanning_mode = FALSE;
          break;
@@ -269,16 +264,12 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
          lookup->lut_word_length = MIN(8, lookup->word_length);
  
       if (lookup->ag_scanning_mode == TRUE)
-         lookup->scan_step = CalculateBestStride(opt->word_size, 
-                                              opt->variable_wordsize, 
-                                              lookup->lut_word_length);
+         lookup->scan_step = lookup->word_length - lookup->lut_word_length + 1;
  
       lookup->backbone_size = iexp(kAlphabetSize, lookup->lut_word_length);
       lookup->mask = lookup->backbone_size - 1;
    }
    lookup->alphabet_size = kAlphabetSize;
-   lookup->exact_matches = 0;
-   lookup->neighbor_matches = 0;
    lookup->threshold = opt->threshold;
    lookup->thin_backbone = 
       (Int4**) calloc(lookup->backbone_size , sizeof(Int4*));
@@ -445,9 +436,17 @@ for(i=0;i<lookup->backbone_size;i++)
  lookup->thin_backbone=NULL;
 
 #ifdef LOOKUP_VERBOSE
- printf("backbone size : %d\nbackbone occupancy: %d (%f%%)\nthick_backbone occupancy: %d (%f%%)\nnum_overflows: %d\noverflow size: %d\nlongest chain: %d\n",lookup->backbone_size, backbone_occupancy, 100.0 * (float) backbone_occupancy/ (float) lookup->backbone_size, thick_backbone_occupancy, 100.0 * (float) thick_backbone_occupancy / (float) lookup->backbone_size, num_overflows, overflow_cells_needed,longest_chain);
-
- printf("exact matches : %d\nneighbor matches : %d\n",lookup->exact_matches,lookup->neighbor_matches);
+ printf("backbone size: %d\n", lookup->backbone_size);
+ printf("backbone occupancy: %d (%f%%)\n",backbone_occupancy,
+                100.0 * backbone_occupancy/lookup->backbone_size);
+ printf("thick_backbone occupancy: %d (%f%%)\n", 
+                thick_backbone_occupancy,
+                100.0 * thick_backbone_occupancy/lookup->backbone_size);
+ printf("num_overflows: %d\n", num_overflows);
+ printf("overflow size: %d\n", overflow_cells_needed);
+ printf("longest chain: %d\n", longest_chain);
+ printf("exact matches: %d\n", lookup->exact_matches);
+ printf("neighbor matches: %d\n", lookup->neighbor_matches);
 #endif
 
  return 0;
