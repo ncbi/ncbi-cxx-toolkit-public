@@ -796,8 +796,8 @@ LookupTableOptionsNew(EBlastProgramType program_number, LookupTableOptions* *opt
 
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
-   EBlastProgramType program_number, Boolean is_megablast, Int4 threshold,
-   Int4 word_size, Boolean variable_wordsize)
+   EBlastProgramType program_number, Boolean is_megablast, 
+   Int4 threshold, Int4 word_size)
 {
    if (!options)
       return 1;
@@ -827,9 +827,6 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
       options->lut_type = RPS_LOOKUP_TABLE;
    if (word_size)
       options->word_size = word_size;
-   if (program_number == eBlastTypeBlastn) {
-      options->variable_wordsize = variable_wordsize;
-   }
    return 0;
 }
 
@@ -971,16 +968,6 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
                          "than 6 for protein comparison");
 		return (Int2) code;
 	}
-
-
-        /* FIXME: is this really needed?? */
-        if (options->variable_wordsize && 
-          ((options->word_size % 4) != 0) ) {
-         Blast_MessageWrite(blast_msg, eBlastSevWarning, code, subcode, 
-                            "Word size must be divisible by 4 if only full "
-                            "bytes of subject sequences are matched to query");
-         return (Int2) code;
-      }
 
 	if (program_number != eBlastTypeBlastn && 
        options->lut_type == MB_LOOKUP_TABLE)
@@ -1298,6 +1285,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.178  2005/12/22 14:07:48  papadopo
+ * remove variable wordsize, and change signature to BlastFillLookupTableOptions
+ *
  * Revision 1.177  2005/12/19 16:11:12  papadopo
  * no minimum value for megablast word size need be enforced; the engine will switch to a standard lookup table if the specified word size is too small
  *
