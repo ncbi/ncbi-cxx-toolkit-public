@@ -52,6 +52,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <algo/gnomon/gnomon.hpp>
 #include <algo/sequence/orf.hpp>
@@ -464,6 +465,50 @@ CTestTranscript_CdsStopCodon::RunTest(const CSerialObject& obj,
 }
 
 
+// Determine the position in a cds of the start of a Code-break
+inline TSeqPos CodeBreakPosInCds(const CCode_break& code_break,
+                                 const CSeq_feat& feat, CScope& scope)
+{
+    return sequence::LocationOffset(feat.GetLocation(), code_break.GetLoc(),
+                                    sequence::eOffset_FromStart, &scope);
+}
+
+
+// Determine whether a Code-break is a selenocysteine
+static bool s_IsSelenocysteine(const CCode_break& code_break)
+{
+    switch (code_break.GetAa().Which()) {
+    case CCode_break::TAa::e_Ncbieaa:
+        return code_break.GetAa().GetNcbieaa() == 85;
+    case CCode_break::TAa::e_Ncbi8aa:
+        return code_break.GetAa().GetNcbi8aa() == 24;
+    case CCode_break::TAa::e_Ncbistdaa:
+        return code_break.GetAa().GetNcbistdaa() == 24;
+    case CCode_break::TAa::e_not_set:
+        return false;
+    }
+}
+
+
+// Determine whether a position in a CDS feature is the beginning
+// of a selenocysteine codon (according to Code-break's)
+static bool s_IsSelenocysteine(TSeqPos pos_in_cds, CFeat_CI feat_iter, CScope& scope)
+{
+    const CSeq_feat& feat = feat_iter->GetOriginalFeature();
+    if (!feat.GetData().GetCdregion().IsSetCode_break()) {
+        return false;
+    }
+    ITERATE (CCdregion::TCode_break, code_break,
+             feat.GetData().GetCdregion().GetCode_break ()) {
+        if (CodeBreakPosInCds(**code_break, feat, scope) == pos_in_cds
+            && s_IsSelenocysteine(**code_break)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 static void s_PrematureStopCodon(const CSeq_id& id, const CSeqTestContext* ctx,
                                  CFeat_CI feat_iter, CSeq_test_result& result)
 {
@@ -474,19 +519,36 @@ static void s_PrematureStopCodon(const CSeq_id& id, const CSeqTestContext* ctx,
     CSeqVector vec(feat_iter->GetLocation(), ctx->GetScope());
     vec.SetIupacCoding();
 
-    for (int i = 0;  i < vec.size() - 3;  i += 3) {
+    bool premature_stop_found = false;
+    for (TSeqPos i = 0;  i < vec.size() - 3;  i += 3) {
         if (tbl.IsOrfStop(tbl.SetCodonState(vec[i], vec[i + 1],
                                             vec[i + 2]))) {
-            result.SetOutput_data()
-                .AddField("has_premature_stop_codon", true);
-            result.SetOutput_data()
-                .AddField("first_premature_stop_position", i);
-            return;
+            if (!premature_stop_found) {
+                result.SetOutput_data()
+                    .AddField("has_premature_stop_codon", true);
+                result.SetOutput_data()
+                    .AddField("first_premature_stop_position",
+                              static_cast<int>(i));
+                premature_stop_found = true;
+            }
+            // determine whether it's an annotated selenocysteine
+            if (!s_IsSelenocysteine(i, feat_iter, ctx->GetScope())) {
+                result.SetOutput_data()
+                    .AddField("has_premature_stop_codon_not_sec", true);
+                result.SetOutput_data()
+                    .AddField("first_premature_stop_position_not_sec",
+                              static_cast<int>(i));
+                return;
+            }
         }
     }
 
     result.SetOutput_data()
-        .AddField("has_premature_stop_codon", false);
+        .AddField("has_premature_stop_codon_not_sec", false);
+    if (!premature_stop_found) {
+        result.SetOutput_data()
+            .AddField("has_premature_stop_codon", false);
+    }
 }
 
 
@@ -728,6 +790,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/12/22 17:30:15  jcherry
+ * Added test for non-selenocysteine inframe stop (based on Code-break)
+ *
  * Revision 1.16  2005/12/21 16:06:52  jcherry
  * Added ORF search that requires ATG starts
  *
