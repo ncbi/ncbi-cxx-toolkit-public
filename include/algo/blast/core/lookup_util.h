@@ -79,19 +79,6 @@ Int4 makemask(Int4 x);
 
 void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet);
 
-/** Auxiliary function that calculates best database scanning stride for the
- * given parameters.
- * @param word_size Length of the exact match required to trigger 
- *                  extensions [in]
- * @param var_words If true, and word_size is divisible by 4, partial bytes 
- *                  need not be checked to test the length of the 
- *                  exact match [in]
- * @param lut_width How many letters are in a lookup table entry [in]
- * @return          The stride necessary to find all exact matches of a given
- *                  word size.
- */
-Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_width);
-
 /** Given a list of query locations, estimate the number of words
  * that would need to be added to a lookup table. The estimate is
  * currently intended for nucleotide locations, and ignores ambiguities
