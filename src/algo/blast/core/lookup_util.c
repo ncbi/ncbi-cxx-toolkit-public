@@ -187,19 +187,6 @@ void debruijn(Int4 n, Int4 k, Uint1* output, Uint1* alphabet)
   return;
 }
 
-Int4 CalculateBestStride(Int4 word_size, Boolean var_words, Int4 lut_width)
-{
-   Int4 extra = 1;
-   Uint1 remainder;
-
-   remainder = word_size % COMPRESSION_RATIO;
-
-   if (var_words && remainder == 0)
-      extra = COMPRESSION_RATIO;
-
-   return word_size - lut_width + extra;
-}
-
 Int4 EstimateNumTableEntries(BlastSeqLoc* location)
 {
    Int4 num_entries = 0;
