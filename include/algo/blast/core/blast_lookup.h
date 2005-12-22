@@ -132,7 +132,6 @@ typedef struct BlastLookupTable {
     Boolean use_pssm;      /**< if TRUE, lookup table construction will assume
                                 that the underlying score matrix is position-
                                 specific */
-    Boolean variable_wordsize; /**< if TRUE then only full bytes are compared as initial words. */
     Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if TRUE, so that 
                                not every base is checked.  */
   } BlastLookupTable;
