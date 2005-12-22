@@ -521,18 +521,11 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    if (lookup_options->mb_template_length > 0) {
         /* discontiguous megablast */
         mb_lt->full_byte_scan = lookup_options->full_byte_scan; 
-        mb_lt->ag_scanning_mode = FALSE;
-        mb_lt->variable_wordsize = FALSE; 
-        mb_lt->scan_step = 0;
         status = s_FillDiscMBTable(query, location, mb_lt, lookup_options);
    }
    else {
         /* contiguous megablast */
-        mb_lt->ag_scanning_mode = TRUE;
-        mb_lt->scan_step = CalculateBestStride(lookup_options->word_size, 
-                                            lookup_options->variable_wordsize, 
-                                            mb_lt->lut_word_length);
-        mb_lt->variable_wordsize = lookup_options->variable_wordsize;
+        mb_lt->scan_step = mb_lt->word_length - mb_lt->lut_word_length + 1;
         status = s_FillContigMBTable(query, location, mb_lt, lookup_options);
    }
 
