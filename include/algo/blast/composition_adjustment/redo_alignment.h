@@ -317,8 +317,6 @@ typedef struct Blast_RedoAlignParams {
     double cutoff_e;        /**< cutoff evalue for saving alignments */
     int do_link_hsps;       /**< if true, then HSP linking and sum
                                statistics are used to computed evalues */
-    double Lambda;          /**< statistical parameter */
-    double logK;            /**< statistical parameter */
     const Blast_RedoAlignCallbacks *
         callbacks;                     /**< callback functions used by
                                             the Blast_RedoAlign* functions */
@@ -337,8 +335,7 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          int adjustParameters, int positionBased,
                          int subject_is_translated,
                          int ccat_query_length, int cutoff_s,
-                         double cutoff_e, int do_link_hsps, double Lambda,
-                         double logK,
+                         double cutoff_e, int do_link_hsps,
                          const Blast_RedoAlignCallbacks * callbacks);
 
 
@@ -359,6 +356,8 @@ void Blast_RedoAlignParamsFree(Blast_RedoAlignParams ** pparams);
  * @param params           parameters used to redo the alignments
  * @param incoming_aligns  a list of existing alignments
  * @param hspcnt           length of incoming_aligns
+ * @param Lambda           statistical parameter
+ * @param logK             statistical parameter
  * @param matchingSeq      the database sequence
  * @param query_info       information about all queries
  * @param numQueries       the number of queries
@@ -380,6 +379,7 @@ int Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                     Blast_RedoAlignParams * params,
                                     BlastCompo_Alignment * incoming_aligns,
                                     int hspcnt,
+                                    double Lambda, double logK,
                                     BlastCompo_MatchingSequence * matchingSeq,
                                     BlastCompo_QueryInfo query_info[],
                                     int numQueries,
@@ -400,6 +400,7 @@ int Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
  * @param params           parameters used to redo the alignments
  * @param incoming_aligns  a list of existing alignments
  * @param hspcnt           length of incoming_aligns
+ * @param Lambda           statistical parameter
  * @param matchingSeq      the database sequence
  * @param ccat_query_length  the length of the concatenated query
  * @param query_info       information about all queries
@@ -414,6 +415,7 @@ int Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                        Blast_RedoAlignParams * params,
                        BlastCompo_Alignment * incoming_aligns,
                        int hspcnt,
+                       double Lambda,
                        BlastCompo_MatchingSequence * matchingSeq,
                        int ccat_query_length,
                        BlastCompo_QueryInfo query_info[],

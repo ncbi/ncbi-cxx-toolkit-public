@@ -914,8 +914,7 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          int adjustParameters, int positionBased,
                          int subject_is_translated,
                          int ccat_query_length, int cutoff_s,
-                         double cutoff_e, int do_link_hsps, double Lambda,
-                         double logK,
+                         double cutoff_e, int do_link_hsps,
                          const Blast_RedoAlignCallbacks * callbacks)
 {
     Blast_RedoAlignParams * params = malloc(sizeof(Blast_RedoAlignParams));
@@ -933,8 +932,6 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
         params->cutoff_s = cutoff_s;
         params->cutoff_e = cutoff_e;
         params->do_link_hsps = do_link_hsps;
-        params->Lambda = Lambda;
-        params->logK = logK;
         params->callbacks = callbacks;
     } else {
         free(*pmatrix_info); *pmatrix_info = NULL;
@@ -949,6 +946,7 @@ int
 Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                    Blast_RedoAlignParams * params,
                    BlastCompo_Alignment * incoming_aligns, int hspcnt,
+                   double Lambda,
                    BlastCompo_MatchingSequence * matchingSeq,
                    int ccat_query_length, BlastCompo_QueryInfo query_info[],
                    int numQueries, int ** matrix,
@@ -969,7 +967,6 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
     int RE_rule = params->adjustParameters - 1;
     int RE_pseudocounts = params->RE_pseudocounts;
     int subject_is_translated = params->subject_is_translated;
-    double Lambda = params->Lambda;
     BlastCompo_GappingParams * gapping_params = params->gapping_params;
     const Blast_RedoAlignCallbacks * callbacks = params->callbacks;
 
@@ -1079,6 +1076,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                 Blast_RedoAlignParams * params,
                                 BlastCompo_Alignment * incoming_aligns,
                                 int hspcnt,
+                                double Lambda, double logK,
                                 BlastCompo_MatchingSequence * matchingSeq,
                                 BlastCompo_QueryInfo query_info[],
                                 int numQueries,
@@ -1105,8 +1103,6 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
     int do_link_hsps = params->do_link_hsps;
     int ccat_query_length = params->ccat_query_length;
     BlastCompo_GappingParams * gapping_params = params->gapping_params;
-    double Lambda = params->Lambda;
-    double logK = params->logK;
     const Blast_RedoAlignCallbacks * callbacks = params->callbacks;
 
     int gap_open = gapping_params->gap_open;
