@@ -156,8 +156,12 @@ inline void CSeqLocInfo::SetFrame(int frame)
     m_Frame = (ETranslationFrame) frame;
 }
 
-/// Vector of per-query mask lists
-typedef vector<list<CRef<CSeqLocInfo> > > TSeqLocInfoVector;
+/// Collection of masked regions for a single query sequence
+typedef list< CRef<CSeqLocInfo> > TMaskedQueryRegions;
+
+/// Collection of masked regions for all queries in a BLAST search
+/// @note this supports tra
+typedef vector< TMaskedQueryRegions > TSeqLocInfoVector;
 
 /// Converts a BlastMaskLoc internal structure into an object returned by the 
 /// C++ API.
@@ -268,6 +272,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2005/12/22 16:44:48  camacho
+* added typedef for masked query regions
+*
 * Revision 1.66  2005/09/28 18:08:55  camacho
 * Make C structure wrappers subclass CObject
 *
