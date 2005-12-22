@@ -45,6 +45,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include "ncbidiag_p.hpp"
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stack>
@@ -1898,6 +1899,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.102  2005/12/22 21:16:29  ucko
+ * +<stdio.h> due to (gratuitous?) use of sprintf.
+ *
  * Revision 1.101  2005/12/22 16:57:14  grichenk
  * Changed params to NoThread type.
  *
