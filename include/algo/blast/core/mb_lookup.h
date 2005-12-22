@@ -128,9 +128,6 @@ typedef struct BlastMBLookupTable {
                           the backbone */
    Int4 longest_chain; /**< Largest number of query positions for a given 
                           word */
-   Boolean variable_wordsize; /**< if TRUE then only full bytes are compared as initial words. */
-   Boolean ag_scanning_mode;  /**< Using AG scanning mode (or stride) if TRUE, so that 
-                               not every base is checked.  */
 } BlastMBLookupTable;
 
 /**
