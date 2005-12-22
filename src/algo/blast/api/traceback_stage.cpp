@@ -160,10 +160,6 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
     
     query_data->GetMessages(m_Messages);
     
-    if (m_Messages.size() < (size_t)query_data->GetNumQueries()) {
-        m_Messages.resize(query_data->GetNumQueries());
-    }
-    
     // 2. Take care of any rps information
     if (Blast_ProgramIsRpsBlast(opts->GetProgramType())) {
         m_InternalData->m_RpsData =
@@ -269,6 +265,10 @@ CBlastTracebackSearch::Run()
     // The preliminary stage also produces errors and warnings; they
     // should be copied from that code to this class somehow, and
     // returned here if they have not been returned or reported yet.
+    
+    if (m_Messages.size() < (size_t)query_data->GetNumQueries()) {
+        m_Messages.resize(query_data->GetNumQueries());
+    }
     
     return CSearchResultSet(aligns, m_Messages);
 }
