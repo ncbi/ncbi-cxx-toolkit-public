@@ -47,9 +47,10 @@ struct SParamDescription
 {
     typedef TValue TValueType;
 
-    const char*  section;
-    const char*  name;
-    const TValue default_value;
+    const char*           section;
+    const char*           name;
+    const TValue          default_value;
+    const TNcbiParamFlags flags;
 };
 
 
@@ -68,9 +69,10 @@ struct SParamEnumDescription
 {
     typedef TValue TValueType;
 
-    const char*  section;
-    const char*  name;
-    const TValue default_value;
+    const char*           section;
+    const char*           name;
+    const TValue          default_value;
+    const TNcbiParamFlags flags;
 
     // List of enum values if any
     const SEnumDescription<TValue>* enums;
@@ -241,10 +243,15 @@ template<class TDescription>
 inline
 CParam<TDescription>::CParam(const string& section, const string& name)
 {
-    string str = g_GetConfigString
-        (section, name,
-         TParamParser::ValueToString(GetThreadDefault()));
-    m_Value = TParamParser::StringToValue(str);
+    if ( !sx_IsSetFlag(eParam_NoLoad) ) {
+        string str = g_GetConfigString
+            (section, name,
+            TParamParser::ValueToString(GetThreadDefault()));
+        m_Value = TParamParser::StringToValue(str);
+    }
+    else {
+        m_Value = GetThreadDefault();
+    }
 }
 
 
@@ -257,14 +264,16 @@ CParam<TDescription>::sx_GetDefault(void)
 
     static bool initialized = false;
     if ( !initialized ) {
-        string config_value = g_GetConfigString
-            (TDescription::sm_ParamDescription.section,
-             TDescription::sm_ParamDescription.name,
-             "");
-        if ( !config_value.empty() ) {
-            s_Default =
-                TParamParser::StringToValue(config_value,
-                                            TDescription::sm_ParamDescription);
+        if ( !sx_IsSetFlag(eParam_NoLoad) ) {
+            string config_value = g_GetConfigString
+                (TDescription::sm_ParamDescription.section,
+                TDescription::sm_ParamDescription.name,
+                "");
+            if ( !config_value.empty() ) {
+                s_Default =
+                    TParamParser::StringToValue(config_value,
+                    TDescription::sm_ParamDescription);
+            }
         }
         initialized = true;
     }
@@ -279,6 +288,14 @@ CParam<TDescription>::sx_GetTls(void)
 {
     static CRef<TTls> s_ValueTls;
     return s_ValueTls;
+}
+
+
+template<class TDescription>
+inline
+bool CParam<TDescription>::sx_IsSetFlag(ENcbiParamFlags flag)
+{
+    return (TDescription::sm_ParamDescription.flags & flag) != 0;
 }
 
 
@@ -307,11 +324,13 @@ typename CParam<TDescription>::TValueType
 CParam<TDescription>::GetThreadDefault(void)
 {
     CFastMutexGuard guard(s_GetLock());
-    CRef<TTls>& tls = sx_GetTls();
-    if ( tls.NotEmpty() ) {
-        TValueType* v = tls->GetValue();
-        if ( v ) {
-            return *v;
+    if ( !sx_IsSetFlag(eParam_NoThread) ) {
+        CRef<TTls>& tls = sx_GetTls();
+        if ( tls.NotEmpty() ) {
+            TValueType* v = tls->GetValue();
+            if ( v ) {
+                return *v;
+            }
         }
     }
     return sx_GetDefault();
@@ -322,6 +341,10 @@ template<class TDescription>
 inline
 void CParam<TDescription>::SetThreadDefault(const TValueType& val)
 {
+    if ( sx_IsSetFlag(eParam_NoThread) ) {
+        NCBI_THROW(CParamException, eNoThreadValue,
+            "The parameter does not allow thread-local values");
+    }
     CFastMutexGuard guard(s_GetLock());
     CRef<TTls>& tls = sx_GetTls();
     if ( !tls ) {
@@ -337,6 +360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/22 16:56:23  grichenk
+ * Added NoThread and NoLoad flags.
+ *
  * Revision 1.6  2005/12/08 16:40:34  ucko
  * Fix compilation under GCC 2.95, which gets confused when trying to
  * use a CRef<>& type as a bool.

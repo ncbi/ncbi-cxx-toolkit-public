@@ -51,12 +51,17 @@ NCBI_PARAM_DECL(string, ParamTest, StrParam);
 NCBI_PARAM_DECL(bool, ParamTest, BoolParam);
 NCBI_PARAM_DECL(unsigned int, ParamTest, UIntParam);
 NCBI_PARAM_DECL(string, ParamTest, StaticStr);
+NCBI_PARAM_DECL(int, ParamTest, NoThreadParam);
+NCBI_PARAM_DECL(int, ParamTest, NoLoadParam);
 
 NCBI_PARAM_DEF(int, ParamTest, ThreadIdx, 0);
 NCBI_PARAM_DEF(string, ParamTest, StrParam, kStrParam_Default);
 NCBI_PARAM_DEF(bool, ParamTest, BoolParam, kBoolParam_Default);
 NCBI_PARAM_DEF(unsigned int, ParamTest, UIntParam, kUIntParam_Default);
 NCBI_PARAM_DEF(string, ParamTest, StaticStr, kStaticStr_Default);
+NCBI_PARAM_DEF_EX(int, ParamTest, NoThreadParam, 0, eParam_NoThread);
+NCBI_PARAM_DEF_EX(int, ParamTest, NoLoadParam, 0, eParam_NoLoad);
+
 
 struct STestStruct
 {
@@ -100,11 +105,8 @@ private:
     typedef NCBI_PARAM_TYPE(ParamTest, BoolParam) TParam_BoolParam;
     typedef NCBI_PARAM_TYPE(ParamTest, UIntParam) TParam_UIntParam;
     typedef NCBI_PARAM_TYPE(ParamTest, Struct) TParam_Struct;
-
-    //TParam_ThreadIdx m_ThreadIdx;
-    //TParam_StrParam  m_StrParam;
-    //TParam_BoolParam m_BoolParam;
-    //TParam_UIntParam m_UIntParam;
+    typedef NCBI_PARAM_TYPE(ParamTest, NoThreadParam) TParam_NoThread;
+    typedef NCBI_PARAM_TYPE(ParamTest, NoLoadParam) TParam_NoLoad;
 };
 
 
@@ -120,6 +122,20 @@ bool CTestParamApp::Thread_Run(int idx)
 
     _ASSERT(TParam_StrParam::GetDefault() == kStrParam_Default);
     _ASSERT(s_StrParam.Get() == kStaticStr_Default);
+
+    // Non-initializable param must always have the same value
+    _ASSERT(TParam_NoLoad::GetDefault() == 0);
+    // No-thread param has no thread local value
+    bool error = false;
+    try {
+        TParam_NoThread::SetThreadDefault(idx + 1000);
+    }
+    catch (CParamException&) {
+        error = true;
+    }
+    _ASSERT(error);
+    TParam_NoThread::SetDefault(idx);
+    _ASSERT(TParam_NoThread::GetThreadDefault() != idx + 1000);
 
     // Initialize parameter with global default
     TParam_StrParam str_param1;
@@ -188,6 +204,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/22 16:56:24  grichenk
+ * Added NoThread and NoLoad flags.
+ *
  * Revision 1.2  2005/11/17 23:14:54  grichenk
  * Fixed test in ST mode
  *
