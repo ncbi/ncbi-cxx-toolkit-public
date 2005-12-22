@@ -160,7 +160,7 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
     
     query_data->GetMessages(m_Messages);
     
-    if (m_Messages.size() < query_data->GetNumQueries()) {
+    if (m_Messages.size() < (size_t)query_data->GetNumQueries()) {
         m_Messages.resize(query_data->GetNumQueries());
     }
     
