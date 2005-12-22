@@ -66,8 +66,6 @@ extern "C" {
                                           megablast; for discontig megablast
                                           the word size is explicitly 
                                           overridden) */
-#define BLAST_VARWORD_NUCL 0  /**< blastn with variable wordsize */
-#define BLAST_VARWORD_MEGABLAST 1 /**< megablast with variable wordsize */
 
 /** Default matrix name: BLOSUM62 */
 #define BLAST_DEFAULT_MATRIX "BLOSUM62"
@@ -183,8 +181,6 @@ typedef struct LookupTableOptions {
    char* phi_pattern;  /**< PHI-BLAST pattern */
    Int4 max_num_patterns; /**< Maximal number of patterns allowed for 
                              PHI-BLAST */
-   Boolean variable_wordsize; /**< Should the partial bytes be examined for 
-                             determining whether exact match is long enough? */
 } LookupTableOptions;
 
 /** Options for dust algorithm, applies only to nucl.-nucl. comparisons.
@@ -728,14 +724,12 @@ Int2 LookupTableOptionsNew(EBlastProgramType program, LookupTableOptions* *optio
  * @param is_megablast Megablast (instead of blastn) if TRUE [in]
  * @param threshold Threshold value for finding neighboring words [in]
  * @param word_size Number of matched residues in an initial word [in]
- * @param variable_wordsize Are only full bytes of a compressed sequence 
- *        checked to find initial words? [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 
 BLAST_FillLookupTableOptions(LookupTableOptions* options, 
    EBlastProgramType program, Boolean is_megablast, Int4 threshold,
-   Int4 word_size, Boolean variable_wordsize);
+   Int4 word_size);
 
 
 /** Deallocates memory for LookupTableOptions*.
