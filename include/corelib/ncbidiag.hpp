@@ -1034,9 +1034,9 @@ extern bool IsSetDiagHandler(void);
 ///
 /// @sa SetDiagFilter
 enum EDiagFilter {
-    eDiagFilter_Trace,  //< for TRACEs only
-    eDiagFilter_Post,   //< for all non-TRACE, non-FATAL
-    eDiagFilter_All     //< for all non-FATAL
+    eDiagFilter_Trace,  ///< for TRACEs only
+    eDiagFilter_Post,   ///< for all non-TRACE, non-FATAL
+    eDiagFilter_All     ///< for all non-FATAL
 };
 
 
@@ -1320,6 +1320,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.95  2005/12/22 16:47:35  grichenk
+ * Fixed Doxygen comments
+ *
  * Revision 1.94  2005/12/21 18:17:04  grichenk
  * Fixed output of module/class/function by adding GetRef().
  * Fixed width for UID.
