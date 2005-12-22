@@ -319,7 +319,7 @@ bool GetMaxPath(const SeqTree::iterator& cursor, double& dMax, double& dBranch1,
                     dBranch1 = localBranch1 + sibDist;
                     dBranch2 = localBranch2 + sibDist;
                 //  sibCursor contains one end of the longest path yet seen
-                } else if (testDist > localMax && testDist > dMax) {
+                } else if (testDist >= localMax && testDist > dMax) {
                     updatedPath = true;
                     dMax = testDist;
                     if (localBranch1 + sibDist > dBranch1) {
@@ -337,6 +337,7 @@ bool GetMaxPath(const SeqTree::iterator& cursor, double& dMax, double& dBranch1,
 				//  should never see this condition
                 } else {
 					result = false;
+                    assert(result);
                 }
 
 			}
@@ -384,6 +385,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/12/22 19:19:04  lanczyck
+ * sync cd_utils with midpoint-root bug fix;
+ * add a line left out when transferred over 'at least 3 sequences' criteria for NJ
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *

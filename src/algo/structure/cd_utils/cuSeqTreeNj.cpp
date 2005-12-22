@@ -124,6 +124,7 @@ void NJ_TreeAlgorithm::initializeNodes() {
         } else {
             m_nseqs = m_dm->GetNumRows();
             nnodes = 2*m_nseqs - 2;
+            if (nnodes < 3) nnodes = 3;  //  to join the final nodes, need a dummy if < 3
             m_seqiters = TTreeIt(nnodes); 
             //cout << "m_seqiters:  " << m_seqiters.size() << endl;
             for (int i=0; i<nnodes; ++i) {
@@ -488,6 +489,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2005/12/22 19:19:04  lanczyck
+ * sync cd_utils with midpoint-root bug fix;
+ * add a line left out when transferred over 'at least 3 sequences' criteria for NJ
+ *
  * Revision 1.2  2005/07/27 14:55:40  lanczyck
  * fix bug when do NJ with < 3 sequences
  *
