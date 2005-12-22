@@ -83,40 +83,6 @@ BEGIN_NCBI_SCOPE
 ///
 
 
-
-/////////////////////////////////////////////////////////////////////////////
-///
-/// NCBI_PARAM_DECL
-/// NCBI_PARAM_DEF
-///
-/// - Declare the parameter with NCBI_PARAM_DECL (NCBI_PARAM_ENUM_DECL for
-///   enums):
-///   NCBI_PARAM_DECL(int, MySection, MyIntParam);
-///   NCBI_PARAM_DECL(string, MySection, MyStrParam);
-///   NCBI_PARAM_ENUM_DECL(EMyEnum, MySection, MyEnumParam);
-///
-/// - Add parameter definition (this will also generate static data):
-///   NCBI_PARAM_DEF(int, MySection, MyIntParam, 12345);
-///   NCBI_PARAM_DEF(string, MySection, MyStrParam, "Default string value");
-///
-/// - For enum parameters define mappings between strings and values
-///   before defining the parameter:
-///   NCBI_PARAM_ENUM_ARRAY(EMyEnum, MySection, MyEnumParam)
-///   {
-///       {"My_A", eMyEnum_A},
-///       {"My_B", eMyEnum_B},
-///       {"My_C", eMyEnum_C}
-///   };
-///
-///   NCBI_PARAM_ENUM_DEF(EMyEnum, MySection, MyEnumParam, eMyEnum_B);
-///
-/// - Use NCBI_PARAM_TYPE() as parameter type:
-///   NCBI_PARAM_TYPE(MySection, MyIntParam)::GetDefault();
-///   typedef NCBI_PARAM_TYPE(MySection, MyStrParam) TMyStrParam;
-///   TMyStrParam str_param; str_param.Set("Local string value");
-///
-
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Helper functions for getting values from registry/environment
@@ -444,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/22 21:18:29  grichenk
+ * Removed duplicate comments.
+ *
  * Revision 1.7  2005/12/22 16:56:23  grichenk
  * Added NoThread and NoLoad flags.
  *
