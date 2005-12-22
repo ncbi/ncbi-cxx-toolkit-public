@@ -155,9 +155,6 @@ void CBlast2seqApplication::Init(void)
     arg_desc->AddDefaultKey("window","window", "Window size for two-hit extension",
                             CArgDescriptions::eInteger, "0");
 
-    arg_desc->AddDefaultKey("varword", "varword", 
-        "Should variable word size be used?",
-        CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("xungap", "xungapped", 
         "X-dropoff value for ungapped extensions",
         CArgDescriptions::eDouble, "0");
@@ -290,7 +287,6 @@ CBlast2seqApplication::ProcessCommandLineArgs()
         if (args["templtype"].AsInteger()) {
             opt.SetMBTemplateType(args["templtype"].AsInteger());
         }
-        opt.SetVariableWordSize(args["varword"].AsBoolean());
     }
 
     if (args["xungap"].AsDouble()) {
