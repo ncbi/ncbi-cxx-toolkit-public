@@ -189,7 +189,8 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
     // Check if the file we're watching (if any) has changed
     // (based on contents, not timestamp!)
     if (watcher  &&  watcher->HasChanged()) {
-        _TRACE("CCgiApplication::x_RunFastCGI: the watch file has changed");
+        ERR_POST(Warning <<
+                 "Forced restart of Fast-CGI, as its watch file has changed");
         return kSR_WatchFile;
     }
     return 0;
@@ -578,6 +579,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.57  2005/12/22 19:40:37  vakatov
+ * Report the restart caused by the change of the Fast-CGI "watch file"
+ * as WARNING (it was TRACE before)
+ *
  * Revision 1.56  2005/12/15 20:24:45  grichenk
  * Use SetFastCGIIteration to set iteration.
  *
