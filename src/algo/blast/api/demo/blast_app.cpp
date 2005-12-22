@@ -164,10 +164,6 @@ void CBlastApplication::Init(void)
         CArgDescriptions::eInteger, "0");
     arg_desc->SetConstraint("scantype", new CArgAllow_Integers(0,3));
 
-    arg_desc->AddDefaultKey("varword", "varword", 
-        "Should variable word size be used, i.e. no partial byte extensions"
-        "when checking initial word length?",
-        CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("xungap", "xungapped", 
         "X-dropoff value for ungapped extensions",
         CArgDescriptions::eDouble, "0");
@@ -346,8 +342,6 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle,
         if (args["templtype"].AsInteger()) {
             opt.SetMBTemplateType(args["templtype"].AsInteger());
         }
-        
-        opt.SetVariableWordSize(args["varword"].AsBoolean());
     }
 
     if (args["xungap"].AsDouble()) {
