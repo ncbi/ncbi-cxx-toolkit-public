@@ -591,7 +591,7 @@ static void s_ConvertBlastnMasks(const CPacked_seqint::Tdata& query_intervals,
         const TSeqRange kTarget((*query_interval)->GetFrom(), 
                                 (*query_interval)->GetTo());
 
-        list< CRef<CSeqLocInfo> > query_masks;
+        TMaskedQueryRegions query_masks;
         pair<BlastSeqLoc*, bool> loc_aux = s_GetBlastnMask(mask, i++);
         for (BlastSeqLoc* loc = loc_aux.first; loc; loc = loc->next) {
             TSeqRange masked_range(loc->ssr->left, loc->ssr->right);
@@ -641,7 +641,7 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
 
         const TSeqRange kTarget((*query_interval)->GetFrom(),
                                 (*query_interval)->GetTo());
-        list<CRef<CSeqLocInfo> > query_masks;
+        TMaskedQueryRegions query_masks;
         for (unsigned int index = 0; index < kNumContexts; index++) {
 
             BlastSeqLoc* loc = mask->seqloc_array[qindex*kNumContexts+index];
@@ -680,6 +680,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.86  2005/12/22 23:05:11  camacho
+ * Use TMaskedQueryRegions typedef
+ *
  * Revision 1.85  2005/12/22 14:02:14  papadopo
  * remove variable-wordsize-related code
  *
