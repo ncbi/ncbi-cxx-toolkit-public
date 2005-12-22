@@ -82,12 +82,12 @@ extern "C" {
 
 // Use old output format if the flag is set
 NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
-NCBI_PARAM_DEF(bool, Diag, Old_Post_Format, true);
+NCBI_PARAM_DEF_EX(bool, Diag, Old_Post_Format, true, eParam_NoThread);
 typedef NCBI_PARAM_TYPE(Diag, Old_Post_Format) TOldPostFormatParam;
 
 // Auto-print context properties on set/change.
 NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
-NCBI_PARAM_DEF(bool, Diag, AutoWrite_Context, false);
+NCBI_PARAM_DEF_EX(bool, Diag, AutoWrite_Context, false, eParam_NoThread);
 typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
 
 
@@ -1898,6 +1898,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.101  2005/12/22 16:57:14  grichenk
+ * Changed params to NoThread type.
+ *
  * Revision 1.100  2005/12/21 18:17:05  grichenk
  * Fixed output of module/class/function by adding GetRef().
  * Fixed width for UID.
