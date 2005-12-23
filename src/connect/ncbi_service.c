@@ -132,6 +132,8 @@ static SERV_ITER s_Open(const char*          service,
                         SSERV_Info**         info,
                         HOST_INFO*           host_info)
 {
+    const TSERV_Type special_flags =
+        fSERV_Promiscuous | fSERV_ReverseDns | fSERV_Stateless;
     const char* s = ismask ? strdup(service) : s_ServiceName(service, 0);
     const SSERV_VTable* op;
     SERV_ITER iter;
@@ -139,35 +141,38 @@ static SERV_ITER s_Open(const char*          service,
     if (!s || !*s || !(iter = (SERV_ITER) malloc(sizeof(*iter))))
         return 0;
 
-    iter->name     = s;
-    iter->type     = types;
-    iter->host     = (preferred_host == SERV_LOCALHOST
-                      ? SOCK_gethostbyname(0) : preferred_host);
-    iter->port     = preferred_port;
-    iter->pref     = (preference < 0.0
-                      ? -1.0
-                      : 0.01 * (preference > 100.0 ? 100.0 : preference));
-    iter->n_skip   = 0;
-    iter->a_skip   = 0;
-    iter->skip     = 0;
-    iter->last     = 0;
-    iter->op       = 0;
-    iter->data     = 0;
-    iter->mask     = ismask;
-    iter->external = external;
-    iter->arg      = arg;
-    iter->arglen   = arg ? strlen(arg) : 0;
-    iter->val      = val;
-    iter->vallen   = val ? strlen(val) : 0;
+    iter->name        = s;
+    iter->type        = types & ~special_flags;
+    iter->host        = (preferred_host == SERV_LOCALHOST
+                         ? SOCK_gethostbyname(0) : preferred_host);
+    iter->port        = preferred_port;
+    iter->pref        = (preference < 0.0
+                         ? -1.0
+                         : 0.01 * (preference > 100.0 ? 100.0 : preference));
+    iter->n_skip      = 0;
+    iter->a_skip      = 0;
+    iter->skip        = 0;
+    iter->last        = 0;
+    iter->op          = 0;
+    iter->data        = 0;
+    iter->ismask      = ismask ? 1 : 0;
+    iter->promiscuous = types & fSERV_Promiscuous ? 1 : 0;
+    iter->reverse_dns = types & fSERV_ReverseDns ? 1 : 0;
+    iter->stateless   = types & fSERV_Stateless ? 1 : 0;
+    iter->external    = external;
+    iter->arg         = arg;
+    iter->arglen      = arg ? strlen(arg) : 0;
+    iter->val         = val;
+    iter->vallen      = val ? strlen(val) : 0;
 
     if (n_skip) {
         size_t i;
         for (i = 0; i < n_skip; i++) {
-            const char* name = (skip[i]->type == fSERV_Dns ?
+            const char* name = (iter->ismask  ||  skip[i]->type == fSERV_Dns ?
                                 SERV_NameOfInfo(skip[i]) : "");
             SSERV_Info* temp = SERV_CopyInfoEx(skip[i], name);
             if (temp) {
-                temp->time = (TNCBI_Time)(-1);
+                temp->time = SERV_TIME_INFINITE;
                 if (!s_AddSkipInfo(iter, temp)) {
                     free(temp);
                     temp = 0;
@@ -188,10 +193,10 @@ static SERV_ITER s_Open(const char*          service,
             return 0;
         }
     } else {
-        if (net_info->stateless)
-            iter->type |= fSERV_StatelessOnly;
         if (net_info->firewall)
             iter->type |= fSERV_Firewall;
+        if (net_info->stateless)
+            iter->stateless = 1;
         if ((net_info->lb_disable
              ||  !(op = SERV_LBSMD_Open(iter, info, host_info)))  &&
             !(op = SERV_DISPD_Open(iter, net_info, info, host_info))) {
@@ -471,8 +476,8 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
             if (strncasecmp(p, used_server_info,
                             sizeof(used_server_info) - 1) == 0) {
                 p += sizeof(used_server_info) - 1;
-                if (sscanf(p, "%u: %n", &d1, &d2) >= 1 &&
-                    (info = SERV_ReadInfo(p + d2)) != 0) {
+                if (sscanf(p, "%u: %n", &d1, &d2) >= 1  &&
+                    (info = SERV_ReadInfoEx(p + d2, "")) != 0) {
                     if (!s_AddSkipInfo(iter, info))
                         free(info);
                     else
@@ -491,10 +496,10 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
     static const char referrer_header[] = "Referer: "/*standard misspelling*/;
     static const char client_revision[] = "Client-Revision: %hu.%hu\r\n";
     static const char accepted_types[] = "Accepted-Server-Types:";
-    static const char server_count[] = "Server-Count: all\r\n";
+    static const char server_count[] = "Server-Count: ";
     char buffer[128], *str;
-    TSERV_Type type, t;
     size_t buflen, i;
+    TSERV_Type t;
     BUF buf = 0;
 
     /* Put client version number */
@@ -546,11 +551,8 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
         /* Form accepted server types */
         buflen = sizeof(accepted_types) - 1;
         memcpy(buffer, accepted_types, buflen);
-        type = (TSERV_Type) (iter->type & ~(fSERV_Promiscuous |
-                                            fSERV_ReverseDns  |
-                                            fSERV_StatelessOnly));
         for (t = 1; t; t <<= 1) {
-            if (type & t) {
+            if (iter->type & t) {
                 const char* name = SERV_TypeStr((ESERV_Type) t);
                 size_t namelen = strlen(name);
                 if (!namelen || buflen + 1 + namelen + 2 >= sizeof(buffer))
@@ -569,8 +571,12 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
             }
         }
         /* how many server-infos for the dispatcher to send to us */
-        if (iter->pref) {
-            if (!BUF_Write(&buf, server_count, sizeof(server_count) - 1)) {
+        if (iter->ismask  ||  iter->pref) {
+            if (!BUF_Write(&buf, server_count, sizeof(server_count) - 1)  ||
+                !BUF_Write(&buf,
+                           iter->ismask ? "10" : "ALL",\
+                           iter->ismask ?   2  :    3)                    ||
+                !BUF_Write(&buf, "\r\n", 2)) {
                 BUF_Destroy(buf);
                 return 0;
             }
@@ -579,11 +585,15 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
         s_SkipSkip(iter);
         /* Put all the rest into rejection list */
         for (i = 0; i < iter->n_skip; i++) {
+            /* NB: all skip infos are now kept with names (perhaps, empty) */
+            const char* name = SERV_NameOfInfo(iter->skip[i]);
             if (!(str = SERV_WriteInfo(iter->skip[i])))
                 break;
             buflen = sprintf(buffer, "Skip-Info-%u: ", (unsigned) i + 1); 
-            assert(buflen < sizeof(buffer)-1);
+            assert(buflen < sizeof(buffer) - 1);
             if (!BUF_Write(&buf, buffer, buflen) ||
+                (name  &&  !BUF_Write(&buf, name, strlen(name))) ||
+                (name  &&  *name  &&  !BUF_Write(&buf, " ", 1)) ||
                 !BUF_Write(&buf, str, strlen(str)) ||
                 !BUF_Write(&buf, "\r\n", 2)) {
                 free(str);
@@ -638,6 +648,10 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.71  2005/12/23 18:13:19  lavr
+ * New bitfields in SERV_ITER (corresponding to special service flags)
+ * Better control of Server-Count in SERV_Print()
+ *
  * Revision 6.70  2005/12/14 21:29:46  lavr
  * SERV_GetInfoP() and SERV_OpenP():  New signatures (changed parameteres)
  * SERV_CurrentName(), s_Open(): to use new SERV_NameOfInfo()
