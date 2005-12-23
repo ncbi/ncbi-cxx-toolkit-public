@@ -719,7 +719,7 @@ static SSERV_Info* s_Firewall_Read(const char** str, size_t add)
     ESERV_Type type;
     const char* s;
     if (!(s = SERV_ReadType(*str, &type)))
-        type = (ESERV_Type) fSERV_Any;
+        type = (ESERV_Type) 0/*fSERV_Any*/;
     else
         *str = s;
     return SERV_CreateFirewallInfoEx(0, 0, type, add);
@@ -914,6 +914,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2005/12/23 18:14:04  lavr
+ * Use fSERV_Any explicitly (instead of cast 0)
+ *
  * Revision 6.58  2005/12/14 21:25:24  lavr
  * Name parameter for SERV_ReadInfoEx() (instead of "add")
  * +SERV_CopyInfoEx(), +SERV_NameOfInfo() [+u.dns.name use]
