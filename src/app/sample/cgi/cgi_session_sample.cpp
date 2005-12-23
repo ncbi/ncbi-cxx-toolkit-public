@@ -43,7 +43,7 @@ using namespace ncbi;
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CCgiSampleApplication::
+//  CCgiSessionSampleApplication::
 //
 
 class CCgiSessionSampleApplication : public CCgiApplication
@@ -53,14 +53,11 @@ public:
     virtual int  ProcessRequest(CCgiContext& ctx);
 
 protected:
+    // Return a CGI session storage
     virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters&) const;
 
 private:
-    // These 2 functions just demonstrate the use of cmd-line argument parsing
-    // mechanism in CGI application -- for the processing of both cmd-line
-    // arguments and HTTP entries
     void x_SetupArgs(void);
-    void x_LookAtArgs(void);
 };
 
 
@@ -78,6 +75,7 @@ ICgiSessionStorage*
 CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params) const
 {
     static auto_ptr<CCgiSession_Netcache> session(new CCgiSession_Netcache(GetConfig()));
+    // Specify that the application takes care of CGI session storage
     params.SetImplOwnership(eNoOwnership);
     return session.get();
 }
@@ -90,9 +88,6 @@ struct SSessionVarTableCtx
     {
         m_CurName = m_Names.begin();
     }
-    ~SSessionVarTableCtx() 
-    {
-    }
 
     const CCgiSession& m_Session;
     typedef CCgiSession::TNames TNames;
@@ -100,8 +95,8 @@ struct SSessionVarTableCtx
     TNames::const_iterator m_CurName;          
 };
 
-CNCBINode* s_SessionVarRowHook(CHTMLPage* page, 
-                               SSessionVarTableCtx* ctx)
+static CNCBINode* s_SessionVarRowHook(CHTMLPage* page, 
+                                      SSessionVarTableCtx* ctx)
 {
     if (ctx->m_CurName == ctx->m_Names.end())
         return 0;
@@ -120,15 +115,16 @@ CNCBINode* s_SessionVarRowHook(CHTMLPage* page,
 
 int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
 {
-    // Parse, verify, and look at cmd-line and CGI parameters via "CArgs"
-    // (optional)
-    x_LookAtArgs();
 
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
 
+    // get CGI session. The framework will try to a session id 
+    // in CGI request cookies (if a session cookie is enabled) or
+    // in request's entries. If session id is not found, then a new
+    // session is created.
     CCgiSession& session = request.GetSession();
     
     string modify_attr_name;
@@ -151,8 +147,11 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
         bool is_value = false;
         string avalue = request.GetEntry("avalue", &is_value);
         if ( is_name && is_value && !aname.empty()) {
-            CNcbiOstream& os = session.GetAttrOStream(aname);
+            // Set a value of the session variable through an
+            // ouput stream.
+            CNcbiOstream& os = session.GetAttrOStream(aname);        
             os << avalue;
+            // or for a string value SetAttribute method can be used
             //session.SetAttribute(aname, avalue);
         } 
         CCgiSession::TNames names( session.GetAttributeNames() );
@@ -165,16 +164,19 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
                     session.RemoveAttribute(*it);
                 else if (avalue == "Modify") {
                     modify_attr_name = *it;
+                    // get a string value from the session variable
                     modify_attr_value = session.GetAttribute(modify_attr_name);
+                    // or an input stream can be used
+                    // CNcbiIstream& is = session.GetAttrIStream(modify_attr_name);
+                    // getline(is,modify_attr_value);
                 }
             }
         }
     }
 
 
-    // Create a HTML page (using template HTML file "cgi_sample.html")
+    // Create a HTML page (using template HTML file "cgi_session_sample.html")
     auto_ptr<CHTMLPage> page;
-    auto_ptr<SSessionVarTableCtx> session_ctx;
     try {
         const string& html = GetConfig().GetString("html", "template",
                                                    "cgi_session_sample.html");
@@ -189,6 +191,7 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
     }
  
 
+    auto_ptr<SSessionVarTableCtx> session_ctx;
     try {        
         if (session.GetStatus() != CCgiSession::eDeleted) {
             session_ctx.reset(new SSessionVarTableCtx(session));
@@ -198,15 +201,16 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
 
             page->AddTagMap("SESSION_ID", 
                             new CHTMLPlainText(session.GetId()));
+            // if we want to pass session Id through a query string
             string cmd = "?" + session.GetSessionIdName() + "=" 
                 + session.GetId();
+            string surl = ctx.GetSelfURL() + cmd;
+            page->AddTagMap("SELF_URL", new CHTMLPlainText(surl));
 
             page->AddTagMap("ATTR_NAME", 
                             new CHTMLPlainText(modify_attr_name));
             page->AddTagMap("ATTR_VALUE", 
                             new CHTMLPlainText(modify_attr_value));
-            string surl = ctx.GetSelfURL() + cmd;
-            page->AddTagMap("SELF_URL", new CHTMLPlainText(surl));
         } else {
             page->AddTagMap("SESSION_ID", 
                             new CHTMLPlainText("Session has been deleted"));
@@ -243,44 +247,10 @@ void CCgiSessionSampleApplication::x_SetupArgs()
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "CGI sample application");
+                              "CGI session sample application");
         
-    arg_desc->AddOptionalKey("message",
-                             "message",
-                             "Message passed to CGI application",
-                             CArgDescriptions::eString,
-                             CArgDescriptions::fAllowMultiple);
-
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
-}
-
-
-void CCgiSessionSampleApplication::x_LookAtArgs()
-{
-    // You can catch CArgException& here to process argument errors,
-    // or you can handle it in OnException()
-    const CArgs& args = GetArgs();
-
-    // "args" now contains both command line arguments and the arguments 
-    // extracted from the HTTP request
-
-    if ( args["message"] ) {
-        // get the first "message" argument only...
-        const string& m = args["message"].AsString();
-        (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
-
-        // ...or get the whole list of "message" arguments
-        const CArgValue::TStringArray& values = 
-            args["message"].GetStringList();
-
-        ITERATE(CArgValue::TStringArray, it, values) {
-            // do something with the message
-            // (void) it->c_str(); // eg
-        } 
-    } else {
-        // no "message" argument is present
-    }
 }
 
 
@@ -300,6 +270,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/12/23 14:11:26  didenko
+ * Cosmetics
+ * Added same comments
+ *
  * Revision 1.4  2005/12/20 21:17:27  didenko
  * Cosmetics
  *
@@ -312,79 +286,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 1.1  2005/12/15 18:22:31  didenko
  * Added cgi session sample
- *
- * Revision 1.17  2005/05/31 13:45:02  didenko
- * Removed obsolete cgi2grid.[hc]pp files
- *
- * Revision 1.16  2005/04/28 17:40:53  didenko
- * Added CGI2GRID_ComposeHtmlPage(...) fuctions
- *
- * Revision 1.15  2005/03/10 17:57:00  vakatov
- * Move the CArgs demo code to separate methods to avoid cluttering the
- * mainstream demo code
- *
- * Revision 1.14  2005/02/25 17:30:34  didenko
- * Add (inhouse-only, thus commented out) example of code to determine
- * if the client is local (i.e. Web request came from inside NCBI)
- *
- * Revision 1.13  2005/02/15 19:38:07  vakatov
- * Use CCgiContext::GetSelfURL() for automagic back-referencing
- *
- * Revision 1.12  2004/12/27 20:36:05  vakatov
- * Eliminate "unused var" warnings.
- * Accept GetArgs()' result by ref -- rather than by value
- *
- * Revision 1.11  2004/12/08 12:50:36  kuznets
- * Case sensitivity turned off
- *
- * Revision 1.10  2004/12/03 14:38:40  kuznets
- * Use multiple args
- *
- * Revision 1.9  2004/12/02 14:25:26  kuznets
- * Show how to use multiple key arguments (list of values)
- *
- * Revision 1.8  2004/12/01 14:10:37  kuznets
- * Example corrected to show how to use app arguments for CGI parameters
- *
- * Revision 1.7  2004/11/19 22:51:56  vakatov
- * Rely on the default mechanism for searching config.file (so plain CGI should
- * not find any).
- *
- * Revision 1.6  2004/11/19 16:24:46  kuznets
- * Added FastCGI configuration
- *
- * Revision 1.5  2004/08/04 14:45:22  vakatov
- * In Init() -- don't forget to call CCgiApplication::Init()
- *
- * Revision 1.4  2004/05/21 21:41:41  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.3  2003/12/04 23:03:37  vakatov
- * Warn about the missing conf.file
- *
- * Revision 1.2  2003/06/18 14:55:42  vakatov
- * Mention that '.cgi' extension is needed on most systems for the
- * executable to be recognized as CGI.
- *
- * Revision 1.1  2002/04/18 16:05:10  ucko
- * Add centralized tree for sample apps.
- *
- * Revision 1.5  2002/04/16 19:24:42  vakatov
- * Do not use <test/test_assert.h>;  other minor modifications.
- *
- * Revision 1.4  2002/04/16 18:47:08  ivanov
- * Centralize threatment of assert() in tests.
- * Added #include <test/test_assert.h>. CVS log moved to end of file.
- *
- * Revision 1.3  2001/11/19 15:20:18  ucko
- * Switch CGI stuff to new diagnostics interface.
- *
- * Revision 1.2  2001/10/29 15:16:13  ucko
- * Preserve default CGI diagnostic settings, even if customized by app.
- *
- * Revision 1.1  2001/10/04 18:17:54  ucko
- * Accept additional query parameters for more flexible diagnostics.
- * Support checking the readiness of CGI input and output streams.
  *
  * ===========================================================================
  */
