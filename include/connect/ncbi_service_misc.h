@@ -50,8 +50,8 @@ extern "C" {
 
 /* Set message hook procedure for messages originating from NCBI network
  * dispatcher (if used).  Any hook will be called not more than once.
- * If no hook is installed, warning message will be generated in the
- * standard log file, not more than once.
+ * Until no hook is installed and exactly one message is caught, a warning
+ * will be generated in the standard log file upon each message acceptance.
  */
 
 typedef void (*FDISP_MessageHook)(const char* message);
@@ -82,6 +82,9 @@ extern NCBI_XCONNECT_EXPORT ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2005/12/23 18:08:02  lavr
+ * FDISP_MessageHook documented better
+ *
  * Revision 1.1  2005/05/04 16:13:14  lavr
  * Initial revision
  *
