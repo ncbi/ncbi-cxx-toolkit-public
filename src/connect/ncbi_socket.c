@@ -210,7 +210,7 @@ typedef int TSOCK_Handle;
 #  endif /*SHUT_RDWR*/
 #  define SOCK_SHUTDOWN_RDWR  SHUT_RDWR
 #  ifndef INADDR_NONE
-#    define INADDR_NONE       (unsigned int)(-1)
+#    define INADDR_NONE       ((unsigned int)(-1))
 #  endif /*INADDR_NONE*/
 #  define SOCK_STRERROR(err)  s_StrError(err)
 /* NCBI_OS_UNIX */
@@ -4451,6 +4451,9 @@ unsigned int SOCK_GetLoopbackAddress(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.181  2005/12/23 18:11:13  lavr
+ * Safety parentheses in INADDR_NONE macro
+ *
  * Revision 6.180  2005/07/25 15:03:45  rsmith
  * take out special SOCK_socklen_t case for MAC_OS since changes to mitsock make it unnecessary.
  *
