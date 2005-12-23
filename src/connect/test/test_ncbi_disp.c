@@ -43,7 +43,7 @@
 int main(int argc, const char* argv[])
 {
     const char* service = argc > 1 ? argv[1] : "bounce";
-    int/*bool*/ local = argc > 2;
+    SConnNetInfo* net_info;
     const SSERV_Info* info;
     int n_found = 0;
     SERV_ITER iter;
@@ -52,15 +52,15 @@ int main(int argc, const char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    CORE_LOGF(eLOG_Note, ("Looking for service `%s' (%s)", service,
-                          local ? "locally" : "randomly"));
+    CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
+    net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
-    if ((local &&
-         (iter = SERV_OpenP(service, fSERV_Any,
-                            SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-                            0/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                            0/*external*/, 0/*arg*/, 0/*val*/)) != 0) ||
-        (!local && (iter = SERV_OpenSimple(service)) != 0)) {
+    iter = SERV_OpenP(service, fSERV_Any,
+                      SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+                      net_info, 0/*skip*/, 0/*n_skip*/,
+                      0/*external*/, 0/*arg*/, 0/*val*/);
+    ConnNetInfo_Destroy(net_info);
+    if (iter) {
         HOST_INFO hinfo;
         CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
         while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
@@ -128,6 +128,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2005/12/23 18:20:33  lavr
+ * Use new SERV_OpenP() for iterator opening (and thus allow service wildcards)
+ *
  * Revision 6.19  2005/12/14 21:45:39  lavr
  * Adjust to use new SERV_OpenP() prototype
  *
