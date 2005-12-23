@@ -811,7 +811,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     xxx->name     = 0;
     xxx->service  = SERV_ServiceName(service);
     xxx->net_info = x_net_info;
-    if (types & fSERV_StatelessOnly)
+    if (types & fSERV_Stateless)
         xxx->net_info->stateless = 1/*true*/;
     if (types & fSERV_Firewall)
         xxx->net_info->firewall = 1/*true*/;
@@ -854,6 +854,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.65  2005/12/23 18:12:32  lavr
+ * fSERV_StatelessOnly -> fSERV_Stateless
+ *
  * Revision 6.64  2005/10/26 14:44:59  lavr
  * Insure service name appears in URLs for HTTP services
  *
