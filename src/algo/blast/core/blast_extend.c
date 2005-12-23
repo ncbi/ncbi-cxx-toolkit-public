@@ -801,7 +801,7 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
                    Int4** matrix, Blast_ExtendWord* ewp, 
                    BlastInitHitList* init_hitlist)
 {
-   Int4 i, index;
+   Int4 index;
    Uint4 query_length = query->length;
    Uint4 subject_length = subject->length;
    Uint1* q_start = query->sequence;
@@ -963,7 +963,7 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
                           Int4** matrix, Blast_ExtendWord* ewp, 
                           BlastInitHitList* init_hitlist)
 {
-   Int4 i, index;
+   Int4 index;
    Uint4 query_length = query->length;
    Uint4 subject_length = subject->length;
    Uint1* q_start = query->sequence;
