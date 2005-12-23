@@ -222,8 +222,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 /// @param qinfo BlastQueryInfo structure to obtain context information [in]
 /// @param seqblk Structure to save sequence data, allocated in this 
 /// function [out]
-/// @param blast_msg Structure to save warnings/errors, allocated in this
-/// function [out]
+/// @param messages object to save warnings/errors for all queries [out]
 /// @param prog program type from the CORE's point of view [in]
 /// @param strand_opt Unless the strand option is set to single strand, the 
 /// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
@@ -368,6 +367,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2005/12/23 16:27:25  camacho
+* doxygen fixes
+*
 * Revision 1.55  2005/12/16 20:51:18  camacho
 * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
 *

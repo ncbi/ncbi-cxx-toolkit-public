@@ -123,8 +123,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
 /// @param qinfo BlastQueryInfo structure to obtain context information [in]
 /// @param seqblk Structure to save sequence data, allocated in this 
 /// function [out]
-/// @param blast_msg Structure to save warnings/errors, allocated in this
-/// function [out]
+/// @param messages object to save warnings/errors for all queries [out]
 /// @param prog program type from the CORE's point of view [in]
 /// @param strand_opt Unless the strand option is set to single strand, the 
 /// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
