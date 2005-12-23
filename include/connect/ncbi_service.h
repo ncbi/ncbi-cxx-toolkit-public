@@ -91,11 +91,16 @@ extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenSimple
 
 /* Special "type" bit values that may be combined with server types */
 typedef enum {
-    /* Do reverse DNS translation of the would-be resulting info */
-    fSERV_ReverseDns  = 0x40000000,
     /* Allows to get even dead services (but not off ones!) */
-    fSERV_Promiscuous = 0x20000000 /* also: all preference params are ignored*/
+    fSERV_Promiscuous = 0x40000000,  /* NB: all preference params are ignored*/
+    /* Do reverse DNS translation of the would-be resulting info */
+    fSERV_ReverseDns  = 0x20000000,
+    /* Only stateless servers should be returned */
+    fSERV_Stateless   = 0x10000000,
+    fSERV_All         = 0x0000FFFF,
+    fSERV_Any         = 0
 } ESERV_SpecialType;
+typedef unsigned int TSERV_Type;     /* Bitwise OR of ESERV_[Special]Type    */
 
 /* Simplified (uncluttered) type to use in 'skip' parameter below */
 typedef const SSERV_Info* SSERV_InfoCPtr;
@@ -208,6 +213,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.44  2005/12/23 18:07:34  lavr
+ * Special service flags moved here, values reassigned
+ *
  * Revision 6.43  2005/12/14 22:03:53  lavr
  * ESERV_SpecialType reinstated public
  *
