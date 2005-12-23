@@ -126,7 +126,7 @@ NetCache_ConfigureWithLB(
                                  SERV_LOCALHOST, net_info);
 #else
     SERV_ITER srv_it = SERV_OpenP(service_name.c_str(), fSERV_Any,
-                                  SERV_LOCALHOST, 0/*port*/, 90.0,
+                                  SERV_LOCALHOST, 0/*port*/, 90.0/*pref*/,
                                   net_info, 0/*skip*/, 0/*n_skip*/,
                                   0/*external*/, 0/*arg*/, 0/*val*/);
 #endif
@@ -514,6 +514,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/12/23 18:20:04  lavr
+ * Document preference in SERV_OpenP() call
+ *
  * Revision 1.30  2005/12/14 22:02:48  lavr
  * ESERV_SpecialType reinstated public
  *
