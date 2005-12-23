@@ -41,7 +41,7 @@
 #define HTTP_DISP_MESSAGE       "NCBI-Message:"
 #define DISPATCHER_CFGPATH      "/var/etc/lbsmd/"
 #define DISPATCHER_CFGFILE      "servrc.cfg"
-#define DISP_PROTOCOL_VERSION   "1.0"
+#define DISP_PROTOCOL_VERSION   "1.1"
 #define DISPD_MESSAGE_FILE      ".dispd.msg"
 
 
@@ -61,6 +61,9 @@ typedef unsigned int ticket_t;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2005/12/23 18:09:01  lavr
+ * Bump minor version number in DISP_PROTOCOL_VERSION
+ *
  * Revision 6.10  2005/04/20 18:13:10  lavr
  * extern "C" limited to code only (not preprocessor macros)
  *
