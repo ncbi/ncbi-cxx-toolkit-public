@@ -45,37 +45,79 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
-
-/// NetCache based blob storage
+///////////////////////////////////////////////////////////////////////////////
+///
+/// CBlobStorage_NetCache ---
+/// Implementaion of IBlobStorage interface based on NetCache service
 ///
 class NCBI_XCONNECT_EXPORT CBlobStorage_NetCache : public IBlobStorage
 {
 public:
-    
+
+    /// Specifies if blobs should be cached on a local fs
     enum ECacheFlags {
-        eCacheInput = 0x1,
-        eCacheOutput = 0x2,
+        eCacheInput = 0x1,  ///< Cache input streams
+        eCacheOutput = 0x2, ///< Cache ouput streams
         eCacheBoth = eCacheInput | eCacheOutput
     };
     typedef unsigned int TCacheFlags;
 
+    /// Create Blob Storage 
+    /// @param[in] nc_client
+    ///  NetCache client. Session Storage will delete it when
+    ///  it goes out of scope.
+    /// @param[in] flags
+    ///  Specifies if blobs should be cached on a local fs
+    ///  before they are accessed for read/write.
+    /// @param[in[ temp_dir
+    ///  Specifies where on a local fs those blobs will be cached
     CBlobStorage_NetCache(CNetCacheClient* nc_client, 
                           TCacheFlags flags = 0x0,
                           const string& temp_dir = ".");
 
     virtual ~CBlobStorage_NetCache(); 
 
+    /// Get a blob content as a string
+    ///
+    /// @param[in] blob_key
+    ///    Blob key to read
     virtual string        GetBlobAsString(const string& data_id);
 
+    /// Get an input stream to a blob
+    ///
+    /// @param[in] blob_key
+    ///    Blob key to read
+    /// @param[out] blob_size
+    ///    if blob_size if not NULL the size of a blob is retured
+    /// @param[in] lock_mode
+    ///    Blob locking mode
     virtual CNcbiIstream& GetIStream(const string& data_id,
                                      size_t* blob_size = 0,
                                      ELockMode lock_mode = eLockWait);
+
+    /// Get an output stream to a blob
+    ///
+    /// @param[in,out] blob_key
+    ///    Blob key to read. If a blob with a given key does not exist
+    ///    an key of a newly create blob will be assigned to blob_key
+    /// @param[in] lock_mode
+    ///    Blob locking mode
     virtual CNcbiOstream& CreateOStream(string& data_id,
                                         ELockMode lock_mode = eLockNoWait);
 
+    /// Create an new blob
+    /// 
+    /// @return 
+    ///     Newly create blob key
     virtual string CreateEmptyBlob();
+
+    /// Delete a blob
+    ///
+    /// @param[in] blob_key
+    ///    Blob key to read
     virtual void DeleteBlob(const string& data_id);
     
+    /// Close all streams and connections.
     virtual void Reset();
 
 public:
@@ -167,6 +209,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/12/23 15:22:35  didenko
+ * Added comments
+ *
  * Revision 1.1  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
