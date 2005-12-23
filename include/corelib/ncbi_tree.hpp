@@ -85,6 +85,8 @@ public:
     typedef list<const TTreeType*>              TConstNodeList;
     typedef typename TNodeList::iterator        TNodeList_I;
     typedef typename TNodeList::const_iterator  TNodeList_CI;
+    typedef typename TNodeList::reverse_iterator        TNodeList_RI;
+    typedef typename TNodeList::const_reverse_iterator  TNodeList_CRI;
     typedef list<TKeyType>                      TKeyList;
 
     /// Tree node construction
@@ -133,6 +135,18 @@ public:
 
     /// Return last iterator on subnode list
     TNodeList_I SubNodeEnd(void) { return m_Nodes.end(); }
+
+    /// Return first const reverse iterator on subnode list
+    TNodeList_CRI SubNodeRBegin(void) const { return m_Nodes.rbegin(); }
+
+    /// Return first reverse iterator on subnode list
+    TNodeList_RI SubNodeRBegin(void) { return m_Nodes.rbegin(); }
+
+    /// Return last const reverse iterator on subnode list
+    TNodeList_CRI SubNodeREnd(void) const { return m_Nodes.rend(); }
+
+    /// Return last reverse iterator on subnode list
+    TNodeList_RI SubNodeREnd(void) { return m_Nodes.rend(); }
 
     /// Return node's value
     const TValue& GetValue(void) const { return m_Value; }
@@ -856,6 +870,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/12/23 15:13:41  yazhuk
+ * Added reverse iterators
+ *
  * Revision 1.42  2005/11/08 20:29:31  grichenk
  * Simplified CPairNodeKeyGetter template arguments
  *
