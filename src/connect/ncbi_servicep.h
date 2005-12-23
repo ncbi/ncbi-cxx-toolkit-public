@@ -58,7 +58,7 @@ typedef struct {
  */
 struct SSERV_IterTag {
     const char*       name;  /* requested service name, private storage      */
-    TSERV_Type        type;  /* requested server type(s)                     */
+    TSERV_Type        type;  /* requested server type(s), specials stripped  */
     unsigned int      host;  /* preferred host to select, network b.o.       */
     unsigned short    port;  /* preferred port to select, host b.o.          */
     double            pref;  /* range [0..100] %%                            */
@@ -70,7 +70,10 @@ struct SSERV_IterTag {
     const SSERV_VTable* op;  /* table of virtual functions                   */
 
     void*             data;  /* private data field                           */
-    unsigned        mask:1;  /* whether the name is to be treated as a mask  */
+    unsigned      ismask:1;  /* whether the name is to be treated as a mask  */
+    unsigned promiscuous:1;  /* as taken from..                              */
+    unsigned reverse_dns:1;  /*            ..types passed..                  */
+    unsigned   stateless:1;   /*                       .. in SERV_*() calls  */
     unsigned    external:1;  /* whether this is an external request          */
     const char*        arg;  /* argument to match; original pointer          */
     size_t          arglen;  /* == 0 for NULL pointer above                  */
@@ -114,7 +117,10 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
  const char*          val            /* environment variable value to match  */
  );
 
-/* same as the above but creates an iterator to get the servers one by one */
+/* same as the above but creates an iterator to get the servers one by one 
+ * CAUTION:  Special requirement for "skip" infos in case of a wildcard
+ * service is requested, is that they _must_ be created having a name attached
+ * (perhaps, empty ""), like with SERV_ReadInfoEx() or SERV_CopyInfoEx() */
 extern NCBI_XCONNECT_EXPORT SERV_ITER SERV_OpenP
 (const char*          service,       /* service name (can be a mask)         */
  TSERV_Type           types,
@@ -188,6 +194,10 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2005/12/23 18:12:15  lavr
+ * New bitfields in SERV_ITER (corresponding to special service flags)
+ * SERV_OpenP() special requirements for "skip" entries documented
+ *
  * Revision 6.35  2005/12/14 22:04:01  lavr
  * ESERV_SpecialType reinstated public
  *
