@@ -48,6 +48,17 @@ CCgiSession_NetCache::CCgiSession_NetCache(const IRegistry& conf)
     m_Storage.reset(factory.CreateInstance());
 }
 
+CCgiSession_NetCache::CCgiSession_NetCache(CNetCacheClient* nc_client, 
+                                           CBlobStorage_NetCache::TCacheFlags flags,
+                                           const string& temp_dir)
+    : m_Dirty(false), m_Loaded(false)
+{
+    m_Storage.reset(new CBlobStorage_NetCache(nc_client,
+                                              flags,
+                                              temp_dir));
+}
+
+
 CCgiSession_NetCache::~CCgiSession_NetCache()
 {
     try {
@@ -203,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/23 15:03:29  didenko
+ * Added one more constructor
+ *
  * Revision 1.6  2005/12/23 14:25:26  didenko
  * Renamed CCgiSession_Netcache to CCgiSession_NetCache
  *
