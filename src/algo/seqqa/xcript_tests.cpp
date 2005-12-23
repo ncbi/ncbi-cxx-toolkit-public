@@ -763,15 +763,29 @@ CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
 static void s_Code_break(const CSeq_id& id, const CSeqTestContext* ctx,
                          CFeat_CI feat_iter, CSeq_test_result& result)
 {
-    int count;
+    int count, not_start_not_sec_count;
     if (feat_iter->GetData().GetCdregion().IsSetCode_break()) {
         count = feat_iter->GetData().GetCdregion().GetCode_break().size();
+        not_start_not_sec_count = 0;
+        ITERATE (CCdregion::TCode_break, code_break,
+                 feat_iter->GetData().GetCdregion().GetCode_break()) {
+            TSeqPos pos = CodeBreakPosInCds(**code_break,
+                                            feat_iter->GetOriginalFeature(),
+                                            ctx->GetScope());
+            if (pos != 0 && !s_IsSelenocysteine(**code_break)) {
+                ++not_start_not_sec_count;
+            }
+        }
     } else {
         count = 0;
+        not_start_not_sec_count = 0;
     }
 
     result.SetOutput_data()
         .AddField("code_break_count", count);
+    result.SetOutput_data()
+        .AddField("code_break_not_start_not_sec_count",
+                  not_start_not_sec_count);
 }
 
 
@@ -790,6 +804,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/12/23 13:58:00  jcherry
+ * Added version of in-frame stop test that ignores marked selenocysteines
+ * and version of Code-break count that ignores sec and start codons
+ *
  * Revision 1.17  2005/12/22 17:30:15  jcherry
  * Added test for non-selenocysteine inframe stop (based on Code-break)
  *
