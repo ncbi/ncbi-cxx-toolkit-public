@@ -74,7 +74,7 @@ void CCgiSessionSampleApplication::Init()
 ICgiSessionStorage* 
 CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params) const
 {
-    static auto_ptr<CCgiSession_Netcache> session(new CCgiSession_Netcache(GetConfig()));
+    static auto_ptr<CCgiSession_NetCache> session(new CCgiSession_NetCache(GetConfig()));
     // Specify that the application takes care of CGI session storage
     params.SetImplOwnership(eNoOwnership);
     return session.get();
@@ -270,6 +270,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/12/23 14:25:26  didenko
+ * Renamed CCgiSession_Netcache to CCgiSession_NetCache
+ *
  * Revision 1.5  2005/12/23 14:11:26  didenko
  * Cosmetics
  * Added same comments

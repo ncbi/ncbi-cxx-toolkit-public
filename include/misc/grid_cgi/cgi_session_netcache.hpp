@@ -44,12 +44,12 @@ BEGIN_NCBI_SCOPE
 class IRegistry;
 class IBlobStorage;
 
-class NCBI_XGRIDCGI_EXPORT CCgiSession_Netcache : public ICgiSessionStorage
+class NCBI_XGRIDCGI_EXPORT CCgiSession_NetCache : public ICgiSessionStorage
 {
 public:
-    CCgiSession_Netcache(const IRegistry&);
+    CCgiSession_NetCache(const IRegistry&);
 
-    virtual ~CCgiSession_Netcache();
+    virtual ~CCgiSession_NetCache();
 
     virtual string CreateNewSession();
     virtual bool LoadSession(const string& sessionid);
@@ -80,8 +80,8 @@ private:
     
     void x_CheckStatus() const;
 
-    CCgiSession_Netcache(const CCgiSession_Netcache&);
-    CCgiSession_Netcache& operator=(const CCgiSession_Netcache&);
+    CCgiSession_NetCache(const CCgiSession_NetCache&);
+    CCgiSession_NetCache& operator=(const CCgiSession_NetCache&);
 };
 
 class CCgiSessionNCException : public CException
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/12/23 14:25:26  didenko
+ * Renamed CCgiSession_Netcache to CCgiSession_NetCache
+ *
  * Revision 1.4  2005/12/20 20:36:02  didenko
  * Comments cosmetics
  * Small interace changes

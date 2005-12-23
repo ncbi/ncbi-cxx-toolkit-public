@@ -41,21 +41,21 @@
 
 BEGIN_NCBI_SCOPE
 
-CCgiSession_Netcache::CCgiSession_Netcache(const IRegistry& conf) 
+CCgiSession_NetCache::CCgiSession_NetCache(const IRegistry& conf) 
     : m_Dirty(false), m_Loaded(false)
 {
     CBlobStorageFactory_NetCache factory(conf);
     m_Storage.reset(factory.CreateInstance());
 }
 
-CCgiSession_Netcache::~CCgiSession_Netcache()
+CCgiSession_NetCache::~CCgiSession_NetCache()
 {
     try {
         Reset();
     } catch (...) {}
 }
 
-string CCgiSession_Netcache::CreateNewSession()
+string CCgiSession_NetCache::CreateNewSession()
 {
     m_Blobs.clear();
     m_SessionId.erase();
@@ -66,7 +66,7 @@ string CCgiSession_Netcache::CreateNewSession()
 }
 
 
-bool CCgiSession_Netcache::LoadSession(const string& sessionid)
+bool CCgiSession_NetCache::LoadSession(const string& sessionid)
 {
     m_Blobs.clear();
     m_SessionId.erase();
@@ -90,7 +90,7 @@ bool CCgiSession_Netcache::LoadSession(const string& sessionid)
     m_Loaded = true;
     return m_Loaded;
 }
-CCgiSession::TNames CCgiSession_Netcache::GetAttributeNames() const
+CCgiSession::TNames CCgiSession_NetCache::GetAttributeNames() const
 {
     TNames names;
     x_CheckStatus();
@@ -100,7 +100,7 @@ CCgiSession::TNames CCgiSession_Netcache::GetAttributeNames() const
     return names;
 }
 
-CNcbiIstream& CCgiSession_Netcache::GetAttrIStream(const string& name, 
+CNcbiIstream& CCgiSession_NetCache::GetAttrIStream(const string& name, 
                                                    size_t* size)
 {
     x_CheckStatus();
@@ -114,7 +114,7 @@ CNcbiIstream& CCgiSession_Netcache::GetAttrIStream(const string& name,
     }
     return m_Storage->GetIStream(i->second, size);
 }
-CNcbiOstream& CCgiSession_Netcache::GetAttrOStream(const string& name)
+CNcbiOstream& CCgiSession_NetCache::GetAttrOStream(const string& name)
 {
     x_CheckStatus();
     Reset();
@@ -123,7 +123,7 @@ CNcbiOstream& CCgiSession_Netcache::GetAttrOStream(const string& name)
     return m_Storage->CreateOStream(blobid);
 }
 
-void CCgiSession_Netcache::SetAttribute(const string& name, const string& value)
+void CCgiSession_NetCache::SetAttribute(const string& name, const string& value)
 {
     x_CheckStatus();
     Reset();
@@ -133,10 +133,10 @@ void CCgiSession_Netcache::SetAttribute(const string& name, const string& value)
     os << value;
     Reset();
 }
-string CCgiSession_Netcache::GetAttribute(const string& name) const
+string CCgiSession_NetCache::GetAttribute(const string& name) const
 {
     x_CheckStatus();
-    const_cast<CCgiSession_Netcache*>(this)->Reset();
+    const_cast<CCgiSession_NetCache*>(this)->Reset();
     TBlobs::const_iterator i = m_Blobs.find(name);
     if (i == m_Blobs.end()) {
         return "";
@@ -144,7 +144,7 @@ string CCgiSession_Netcache::GetAttribute(const string& name) const
     return m_Storage->GetBlobAsString(i->second);
 }
 
-void CCgiSession_Netcache::RemoveAttribute(const string& name)
+void CCgiSession_NetCache::RemoveAttribute(const string& name)
 {
      x_CheckStatus();
     TBlobs::iterator i = m_Blobs.find(name);
@@ -157,7 +157,7 @@ void CCgiSession_Netcache::RemoveAttribute(const string& name)
     m_Dirty = true;
     Reset();
 }
-void CCgiSession_Netcache::DeleteSession()
+void CCgiSession_NetCache::DeleteSession()
 {
     x_CheckStatus();
     Reset();
@@ -169,7 +169,7 @@ void CCgiSession_Netcache::DeleteSession()
 }
 
 
-void CCgiSession_Netcache::Reset()
+void CCgiSession_NetCache::Reset()
 {
     if (!m_Loaded) return;
     m_Storage->Reset();
@@ -188,7 +188,7 @@ void CCgiSession_Netcache::Reset()
 }
 
 
-void CCgiSession_Netcache::x_CheckStatus() const
+void CCgiSession_NetCache::x_CheckStatus() const
 {
     if (!m_Loaded)
         NCBI_THROW(CCgiSessionNCException,
@@ -203,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/12/23 14:25:26  didenko
+ * Renamed CCgiSession_Netcache to CCgiSession_NetCache
+ *
  * Revision 1.5  2005/12/20 20:36:02  didenko
  * Comments cosmetics
  * Small interace changes
