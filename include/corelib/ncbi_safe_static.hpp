@@ -65,7 +65,7 @@ public:
         eLifeSpan_Short    = -10000,
         eLifeSpan_Normal   = 0,
         eLifeSpan_Long     = 10000,
-        eLifeSpan_Longest  = 20000,
+        eLifeSpan_Longest  = 20000
     };
     // Constructs a life span object from basic level and adjustment.
     // Generates warning (and assertion in debug mode) if the adjustment
@@ -436,6 +436,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/12/23 15:30:07  ivanov
+ * Removed extra comma in ELifeSpan enum declaration
+ *
  * Revision 1.14  2005/12/14 17:12:41  grichenk
  * Added life span parameter for safe static objects.
  *
