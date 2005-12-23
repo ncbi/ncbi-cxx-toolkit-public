@@ -111,8 +111,6 @@ public:
         eFormat,     //< Format or encoding
         eData,       //< Syntaxically correct but contains odd data (from the
                      //< point of view of particular CGI application)
-        eSessionImpNotRegistred,
-        eSessionDoesnotExist
     };
     virtual const char* GetErrCodeString(void) const
     {
@@ -252,7 +250,7 @@ class CCgiSessionException : public CCgiException
 {
 public:
     enum EErrCode {
-        eSessionId,     ///< SessionId is not spesified
+        eSessionId,     ///< SessionId is not specified
         eImplNotSet,    ///< Session implementaion is not set
         eDeleted,       ///< Session has been deleted
         eSessionDoesnotExist, ///< Session does not exsit;
@@ -261,7 +259,7 @@ public:
     virtual const char* GetErrCodeString(void) const
     {
         switch ( GetErrCode() ) {
-        case eSessionId:      return "SessionId is not spesified";
+        case eSessionId:      return "SessionId is not specified";
         case eImplNotSet:     return "Session implementaion is not set";
         case eDeleted:        return "Session has been deleted";
         case eSessionDoesnotExist: return "Session does not exsit";
@@ -282,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/23 15:50:54  didenko
+ * Removed unused CCgiRequestException error codes
+ *
  * Revision 1.10  2005/12/19 16:55:03  didenko
  * Improved CGI Session implementation
  *
