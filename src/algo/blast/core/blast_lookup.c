@@ -1197,38 +1197,30 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
    BlastLookupTable* lookup;
    Int4* lookup_pos;
    Int4 num_hits;
-   Int4 index;
    PV_ARRAY_TYPE *pv_array;
    Int4 total_hits = 0;
    Int4 lut_word_length;
-   Int4 i;
-   Int4 mask;
 
    ASSERT(lookup_wrap->lut_type == NA_LOOKUP_TABLE);
    lookup = (BlastLookupTable*) lookup_wrap->lut;
 
    pv_array = lookup->pv;
    lut_word_length = lookup->lut_word_length;
-   ASSERT(lut_word_length == 4 || 
-          lut_word_length == 8);
+   ASSERT(lut_word_length == 8);
 
    abs_start = subject->sequence;
    s = abs_start + start_offset/COMPRESSION_RATIO;
-   /* s_end points to the place right after the last full sequence byte */ 
-   s_end = abs_start + (*end_offset + lut_word_length)/COMPRESSION_RATIO;
-   mask = lookup->mask;
+   s_end = abs_start + (subject->length - lut_word_length) /
+                                        COMPRESSION_RATIO;
 
-   /* Compute the first index */
+   for (; s <= s_end; s++) {
 
-   index = 0;
-   for (i = 0; i < lut_word_length; i += COMPRESSION_RATIO)
-      index = index << FULL_BYTE_SHIFT | *s++;
+      Int4 index = s[0] << 8 | s[1];
 
-   /* s points to the byte right after the end of the current word */
-   while (s <= s_end) {
       if (NA_PV_TEST(pv_array, index, PV_ARRAY_BTS)) {
          num_hits = lookup->thick_backbone[index].num_used;
          ASSERT(num_hits != 0);
+
          if (num_hits > (max_hits - total_hits))
             break;
 
@@ -1238,8 +1230,7 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
             lookup_pos = lookup->overflow + 
                        lookup->thick_backbone[index].payload.overflow_cursor;
          
-         /* Save the hits offsets */
-         s_off = (s - abs_start)*COMPRESSION_RATIO - lut_word_length;
+         s_off = (s - abs_start)*COMPRESSION_RATIO;
          while (num_hits) {
             q_off = *((Uint4 *) lookup_pos); /* get next query offset */
             lookup_pos++;
@@ -1249,14 +1240,8 @@ Int4 BlastNaScanSubject(const LookupTableWrap* lookup_wrap,
             offset_pairs[total_hits++].qs_offsets.s_off = s_off;
          }
       }
-
-      /* Compute the next value of the index */
-      index = (((index)<<FULL_BYTE_SHIFT) & mask) | (*s++);  
-
    }
-   /* Ending offset should point to the start of the word that ends 
-      at s */
-   *end_offset = (s - abs_start)*COMPRESSION_RATIO - lut_word_length;
+   *end_offset = (s - abs_start)*COMPRESSION_RATIO;
 
    return total_hits;
 }
