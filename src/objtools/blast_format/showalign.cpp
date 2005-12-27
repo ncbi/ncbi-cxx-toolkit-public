@@ -1208,11 +1208,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                         avList.push_back(alnvecInfo);
                         int gi = s_GetGiForSeqIdList(handle.\
                                                      GetBioseqCore()->GetId());
-                        if(!(toolUrl == NcbiEmptyString 
-                             || (gi > 0 
-                                 && toolUrl.find("dumpgnl.cgi") 
-                                 != string::npos)) 
-                           || (m_AlignOption & eLinkout)){
+                        if (toolUrl.find("dumpgnl.cgi") != string::npos 
+                            || (m_AlignOption & eLinkout)) {
                             /*need to construct segs for dumpgnl and
                               get sub-sequence for long sequences*/
                             string idString = avRef->GetSeqId(1).GetSeqIdString();
@@ -2275,32 +2272,32 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids,
     str = s_MakeURLSafe(dbtmp == NULL ? (char*) "nr" : dbtmp);
     link += "<a href=\"";
     if (toolUrl.find("?") == string::npos){
-        link += toolUrl + "?" + "db=" + str + "&na=" + (m_IsDbNa? "1" : "0")
-            + "&";
+        link += toolUrl + "?" + "db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
     } else {
-        link += toolUrl + "&db=" + str + "&na=" + (m_IsDbNa? "1" : "0") + "&";
+        link += toolUrl + "&db=" + str + "&na=" + (m_IsDbNa? "1" : "0");
     }
     
     if (gnl[0] != '\0'){
         str = s_MakeURLSafe(gnl);
-        link += "gnl=";
+        link += "&gnl=";
         link += str;
-        link += "&";
     }
     if (gi > 0){
-        link += "gi=" + NStr::IntToString(gi) + "&";
+        link += "&gi=" + NStr::IntToString(gi);
     }
     if(taxid > 0){
-        link += "taxid=" + NStr::IntToString(taxid) +"&";
+        link += "&taxid=" + NStr::IntToString(taxid);
     }
     if (m_Rid != NcbiEmptyString){
-        link += "RID=" + m_Rid +"&";
+        link += "&RID=" + m_Rid;
     }
     
     if ( m_QueryNumber > 0){
-        link += "QUERY_NUMBER=" + NStr::IntToString(m_QueryNumber) + "&";
+        link += "&QUERY_NUMBER=" + NStr::IntToString(m_QueryNumber);
     }
-    link += "segs=" + segs;
+    if (toolUrl.find("dumpgnl.cgi") !=string::npos) {
+        link += "&segs=" + segs;
+    }
     link += "\">";
     if(nodb_path){
         delete [] dbtmp;
@@ -2711,6 +2708,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.95  2005/12/27 18:37:05  jianye
+*no segs for mapview url parameters
+*
 *Revision 1.94  2005/12/14 20:44:40  jianye
 *clarify the and/or condition
 *
