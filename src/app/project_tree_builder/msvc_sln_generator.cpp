@@ -69,6 +69,14 @@ CMsvcSolutionGenerator::AddUtilityProject(const string& full_path)
 
 
 void 
+CMsvcSolutionGenerator::AddConfigureProject(const string& full_path)
+{
+    m_ConfigureProjects.push_back(TUtilityProject(full_path, 
+                                                GenerateSlnGUID()));
+}
+
+
+void 
 CMsvcSolutionGenerator::AddBuildAllProject(const string& full_path)
 {
     m_BuildAllProject = TUtilityProject(full_path, GenerateSlnGUID());
@@ -88,12 +96,18 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
     // Start sln file
-    ofs << MSVC_SOLUTION_HEADER_LINE << endl;
+    ofs << MSVC_SOLUTION_HEADER_LINE
+        << GetApp().GetRegSettings().GetSolutionFileFormatVersion() << endl;
 
     // Utility projects
     ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
         const TUtilityProject& utl_prj = *p;
         WriteUtilityProject(utl_prj, ofs);
+    }
+    // Configure projects
+    ITERATE(list<TUtilityProject>, p, m_ConfigureProjects) {
+        const TUtilityProject& utl_prj = *p;
+        WriteConfigureProject(utl_prj, ofs);
     }
     // BuildAll project
     if ( !m_BuildAllProject.first.empty() &&
@@ -248,10 +262,12 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
 
         const CProjKey& id = *p;
 
-        // Do not generate lib-to-lib depends.
-        if (project.m_Project.m_ProjType == CProjKey::eLib  &&
-            id.Type() == CProjKey::eLib) {
-            continue;
+        if (GetApp().GetRegSettings().GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
+            // Do not generate lib-to-lib depends.
+            if (project.m_Project.m_ProjType == CProjKey::eLib  &&
+                id.Type() == CProjKey::eLib) {
+                continue;
+            }
         }
         if ( GetApp().GetSite().IsLibWithChoice(id.Id()) ) {
             if ( GetApp().GetSite().GetChoiceForLib(id.Id()) == CMsvcSite::e3PartyLib ) {
@@ -280,10 +296,8 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
     ofs << "EndProject" << endl;
 }
 
-
-void 
-CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
-                                            CNcbiOfstream&         ofs)
+void CMsvcSolutionGenerator::BeginUtilityProject(
+    const TUtilityProject& project, CNcbiOfstream& ofs)
 {
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID
@@ -291,8 +305,7 @@ CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
         << CDirEntry(project.first).GetBase() //basename
         << "\", \"";
 
-    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, 
-                                         project.first)
+    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, project.first)
         << "\", \"";
 
     ofs << project.second //m_GUID 
@@ -300,9 +313,45 @@ CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
         << endl;
 
     ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+}
 
+void CMsvcSolutionGenerator::EndUtilityProject(
+    const TUtilityProject& project, CNcbiOfstream& ofs)
+{
     ofs << '\t' << "EndProjectSection" << endl;
     ofs << "EndProject" << endl;
+}
+
+void 
+CMsvcSolutionGenerator::WriteUtilityProject(const TUtilityProject& project,
+                                            CNcbiOfstream&         ofs)
+{
+    BeginUtilityProject(project,ofs);
+    EndUtilityProject(project,ofs);
+}
+
+void 
+CMsvcSolutionGenerator::WriteConfigureProject(const TUtilityProject& project,
+                                            CNcbiOfstream&         ofs)
+{
+    BeginUtilityProject(project,ofs);
+    if (GetApp().GetRegSettings().GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+        string ptb("project_tree_builder");
+        CProjKey id_ptb(CProjKey::eApp,ptb);
+        TProjects::const_iterator n = m_Projects.find(id_ptb);
+        if (n == m_Projects.end()) {
+            LOG_POST(Warning << "Project " + 
+                    project.first + " depends on missing project " + id_ptb.Id());
+        } else {
+            const CPrjContext& prj_i = n->second;
+
+            ofs << '\t' << '\t' 
+                << prj_i.m_GUID 
+                << " = " 
+                << prj_i.m_GUID << endl;
+        }
+    }
+    EndUtilityProject(project,ofs);
 }
 
 
@@ -310,21 +359,7 @@ void
 CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project, 
                                              CNcbiOfstream&         ofs)
 {
-    ofs << "Project(\"" 
-        << MSVC_SOLUTION_ROOT_GUID 
-        << "\") = \"" 
-        << CDirEntry(project.first).GetBase() //basename 
-        << "\", \"";
-
-    ofs << CDirEntry::CreateRelativePath(m_SolutionDir, 
-                                         project.first)
-        << "\", \"";
-
-    ofs << project.second // m_GUID 
-        << "\"" 
-        << endl;
-
-    ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+    BeginUtilityProject(project,ofs);
     
     ITERATE(TProjects, p, m_Projects) {
 //        const CProjKey&    id    = p->first;
@@ -340,8 +375,7 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
             << prj_i.m_GUID << endl;
     }
 
-    ofs << '\t' << "EndProjectSection" << endl;
-    ofs << "EndProject" << endl;
+    EndUtilityProject(project,ofs);
 }
 
 
@@ -414,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/12/27 14:57:51  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.26  2005/09/20 20:01:03  gouriano
  * Corrected project dependencies for lib with choice
  *

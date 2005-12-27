@@ -2741,7 +2741,11 @@ inline
 int NStr::strcasecmp(const char* s1, const char* s2)
 {
 #if defined(HAVE_STRICMP)
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+    return ::_stricmp(s1, s2);
+#else
     return ::stricmp(s1, s2);
+#endif
 
 #elif defined(HAVE_STRCASECMP_LC)
     return ::strcasecmp(s1, s2);
@@ -2764,7 +2768,11 @@ inline
 int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
 {
 #if defined(HAVE_STRICMP)
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+    return ::_strnicmp(s1, s2, n);
+#else
     return ::strnicmp(s1, s2, n);
+#endif
 
 #elif defined(HAVE_STRCASECMP_LC)
     return ::strncasecmp(s1, s2, n);
@@ -3175,6 +3183,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.99  2005/12/27 14:53:54  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.98  2005/10/27 15:53:06  gouriano
  * Further enhancements of CStringUTF8
  *

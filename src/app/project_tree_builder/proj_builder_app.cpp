@@ -487,8 +487,8 @@ int CProjBulderApp::Run(void)
             sln_gen.AddProject(p->second);
         }
         sln_gen.AddUtilityProject (master_prj_gen.GetPath());
-        sln_gen.AddUtilityProject (configure_generator.GetPath(false));
-        sln_gen.AddUtilityProject (configure_generator.GetPath(true));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(false));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(true));
         sln_gen.AddUtilityProject (index_prj_path);
         sln_gen.AddBuildAllProject(build_all_prj_path);
         sln_gen.SaveSolution(m_Solution);
@@ -583,8 +583,8 @@ int CProjBulderApp::Run(void)
             sln_gen.AddProject(p->second);
         }
         sln_gen.AddUtilityProject (master_prj_gen.GetPath());
-        sln_gen.AddUtilityProject (configure_generator.GetPath(false));
-        sln_gen.AddUtilityProject (configure_generator.GetPath(true));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(false));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(true));
         sln_gen.AddUtilityProject (index_prj_path);
         sln_gen.AddBuildAllProject(build_all_prj_path);
         sln_gen.SaveSolution(m_Solution);
@@ -686,6 +686,8 @@ void CProjBulderApp::ParseArguments(void)
     m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
     LOG_POST(Info << "Solution: " << m_Solution);
     m_BuildPtb = !((bool)args["nobuildptb"]);
+    m_BuildPtb = m_BuildPtb &&
+        GetRegSettings().GetMsvcVersion() == CMsvc7RegSettings::eMsvc710;
 
     m_AddMissingLibs =   (bool)args["ext"];
     m_ScanWholeTree  = !((bool)args["nws"]);
@@ -1099,6 +1101,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2005/12/27 14:57:51  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.65  2005/12/20 19:35:51  gouriano
  * Use MSVC non-version-specific defines
  *

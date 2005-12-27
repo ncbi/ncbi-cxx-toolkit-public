@@ -547,6 +547,9 @@ public:
     {
         string command_line, cmd;
         command_line += CPreBuildEventTool::CommandLine();
+        if (GetApp().GetRegSettings().GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+            return command_line;
+        }
         if ( !m_LibDepends.empty() ) {
 #if 0
             command_line += "@echo on\n";
@@ -750,6 +753,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/12/27 14:58:14  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.23  2005/04/13 15:56:34  gouriano
  * Handle paths with spaces
  *

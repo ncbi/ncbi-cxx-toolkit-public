@@ -56,6 +56,8 @@ public:
     
     void AddUtilityProject (const string& full_path);
 
+    void AddConfigureProject (const string& full_path);
+
     void AddBuildAllProject(const string& full_path);
 
     void SaveSolution(const string& file_path);
@@ -70,6 +72,7 @@ private:
     typedef pair<string, string> TUtilityProject;
     // Utility projects
     list<TUtilityProject> m_UtilityProjects;
+    list<TUtilityProject> m_ConfigureProjects;
 
     // BuildAll utility project
     TUtilityProject m_BuildAllProject; 
@@ -102,7 +105,15 @@ private:
     void WriteProjectAndSection(CNcbiOfstream&     ofs, 
                                 const CPrjContext& project);
     
+    void BeginUtilityProject   (const TUtilityProject& project, 
+                                CNcbiOfstream& ofs);
+    void EndUtilityProject   (const TUtilityProject& project, 
+                                CNcbiOfstream& ofs);
+
     void WriteUtilityProject   (const TUtilityProject& project, 
+                                CNcbiOfstream& ofs);
+
+    void WriteConfigureProject (const TUtilityProject& project, 
                                 CNcbiOfstream& ofs);
 
     void WriteBuildAllProject  (const TUtilityProject& project, 
@@ -127,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/12/27 14:58:14  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.12  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

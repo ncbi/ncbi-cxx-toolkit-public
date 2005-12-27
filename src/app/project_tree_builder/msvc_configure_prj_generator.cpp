@@ -115,12 +115,12 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                         project_tree_builder_sln_path);
         
         m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
+        m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     }
 
     // Make *.bat file from source file of this custom build.
     // This file ( see CreateProjectFileItem below )
     // will use defines PTB_PATH, TREE_ROOT and SLN_PATH mentioned above
-    m_CustomBuildCommand += "if errorlevel 1 exit 1\n";
     m_CustomBuildCommand += "cd $(InputDir)\n";
     m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
     m_CustomBuildCommand += "call $(InputName).bat\n";
@@ -258,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2005/12/27 14:57:51  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.25  2005/05/13 16:58:00  gouriano
  * Do not always open conf log in case of errors
  *

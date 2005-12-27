@@ -67,7 +67,7 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
     // Attributes:
     {{
         xmlprj.SetAttlist().SetProjectType (MSVC_PROJECT_PROJECT_TYPE);
-        xmlprj.SetAttlist().SetVersion     (MSVC_PROJECT_VERSION);
+        xmlprj.SetAttlist().SetVersion     (GetApp().GetRegSettings().GetProjectFileFormatVersion());
         xmlprj.SetAttlist().SetName        (project_context.ProjectName());
         xmlprj.SetAttlist().SetKeyword     (MSVC_PROJECT_KEYWORD_WIN32);
     }}
@@ -470,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/12/27 14:57:51  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.42  2005/11/17 20:46:53  gouriano
  * Allow datatool to find out-of-tree ASN spec in ASN projects
  *

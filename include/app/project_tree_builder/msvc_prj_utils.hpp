@@ -171,6 +171,11 @@ struct SCustomBuildInfo
 class CMsvc7RegSettings
 {
 public:
+    enum EMsvcVersion {
+        eMsvc710 = 0,
+        eMsvc800express
+    };
+
     CMsvc7RegSettings(void);
 
     string            m_Version;
@@ -181,7 +186,14 @@ public:
     string            m_MetaMakefile;
     string            m_DllInfo;
 
+    EMsvcVersion    GetMsvcVersion(void) const
+    {
+        return m_MsvcVersion;
+    }
+    string    GetProjectFileFormatVersion(void) const;
+    string    GetSolutionFileFormatVersion(void) const;
 private:
+    EMsvcVersion      m_MsvcVersion;
     CMsvc7RegSettings(const CMsvc7RegSettings&);
     CMsvc7RegSettings& operator= (const CMsvc7RegSettings&);
 };
@@ -475,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/12/27 14:58:14  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.27  2005/04/29 14:10:26  gouriano
  * Added definition of runtime library type
  *

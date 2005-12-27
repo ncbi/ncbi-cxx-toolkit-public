@@ -882,7 +882,15 @@ public:
     static int GetErrCode(void)
         { return errno; }
     static const char* GetErrCodeString(int errnum) 
-        { return ::strerror(errnum); }
+        {
+#if NCBI_COMPILER_MSVC && (_MSC_VER >= 1400)
+            static char buf[128];
+            strerror_s(buf,sizeof(buf),errnum);
+            return buf;
+#else
+            return ::strerror(errnum);
+#endif
+        }
 };
 #  define NCBI_ERRNO_CODE_WRAPPER NCBI_NS_NCBI::CErrnoAdapt::GetErrCode
 #  define NCBI_ERRNO_STR_WRAPPER  NCBI_NS_NCBI::CErrnoAdapt::GetErrCodeString
@@ -1115,6 +1123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2005/12/27 14:53:54  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.64  2005/12/12 14:00:29  ivanov
  * Fixed compile errors in previous revision
  *

@@ -312,7 +312,28 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 
 CMsvc7RegSettings::CMsvc7RegSettings(void)
 {
-    //TODO
+#if _MSC_VER >= 1400
+    m_MsvcVersion = eMsvc800express;
+#else
+    m_MsvcVersion = eMsvc710;
+#endif
+}
+
+string CMsvc7RegSettings::GetProjectFileFormatVersion(void) const
+{
+    if (m_MsvcVersion == eMsvc710) {
+        return "7.10";
+    } else {
+        return "8.00";
+    }
+}
+string CMsvc7RegSettings::GetSolutionFileFormatVersion(void) const
+{
+    if (m_MsvcVersion == eMsvc710) {
+        return "8.00";
+    } else {
+        return "9.00";
+    }
 }
 
 
@@ -878,7 +899,7 @@ void CreateUtilityProject(const string&            name,
     {{
         //Attributes:
         project->SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
-        project->SetAttlist().SetVersion      (MSVC_PROJECT_VERSION);
+        project->SetAttlist().SetVersion      (GetApp().GetRegSettings().GetProjectFileFormatVersion());
         project->SetAttlist().SetName         (name);
         project->SetAttlist().SetRootNamespace
             (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
@@ -1072,6 +1093,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/12/27 14:57:51  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.39  2005/10/31 19:54:28  gouriano
  * Fine-tune build type name
  *

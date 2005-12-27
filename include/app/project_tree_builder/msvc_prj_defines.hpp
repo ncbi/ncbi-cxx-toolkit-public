@@ -53,22 +53,16 @@
 #define LIST_SEPARATOR      " \t\n\r,;"
 
 
-#if _MSC_VER >= 1400
-#define MSVC_REG_SECTION            "msvc800exp"
-#define MSVC_PROJECT_VERSION        "8.00"
-#define MSVC_SOLUTION_HEADER_LINE   \
-                "Microsoft Visual Studio Solution File, Format Version 9.00"
-#else
 #define MSVC_REG_SECTION            "msvc7"
-#define MSVC_PROJECT_VERSION        "7.10"
 #define MSVC_SOLUTION_HEADER_LINE   \
-                "Microsoft Visual Studio Solution File, Format Version 8.00"
-#endif
-
+                "Microsoft Visual Studio Solution File, Format Version "
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/27 14:58:14  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.7  2005/12/20 19:34:44  gouriano
  * Added MSVC 800 defines
  *
