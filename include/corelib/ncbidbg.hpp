@@ -60,6 +60,9 @@ BEGIN_NCBI_SCOPE
 
 #  define _TROUBLE NCBI_NS_NCBI::CNcbiDiag::DiagTrouble(DIAG_COMPILE_INFO)
 
+#  ifdef _ASSERT
+#  undef _ASSERT
+#  endif
 #  define _ASSERT(expr) \
     do { if ( !(expr) ) \
         NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr); \
@@ -107,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.34  2005/12/27 14:54:36  gouriano
+ * Before defining _ASSERT check if it is already defined
+ *
  * Revision 1.33  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
