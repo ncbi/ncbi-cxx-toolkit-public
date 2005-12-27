@@ -29,7 +29,7 @@
  * Authors:  Maxim Didneko, Anatoliy Kuznetsov
  *
  * File Description:  
- *      DEPRICATED
+ *      DEPRECATED
  *
  */
 
@@ -47,6 +47,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/12/27 14:45:44  didenko
+ * Cosmetics
+ *
  * Revision 1.11  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

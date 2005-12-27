@@ -27,7 +27,7 @@
  * ===========================================================================
  *
  * Authors:  Maxim Didenko
- *         DEPRICATED
+ *         DEPRECATED
  */
 
 #include <connect/services/blob_storage_netcache.hpp>
@@ -42,6 +42,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/12/27 14:45:44  didenko
+ * Cosmetics
+ *
  * Revision 1.10  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
