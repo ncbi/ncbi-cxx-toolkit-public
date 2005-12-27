@@ -80,6 +80,18 @@ private:
         { 
             return p.second->GetSecondTo() < pos;  
         }    
+        bool operator()
+            (position_type pos,
+             const TAlnRngCollExt::TFrom2Range::value_type& p)
+        { 
+            return pos < p.second->GetSecondTo();  
+        }    
+        bool operator()
+            (const TAlnRngCollExt::TFrom2Range::value_type& p1,
+             const TAlnRngCollExt::TFrom2Range::value_type& p2)
+        { 
+            return p1.second->GetSecondTo() < p2.second->GetSecondTo();  
+        }    
     };
 
     TAlnRngCollExt m_Extender;
@@ -134,6 +146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/12/27 19:48:55  gouriano
+* Adjustments for MSVC 2005 Express
+*
 * Revision 1.1  2005/08/10 19:36:09  todorov
 * Preliminary revision.
 *

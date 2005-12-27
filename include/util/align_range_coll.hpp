@@ -327,11 +327,27 @@ public:
         typedef typename Range::position_type   position_type;
         bool    operator()(const Range& r, position_type pos)  
         { 
-            return r.GetFirstToOpen() <= pos;  
+            return r.GetFirstToOpen() <= pos;
+        }    
+        bool    operator()(position_type pos, const Range& r)  
+        { 
+            return pos <= r.GetFirstToOpen();
+        }    
+        bool    operator()(const Range& r1, const Range& r2)  
+        { 
+            return r1.GetFirstToOpen() <= r2.GetFirstToOpen();
         }    
         bool    operator()(const Range* r, position_type pos)  
         { 
             return r->GetFirstToOpen() <= pos;  
+        }
+        bool    operator()(position_type pos, const Range* r)  
+        { 
+            return pos <= r->GetFirstToOpen();
+        }
+        bool    operator()(const Range* r1, const Range* r2)  
+        { 
+            return r1->GetFirstToOpen() <= r2->GetFirstToOpen();  
         }
     };
     template<class Range>
@@ -341,6 +357,10 @@ public:
         bool    operator()(const Range& r, position_type pos)  
         { 
             return r.GetFirstFrom() < pos;  
+        }
+        bool    operator()(position_type pos, const Range& r)
+        { 
+            return pos < r.GetFirstFrom();  
         }
         bool    operator()(const Range& r_1, const Range& r_2)
         {
@@ -692,6 +712,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/12/27 19:49:43  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.6  2005/06/29 15:49:16  yazhuk
  * Fixed operator []
  *

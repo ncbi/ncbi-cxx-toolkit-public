@@ -44,7 +44,9 @@ BEGIN_NCBI_SCOPE
 template<class Range, class Position>
 struct PRangeLessPos
 {
-    bool    operator()(const Range &R, Position Pos)  { return R.GetToOpen() <= Pos;  }    
+    bool    operator()(const Range &R, Position Pos)     { return R.GetToOpen() <= Pos;  }    
+    bool    operator()(Position Pos, const Range &R)     { return Pos <= R.GetToOpen();  }    
+    bool    operator()(const Range &R1, const Range &R2) { return R1.GetToOpen() <= R2.GetToOpen();  }    
 };
     
 ///////////////////////////////////////////////////////////////////////////////
@@ -384,6 +386,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/12/27 19:49:43  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.11  2005/10/31 20:34:05  dicuccio
  * FIx bungled commit in version 1.10
  *

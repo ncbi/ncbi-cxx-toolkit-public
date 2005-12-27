@@ -154,7 +154,6 @@ public:
     TAlleleIndex    m_AllelesIndices[kMax_AllelesCount];
 };
 
-
 /////////////////////////////////////////////////////////////////////////////
 // SSNP_Info
 /////////////////////////////////////////////////////////////////////////////
@@ -198,6 +197,12 @@ inline
 bool SSNP_Info::operator<(TSeqPos to_position) const
 {
     return m_ToPosition < to_position;
+}
+
+inline
+bool operator<(TSeqPos end_position, const SSNP_Info& snp)
+{
+    return end_position < snp.m_ToPosition;
 }
 
 

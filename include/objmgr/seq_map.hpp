@@ -218,6 +218,14 @@ protected:
             {
                 return pos < seg.m_Position + seg.m_Length;
             }
+        bool operator()(const CSegment& seg, TSeqPos pos)
+            {
+                return seg.m_Position + seg.m_Length < pos;
+            }
+        bool operator()(const CSegment& seg1, const CSegment& seg2)
+            {
+                return seg1.m_Position + seg1.m_Length < seg2.m_Position + seg2.m_Length;
+            }
     };
 
     // 'ctors
