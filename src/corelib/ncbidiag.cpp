@@ -285,7 +285,10 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
 string CDiagContext::GetStringUID(void) const
 {
     char buf[13];
-    sprintf(buf, "%012s", NStr::Int8ToString(GetUID(), 0, 16).c_str());
+    Int8 uid = GetUID();
+    int time = int(uid >> 16);
+    int pid = int(uid & 0xFFFF);
+    sprintf(buf, "%08X%04X", time, pid);
     return string(buf);
 }
 
@@ -436,8 +439,8 @@ bool               CDiagBuffer::sm_CanDeleteErrCodeInfo = false;
 CDiagBuffer::CDiagBuffer(void)
     : m_Stream(new CNcbiOstrstream),
       m_InitialStreamFlags(m_Stream->flags()),
-      m_TID(CThread::GetSelf()),
       m_PID(CProcess::GetCurrentPid()),
+      m_TID(CThread::GetSelf()),
       m_ThreadPostCount(0)
 {
     m_Diag = 0;
@@ -1899,6 +1902,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.103  2005/12/27 16:02:56  grichenk
+ * Fixed warnings and UID formatting.
+ *
  * Revision 1.102  2005/12/22 21:16:29  ucko
  * +<stdio.h> due to (gratuitous?) use of sprintf.
  *
