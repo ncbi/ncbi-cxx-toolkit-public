@@ -1206,8 +1206,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                        alnvecInfo->comp_adj_method);
                         alnvecInfo->alnvec = avRef;
                         avList.push_back(alnvecInfo);
-                        int gi = s_GetGiForSeqIdList(handle.\
-                                                     GetBioseqCore()->GetId());
+
                         if (toolUrl.find("dumpgnl.cgi") != string::npos 
                             || (m_AlignOption & eLinkout)) {
                             /*need to construct segs for dumpgnl and
@@ -2708,6 +2707,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.96  2005/12/27 21:51:34  coulouri
+*remove unused variable
+*
 *Revision 1.95  2005/12/27 18:37:05  jianye
 *no segs for mapview url parameters
 *
