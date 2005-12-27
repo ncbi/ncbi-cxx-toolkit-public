@@ -120,7 +120,7 @@ template<class TDescription>
 inline
 typename CParamParser<TDescription>::TValueType
 CParamParser<TDescription>::StringToValue(const string& str,
-                                          const TParamDesc& descr)
+                                          const TParamDesc&)
 {
     CNcbiIstrstream in(str.c_str());
     TValueType val;
@@ -139,7 +139,7 @@ CParamParser<TDescription>::StringToValue(const string& str,
 template<class TDescription>
 inline
 string CParamParser<TDescription>::ValueToString(const TValueType& val,
-                                                 const TParamDesc& descr)
+                                                 const TParamDesc&)
 {
     CNcbiOstrstream buffer;
     buffer << val;
@@ -360,6 +360,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/27 16:02:30  grichenk
+ * Fixed warnings
+ *
  * Revision 1.7  2005/12/22 16:56:23  grichenk
  * Added NoThread and NoLoad flags.
  *
