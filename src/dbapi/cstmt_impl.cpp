@@ -129,9 +129,6 @@ void CCallableStatement::Close()
     FreeResources();
 }    
 
-void CCallableStatement::SendSql(const string& /*sql*/)
-{
-}
 
 END_NCBI_SCOPE
 
@@ -139,6 +136,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2005/12/28 15:09:13  kholodov
+* Removed empty SendSql() definition
+*
 * Revision 1.19  2005/12/13 19:11:47  ucko
 * Actually define [IC]CallableStatement::SendSql, and move CVS logs to the end.
 *
