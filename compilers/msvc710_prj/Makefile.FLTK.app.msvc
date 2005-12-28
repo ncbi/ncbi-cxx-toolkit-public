@@ -7,4 +7,5 @@ subSystem = 2
 
 
 [AddToProject]
-SourceFiles = winmain
+SourceFiles = ../../src/gui/winmain
+
