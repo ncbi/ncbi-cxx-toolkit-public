@@ -283,7 +283,13 @@ public:
     ///   Pointer to resultset. For statements with no resultset return 0.
     virtual IResultSet* GetResultSet() = 0;
 
-    /// Check for more results available..
+    /// Check for more results available. 
+	///
+	/// Each call advances to the next result and the current one 
+	/// will be cancelled it not retrieved before next call.
+	/// The amount of retured results may be bigger than the expected amount
+	/// due to auxiliary results returned depending on the driver and server
+	/// platform.
     ///
     /// @return
     ///   Return true, if there are more results available.
@@ -340,6 +346,7 @@ public:
     /// If there is more than one resultset, the rest remain
     /// pending unless either PurgeResults() is called or next statement
     /// is run or the statement is closed.
+	/// NOTE: Provided only for queries containing a single sql statement returning rows.
     /// @param sql
     ///   SQL statement to execute.
     /// @return
@@ -784,6 +791,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/12/28 17:25:00  kholodov
+ * Added: more detailed HasMoreResults() description
+ *
  * Revision 1.43  2005/12/13 17:20:08  kholodov
  * Modified: Execute() method deprecated
  *
