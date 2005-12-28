@@ -217,8 +217,13 @@ void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
             *m_Out << request;
             *m_In >> reply;
             break;
-        } catch (CSerialException&) {
-            if (++tries == m_RetryLimit  ||  !x_ShouldRetry(tries) ) {
+        } catch (CException& e) {
+            // Some exceptions tend to correspond to transient glitches;
+            // the remainder, however, may as well get propagated immediately.
+            if ( !dynamic_cast<CSerialException*>(&e)
+                 &&  !dynamic_cast<CIOException*>(&e) ) {
+                throw;
+            } else if (++tries == m_RetryLimit  ||  !x_ShouldRetry(tries) ) {
                 throw;
             } else if ( !(tries % 2) ) {
                 // reset on every other attempt in case we're out of sync
@@ -283,6 +288,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2005/12/28 19:09:47  ucko
+* Tweak Ask once more, as we may encounter transient CIOExceptions as
+* well as transient CSerialExceptions, and should retry in both cases.
+*
 * Revision 1.10  2004/09/24 14:32:04  ucko
 * Rework Ask's logic; it now propagates exceptions when it's hit the
 * retry limit, and periodically attempts full resyncs.
