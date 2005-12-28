@@ -37,7 +37,7 @@
 /// CFileException to allow various file and directory operations.
 ///
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <vector>
@@ -2535,6 +2535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2005/12/28 13:05:56  dicuccio
+ * Changed ncbistd.hpp to ncbiobj.hpp for new dependency on CObject
+ *
  * Revision 1.70  2005/12/28 11:41:31  ivanov
  * Move include corelib/ncbi_safe_static.hpp to .cpp file
  *
