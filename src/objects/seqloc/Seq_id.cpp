@@ -1281,8 +1281,14 @@ CSeq_id& CSeq_id::Set(const string& the_id_in)
         NStr::Split(the_id, "|", fasta_pieces, NStr::eNoMergeDelims);
         x_Init(fasta_pieces);
         if ( !fasta_pieces.empty() ) {
-            NCBI_THROW(CSeqIdException, eFormat,
-                       "FASTA-style ID " + the_id + " has too many parts.");
+            // tolerate trailing parts if they're all empty.
+            ITERATE(list<string>, it, fasta_pieces) {
+                if ( !it->empty() ) {
+                    NCBI_THROW(CSeqIdException, eFormat,
+                               "FASTA-style ID " + the_id
+                               + " has too many parts.");
+                }
+            }
         }
         return *this;
     }
@@ -1608,6 +1614,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.117  2005/12/28 17:05:13  ucko
+ * CSeq_id::Set(const string&): put up with trailing parts in FASTA-style
+ * IDs as long as they're all empty.
+ *
  * Revision 6.116  2005/12/12 15:47:00  ucko
  * IdentifyAccession: DW has been allocated to GenBank ESTs.
  * ParseFastaIds: treat untagged numeric IDs as local IDs rather than GIs.
