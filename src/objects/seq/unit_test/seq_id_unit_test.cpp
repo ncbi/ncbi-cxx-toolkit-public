@@ -240,6 +240,12 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaLocal)
     CHECK(id->IsLocal());
     CHECK(id->GetLocal().IsStr());
     CHECK_EQUAL(id->GetLocal().GetStr(), string("asdf"));
+
+    CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|NM_002020|")));
+    CHECK(id->IsLocal());
+    CHECK(id->GetLocal().IsStr());
+    CHECK_EQUAL(id->GetLocal().GetStr(), string("NM_002020"));
+    CHECK_THROW_SEQID(id.Reset(new CSeq_id("lcl|NM_002020|junk")));
 }
 
 BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaObsolete)
@@ -688,6 +694,10 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2005/12/28 17:05:50  ucko
+* Verify that FASTA-style IDs can have extra parts if and only if those
+* parts are all empty.
+*
 * Revision 1.4  2005/12/05 17:00:14  ucko
 * Add support for Boost 1.33.x, which is now installed on Solaris 10.
 *
