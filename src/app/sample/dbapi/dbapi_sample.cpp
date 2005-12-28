@@ -206,7 +206,7 @@ end";
 
             conn->MsgToEx(true);
 
-            stmt->Execute(sql);
+            stmt->SendSql(sql);
     
         // Below is an example of using auto_ptr to avoid resource wasting
         // in case of multiple resultsets, statements, etc.
@@ -278,7 +278,7 @@ end";
         conn->MsgToEx(true);
 
         try {
-            stmt->Execute(sql);
+            stmt->SendSql(sql);
     
             while( stmt->HasMoreResults() ) {
                 if( stmt->HasRows() ) {   
@@ -508,7 +508,7 @@ end";
         stmt->SetParam(CVariant(5), "@id");
         stmt->SetParam(CVariant::Float(&f), "@f");
         stmt->SetParam(CVariant(5), "@o");
-        stmt->Execute(sql); 
+        stmt->SendSql(sql); 
     
         while(stmt->HasMoreResults()) {
             IResultSet *rs = stmt->GetResultSet();
@@ -587,7 +587,7 @@ end";
 
         stmt->ExecuteUpdate("set textsize 2000000");
     
-        stmt->Execute("select str_val, text_val, text_val \
+        stmt->SendSql("select str_val, text_val, text_val \
 from SelectSample where int_val = 1");
     
         while( stmt->HasMoreResults() ) { 
@@ -706,7 +706,7 @@ end";
         //if( NStr::CompareNocase(driver, "ctlib") == 0 )
         //    sql += " at isolation read uncommitted";
 
-        stmt->Execute(sql);
+        stmt->SendSql(sql);
         IConnection *newConn = conn->CloneConnection();
 
         cnt = 0;
@@ -730,7 +730,7 @@ end";
         // check if Blob is there
         stmt = conn->CreateStatement();
         NcbiCout << "Checking BLOB size..." << endl;
-        stmt->Execute("select 'Written blob size' as size, datalength(blob) \
+        stmt->SendSql("select 'Written blob size' as size, datalength(blob) \
 from BlobSample where id = 1");
         
         while( stmt->HasMoreResults() ) {
@@ -827,6 +827,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/12/28 15:33:32  kholodov
+* Replaced the deprecated Execute() calls by SendSql()
+*
 * Revision 1.22  2005/11/10 15:17:01  ssikorsk
 * Minor code cleanup
 *
