@@ -1080,6 +1080,32 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
     }
 }
 
+string CProjBulderApp::ProcessLocationMacros(string raw_data)
+{
+    string data(raw_data), raw_macro, macro, definition;
+    string::size_type start, end, done = 0;
+    while ((start = data.find("$(", done)) != string::npos) {
+        end = data.find(")", start);
+        if (end == string::npos) {
+            LOG_POST(Warning << "Possibly incorrect MACRO definition in: " + raw_data);
+            return data;
+        }
+        raw_macro = data.substr(start,end-start+1);
+        if (CSymResolver::IsDefine(raw_macro)) {
+            macro = CSymResolver::StripDefine(raw_macro);
+            definition.erase();
+            if (macro == "msvc_prj") {
+                definition = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Compilers, 
+                    GetRegSettings().m_CompilersSubdir);
+            }
+            if (!definition.empty()) {
+                data = NStr::Replace(data, raw_macro, definition);
+            }
+        }
+    }
+    return data;
+}
+
 CProjBulderApp& GetApp(void)
 {
     static CProjBulderApp theApp;
@@ -1101,6 +1127,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2005/12/28 20:37:43  gouriano
+ * Add parameterization into VCPROJ definition
+ *
  * Revision 1.66  2005/12/27 14:57:51  gouriano
  * Adjustments for MSVC 2005 Express
  *

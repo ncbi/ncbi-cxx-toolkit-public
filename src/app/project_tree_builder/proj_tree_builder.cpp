@@ -1037,7 +1037,14 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                       << "  at " << applib_mfilepath);
         return CProjKey();
     }
-    list<string> sources = k->second;
+    list<string> sources;
+    ITERATE(list<string>, s, k->second) {
+        string d = GetApp().ProcessLocationMacros( *s );
+        if (CDirEntry::IsAbsolutePath(d)) {
+            d = CDirEntry::CreateRelativePath( source_base_dir, d);
+        }
+        sources.push_back( d );
+    }
 
     // depends - 
     list<CProjKey> depends_ids;
@@ -1578,6 +1585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2005/12/28 20:37:43  gouriano
+ * Add parameterization into VCPROJ definition
+ *
  * Revision 1.31  2005/09/15 18:24:37  gouriano
  * Recognize and process local (within a single makefile) macros
  *

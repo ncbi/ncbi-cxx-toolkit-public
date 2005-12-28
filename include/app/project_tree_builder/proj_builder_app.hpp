@@ -155,6 +155,7 @@ public:
     bool   IsAllowedProjectTag(const CSimpleMakeFileContents& mk,
                                string& unmet) const;
     void   LoadProjectTags(const string& filename);
+    string ProcessLocationMacros(string data);
     
 private:
     void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
@@ -220,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2005/12/28 20:38:37  gouriano
+ * Add parameterization into VCPROJ definition
+ *
  * Revision 1.24  2005/05/13 13:15:09  gouriano
  * Do not filter by tags when scanning the whole tree
  *
