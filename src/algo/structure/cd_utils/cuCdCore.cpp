@@ -1679,7 +1679,8 @@ bool CCdCore::IsInPendingList(const CRef< CSeq_id >& ID, vector<int>& listIndex)
                          if ((*lsaci)->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag) {
                             const CRef< CDense_diag> denDiag = (*lsaci)->GetSegs().GetDendiag().front();
                             for (vsici = denDiag->GetIds().begin(); vsici != denDiag->GetIds().end(); ++vsici) {
-                                if (ID->Match(**vsici)) {
+                                //  skip the master and only look at the slaves
+                                if (vsici != denDiag->GetIds().begin() && ID->Match(**vsici)) {
                                     listIndex.push_back(foundIndex);
 //                                    return true;
                                 }
@@ -2325,6 +2326,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/12/28 17:25:44  lanczyck
+ * bug fix transferred from CDTree:  IsInPendingList no longer counts master of a pending alignment as pending
+ *
  * Revision 1.3  2005/05/10 20:11:31  cliu
  * make and save trees
  *
