@@ -473,13 +473,18 @@ bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
 // Update 'ptr' to current position in the string.
 
 enum ESkipMode {
-    eSkipAllAllowed,
-    eSkipSpacesOnly
+    eSkipAll,           // all symbols
+    eSkipAllAllowed,    // all symbols, except digit/+/-/.
+    eSkipSpacesOnly     // spaces only 
 };
 
 void s_SkipAllowedSymbols(const CTempString& str, size_t& pos,
                           ESkipMode skip_mode)
 {
+    if (skip_mode == eSkipAll) {
+        pos = str.length();
+        return;
+    }
     unsigned char ch = str[pos];
     while ( ch ) {
         if ( isdigit(ch)  ||  ch == '+' ||  ch == '-'  ||  ch == '.' ) {
@@ -598,8 +603,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
     if (flags & fAllowTrailingSymbols) {
         bool spaces = ((flags & fAllowTrailingSymbols) ==
                        fAllowTrailingSpaces);
-        s_SkipAllowedSymbols(str, pos, 
-                       spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
     // Assign sign before the end pointer check
     n = sign ? -n : n;
@@ -674,8 +678,7 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
     if (flags & fAllowTrailingSymbols) {
         bool spaces = ((flags & fAllowTrailingSymbols) ==
                        fAllowTrailingSpaces);
-        s_SkipAllowedSymbols(str, pos,
-                       spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
     CHECK_ENDPTR(Uint8);
     return n;
@@ -801,8 +804,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
     if (flags & fAllowTrailingSymbols) {
         bool spaces = ((flags & fAllowTrailingSymbols) ==
                        fAllowTrailingSpaces);
-        s_SkipAllowedSymbols(str, pos,
-                       spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
     CHECK_ENDPTR(DataSize);
     return n;
@@ -2367,6 +2369,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.170  2005/12/28 15:39:24  ivanov
+ * NStr::StringTo* - allow digits as trailing symbols right after non-digits
+ *
  * Revision 1.169  2005/11/16 18:52:18  vakatov
  * NStr::[U]Int8ToString() -- remember to use the "base" argument.
  *
