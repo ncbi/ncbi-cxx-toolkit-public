@@ -313,10 +313,12 @@ CTLibContext::~CTLibContext()
             p_pot->Remove(this);
             if (p_pot->NofItems() == 0) { // this is a last driver for this context
                 delete p_pot;
+#if !defined(NCBI_OS_MSWIN)
                 if (ct_exit(m_Context, CS_UNUSED) != CS_SUCCEED) {
                     ct_exit(m_Context, CS_FORCE_EXIT);
                 }
                 cs_ctx_drop(m_Context);
+#endif
             }
         }
     }
@@ -1147,6 +1149,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2005/12/28 13:41:09  ssikorsk
+ * Disable ct_exit/cs_ctx_drop on Windows
+ *
  * Revision 1.51  2005/12/02 14:16:14  ssikorsk
  *  Log server and user names with error message.
  *
