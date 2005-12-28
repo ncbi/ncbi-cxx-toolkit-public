@@ -340,7 +340,6 @@ CODBC_LangCmd::~CODBC_LangCmd()
         if (m_WasSent) {
             Cancel();
         }
-        GetConnection().DropCmd(*this);
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -563,6 +562,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/12/28 13:15:00  ssikorsk
+ * Roll back an accidental commit
+ *
  * Revision 1.16  2005/12/28 13:10:03  ssikorsk
  * Restore CSafeStaticPtr-based singleton
  *
