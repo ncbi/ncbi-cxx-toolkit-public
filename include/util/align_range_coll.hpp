@@ -695,6 +695,16 @@ protected:
         { 
             return p.second->GetSecondTo() < pos;  
         }    
+        bool    operator()(position_type pos,
+                           const typename TFrom2Range::value_type& p)  
+        { 
+            return pos < p.second->GetSecondTo();  
+        }    
+        bool    operator()(const typename TFrom2Range::value_type& p1,
+                           const typename TFrom2Range::value_type& p2)  
+        { 
+            return p1.second->GetSecondTo() < p2.second->GetSecondTo();  
+        }    
     };
     
 protected:
@@ -712,6 +722,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/28 16:18:11  gouriano
+ * Adjustments for MSVC 2005 Express
+ *
  * Revision 1.7  2005/12/27 19:49:43  gouriano
  * Adjustments for MSVC 2005 Express
  *
