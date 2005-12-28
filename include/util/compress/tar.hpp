@@ -43,6 +43,7 @@
 
 #include <corelib/ncbifile.hpp>
 #include <list>
+#include <memory>
 #include <utility>
 
 
@@ -583,6 +584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/12/28 16:50:13  ucko
+ * +<memory> for auto_ptr<>
+ *
  * Revision 1.19  2005/12/02 05:49:32  lavr
  * Fix some comments
  *
