@@ -340,6 +340,7 @@ CODBC_LangCmd::~CODBC_LangCmd()
         if (m_WasSent) {
             Cancel();
         }
+        GetConnection().DropCmd(*this);
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -562,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/12/28 13:10:03  ssikorsk
+ * Restore CSafeStaticPtr-based singleton
+ *
  * Revision 1.15  2005/11/28 13:22:59  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.

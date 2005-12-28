@@ -98,10 +98,6 @@ private:
     static IDataSource* CreateDs(I_DriverContext* ctx);
     // This function will just call the delete operator.
     static void DeleteDs(const IDataSource* const ds);
-
-private:
-    static CDriverManager* sm_Instance;
-    DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 };
 
 END_NCBI_SCOPE
@@ -113,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/12/28 13:09:51  ssikorsk
+ * Restore CSafeStaticPtr-based singleton
+ *
  * Revision 1.14  2005/04/08 16:50:41  ssikorsk
  * Restored a previous CDriverManager::GetInstance logic because of ctlib issues
  *
