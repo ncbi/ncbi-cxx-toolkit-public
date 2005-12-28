@@ -6,5 +6,5 @@ APP_DEP   =
 
 DLL_DEP   = 
 
-VCPROJ    = ..\..\..\compilers\msvc710_prj\static\third_party_static_install.vcproj
+VCPROJ    = $(msvc_prj)\static\third_party_static_install.vcproj
 
