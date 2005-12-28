@@ -33,6 +33,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <stdio.h>
 
@@ -3635,6 +3636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.132  2005/12/28 11:41:40  ivanov
+ * Move include corelib/ncbi_safe_static.hpp to .cpp file
+ *
  * Revision 1.131  2005/12/20 15:51:43  gouriano
  * Added safety check
  *

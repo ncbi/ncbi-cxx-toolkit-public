@@ -40,7 +40,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
-#include <corelib/ncbi_safe_static.hpp>
 #include <vector>
 
 #include <sys/types.h>
@@ -2536,6 +2535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2005/12/28 11:41:31  ivanov
+ * Move include corelib/ncbi_safe_static.hpp to .cpp file
+ *
  * Revision 1.69  2005/12/08 14:12:15  ivanov
  * Minor comment fix for CDirEntry::GetMode()
  *
