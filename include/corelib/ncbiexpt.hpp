@@ -898,7 +898,7 @@ public:
 
 // MS Windows API errors
 #ifdef NCBI_OS_MSWIN
-class CLastErrorAdapt
+class NCBI_XNCBI_EXPORT CLastErrorAdapt
 {
 public:
     static int GetErrCode(void)
@@ -1123,6 +1123,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2005/12/29 15:40:14  jcherry
+ * Added export specifier for CLastErrorAdapt
+ *
  * Revision 1.65  2005/12/27 14:53:54  gouriano
  * Adjustments for MSVC 2005 Express
  *
