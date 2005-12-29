@@ -593,20 +593,13 @@ NCBI_PARAM_DEF (string, MMDBSrv, Args,
 // test to make sure that HTTP object load from the MMDB Web server works
 BEGIN_TEST_FUNCTION(MMDBSrv)
 
-
-    NCBI_PARAM_TYPE(MMDBSrv, Host) MMDBSrv_Host;
-    NCBI_PARAM_TYPE(MMDBSrv, Port) MMDBSrv_Port;
-    NCBI_PARAM_TYPE(MMDBSrv, Path) MMDBSrv_Path;
-    NCBI_PARAM_TYPE(MMDBSrv, Args) MMDBSrv_Args;
-
-
     // get protein structure 1AL1 (mmdb ID 220) from mmdbsrv
     CNcbi_mime_asn1 mime;
-    if (!GetAsnDataViaHTTP(MMDBSrv_Host.Get(),
-                           MMDBSrv_Path.Get(),
-                           MMDBSrv_Args.Get(),
+    if (!GetAsnDataViaHTTP(NCBI_PARAM_TYPE(MMDBSrv, Host)::GetDefault(),
+                           NCBI_PARAM_TYPE(MMDBSrv, Path)::GetDefault(),
+                           NCBI_PARAM_TYPE(MMDBSrv, Args)::GetDefault(),
                            &mime, &err, true,
-                           MMDBSrv_Port.Get()))
+                           NCBI_PARAM_TYPE(MMDBSrv, Port)::GetDefault()))
         ADD_ERR_RETURN("HTTP asn data load failed: " << err);
 
     if (!mime.IsStrucseq()  ||
@@ -699,6 +692,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2005/12/29 19:13:08  vakatov
+* MMDBSrv::  Use static method CParam<>::GetDefault(), don't create
+*            variables for the config parameters.
+*
 * Revision 1.27  2005/12/29 18:05:46  vakatov
 * Make the MMDB server's URL configurable via config file and/or environment
 * -- using the CParam mechanism. (See also in "asniotest.ini").
