@@ -34,6 +34,7 @@
  */
 
 #include "ncbi_host_infop.h"
+#include <corelib/mswin_export.h>
 #include <connect/ncbi_server_info.h>
 
 
@@ -88,12 +89,14 @@ SSERV_Info* SERV_ReadInfoEx
  );
 
 
+NCBI_XCONNECT_EXPORT
 SSERV_Info* SERV_CopyInfoEx
 (const SSERV_Info* orig,
  const char*       name
  );
 
 
+NCBI_XCONNECT_EXPORT
 const char* SERV_NameOfInfo
 (const SSERV_Info* info
  );
@@ -107,6 +110,9 @@ const char* SERV_NameOfInfo
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2005/12/29 12:47:12  dicuccio
+ * Export a couple of internal functions needed by connext
+ *
  * Revision 6.6  2005/12/14 21:24:23  lavr
  * Name parameter for SERV_ReadInfoEx() (instead of "add")
  * +SERV_CopyInfoEx(), +SERV_NameOfInfo()
