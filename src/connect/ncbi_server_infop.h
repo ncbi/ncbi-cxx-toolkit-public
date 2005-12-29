@@ -34,7 +34,6 @@
  */
 
 #include "ncbi_host_infop.h"
-#include <corelib/mswin_export.h>
 #include <connect/ncbi_server_info.h>
 
 
@@ -110,6 +109,9 @@ const char* SERV_NameOfInfo
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2005/12/29 16:28:09  dicuccio
+ * Drop #include that was confusing the C toolkit's build
+ *
  * Revision 6.7  2005/12/29 12:47:12  dicuccio
  * Export a couple of internal functions needed by connext
  *
