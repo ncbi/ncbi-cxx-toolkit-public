@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 /**\brief Interface to the bit array used to check if the score of a unit is
  **       below t_extend.
  **/
-class CSeqMaskerCacheBoost
+class NCBI_XALGOWINMASK_EXPORT CSeqMaskerCacheBoost
 {
     public:
 
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/12/29 16:13:35  jcherry
+ * Added export specifier for CSeqMaskerCacheBoost
+ *
  * Revision 1.2  2005/08/31 16:47:28  morgulis
  * Adding comments.
  *
