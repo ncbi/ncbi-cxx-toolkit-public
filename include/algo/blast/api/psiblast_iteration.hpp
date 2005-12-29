@@ -35,6 +35,7 @@
 #define ALGO_BLAST_API___PSIBLAST_ITERATION__HPP
 
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/core/blast_export.h>
 #include <list>
 
 /** @addtogroup AlgoBlast
@@ -55,7 +56,7 @@ BEGIN_SCOPE(blast)
 class CPSIBlastOptionsHandle;
 
 /// Represents the iteration state in PSI-BLAST
-class CPsiBlastIterationState
+class NCBI_XBLAST_EXPORT CPsiBlastIterationState
 {
 public:
     /// Constructor
