@@ -46,7 +46,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CSysLog : public CDiagHandler {
+class NCBI_XNCBI_EXPORT CSysLog : public CDiagHandler {
 public:
     enum EFlags {
         fNoOverride        = 0x40000000, ///< never call openlog() ourselves
@@ -126,6 +126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/12/29 15:39:26  jcherry
+ * Added export specifier for CSysLog
+ *
  * Revision 1.2  2005/07/28 17:24:14  ucko
  * Shift flags down one place to stay clear of the sign bit.
  *
