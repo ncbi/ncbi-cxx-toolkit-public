@@ -403,7 +403,7 @@ private:
 ///
 /// NCBI diagnostic context. Storage for application-wide properties.
 
-class CDiagContext
+class NCBI_XNCBI_EXPORT CDiagContext
 {
 public:
     CDiagContext(void);
@@ -418,28 +418,23 @@ public:
 
     /// Set AutoWrite flag. If set, each property is posted to the current
     /// diag stream when a new value is set.
-    NCBI_XNCBI_EXPORT
     void SetAutoWrite(bool value);
 
     /// Set application context property by name.
     /// Write property to the log if AutoPrint flag is set.
-    NCBI_XNCBI_EXPORT
     void SetProperty(const string& name, const string& value);
 
     /// Get application context property by name, return empty string if the
     /// property is not set.
-    NCBI_XNCBI_EXPORT
     string GetProperty(const string name) const;
 
     /// Forced dump of all set properties regardless of the AutoPrint flag.
-    NCBI_XNCBI_EXPORT
     void PrintProperties(void) const;
 
     // Print exit message if AutoPrint flag is set.
     void PrintExit(void) const;
 
     /// Check old/new format flag (for compatibility only)
-    NCBI_XNCBI_EXPORT
     static bool IsSetOldPostFormat(void);
 
 private:
@@ -1320,6 +1315,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.96  2005/12/29 21:19:28  grichenk
+ * Export CDiagContext
+ *
  * Revision 1.95  2005/12/22 16:47:35  grichenk
  * Fixed Doxygen comments
  *
