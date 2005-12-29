@@ -65,12 +65,26 @@ void CReader::OpenInitialConnection(bool force)
                 conn.Release();
                 return;
             }
+            catch ( CLoaderException& exc ) {
+                if ( exc.GetErrCode() == exc.eNoConnection ) {
+                    // no connection can be opened
+                    throw;
+                }
+                LOG_POST(Warning<<"CReader: "
+                         "cannot open initial connection: "<<exc.what());
+                if ( attempt >= GetRetryCount() ) {
+                    // this is the last attempt to establish connection
+                    NCBI_RETHROW(exc, CLoaderException, eNoConnection,
+                                 "cannot open initial connection");
+                }
+            }
             catch ( CException& exc ) {
                 LOG_POST(Warning<<"CReader: "
                          "cannot open initial connection: "<<exc.what());
                 if ( attempt >= GetRetryCount() ) {
                     // this is the last attempt to establish connection
-                    throw;
+                    NCBI_RETHROW(exc, CLoaderException, eNoConnection,
+                                 "cannot open initial connection");
                 }
             }
         }
@@ -158,7 +172,7 @@ void CReader::x_RemoveConnection(void)
 CReader::TConn CReader::x_AllocConnection(bool oldest)
 {
     if ( GetMaximumConnections() <= 0 ) {
-        NCBI_THROW(CLoaderException, eNoConnection, "no connection");
+        NCBI_THROW(CLoaderException, eNoConnection, "connections limit is 0");
     }
     m_NumFreeConnections.Wait();
     CMutexGuard guard(m_ConnectionsMutex);
@@ -199,7 +213,7 @@ void CReader::x_AbortConnection(TConn conn)
         x_DisconnectAtSlot(conn);
     }
     catch ( exception& exc ) {
-        ERR_POST("CReader: cannot reuse connection: "<<exc.what());
+        ERR_POST("CReader("<<conn<<"): cannot reuse connection: "<<exc.what());
         // cannot reuse connection number, allocate new one
         try {
             x_RemoveConnectionSlot(conn);
@@ -218,8 +232,8 @@ void CReader::x_AbortConnection(TConn conn)
 
 void CReader::x_DisconnectAtSlot(TConn conn)
 {
-    LOG_POST(Warning << "CReader:"
-             " GenBank connection failed: reconnecting...");
+    LOG_POST(Warning << "CReader("<<conn<<"): "
+             "GenBank connection failed: reconnecting...");
     x_RemoveConnectionSlot(conn);
     x_AddConnectionSlot(conn);
 }

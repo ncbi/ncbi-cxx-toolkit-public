@@ -235,7 +235,7 @@ CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
 #endif
 
     if ( stream->bad() ) {
-        NCBI_THROW(CLoaderException, eNoConnection, "connection failed");
+        NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
     }
     
     if ( GetDebugLevel() >= eTraceConn ) {

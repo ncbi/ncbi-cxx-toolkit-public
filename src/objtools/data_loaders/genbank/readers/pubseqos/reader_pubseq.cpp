@@ -269,7 +269,7 @@ CDB_Connection* CPubseqReader::x_NewConnection(void)
         (m_Context->Connect(m_Server, m_User, m_Password, 0));
     
     if ( !conn.get() ) {
-        NCBI_THROW(CLoaderException, eNoConnection, "connection failed");
+        NCBI_THROW(CLoaderException, eConnectionFailed, "connection failed");
     }
 
     {{
