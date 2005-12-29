@@ -86,6 +86,11 @@ namespace ncbi {namespace objects {namespace validator {}} namespace blast {}}
 // Trouble due to some MSVC #define of strcasecmp
 %ignore ncbi::NStr::strcasecmp;
 
+// Need to hide auto_ptr declaration in ncbimisc.hpp from SWIG
+// due to nested template mess
+%import corelib/config/ncbiconf_msvc.h
+#undef HAVE_NO_AUTO_PTR
+
 #endif  // _MSC_VER
 
 %include ignores.i  // Various things to %ignore
@@ -173,13 +178,8 @@ object = ncbi_object
 %include algo.swig
 %include data_loaders.swig
 %include seqext.swig
+%include xblastformat.swig
 
-%ifndef WINDOWS objtools/blast_format/blastfmtutil.hpp
-%ifndef WINDOWS objtools/blast_format/showalign.hpp
-%ifndef WINDOWS objtools/blast_format/showdefline.hpp
-%ifndef WINDOWS objtools/blast_format/blastxml_format.hpp
-%ifndef WINDOWS objtools/blast_format/tabular.hpp
-%ifndef WINDOWS objtools/blast_format/vectorscreen.hpp
 %ifndef WINDOWS objtools/align/alngraphic.hpp
 
 objtools/simple/simple_om.hpp
@@ -208,6 +208,10 @@ objtools/simple/simple_om.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/12/29 17:50:04  jcherry
+ * Move blast formatting stuff to its own file and wrap on all platforms.
+ * Fix for auto_ptr nested templates problem on Windows.
+ *
  * Revision 1.7  2005/11/22 15:20:09  jcherry
  * #define __declspec(x) to nothing
  *
