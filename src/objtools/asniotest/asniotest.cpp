@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrasnb.hpp>
@@ -572,18 +573,46 @@ bool GetAsnDataViaHTTP(
     return okay;
 }
 
-// test to make sure that HTTP object load works
-BEGIN_TEST_FUNCTION(HTTPLoad)
+
+// Configurable host, port, path and URL args for the MMDBSrv test
+NCBI_PARAM_DECL(string, MMDBSrv, Host);
+NCBI_PARAM_DEF (string, MMDBSrv, Host, "www.ncbi.nlm.nih.gov");
+
+NCBI_PARAM_DECL(unsigned short, MMDBSrv, Port);
+NCBI_PARAM_DEF (unsigned short, MMDBSrv, Port, 80);
+
+NCBI_PARAM_DECL(string, MMDBSrv, Path);
+NCBI_PARAM_DEF (string, MMDBSrv, Path, "/Structure/mmdb/mmdbsrv.cgi");
+
+NCBI_PARAM_DECL(string, MMDBSrv, Args);
+NCBI_PARAM_DEF (string, MMDBSrv, Args,
+                "uid=1AL1&form=6&db=t&save=Save&dopt=j"
+                "&Complexity=Cn3D%20Subset");
+
+
+// test to make sure that HTTP object load from the MMDB Web server works
+BEGIN_TEST_FUNCTION(MMDBSrv)
+
+
+    NCBI_PARAM_TYPE(MMDBSrv, Host) MMDBSrv_Host;
+    NCBI_PARAM_TYPE(MMDBSrv, Port) MMDBSrv_Port;
+    NCBI_PARAM_TYPE(MMDBSrv, Path) MMDBSrv_Path;
+    NCBI_PARAM_TYPE(MMDBSrv, Args) MMDBSrv_Args;
+
 
     // get protein structure 1AL1 (mmdb ID 220) from mmdbsrv
     CNcbi_mime_asn1 mime;
-    if (!GetAsnDataViaHTTP("www.ncbi.nlm.nih.gov", "/Structure/mmdb/mmdbsrv.cgi",
-            "uid=1AL1&form=6&db=t&save=Save&dopt=j&Complexity=Cn3D%20Subset", &mime, &err, true))
+    if (!GetAsnDataViaHTTP(MMDBSrv_Host.Get(),
+                           MMDBSrv_Path.Get(),
+                           MMDBSrv_Args.Get(),
+                           &mime, &err, true,
+                           MMDBSrv_Port.Get()))
         ADD_ERR_RETURN("HTTP asn data load failed: " << err);
 
-    if (!mime.IsStrucseq() || mime.GetStrucseq().GetStructure().GetId().size() == 0 ||
-            !mime.GetStrucseq().GetStructure().GetId().front()->IsMmdb_id() ||
-            mime.GetStrucseq().GetStructure().GetId().front()->GetMmdb_id().Get() != 220)
+    if (!mime.IsStrucseq()  ||
+        mime.GetStrucseq().GetStructure().GetId().size() == 0 ||
+        !mime.GetStrucseq().GetStructure().GetId().front()->IsMmdb_id() ||
+        mime.GetStrucseq().GetStructure().GetId().front()->GetMmdb_id().Get() != 220)
         ADD_ERR_RETURN("structure returned is not what was expected");
 
 END_TEST_FUNCTION
@@ -620,7 +649,7 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(DefaultField);
         RUN_TEST(ZeroReal);
         RUN_TEST(UnsignedInt);
-        RUN_TEST(HTTPLoad);
+        RUN_TEST(MMDBSrv);
         RUN_TEST(FullBlobs);
 
     } catch (exception& e) {
@@ -661,16 +690,19 @@ int main(int argc, const char* argv[])
     SetDiagPostLevel(eDiag_Info);   // show all messages
 
     // turn on C++ object verification
-    CSerialObject::SetVerifyDataGlobal(eSerialVerifyData_Always);
+    CSerialObject::SetVerifyDataGlobal (eSerialVerifyData_Always);
     CObjectOStream::SetVerifyDataGlobal(eSerialVerifyData_Always);
 
-    ASNIOTestApp app;
-    return app.AppMain(argc, argv, NULL, eDS_Default, NULL);    // don't use config file
+    return ASNIOTestApp().AppMain(argc, argv);
 }
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/12/29 18:05:46  vakatov
+* Make the MMDB server's URL configurable via config file and/or environment
+* -- using the CParam mechanism. (See also in "asniotest.ini").
+*
 * Revision 1.26  2005/08/04 12:32:45  ivanov
 * Use 'flag' version of NStr::StringToInt()
 *
