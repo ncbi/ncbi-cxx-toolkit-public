@@ -283,9 +283,9 @@ protected:
             m_vRanges.erase(it_right, end_nc()); // erase ranges to the right
         }
 
-        position_type pos_from = this->R.GetFrom();
+        position_type pos_from = r.GetFrom();
         iterator it_left =
-            lower_bound(begin_nc(), end_nc(), pos_from, this->P);
+            lower_bound(begin_nc(), end_nc(), pos_from, p);
         if(it_left != end_nc()) {        
             if(it_left->GetFrom() < pos_from)    
                 it_left->SetFrom(pos_from);
@@ -386,6 +386,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/12/29 19:27:25  dicuccio
+ * Minor tweak - don't use 'this->' unnecessarily
+ *
  * Revision 1.12  2005/12/27 19:49:43  gouriano
  * Adjustments for MSVC 2005 Express
  *
