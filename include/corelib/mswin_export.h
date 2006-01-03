@@ -1038,6 +1038,14 @@
 #  define NCBI_XUTIL_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library xconnext
+ */
+#ifdef NCBI_XCONNEXT_EXPORTS
+#  define NCBI_XCONNEXT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XCONNEXT_EXPORT __declspec(dllimport)
+#endif
+
 
 #else  /* !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD) */
 
@@ -1150,6 +1158,7 @@
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XSQLITE_EXPORT
 #  define NCBI_XUTIL_EXPORT
+#  define NCBI_XCONNEXT_EXPORT
 
 #endif
 
@@ -1171,6 +1180,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.106  2006/01/03 18:49:36  ssikorsk
+ * Add NCBI_XCONNEXT_EXPORTS.
+ *
  * Revision 1.105  2005/12/21 15:09:13  jcherry
  * Added NCBI_XBLASTFORMAT_EXPORT(S)
  *
