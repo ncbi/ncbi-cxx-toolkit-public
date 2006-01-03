@@ -5,7 +5,7 @@
 
 REQUIRES = objects C-Toolkit
 
-ASN_DEP = cdd
+ASN_DEP = cdd ncbimime taxon1
 
 LIB = xcd_utils
 
