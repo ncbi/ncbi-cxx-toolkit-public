@@ -258,21 +258,17 @@ CDbapiSampleApp::CreateConnection(I_DriverContext::TConnectionMode mode,
                                pool_name);
 
     if ( !conn ) {
-        ERR_POST(Fatal << "Cannot open connection to a server: "
+        ERR_POST(Fatal << "Cannot open connection to the server: "
                  << GetServerName());
     }
 
     if ( m_UseSampleDatabase == eUseSampleDatabase ) {
         //  Change default database:
-        // auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
-        CDB_LangCmd* set_cmd = conn->LangCmd("use DBAPI_Sample");
+        auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
         set_cmd->Send();
         while ( set_cmd->HasMoreResults() ) {
-            // auto_ptr<CDB_Result> r(set_cmd->Result());
-            CDB_Result* r = set_cmd->Result();
-            delete r;
+            auto_ptr<CDB_Result> r(set_cmd->Result());
         }
-        delete set_cmd;
     }
 
     return conn;
@@ -490,6 +486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/03 19:49:13  ssikorsk
+ * Minor refactoring
+ *
  * Revision 1.12  2005/11/16 21:58:18  ucko
  * Use NStr::StartsWith rather than string::compare, which requires an
  * explicit length and has a nonstandard syntax under GCC 2.95.
