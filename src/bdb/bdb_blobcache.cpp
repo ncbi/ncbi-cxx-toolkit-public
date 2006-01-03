@@ -1158,7 +1158,11 @@ void CBDB_Cache::Open(const char* cache_path,
 
         try {
             m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
-            if (!m_Env->IsTransactional()) {
+            if (m_Env->IsTransactional()) {
+                LOG_POST(Info <<
+                         "LC: '" << cache_name <<
+                         "' Joined transactional environment ");
+            } else {
                 LOG_POST(Info <<
                          "LC: '" << cache_name <<
                          "' Warning: Joined non-transactional environment ");
@@ -3318,6 +3322,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.131  2006/01/03 15:40:27  kuznets
+ * Fixed bug in diagnostics
+ *
  * Revision 1.130  2005/12/21 14:45:11  kuznets
  * warning fixed
  *
