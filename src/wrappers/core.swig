@@ -193,6 +193,7 @@ util/util_exception.hpp
 util/weakmap.hpp
 util/cache/icache.hpp
 util/dictionary.hpp
+util/dictionary_util.hpp
 // weakmap.inl won't compile
 //util/weakmap.hpp
 connect/email_diag_handler.hpp
@@ -206,6 +207,20 @@ connect/ncbi_pipe.hpp
 connect/ncbi_pipe_connector.hpp
 connect/ncbi_socket.hpp
 connect/ncbi_socket_unix.hpp
+connect/services/blob_storage_netcache.hpp
+connect/services/grid_client.hpp
+connect/services/grid_client_app.hpp
+connect/services/grid_control_thread.hpp
+connect/services/grid_debug_context.hpp
+connect/services/grid_default_factories.hpp
+connect/services/grid_worker.hpp
+connect/services/grid_worker_app.hpp
+connect/services/grid_worker_app_impl.hpp
+connect/services/netcache_client.hpp
+connect/services/netschedule_client.hpp
+connect/services/netschedule_storage.hpp
+connect/services/netservice_client.hpp
+connect/services/ns_client_factory.hpp
 connect/threaded_server.hpp
 serial/aliasinfo.hpp
 serial/asntypes.hpp
@@ -326,6 +341,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/03 14:38:02  jcherry
+ * Added headers
+ *
  * Revision 1.12  2005/12/15 20:31:24  jcherry
  * Added headers
  *
