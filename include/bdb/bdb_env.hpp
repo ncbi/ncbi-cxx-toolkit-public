@@ -131,7 +131,7 @@ public:
     DB_TXN* CreateTxn(DB_TXN* parent_txn = 0, unsigned int flags = 0);
 
     /// Return TRUE if environment has been open as transactional
-    bool IsTransactional() const { return m_Transactional; }
+    bool IsTransactional() const;
 
     /// Flush the underlying memory pools, logs and data bases
     void TransactionCheckpoint();
@@ -218,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/01/03 15:40:48  kuznets
+ * Cosmetics
+ *
  * Revision 1.23  2005/08/24 18:14:27  kuznets
  * +SetTasSpins()
  *

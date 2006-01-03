@@ -420,6 +420,11 @@ void CBDB_Env::TransactionCheckpoint()
     }
 }
 
+bool CBDB_Env::IsTransactional() const 
+{ 
+    return m_Transactional; 
+}
+
 void CBDB_Env::CleanLog()
 {
     char **nm_list = 0;
@@ -459,6 +464,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/01/03 15:39:55  kuznets
+ * Cosmetics
+ *
  * Revision 1.32  2005/08/24 18:15:23  kuznets
  * +SetTasSpins()
  *
