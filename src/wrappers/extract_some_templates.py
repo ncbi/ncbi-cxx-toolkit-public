@@ -39,7 +39,7 @@ banned = ['int', 'double', 'bool', 'string',
 banned_vectors = ['CHit'] # ncbi::CHit vs. ncbi::objects::CHit
 
 for iname in inames:
-    headers = sppp.ProcessFile(iname)
+    headers = sppp.ProcessFile(iname, None, defined_symbols)
     for header in headers:
         hname = os.environ['NCBI_INCLUDE'] + '/' + header
         if not os.path.exists(hname):
