@@ -267,7 +267,8 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
    return TRUE;
 }
 
-/** Perform ungapped extension of a word hit
+/** Perform ungapped extension of a word hit, using a score
+ *  matrix and extending one base at a time
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param matrix The scoring matrix [in]
@@ -275,10 +276,9 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
  * @param s_off The offset of a word in subject [in]
  * @param X The drop-off parameter for the ungapped extension [in]
  * @param ungapped_data The ungapped extension information [out]
- * @return Status: 0 on success, -1 if memory allocation failed.
  */
-static Int2
-s_NuclUngappedExtend(BLAST_SequenceBlk* query, 
+static void
+s_NuclUngappedExtendExact(BLAST_SequenceBlk* query, 
    BLAST_SequenceBlk* subject, Int4** matrix, 
    Int4 q_off, Int4 s_off, Int4 X, 
    BlastUngappedData* ungapped_data)
@@ -339,11 +339,11 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
    }
 	
    /* extend to the right */
-   q = q_end;
-   s = s_end;
+   q = query->sequence + q_off;
+   s = subject0 + s_off/COMPRESSION_RATIO;
    sum = 0;
    base = 3 - (s_off % COMPRESSION_RATIO);
-   
+
    while (s < sf || (s == sf && base > remainder)) {
       ch = *s;
       if ((sum += matrix[*q++][NCBI2NA_UNPACK_BASE(ch, base)]) > 0) {
@@ -361,8 +361,109 @@ s_NuclUngappedExtend(BLAST_SequenceBlk* query,
    
    ungapped_data->length = q_end - q_beg;
    ungapped_data->score = score;
+}
+
+/** Perform ungapped extension of a word hit. Use an approximate method
+ * and revert to rigorous ungapped alignment if the approximate score
+ * is high enough
+ * @param query The query sequence [in]
+ * @param subject The subject sequence [in]
+ * @param matrix The scoring matrix [in]
+ * @param q_off The offset of a word in query [in]
+ * @param s_match_end The first offset in the subject sequence that 
+ *              is not known to exactly match the query sequence [in]
+ * @param s_off The offset of a word in subject [in]
+ * @param X The drop-off parameter for the ungapped extension [in]
+ * @param ungapped_data The ungapped extension information [out]
+ * @param score_table Array containing precompute sums of
+ *                    match and mismatch scores [in]
+ * @param reduced_cutoff Score beyond which a rigorous extension is used [in]
+ */
+static void
+s_NuclUngappedExtend(BLAST_SequenceBlk* query, 
+   BLAST_SequenceBlk* subject, Int4** matrix, 
+   Int4 q_off, Int4 s_match_end, Int4 s_off,
+   Int4 X, BlastUngappedData* ungapped_data,
+   const Int4 *score_table, Int4 reduced_cutoff)
+{
+   Uint1* q_start = query->sequence;
+   Uint1* s_start = subject->sequence;
+   Uint1* q;
+   Uint1* s;
+   Int4 sum, score;
+   Int4 i, len;
+   Uint1* new_q;
+   Int4 q_ext, s_ext;
    
-   return 0;
+   /* The left extension begins behind (q_ext,s_ext); this
+      is the first 4-base boundary after s_off. */
+
+   len = (COMPRESSION_RATIO - (s_off % COMPRESSION_RATIO)) %
+                         COMPRESSION_RATIO;
+   q_ext = q_off + len;
+   s_ext = s_off + len;
+   q = q_start + q_ext;
+   s = s_start + s_ext / COMPRESSION_RATIO;
+   len = MIN(q_ext, s_ext) / COMPRESSION_RATIO;
+
+   score = 0;
+   sum = 0;
+   new_q = q;
+
+   for (i = 0; i < len; s--, q -= 4, i++) {
+       Uint1 s_byte = s[-1];
+       Uint1 q_byte = (q[-4]<<6) | (q[-3]<<4) | (q[-2]<<2) | q[-1];
+
+       sum += score_table[q_byte ^ s_byte];
+       if (sum > 0) {
+           new_q = q - 4; score += sum; sum = 0;
+       }
+       if (sum < X) {
+           break;
+       }
+   }
+
+   /* record the start point of the extension */
+
+   ungapped_data->q_start = new_q - q_start;
+   ungapped_data->s_start = s_ext - (q_ext - ungapped_data->q_start);
+
+   /* the right extension begins at the first bases not
+      examined by the previous loop */
+
+   q = q_start + q_ext;
+   s = s_start + s_ext / COMPRESSION_RATIO;
+   len = MIN(query->length - q_ext, subject->length - s_ext) /
+                        COMPRESSION_RATIO;
+   sum = 0;
+   new_q = q;
+
+   for (i = 0; i < len; s++, q += 4, i++) {
+       Uint1 s_byte = s[0];
+       Uint1 q_byte = (q[0]<<6) | (q[1]<<4) | (q[2]<<2) | q[3];
+
+       sum += score_table[q_byte ^ s_byte];
+       if (sum > 0) {
+           new_q = q + 3; score += sum; sum = 0;
+       }
+       if (sum < X) {
+           break;
+       }
+   }
+
+   if (score > reduced_cutoff) {
+       /* the current score is high enough; throw away the
+          alignment and recompute it rigorously */
+       s_NuclUngappedExtendExact(query, subject, matrix, q_off,
+                                 s_off, X, ungapped_data);
+   }
+   else {
+       /* record the length and score of the extension. Make
+          sure the alignment extends at least to s_match_end */
+       ungapped_data->score = score;
+       ungapped_data->length = MAX(s_match_end - ungapped_data->s_start,
+                               (new_q - q_start) - ungapped_data->q_start + 1);
+   }
 }
 
 /** Mask for encoding in one integer a hit offset and whether that hit has 
@@ -443,8 +544,10 @@ s_BlastnDiagExtendInitialHit(BLAST_SequenceBlk* query,
       if (word_params->options->ungapped_extension) {
          /* Perform ungapped extension */
          ungapped_data = &dummy_ungapped_data;
-         s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
-                              -word_params->x_dropoff, ungapped_data);
+         s_NuclUngappedExtend(query, subject, matrix, q_off, s_end, s_off, 
+                              -word_params->x_dropoff, ungapped_data,
+                              word_params->nucl_score_table,
+                              word_params->reduced_nucl_cutoff_score);
       
          last_hit = ungapped_data->length + ungapped_data->s_start 
             + diag_table->offset;
@@ -592,8 +695,10 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
             if (word_params->options->ungapped_extension) {
                /* Perform ungapped extension */
                ungapped_data = &dummy_ungapped_data;
-               s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
-                                    -word_params->x_dropoff, ungapped_data);
+               s_NuclUngappedExtend(query, subject, matrix, q_off, s_end, s_off,
+                                    -word_params->x_dropoff, ungapped_data,
+                                    word_params->nucl_score_table,
+                                    word_params->reduced_nucl_cutoff_score);
       
                last_hit = ungapped_data->length + ungapped_data->s_start;
             } else {
@@ -660,8 +765,10 @@ s_BlastnStacksExtendInitialHit(BLAST_SequenceBlk* query,
       if (word_params->options->ungapped_extension) {
          /* Perform ungapped extension */
          ungapped_data = &dummy_ungapped_data;
-         s_NuclUngappedExtend(query, subject, matrix, q_off, s_off, 
-                              -word_params->x_dropoff, ungapped_data);
+         s_NuclUngappedExtend(query, subject, matrix, q_off, s_end, s_off, 
+                              -word_params->x_dropoff, ungapped_data,
+                              word_params->nucl_score_table,
+                              word_params->reduced_nucl_cutoff_score);
          stack[stack_top].level = 
             (ungapped_data->length + ungapped_data->s_start);
       } else {
@@ -887,20 +994,26 @@ BlastNaExtendRight(const BlastOffsetPair* offset_pairs, Int4 num_hits,
             continue;
       }
 
-      /* check the diagonal on which the hit lies */
+      /* check the diagonal on which the hit lies. The boundaries
+         extend from the first match of the hit to one beyond the
+         last match */
 
       if (word_params->container_type == eWordStacks) {
          hit_ready = s_BlastnStacksExtendInitialHit(query, subject, min_step,
                                            template_length, word_params, 
                                            matrix, ewp->stack_table, 
-                                           q_offset, s_off + extended_right,
-                                           s_offset, init_hitlist);
+                                           q_offset - extended_left, 
+                                           s_off + extended_right,
+                                           s_offset - extended_left, 
+                                           init_hitlist);
       } else {
          hit_ready = s_BlastnDiagExtendInitialHit(query, subject, min_step, 
                                          template_length, word_params, 
                                          matrix, ewp->diag_table, 
-                                         q_offset, s_off + extended_right,
-                                         s_offset, init_hitlist);
+                                         q_offset - extended_left, 
+                                         s_off + extended_right,
+                                         s_offset - extended_left, 
+                                         init_hitlist);
       }
       if (hit_ready)
          ++hits_extended;
@@ -1088,20 +1201,26 @@ BlastNaExtendRightAndLeft(const BlastOffsetPair* offset_pairs, Int4 num_hits,
                continue;
          }
 
-         /* check the diagonal on which the hit lies */
+         /* check the diagonal on which the hit lies. The boundaries
+            extend from the first match of the hit to one beyond the
+            last match */
 
          if (word_params->container_type == eWordStacks) {
             hit_ready = s_BlastnStacksExtendInitialHit(query, subject, min_step,
                                               template_length, word_params, 
                                               matrix, ewp->stack_table, 
-                                              q_offset, s_off,
-                                              s_offset, init_hitlist);
+                                              q_offset - extended_left, 
+                                              s_off,
+                                              s_offset - extended_left, 
+                                              init_hitlist);
          } else {
             hit_ready = s_BlastnDiagExtendInitialHit(query, subject, min_step, 
                                             template_length, word_params, 
                                             matrix, ewp->diag_table, 
-                                            q_offset, s_off,
-                                            s_offset, init_hitlist);
+                                            q_offset - extended_left, 
+                                            s_off,
+                                            s_offset - extended_left, 
+                                            init_hitlist);
          }
          if (hit_ready)
             ++hits_extended;
