@@ -120,13 +120,6 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
-    virtual CDB_Connection* Connect(const string&   srv_name,
-                                    const string&   user_name,
-                                    const string&   passwd,
-                                    TConnectionMode mode,
-                                    bool            reusable  = false,
-                                    const string&   pool_name = kEmptyStr);
-
     virtual bool IsAbleTo(ECapability cpb) const {return false;}
 
 
@@ -145,6 +138,9 @@ public:
         return m_Reporter;
     }
 
+protected:
+    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr);
+    
 private:
     SQLHENV     m_Context;
     SQLUINTEGER m_PacketSize;
@@ -724,6 +720,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/01/03 18:56:03  ssikorsk
+ * Replace method Connect with MakeConnection.
+ *
  * Revision 1.17  2005/12/01 14:33:32  ssikorsk
  * Private method CODBC_Connection::x_SendData takes
  * statement instead of connection as a parameter now.

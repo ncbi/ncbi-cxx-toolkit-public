@@ -78,14 +78,6 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
-    virtual CDB_Connection* Connect(const string&   srv_name,
-                                    const string&   user_name,
-                                    const string&   passwd,
-                                    TConnectionMode mode,
-                                    bool            reusable  = false,
-                                    const string&   pool_name = kEmptyStr);
-
-
     //
     // CTLIB specific functionality
     //
@@ -111,6 +103,9 @@ public:
     static bool CTLIB_srverr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                                      CS_SERVERMSG* msg);
 
+protected:
+    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr);
+    
 private:
     CS_CONTEXT* m_Context;
     CS_INT      m_PacketSize;
@@ -634,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/01/03 18:55:00  ssikorsk
+ * Replace method Connect with MakeConnection.
+ *
  * Revision 1.21  2005/12/06 19:20:02  ssikorsk
  * Added private method GetConnection to all *command* classes
  *

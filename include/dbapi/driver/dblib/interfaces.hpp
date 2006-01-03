@@ -164,13 +164,6 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
-    virtual CDB_Connection* Connect(const string&   srv_name,
-                                    const string&   user_name,
-                                    const string&   passwd,
-                                    TConnectionMode mode,
-                                    bool            reusable  = false,
-                                    const string&   pool_name = kEmptyStr);
-
     virtual bool IsAbleTo(ECapability cpb) const;
 
     //
@@ -214,6 +207,9 @@ public:
 public:
     bool ConnectedToMSSQLServer(void) const;
     int GetTDSVersion(void) const;
+    
+protected:
+    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr);
     
 private:
     short                 m_PacketSize;
@@ -994,6 +990,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/01/03 18:55:30  ssikorsk
+ * Replace method Connect with MakeConnection.
+ *
  * Revision 1.29  2005/12/06 19:21:52  ssikorsk
  * Added private methods GetResultSet/SetResultSet/ClearResultSet
  * to all *command* classes
