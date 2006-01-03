@@ -120,7 +120,7 @@ const string& CEnvironmentRegistry::x_Get(const string& section,
                                           const string& name,
                                           TFlags flags) const
 {
-    if (flags & fPersistent) {
+    if ((flags & fTPFlags) == fPersistent) {
         return kEmptyStr;
     }
     REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
@@ -321,6 +321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/03 19:39:43  ucko
+ * x_Get: tolerate fPersistent when accompanied by fTransient.
+ *
  * Revision 1.4  2005/04/28 14:03:47  ivanov
  * Replace internal REV_ITERATE with REVERSE_ITERATE macro from ncbimisc.hpp
  *
