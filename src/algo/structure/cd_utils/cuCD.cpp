@@ -28,7 +28,7 @@
  * File Description:
  *
  *       High-level algorithmic operations on one or more CCd objects.
- *       (methods that only traverse the cdd ASN.1 data structure are in 
+ *       (methods that only traverse the cdd ASN.1 data structure are in
  *        placed in the CCd class itself)
  *
  * ===========================================================================
@@ -139,7 +139,7 @@ bool Reorder(CCdCore* pCD, const vector<int> positions)
     //  Before moving the alignments around, reorder the structural alignments to reflect
     //  the new ordering of the rows.  If there was a problem, the structural alignments
     //  are left in their original order.
-    bool saReorderOK = ReorderStructureAlignments(pCD, positions);    
+    bool saReorderOK = ReorderStructureAlignments(pCD, positions);
 
     alignments.clear();
 	for (int i = 0; i < temp.size(); i++)
@@ -149,7 +149,7 @@ bool Reorder(CCdCore* pCD, const vector<int> positions)
 	return true;
 }
 
-bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions) 
+bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions)
 {
     bool result = false;
     if (!pCD || !pCD->IsSeqAligns() || positions.size() == 0 || !pCD->Has3DMaster())
@@ -162,7 +162,7 @@ bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions)
     TSAMap saMapTmp;
     TSAMap::iterator saMapIt, saMapEnd;
 
-    const CPDB_seq_id* pdbId = NULL;   
+    const CPDB_seq_id* pdbId = NULL;
 
     unsigned int i, nRows = (unsigned) pCD->GetNumRows();
     int n3DAlign = pCD->Num3DAlignments(), nPDBs = 0;
@@ -181,7 +181,7 @@ bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions)
     //  structure alignment to the temporary map indexed by the *new* position.  Recall that
     //  positions does not include an entry for the master and positions[0] is the new position
     //  of row 1.
-    int si; 
+    int si;
     for (i = 0; i < (nRows - 1) && saListIt != saListEnd; ++i) {
         si = (int) i;
         if (pCD->GetPDB(si+1, pdbId)) {
@@ -191,7 +191,7 @@ bool ReorderStructureAlignments(CCdCore* pCD, const vector<int>& positions)
         }
     }
 
-    //  The number of non-master PDBs founds should be the same as the number of 
+    //  The number of non-master PDBs founds should be the same as the number of
     //  structural alignments.  If not, then there's no way to know how to reorder
     //  them --> leave them in the original state.
     if (nPDBs == n3DAlign) {
@@ -219,7 +219,7 @@ bool SetCreationDate(CCdCore* cd) {
 		    if((*it)->IsCreate_date())
 		    {
 			    descList.erase(it);
-			    break;   
+			    break;
 		    }
 	    }
 	    CTime cur(CTime::eCurrent);
@@ -246,7 +246,7 @@ bool SetUpdateDate(CCdCore* cd) {
 		    if((*it)->IsUpdate_date())
 		    {
 			    descList.erase(it);
-			    break;   
+			    break;
 		    }
 	    }
 	    CTime cur(CTime::eCurrent);
@@ -264,9 +264,9 @@ bool SetUpdateDate(CCdCore* cd) {
 
 //   If ncbiMime contains a CD, return it.  Otherwise return NULL.
 CCdCore* ExtractCDFromMime(CNcbi_mime_asn1* ncbiMime) {
-    
+
     CCdCore* pCD = NULL;
-    
+
     //  Only mime type defined w/ a CD in it is 'general' == Biostruc-seqs-aligns-cdd,
     //  whose 'seq-align-data' choice object must have a cd.  Ignore the additional
     //  'structures' and 'structure-type' fields.
@@ -274,13 +274,13 @@ CCdCore* ExtractCDFromMime(CNcbi_mime_asn1* ncbiMime) {
         const CCdd* tmpCCdd = &ncbiMime->GetGeneral().GetSeq_align_data().GetCdd();
         pCD = CopyCD((const CCdCore*) tmpCCdd);
     }
-    
+
     return pCD;
 }
 
 //  from cdt_frame.cpp
 //  Wraps a call to CopyASNObject
-//  If copyNonASNMembers = true, all statistics, sequence strings and aligned residues 
+//  If copyNonASNMembers = true, all statistics, sequence strings and aligned residues
 //  data structures are copied.  The CD's read status is *always* copied.
 CCdCore* CopyCD(const CCdCore* cd) {
 
@@ -294,7 +294,7 @@ CCdCore* CopyCD(const CCdCore* cd) {
   return NULL;
 }
 
-//  For a specified row in cd1, find all potential matches in cd2.  
+//  For a specified row in cd1, find all potential matches in cd2.
 //  If cd1 == cd2, returns row1 plus any other matches (should be exactly one in a valid CD)
 //  If cd1AsChild == true,  mapping assumes cd2 is parent of cd1.
 //  If cd1AsChild == false, mapping assumes cd1 is parent of cd2.
@@ -303,27 +303,27 @@ CCdCore* CopyCD(const CCdCore* cd) {
 //  (except for interface, almost the same as the CFootprint::isMemberOf methods;
 //   CFootprint is streamlined by factoring out the check on Seq_id's)
 int GetMappedRowIds(CCdCore* cd1, int row1, CCdCore* cd2, vector<int>& rows2, bool cd1AsChild, bool overlapMode) {
-    
+
     int   NumRows = cd1->GetNumRows();
     int   Lower, Upper, Lower2, Upper2;
     int   NumMatches;
     vector<int> matches;
     CRef<CSeq_id>  SeqId;
-    
+
     //  Each CD must be valid, and row1 must be valid
     if (cd1 == NULL || cd2 == NULL || !cd1->GetSeqIDFromAlignment(row1, SeqId)) {
         rows2.clear();
         return 0;
     }
-    
+
     // get its alignment range
     Lower = cd1->GetLowerBound(row1);
     Upper = cd1->GetUpperBound(row1);
-    
+
     matches.clear();
     NumMatches = cd2->GetAllRowIndicesForSeqId(SeqId, matches);  // find all row indices for a seqID (return # found)
     if (NumMatches) {
-        
+
         // for each of the matches
         for (int j=0; j<NumMatches; j++) {
             Lower2 = cd2->GetLowerBound(matches[j]);
@@ -429,7 +429,7 @@ void SetAlignedResiduesForCD(CCdCore* cd, char** & ppAlignedResidues, bool force
 // allocate space for, and make, an array of all aligned residues
 //-------------------------------------------------------------------------
     bool isMaster;
-    
+
     string s;
     int numRows = cd->GetNumRows();
     int numAligned = cd->GetAlignmentLength();
@@ -476,7 +476,7 @@ CRef< CBioseq > GetMasterBioseqWithFootprintOld(CCdCore* cd)
 	masterBioseq->Assign(*bioseq);
 	//add local seq-id of cd accession
 	list< CRef< CSeq_id > >& idList = masterBioseq->SetId();
-	CRef< CSeq_id >  seqIdRef(new CSeq_id(CSeq_id::e_Local, cd->GetAccession(), "")); 
+	CRef< CSeq_id >  seqIdRef(new CSeq_id(CSeq_id::e_Local, cd->GetAccession(), ""));
 	idList.push_back(seqIdRef);
 	//add seq-loc of footprint
 	list< CRef< CSeq_annot > >&  seqAnnots = masterBioseq->SetAnnot();
@@ -520,7 +520,7 @@ CRef< CBioseq > GetBioseqWithFootprintForNthRow(CCdCore* cd, int N, string& errs
 	BioseqForNthRow->Assign(*bioseq);
 	//add local seq-id of cd accession
 	list< CRef< CSeq_id > >& idList = BioseqForNthRow->SetId();
-	CRef< CSeq_id >  seqIdRef(new CSeq_id(CSeq_id::e_Local, cd->GetAccession(), "")); 
+	CRef< CSeq_id >  seqIdRef(new CSeq_id(CSeq_id::e_Local, cd->GetAccession(), ""));
 	idList.push_back(seqIdRef);
 	//add seq-loc of footprint
 	list< CRef< CSeq_annot > >&  seqAnnots = BioseqForNthRow->SetAnnot();
@@ -661,7 +661,7 @@ bool ReMasterCdWithoutUnifiedBlocks(CCdCore* cd, int Row, bool resetFields)
 	return remasterAlignannot(*cd, Row);
 }
 
-bool remasterAlignannot(CCdCore& cd, unsigned int oldMasterRow) 
+bool remasterAlignannot(CCdCore& cd, unsigned int oldMasterRow)
 {
     //  Exit if invalid row number or the old master is same as current master.
     if (oldMasterRow >= cd.GetNumRows() || oldMasterRow == 0) return false;
@@ -736,7 +736,7 @@ bool remasterAlignannot(CCdCore& cd, unsigned int oldMasterRow)
     return ok;
 }
 
-int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields) 
+int  PurgeConsensusSequences(CCdCore* pCD, bool resetFields)
 {
     int nPurged = 0;
     vector<int> consensusRows, consensusSeqListIds;
@@ -773,91 +773,101 @@ int IntersectByMaster(CCdCore* ccd) {
     unsigned int masterLen = (ccd) ? ccd->GetSequenceStringByRow(0).length() : 0;
     if (masterLen == 0) return result;
 
-    int nAlignedMaster = 0, nAlignedIBM = 0;
-    unsigned int i, nRows = ccd->GetNumRows();
+    bool allMasterModelsEqual = true;
+    int slaveStart;
+    int nAlignedIBM = 0;
+    unsigned int i, j, nBlocks;
+    unsigned int nRows = ccd->GetNumRows();
+
     BlockIntersector blockIntersector(masterLen);
-    BlockModel row0BlockModel(ccd->GetSeqAlign(0), false);
-    BlockModel* intersectedBlockModel, *masterBlockModel;
+    BlockModel* intersectedBlockModel;
+    //BlockModel* simpleIntersectedBlockModel;
+    BlockModelPair* bmp;
+    vector<BlockModelPair*> blockModelPairs;
+    set<int> forcedCTerminiInIntersection;
 
-    string sr0 = row0BlockModel.toString();
+    list< CRef< CSeq_align > >& cdSeqAligns = ccd->GetSeqAligns();
+    list< CRef< CSeq_align > >::iterator cdSeqAlignIt = cdSeqAligns.begin(), cdSeqAlignEnd = cdSeqAligns.end();
 
-    nAlignedMaster = row0BlockModel.getTotalBlockLength();
-    if (nAlignedMaster == 0) {
-        return result;
-    }
+    for (i = 0; cdSeqAlignIt != cdSeqAlignEnd; ++cdSeqAlignIt, ++i) {
+        bmp = new BlockModelPair(*cdSeqAlignIt);
 
-    for (i = 0; i < nRows; ++i) {
-        masterBlockModel = new BlockModel(ccd->GetSeqAlign(i), false);  
-        if (masterBlockModel) {
-            blockIntersector.addOneAlignment(*masterBlockModel);
+        //  We assume # of blocks and all block lengths are same on master and slave.
+        if (bmp && bmp->isValid()) {
+
+            blockModelPairs.push_back(bmp);
+            blockIntersector.addOneAlignment(bmp->getMaster());
+
+            //  Find places the intersection can't merge blocks (i.e., where there are
+            //  gaps in the slave across a block boundary, but not in the master).
+            BlockModel& slave = bmp->getSlave();
+            nBlocks = slave.getBlocks().size();
+            for (j = 0; j < nBlocks - 1; ++j) {  //  '-1' as I don't care about end of the C-terminal block
+                if (slave.getGapToCTerminal(j) > 0 && bmp->getMaster().getGapToCTerminal(j) == 0) {
+                    forcedCTerminiInIntersection.insert(bmp->getMaster().getBlock(j).getEnd());
+                }
+            }
         }
-        delete masterBlockModel;
     }
 
-    intersectedBlockModel = blockIntersector.getIntersectedAlignment();
-    if (!intersectedBlockModel) {
+    //  There was a problem creating one of the BlockModelPair objects from a seq_align,
+    //  or one or more seq_align was invalid.
+    if (blockModelPairs.size() != cdSeqAligns.size()) {
         return result;
     }
 
+    //simpleIntersectedBlockModel = blockIntersector.getIntersectedAlignment();
+    intersectedBlockModel = blockIntersector.getIntersectedAlignment(forcedCTerminiInIntersection);
+    nAlignedIBM = (intersectedBlockModel) ? intersectedBlockModel->getTotalBlockLength() : 0;
+    if (nAlignedIBM == 0) {
+        return result;
+    }
+
+    i = 0;
+    while (i < nRows - 1 && allMasterModelsEqual) {  // #rows = #seq_aligns + 1
+        allMasterModelsEqual = (blockModelPairs[i] && (blockModelPairs[i]->getMaster() == *intersectedBlockModel));
+        ++i;
+    }
+
+
+    //string testStr, testStr2;
     //string sint = intersectedBlockModel->toString();
+    //string sintsimple = simpleIntersectedBlockModel->toString();
+    //delete simpleIntersectedBlockModel;
 
     //  If have case where every block model isn't identical...
-    if (!(*intersectedBlockModel == row0BlockModel)) {
+    if (!allMasterModelsEqual) {
 
-        nAlignedIBM = intersectedBlockModel->getTotalBlockLength();
+        nBlocks = intersectedBlockModel->getBlocks().size();
+        for (i = 0, cdSeqAlignIt = cdSeqAligns.begin(); i < nRows - 1 ; ++i, ++cdSeqAlignIt) {
 
-        //  Need to modify the block model to conform with intersectedBlockModel.
-        //  If the nAlignedIBM == nAlignedMaster, all residues remain aligned
-        //  but there could still be a difference in block boundaries (e.g.,
-        //  contiguous blocks being defined as two blocks in one seq align but
-        //  one big block in another).
-        if (nAlignedIBM > 0 && nAlignedIBM <= nAlignedMaster) {  
+            bmp = blockModelPairs[i];  //BlockModelPair seqAlignPair(*cdSeqAlignIt);
+            BlockModel* intersectedSeqAlignSlave = new BlockModel(bmp->getSlave().getSeqId(), false);
 
-            list< CRef< CSeq_align > >& cdSeqAligns = ccd->GetSeqAligns();
-            list< CRef< CSeq_align > >::iterator cdSeqAlignIt = cdSeqAligns.begin(), cdSeqAlignEnd = cdSeqAligns.end();
+            bmp->reverse();
+            for (j = 0; j < nBlocks; ++j) {
+                const Block& jthMasterBlock = intersectedBlockModel->getBlock(j);
+                slaveStart = bmp->mapToMaster(jthMasterBlock.getStart());
 
-            //  Make a dummy pair where the intersected master is aligned to itself.
-            BlockModelPair dummyMasterPair(intersectedBlockModel->toSeqAlign(*intersectedBlockModel));
+                //  since we're dealing w/ an intersection, slaveStart should always be valid
+                assert(slaveStart != -1);
 
-            //string testStr, testStr2;
-            for (i = 0; cdSeqAlignIt != cdSeqAlignEnd; ++cdSeqAlignIt, ++i) {
-
-                //  this way, adjacent blocks appear to remain separate
-                BlockModelPair intersectedPair(*cdSeqAlignIt);
-                intersectedPair.remaster(dummyMasterPair);
-                //testStr = intersectedPair.getMaster().toString();
-                //testStr2= intersectedPair.getSlave().toString();
-                *cdSeqAlignIt = intersectedPair.toSeqAlign();
-
-                if (i == 0) result = intersectedPair.getMaster().getBlocks().size();
-
-                /*
-                //  this way, adjacent blocks appear to get merged
-                BlockModelPair intersectedPair(*cdSeqAlignIt);
-                delta = *intersectedBlockModel - intersectedPair.getMaster();
-                intersectedSlave = intersectedPair.getSlave() + *(delta.first);
-                testStr = (intersectedPair.getMaster() + *(delta.first)).first->toString();
-                testStr2 = intersectedSlave.first->toString();
-
-                intersectedPair.getMaster() = *intersectedBlockModel;
-                intersectedPair.getSlave()  = *(intersectedSlave.first);
-                *cdSeqAlignIt = intersectedPair.toSeqAlign();
-                */
+                intersectedSeqAlignSlave->addBlock(Block(slaveStart, jthMasterBlock.getLen(), jthMasterBlock.getId()));
             }
+            *cdSeqAlignIt = intersectedSeqAlignSlave->toSeqAlign(*intersectedBlockModel);
+            //testStr = intersectedSeqAlignSlave->toString();
+            //testStr2 = bmp->getMaster().toString();  // original *slave* alignment
 
-        // Should never happen, but original alignment should remain safe.
-        } else if (nAlignedIBM > nAlignedMaster) {  
-            result = row0BlockModel.getBlocks().size();
-
-        // There is no residue common to all seq-aligns.
-        } else if (nAlignedIBM == 0) {
-            result = -1;
+            delete bmp;
         }
-        delete intersectedBlockModel;
+        blockModelPairs.clear();
+        result = nBlocks;
 
     } else {  //  IBM not required...
         result = 0;
     }
+
+    delete intersectedBlockModel;
 
     return result;
 }
@@ -891,6 +901,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2006/01/03 16:19:58  lanczyck
+ * fixes for IBM;
+ * add overload of 'getIntersectedAlignment' to force specific block boundaries
+ *
  * Revision 1.12  2005/12/14 20:23:13  cliu
  * remove repeats.
  *

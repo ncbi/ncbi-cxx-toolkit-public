@@ -48,6 +48,11 @@ public:
 
 	void addOneAlignment(const BlockModel& bm);
 	BlockModel* getIntersectedAlignment();
+    //  'forcedBreak' contains sequences positions after which, if part
+    //  of a block in the intersected alignment, forced the block to end.
+    //  (I.e., forced C-terminal ends of a block).  This will force breaking 
+    //  large blocks into multiple smaller blocks.
+	BlockModel* getIntersectedAlignment(const std::set<int>& forcedBreak);
 
 private:
 	int m_seqLen;
@@ -65,6 +70,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/01/03 16:15:29  lanczyck
+ * fixes for IBM;
+ * add overload of 'getIntersectedAlignment' to force specific block boundaries
+ *
  * Revision 1.1  2005/04/19 14:28:00  lanczyck
  * initial version under algo/structure
  *

@@ -106,6 +106,57 @@ BlockModel* BlockIntersector::getIntersectedAlignment()
 	return result;
 }
 
+BlockModel* BlockIntersector::getIntersectedAlignment(const std::set<int>& forcedBreak)
+{
+	BlockModel* result = new BlockModel(*m_firstBm);
+	if (m_totalRows <= 1)
+		return result;
+	std::vector<Block>& blocks = result->getBlocks();
+    std::set<int>::const_iterator setEnd = forcedBreak.end();
+	blocks.clear();
+	bool inBlock = false;
+    bool forceNewBlock = false;
+	int start = 0;
+	int blockId = 0;
+	int i = 0;
+	for (; i < m_seqLen; i++)
+	{
+
+        //  previous position was not in a block so forcedBreak is irrelevant
+		if (!inBlock)
+		{
+			if (m_aligned[i] >= m_totalRows)
+			{
+				start = i;
+				inBlock = true;
+			}
+		}
+		else
+		{
+            //  was the previous position a forced C-terminus?
+            forceNewBlock = (i > 0 && forcedBreak.find(i - 1) != setEnd);
+
+            //  it's a C-termini w/o any forcing
+            if (m_aligned[i] < m_totalRows)
+			{
+				inBlock = false;
+				blocks.push_back(Block(start, i - start, blockId));
+				blockId++;
+			} 
+            //  need to break this block and immediately start a new one
+            else if (forceNewBlock)
+            {
+				blocks.push_back(Block(start, i - start, blockId));
+				blockId++;
+                start = i;
+            }
+		}
+	}
+	if (inBlock) //block goes to the end of the sequence
+		blocks.push_back(Block(start, i - start, blockId));
+	return result;
+}
+
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE
 
@@ -114,6 +165,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2006/01/03 16:19:58  lanczyck
+ * fixes for IBM;
+ * add overload of 'getIntersectedAlignment' to force specific block boundaries
+ *
  * Revision 1.1  2005/04/19 14:27:18  lanczyck
  * initial version under algo/structure
  *
