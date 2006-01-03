@@ -183,48 +183,32 @@ static const SStringNumericValues s_Str2NumTests[] = {
     BAD("1.."),
     STRI(-123),
     BAD("--123"),
-
     { "+123", DF, 123, 123, 123, 123, 123, 123 },
     BAD("++123"),
     BAD("- 123"),
-
-    // fix StringToDouble(), should be: 
-    // BAD(" 123")
-    { " 123",  DF, -1, kBad, kBad, kBad, kBad, 123. },
+    BAD(" 123"),
 
 //+++ FIX ME: after transition to new flag versions of StringTo*() replace (>>*) with real flags !!!
+// It compiles fine, but on moment of execution each flag here have an zero vlaue.
 
-    { " 123", (1<<12) /*NStr::fAllowLeadingSpaces*/,  -1, 123,  123,  123,  123,  123. },
-    { " 123",  (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/, -1, 123,  123,  123,  123,  123. },
-
+    { " 123", (1<<12)/*NStr::fAllowLeadingSpaces*/,  -1, 123,  123,  123,  123,  123. },
+    { " 123", (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/, -1, 123,  123,  123,  123,  123. },
     BAD("123 "),
-
-    // fix StringToDouble(), should be: 
-    // { "123 ",  NStr::fAllowTrailingSpaces,  -1, 123,  123,  123,  123,  123. },
-    // { "123 ",  NStr::fAllowTrailingSymbols, -1, 123,  123,  123,  123,  123. },
-    { "123 ",  (1<<14)/*NStr::fAllowTrailingSpaces*/,  -1, 123,  123,  123,  123,  kBad },
-    { "123 ",  (1<<14)|(1<<15)/*NStr::fAllowTrailingSymbols*/, -1, 123,  123,  123,  123,  kBad },
-
-    // fix StringToDouble(), should be: 
-    // { " 123 ",  NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces, -1, 123,  123,  123,  123,  123. },
-    { " 123 ", (1<<12)|(1<<14)/*NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces*/, -1, 123,  123,  123,  123,  kBad },
-
-    // fix StringToDouble(), should be: 
-    // { "1,234",     NStr::fAllowCommas, -1,    1234,    1234,    1234,    1234,    1234 },
-    // { "1,234,567", NStr::fAllowCommas, -1, 1234567, 1234567, 1234567, 1234567, 1234567 },
+    { "123 ",     (1<<14)/*NStr::fAllowTrailingSpaces*/,  -1, 123,  123,  123,  123,  123. },
+    { "123 ",     (1<<14)|(1<<15)/*NStr::fAllowTrailingSymbols*/, -1, 123,  123,  123,  123,  123. },
+    { "123(45) ", (1<<14)|(1<<15)/*NStr::fAllowTrailingSymbols*/, -1, 123,  123,  123,  123,  123. },
+    { " 123 ",    (1<<12)|(1<<14)/*NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces*/, -1, 123,  123,  123,  123,  123. },
+    
     { "1,234",     (1<<11)/*NStr::fAllowCommas*/, -1,    1234,    1234,    1234,    1234, kBad },
     { "1,234,567", (1<<11)/*NStr::fAllowCommas*/, -1, 1234567, 1234567, 1234567, 1234567, kBad },
     { "12,34",     (1<<11)/*NStr::fAllowCommas*/, -1,    kBad,    kBad,    kBad,    kBad, kBad },
     { ",123",      (1<<11)/*NStr::fAllowCommas*/, -1,    kBad,    kBad,    kBad,    kBad, kBad },
-    // fix StringToDouble(), should be: 
-    // { ",123",      NStr::fAllowCommas | NStr::fAllowLeadingSymbols, -1, 123, 123, 123, 123, 123 },
-    { ",123",      (1<<11)|(1<<12)|(1<<13)/*NStr::fAllowCommas | NStr::fAllowLeadingSymbols*/, -1, 123, 123, 123, 123, kBad },
+    { ",123",      (1<<11)|(1<<12)|(1<<13)/*NStr::fAllowCommas | NStr::fAllowLeadingSymbols*/, -1, 123, 123, 123, 123, 123 },
 
     { "+123", 0, 123, 123, 123, 123, 123, 123 },
     // fix StringToDouble(), should be: 
-    // { "123", NStr::fMandatorySign, 123, kBad, kBad, kBad, kBad, kBad },
-    { "123",  (1<<10)/*NStr::fMandatorySign*/, 123, kBad, kBad, kBad, kBad,  123 },
-    { "+123", (1<<10)/*NStr::fMandatorySign*/, 123,  123,  123,  123,  123,  123 },
+    { "123",  (1<<10)/*NStr::fMandatorySign*/, 123, kBad, kBad, kBad, kBad, kBad },
+    { "+123", (1<<10)/*NStr::fMandatorySign*/, 123,  123,  123,  123,  123, 123 },
     { "-123", (1<<10)/*NStr::fMandatorySign*/,  -1, -123, kBad, -123, kBad, -123 },
     { "+123", (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/, 123,  123,  123,  123,  123,  123 },
     { "-123", (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/,  -1, -123, kBad, -123, kBad, -123 }
@@ -1515,6 +1499,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.55  2006/01/03 17:40:26  ivanov
+ * NStr:StringToDouble() added support for TStringToNumFlags flags
+ *
  * Revision 6.54  2005/10/19 12:42:17  ivanov
  * Use changed NStr::*ToString() with additional adix base parameter
  *

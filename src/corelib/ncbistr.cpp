@@ -340,14 +340,9 @@ int NStr::StringToNumeric(const string& str)
                         " - invalid characters", delta);                    \
         }                                                                   \
 
-#define CHECK_ENDPTR(conv)                                                 \
+#define CHECK_ENDPTR(conv)                                                  \
     if ( str[pos] ) {                                                       \
         S2N_CONVERT_ERROR(conv, EINVAL, true, pos);                         \
-    }
-
-#define CHECK_ENDPTR_(conv)                                                \
-    if ( *endptr ) {                                                        \
-        S2N_CONVERT_ERROR(conv, EINVAL, true, s_DiffPtr(endptr, begptr));   \
     }
 
 #define CHECK_RANGE(nmin, nmax, conv)                                      \
@@ -422,30 +417,6 @@ NStr::StringToULong(const CTempString& str, TStringToNumFlags flags, int base)
 }
 
 
-double
-NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
-{
-    string s = str;
-    char* endptr = 0;
-    const char* begptr = s.c_str();
-
-    errno = 0;
-    double n = strtod(begptr, &endptr);
-
-    if ( errno  ||  !endptr  ||  endptr == begptr ) {
-        S2N_CONVERT_ERROR(double, EINVAL, false, s_DiffPtr(endptr, begptr));
-    }
-    if ( *(endptr - 1) != '.'  &&  *endptr == '.' ) {
-        // Only a single dot at the end of line is allowed
-        if (endptr == strchr(begptr, '.')) {
-            endptr++;
-        }
-    }
-    CHECK_ENDPTR_(double);
-    return n;
-}
-
-
 /// @internal
 // Check that symbol 'ch' is good symbol for number with radix 'base'.
 bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
@@ -468,10 +439,8 @@ bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
  }
 
 
-
 // Skip all allowed chars (all except used for digit composition). 
 // Update 'ptr' to current position in the string.
-
 enum ESkipMode {
     eSkipAll,           // all symbols
     eSkipAllAllowed,    // all symbols, except digit/+/-/.
@@ -681,6 +650,70 @@ NStr::StringToUInt8(const CTempString& str, TStringToNumFlags flags, int base)
         s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
     }
     CHECK_ENDPTR(Uint8);
+    return n;
+}
+
+
+double
+NStr::StringToDouble(const CTempString& str, TStringToNumFlags flags)
+{
+    _ASSERT(flags == 0  ||  flags > 32);
+
+    // Current position in the string
+    size_t pos = 0;
+
+    // Skip allowed leading symbols
+    if (flags & fAllowLeadingSymbols) {
+        bool spaces = ((flags & fAllowLeadingSymbols) == fAllowLeadingSpaces);
+        s_SkipAllowedSymbols(str, pos,
+                             spaces ? eSkipSpacesOnly : eSkipAllAllowed);
+    }
+    // Check mandatory sign
+    if (flags & fMandatorySign) {
+        switch (str[pos]) {
+        case '-':
+        case '+':
+            break;
+        default:
+            S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+            break;
+        }
+    }
+    // For consistency make additional check on incorrect leading symbols.
+    // Because strtod() may just skip such symbols.
+    if (!(flags & fAllowLeadingSymbols)) {
+        char c = str[pos];
+        if ( !isdigit((unsigned int)c)  &&  c != '.'  &&  c != '-'  &&  c != '+') {
+            S2N_CONVERT_ERROR(Int8, EINVAL, true, pos);
+        }
+    }
+
+    // Conversion
+    string s = str;
+    char* endptr = 0;
+    const char* begptr = s.c_str() + pos;
+
+    errno = 0;
+    double n = strtod(begptr, &endptr);
+    if ( errno  ||  !endptr  ||  endptr == begptr ) {
+        S2N_CONVERT_ERROR(double, EINVAL, false, s_DiffPtr(endptr, begptr));
+    }
+    if ( *(endptr - 1) != '.'  &&  *endptr == '.' ) {
+        // Only a single dot at the end of line is allowed
+        if (endptr == strchr(begptr, '.')) {
+            endptr++;
+        }
+    }
+    pos += s_DiffPtr(endptr, begptr);
+
+    // Skip allowed trailing symbols
+    if (flags & fAllowTrailingSymbols) {
+        bool spaces = ((flags & fAllowTrailingSymbols) ==
+                       fAllowTrailingSpaces);
+        s_SkipAllowedSymbols(str, pos, spaces ? eSkipSpacesOnly : eSkipAll);
+    }
+
+    CHECK_ENDPTR(double);
     return n;
 }
 
@@ -2369,6 +2402,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.171  2006/01/03 17:39:39  ivanov
+ * NStr:StringToDouble() added support for TStringToNumFlags flags
+ *
  * Revision 1.170  2005/12/28 15:39:24  ivanov
  * NStr::StringTo* - allow digits as trailing symbols right after non-digits
  *
