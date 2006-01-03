@@ -78,15 +78,11 @@ bool CMySQLContext::SetMaxTextImageSize(size_t /*nof_bytes*/)
 }
 
 
-CDB_Connection* CMySQLContext::Connect(const string&   srv_name,
-                                       const string&   user_name,
-                                       const string&   passwd,
-                                       TConnectionMode /*mode*/,
-                                       bool            /*reusable*/,
-                                       const string&   /*pool_name*/)
+CDB_Connection* CMySQLContext::MakeConnection(const SConnAttr& conn_attr)
 {
     return Create_Connection
-        (*new CMySQL_Connection(this, srv_name, user_name, passwd));
+        (*new CMySQL_Connection(this, conn_attr.srv_name, conn_attr.user_name,
+                                conn_attr.passwd));
 }
 
 
@@ -169,6 +165,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/03 21:59:53  ucko
+ * CMySQLContext: rename Connect to MakeConnection (and adjust its
+ * interface accordingly)
+ *
  * Revision 1.13  2005/07/19 13:49:14  ssikorsk
  * Export DBAPI_RegisterDriver_MYSQL(I_DriverMgr& mgr)
  *

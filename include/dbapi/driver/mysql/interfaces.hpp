@@ -69,12 +69,7 @@ public:
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
     virtual bool SetMaxTextImageSize(size_t nof_bytes);
 
-    virtual CDB_Connection* Connect(const string&   srv_name,
-                                    const string&   user_name,
-                                    const string&   passwd,
-                                    TConnectionMode mode,
-                                    bool            reusable  = false,
-                                    const string&   pool_name = kEmptyStr);
+    virtual CDB_Connection* MakeConnection(const SConnAttr& conn_attr);
 
     virtual bool IsAbleTo(ECapability cpb) const;
 };
@@ -275,6 +270,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/01/03 21:59:41  ucko
+ * CMySQLContext: rename Connect to MakeConnection (and adjust its
+ * interface accordingly)
+ *
  * Revision 1.15  2005/10/20 12:58:14  ssikorsk
  * Code reformatting
  *
