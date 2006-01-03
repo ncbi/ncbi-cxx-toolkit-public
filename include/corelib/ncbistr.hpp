@@ -303,6 +303,7 @@ public:
     ///   String to be converted.
     /// @param flags
     ///   How to convert string to value.
+    ///   Do not support fAllowCommas flag.
     /// @return
     ///   - Convert "str" to "double" value and return it.
     ///   - 0 if "str" contains illegal symbols, or if it represents a number
@@ -3183,6 +3184,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.100  2006/01/03 17:41:23  ivanov
+ * Added comment for NStr:StringToDouble()
+ *
  * Revision 1.99  2005/12/27 14:53:54  gouriano
  * Adjustments for MSVC 2005 Express
  *
