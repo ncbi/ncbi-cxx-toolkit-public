@@ -198,77 +198,32 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 }
 
 
-CDB_Connection* CTLibContext::Connect(const string&   srv_name,
-                                      const string&   user_name,
-                                      const string&   passwd,
-                                      TConnectionMode mode,
-                                      bool            reusable,
-                                      const string&   pool_name)
+I_Connection* 
+CTLibContext::MakeConnection(const SConnAttr& conn_attr)
 {
-    //DEFINE_STATIC_FAST_MUTEX(xMutex);
-    // CFastMutexGuard mg(xMutex);
-    CFastMutexGuard mg(m_Mtx);
-
-    if (reusable  &&  m_NotInUse.NofItems() > 0) {
-        // try to get a connection from the pot
-        if ( !pool_name.empty() ) {
-            // use a pool name
-            for (int i = m_NotInUse.NofItems();  i--; ) {
-                CTL_Connection* t_con
-                    = static_cast<CTL_Connection*> (m_NotInUse.Get(i));
-
-                if (pool_name.compare(t_con->PoolName()) == 0) {
-                    m_NotInUse.Remove(i);
-                    if(t_con->Refresh()) {
-                        m_InUse.Add((TPotItem) t_con);
-                        return Create_Connection(*t_con);
-                    }
-                    delete t_con;
-                }
-            }
-        }
-        else { // using server name as a pool name
-
-            if ( srv_name.empty() )
-                return 0;
-
-            // try to use a server name
-            for (int i = m_NotInUse.NofItems();  i--; ) {
-                CTL_Connection* t_con
-                    = static_cast<CTL_Connection*> (m_NotInUse.Get(i));
-
-                if (srv_name.compare(t_con->ServerName()) == 0) {
-                    m_NotInUse.Remove(i);
-                    if(t_con->Refresh()) {
-                        m_InUse.Add((TPotItem) t_con);
-                        return Create_Connection(*t_con);
-                    }
-                    delete t_con;
-                }
-            }
-        }
-    }
-
-    if((mode & fDoNotConnect) != 0) return 0;
-
     // new connection needed
-    CHECK_DRIVER_ERROR( 
-        srv_name.empty()  ||  user_name.empty()  ||  passwd.empty(),
+    CHECK_DRIVER_ERROR( conn_attr.srv_name.empty()  ||  
+                        conn_attr.user_name.empty()  ||  
+                        conn_attr.passwd.empty(),
         "You have to provide server name, user name and "
         "password to connect to the server", 
         100010 );
 
-    CS_CONNECTION* con = x_ConnectToServer(srv_name, user_name, passwd, mode);
+    CS_CONNECTION* con = x_ConnectToServer(conn_attr.srv_name, 
+                                           conn_attr.user_name, 
+                                           conn_attr.passwd, 
+                                           conn_attr.mode);
+    
     CHECK_DRIVER_ERROR( con == 0, "Cannot connect to the server", 100011 );
 
-    CTL_Connection* t_con = new CTL_Connection(this, con, reusable, pool_name);
+    CTL_Connection* t_con = new CTL_Connection(this, 
+                                               con, 
+                                               conn_attr.reusable, 
+                                               conn_attr.pool_name);
     t_con->m_MsgHandlers = m_ConnHandlers;
-
-    m_InUse.Add((TPotItem) t_con);
-
-    return Create_Connection(*t_con);
+    
+    return t_con;
 }
-
 
 
 bool CTLibContext::IsAbleTo(ECapability cpb) const
@@ -1149,6 +1104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/01/03 19:01:25  ssikorsk
+ * Implement method MakeConnection.
+ *
  * Revision 1.52  2005/12/28 13:41:09  ssikorsk
  * Disable ct_exit/cs_ctx_drop on Windows
  *

@@ -215,60 +215,20 @@ void CDBLibContext::SetClientCharset(const char* charset) const
 #endif
 }
 
-CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
-                                       const string&   user_name,
-                                       const string&   passwd,
-                                       TConnectionMode mode,
-                                       bool            reusable,
-                                       const string&   pool_name)
+I_Connection* 
+CDBLibContext::MakeConnection(const SConnAttr& conn_attr)
 {
-    CDBL_Connection* t_con;
-
-    // DEFINE_STATIC_FAST_MUTEX(xMutex);
-    CFastMutexGuard mg(m_Mtx);
-
-    if (reusable  &&  m_NotInUse.NofItems() > 0) { // try to reuse connection
-        if (!pool_name.empty()) { // try to use pool name
-            int n = m_NotInUse.NofItems();
-            while (n--) {
-                t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(n));
-                if (pool_name.compare(t_con->PoolName()) == 0) {
-                    m_NotInUse.Remove(n);
-                    if(t_con->Refresh()) {
-                        m_InUse.Add((TPotItem) t_con);
-                        return Create_Connection(*t_con);
-                    }
-                    delete t_con;
-                }
-            }
-        }
-        else {
-            if (srv_name.empty())
-                return 0;
-            int n = m_NotInUse.NofItems();
-            // try to use server name
-            while (n--) {
-                t_con = static_cast<CDBL_Connection*> (m_NotInUse.Get(n));
-                if (srv_name.compare(t_con->ServerName()) == 0) {
-                    m_NotInUse.Remove(n);
-                    if(t_con->Refresh()) {
-                        m_InUse.Add((TPotItem) t_con);
-                        return Create_Connection(*t_con);
-                    }
-                    delete t_con;
-                }
-            }
-        }
-    }
-
-
-    if((mode & fDoNotConnect) != 0) return 0;
     // new connection needed
-    if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
+    if (conn_attr.srv_name.empty()  ||  
+        conn_attr.user_name.empty()  ||  
+        conn_attr.passwd.empty()) {
         DATABASE_DRIVER_ERROR( "Insufficient info/credentials to connect", 200010 );
     }
 
-    DBPROCESS* dbcon = x_ConnectToServer(srv_name, user_name, passwd, mode);
+    DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name, 
+                                         conn_attr.user_name, 
+                                         conn_attr.passwd, 
+                                         conn_attr.mode);
 
     CHECK_DRIVER_ERROR( 
         !dbcon,
@@ -280,15 +240,20 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
     dbsetopt(dbcon, DBTEXTSIZE , "2147483647" ); // 0x7FFFFFFF
 #endif
 
-    t_con = new CDBL_Connection(this, dbcon, reusable, pool_name);
+    CDBL_Connection* t_con = NULL;
+    t_con = new CDBL_Connection(this, 
+                                dbcon, 
+                                conn_attr.reusable, 
+                                conn_attr.pool_name);
+    
     t_con->m_MsgHandlers = m_ConnHandlers;
-    t_con->m_Server      = srv_name;
-    t_con->m_User        = user_name;
-    t_con->m_Passwd      = passwd;
-    t_con->m_BCPAble     = (mode & fBcpIn) != 0;
-    t_con->m_SecureLogin = (mode & fPasswordEncrypted) != 0;
-    m_InUse.Add((TPotItem) t_con);
-    return Create_Connection(*t_con);
+    t_con->m_Server      = conn_attr.srv_name;
+    t_con->m_User        = conn_attr.user_name;
+    t_con->m_Passwd      = conn_attr.passwd;
+    t_con->m_BCPAble     = (conn_attr.mode & fBcpIn) != 0;
+    t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
+    
+    return t_con;
 }
 
 
@@ -1127,6 +1092,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/01/03 19:01:46  ssikorsk
+ * Implement method MakeConnection.
+ *
  * Revision 1.59  2005/12/02 14:15:01  ssikorsk
  *  Log server and user names with error message.
  *

@@ -234,83 +234,40 @@ bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
 }
 
 
-CDB_Connection* CODBCContext::Connect(const string&   srv_name,
-                                      const string&   user_name,
-                                      const string&   passwd,
-                                      TConnectionMode mode,
-                                      bool            reusable,
-                                      const string&   pool_name)
+I_Connection* 
+CODBCContext::MakeConnection(const SConnAttr& conn_attr)
 {
-    // static CFastMutex xMutex;
-    CFastMutexGuard mg(m_Mtx);
-
-    if (reusable  &&  m_NotInUse.NofItems() > 0) {
-        // try to get a connection from the pot
-        if ( !pool_name.empty() ) {
-            // use a pool name
-            for (int i = m_NotInUse.NofItems();  i--; ) {
-                CODBC_Connection* t_con
-                    = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
-
-                if (pool_name.compare(t_con->PoolName()) == 0) {
-                    m_NotInUse.Remove(i);
-                    if(t_con->Refresh()) {
-                        m_InUse.Add((TPotItem) t_con);
-                        return Create_Connection(*t_con);
-                    }
-                    delete t_con;
-                }
-            }
-        }
-        else {
-
-            if ( srv_name.empty() )
-                return 0;
-
-            // try to use a server name
-            for (int i = m_NotInUse.NofItems();  i--; ) {
-                CODBC_Connection* t_con
-                    = static_cast<CODBC_Connection*> (m_NotInUse.Get(i));
-
-                if (srv_name.compare(t_con->ServerName()) == 0) {
-                    m_NotInUse.Remove(i);
-                    if(t_con->Refresh()) {
-                        m_InUse.Add((TPotItem) t_con);
-                        return Create_Connection(*t_con);
-                    }
-                    delete t_con;
-                }
-            }
-        }
-    }
-
-    if((mode & fDoNotConnect) != 0) return 0;
     // new connection needed
-    if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
+    if (conn_attr.srv_name.empty()  ||  
+        conn_attr.user_name.empty()  ||  
+        conn_attr.passwd.empty()) {
         string err_message = "You have to provide server name, user name and " 
             "password to connect to the server" + m_Reporter.GetExtraMsg();
         DATABASE_DRIVER_ERROR( err_message, 100010 );
     }
 
-    SQLHDBC con = x_ConnectToServer(srv_name, user_name, passwd, mode);
+    SQLHDBC con = x_ConnectToServer(conn_attr.srv_name, 
+                                    conn_attr.user_name, 
+                                    conn_attr.passwd, mode);
+    
     if (con == 0) {
         string err_message = "Cannot connect to the server" + m_Reporter.GetExtraMsg();
         DATABASE_DRIVER_ERROR( err_message, 100011 );
     }
 
-    CODBC_Connection* t_con = new CODBC_Connection(this, con, reusable, pool_name);
+    CODBC_Connection* t_con = new CODBC_Connection(this, 
+                                                   con, 
+                                                   conn_attr.reusable, 
+                                                   conn_attr.pool_name);
     t_con->m_MsgHandlers = m_ConnHandlers;
-    t_con->m_Server      = srv_name;
-    t_con->m_User        = user_name;
-    t_con->m_Passwd      = passwd;
+    t_con->m_Server      = conn_attr.srv_name;
+    t_con->m_User        = conn_attr.user_name;
+    t_con->m_Passwd      = conn_attr.passwd;
 //    t_con->m_BCPAble     = (mode & fBcpIn) != 0;
     t_con->m_SecureLogin = (mode & fPasswordEncrypted) != 0;
-
-    m_InUse.Add((TPotItem) t_con);
-
-    return Create_Connection(*t_con);
+    
+    return t_con;
 }
-
 
 CODBCContext::~CODBCContext()
 {
@@ -617,6 +574,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/01/03 19:02:44  ssikorsk
+ * Implement method MakeConnection.
+ *
  * Revision 1.31  2005/11/28 13:22:59  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.
