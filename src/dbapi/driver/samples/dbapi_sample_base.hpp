@@ -1,3 +1,6 @@
+#ifndef DBAPI_SAMPLE_BASE_HPP
+#define DBAPI_SAMPLE_BASE_HPP
+
 /*  $Id$
 * ===========================================================================
 *
@@ -191,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/03 19:48:37  ssikorsk
+ * Added protection for multiple include
+ *
  * Revision 1.2  2005/10/26 11:28:09  ssikorsk
  * Added CDbapiSampleApp::m_TDSVersion
  *
@@ -199,3 +205,5 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
+
+#endif // DBAPI_SAMPLE_BASE_HPP
