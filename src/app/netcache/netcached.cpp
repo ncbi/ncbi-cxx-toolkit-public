@@ -42,28 +42,20 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <util/thread_nonstop.hpp>
-#include <util/bitset/ncbi_bitset.hpp>
-
-#include <util/cache/icache.hpp>
-#include <util/cache/icache_clean_thread.hpp>
-#include <util/logrotate.hpp>
 #include <util/transmissionrw.hpp>
 
 #include <bdb/bdb_blobcache.hpp>
-
-#include <connect/threaded_server.hpp>
-#include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_conn_reader_writer.hpp>
-#include <connect/services/netcache_client.hpp>
 
 #if defined(NCBI_OS_UNIX)
 # include <corelib/ncbi_os_unix.hpp>
 # include <signal.h>
 #endif
 
+#include "netcached.hpp"
+
+
 #define NETCACHED_VERSION \
-      "NCBI NetCache server version=1.4.0  " __DATE__ " " __TIME__
+      "NCBI NetCache server version=2.0.0  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -222,145 +214,38 @@ private:
 };
 
 
-/// @internal
-///
-/// Netcache server side request statistics
-///
-struct NetCache_RequestStat
+void CNetCache_Logger::Put(const string&               auth, 
+                           const NetCache_RequestStat& stat,
+                           const string&               blob_key)
 {
-    CTime        conn_time;    ///< request incoming time in seconds
-    unsigned     req_code;     ///< 'P' put, 'G' get
-    size_t       blob_size;    ///< BLOB size
-    double       elapsed;      ///< total time in seconds to process request
-    double       comm_elapsed; ///< time spent reading/sending data
-    string       peer_address; ///< Client's IP address
-    unsigned     io_blocks;    ///< Number of IO blocks translated
-};
+    string msg, tmp;
+    msg += auth;
+    msg += ';';
+    msg += stat.peer_address;
+    msg += ';';
+    msg += stat.conn_time.AsString();
+    msg += ';';
+    msg += (char)stat.req_code;
+    msg += ';';
+    NStr::UInt8ToString(tmp, stat.blob_size);
+    msg += tmp;
+    msg += ';';
+    msg += NStr::DoubleToString(stat.elapsed, 5);
+    msg += ';';
+    msg += NStr::DoubleToString(stat.comm_elapsed, 5);
+    msg += ';';
+    msg += blob_key;
+    msg += "\n";
 
-/// @internal
-class CNetCacheLogStream : public CRotatingLogStream
-{
-public:
-    typedef CRotatingLogStream TParent;
-public:
-    CNetCacheLogStream(const string&    filename, 
-                       CNcbiStreamoff   limit)
-    : TParent(filename, limit)
-    {}
-protected:
-    virtual string x_BackupName(string& name)
-    {
-        return kEmptyStr;
+    m_Log << msg;
+
+    if (stat.req_code == 'V') {
+        m_Log << NcbiFlush;
     }
+}
 
-};
-
-/// @internal
-///
-/// Netcache logger
-///
-class CNetCache_Logger
-{
-public:
-    CNetCache_Logger(const string&    filename, 
-                     CNcbiStreamoff   limit)
-      : m_Log(filename, limit)
-    {}
-
-    void Put(const string& auth, 
-             const NetCache_RequestStat& stat,
-             const string&  blob_key)
-    {
-        string msg, tmp;
-        msg += auth;
-        msg += ';';
-        msg += stat.peer_address;
-        msg += ';';
-        msg += stat.conn_time.AsString();
-        msg += ';';
-        msg += (char)stat.req_code;
-        msg += ';';
-        NStr::UInt8ToString(tmp, stat.blob_size);
-        msg += tmp;
-        msg += ';';
-        msg += NStr::DoubleToString(stat.elapsed, 5);
-        msg += ';';
-        msg += NStr::DoubleToString(stat.comm_elapsed, 5);
-        msg += ';';
-        msg += blob_key;
-        msg += "\n";
-
-        m_Log << msg;
-
-        if (stat.req_code == 'V') {
-            m_Log << NcbiFlush;
-        }
-    }
-    void Rotate() { m_Log.Rotate(); }
-private:
-    CNetCacheLogStream m_Log;
-};
-
-class CNetCacheServer;
 
 static CNetCacheServer* s_netcache_server = 0;
-
-/// NC requests
-///
-/// @internal
-typedef enum {
-    eError,
-    ePut,
-    ePut2,   ///< PUT v.2 transmission protocol
-    eGet,
-    eShutdown,
-    eVersion,
-    eRemove,
-    eLogging,
-    eGetConfig,
-    eGetStat,
-    eIsLock,
-    eGetBlobOwner,
-    eDropStat
-} ENC_RequestType;
-
-
-/// Request context
-///
-/// @internal
-struct SNC_Request
-{
-    ENC_RequestType req_type;
-    unsigned int    timeout;
-    string          req_id;
-    string          err_msg;
-    bool            no_lock;
-
-    void Init() 
-    {
-        req_type = eError;
-        timeout = 0;
-        req_id.erase(); err_msg.erase();
-        no_lock = false;
-    }
-};
-
-
-/// Thread specific data for threaded server
-///
-/// @internal
-///
-struct SNC_ThreadData
-{
-    string      request;                        ///< request string
-    string      auth;                           ///< Authentication string
-    SNC_Request req;                            ///< parsed request
-    AutoPtr<char, ArrayDeleter<char> >  buffer; ///< operation buffer
-
-    SNC_ThreadData(unsigned int size)
-        : buffer(new char[size + 256]) 
-    {}
-};
 
 
 ///@internal
@@ -375,217 +260,120 @@ static
 CRef< CTls<SNC_ThreadData> > s_tls(new CTls<SNC_ThreadData>);
 
 
-/// Netcache threaded server
-///
-/// @internal
-class CNetCacheServer : public CThreadedServer
+CNetCacheServer::CNetCacheServer(unsigned int     port,
+                                 ICache*          cache,
+                                 unsigned         max_threads,
+                                 unsigned         init_threads,
+                                 unsigned         network_timeout,
+                                 bool             is_log,
+                                 const IRegistry& reg) 
+: CThreadedServer(port),
+    m_MaxId(0),
+    m_Cache(cache),
+    m_Shutdown(false),
+    m_InactivityTimeout(network_timeout),
+    m_LogFlag(is_log),
+    m_TLS_Size(64 * 1024),
+    m_Reg(reg)
 {
-public:
-    CNetCacheServer(unsigned int     port,
-                    ICache*          cache,
-                    unsigned         max_threads,
-                    unsigned         init_threads,
-                    unsigned         network_timeout,
-                    bool             is_log,
-                    const IRegistry& reg) 
-        : CThreadedServer(port),
-          m_MaxId(0),
-          m_Cache(cache),
-          m_Shutdown(false),
-          m_InactivityTimeout(network_timeout),
-          m_LogFlag(is_log),
-          m_TLS_Size(64 * 1024),
-          m_Reg(reg)
-    {
-        char hostname[256];
-        int status = SOCK_gethostname(hostname, sizeof(hostname));
-        if (status == 0) {
-            m_Host = hostname;
+    char hostname[256];
+    int status = SOCK_gethostname(hostname, sizeof(hostname));
+    if (status == 0) {
+        m_Host = hostname;
+    }
+
+    m_MaxThreads = max_threads ? max_threads : 25;
+    m_InitThreads = init_threads ? 
+        (init_threads < m_MaxThreads ? init_threads : 2)  : 10;
+    m_QueueSize = m_MaxThreads + 2;
+
+    x_CreateLog();
+
+    s_netcache_server = this;
+    m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
+}
+
+CNetCacheServer::~CNetCacheServer()
+{
+    NON_CONST_ITERATE(TLocalCacheMap, it, m_LocalCacheMap) {
+        ICache *ic = it->second;
+        delete ic; it->second = 0;
+    }
+}
+
+void CNetCacheServer::SetParams()
+{
+    m_ThrdSrvAcceptTimeout.sec = 1;
+    m_ThrdSrvAcceptTimeout.usec = 0;
+}
+
+void CNetCacheServer::MountICache(CConfig&                conf,
+                                  CPluginManager<ICache>& pm_cache)
+{
+    CFastMutexGuard guard(m_LocalCacheMap_Lock);
+
+    const CConfig::TParamTree* param_tree = conf.GetTree();
+    x_GetICacheNames(&m_LocalCacheMap);
+    NON_CONST_ITERATE(TLocalCacheMap, it, m_LocalCacheMap) {
+        const string& cache_name = it->first;
+        if (it->second != 0) {
+            continue;  // already created
+        }
+        string section_name("icache_");
+        section_name.append(cache_name);
+
+        const TPluginManagerParamTree* bdb_tree = 
+            param_tree->FindSubNode(section_name);
+        if (!bdb_tree) {
+            ERR_POST("Configuration error. Cannot find registry section " 
+                     << section_name);
+            continue;
         }
 
-        m_MaxThreads = max_threads ? max_threads : 25;
-        m_InitThreads = init_threads ? 
-            (init_threads < m_MaxThreads ? init_threads : 2)  : 10;
-        m_QueueSize = m_MaxThreads + 2;
+        ICache* ic;
+        try {
+            ic = pm_cache.CreateInstance(
+                                kBDBCacheDriverName,
+                                TCachePM::GetDefaultDrvVers(),
+                                bdb_tree);
 
-        x_CreateLog();
+            it->second = ic;
+            LOG_POST("Local cache mounted: " << cache_name);
+        } 
+        catch (exception& ex)
+        {
+            ERR_POST("Error mounting local cache:" << cache_name << 
+                     ":\n" << ex.what()
+                    );
+            throw;
+        }
 
-        s_netcache_server = this;
-        m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
+    } // ITERATE
+}
+
+ICache* CNetCacheServer::GetLocalCache(const string& cache_name)
+{
+    CFastMutexGuard guard(m_LocalCacheMap_Lock);
+
+    TLocalCacheMap::iterator it = m_LocalCacheMap.find(cache_name);
+    if (it == m_LocalCacheMap.end()) {
+        return 0;
     }
+    return it->second;
+}
 
-    virtual ~CNetCacheServer() {}
 
-    unsigned int GetTLS_Size() const { return m_TLS_Size; }
-    void SetTLS_Size(unsigned int size) { m_TLS_Size = size; }
-
-    /// Take request code from the socket and process the request
-    virtual void  Process(SOCK sock);
-    virtual bool ShutdownRequested(void) { return m_Shutdown; }
-
-        
-    void SetShutdownFlag() { if (!m_Shutdown) m_Shutdown = true; }
+void CNetCacheServer::ProcessOverflow(SOCK sock) 
+{
+    const char* msg = "ERR:Server busy";
     
-    /// Override some parent parameters
-    virtual void SetParams()
-    {
-        m_ThrdSrvAcceptTimeout.sec = 1;
-        m_ThrdSrvAcceptTimeout.usec = 0;
-    }
-
-protected:
-    virtual void ProcessOverflow(SOCK sock) 
-    {
-        const char* msg = "ERR:Server busy";
-        
-        size_t n_written;
-        SOCK_Write(sock, (void *)msg, 16, &n_written, eIO_WritePlain);
-        SOCK_Close(sock); 
-        ERR_POST("ProcessOverflow! Server is busy.");
-    }
-
-private:
-
-    /// Process "PUT" request
-    void ProcessPut(CSocket&              sock, 
-                    SNC_Request&          req,
-                    SNC_ThreadData&       tdata,
-                    NetCache_RequestStat& stat);
-
-    /// Process "PUT2" request
-    void ProcessPut2(CSocket&              sock, 
-                     SNC_Request&          req,
-                     SNC_ThreadData&       tdata,
-                     NetCache_RequestStat& stat);
-
-    /// Process "GET" request
-    void ProcessGet(CSocket&              sock, 
-                    const SNC_Request&    req,
-                    SNC_ThreadData&       tdata,
-                    NetCache_RequestStat& stat);
-
-    /// Process "VERSION" request
-    void ProcessVersion(CSocket& sock, const SNC_Request& req);
-
-    /// Process "LOG" request
-    void ProcessLog(CSocket& sock, const SNC_Request& req);
-
-    /// Process "REMOVE" request
-    void ProcessRemove(CSocket& sock, const SNC_Request& req);
-
-    /// Process "SHUTDOWN" request
-    void ProcessShutdown();
-
-    /// Process "GETCONF" request
-    void ProcessGetConfig(CSocket& sock);
-
-    /// Process "DROPSTAT" request
-    void ProcessDropStat(CSocket& sock);
-
-    /// Process "GBOW" request
-    void ProcessGetBlobOwner(CSocket& sock, const SNC_Request& req);
-
-    /// Process "GETSTAT" request
-    void ProcessGetStat(CSocket& sock, const SNC_Request& req);
-
-    /// Process "ISLK" request
-    void ProcessIsLock(CSocket& sock, const SNC_Request& req);
+    size_t n_written;
+    SOCK_Write(sock, (void *)msg, 16, &n_written, eIO_WritePlain);
+    SOCK_Close(sock); 
+    ERR_POST("ProcessOverflow! Server is busy.");
+}
 
 
-    /// Returns FALSE when socket is closed or cannot be read
-    bool ReadStr(CSocket& sock, string* str);
-
-    /// Read buffer from the socket.
-    // bool ReadBuffer(CSocket& sock, char* buf, size_t* buffer_length);
-
-    /// TRUE return means we have EOF in the socket (no more data is coming)
-    bool ReadBuffer(CSocket& sock, 
-                    char*    buf, 
-                    size_t   buf_size,
-                    size_t*  read_length);
-
-    /// TRUE return means we have EOF in the socket (no more data is coming)
-    bool ReadBuffer(CSocket& sock,
-                    IReader* rdr, 
-                    char*    buf, 
-                    size_t   buf_size,
-                    size_t*  read_length);
-
-    void ParseRequest(const string& reqstr, SNC_Request* req);
-
-    /// Reply to the client
-    void WriteMsg(CSocket& sock, 
-                  const string& prefix, const string& msg);
-
-    /// Generate unique system-wide request id
-    void GenerateRequestId(const SNC_Request& req, 
-                           string*            id_str,
-                           unsigned int*      transaction_id);
-
-
-    /// Get logger instance
-    CNetCache_Logger* GetLogger();
-    /// TRUE if logging is ON
-    bool IsLog() const;
-
-private:
-    bool x_CheckBlobId(CSocket&       sock,
-                       CNetCache_Key* blob_id, 
-                       const string&  blob_key);
-
-    void x_WriteBuf(CSocket& sock,
-                    char*    buf,
-                    size_t   bytes);
-
-    void x_CreateLog();
-
-    /// Check if we have active thread data for this thread.
-    /// Setup thread data if we don't.
-    SNC_ThreadData* x_GetThreadData(); 
-
-    /// Register protocol error (statistics)
-    void x_RegisterProtocolErr(ENC_RequestType   req_type,
-                               const string&     auth);
-    void x_RegisterInternalErr(ENC_RequestType   req_type,
-                               const string&     auth);
-    void x_RegisterNoBlobErr(ENC_RequestType   req_type,
-                               const string&     auth);
-
-    /// Register exception error (statistics)
-    void x_RegisterException(ENC_RequestType           req_type,
-                             const string&             auth,
-                             const CNetCacheException& ex);
-
-    /// Register exception error (statistics)
-    void x_RegisterException(ENC_RequestType           req_type,
-                             const string&             auth,
-                             const CNetServiceException& ex);
-
-private:
-    /// Host name where server runs
-    string             m_Host;
-    /// ID counter
-    unsigned           m_MaxId;
-    /// Set of ids in use (PUT)
-    bm::bvector<>      m_UsedIds;
-    ICache*            m_Cache;
-    /// Flags that server received a shutdown request
-    volatile bool      m_Shutdown; 
-    /// Time to wait for the client (seconds)
-    unsigned           m_InactivityTimeout;
-    /// Log writer
-    auto_ptr<CNetCache_Logger>  m_Logger;
-    /// Logging ON/OFF
-    bool                        m_LogFlag;
-    unsigned int                m_TLS_Size;
-    
-    /// Accept timeout for threaded server
-    STimeout                     m_ThrdSrvAcceptTimeout;
-    /// Quick local timer
-    CFastLocalTime               m_LocalTimer;
-    /// Configuration
-    const IRegistry&             m_Reg;
-};
 
 /// @internal
 static
@@ -608,10 +396,147 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
 }        
 
 
+void CNetCacheServer::ProcessNC(CSocket&              socket,
+                                ENC_RequestType&      req_type,
+                                SNC_Request&          req,
+                                SNC_ThreadData&       tdata,
+                                NetCache_RequestStat& stat)
+{
+    ParseRequestNC(tdata.request, &(tdata.req));
+
+    switch ((req_type = tdata.req.req_type)) {
+    case ePut:
+        stat.req_code = 'P';
+        ProcessPut(socket, tdata.req, tdata, stat);
+        break;
+    case ePut2:
+        stat.req_code = 'P';
+        ProcessPut2(socket, tdata.req, tdata, stat);
+        break;
+    case eGet:
+        stat.req_code = 'G';
+        ProcessGet(socket, tdata.req, tdata, stat);
+        break;
+    case eShutdown:
+        stat.req_code = 'S';
+        ProcessShutdown();
+        break;
+    case eGetConfig:
+        stat.req_code = 'C';
+        ProcessGetConfig(socket);
+        break;
+    case eGetStat:
+        stat.req_code = 'T';
+        ProcessGetStat(socket, tdata.req);
+        break;
+    case eDropStat:
+        stat.req_code = 'D';
+        ProcessDropStat(socket);
+        break;
+    case eGetBlobOwner:
+        ProcessGetBlobOwner(socket, tdata.req);
+        break;
+    case eVersion:
+        stat.req_code = 'V';
+        ProcessVersion(socket, tdata.req);
+        break;
+    case eRemove:
+        stat.req_code = 'R';
+        ProcessRemove(socket, tdata.req);
+        break;
+    case eLogging:
+        stat.req_code = 'L';
+        ProcessLog(socket, tdata.req);
+        break;
+    case eIsLock:
+        stat.req_code = 'K';
+        ProcessIsLock(socket, tdata.req);
+        break;
+    case eError:
+        WriteMsg(socket, "ERR:", tdata.req.err_msg);
+        x_RegisterProtocolErr(eError, tdata.auth);
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
+
+}
+
+void CNetCacheServer::ProcessIC(CSocket&              socket,
+                                EIC_RequestType&      req_type,
+                                SIC_Request&          req,
+                                SNC_ThreadData&       tdata,
+                                NetCache_RequestStat& stat)
+{
+    ParseRequestIC(tdata.request, &req);
+
+    ICache* ic = GetLocalCache(req.cache_name);
+    if (ic == 0) {
+        tdata.ic_req.err_msg = "Cache unknown: ";
+        tdata.ic_req.err_msg.append(req.cache_name);
+        WriteMsg(socket, "ERR:", tdata.ic_req.err_msg);
+        return;
+    }
+
+    switch ((req_type = tdata.ic_req.req_type)) {
+    case eIC_SetTimeStampPolicy:
+        Process_IC_SetTimeStampPolicy(*ic, socket, req, tdata);
+        break;
+    case eIC_GetTimeStampPolicy:
+        Process_IC_GetTimeStampPolicy(*ic, socket, req, tdata);
+        break;
+    case eIC_SetVersionRetention:
+        Process_IC_SetVersionRetention(*ic, socket, req, tdata);
+        break;
+    case eIC_GetVersionRetention:
+        Process_IC_GetVersionRetention(*ic, socket, req, tdata);
+        break;
+    case eIC_GetTimeout:
+        Process_IC_GetTimeout(*ic, socket, req, tdata);
+        break;
+    case eIC_IsOpen:
+        Process_IC_IsOpen(*ic, socket, req, tdata);
+        break;
+    case eIC_Store:
+        Process_IC_Store(*ic, socket, req, tdata);
+        break;
+    case eIC_GetSize:
+        Process_IC_GetSize(*ic, socket, req, tdata);
+        break;
+    case eIC_GetBlobOwner:
+        Process_IC_GetBlobOwner(*ic, socket, req, tdata);
+        break;
+    case eIC_Read:
+        Process_IC_Read(*ic, socket, req, tdata);
+        break;
+    case eIC_Remove:
+        Process_IC_Remove(*ic, socket, req, tdata);
+        break;
+    case eIC_RemoveKey:
+        Process_IC_RemoveKey(*ic, socket, req, tdata);
+        break;
+    case eIC_GetAccessTime:
+        Process_IC_GetAccessTime(*ic, socket, req, tdata);
+        break;
+    case eIC_HasBlobs:
+        Process_IC_HasBlobs(*ic, socket, req, tdata);
+        break;
+
+    case eIC_Error:
+        WriteMsg(socket, "ERR:", tdata.ic_req.err_msg);
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
+
+}
+
+
 void CNetCacheServer::Process(SOCK sock)
 {
     SNC_ThreadData* tdata = x_GetThreadData();
-    ENC_RequestType req_type = eError;
+    ENC_RequestType nc_req_type = eError;
+    EIC_RequestType ic_req_type = eIC_Error;
     NetCache_RequestStat    stat;
     stat.blob_size = stat.io_blocks = 0;
 
@@ -638,79 +563,42 @@ void CNetCacheServer::Process(SOCK sock)
             sw.Start();
         }
 
-
         // Set socket parameters
 
         socket.DisableOSSendDelay();
         STimeout to = {m_InactivityTimeout, 0};
         socket.SetTimeout(eIO_ReadWrite , &to);
 
-        tdata->req.Init();
         s_WaitForReadSocket(socket, m_InactivityTimeout);
 
         if (ReadStr(socket, &(tdata->auth))) {
             
             s_WaitForReadSocket(socket, m_InactivityTimeout);
 
-            if (ReadStr(socket, &(tdata->request))) {                
-                ParseRequest(tdata->request, &(tdata->req));
+            if (ReadStr(socket, &(tdata->request))) {
 
-                switch ((req_type = tdata->req.req_type)) {
-                case ePut:
-                    stat.req_code = 'P';
-                    ProcessPut(socket, tdata->req, *tdata, stat);
-                    break;
-                case ePut2:
-                    stat.req_code = 'P';
-                    ProcessPut2(socket, tdata->req, *tdata, stat);
-                    break;
-                case eGet:
-                    stat.req_code = 'G';
-                    ProcessGet(socket, tdata->req, *tdata, stat);
-                    break;
-                case eShutdown:
-                    stat.req_code = 'S';
-                    ProcessShutdown();
-                    break;
-                case eGetConfig:
-                    stat.req_code = 'C';
-                    ProcessGetConfig(socket);
-                    break;
-                case eGetStat:
-                    stat.req_code = 'T';
-                    ProcessGetStat(socket, tdata->req);
-                    break;
-                case eDropStat:
-                    stat.req_code = 'D';
-                    ProcessDropStat(socket);
-                    break;
-                case eGetBlobOwner:
-                    ProcessGetBlobOwner(socket, tdata->req);
-                    break;
-                case eVersion:
-                    stat.req_code = 'V';
-                    ProcessVersion(socket, tdata->req);
-                    break;
-                case eRemove:
-                    stat.req_code = 'R';
-                    ProcessRemove(socket, tdata->req);
-                    break;
-                case eLogging:
-                    stat.req_code = 'L';
-                    ProcessLog(socket, tdata->req);
-                    break;
-                case eIsLock:
-                    stat.req_code = 'K';
-                    ProcessIsLock(socket, tdata->req);
-                    break;
-                case eError:
-                    WriteMsg(socket, "ERR:", tdata->req.err_msg);
-                    x_RegisterProtocolErr(eError, tdata->auth);
-                    break;
-                default:
-                    _ASSERT(0);
-                } // switch
+                const string& rq = tdata->request;
+
+                if (rq.length() < 2) { 
+                    WriteMsg(socket, "ERR:", "Invalid request");
+                    x_RegisterProtocolErr(eError, rq);
+                    return;
+                }
+
+                // check if it is NC or IC
+
+                if (rq[0] == 'I' && rq[1] == 'C') {  // ICache request
+                    tdata->ic_req.Init();
+                    ProcessIC(socket, 
+                              ic_req_type, tdata->ic_req, *tdata, stat);
+                } else {
+                    tdata->req.Init();
+                    ProcessNC(socket, 
+                              nc_req_type, tdata->req, *tdata, stat);
+                }
+
             }
+
         }
 
         // cleaning up the input wire, in case if there is some
@@ -745,7 +633,7 @@ void CNetCacheServer::Process(SOCK sock)
                  << " blobsize="     << stat.blob_size
                  << " io blocks="    << stat.io_blocks
                  );
-        x_RegisterException(req_type, tdata->auth, ex);
+        x_RegisterException(nc_req_type, tdata->auth, ex);
     }
     catch (CNetServiceException& ex)
     {
@@ -756,7 +644,7 @@ void CNetCacheServer::Process(SOCK sock)
                  << " blobsize="     << stat.blob_size
                  << " io blocks="    << stat.io_blocks
                  );
-        x_RegisterException(req_type, tdata->auth, ex);
+        x_RegisterException(nc_req_type, tdata->auth, ex);
     }
     catch (exception& ex)
     {
@@ -767,7 +655,7 @@ void CNetCacheServer::Process(SOCK sock)
                  << " blobsize="     << stat.blob_size
                  << " io blocks="    << stat.io_blocks
                  );
-        x_RegisterInternalErr(req_type, tdata->auth);
+        x_RegisterInternalErr(nc_req_type, tdata->auth);
     }
 }
 
@@ -1266,153 +1154,6 @@ void CNetCacheServer::WriteMsg(CSocket&       sock,
         sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
 }
 
-void CNetCacheServer::ParseRequest(const string& reqstr, SNC_Request* req)
-{
-    const char* s = reqstr.c_str();
-
-    if (strncmp(s, "PUT2", 4) == 0) {
-        req->req_type = ePut2;
-        req->timeout = 0;
-        req->req_id.erase();
-
-        s += 4;
-        goto put_args_parse;
-
-    } // PUT2
-
-    if (strncmp(s, "PUT", 3) == 0) {
-        req->req_type = ePut;
-        req->timeout = 0;
-        req->req_id.erase();
-
-        s += 3;
-put_args_parse:
-        while (*s && isspace((unsigned char)(*s))) {
-            ++s;
-        }
-
-        if (*s) {  // timeout value
-            int time_out = atoi(s);
-            if (time_out > 0) {
-                req->timeout = time_out;
-            }
-        }
-        while (*s && isdigit((unsigned char)(*s))) {
-            ++s;
-        }
-        while (*s && isspace((unsigned char)(*s))) {
-            ++s;
-        }
-        req->req_id = s;
-
-        return;
-    } // PUT
-
-    if (strncmp(s, "GETCONF", 7) == 0) {
-        req->req_type = eGetConfig;
-        s += 7;
-        return;
-    } // GETCONF
-
-    if (strncmp(s, "GETSTAT", 7) == 0) {
-        req->req_type = eGetStat;
-        s += 7;
-        return;
-    } // GETSTAT
-
-    if (strncmp(s, "ISLK", 4) == 0) {
-        req->req_type = eIsLock;
-        s += 4;
-
-parse_blob_id:
-        req->req_id.erase();
-
-        while (*s && isspace((unsigned char)(*s))) {
-            ++s;
-        }
-
-        req->req_id = s;
-        return;
-    }
-
-    if (strncmp(s, "GBOW", 4) == 0) {  // get blob owner
-        req->req_type = eGetBlobOwner;
-        s += 4;
-        goto parse_blob_id;
-    } // GBOW
-
-    if (strncmp(s, "GET", 3) == 0) {
-        req->req_type = eGet;
-        s += 3;
-
-        // parse blob id
-        while (*s && isspace((unsigned char)(*s))) {
-            ++s;
-        }
-
-        req->req_id.erase();
-
-        // skip blob id
-        while (*s && !isspace((unsigned char)(*s))) {
-            char ch = *s;
-            req->req_id.append(1, ch);
-            ++s;
-        }
-
-        if (!*s) {
-            return;
-        }
-
-        // skip whitespace
-        while (*s && isspace((unsigned char)(*s))) {
-            ++s;
-        }
-
-        if (!*s) {
-            return;
-        }
-
-        // NW modificator (no wait request)
-        if (s[0] == 'N' && s[1] == 'W') {
-            req->no_lock = true;
-        }
-
-        return;
-    } // GET
-
-    if (strncmp(s, "REMOVE", 3) == 0) {
-        req->req_type = eRemove;
-        s += 6;
-        goto parse_blob_id;
-    } // REMOVE
-
-    if (strncmp(s, "DROPSTAT", 8) == 0) {
-        req->req_type = eDropStat;
-        s += 8;
-        return;
-    } // DROPSTAT
-
-
-    if (strncmp(s, "SHUTDOWN", 7) == 0) {
-        req->req_type = eShutdown;
-        return;
-    } // SHUTDOWN
-
-    if (strncmp(s, "VERSION", 7) == 0) {
-        req->req_type = eVersion;
-        return;
-    } // VERSION
-
-    if (strncmp(s, "LOG", 3) == 0) {
-        req->req_type = eLogging;
-        s += 3;
-        goto parse_blob_id;  // "ON/OFF" instead of blob_id in this case
-    } // LOG
-
-
-    req->req_type = eError;
-    req->err_msg = "Unknown request";
-}
 
 bool CNetCacheServer::ReadBuffer(CSocket& sock,
                                  IReader* rdr, 
@@ -1746,6 +1487,41 @@ void CNetCacheServer::x_RegisterException(ENC_RequestType           req_type,
     } // switch
 }
 
+/// Read the registry for icache_XXXX entries
+void CNetCacheServer::x_GetICacheNames(TLocalCacheMap* cache_map)
+{
+    string cache_name;
+    list<string> sections;
+    m_Reg.EnumerateSections(&sections);
+
+    string tmp;
+    ITERATE(list<string>, it, sections) {
+        const string& sname = *it;
+        NStr::SplitInTwo(sname, "_", tmp, cache_name);
+        if (NStr::CompareNocase(tmp, "icache") != 0) {
+            continue;
+        }
+
+        NStr::ToLower(cache_name);
+        (*cache_map)[cache_name] = 0;
+
+    } // ITERATE
+}
+
+
+
+///////////////////////////////////////////////////////////////////////
+
+/// @internal
+extern "C" 
+void Threaded_Server_SignalHandler( int )
+{
+    if (s_netcache_server && 
+        (!s_netcache_server->ShutdownRequested()) ) {
+        s_netcache_server->SetShutdownFlag();
+        LOG_POST("Interrupt signal. Shutdown requested.");
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -1785,19 +1561,6 @@ void CNetCacheDApp::Init(void)
 }
 
 
-/// @internal
-extern "C" 
-void Threaded_Server_SignalHandler( int )
-{
-    if (s_netcache_server && 
-        (!s_netcache_server->ShutdownRequested()) ) {
-        s_netcache_server->SetShutdownFlag();
-        LOG_POST("Interrupt signal. Shutdown requested.");
-    }
-}
-
-
-
 int CNetCacheDApp::Run(void)
 {
     CBDB_Cache* bdb_cache = 0;
@@ -1831,12 +1594,18 @@ int CNetCacheDApp::Run(void)
         // from this moment on the server is silent...
         SetDiagStream(m_ErrLog.get());
 
+
+        // Mount BDB Cache
+
         const CConfig::TParamTree* param_tree = conf.GetTree();
         const TPluginManagerParamTree* bdb_tree = 
             param_tree->FindSubNode(kBDBCacheDriverName);
 
 
         auto_ptr<ICache> cache;
+
+        CPluginManager<ICache> pm_cache;
+        pm_cache.RegisterWithEntryPoint(NCBI_EntryPoint_xcache_bdb);
 
         if (bdb_tree) {
 
@@ -1848,24 +1617,20 @@ int CNetCacheDApp::Run(void)
             reg.GetBool("server", "reinit", false, 0, CNcbiRegistry::eReturn);
 
             if (args["reinit"] || reinit) {  // Drop the database directory
+                LOG_POST(("Removing BDB database directory " + db_path));
                 CDir dir(db_path);
                 dir.Remove();
             }
             
 
             LOG_POST("Initializing BDB cache");
-
-            typedef CPluginManager<ICache> TCachePM;
-            CPluginManager<ICache> pm_cache;
-            pm_cache.RegisterWithEntryPoint(NCBI_EntryPoint_xcache_bdb);
-
             ICache* ic;
 
             try {
                 ic = 
                     pm_cache.CreateInstance(
                         kBDBCacheDriverName,
-                        TCachePM::GetDefaultDrvVers(),
+                        CNetCacheServer::TCachePM::GetDefaultDrvVers(),
                         bdb_tree);
             } 
             catch (CBDB_Exception& ex)
@@ -1883,7 +1648,7 @@ int CNetCacheDApp::Run(void)
                     ic = 
                       pm_cache.CreateInstance(
                         kBDBCacheDriverName,
-                        TCachePM::GetDefaultDrvVers(),
+                        CNetCacheServer::TCachePM::GetDefaultDrvVers(),
                         bdb_tree);
 
                 } else {
@@ -1912,6 +1677,9 @@ int CNetCacheDApp::Run(void)
             ERR_POST("Configuration error. Cache not open.");
             return 1;
         }
+
+        // start threaded server
+
 
         int port = 
             reg.GetInt("server", "port", 9000, 0, CNcbiRegistry::eReturn);
@@ -1946,6 +1714,13 @@ int CNetCacheDApp::Run(void)
 
         thr_srv->SetTLS_Size(tls_size);
 
+
+        
+        // create ICache instances
+
+        thr_srv->MountICache(conf, pm_cache);
+
+
         LOG_POST(Info << "Running server on port " << port);
         thr_srv->Run();
     }
@@ -1965,8 +1740,6 @@ int CNetCacheDApp::Run(void)
 
 
 
-
-
 int main(int argc, const char* argv[])
 {
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default, "netcached.ini");
@@ -1975,6 +1748,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/01/03 15:42:17  kuznets
+ * Added support for network ICache interface
+ *
  * Revision 1.73  2005/12/05 14:50:00  kuznets
  * Fixed compilation problems
  *
@@ -2062,95 +1838,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 1.45  2005/03/21 20:12:05  kuznets
  * Fixed race condition with setting accept timeout
- *
- * Revision 1.44  2005/03/17 21:34:24  kuznets
- * Use CFastLocalTime
- *
- * Revision 1.43  2005/02/17 16:15:27  kuznets
- * Added ProcessOverflow with ERR_POST
- *
- * Revision 1.42  2005/02/15 15:16:50  kuznets
- * Rotated log stream, overloaded x_BackupName to self-rotate
- *
- * Revision 1.41  2005/02/09 19:36:39  kuznets
- * Restored accidentally removed SetTimeout()
- *
- * Revision 1.40  2005/02/09 19:34:08  kuznets
- * Trail buffer read using socket.Read(NULL, ...)
- *
- * Revision 1.39  2005/02/09 13:36:14  kuznets
- * Limit log size to 100M, rotate log every time its turned ON
- *
- * Revision 1.38  2005/02/07 18:55:40  kuznets
- * REmoved port number from the connection log
- *
- * Revision 1.37  2005/02/07 13:06:37  kuznets
- * Logging improvements
- *
- * Revision 1.36  2005/01/24 17:21:40  vasilche
- * Removed redundant comparison "bool != false".
- *
- * Revision 1.35  2005/01/05 15:34:51  kuznets
- * Fast shutdown through low small accept timeout, restored signal procesing
- *
- * Revision 1.34  2005/01/04 18:55:30  kuznets
- * Commented out signal handlers
- *
- * Revision 1.33  2005/01/04 17:33:34  kuznets
- * Added graceful shutdown on SIGTERM(unix)
- *
- * Revision 1.32  2005/01/03 14:29:51  kuznets
- * Improved logging
- *
- * Revision 1.31  2004/12/29 15:35:37  kuznets
- * Fixed bug in comm. protocol
- *
- * Revision 1.29  2004/12/27 19:14:07  kuznets
- * Use NStr::strcasecmp instead of stricmp
- *
- * Revision 1.28  2004/12/27 16:31:32  kuznets
- * Implemented server side logging
- *
- * Revision 1.27  2004/12/22 21:02:53  grichenk
- * BDB and DBAPI caches split into separate libs.
- * Added entry point registration, fixed driver names.
- *
- * Revision 1.26  2004/12/22 14:36:13  kuznets
- * Performance optimization (ProcessGet)
- *
- * Revision 1.25  2004/11/08 16:02:53  kuznets
- * BLOB timeout passed to ICache
- *
- * Revision 1.24  2004/11/01 16:16:02  kuznets
- * Use NStr instead of itoa
- *
- * Revision 1.23  2004/11/01 16:03:39  kuznets
- * Added blob size to GET response
- *
- * Revision 1.22  2004/11/01 14:40:24  kuznets
- * Implemented BLOB update, fixed bug in object locking
- *
- * Revision 1.21  2004/10/28 16:14:42  kuznets
- * Implemented REMOVE
- *
- * Revision 1.20  2004/10/27 17:08:57  kuznets
- * Purge thread has been delegated to CBDB_Cache
- *
- * Revision 1.19  2004/10/27 14:18:02  kuznets
- * BLOB key parser moved from netcached
- *
- * Revision 1.18  2004/10/26 14:21:41  kuznets
- * New parameter network_timeout
- *
- * Revision 1.17  2004/10/26 13:36:27  kuznets
- * new startup flag -reinit and drop_db ini parameter
- *
- * Revision 1.16  2004/10/25 16:06:18  kuznets
- * Better timeout handling, use larger network bufers, VERSION command
- *
- * Revision 1.15  2004/10/21 17:21:42  kuznets
- * Reallocated buffer replaced with TLS data
- *
  *
  * ===========================================================================
  */
