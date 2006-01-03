@@ -385,7 +385,7 @@ Int2 BlastExtensionParametersNew(EBlastProgramType program_number,
          when rescaling and composition based statistics is applied, as we
          lose precision. Therefore this is redone in Kappa_RedoAlignmentCore */
       params->gap_x_dropoff_final = (Int4) 
-          (options->gap_x_dropoff_final*NCBIMATH_LN2 / min_lambda);
+          MAX(options->gap_x_dropoff_final*NCBIMATH_LN2 / min_lambda, params->gap_x_dropoff);
    }
    
    if (sbp->scale_factor > 1.0) {
@@ -824,6 +824,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2006/01/03 14:18:42  madden
+ * In BlastExtensionParametersNew raise gap_x_dropoff_final to gap_x_dropoff if it is lower
+ *
  * Revision 1.13  2005/12/19 16:12:30  papadopo
  * remove the possibility of specifying eRight for megablast extension method
  *
