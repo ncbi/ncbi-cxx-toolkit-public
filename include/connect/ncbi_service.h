@@ -37,9 +37,9 @@
 #include <connect/ncbi_host_info.h>
 
 
-/* Revision 6.200 */
+/* Revision 6.210 */
 #define SERV_CLIENT_REVISION_MAJOR  6
-#define SERV_CLIENT_REVISION_MINOR  200
+#define SERV_CLIENT_REVISION_MINOR  210
 
 
 /** @addtogroup ServiceSupport
@@ -213,6 +213,9 @@ extern NCBI_XCONNECT_EXPORT void SERV_Close
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2006/01/03 19:57:59  lavr
+ * Bump client revision to 6.210
+ *
  * Revision 6.44  2005/12/23 18:07:34  lavr
  * Special service flags moved here, values reassigned
  *
