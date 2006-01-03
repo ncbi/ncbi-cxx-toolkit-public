@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/interfaces.hpp>
 #include <dbapi/driver/public.hpp>
+#include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -165,6 +166,15 @@ I_Result::~I_Result(void)
 
 
 ////////////////////////////////////////////////////////////////////////////
+//  I_DriverContext::SConnAttr::
+//
+
+I_DriverContext::SConnAttr::SConnAttr(void)
+: mode(fDoNotConnect)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////
 //  I_DriverContext::
 //
 
@@ -172,6 +182,11 @@ I_DriverContext::I_DriverContext(void)
 {
     PushCntxMsgHandler    ( &CDB_UserHandler::GetDefault() );
     PushDefConnMsgHandler ( &CDB_UserHandler::GetDefault() );
+}
+
+I_DriverContext::~I_DriverContext(void)
+{
+    return;
 }
 
 void I_DriverContext::PushCntxMsgHandler(CDB_UserHandler* h)
@@ -260,12 +275,9 @@ unsigned int I_DriverContext::NofConnections(const string& srv_name,
 
 CDB_Connection* I_DriverContext::Create_Connection(I_Connection& connection)
 {
-    return new CDB_Connection(&connection);
-}
+    m_InUse.Add((TPotItem) &connection);
 
-I_DriverContext::~I_DriverContext(void)
-{
-    return;
+    return new CDB_Connection(&connection);
 }
 
 void 
@@ -290,6 +302,92 @@ const string&
 I_DriverContext::GetHostName(void) const
 {
     return m_HostName;
+}
+
+I_Connection* 
+I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
+{
+    if (conn_attr.reusable  &&  m_NotInUse.NofItems() > 0) {
+        // try to get a connection from the pot
+        if ( !conn_attr.pool_name.empty() ) {
+            // use a pool name
+            for (int i = m_NotInUse.NofItems();  --i; ) {
+                CDB_Connection* t_con
+                    = static_cast<CDB_Connection*> (m_NotInUse.Get(i));
+
+                // There is no pool name check here. We assume that a connection
+                // pool contains connections with appropriate server names only.
+                if (conn_attr.pool_name.compare(t_con->PoolName()) == 0) {
+                    m_NotInUse.Remove(i);
+                    if(t_con->Refresh()) {
+                        return Create_Connection(*t_con);
+                    }
+                    delete t_con;
+                }
+            }
+        }
+        else {
+
+            if ( conn_attr.srv_name.empty() )
+                return NULL;
+
+            // try to use a server name
+            for (int i = m_NotInUse.NofItems();  --i; ) {
+                CDB_Connection* t_con
+                    = static_cast<CDB_Connection*> (m_NotInUse.Get(i));
+
+                if (conn_attr.srv_name.compare(t_con->ServerName()) == 0) {
+                    m_NotInUse.Remove(i);
+                    if(t_con->Refresh()) {
+                        return Create_Connection(*t_con);
+                    }
+                    delete t_con;
+                }
+            }
+        }
+    }
+
+    if((conn_attr.mode & fDoNotConnect) != 0) {
+        return NULL;
+    }
+    
+    I_Connection* t_con = MakeConnection(conn_attr);
+    
+    return t_con;
+}
+
+CDB_Connection* 
+I_DriverContext::Connect(const string&   srv_name,
+                         const string&   user_name,
+                         const string&   passwd,
+                         TConnectionMode mode,
+                         bool            reusable,
+                         const string&   pool_name)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    SConnAttr conn_attr;
+
+    conn_attr.srv_name = srv_name;
+    conn_attr.user_name = user_name;
+    conn_attr.passwd = passwd;
+    conn_attr.mode = mode;
+    conn_attr.reusable = reusable;
+    conn_attr.pool_name = pool_name;
+
+    
+    I_Connection* t_con = 
+        CDbapiConnMgr::Instance().GetConnectionFactory()->MakeConnection(*this, conn_attr);
+    
+    if((!t_con && (mode & fDoNotConnect) != 0)) {
+        return NULL;
+    }
+
+    CHECK_DRIVER_ERROR(t_con == NULL, 
+                       "Cannot connect to the server '" + srv_name + "'", 
+                       100011 );
+    
+    return Create_Connection(*t_con);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -353,6 +451,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/01/03 18:59:52  ssikorsk
+ * Implement I_DriverContext::MakePooledConnection and
+ * I_DriverContext::Connect.
+ *
  * Revision 1.10  2005/10/20 13:03:20  ssikorsk
  * Implemented:
  * I_DriverContext::SetApplicationName
