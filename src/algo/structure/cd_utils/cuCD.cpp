@@ -852,7 +852,8 @@ int IntersectByMaster(CCdCore* ccd) {
                 //  since we're dealing w/ an intersection, slaveStart should always be valid
                 assert(slaveStart != -1);
 
-                intersectedSeqAlignSlave->addBlock(Block(slaveStart, jthMasterBlock.getLen(), jthMasterBlock.getId()));
+                Block b(slaveStart, jthMasterBlock.getLen(), jthMasterBlock.getId());
+                intersectedSeqAlignSlave->addBlock(b);
             }
             *cdSeqAlignIt = intersectedSeqAlignSlave->toSeqAlign(*intersectedBlockModel);
             //testStr = intersectedSeqAlignSlave->toString();
@@ -901,6 +902,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2006/01/03 18:28:20  ucko
+ * IntersectByMaster: AddBlock takes a reference, so don't try to pass it
+ * an anonymous temporary.
+ *
  * Revision 1.13  2006/01/03 16:19:58  lanczyck
  * fixes for IBM;
  * add overload of 'getIntersectedAlignment' to force specific block boundaries
