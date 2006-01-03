@@ -695,7 +695,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
             case 'S':                               return eAcc_gb_con;
-            case 'U':                               return eAcc_gb_gss;
+            case 'U': case 'X':                     return eAcc_gb_gss;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1614,6 +1614,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.118  2006/01/03 19:42:37  ucko
+ * IdentifyAccession: DX -> eAcc_gb_gss.
+ *
  * Revision 6.117  2005/12/28 17:05:13  ucko
  * CSeq_id::Set(const string&): put up with trailing parts in FASTA-style
  * IDs as long as they're all empty.
