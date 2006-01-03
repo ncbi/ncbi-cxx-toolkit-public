@@ -106,10 +106,14 @@ typedef struct BlastInitialWordParameters {
                            value in options. */
    Int4 x_dropoff; /**< Raw X-dropoff value used in the ungapped extension */
    Int4 cutoff_score; /**< Cutoff score for saving ungapped hits. */
+   Int4 reduced_nucl_cutoff_score; /**< reduced cutoff score for early pruning 
+                                        of ungapped nucleotide alignments */
    ESeedContainerType container_type; /**< How to store offset pairs for initial
                                         seeds? */
    ESeedExtensionMethod extension_method; /**< How should exact matches be 
                                             extended? */
+   Int4 nucl_score_table[256]; /**< the combined score of all match/mismatch
+                                    combinations for aligning four bases */
 } BlastInitialWordParameters;
     
 /** Computed values used as parameters for gapped alignments */
