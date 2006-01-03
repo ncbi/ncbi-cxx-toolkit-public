@@ -200,8 +200,9 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 {
    Blast_KarlinBlk* kbp_std;
    Int2 status = 0;
-   const int kQueryLenForStacks = 50;  /* Use stacks rather than diag for 
-                                     any query longer than this.  Only for blastn. */
+   const int kQueryLenForStacks = 8000;  /* For blastn, use stacks rather 
+                                            than diags for any query longer 
+                                            than this */
 
    /* If parameters pointer is NULL, there is nothing to fill, 
       so don't do anything */
@@ -235,6 +236,33 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    status = BlastInitialWordParametersUpdate(program_number,
                hit_params, sbp, query_info,
                subject_length, *parameters);
+
+   if (program_number == eBlastTypeBlastn) {
+      Int4 i;
+      Int4 reward = sbp->reward;
+      Int4 penalty = sbp->penalty;
+      Int4 *table = (*parameters)->nucl_score_table;
+
+      /* nucleotide ungapped extensions are first computed
+         approximately, and then recomputed exactly if the
+         approximate score is high enough. The approximate
+         computation considers nucleotides in batches of 4,
+         so a table is needed that contains the combined scores
+         of all combinations of 4 matches/mismatches */
+
+      for (i = 0; i < 256; i++) {
+         /* break the bit pattern of i into four 2-bit groups.
+            If bits in a group are set, that group represents 
+            a mismatch */
+
+         Int4 score = 0;
+         if (i & 3) score += penalty; else score += reward;
+         if ((i >> 2) & 3) score += penalty; else score += reward;
+         if ((i >> 4) & 3) score += penalty; else score += reward;
+         if (i >> 6) score += penalty; else score += reward;
+         table[i] = score;
+      }
+   }
 
    return status;
 }
@@ -335,6 +363,13 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
 
    parameters->cutoff_score = MIN(hit_params->cutoff_score_max, cutoff_s);
    
+   /* Nucleotide searches first compute an approximate ungapped
+      alignment and compare it to a reduced ungapped cutoff score */
+   if (program_number == eBlastTypeBlastn) {
+       parameters->reduced_nucl_cutoff_score = 
+                          (Int4)(0.6 * parameters->cutoff_score);
+   }
+
    /* Note that x_dropoff_init stays constant throughout the search.
       The cutoff_score and x_dropoff parameters may be updated multiple times, 
       if every subject sequence is treated individually. Hence we need to know 
@@ -824,6 +859,10 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2006/01/03 17:53:20  papadopo
+ * 1. increase the cutoff query size for using stacks
+ * 2. initialize fields for approximate nucleotide ungapped alignment
+ *
  * Revision 1.14  2006/01/03 14:18:42  madden
  * In BlastExtensionParametersNew raise gap_x_dropoff_final to gap_x_dropoff if it is lower
  *
