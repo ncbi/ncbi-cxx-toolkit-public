@@ -29,6 +29,8 @@
  *
  */
 
+%ignore *::CNetScheduleClient_SJobBatch::job_list;
+
 %ignore *::CStlClassInfoFunctions_set_SInitializer;
 %ignore *::CStlClassInfoFunctions_multiset_SInitializer;
 
@@ -123,6 +125,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/01/03 14:37:44  jcherry
+ * %ignore CNetScheduleClient::SJobBatch::job_list
+ *
  * Revision 1.10  2005/11/19 21:27:26  jcherry
  * %ignore CStlClassInfoFunctions_set::SInitializer and
  * CStlClassInfoFunctions_multiset::SInitializer
