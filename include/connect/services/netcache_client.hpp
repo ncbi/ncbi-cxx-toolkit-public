@@ -454,7 +454,9 @@ public:
         ///< Server side error
         eServerError,
         ///< BLOB is locked by another client
-        eBlobLocked
+        eBlobLocked,
+        ///< Cache name unknown
+        eUnknnownCache
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -465,6 +467,7 @@ public:
         case eKeyFormatError:      return "eKeyFormatError";
         case eServerError:         return "eServerError";
         case eBlobLocked:          return "eBlobLocked";
+        case eUnknnownCache:       return "eUnknnownCache";
         default:                   return CException::GetErrCodeString();
         }
     }
@@ -537,7 +540,7 @@ public:
 public:
     CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, 
                              EOwnership        own_writer,
-                             CNetCacheClient&  parent);
+                             CNetCacheClient*  parent);
     virtual ~CNetCache_WriterErrCheck();
 
     virtual 
@@ -551,7 +554,7 @@ protected:
     void CheckInputMessage();
 protected:
     CNetCacheSock_RW*  m_RW;
-    CNetCacheClient&   m_NC_Client;
+    CNetCacheClient*   m_NC_Client;
 };
 
 
@@ -576,6 +579,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/01/03 15:35:57  kuznets
+ * Added network ICache client
+ *
  * Revision 1.47  2005/12/05 13:42:25  kuznets
  * +DropStat()
  *

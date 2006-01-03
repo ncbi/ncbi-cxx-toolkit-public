@@ -143,6 +143,7 @@ protected:
     void CreateSocket(const string& hostname, unsigned port);
     void WaitForServer();
     /// Remove "ERR:" prefix 
+    static
     void TrimErr(string* err_msg);
     void PrintServerOut(CNcbiOstream & out);
 
@@ -215,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/03 15:35:57  kuznets
+ * Added network ICache client
+ *
  * Revision 1.11  2005/11/01 14:56:21  kuznets
  * Compilation warning fixed
  *

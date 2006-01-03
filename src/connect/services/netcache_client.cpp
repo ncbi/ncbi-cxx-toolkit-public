@@ -317,7 +317,7 @@ IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
     if (m_PutVersion == 2) {
 
         CNetCache_WriterErrCheck* err_writer =
-            new CNetCache_WriterErrCheck(writer, eTakeOwnership, *this);
+            new CNetCache_WriterErrCheck(writer, eTakeOwnership, this);
 /*
         CTransmissionWriter* twriter = 
             new CTransmissionWriter(writer, eTakeOwnership);
@@ -738,7 +738,7 @@ void CNetCacheClient::TransmitBuffer(const char* buf, size_t len)
     _ASSERT(m_Sock);
 
     CNetCacheSock_RW   wrt(m_Sock);
-    CNetCache_WriterErrCheck err_wrt(&wrt, eNoOwnership, *this);
+    CNetCache_WriterErrCheck err_wrt(&wrt, eNoOwnership, this);
 
     const char* buf_ptr = buf;
     size_t size_to_write = len;
@@ -800,7 +800,7 @@ void CNetCacheSock_RW::OwnSocket()
 CNetCache_WriterErrCheck::CNetCache_WriterErrCheck
                                         (CNetCacheSock_RW* wrt, 
                                          EOwnership        own_writer,
-                                         CNetCacheClient&  parent)
+                                         CNetCacheClient*  parent)
 : CTransmissionWriter(wrt, own_writer),
   m_RW(wrt),
   m_NC_Client(parent)
@@ -858,7 +858,7 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
                 goto closed_err;
             }
             if (!msg.empty()) {
-                m_NC_Client.TrimErr(&msg);
+                CNetCacheClient::TrimErr(&msg);
                 goto throw_err_msg;
             }
         }
@@ -873,7 +873,9 @@ closed_err:
     msg = "Server closed communication channel (timeout?)";
 
 throw_err_msg:
-    m_NC_Client.SetCommErrMsg(msg);
+    if (m_NC_Client) {
+        m_NC_Client->SetCommErrMsg(msg);
+    }
     m_RW = 0;
     NCBI_THROW(CNetServiceException, eCommunicationError, msg);
 }
@@ -985,6 +987,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/01/03 15:36:44  kuznets
+ * Added network ICache client
+ *
  * Revision 1.56  2005/12/05 13:42:45  kuznets
  * +DropStat()
  *
