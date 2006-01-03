@@ -416,7 +416,7 @@ protected:
 public:
     virtual ~I_DriverContext(void);
     
-public:
+
     // Connection mode
     enum EConnectionMode {
         fBcpIn             = 0x1,
@@ -426,6 +426,17 @@ public:
     };
     typedef int TConnectionMode;  // holds a binary OR of "EConnectionMode"
 
+    struct NCBI_DBAPIDRIVER_EXPORT SConnAttr {
+        SConnAttr(void);
+        
+        string          srv_name;
+        string          user_name;
+        string          passwd;
+        TConnectionMode mode;
+        bool            reusable;
+        string          pool_name;
+    };
+    
     // Set login and connection timeouts.
     // NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
     //        DB API), then set the timeout to infinite.
@@ -445,7 +456,7 @@ public:
                                     const string&   passwd,
                                     TConnectionMode mode,
                                     bool            reusable  = false,
-                                    const string&   pool_name = kEmptyStr) = 0;
+                                    const string&   pool_name = kEmptyStr);
 
     // Return number of currently open connections in this context.
     // If "srv_name" is not NULL, then return # of conn. open to that server.
@@ -479,7 +490,6 @@ public:
     void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
                                 const string& pool_name = kEmptyStr);
 
-public:
     // app_name defines the application name that a connection will use when 
     // connecting to a server.
     void SetApplicationName(const string& app_name);
@@ -490,8 +500,10 @@ public:
 
 protected:
     // To allow children of I_DriverContext to create CDB_Connection
-    static CDB_Connection* Create_Connection(I_Connection& connection);
-
+    CDB_Connection* Create_Connection(I_Connection& connection);
+    I_Connection* MakePooledConnection(const SConnAttr& conn_attr);
+    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr) = 0;
+    
     // Used and unused(reserve) connections
     CPointerPot m_NotInUse;
     CPointerPot m_InUse;
@@ -506,11 +518,12 @@ private:
     // Return unused connection "conn" to the driver context for future
     // reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(I_Connection* conn, bool conn_reusable);
-    friend class CDB_Connection;
     
-private:
     string  m_AppName;
     string  m_HostName;
+
+    friend class CDB_Connection;
+    friend class IDBConnectionFactory;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -636,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/01/03 18:52:56  ssikorsk
+ * Add I_DriverContext::SConnAttr structure.
+ *
  * Revision 1.37  2005/10/20 12:53:01  ssikorsk
  * + I_DriverContext::SetApplicationName
  * + I_DriverContext::GetApplicationName
