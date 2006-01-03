@@ -262,7 +262,9 @@ const string& CCgiContext::GetSelfURL(ESelfUrlPort use_port)
     }
 
     // Compose self URL
-    m_SelfURL = "http://";
+    bool secure = AStrEquiv(GetRequest().GetRandomProperty("HTTPS",
+        false), "on", PNocase());
+    m_SelfURL = secure ? "https://" : "http://";
     m_SelfURL += GetRequest().GetProperty(eCgi_ServerName);
     if (use_port != eSelfUrlPort_Strip) {
         m_SelfURL += ':';
@@ -321,6 +323,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.46  2006/01/03 20:41:20  grichenk
+* Check for HTTPS in GetSelfURL()
+*
 * Revision 1.45  2005/12/20 20:36:02  didenko
 * Comments cosmetics
 * Small interace changes
