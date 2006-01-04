@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = dbapi_conn_policy
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
