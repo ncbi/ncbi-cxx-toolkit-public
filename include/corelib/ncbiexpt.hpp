@@ -425,18 +425,28 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /////////////////////////////////////////////////////////////////////////////
 // CException: useful macros
 
-/// Generic macro to throw an exception, given the exception class,
-/// error code and message string.
-#define NCBI_THROW(exception_class, err_code, message) \
-    throw exception_class(DIAG_COMPILE_INFO,           \
-        0, exception_class::err_code, (message))
+/// Create an instance of the exception to be thrown later.
+#define NCBI_EXCEPTION_VAR(name, exception_class, err_code, message) \
+    exception_class name(DIAG_COMPILE_INFO, 0,                       \
+    exception_class::err_code, (message) )
+
+/// Throw an existing exception object
+#define NCBI_EXCEPTION_THROW(exception_var) \
+    throw (exception_var)
+
+#define NCBI_EXCEPTION_EMPTY_NAME
 
 // NCBI_THROW(foo).SetModule("aaa");
 /// Generic macro to make an exception, given the exception class,
 /// error code and message string.
 #define NCBI_EXCEPTION(exception_class, err_code, message)           \
-    (exception_class(DIAG_COMPILE_INFO, 0, exception_class::err_code,\
-                     (message) ))
+    NCBI_EXCEPTION_VAR(NCBI_EXCEPTION_EMPTY_NAME,                    \
+    exception_class, err_code, message)
+
+/// Generic macro to throw an exception, given the exception class,
+/// error code and message string.
+#define NCBI_THROW(exception_class, err_code, message) \
+    NCBI_EXCEPTION_THROW(NCBI_EXCEPTION(exception_class, err_code, message))
 
 /// Generic macro to make an exception, given the exception class,
 /// previous exception , error code and message string.
@@ -1082,13 +1092,23 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 
 
+/// Create an instance of the exception with one additional parameter.
+#define NCBI_EXCEPTION2_VAR(name, exception_class, err_code, message, extra) \
+    exception_class name(DIAG_COMPILE_INFO, 0,                               \
+    exception_class::err_code, (message), (extra) )
+
+/// Generic macro to make an exception with one additional parameter,
+/// given the exception class, error code and message string.
+#define NCBI_EXCEPTION2(exception_class, err_code, message, extra)   \
+    NCBI_EXCEPTION2_VAR(NCBI_EXCEPTION_EMPTY_NAME,                   \
+    exception_class, err_code, message, extra)
+
 /// Throw exception with extra parameter.
 ///
 /// Required to throw exceptions with one additional parameter
 /// (e.g. positional information for CParseException).
 #define NCBI_THROW2(exception_class, err_code, message, extra) \
-    throw exception_class(DIAG_COMPILE_INFO, \
-        0,exception_class::err_code, (message), (extra))
+    throw NCBI_EXCEPTION2(exception_class, err_code, message, extra)
 
 /// Re-throw exception with extra parameter.
 ///
@@ -1123,6 +1143,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/01/04 18:36:55  grichenk
+ * Added macros for defining exception object without throwing it
+ * and for throwing an existing exception object.
+ *
  * Revision 1.66  2005/12/29 15:40:14  jcherry
  * Added export specifier for CLastErrorAdapt
  *
