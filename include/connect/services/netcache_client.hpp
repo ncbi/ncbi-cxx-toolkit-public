@@ -299,11 +299,16 @@ protected:
 
     friend class CNetCache_WriterErrCheck;
 
+public:
+    static 
+    bool CheckErrTrim(string& answer) { return x_CheckErrTrim(answer); }
+
 protected:
     /// Check if server output starts with "ERR:", throws an exception
     /// "OK:", "ERR:" prefixes are getting trimmed
     ///
     /// @return false if Blob not found error detected
+    static
     bool x_CheckErrTrim(string& answer);
 
 private:
@@ -579,6 +584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/01/04 18:59:43  kuznets
+ * + CheckErrTrim()
+ *
  * Revision 1.48  2006/01/03 15:35:57  kuznets
  * Added network ICache client
  *
