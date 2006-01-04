@@ -43,7 +43,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 2, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(I_DriverContext,  "xdbapi", 3, 0, 0);
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_Connection : public I_Connection
 {
@@ -507,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/04 18:56:09  ssikorsk
+ * Changed xdbapi version from 2.1.0 to 3.0.0.
+ *
  * Revision 1.18  2005/12/06 19:17:30  ssikorsk
  * Added GetResultSet/SetResultSet methods to CDB_Result
  *
