@@ -29,6 +29,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistre.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 #include <html/html.hpp>
@@ -52,6 +53,8 @@ public:
 protected:
     /// Get storage for CGI session data
     virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters&) const;
+private:
+    void x_ShowConfigFile(CCgiResponse& response);
 };
 
 
@@ -81,12 +84,18 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
 
+    // if Show config file was requested
+    if ( !request.GetEntry("showconfig").empty() ) {
+        x_ShowConfigFile(response);
+        return 0;
+    }
+
+
     // Get CGI session.
     // The framework searches for the session ID in the CGI request
     // cookies and entries. If session ID is not found, then a new
     // session will be created.
     CCgiSession& session = request.GetSession();
-
 
     // Check if it was requested to delete current session or to create a
     // new session ("Delete Session" or "Create Session" buttons in the form)
@@ -164,6 +173,28 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+
+void CCgiSessionSampleApplication::x_ShowConfigFile(CCgiResponse& response)
+{
+    CNodeRef Html(new CHTML_html);
+    CNodeRef Head(new CHTML_head);
+    Head->AppendChild(new CHTML_title("Sample CGI Session config file"));
+    Html->AppendChild(Head);
+    CNodeRef Body(new CHTML_body);
+    Html->AppendChild(Body);
+    CNcbiIfstream is(GetConfigPath().c_str());
+    CNcbiOstrstream os;
+    os << is.rdbuf();
+    Body->AppendChild(new CHTML_pre(CNcbiOstrstreamToString(os)));
+    response.WriteHeader();
+    Html->Print(response.out());
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
 
 // Auxiliary function to create the HTML table to hold session attributes
 static CRef<CHTML_table> s_CreateHTMLTable()
@@ -213,7 +244,12 @@ static CNodeRef s_CreateHTMLPage(CRef<CHTML_table> table,
     Form->AppendChild(new CHTML_submit("SUBMIT", "Submit"));
     Form->AppendChild(new CHTML_reset);
     Form->AppendChild(new CHTML_hr);
-    Form->AppendChild(new CHTML_a("show_session_sample_config.cgi",
+    string s(form_url);
+    string::size_type pos = s.find('?');
+    if (pos != string::npos) {
+        s = form_url.substr(0,pos);
+    }
+    Form->AppendChild(new CHTML_a(s + "?showconfig=1",
                                   "Show config file"));
     return Html;
 }
@@ -235,6 +271,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/04 21:10:16  didenko
+ * Added a command to show the config file
+ *
  * Revision 1.7  2006/01/04 19:50:45  didenko
  * Decorated cgi session sample application
  *
