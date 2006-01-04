@@ -31,6 +31,7 @@
 
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <algorithm>
 
 USING_NCBI_SCOPE;
 
@@ -152,6 +153,9 @@ CDBServiceMapperCoR::ConfigureFromRegistry(const IRegistry* registry)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/04 12:29:54  ssikorsk
+ * include <algorithm> explicitly.
+ *
  * Revision 1.1  2006/01/03 19:44:08  ssikorsk
  * Initial implementation
  *
