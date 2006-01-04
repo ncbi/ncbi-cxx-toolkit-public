@@ -145,14 +145,19 @@ CDBServiceMapperCoR::SetPreference(const string&  service,
 void 
 CDBServiceMapperCoR::ConfigureFromRegistry(const IRegistry* registry)
 {
-    for_each(m_Delegates.begin(), m_Delegates.end(), 
-             bind2nd(mem_fun(&IDBServiceMapper::Configure), registry));
+    NON_CONST_ITERATE (TDelegates, dg_it, m_Delegates) {
+        (*dg_it)->Configure(registry);
+    }
 }
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/04 15:01:13  ucko
+ * ConfigureFromRegistry: switch to NON_CONST_ITERATE because SGI's STL
+ * implementation deals poorly with functions whose return type is void.
+ *
  * Revision 1.2  2006/01/04 12:29:54  ssikorsk
  * include <algorithm> explicitly.
  *
