@@ -263,9 +263,13 @@ CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(
     ITERATE(list<SLibChoice>, p, m_LibChoices) {
         const SLibChoice& choice = *p;
         if (choice.m_3PartyLib == lib3party_id) {
-            SLibInfo lib_info;
-            GetLibInfo(lib3party_id, cfg_info, &lib_info);
-            return IsLibOk(lib_info,true) ? e3PartyLib : eLib;
+            if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
+                return choice.m_Choice;
+            } else {
+                SLibInfo lib_info;
+                GetLibInfo(lib3party_id, cfg_info, &lib_info);
+                return IsLibOk(lib_info,true) ? e3PartyLib : eLib;
+            }
         }
     }
     return eUnknown;
@@ -507,6 +511,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/01/04 13:44:55  gouriano
+ * Corrected analyzing build configurations for DLL build
+ *
  * Revision 1.33  2005/11/01 14:43:18  gouriano
  * Looking for provided features check also standard ones
  *

@@ -309,19 +309,25 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 
 
 //-----------------------------------------------------------------------------
+CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
+#if _MSC_VER >= 1400
+    CMsvc7RegSettings::eMsvc800express;
+#else
+    CMsvc7RegSettings::eMsvc710;
+#endif
+
+CMsvc7RegSettings::EMsvcVersion  CMsvc7RegSettings::GetMsvcVersion(void)
+{
+    return sm_MsvcVersion;
+}
 
 CMsvc7RegSettings::CMsvc7RegSettings(void)
 {
-#if _MSC_VER >= 1400
-    m_MsvcVersion = eMsvc800express;
-#else
-    m_MsvcVersion = eMsvc710;
-#endif
 }
 
 string CMsvc7RegSettings::GetProjectFileFormatVersion(void) const
 {
-    if (m_MsvcVersion == eMsvc710) {
+    if (GetMsvcVersion() == eMsvc710) {
         return "7.10";
     } else {
         return "8.00";
@@ -329,7 +335,7 @@ string CMsvc7RegSettings::GetProjectFileFormatVersion(void) const
 }
 string CMsvc7RegSettings::GetSolutionFileFormatVersion(void) const
 {
-    if (m_MsvcVersion == eMsvc710) {
+    if (GetMsvcVersion() == eMsvc710) {
         return "8.00";
     } else {
         return "9.00";
@@ -1093,6 +1099,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/01/04 13:44:55  gouriano
+ * Corrected analyzing build configurations for DLL build
+ *
  * Revision 1.40  2005/12/27 14:57:51  gouriano
  * Adjustments for MSVC 2005 Express
  *

@@ -687,7 +687,7 @@ void CProjBulderApp::ParseArguments(void)
     LOG_POST(Info << "Solution: " << m_Solution);
     m_BuildPtb = !((bool)args["nobuildptb"]);
     m_BuildPtb = m_BuildPtb &&
-        GetRegSettings().GetMsvcVersion() == CMsvc7RegSettings::eMsvc710;
+        CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710;
 
     m_AddMissingLibs =   (bool)args["ext"];
     m_ScanWholeTree  = !((bool)args["nws"]);
@@ -767,9 +767,13 @@ void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 }
 
 
-void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
+void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs)
 {
     configs->clear();
+    if (m_Dll) {
+        GetDllsInfo().GetBuildConfigs(configs);
+        return;
+    }
     string config_str = GetConfig().GetString(MSVC_REG_SECTION, "Configurations", "");
     list<string> configs_list;
     NStr::Split(config_str, LIST_SEPARATOR, configs_list);
@@ -785,8 +789,6 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
         m_MsvcRegSettings->m_Version = 
             GetConfig().GetString(MSVC_REG_SECTION, "Version", "");
 
-        GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
-
         m_MsvcRegSettings->m_CompilersSubdir  = 
             GetConfig().GetString(MSVC_REG_SECTION, "compilers", "");
     
@@ -801,6 +803,8 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 
         m_MsvcRegSettings->m_DllInfo = 
             GetConfig().GetString(MSVC_REG_SECTION, "DllInfo", "");
+
+        GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
     }
     return *m_MsvcRegSettings;
 }
@@ -1127,6 +1131,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/01/04 13:44:55  gouriano
+ * Corrected analyzing build configurations for DLL build
+ *
  * Revision 1.67  2005/12/28 20:37:43  gouriano
  * Add parameterization into VCPROJ definition
  *

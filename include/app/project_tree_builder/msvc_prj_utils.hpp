@@ -186,14 +186,11 @@ public:
     string            m_MetaMakefile;
     string            m_DllInfo;
 
-    EMsvcVersion    GetMsvcVersion(void) const
-    {
-        return m_MsvcVersion;
-    }
+    static EMsvcVersion    GetMsvcVersion(void);
     string    GetProjectFileFormatVersion(void) const;
     string    GetSolutionFileFormatVersion(void) const;
 private:
-    EMsvcVersion      m_MsvcVersion;
+    static EMsvcVersion   sm_MsvcVersion;
     CMsvc7RegSettings(const CMsvc7RegSettings&);
     CMsvc7RegSettings& operator= (const CMsvc7RegSettings&);
 };
@@ -487,6 +484,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/01/04 13:45:16  gouriano
+ * Corrected analyzing build configurations for DLL build
+ *
  * Revision 1.28  2005/12/27 14:58:14  gouriano
  * Adjustments for MSVC 2005 Express
  *

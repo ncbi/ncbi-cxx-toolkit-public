@@ -48,7 +48,7 @@ public:
     ~CMsvcDllsInfo(void);
     
     void GetDllsList      (list<string>*      dlls_ids) const;
-    void GetBuildConfigs  (list<SConfigInfo>* config)   const;
+    void GetBuildConfigs  (list<SConfigInfo>* config);
     string GetBuildDefine (void) const;
 
     struct SDllInfo
@@ -97,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/01/04 13:45:16  gouriano
+ * Corrected analyzing build configurations for DLL build
+ *
  * Revision 1.9  2004/10/12 16:19:04  ivanov
  * Cosmetics
  *

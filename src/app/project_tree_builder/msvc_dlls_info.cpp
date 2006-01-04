@@ -67,7 +67,7 @@ void CMsvcDllsInfo::GetDllsList(list<string>* dlls_ids) const
 }
 
 
-void CMsvcDllsInfo::GetBuildConfigs(list<SConfigInfo>* config) const
+void CMsvcDllsInfo::GetBuildConfigs(list<SConfigInfo>* config)
 {
     config->clear();
 
@@ -595,6 +595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/01/04 13:44:55  gouriano
+ * Corrected analyzing build configurations for DLL build
+ *
  * Revision 1.32  2005/09/12 20:20:36  gouriano
  * Corrected choosing MSVC tune-up file path
  *

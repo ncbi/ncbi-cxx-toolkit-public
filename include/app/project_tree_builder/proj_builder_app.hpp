@@ -158,7 +158,7 @@ public:
     string ProcessLocationMacros(string data);
     
 private:
-    void    GetBuildConfigs     (list<SConfigInfo>* configs) const;
+    void    GetBuildConfigs     (list<SConfigInfo>* configs);
     void    CreateFeaturesAndPackagesFiles(const list<SConfigInfo>* configs);
     bool    ConfirmConfiguration(void);
 };
@@ -221,6 +221,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/01/04 13:45:16  gouriano
+ * Corrected analyzing build configurations for DLL build
+ *
  * Revision 1.25  2005/12/28 20:38:37  gouriano
  * Add parameterization into VCPROJ definition
  *
