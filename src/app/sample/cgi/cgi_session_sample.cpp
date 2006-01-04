@@ -31,12 +31,10 @@
 #include <ncbi_pch.hpp>
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
-#include <cgi/cgi_exception.hpp>
+#include <html/html.hpp>
 
 #include <misc/grid_cgi/cgi_session_netcache.hpp>
 
-#include <html/html.hpp>
-#include <html/page.hpp>
 
 
 using namespace ncbi;
@@ -49,208 +47,175 @@ using namespace ncbi;
 class CCgiSessionSampleApplication : public CCgiApplication
 {
 public:
-    virtual void Init(void);
     virtual int  ProcessRequest(CCgiContext& ctx);
 
 protected:
-    // Return a CGI session storage
+    /// Get storage for CGI session data
     virtual ICgiSessionStorage* GetSessionStorage(CCgiSessionParameters&) const;
-
-private:
-    void x_SetupArgs(void);
 };
 
 
-void CCgiSessionSampleApplication::Init()
-{
-    // Standard CGI framework initialization
-    CCgiApplication::Init();
-
-    // Describe possible cmd-line and HTTP entries
-    // (optional)
-    x_SetupArgs();
-}
 
 ICgiSessionStorage* 
-CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params) const
+CCgiSessionSampleApplication::GetSessionStorage(CCgiSessionParameters& params)
+    const
 {
-    static auto_ptr<CCgiSession_NetCache> session(new CCgiSession_NetCache(GetConfig()));
-    // Specify that the application takes care of CGI session storage
-    params.SetImplOwnership(eNoOwnership);
-    return session.get();
+    // NetCache requires some configuring;  e.g. see "cgi_session_sample.ini"
+    const IRegistry& app_config = GetConfig();
+
+    // Note:  Framework will take the ownership over the CCgiSession_NetCache
+    return new CCgiSession_NetCache(app_config);
 }
 
 
-struct SSessionVarTableCtx 
-{
-    SSessionVarTableCtx(const CCgiSession& session) 
-        : m_Session(session), m_Names(session.GetAttributeNames())
-    {
-        m_CurName = m_Names.begin();
-    }
+// Fwd decl of auxiliary functions to create the HTML representation skeleton
+static CRef<CHTML_table> s_CreateHTMLTable();
+static CNodeRef          s_CreateHTMLPage(CRef<CHTML_table> table, 
+                                          const string&     form_url,
+                                          const string&     session_label);
 
-    const CCgiSession& m_Session;
-    typedef CCgiSession::TNames TNames;
-    TNames m_Names;
-    TNames::const_iterator m_CurName;          
-};
-
-static CNCBINode* s_SessionVarRowHook(CHTMLPage* page, 
-                                      SSessionVarTableCtx* ctx)
-{
-    if (ctx->m_CurName == ctx->m_Names.end())
-        return 0;
-    auto_ptr<CNCBINode> node(new CNCBINode);
-    node->AppendChild(new CHTMLTagNode("session_var_row"));
-    
-    const string& name = *(ctx->m_CurName);
-    page->AddTagMap("name",  new CHTMLText(name));
-    string value = ctx->m_Session.GetAttribute(name);
-    page->AddTagMap("value",  new CHTMLText(value));
-
-    ++(ctx->m_CurName);
-    node->RepeatTag();
-    return node.release();
-}
 
 int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
 {
-
-    // Given "CGI context", get access to its "HTTP request" and
-    // "HTTP response" sub-objects
+    // Given "CGI context", get its "HTTP request" and "HTTP response"
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
 
-    // get CGI session. The framework will try to a session id 
-    // in CGI request cookies (if a session cookie is enabled) or
-    // in request's entries. If session id is not found, then a new
-    // session is created.
+    // Get CGI session.
+    // The framework searches for the session ID in the CGI request
+    // cookies and entries. If session ID is not found, then a new
+    // session will be created.
     CCgiSession& session = request.GetSession();
-    
-    string modify_attr_name;
-    string modify_attr_value;
 
-    bool is_sess_cmd_set = false;
-    string cmd = request.GetEntry("DelSession", &is_sess_cmd_set);
-    if (is_sess_cmd_set) {
+
+    // Check if it was requested to delete current session or to create a
+    // new session ("Delete Session" or "Create Session" buttons in the form)
+    if ( !request.GetEntry("DeleteSession").empty() ) {
         session.DeleteSession();
-    } else {
-        cmd = request.GetEntry("CrtSession", &is_sess_cmd_set);
-        if (is_sess_cmd_set) {
-            session.CreateNewSession();
-        }
     }
-    
-    if ( session.GetStatus() != CCgiSession::eDeleted ) {
-        bool is_name = false;
-        string aname = request.GetEntry("aname", &is_name);
-        bool is_value = false;
-        string avalue = request.GetEntry("avalue", &is_value);
-        if ( is_name && is_value && !aname.empty()) {
-            // Set a value of the session variable through an
-            // ouput stream.
-            CNcbiOstream& os = session.GetAttrOStream(aname);        
-            os << avalue;
-            // or for a string value SetAttribute method can be used
-            //session.SetAttribute(aname, avalue);
-        } 
+    else if ( !request.GetEntry("CreateSession").empty() ) {
+        session.CreateNewSession();
+    }
+
+
+    // If there is an active CGI session...
+    if (session.GetStatus() != CCgiSession::eDeleted) {
+        // Check if user typed into the text fields to add a new
+        // (or to change an existing) session variable
+        string name = request.GetEntry("AttrName");
+        if ( !name.empty() ) {
+            string value = request.GetEntry("AttrValue");
+
+            // Store the value of the session variable
+            CNcbiOstream& os = session.GetAttrOStream(name);
+            os << value;
+
+            // Alternatively (for a string value), the SetAttribute()
+            // method can also be used:
+            //   session.SetAttribute(name, value);
+        }
+
+        // Check if user requested to delete existing
+        // session variable (pressed "Delete Attribute" button)
         CCgiSession::TNames names( session.GetAttributeNames() );
         ITERATE(CCgiSession::TNames, it, names) {
-            bool is_set;
-            string action = *it + "_action";
-            string avalue = request.GetEntry(action, &is_set);
-            if (is_set) {
-                if (avalue == "Delete")
-                    session.RemoveAttribute(*it);
-                else if (avalue == "Modify") {
-                    modify_attr_name = *it;
-                    // get a string value from the session variable
-                    modify_attr_value = session.GetAttribute(modify_attr_name);
-                    // or an input stream can be used
-                    // CNcbiIstream& is = session.GetAttrIStream(modify_attr_name);
-                    // getline(is,modify_attr_value);
-                }
+            if ( !request.GetEntry("Delete_" + *it).empty() ) {
+                session.RemoveAttribute(*it);
+                break;
             }
         }
-    }
+    }      
 
+    // Create layout of the table that shows session attributes (if any)
+    CRef<CHTML_table> table(s_CreateHTMLTable());
 
-    // Create a HTML page (using template HTML file "cgi_session_sample.html")
-    auto_ptr<CHTMLPage> page;
-    try {
-        const string& html = GetConfig().GetString("html", "template",
-                                                   "cgi_session_sample.html");
-        const string& inc = GetConfig().GetString("html", "inc",
-                                                  "cgi_session_sample.inc");
-        page.reset(new CHTMLPage("Sample CGI Session", html));
-        page->LoadTemplateLibFile(inc);
+    // Populate the HTML page with the session data
+    string session_label;
+    string self_url = ctx.GetSelfURL();
+    if (session.GetStatus() != CCgiSession::eDeleted) {
+        // Populate table with the list of known session variables
+        CCgiSession::TNames attrs(session.GetAttributeNames());
+        CHTML_table::TIndex row = 1;
+        ITERATE(CCgiSession::TNames, name, attrs) {
+            table->Cell(row,0)->AppendPlainText(*name);
+            table->Cell(row,1)->AppendPlainText(session.GetAttribute(*name));
+            table->Cell(row,2)->AppendChild
+                (new CHTML_submit("Delete_" + *name, "Delete Attribute"));
+            ++row;
+        }
 
-    } catch (exception& e) {
-        ERR_POST("Failed to create Sample CGI HTML page: " << e.what());
-        return 2;
-    }
- 
+        // Show session ID
+        session_label = "Session ID: " + session.GetId();
 
-    auto_ptr<SSessionVarTableCtx> session_ctx;
-    try {        
-        if (session.GetStatus() != CCgiSession::eDeleted) {
-            session_ctx.reset(new SSessionVarTableCtx(session));
-            page->AddTagMap("session_vars_hook", 
-                            CreateTagMapper(s_SessionVarRowHook,
-                                            &*session_ctx));
+        // If we want to pass session Id through a query string...
+        self_url += "?" + session.GetSessionIdName() + "=" + session.GetId();
+    } else {
+        // Session has been deleted, so no session data is available
+        session_label = "Session has been deleted";       
+    }    
 
-            page->AddTagMap("SESSION_ID", 
-                            new CHTMLPlainText(session.GetId()));
-            // if we want to pass session Id through a query string
-            string cmd = "?" + session.GetSessionIdName() + "=" 
-                + session.GetId();
-            string surl = ctx.GetSelfURL() + cmd;
-            page->AddTagMap("SELF_URL", new CHTMLPlainText(surl));
+    // Print HTTP header
+    response.WriteHeader();
 
-            page->AddTagMap("ATTR_NAME", 
-                            new CHTMLPlainText(modify_attr_name));
-            page->AddTagMap("ATTR_VALUE", 
-                            new CHTMLPlainText(modify_attr_value));
-        } else {
-            page->AddTagMap("SESSION_ID", 
-                            new CHTMLPlainText("Session has been deleted"));
-        } 
-
-    }
-    catch (exception& e) {
-        ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
-        return 3;
-    }
-
-    // Compose and flush the resultant HTML page
-    try {
-        response.WriteHeader();
-        page->Print(response.out(), CNCBINode::eHTML);
-    } catch (exception& e) {
-        ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
-        return 4;
-    }
+    // Finish the HTML page, then print it
+    s_CreateHTMLPage(table, self_url, session_label)->Print(response.out());
 
     return 0;
 }
 
 
 
-void CCgiSessionSampleApplication::x_SetupArgs()
+// Auxiliary function to create the HTML table to hold session attributes
+static CRef<CHTML_table> s_CreateHTMLTable()
 {
-    // Disregard the case of CGI arguments
-    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
+    CRef<CHTML_table> table(new CHTML_table);
+    table->SetAttribute("border","1");
+    table->SetAttribute("width","600");
+    table->SetAttribute("cellspacing","0");
+    table->SetAttribute("cellpadding","2");
+    table->SetColumnWidth(0,"20%");
+    table->SetColumnWidth(1,"65%");
+    table->HeaderCell(0,0)->AppendPlainText("Name");
+    table->HeaderCell(0,1)->AppendPlainText("Value");
+    table->HeaderCell(0,2)->AppendPlainText("Action");
+    return table;
+}
 
-    // Create CGI argument descriptions class
-    //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "CGI session sample application");
-        
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
+// Auxiliary function to create the HTML page to manage session and its data
+static CNodeRef s_CreateHTMLPage(CRef<CHTML_table> table, 
+                                 const string&     form_url,
+                                 const string&     session_label) 
+{
+    CNodeRef Html(new CHTML_html);
+    CNodeRef Head(new CHTML_head);
+    Head->AppendChild(new CHTML_title("Sample CGI Session"));
+    Html->AppendChild(Head);
+    CNodeRef Body(new CHTML_body);
+    Html->AppendChild(Body);
+    Body->AppendChild(new CHTML_h3(session_label));
+
+    CRef<CHTML_form> Form(new CHTML_form(form_url, CHTML_form::ePost));
+    Body->AppendChild(Form);
+    Form->AppendChild(new CHTML_submit("DeleteSession", "Delete Session"));
+    Form->AppendChild(new CHTML_submit("CreateSession", "Create New Session"));
+    Form->AppendChild(new CHTML_hr);
+    Form->AppendChild(table);
+    Form->AppendChild(new CHTML_br);
+    Form->AppendPlainText("Set Attribute:");
+    Form->AppendChild(new CHTML_br);
+    Form->AppendChild(new CHTML_p);
+    Form->AppendPlainText("Name:   ");
+    Form->AppendChild(new CHTML_text("AttrName"));
+    Form->AppendPlainText("  Value:  ");
+    Form->AppendChild(new CHTML_text("AttrValue"));
+    Form->AppendChild(new CHTML_p);
+    Form->AppendChild(new CHTML_submit("SUBMIT", "Submit"));
+    Form->AppendChild(new CHTML_reset);
+    Form->AppendChild(new CHTML_hr);
+    Form->AppendChild(new CHTML_a("show_session_sample_config.cgi",
+                                  "Show config file"));
+    return Html;
 }
 
 
@@ -261,7 +226,7 @@ void CCgiSessionSampleApplication::x_SetupArgs()
 
 int main(int argc, const char* argv[])
 {
-    int result = CCgiSessionSampleApplication().AppMain(argc, argv, 0, eDS_Default);
+    int result = CCgiSessionSampleApplication().AppMain(argc, argv);
     return result;
 }
 
@@ -270,6 +235,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/04 19:50:45  didenko
+ * Decorated cgi session sample application
+ *
  * Revision 1.6  2005/12/23 14:25:26  didenko
  * Renamed CCgiSession_Netcache to CCgiSession_NetCache
  *
