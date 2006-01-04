@@ -181,6 +181,9 @@ EOF
                 continue
             fi
 
+            cmd="dbapi_conn_policy -d $driver -S $server"
+            RunSimpleTest "dbapi_conn_policy"
+
             # do not run tests with a boolk copy operations 
             # on Sybase databases with the "ftds" driver
             if test \( $driver = "ftds" -a $server = $server_mssql \) -o \
@@ -201,7 +204,7 @@ EOF
                     cmd="dbapi_testspeed -d $driver -S $server"
                     RunSimpleTest "dbapi_testspeed"
                 else
-                    sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -d $driver -S $server (skipped)"
+                    sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -d $driver -S $server (Skipped. It causes deadlocks.)"
                 fi
 
             else
