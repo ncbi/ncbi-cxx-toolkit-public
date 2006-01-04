@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.404 2005/12/05 17:31:04 ucko Exp $
+#  $Id: configure.ac,v 1.405 2006/01/04 20:51:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -140,6 +140,10 @@ AC_ARG_WITH(caution,
    [ --with-caution          cancel configuration unconditionally when in doubt])
 AC_ARG_WITH(caution2,
    [ --without-caution       proceed without asking when in doubt])
+AC_ARG_WITH(ccache,
+   [ --without-ccache        do not automatically use ccache if available])
+AC_ARG_WITH(distcc,
+   [ --with-distcc           use distcc if available])
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
@@ -340,7 +344,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
-check static-exe bin-release strip version lfs pch caution \
+check static-exe bin-release strip version lfs pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
 geo included-geo \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
@@ -1438,10 +1442,27 @@ case "$host_os" in
      ;;
 esac
 
-AC_CHECK_PROG(CCACHE, ccache, ccache, [])
-if test -n "$CCACHE" ; then
-   CC_WRAPPER="$CCACHE $CC_WRAPPER"
-   CXX_WRAPPER="$CCACHE $CXX_WRAPPER"
+# When using ccache and distcc together, ccache needs to be on the
+# outside, so look for distcc first.
+
+if test "$with_distcc" = "yes"; then
+   AC_CHECK_PROG(DISTCC, distcc, distcc, [])
+   if test -n "$DISTCC" ; then
+      CC_WRAPPER="$DISTCC $CC_WRAPPER"
+      CXX_WRAPPER="$DISTCC $CXX_WRAPPER"
+   else
+      AC_MSG_WARN([distcc explicitly requested, but not found in PATH.])
+   fi
+fi
+
+if test "$with_ccache" != "no"; then
+   AC_CHECK_PROG(CCACHE, ccache, ccache, [])
+   if test -n "$CCACHE" ; then
+      CC_WRAPPER="$CCACHE $CC_WRAPPER"
+      CXX_WRAPPER="$CCACHE $CXX_WRAPPER"
+   elif test "$with_ccache" = "yes"; then
+      AC_MSG_WARN([ccache explicitly requested, but not found in PATH.])
+   fi
 fi
 
 # Note the path, since syntax is version-specific....
