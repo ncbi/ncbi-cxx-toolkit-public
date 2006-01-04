@@ -37,8 +37,6 @@ BEGIN_NCBI_SCOPE
 
 #define NC_SKIPNUM(x)  \
     while (*x && (*x >= '0' && *x <= '9')) { ++x; }
-#define NC_SKIPNUM_SPACE(x)  \
-    while (*x && ((*x >= '0' && *x <= '9') || *x == ' ' || *x == '\t')) ++x;
 #define NC_SKIPSPACE(x)  \
     while (*x && (*x == ' ' || *x == '\t')) { ++x; }
 #define NC_RETURN_ERROR(err) \
@@ -53,6 +51,7 @@ BEGIN_NCBI_SCOPE
     do { ++x;\
         if (*x == 0) NC_RETURN_ERROR("Invalid IC request"); \
         if (*x == '"') { ++x; break; } \
+        str.push_back(*x); \
     } while (1);
 
 
@@ -117,13 +116,15 @@ void CNetCacheServer::ParseRequestIC(const string& reqstr, SIC_Request* req)
         s += 4;
         NC_SKIPSPACE(s)
         req->i0 = (unsigned) atoi(s);  // ttl
-        NC_SKIPNUM_SPACE(s)
+        NC_SKIPNUM(s)
+        NC_SKIPSPACE(s)
     get_kvs:
         NC_GETVAR(s, req->key)
         NC_SKIPSPACE(s)
         NC_CHECK_END(s)
         req->version = (unsigned) atoi(s);
-        NC_SKIPNUM_SPACE(s)
+        NC_SKIPNUM(s)
+        NC_SKIPSPACE(s)
         NC_GETVAR(s, req->subkey)
         return;
     } // STOR
@@ -186,10 +187,12 @@ void CNetCacheServer::ParseRequestIC(const string& reqstr, SIC_Request* req)
         NC_SKIPSPACE(s)
         NC_CHECK_END(s)
         req->i0 = (unsigned)atoi(s);
-        NC_SKIPNUM_SPACE(s)
+        NC_SKIPNUM(s)
+        NC_SKIPSPACE(s)
         NC_CHECK_END(s)
         req->i1 = (unsigned)atoi(s);
-        NC_SKIPNUM_SPACE(s)
+        NC_SKIPNUM(s)
+        NC_SKIPSPACE(s)
         NC_CHECK_END(s)
         req->i2 = (unsigned)atoi(s);
         return;
@@ -421,6 +424,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/04 19:09:56  kuznets
+ * Fixed command parsing
+ *
  * Revision 1.2  2006/01/04 18:19:04  ucko
  * Drop spurious semicolon after BEGIN_NCBI_SCOPE, as some versions of
  * WorkShop object to the resulting empty statement.
