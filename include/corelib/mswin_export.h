@@ -1038,14 +1038,6 @@
 #  define NCBI_XUTIL_EXPORT __declspec(dllimport)
 #endif
 
-/* Export specifier for library xconnext
- */
-#ifdef NCBI_XCONNEXT_EXPORTS
-#  define NCBI_XCONNEXT_EXPORT __declspec(dllexport)
-#else
-#  define NCBI_XCONNEXT_EXPORT __declspec(dllimport)
-#endif
-
 
 #else  /* !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_DLL_BUILD) */
 
@@ -1180,6 +1172,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.107  2006/01/04 12:53:13  ssikorsk
+ * Remove NCBI_XCONNEXT_EXPORTS.
+ *
  * Revision 1.106  2006/01/03 18:49:36  ssikorsk
  * Add NCBI_XCONNEXT_EXPORTS.
  *
