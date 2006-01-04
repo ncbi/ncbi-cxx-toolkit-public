@@ -148,7 +148,7 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
         not_eof = ReadBuffer(sock, &transm_reader, buf, buf_size, &nn_read);
 
         if (nn_read == 0 && !not_eof) {
-            m_Cache->Store(req.key, req.version, req.subkey, 
+            ic.Store(req.key, req.version, req.subkey, 
                            buf, nn_read, req.i0, tdata.auth);
             break;
         }
@@ -160,13 +160,13 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
             if (iwrt.get() == 0) { // first read
 
                 if (not_eof == false) { // complete read
-                m_Cache->Store(req.key, req.version, req.subkey, 
-                               buf, nn_read, req.i0, tdata.auth);
+                    ic.Store(req.key, req.version, req.subkey, 
+                                   buf, nn_read, req.i0, tdata.auth);
                     return;
                 }
 
                 iwrt.reset(
-                    m_Cache->GetWriteStream(req.key, req.version, req.subkey,
+                    ic.GetWriteStream(req.key, req.version, req.subkey,
                                             req.i0, tdata.auth));
             }
             size_t bytes_written;
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/04 19:09:15  kuznets
+ * Fixed bugs in ICache use
+ *
  * Revision 1.1  2006/01/03 15:42:17  kuznets
  * Added support for network ICache interface
  *
