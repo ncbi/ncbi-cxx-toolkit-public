@@ -33,7 +33,7 @@
 
 #include "netcached.hpp"
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 #define NC_SKIPNUM(x)  \
     while (*x && (*x >= '0' && *x <= '9')) { ++x; }
@@ -421,6 +421,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/04 18:19:04  ucko
+ * Drop spurious semicolon after BEGIN_NCBI_SCOPE, as some versions of
+ * WorkShop object to the resulting empty statement.
+ *
  * Revision 1.1  2006/01/03 15:42:17  kuznets
  * Added support for network ICache interface
  *
