@@ -36,6 +36,7 @@
 
 
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistr.hpp>
 
 
 /** @addtogroup CGIExcep
@@ -53,11 +54,96 @@ BEGIN_NCBI_SCOPE
 ///
 ///   Base class for the exceptions used by CGI framework
 
-class CCgiException : EXCEPTION_VIRTUAL_BASE public CException
+struct SCgiStatus;
+
+class NCBI_XCGI_EXPORT CCgiException : EXCEPTION_VIRTUAL_BASE public CException
 {
+public:
+    /// HTTP status codes
+    enum EStatusCode {
+        eStatusNotSet               = 0,   ///< Internal value - code not set
+
+        e200_Ok                     = 200,
+        e201_Created                = 201,
+        e202_Accepted               = 202,
+        e203_NonAuthInformation     = 203,
+        e204_NoContent              = 204,
+        e205_ResetContent           = 205,
+        e206_PartialContent         = 206,
+
+        e300_MultipleChoices        = 300,
+        e301_MovedPermanently       = 301,
+        e302_Found                  = 302,
+        e303_SeeOther               = 303,
+        e304_NotModified            = 304,
+        e305_UseProxy               = 305,
+        e307_TemporaryRedirect      = 307,
+
+        e400_BadRequest             = 400,
+        e401_Unauthorized           = 401,
+        e402_PaymentRequired        = 402,
+        e403_Forbidden              = 403,
+        e404_NotFound               = 404,
+        e405_MethodNotAllowed       = 405,
+        e406_NotAcceptable          = 406,
+        e407_ProxyAuthRequired      = 407,
+        e408_RequestTimeout         = 408,
+        e409_Conflict               = 409,
+        e410_Gone                   = 410,
+        e411_LengthRequired         = 411,
+        e412_PreconditionFailed     = 412,
+        e413_RequestEntityTooLarge  = 413,
+        e414_RequestURITooLong      = 414,
+        e415_UnsupportedMediaType   = 415,
+        e416_RangeNotSatisfiable    = 416,
+        e417_ExpectationFailed      = 417,
+
+        e500_InternalServerError    = 500,
+        e501_NotImplemented         = 501,
+        e502_BadGateway             = 502,
+        e503_ServiceUnavailable     = 503,
+        e504_GatewayTimeout         = 504,
+        e505_HTTPVerNotSupported    = 505
+    };
+
+    CCgiException& SetStatus(const SCgiStatus& status);
+
+    EStatusCode GetStatusCode(void) const
+        {
+            return m_StatusCode;
+        }
+    string      GetStatusMessage(void) const
+        {
+            return m_StatusMessage.empty() ?
+                sx_GetStdStatusMessage(m_StatusCode) : m_StatusMessage;
+        }
+
     NCBI_EXCEPTION_DEFAULT(CCgiException, CException);
+
+protected:
+    /// Override method for initializing exception data.
+    virtual void x_Init(const CDiagCompileInfo& info,
+                        const string& message,
+                        const CException* prev_exception);
+
+    /// Override method for copying exception data.
+    virtual void x_Assign(const CException& src);
+
+private:
+    static string sx_GetStdStatusMessage(EStatusCode code);
+
+    EStatusCode m_StatusCode;
+    string      m_StatusMessage;
 };
 
+
+struct SCgiStatus {
+    SCgiStatus(CCgiException::EStatusCode code,
+               const string& message = kEmptyStr)
+        : m_Code(code), m_Message(message) {}
+    CCgiException::EStatusCode m_Code;
+    string                     m_Message;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -81,6 +167,7 @@ public:
         default:        return CException::GetErrCodeString();
         }
     }
+
     NCBI_EXCEPTION_DEFAULT2
     (CCgiCookieException, CParseTemplException<CCgiException>,
      std::string::size_type);
@@ -125,6 +212,7 @@ public:
         default:         return CException::GetErrCodeString();
         }
     }
+
     NCBI_EXCEPTION_DEFAULT(CCgiRequestException, CCgiException);
 };
 
@@ -179,6 +267,7 @@ public:
         default:       return CException::GetErrCodeString();
         }
     }
+
     NCBI_EXCEPTION_DEFAULT
     (CCgiErrnoException, CErrnoTemplException<CCgiException>);
 };
@@ -211,6 +300,7 @@ public:
         default:         return CException::GetErrCodeString();
         }
     }
+
     NCBI_EXCEPTION_DEFAULT(CCgiArgsException, CCgiException);
 };
 
@@ -271,6 +361,33 @@ public:
     NCBI_EXCEPTION_DEFAULT(CCgiSessionException, CCgiException);
 };
 
+
+#define NCBI_CGI_THROW_WITH_STATUS(exception, err_code, message, status) \
+    {                                                                    \
+        NCBI_EXCEPTION_VAR(cgi_exception, exception, err_code, message); \
+        cgi_exception.SetStatus( (status) );                             \
+        NCBI_EXCEPTION_THROW(cgi_exception);                             \
+    }
+
+#define NCBI_CGI_THROW2_WITH_STATUS(exception, err_code,                  \
+                                    message, extra, status)               \
+    {                                                                     \
+        NCBI_EXCEPTION2_VAR(cgi_exception, exception,                     \
+                            err_code, message, extra);                    \
+        cgi_exception.SetStatus( (status) );                              \
+        NCBI_EXCEPTION_THROW(cgi_exception);                              \
+    }
+
+
+inline
+CCgiException& CCgiException::SetStatus(const SCgiStatus& status)
+{
+    m_StatusCode = status.m_Code;
+    m_StatusMessage = status.m_Message;
+    return *this;
+}
+
+
 END_NCBI_SCOPE
 
 
@@ -280,6 +397,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/04 18:39:59  grichenk
+ * Added cgi_exception.cpp.
+ * Added HTTP status code and message to CCgiException.
+ * CCgiApplication generates HTTP status header if it's set
+ * in CCgiException.
+ *
  * Revision 1.11  2005/12/23 15:50:54  didenko
  * Removed unused CCgiRequestException error codes
  *

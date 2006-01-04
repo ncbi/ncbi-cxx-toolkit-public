@@ -97,7 +97,17 @@ int CCgiApplication::Run(void)
         m_Context.reset( CreateContext() );
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
-        result = ProcessRequest(*m_Context);
+        try {
+            result = ProcessRequest(*m_Context);
+        }
+        catch (CCgiException& e) {
+            if (e.GetStatusCode() != CCgiException::e200_Ok) {
+                throw;
+            }
+            // If for some reason exception with status 200 was thrown,
+            // set the result to 0.
+            result = 0;
+        }
         _TRACE("CCgiApplication::Run: flushing");
         m_Context->GetResponse().Flush();
         _TRACE("CCgiApplication::Run: return " << result);
@@ -301,9 +311,20 @@ CCgiApplication::~CCgiApplication(void)
 int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 {
     // Discriminate between different types of error
-    const char* status_str = "500 Server Error";
-    if ( dynamic_cast<CCgiRequestException*> (&e) ) {
-        status_str = "400 Malformed HTTP Request";
+    string status_str = "500 Server Error";
+    if ( dynamic_cast<CCgiException*> (&e) ) {
+        CCgiException& cgi_e = dynamic_cast<CCgiException&>(e);
+        if ( cgi_e.GetStatusCode() != CCgiException::eStatusNotSet ) {
+            status_str = NStr::IntToString(
+                (unsigned int)cgi_e.GetStatusCode()) +
+                " " + cgi_e.GetStatusMessage();
+        }
+        else {
+            // Convert CgiRequestException to error 400
+            if ( dynamic_cast<CCgiRequestException*> (&e) ) {
+                status_str = "400 Malformed HTTP Request";
+            }
+        }
     }
 
     // HTTP header
@@ -825,6 +846,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.67  2006/01/04 18:39:59  grichenk
+* Added cgi_exception.cpp.
+* Added HTTP status code and message to CCgiException.
+* CCgiApplication generates HTTP status header if it's set
+* in CCgiException.
+*
 * Revision 1.66  2005/12/20 20:36:02  didenko
 * Comments cosmetics
 * Small interace changes
