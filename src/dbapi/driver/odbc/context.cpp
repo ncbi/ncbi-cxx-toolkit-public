@@ -248,7 +248,8 @@ CODBCContext::MakeConnection(const SConnAttr& conn_attr)
 
     SQLHDBC con = x_ConnectToServer(conn_attr.srv_name, 
                                     conn_attr.user_name, 
-                                    conn_attr.passwd, mode);
+                                    conn_attr.passwd, 
+                                    conn_attr.mode);
     
     if (con == 0) {
         string err_message = "Cannot connect to the server" + m_Reporter.GetExtraMsg();
@@ -264,7 +265,7 @@ CODBCContext::MakeConnection(const SConnAttr& conn_attr)
     t_con->m_User        = conn_attr.user_name;
     t_con->m_Passwd      = conn_attr.passwd;
 //    t_con->m_BCPAble     = (mode & fBcpIn) != 0;
-    t_con->m_SecureLogin = (mode & fPasswordEncrypted) != 0;
+    t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
     
     return t_con;
 }
@@ -574,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/01/04 12:28:35  ssikorsk
+ * Fix compilation issues
+ *
  * Revision 1.32  2006/01/03 19:02:44  ssikorsk
  * Implement method MakeConnection.
  *
