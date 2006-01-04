@@ -69,8 +69,8 @@ public:
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
                                     unsigned int    timeout,
                                     unsigned int    max_timeout = 0);
-    virtual TTimeStampFlags GetTimeStampPolicy();
-    virtual int GetTimeout();
+    virtual TTimeStampFlags GetTimeStampPolicy() const;
+    virtual int GetTimeout() const;
     virtual bool IsOpen() const;
     virtual void SetVersionRetention(EKeepVersions policy);
     virtual EKeepVersions GetVersionRetention() const;
@@ -93,6 +93,10 @@ public:
                       const string& subkey,
                       void*         buf,
                       size_t        buf_size);
+    virtual IReader* GetReadStream(const string&  key,
+                                   int            version,
+                                   const string&  subkey);
+
     virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
@@ -126,11 +130,17 @@ protected:
     void CheckConnect();
     void MakeCommandPacket(string* out_str, 
                            const string& cmd_str) const;
+    void AddKVS(string*          out_str, 
+                const string&    key,
+                int              version,
+                const string&    subkey) const;
+
     void TrimPrefix(string* str) const;
     void CheckOK(string* str) const;
 
 protected:
     string      m_CacheName;
+    size_t      m_BlobSize;
 };
 
 END_NCBI_SCOPE
@@ -138,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/04 19:04:58  kuznets
+ * Cleanup
+ *
  * Revision 1.1  2006/01/03 15:35:57  kuznets
  * Added network ICache client
  *
