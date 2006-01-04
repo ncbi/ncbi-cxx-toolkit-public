@@ -521,7 +521,7 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
     CheckConnect();
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
-    MakeCommandPacket(&cmd, "GACT ");
+    MakeCommandPacket(&cmd, "READ ");
     AddKVS(&cmd, key, version, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
@@ -589,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/04 19:45:13  kuznets
+ * Fixed use of wrong command code
+ *
  * Revision 1.2  2006/01/04 19:05:33  kuznets
  * Cleanup & bug fixes
  *
