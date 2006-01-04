@@ -339,14 +339,36 @@ int CBlastDbDataLoader::GetOid(const CSeq_id_Handle& idh)
     if ( iter != m_Ids.end() ) {
         return iter->second;
     }
-
+    
+    CConstRef<CSeq_id> seqid = idh.GetSeqId();
+    
     int oid = -1;
-    if (! m_SeqDB->SeqidToOid(*idh.GetSeqId(), oid)) {
+    
+    if (! m_SeqDB->SeqidToOid(*seqid, oid)) {
         return -1;
     }
-
+    
+    // Test for deflines.  If the filtering eliminates the Seq-id we
+    // are interested in, we just pretend we don't know anything about
+    // this Seq-id.  If there are other data loaders installed, they
+    // will have an opportunity to resolve the Seq-id.
+    
+    bool found = false;
+    
+    list< CRef<CSeq_id> > filtered = m_SeqDB->GetSeqIDs(oid);
+    
+    ITERATE(list< CRef<CSeq_id> >, iter, filtered) {
+        if (seqid->Compare(**iter) == CSeq_id::e_YES) {
+            found = true;
+        }
+    }
+    
+    if (! found) {
+        return -1;
+    }
+    
     m_Ids.insert(TIds::value_type(idh, oid));
-
+    
     return oid;
 }
 
@@ -511,6 +533,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.37  2006/01/04 16:23:27  bealer
+ * - Check filtering of Seq-ids.
+ *
  * Revision 1.36  2005/12/08 14:28:16  vasilche
  * Use TSeqPos for sequence length.
  * Pepresent sequences as raw Seq-data when they are short enough.
