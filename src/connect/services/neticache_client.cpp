@@ -129,7 +129,8 @@ void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
                                           unsigned int    timeout,
                                           unsigned int    max_timeout)
 {
-    CheckConnect();
+    CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
+    cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
     string& cmd = m_Tmp;
@@ -150,40 +151,42 @@ void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
 }
 
 
-ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy()
+ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
 {
-    CheckConnect();
+    CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
+    cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
-    string& cmd = m_Tmp;
+    string& cmd = cl->m_Tmp;
     MakeCommandPacket(&cmd, "GTSP ");
 
-    WriteStr(cmd.c_str(), cmd.length() + 1);
-    WaitForServer();
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
+    cl->WriteStr(cmd.c_str(), cmd.length() + 1);
+    cl->WaitForServer();
+    if (!cl->ReadStr(*m_Sock, &cl->m_Tmp)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    TrimPrefix(&m_Tmp);
+    TrimPrefix(&cl->m_Tmp);
 
     ICache::TTimeStampFlags flags = atoi(m_Tmp.c_str());
     return flags;
 }
 
-int CNetICacheClient::GetTimeout()
+int CNetICacheClient::GetTimeout() const
 {
-    CheckConnect();
+    CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
+    cl->CheckConnect();
     CSockGuard sg(*m_Sock);
 
-    string& cmd = m_Tmp;
+    string& cmd = cl->m_Tmp;
     MakeCommandPacket(&cmd, "GTOU ");
-    WriteStr(cmd.c_str(), cmd.length() + 1);
-    WaitForServer();
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
+    cl->WriteStr(cmd.c_str(), cmd.length() + 1);
+    cl->WaitForServer();
+    if (!cl->ReadStr(*m_Sock, &cl->m_Tmp)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    TrimPrefix(&m_Tmp);
+    TrimPrefix(&cl->m_Tmp);
 
     int to = atoi(m_Tmp.c_str());
     return to;
@@ -300,6 +303,8 @@ size_t CNetICacheClient::GetSize(const string&  key,
 
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "GSIZ ");
+    AddKVS(&cmd, key, version, subkey);
+
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -323,6 +328,8 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
 
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "GBLW ");
+    AddKVS(&cmd, key, version, subkey);
+
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -379,6 +386,7 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
                                      BlobAccessDescr*  blob_descr)
 {
     blob_descr->reader = GetReadStream(key, version, subkey);
+    blob_descr->blob_size = m_BlobSize;
     // TO DO: fill blob_size and blob_found methods
 }
 
@@ -394,10 +402,7 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "STOR ");
     cmd.append(NStr::UIntToString(time_to_live));
-    cmd.append(" ");
-    cmd.append(NStr::UIntToString(version));
-    cmd.append(" ");
-    cmd.append(subkey);
+    AddKVS(&cmd, key, version, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -410,6 +415,7 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
     CNetCacheSock_RW* writer = new CNetCacheSock_RW(m_Sock);
     DetachSocket();
     writer->OwnSocket();
+    sg.Release();
 
     CNetCache_WriterErrCheck* err_writer =
             new CNetCache_WriterErrCheck(writer, eTakeOwnership, 0);
@@ -423,7 +429,9 @@ void CNetICacheClient::Remove(const string& key)
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "REMK ");
+    cmd.push_back('"');
     cmd.append(key);
+    cmd.push_back('"');
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
     if (!ReadStr(*m_Sock, &m_Tmp)) {
@@ -441,11 +449,7 @@ void CNetICacheClient::Remove(const string&    key,
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "REMO ");
-    cmd.append(key);
-    cmd.append(" ");
-    cmd.append(NStr::UIntToString(version));
-    cmd.append(" ");
-    cmd.append(subkey);
+    AddKVS(&cmd, key, version, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -464,11 +468,7 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "GACT ");
-    cmd.append(key);
-    cmd.append(" ");
-    cmd.append(NStr::UIntToString(version));
-    cmd.append(" ");
-    cmd.append(subkey);
+    AddKVS(&cmd, key, version, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -488,11 +488,7 @@ bool CNetICacheClient::HasBlobs(const string&  key,
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "HASB ");
-    cmd.append(key);
-    cmd.append(" ");
-    cmd.append("0");
-    cmd.append(" ");
-    cmd.append(subkey);
+    AddKVS(&cmd, key, 0, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
@@ -508,6 +504,7 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 void CNetICacheClient::Purge(time_t           access_timeout,
                              EKeepVersions    keep_last_version)
 {
+    // do nothing, this a server-side responsibility
 }
 
 void CNetICacheClient::Purge(const string&    key,
@@ -516,6 +513,66 @@ void CNetICacheClient::Purge(const string&    key,
                              EKeepVersions    keep_last_version)
 {
 }
+
+IReader* CNetICacheClient::GetReadStream(const string&  key,
+                                         int            version,
+                                         const string&  subkey)
+{
+    CheckConnect();
+    CSockGuard sg(*m_Sock);
+    string& cmd = m_Tmp;
+    MakeCommandPacket(&cmd, "GACT ");
+    AddKVS(&cmd, key, version, subkey);
+
+    WriteStr(cmd.c_str(), cmd.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+
+    bool blob_found = CNetCacheClient::CheckErrTrim(m_Tmp);
+
+    if (!blob_found) {
+        return NULL;
+    }
+    string& answer = m_Tmp;
+    string::size_type pos = answer.find("SIZE=");
+    if (pos != string::npos) {
+        const char* ch = answer.c_str() + pos + 5;
+        m_BlobSize = (size_t)atoi(ch);
+    } else {
+        m_BlobSize = 0;
+    }
+
+    sg.Release();
+    CNetCacheSock_RW* rw = new CNetCacheSock_RW(m_Sock);
+    
+    DetachSocket();
+    rw->OwnSocket();
+
+    return rw;
+}
+
+void CNetICacheClient::AddKVS(string*          out_str, 
+                              const string&    key,
+                              int              version,
+                              const string&    subkey) const
+{
+    _ASSERT(out_str);
+
+    out_str->push_back('"');
+    out_str->append(key);
+    out_str->push_back('"');
+    out_str->append(" ");
+    out_str->append(NStr::UIntToString(version));
+    out_str->append(" ");
+    out_str->push_back('"');
+    out_str->append(subkey);
+    out_str->push_back('"');
+}
+
+
 
 string CNetICacheClient::GetCacheName(void) const
 {
@@ -532,6 +589,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/04 19:05:33  kuznets
+ * Cleanup & bug fixes
+ *
  * Revision 1.1  2006/01/03 15:36:44  kuznets
  * Added network ICache client
  *
