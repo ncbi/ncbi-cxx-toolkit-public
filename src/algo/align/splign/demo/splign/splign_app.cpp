@@ -389,7 +389,7 @@ bool CSplignApp::x_GetNextPair(const THitRefs& hitrefs,
     }
 
     if(m_CurHitRef == dim) {
-        m_CurHitRef == numeric_limits<size_t>::max();
+        m_CurHitRef = numeric_limits<size_t>::max();
         return false;
     }
 
@@ -995,6 +995,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/01/04 13:28:00  kapustin
+ * Fix typo in x_GetNextPair
+ *
  * Revision 1.56  2005/12/07 15:51:34  kapustin
  * +CSplignApp::s_ReadBlastHit()
  *
