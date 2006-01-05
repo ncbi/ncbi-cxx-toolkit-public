@@ -32,18 +32,28 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <memory>
+
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/neticache_client.hpp>
 #include <connect/services/netcache_client.hpp>
+
 #include <util/transmissionrw.hpp>
-#include <memory>
+#include <util/cache/icache_cf.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+CNetICacheClient::CNetICacheClient()
+  : CNetServiceClient("localhost", 9000, "netcache_client"),
+    m_CacheName("default_cache")
+{
+}
 
 CNetICacheClient::CNetICacheClient(const string&  host,
                                    unsigned short port,
@@ -53,6 +63,18 @@ CNetICacheClient::CNetICacheClient(const string&  host,
     m_CacheName(cache_name)
 {
 }
+
+void CNetICacheClient::SetConnectionParams(const string&  host,
+                                           unsigned short port,
+                                           const string&  cache_name,
+                                           const string&  client_name)
+{
+    m_Host = host;
+    m_Port = port;
+    m_CacheName = cache_name;
+    m_ClientName = client_name;
+}
+
 
 CNetICacheClient::~CNetICacheClient()
 {}
@@ -584,11 +606,106 @@ bool CNetICacheClient::SameCacheParams(const TCacheParams* params) const
     return false;
 }
 
+
+
+
+
+const char* kNetICacheDriverName = "netcache";
+
+/// Class factory for NetCache implementation of ICache
+///
+/// @internal
+///
+class CNetICacheCF : public CICacheCF<CNetICacheClient>
+{
+public:
+    typedef CICacheCF<CNetICacheClient> TParent;
+public:
+    CNetICacheCF() : TParent(kNetICacheDriverName, 0)
+    {
+    }
+    ~CNetICacheCF()
+    {
+    }
+
+    virtual
+    ICache* CreateInstance(
+                   const string&    driver  = kEmptyStr,
+                   CVersionInfo     version = NCBI_INTERFACE_VERSION(ICache),
+                   const TPluginManagerParamTree* params = 0) const;
+
+};
+
+
+static const string kCFParam_server          = "server";
+static const string kCFParam_host            = "host";
+static const string kCFParam_port            = "port";
+static const string kCFParam_cache_name      = "cache_name";
+static const string kCFParam_client          = "client";
+
+
+
+ICache* CNetICacheCF::CreateInstance(
+           const string&                  driver,
+           CVersionInfo                   version,
+           const TPluginManagerParamTree* params) const
+{
+    auto_ptr<CNetICacheClient> drv;
+    if (driver.empty() || driver == m_DriverName) {
+        if (version.Match(NCBI_INTERFACE_VERSION(ICache))
+                            != CVersionInfo::eNonCompatible) {
+            drv.reset(new CNetICacheClient());
+        }
+    } else {
+        return 0;
+    }
+
+    if (!params)
+        return drv.release();
+
+    // cache client configuration
+
+    string host;
+    try {
+        host =
+            GetParam(params, kCFParam_server, true, kEmptyStr);
+    } 
+    catch (exception&)
+    {
+        host =
+            GetParam(params, kCFParam_host, true, kEmptyStr);
+    }
+    int port =
+        GetParamInt(params,kCFParam_port, true, 9000);
+    const string& cache_name =
+        GetParam(params, kCFParam_cache_name, true, kEmptyStr);
+    const string& client_name =
+        GetParam(params, kCFParam_client, true, kEmptyStr);
+
+    drv->SetConnectionParams(host, port, cache_name, client_name);
+
+    return drv.release();
+}
+
+
+
+
+void NCBI_EntryPoint_xcache_netcache(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method)
+{
+    CHostEntryPointImpl<CNetICacheCF>::NCBI_EntryPointImpl(info_list, method);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/05 17:40:39  kuznets
+ * +plugin manager entry point and CF
+ *
  * Revision 1.3  2006/01/04 19:45:13  kuznets
  * Fixed use of wrong command code
  *
