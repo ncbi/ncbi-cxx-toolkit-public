@@ -138,7 +138,7 @@ static CRef < TruncatedSequence > CreateTruncatedSequence(const BlockMultipleAli
     bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
     bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
     bioseq.SetInst().SetLength(ts->toIndex - ts->fromIndex + 1);
-    TRACEMSG("slave " << ts->originalFullSequence->identifier->ToString()
+    TRACEMSG("truncated " << ts->originalFullSequence->identifier->ToString()
         << " from " << (ts->fromIndex+1) << " to " << (ts->toIndex+1) << "; length " << bioseq.GetInst().GetLength());
     bioseq.SetInst().SetSeq_data().SetNcbistdaa().Set().resize(ts->toIndex - ts->fromIndex + 1);
     for (int j=ts->fromIndex; j<=ts->toIndex; ++j)
@@ -170,7 +170,7 @@ static inline bool GetLocalID(const CSeq_id& sid, int *localID)
     return true;
 }
 
-static bool SeqIdMatchesMaster(const CSeq_id& sid, bool usePSSM)
+static inline bool SeqIdMatchesMaster(const CSeq_id& sid, bool usePSSM)
 {
     // if blast-sequence-vs-pssm, master will be consensus
     if (usePSSM)
@@ -541,6 +541,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2006/01/05 15:51:20  thiessen
+* tweaks
+*
 * Revision 1.45  2005/12/07 18:58:43  thiessen
 * map results from consensus-based PSSMs
 *

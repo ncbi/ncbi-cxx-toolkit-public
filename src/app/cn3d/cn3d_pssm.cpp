@@ -241,7 +241,7 @@ void PSSMWrapper::UnpackMatrix(ncbi::cd_utils::PssmMaker& pm)
     }
 
     // map multiple's master <-> consensus position
-    if (pm.getConsensus().size() != pssm->GetPssm().GetNumColumns())
+    if ((int)pm.getConsensus().size() != pssm->GetPssm().GetNumColumns())
         PTHROW("Consensus sequence does not match PSSM size");
     TRACEMSG("master length: " << multiple->GetMaster()->Length() << ", consensus length: " << pm.getConsensus().size());
     cd_utils::BlockModelPair bmp(pm.getGuideAlignment());   // consensus is slave
@@ -304,6 +304,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/01/05 15:51:20  thiessen
+* tweaks
+*
 * Revision 1.16  2005/12/07 18:58:17  thiessen
 * toss my BMA->PSIMsa conversion, use PssmMaker instead to generate consensus-based PSSMs
 *

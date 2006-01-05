@@ -232,6 +232,7 @@ Cn3DApp::Cn3DApp() : wxApp() /*wxGLApp()*/
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info);   // report all messages
     SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
+    UnsetDiagTraceFlag(eDPF_Location);
 #ifdef _DEBUG
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
@@ -637,6 +638,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/01/05 15:51:20  thiessen
+* tweaks
+*
 * Revision 1.30  2005/11/04 20:45:31  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *

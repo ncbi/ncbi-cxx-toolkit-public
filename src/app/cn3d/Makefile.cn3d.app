@@ -73,8 +73,7 @@ LIB =	xcd_utils xbma_refiner xstruct_util xstruct_dp xstruct_thread \
 	xblast composition_adjustment seqdb xobjread tables \
 	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 blastdb xnetblast \
-	xregexp xser xutil xconnect xncbi \
-	$(Z_LIB) $(PCRE_LIB)
+	xregexp xser xutil xconnect xncbi $(Z_LIB) $(PCRE_LIB)
 
 WXWIDGETS_INSTALL = $(HOME)/wxWidgets-install
 ifeq ($(DEBUG_SFX),Debug)
