@@ -1121,39 +1121,54 @@ cleanup:
 unsigned int Threader::GetGeometryViolations(const BlockMultipleAlignment *multiple,
     GeometryViolationsForRow *violations)
 {
-    Fld_Mtf *fldMtf = NULL;
-
     // create contact lists
     if (!multiple->GetMaster()->molecule || multiple->GetMaster()->molecule->parentSet->isAlphaOnly) {
         ERRORMSG("Can't use contact potential on non-structured master, or alpha-only (virtual bond) models!");
         return false;
     }
-    if (!(fldMtf = CreateFldMtf(multiple->GetMaster()))) return false;
 
     violations->clear();
     violations->resize(multiple->NRows());
 
-    // look for too-short regions between aligned blocks
+    // look for too-short regions between aligned blocks in unstructured sequences, using minimum loop
+    // lengths of all structured sequences
     BlockMultipleAlignment::UngappedAlignedBlockList aBlocks;
     multiple->GetUngappedAlignedBlocks(&aBlocks);
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = aBlocks.end(), n;
-    unsigned int nViolations = 0;
-    const Block::Range *thisRange, *nextRange, *thisMaster, *nextMaster;
+    unsigned int nViolations = 0, row;
+    const Block::Range *thisRange, *nextRange;
+    int minimumLoop;
     for (b=aBlocks.begin(); b!=be; ++b) {
         n = b;
         ++n;
         if (n == be) break;
-        thisMaster = (*b)->GetRangeOfRow(0);
-        nextMaster = (*n)->GetRangeOfRow(0);
 
-        for (unsigned int row=1; row<multiple->NRows(); ++row) {
-            thisRange = (*b)->GetRangeOfRow(row);
-            nextRange = (*n)->GetRangeOfRow(row);
+        // find minimum allowed loop length between these blocks based on any structure
+        minimumLoop = kMax_Int;
+        for (row=0; row<multiple->NRows(); ++row) {
+            if (multiple->GetSequenceOfRow(row)->molecule && !multiple->GetSequenceOfRow(row)->molecule->parentSet->isAlphaOnly) {
+                thisRange = (*b)->GetRangeOfRow(row);
+                nextRange = (*n)->GetRangeOfRow(row);
+                Fld_Mtf *fldMtf = CreateFldMtf(multiple->GetSequenceOfRow(row));
+                if (!fldMtf) {
+                    ERRORMSG("Can't create FldMtf for " << multiple->GetSequenceOfRow(row)->identifier->ToString());
+                    return false;
+                }
+                if (fldMtf->mll[thisRange->to][nextRange->from] < minimumLoop)
+                    minimumLoop = fldMtf->mll[thisRange->to][nextRange->from];
+            }
+        }
 
-            // violation found
-            if (nextRange->from - thisRange->to - 1 < fldMtf->mll[nextMaster->from][thisMaster->to]) {
-                (*violations)[row].push_back(make_pair(thisRange->to, nextRange->from));
-                ++nViolations;
+        // check for too-short loops in all unstructured rows
+        for (row=1; row<multiple->NRows(); ++row) {
+            if (!multiple->GetSequenceOfRow(row)->molecule || multiple->GetSequenceOfRow(row)->molecule->parentSet->isAlphaOnly) {
+                thisRange = (*b)->GetRangeOfRow(row);
+                nextRange = (*n)->GetRangeOfRow(row);
+                // violation found
+                if (nextRange->from - thisRange->to - 1 < minimumLoop) {
+                    (*violations)[row].push_back(make_pair(thisRange->to, nextRange->from));
+                    ++nViolations;
+                }
             }
         }
     }
@@ -1200,6 +1215,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2006/01/05 15:51:14  thiessen
+* show GV based on minimum loops on all structures
+*
 * Revision 1.55  2005/11/17 22:34:44  thiessen
 * fix vector type problem
 *
