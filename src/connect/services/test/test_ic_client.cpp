@@ -81,7 +81,12 @@ void CTestICClient::Init(void)
     arg_desc->AddPositional("port",
                             "Port number.", 
                             CArgDescriptions::eInteger);
-    
+
+    arg_desc->AddPositional("cache",
+                            "Cache name.", 
+                            CArgDescriptions::eString);
+
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
@@ -101,10 +106,86 @@ int CTestICClient::Run(void)
     CArgs args = GetArgs();
     const string& host  = args["hostname"].AsString();
     unsigned short port = args["port"].AsInteger();
+    const string& cache_name  = args["cache"].AsString();
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data2[] = "New data.";
     string key;
+
+    CNetICacheClient cl(host, port, cache_name, "test_icache");
+/*
+    ICache::TTimeStampFlags flags = 
+        ICache::fTimeStampOnRead | ICache::fTrackSubKey;
+    cl.SetTimeStampPolicy(flags, 1800, 0);
+
+    ICache::TTimeStampFlags fl = cl.GetTimeStampPolicy();
+    assert(flags == fl);
+
+    ICache::EKeepVersions vers = ICache::eDropOlder;
+    cl.SetVersionRetention(vers);
+    ICache::EKeepVersions v = cl.GetVersionRetention();
+    assert(vers == v);
+
+    bool b = cl.IsOpen();
+    assert(b == true);
+*/
+    {{
+    string key = "k1";
+    int version = 0;
+    string subkey = "sk";
+
+    size_t data_size = strlen(test_data) + 1;
+
+    cl.Store(key, version, subkey, test_data, data_size);
+    SleepMilliSec(700);
+
+    size_t sz = cl.GetSize(key, version, subkey);
+    assert(sz == data_size);
+
+    string owner;
+    cl.GetBlobOwner(key, version, subkey, &owner);
+
+    char buf[1024] = {0,};
+    cl.Read(key, version, subkey, buf, sizeof(buf));
+
+    assert(strcmp(buf, test_data) == 0);
+
+    }}
+
+    {{
+    string key = "k2";
+    int version = 0;
+    string subkey = "sk";
+
+    size_t test_size = 1024 * 1024 * 2;
+    unsigned char *test_buf = new unsigned char[test_size+10];
+    for (int i = 0; i < test_size; ++i) {
+        test_buf[i] = 127;
+    }
+
+    cl.Store(key, version, subkey, test_buf, test_size);
+
+    for (int i = 0; i < test_size; ++i) {
+        test_buf[i] = 0;
+    }
+    SleepMilliSec(700);
+
+    size_t sz = cl.GetSize(key, version, subkey);
+    assert(sz == test_size);
+
+
+    cl.Read(key, version, subkey, test_buf, test_size);
+    
+    for (int i = 0; i < test_size; ++i) {
+        if (test_buf[i] != 127) {
+            assert(0);
+        }
+    }
+
+
+
+
+    }}
 
     return 0;
 }
@@ -119,6 +200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/01/05 14:51:06  kuznets
+ * tests implemented
+ *
  * Revision 6.1  2006/01/03 15:38:57  kuznets
  * + test for net ICache
  *
