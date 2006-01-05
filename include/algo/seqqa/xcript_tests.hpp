@@ -135,12 +135,21 @@ DECLARE_TRANSCRIPT_TEST(Orfs);
 ///
 DECLARE_TRANSCRIPT_TEST(Code_break);
 
+///
+/// See how far the annotated CDS can be extended 5'
+/// to an ATG without hitting a stop.
+///
+DECLARE_TRANSCRIPT_TEST(OrfExtension);
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/05 19:01:43  jcherry
+ * Added ORF extension test
+ *
  * Revision 1.3  2004/10/21 21:02:03  jcherry
  * Added test for code-breaks in CDS feature and recording of
  * lengths of protein product and translation.

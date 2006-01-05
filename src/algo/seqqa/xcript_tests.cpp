@@ -228,10 +228,6 @@ static void s_InframeUpstreamStart(const CSeq_id& id,
                                    CFeat_CI feat_iter,
                                    CSeq_test_result& result)
 {
-    CConstRef<CGenetic_code> code = 
-        s_GetCode(feat_iter->GetData().GetCdregion());
-    const CTrans_table& tbl = CGen_code_table::GetTransTable(*code); 
-    
     TSeqPos upstream_length;
     CSeqVector vec = 
         s_GetCdregionPlusUpstream(feat_iter, ctx, upstream_length);
@@ -485,6 +481,7 @@ static bool s_IsSelenocysteine(const CCode_break& code_break)
     case CCode_break::TAa::e_Ncbistdaa:
         return code_break.GetAa().GetNcbistdaa() == 24;
     case CCode_break::TAa::e_not_set:
+    default:
         return false;
     }
 }
@@ -798,12 +795,59 @@ CTestTranscript_Code_break::RunTest(const CSerialObject& obj,
 }
 
 
+static void s_OrfExtension(const CSeq_id& id,
+                           const CSeqTestContext* ctx,
+                           CFeat_CI feat_iter,
+                           CSeq_test_result& result)
+{
+    TSeqPos upstream_length;
+    CSeqVector vec = 
+        s_GetCdregionPlusUpstream(feat_iter, ctx, upstream_length);
+    vec.SetIupacCoding();
+
+    EKozakStrength strength;
+    vector<int> starts(eStrong + 1, upstream_length);
+    string codon;
+    for (int i = upstream_length - 3;  i >= 0;  i -= 3) {
+        vec.GetSeqData(i, i + 3, codon);
+        if (codon == "ATG") {
+            strength = s_GetKozakStrength(vec, i);
+            starts[strength] = i;
+        }
+        if (codon == "TAA" || codon == "TAG" || codon == "TGA") {
+            break;
+        }
+    }
+    result.SetOutput_data()
+        .AddField("max_extension_weak_kozak",
+                  static_cast<int>(upstream_length - starts[eWeak]));
+    result.SetOutput_data()
+        .AddField("max_extension_moderate_kozak",
+                  static_cast<int>(upstream_length - starts[eModerate]));
+    result.SetOutput_data()
+        .AddField("max_extension_strong_kozak",
+                  static_cast<int>(upstream_length - starts[eStrong]));
+}
+
+
+CRef<CSeq_test_result_set>
+CTestTranscript_OrfExtension::RunTest(const CSerialObject& obj,
+                                              const CSeqTestContext* ctx)
+{
+    return x_TestAllCdregions(obj, ctx, "orf_extension",
+                              s_OrfExtension);
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/05 19:01:41  jcherry
+ * Added ORF extension test
+ *
  * Revision 1.18  2005/12/23 13:58:00  jcherry
  * Added version of in-frame stop test that ignores marked selenocysteines
  * and version of Code-break count that ignores sec and start codons

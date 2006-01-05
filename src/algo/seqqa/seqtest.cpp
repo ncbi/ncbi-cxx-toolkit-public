@@ -129,6 +129,8 @@ void CSeqTestManager::RegisterStandardTests()
                  new CTestTranscript_Orfs);
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_CodingPropensity);
+    RegisterTest(CSeq_id::GetTypeInfo(),
+                 new CTestTranscript_OrfExtension);
 
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestProtProd_ProteinLength);
@@ -209,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/05 19:01:41  jcherry
+ * Added ORF extension test
+ *
  * Revision 1.8  2005/03/14 18:19:02  grichenk
  * Added SAnnotSelector(TFeatSubtype), fixed initialization of CFeat_CI and
  * SAnnotSelector.
