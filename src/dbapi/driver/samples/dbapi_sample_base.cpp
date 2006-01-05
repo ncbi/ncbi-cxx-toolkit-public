@@ -40,12 +40,15 @@
 
 #include <ncbi_pch.hpp>
 
+#include "dbapi_sample_base.hpp"
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <util/smalldns.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
-#include "dbapi_sample_base.hpp"
+#include <dbapi/driver/dbapi_conn_factory.hpp>
+#include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#include <util/random_gen.hpp>
 
 #include <algorithm>
 
@@ -70,7 +73,8 @@ const char*  file_name[] = {
 CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
     : CNcbiApplication(),
       m_DriverContext(0),
-      m_UseSampleDatabase(sd)
+      m_UseSampleDatabase(sd),
+      m_UseSvcMapper(false)
 {
     m_TableUID += "_" + CSmallDNS::GetLocalHost() + "_";
     m_TableUID += NStr::IntToString(CProcess::GetCurrentPid()) + "_";
@@ -159,6 +163,12 @@ CDbapiSampleApp::Init()
                             "TDS protocol version",
                             CArgDescriptions::eInteger);
 
+    arg_desc->AddDefaultKey("lb", "use_load_balancer",
+                            "Use load balancer for service mapping",
+                            CArgDescriptions::eString, "off");
+    arg_desc->SetConstraint("lb", &(*new CArgAllow_Strings, 
+                                    "on", "off", "random"));
+
     // Add user's command-line argument descriptions
     InitSample(*arg_desc);
 
@@ -183,7 +193,20 @@ CDbapiSampleApp::Run()
     } else {
         m_TDSVersion.erase();
     }
-
+    
+    string service_mapping = args["lb"].AsString();
+    if (service_mapping == "on") {
+        m_UseSvcMapper = true;
+    } else if (service_mapping == "random") {
+        static CRandom rdm_gen(time(NULL));
+        m_UseSvcMapper = (rdm_gen.GetRand(0, 1) != 0);
+    }
+    
+    if (UseSvcMapper()) {
+        DBLB_INSTALL_DEFAULT();
+        LOG_POST("Using load-balancer service to server mapper ...");
+    }
+    
     if ( m_TDSVersion.empty() ) {
         // Setup some driver-specific attributes
         if ( GetDriverName() == "dblib"  &&  GetServerType() == eSybase ) {
@@ -262,6 +285,26 @@ CDbapiSampleApp::CreateConnection(I_DriverContext::TConnectionMode mode,
                  << GetServerName());
     }
 
+    // Print database name
+    string sql("select @@servername");
+
+    auto_ptr<CDB_LangCmd> stmt(conn->LangCmd(sql));
+    stmt->Send();
+
+    while ( stmt->HasMoreResults() ) {
+        auto_ptr<CDB_Result> result(stmt->Result());
+        if ( !result.get() )
+            continue;
+
+        if ( result->ResultType() == eDB_RowResult ) {
+            if ( result->Fetch() ) {
+                CDB_LongChar v;
+                result->GetItem(&v);
+                LOG_POST("Connected to the server '" << v.Value() << "'");
+            }
+        }
+    }
+    
     if ( m_UseSampleDatabase == eUseSampleDatabase ) {
         //  Change default database:
         auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
@@ -486,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/05 20:23:05  ssikorsk
+ * Added program option 'lb' (Use load balancer for service mapping)
+ *
  * Revision 1.13  2006/01/03 19:49:13  ssikorsk
  * Minor refactoring
  *

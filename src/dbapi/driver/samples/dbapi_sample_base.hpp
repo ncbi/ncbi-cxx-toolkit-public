@@ -165,6 +165,11 @@ protected:
     {
         return m_DatabaseParameters;
     }
+    
+    bool UseSvcMapper(void) const
+    {
+        return m_UseSvcMapper;
+    }
 
 private:
     virtual void Init();
@@ -182,6 +187,7 @@ private:
     string m_UserName;
     string m_Password;
     string m_TDSVersion;
+    bool   m_UseSvcMapper;
 
     TDatabaseParameters  m_DatabaseParameters;
 };
@@ -194,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/05 20:23:05  ssikorsk
+ * Added program option 'lb' (Use load balancer for service mapping)
+ *
  * Revision 1.3  2006/01/03 19:48:37  ssikorsk
  * Added protection for multiple include
  *
