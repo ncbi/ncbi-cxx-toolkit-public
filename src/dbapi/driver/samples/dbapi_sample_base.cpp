@@ -47,7 +47,9 @@
 #include <util/smalldns.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
 #include <dbapi/driver/dbapi_conn_factory.hpp>
+#ifdef HAVE_LIBCONNEXT
 #include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#endif
 #include <util/random_gen.hpp>
 
 #include <algorithm>
@@ -203,8 +205,12 @@ CDbapiSampleApp::Run()
     }
     
     if (UseSvcMapper()) {
+#ifdef HAVE_LIBCONNEXT
         DBLB_INSTALL_DEFAULT();
         LOG_POST("Using load-balancer service to server mapper ...");
+#else
+        ERR_POST("Load balancing requested, but not available in this build");
+#endif
     }
     
     if ( m_TDSVersion.empty() ) {
@@ -529,6 +535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/05 21:49:58  ucko
+ * Conditionalize use of load balancer on HAVE_LIBCONNEXT.
+ *
  * Revision 1.14  2006/01/05 20:23:05  ssikorsk
  * Added program option 'lb' (Use load balancer for service mapping)
  *
