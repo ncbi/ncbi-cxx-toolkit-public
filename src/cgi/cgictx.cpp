@@ -215,7 +215,7 @@ const CCgiEntry& CCgiContext::GetRequestValue(const string& name,
     while (++range.first != range.second) {
         if (range.first->second != value) {
             THROW1_TRACE(runtime_error,
-                         "duplicated entries in request with name: " +
+                         "duplicate entries in request with name: " +
                          name + ": " + value.GetValue() + "!=" +
                          range.first->second.GetValue());
         }
@@ -323,6 +323,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.47  2006/01/05 15:25:32  lavr
+* Spelling
+*
 * Revision 1.46  2006/01/03 20:41:20  grichenk
 * Check for HTTPS in GetSelfURL()
 *
