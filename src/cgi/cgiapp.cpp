@@ -102,11 +102,14 @@ int CCgiApplication::Run(void)
             result = ProcessRequest(*m_Context);
         }
         catch (CCgiException& e) {
-            if (e.GetStatusCode() != CCgiException::e200_Ok) {
+            if ( e.GetStatusCode() < CCgiException::e200_Ok  ||
+                 e.GetStatusCode() >= CCgiException::e300_MultipleChoices ) {
                 throw;
             }
-            // If for some reason exception with status 200 was thrown,
-            // set the result to 0.
+            // If for some reason exception with status 2xx was thrown,
+            // set the result to 0, update HTTP status and continue.
+            m_Context->GetResponse().SetStatus(e.GetStatusCode(),
+                                               e.GetStatusMessage());
             result = 0;
         }
         _TRACE("CCgiApplication::Run: flushing");
@@ -858,6 +861,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.69  2006/01/05 21:16:27  grichenk
+* Allow all 2xx HTTP status codes rather than only 200.
+*
 * Revision 1.68  2006/01/05 16:23:39  grichenk
 * Added VerifyCgiContext() to prohibit HTTP_X_MOZ prefetch.
 *
