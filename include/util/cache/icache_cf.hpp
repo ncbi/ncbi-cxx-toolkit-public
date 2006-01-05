@@ -50,7 +50,7 @@ class CICacheCF : public CSimpleClassFactoryImpl<ICache, TDriver>
 {
 public:
     typedef 
-      CSimpleClassFactoryImpl<ICache, CBDB_Cache> TParent;
+      CSimpleClassFactoryImpl<ICache, TDriver> TParent;
 
 public:
     CICacheCF(const string& driver_name, int patch_level = -1)
@@ -188,6 +188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/05 17:04:21  kuznets
+ * Use template arg instead of CBDB_Cache
+ *
  * Revision 1.5  2004/11/03 17:53:47  kuznets
  * All time related parameters made unsigned
  *
