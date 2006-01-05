@@ -749,6 +749,8 @@ extern string URL_EncodeString(const string& str,
         break;
     default:
         _TROUBLE;
+        // To keep off compiler warning
+        encode_table = 0;
     }
 
     SIZE_TYPE pos;
@@ -1123,6 +1125,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.12  2006/01/05 15:24:50  lavr
+* URL_EncodeString(): Keep off compiler warning
+*
 * Revision 1.11  2005/12/15 21:53:38  grichenk
 * Check if ArgsList is initialized (initialize in non-const GetArgs())
 *
