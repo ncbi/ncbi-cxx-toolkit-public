@@ -522,7 +522,7 @@ public:
 ///
 /// @internal
 ///
-class CNetCacheSock_RW : public CSocketReaderWriter
+class NCBI_XCONNECT_EXPORT CNetCacheSock_RW : public CSocketReaderWriter
 {
 public:
     CNetCacheSock_RW(CSocket* sock);
@@ -538,7 +538,8 @@ public:
 /// IWriter with error checking
 ///
 /// @internal
-class CNetCache_WriterErrCheck : public CTransmissionWriter
+class NCBI_XCONNECT_EXPORT CNetCache_WriterErrCheck 
+					: public CTransmissionWriter
 {
 public:
     typedef CTransmissionWriter TParent;
@@ -584,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/01/05 17:37:50  kuznets
+ * Export specs for connection protocol classes
+ *
  * Revision 1.49  2006/01/04 18:59:43  kuznets
  * + CheckErrTrim()
  *
