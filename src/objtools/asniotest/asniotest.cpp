@@ -576,18 +576,23 @@ bool GetAsnDataViaHTTP(
 
 // Configurable host, port, path and URL args for the MMDBSrv test
 NCBI_PARAM_DECL(string, MMDBSrv, Host);
-NCBI_PARAM_DEF (string, MMDBSrv, Host, "www.ncbi.nlm.nih.gov");
+NCBI_PARAM_DEF_EX(string, MMDBSrv, Host, "www.ncbi.nlm.nih.gov",
+                  eParam_NoThread, "MMDBSRV_HOST");
 
 NCBI_PARAM_DECL(unsigned short, MMDBSrv, Port);
-NCBI_PARAM_DEF (unsigned short, MMDBSrv, Port, 80);
+NCBI_PARAM_DEF_EX(unsigned short, MMDBSrv, Port, 80,
+                  eParam_NoThread, "MMDBSRV_PORT");
 
 NCBI_PARAM_DECL(string, MMDBSrv, Path);
-NCBI_PARAM_DEF (string, MMDBSrv, Path, "/Structure/mmdb/mmdbsrv.cgi");
+NCBI_PARAM_DEF_EX(string, MMDBSrv, Path, "/Structure/mmdb/mmdbsrv.cgi",
+                  eParam_NoThread, "MMDBSRV_PATH");
 
 NCBI_PARAM_DECL(string, MMDBSrv, Args);
-NCBI_PARAM_DEF (string, MMDBSrv, Args,
-                "uid=1AL1&form=6&db=t&save=Save&dopt=j"
-                "&Complexity=Cn3D%20Subset");
+NCBI_PARAM_DEF_EX(string, MMDBSrv, Args,
+                  "uid=1AL1&form=6&db=t&save=Save&dopt=j"
+                  "&Complexity=Cn3D%20Subset",
+                  eParam_NoThread,
+                  "MMDBSRV_ARGS");
 
 
 // test to make sure that HTTP object load from the MMDB Web server works
@@ -692,6 +697,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/01/05 20:40:17  grichenk
+* Added explicit environment variable name for params.
+* Added default value caching flag to CParam constructor.
+*
 * Revision 1.28  2005/12/29 19:13:08  vakatov
 * MMDBSrv::  Use static method CParam<>::GetDefault(), don't create
 *            variables for the config parameters.

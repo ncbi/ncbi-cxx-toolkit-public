@@ -32,11 +32,15 @@
 
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_param.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// Helper functions for getting values from registry/environment
+///
 
 SSystemFastMutex& CParamBase::s_GetLock(void)
 {
@@ -44,6 +48,8 @@ SSystemFastMutex& CParamBase::s_GetLock(void)
     return s_ParamValueLock;
 }
 
+
+const char* kNcbiConfigPrefix = "NCBI_CONFIG__";
 
 // g_GetConfigXxx() functions
 
@@ -58,42 +64,53 @@ namespace {
         }
     }
 
-    const char* GetEnv(const char* section, const char* variable)
+    string GetEnvVarName(const char* section,
+                         const char* variable,
+                         const char* env_var_name)
     {
-        const char* value;
-        if ( section ) {
-            string env_var;
-            env_var += section;
-            env_var += '_';
-            env_var += variable;
-            NStr::ToUpper(env_var);
-            value = getenv(env_var.c_str());
+        string env_var;
+        if ( env_var_name  &&  *env_var_name ) {
+            env_var = env_var_name;
         }
         else {
-            string var = variable;
-            NStr::ToUpper(var);
-            value = getenv(var.c_str());
+            env_var = kNcbiConfigPrefix;
+            if ( section  &&  *section ) {
+                env_var += section;
+                env_var += "__";
+            }
+            env_var += variable;
         }
-        return value;
+        NStr::ToUpper(env_var);
+        return env_var;
+    }
+
+    const char* GetEnv(const char* section,
+                       const char* variable,
+                       const char* env_var_name)
+    {
+        return getenv(GetEnvVarName(section, variable, env_var_name).c_str());
     }
 
 #ifdef _DEBUG
     static const char* const CONFIG_DUMP_SECTION = "NCBI";
     static const char* const CONFIG_DUMP_VARIABLE = "CONFIG_DUMP_VARIABLES";
     static bool config_dump = g_GetConfigFlag(CONFIG_DUMP_SECTION,
-                                              CONFIG_DUMP_VARIABLE);
+                                              CONFIG_DUMP_VARIABLE,
+                                              0,
+                                              false);
 #endif
 }
 
 
 bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                        const char* variable,
+                                       const char* env_var_name,
                                        bool default_value)
 {
 #ifdef _DEBUG
     bool dump = variable != CONFIG_DUMP_VARIABLE && config_dump;
 #endif
-    if ( section ) {
+    if ( section  &&  *section ) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app ) {
             const string& str = app->GetConfig().Get(section, variable);
@@ -117,18 +134,19 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
             }
         }
     }
-    const char* str = GetEnv(section, variable);
+    const char* str = GetEnv(section, variable, env_var_name);
     if ( str ) {
         try {
             bool value = StringToBool(str);
 #ifdef _DEBUG
             if ( dump ) {
-                if ( section ) {
+                if ( section  &&  *section ) {
                     LOG_POST("NCBI_CONFIG: bool variable"
                              " [" << section << "]"
                              " " << variable <<
                              " = " << value <<
-                             " from env var " << section << '_' << variable);
+                             " from env var " <<
+                             GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
                     LOG_POST("NCBI_CONFIG: bool variable "
@@ -147,7 +165,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
     bool value = default_value;
 #ifdef _DEBUG
     if ( dump ) {
-        if ( section ) {
+        if ( section  &&  *section ) {
             LOG_POST("NCBI_CONFIG: bool variable"
                      " [" << section << "]"
                      " " << variable <<
@@ -168,9 +186,10 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 
 int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
                                      const char* variable,
+                                     const char* env_var_name,
                                      int default_value)
 {
-    if ( section ) {
+    if ( section  &&  *section ) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app ) {
             const string& str = app->GetConfig().Get(section, variable);
@@ -194,18 +213,19 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
             }
         }
     }
-    const char* str = GetEnv(section, variable);
+    const char* str = GetEnv(section, variable, env_var_name);
     if ( str ) {
         try {
             int value = NStr::StringToInt(str);
 #ifdef _DEBUG
             if ( config_dump ) {
-                if ( section ) {
+                if ( section  &&  *section ) {
                     LOG_POST("NCBI_CONFIG: int variable"
                              " [" << section << "]"
                              " " << variable <<
                              " = " << value <<
-                             " from env var " << section << '_' << variable);
+                             " from env var " <<
+                             GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
                     LOG_POST("NCBI_CONFIG: int variable "
@@ -224,7 +244,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
     int value = default_value;
 #ifdef _DEBUG
     if ( config_dump ) {
-        if ( section ) {
+        if ( section  &&  *section ) {
             LOG_POST("NCBI_CONFIG: int variable"
                      " [" << section << "]"
                      " " << variable <<
@@ -245,9 +265,10 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
 
 string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* variable,
+                                           const char* env_var_name,
                                            const char* default_value)
 {
-    if ( section ) {
+    if ( section  &&  *section ) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app ) {
             const string& value = app->GetConfig().Get(section, variable);
@@ -265,16 +286,17 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
             }
         }
     }
-    const char* value = GetEnv(section, variable);
+    const char* value = GetEnv(section, variable, env_var_name);
     if ( value ) {
 #ifdef _DEBUG
         if ( config_dump ) {
-            if ( section ) {
+            if ( section  &&  *section ) {
                 LOG_POST("NCBI_CONFIG: str variable"
                          " [" << section << "]"
                          " " << variable <<
                          " = \"" << value << "\""
-                         " from env var " << section << '_' << variable);
+                         " from env var " <<
+                         GetEnvVarName(section, variable, env_var_name));
             }
             else {
                 LOG_POST("NCBI_CONFIG: str variable"
@@ -289,7 +311,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
     value = default_value? default_value: "";
 #ifdef _DEBUG
     if ( config_dump ) {
-        if ( section ) {
+        if ( section  &&  *section ) {
             LOG_POST("NCBI_CONFIG: str variable"
                      " [" << section << "]"
                      " " << variable <<
@@ -313,6 +335,10 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2006/01/05 20:40:17  grichenk
+ * Added explicit environment variable name for params.
+ * Added default value caching flag to CParam constructor.
+ *
  * Revision 1.2  2005/12/07 18:11:21  grichenk
  * Convert names of environment variables to upper case.
  *

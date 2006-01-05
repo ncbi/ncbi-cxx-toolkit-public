@@ -83,12 +83,14 @@ extern "C" {
 
 // Use old output format if the flag is set
 NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
-NCBI_PARAM_DEF_EX(bool, Diag, Old_Post_Format, true, eParam_NoThread);
+NCBI_PARAM_DEF_EX(bool, Diag, Old_Post_Format, true, eParam_NoThread,
+                  "DIAG_OLD_POST_FORMAT");
 typedef NCBI_PARAM_TYPE(Diag, Old_Post_Format) TOldPostFormatParam;
 
 // Auto-print context properties on set/change.
 NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
-NCBI_PARAM_DEF_EX(bool, Diag, AutoWrite_Context, false, eParam_NoThread);
+NCBI_PARAM_DEF_EX(bool, Diag, AutoWrite_Context, false, eParam_NoThread,
+                  "DIAG_AUTOWRITE_CONTEXT");
 typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
 
 
@@ -670,6 +672,9 @@ string SDiagMessage::x_GetModule(void) const
 {
     if ( m_Module && *m_Module ) {
         return string(m_Module);
+    }
+    if ( GetDiagContext().IsSetOldPostFormat() ) {
+        return kEmptyStr;
     }
     if ( !m_File || !(*m_File) ) {
         return kEmptyStr;
@@ -1902,6 +1907,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.104  2006/01/05 20:40:17  grichenk
+ * Added explicit environment variable name for params.
+ * Added default value caching flag to CParam constructor.
+ *
  * Revision 1.103  2005/12/27 16:02:56  grichenk
  * Fixed warnings and UID formatting.
  *

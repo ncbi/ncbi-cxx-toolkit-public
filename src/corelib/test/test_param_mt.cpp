@@ -56,8 +56,8 @@ NCBI_PARAM_DEF(string, ParamTest, StrParam, kStrParam_Default);
 NCBI_PARAM_DEF(bool, ParamTest, BoolParam, kBoolParam_Default);
 NCBI_PARAM_DEF(unsigned int, ParamTest, UIntParam, kUIntParam_Default);
 NCBI_PARAM_DEF(string, ParamTest, StaticStr, kStaticStr_Default);
-NCBI_PARAM_DEF_EX(int, ParamTest, NoThreadParam, 0, eParam_NoThread);
-NCBI_PARAM_DEF_EX(int, ParamTest, NoLoadParam, 0, eParam_NoLoad);
+NCBI_PARAM_DEF_EX(int, ParamTest, NoThreadParam, 0, eParam_NoThread, 0);
+NCBI_PARAM_DEF_EX(int, ParamTest, NoLoadParam, 0, eParam_NoLoad, 0);
 
 
 // User-defined type
@@ -203,6 +203,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/05 20:40:17  grichenk
+ * Added explicit environment variable name for params.
+ * Added default value caching flag to CParam constructor.
+ *
  * Revision 1.4  2005/12/22 21:19:18  grichenk
  * Cosmetic improvements.
  *

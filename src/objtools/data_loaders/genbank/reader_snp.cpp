@@ -79,7 +79,8 @@ BEGIN_SCOPE(objects)
 // utility function
 
 NCBI_PARAM_DECL(bool, GENBANK, SNP_TABLE_STAT);
-NCBI_PARAM_DEF(bool, GENBANK, SNP_TABLE_STAT, false);
+NCBI_PARAM_DEF_EX(bool, GENBANK, SNP_TABLE_STAT, false,
+                  eParam_NoThread, "GENBANK_SNP_TABLE_STAT");
 
 static bool CollectSNPStat(void)
 {
@@ -208,7 +209,8 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 
 #ifdef _DEBUG
 NCBI_PARAM_DECL(int, GENBANK, SNP_TABLE_DUMP);
-NCBI_PARAM_DEF(int, GENBANK, SNP_TABLE_DUMP, 0);
+NCBI_PARAM_DEF_EX(int, GENBANK, SNP_TABLE_DUMP, 0,
+                  eParam_NoThread, "GENBANK_SNP_TABLE_DUMP");
 #endif
 
 void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
@@ -592,6 +594,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.26  2006/01/05 20:40:18  grichenk
+ * Added explicit environment variable name for params.
+ * Added default value caching flag to CParam constructor.
+ *
  * Revision 1.25  2005/11/17 18:47:19  grichenk
  * Replaced GetConfigXXX with CParam<>.
  *

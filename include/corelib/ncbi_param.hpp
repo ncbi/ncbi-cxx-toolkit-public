@@ -40,6 +40,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbiapp.hpp>
 
 
 /** @addtogroup Param
@@ -95,8 +96,11 @@ BEGIN_NCBI_SCOPE
 /// @param variable
 ///   Variable name within application section.
 ///   If no value found in configuration file, environment variable with
-///   name section_variable or variable will be checked, depending on
-///   wether section is null.
+///   name NCBI_CONFIG__section__variable or NCBI_CONFIG__variable will be
+///   checked, depending on wether section is null.
+/// @param env_var_name
+///   If not empty, overrides the default NCBI_CONFIG__section__name
+///   name of the environment variable.
 /// @param default_value
 ///   If no value found neither in configuration file nor in environment,
 ///   this value will be returned, or empty string if this value is null.
@@ -105,7 +109,8 @@ BEGIN_NCBI_SCOPE
 /// @sa g_GetConfigInt(), g_GetConfigFlag()
 string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* variable,
-                                           const char* default_value = 0);
+                                           const char* env_var_name,
+                                           const char* default_value);
 
 /// Get integer configuration value.
 ///
@@ -114,8 +119,11 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
 /// @param variable
 ///   Variable name within application section.
 ///   If no value found in configuration file, environment variable with
-///   name section_variable or variable will be checked, depending on
-///   wether section is null.
+///   name NCBI_CONFIG__section__variable or NCBI_CONFIG__variable will be
+///   checked, depending on wether section is null.
+/// @param env_var_name
+///   If not empty, overrides the default NCBI_CONFIG__section__name
+///   name of the environment variable.
 /// @param default_value
 ///   If no value found neither in configuration file nor in environment,
 ///   this value will be returned.
@@ -124,7 +132,8 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
 /// @sa g_GetConfigString(), g_GetConfigFlag()
 int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
                                      const char* variable,
-                                     int default_value = 0);
+                                     const char* env_var_name,
+                                     int         default_value);
 
 /// Get boolean configuration value.
 ///
@@ -133,8 +142,11 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
 /// @param variable
 ///   Variable name within application section.
 ///   If no value found in configuration file, environment variable with
-///   name section_variable or variable will be checked, depending on
-///   wether section is null.
+///   name NCBI_CONFIG__section__variable or NCBI_CONFIG__variable will be
+///   checked, depending on wether section is null.
+/// @param env_var_name
+///   If not empty, overrides the default NCBI_CONFIG__section__name
+///   name of the environment variable.
 /// @param default_value
 ///   If no value found neither in configuration file nor in environment,
 ///   this value will be returned.
@@ -143,7 +155,8 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
 /// @sa g_GetConfigString(), g_GetConfigInt()
 bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                        const char* variable,
-                                       bool default_value = false);
+                                       const char* env_var_name,
+                                       bool        default_value);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -205,7 +218,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 #define NCBI_PARAM_DEF(type, section, name, default_value)     \
     SParamDescription< type >                                  \
     SNcbiParamDesc_##section##_##name::sm_ParamDescription =   \
-        { #section, #name, default_value, eParam_Default }
+        { #section, #name, 0, default_value, eParam_Default }
 
 
 /// Static array of enum name+value pairs. Must be defined before
@@ -221,7 +234,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 #define NCBI_PARAM_ENUM_DEF(type, section, name, default_value) \
     SParamEnumDescription< type >                               \
     SNcbiParamDesc_##section##_##name::sm_ParamDescription =    \
-        { #section, #name, default_value, eParam_Default,       \
+        { #section, #name, 0, default_value, eParam_Default,    \
           s_EnumData_##section##_##name,                        \
           ArraySize(s_EnumData_##section##_##name) }
 
@@ -229,20 +242,21 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 /// Definition of a parameter with additional flags.
 /// @sa NCBI_PARAM_DEF
 /// @sa ENcbiParamFlags
-#define NCBI_PARAM_DEF_EX(type, section, name, default_value, flags)  \
-    SParamDescription< type >                                         \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription =          \
-        { #section, #name, default_value, flags }
+#define NCBI_PARAM_DEF_EX(type, section, name, default_value, flags, env) \
+    SParamDescription< type >                                             \
+    SNcbiParamDesc_##section##_##name::sm_ParamDescription =              \
+        { #section, #name, #env, default_value, flags }
 
 
 /// Definition of an enum parameter with additional flags.
 /// @sa NCBI_PARAM_ENUM_DEF
 /// @sa ENcbiParamFlags
-#define NCBI_PARAM_ENUM_DEF_EX(type, section, name, default_value, flags) \
-    SParamEnumDescription< type >                                         \
-    SNcbiParamDesc_##section##_##name::sm_ParamDescription =              \
-        { #section, #name, default_value, flags,                          \
-          s_EnumData_##section##_##name,                                  \
+#define NCBI_PARAM_ENUM_DEF_EX(type, section, name,            \
+                               default_value, flags, env)      \
+    SParamEnumDescription< type >                              \
+    SNcbiParamDesc_##section##_##name::sm_ParamDescription =   \
+        { #section, #name, #env, default_value, flags,         \
+          s_EnumData_##section##_##name,                       \
           ArraySize(s_EnumData_##section##_##name) }
 
 
@@ -333,6 +347,13 @@ enum ENcbiParamFlags {
 
 typedef int TNcbiParamFlags;
 
+/// Caching default value on construction of a param
+enum EParamCacheFlag {
+    eParamCache_Force,  ///< Force caching currently set default value.
+    eParamCache_Try,    ///< Cache the default value if the application
+                        ///< registry is already initialized.
+    eParamCache_Defer   ///< Do not try to cache the default value.
+};
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -359,10 +380,10 @@ public:
 
     /// Create parameter with the thread default or global default value.
     /// Changing defaults does not affect the existing parameter objects.
-    CParam(void) : m_Value(GetThreadDefault()) {}
+    CParam(EParamCacheFlag cache_flag = eParamCache_Try);
 
     /// Create parameter with a given value, ignore defaults.
-    CParam(const TValueType& val) : m_Value(val) {}
+    CParam(const TValueType& val) : m_ValueSet(true), m_Value(val) {}
 
     /// Load parameter value from registry or environment.
     /// Overrides section and name set in the parameter description.
@@ -372,9 +393,9 @@ public:
     ~CParam(void) {}
 
     /// Get current parameter value.
-    TValueType Get(void) const { return m_Value; }
+    TValueType Get(void) const;
     /// Set new parameter value (this instance only).
-    void Set(const TValueType& val) { m_Value = val; }
+    void Set(const TValueType& val);
 
     /// Get global default value. If not yet set, attempts to load the value
     /// from application registry or environment.
@@ -395,8 +416,10 @@ private:
     static CRef<TTls>&       sx_GetTls     (void);
 
     static bool sx_IsSetFlag(ENcbiParamFlags flag);
+    static bool sx_CanGetDefault(void);
 
-    TValueType m_Value;
+    mutable bool       m_ValueSet;
+    mutable TValueType m_Value;
 };
 
 
@@ -410,6 +433,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/05 20:40:17  grichenk
+ * Added explicit environment variable name for params.
+ * Added default value caching flag to CParam constructor.
+ *
  * Revision 1.8  2005/12/22 21:18:29  grichenk
  * Removed duplicate comments.
  *

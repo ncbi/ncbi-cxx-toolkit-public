@@ -64,7 +64,8 @@ BEGIN_SCOPE(objects)
 
 
 NCBI_PARAM_DECL(bool, OBJMGR, SCOPE_AUTORELEASE);
-NCBI_PARAM_DEF(bool, OBJMGR, SCOPE_AUTORELEASE, true);
+NCBI_PARAM_DEF_EX(bool, OBJMGR, SCOPE_AUTORELEASE, true,
+                  eParam_NoThread, "OBJMGR_SCOPE_AUTORELEASE");
 
 static bool s_GetScopeAutoReleaseEnabled(void)
 {
@@ -74,7 +75,8 @@ static bool s_GetScopeAutoReleaseEnabled(void)
 
 
 NCBI_PARAM_DECL(unsigned, OBJMGR, SCOPE_AUTORELEASE_SIZE);
-NCBI_PARAM_DEF(unsigned, OBJMGR, SCOPE_AUTORELEASE_SIZE, 10);
+NCBI_PARAM_DEF_EX(unsigned, OBJMGR, SCOPE_AUTORELEASE_SIZE, 10,
+                  eParam_NoThread, "OBJMGR_SCOPE_AUTORELEASE_SIZE");
 
 static unsigned s_GetScopeAutoReleaseSize(void)
 {
@@ -1746,6 +1748,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/01/05 20:40:17  grichenk
+* Added explicit environment variable name for params.
+* Added default value caching flag to CParam constructor.
+*
 * Revision 1.30  2005/11/17 18:47:18  grichenk
 * Replaced GetConfigXXX with CParam<>.
 *

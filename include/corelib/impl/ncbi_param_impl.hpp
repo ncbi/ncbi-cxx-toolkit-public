@@ -49,6 +49,7 @@ struct SParamDescription
 
     const char*           section;
     const char*           name;
+    const char*           env_var_name;
     const TValue          default_value;
     const TNcbiParamFlags flags;
 };
@@ -241,6 +242,21 @@ CEnumParser<TEnum>::EnumToString(const TEnumType& val,
 
 template<class TDescription>
 inline
+CParam<TDescription>::CParam(EParamCacheFlag cache_flag)
+    : m_ValueSet(false)
+{
+    if (cache_flag == eParamCache_Defer) {
+        return;
+    }
+    if ( cache_flag == eParamCache_Force  ||
+        CNcbiApplication::Instance() ) {
+        Get();
+    }
+}
+
+
+template<class TDescription>
+inline
 CParam<TDescription>::CParam(const string& section, const string& name)
 {
     if ( !sx_IsSetFlag(eParam_NoLoad) ) {
@@ -248,9 +264,7 @@ CParam<TDescription>::CParam(const string& section, const string& name)
             (section, name,
             TParamParser::ValueToString(GetThreadDefault()));
         m_Value = TParamParser::StringToValue(str);
-    }
-    else {
-        m_Value = GetThreadDefault();
+        m_ValueSet = true;
     }
 }
 
@@ -265,10 +279,11 @@ CParam<TDescription>::sx_GetDefault(void)
     static bool initialized = false;
     if ( !initialized ) {
         if ( !sx_IsSetFlag(eParam_NoLoad) ) {
-            string config_value = g_GetConfigString
-                (TDescription::sm_ParamDescription.section,
-                TDescription::sm_ParamDescription.name,
-                "");
+            string config_value =
+                g_GetConfigString(TDescription::sm_ParamDescription.section,
+                                  TDescription::sm_ParamDescription.name,
+                                  TDescription::sm_ParamDescription.env_var_name,
+                                  "");
             if ( !config_value.empty() ) {
                 s_Default =
                     TParamParser::StringToValue(config_value,
@@ -354,12 +369,46 @@ void CParam<TDescription>::SetThreadDefault(const TValueType& val)
 }
 
 
+template<class TDescription>
+inline
+bool CParam<TDescription>::sx_CanGetDefault(void)
+{
+    return CNcbiApplication::Instance();
+}
+
+
+template<class TDescription>
+inline
+typename CParam<TDescription>::TValueType
+CParam<TDescription>::Get(void) const
+{
+    if ( !m_ValueSet ) {
+        m_Value = GetThreadDefault();
+        m_ValueSet = true;
+    }
+    return m_Value;
+}
+
+
+template<class TDescription>
+inline
+void CParam<TDescription>::Set(const TValueType& val)
+{
+    m_Value = val;
+    m_ValueSet = true;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/05 20:40:17  grichenk
+ * Added explicit environment variable name for params.
+ * Added default value caching flag to CParam constructor.
+ *
  * Revision 1.8  2005/12/27 16:02:30  grichenk
  * Fixed warnings
  *

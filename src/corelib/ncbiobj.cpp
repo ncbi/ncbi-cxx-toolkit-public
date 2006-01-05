@@ -563,7 +563,8 @@ void CObject::DoDeleteThisObject(void)
 
 
 NCBI_PARAM_DECL(bool, NCBI, ABORT_ON_COBJECT_THROW);
-NCBI_PARAM_DEF(bool, NCBI, ABORT_ON_COBJECT_THROW, false);
+NCBI_PARAM_DEF_EX(bool, NCBI, ABORT_ON_COBJECT_THROW, false,
+                  eParam_NoThread, "NCBI_ABORT_ON_COBJECT_THROW");
 
 void CObjectException::x_InitErrCode(CException::EErrCode err_code)
 {
@@ -584,7 +585,8 @@ void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 
 
 NCBI_PARAM_DECL(bool, NCBI, ABORT_ON_NULL);
-NCBI_PARAM_DEF(bool, NCBI, ABORT_ON_NULL, false);
+NCBI_PARAM_DEF_EX(bool, NCBI, ABORT_ON_NULL, false,
+                  eParam_NoThread, "NCBI_ABORT_ON_NULL");
 
 void CObject::ThrowNullPointerException(void)
 {
@@ -892,6 +894,10 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/01/05 20:40:17  grichenk
+ * Added explicit environment variable name for params.
+ * Added default value caching flag to CParam constructor.
+ *
  * Revision 1.52  2005/11/17 18:47:18  grichenk
  * Replaced GetConfigXXX with CParam<>.
  *

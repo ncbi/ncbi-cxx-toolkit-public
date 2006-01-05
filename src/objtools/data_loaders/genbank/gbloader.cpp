@@ -77,7 +77,8 @@ BEGIN_SCOPE(objects)
 //
 
 
-NCBI_PARAM_DEF(string, GENBANK, LOADER_METHOD, kEmptyStr);
+NCBI_PARAM_DEF_EX(string, GENBANK, LOADER_METHOD, kEmptyStr,
+                  eParam_NoThread, "GENBANK_LOADER_METHOD");
 typedef NCBI_PARAM_TYPE(GENBANK, LOADER_METHOD) TGenbankLoaderMethod;
 
 
@@ -588,7 +589,8 @@ void CGBDataLoader::x_CreateWriters(const string& str,
 
 #ifdef REGISTER_READER_ENTRY_POINTS
 NCBI_PARAM_DECL(bool, GENBANK, REGISTER_READERS);
-NCBI_PARAM_DEF(bool, GENBANK, REGISTER_READERS, true);
+NCBI_PARAM_DEF_EX(bool, GENBANK, REGISTER_READERS, true,
+                  eParam_NoThread, "GENBANK_REGISTER_READERS");
 #endif
 
 CRef<CPluginManager<CReader> > CGBDataLoader::x_GetReaderManager(void)
