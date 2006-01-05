@@ -109,7 +109,7 @@ public:
     /// preference - value between 0 and 100 
     ///      (0 means *no particular preferances*, 100 means *do not choose, 
     ///      just use a given server*)
-    /// prefered_server - prefered server
+    /// preferred_server - preferred server
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100) = 0;
@@ -171,6 +171,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/05 15:23:38  ssikorsk
+ * Spelling correction
+ *
  * Revision 1.1  2006/01/03 19:19:58  ssikorsk
  * Initial version of a service name to a database mapping interface.
  *
