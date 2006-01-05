@@ -730,7 +730,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
                      : NStr::Join(head, string(1, DIR_SEPARATOR))
                      + DIR_SEPARATOR + next);
             char buf[PATH_MAX];
-            int  length = readlink(s.c_str(), buf, sizeof(buf));
+            int  length = (int)readlink(s.c_str(), buf, sizeof(buf));
             if (length > 0) {
                 current.assign(buf, length);
                 if (++link_depth >= 1024) {
@@ -1394,7 +1394,7 @@ string CDirEntry::LookupLink(void)
 #ifdef NCBI_OS_UNIX
     char buf[PATH_MAX];
     string name;
-    int length = readlink(GetPath().c_str(), buf, sizeof(buf));
+    int length = (int)readlink(GetPath().c_str(), buf, sizeof(buf));
     if (length > 0) {
         name.assign(buf, length);
     }
@@ -2860,7 +2860,7 @@ bool CSymLink::Create(const string& path)
 {
 #if defined(NCBI_OS_UNIX)
     char buf[PATH_MAX];
-    int  len = readlink(GetPath().c_str(), buf, sizeof(buf));
+    int  len = (int)readlink(GetPath().c_str(), buf, sizeof(buf));
     if ( len != -1 ) {
         return false;
     }
@@ -2937,7 +2937,7 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
 
     // Copy symbolic link (create new one)
     char buf[PATH_MAX+1];
-    int  len = readlink(GetPath().c_str(), buf, sizeof(buf)-1);
+    int  len = (int)readlink(GetPath().c_str(), buf, sizeof(buf)-1);
     if ( len < 1 ) {
         return false;
     }
@@ -3636,6 +3636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.133  2006/01/05 17:09:21  ivanov
+ * Fixed warnings on Workshop compiler in 64-bit configurations
+ *
  * Revision 1.132  2005/12/28 11:41:40  ivanov
  * Move include corelib/ncbi_safe_static.hpp to .cpp file
  *

@@ -33,6 +33,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbi_limits.h>
 #include <stdlib.h>
 
 #if defined(NCBI_OS_MSWIN)
@@ -215,6 +216,13 @@ static void s_Offset(long *value, long offset, long bound, int *major)
     }
 }
 
+
+// Macro to check range for nanoseconds. Nanoseconds have a 'long' type in all
+// functions, but internally CTime store it as Int4.
+#define CHECK_NS_RANGE(value) \
+    if ( value < kMin_I4  ||  value > kMax_I4 ) {  \
+        NCBI_THROW(CTimeException, eArgument, "CTime: nanoseconds value is out of range."); \
+    }
 
 
 //============================================================================
@@ -449,13 +457,16 @@ void CTime::x_Init(const string& str, const string& fmt)
             m_Data.sec = (unsigned char)value;
             break;
         case 'l':
-            m_Data.nanosec = value * 1000000;
+            CHECK_NS_RANGE(value);
+            m_Data.nanosec = (Int4)value * 1000000;
             break;
         case 'r':
-            m_Data.nanosec = value * 1000;
+            CHECK_NS_RANGE(value);
+            m_Data.nanosec = (Int4)value * 1000;
             break;
         case 'S':
-            m_Data.nanosec = value;
+            CHECK_NS_RANGE(value);
+            m_Data.nanosec = (Int4)value;
             break;
         default:
             NCBI_THROW(CTimeException, eFormat, "CTime:  format is incorrect");
@@ -500,7 +511,8 @@ CTime::CTime(int year, int month, int day, int hour,
     m_Data.hour        = hour;
     m_Data.min         = minute;
     m_Data.sec         = second;
-    m_Data.nanosec     = nanosecond;
+    CHECK_NS_RANGE(nanosecond);
+    m_Data.nanosec     = (Int4)nanosecond;
     m_Data.tz          = tz;
     m_Data.tzprec      = tzp;
     m_Data.adjTimeDiff = 0;
@@ -614,7 +626,8 @@ void CTime::SetSecond(int second)
 
 void CTime::SetNanoSecond(long nanosecond)
 {
-    m_Data.nanosec = nanosecond;
+    CHECK_NS_RANGE(nanosecond);
+    m_Data.nanosec = (Int4)nanosecond;
     if ( !IsValid() ) {
         NCBI_THROW(CTimeException, eInvalid, kMsgInvalidTime);
     }
@@ -1076,7 +1089,8 @@ CTime& CTime::x_SetTime(const time_t* value)
     m_Data.hour        = t->tm_hour;
     m_Data.min         = t->tm_min;
     m_Data.sec         = t->tm_sec;
-    m_Data.nanosec     = ns;
+    CHECK_NS_RANGE(ns);
+    m_Data.nanosec     = (Int4)ns;
     return *this;
 }
 
@@ -2128,6 +2142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/01/05 17:09:21  ivanov
+ * Fixed warnings on Workshop compiler in 64-bit configurations
+ *
  * Revision 1.69  2005/12/16 18:03:51  ivanov
  * + CStopWatch::Stop() to suspend a "timer"
  *
