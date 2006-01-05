@@ -29,6 +29,8 @@
  *
  */
 
+%ignore *::I_DriverContext_SConnAttr::mode;
+
 %ignore *::CNetScheduleClient_SJobBatch::job_list;
 
 %ignore *::CStlClassInfoFunctions_set_SInitializer;
@@ -125,6 +127,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/05 16:00:56  jcherry
+ * %ignore I_DriverContext::SConnAttr::mode
+ *
  * Revision 1.11  2006/01/03 14:37:44  jcherry
  * %ignore CNetScheduleClient::SJobBatch::job_list
  *
