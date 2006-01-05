@@ -219,6 +219,14 @@
 #  define NCBI_BDB_CACHE_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library netcache (ICache)
+ */
+#ifdef NCBI_NET_CACHE_EXPORTS
+#  define NCBI_NET_CACHE_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_NET_CACHE_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library biblo
  */
 #ifdef NCBI_BIBLIO_EXPORTS
@@ -1047,6 +1055,7 @@
 #  define NCBI_ACCESS_EXPORT
 #  define NCBI_BDB_CACHE_EXPORT
 #  define NCBI_BDB_EXPORT
+#  define NCBI_NET_CACHE_EXPORT
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
@@ -1172,6 +1181,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.108  2006/01/05 19:20:16  kuznets
+ * +NCBI_NET_CACHE_EXPORT(s)
+ *
  * Revision 1.107  2006/01/04 12:53:13  ssikorsk
  * Remove NCBI_XCONNEXT_EXPORTS.
  *
