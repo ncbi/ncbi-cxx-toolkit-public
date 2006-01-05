@@ -152,6 +152,9 @@
 /* Define to 1 if libbz2 is available. */
 #undef HAVE_LIBBZ2
 
+/* Define to 1 if non-public CONNECT extensions are available. */
+#undef HAVE_LIBCONNEXT
+
 /* Define to 1 if CRYPT is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBCRYPT
@@ -271,6 +274,9 @@
 
 /* Define to 1 if the NCBI C toolkit is available. */
 #undef HAVE_NCBI_C
+
+/* Define to 1 if the real version of ncbi_crypt support is available. */
+#undef HAVE_NCBI_CRYPT
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H

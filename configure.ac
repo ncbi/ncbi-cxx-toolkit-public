@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.405 2006/01/04 20:51:01 ucko Exp $
+#  $Id: configure.ac,v 1.406 2006/01/05 21:42:29 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -318,6 +318,8 @@ AC_ARG_WITH(local-lbsm,
    [ --without-local-lbsm    turn off support for IPC with locally running LBSMD])
 AC_ARG_WITH(ncbi-crypt,
    [ --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt])
+AC_ARG_WITH(connext,
+   [ --without-connext       do not build non-public CONNECT library extensions])
 AC_ARG_WITH(serial,
    [ --without-serial        do not build the serialization library and tools])
 AC_ARG_WITH(objects,
@@ -350,7 +352,8 @@ geo included-geo \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
-local-lbsm ncbi-crypt serial objects dbapi app ctools gui algo internal"
+local-lbsm ncbi-crypt connext \
+serial objects dbapi app ctools gui algo internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
@@ -410,6 +413,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_dll=no}
    : ${with_local_lbsm=no}
    : ${with_ncbi_crypt=no}
+   : ${with_connext=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
              [Define to 1 when building binaries for public release.])
 fi
@@ -4595,6 +4599,40 @@ else
 fi
 
 
+## `connext' support
+
+connext="ncbi_dblb ncbi_ifconf ncbi_localnet"
+
+for fff in $connext ; do
+   if test ! -f ${real_srcdir}/src/connect/ext/${fff}.c ; then
+      if test "$with_connext" = "yes" ; then
+         AC_MSG_ERROR(["--with-connext:  src/connect/ext/${fff}.c is missing"])
+      fi
+      with_connext="no"
+      break
+   fi
+done
+
+if test "$with_connext" = "no"; then
+   if test "$with_ncbi_crypt" = "yes" ; then
+      AC_MSG_ERROR([--with-ncbi-crypt specified, but CONNECT extensions are unavailable])
+   fi
+   with_ncbi_crypt=no
+fi
+
+if test "$with_connext" = "no" ; then
+   WithoutProjects="$WithoutProjects connext"
+   CONNEXT=
+   XCONNEXT=
+else
+   WithProjects="$WithProjects connext"
+   CONNEXT=connext
+   XCONNEXT=xconnext
+   AC_DEFINE(HAVE_LIBCONNEXT, 1,
+      [Define to 1 if non-public CONNECT extensions are available.])
+fi
+
+
 ## `ncbi_crypt' support
 
 ncbi_crypt="ncbi_crypt"
@@ -4614,8 +4652,8 @@ if test "$with_ncbi_crypt" = "no" ; then
    ncbi_crypt="ncbi_crypt_stub"
 else
    WithProjects="$WithProjects ncbi_crypt"
-   dnl AC_DEFINE(HAVE_NCBI_CRYPT, 1,
-   dnl    [Define to 1 if the real version of ncbi_crypt support is available.])
+   AC_DEFINE(HAVE_NCBI_CRYPT, 1,
+      [Define to 1 if the real version of ncbi_crypt support is available.])
 fi
 
 
@@ -5039,6 +5077,8 @@ AC_SUBST(CXXFLAGS_DLL)
 AC_SUBST(OPT_GROUPS)
 AC_SUBST(local_lbsm)
 AC_SUBST(ncbi_crypt)
+AC_SUBST(CONNEXT)
+AC_SUBST(XCONNEXT)
 AC_SUBST(serial)
 AC_SUBST(bdb)
 AC_SUBST(dbapi)

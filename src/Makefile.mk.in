@@ -243,6 +243,10 @@ LOCAL_LBSM = @local_lbsm@
 # --with-ncbi-crypt:  --->  src/connect/ext/Makefile.connext.lib
 NCBI_CRYPT = @ncbi_crypt@
 
+# non-public (X)CONNECT extensions
+CONNEXT  = @CONNEXT@
+XCONNEXT = @XCONNEXT@
+
 # NCBI C++ API for BerkeleyDB
 BDB_LIB       = @BDB_LIB@
 BDB_CACHE_LIB = @BDB_CACHE_LIB@
