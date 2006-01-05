@@ -226,6 +226,9 @@ protected:
     /// the CCgiApplication.
     void SetCafService(CCookieAffinity* caf);
 
+    /// Check CGI context for possible problems, throw exception with
+    /// HTTP status set if something is wrong.
+    void VerifyCgiContext(CCgiContext& context);
 
 protected:
 
@@ -346,6 +349,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2006/01/05 16:23:27  grichenk
+* Added VerifyCgiContext() to prohibit HTTP_X_MOZ prefetch.
+*
 * Revision 1.50  2005/12/20 20:36:02  didenko
 * Comments cosmetics
 * Small interace changes

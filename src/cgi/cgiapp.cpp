@@ -98,6 +98,7 @@ int CCgiApplication::Run(void)
         ConfigureDiagnostics(*m_Context);
         x_AddLBCookie();
         try {
+            VerifyCgiContext(*m_Context);
             result = ProcessRequest(*m_Context);
         }
         catch (CCgiException& e) {
@@ -671,6 +672,17 @@ void CCgiApplication::x_AddLBCookie()
 }
 
 
+void CCgiApplication::VerifyCgiContext(CCgiContext& context)
+{
+    string x_moz = context.GetRequest().GetRandomProperty("X_MOZ");
+    if ( NStr::EqualNocase(x_moz, "prefetch") ) {
+        NCBI_CGI_THROW_WITH_STATUS(CCgiRequestException, eData,
+            "Prefetch is not allowed for CGIs",
+            CCgiException::e403_Forbidden);
+    }
+}
+
+
 ///////////////////////////////////////////////////////
 // CCgiStatistics
 //
@@ -846,6 +858,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.68  2006/01/05 16:23:39  grichenk
+* Added VerifyCgiContext() to prohibit HTTP_X_MOZ prefetch.
+*
 * Revision 1.67  2006/01/04 18:39:59  grichenk
 * Added cgi_exception.cpp.
 * Added HTTP status code and message to CCgiException.

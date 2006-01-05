@@ -457,6 +457,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
             // Call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
+            VerifyCgiContext(*m_Context);
             int x_result = ProcessRequest(*m_Context);
             _TRACE("CCgiApplication::Run: flushing");
             m_Context->GetResponse().Flush();
@@ -579,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.58  2006/01/05 16:23:39  grichenk
+ * Added VerifyCgiContext() to prohibit HTTP_X_MOZ prefetch.
+ *
  * Revision 1.57  2005/12/22 19:40:37  vakatov
  * Report the restart caused by the change of the Fast-CGI "watch file"
  * as WARNING (it was TRACE before)
