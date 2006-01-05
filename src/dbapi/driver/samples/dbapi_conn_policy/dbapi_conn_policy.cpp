@@ -48,33 +48,6 @@ CConnectPolicyApp::~CConnectPolicyApp(void)
 {
 }
 
-
-string 
-CConnectPolicyApp::GetCurrentDatabase(void)
-{
-    string sql("select @@servername");
-    auto_ptr<CDB_Connection> conn(CreateConnection());
-
-    auto_ptr<CDB_LangCmd> stmt(conn->LangCmd(sql));
-    stmt->Send();
-
-    while ( stmt->HasMoreResults() ) {
-        auto_ptr<CDB_Result> result(stmt->Result());
-        if ( !result.get() )
-            continue;
-
-        if ( result->ResultType() == eDB_RowResult ) {
-            if ( result->Fetch() ) {
-                CDB_LongChar v;
-                result->GetItem(&v);
-                return v.Value();
-            }
-        }
-    }
-    
-    return string("Connection wasn't found");
-}
-
 int
 CConnectPolicyApp::RunSample(void)
 {
@@ -82,7 +55,7 @@ CConnectPolicyApp::RunSample(void)
         DBLB_INSTALL_DEFAULT();
                 
         for (int i = 0; i < 20; ++i) {
-            cout << "Connected to the server: '" << GetCurrentDatabase() << "'" << endl;
+            auto_ptr<CDB_Connection> conn(CreateConnection());
         }
         
     }
@@ -102,6 +75,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/05 21:35:43  ssikorsk
+ * Removed GetCurrentDatabase method.
+ *
  * Revision 1.1  2006/01/04 13:11:42  ssikorsk
  * An initial version of a sample application.
  *
