@@ -53,16 +53,22 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XCONNECT_EXPORT CNetICacheClient : public CNetServiceClient,
+class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
                                               public ICache
 {
 public:
+    CNetICacheClient();
     CNetICacheClient(const string&  host,
                      unsigned short port,
                      const string&  cache_name,
                      const string&  client_name);
 
     virtual ~CNetICacheClient();
+
+    void SetConnectionParams(const string&  host,
+                             unsigned short port,
+                             const string&  cache_name,
+                             const string&  client_name);
 
     // ICache interface implementation
 
@@ -143,11 +149,29 @@ protected:
     size_t      m_BlobSize;
 };
 
+
+extern NCBI_NET_CACHE_EXPORT const char* kNetICacheDriverName;
+
+extern "C"
+{
+
+NCBI_NET_CACHE_EXPORT
+void NCBI_EntryPoint_xcache_netcache(
+     CPluginManager<ICache>::TDriverInfoList&   info_list,
+     CPluginManager<ICache>::EEntryPointRequest method);
+
+
+} // extern C
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/05 17:38:30  kuznets
+ * Implemented plugin manager entry point
+ *
  * Revision 1.2  2006/01/04 19:04:58  kuznets
  * Cleanup
  *
