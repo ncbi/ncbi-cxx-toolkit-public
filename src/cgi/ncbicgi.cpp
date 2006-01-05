@@ -1,36 +1,36 @@
 /*  $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* Author:  Denis Vakatov
-*
-* File Description:
-*   NCBI C++ CGI API:
-*      CCgiCookie    -- one CGI cookie
-*      CCgiCookies   -- set of CGI cookies
-*      CCgiRequest   -- full CGI request
-*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov
+ *
+ * File Description:
+ *   NCBI C++ CGI API:
+ *      CCgiCookie    -- one CGI cookie
+ *      CCgiCookies   -- set of CGI cookies
+ *      CCgiRequest   -- full CGI request
+ */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbienv.hpp>
@@ -44,14 +44,14 @@
 #include <time.h>
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>
+#  ifdef NCBI_OS_MAC
+// Mac OS has unistd.h, but STDIN_FILENO is not defined
+#    define STDIN_FILENO 0
+#  endif
 #else
 #  define STDIN_FILENO 0
 #endif
 
-// Mac OS has unistd.h, but STDIN_FILENO is not defined
-#ifdef NCBI_OS_MAC
-#  define STDIN_FILENO 0
-#endif
 
 BEGIN_NCBI_SCOPE
 
@@ -62,9 +62,10 @@ BEGIN_NCBI_SCOPE
 //
 
 // auxiliary zero "tm" struct
-const tm kZeroTime = { 0,0,0,0,0,0,0,0,0 };
-inline bool s_ZeroTime(const tm& date) {
-    return (::memcmp(&date, &kZeroTime, sizeof(tm)) == 0);
+static const tm kZeroTime = { 0 };
+inline bool s_IsZeroTime(const tm& date)
+{
+    return ::memcmp(&date, &kZeroTime, sizeof(tm)) == 0 ? true : false;
 }
 
 
@@ -126,7 +127,7 @@ void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
 
 string CCgiCookie::GetExpDate(void) const
 {
-    if ( s_ZeroTime(m_Expires) )
+    if ( s_IsZeroTime(m_Expires) )
         return kEmptyStr;
 
     char str[30];
@@ -143,7 +144,7 @@ bool CCgiCookie::GetExpDate(tm* exp_date) const
 {
     if ( !exp_date )
         NCBI_THROW(CCgiException, eUnknown, "Null cookie exp.date passed");
-    if ( s_ZeroTime(m_Expires) )
+    if ( s_IsZeroTime(m_Expires) )
         return false;
     *exp_date = m_Expires;
     return true;
@@ -265,6 +266,7 @@ void CCgiCookie::SetExpTime(const CTime& exp_time)
     m_Expires.tm_year  = exp_time.Year()-1900;
     m_Expires.tm_isdst = -1;
 }
+
 
 
 ///////////////////////////////////////////////////////
@@ -610,7 +612,7 @@ private:
 
 // Must be in correspondence with variables checked in NcbiGetClientIP[Ex]()
 // (header: <connect/ext/ncbi_localnet.h>, source: connect/ext/ncbi_localnet.c,
-// library: connext)
+// library: [x]connext)
 static const char* s_TrackingVars[] = 
 {
     "HTTP_CAF_PROXIED_HOST",
@@ -1066,6 +1068,7 @@ void CCgiRequest::x_Init
     s_AddEntry(m_Entries, kEmptyStr, image_name, 0);
 }
 
+
 void CCgiRequest::x_ProcessQueryString(TFlags flags, const CNcbiArguments* args)
 {
     // Parse entries or indexes from "$QUERY_STRING" or cmd.-line args
@@ -1090,6 +1093,7 @@ void CCgiRequest::x_ProcessQueryString(TFlags flags, const CNcbiArguments* args)
         }
     }
 }
+
 
 void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd)
 {
@@ -1179,6 +1183,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
         m_InputFD = -1;
     }
 }
+
 
 const string& CCgiRequest::x_GetPropertyByName(const string& name) const
 {
@@ -1302,6 +1307,8 @@ void CCgiRequest::Serialize(CNcbiOstream& os) const
     }
 
 }
+
+
 void CCgiRequest::Deserialize(CNcbiIstream& is, TFlags flags) 
 {
     ReadMap(is, GetEntries());
@@ -1349,143 +1356,145 @@ CCgiSession& CCgiRequest::GetSession(ESessionCreateMode mode) const
 END_NCBI_SCOPE
 
 
-
 /*
-* ===========================================================================
-* $Log$
-* Revision 1.103  2005/12/19 16:55:04  didenko
-* Improved CGI Session implementation
-*
-* Revision 1.102  2005/12/15 18:21:15  didenko
-* Added CGI session support
-*
-* Revision 1.101  2005/12/09 01:35:37  vakatov
-* CCgiRequest::ParseEntries/Indexes() -- catch CCgiArgsParserException
-* instead of CCgiParseException
-*
-* Revision 1.100  2005/10/17 16:46:43  grichenk
-* Added CCgiArgs_Parser base class.
-* Redesigned CCgiRequest to use CCgiArgs_Parser.
-* Replaced CUrlException with CCgiParseException.
-*
-* Revision 1.99  2005/10/13 18:30:15  grichenk
-* Added cgi_util with CCgiArgs and CUrl.
-* Moved URL encoding/decoding functions to cgi_util.
-* Added CUrlException.
-*
-* Revision 1.98  2005/09/23 14:02:34  lavr
-* Fix last ChangeLog entry
-*
-* Revision 1.97  2005/09/23 14:01:51  lavr
-* Tracking environment list extended with HTTP_CAF_PROXIED_HOST
-*
-* Revision 1.96  2005/06/30 17:14:26  grichenk
-* Added flag to CCgiCookies to allow storing invalid cookies.
-* Added CCgiCookie::IsInvalid(). Throw exception when writing
-* an invalid cookie.
-*
-* Revision 1.95  2005/06/03 16:40:27  lavr
-* Explicit (unsigned char) casts in ctype routines
-*
-* Revision 1.94  2005/05/31 13:43:21  didenko
-* Created private methods for Query String and Input Stream processing
-*
-* Revision 1.93  2005/05/27 19:57:36  grichenk
-* Added URL encoding flags to CCgiRequest
-*
-* Revision 1.92  2005/05/27 16:36:16  grichenk
-* Added flags to control URL encode/decode in cookies.
-*
-* Revision 1.91  2005/05/27 12:48:31  didenko
-* Deserialize method will set an input stream if that stream is at the end
-* or not in the good state.
-*
-* Revision 1.90  2005/05/23 15:03:09  didenko
-* Added Serialize/Deserialize methods to CCgiRequest class
-*
-* Revision 1.89  2005/05/18 14:12:45  grichenk
-* URL-encode/decode cookie's name and value
-*
-* Revision 1.88  2005/05/17 18:16:50  didenko
-* Added writer mode parameter to CCgiCookie::Write and CCgiCookies::Write method
-* Added assignment oprerator to CCgiEntry class
-*
-* Revision 1.87  2005/05/05 16:43:36  vakatov
-* Incoming cookies:  just skip the malformed cookies (with error posted) --
-* rather than failing to parse the request altogether. The good cookies would
-* still be parsed successfully.
-*
-* Revision 1.86  2005/03/10 18:03:18  vakatov
-* Fix to correctly discriminate between the CGI and regular-style cmd-line args
-*
-* Revision 1.85  2005/03/02 05:00:09  lavr
-* NcbiGetClientIP() API noted
-*
-* Revision 1.84  2005/02/25 17:28:51  didenko
-* + CCgiRequest::GetClientTrackingEnv
-*
-* Revision 1.83  2005/02/16 15:04:35  ssikorsk
-* Tweaked kEmptyStr with Linux GCC
-*
-* Revision 1.82  2005/02/03 19:40:28  vakatov
-* fIgnoreQueryString to affect cmd.-line arg as well
-*
-* Revision 1.81  2005/01/28 17:35:03  vakatov
-* + CCgiCookies::GetAll()
-* Quick-and-dirty Doxygen'ization
-*
-* Revision 1.80  2004/12/13 21:43:44  ucko
-* CCgiEntry: support Content-Type headers from POST submissions.
-*
-* Revision 1.79  2004/12/08 12:49:31  kuznets
-* Optional case sensitivity when processing CGI args
-*
-* Revision 1.78  2004/09/07 19:14:09  vakatov
-* Better structurize (and use) CGI exceptions to distinguish between user-
-* and server- errors
-*
-* Revision 1.77  2004/08/04 16:15:37  vakatov
-* Consistently throw CCgiParseException in those (and only those) cases where
-* the HTTP request itself is malformatted.
-* Improved and fixed diagnostic messages.
-* Purged CVS logs dated before 2003.
-*
-* Revision 1.76  2004/05/17 20:56:50  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.75  2003/11/24 18:14:58  ucko
-* CCgiRequest::ParseEntries: Swallow "amp;" (case-insensitive) after &
-* for the sake of some older browsers that misparse HREF attributes.
-*
-* Revision 1.74  2003/10/15 17:06:02  ucko
-* CCgiRequest::x_Init: truncate str properly in the case of unexpected EOF.
-*
-* Revision 1.73  2003/08/20 19:41:34  ucko
-* CCgiRequest::ParseEntries: handle unencoded = signs in values.
-*
-* Revision 1.72  2003/07/14 20:28:46  vakatov
-* CCgiCookie::GetExpDate() -- date format to conform with RFC1123
-*
-* Revision 1.71  2003/07/08 19:04:12  ivanov
-* Added optional parameter to the URL_Encode() to enable mark charactres
-* encoding
-*
-* Revision 1.70  2003/06/04 00:22:53  ucko
-* Improve diagnostics in CCgiRequest::x_Init.
-*
-* Revision 1.69  2003/04/16 21:48:19  vakatov
-* Slightly improved logging format, and some minor coding style fixes.
-*
-* Revision 1.68  2003/03/12 16:10:23  kuznets
-* iterate -> ITERATE
-*
-* Revision 1.67  2003/03/11 19:17:31  kuznets
-* Improved error diagnostics in CCgiRequest
-*
-* Revision 1.66  2003/02/24 20:01:54  gouriano
-* use template-based exceptions instead of errno and parse exceptions
-*
-* Revision 1.65  2003/02/19 17:50:47  kuznets
-* Added function AddExpTime to CCgiCookie class
-* ==========================================================================
-*/
+ * ===========================================================================
+ * $Log$
+ * Revision 1.104  2006/01/05 15:26:31  lavr
+ * Proper kZeroTime init (size-independent);  formatting
+ *
+ * Revision 1.103  2005/12/19 16:55:04  didenko
+ * Improved CGI session implementation
+ *
+ * Revision 1.102  2005/12/15 18:21:15  didenko
+ * Added CGI session support
+ *
+ * Revision 1.101  2005/12/09 01:35:37  vakatov
+ * CCgiRequest::ParseEntries/Indexes() -- catch CCgiArgsParserException
+ * instead of CCgiParseException
+ *
+ * Revision 1.100  2005/10/17 16:46:43  grichenk
+ * Added CCgiArgs_Parser base class.
+ * Redesigned CCgiRequest to use CCgiArgs_Parser.
+ * Replaced CUrlException with CCgiParseException.
+ *
+ * Revision 1.99  2005/10/13 18:30:15  grichenk
+ * Added cgi_util with CCgiArgs and CUrl.
+ * Moved URL encoding/decoding functions to cgi_util.
+ * Added CUrlException.
+ *
+ * Revision 1.98  2005/09/23 14:02:34  lavr
+ * Fix last ChangeLog entry
+ *
+ * Revision 1.97  2005/09/23 14:01:51  lavr
+ * Tracking environment list extended with HTTP_CAF_PROXIED_HOST
+ *
+ * Revision 1.96  2005/06/30 17:14:26  grichenk
+ * Added flag to CCgiCookies to allow storing invalid cookies.
+ * Added CCgiCookie::IsInvalid(). Throw exception when writing
+ * an invalid cookie.
+ *
+ * Revision 1.95  2005/06/03 16:40:27  lavr
+ * Explicit (unsigned char) casts in ctype routines
+ *
+ * Revision 1.94  2005/05/31 13:43:21  didenko
+ * Created private methods for Query String and Input Stream processing
+ *
+ * Revision 1.93  2005/05/27 19:57:36  grichenk
+ * Added URL encoding flags to CCgiRequest
+ *
+ * Revision 1.92  2005/05/27 16:36:16  grichenk
+ * Added flags to control URL encode/decode in cookies.
+ *
+ * Revision 1.91  2005/05/27 12:48:31  didenko
+ * Deserialize method will set an input stream if that stream is at the end
+ * or not in the good state.
+ *
+ * Revision 1.90  2005/05/23 15:03:09  didenko
+ * Added Serialize/Deserialize methods to CCgiRequest class
+ *
+ * Revision 1.89  2005/05/18 14:12:45  grichenk
+ * URL-encode/decode cookie's name and value
+ *
+ * Revision 1.88  2005/05/17 18:16:50  didenko
+ * Added writer mode parameter to CCgiCookie::Write and CCgiCookies::Write method
+ * Added assignment oprerator to CCgiEntry class
+ *
+ * Revision 1.87  2005/05/05 16:43:36  vakatov
+ * Incoming cookies:  just skip the malformed cookies (with error posted) --
+ * rather than failing to parse the request altogether. The good cookies would
+ * still be parsed successfully.
+ *
+ * Revision 1.86  2005/03/10 18:03:18  vakatov
+ * Fix to correctly discriminate between the CGI and regular-style cmd-line args
+ *
+ * Revision 1.85  2005/03/02 05:00:09  lavr
+ * NcbiGetClientIP() API noted
+ *
+ * Revision 1.84  2005/02/25 17:28:51  didenko
+ * + CCgiRequest::GetClientTrackingEnv
+ *
+ * Revision 1.83  2005/02/16 15:04:35  ssikorsk
+ * Tweaked kEmptyStr with Linux GCC
+ *
+ * Revision 1.82  2005/02/03 19:40:28  vakatov
+ * fIgnoreQueryString to affect cmd.-line arg as well
+ *
+ * Revision 1.81  2005/01/28 17:35:03  vakatov
+ * + CCgiCookies::GetAll()
+ * Quick-and-dirty Doxygen'ization
+ *
+ * Revision 1.80  2004/12/13 21:43:44  ucko
+ * CCgiEntry: support Content-Type headers from POST submissions.
+ *
+ * Revision 1.79  2004/12/08 12:49:31  kuznets
+ * Optional case sensitivity when processing CGI args
+ *
+ * Revision 1.78  2004/09/07 19:14:09  vakatov
+ * Better structurize (and use) CGI exceptions to distinguish between user-
+ * and server- errors
+ *
+ * Revision 1.77  2004/08/04 16:15:37  vakatov
+ * Consistently throw CCgiParseException in those (and only those) cases where
+ * the HTTP request itself is malformatted.
+ * Improved and fixed diagnostic messages.
+ * Purged CVS logs dated before 2003.
+ *
+ * Revision 1.76  2004/05/17 20:56:50  gorelenk
+ * Added include of PCH ncbi_pch.hpp
+ *
+ * Revision 1.75  2003/11/24 18:14:58  ucko
+ * CCgiRequest::ParseEntries: Swallow "amp;" (case-insensitive) after &
+ * for the sake of some older browsers that misparse HREF attributes.
+ *
+ * Revision 1.74  2003/10/15 17:06:02  ucko
+ * CCgiRequest::x_Init: truncate str properly in the case of unexpected EOF.
+ *
+ * Revision 1.73  2003/08/20 19:41:34  ucko
+ * CCgiRequest::ParseEntries: handle unencoded = signs in values.
+ *
+ * Revision 1.72  2003/07/14 20:28:46  vakatov
+ * CCgiCookie::GetExpDate() -- date format to conform with RFC1123
+ *
+ * Revision 1.71  2003/07/08 19:04:12  ivanov
+ * Added optional parameter to the URL_Encode() to enable mark charactres
+ * encoding
+ *
+ * Revision 1.70  2003/06/04 00:22:53  ucko
+ * Improve diagnostics in CCgiRequest::x_Init.
+ *
+ * Revision 1.69  2003/04/16 21:48:19  vakatov
+ * Slightly improved logging format, and some minor coding style fixes.
+ *
+ * Revision 1.68  2003/03/12 16:10:23  kuznets
+ * iterate -> ITERATE
+ *
+ * Revision 1.67  2003/03/11 19:17:31  kuznets
+ * Improved error diagnostics in CCgiRequest
+ *
+ * Revision 1.66  2003/02/24 20:01:54  gouriano
+ * use template-based exceptions instead of errno and parse exceptions
+ *
+ * Revision 1.65  2003/02/19 17:50:47  kuznets
+ * Added function AddExpTime to CCgiCookie class
+ * ==========================================================================
+ */
