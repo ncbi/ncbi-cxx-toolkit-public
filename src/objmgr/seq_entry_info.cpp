@@ -244,7 +244,8 @@ void CSeq_entry_Info::x_DoUpdate(TNeedUpdateFlags flags)
         x_LoadChunk(kBioseqChunkId);
     }
     if ( (flags & fNeedUpdate_children) && m_Contents ) {
-        m_Contents->x_Update(flags >> kNeedUpdate_bits);
+        m_Contents->x_Update((flags & fNeedUpdate_children) |
+                             (flags >> kNeedUpdate_bits));
         _ASSERT(Which()==m_Object->Which());
     }
     TParent::x_DoUpdate(flags);
@@ -562,6 +563,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/01/06 20:52:21  vasilche
+ * Fixed GetCompleteSeq_entry().
+ *
  * Revision 1.31  2005/11/28 20:16:52  vasilche
  * Removed incorrect assertion. No mutex is locked so new data may appear.
  *
