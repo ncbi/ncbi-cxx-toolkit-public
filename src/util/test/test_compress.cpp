@@ -77,7 +77,7 @@ public:
 
 
 // Print OK message
-#define OK cout << "OK\n\n"
+#define OK LOG_POST("OK\n")
 
 // Init destination buffers
 #define INIT_BUFFERS  memset(dst_buf, 0, kBufLen); memset(cmp_buf, 0, kBufLen)
@@ -104,7 +104,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // Compress/decomress buffer
     //------------------------------------------------------------------------
     {{
-        cout << "Testing default level compression...\n";
+        LOG_POST("Testing default level compression...");
         INIT_BUFFERS;
 
         // Compress data
@@ -132,7 +132,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // Overflow test
     //------------------------------------------------------------------------
     {{
-        cout << "Output buffer overflow test...\n";
+        LOG_POST("Output buffer overflow test...");
 
         TCompression c;
         dst_len = 100;
@@ -148,7 +148,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // File compress/decompress test
     //------------------------------------------------------------------------
     {{
-        cout << "File compress/decompress test...\n";
+        LOG_POST("File compress/decompress test...");
         INIT_BUFFERS;
 
         size_t n;
@@ -202,7 +202,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // Compression input stream test
     //------------------------------------------------------------------------
     {{
-        cout << "Testing compression input stream...\n";
+        LOG_POST("Testing compression input stream...");
         INIT_BUFFERS;
 
         // Compression input stream test 
@@ -242,7 +242,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // Decompression input stream test
     //------------------------------------------------------------------------
     {{
-        cout << "Testing decompression input stream...\n";
+        LOG_POST("Testing decompression input stream...");
         INIT_BUFFERS;
 
         // Compress the data
@@ -280,7 +280,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // Compression output stream test
     //------------------------------------------------------------------------
     {{
-        cout << "Testing compression output stream...\n";
+        LOG_POST("Testing compression output stream...");
         INIT_BUFFERS;
 
         // Write data to compressing stream
@@ -315,7 +315,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // Decompression output stream test
     //------------------------------------------------------------------------
     {{
-        cout << "Testing decompression output stream...\n";
+        LOG_POST("Testing decompression output stream...");
         INIT_BUFFERS;
 
         // Compress the data
@@ -353,7 +353,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // IO stream tests
     //------------------------------------------------------------------------
     {{
-        cout << "Testing IO stream...\n";
+        LOG_POST("Testing IO stream...");
         {{
             INIT_BUFFERS;
 
@@ -433,7 +433,7 @@ void CTestCompressor<TCompression, TCompressionFile,
     // Advanced I/O stream test
     //------------------------------------------------------------------------
     {{
-        cout << "Advanced I/O stream test...\n";
+        LOG_POST("Advanced I/O stream test...");
         INIT_BUFFERS;
 
         int v;
@@ -484,12 +484,13 @@ void CTestCompressor<TCompression, TCompressionFile,
                   size_t dst_len,
                   size_t out_len)
 {
-    cout << ((type == eCompress) ? "Compress   ": "Decompress ");
-    cout << "errcode = ";
-    cout << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", ";
-    cout << ((src_len == kUnknown) ? '?' : src_len) << " -> ";
-    cout << ((out_len == kUnknown) ? '?' : out_len) << ", limit ";
-    cout << ((dst_len == kUnknown) ? '?' : dst_len) << endl;
+    LOG_POST(((type == eCompress) ? "Compress   ": "Decompress ")
+             << "errcode = "
+             << ((last_errcode == kUnknownErr) ? '?' : last_errcode) << ", "
+             << ((src_len == kUnknown) ? '?' : src_len) << " -> "
+             << ((out_len == kUnknown) ? '?' : out_len) << ", limit "
+             << ((dst_len == kUnknown) ? '?' : dst_len)
+    );
 }
 
 
@@ -519,7 +520,7 @@ int CTest::Run(void)
 
     // Preparing a data for compression
     unsigned int seed = (unsigned int)time(0);
-    cout << "Random seed = " << seed << endl << endl;
+    LOG_POST("Random seed = " << seed);
     srand(seed);
     for (size_t i=0; i<kDataLen; i++) {
         // Use a set from 25 chars [A-Z]
@@ -530,18 +531,18 @@ int CTest::Run(void)
 
     // Test compressors
 
-    cout << "-------------- BZip2 ---------------\n\n";
+    LOG_POST("-------------- BZip2 ---------------\n");
     CTestCompressor<CBZip2Compression, CBZip2CompressionFile,
                     CBZip2StreamCompressor, CBZip2StreamDecompressor>
         ::Run(src_buf);
 
-    cout << "--------------- Zlib ---------------\n\n";
+    LOG_POST("--------------- Zlib ---------------\n");
     
     CTestCompressor<CZipCompression, CZipCompressionFile,
                     CZipStreamCompressor, CZipStreamDecompressor>
         ::Run(src_buf);
 
-    cout << "\nTEST execution completed successfully!\n\n";
+    LOG_POST("\nTEST execution completed successfully!\n");
  
     return 0;
 }
@@ -563,6 +564,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/06 16:58:03  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 1.12  2005/08/22 18:14:20  ivanov
  * Removed redundant assert
  *
