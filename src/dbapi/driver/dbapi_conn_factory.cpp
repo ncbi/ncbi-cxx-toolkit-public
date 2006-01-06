@@ -88,9 +88,9 @@ CDBConnectionFactory::ConfigureFromRegistry(const IRegistry* registry)
     m_MaxNumOfDispatches = 
         registry->GetInt(section_name, "MAX_DISPATCHES", 0);
     m_ConnectionTimeout = 
-        registry->GetInt(section_name, "CONNECTION_TIMEOUT", 1);
+        registry->GetInt(section_name, "CONNECTION_TIMEOUT", 2);
     m_LoginTimeout = 
-        registry->GetInt(section_name, "LOGIN_TIMEOUT", 1);
+        registry->GetInt(section_name, "LOGIN_TIMEOUT", 2);
 }
 
 void 
@@ -302,6 +302,9 @@ CDBRedispatchFactory::~CDBRedispatchFactory(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/06 18:52:12  ssikorsk
+ * Increase default connection and login timeouts up to 2 sec.
+ *
  * Revision 1.1  2006/01/03 19:44:08  ssikorsk
  * Initial implementation
  *
