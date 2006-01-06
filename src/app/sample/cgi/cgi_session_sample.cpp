@@ -167,7 +167,8 @@ int CCgiSessionSampleApplication::ProcessRequest(CCgiContext& ctx)
     response.WriteHeader();
 
     // Finish the HTML page, then print it
-    s_CreateHTMLPage(table, self_url, session_label)->Print(response.out());
+    CNodeRef page = s_CreateHTMLPage(table, self_url, session_label);
+    page->Print(response.out());
 
     return 0;
 }
@@ -271,6 +272,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/06 15:52:07  ucko
+ * ProcessRequest: introduce an explicit variable for the generated page
+ * to avoid confusing WorkShop 5.3.
+ *
  * Revision 1.8  2006/01/04 21:10:16  didenko
  * Added a command to show the config file
  *
