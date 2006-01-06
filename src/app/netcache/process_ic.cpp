@@ -45,7 +45,7 @@
 
 #include "netcached.hpp"
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 
 void CNetCacheServer::Process_IC_SetTimeStampPolicy(ICache&           ic,
@@ -371,6 +371,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/06 01:58:59  ucko
+ * Drop spurious semicolon after BEGIN_NCBI_SCOPE, as some versions of
+ * WorkShop object to the resulting empty statement.
+ *
  * Revision 1.2  2006/01/04 19:09:15  kuznets
  * Fixed bugs in ICache use
  *
