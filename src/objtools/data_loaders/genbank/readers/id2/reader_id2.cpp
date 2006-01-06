@@ -151,15 +151,15 @@ NCBI_PARAM_DECL(string, GENBANK, ID2_SERVICE_NAME);
 NCBI_PARAM_DECL(string, NCBI, SERVICE_NAME_ID2);
 
 NCBI_PARAM_DEF_EX(int, GENBANK, ID2_DEBUG, 0,
-                  eParam_NoThread, "GENBANK_ID2_DEBUG");
+                  eParam_NoThread, GENBANK_ID2_DEBUG);
 NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 1,
-                  eParam_NoThread, "GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE");
+                  eParam_NoThread, GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE);
 NCBI_PARAM_DEF_EX(string, GENBANK, ID2_CGI_NAME, kEmptyStr,
-                  eParam_NoThread, "GENBANK_ID2_CGI_NAME");
+                  eParam_NoThread, GENBANK_ID2_CGI_NAME);
 NCBI_PARAM_DEF_EX(string, GENBANK, ID2_SERVICE_NAME, kEmptyStr,
-                  eParam_NoThread, "GENBANK_ID2_SERVICE_NAME");
+                  eParam_NoThread, GENBANK_ID2_SERVICE_NAME);
 NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID2, DEFAULT_SERVICE,
-                  eParam_NoThread, "GENBANK_SERVICE_NAME_ID2");
+                  eParam_NoThread, GENBANK_SERVICE_NAME_ID2);
 
 static int GetDebugLevel(void)
 {

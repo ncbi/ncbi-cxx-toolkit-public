@@ -98,11 +98,11 @@ NCBI_PARAM_DECL(string, GENBANK, ID1_SERVICE_NAME);
 NCBI_PARAM_DECL(string, NCBI, SERVICE_NAME_ID1);
 
 NCBI_PARAM_DEF_EX(int, GENBANK, ID1_DEBUG, 0,
-                  eParam_NoThread, "GENBANK_ID1_DEBUG");
+                  eParam_NoThread, GENBANK_ID1_DEBUG);
 NCBI_PARAM_DEF_EX(string, GENBANK, ID1_SERVICE_NAME, kEmptyStr,
-                  eParam_NoThread, "GENBANK_ID1_SERVICE_NAME");
+                  eParam_NoThread, GENBANK_ID1_SERVICE_NAME);
 NCBI_PARAM_DEF_EX(string, NCBI, SERVICE_NAME_ID1, DEFAULT_SERVICE,
-                  eParam_NoThread, "GENBANK_SERVICE_NAME_ID1");
+                  eParam_NoThread, GENBANK_SERVICE_NAME_ID1);
 
 
 static int GetDebugLevel(void)

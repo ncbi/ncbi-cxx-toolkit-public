@@ -577,22 +577,22 @@ bool GetAsnDataViaHTTP(
 // Configurable host, port, path and URL args for the MMDBSrv test
 NCBI_PARAM_DECL(string, MMDBSrv, Host);
 NCBI_PARAM_DEF_EX(string, MMDBSrv, Host, "www.ncbi.nlm.nih.gov",
-                  eParam_NoThread, "MMDBSRV_HOST");
+                  eParam_NoThread, MMDBSRV_HOST);
 
 NCBI_PARAM_DECL(unsigned short, MMDBSrv, Port);
 NCBI_PARAM_DEF_EX(unsigned short, MMDBSrv, Port, 80,
-                  eParam_NoThread, "MMDBSRV_PORT");
+                  eParam_NoThread, MMDBSRV_PORT);
 
 NCBI_PARAM_DECL(string, MMDBSrv, Path);
 NCBI_PARAM_DEF_EX(string, MMDBSrv, Path, "/Structure/mmdb/mmdbsrv.cgi",
-                  eParam_NoThread, "MMDBSRV_PATH");
+                  eParam_NoThread, MMDBSRV_PATH);
 
 NCBI_PARAM_DECL(string, MMDBSrv, Args);
 NCBI_PARAM_DEF_EX(string, MMDBSrv, Args,
                   "uid=1AL1&form=6&db=t&save=Save&dopt=j"
                   "&Complexity=Cn3D%20Subset",
                   eParam_NoThread,
-                  "MMDBSRV_ARGS");
+                  MMDBSRV_ARGS);
 
 
 // test to make sure that HTTP object load from the MMDB Web server works
@@ -697,6 +697,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2006/01/06 22:25:47  grichenk
+* Fixed env. vars naming for CParam<>.
+* Fixed printing of trace messages and location in ncbidiag.
+*
 * Revision 1.29  2006/01/05 20:40:17  grichenk
 * Added explicit environment variable name for params.
 * Added default value caching flag to CParam constructor.

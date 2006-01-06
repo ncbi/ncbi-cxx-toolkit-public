@@ -72,15 +72,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 NCBI_PARAM_DEF_EX(bool, GENBANK, SNP_PACK_STRINGS, true,
-                  eParam_NoThread, "GENBANK_SNP_PACK_STRINGS");
+                  eParam_NoThread, GENBANK_SNP_PACK_STRINGS);
 NCBI_PARAM_DEF_EX(bool, GENBANK, SNP_SPLIT, true,
-                  eParam_NoThread, "GENBANK_SNP_SPLIT");
+                  eParam_NoThread, GENBANK_SNP_SPLIT);
 NCBI_PARAM_DEF_EX(bool, GENBANK, SNP_TABLE, true,
-                  eParam_NoThread, "GENBANK_SNP_TABLE");
+                  eParam_NoThread, GENBANK_SNP_TABLE);
 NCBI_PARAM_DEF_EX(bool, GENBANK, USE_MEMORY_POOL, true,
-                  eParam_NoThread, "GENBANK_USE_MEMORY_POOL");
+                  eParam_NoThread, GENBANK_USE_MEMORY_POOL);
 NCBI_PARAM_DEF_EX(int, GENBANK, READER_STATS, 0,
-                  eParam_NoThread, "GENBANK_READER_STATS");
+                  eParam_NoThread, GENBANK_READER_STATS);
 
 
 /////////////////////////////////////////////////////////////////////////////

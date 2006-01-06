@@ -1300,7 +1300,7 @@ void CDataSource::SetLoaded(CTSE_LoadLock& lock)
 
 NCBI_PARAM_DECL(unsigned, OBJMGR, BLOB_CACHE);
 NCBI_PARAM_DEF_EX(unsigned, OBJMGR, BLOB_CACHE, 10,
-                  eParam_NoThread, "OBJMGR_BLOB_CACHE");
+                  eParam_NoThread, OBJMGR_BLOB_CACHE);
 
 static unsigned s_GetCacheSize(void)
 {

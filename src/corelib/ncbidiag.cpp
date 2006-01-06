@@ -84,13 +84,13 @@ extern "C" {
 // Use old output format if the flag is set
 NCBI_PARAM_DECL(bool, Diag, Old_Post_Format);
 NCBI_PARAM_DEF_EX(bool, Diag, Old_Post_Format, true, eParam_NoThread,
-                  "DIAG_OLD_POST_FORMAT");
+                  DIAG_OLD_POST_FORMAT);
 typedef NCBI_PARAM_TYPE(Diag, Old_Post_Format) TOldPostFormatParam;
 
 // Auto-print context properties on set/change.
 NCBI_PARAM_DECL(bool, Diag, AutoWrite_Context);
 NCBI_PARAM_DEF_EX(bool, Diag, AutoWrite_Context, false, eParam_NoThread,
-                  "DIAG_AUTOWRITE_CONTEXT");
+                  DIAG_AUTOWRITE_CONTEXT);
 typedef NCBI_PARAM_TYPE(Diag, AutoWrite_Context) TAutoWrite_Context;
 
 
@@ -504,8 +504,10 @@ bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 void CDiagBuffer::Flush(void)
 {
     // Do nothing if diag severity is lower than allowed
-    if ( !m_Diag  ||  m_Diag->GetSeverity() < sm_PostSeverity )
+    if ( !m_Diag  ||  m_Diag->GetSeverity() < sm_PostSeverity  ||
+        (m_Diag->GetSeverity() == eDiag_Trace  &&  !GetTraceEnabled()) ) {
         return;
+    }
 
     CNcbiOstrstream* ostr = dynamic_cast<CNcbiOstrstream*>(m_Stream);
     EDiagSev sev = m_Diag->GetSeverity();
@@ -782,7 +784,7 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
     }
 
     // Module::Class::Function -
-    bool have_module = (m_Module && *m_Module) || (m_File && *m_File);
+    bool have_module = (m_Module && *m_Module);
     bool print_location =
         ( have_module ||
          (m_Class     &&  *m_Class ) ||
@@ -1907,6 +1909,10 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.105  2006/01/06 22:25:46  grichenk
+ * Fixed env. vars naming for CParam<>.
+ * Fixed printing of trace messages and location in ncbidiag.
+ *
  * Revision 1.104  2006/01/05 20:40:17  grichenk
  * Added explicit environment variable name for params.
  * Added default value caching flag to CParam constructor.

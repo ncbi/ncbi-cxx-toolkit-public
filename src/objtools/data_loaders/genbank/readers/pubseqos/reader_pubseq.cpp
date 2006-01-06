@@ -77,7 +77,7 @@ static CAtomicCounter s_pubseq_readers;
 #ifdef _DEBUG
 NCBI_PARAM_DECL(int, GENBANK, PUBSEQOS_DEBUG);
 NCBI_PARAM_DEF_EX(int, GENBANK, PUBSEQOS_DEBUG, 0,
-                  eParam_NoThread, "GENBANK_PUBSEQOS_DEBUG");
+                  eParam_NoThread, GENBANK_PUBSEQOS_DEBUG);
 
 static int GetDebugLevel(void)
 {
