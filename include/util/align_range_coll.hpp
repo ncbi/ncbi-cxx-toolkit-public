@@ -436,8 +436,8 @@ public:
     
     void    Sort()
     {
-        PRangeFromLess<TAlignRange>    p;        
-        std::sort(m_Ranges.begin(), m_Ranges.end(), p);
+        std::sort(m_Ranges.begin(), m_Ranges.end(),
+                  PRangeFromLess<TAlignRange>());
 
         x_ResetFlags(fUnsorted);
         x_SetFlags(fNotValidated);
@@ -677,8 +677,8 @@ public:
     /// returns an iterator to the fisrt segment containing "pos"
     const_iterator FindOnSecond(position_type pos) const
     {
-        PItLess p;
-        typename TFrom2Range::const_iterator it = lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, p); 
+        typename TFrom2Range::const_iterator it =
+            lower_bound(m_Ranges.begin(), m_Ranges.end(), pos, PItLess()); 
         if(it != m_Ranges.end())    {
             const TAlignRange& r = *it->second;
             _ASSERT(r.GetSecondTo() >= pos);
@@ -722,6 +722,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/08 03:01:16  dicuccio
+ * Fix warnings
+ *
  * Revision 1.8  2005/12/28 16:18:11  gouriano
  * Adjustments for MSVC 2005 Express
  *
