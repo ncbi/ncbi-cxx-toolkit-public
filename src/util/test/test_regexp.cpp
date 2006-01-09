@@ -77,7 +77,7 @@ int CRegexApplication::Run(void)
 {
     // Simple way to use regular expressions
     CRegexp pattern("D\\w*g");
-    cout << pattern.GetMatch("The Dodgers play baseball.") << endl;
+    LOG_POST(pattern.GetMatch("The Dodgers play baseball."));
     
     // Perl compatible regular expression pattern to match
     string pat("(q.*k).*f?x");
@@ -92,12 +92,12 @@ int CRegexApplication::Run(void)
          "even a mouse.\n");
 
     // Display pattern and sub pattern matches
-    cout << pattern.GetMatch(text) << endl;
+    LOG_POST(pattern.GetMatch(text));
     for (int k = 1;  k < pattern.NumFound();  k++) {
-        cout << pattern.GetSub(text, 1) << endl;
+        LOG_POST(pattern.GetSub(text, 1));
     }    
     
-    cout << string(33, '-') << endl;
+    LOG_POST(string(33, '-'));
 
     // Set new pattern and ignore case
     pattern.Set("t\\w*e", CRegexp::fCompile_ignore_case);
@@ -107,14 +107,14 @@ int CRegexApplication::Run(void)
     while (start != string::npos) {
         string match = pattern.GetMatch(text, start);
         if (pattern.NumFound() > 0) {
-            cout << match << endl;
+            LOG_POST(match);
             start = text.find(match, start) + 1;            
         } else {
             break;
         }
     }
 
-    cout << string(33, '-') << endl;
+    LOG_POST(string(33, '-'));
 
     // Same as above but using GetResults() instead of return string
     start = 0;
@@ -122,7 +122,7 @@ int CRegexApplication::Run(void)
         pattern.GetMatch(text, start, 0, CRegexp::fMatch_default, true);
         if (pattern.NumFound() > 0) {
             const int* rslt = pattern.GetResults(0);
-            cout << text.substr(rslt[0], rslt[1] - rslt[0]) << endl;
+            LOG_POST(text.substr(rslt[0], rslt[1] - rslt[0]));
             start = rslt[1];
         } else {
             break;
@@ -149,6 +149,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/09 12:37:36  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 1.7  2005/10/24 15:28:39  vakatov
  * Added test for regexp-based cmdline argument validation (CArgAllow_Regexp).
  * Simplified some other tests.
