@@ -202,7 +202,7 @@ meNode *decodeNewickSubtree(char *treeString, meTree *T, int *uCount)
 
 meTree *loadNewickTree(FILE *ifile, int numLeaves)
 {
-  char label[] = "EmptyEdge";
+  // char label[] = "EmptyEdge";
   meTree *T;
   meNode *centerNode;
   int i = 0;
@@ -391,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/09 19:47:51  jcherry
+ * Removed unused variables
+ *
  * Revision 1.2  2004/05/21 21:41:04  gorelenk
  * Added PCH ncbi_pch.hpp
  *

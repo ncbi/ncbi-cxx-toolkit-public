@@ -245,13 +245,13 @@ meTree* fastme_run(double** D_in, int numSpecies_in, char **labels, int btype_in
   meSet *species, *slooper;
 
 //  char **filenames;
-  char *treeString = NULL;   /* space for this allocated in newickPrintTreeString */
+  // char *treeString = NULL;   /* space for this allocated in newickPrintTreeString */
   meTree *T;
 
 
   int setCounter = 0;
   int numSets = 1;
-  int count = 0;
+  // int count = 0;
   int nniCount = 0;
   int ntype = ntype_in, btype = btype_in, wtype = wtype_in;
 
@@ -395,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/09 19:47:51  jcherry
+ * Removed unused variables
+ *
  * Revision 1.3  2005/04/18 18:38:31  jcherry
  * Changed strange code to eliminate compiler warning
  *
