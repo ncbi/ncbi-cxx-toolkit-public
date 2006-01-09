@@ -72,6 +72,7 @@
 #  define NCBI_XSERIAL_EXPORTS
 #  define NCBI_XUTIL_EXPORTS
 #  define NCBI_XREGEXP_EXPORTS
+#  define NCBI_NET_CACHE_EXPORTS
 #endif
 
 
@@ -1181,6 +1182,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.109  2006/01/09 20:00:07  dicuccio
+ * Added NET_CACTE exports to corelib
+ *
  * Revision 1.108  2006/01/05 19:20:16  kuznets
  * +NCBI_NET_CACHE_EXPORT(s)
  *
