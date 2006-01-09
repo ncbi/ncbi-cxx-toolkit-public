@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -176,7 +176,7 @@ MMDB-Chemical-graph DEFINITIONS ::=
 BEGIN
 
 EXPORTS Biostruc-graph, Biomol-descr, Residue-graph,
-	Molecule-id, Residue-id, Atom-id;
+	Molecule-id, PCSubstance-id, Residue-id, Atom-id;
 
 IMPORTS Pub FROM NCBI-Pub
 	BioSource FROM NCBI-BioSource
@@ -269,9 +269,14 @@ Molecule-graph ::= SEQUENCE {
 	descr			SEQUENCE OF Biomol-descr OPTIONAL,
 	seq-id			Seq-id OPTIONAL,
 	residue-sequence	SEQUENCE OF Residue,
-	inter-residue-bonds	SEQUENCE OF Inter-residue-bond OPTIONAL }
+	inter-residue-bonds	SEQUENCE OF Inter-residue-bond OPTIONAL, 
+	sid                     PCSubstance-id OPTIONAL }
    
 Molecule-id ::= INTEGER
+
+-- Pubchem substance id
+
+PCSubstance-id ::= INTEGER
 
 -- Residues may be assigned a text-string name as well as an id number. PDB 
 -- assigned residue numbers appear as the residue name.
