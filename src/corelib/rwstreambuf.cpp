@@ -101,21 +101,18 @@ CRWStreambuf::~CRWStreambuf()
         sync();
     }
 
-    IReaderWriter* r = dynamic_cast<IReaderWriter*> (m_Reader);
-    IReaderWriter* w = dynamic_cast<IReaderWriter*> (m_Writer);
-
-    if ((m_Flags & fOwnAll) == fOwnAll  &&  r  &&  r == w) {
-        delete m_Reader;
-        m_Reader = NULL;
-        m_Writer = NULL;
-    }
-
-    if (m_Flags & fOwnWriter) {
-        delete m_Writer;
-    }
-
-    if (m_Flags & fOwnReader) {
-        delete m_Reader;
+    IReaderWriter* rw = dynamic_cast<IReaderWriter*> (m_Reader);
+    if (rw  &&  rw == dynamic_cast<IReaderWriter*> (m_Writer)) {
+        if ((m_Flags & fOwnAll) == fOwnAll) {
+            delete rw;
+        }
+    } else {
+        if (m_Flags & fOwnWriter) {
+            delete m_Writer;
+        }
+        if (m_Flags & fOwnReader) {
+            delete m_Reader;
+        }
     }
 
     if ( m_OwnBuf ) {
@@ -335,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2006/01/09 17:06:24  lavr
+ * ~CRWStreambuf(): Do not delete reader-writer on insufficient ownership
+ *
  * Revision 1.14  2006/01/09 16:12:53  dicuccio
  * Rework destructor to avoid memory leaks
  *
