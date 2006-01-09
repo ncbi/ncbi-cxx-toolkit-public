@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES__NS_CLIENT_FACTORY_HPP
-#define CONNECT_SERVICES__NS_CLIENT_FACTORY_HPP
+#ifndef CONNECT_SERVICES___NS_CLIENT_FACTORY__HPP
+#define CONNECT_SERVICES___NS_CLIENT_FACTORY__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -48,10 +48,12 @@ class INetScheduleClientFactory
 {
 public:
     virtual ~INetScheduleClientFactory() {}
+
     /// Create a NetSchedule client
-    ///
     virtual CNetScheduleClient* CreateInstance(void) = 0;
 };
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -72,6 +74,7 @@ private:
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 /// @internal
@@ -79,27 +82,31 @@ class CNSClientFactoryException : public CException
 {
 public:
     enum EErrCode {
-        eNSClientIsNotCreated,
+        eNSClientIsNotCreated
     };
 
     virtual const char* GetErrCodeString(void) const
     {
-        switch (GetErrCode())
-        {
-        case eNSClientIsNotCreated: 
-            return "eNSClientIsNotCreatedError";
-        default:      return CException::GetErrCodeString();
+        switch (GetErrCode()) {
+        case eNSClientIsNotCreated:  return "eNSClientIsNotCreatedError";
+        default:                     return CException::GetErrCodeString();
         }
     }
 
     NCBI_EXCEPTION_DEFAULT(CNSClientFactoryException, CException);
 };
 
+
 END_NCBI_SCOPE
+
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/09 16:18:26  vakatov
+ * Removed extraneous comma
+ *
  * Revision 1.1  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
@@ -112,4 +119,4 @@ END_NCBI_SCOPE
  */
 
 
-#endif // CONNECT_SERVICES__NS_CLIENT_FACTORY_HPP
+#endif // CONNECT_SERVICES___NS_CLIENT_FACTORY__HPP

@@ -196,7 +196,7 @@ public:
         eEntry,      //< Entry value
         eAttribute,  //< Entry attribute
         eFormat,     //< Format or encoding
-        eData,       //< Syntaxically correct but contains odd data (from the
+        eData        //< Syntaxically correct but contains odd data (from the
                      //< point of view of particular CGI application)
     };
     virtual const char* GetErrCodeString(void) const
@@ -397,6 +397,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/09 16:16:52  vakatov
+ * Removed extraneous comma
+ *
  * Revision 1.12  2006/01/04 18:39:59  grichenk
  * Added cgi_exception.cpp.
  * Added HTTP status code and message to CCgiException.
