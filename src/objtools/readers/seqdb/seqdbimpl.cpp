@@ -65,10 +65,10 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     m_Aliases.SetMasks(m_VolSet);
     m_OidListSetup = ! (m_VolSet.HasFilter() || gi_list);
     
-    SetIterationRange(oid_begin, oid_end);
-    
     m_VolumeLength = x_GetVolumeLength();
     m_NumOIDs      = x_GetNumOIDs();
+    
+    SetIterationRange(0, m_NumOIDs);
     
     try {
         m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
@@ -98,7 +98,11 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
         
         if (m_NeedTotalsScan) {
             CSeqDBLockHold locked(m_Atlas);
-            x_ScanTotals(locked);
+            
+            // This is a whole-database scan; it's always done in
+            // approximate length mode.
+            
+            x_ScanTotals(true, & m_NumSeqs, & m_TotalLength, locked);
         } else {
             m_NumSeqs     = x_GetNumSeqs();
             m_TotalLength = x_GetTotalLength();
@@ -110,6 +114,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
         m_FlushCB.SetImpl(0);
         throw;
     }
+    
+    SetIterationRange(oid_begin, oid_end);
     
     CHECK_MARKER();
 }
@@ -132,18 +138,6 @@ void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
         if (m_RestrictBegin > m_RestrictEnd) {
             m_RestrictBegin = m_RestrictEnd;
         }
-    }
-    
-    if (oid_begin || oid_end) {
-        m_NeedTotalsScan = true;
-    }
-    
-    // There may be several uncommon cases where this does an extra,
-    // unnecessary, OID scan.  But only the first OID really costs
-    // much time.
-    
-    if (m_NeedTotalsScan) {
-        x_ScanTotals(locked);
     }
 }
 
@@ -934,7 +928,10 @@ void CSeqDBImpl::GetAliasFileValues(TAliasFileValues & afv)
     m_Aliases.GetAliasFileValues(afv, m_VolSet);
 }
 
-void CSeqDBImpl::x_ScanTotals(CSeqDBLockHold & locked)
+void CSeqDBImpl::x_ScanTotals(bool             approx,
+                              int            * numseq,
+                              Uint8          * totlen,
+                              CSeqDBLockHold & locked)
 {
     int   oid_count(0);
     Uint8 base_count(0);
@@ -952,15 +949,26 @@ void CSeqDBImpl::x_ScanTotals(CSeqDBLockHold & locked)
         
         _ASSERT(volp);
         
-        if ('p' == m_SeqType) {
-            base_count += volp->GetSeqLengthProt(vol_oid, locked);
-        } else {
-            base_count += volp->GetSeqLengthApprox(vol_oid, locked);
+        if (totlen) {
+            if ('p' == m_SeqType) {
+                base_count += volp->GetSeqLengthProt(vol_oid, locked);
+            } else {
+                if (approx) {
+                    base_count += volp->GetSeqLengthApprox(vol_oid, locked);
+                } else {
+                    base_count += volp->GetSeqLengthExact(vol_oid, locked);
+                }
+            }
         }
     }
     
-    m_TotalLength = base_count;
-    m_NumSeqs = oid_count;
+    if (numseq) {
+        *numseq = oid_count;
+    }
+    
+    if (totlen) {
+        *totlen = base_count;
+    }
 }
 
 void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
@@ -987,6 +995,46 @@ void CSeqDBImpl::GetTaxInfo(int taxid, SSeqDBTaxInfo & info)
     info.common_name     = tnames.GetCommonName();
     info.blast_name      = tnames.GetBlastName();
     info.s_kingdom       = tnames.GetSKing();
+}
+
+void CSeqDBImpl::GetTotals(ESummaryType   sumtype,
+                           int          * oid_count,
+                           Uint8        * total_length,
+                           bool           use_approx)
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    if (oid_count) {
+        *oid_count = 0;
+    }
+    
+    if (total_length) {
+        *total_length = 0;
+    }
+    
+    switch(sumtype) {
+    case CSeqDB::eUnfilteredAll:
+        if (oid_count) {
+            *oid_count = GetNumOIDs();
+        }
+        if (total_length) {
+            *total_length = GetVolumeLength();
+        }
+        break;
+        
+    case CSeqDB::eFilteredAll:
+        if (oid_count) {
+            *oid_count = GetNumSeqs();
+        }
+        if (total_length) {
+            *total_length = GetTotalLength();
+        }
+        break;
+        
+    case CSeqDB::eFilteredRange:
+        x_ScanTotals(use_approx, oid_count, total_length, locked);
+        break;
+    }
 }
 
 END_NCBI_SCOPE

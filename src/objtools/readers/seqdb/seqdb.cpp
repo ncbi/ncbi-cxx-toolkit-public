@@ -708,5 +708,15 @@ void CSeqDB::GetTaxInfo(int taxid, SSeqDBTaxInfo & info) const
     m_Impl->Verify();
 }
 
+void CSeqDB::GetTotals(ESummaryType   sumtype,
+                       int          * oid_count,
+                       Uint8        * total_length,
+                       bool           use_approx) const
+{
+    m_Impl->Verify();
+    m_Impl->GetTotals(sumtype, oid_count, total_length, use_approx);
+    m_Impl->Verify();
+}
+
 END_NCBI_SCOPE
 

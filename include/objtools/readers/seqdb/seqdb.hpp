@@ -164,6 +164,18 @@ public:
         eUnknown
     };
     
+    /// Types of summary information available.
+    enum ESummaryType {
+        /// Sum of all sequences, ignoring GI and OID lists and alias files.
+        eUnfilteredAll,
+        
+        /// Values from alias files, or summation over all included sequences.
+        eFilteredAll,
+        
+        /// Sum of included sequences with OIDs within the iteration range.
+        eFilteredRange
+    };
+    
     /// Sequence type accepted and returned for OID indexes.
     typedef int TOID;
     
@@ -492,6 +504,35 @@ public:
     /// OIDs regardless of inclusion by the filtering mechanisms of
     /// the alias files.
     Uint8 GetVolumeLength() const;
+    
+    /// Returns the sum of the sequence lengths.
+    ///
+    /// This uses summary information and iteration to compute the
+    /// total length and number of sequences for some subset of the
+    /// database.  If eUnfilteredAll is specified, it uses information
+    /// from the underlying database volumes, without filtering.  If
+    /// eFilteredAll is specified, all of the included sequences are
+    /// used, for all possible OIDs.  If eFilteredRange is specified,
+    /// the returned values correspond to the sum over only those
+    /// sequences that survive filtering, and are within the iteration
+    /// range.  If either of oid_count or total_length is passed NULL,
+    /// that result is not returned.  In some cases, the results can
+    /// be computed in constant time; other cases require iteration
+    /// proportional to the length of the database or the included OID
+    /// range (see SetIterationRange()).
+    ///
+    /// @param sumtype
+    ///   Specifies the subset of sequences to include.
+    /// @param oid_count
+    ///   The returned number of included OIDs.
+    /// @param total_length
+    ///   The returned sum of included sequence lengths.
+    /// @param use_approx
+    ///   Whether to use approximate lengths for nucleotide.
+    void GetTotals(ESummaryType   sumtype,
+                   int          * oid_count,
+                   Uint8        * total_length,
+                   bool           use_approx = true) const;
     
     /// Returns the length of the largest sequence in the database.
     ///

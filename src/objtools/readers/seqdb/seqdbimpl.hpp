@@ -110,6 +110,8 @@ class CSeqDBImpl {
     typedef TSeqDBAliasFileValues TAliasFileValues;
     
 public:
+    typedef CSeqDB::ESummaryType ESummaryType;
+    
     /// Constructor
     ///
     /// This builds a CSeqDBImpl object from the provided parameters,
@@ -538,6 +540,34 @@ public:
     ///   A structure containing taxonomic description strings.
     void GetTaxInfo(int taxid, SSeqDBTaxInfo & info);
     
+    /// Returns the sum of the sequence lengths.
+    ///
+    /// This uses summary information and iteration to compute the
+    /// total length and number of sequences for some subset of the
+    /// database.  If eUnfilteredAll is specified, it uses information
+    /// from the underlying database volumes, without filtering.  If
+    /// eFilteredAll is specified, all of the included sequences are
+    /// used, for all possible OIDs.  If eFilteredRange is specified,
+    /// the returned values correspond to the sum over only those
+    /// sequences that survive filtering, and are within the iteration
+    /// range.  In some cases, the results can be computed in constant
+    /// time; other cases require iteration proportional to the length
+    /// of the database or the included OID range (see
+    /// SetIterationRange()).
+    ///
+    /// @param sumtype
+    ///   Specifies the subset of sequences to include.
+    /// @param oid_count
+    ///   The returned number of included OIDs.
+    /// @param total_length
+    ///   The returned sum of included sequence lengths.
+    /// @param use_approx
+    ///   Whether to use approximate lengths for nucleotide.
+    void GetTotals(ESummaryType   sumtype,
+                   int          * oid_count,
+                   Uint8        * total_length,
+                   bool           use_approx);
+    
 private:
     CLASS_MARKER_FIELD("IMPL")
     
@@ -622,7 +652,19 @@ private:
     /// number of (included) sequences and bases from the OID mask and
     /// sequence lengths.  It stores the computed values in m_NumSeqs
     /// and m_TotalLength.
-    void x_ScanTotals(CSeqDBLockHold & locked);
+    ///
+    /// @param approx
+    ///   Specify true if approximate lengths are okay.
+    /// @param seq_count
+    ///   Returned count of included OIDs in this range.
+    /// @param base_count
+    ///   Returned sum of lengths of included sequences.
+    /// @param locked
+    ///   The lock hold object for this thread.
+    void x_ScanTotals(bool             approx,
+                      int            * seq_count,
+                      Uint8          * base_count, 
+                      CSeqDBLockHold & locked);
     
     /// This callback functor allows the atlas code flush any cached
     /// region holds prior to garbage collection.
