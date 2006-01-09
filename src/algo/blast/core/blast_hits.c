@@ -2103,7 +2103,8 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
       /* Return the packed sequence to the database */
       BlastSeqSrcReleaseSequence(seq_src, (void*) &seq_arg);
       /* Get the unpacked sequence */
-      BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg);
+      if ((status=BlastSeqSrcGetSequence(seq_src, (void*) &seq_arg)))
+          return status;
    }
 
    if (kTranslateSubject) {

@@ -813,6 +813,8 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                      hsp_list, query, seq_arg.seq, word_params, hit_params, 
                      query_info, sbp, score_params, seq_src, 
                      (db_options ? db_options->gen_code_string : NULL));
+               if (status)
+                  return status;
                /* Relink HSPs if sum statistics is used, because scores might
                 * have changed after reevaluation with ambiguities, and there
                 * will be no traceback stage where relinking is done normally.
