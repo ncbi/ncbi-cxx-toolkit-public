@@ -1022,28 +1022,40 @@ protected:
 class NCBI_XNCBI_EXPORT CArgAllow_Strings : public CArgAllow
 {
 public:
-    /// Constructor.
-    CArgAllow_Strings(void);
+    /// Constructor
+    /// @param use_case
+    ///   If to ignore the case of the characters
+    CArgAllow_Strings(NStr::ECase use_case = NStr::eCase);
 
-    /// Add allowed string values.
+    /// Add allowed string values
+    /// @param value
+    ///   String to add to the set of allowed string values
     CArgAllow_Strings* Allow(const string& value);
 
-    /// Short notation operator for adding allowed string values.
+    /// Short notation operator for adding allowed string values
+    /// @param value
+    ///   String to add to the set of allowed string values
     /// @sa
     ///   Allow()
     CArgAllow_Strings& operator,(const string& value) { return *Allow(value); }
 
 protected:
     /// Verify if specified value is allowed.
-    virtual bool   Verify(const string& value) const;
+    virtual bool Verify(const string& value) const;
 
     /// Get usage information.
     virtual string GetUsage(void) const;
 
     /// Protected destructor.
     virtual ~CArgAllow_Strings(void);
+
 private:
-    set<string> m_Strings;  ///< Set of allowed string values
+    /// Type of the container that contains the allowed string values
+    /// @sa m_Strings
+    typedef set<string, PNocase> TStrings;
+
+    TStrings     m_Strings;  ///< Set of allowed string values
+    NStr::ECase  m_UseCase;  ///< If to ignore the case of the chars
 };
 
 
@@ -1204,6 +1216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/01/09 17:16:29  vakatov
+ * CArgAllow_Strings += case-insensitivity (optional)
+ *
  * Revision 1.47  2005/10/24 16:07:34  vakatov
  * + @sa CArgAllow_Regexp, which is defined in another library
  *

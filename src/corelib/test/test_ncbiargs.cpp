@@ -176,16 +176,23 @@ static void s_RunTest0(const CArgs& args, ostream& os)
 static void s_InitTest9(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("a",
-                    "alphaNumericKey",
-                    "This is a test alpha-num argument",
+                    "stringsKey",
+                    "This is a test of set-of-strings argument",
+                    CArgDescriptions::eString);
+
+    arg_desc.AddKey("ai",
+                    "strings_nocase_Key",
+                    "This is a test of set-of-strings arg (case-insensitive)",
                     CArgDescriptions::eString);
 
     arg_desc.AddKey("i",
                     "integerKey",
-                    "This is a test integer argument",
+                    "This is a test of integer argument",
                     CArgDescriptions::eInteger);
 
     arg_desc.SetConstraint("a", &(*new CArgAllow_Strings, "foo", "bar", "qq"));
+    arg_desc.SetConstraint("ai", &(*new CArgAllow_Strings(NStr::eNocase),
+                                   "Foo", "bAr", "qQ"));
     arg_desc.SetConstraint("i", new CArgAllow_Integers(-3, 34));
 }
 
@@ -526,6 +533,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.24  2006/01/09 17:16:29  vakatov
+ * CArgAllow_Strings += case-insensitivity (optional)
+ *
  * Revision 6.23  2004/07/22 15:26:09  vakatov
  * Allow "Int8" arguments
  *

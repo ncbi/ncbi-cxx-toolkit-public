@@ -2296,8 +2296,9 @@ string CArgAllow_String::GetUsage(void) const
 //  CArgAllow_Strings::
 //
 
-CArgAllow_Strings::CArgAllow_Strings(void)
-    : CArgAllow()
+CArgAllow_Strings::CArgAllow_Strings(NStr::ECase use_case)
+    : CArgAllow(),
+      m_UseCase(use_case)
 {
     return;
 }
@@ -2312,7 +2313,11 @@ CArgAllow_Strings* CArgAllow_Strings::Allow(const string& value)
 
 bool CArgAllow_Strings::Verify(const string& value) const
 {
-    return (m_Strings.find(value) != m_Strings.end());
+    TStrings::iterator it = m_Strings.find(value);
+    if (it == m_Strings.end())
+        return false;
+
+    return (m_UseCase == NStr::eCase) ? NStr::EqualCase(*it, value) : true;
 }
 
 
@@ -2332,6 +2337,9 @@ CArgAllow_Strings::GetUsage(void) const
         ++it;
         if (it == m_Strings.end()) {
             str += "'";
+            if (m_UseCase == NStr::eNocase) {
+                str += "  {case insensitive}";
+            }
             break;
         }
         str += "', ";
@@ -2425,6 +2433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/01/09 17:16:29  vakatov
+ * CArgAllow_Strings += case-insensitivity (optional)
+ *
  * Revision 1.59  2005/05/12 15:06:06  lavr
  * Use explicit (unsigned char) conversion in <ctype.h>'s macros
  *
