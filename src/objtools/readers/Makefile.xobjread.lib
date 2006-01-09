@@ -1,6 +1,6 @@
 # $Id$
 
-ASN_DEP = seq
+ASN_DEP = seq seqset
 
 LIB = xobjread
 SRC = fasta readfeat gff_reader agp_read aln_reader cigar getfeature phrap
