@@ -2313,7 +2313,7 @@ CArgAllow_Strings* CArgAllow_Strings::Allow(const string& value)
 
 bool CArgAllow_Strings::Verify(const string& value) const
 {
-    TStrings::iterator it = m_Strings.find(value);
+    TStrings::const_iterator it = m_Strings.find(value);
     if (it == m_Strings.end())
         return false;
 
@@ -2329,7 +2329,7 @@ CArgAllow_Strings::GetUsage(void) const
     }
 
     string str;
-    set<string>::const_iterator it = m_Strings.begin();
+    TStrings::const_iterator it = m_Strings.begin();
     for (;;) {
         str += "`";
         str += *it;
@@ -2433,6 +2433,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/01/09 17:50:23  ssikorsk
+ * Fixed compilation issues.
+ *
  * Revision 1.60  2006/01/09 17:16:29  vakatov
  * CArgAllow_Strings += case-insensitivity (optional)
  *
