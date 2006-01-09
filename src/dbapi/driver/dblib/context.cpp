@@ -218,13 +218,6 @@ void CDBLibContext::SetClientCharset(const char* charset) const
 I_Connection* 
 CDBLibContext::MakeConnection(const SConnAttr& conn_attr)
 {
-    // new connection needed
-    if (conn_attr.srv_name.empty()  ||  
-        conn_attr.user_name.empty()  ||  
-        conn_attr.passwd.empty()) {
-        DATABASE_DRIVER_ERROR( "Insufficient info/credentials to connect", 200010 );
-    }
-
     DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name, 
                                          conn_attr.user_name, 
                                          conn_attr.passwd, 
@@ -1092,6 +1085,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/01/09 19:19:21  ssikorsk
+ * Validate server name, user name and password before connection for all drivers.
+ *
  * Revision 1.60  2006/01/03 19:01:46  ssikorsk
  * Implement method MakeConnection.
  *

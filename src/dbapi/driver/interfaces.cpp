@@ -375,7 +375,25 @@ I_DriverContext::Connect(const string&   srv_name,
     conn_attr.reusable = reusable;
     conn_attr.pool_name = pool_name;
 
-    
+    // Precondition check.
+    if (conn_attr.srv_name.empty() ||  
+        conn_attr.user_name.empty() ||  
+        conn_attr.passwd.empty()) {
+        string err_msg("Insufficient info/credentials to connect.");
+        
+        if (conn_attr.srv_name.empty()) {
+            err_msg += " Server name has not been set.";
+        }
+        if (conn_attr.user_name.empty()) {
+            err_msg += " User name has not been set.";
+        }
+        if (conn_attr.passwd.empty()) {
+            err_msg += " Password has not been set.";
+        }
+        
+        DATABASE_DRIVER_ERROR( err_msg, 200010 );
+    }
+        
     I_Connection* t_con = 
         CDbapiConnMgr::Instance().GetConnectionFactory()->MakeConnection(*this, conn_attr);
     
@@ -451,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/09 19:19:21  ssikorsk
+ * Validate server name, user name and password before connection for all drivers.
+ *
  * Revision 1.11  2006/01/03 18:59:52  ssikorsk
  * Implement I_DriverContext::MakePooledConnection and
  * I_DriverContext::Connect.
