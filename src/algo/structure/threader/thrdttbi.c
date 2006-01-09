@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 13:11:43  thiessen
+* preclude GCC warnings, mainly by initializing vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -85,7 +88,7 @@ int	ct;		/* Index of current thread in list traversal */
 int	in;		/* Index where a new thread will be inserted */
 int	pr;		/* Index of previous thread in linked list */
 int	nx;		/* Index of next thread in linked list */
-int	sm;		/* Test if two threads are the same */
+int	sm=0;		/* Test if two threads are the same */
 int	le;		/* Test if new thread has lower energy */
 float	cg;		/* Energy of current thread */
 

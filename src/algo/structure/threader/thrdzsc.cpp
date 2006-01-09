@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2006/01/09 13:11:43  thiessen
+* preclude GCC warnings, mainly by initializing vars
+*
 * Revision 1.3  2006/01/09 12:52:38  thiessen
 * tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
 *
@@ -111,7 +114,7 @@ int	n_perm;		/* Number of permutations */
 int	mn,mx;
 int	n_thr;		/* Number of top threads to calculate Z-score for */
 int	to,from,
-	tlf,tls,dln;
+	tlf=0,tls=0,dln;
 int	*cf;		/* Flags residues within the core */
 int     t1,t2;          /* Motif residue types */
 int     r1,r2;          /* Motif residue positions */
@@ -125,7 +128,7 @@ float	avg,avg2,
 int	nl,ot;
 float	disp,dispm,dispp;/* Square root of variance */
 float	tg,tgp,tgm;	        /* Energy of shuffled sequence */
-float   tg_max;		/* Energy of a given thread */
+float   tg_max=0.0f;		/* Energy of a given thread */
 int	*gi;
 int     *lsg,*aqi,
 	*r,*o,*sq;

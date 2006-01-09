@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/01/09 13:11:43  thiessen
+* preclude GCC warnings, mainly by initializing vars
+*
 * Revision 1.2  2006/01/09 12:52:38  thiessen
 * tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
 *
@@ -202,7 +205,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
  int	spcd;		/* Flags a change in threaded sequence composition    */
  int	mx,mn;		/* Range of segment alignment or location             */
  int	cs;		/* Current segment in alignment or location sampling  */
- int	ct;		/* Current terminus for segment location sampling     */
+ int	ct=0;		/* Current terminus for segment location sampling     */
  int	al;		/* Current alignment of a core segment                */
  int	of;		/* Current terminus offset from reference position    */
  int	rf;		/* Reference position for a core element              */
@@ -1821,7 +1824,7 @@ void PrintThdTbl(Thd_Tbl* ttb, FILE* pFile) {
   fprintf(pFile, "number of core segments:  %6d\n", ttb->nsc);
   fprintf(pFile, "index of lowest energy thread:  %6d\n", ttb->mn);
   fprintf(pFile, "index of highest energy thread: %6d\n", ttb->mx);
-  fprintf(pFile, "for each thread:\n", ttb->n);
+  fprintf(pFile, "for each thread:\n");
   fprintf(pFile, "           tg           ps           ms           cs          lps          zsc\n");
   for (i=0; i<ttb->n; i++) {
     fprintf(pFile, " %12.5e %12.5e %12.5e %12.5e %12.5e %12.5e\n",

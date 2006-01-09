@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 13:11:43  thiessen
+* preclude GCC warnings, mainly by initializing vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -90,7 +93,7 @@ int	ns;		/* Neighbor segment index */
 int	mxo,mno;	/* Explicit maximum and minimum segment extent */
 int	cuo;		/* Current segment extent */
 int	cua;		/* Current segment alignment */
-int	*mp;		/* Motif-derived loop length limits */
+int	*mp=NULL;	/* Motif-derived loop length limits */
 int	l1;		/* Minimum loop length allowed by core definition */
 int	l2;		/* Minimum loop length allowed by folding motif */
 int	ll;		/* Loop length implied by a given segment extent */

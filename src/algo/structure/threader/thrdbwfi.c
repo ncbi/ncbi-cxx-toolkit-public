@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/01/09 13:11:43  thiessen
+* preclude GCC warnings, mainly by initializing vars
+*
 * Revision 1.2  2006/01/09 12:52:38  thiessen
 * tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
 *
@@ -66,8 +69,8 @@
 
 int	i;		/* Counter */
 int	ct;		/* Index of current thread in list traversal */
-int	nz;		/* Number of threads with non-zero Boltzmann weight */
-int	nt;		/* Number of threads within specified ensemble cutoff */
+int	nz=0;		/* Number of threads with non-zero Boltzmann weight */
+int	nt=0;		/* Number of threads within specified ensemble cutoff */
 float	tm;		/* Temperature for calculation of Boltzmann weight */
 float	gm;		/* Minimum energy value for scaling of exponents */
 float	g;		/* Energy value */

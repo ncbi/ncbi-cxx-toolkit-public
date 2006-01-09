@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/01/09 13:11:43  thiessen
+* preclude GCC warnings, mainly by initializing vars
+*
 * Revision 1.2  2006/01/09 12:52:38  thiessen
 * tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
 *
@@ -78,7 +81,7 @@ int	nrt;		/* Number of residue types */
 int	nqi;		/* Number of residues in query sequence */
 int	i,j,k;		/* Counters */
 int	t1,t2;		/* Motif residue types */
-int	r1,r2;		/* Motif residue positions */
+int	r1,r2=0;	/* Motif residue positions */
 int	s1,s2;		/* Core segment indices */
 int	d;		/* Distance inteva */
 Cxl_Los *cr;	/* Pointer to segment reference contact lists */
