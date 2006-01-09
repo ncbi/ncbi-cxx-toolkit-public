@@ -71,7 +71,6 @@ public:
 
     virtual ERW_Result Flush(void){ return eRW_Success; }
 
-
 private:
     CTestMemWriter(const CTestMemWriter&);
     CTestMemWriter& operator=(const CTestMemWriter&);
@@ -80,6 +79,7 @@ private:
     unsigned char*  m_Ptr;
     size_t          m_Capacity;
 };
+
 
 /// @internal
 class CTestMemReader : public IReader
@@ -146,13 +146,12 @@ public:
 void CTestTransmission::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
-
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-
     d->SetUsageContext("test_transmissionrw",
                        "test transmission reader/writer");
     SetupArgDescriptions(d.release());
 }
+
 
 static
 void s_SaveTestData(IWriter* wrt, size_t size)
@@ -164,6 +163,7 @@ void s_SaveTestData(IWriter* wrt, size_t size)
         assert(res == eRW_Success);
     }
 }
+
 
 static
 void s_ReadCheck1(IReader*               rdr, 
@@ -193,7 +193,7 @@ void s_ReadCheck1(IReader*               rdr,
 
 int CTestTransmission::Run(void)
 {
-    NcbiCout << "Test IReader/IWriter transmission" << NcbiEndl;
+    LOG_POST("Test IReader/IWriter transmission");
 
     const int test_buf_size = 1024;
     unsigned char buf[test_buf_size  * 10];
@@ -208,9 +208,7 @@ int CTestTransmission::Run(void)
     {{
     CTestMemWriter wrt(buf, sizeof(buf));
     s_SaveTestData(&wrt, test_buf_size/2);
-
     sz = wrt.SizeWritten();
-
     assert(sz == test_buf_size/2);
     }}
 
@@ -267,11 +265,8 @@ int CTestTransmission::Run(void)
 
     // Transmission test
 
-
     memset(buf, 0, sizeof(buf));
     memset(buf2, 0, sizeof(buf2));
-
-
 
     {{
     CTestMemWriter wrt(buf, sizeof(buf));
@@ -287,8 +282,6 @@ int CTestTransmission::Run(void)
     trdr.Read(&c, 1);
 
     assert(b==c);
-
-
     }}
 
     size_t tsize = 3;
@@ -311,7 +304,6 @@ int CTestTransmission::Run(void)
 
     s_ReadCheck1(&trdr, buf, buf2, sz * 2, tsize);//test_buf_size/2);
     }}
-
 
     memset(buf, 0, sizeof(buf));
     memset(buf2, 0, sizeof(buf2));
@@ -385,8 +377,7 @@ int CTestTransmission::Run(void)
     assert(total_read = tsize);
     }}
 
-
-    NcbiCout << "OK" << NcbiEndl;
+    LOG_POST("OK");
 
     return 0;
 }
@@ -396,9 +387,13 @@ int main(int argc, const char* argv[])
     return CTestTransmission().AppMain(argc, argv);
 }
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/09 12:53:37  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 1.3  2005/04/20 20:09:13  lavr
  * Comment out unused functions' parameters
  *

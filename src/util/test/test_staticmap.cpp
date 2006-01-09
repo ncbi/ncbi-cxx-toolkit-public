@@ -445,7 +445,7 @@ int CTestStaticMap::Run(void)
         TestStaticMap();
     }
 
-    NcbiCout << "All tests passed." << NcbiEndl;
+    LOG_POST("All tests passed.");
     return 0;
 }
 
@@ -460,6 +460,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/01/09 12:53:37  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 1.9  2005/10/27 15:02:32  vasilche
  * Fixed warning about unused exception variable.
  *

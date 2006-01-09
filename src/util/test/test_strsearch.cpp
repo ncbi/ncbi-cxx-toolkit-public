@@ -53,117 +53,83 @@ USING_NCBI_SCOPE;
 static
 void s_TEST_BoyerMooreMatcher(void)
 {
-    cout << "======== String search test (Boyer-Moore)." << endl;
+    LOG_POST("String search test (Boyer-Moore).");
 
     const char* str = "123 567 BB";
     size_t len = strlen(str);
     {{    
-    CBoyerMooreMatcher matcher("BB");
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert(pos == 8);
+        CBoyerMooreMatcher matcher("BB");
+        size_t pos = matcher.Search(str, 0, len);
+        assert(pos == 8);
     }}
-
     {{    
-    CBoyerMooreMatcher matcher("BB", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::eWholeWordMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert(pos == 8);
+        CBoyerMooreMatcher matcher("BB", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert(pos == 8);
     }}
-
     {{
-    CBoyerMooreMatcher matcher("123", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::eWholeWordMatch);
-
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert(pos == 0);
+        CBoyerMooreMatcher matcher("123", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert(pos == 0);
     }}
-
     {{
-    CBoyerMooreMatcher matcher("1234", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::eWholeWordMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert((int)pos == -1l);
+        CBoyerMooreMatcher matcher("1234", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert((int)pos == -1l);
     }}
-
     {{
-    CBoyerMooreMatcher matcher("bb", 
-                               NStr::eCase, 
-                               CBoyerMooreMatcher::eWholeWordMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert((int)pos == -1l);
+        CBoyerMooreMatcher matcher("bb", NStr::eCase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert((int)pos == -1l);
     }}
-
     {{    
-    CBoyerMooreMatcher matcher("67", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::eWholeWordMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert((int)pos == -1l);
+        CBoyerMooreMatcher matcher("67", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eWholeWordMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert((int)pos == -1l);
     }}
-
     {{
-    CBoyerMooreMatcher matcher("67", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::eSubstrMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert(pos == 5);
+        CBoyerMooreMatcher matcher("67", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eSubstrMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert(pos == 5);
     }}
-
     {{
-    CBoyerMooreMatcher matcher("67", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::eSuffixMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert(pos == 5);
+        CBoyerMooreMatcher matcher("67", NStr::eNocase, 
+                                   CBoyerMooreMatcher::eSuffixMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert(pos == 5);
     }}
-
-
     {{
-    CBoyerMooreMatcher matcher("56", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::ePrefixMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert(pos == 4);
+        CBoyerMooreMatcher matcher("56", NStr::eNocase, 
+                                   CBoyerMooreMatcher::ePrefixMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert(pos == 4);
     }}
-
     {{
-    CBoyerMooreMatcher matcher("123", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::ePrefixMatch);
-    size_t pos = matcher.Search(str, 0, len);
-
-    assert(pos == 0);
+        CBoyerMooreMatcher matcher("123", NStr::eNocase, 
+                                   CBoyerMooreMatcher::ePrefixMatch);
+        size_t pos = matcher.Search(str, 0, len);
+        assert(pos == 0);
     }}
-
     {{
-    CBoyerMooreMatcher matcher("drosophila", 
-                               NStr::eNocase, 
-                               CBoyerMooreMatcher::ePrefixMatch);
-    matcher.InitCommonDelimiters();
-    const char* str1 = 
-       "eukaryotic initiation factor 4E-I [Drosophila melanogaster]";
+        CBoyerMooreMatcher matcher("drosophila", NStr::eNocase, 
+                                   CBoyerMooreMatcher::ePrefixMatch);
+        matcher.InitCommonDelimiters();
+        const char* str1 = 
+            "eukaryotic initiation factor 4E-I [Drosophila melanogaster]";
 
-    size_t len1 = strlen(str1);
-    size_t pos = matcher.Search(str1, 0, len1);
-
-    assert(pos != (SIZE_TYPE)-1);
+        size_t len1 = strlen(str1);
+        size_t pos  = matcher.Search(str1, 0, len1);
+        assert(pos != (SIZE_TYPE)-1);
     }}
 
-    cout << "======== String search test (Boyer-Moore) ok." << endl;
+    LOG_POST("String search test (Boyer-Moore) ok.");
 }
-
 
 
 
@@ -185,22 +151,17 @@ void CStrSearchTest::Init(void)
     SetDiagPostFlag(eDPF_File);
     SetDiagPostFlag(eDPF_Line);
     auto_ptr<CArgDescriptions> d(new CArgDescriptions);
-    d->SetUsageContext("test_bdb",
-                       "test BDB library");
+    d->SetUsageContext("test_bdb", "test BDB library");
     SetupArgDescriptions(d.release());
 }
 
 
 int CStrSearchTest::Run(void)
 {
-    cout << "Run string search test" << endl << endl;
-
-
     s_TEST_BoyerMooreMatcher();
 
+    LOG_POST("\nTEST execution completed successfully!");
 
-    cout << endl;
-    cout << "TEST execution completed successfully!" << endl << endl;
     return 0;
 }
 
@@ -219,6 +180,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/09 12:53:37  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 1.8  2005/04/25 19:05:24  ivanov
  * Fixed compilation warnings on 64-bit Worshop compiler
  *
@@ -242,7 +206,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 1.1  2004/03/03 14:32:33  kuznets
  * Initial revision (test app for string searches)
- *
  *
  * ===========================================================================
  */
