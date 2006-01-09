@@ -78,7 +78,7 @@ void COffsetReadHook::ReadObject(CObjectIStream &in,
             // Clear the discard flag before calling sniffer's event reactors
             m_Sniffer->SetDiscardCurrObject(false);
 
-            m_Sniffer->OnObjectFoundPre(object, in.GetStreamOffset());
+            m_Sniffer->OnObjectFoundPre(object, in.GetStreamPos());
      
             DefaultRead(in, object);
 
@@ -258,7 +258,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
         catch (CException& _DEBUG_ARG(e)) {
             _TRACE("  failed to read: " << e.GetMsg());
             Reset();
-            input.SetStreamOffset(m_StreamPos);
+            input.SetStreamPos(m_StreamPos);
             ++it; // trying the next type.
         }
     }
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2006/01/09 12:36:58  kuznets
+* Reflect changes in CObjectIStream
+*
 * Revision 1.22  2005/11/07 13:03:56  kuznets
 * Use streampos (portability fix)
 *
