@@ -302,7 +302,7 @@ public:
     /// Start timing.
     /// @param msg Message to output at beginning and Mark().
     CTimedTask(string msg)
-        : m_Msg(msg)
+        : m_Watch(CStopWatch::eStart), m_Msg(msg)
     {
         cout << "Executing task [" << m_Msg << "]..." << endl;
         m_Watch.Start();
@@ -365,7 +365,7 @@ int test1(int argc, char ** argv)
     bool failed      = false;
     
     while(! args.empty()) {
-        CStopWatch perf_sw(true);
+        CStopWatch perf_sw(CStopWatch::eStart);
         string desc;
         
         string s = args.front();
@@ -786,7 +786,7 @@ int test1(int argc, char ** argv)
             CMutex a;
             CFastMutex b;
             
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             double spt1 = sw.Elapsed();
             
             for(int i = 0; i<10000000; i++) {
@@ -1040,7 +1040,7 @@ int test1(int argc, char ** argv)
                 full_version = true;
             }
             
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             
             double e[4];
             
@@ -1313,7 +1313,7 @@ int test1(int argc, char ** argv)
             vector<int> gis;
             vector<int> oids;
             
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             
             CSeqDB db("nr", CSeqDB::eProtein);
             
@@ -1849,7 +1849,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-xlate4]";
         
         if (s == "-gilist") {
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             
             double e1 = sw.Elapsed();
             CSeqDB db(dbname, seqtype);
@@ -2555,7 +2555,7 @@ int test1(int argc, char ** argv)
             double woist = 0.0;
             double totul = 0.0;
             
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             
             for(int i = 0; i<10; i++) {
                 CSeqDBIter skywalk = phil.Begin();
@@ -3292,7 +3292,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-file-gi-list2]";
         
         if (s == "-file-gi-list") {
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             double e1, e2, e3, e4, e5;
             e1 = sw.Elapsed();
             
@@ -3406,7 +3406,7 @@ int test1(int argc, char ** argv)
         } else desc += " [-bioseq-iteration]";
         
         if (s == "-megabarley") {
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             
             double e1 = sw.Elapsed();
             double e2 = e1;
@@ -3428,7 +3428,7 @@ int test1(int argc, char ** argv)
             double xt[Asize];
             const char * tag[Asize];
             
-            CStopWatch sw(true);
+            CStopWatch sw(CStopWatch::eStart);
             
             xt[xt_iter++] = sw.Elapsed();
             CSeqDB al("nr", CSeqDB::eProtein);
@@ -4084,7 +4084,7 @@ int test1(int argc, char ** argv)
     //return 0;
     
     
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
     
     for(int k = 0; k<num_itera; k++) {
         try {

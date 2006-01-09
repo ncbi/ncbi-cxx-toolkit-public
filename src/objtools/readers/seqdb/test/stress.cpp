@@ -324,7 +324,7 @@ void stress_test_seqdb(const list<string> & args_list)
     int count = 100;
     
     while(count < max_iter) {
-        CStopWatch sw(true);
+        CStopWatch sw(CStopWatch::eStart);
         
         cout << "Count: " << count << " ... " << flush;
         
