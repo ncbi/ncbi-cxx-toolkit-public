@@ -51,9 +51,6 @@
  *    s_PHIBlastAlignPatterns(...)    
  *    Right score = Blast_SemiGappedAlign(...) 
  * </pre>
- * @todo FIXME The alignment code uses complicated representation of the
- *             pattern, and may produce wrong alignments of patterns in case
- *             when pattern has variable length pieces longer than 32 residues.
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
