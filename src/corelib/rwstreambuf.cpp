@@ -104,17 +104,18 @@ CRWStreambuf::~CRWStreambuf()
     IReaderWriter* r = dynamic_cast<IReaderWriter*> (m_Reader);
     IReaderWriter* w = dynamic_cast<IReaderWriter*> (m_Writer);
 
-    if ((m_Flags & fOwnAll) && r != w) {
-        delete m_Writer;
+    if ((m_Flags & fOwnAll) == fOwnAll  &&  r  &&  r == w) {
         delete m_Reader;
-    } else if (m_Flags & fOwnWriter) {
-        if (!r || r != w) {
-            delete m_Writer;
-        }
-    } else if (m_Flags & fOwnReader) {
-        if (!w || w != r) {
-            delete m_Reader;
-        }
+        m_Reader = NULL;
+        m_Writer = NULL;
+    }
+
+    if (m_Flags & fOwnWriter) {
+        delete m_Writer;
+    }
+
+    if (m_Flags & fOwnReader) {
+        delete m_Reader;
     }
 
     if ( m_OwnBuf ) {
@@ -334,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.14  2006/01/09 16:12:53  dicuccio
+ * Rework destructor to avoid memory leaks
+ *
  * Revision 1.13  2005/08/12 16:11:55  lavr
  * Catch (and optionally report) all exceptions from I{Reader|Writer}
  *
