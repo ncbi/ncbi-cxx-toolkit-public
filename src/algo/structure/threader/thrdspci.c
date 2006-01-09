@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -73,7 +76,6 @@ int	nsc;		/* Number of core segments */
 int	nlp;		/* Number of loops */
 int	nrt;		/* Number of residue types in potential */
 int	nqi;		/* Number of residues in query sequence */
-int	ppi;		/* Index of peptide group in contact potential */
 int	i,j;		/* Counters */
 int	r;		/* Residue type */
 int	nt,ct;		/* Core segment or loop terminii */

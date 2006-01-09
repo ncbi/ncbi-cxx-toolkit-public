@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:05  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -57,7 +60,7 @@
 /* n- or c-terminal offsets of a segment.  They contain pointers to the */
 /* energies of each contact, as well as distance intervals.  */
 
-int cpll(Cor_Def* cdf, Rcx_Ptl* pmf, Qry_Seq* qsq, Cxl_Los** cpr,
+/*int*/ void cpll(Cor_Def* cdf, Rcx_Ptl* pmf, Qry_Seq* qsq, Cxl_Los** cpr,
          Cur_Aln* sai, Cxl_Los** cpl) {
 /*-----------------------------------------------------*/
 /* cdf:  Core segment locations and loop length limits */
@@ -84,7 +87,6 @@ int	*cf;		/* Flags residues possibly within the core. */
 int	le;		/* Explicit limit on segment extent, query index */
 int	la;		/* Alignment-derived limit on segment extent */
 int	mn,mx;		/* Range */
-int	qi;		/* Aligned query sequence index from motif index */
 
 /* Parameters */
 
@@ -109,7 +111,7 @@ cf=sai->cf;
 for(i=0;i<nmt;i++) cf[i]=(-1);
 /* for(i=0; i<nmt; i++) printf("%d ",cf[i]); printf("cf\n"); */
 
-for(i=0; i<nsc; i++) { 
+for(i=0; i<nsc; i++) {
 
 	/* Identify maximum n-terminal extent of this segment */
 	le=sai->al[i]-cdf->sll.nomx[i];
@@ -144,14 +146,14 @@ for(i=0; i<nsc; i++) { cl=cpl[i]; cl->rr.n=0; cl->rp.n=0; cl->rf.n=0;}
 /* Loop over core segments */
 
 for(i=0; i<nsc; i++ ) {
-	cl=cpl[i]; 
-	cr=cpr[i]; 
-	
+	cl=cpl[i];
+	cr=cpr[i];
+
 	/* Loop over residue-residue contacts in the reference list */
-	
+
 	for(j=0; j<cr->rr.n; j++) {
 
-		/* Test that contact is within the allowed extent range */ 
+		/* Test that contact is within the allowed extent range */
 		r1=cr->rr.r1[j];
 		s1=cf[r1];
 		if(s1<0) continue;
@@ -163,24 +165,24 @@ for(i=0; i<nsc; i++ ) {
 		t2=qsq->sq[sai->al[s2]-(cdf->sll.rfpt[s2]-r2)];
 		if(t2<0) continue;
 		d=cr->rr.d[j];
-	
+
 		/* Copy contact to the location-sampling pair list */
 		k=cl->rr.n;
-		cl->rr.r1[k]=r1; 
-		cl->rr.r2[k]=r2; 
+		cl->rr.r1[k]=r1;
+		cl->rr.r2[k]=r2;
 		cl->rr.d[k]=d;
 		cl->rr.e[k]=pmf->rrt[d][t1][t2];
-		cl->rr.n++; 
+		cl->rr.n++;
 	/* printf("j:%d k:%d s1:%d s2:%d r1:%d r2:%d t1:%d t2:%d d:%d e:%d\n",
 		j,k,s1,s2,r1,r2,t1,t2,d,cl->rr.e[k]); */
-		
+
 		}
-	
-	
+
+
 	/* Loop over residue-peptide contacts in the reference list */
 	for(j=0; j<cr->rp.n; j++) {
-	
-		/* Test that the contact is present in the current core */	
+
+		/* Test that the contact is present in the current core */
 		r1=cr->rp.r1[j];
 		s1=cf[r1];
 		if(s1<0) continue;
@@ -193,20 +195,20 @@ for(i=0; i<nsc; i++ ) {
 
 		/* Copy contact to the location-sampling pair list */
 		k=cl->rp.n;
-		cl->rp.r1[k]=r1; 
-		cl->rp.p2[k]=r2; 
+		cl->rp.r1[k]=r1;
+		cl->rp.p2[k]=r2;
 		cl->rp.d[k]=d;
-		cl->rp.e[k]=pmf->rrt[d][t1][ppi];  
-		cl->rp.n++; 
+		cl->rp.e[k]=pmf->rrt[d][t1][ppi];
+		cl->rp.n++;
 	/* printf("j:%d k:%d s1:%d s2:%d r1:%d r2:%d t1:%d t2:%d d:%d e:%d\n",
 		j,k,s1,s2,r1,r2,t1,ppi,d,cl->rp.e[k]); */
 		}
-		
+
 
 	/* Loop over residue-fixed contacts in the reference list */
 	for(j=0; j<cr->rf.n; j++) {
-	
-		/* Test that the contact is present in the current core */	
+
+		/* Test that the contact is present in the current core */
 		r1=cr->rf.r1[j];
 		s1=cf[r1];
 		if(s1<0) continue;
@@ -214,17 +216,17 @@ for(i=0; i<nsc; i++ ) {
 		if(t1<0) continue;
 		t2=cr->rf.t2[j];
 		d=cr->rf.d[j];
-	
+
 		/* Copy contact to the location-sampling pair list */
 		k=cl->rf.n;
-		cl->rf.r1[k]=r1; 
-		cl->rf.t2[k]=r2; 
+		cl->rf.r1[k]=r1;
+		cl->rf.t2[k]=r2;
 		cl->rf.d[k]=d;
-		cl->rf.e[k]=pmf->rrt[d][t1][t2]; 
-		cl->rf.n++; 
+		cl->rf.e[k]=pmf->rrt[d][t1][t2];
+		cl->rf.n++;
 	/* printf("j:%d k:%d s1:%d s2:%d r1:%d r2:%d t1:%d t2:%d d:%d e:%d\n",
 		j,k,s1,s2,r1,r2,t1,ppi,d,cl->rf.e[k]); */
-		} 
+		}
 	}
 
 }

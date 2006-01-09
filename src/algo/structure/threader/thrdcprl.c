@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:05  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -54,14 +57,14 @@
 /* Count and/or list largest possible sets of contact indices by segment. */
 /* The flag ct specifies whether contacts should only be counted, or whether */
 /* their indices should be stored.  The former option is used to determine */
-/* the required memory allocation. */ 
+/* the required memory allocation. */
 
 /* Organize residue-residue contacts as a list of paired indices, with an */
 /* associated distance interval.  Organize residue peptide contacts as a */
 /* similar list.  Organize residue-fixed environment contacts as a list of */
 /* indices and types. */
 
-int cprl(Fld_Mtf* mtf, Cor_Def* cdf, Rcx_Ptl* pmf, Cxl_Los** cpr, int ct) {
+/*int*/ void cprl(Fld_Mtf* mtf, Cor_Def* cdf, Rcx_Ptl* pmf, Cxl_Los** cpr, int ct) {
 /*--------------------------------------------------------*/
 /* mtf:  Contact matrices defining the folding motif      */
 /* cdf:  contains min/max segment locations               */
@@ -92,7 +95,7 @@ nfs=cdf->fll.n;
 nmt=mtf->n;
 ppi=pmf->ppi;
 
-/* 
+/*
 printf("nsc %d\n",nsc);
 printf("nfs %d\n",nfs);
 printf("nmt %d\n",nmt);
@@ -102,8 +105,8 @@ printf("ppi %d\n",ppi);
 
 /* Local storage for identifying residue positions by segment */
 
-cs=(int *)calloc(nmt,sizeof(int)); 
-fs=(int *)calloc(nmt,sizeof(int)); 
+cs=(int *)calloc(nmt,sizeof(int));
+fs=(int *)calloc(nmt,sizeof(int));
 
 
 /* Zero contact counts  */
@@ -118,7 +121,7 @@ for(i=0; i<nsc; i++) {
 
 /* Flag residue positions by core segment, at segments maximum extent */
 
-for(i=0; i<nmt; i++) cs[i]=-1;	
+for(i=0; i<nmt; i++) cs[i]=-1;
 for(i=0; i<nsc; i++) {
 	mn=cdf->sll.rfpt[i]-cdf->sll.nomx[i];
 	mx=cdf->sll.rfpt[i]+cdf->sll.comx[i];
@@ -138,25 +141,25 @@ for(i=0; i<mtf->rrc.n; i++) {
 	if(s2<0) continue;
 	d=mtf->rrc.d[i];
 	cp=cpr[s1];
-	cp->rr.n++; 
+	cp->rr.n++;
 	if(ct!=0) {	j=cp->rr.n-1;
-			cp->rr.r1[j]=r1; 
-			cp->rr.r2[j]=r2; 
-			cp->rr.d[j]=d; } 
-	
+			cp->rr.r1[j]=r1;
+			cp->rr.r2[j]=r2;
+			cp->rr.d[j]=d; }
+
 	if(s1==s2) continue;
-	
+
 	cp=cpr[s2];
-	cp->rr.n++; 
+	cp->rr.n++;
 	if(ct!=0) {	j=cp->rr.n-1;
-			cp->rr.r1[j]=r1; 
-			cp->rr.r2[j]=r2; 
+			cp->rr.r1[j]=r1;
+			cp->rr.r2[j]=r2;
 			cp->rr.d[j]=d; } }
-			
+
 /*
 for(i=0; i<nsc; i++) {
 	cp=cpr[i];
-	printf("rr:%d rp:%d rf:%d cpr[%d]\n",cp->rr.n,cp->rp.n,cp->rf.n,i); 
+	printf("rr:%d rp:%d rf:%d cpr[%d]\n",cp->rr.n,cp->rp.n,cp->rf.n,i);
 	if(ct!=0) for(j=0; j<cp->rr.n; j++) {
 		printf("%d %d %d\n",cp->rr.r1[j],cp->rr.r2[j],cp->rr.d[j]); } }
 */
@@ -172,32 +175,32 @@ for(i=0; i<mtf->rpc.n; i++) {
 	if(s2<0) continue;
 	d=mtf->rpc.d[i];
 	cp=cpr[s1];
-	cp->rp.n++; 
+	cp->rp.n++;
 	if(ct!=0) {	j=cp->rp.n-1;
-			cp->rp.r1[j]=r1; 
-			cp->rp.p2[j]=r2; 
+			cp->rp.r1[j]=r1;
+			cp->rp.p2[j]=r2;
 			cp->rp.d[j]=d; }
-	
+
 	if(s1==s2) continue;
-	
+
 	cp=cpr[s2];
-	cp->rp.n++; 
+	cp->rp.n++;
 	if(ct!=0) {	j=cp->rp.n-1;
-			cp->rp.r1[j]=r1; 
-			cp->rp.p2[j]=r2; 
+			cp->rp.r1[j]=r1;
+			cp->rp.p2[j]=r2;
 			cp->rp.d[j]=d; } }
 
-/* 
+/*
 for(i=0; i<nsc; i++) {
 	cp=cpr[i];
-	printf("rr:%d rp:%d rf:%d cpr[%d]\n",cp->rr.n,cp->rp.n,cp->rf.n,i); 
+	printf("rr:%d rp:%d rf:%d cpr[%d]\n",cp->rr.n,cp->rp.n,cp->rf.n,i);
 	if(ct!=0) for(j=0; j<cp->rp.n; j++) {
 		printf("%d %d %d\n",cp->rp.r1[j],cp->rp.p2[j],cp->rp.d[j]); } }
 */
 
 /* Flag residue positions within fixed segments */
 
-for(i=0; i<nmt; i++) fs[i]=-1;	
+for(i=0; i<nmt; i++) fs[i]=-1;
 for(i=0; i<nfs; i++) {
 	mn=cdf->fll.nt[i];
 	mx=cdf->fll.ct[i];
@@ -214,43 +217,43 @@ for(i=0; i<mtf->rrc.n; i++) {
 	r2=mtf->rrc.r2[i];
 	s2=cs[r2]; f2=fs[r2];
 	if(s2<0&&f2<0) continue;
-	
+
 	if(f1<0&&f2<0) continue;
 	if(f1>0&&f2>0) continue;
-	
+
 	if(s2>0&&f1>0) { s1=s2; r1=r2; f2=f1; }
-	
+
 	d=mtf->rrc.d[i];
 	cp=cpr[s1];
 	t2=cdf->fll.sq[f2];
 	if(t2<0) continue;
-	cp->rf.n++; 
+	cp->rf.n++;
 	if(ct!=0) {	j=cp->rf.n-1;
-			cp->rf.r1[j]=r1; 
+			cp->rf.r1[j]=r1;
 			cp->rf.t2[j]=t2;
 			cp->rf.d[j]=d; } }
-	
+
 for(i=0; i<mtf->rpc.n; i++) {
 	r1=mtf->rpc.r1[i];
-	s1=cs[r1]; 
+	s1=cs[r1];
 	if(s1<0) continue;
 	r2=mtf->rpc.p2[i];
 	f2=fs[r2];
 	if(f2<0) continue;
-	
+
 	d=mtf->rpc.d[i];
 	cp=cpr[s1];
-	cp->rf.n++; 
+	cp->rf.n++;
 	if(ct!=0) {	j=cp->rf.n-1;
-			cp->rf.r1[j]=r1; 
+			cp->rf.r1[j]=r1;
 			cp->rf.t2[j]=ppi;
 			cp->rf.d[j]=d; } }
-	
 
-/* 
+
+/*
 for(i=0; i<nsc; i++) {
 	cp=cpr[i];
-	printf("rr:%d rp:%d rf:%d cpr[%d]\n",cp->rr.n,cp->rp.n,cp->rf.n,i); 
+	printf("rr:%d rp:%d rf:%d cpr[%d]\n",cp->rr.n,cp->rp.n,cp->rf.n,i);
 	if(ct!=0) for(j=0; j<cp->rf.n; j++) {
 		printf("%d %d %d\n",cp->rf.r1[j],cp->rf.t2[j],cp->rf.d[j]); } }
 
@@ -259,7 +262,7 @@ for(i=0; i<nsc; i++) {
 /* Free local storage */
 
 free(fs);
-free(cs); 
+free(cs);
 
 }
 

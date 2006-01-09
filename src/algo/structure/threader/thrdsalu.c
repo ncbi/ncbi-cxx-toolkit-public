@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:05  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -52,7 +55,7 @@
 #include <algo/structure/threader/thrdatd.h>
 #include <algo/structure/threader/thrddecl.h>
 
-int salu(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli, int cs, int al, Cur_Aln* sai) {
+/*int*/ void salu(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli, int cs, int al, Cur_Aln* sai) {
 /*-------------------------------------------------------*/
 /* cdf:  Core segment locations and loop length limits   */
 /* qsq:  Sequence to thread with alignment contraints    */
@@ -62,19 +65,18 @@ int salu(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli, int cs, int al, Cur_Aln* sai)
 /* sai:  Contains segment alignment values to be set     */
 /*-------------------------------------------------------*/
 
-int	i,j;
 int	ci;		/* Residue index in core motif */
 int	si;		/* Residue index in query sequence */
 int	mx,mn;		/* Aligment range */
 
 
 sai->al[cs]=al;
-mn=sai->al[cs]-sli->no[cs]; 
-mx=sai->al[cs]+sli->co[cs]; 
+mn=sai->al[cs]-sli->no[cs];
+mx=sai->al[cs]+sli->co[cs];
 ci=cdf->sll.rfpt[cs]-sli->no[cs];
-for(si=mn; si<=mx; si++) { 
-	sai->sq[ci]=qsq->sq[si]; 
-	ci++; } 
+for(si=mn; si<=mx; si++) {
+	sai->sq[ci]=qsq->sq[si];
+	ci++; }
 
 /* printf("sai->nsc:%d nmt%d\n",sai->nsc,sai->nmt);
 for(i=0;i<sai->nsc;i++) printf("%d ",sai->al[i]); printf("sai->al\n");

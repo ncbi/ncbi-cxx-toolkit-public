@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -57,14 +60,14 @@
 #include <algo/structure/threader/thrddecl.h>
 
 /* Update segment pair energies as they are stored during alignment sampling. */
-/* The segment pairwise term contains the sum of the pairwise components of */ 
+/* The segment pairwise term contains the sum of the pairwise components of */
 /* the side-chain to side-chain contact potential.  The segment term contains */
 /* the sum of side-chain "profile" terms, including side-chain to side-chain */
 /* hydrophobic components, side-chain to peptide hydrophobic and pairwise */
 /* components, and side-chain to fixed-residue pairwise and hydrohobic */
 /* components. */
 
-int spea(Cor_Def* cdf, Cxl_Als** cpa, Cur_Aln* sai, Cur_Loc* sli,
+/*int*/ void spea(Cor_Def* cdf, Cxl_Als** cpa, Cur_Aln* sai, Cur_Loc* sli,
          int n, int h, Seg_Gsm* spe, Seq_Mtf* psm, Seg_Cmp* spc) {
 /*--------------------------------------------------------*/
 /* cpa:  Contacts by segment, given current location      */
@@ -79,17 +82,14 @@ int spea(Cor_Def* cdf, Cxl_Als** cpa, Cur_Aln* sai, Cur_Loc* sli,
 /*--------------------------------------------------------*/
 
 int     nsc;            /* Number of threaded segments in core definition */
-int	i,j,k;		/* Counters */
+int	i,j;		/* Counters */
 int	r1,r2;		/* Residue indices in core motif */
 int	s1,s2;		/* Segment indices in core motif */
 int	t1,t2;		/* Residue type indices */
 Cxl_Als *ca;	/* Pointer to contact list of the current segment */
 int	gs;		/* Potential profile energy sum */
 int	ms;		/* Motif energy sum */
-int	cs;		/* Conservation energies sum */
-int	ls;		/* Loopout energies sum */
-/*int	s0;*/		/* Expected motif energy sum */
-int	mn, mx;		
+int	mn, mx;
 int     nrt;            /* Number of residue types in potential */
 
 
@@ -118,15 +118,15 @@ if(h!=0) for(i=0; i<ca->rr.n; i++) {
 	if(t1<0) continue;
 	s1=sli->cr[r1];
 	r2=ca->rr.r2[i];
-	t2=sai->sq[r2]; 
+	t2=sai->sq[r2];
 	if(t2<0) continue;
 	s2=sli->cr[r2];
 	/* printf("i:%d r1:%d r2:%d s1:%d s2:%d t1:%d t2:%d\n",
 		i,r1,r2,s1,s2,t1,t2); */
-	spe->gss[s1][s2]+= ca->rr.e[i][t1][t2]; 
+	spe->gss[s1][s2]+= ca->rr.e[i][t1][t2];
 	/* printf("spe->gss[%d][%d]:%d\n",s1,s2,spe->gss[s1][s2]); */
 	}
-		
+
 
 /* Sum energies for "profile" terms */
 
@@ -134,22 +134,22 @@ if(h!=0) for(i=0; i<ca->rr.n; i++) {
 
 gs=0;
 for(i=0;i<ca->r.n;i++) {
-	t1=sai->sq[ca->r.r[i]]; 
+	t1=sai->sq[ca->r.r[i]];
 	if(t1<0) continue;
-	gs+=ca->r.e[i][sai->sq[ca->r.r[i]]]; 
+	gs+=ca->r.e[i][sai->sq[ca->r.r[i]]];
 	}
 spe->gs[n]=gs;
 
 /* for(j=0; j<nsc; j++) {
 	for(i=0; i<nsc; i++) printf("%d ",spe->gss[j][i]);
-			printf("spe->gss[%d]\n",j); } 
+			printf("spe->gss[%d]\n",j); }
 for(i=0; i<nsc; i++) printf("%d ",spe->gs[i]); printf("spe->gs\n"); */
 
 /* Sum motif energies */
 
 ms=0; /*s0=0;*/
 	mn=cdf->sll.rfpt[n]-sli->no[n];
-	mx=cdf->sll.rfpt[n]+sli->co[n]; 
+	mx=cdf->sll.rfpt[n]+sli->co[n];
 
 /*printf("\nAligned segment number:");printf("%d\n",n);
 printf("sll.rfpt[n],cdf->sll.nomn[n],cdf->sll.comn[n]:");

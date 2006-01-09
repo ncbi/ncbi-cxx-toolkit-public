@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -53,7 +56,7 @@
 /* Initialize thread table, a linked list containing the minimum energy */
 /* threads found in sampling */
 
-int ttb0(Thd_Tbl* ttb) {
+/*int*/ void ttb0(Thd_Tbl* ttb) {
 /*---------------------------------------------------------*/
 /* ttb:  Tables to hold Results of Gibbs sampled threading */
 /*---------------------------------------------------------*/
@@ -65,8 +68,8 @@ n=ttb->n-1;
 
 /* Set thread frequencies to zero and initialize linked list. */
 ttb->tf[0]=0; ttb->ts[0]=0; ttb->nx[0]=1; ttb->tg[0]=BIGNEG;
-for(i=1; i<n; i++) { 
-	ttb->tf[i]=0; ttb->ts[i]=0; ttb->tg[i]=BIGNEG; 
+for(i=1; i<n; i++) {
+	ttb->tf[i]=0; ttb->ts[i]=0; ttb->tg[i]=BIGNEG;
 	ttb->ps[i]=BIGNEG; ttb->ms[i]=BIGNEG;
 	ttb->cs[i]=BIGNEG; ttb->lps[i]=BIGNEG;
 	/*ttb->g0[i]=BIGNEG; ttb->zsc[i]=0.0;*/

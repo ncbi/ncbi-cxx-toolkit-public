@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/01/09 12:52:44  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.2  2005/10/31 21:57:16  thiessen
 * MSVC fix
 *
@@ -100,11 +103,11 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
         Gib_Scd* gsp, Thd_Tbl* ttb, Seq_Mtf* psm, float* trg, int zscs,
         double ScalingFactor, float PSSM_Weight);
 
-int cprl(Fld_Mtf* mtf, Cor_Def* cdf, Rcx_Ptl* pmf, Cxl_Los** cpr, int ct);
+/*int*/ void cprl(Fld_Mtf* mtf, Cor_Def* cdf, Rcx_Ptl* pmf, Cxl_Los** cpr, int ct);
 
-int ttb0(Thd_Tbl* ttb);
+/*int*/ void ttb0(Thd_Tbl* ttb);
 
-int sgoi(int is, int it, Rnd_Smp* pvl, Seg_Ord* sgo);
+/*int*/ void sgoi(int is, int it, Rnd_Smp* pvl, Seg_Ord* sgo);
 
 int slo0(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli,
          int cs, int ct, int* mn, int* mx);
@@ -118,28 +121,28 @@ int sal0(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli, Cur_Aln* sai,
 int spci(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli, Cur_Aln* sai,
          int n, Seg_Cmp* spc);
 
-int spni(Cxl_Los** cpl, Cur_Loc* sli, int n, Seg_Nsm* spn);
+/*int*/ void spni(Cxl_Los** cpl, Cur_Loc* sli, int n, Seg_Nsm* spn);
 
-int cxei(Seg_Nsm* spn, Seg_Cmp* spc, Rcx_Ptl* pmf, Cur_Loc* sli, Seq_Mtf* psm, Cor_Def* cdf, Thd_Cxe* cxe);
+/*int*/ void cxei(Seg_Nsm* spn, Seg_Cmp* spc, Rcx_Ptl* pmf, Cur_Loc* sli, Seq_Mtf* psm, Cor_Def* cdf, Thd_Cxe* cxe);
 
-int cpll(Cor_Def* cdf, Rcx_Ptl* pmf, Qry_Seq* qsq, Cxl_Los** cpr,
+/*int*/ void cpll(Cor_Def* cdf, Rcx_Ptl* pmf, Qry_Seq* qsq, Cxl_Los** cpr,
          Cur_Aln* sai, Cxl_Los** cpl);
 
-int spel(Cxl_Los** cpl, Cur_Aln* sai, Cur_Loc* sli, int cs, Seg_Gsm* spe,
+/*int*/ void spel(Cxl_Los** cpl, Cur_Aln* sai, Cur_Loc* sli, int cs, Seg_Gsm* spe,
          Cor_Def* cdf, Seq_Mtf* psm, Seg_Cmp* spc);
 
 int ttbi(Cur_Aln* sai, Cur_Loc* sli, Thd_Gsm* tdg, Thd_Tbl* ttb,
          int nrs, int o);
 
-int cpal(Rcx_Ptl* pmf, Cxl_Los** cpr, Cur_Loc* sli, Cxl_Als** cpa);
+/*int*/ void cpal(Rcx_Ptl* pmf, Cxl_Los** cpr, Cur_Loc* sli, Cxl_Als** cpa);
 
-int spea(Cor_Def* cdf, Cxl_Als** cpa, Cur_Aln* sai, Cur_Loc* sli,
+/*int*/ void spea(Cor_Def* cdf, Cxl_Als** cpa, Cur_Aln* sai, Cur_Loc* sli,
          int n, int h, Seg_Gsm* spe, Seq_Mtf* psm, Seg_Cmp* spc);
 
 int salr(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli, Cur_Aln* sai,
          int cs, int* mn, int* mx);
 
-int salu(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli,
+/*int*/ void salu(Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli,
          int cs, int al, Cur_Aln* sai);
 
 int algs(Rnd_Smp* pvl, int tm);
@@ -147,10 +150,10 @@ int algs(Rnd_Smp* pvl, int tm);
 int slor(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli, Cur_Aln* sai,
          int cs, int ct, int* mn, int*mx);
 
-int slou(Fld_Mtf* mtf, Cor_Def* cdf, int cs, int ct, int of, Cur_Loc* sli,
+/*int*/ void slou(Fld_Mtf* mtf, Cor_Def* cdf, int cs, int ct, int of, Cur_Loc* sli,
 	Cur_Aln* sai, Qry_Seq* qsq);
 
-float bwfi(Thd_Tbl* ttb, Gib_Scd* gsp, Thd_Tst* tts);
+/*float*/ void bwfi(Thd_Tbl* ttb, Gib_Scd* gsp, Thd_Tst* tts);
 
 void zsc(Thd_Tbl* ttb, Seq_Mtf* psm, Qry_Seq* qsq, Cxl_Los** cpr,
           Cor_Def* cdf, Rcx_Ptl* pmf, Seg_Gsm* spe, Cur_Aln* sai, Rnd_Smp* pvl,

@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:05  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -54,7 +57,7 @@
 #include <algo/structure/threader/thrddecl.h>
 #include <math.h>
 
-float bwfi(Thd_Tbl* ttb, Gib_Scd* gsp, Thd_Tst* tts) {
+/*float*/ void bwfi(Thd_Tbl* ttb, Gib_Scd* gsp, Thd_Tst* tts) {
 /*---------------------------------------------------------*/
 /* ttb:   Table holding results of Gibbs sampled threading */
 /* gsp:   Various control parameters for Gibb's sampling   */
@@ -63,7 +66,7 @@ float bwfi(Thd_Tbl* ttb, Gib_Scd* gsp, Thd_Tst* tts) {
 
 int	i;		/* Counter */
 int	ct;		/* Index of current thread in list traversal */
-int	nz;		/* Number of threads with non-zero Boltzmann weight */ 
+int	nz;		/* Number of threads with non-zero Boltzmann weight */
 int	nt;		/* Number of threads within specified ensemble cutoff */
 float	tm;		/* Temperature for calculation of Boltzmann weight */
 float	gm;		/* Minimum energy value for scaling of exponents */
@@ -80,7 +83,7 @@ gm=ttb->tg[ttb->mx]; tm=(float)gsp->cet;
 sb=0.; ct=ttb->mx; for(i=0; i<ttb->n; i++) {
 	if(ttb->tf[ct]==0) {nz=i; break;}
 	g=ttb->tg[ct]-gm;
-	b=(float) exp(g/tm); 
+	b=(float) exp(g/tm);
 	tts->bw[ct]=b;
 	sb+=b;
 	/* printf("gm:%.2f sb:%.5f i:%d ct:%d g:%.2f b:%.5f\n",
@@ -104,11 +107,11 @@ cw=0.; ct=ttb->mx; for(i=0; i<=nz; i++) {
 tts->ts=-1; tts->tf=-1;
 ct=ttb->mx; for(i=0; i<=nt; i++) {
 	if(ttb->ts[ct]>tts->ts) {
-		tts->ts=ttb->ts[ct]; 
+		tts->ts=ttb->ts[ct];
 		tts->tf=ttb->tf[ct]; }
-	else if(ttb->ts[ct]==tts->ts && ttb->tf[ct]>tts->tf) 
+	else if(ttb->ts[ct]==tts->ts && ttb->tf[ct]>tts->tf)
 		tts->tf=ttb->tf[ct];
-		/* printf("ensi:%d ct:%d dgi:%.1f bfi:%.4f tsi:%d ts:%d 
+		/* printf("ensi:%d ct:%d dgi:%.1f bfi:%.4f tsi:%d ts:%d
 			tfi: %d tf:%d\n",
 			i,ct,ttb->tg[ct],tts->bw[ct],ttb->ts[ct],tts->ts,
 			ttb->tf[ct],tts->tf); */

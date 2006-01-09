@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -55,7 +58,7 @@
 #include <algo/structure/threader/thrdatd.h>
 #include <algo/structure/threader/thrddecl.h>
 
-int slou(Fld_Mtf* mtf, Cor_Def* cdf, int cs, int ct, int of, Cur_Loc* sli,
+/*int*/ void slou(Fld_Mtf* mtf, Cor_Def* cdf, int cs, int ct, int of, Cur_Loc* sli,
     Cur_Aln* sai, Qry_Seq* qsq) {
 /*--------------------------------------------------------*/
 /* mtf:  Contact matrices defining the folding motif      */
@@ -86,20 +89,20 @@ for(i=mn; i<=mx; i++) sli->cr[i]=-1;
 
 /* Record new element range based on updated n- or c-terminal extent */
 switch(ct) {
-	
-	case 0: { 	sli->no[cs]=of; 
-			mn=rf-of; 
-			ns=cs-1; if(ns>=0) { 	
+
+	case 0: { 	sli->no[cs]=of;
+			mn=rf-of;
+			ns=cs-1; if(ns>=0) {
 				nt=cdf->sll.rfpt[ns]+sli->co[ns];
 				sli->lp[cs]=mtf->mll[nt][mn]; }
 			break; }
-	
-	case 1: { 	sli->co[cs]=of; 
-			mx=rf+of; 
-			ns=cs+1; if(ns<nsc) {	
+
+	case 1: { 	sli->co[cs]=of;
+			mx=rf+of;
+			ns=cs+1; if(ns<nsc) {
 				nt=cdf->sll.rfpt[ns]-sli->no[ns];
 				sli->lp[cs+1]=mtf->mll[mx][nt]; }
-			break; } 
+			break; }
 		}
 
 

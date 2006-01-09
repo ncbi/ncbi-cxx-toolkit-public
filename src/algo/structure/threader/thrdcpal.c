@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:05  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -56,7 +59,7 @@
 /* side-chain contacts, side-chain to peptide and side-chain to fixed-residue */
 /* energies for each residue of a segment, for each possible residue type. */
 /* This segment "profile" is used to compute the linear component of */
-/* alternative-alignment energies, given the current core definition. */  
+/* alternative-alignment energies, given the current core definition. */
 
 /* Note that the profile terms include the hydrophobic component energy for */
 /* contacts involving a fixed group, either peptide or fixed-type side chain. */
@@ -65,7 +68,7 @@
 /* that the same reference state sum may be used for core segment aligment */
 /* location sampling. */
 
-int cpal(Rcx_Ptl* pmf, Cxl_Los** cpr, Cur_Loc* sli, Cxl_Als** cpa) {
+/*int*/ void cpal(Rcx_Ptl* pmf, Cxl_Los** cpr, Cur_Loc* sli, Cxl_Als** cpa) {
 /*-------------------------------------------------------*/
 /* pmf:  Potential of mean force as a 3-d lookup table   */
 /* cpr:  Contacts by segment, largest possible set       */
@@ -110,23 +113,23 @@ for(i=0; i<nmt; i++) if(sli->cr[i]>=0) {
 	ca=cpa[sli->cr[i]];
 	n=ca->r.n;
 	ca->r.r[n]=i;
-	ert=ca->r.e[n]; for(j=0; j<nrt; j++) ert[j]=0; 
-	ca->r.n++; 
+	ert=ca->r.e[n]; for(j=0; j<nrt; j++) ert[j]=0;
+	ca->r.n++;
 	/* printf("position i:%d segment:%d count:%d\n",i, sli->cr[i],n);
 	for(j=0; j<nrt; j++) printf("%d ",ert[j]); printf("ca->r.e[%d]\n",n); */
 	}
 
 
 /* Loop over core segments */
-for(i=0; i<nsc; i++) { 
-	ca=cpa[i]; 
-	cr=cpr[i]; 
+for(i=0; i<nsc; i++) {
+	ca=cpa[i];
+	cr=cpr[i];
 	/* printf("segment list:%d\n",i); */
 
 	/* Loop over residue-residue contacts in the reference list */
 	for(j=0; j<cr->rr.n; j++) {
 
-		/* Test that contact is present in the current core */ 
+		/* Test that contact is present in the current core */
 		r1=cr->rr.r1[j];
 		s1=sli->cr[r1];
 		if(s1<0) continue;
@@ -134,40 +137,40 @@ for(i=0; i<nsc; i++) {
 		s2=sli->cr[r2];
 		if(s2<0) continue;
 		d=cr->rr.d[j];
-	
+
 		/* Copy pairwise contact energy pointer to the pair list */
 		k=ca->rr.n;
-		ca->rr.r1[k]=r1; 
-		ca->rr.r2[k]=r2; 
-		ca->rr.e[k]=pmf->rre[d]; 
-		ca->rr.n++; 
+		ca->rr.r1[k]=r1;
+		ca->rr.r2[k]=r2;
+		ca->rr.e[k]=pmf->rre[d];
+		ca->rr.n++;
 		/* printf("rr pair:%d r1:%d s1:%d r2:%d s2:%d d:%d\n",
 			j,r1,s1,r2,s2,d); */
-	
-		/* Add hydrophobic contact energy to the segment profile */	
+
+		/* Add hydrophobic contact energy to the segment profile */
 		prt=pmf->re[d];
 		for(k=0;k<ca->r.n;k++) {
 			if(ca->r.r[k]==r1) {
 				ert=ca->r.e[k];
-				for(l=0;l<nrt;l++) ert[l]+=prt[l]; 
-				/* for(l=0; l<nrt; l++) printf("%d ",ert[l]); 
+				for(l=0;l<nrt;l++) ert[l]+=prt[l];
+				/* for(l=0; l<nrt; l++) printf("%d ",ert[l]);
 				printf("ca->r.e[%d]\n",k); */
 				}
 			if(ca->r.r[k]==r2) {
 				ert=ca->r.e[k];
-				for(l=0;l<nrt;l++) ert[l]+=prt[l]; 
-				/* for(l=0; l<nrt; l++) printf("%d ",ert[l]); 
+				for(l=0;l<nrt;l++) ert[l]+=prt[l];
+				/* for(l=0; l<nrt; l++) printf("%d ",ert[l]);
 				printf("ca->r.e[%d]\n",k); */
-				} 
-			} 
-		} 
-		
+				}
+			}
+		}
 
-		
+
+
 	/* Loop over residue-peptide contacts in the reference list */
 	for(j=0; j<cr->rp.n; j++) {
-	
-		/* Test that the contact is present in the current core */	
+
+		/* Test that the contact is present in the current core */
 		r1=cr->rp.r1[j];
 		s1=sli->cr[r1];
 		if(s1<0) continue;
@@ -175,23 +178,23 @@ for(i=0; i<nsc; i++) {
 		s2=sli->cr[r2];
 		if(s2<0) continue;
 		d=cr->rp.d[j];
-		/* printf("rp pair:%d r1:%d s1:%d r2:%d s2:%d d:%d\n", 
+		/* printf("rp pair:%d r1:%d s1:%d r2:%d s2:%d d:%d\n",
 			j,r1,s1,r2,s2,d); */
 
-		/* Add total peptide contact energy to the segment profile */	
+		/* Add total peptide contact energy to the segment profile */
 		for(k=0;k<ca->r.n;k++) if(ca->r.r[k]==r1) {
 				ert=ca->r.e[k];
 				prt=pmf->rrt[d][ppi];
-				for(l=0;l<nrt;l++) ert[l]+=prt[l]; 
-				/* for(l=0; l<nrt; l++) printf("%d ",ert[l]); 
+				for(l=0;l<nrt;l++) ert[l]+=prt[l];
+				/* for(l=0; l<nrt; l++) printf("%d ",ert[l]);
 				printf("ca->r.e[%d]\n",k); */
 				} }
 
 
 	/* Loop over residue-fixed contacts in the reference list */
 	for(j=0; j<cr->rf.n; j++) {
-	
-		/* Test that the contact is present in the current core */	
+
+		/* Test that the contact is present in the current core */
 		r1=cr->rf.r1[j];
 		s1=sli->cr[r1];
 		if(s1<0) continue;
@@ -199,16 +202,16 @@ for(i=0; i<nsc; i++) {
 		d=cr->rf.d[j];
 		/* printf("rp pair:%d r1:%d s1:%d t2:%d d:%d\n",
 			j,r1,s1,t2,d); */
-	
-		/* Add fixed contact energy to the segment profile */	
+
+		/* Add fixed contact energy to the segment profile */
 		for(k=0;k<ca->r.n;k++) if(ca->r.r[k]==r1) {
 			ert=ca->r.e[k];
 			prt=pmf->rrt[d][t2];
-			for(l=0;l<nrt;l++) ert[l]+=prt[l]; 
-			/* for(l=0; l<nrt; l++) printf("%d ",ert[l]); 
+			for(l=0;l<nrt;l++) ert[l]+=prt[l];
+			/* for(l=0; l<nrt; l++) printf("%d ",ert[l]);
 			printf("ca->r.e[%d]\n",k); */
-			} } 
-			
+			} }
+
 	}
 }
 

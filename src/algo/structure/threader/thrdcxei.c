@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:05  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -67,7 +70,7 @@
 /* side-chain to fixed-residue contacts are stored in cxe.  Pairwise and */
 /* hydrophobic components of the potential are included in the sums. */
 
-int cxei(Seg_Nsm* spn, Seg_Cmp* spc, Rcx_Ptl* pmf, Cur_Loc* sli, Seq_Mtf* psm, Cor_Def* cdf, Thd_Cxe* cxe) {
+/*int*/ void cxei(Seg_Nsm* spn, Seg_Cmp* spc, Rcx_Ptl* pmf, Cur_Loc* sli, Seq_Mtf* psm, Cor_Def* cdf, Thd_Cxe* cxe) {
 /*--------------------------------------------------------*/
 /* spn:  Partial sums of contact counts by segment pair   */
 /* spc:  Residue type composition of current threaded seq */
@@ -89,11 +92,9 @@ int	*pmr;		/* Pointer to a residue-row of the potential */
 int     *fnd;           /* Fixed contact counts for a distance interval */
 int     fnr;            /* Fixed contact counts for a residue type */
 int     nsc;            /* Number of threaded segments in core definition */
-int     s0, ss0;
-int     mn, mx, mn1, mx1;
-int     t1;
+int     s0;
+int     mn, mx;
 int     ntot, ms;
-int     mnq, mxq;
 
 nrt=cxe->nrt;
 ndi=cxe->ndi;
@@ -138,13 +139,13 @@ for(i=0; i<nrt; i++) {
 /* Compute expected residue-peptide contact energy by distance interval. */
 
 for(i=0; i<ndi; i++) {
-	if(spn->srp[i]==0) { 
-		cxe->rpe[i]=0.; 
+	if(spn->srp[i]==0) {
+		cxe->rpe[i]=0.;
 		continue; }
 	fsm=0.;
 	pmr=pmf->rrt[i][ppi];
-	for(j=0;j<nrt;j++) fsm+=((float)pmr[j])*cxe->rp[j]; 
-	cxe->rpe[i]=fsm; 
+	for(j=0;j<nrt;j++) fsm+=((float)pmr[j])*cxe->rp[j];
+	cxe->rpe[i]=fsm;
 	}
 /* for(i=0; i<ndi; i++) printf("%.2f ",cxe->rpe[i]); printf("cxe->rpe\n"); */
 
@@ -152,8 +153,8 @@ for(i=0; i<ndi; i++) {
 /* Compute expected residue-residue contact energy by distance interval. */
 
 for(i=0; i<ndi; i++) {
-	if(spn->srr[i]==0) { 
-		cxe->rre[i]=0.; 
+	if(spn->srr[i]==0) {
+		cxe->rre[i]=0.;
 		continue; }
 	fsm=0;
 	pmd=pmf->rrt[i];
@@ -168,18 +169,18 @@ for(i=0; i<ndi; i++) {
 /* Compute expected residue-fixed energy */
 
 for(i=0; i<ndi; i++) {
-	if(spn->srf[i]==0) { 
-		cxe->rfe[i]=0.; 
+	if(spn->srf[i]==0) {
+		cxe->rfe[i]=0.;
 		continue; }
-	fsm=0.; 
-	fnd=spn->frf[i];	
+	fsm=0.;
+	fnd=spn->frf[i];
 	pmd=pmf->rrt[i];
 	for(j=0; j<nrt; j++) {
-		fnr=fnd[j];		
+		fnr=fnd[j];
 		if(fnr==0) continue;
-		pmr=pmd[j];	
+		pmr=pmd[j];
 		for(k=0; k<nrt; k++) fsm+=((float)(fnr*pmr[k]))*cxe->rp[k]; }
-	cxe->rfe[i]=fsm/(float)spn->srf[i]; } 
+	cxe->rfe[i]=fsm/(float)spn->srf[i]; }
 /* for(i=0; i<ndi; i++) printf("%.4f ",cxe->rfe[i]); printf("cxe->rfe\n"); */
 
 /* Compute expected energy for template sequence motif and profile-profile term */
@@ -202,7 +203,7 @@ for(i=0;i<nsc;i++){
 ntot=0;
 for(i=0;i<(nrt-1);i++)ntot+=spc->rt[i];
 
-psm->ww0=s0/ntot;
+psm->ww0=((float)s0)/ntot;
 
 }
 

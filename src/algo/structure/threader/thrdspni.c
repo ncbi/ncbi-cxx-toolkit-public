@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -53,7 +56,7 @@
 /* Sum contact counts for the n-th core segment. Use these sums to recompute */
 /* total contact counts. */
 
-int spni(Cxl_Los** cpl, Cur_Loc* sli, int n, Seg_Nsm* spn) {
+/*int*/ void spni(Cxl_Los** cpl, Cur_Loc* sli, int n, Seg_Nsm* spn) {
 /*-------------------------------------------------------*/
 /* cpl:  Contacts by segment, given current alignment    */
 /* sli:  Current locations of core segments in the motif */
@@ -65,7 +68,6 @@ int	nsc;		/* Number of core segments */
 int	ndi;		/* Number of distance intervals */
 int	nrt;		/* Number of residue types in potential */
 int	i,j,k;		/* Counters */
-int	r1,r2;		/* Residue indices */
 int	s1,s2;		/* Core segment indices */
 int	t2;		/* Residue type index */
 Cxl_Los *cl;	/* Pointer to contact list for current segment */
@@ -82,27 +84,27 @@ ndi=spn->ndi;
 
 /* Set pointer to contact list of current segment */
 
-cl=cpl[n]; 
+cl=cpl[n];
 
 /* printf("n:%d\n",n);
 printf("rr:%d rp:%d rf:%d cpl[%d]\n",cl->rr.n,cl->rp.n,cl->rf.n,n); */
 
 /* printf("rr:\n");
 for(j=0; j<cl->rr.n; j++) {
-	printf("%d %d %d\n",cl->rr.r1[j],cl->rr.r2[j],cl->rr.d[j]); } 
+	printf("%d %d %d\n",cl->rr.r1[j],cl->rr.r2[j],cl->rr.d[j]); }
 printf("rp:\n");
 for(j=0; j<cl->rp.n; j++) {
-	printf("%d %d %d\n",cl->rp.r1[j],cl->rp.p2[j],cl->rp.d[j]); } 
+	printf("%d %d %d\n",cl->rp.r1[j],cl->rp.p2[j],cl->rp.d[j]); }
 printf("rf:\n");
 for(j=0; j<cl->rf.n; j++) {
-	printf("%d %d %d\n",cl->rf.r1[j],cl->rf.t2[j],cl->rf.d[j]); } 
+	printf("%d %d %d\n",cl->rf.r1[j],cl->rf.t2[j],cl->rf.d[j]); }
 for(i=0;i<sli->nmt;i++) printf("%d ",sli->cr[i]); printf("sli->cr\n"); */
 
 /* Zero residue-residue contact counts */
 
 for(i=0;i<ndi;i++) {
-	nni=spn->nrr[i]; 
-	for(j=0; j<nsc; j++) { nni[n][j]=0; nni[j][n]=0; } } 
+	nni=spn->nrr[i];
+	for(j=0; j<nsc; j++) { nni[n][j]=0; nni[j][n]=0; } }
 
 
 /* printf("rr before %d:\n",n); for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) {
@@ -110,10 +112,10 @@ for(i=0;i<ndi;i++) {
 	printf("spn->nrr[%d][%d]\n",k,j); } */
 
 /* Loop over residue-residue contacts in the reference list */
-	
+
 for(i=0; i<cl->rr.n; i++) {
 
-	/* Increment counts if contact is within the current core */ 
+	/* Increment counts if contact is within the current core */
 	s1=sli->cr[cl->rr.r1[i]];
 	/* printf("i:%d s1:%d\n",i,s1); */
 	if(s1<0) continue;
@@ -124,7 +126,7 @@ for(i=0; i<cl->rr.n; i++) {
 	/* printf("spn->nrr[%d][%d][%d]:%d\n",cl->rr.d[i],s1,s2,
 		spn->nrr[cl->rr.d[i]][s1][s2]); */
 	}
-		
+
 /* for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) {
 	for(i=0; i<nsc; i++) printf("%d ",spn->nrr[k][j][i]);
 	printf("spn->nrr[%d][%d]\n",k,j); } */
@@ -141,17 +143,17 @@ for(i=0;i<ndi;i++) {
 	printf("spn->nrp[%d][%d]\n",k,j); } */
 
 /* Loop over residue-peptide contacts in the reference list */
-	
+
 for(i=0; i<cl->rp.n; i++) {
 
-	/* Increment counts if contact is within the current core */ 
+	/* Increment counts if contact is within the current core */
 	s1=sli->cr[cl->rp.r1[i]];
 	/* printf("i:%d s1:%d\n",i,s1); */
 	if(s1<0) continue;
 	s2=sli->cr[cl->rp.p2[i]];
 	/* printf("s2:%d\n",s2);  */
 	if(s2<0) continue;
-	spn->nrp[cl->rp.d[i]][s1][s2]++; 
+	spn->nrp[cl->rp.d[i]][s1][s2]++;
 	/* printf("spn->nrp[%d][%d][%d]:%d\n",cl->rp.d[i],s1,s2,
 		spn->nrp[cl->rp.d[i]][s1][s2]);  */
 	}
@@ -199,7 +201,7 @@ for(i=0;i<ndi;i++) {
 
 for(i=0; i<cl->rf.n; i++) {
 
-	/* Increment counts if contact is within the current core */ 
+	/* Increment counts if contact is within the current core */
 	s1=sli->cr[cl->rf.r1[i]];
 	if(s1<0) continue;
 	t2=cl->rf.t2[i];
@@ -229,10 +231,10 @@ for(i=0;i<ndi;i++) {
 
 
 spn->trf=0; for(i=0; i<ndi; i++) {
-	nsi=spn->frf[i]; 
+	nsi=spn->frf[i];
 	rn=0; for(j=0; j<nrt; j++) rn+=nsi[j];
-	spn->srf[i]=rn;	
-	spn->trf+=rn; } 
+	spn->srf[i]=rn;
+	spn->trf+=rn; }
 
 /* for(k=0; k<ndi; k++) printf("%d ",spn->srf[k]); printf("spn->srf\n");  */
 

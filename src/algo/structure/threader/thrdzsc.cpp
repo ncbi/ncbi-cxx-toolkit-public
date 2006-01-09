@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.2  2005/10/31 21:57:32  thiessen
 * MSVC fix
 *
@@ -56,6 +59,10 @@
 *
 * ==========================================================================
 */
+
+#ifdef _MSC_VER
+#pragma warning(disable:4244)   // disable double->float warning in MSVC
+#endif
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
@@ -95,8 +102,7 @@ void zsc(Thd_Tbl* ttb, Seq_Mtf* psm, Qry_Seq* qsq, Cxl_Los** cpr, Cor_Def* cdf,
 /*---------------------------------------------------------*/
 
 int	i,j,k,nmt,
-	kk,itr,ii,jj;	/* Counters */
-int	temp;	        /* Random index of the query sequence */
+	itr,ii,jj;	/* Counters */
 int	i_max;		/* Index of the top hit */
 int	ntr;		/* Number of positions to be shuffled */
 int	nsc;		/* Number of core segments */
@@ -111,19 +117,19 @@ int     t1,t2;          /* Motif residue types */
 int     r1,r2;          /* Motif residue positions */
 int     s1,s2;          /* Core segment indices */
 int     d;              /* Distance interval */
-int	ps,ms,cs,
+int	ms,cs,
 	ls; 		/* Energy terms */
 float	avg,avg2,
 	avgm,avgp,
 	avgm2,avgp2;    /* Averages */
 int	nl,ot;
 float	disp,dispm,dispp;/* Square root of variance */
-float	tg,tgp,tgm,zsc;	        /* Energy of shuffled sequence */
+float	tg,tgp,tgm;	        /* Energy of shuffled sequence */
 float   tg_max;		/* Energy of a given thread */
 int	*gi;
 int     *lsg,*aqi,
 	*r,*o,*sq;
-int	g,gs;
+int	g;
 
 Cxl_Los *cr;    /* Pointer to segment reference contact lists */
 

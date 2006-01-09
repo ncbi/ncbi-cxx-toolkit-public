@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -62,7 +65,7 @@
 /* of side-chain to peptide contact potential.  The "profile" term contains */
 /* only the sum of side-chain to fixed-residue contact potential. */
 
-int spel(Cxl_Los** cpl, Cur_Aln* sai, Cur_Loc* sli, int cs, Seg_Gsm* spe,
+/*int*/ void spel(Cxl_Los** cpl, Cur_Aln* sai, Cur_Loc* sli, int cs, Seg_Gsm* spe,
          Cor_Def* cdf, Seq_Mtf* psm, Seg_Cmp* spc) {
 /*--------------------------------------------------------*/
 /* cpl:  Contacts by segment, given current location      */
@@ -76,8 +79,7 @@ int spel(Cxl_Los** cpl, Cur_Aln* sai, Cur_Loc* sli, int cs, Seg_Gsm* spe,
 /*--------------------------------------------------------*/
 
 int	nsc;		/* Number of core segments */
-int	i,j,k;		/* Counters */
-int	r1,r2;		/* Residue indices in core motif */
+int	i,j;		/* Counters */
 int	s1,s2;		/* Segment indices */
 Cxl_Los *cl;	/* Pointer to contact list of the current segment */
 int	gs;		/* Profile energy sum */
@@ -126,7 +128,7 @@ for(i=0; i<cl->rr.n; i++) {
 /* for(j=0; j<nsc; j++) {
 	for(i=0; i<nsc; i++) printf("%d ",spe->gss[j][i]);
 		printf("spe->gss[%d]\n",j); } */
-		
+
 
 
 /* Sum potential for residue-peptide contacts */
@@ -141,7 +143,7 @@ for(i=0; i<cl->rp.n; i++) {
 /* for(j=0; j<nsc; j++) {
 	for(i=0; i<nsc; i++) printf("%d ",spe->gss[j][i]);
 		printf("spe->gss[%d]\n",j); } */
-		
+
 
 /* Sum energies for "profile" terms */
 
@@ -166,7 +168,7 @@ ms=0; s0=0;
 		t1=sai->sq[j];
 		if(t1<0) continue;
 		ms+=psm->ww[j][t1];
-	
+
 /*		for(k=0;k<psm->AlphabetSize;k++){
 		s0+=psm->ww[j][k]*spc->rt[k]; }*/
 

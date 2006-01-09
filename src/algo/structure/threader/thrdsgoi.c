@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:06  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -55,7 +58,7 @@
 #include <algo/structure/threader/thrdatd.h>
 #include <algo/structure/threader/thrddecl.h>
 
-int sgoi(int is, int it, Rnd_Smp* pvl, Seg_Ord* sgo) {
+/*int*/ void sgoi(int is, int it, Rnd_Smp* pvl, Seg_Ord* sgo) {
 /*----------------------------------------------------*/
 /* is:   Code to determine order of segment sampling  */
 /* it:   Code to determine order of terminus sampling */
@@ -63,11 +66,11 @@ int sgoi(int is, int it, Rnd_Smp* pvl, Seg_Ord* sgo) {
 /* sgo:  Segment samping order                        */
 /*----------------------------------------------------*/
 
-int	nsc;		/* Number of threaded core segments */	
+int	nsc;		/* Number of threaded core segments */
 int	i,j,k;		/* Counters */
-int	*si;		/* Segment index by order of sampling */ 
-int	*so;		/* Flags segments already assigned an order */ 
-int	*to;		/* Order of terminus sampling, 0=Nterm, 1=Cterm. */ 
+int	*si;		/* Segment index by order of sampling */
+int	*so;		/* Flags segments already assigned an order */
+int	*to;		/* Order of terminus sampling, 0=Nterm, 1=Cterm. */
 float	pv;		/* P value */
 
 
@@ -83,23 +86,23 @@ to=sgo->to;
 /* Determine the order of core segment alignment */
 /* printf("is:%d\n",is); */
 switch(is) {
-	
+
 	default: {	/* Order randomly */
 		/* printf("segment order by default random method\n"); */
-		pvl->n=nsc;		
+		pvl->n=nsc;
 		for(i=0; i<nsc; i++) {
-			pv=1./(nsc-i);
-			for(j=0; j<nsc; j++) { 
+			pv= 1.0f /(nsc-i);
+			for(j=0; j<nsc; j++) {
 				if(so[j]==1) pvl->p[j]=pv;
 				else pvl->p[j]=0.; }
-			k=rsmp(pvl); so[k]=0; si[i]=k; } 
-			break; } 
+			k=rsmp(pvl); so[k]=0; si[i]=k; }
+			break; }
 
 	case 1: {	/* Order by occurrence in the core definition */
 
 		/* printf("segment order by occurrence, case 1\n"); */
-		for(i=0; i<nsc; i++)  si[i]=i;  break; } 
-		
+		for(i=0; i<nsc; i++)  si[i]=i;  break; }
+
 		}
 
 
@@ -120,7 +123,7 @@ switch(it) {
 	case 2: {	/* C-terminus first */
 		/* printf("segment order c-terminus first, case 2\n"); */
 		for(i=0; i<nsc; i++) to[i]=1; break; }
-		
+
 		}
 
 }

@@ -36,6 +36,9 @@
 * Modifications:
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/09 12:52:38  thiessen
+* tweaks to preclude MSVC warnings, mainly making void returns and removing unused vars
+*
 * Revision 1.1  2005/10/31 21:26:05  thiessen
 * check in threader to C++ toolkit, with no C toolkit dependencies
 *
@@ -108,7 +111,10 @@
 * ==========================================================================
 */
 
-
+#ifdef _MSC_VER
+#pragma warning(disable:4244)   // disable double->float warning in MSVC
+#pragma warning(disable:4018)   // disable signed/unsigned mismatch warning in MSVC
+#endif
 
 /*----------------------------------------------------------------------------*/
 /* atd - adaptive threading of protein sequence through folding motif         */
@@ -155,7 +161,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
   Cur_Aln *sai;	/* Current alignment of query sequence with core      */
   Seg_Nsm *spn;	/* Partial sums of contact counts by segment pair     */
   Seg_Cmp *spc;	/* Partial sums of residue counts by segment pair     */
-  Thd_Cxe *cxe;	/* Expected energy of a contact in current thread     */	
+  Thd_Cxe *cxe;	/* Expected energy of a contact in current thread     */
   Seg_Gsm *spe;	/* Partial sums of contact energies by segment pair   */
   Thd_Gsm *tdg;	/* Total energies for the current threaded sequence   */
   Cxl_Los **cpr;	/* Contacts by segment, largest possible set          */
@@ -168,7 +174,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
 /*----------------------------------------------------------------------------*/
 /* Parameters from argument data structures                                   */
 /*----------------------------------------------------------------------------*/
- int	nsc; 		/* Number of threaded segments in core definition     */	
+ int	nsc; 		/* Number of threaded segments in core definition     */
  int	nmt;		/* Number of residue positions in the folding motif   */
  int	nlp;		/* Number of loops, including n- and c-terminal tails */
  int	nrr;		/* Number of residue-residue contacts in motif        */
@@ -181,7 +187,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
 /*----------------------------------------------------------------------------*/
  int	nrs;		/* Number of random starts for Gibb's sampling        */
  int	nts;		/* Number of temperature steps                        */
- int	nti;		/* Number of iterations per tempeature step */ 	
+ int	nti;		/* Number of iterations per tempeature step */
  int	nac;		/* Number of alignment cycles per iteration */
  int	nlc;		/* Number of extent/location cycles per iteration */
  int	ngs;		/* Number of trajectory points recorded */
@@ -189,7 +195,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
 /*----------------------------------------------------------------------------*/
 /* Other local variables                                                      */
 /*----------------------------------------------------------------------------*/
- int	i,j,k,l,m,n;	/* Counters                                           */
+ int	i,j,k,n;	/* Counters                                           */
  Cxl_Als	*ca;	/* Pointer to alignment sampling pair lists           */
  Cxl_Los	*cl;	/* Pointer to location sampling lists                 */
  Cxl_Los	*cr;	/* Pointer to contact pair lists                      */
@@ -260,7 +266,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
 /*----------------------------------------------------------------------------*/
 /* Retrieve parameters                                                        */
 /*----------------------------------------------------------------------------*/
-  nsc=cdf->sll.n;	
+  nsc=cdf->sll.n;
   nmt=mtf->n;
   nlp=cdf->lll.n;
   nrr=mtf->rrc.n;
@@ -280,7 +286,7 @@ int atd(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Rcx_Ptl* pmf,
 
 
 /*----------------------------------------------------------------------------*/
-/* Allocate storage for threading data structures                             */ 
+/* Allocate storage for threading data structures                             */
 /*----------------------------------------------------------------------------*/
   sli=calloc(1,sizeof(Cur_Loc));
   sai=calloc(1,sizeof(Cur_Aln));
@@ -340,7 +346,7 @@ for(i=0;i<nmt;i++) printf("%d ",sai->sq[i]); printf("sai->sq\n");
 /* Allocate storage for current segment pair energies, type Seg_Gsm */
 spe->nsc=nsc;
 spe->gss=calloc(nsc,sizeof(int *));
-	for(i=0;i<nsc;i++) spe->gss[i]=calloc(nsc,sizeof(int)); 
+	for(i=0;i<nsc;i++) spe->gss[i]=calloc(nsc,sizeof(int));
 spe->gs=calloc(nsc,sizeof(int));
 spe->ms=calloc(nsc,sizeof(int));
 spe->cs=calloc(nsc,sizeof(int));
@@ -349,8 +355,8 @@ spe->s0=calloc(nsc,sizeof(int));
 
 #ifdef ATD_DEBUG
 for(i=0; i<nsc; i++) printf("%d ",spe->gs[i]); printf("spe->gs\n");
-for(j=0; j<nsc; j++) { 
-	for(i=0; i<nsc; i++) printf("%d ",spe->gss[j][i]); 
+for(j=0; j<nsc; j++) {
+	for(i=0; i<nsc; i++) printf("%d ",spe->gss[j][i]);
 	printf("spe->gss[%d]\n",j); }
 #endif
 
@@ -360,34 +366,34 @@ spn->nsc=nsc;
 spn->nrt=nrt;
 spn->nrr=calloc(ndi,sizeof(int **));
 	for(i=0; i<ndi; i++) spn->nrr[i]=calloc(nsc,sizeof(int *));
-	for(i=0; i<ndi; i++) for (j=0; j<nsc; j++) 
+	for(i=0; i<ndi; i++) for (j=0; j<nsc; j++)
 		spn->nrr[i][j]=calloc(nsc,sizeof(int));
 spn->srr=calloc(ndi,sizeof(int));
 spn->nrp=calloc(ndi,sizeof(int **));
 	for(i=0; i<ndi; i++) spn->nrp[i]=calloc(nsc,sizeof(int *));
-	for(i=0; i<ndi; i++) for (j=0; j<nsc; j++) 
+	for(i=0; i<ndi; i++) for (j=0; j<nsc; j++)
 		spn->nrp[i][j]=calloc(nsc,sizeof(int));
 spn->srp=calloc(ndi,sizeof(int));
 spn->nrf=calloc(ndi,sizeof(int **));
 	for(i=0; i<ndi; i++) spn->nrf[i]=calloc(nsc,sizeof(int *));
-	for(i=0; i<ndi; i++) for (j=0; j<nsc; j++) 
+	for(i=0; i<ndi; i++) for (j=0; j<nsc; j++)
 		spn->nrf[i][j]=calloc(nrt,sizeof(int));
-spn->frf=calloc(ndi,sizeof(int *)); 
-for(i=0;i<ndi;i++) spn->frf[i]=calloc(nrt,sizeof(int)); 
+spn->frf=calloc(ndi,sizeof(int *));
+for(i=0;i<ndi;i++) spn->frf[i]=calloc(nrt,sizeof(int));
 spn->srf=calloc(ndi,sizeof(int));
 
 #ifdef ATD_DEBUG
 printf("spn->ndi:%d nsc:%d nrt%d\n",spn->ndi,spn->nsc,spn->nrt);
-for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) { 
-	for(i=0; i<nsc; i++) printf("%d ",spn->nrr[k][j][i]); 
+for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) {
+	for(i=0; i<nsc; i++) printf("%d ",spn->nrr[k][j][i]);
 	printf("spn->nrr[%d][%d]\n",k,j); }
 for(i=0; i<ndi; i++) printf("%d ",spn->srr[i]); printf("spn->srr\n");
-for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) { 
-	for(i=0; i<nsc; i++) printf("%d ",spn->nrp[k][j][i]); 
+for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) {
+	for(i=0; i<nsc; i++) printf("%d ",spn->nrp[k][j][i]);
 	printf("spn->nrp[%d][%d]\n",k,j); }
 for(i=0; i<ndi; i++) printf("%d ",spn->srp[i]); printf("spn->srp\n");
-for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) { 
-	for(i=0; i<nrt; i++) printf("%d ",spn->nrf[k][j][i]); 
+for(k=0; k<ndi; k++) for(j=0; j<nsc; j++) {
+	for(i=0; i<nrt; i++) printf("%d ",spn->nrf[k][j][i]);
 	printf("spn->nrf[%d][%d]\n",k,j); }
 for(j=0; j<ndi; j++) {
 	for(i=0;i<nrt;i++) printf("%d ",spn->frf[j][i]);
@@ -402,7 +408,7 @@ spc->srt=calloc(nsc,sizeof(int *));
 	for(i=0; i<nsc; i++) spc->srt[i]=calloc(nrt,sizeof(int));
 spc->nlp=nlp;
 spc->lrt=calloc(nlp,sizeof(int *));
-	for(i=0; i<nlp; i++) spc->lrt[i]=calloc(nrt,sizeof(int)); 
+	for(i=0; i<nlp; i++) spc->lrt[i]=calloc(nrt,sizeof(int));
 spc->rt=calloc(nrt,sizeof(int));
 spc->rto=calloc(nrt,sizeof(int));
 
@@ -477,10 +483,10 @@ tts->ib=(float *)calloc(tts->nb,sizeof(float)); /* Best energy per iteration */
 
 
 /* For each core segment identify all possible contact pairs */
-cprl(mtf,cdf,pmf,cpr,0);		
+cprl(mtf,cdf,pmf,cpr,0);
 
 #ifdef ATD_DEBUG
-  for(i=0; i<nsc; i++) { 
+  for(i=0; i<nsc; i++) {
 	cr=cpr[i];
 	printf("rr:%d rp:%d rf:%d cpr[%d]\n",cr->rr.n,cr->rp.n,cr->rf.n,i); }
 #endif
