@@ -210,7 +210,7 @@ void TestNetwork(const string host, unsigned port, const string& queue_name)
 
     NcbiCout << "Testing network using ServerVersion command " <<  kIterCount<< " iterations..." << NcbiEndl;
 
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
 
     for (unsigned i = 0; i < kIterCount; ++i) {
         cl.ServerVersion();
@@ -241,7 +241,7 @@ void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
     {{
     NcbiCout << "Submit " << jobs.job_list.size() << " jobs..." << NcbiEndl;
 
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
     cl.SubmitJobBatch(jobs);
 
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
@@ -270,7 +270,7 @@ void TestBatchSubmit(const string host, unsigned port, const string& queue_name)
     string job_key, input;
     string out = "DONE";
 
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
 
     for (;1;++cnt) {
         bool job_exists = cl.PutResultGetJob(job_key, 0, out, &job_key, &input);
@@ -362,7 +362,7 @@ int CTestNetScheduleStress::Run(void)
     jobs.reserve(jcount);
 
     {{
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
 
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
@@ -394,7 +394,7 @@ int CTestNetScheduleStress::Run(void)
     NcbiCout << NcbiEndl 
              << "GetStatus " << jobs.size() << " jobs..." << NcbiEndl;
 
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
 
     unsigned i = 0;
     NON_CONST_ITERATE(vector<string>, it, jobs) {
@@ -429,7 +429,7 @@ int CTestNetScheduleStress::Run(void)
 
     {{
     NcbiCout << NcbiEndl << "Take-Return jobs..." << NcbiEndl;
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
     string input;
 
     unsigned cnt = 0;
@@ -468,7 +468,7 @@ int CTestNetScheduleStress::Run(void)
     {{
     NcbiCout << NcbiEndl << "Processing..." << NcbiEndl;
     SleepMilliSec(8000);
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
     
     unsigned cnt = 0;
     string input;
@@ -500,7 +500,7 @@ int CTestNetScheduleStress::Run(void)
     {{
     NcbiCout << NcbiEndl << "Check returned jobs..." << NcbiEndl;
     SleepMilliSec(5000);
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
 
     string output;
     NON_CONST_ITERATE(vector<string>, it, jobs_returned) {
@@ -536,6 +536,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/09 12:52:55  kuznets
+ * Reflected changes in CStopWatch
+ *
  * Revision 1.18  2005/08/23 15:00:42  kuznets
  * Added network test
  *

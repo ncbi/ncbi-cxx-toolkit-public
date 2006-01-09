@@ -937,7 +937,7 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
         // read the batch body
         //
 
-        CStopWatch sw1(true);
+        CStopWatch sw1(CStopWatch::eStart);
 
         tdata.batch_subm_vec.resize(batch_size);
 
@@ -992,7 +992,7 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
 
         // we have our batch now
 
-        CStopWatch sw2(true);
+        CStopWatch sw2(CStopWatch::eStart);
 
         unsigned job_id =
             queue.SubmitBatch(tdata.batch_subm_vec, 
@@ -2436,6 +2436,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/01/09 12:41:24  kuznets
+ * Reflected changes in CStopWatch
+ *
  * Revision 1.59  2005/11/21 14:26:28  kuznets
  * Better handling of authentication errors (induced by LBSM and port scanners
  *

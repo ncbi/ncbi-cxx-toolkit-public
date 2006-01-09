@@ -91,7 +91,7 @@ bool s_CheckExists(const string&  /* host */,
     info.connection_time = 0;
 
     CNetCacheClient nc_client("test");
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
 
     unsigned char dataBuf[1024] = {0,};
 
@@ -147,7 +147,7 @@ string s_PutBlob(const string&           host,
     STransactionInfo info;
     info.blob_size = size;
 
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
     CNetCacheClient nc_client(host, port, "test");
     STimeout to = {120, 0};
     nc_client.SetCommunicationTimeout(to);
@@ -725,7 +725,7 @@ return 1;
     NcbiCout << NcbiEndl;
 
 
-    unsigned repeats = 5000;
+    unsigned repeats = 2000;
 
     s_StressTest(host, port, 256, repeats, &log, &log_read, &rep_keys, 10);
     NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
@@ -789,6 +789,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/01/09 12:49:22  kuznets
+ * Reflected changes in CStopWatch
+ *
  * Revision 1.37  2005/11/28 15:23:07  kuznets
  * +test for GetOwner()
  *

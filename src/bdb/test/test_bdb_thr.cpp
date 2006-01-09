@@ -267,7 +267,7 @@ int CBDB_TestThreads::Run(void)
         vector<CRef<CThread> > thread_list;
         thread_list.reserve(kThreadCount);
 
-        CStopWatch sw(true);
+        CStopWatch sw(CStopWatch::eStart);
 
         NcbiCout << "Starting " << kThreadCount << " threads..." << flush;
         for (unsigned i = 0; i < kThreadCount; ++i) {
@@ -329,6 +329,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/09 12:47:28  kuznets
+ * Reflected changes in CStopWatch
+ *
  * Revision 1.2  2005/11/08 19:15:37  kuznets
  * Illustrated how to deal with dead lock
  *

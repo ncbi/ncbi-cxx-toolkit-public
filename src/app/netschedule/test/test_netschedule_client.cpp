@@ -147,7 +147,7 @@ int CTestNetScheduleClient::Run(void)
 
 
     {{
-    CStopWatch sw(true);
+    CStopWatch sw(CStopWatch::eStart);
 
     NcbiCout << "Submit " << jcount << " jobs..." << NcbiEndl;
 
@@ -249,6 +249,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/01/09 12:52:55  kuznets
+ * Reflected changes in CStopWatch
+ *
  * Revision 1.9  2005/03/22 19:02:54  kuznets
  * Reflecting chnages in connect layout
  *

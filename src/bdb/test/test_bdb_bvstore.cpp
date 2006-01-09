@@ -63,7 +63,10 @@ struct SBVStoreDB : public CBDB_BvStore< bm::bvector<> >
     CBDB_FieldUint4        thr_id;
     CBDB_FieldUint4        rec_id;
 
+    typedef CBDB_BvStore< bm::bvector<> >  TParent;
+
     SBVStoreDB()
+    : TParent(256)
     {
         DisableNull(); 
         BindKey("thr_id",   &thr_id);
@@ -251,10 +254,40 @@ int CBDB_TestThreads::Run(void)
     env.SetLockTimeout(10 * 1000000); // 10 sec
     env.SetTasSpins(5);
 
-    SBVStoreDB db;
-    db.SetEnv(env);
-    db.Open("bvdata.db", CBDB_RawFile::eCreate);
+    {{
+        SBVStoreDB db;
+        db.SetEnv(env);
+        db.Open("bvdata.db", CBDB_RawFile::eCreate);
 
+        CBDB_Transaction trans(*db.GetEnv(), 
+                            CBDB_Transaction::eTransASync,
+                            CBDB_Transaction::eNoAssociation);
+        db.SetTransaction(&trans);
+
+        db.thr_id = 1;
+        db.rec_id = 1;
+
+        bm::bvector<> bv;
+        FillBV(&bv, 1000000);
+
+        db.WriteVector(bv, SBVStoreDB::eCompact);
+
+        trans.Commit();
+    }}
+    {{
+        SBVStoreDB db;
+        db.SetEnv(env);
+        db.Open("bvdata.db", CBDB_RawFile::eReadWrite);
+
+        db.thr_id = 1;
+        db.rec_id = 1;
+        bm::bvector<> bv;
+
+        EBDB_ErrCode err = db.ReadVector(&bv);
+        assert(err == eBDB_Ok);
+        NcbiCout << bv.count() << NcbiEndl;
+
+    }}
 
     NcbiCout << "Ok." << NcbiEndl;
 
@@ -274,7 +307,7 @@ int CBDB_TestThreads::Run(void)
         vector<CRef<CThread> > thread_list;
         thread_list.reserve(kThreadCount);
 
-        CStopWatch sw(true);
+        CStopWatch sw(CStopWatch::eStart);
 
         NcbiCout << "Starting " << kThreadCount << " threads..." << flush;
         for (unsigned i = 0; i < kThreadCount; ++i) {
@@ -336,6 +369,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/09 12:47:28  kuznets
+ * Reflected changes in CStopWatch
+ *
  * Revision 1.1  2005/11/08 19:26:04  kuznets
  * Added test for bv storage
  *
