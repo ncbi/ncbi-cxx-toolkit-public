@@ -124,6 +124,19 @@ CNcbiApplication::~CNcbiApplication(void)
     if (m_CinBuffer) {
         delete [] m_CinBuffer;
     }
+
+#if defined(NCBI_COMPILER_WORKSHOP)
+    // At least under these conditions:
+    //  1) WorkShop 5.5 on Solaris 10/SPARC, Release64MT,    and
+    //  2) when IOS_BASE::sync_with_stdio(false) is called,  and
+    //  3) the contents of 'cout' is not flashed
+    // some applications crash on exit() while apparently trying to
+    // flush 'cout' and getting confused by its own guts, with error:
+    //   "*** libc thread failure: _thread_setschedparam_main() fails"
+    //
+    // This forced pre-flush trick seems to fix the problem.
+    NcbiCout.flush();
+#endif
 }
 
 
@@ -699,7 +712,8 @@ void CNcbiApplication::x_SetupStdio(void)
 {
     if ((m_StdioFlags & fDefault_SyncWithStdio) == 0) {
         // SUN WorkShop STL stream library has significant performance loss
-        // when sync_with_stdio is true (default),
+        // (due to the multiple gratuitous lseeks() in std i/o)
+        // when sync_with_stdio is TRUE (default),
         // so we turn off sync_with_stdio here.
         IOS_BASE::sync_with_stdio(false);
     }
@@ -712,7 +726,7 @@ void CNcbiApplication::x_SetupStdio(void)
 #if defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION >= 300
         _ASSERT(!m_CinBuffer);
-        // Ugly work around for G++/Solaris C RTL interaction
+        // Ugly workaround for ugly interaction between g++ and Solaris C RTL
         const size_t kCinBufSize = 5120;
         m_CinBuffer = new char[kCinBufSize];
         cin.rdbuf()->pubsetbuf(m_CinBuffer, kCinBufSize);
@@ -721,10 +735,10 @@ void CNcbiApplication::x_SetupStdio(void)
     }
 #if defined(NCBI_OS_MSWIN)
     if ((m_StdioFlags & fBinaryCin) != 0) {
-        setmode( fileno( stdin ), O_BINARY );
+        setmode(fileno(stdin), O_BINARY);
     }
     if ((m_StdioFlags & fBinaryCout) != 0) {
-        setmode( fileno( stdout ), O_BINARY );
+        setmode(fileno(stdout), O_BINARY);
     }
 #endif
 }
@@ -737,9 +751,9 @@ void CNcbiApplication::SetProgramDisplayName(const string& app_name)
 
 
 string CNcbiApplication::FindProgramExecutablePath
-(int                argc, 
- const char* const* argv,
- string* real_path)
+(int                _DEBUG_ARG(argc), 
+ const char* const*            argv,
+ string*                       real_path)
 {
     string ret_val;
 #if defined (NCBI_OS_DARWIN)  &&  defined (NCBI_COMPILER_METROWERKS)
@@ -1012,6 +1026,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.114  2006/01/09 15:59:52  vakatov
+ * CNcbiApplication::x_SetupStdio() -- work around the STDIO destruction
+ * glitch that appeared on WorkShop 5.5 on Solaris 10/SPARC
+ *
  * Revision 1.113  2005/12/21 18:17:04  grichenk
  * Fixed output of module/class/function by adding GetRef().
  * Fixed width for UID.
