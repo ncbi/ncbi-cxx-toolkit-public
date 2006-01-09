@@ -374,7 +374,7 @@ bool CNetICacheClient::Read(const string& key,
     if (rdr.get() == 0) {
         return false;
     }
-    size_t x_blob_size = 0;
+
     size_t x_read = 0;
 
     size_t buf_avail = buf_size;
@@ -703,6 +703,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/09 16:38:43  vakatov
+ * CNetICacheClient::Read() -- heed the warning, get rid of an unused variable
+ *
  * Revision 1.4  2006/01/05 17:40:39  kuznets
  * +plugin manager entry point and CF
  *
