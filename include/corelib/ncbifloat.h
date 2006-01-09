@@ -49,7 +49,15 @@
 #if defined(NCBI_OS_MSWIN)
 #   include <float.h>
 #elif defined(HAVE_IEEEFP_H)
-#   include <ieeefp.h>
+#   if defined(NCBI_OS_CYGWIN) && defined(__cplusplus)
+/* At least some versions of Cygwin's ieeefp.h fail to use extern "C",
+ * requiring us to. :-/ */
+extern "C" {
+#      include <ieeefp.h>
+}
+#   else
+#      include <ieeefp.h>
+#   endif
 #endif
 
 #if defined(NCBI_OS_MSWIN)
@@ -89,6 +97,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/01/09 15:57:25  ucko
+ * On at least some versions of Cygwin, <ieeefp.h> never uses
+ * extern "C" { ... }, so supply it ourselves if called for.
+ *
  * Revision 1.10  2005/05/13 18:23:30  ivanov
  * Do not use C++ comments in the .h files
  *
