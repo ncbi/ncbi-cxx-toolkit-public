@@ -1758,9 +1758,11 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list)
         return 0;
 }
 
-/** Callback for sorting HSPs by starting offset in query. The sorting criteria
- * in order of priority: context, starting offset in query, starting offset in 
- * subject. Null HSPs are moved to the end of the array.
+/** Callback for sorting HSPs by starting offset in query. Sorting is by
+ * increasing context, then increasing query start offset, then increasing
+ * subject start offset, then decreasing score, then increasing query end 
+ * offset, then increasing subject end offset. Null HSPs are moved to the 
+ * end of the array.
  * @param v1 pointer to first HSP [in]
  * @param v2 pointer to second HSP [in]
  * @return Result of comparison.
@@ -1768,13 +1770,13 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list)
 static int
 s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
 {
-	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+   BlastHSP* h1,* h2;
+   BlastHSP** hp1,** hp2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+   hp1 = (BlastHSP**) v1;
+   hp2 = (BlastHSP**) v2;
+   h1 = *hp1;
+   h2 = *hp2;
 
    if (!h1 && !h2)
       return 0;
@@ -1789,22 +1791,43 @@ s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
    if (h1->context > h2->context)
       return 1;
 
-	if (h1->query.offset < h2->query.offset)
-		return -1;
-	if (h1->query.offset > h2->query.offset)
-		return 1;
+   if (h1->query.offset < h2->query.offset)
+      return -1;
+   if (h1->query.offset > h2->query.offset)
+      return 1;
 
-	if (h1->subject.offset < h2->subject.offset)
-		return -1;
-	if (h1->subject.offset > h2->subject.offset)
-		return 1;
+   if (h1->subject.offset < h2->subject.offset)
+      return -1;
+   if (h1->subject.offset > h2->subject.offset)
+      return 1;
 
-	return 0;
+   /* tie breakers: sort by decreasing score, then 
+      by increasing size of query range, then by
+      increasing subject range. */
+
+   if (h1->score < h2->score)
+      return 1;
+   if (h1->score > h2->score)
+      return -1;
+
+   if (h1->query.end < h2->query.end)
+      return -1;
+   if (h1->query.end > h2->query.end)
+      return 1;
+
+   if (h1->subject.end < h2->subject.end)
+      return -1;
+   if (h1->subject.end > h2->subject.end)
+      return 1;
+
+   return 0;
 }
 
-/** Callback for sorting HSPs by ending offset in query. The sorting criteria
- * in order of priority: context, ending offset in query, ending offset in 
- * subject. Null HSPs are moved to the end of the array.
+/** Callback for sorting HSPs by ending offset in query. Sorting is by
+ * increasing context, then increasing query end offset, then increasing
+ * subject end offset, then decreasing score, then decreasing query start
+ * offset, then decreasing subject start offset. Null HSPs are moved to the 
+ * end of the array.
  * @param v1 pointer to first HSP [in]
  * @param v2 pointer to second HSP [in]
  * @return Result of comparison.
@@ -1812,13 +1835,13 @@ s_QueryOffsetCompareHSPs(const void* v1, const void* v2)
 static int
 s_QueryEndCompareHSPs(const void* v1, const void* v2)
 {
-	BlastHSP* h1,* h2;
-	BlastHSP** hp1,** hp2;
+   BlastHSP* h1,* h2;
+   BlastHSP** hp1,** hp2;
 
-	hp1 = (BlastHSP**) v1;
-	hp2 = (BlastHSP**) v2;
-	h1 = *hp1;
-	h2 = *hp2;
+   hp1 = (BlastHSP**) v1;
+   hp2 = (BlastHSP**) v2;
+   h1 = *hp1;
+   h2 = *hp2;
 
    if (!h1 && !h2)
       return 0;
@@ -1833,17 +1856,37 @@ s_QueryEndCompareHSPs(const void* v1, const void* v2)
    if (h1->context > h2->context)
       return 1;
 
-	if (h1->query.end < h2->query.end)
-		return -1;
-	if (h1->query.end > h2->query.end)
-		return 1;
+   if (h1->query.end < h2->query.end)
+      return -1;
+   if (h1->query.end > h2->query.end)
+      return 1;
 
-	if (h1->subject.end < h2->subject.end)
-		return -1;
-	if (h1->subject.end > h2->subject.end)
-		return 1;
+   if (h1->subject.end < h2->subject.end)
+      return -1;
+   if (h1->subject.end > h2->subject.end)
+      return 1;
 
-	return 0;
+   /* tie breakers: sort by decreasing score, then 
+      by increasing size of query range, then by
+      increasing size of subject range. The shortest range 
+      means the *largest* sequence offset must come 
+      first */
+   if (h1->score < h2->score)
+      return 1;
+   if (h1->score > h2->score)
+      return -1;
+
+   if (h1->query.offset < h2->query.offset)
+      return 1;
+   if (h1->query.offset > h2->query.offset)
+      return -1;
+
+   if (h1->subject.offset < h2->subject.offset)
+      return 1;
+   if (h1->subject.offset > h2->subject.offset)
+      return -1;
+
+   return 0;
 }
 
 Int4
@@ -1852,13 +1895,12 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
 
 {
    BlastHSP** hsp_array;  /* hsp_array to purge. */
-   Int4 index = 0;        /* loop index. */
-   Int4 increment = 1;    
-   Int2 retval = 0;
+   Int4 i, j;
+   Int2 retval;
    Int4 hsp_count;
    
    /* If HSP list is empty, return immediately. */
-   if (hsp_list == NULL || hsp_list->hspcnt == 0)
+   if (hsp_list == NULL || hsp_list->hspcnt <= 1)
        return 0;
 
    /* Do nothing for PHI BLAST, because HSPs corresponding to different pattern
@@ -1870,62 +1912,33 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
    hsp_count = hsp_list->hspcnt;
 
    qsort(hsp_array, hsp_count, sizeof(BlastHSP*), s_QueryOffsetCompareHSPs);
-   while (index < hsp_count-increment) 
-   {
-      if (hsp_array[index+increment] == NULL) 
-      {
-         increment++;
-         continue;
+   i = 0;
+   while (i < hsp_count) {
+      j = 1;
+      while (i+j < hsp_count &&
+             hsp_array[i] && hsp_array[i+j] &&
+             hsp_array[i]->context == hsp_array[i+j]->context &&
+             hsp_array[i]->query.offset == hsp_array[i+j]->query.offset &&
+             hsp_array[i]->subject.offset == hsp_array[i+j]->subject.offset) {
+         hsp_array[i+j] = Blast_HSPFree(hsp_array[i+j]);
+         j++;
       }
-      
-      if (hsp_array[index] && hsp_array[index]->query.offset == hsp_array[index+increment]->query.offset &&
-          hsp_array[index]->subject.offset == hsp_array[index+increment]->subject.offset &&
-          hsp_array[index]->context == hsp_array[index+increment]->context)
-      {
-         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-            hsp_array[index+increment] = 
-                                Blast_HSPFree(hsp_array[index+increment]);
-            increment++;
-         } else {
-            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
-            index++;
-            increment = 1;
-         }
-      } else {
-         index++;
-         increment = 1;
-      }
+      i += j;
    }
    
    qsort(hsp_array, hsp_count, sizeof(BlastHSP*), s_QueryEndCompareHSPs);
-   index=0;
-   increment=1;
-   while (index < hsp_count-increment)
-   { 
-      if (hsp_array[index+increment] == NULL)
-      {
-         increment++;
-         continue;
+   i = 0;
+   while (i < hsp_count) {
+      j = 1;
+      while (i+j < hsp_count &&
+             hsp_array[i] && hsp_array[i+j] &&
+             hsp_array[i]->context == hsp_array[i+j]->context &&
+             hsp_array[i]->query.end == hsp_array[i+j]->query.end &&
+             hsp_array[i]->subject.end == hsp_array[i+j]->subject.end) {
+         hsp_array[i+j] = Blast_HSPFree(hsp_array[i+j]);
+         j++;
       }
-      
-      if (hsp_array[index] &&
-          hsp_array[index]->query.end == hsp_array[index+increment]->query.end &&
-          hsp_array[index]->subject.end == hsp_array[index+increment]->subject.end &&
-          hsp_array[index]->context == hsp_array[index+increment]->context)
-      {
-         if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-            hsp_array[index+increment] = 
-                                Blast_HSPFree(hsp_array[index+increment]);
-            increment++;
-         } else	{
-            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
-            index++;
-            increment = 1;
-         }
-      } else {
-         index++;
-         increment = 1;
-      }
+      i += j;
    }
 
    retval = Blast_HSPListPurgeNullHSPs(hsp_list);
@@ -1935,126 +1948,57 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
    return hsp_list->hspcnt;
 }
 
-/** Status values returned by an HSP inclusion test function. */
-typedef enum EHSPInclusionStatus {
-   eEqual = 0,      /**< Identical */
-   eFirstInSecond,  /**< First included in rectangle formed by second */
-   eSecondInFirst,  /**< Second included in rectangle formed by first */
-   eDiagNear,       /**< Diagonals are near, but neither HSP is included in
-                       the other. */
-   eDiagDistant     /**< Diagonals are far apart, or different contexts */
-} EHSPInclusionStatus;
-
 /** Diagonal distance between HSPs, outside of which one HSP cannot be 
  * considered included in the other.
  */ 
 #define MIN_DIAG_DIST 60
-
-/** HSP inclusion criterion for megablast: one HSP must be included in a
- * diagonal strip of a certain width around the other, and also in a rectangle
- * formed by the other HSP's endpoints.
- */
-static EHSPInclusionStatus 
-s_BlastHSPInclusionTest(BlastHSP* hsp1, BlastHSP* hsp2)
-{
-   if (hsp1->context != hsp2->context || 
-       !MB_HSP_CLOSE(hsp1->query.offset, hsp2->query.offset,
-                     hsp1->subject.offset, hsp2->subject.offset, 
-                     MIN_DIAG_DIST))
-      return eDiagDistant;
-
-   if (hsp1->query.offset == hsp2->query.offset && 
-       hsp1->query.end == hsp2->query.end &&  
-       hsp1->subject.offset == hsp2->subject.offset && 
-       hsp1->subject.end == hsp2->subject.end && 
-       hsp1->score == hsp2->score) {
-      return eEqual;
-   } else if (hsp1->query.offset >= hsp2->query.offset && 
-       hsp1->query.end <= hsp2->query.end &&  
-       hsp1->subject.offset >= hsp2->subject.offset && 
-       hsp1->subject.end <= hsp2->subject.end && 
-       hsp1->score <= hsp2->score) { 
-      return eFirstInSecond;
-   } else if (hsp1->query.offset <= hsp2->query.offset &&  
-              hsp1->query.end >= hsp2->query.end &&  
-              hsp1->subject.offset <= hsp2->subject.offset && 
-              hsp1->subject.end >= hsp2->subject.end && 
-              hsp1->score >= hsp2->score) { 
-      return eSecondInFirst;
-   }
-   return eDiagNear;
-}
-
-/** How many HSPs to check for inclusion for each new HSP? */
-#define MAX_NUM_CHECK_INCLUSION 20
 
 /** Remove redundant HSPs in an HSP list based on a diagonal inclusion test: if 
  * an HSP is within a certain diagonal distance of another HSP, and its endpoints 
  * are contained in a rectangle formed by another HSP, then it is removed.
  * Performed only after a single-phase greedy gapped extension, when there is no 
  * extra traceback stage that could fix the inclusions.
- * @param hsp_list HSP list to check [in] [out]
+ * @param query_blk Query sequence for the HSPs
+ * @param subject_blk Subject sequence for the HSPs
+ * @param query info Used to map HSPs uniquely onto the complete
+ *                   set of query sequences
+ * @param hsp_list HSP list to check (must be in standard sorted order) [in/out]
  */
-static Int2
-s_BlastHSPListCheckDiagonalInclusion(BlastHSPList* hsp_list)
+static void
+s_BlastHSPListCheckDiagonalInclusion(BLAST_SequenceBlk* query_blk, 
+                                     BLAST_SequenceBlk* subject_blk, 
+                                     const BlastQueryInfo* query_info, 
+                                     BlastHSPList* hsp_list)
 {
-   Int4 index, new_hspcnt, index1, index2;
+   Int4 index;
    BlastHSP** hsp_array = hsp_list->hsp_array;
-   Boolean shift_needed = FALSE;
-   EHSPInclusionStatus inclusion_status = eDiagNear;
+   BlastIntervalTree *tree;
 
    if (hsp_list->hspcnt <= 1)
-      return 0;
+      return;
 
-   qsort(hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-         s_DiagCompareHSPs);
+   /* Remove any HSPs that are contained within other HSPs.
+      Since the list is sorted by score already, any HSP
+      contained by a previous HSP is guaranteed to have a
+      lower score, and may be purged. */
 
-   for (index=1, new_hspcnt=0; index<hsp_list->hspcnt; index++) {
-      if (!hsp_array[index])
-         break;
-      inclusion_status = eDiagNear;
-      for (index1 = new_hspcnt; inclusion_status != eDiagDistant &&
-           index1 >= 0 && new_hspcnt-index1 < MAX_NUM_CHECK_INCLUSION;
-           index1--) {
-         inclusion_status = 
-            s_BlastHSPInclusionTest(hsp_array[index], hsp_array[index1]);
-         if (inclusion_status == eFirstInSecond || 
-             inclusion_status == eEqual) {
-            /* Free the new HSP and break out of the inclusion test loop */
-            hsp_array[index] = Blast_HSPFree(hsp_array[index]);
-            break;
-         } else if (inclusion_status == eSecondInFirst) {
-            hsp_array[index1] = Blast_HSPFree(hsp_array[index1]);
-            shift_needed = TRUE;
-         }
-      }
-      
-      /* If some lower indexed HSPs have been removed, shift the subsequent 
-         HSPs */
-      if (shift_needed) {
-         /* Find the first non-NULL HSP, going backwards */
-         while (index1 >= 0 && !hsp_array[index1])
-            index1--;
-         /* Go forward, and shift any non-NULL HSPs */
-         for (index2 = ++index1; index1 <= new_hspcnt; index1++) {
-            if (hsp_array[index1])
-               hsp_array[index2++] = hsp_array[index1];
-         }
-         new_hspcnt = index2 - 1;
-         shift_needed = FALSE;
-      }
-      if (hsp_array[index] != NULL)
-         hsp_array[++new_hspcnt] = hsp_array[index];
+   tree = Blast_IntervalTreeInit(0, query_blk->length + 1,
+                                 0, subject_blk->length + 1);
+
+   for (index = 0; index < hsp_list->hspcnt; index++) {
+       BlastHSP *hsp = hsp_array[index];
+       
+       if (BlastIntervalTreeContainsHSP(tree, hsp, query_info,
+                                        MIN_DIAG_DIST)) {
+           hsp_array[index] = Blast_HSPFree(hsp);
+       }
+       else {
+           BlastIntervalTreeAddHSP(hsp, tree, query_info, 
+                                   eQueryAndSubject);
+       }
    }
-   /* Set all HSP pointers that will not be used any more to NULL */
-   memset(&hsp_array[new_hspcnt+1], 0, 
-	  (hsp_list->hspcnt - new_hspcnt - 1)*sizeof(BlastHSP*));
-   hsp_list->hspcnt = new_hspcnt + 1;
-
-   /* Sort the HSP array by score again. */
-   Blast_HSPListSortByScore(hsp_list);
-
-   return 0;
+   tree = Blast_IntervalTreeFree(tree);
+   Blast_HSPListPurgeNullHSPs(hsp_list);
 }
 
 Int2 
@@ -2183,17 +2127,24 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
       Blast_HSPListPurgeNullHSPs(hsp_list);
    }
 
-   /* If greedy extension with traceback was used, check for 
-      HSP inclusion in a diagonal strip around another HSP. */
+   /* If greedy extension with traceback was used, remove
+      any HSPs that share a starting or ending diagonal
+      with a higher-scoring HSP. */
    if (gapped) 
-      status = s_BlastHSPListCheckDiagonalInclusion(hsp_list);
+      Blast_HSPListPurgeHSPsWithCommonEndpoints(program, hsp_list);
 
    /* Sort the HSP array by score (scores may have changed!) */
    Blast_HSPListSortByScore(hsp_list);
 
+   /* If greedy extension with traceback was used, check for 
+      HSP inclusion in a diagonal strip around another HSP. */
+   if (gapped) 
+      s_BlastHSPListCheckDiagonalInclusion(query_blk, subject_blk,
+                                           query_info, hsp_list);
+
    Blast_HSPListAdjustOddBlastnScores(hsp_list, gapped, sbp);
 
-   return status;
+   return 0;
 }
 
 /** Combine two HSP lists, without altering the individual HSPs, and without 
