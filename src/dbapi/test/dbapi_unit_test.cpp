@@ -300,7 +300,7 @@ CDBAPIUnitTest::Test_Insert(void)
         sql  = " SELECT int_field, vc1000_field FROM " + GetTableName();
         sql += " ORDER BY int_field";
 
-        auto_stmt->Execute( sql );
+        auto_stmt->SendSql( sql );
 
         BOOST_CHECK( auto_stmt->HasMoreResults() );
         BOOST_CHECK( auto_stmt->HasRows() );
@@ -351,7 +351,7 @@ CDBAPIUnitTest::Test_DateTime(void)
         {
             sql = "SELECT * FROM #test_datetime";
 
-            auto_stmt->Execute( sql );
+            auto_stmt->SendSql( sql );
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -386,7 +386,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             // Workaround for the ctlib driver ...
             auto_stmt->ClearParamList();
 
-            auto_stmt->Execute( sql );
+            auto_stmt->SendSql( sql );
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -425,7 +425,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             // Workaround for the ctlib driver ...
             auto_stmt->ClearParamList();
 
-            auto_stmt->Execute( sql );
+            auto_stmt->SendSql( sql );
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -446,7 +446,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             bool already_exist = false;
             
             // auto_stmt->Execute( "select * FROM sysobjects WHERE xtype = 'P' AND name = 'sp_test_datetime'" );
-            auto_stmt->Execute( "select * FROM sysobjects WHERE name = 'sp_test_datetime'" );
+            auto_stmt->SendSql( "select * FROM sysobjects WHERE name = 'sp_test_datetime'" );
             while( auto_stmt->HasMoreResults() ) { 
                 if( auto_stmt->HasRows() ) { 
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -485,7 +485,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             // Workaround for the ctlib driver ...
             auto_stmt->ClearParamList();
 
-            auto_stmt->Execute( sql );
+            auto_stmt->SendSql( sql );
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -522,7 +522,7 @@ CDBAPIUnitTest::Test_DateTime(void)
             // Workaround for the ctlib driver ...
             auto_stmt->ClearParamList();
 
-            auto_stmt->Execute( sql );
+            auto_stmt->SendSql( sql );
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
             auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -565,7 +565,7 @@ CDBAPIUnitTest::Test_UNIQUE(void)
     {
         sql = "SELECT * FROM #test_unique";
         
-        auto_stmt->Execute( sql );
+        auto_stmt->SendSql( sql );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -591,7 +591,7 @@ CDBAPIUnitTest::Test_UNIQUE(void)
     {
         sql = "SELECT * FROM #test_unique";
         
-        auto_stmt->Execute( sql );
+        auto_stmt->SendSql( sql );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -655,7 +655,7 @@ CDBAPIUnitTest::Test_LOB(void)
     {
         sql = "SELECT text_field FROM "+ GetTableName();
         
-        auto_stmt->Execute( sql );
+        auto_stmt->SendSql( sql );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -727,7 +727,7 @@ CDBAPIUnitTest::Test_GetColumnNo(void)
     {
         sql = "SELECT * FROM #Overlaps";
         
-        auto_stmt->Execute( sql );
+        auto_stmt->SendSql( sql );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -898,7 +898,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             sql  = " SELECT id, vb8000_field FROM #bin_bulk_insert_table";
             sql += " ORDER BY id";
 
-            auto_stmt->Execute( sql );
+            auto_stmt->SendSql( sql );
             
             BOOST_CHECK( auto_stmt->HasMoreResults() );
             BOOST_CHECK( auto_stmt->HasRows() );
@@ -955,7 +955,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 sql  = " SELECT int_field FROM #bulk_insert_table";
                 sql += " ORDER BY id";
                 
-                auto_stmt->Execute( sql );
+                auto_stmt->SendSql( sql );
                 
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
@@ -1007,7 +1007,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
                 sql  = " SELECT bigint_field FROM #bulk_insert_table";
                 sql += " ORDER BY id";
                 
-                auto_stmt->Execute( sql );
+                auto_stmt->SendSql( sql );
                 
                 BOOST_CHECK( auto_stmt->HasMoreResults() );
                 BOOST_CHECK( auto_stmt->HasRows() );
@@ -1145,7 +1145,7 @@ CDBAPIUnitTest::Test_Bulk_Writing(void)
             sql  = " SELECT id, vc8000_field FROM #bulk_insert_table";
             sql += " ORDER BY id";
 
-            auto_stmt->Execute( sql );
+            auto_stmt->SendSql( sql );
             while( auto_stmt->HasMoreResults() ) { 
                 if( auto_stmt->HasRows() ) { 
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -1227,7 +1227,7 @@ CDBAPIUnitTest::Test_Variant2(void)
         sql += " ORDER BY int_field";
         
         string::size_type str_size(10);
-        auto_stmt->Execute( sql );
+        auto_stmt->SendSql( sql );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
@@ -1407,7 +1407,7 @@ CDBAPIUnitTest::Test_SelectStmtXML(void)
         }
 
         // Same but call Execute instead of ExecuteQuery.
-        auto_stmt->Execute( sql );
+        auto_stmt->SendSql( sql );
     }
 }
 
@@ -1645,7 +1645,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         
         // Execute it first time ...
         // auto_stmt->Execute( "exec sp_databases" );
-        auto_stmt->Execute( "SELECT name FROM sysobjects" );
+        auto_stmt->SendSql( "SELECT name FROM sysobjects" );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
@@ -1676,7 +1676,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         
         // Execute it second time ...
         // auto_stmt->Execute( "exec sp_databases" );
-        auto_stmt->Execute( "SELECT name FROM sysobjects" );
+        auto_stmt->SendSql( "SELECT name FROM sysobjects" );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
@@ -1706,8 +1706,8 @@ CDBAPIUnitTest::Test_Procedure(void)
         }
         
         // Same as before but do not retrieve data ...
-        auto_stmt->Execute( "exec sp_databases" );
-        auto_stmt->Execute( "exec sp_databases" );
+        auto_stmt->SendSql( "exec sp_databases" );
+        auto_stmt->SendSql( "exec sp_databases" );
     }
 
     // Test ICallableStatement
@@ -1833,7 +1833,7 @@ CDBAPIUnitTest::Test_ES_01(IConnection& conn)
 {
     auto_ptr<IStatement> auto_stmt( conn.GetStatement() );
 
-    auto_stmt->Execute( "select name from wrong table" );
+    auto_stmt->SendSql( "select name from wrong table" );
     while( auto_stmt->HasMoreResults() ) { 
         if( auto_stmt->HasRows() ) { 
             auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
@@ -3391,6 +3391,7 @@ CTestArguments::SetDatabaseParameters(void)
         } else if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") && 
                     GetServerType() == eSybase ) {
             // ftds work with Sybase databases using protocol v42 only ...
+            // m_DatabaseParameters["version"] = "100";
             m_DatabaseParameters["version"] = "42";
 //         } else if ( GetDriverName() == "ftds63" &&
 //                     GetServerType() == eSybase ) {
@@ -3401,9 +3402,10 @@ CTestArguments::SetDatabaseParameters(void)
         m_DatabaseParameters["version"] = m_TDSVersion;
     }
 
-//     if ( GetDriverName() == "ftds" || GetDriverName() == "ftds63" ) {
-//         m_DatabaseParameters["client_charset"] = "UTF-8";
-//     }
+    if ( (GetDriverName() == "ftds" || GetDriverName() == "ftds63") &&  
+        GetServerType() == eMsSql) {
+        m_DatabaseParameters["client_charset"] = "UTF-8";
+    }
 }
 
 
@@ -3429,6 +3431,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.59  2006/01/09 18:03:20  ssikorsk
+ * Get rid of the deprecated method Execute.
+ *
  * Revision 1.58  2005/12/05 17:02:33  ucko
  * Add support for Boost 1.33.x, which is now installed on Solaris 10.
  *
