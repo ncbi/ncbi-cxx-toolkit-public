@@ -1,5 +1,5 @@
-#ifndef CONN___NETICACHE_CLIENT__HPP
-#define CONN___NETICACHE_CLIENT__HPP
+#ifndef CONNECT_SERVICES___NETICACHE_CLIENT__HPP
+#define CONNECT_SERVICES___NETICACHE_CLIENT__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -169,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/09 16:39:25  vakatov
+ * Heed the warning -- added EOL at EOF
+ *
  * Revision 1.3  2006/01/05 17:38:30  kuznets
  * Implemented plugin manager entry point
  *
@@ -183,4 +186,4 @@ END_NCBI_SCOPE
  */
 
 
-#endif
+#endif  /* CONNECT_SERVICES___NETICACHE_CLIENT__HPP */
