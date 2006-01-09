@@ -67,14 +67,14 @@ void CTest::Init(void)
 // Print elapsed time and wait a little to avoid race conditions
 #define ELAPSED \
     e = sw.Elapsed(); \
-    cout << "elapsed: " << setiosflags(ios::fixed) << e << endl; \
+    LOG_POST("elapsed: " + NStr::DoubleToString(e, -1, NStr::fDoubleFixed)); \
     SleepMilliSec(100)
 
 // Start/stop test messages
 #define START(x) \
-    cout << "Start test " << x << endl
+    LOG_POST("Start test " << x)
 #define DONE \
-    cout << "DONE" << endl
+    LOG_POST("DONE")
 
 
 int CTest::Run(void)
@@ -148,7 +148,7 @@ int CTest::Run(void)
         // with auto sleep beetween requests.
         CRequestRateControl mgr(1, CTimeSpan(0,0), CTimeSpan(1,0),
                                 CRequestRateControl::eSleep);
-        CStopWatch sw(true);
+        CStopWatch sw(CStopWatch::eStart);
         assert( mgr.Approve() );
         assert( mgr.Approve() );
         assert( mgr.Approve() );
@@ -163,7 +163,7 @@ int CTest::Run(void)
         // with auto sleep beetween requests.
         CRequestRateControl mgr(2, CTimeSpan(3,0), CTimeSpan(1,0),
                                 CRequestRateControl::eSleep);
-        CStopWatch sw(true);
+        CStopWatch sw(CStopWatch::eStart);
         // sleep 0
         assert( mgr.Approve() );
         ELAPSED;
@@ -206,6 +206,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/09 12:32:55  ivanov
+ * Do not use deprecated constructor of CStopWatch class.
+ * Use LOG_POST instead of cout.
+ *
  * Revision 1.5  2005/09/26 10:58:39  ivanov
  * Increased checked time intervals for elapsed time
  *
