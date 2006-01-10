@@ -70,7 +70,7 @@
 #include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/id1/id1_client.hpp>
 #include <objects/pcsubstance/PC_InfoData.hpp>
-#include <objects/pcsubstance/PC_URN.hpp>
+#include <objects/pcsubstance/PC_Urn.hpp>
 
 #include "asniotest.hpp"
 
@@ -745,6 +745,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2006/01/10 22:35:11  thiessen
+* fix capitalization
+*
 * Revision 1.31  2006/01/10 22:21:28  thiessen
 * add test for BIT STRING serialization
 *
