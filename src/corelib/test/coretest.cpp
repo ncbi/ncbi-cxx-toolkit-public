@@ -729,11 +729,11 @@ static void TestException_AuxTrace(void)
 
 static void TestStreamposConvert(void)
 {
-    Int8 p1(1);
+    Int8 p1 = 1;
     p1 <<= 45;
 
     CT_POS_TYPE pos = NcbiInt8ToStreampos(p1);
-    Int8 p2 = NcbiStreamposToInt8(pos);
+    Int8        p2  = NcbiStreamposToInt8(pos);
 
     assert(p1 == p2);
     assert(p1 && p2);
@@ -748,7 +748,7 @@ static void TestException(void)
     TestException_Features();
     TestException_Std();
     TestException_Aux();
-    // TestStreamposConvert();
+    TestStreamposConvert();
 }
 
 
@@ -969,6 +969,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.102  2006/01/10 16:34:01  vakatov
+ * Try to turn the "TestStreamposConvert()" test back on
+ *
  * Revision 1.101  2005/11/23 17:11:54  ucko
  * Define NO_EMPTY_BASE_OPTIMIZATION for MIPSpro.
  *
