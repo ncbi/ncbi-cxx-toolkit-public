@@ -187,6 +187,7 @@ public:
     string            m_DllInfo;
 
     static EMsvcVersion    GetMsvcVersion(void);
+    static string          GetMsvcSection(void);
     string    GetProjectFileFormatVersion(void) const;
     string    GetSolutionFileFormatVersion(void) const;
 private:
@@ -484,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2006/01/10 17:39:42  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.29  2006/01/04 13:45:16  gouriano
  * Corrected analyzing build configurations for DLL build
  *

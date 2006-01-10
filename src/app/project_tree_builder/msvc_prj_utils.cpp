@@ -321,6 +321,15 @@ CMsvc7RegSettings::EMsvcVersion  CMsvc7RegSettings::GetMsvcVersion(void)
     return sm_MsvcVersion;
 }
 
+string CMsvc7RegSettings::GetMsvcSection(void)
+{
+    if (GetMsvcVersion() == eMsvc710) {
+        return string(MSVC_REG_SECTION) + "710";
+    } else {
+        return string(MSVC_REG_SECTION) + "800exp";
+    }
+}
+
 CMsvc7RegSettings::CMsvc7RegSettings(void)
 {
 }
@@ -1099,6 +1108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/01/10 17:39:21  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.41  2006/01/04 13:44:55  gouriano
  * Corrected analyzing build configurations for DLL build
  *

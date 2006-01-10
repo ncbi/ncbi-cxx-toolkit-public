@@ -61,25 +61,31 @@ CMsvcSolutionGenerator::AddProject(const CProjItem& project)
 
 
 void 
-CMsvcSolutionGenerator::AddUtilityProject(const string& full_path)
+CMsvcSolutionGenerator::AddUtilityProject(const string& full_path,
+                                          const string& name)
 {
     m_UtilityProjects.push_back(TUtilityProject(full_path, 
                                                 GenerateSlnGUID()));
+    m_PathToName[full_path] = name;
 }
 
 
 void 
-CMsvcSolutionGenerator::AddConfigureProject(const string& full_path)
+CMsvcSolutionGenerator::AddConfigureProject(const string& full_path,
+                                            const string& name)
 {
     m_ConfigureProjects.push_back(TUtilityProject(full_path, 
                                                 GenerateSlnGUID()));
+    m_PathToName[full_path] = name;
 }
 
 
 void 
-CMsvcSolutionGenerator::AddBuildAllProject(const string& full_path)
+CMsvcSolutionGenerator::AddBuildAllProject(const string& full_path,
+                                           const string& name)
 {
     m_BuildAllProject = TUtilityProject(full_path, GenerateSlnGUID());
+    m_PathToName[full_path] = name;
 }
 
 
@@ -126,19 +132,32 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     ofs << "Global" << endl;
 	
     // Write all configurations
-    ofs << '\t' << "GlobalSection(SolutionConfiguration) = preSolution" << endl;
+    if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+        ofs << '\t' << "GlobalSection(SolutionConfigurationPlatforms) = preSolution" << endl;
+    } else {
+        ofs << '\t' << "GlobalSection(SolutionConfiguration) = preSolution" << endl;
+    }
     ITERATE(list<SConfigInfo>, p, m_Configs) {
-        const string& config = (*p).m_Name;
+        string config = (*p).m_Name;
+        if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+            config = ConfigName(config);
+        }
         ofs << '\t' << '\t' << config << " = " << config << endl;
     }
     ofs << '\t' << "EndGlobalSection" << endl;
     
-    ofs << '\t' 
-        << "GlobalSection(ProjectConfiguration) = postSolution" 
-        << endl;
+    if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+        ofs << '\t' << "GlobalSection(ProjectConfigurationPlatforms) = postSolution" << endl;
+    } else {
+        ofs << '\t' << "GlobalSection(ProjectConfiguration) = postSolution" << endl;
+    }
 
     // Utility projects
     ITERATE(list<TUtilityProject>, p, m_UtilityProjects) {
+        const TUtilityProject& utl_prj = *p;
+        WriteUtilityProjectConfiguration(utl_prj, ofs);
+    }
+    ITERATE(list<TUtilityProject>, p, m_ConfigureProjects) {
         const TUtilityProject& utl_prj = *p;
         WriteUtilityProjectConfiguration(utl_prj, ofs);
     }
@@ -256,13 +275,13 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         << "\"" 
         << endl;
 
-    ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+    bool needopen=true;
 
     ITERATE(list<CProjKey>, p, project.m_Project.m_Depends) {
 
         const CProjKey& id = *p;
 
-        if (GetApp().GetRegSettings().GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
+        if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
             // Do not generate lib-to-lib depends.
             if (project.m_Project.m_ProjType == CProjKey::eLib  &&
                 id.Type() == CProjKey::eLib) {
@@ -287,22 +306,29 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         }
         const CPrjContext& prj_i = n->second;
 
+        if (needopen) {
+            ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+            needopen = false;
+        }
         ofs << '\t' << '\t' 
             << prj_i.m_GUID 
             << " = " 
             << prj_i.m_GUID << endl;
     }
-    ofs << '\t' << "EndProjectSection" << endl;
+    if (!needopen) {
+        ofs << '\t' << "EndProjectSection" << endl;
+    }
     ofs << "EndProject" << endl;
 }
 
 void CMsvcSolutionGenerator::BeginUtilityProject(
     const TUtilityProject& project, CNcbiOfstream& ofs)
 {
+    string name = m_PathToName[project.first];
     ofs << "Project(\"" 
         << MSVC_SOLUTION_ROOT_GUID
         << "\") = \"" 
-        << CDirEntry(project.first).GetBase() //basename
+        << name //CDirEntry(project.first).GetBase() //basename
         << "\", \"";
 
     ofs << CDirEntry::CreateRelativePath(m_SolutionDir, project.first)
@@ -311,14 +337,11 @@ void CMsvcSolutionGenerator::BeginUtilityProject(
     ofs << project.second //m_GUID 
         << "\"" 
         << endl;
-
-    ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
 }
 
 void CMsvcSolutionGenerator::EndUtilityProject(
     const TUtilityProject& project, CNcbiOfstream& ofs)
 {
-    ofs << '\t' << "EndProjectSection" << endl;
     ofs << "EndProject" << endl;
 }
 
@@ -335,7 +358,7 @@ CMsvcSolutionGenerator::WriteConfigureProject(const TUtilityProject& project,
                                             CNcbiOfstream&         ofs)
 {
     BeginUtilityProject(project,ofs);
-    if (GetApp().GetRegSettings().GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+    if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
         string ptb("project_tree_builder");
         CProjKey id_ptb(CProjKey::eApp,ptb);
         TProjects::const_iterator n = m_Projects.find(id_ptb);
@@ -345,10 +368,12 @@ CMsvcSolutionGenerator::WriteConfigureProject(const TUtilityProject& project,
         } else {
             const CPrjContext& prj_i = n->second;
 
+            ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
             ofs << '\t' << '\t' 
                 << prj_i.m_GUID 
                 << " = " 
                 << prj_i.m_GUID << endl;
+            ofs << '\t' << "EndProjectSection" << endl;
         }
     }
     EndUtilityProject(project,ofs);
@@ -360,6 +385,7 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
                                              CNcbiOfstream&         ofs)
 {
     BeginUtilityProject(project,ofs);
+    bool needopen=true;
     
     ITERATE(TProjects, p, m_Projects) {
 //        const CProjKey&    id    = p->first;
@@ -368,13 +394,19 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
             LOG_POST(Info << "For reference only: " << prj_i.m_ProjectName);
             continue;
         }
-
+        if (needopen) {
+            ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+            needopen = false;
+        }
         ofs << '\t' << '\t' 
             << prj_i.m_GUID 
             << " = " 
             << prj_i.m_GUID << endl;
     }
 
+    if (!needopen) {
+        ofs << '\t' << "EndProjectSection" << endl;
+    }
     EndUtilityProject(project,ofs);
 }
 
@@ -392,13 +424,16 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
 //        bool config_enabled = context.IsConfigEnabled(cfg_info, 0);
 
         const string& config = cfg_info.m_Name;
-        
+        string cfg1 = config;
+        if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+            cfg1 = ConfigName(config);
+        }
 
         ofs << '\t' 
             << '\t' 
             << project.m_GUID 
             << '.' 
-            << config 
+            << cfg1
             << ".ActiveCfg = " 
             << ConfigName(config)
             << endl;
@@ -407,7 +442,7 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
             << '\t' 
             << project.m_GUID 
             << '.' 
-            << config 
+            << cfg1
             << ".Build.0 = " 
             << ConfigName(config)
             << endl;
@@ -426,7 +461,7 @@ CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& 
             << '\t' 
             << project.second // project.m_GUID 
             << '.' 
-            << config 
+            << ConfigName(config)
             << ".ActiveCfg = " 
             << ConfigName(config)
             << endl;
@@ -435,7 +470,7 @@ CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& 
             << '\t' 
             << project.second // project.m_GUID 
             << '.' 
-            << config 
+            << ConfigName(config)
             << ".Build.0 = " 
             << ConfigName(config)
             << endl;
@@ -448,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/01/10 17:39:21  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.27  2005/12/27 14:57:51  gouriano
  * Adjustments for MSVC 2005 Express
  *

@@ -61,6 +61,10 @@ public:
     void SaveProject();
 
     string GetPath() const;
+    string GetName(void) const
+    {
+        return m_Name;
+    }
 
 private:
     const CProjectItemsTree& m_Tree;
@@ -100,6 +104,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/10 17:39:42  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.11  2004/06/10 15:12:55  gorelenk
  * Added newline at the file end to avoid GCC warning.
  *

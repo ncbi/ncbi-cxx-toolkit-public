@@ -44,7 +44,7 @@
 #define MSVC_MASTERPROJECT_KEYWORD        "ManagedCProj"
 
 
-/// MSVC 7.10 solution defines
+/// MSVC solution defines
 #define MSVC_SOLUTION_ROOT_GUID     "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 
 #define MSVC_DEFAULT_LIBS_TAG       "DefaultLibs"
@@ -53,13 +53,16 @@
 #define LIST_SEPARATOR      " \t\n\r,;"
 
 
-#define MSVC_REG_SECTION            "msvc7"
+#define MSVC_REG_SECTION            "msvc"
 #define MSVC_SOLUTION_HEADER_LINE   \
                 "Microsoft Visual Studio Solution File, Format Version "
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/10 17:39:42  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.8  2005/12/27 14:58:14  gouriano
  * Adjustments for MSVC 2005 Express
  *

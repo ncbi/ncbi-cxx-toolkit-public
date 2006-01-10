@@ -222,7 +222,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,0,3) );
+    SetVersion( CVersionInfo(1,1,0) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -486,11 +486,11 @@ int CProjBulderApp::Run(void)
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             sln_gen.AddProject(p->second);
         }
-        sln_gen.AddUtilityProject (master_prj_gen.GetPath());
-        sln_gen.AddConfigureProject (configure_generator.GetPath(false));
-        sln_gen.AddConfigureProject (configure_generator.GetPath(true));
-        sln_gen.AddUtilityProject (index_prj_path);
-        sln_gen.AddBuildAllProject(build_all_prj_path);
+        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetName());
+        sln_gen.AddConfigureProject (configure_generator.GetPath(false), configure_generator.GetName(false));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(true), configure_generator.GetName(true));
+        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj.GetAttlist().GetName());
+        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj.GetAttlist().GetName());
         sln_gen.SaveSolution(m_Solution);
     }
 
@@ -582,11 +582,11 @@ int CProjBulderApp::Run(void)
         ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
             sln_gen.AddProject(p->second);
         }
-        sln_gen.AddUtilityProject (master_prj_gen.GetPath());
-        sln_gen.AddConfigureProject (configure_generator.GetPath(false));
-        sln_gen.AddConfigureProject (configure_generator.GetPath(true));
-        sln_gen.AddUtilityProject (index_prj_path);
-        sln_gen.AddBuildAllProject(build_all_prj_path);
+        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetName());
+        sln_gen.AddConfigureProject (configure_generator.GetPath(false), configure_generator.GetName(false));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(true), configure_generator.GetName(true));
+        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj.GetAttlist().GetName());
+        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj.GetAttlist().GetName());
         sln_gen.SaveSolution(m_Solution);
     }
 
@@ -774,7 +774,8 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs)
         GetDllsInfo().GetBuildConfigs(configs);
         return;
     }
-    string config_str = GetConfig().GetString(MSVC_REG_SECTION, "Configurations", "");
+    string config_str = GetConfig().GetString(
+        CMsvc7RegSettings::GetMsvcSection(), "Configurations", "");
     list<string> configs_list;
     NStr::Split(config_str, LIST_SEPARATOR, configs_list);
     LoadConfigInfoByNames(GetConfig(), configs_list, configs);
@@ -785,24 +786,24 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 {
     if ( !m_MsvcRegSettings.get() ) {
         m_MsvcRegSettings.reset(new CMsvc7RegSettings());
-    
-        m_MsvcRegSettings->m_Version = 
-            GetConfig().GetString(MSVC_REG_SECTION, "Version", "");
-
-        m_MsvcRegSettings->m_CompilersSubdir  = 
-            GetConfig().GetString(MSVC_REG_SECTION, "compilers", "");
-    
-        m_MsvcRegSettings->m_ProjectsSubdir  = 
-            GetConfig().GetString(MSVC_REG_SECTION, "Projects", "build");
 
         m_MsvcRegSettings->m_MakefilesExt = 
             GetConfig().GetString(MSVC_REG_SECTION, "MakefilesExt", "msvc");
+    
+        m_MsvcRegSettings->m_ProjectsSubdir  = 
+            GetConfig().GetString(MSVC_REG_SECTION, "Projects", "build");
 
         m_MsvcRegSettings->m_MetaMakefile = 
             GetConfig().GetString(MSVC_REG_SECTION, "MetaMakefile", "");
 
         m_MsvcRegSettings->m_DllInfo = 
             GetConfig().GetString(MSVC_REG_SECTION, "DllInfo", "");
+    
+        m_MsvcRegSettings->m_Version = 
+            GetConfig().GetString(CMsvc7RegSettings::GetMsvcSection(), "Version", "");
+
+        m_MsvcRegSettings->m_CompilersSubdir  = 
+            GetConfig().GetString(CMsvc7RegSettings::GetMsvcSection(), "msvc_prj", "");
 
         GetBuildConfigs(&m_MsvcRegSettings->m_ConfigInfo);
     }
@@ -1098,12 +1099,13 @@ string CProjBulderApp::ProcessLocationMacros(string raw_data)
         if (CSymResolver::IsDefine(raw_macro)) {
             macro = CSymResolver::StripDefine(raw_macro);
             definition.erase();
-            if (macro == "msvc_prj") {
-                definition = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Compilers, 
-                    GetRegSettings().m_CompilersSubdir);
-            }
+            definition = GetConfig().GetString(CMsvc7RegSettings::GetMsvcSection(), macro, "");
             if (!definition.empty()) {
+                definition = CDirEntry::ConcatPath(
+                    m_ProjectTreeInfo->m_Compilers, definition);
                 data = NStr::Replace(data, raw_macro, definition);
+            } else {
+                done = end;
             }
         }
     }
@@ -1131,6 +1133,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/01/10 17:39:21  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.68  2006/01/04 13:44:55  gouriano
  * Corrected analyzing build configurations for DLL build
  *

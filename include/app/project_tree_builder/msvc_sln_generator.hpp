@@ -54,11 +54,11 @@ public:
     
     void AddProject(const CProjItem& project);
     
-    void AddUtilityProject (const string& full_path);
+    void AddUtilityProject (const string& full_path, const string& name);
 
-    void AddConfigureProject (const string& full_path);
+    void AddConfigureProject (const string& full_path, const string& name);
 
-    void AddBuildAllProject(const string& full_path);
+    void AddBuildAllProject(const string& full_path, const string& name);
 
     void SaveSolution(const string& file_path);
     
@@ -73,9 +73,9 @@ private:
     // Utility projects
     list<TUtilityProject> m_UtilityProjects;
     list<TUtilityProject> m_ConfigureProjects;
-
     // BuildAll utility project
     TUtilityProject m_BuildAllProject; 
+    map<string, string> m_PathToName;
 
     class CPrjContext
     {
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/10 17:39:42  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.13  2005/12/27 14:58:14  gouriano
  * Adjustments for MSVC 2005 Express
  *

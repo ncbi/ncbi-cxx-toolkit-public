@@ -183,6 +183,13 @@ string CMsvcConfigureProjectGenerator::GetPath(bool with_gui) const
     return project_path;
 }
 
+string CMsvcConfigureProjectGenerator::GetName(bool with_gui) const
+{
+    if (with_gui) {
+        return m_NameGui;
+    }
+    return m_Name;
+}
 
 void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
 {
@@ -258,6 +265,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/01/10 17:39:21  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.26  2005/12/27 14:57:51  gouriano
  * Adjustments for MSVC 2005 Express
  *

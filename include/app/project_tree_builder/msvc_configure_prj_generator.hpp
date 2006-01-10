@@ -68,6 +68,7 @@ public:
 
     void SaveProject(bool with_gui);
     string GetPath(bool with_gui) const;
+    string GetName(bool with_gui) const;
 
 private:
  
@@ -109,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/10 17:39:42  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.6  2005/05/10 17:29:09  gouriano
  * Added configure_dialog project
  *

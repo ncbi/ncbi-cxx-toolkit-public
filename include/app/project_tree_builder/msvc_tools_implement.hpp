@@ -547,7 +547,7 @@ public:
     {
         string command_line, cmd;
         command_line += CPreBuildEventTool::CommandLine();
-        if (GetApp().GetRegSettings().GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+        if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
             return command_line;
         }
         if ( !m_LibDepends.empty() ) {
@@ -753,6 +753,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/01/10 17:39:42  gouriano
+ * Corrected solution generation for MSVC 2005 Express
+ *
  * Revision 1.24  2005/12/27 14:58:14  gouriano
  * Adjustments for MSVC 2005 Express
  *
