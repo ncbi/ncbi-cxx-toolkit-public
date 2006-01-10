@@ -51,9 +51,7 @@ public:
     typedef TRanges::const_iterator const_iterator;
 
     CHandleRange(void);
-    CHandleRange(const CHandleRange& hr);
     ~CHandleRange(void);
-    CHandleRange& operator=(const CHandleRange& hr);
 
     bool Empty(void) const;
     const_iterator begin(void) const;
@@ -61,6 +59,8 @@ public:
 
     // Add a new range
     void AddRange(TRange range, ENa_strand strand/* = eNa_strand_unknown*/);
+    void AddRange(TRange range, ENa_strand strand,
+                  bool more_before, bool more_after);
     // Merge a new range with the existing ranges
     void MergeRange(TRange range, ENa_strand strand);
 
@@ -120,6 +120,8 @@ private:
     TRange         m_TotalRanges_minus;
     bool           m_IsCircular;
     bool           m_IsSingleStrand;
+    bool           m_MoreBefore;
+    bool           m_MoreAfter;
 
     // friend class CDataSource;
     friend class CHandleRangeMap;
@@ -192,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2006/01/10 20:04:32  vasilche
+ * Better indexing of annotations spanning several segments.
+ *
  * Revision 1.25  2004/12/22 15:56:22  vasilche
  * Explicitly mark ETotalRangeFlags values as bits.
  * Allow to include origin in GetCircularRangeStart() and GetCircularRangeEnd().

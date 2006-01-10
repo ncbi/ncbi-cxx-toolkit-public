@@ -47,6 +47,7 @@ class CSeq_loc;
 class NCBI_XOBJMGR_EXPORT CHandleRangeMap
 {
 public:
+    typedef CHandleRange::TRange TRange;
     typedef map<CSeq_id_Handle, CHandleRange> TLocMap;
     typedef TLocMap::const_iterator const_iterator;
 
@@ -58,9 +59,10 @@ public:
 
     // Add all ranges for each seq-id from a seq-loc
     void AddLocation(const CSeq_loc& loc);
+    void AddLocation(const CSeq_loc& loc, bool more_before, bool more_after);
     // Add range substituting with handle "h"
     void AddRange(const CSeq_id_Handle& h,
-                  CHandleRange::TRange range, ENa_strand strand);
+                  const TRange& range, ENa_strand strand);
     // Add ranges from "range" with handle "h"
     void AddRanges(const CSeq_id_Handle& h, const CHandleRange& hr);
     CHandleRange& AddRanges(const CSeq_id_Handle& h);
@@ -81,8 +83,18 @@ public:
 
     void AddRange(const CSeq_id& id, TSeqPos from, TSeqPos to,
                   ENa_strand strand = eNa_strand_unknown);
-    void AddRange(const CSeq_id& id, CHandleRange::TRange range,
-                  ENa_strand strand = eNa_strand_unknown);
+    void AddRange(const CSeq_id& id,
+                  const TRange& range, ENa_strand strand = eNa_strand_unknown);
+
+    void AddRange(const CSeq_id_Handle& h,
+                  const TRange& range, ENa_strand strand,
+                  bool more_before, bool more_after);
+    void AddRange(const CSeq_id& id,
+                  const TRange& range, ENa_strand strand,
+                  bool more_before, bool more_after);
+    void AddRange(const CSeq_id& id,
+                  TSeqPos from, TSeqPos to, ENa_strand strand,
+                  bool more_before, bool more_after);
 
 private:
     // Split the location and add range lists to the locmap
@@ -93,11 +105,34 @@ private:
 
 
 inline
-void CHandleRangeMap::AddRange(const CSeq_id& id,
-                               TSeqPos from, TSeqPos to,
-                               ENa_strand strand)
+void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
+                               const TRange& range, ENa_strand strand)
 {
-    AddRange(id, CHandleRange::TRange(from, to), strand);
+    AddRange(h, range, strand, false, false);
+}
+
+
+inline
+void CHandleRangeMap::AddRange(const CSeq_id& id,
+                               const TRange& range, ENa_strand strand)
+{
+    AddRange(id, range, strand, false, false);
+}
+
+
+inline
+void CHandleRangeMap::AddRange(const CSeq_id& id,
+                               TSeqPos from, TSeqPos to, ENa_strand strand,
+                               bool more_before, bool more_after)
+{
+    AddRange(id, TRange(from, to), strand, more_before, more_after);
+}
+
+
+inline
+void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
+{
+    AddLocation(loc, false, false);
 }
 
 
@@ -107,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2006/01/10 20:04:33  vasilche
+ * Better indexing of annotations spanning several segments.
+ *
  * Revision 1.16  2004/07/12 15:05:31  grichenk
  * Moved seq-id mapper from xobjmgr to seq library
  *

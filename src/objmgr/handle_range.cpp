@@ -50,32 +50,15 @@ CHandleRange::CHandleRange(void)
     : m_TotalRanges_plus(TRange::GetEmpty()),
       m_TotalRanges_minus(TRange::GetEmpty()),
       m_IsCircular(false),
-      m_IsSingleStrand(true)
+      m_IsSingleStrand(true),
+      m_MoreBefore(false),
+      m_MoreAfter(false)
 {
-}
-
-
-CHandleRange::CHandleRange(const CHandleRange& hr)
-{
-    *this = hr;
 }
 
 
 CHandleRange::~CHandleRange(void)
 {
-}
-
-
-CHandleRange& CHandleRange::operator=(const CHandleRange& hr)
-{
-    if (this != &hr) {
-        m_Ranges = hr.m_Ranges;
-        m_TotalRanges_plus = hr.m_TotalRanges_plus;
-        m_TotalRanges_minus = hr.m_TotalRanges_minus;
-        m_IsCircular = hr.m_IsCircular;
-        m_IsSingleStrand = hr.m_IsSingleStrand;
-    }
-    return *this;
 }
 
 
@@ -107,45 +90,76 @@ CHandleRange::TTotalRangeFlags CHandleRange::GetStrandsFlag(void) const
 
 void CHandleRange::AddRange(TRange range, ENa_strand strand)
 {
+    AddRange(range, strand, false, false);
+}
+
+
+void CHandleRange::AddRange(TRange range, ENa_strand strand,
+                            bool more_before, bool more_after)
+{
     if ( !m_Ranges.empty()  &&  m_IsSingleStrand ) {
         if ( strand != m_Ranges.front().second) {
             // Different strands, the location can not be circular
-            m_IsCircular = false;
-            // Reorganize total ranges by strand
-            TRange total_range = m_TotalRanges_plus;
-            total_range += m_TotalRanges_minus;
-            if ( x_IncludesPlus(m_Ranges.front().second) ) {
-                m_TotalRanges_plus = total_range;
-            }
-            else {
-                m_TotalRanges_plus = TRange::GetEmpty();
-            }
-            if ( x_IncludesMinus(m_Ranges.front().second) ) {
-                m_TotalRanges_minus = total_range;
-            }
-            else {
-                m_TotalRanges_minus = TRange::GetEmpty();
+            if ( m_IsCircular ) {
+                // Different strands, the location can not be circular
+                // Reorganize total ranges by strand
+                TRange total_range = m_TotalRanges_plus;
+                total_range += m_TotalRanges_minus;
+                if ( x_IncludesPlus(m_Ranges.front().second) ) {
+                    m_TotalRanges_plus = total_range;
+                }
+                else {
+                    m_TotalRanges_plus = TRange::GetEmpty();
+                }
+                if ( x_IncludesMinus(m_Ranges.front().second) ) {
+                    m_TotalRanges_minus = total_range;
+                }
+                else {
+                    m_TotalRanges_minus = TRange::GetEmpty();
+                }
+                m_IsCircular = false;
             }
             m_IsSingleStrand = false;
         }
-        else if ( !m_IsCircular ) {
-            // Circular location?
-            if ( x_IncludesPlus(strand) ) {
-                m_IsCircular =
-                    range.GetFrom() < m_Ranges.back().first.GetFrom();
-            }
-            else {
-                m_IsCircular =
-                    range.GetFrom() > m_Ranges.back().first.GetFrom();
-            }
-            if ( m_IsCircular ) {
-                // Reorganize total ranges. Everything already collected
-                // goes to the first part, all new ranges will go to the
-                // second part.
-                m_TotalRanges_plus += m_TotalRanges_minus;
-                m_TotalRanges_minus = TRange::GetEmpty();
+        else {
+            // Same strand, but location may become circular
+            if ( !m_IsCircular ) {
+                // Check if location becomes circular
+                if ( x_IncludesPlus(strand) ) {
+                    m_IsCircular =
+                        range.GetFrom() < m_Ranges.back().first.GetFrom();
+                }
+                else {
+                    m_IsCircular =
+                        range.GetFrom() > m_Ranges.back().first.GetFrom();
+                }
+                if ( m_IsCircular ) {
+                    // Reorganize total ranges.
+                    // First part (everything already collected)
+                    // goes to m_TotalRanges_plus,
+                    // second part (all new ranges)
+                    // will go to m_TotalRanges_minus.
+
+                    // Verify that until now all ranges are on the same strand.
+                    _ASSERT(m_TotalRanges_plus.Empty() ||
+                            m_TotalRanges_minus.Empty() ||
+                            m_TotalRanges_plus == m_TotalRanges_minus);
+                    m_TotalRanges_plus += m_TotalRanges_minus;
+                    m_TotalRanges_minus = TRange::GetEmpty();
+                }
+                else {
+                    _ASSERT(m_IsSingleStrand && !m_IsCircular);
+                    _ASSERT(!m_Ranges.empty());
+                    _ASSERT(more_before);
+                    _ASSERT(m_MoreAfter);
+                    m_MoreAfter = more_after;
+                }
             }
         }
+    }
+    else {
+        m_MoreBefore = more_before;
+        m_MoreAfter = more_after;
     }
     m_Ranges.push_back(TRanges::value_type(range, strand));
     if ( !m_IsCircular ) {
@@ -249,13 +263,13 @@ TSeqPos CHandleRange::GetRight(void) const
 CHandleRange::TRange
 CHandleRange::GetOverlappingRange(TTotalRangeFlags flags) const
 {
-    TOpenRange ret = TOpenRange::GetEmpty();
+    TRange ret = TRange::GetEmpty();
     if (m_IsCircular) {
         ETotalRangeFlags circular_strand =
             IsReverse(m_Ranges.front().second) ?
             eStrandMinus : eStrandPlus;
         if (flags & circular_strand) {
-            ret = TOpenRange::GetWhole();
+            ret = TRange::GetWhole();
         }
         return ret;
     }
@@ -265,6 +279,29 @@ CHandleRange::GetOverlappingRange(TTotalRangeFlags flags) const
     if (flags & eStrandMinus) {  // == eCircularEnd
         ret += m_TotalRanges_minus;
     }
+    if ( m_IsSingleStrand && (m_MoreBefore || m_MoreAfter) ) {
+        _ASSERT(!m_Ranges.empty());
+        if ( x_IncludesPlus(m_Ranges.front().second) ) {
+            if ( (flags & eStrandPlus) ) {
+                if ( m_MoreBefore ) {
+                    ret.SetFrom(TRange::GetWholeFrom());
+                }
+                if ( m_MoreAfter ) {
+                    ret.SetTo(TRange::GetWholeTo());
+                }
+            }
+        }
+        else {
+            if ( (flags & eStrandMinus) ) {
+                if ( m_MoreAfter ) {
+                    ret.SetFrom(TRange::GetWholeFrom());
+                }
+                if ( m_MoreBefore ) {
+                    ret.SetTo(TRange::GetWholeTo());
+                }
+            }
+        }
+    }
     return ret;
 }
 
@@ -273,7 +310,7 @@ CHandleRange::TRange
 CHandleRange::GetCircularRangeStart(bool include_origin) const
 {
     _ASSERT(m_IsCircular);
-    TOpenRange ret = m_TotalRanges_plus;
+    TRange ret = m_TotalRanges_plus;
     if ( include_origin ) {
         // Adjust start/stop to include cut point
         if ( !IsReverse(m_Ranges.front().second) ) {
@@ -293,7 +330,7 @@ CHandleRange::TRange
 CHandleRange::GetCircularRangeEnd(bool include_origin) const
 {
     _ASSERT(m_IsCircular);
-    TOpenRange ret = m_TotalRanges_minus;
+    TRange ret = m_TotalRanges_minus;
     if ( include_origin ) {
         // Adjust start/stop to include cut point
         if ( !IsReverse(m_Ranges.front().second) ) {
@@ -312,7 +349,7 @@ CHandleRange::GetCircularRangeEnd(bool include_origin) const
 CHandleRange::TRange
 CHandleRange::GetOverlappingRange(const TRange& range) const
 {
-    TOpenRange ret = TOpenRange::GetEmpty();
+    TRange ret = TRange::GetEmpty();
     if ( !range.Empty() ) {
         ITERATE ( TRanges, it, m_Ranges ) {
             ret += it->first.IntersectionWith(range);
@@ -349,6 +386,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/01/10 20:04:33  vasilche
+* Better indexing of annotations spanning several segments.
+*
 * Revision 1.26  2004/12/22 15:56:22  vasilche
 * Explicitly mark ETotalRangeFlags values as bits.
 * Allow to include origin in GetCircularRangeStart() and GetCircularRangeEnd().

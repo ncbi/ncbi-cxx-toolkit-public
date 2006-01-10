@@ -80,7 +80,8 @@ void CHandleRangeMap::clear(void)
 }
 
 
-void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
+void CHandleRangeMap::AddLocation(const CSeq_loc& loc,
+                                  bool more_before, bool more_after)
 {
     switch ( loc.Which() ) {
     case CSeq_loc::e_not_set:
@@ -90,12 +91,14 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     }
     case CSeq_loc::e_Empty:
     {
-        AddRange(loc.GetEmpty(), CHandleRange::TRange::GetEmpty());
+        AddRange(loc.GetEmpty(), TRange::GetEmpty(),
+                 eNa_strand_unknown, more_before, more_after);
         return;
     }
     case CSeq_loc::e_Whole:
     {
-        AddRange(loc.GetWhole(), CHandleRange::TRange::GetWhole());
+        AddRange(loc.GetWhole(), TRange::GetWhole(),
+                 eNa_strand_unknown, more_before, more_after);
         return;
     }
     case CSeq_loc::e_Int:
@@ -104,7 +107,8 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
         AddRange(i.GetId(),
                  i.GetFrom(),
                  i.GetTo(),
-                 i.IsSetStrand()? i.GetStrand(): eNa_strand_unknown);
+                 i.IsSetStrand()? i.GetStrand(): eNa_strand_unknown,
+                 more_before, more_after);
         return;
     }
     case CSeq_loc::e_Pnt:
@@ -113,19 +117,26 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
         AddRange(p.GetId(),
                  p.GetPoint(),
                  p.GetPoint(),
-                 p.IsSetStrand()? p.GetStrand(): eNa_strand_unknown);
+                 p.IsSetStrand()? p.GetStrand(): eNa_strand_unknown,
+                 more_before, more_after);
         return;
     }
     case CSeq_loc::e_Packed_int:
     {
         // extract each range
         const CPacked_seqint& pi = loc.GetPacked_int();
-        ITERATE( CPacked_seqint::Tdata, ii, pi.Get() ) {
-            const CSeq_interval& i = **ii;
-            AddRange(i.GetId(),
-                     i.GetFrom(),
-                     i.GetTo(),
-                     i.IsSetStrand()? i.GetStrand(): eNa_strand_unknown);
+        if ( !pi.Get().empty() ) {
+            CPacked_seqint::Tdata::const_iterator last = pi.Get().end();
+            --last;
+            ITERATE( CPacked_seqint::Tdata, ii, pi.Get() ) {
+                const CSeq_interval& i = **ii;
+                AddRange(i.GetId(),
+                         i.GetFrom(),
+                         i.GetTo(),
+                         i.IsSetStrand()? i.GetStrand(): eNa_strand_unknown,
+                         more_before, ii != last || more_after);
+                more_before = true;
+            }
         }
         return;
     }
@@ -133,19 +144,33 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     {
         // extract each point
         const CPacked_seqpnt& pp = loc.GetPacked_pnt();
-        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(pp.GetId());
-        CHandleRange& hr = m_LocMap[idh];
-        ENa_strand strand = pp.IsSetStrand()? pp.GetStrand(): eNa_strand_unknown;
-        ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
-            hr.AddRange(CHandleRange::TRange(*pi, *pi), strand);
+        if ( !pp.GetPoints().empty() ) {
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(pp.GetId());
+            CHandleRange& hr = m_LocMap[idh];
+            ENa_strand strand =
+                pp.IsSetStrand()? pp.GetStrand(): eNa_strand_unknown;
+            CPacked_seqpnt::TPoints::const_iterator last =
+                pp.GetPoints().end();
+            --last;
+            ITERATE ( CPacked_seqpnt::TPoints, pi, pp.GetPoints() ) {
+                hr.AddRange(CRange<TSeqPos>(*pi, *pi), strand,
+                            more_before, pi != last || more_after);
+                more_before = true;
+            }
         }
         return;
     }
     case CSeq_loc::e_Mix:
     {
         // extract sub-locations
-        ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
-            AddLocation(**li);
+        if ( !loc.GetMix().Get().empty() ) {
+            CSeq_loc_mix::Tdata::const_iterator last =
+                loc.GetMix().Get().end();
+            --last;
+            ITERATE ( CSeq_loc_mix::Tdata, li, loc.GetMix().Get() ) {
+                AddLocation(**li, more_before, li != last || more_after);
+                more_before = true;
+            }
         }
         return;
     }
@@ -153,7 +178,7 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
     {
         // extract sub-locations
         ITERATE ( CSeq_loc_equiv::Tdata, li, loc.GetEquiv().Get() ) {
-            AddLocation(**li);
+            AddLocation(**li, more_before, more_after);
         }
         return;
     }
@@ -164,13 +189,15 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
         AddRange(pa.GetId(),
                  pa.GetPoint(),
                  pa.GetPoint(),
-                 pa.IsSetStrand()? pa.GetStrand(): eNa_strand_unknown);
+                 pa.IsSetStrand()? pa.GetStrand(): eNa_strand_unknown,
+                 more_before, more_after);
         if ( bond.IsSetB() ) {
             const CSeq_point& pb = bond.GetB();
             AddRange(pb.GetId(),
                      pb.GetPoint(),
                      pb.GetPoint(),
-                     pb.IsSetStrand()? pb.GetStrand(): eNa_strand_unknown);
+                     pb.IsSetStrand()? pb.GetStrand(): eNa_strand_unknown,
+                     more_before, more_after);
         }
         return;
     }
@@ -184,18 +211,22 @@ void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
 
 
 void CHandleRangeMap::AddRange(const CSeq_id_Handle& h,
-                               CHandleRange::TRange range,
-                               ENa_strand strand)
+                               const TRange& range,
+                               ENa_strand strand,
+                               bool more_before,
+                               bool more_after)
 {
-    m_LocMap[h].AddRange(range, strand);
+    m_LocMap[h].AddRange(range, strand, more_before, more_after);
 }
 
 
 void CHandleRangeMap::AddRange(const CSeq_id& id,
-                               CHandleRange::TRange range,
-                               ENa_strand strand)
+                               const TRange& range,
+                               ENa_strand strand,
+                               bool more_before, bool more_after)
 {
-    AddRange(CSeq_id_Handle::GetHandle(id), range, strand);
+    AddRange(CSeq_id_Handle::GetHandle(id), range, strand,
+             more_before, more_after);
 }
 
 
@@ -257,6 +288,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/01/10 20:04:33  vasilche
+* Better indexing of annotations spanning several segments.
+*
 * Revision 1.23  2004/12/22 15:56:23  vasilche
 * Avoid explicit call to CSeq_id_Mapper::GetInstance().
 *
