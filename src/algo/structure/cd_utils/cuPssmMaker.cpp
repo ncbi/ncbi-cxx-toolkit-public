@@ -141,7 +141,7 @@ CdPssmInput::CdPssmInput(ResidueProfiles& profiles, PssmMakerOptions& config, bo
 void CdPssmInput::read(ColumnResidueProfile& crp)
 {
 	
-	int conIndex = crp.getIndexByConsensus();
+	crp.getIndexByConsensus();
 	int startingRow = 0;
 	if (m_useConsensus)
 		startingRow = 1;
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.8  2005/11/29 19:30:42  cliu
  * remove makeBlastMatrix
  *

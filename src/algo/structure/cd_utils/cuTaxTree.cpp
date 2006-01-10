@@ -413,9 +413,9 @@ int TaxTreeData::GetTaxIDForSequence(const AlignmentCollection& aligns, int rowI
 
 void TaxTreeData::addTaxToBioseq(CBioseq& bioseq, int taxid, string& taxName)
 {
+	//bool hasSource = false;
 	//get BioSource if there is none in bioseq
 	CSeq_descr& seqDescr = bioseq.SetDescr();
-	bool hasSource = false;
 	if (seqDescr.IsSet())
 	{
 		list< CRef< CSeqdesc > >& descrList = seqDescr.Set();
@@ -576,6 +576,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.4  2005/08/09 20:58:22  cliu
  * take care of no rank viruses.
  *

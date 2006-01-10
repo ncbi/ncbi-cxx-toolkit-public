@@ -153,7 +153,6 @@ int  SeqAlignRemap(CRef< CSeq_align >& source, int iSeq, CRef< CSeq_align >& gui
         mappedAlign->SetDim(source->GetDim());
         mappedAlign->SetSegs().Select(source->GetSegs().Which());
         nBlocks = ddRemap(sourceDD, iSeq, guideDD, iMaster, &mappedAlignDD, iMasterNew, iSeqNew, flags, err);
-        int sz = mappedAlignDD.size();
         for (TDendiag::iterator ddIt = mappedAlignDD.begin(); ddIt != mappedAlignDD.end(); ++ddIt) {
             mappedAlign->SetSegs().SetDendiag().push_back(*ddIt);
         }
@@ -1213,7 +1212,7 @@ string ddDifferenceResidues(TDendiag * pSrcDD,TDendiag * pGuideDD,TDendiag * new
 		ddAcumAliCord(pGuideDD,0,allArr,1);
 
         // restore overlap alignments   
-		int iCnt=ddScanAliCord(newDDlist,allArr,maxLen,0,0,-1,1);
+		ddScanAliCord(newDDlist,allArr,maxLen,0,0,-1,1);
 
 		free( (void * )allArr) ;
         return ddAlignInfo(newDDlist);
@@ -1561,6 +1560,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.2  2005/04/19 22:05:04  ucko
  * +<stdio.h> due to use of sprintf()
  *

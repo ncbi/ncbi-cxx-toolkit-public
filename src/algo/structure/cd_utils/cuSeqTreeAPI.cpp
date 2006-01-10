@@ -223,9 +223,9 @@ bool SeqTreeAPI::loadAndValidateExistingTree(MultipleAlignment& ma, TreeOptions*
 	if (!cd->IsSetSeqtree())
 		return false;
 
+	//bool loaded = false;
 	SeqTree* tmpTree = 0;
 	TreeOptions* tmpOptions = 0;
-	bool loaded = false;
 	SeqTree tmpTreeObj;
 	TreeOptions tmpOptionsObj;
 
@@ -261,6 +261,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.7  2005/10/04 20:10:47  cliu
  * membership annotation when loading tree.
  *

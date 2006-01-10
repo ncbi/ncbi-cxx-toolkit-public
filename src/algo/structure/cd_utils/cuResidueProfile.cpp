@@ -170,7 +170,6 @@ inline double ColumnResidueProfile::reweightColumnByRowWeights(const vector<doub
 	{
 		//debug
 		char aa = m_residues[i];
-		int count = m_residueRowsMap.count(aa);
 		pair <ResidueRowsMap::const_iterator, ResidueRowsMap::const_iterator> range =
 			m_residueRowsMap.equal_range(m_residues[i]);
 		resWeight = 0;
@@ -493,9 +492,9 @@ void ResidueProfiles::calculateRowWeights()
 		defaultWeight = 1.0f * double(colUsed)/double(m_totalRows);
 	else
 		defaultWeight = 1.0f * double(m_profiles.size())/double(m_totalRows);
-	double minW = 0.0, maxW = 0.0;
 	int noWeightRows = 0;
 	/*
+	double minW = 0.0, maxW = 0.0;
 	for ( int i = 0; i < m_rowWeights.size(); i++)
 	{
 		if (m_rowWeights[i] > maxW)
@@ -960,6 +959,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.6  2005/08/25 20:22:22  cliu
  * conditionally skip long insert
  *

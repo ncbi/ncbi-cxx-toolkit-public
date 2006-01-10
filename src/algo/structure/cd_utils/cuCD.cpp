@@ -139,7 +139,7 @@ bool Reorder(CCdCore* pCD, const vector<int> positions)
     //  Before moving the alignments around, reorder the structural alignments to reflect
     //  the new ordering of the rows.  If there was a problem, the structural alignments
     //  are left in their original order.
-    bool saReorderOK = ReorderStructureAlignments(pCD, positions);
+    ReorderStructureAlignments(pCD, positions);
 
     alignments.clear();
 	for (int i = 0; i < temp.size(); i++)
@@ -304,7 +304,6 @@ CCdCore* CopyCD(const CCdCore* cd) {
 //   CFootprint is streamlined by factoring out the check on Seq_id's)
 int GetMappedRowIds(CCdCore* cd1, int row1, CCdCore* cd2, vector<int>& rows2, bool cd1AsChild, bool overlapMode) {
 
-    int   NumRows = cd1->GetNumRows();
     int   Lower, Upper, Lower2, Upper2;
     int   NumMatches;
     vector<int> matches;
@@ -902,6 +901,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.14  2006/01/03 18:28:20  ucko
  * IntersectByMaster: AddBlock takes a reference, so don't try to pass it
  * an anonymous temporary.

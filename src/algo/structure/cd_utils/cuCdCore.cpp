@@ -954,7 +954,6 @@ bool CCdCore::EraseTheseRows(const std::vector<int>& TossRows) {
   int  i;
 
   int Count = 0;
-  int Test = TossRows.size();
 
   CRef< CSeq_annot > alignment;
   if (!GetAlignment(alignment)) {
@@ -2326,6 +2325,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.4  2005/12/28 17:25:44  lanczyck
  * bug fix transferred from CDTree:  IsInPendingList no longer counts master of a pending alignment as pending
  *

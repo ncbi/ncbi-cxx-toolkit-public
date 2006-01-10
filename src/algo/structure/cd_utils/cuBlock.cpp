@@ -775,7 +775,6 @@ string DeltaBlockModelToString(const DeltaBlockModel& dbm)
 {
     string deltaBlockModelStr, tmp;
     DeltaBlockModel::const_iterator dbm_cit = dbm.begin(), dbm_citEnd = dbm.end();
-    unsigned int nDeltaBlocks = dbm.size();
 
     for (; dbm_cit != dbm_citEnd; ++dbm_cit) {
         tmp  = "  Delta Block Subject Id = " + NStr::IntToString(dbm_cit->subjectBlockID);
@@ -929,6 +928,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/01/10 16:54:51  lanczyck
+ * eliminate unused variable warnings
+ *
  * Revision 1.3  2005/11/29 19:28:18  cliu
  * add offset
  *
