@@ -76,6 +76,8 @@ void CSeq_entry::Parentize(void)
             (*si)->Parentize();
         }
         break;
+    case e_not_set:
+        break;
     }
 }
 
@@ -89,6 +91,8 @@ void CSeq_entry::ParentizeOneLevel(void)
         NON_CONST_ITERATE ( CBioseq_set::TSeq_set, si, SetSet().SetSeq_set() ) {
             (*si)->SetParentEntry(this);
         }
+        break;
+    case e_not_set:
         break;
     }
 }
@@ -169,6 +173,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.33  2006/01/10 22:22:21  grichenk
+ * Fixed warnings
+ *
  * Revision 6.32  2005/05/20 13:35:14  shomrat
  * Added BasicCleanup()
  *
