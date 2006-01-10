@@ -69,6 +69,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/id1/id1_client.hpp>
+#include <objects/pcsubstance/PC_InfoData.hpp>
+#include <objects/pcsubstance/PC_URN.hpp>
 
 #include "asniotest.hpp"
 
@@ -538,6 +540,51 @@ BEGIN_TEST_FUNCTION(UnsignedInt)
 END_TEST_FUNCTION
 
 
+// test for serialzation of BIT STRING
+BEGIN_TEST_FUNCTION(BitString)
+
+    CRandom r(1234567);
+
+    unsigned int i, j;
+    for (i=0; i<1000; ++i) {
+
+        // create object w/ BIT STRING of random length and content
+        CPC_InfoData orig;
+        orig.SetUrn().SetLabel("test");
+        CBitString& b = orig.SetValue().SetBitlist();
+        unsigned int s = r.GetRand(1, 100000);
+        b.resize(s);
+        for (j=0; j<s; ++j)
+            b[j] = r.GetRand(0, 1) ? true : false;
+
+        // dump object to strstream in either asn text, asn binary, or xml
+        CNcbiStrstream ss;
+        ESerialDataFormat format = (ESerialDataFormat) r.GetRand(eSerial_AsnText, eSerial_Xml);
+        auto_ptr < CObjectOStream > osa(CObjectOStream::Open(format, ss, false));
+        *osa << orig;
+
+        // read object back in from stream
+        auto_ptr < CObjectIStream > isa(CObjectIStream::Open(format, ss, false));
+        CPC_InfoData copy;
+        *isa >> copy;
+
+        // compare bit lists
+        bool failed = (!copy.GetValue().IsBitlist() || copy.GetValue().GetBitlist().size() != s);
+        if (!failed) {
+            for (j=0; j<s; ++j)
+                if (orig.GetValue().GetBitlist()[j] != copy.GetValue().GetBitlist()[j])
+                    break;
+            failed = (j != s);
+        }
+        if (failed)
+            ADD_ERR("BIT STRING test #" << i << " failed: size = " << s << ", format = "
+                << ((format == eSerial_AsnText) ? "eSerial_AsnText" :
+                    ((format == eSerial_AsnBinary) ? "eSerial_AsnBinary" : "eSerial_Xml")));
+    }
+
+END_TEST_FUNCTION
+
+
 // template for loading ASN data via HTTP connection (borrowed from Cn3D)
 template < class ASNClass >
 bool GetAsnDataViaHTTP(
@@ -647,6 +694,7 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(DefaultField);
         RUN_TEST(ZeroReal);
         RUN_TEST(UnsignedInt);
+        RUN_TEST(BitString);
         RUN_TEST(MMDBSrv);
         RUN_TEST(FullBlobs);
 
@@ -697,6 +745,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2006/01/10 22:21:28  thiessen
+* add test for BIT STRING serialization
+*
 * Revision 1.30  2006/01/06 22:25:47  grichenk
 * Fixed env. vars naming for CParam<>.
 * Fixed printing of trace messages and location in ncbidiag.

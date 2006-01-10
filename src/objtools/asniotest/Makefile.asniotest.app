@@ -8,9 +8,10 @@ APP = asniotest
 SRC = asniotest
 
 LIB = \
-    ncbimime \
-    cdd \
-    scoremat \
+	pcsubstance \
+	ncbimime \
+	cdd \
+	scoremat \
 	cn3d \
 	mmdb \
 	id1cli id1 \
