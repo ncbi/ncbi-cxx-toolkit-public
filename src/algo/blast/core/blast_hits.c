@@ -1900,7 +1900,7 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
    Int4 hsp_count;
    
    /* If HSP list is empty, return immediately. */
-   if (hsp_list == NULL || hsp_list->hspcnt <= 1)
+   if (hsp_list == NULL || hsp_list->hspcnt == 0)
        return 0;
 
    /* Do nothing for PHI BLAST, because HSPs corresponding to different pattern
