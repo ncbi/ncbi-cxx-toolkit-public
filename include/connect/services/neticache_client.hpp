@@ -54,6 +54,10 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Client to NetCache server (implements ICache interface)
+///
+/// @note This implementation is thread safe and syncronized
+///
 class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
                                                public ICache
 {
@@ -63,7 +67,6 @@ public:
                      unsigned short port,
                      const string&  cache_name,
                      const string&  client_name);
-
     virtual ~CNetICacheClient();
 
     void SetConnectionParams(const string&  host,
@@ -150,6 +153,11 @@ protected:
 
     void TrimPrefix(string* str) const;
     void CheckOK(string* str) const;
+
+    IReader* GetReadStream_NoLock(const string&  key,
+                                  int            version,
+                                  const string&  subkey);
+
 private:
     CNetICacheClient(const CNetICacheClient&);
     CNetICacheClient& operator=(const CNetICacheClient&);
@@ -158,6 +166,7 @@ protected:
     string              m_CacheName;
     size_t              m_BlobSize;
     CRequestRateControl m_Throttler;
+    mutable CFastMutex  m_Lock;     ///< Client access lock
 };
 
 
@@ -180,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/10 20:09:16  kuznets
+ * Implemented thread syncronization in neticache client
+ *
  * Revision 1.5  2006/01/10 14:45:24  kuznets
  * Save sockets: + connection pool
  *

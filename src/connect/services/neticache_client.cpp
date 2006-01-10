@@ -166,6 +166,8 @@ void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
                                           unsigned int    timeout,
                                           unsigned int    max_timeout)
 {
+    CFastMutexGuard guard(m_Lock);
+
     CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
@@ -190,6 +192,8 @@ void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
 
 ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
 {
+    CFastMutexGuard guard(m_Lock);
+
     CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
@@ -211,6 +215,8 @@ ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
 
 int CNetICacheClient::GetTimeout() const
 {
+    CFastMutexGuard guard(m_Lock);
+
     CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
@@ -232,6 +238,8 @@ int CNetICacheClient::GetTimeout() const
 
 bool CNetICacheClient::IsOpen() const
 {
+    CFastMutexGuard guard(m_Lock);
+
     // need this trick to get over intrinsic non-const-ness of 
     // the network protocol
     CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
@@ -256,6 +264,8 @@ bool CNetICacheClient::IsOpen() const
 
 void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
@@ -284,6 +294,8 @@ void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
 
 ICache::EKeepVersions CNetICacheClient::GetVersionRetention() const
 {
+    CFastMutexGuard guard(m_Lock);
+
     CNetICacheClient* cl = const_cast<CNetICacheClient*>(this);
     bool reconnected = cl->CheckConnect();
     CSockGuard sg(*m_Sock);
@@ -312,6 +324,8 @@ void CNetICacheClient::Store(const string&  key,
                              unsigned int   time_to_live,
                              const string&  owner)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
 //    CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
@@ -372,6 +386,8 @@ size_t CNetICacheClient::GetSize(const string&  key,
                                  int            version,
                                  const string&  subkey)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
 //    CSockGuard sg(*m_Sock);
 
@@ -397,6 +413,8 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
                                     const string&  subkey,
                                     string*        owner)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
 //    CSockGuard sg(*m_Sock);
 
@@ -421,7 +439,9 @@ bool CNetICacheClient::Read(const string& key,
                             void*         buf,
                             size_t        buf_size)
 {
-    auto_ptr<IReader> rdr(GetReadStream(key, version, subkey));
+    CFastMutexGuard guard(m_Lock);
+
+    auto_ptr<IReader> rdr(GetReadStream_NoLock(key, version, subkey));
     size_t blob_size = m_BlobSize;
 
     if (rdr.get() == 0) {
@@ -462,9 +482,13 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
                                      const string&     subkey,
                                      BlobAccessDescr*  blob_descr)
 {
-    blob_descr->reader = GetReadStream(key, version, subkey);
-    blob_descr->blob_size = m_BlobSize;
-    // TO DO: fill blob_size and blob_found methods
+    CFastMutexGuard guard(m_Lock);
+    blob_descr->reader = GetReadStream_NoLock(key, version, subkey);
+    if (blob_descr->reader) {
+        blob_descr->blob_size = m_BlobSize;
+    } else {
+        blob_descr->blob_size = 0;
+    }
 }
 
 
@@ -474,6 +498,8 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
                                           unsigned int     time_to_live,
                                           const string&    /*owner*/)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
@@ -502,6 +528,8 @@ IWriter* CNetICacheClient::GetWriteStream(const string&    key,
 
 void CNetICacheClient::Remove(const string& key)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
@@ -522,6 +550,8 @@ void CNetICacheClient::Remove(const string&    key,
                               int              version,
                               const string&    subkey)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
@@ -541,6 +571,8 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
                                        int            version,
                                        const string&  subkey)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
@@ -561,6 +593,8 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
 bool CNetICacheClient::HasBlobs(const string&  key,
                                 const string&  subkey)
 {
+    CFastMutexGuard guard(m_Lock);
+
     bool reconnected = CheckConnect();
 //    CSockGuard sg(*m_Sock);
     string& cmd = m_Tmp;
@@ -591,9 +625,10 @@ void CNetICacheClient::Purge(const string&    key,
 {
 }
 
-IReader* CNetICacheClient::GetReadStream(const string&  key,
-                                         int            version,
-                                         const string&  subkey)
+IReader* 
+CNetICacheClient::GetReadStream_NoLock(const string&  key,
+                                       int            version,
+                                       const string&  subkey)
 {
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
@@ -632,6 +667,15 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
     return rw;
 }
 
+
+IReader* CNetICacheClient::GetReadStream(const string&  key,
+                                         int            version,
+                                         const string&  subkey)
+{
+    CFastMutexGuard guard(m_Lock);
+    return GetReadStream_NoLock(key, version, subkey);
+}
+
 void CNetICacheClient::AddKVS(string*          out_str, 
                               const string&    key,
                               int              version,
@@ -654,11 +698,15 @@ void CNetICacheClient::AddKVS(string*          out_str,
 
 string CNetICacheClient::GetCacheName(void) const
 {
+    CFastMutexGuard guard(m_Lock);
+
     return m_CacheName;
 }
 
 bool CNetICacheClient::SameCacheParams(const TCacheParams* params) const
 {
+    CFastMutexGuard guard(m_Lock);
+
     return false;
 }
 
@@ -759,6 +807,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/10 20:09:39  kuznets
+ * Implemented thread syncronization in neticache client
+ *
  * Revision 1.6  2006/01/10 14:44:34  kuznets
  * Save sockets: + connection pool
  *
