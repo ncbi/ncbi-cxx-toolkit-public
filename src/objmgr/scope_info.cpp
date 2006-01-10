@@ -1002,13 +1002,13 @@ int CTSE_ScopeInfo::x_GetDSLocksCount(void) const
 
 bool CTSE_ScopeInfo::IsLocked(void) const
 {
-    return m_TSE_LockCounter.Get() > x_GetDSLocksCount();
+    return int(m_TSE_LockCounter.Get()) > x_GetDSLocksCount();
 }
 
 
 bool CTSE_ScopeInfo::LockedMoreThanOnce(void) const
 {
-    return m_TSE_LockCounter.Get() > x_GetDSLocksCount() + 1;
+    return int(m_TSE_LockCounter.Get()) > x_GetDSLocksCount() + 1;
 }
 
 
@@ -1748,6 +1748,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2006/01/10 20:03:18  vasilche
+* Fixed warnings.
+*
 * Revision 1.32  2006/01/06 22:25:46  grichenk
 * Fixed env. vars naming for CParam<>.
 * Fixed printing of trace messages and location in ncbidiag.
