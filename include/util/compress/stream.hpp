@@ -69,7 +69,7 @@ BEGIN_NCBI_SCOPE
 //
 // Note:
 //   CCompression[IO]Stream class objects must be finalized after use.
-//   Only after finalization all data putted into stream will be processed
+//   Only after finalization all data put into stream will be processed
 //   for sure. By default finalization called in the class destructor, however
 //   it can be done in any time by call Finalize(). After finalization you
 //   can only read from the stream (if it is derived from istream).
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/01/10 17:44:20  ivanov
+ * Comment corrected
+ *
  * Revision 1.9  2004/05/10 11:56:24  ivanov
  * Added gzip file format support
  *
