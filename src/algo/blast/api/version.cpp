@@ -60,11 +60,11 @@ CVersion::Print(void) const
 static const string kReferences[(int)CReference::eMaxPublications+1] = {
     // eGappedBlast
     "Altschul, Stephen F., Thomas L. Madden, \
-Alejandro A. Sch‰ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. \
+Alejandro A. Sch√§ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. \
 Lipman (1997), \"Gapped BLAST and PSI-BLAST: a new generation of protein \
 database search programs\", Nucleic Acids Res. 25:3389-3402.",
     // ePhiBlast
-    "Zhang, Zheng, Alejandro A. Sch‰ffer, Webb Miller, \
+    "Zhang, Zheng, Alejandro A. Sch√§ffer, Webb Miller, \
 Thomas L. Madden, David J. Lipman, Eugene V. Koonin, and Stephen F. \
 Altschul (1998), \"Protein sequence similarity searches using patterns \
 as seeds\", Nucleic Acids Res. 26:3986-3990.",
@@ -73,14 +73,14 @@ as seeds\", Nucleic Acids Res. 26:3986-3990.",
 \"A greedy algorithm for aligning DNA sequences\", \
 J Comput Biol 2000; 7(1-2):203-14.", 
     // eCompBasedStats
-    "Sch‰ffer, Alejandro A., L. Aravind, Thomas L. Madden, Sergei Shavirin, \
+    "Sch√§ffer, Alejandro A., L. Aravind, Thomas L. Madden, Sergei Shavirin, \
 John L. Spouge, Yuri I. Wolf, Eugene V. Koonin, and Stephen F. Altschul \
 (2001), \"Improving the accuracy of PSI-BLAST protein database searches \
 with composition-based statistics and other refinements\", Nucleic Acids \
 Res. 29:2994-3005.",
     // eCompAdjustedMatrices
     "Stephen F. Altschul, John C. Wootton, E. Michael Gertz, Richa Agarwala, Aleksandr Morgulis, \
-Alejandro A. Sch‰ffer, and Yi-Kuo Yu \"Protein database searches using \
+Alejandro A. Sch√§ffer, and Yi-Kuo Yu \"Protein database searches using \
 compositionally adjusted substitution matrices\", FEBS J. 272:5101-5109.",
     // eMaxPublications
     kEmptyStr
