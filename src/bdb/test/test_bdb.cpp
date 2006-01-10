@@ -912,7 +912,7 @@ static void s_TEST_BDB_Query(void)
     cout << "======== Query test ok." << endl;
 }
 
-
+/*
 static void s_TEST_BDB_IdTable_Fill2(void)
 {
     cout << "======== Id table filling test 2." << endl;
@@ -1025,7 +1025,7 @@ static void s_TEST_BDB_IdTable_Fill2(void)
 
 
 }
-
+*/
 
 
 //////////////////////////////////////////////////////////////////
@@ -2200,6 +2200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/01/10 14:31:20  kuznets
+ * Commented out currently unused proc to make compiler happy
+ *
  * Revision 1.62  2005/12/14 19:27:08  kuznets
  * +test for queue db type
  *
