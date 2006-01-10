@@ -457,11 +457,16 @@ CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& 
     ITERATE(list<SConfigInfo>, p, m_Configs) {
 
         const string& config = (*p).m_Name;
+        string cfg1 = config;
+        if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+            cfg1 = ConfigName(config);
+        }
+
         ofs << '\t' 
             << '\t' 
             << project.second // project.m_GUID 
             << '.' 
-            << ConfigName(config)
+            << cfg1
             << ".ActiveCfg = " 
             << ConfigName(config)
             << endl;
@@ -470,7 +475,7 @@ CMsvcSolutionGenerator::WriteUtilityProjectConfiguration(const TUtilityProject& 
             << '\t' 
             << project.second // project.m_GUID 
             << '.' 
-            << ConfigName(config)
+            << cfg1
             << ".Build.0 = " 
             << ConfigName(config)
             << endl;
@@ -483,6 +488,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/01/10 20:20:33  gouriano
+ * Corrected writing configuration info
+ *
  * Revision 1.28  2006/01/10 17:39:21  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *
