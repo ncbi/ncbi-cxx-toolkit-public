@@ -38,6 +38,7 @@
 ///
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 #include <connect/ncbi_socket.hpp>
@@ -230,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/10 15:00:39  kuznets
+ * #include ncbimtx.hpp
+ *
  * Revision 1.13  2006/01/10 14:45:24  kuznets
  * Save sockets: + connection pool
  *
