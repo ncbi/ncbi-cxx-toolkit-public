@@ -124,6 +124,10 @@ public:
     {
         return GetSeverityString() + ": " + m_Message;
     }
+
+    bool operator==(const CSearchMessage& rhs) const;
+    bool operator!=(const CSearchMessage& rhs) const;
+    bool operator<(const CSearchMessage& rhs) const;
     
 private:
     EBlastSeverity m_Severity;
@@ -150,6 +154,36 @@ enum EResultType {
 /// Vector of Seq-align-sets
 typedef vector< CRef<objects::CSeq_align_set> > TSeqAlignVector;
 
+inline bool
+CSearchMessage::operator==(const CSearchMessage& rhs) const
+{
+    if (m_Severity == rhs.m_Severity &&
+        m_ErrorId  == rhs.m_ErrorId &&
+        m_Message  == rhs.m_Message) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+inline bool
+CSearchMessage::operator!=(const CSearchMessage& rhs) const
+{
+    return !(*this == rhs);
+}
+
+inline bool
+CSearchMessage::operator<(const CSearchMessage& rhs) const
+{
+    if (m_ErrorId < rhs.m_ErrorId ||
+        m_Severity < rhs.m_Severity ||
+        m_Message < rhs.m_Message) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -157,6 +191,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2006/01/10 20:19:58  camacho
+* + equality and < operators to CSearchMessage
+*
 * Revision 1.22  2005/12/16 20:51:34  camacho
 * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
 *
