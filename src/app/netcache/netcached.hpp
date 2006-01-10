@@ -517,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/10 15:05:31  kuznets
+ * +End-line at the end of file
+ *
  * Revision 1.2  2006/01/10 14:36:27  kuznets
  * Fixing bugs in ICache network protocol
  *
