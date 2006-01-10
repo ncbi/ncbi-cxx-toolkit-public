@@ -40,6 +40,7 @@
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netservice_client.hpp>
 
+
 #include <memory>
 
 
@@ -327,12 +328,32 @@ void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
     }
 }
 
+void CNetServiceClient::ReturnSocket(CSocket* sock)
+{
+    _ASSERT(sock);
+    if (m_Sock == 0) {
+        m_Sock = sock;
+        return;
+    }
+    CFastMutexGuard guard(m_SockPool_Lock);
+    m_SockPool.Put(sock);
+}
+
+CSocket* CNetServiceClient::GetPoolSocket()
+{
+    CFastMutexGuard guard(m_SockPool_Lock);
+    return m_SockPool.GetIfAvailable();
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/10 14:44:34  kuznets
+ * Save sockets: + connection pool
+ *
  * Revision 1.13  2005/09/21 16:11:28  kuznets
  * Added support for global application wide client names
  *

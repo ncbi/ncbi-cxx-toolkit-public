@@ -37,10 +37,12 @@
 /// Network service utilities. 
 ///
 
+#include <corelib/ncbistd.hpp>
 #include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 #include <connect/ncbi_socket.hpp>
-#include <corelib/ncbistd.hpp>
+
+#include <util/resource_pool.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -137,6 +139,15 @@ public:
         return m_ClientNameComment;
     }
     const string& GetClientName() const { return m_ClientName; }
+
+    /// Return socket to the socket pool
+    /// @note thread sync. method
+    void ReturnSocket(CSocket* sock);
+
+    /// Get socket out of the socket pool (if there are sockets available)
+    /// @note thread sync. method
+    CSocket* GetPoolSocket();
+
 protected:
     bool ReadStr(CSocket& sock, string* str);
     void WriteStr(const char* str, size_t len);
@@ -169,14 +180,17 @@ private:
     CNetServiceClient& operator=(const CNetServiceClient&);
 
 protected:
-    CSocket*       m_Sock;
-    string         m_Host;
-    unsigned short m_Port;
-    EOwnership     m_OwnSocket;
-    string         m_ClientName;
-    STimeout       m_Timeout;
-    string         m_ClientNameComment;
-    string         m_Tmp;                 ///< Temporary string
+    CSocket*                m_Sock;
+    string                  m_Host;
+    unsigned short          m_Port;
+    EOwnership              m_OwnSocket;
+    string                  m_ClientName;
+    STimeout                m_Timeout;
+    string                  m_ClientNameComment;
+    string                  m_Tmp;                 ///< Temporary string
+private:
+    CResourcePool<CSocket>  m_SockPool;
+    CFastMutex              m_SockPool_Lock;
 };
 
 
@@ -216,6 +230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/10 14:45:24  kuznets
+ * Save sockets: + connection pool
+ *
  * Revision 1.12  2006/01/03 15:35:57  kuznets
  * Added network ICache client
  *

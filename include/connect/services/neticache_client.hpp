@@ -46,6 +46,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/version.hpp>
 
+#include <util/request_control.hpp>
 #include <util/reader_writer.hpp>
 #include <util/transmissionrw.hpp>
 #include <util/cache/icache.hpp>
@@ -54,7 +55,7 @@
 BEGIN_NCBI_SCOPE
 
 class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
-                                              public ICache
+                                               public ICache
 {
 public:
     CNetICacheClient();
@@ -133,9 +134,15 @@ public:
     virtual string GetCacheName(void) const;
 
 protected:
-    void CheckConnect();
+    /// Connect to server
+    /// Function returns true if connection has been re-established
+    /// flase if connection has been established before and
+    /// throws an exception if it cannot establish connection
+    bool CheckConnect();
+
     void MakeCommandPacket(string* out_str, 
-                           const string& cmd_str) const;
+                           const string& cmd_str,
+                           bool          connected) const;
     void AddKVS(string*          out_str, 
                 const string&    key,
                 int              version,
@@ -143,10 +150,14 @@ protected:
 
     void TrimPrefix(string* str) const;
     void CheckOK(string* str) const;
+private:
+    CNetICacheClient(const CNetICacheClient&);
+    CNetICacheClient& operator=(const CNetICacheClient&);
 
 protected:
-    string      m_CacheName;
-    size_t      m_BlobSize;
+    string              m_CacheName;
+    size_t              m_BlobSize;
+    CRequestRateControl m_Throttler;
 };
 
 
@@ -169,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/10 14:45:24  kuznets
+ * Save sockets: + connection pool
+ *
  * Revision 1.4  2006/01/09 16:39:25  vakatov
  * Heed the warning -- added EOL at EOF
  *

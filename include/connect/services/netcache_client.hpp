@@ -531,8 +531,18 @@ public:
     /// Take socket ownership
     void OwnSocket();
 
+    /// Set pointer on parent object responsible for socket pooling
+    /// If parent set RW will return socket to its parent for reuse.
+    /// If parent not set, socket is closed.
+    void SetSocketParent(CNetServiceClient* parent);
+
     /// Access to CSocketReaderWriter::m_Sock
     CSocket& GetSocket() { _ASSERT(m_Sock); return *m_Sock; }
+private:
+    CNetCacheSock_RW(const CNetCacheSock_RW&);
+    CNetCacheSock_RW& operator=(const CNetCacheSock_RW&);
+protected:
+    CNetServiceClient*  m_Parent;
 };
 
 /// IWriter with error checking
@@ -585,6 +595,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.51  2006/01/10 14:45:24  kuznets
+ * Save sockets: + connection pool
+ *
  * Revision 1.50  2006/01/05 17:37:50  kuznets
  * Export specs for connection protocol classes
  *

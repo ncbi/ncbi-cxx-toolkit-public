@@ -780,17 +780,30 @@ bool CNetCacheClient::x_CheckErrTrim(string& answer)
 ///////////////////////////////////////////////////////////////////////////////
 
 CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) 
-: CSocketReaderWriter(sock) 
+: CSocketReaderWriter(sock),
+  m_Parent(0)
 {}
 
 CNetCacheSock_RW::~CNetCacheSock_RW() 
 { 
-    if (m_Sock) m_Sock->Close(); 
+    if (m_Sock) { 
+        if (m_Parent) {
+            m_Parent->ReturnSocket(m_Sock);
+            m_Sock = 0;
+        } else {
+            m_Sock->Close();
+        }
+    }
 }
 
 void CNetCacheSock_RW::OwnSocket() 
 { 
     m_IsOwned = eTakeOwnership; 
+}
+
+void CNetCacheSock_RW::SetSocketParent(CNetServiceClient* parent)
+{
+    m_Parent = parent;
 }
 
 
@@ -987,6 +1000,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/01/10 14:44:34  kuznets
+ * Save sockets: + connection pool
+ *
  * Revision 1.57  2006/01/03 15:36:44  kuznets
  * Added network ICache client
  *
