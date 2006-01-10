@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 /// General purpose resource pool.
 ///
-/// Intended use is to store heavy reusable objects.
+/// Intended use is to store reusable objects.
 /// Pool frees all vacant objects only upon pools destruction.
 /// Subsequent Get/Put calls does not result in objects reallocations and
 /// reinitializations. (So the prime target is performance optimization).
@@ -84,6 +84,20 @@ public:
             v = *(--it);
             m_FreeObjects.pop_back();
         }
+        return v;
+    }
+
+    /// Get object from the pool if there is a vacancy, 
+    /// otherwise returns NULL
+    Value* GetIfAvailable()
+    {
+        if (m_FreeObjects.empty()) {
+            return 0;
+        }
+        Value* v;
+        typename TPoolList::iterator it = m_FreeObjects.end();
+        v = *(--it);
+        m_FreeObjects.pop_back();
         return v;
     }
 
@@ -175,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/10 14:58:26  kuznets
+ * +GetIfAvailable()
+ *
  * Revision 1.5  2004/03/10 16:51:09  kuznets
  * Fixed compilation problems (GCC)
  *
