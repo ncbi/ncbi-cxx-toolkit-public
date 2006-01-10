@@ -32,7 +32,9 @@
 #include "dbapi_conn_policy.hpp"
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/dbapi_conn_factory.hpp>
-#include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#ifdef HAVE_CONNEXT
+#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#endif
 
 
 USING_NCBI_SCOPE;
@@ -52,7 +54,9 @@ int
 CConnectPolicyApp::RunSample(void)
 {
     try {
+#ifdef HAVE_CONNEXT
         DBLB_INSTALL_DEFAULT();
+#endif
                 
         for (int i = 0; i < 20; ++i) {
             auto_ptr<CDB_Connection> conn(CreateConnection());
@@ -75,6 +79,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/10 17:23:37  ucko
+ * Conditionalize use of ncbi_dblb_svcmapper.hpp and DBLB_INSTALL_DEFAULT
+ * on HAVE_CONNEXT.
+ *
  * Revision 1.2  2006/01/05 21:35:43  ssikorsk
  * Removed GetCurrentDatabase method.
  *
