@@ -587,7 +587,9 @@ public:
         /// Do not use URL-encoding/decoding for cookies
         fCookies_Unencoded   = (1 << 5),
         /// Use hex code for encoding spaces rather than '+'
-        fCookies_SpaceAsHex  = (1 << 6)
+        fCookies_SpaceAsHex  = (1 << 6),
+        /// Save request content (available through GetContent())
+        fSaveRequestContent  = (1 << 7)
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
@@ -627,6 +629,10 @@ public:
     /// Return "kContentLengthUnknown" if Content-Length header is missing.
     static const size_t kContentLengthUnknown;
     size_t GetContentLength(void) const;
+
+    /// Get request content. The content is saved only when fSaveRequestContent
+    /// flag is set. Otherwise the method will throw exception.
+    const string& GetContent(void) const;
 
     /// Retrieve the request cookies
     const CCgiCookies& GetCookies(void) const;
@@ -712,6 +718,8 @@ private:
     /// set of environment variables
     const CNcbiEnvironment*    m_Env;
     auto_ptr<CNcbiEnvironment> m_OwnEnv;
+    /// Original request content or NULL if fSaveRequestContent is not set
+    auto_ptr<string>           m_Content;
     /// set of the request FORM-like entries(already retrieved; cached)
     TCgiEntries m_Entries;
     /// set of the request ISINDEX-like indexes(already retrieved; cached)
@@ -931,6 +939,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.83  2006/01/10 20:00:06  grichenk
+* Allow to save request content.
+*
 * Revision 1.82  2005/12/19 16:55:03  didenko
 * Improved CGI Session implementation
 *

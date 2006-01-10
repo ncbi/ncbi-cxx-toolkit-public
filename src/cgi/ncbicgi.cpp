@@ -1097,6 +1097,14 @@ void CCgiRequest::x_ProcessQueryString(TFlags flags, const CNcbiArguments* args)
 
 void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd)
 {
+    if ( (flags & fSaveRequestContent) ) {
+        m_Content.reset(new string);
+    }
+    else {
+        if ( m_Content.get() ) {
+            m_Content.reset();
+        }
+    }
     // POST method?
     if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) ) {
 
@@ -1171,6 +1179,9 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
             s_ParsePostQuery(content_type, str, m_Entries);
             m_Input    = 0;
             m_InputFD = -1;
+            if ( m_Content.get() ) {
+                m_Content->swap(str);
+            }
         }
         else {
             // Let the user to retrieve and parse the content
@@ -1182,6 +1193,16 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
         m_Input   = 0;
         m_InputFD = -1;
     }
+}
+
+
+const string& CCgiRequest::GetContent(void) const
+{
+    if ( !m_Content.get() ) {
+        NCBI_THROW(CCgiRequestException, eRead,
+                   "Request content is not available");
+    }
+    return *m_Content;
 }
 
 
@@ -1359,6 +1380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2006/01/10 20:00:07  grichenk
+ * Allow to save request content.
+ *
  * Revision 1.104  2006/01/05 15:26:31  lavr
  * Proper kZeroTime init (size-independent);  formatting
  *
