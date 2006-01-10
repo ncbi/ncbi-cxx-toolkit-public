@@ -81,6 +81,7 @@ void CNetCacheServer::ParseRequestIC(const string& reqstr, SIC_Request* req)
     //   GTOU
     //   ISOP
     //   STOR ttl "key" version "subkey"
+    //   STRS ttl blob_size "key" version "subkey"
     //   GSIZ "key" version "subkey"
     //   GBLW "key" version "subkey"
     //   READ "key" version "subkey"
@@ -128,6 +129,19 @@ void CNetCacheServer::ParseRequestIC(const string& reqstr, SIC_Request* req)
         NC_GETVAR(s, req->subkey)
         return;
     } // STOR
+
+    if (CmpCmd4(s, "STRS")) { // Store size
+        req->req_type = eIC_StoreBlob;
+        s += 4;
+        NC_SKIPSPACE(s)
+        req->i0 = (unsigned) atoi(s);  // ttl
+        NC_SKIPNUM(s)
+        NC_SKIPSPACE(s)
+        req->i1 = (unsigned) atoi(s);  // blob size
+        NC_SKIPNUM(s)
+        NC_SKIPSPACE(s)
+        goto get_kvs;
+    }
 
     if (CmpCmd4(s, "GSIZ")) { // GetSize
         req->req_type = eIC_GetSize;
@@ -424,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/10 14:36:27  kuznets
+ * Fixing bugs in ICache network protocol
+ *
  * Revision 1.3  2006/01/04 19:09:56  kuznets
  * Fixed command parsing
  *

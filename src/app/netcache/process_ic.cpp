@@ -187,6 +187,82 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
     }
 }
 
+void CNetCacheServer::Process_IC_StoreBlob(ICache&              ic,
+                                           CSocket&             sock, 
+                                           SIC_Request&         req,
+                                           SNC_ThreadData&      tdata)
+{
+    WriteMsg(sock, "OK:", "");
+
+    auto_ptr<IWriter> iwrt;
+
+    char* buf = tdata.buffer.get();
+    size_t buf_size = GetTLS_Size();
+    bool not_eof;
+
+    CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
+    CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
+
+    size_t blob_size = req.i1;
+
+    if (blob_size == 0) {
+        ic.Store(req.key, req.version, req.subkey, buf,
+                 0, req.i0, tdata.auth);
+        return;
+    }
+
+    do {
+        size_t nn_read;
+
+        CStopWatch  sw(CStopWatch::eStart);
+
+        not_eof = 
+            ReadBuffer(sock, 
+                       &transm_reader, 
+                       buf, buf_size, &nn_read, blob_size);
+
+        if (nn_read == 0 && !not_eof) {
+            ic.Store(req.key, req.version, req.subkey, 
+                           buf, nn_read, req.i0, tdata.auth);
+            break;
+        }
+
+        blob_size -= nn_read;
+
+        //stat.comm_elapsed += sw.Elapsed();
+        //stat.blob_size += nn_read;
+
+        if (nn_read) {
+            if (iwrt.get() == 0) { // first read
+
+                if (not_eof == false || (blob_size == 0)) { // complete read
+                    ic.Store(req.key, req.version, req.subkey, 
+                                   buf, nn_read, req.i0, tdata.auth);
+                    return;
+                }
+
+                iwrt.reset(
+                    ic.GetWriteStream(req.key, req.version, req.subkey,
+                                      req.i0, tdata.auth));
+            }
+            size_t bytes_written;
+            ERW_Result res = 
+                iwrt->Write(buf, nn_read, &bytes_written);
+            if (res != eRW_Success) {
+                WriteMsg(sock, "ERR:", "Server I/O error");
+                //x_RegisterInternalErr(req.req_type, tdata.auth);
+                return;
+            }
+        } // if (nn_read)
+
+    } while (not_eof && (blob_size > 0));
+
+    if (iwrt.get()) {
+        iwrt->Flush();
+        iwrt.reset(0);
+    }
+}
+
 
 void CNetCacheServer::Process_IC_GetSize(ICache&              ic,
                                          CSocket&             sock,
@@ -371,6 +447,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/10 14:36:27  kuznets
+ * Fixing bugs in ICache network protocol
+ *
  * Revision 1.3  2006/01/06 01:58:59  ucko
  * Drop spurious semicolon after BEGIN_NCBI_SCOPE, as some versions of
  * WorkShop object to the resulting empty statement.

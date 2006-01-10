@@ -500,6 +500,9 @@ void CNetCacheServer::ProcessIC(CSocket&              socket,
     case eIC_Store:
         Process_IC_Store(*ic, socket, req, tdata);
         break;
+    case eIC_StoreBlob:
+        Process_IC_StoreBlob(*ic, socket, req, tdata);
+        break;
     case eIC_GetSize:
         Process_IC_GetSize(*ic, socket, req, tdata);
         break;
@@ -575,8 +578,7 @@ void CNetCacheServer::Process(SOCK sock)
             
             s_WaitForReadSocket(socket, m_InactivityTimeout);
 
-            if (ReadStr(socket, &(tdata->request))) {
-
+            while (ReadStr(socket, &(tdata->request))) {
                 const string& rq = tdata->request;
 
                 if (rq.length() < 2) { 
@@ -595,9 +597,12 @@ void CNetCacheServer::Process(SOCK sock)
                     tdata->req.Init();
                     ProcessNC(socket, 
                               nc_req_type, tdata->req, *tdata, stat);
+                    // netcache protocol is not tested(and designed) for
+                    // multi-command work, so for now I just break
+                    // out of the loop and close the socket
+                    break;
                 }
-
-            }
+            } // while
 
         }
 
@@ -1159,6 +1164,54 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
                                  IReader* rdr, 
                                  char*    buf, 
                                  size_t   buf_size,
+                                 size_t*  read_length,
+                                 size_t   expected_size)
+{
+    *read_length = 0;
+    size_t nn_read = 0;
+
+    bool ret_flag = true;
+
+    while (ret_flag && expected_size) {
+        if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
+            break;
+        }
+
+        ERW_Result io_res = rdr->Read(buf, buf_size, &nn_read);
+        switch (io_res) 
+        {
+        case eRW_Success:
+            break;
+        case eRW_Timeout:
+            if (*read_length == 0) {
+                NCBI_THROW(CNetServiceException, eTimeout, "IReader timeout");
+            }
+            break;
+        case eRW_Eof:
+            ret_flag = false;
+            break;
+        default: // invalid socket or request
+            NCBI_THROW(CNetServiceException, eCommunicationError, kEmptyStr);
+
+        } // switch
+        *read_length += nn_read;
+        buf_size -= nn_read;
+        expected_size -= nn_read;
+
+        if (buf_size <= 10) {  // buffer too small to read again
+            break;
+        }
+        buf += nn_read;
+    }
+
+    return ret_flag;  // false means we hit "eIO_Closed"
+}
+
+
+bool CNetCacheServer::ReadBuffer(CSocket& sock,
+                                 IReader* rdr, 
+                                 char*    buf, 
+                                 size_t   buf_size,
                                  size_t*  read_length)
 {
     *read_length = 0;
@@ -1198,7 +1251,6 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
     }
 
     return ret_flag;  // false means we hit "eIO_Closed"
-
 }
 
 
@@ -1748,6 +1800,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.75  2006/01/10 14:36:27  kuznets
+ * Fixing bugs in ICache network protocol
+ *
  * Revision 1.74  2006/01/03 15:42:17  kuznets
  * Added support for network ICache interface
  *

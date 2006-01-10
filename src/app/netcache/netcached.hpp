@@ -80,6 +80,7 @@ typedef enum {
     eIC_GetTimeout,
     eIC_IsOpen,
     eIC_Store,
+    eIC_StoreBlob,
     eIC_GetSize,
     eIC_GetBlobOwner,
     eIC_Read,
@@ -306,6 +307,10 @@ private:
                           CSocket&             sock, 
                           SIC_Request&         req,
                           SNC_ThreadData&      tdata);
+    void Process_IC_StoreBlob(ICache&              ic,
+                              CSocket&             sock,
+                              SIC_Request&         req,
+                              SNC_ThreadData&      tdata);
 
     void Process_IC_GetSize(ICache&              ic,
                             CSocket&             sock, 
@@ -410,6 +415,13 @@ private:
                     size_t   buf_size,
                     size_t*  read_length);
 
+    bool ReadBuffer(CSocket& sock,
+                    IReader* rdr, 
+                    char*    buf, 
+                    size_t   buf_size,
+                    size_t*  read_length,
+                    size_t   expected_size);
+
     void ParseRequestNC(const string& reqstr, SNC_Request* req);
 
     void ParseRequestIC(const string& reqstr, SIC_Request* req);
@@ -505,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/10 14:36:27  kuznets
+ * Fixing bugs in ICache network protocol
+ *
  * Revision 1.1  2006/01/03 15:42:17  kuznets
  * Added support for network ICache interface
  *
