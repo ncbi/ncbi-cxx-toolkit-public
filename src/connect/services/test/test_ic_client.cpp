@@ -113,7 +113,7 @@ int CTestICClient::Run(void)
     string key;
 
     CNetICacheClient cl(host, port, cache_name, "test_icache");
-/*
+
     ICache::TTimeStampFlags flags = 
         ICache::fTimeStampOnRead | ICache::fTrackSubKey;
     cl.SetTimeStampPolicy(flags, 1800, 0);
@@ -128,7 +128,7 @@ int CTestICClient::Run(void)
 
     bool b = cl.IsOpen();
     assert(b == true);
-*/
+
     {{
     string key = "k1";
     int version = 0;
@@ -138,6 +138,9 @@ int CTestICClient::Run(void)
 
     cl.Store(key, version, subkey, test_data, data_size);
     SleepMilliSec(700);
+
+    bool hb = cl.HasBlobs(key, subkey);
+    assert(hb);
 
     size_t sz = cl.GetSize(key, version, subkey);
     assert(sz == data_size);
@@ -150,6 +153,18 @@ int CTestICClient::Run(void)
 
     assert(strcmp(buf, test_data) == 0);
 
+    memset(buf, 0, sizeof(buf));
+    cl.Read(key, version, subkey, buf, sizeof(buf));
+
+    assert(strcmp(buf, test_data) == 0);
+
+
+    sz = cl.GetSize(key, version, subkey);
+    assert(sz == data_size);
+    hb = cl.HasBlobs(key, subkey);
+    assert(hb);
+
+
     }}
 
     {{
@@ -159,13 +174,13 @@ int CTestICClient::Run(void)
 
     size_t test_size = 1024 * 1024 * 2;
     unsigned char *test_buf = new unsigned char[test_size+10];
-    for (int i = 0; i < test_size; ++i) {
+    for (size_t i = 0; i < test_size; ++i) {
         test_buf[i] = 127;
     }
 
     cl.Store(key, version, subkey, test_buf, test_size);
 
-    for (int i = 0; i < test_size; ++i) {
+    for (size_t i = 0; i < test_size; ++i) {
         test_buf[i] = 0;
     }
     SleepMilliSec(700);
@@ -182,6 +197,8 @@ int CTestICClient::Run(void)
         }
     }
 
+    sz = cl.GetSize(key, version, subkey);
+    assert(sz == test_size);
 
 
 
@@ -200,6 +217,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2006/01/10 14:44:59  kuznets
+ * More tests
+ *
  * Revision 6.2  2006/01/05 14:51:06  kuznets
  * tests implemented
  *
