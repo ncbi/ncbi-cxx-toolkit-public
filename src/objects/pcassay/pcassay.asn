@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.11 2005/11/30 22:42:18 ywang Exp $
+-- $Id: pcassay.asn,v 1.12 2006/01/10 12:54:50 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -48,7 +48,8 @@ PC-AssaySubmit ::= SEQUENCE {
     assay             CHOICE {                               -- Assay Description or pre-existing Identifier
                           aid           INTEGER,             --   Assay Identifier
                           aid-source    PC-Source,           --   External Assay Identifier
-                          descr         PC-AssayDescription  --   Assay Description (new or updated)
+                          descr         PC-AssayDescription, --   Assay Description (new or updated)
+                          aidver        PC-ID                --   Assay Identifier/Version (for internal use)
                       },
     data              SEQUENCE OF PC-AssayResults  OPTIONAL, -- Assay Data Deposition (vector)
     revoke            SEQUENCE OF INTEGER          OPTIONAL  -- List of SID's whose data is to be suppressed
@@ -63,31 +64,31 @@ PC-AssayResultsSet ::= SEQUENCE OF PC-AssayResults
 --   referenced Assay Description
 PC-AssayResults ::= SEQUENCE {
     -- Internal/External Tracking Information
-    sid               INTEGER,                             -- Tested Substance ID/Version  [Either valid ID or, 
-                                                           --   if "sid-source" is to be used, a "0" dummy value]
-                                                           --   Note: A valid ID is greater than "0"
-    sid-source        PC-Source                  OPTIONAL, -- External Identifier for this Substance
-                                                           --   Note: May be used in-lieu of "sid"
-                                                           --   Note: This is non-optional if "sid" is "0"
-    version           INTEGER                    OPTIONAL, -- Version identifier for this AID-SID Result
-                                                           --   Note: Incoming data should set this to be "0"
+    sid               INTEGER,                               -- Tested Substance ID/Version  [Either valid ID or, 
+                                                             --   if "sid-source" is used, this is a "0" value]
+                                                             --   Note: A valid ID is greater than "0"
+    sid-source        PC-Source                    OPTIONAL, -- External Identifier for this Substance
+                                                             --   Note: May be used in-lieu of "sid"
+                                                             --   Note: This is non-optional if "sid" is "0"
+    version           INTEGER                      OPTIONAL, -- Version identifier for this AID-SID Result
+                                                             --   Note: Incoming data should set this to be "0"
 
     -- Data Annotation/Qualifier and URL to further Depositor Information
-    comment           VisibleString              OPTIONAL, -- Annotation or qualifier for this Result
+    comment           VisibleString                OPTIONAL, -- Annotation or qualifier for this Result
 
     -- Assay Result Data for this Sample
     --   Note: Users need populate only those "tid"s, for which there is data, in any order.
-    outcome           INTEGER {                            -- Assay Outcome
-                          inactive        (1),             --   Substance is considered Inactive
-                          active          (2),             --   Substance is considered Active
-                          inconclusive    (3),             --   Substance is Inconclusive
-                          unspecified     (4)              --   Substance Outcome is Unspecified
+    outcome           INTEGER {                              -- Assay Outcome
+                          inactive        (1),               --   Substance is considered Inactive
+                          active          (2),               --   Substance is considered Active
+                          inconclusive    (3),               --   Substance is Inconclusive
+                          unspecified     (4)                --   Substance Outcome is Unspecified
                       }               DEFAULT unspecified,
-    rank              INTEGER                   OPTIONAL,  -- Numeric Rank of Assay Outcome (for result ordering)
-                                                           --   Note: Larger numbers are more active
-    data              SEQUENCE OF PC-AssayData  OPTIONAL,  -- Assay Data Reported for this SID (vector)
-    url               VisibleString             OPTIONAL,  -- Depositor provided URL for this Result
-    pub               SEQUENCE OF Pub           OPTIONAL   -- Depositor provided publications for this result
+    rank              INTEGER                      OPTIONAL, -- Rank of Assay Outcome (for result ordering)
+                                                             --   Note: Larger numbers are more active
+    data              SEQUENCE OF PC-AssayData     OPTIONAL, -- Assay Data Reported for this SID (vector)
+    url               VisibleString                OPTIONAL, -- Depositor provided URL for this Result
+    xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL  -- Annotated Cross-Reference Information
 }
 
 
@@ -132,7 +133,8 @@ PC-AssayDescription ::= SEQUENCE {
     results           SEQUENCE OF PC-ResultType,             -- Result Definitions (vector)
 
     -- Additional Information
-    pub               SEQUENCE OF Pub              OPTIONAL  -- Depositor provided publications for this assay
+    pub               SEQUENCE OF Pub              OPTIONAL, -- Depositor provided publications for this assay
+    revision          INTEGER                      OPTIONAL  -- Revision identifier for textual description
 }
 
 
@@ -244,6 +246,13 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.12  2006/01/10 12:54:50  bolton
+-- Major change to meaning of PC-ID version, now an assay restatement
+-- identifier.  New revision identifier added to AssayDescription to
+-- track textual modifications (previous meaning of PC-ID version).
+-- Replaced "Sequence of Pub" in AssayResults with "Sequence of
+-- AnnotatedXRef".  Added "PC-ID" to the AssaySubmit assay choice.
+--
 -- Revision 1.11  2005/11/30 22:42:18  ywang
 -- change rank to be optional
 --
@@ -336,4 +345,5 @@ END
 -- Minor changes to make "pcassay" library compile.
 --
 -- ===========================================================================
+
 
