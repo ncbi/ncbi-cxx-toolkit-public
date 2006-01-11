@@ -69,8 +69,6 @@ static char* s_ServiceName(const char* service, size_t depth)
             return strdup(service);
     } else
         strncpy0(srv, p, sizeof(srv) - 1);
-
-    /* No cycle detection in service name redefinition */
     return s_ServiceName(srv, depth);
 }
 
@@ -81,9 +79,23 @@ char* SERV_ServiceName(const char* service)
 }
 
 
-static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
+static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
+                                 const char* name,
+                                 SSERV_Info* info)
 {
     size_t n;
+    assert(name);
+    for (n = 0; n < iter->n_skip; n++) {
+        if (strcasecmp(name, SERV_NameOfInfo(iter->skip[n])) == 0
+            &&  SERV_EqualInfo(info, iter->skip[n])) {
+            /* Replace older version */
+            if (iter->last == iter->skip[n])
+                iter->last = info;
+            free(iter->skip[n]);
+            iter->skip[n] = info;
+            return 1;
+        }
+    }
     if (info->type == fSERV_Firewall) {
         for (n = 0; n < iter->n_skip; n++) {
             SSERV_Info* temp = iter->skip[n];
@@ -91,7 +103,7 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
                 temp->u.firewall.type == info->u.firewall.type) {
                 if (n < --iter->n_skip) {
                     memmove(iter->skip + n, iter->skip + n + 1,
-                            sizeof(*iter->skip)*(iter->n_skip - n));
+                            (iter->n_skip - n) * sizeof(*iter->skip));
                 }
                 if (iter->last == temp)
                     iter->last = 0;
@@ -103,10 +115,10 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
     if (iter->n_skip == iter->a_skip) {
         SSERV_Info** temp;
         n = iter->a_skip + 10;
-        if (iter->skip)
-            temp = (SSERV_Info**) realloc(iter->skip, sizeof(*temp) * n);
-        else
-            temp = (SSERV_Info**) malloc(sizeof(*temp) * n);
+        temp = (SSERV_Info**)
+            (iter->skip
+             ? realloc(iter->skip, n * sizeof(*temp))
+             : malloc (            n * sizeof(*temp)));
         if (!temp)
             return 0;
         iter->skip = temp;
@@ -173,7 +185,7 @@ static SERV_ITER s_Open(const char*          service,
             SSERV_Info* temp = SERV_CopyInfoEx(skip[i], name);
             if (temp) {
                 temp->time = SERV_TIME_INFINITE;
-                if (!s_AddSkipInfo(iter, temp)) {
+                if (!s_AddSkipInfo(iter, name, temp)) {
                     free(temp);
                     temp = 0;
                 }
@@ -268,6 +280,64 @@ SERV_ITER SERV_OpenP(const char*          service,
 }
 
 
+static void s_SkipSkip(SERV_ITER iter, time_t now)
+{
+    size_t n;
+    if (!iter->n_skip)
+        return;
+
+    n = 0;
+    while (n < iter->n_skip) {
+        SSERV_Info* temp = iter->skip[n];
+        if (temp->time != SERV_TIME_INFINITE && (!now || temp->time < now)) {
+            if (n < --iter->n_skip) {
+                memmove(iter->skip + n, iter->skip + n + 1,
+                        sizeof(*iter->skip)*(iter->n_skip - n));
+            }
+            if (iter->last == temp)
+                iter->last = 0;
+            free(temp);
+        } else
+            n++;
+    }
+}
+
+
+static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
+                                 HOST_INFO*  host_info,
+                                 int/*bool*/ internal)
+{
+    SSERV_Info* info = 0;
+    assert(iter && iter->op);
+    if (iter->op->GetNextInfo) {
+        if (!internal) {
+            /* First, remove all outdated entries from our skip list */
+            s_SkipSkip(iter, time(0));
+        }
+        /* Next, obtain a fresh entry from the actual mapper */
+        while ((info = (*iter->op->GetNextInfo)(iter, host_info)) != 0) {
+            /* This should never actually be used for LBSMD dispatcher,
+             * as all exclusion logic is already done in it internally. */
+            int/*bool*/ go =
+                !info->host  ||  iter->pref >= 0.0  ||
+                !iter->host  ||  (iter->host == info->host  &&
+                                  (!iter->port  ||  iter->port == info->port));
+            if (go  &&  internal)
+                break;
+            if (!s_AddSkipInfo(iter, SERV_NameOfInfo(info), info)) {
+                free(info);
+                info = 0;
+            }
+            if (go || !info)
+                break;
+        }
+    }
+    if (!internal)
+        iter->last = info;
+    return info;
+}
+
+
 static SSERV_Info* s_GetInfo(const char*          service,
                              TSERV_Type           types,
                              unsigned int         preferred_host,
@@ -287,8 +357,10 @@ static SSERV_Info* s_GetInfo(const char*          service,
                             net_info, skip, n_skip,
                             external, arg, val,
                             &info, host_info);
-    if (iter && !info && iter->op && iter->op->GetNextInfo)
-        info = (*iter->op->GetNextInfo)(iter, host_info);
+    if (iter && iter->op && !info) {
+        /* All DISPD searches end up here, but none LBSMD ones */
+        info = s_GetNextInfo(iter, host_info, 1/*internal*/);
+    }
     SERV_Close(iter);
     return info;
 }
@@ -343,58 +415,16 @@ SSERV_Info* SERV_GetInfoP(const char*          service,
 }
 
 
-static void s_SkipSkip(SERV_ITER iter)
-{
-    if (iter->n_skip) {
-        TNCBI_Time t = (TNCBI_Time) time(0);
-        size_t n = 0;
-
-        while (n < iter->n_skip) {
-            SSERV_Info* temp = iter->skip[n];
-            if (temp->time < t) {
-                if (n < --iter->n_skip) {
-                    memmove(iter->skip + n, iter->skip + n + 1,
-                            sizeof(*iter->skip)*(iter->n_skip - n));
-                }
-                if (iter->last == temp)
-                    iter->last = 0;
-                free(temp);
-            } else
-                n++;
-        }
-    }
-}
-
-
-static const SSERV_Info* s_GetNextInfo(SERV_ITER  iter,
-                                       HOST_INFO* host_info)
-{
-    SSERV_Info* info = 0;
-    assert(iter && iter->op);
-    /* First, remove all outdated entries from our skip list */
-    s_SkipSkip(iter);
-    /* Next, obtain a fresh entry from the actual mapper */
-    if (iter->op->GetNextInfo &&
-        (info = (*iter->op->GetNextInfo)(iter, host_info)) != 0 &&
-        !s_AddSkipInfo(iter, info)) {
-        free(info);
-        info = 0;
-    }
-    iter->last = info;
-    return info;
-}
-
-
 const SSERV_Info* SERV_GetNextInfoEx(SERV_ITER  iter,
                                      HOST_INFO* host_info)
 {
-    return iter && iter->op ? s_GetNextInfo(iter, host_info) : 0;
+    return iter && iter->op ? s_GetNextInfo(iter, host_info, 0) : 0;
 }
 
 
 const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
 {
-    return iter && iter->op ? s_GetNextInfo(iter, 0) : 0;
+    return iter && iter->op ? s_GetNextInfo(iter, 0, 0) : 0;
 }
 
 
@@ -421,13 +451,10 @@ int/*bool*/ SERV_Penalize(SERV_ITER iter, double fine)
 
 void SERV_Reset(SERV_ITER iter)
 {
-    size_t i;
     if (!iter)
         return;
-    for (i = 0; i < iter->n_skip; i++)
-        free(iter->skip[i]);
-    iter->n_skip = 0;
     iter->last = 0;
+    s_SkipSkip(iter, 0);
     if (iter->op && iter->op->Reset)
         (*iter->op->Reset)(iter);
 }
@@ -435,9 +462,13 @@ void SERV_Reset(SERV_ITER iter)
 
 void SERV_Close(SERV_ITER iter)
 {
+    size_t i;
     if (!iter)
         return;
     SERV_Reset(iter);
+    for (i = 0; i < iter->n_skip; i++)
+        free(iter->skip[i]);
+    iter->n_skip = 0;
     if (iter->op && iter->op->Close)
         (*iter->op->Close)(iter);
     if (iter->skip)
@@ -448,7 +479,7 @@ void SERV_Close(SERV_ITER iter)
 }
 
 
-int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
+int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 {
     static const char used_server_info[] = "Used-Server-Info-";
     int retval = 0/*not updated yet*/;
@@ -471,14 +502,14 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text)
             else
                 t[len] = 0;
             p = t;
-            if (iter->op->Update && (*iter->op->Update)(iter, now, p))
+            if (iter->op->Update && (*iter->op->Update)(iter, now, p, code))
                 retval = 1/*updated*/;
             if (strncasecmp(p, used_server_info,
                             sizeof(used_server_info) - 1) == 0) {
                 p += sizeof(used_server_info) - 1;
                 if (sscanf(p, "%u: %n", &d1, &d2) >= 1  &&
                     (info = SERV_ReadInfoEx(p + d2, "")) != 0) {
-                    if (!s_AddSkipInfo(iter, info))
+                    if (!s_AddSkipInfo(iter, "", info))
                         free(info);
                     else
                         retval = 1/*updated*/;
@@ -571,10 +602,10 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
             }
         }
         /* how many server-infos for the dispatcher to send to us */
-        if (iter->ismask  ||  iter->pref) {
+        if (iter->ismask  ||  (iter->pref  &&  iter->host)) {
             if (!BUF_Write(&buf, server_count, sizeof(server_count) - 1)  ||
                 !BUF_Write(&buf,
-                           iter->ismask ? "10" : "ALL",\
+                           iter->ismask ? "10" : "ALL",
                            iter->ismask ?   2  :    3)                    ||
                 !BUF_Write(&buf, "\r\n", 2)) {
                 BUF_Destroy(buf);
@@ -582,7 +613,7 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
             }
         }
         /* Drop any outdated skip entries */
-        s_SkipSkip(iter);
+        s_SkipSkip(iter, time(0));
         /* Put all the rest into rejection list */
         for (i = 0; i < iter->n_skip; i++) {
             /* NB: all skip infos are now kept with names (perhaps, empty) */
@@ -648,6 +679,11 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.72  2006/01/11 16:27:36  lavr
+ * SERV_Update() and SERV_ITER's VT::Update() have got addt'l "code" argument
+ * Changes to fix SERV_Reset() behavior as documented
+ * Improve sticking to preference in case of malfuctioning services
+ *
  * Revision 6.71  2005/12/23 18:13:19  lavr
  * New bitfields in SERV_ITER (corresponding to special service flags)
  * Better control of Server-Count in SERV_Print()
