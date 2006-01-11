@@ -367,14 +367,13 @@ SSERV_Info* SERV_CopyInfoEx(const SSERV_Info* orig, const char* name)
     SSERV_Info* info;
     if (!size)
         return 0;
-    if ((info = (SSERV_Info*) malloc(size + (name ? strlen(name)+1 : 0))) !=0){
+    if ((info = (SSERV_Info*)malloc(size + (name ? strlen(name)+1 : 0))) != 0){
         memcpy(info, orig, size);
         memset(&info->reserved, 0, sizeof(info->reserved));
         if (name) {
             strcpy((char*) info + size, name);
-            if (orig->type == fSERV_Dns) {
+            if (orig->type == fSERV_Dns)
                 info->u.dns.name = 1/*true*/;
-            }
         } else if (orig->type == fSERV_Dns)
             info->u.dns.name = 0/*false*/;
     }
@@ -914,6 +913,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.60  2006/01/11 16:31:41  lavr
+ * Cosmetics
+ *
  * Revision 6.59  2005/12/23 18:14:04  lavr
  * Use fSERV_Any explicitly (instead of cast 0)
  *
