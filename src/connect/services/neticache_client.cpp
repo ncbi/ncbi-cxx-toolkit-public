@@ -503,8 +503,10 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
     blob_descr->reader.reset(GetReadStream_NoLock(key, version, subkey));
     if (blob_descr->reader.get()) {
         blob_descr->blob_size = m_BlobSize;
+		blob_descr->blob_found = true;
     } else {
         blob_descr->blob_size = 0;
+		blob_descr->blob_found = false;
     }
 }
 
@@ -824,6 +826,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/01/11 16:29:07  kuznets
+ * Fixed bug in GetBlobAccess()
+ *
  * Revision 1.9  2006/01/11 15:20:11  kuznets
  * Reflecting changes in ICache
  *
