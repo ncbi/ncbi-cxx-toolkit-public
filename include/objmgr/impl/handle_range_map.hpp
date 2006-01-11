@@ -130,6 +130,14 @@ void CHandleRangeMap::AddRange(const CSeq_id& id,
 
 
 inline
+void CHandleRangeMap::AddRange(const CSeq_id& id,
+                               TSeqPos from, TSeqPos to, ENa_strand strand)
+{
+    AddRange(id, from, to, strand, false, false);
+}
+
+
+inline
 void CHandleRangeMap::AddLocation(const CSeq_loc& loc)
 {
     AddLocation(loc, false, false);
@@ -142,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.18  2006/01/11 17:26:57  vasilche
+ * Added missing method.
+ *
  * Revision 1.17  2006/01/10 20:04:33  vasilche
  * Better indexing of annotations spanning several segments.
  *
