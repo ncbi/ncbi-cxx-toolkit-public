@@ -580,7 +580,7 @@ void CNetCacheServer::Process(SOCK sock)
 
             while (ReadStr(socket, &(tdata->request))) {
                 const string& rq = tdata->request;
-
+cerr << rq << endl;
                 if (rq.length() < 2) { 
                     WriteMsg(socket, "ERR:", "Invalid request");
                     x_RegisterProtocolErr(eError, rq);
@@ -593,6 +593,9 @@ void CNetCacheServer::Process(SOCK sock)
                     tdata->ic_req.Init();
                     ProcessIC(socket, 
                               ic_req_type, tdata->ic_req, *tdata, stat);
+                } else 
+                if (rq[0] == 'A' && rq[1] == '?') {  // Alive?
+                    WriteMsg(socket, "OK:", "");
                 } else {
                     tdata->req.Init();
                     ProcessNC(socket, 
@@ -833,7 +836,7 @@ void CNetCacheServer::ProcessGet(CSocket&               sock,
     }
     char* buf = tdata.buffer.get();
 
-    ICache::BlobAccessDescr ba_descr;
+    ICache::SBlobAccessDescr ba_descr;
     buf += 100;
     ba_descr.buf = buf;
     ba_descr.buf_size = GetTLS_Size() - 100;
@@ -869,7 +872,7 @@ blob_not_found:
 */
     stat.blob_size = ba_descr.blob_size;
 
-    if (ba_descr.reader == 0) {  // all in buffer
+    if (ba_descr.reader.get() == 0) {  // all in buffer
         string msg("OK:BLOB found. SIZE=");
         string sz;
         NStr::UIntToString(sz, ba_descr.blob_size);
@@ -899,7 +902,7 @@ blob_not_found:
 
     // re-translate reader to the network
 
-    auto_ptr<IReader> rdr(ba_descr.reader);
+    auto_ptr<IReader> rdr(ba_descr.reader.release());
     if (!rdr.get()) {
         goto blob_not_found;
     }
@@ -1320,7 +1323,7 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
             flag = false;
             break;
         case eIO_Timeout:
-            NCBI_THROW(CNetServiceException, eTimeout, kEmptyStr);
+            NCBI_THROW(CNetServiceException, eTimeout, "Connection timeout");
             break;
         default: // invalid socket or request, bailing out
             return false;
@@ -1345,6 +1348,10 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
         return false;
     }
     io_st = sock.Read(szBuf, str_len + 1);
+    if (io_st != eIO_Success) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Cannot read string");
+    }
     return true;
 }
 
@@ -1800,6 +1807,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.76  2006/01/11 15:26:26  kuznets
+ * Reflecting changes in ICache
+ *
  * Revision 1.75  2006/01/10 14:36:27  kuznets
  * Fixing bugs in ICache network protocol
  *

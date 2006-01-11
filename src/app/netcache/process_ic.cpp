@@ -292,7 +292,7 @@ void CNetCacheServer::Process_IC_Read(ICache&              ic,
 {
     char* buf = tdata.buffer.get();
 
-    ICache::BlobAccessDescr ba_descr;
+    ICache::SBlobAccessDescr ba_descr;
     buf += 100;
     ba_descr.buf = buf;
     ba_descr.buf_size = GetTLS_Size() - 100;
@@ -328,7 +328,7 @@ blob_not_found:
 */
 //    stat.blob_size = ba_descr.blob_size;
 
-    if (ba_descr.reader == 0) {  // all in buffer
+    if (ba_descr.reader.get() == 0) {  // all in buffer
         string msg("OK:BLOB found. SIZE=");
         string sz;
         NStr::UIntToString(sz, ba_descr.blob_size);
@@ -358,7 +358,7 @@ blob_not_found:
 
     // re-translate reader to the network
 
-    auto_ptr<IReader> rdr(ba_descr.reader);
+    auto_ptr<IReader> rdr(ba_descr.reader.release());
     if (!rdr.get()) {
         goto blob_not_found;
     }
@@ -447,6 +447,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/11 15:26:26  kuznets
+ * Reflecting changes in ICache
+ *
  * Revision 1.4  2006/01/10 14:36:27  kuznets
  * Fixing bugs in ICache network protocol
  *

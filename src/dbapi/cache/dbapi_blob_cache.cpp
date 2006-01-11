@@ -840,7 +840,7 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
 void CDBAPI_Cache::GetBlobAccess(const string&     /* key */,
                                  int               /* version */,
                                  const string&     /* subkey */,
-                                 BlobAccessDescr*  blob_descr)
+                                 SBlobAccessDescr*  blob_descr)
 {
     _ASSERT(0); // Not implemented yet
     blob_descr->blob_size = 0;
@@ -1256,6 +1256,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/01/11 15:27:34  kuznets
+ * Reflecting changes in ICache
+ *
  * Revision 1.20  2005/11/28 15:28:59  kuznets
  * +GetBlobOwner()
  *
