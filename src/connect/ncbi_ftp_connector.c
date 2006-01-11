@@ -715,7 +715,7 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
                                              const char*    path,
                                              TFCDC_Flags    flag)
 {
-    CONNECTOR      ccc = (SConnector*) malloc(sizeof(SConnector));
+    CONNECTOR      ccc = (SConnector*)    malloc(sizeof(SConnector));
     SFTPConnector* xxx = (SFTPConnector*) malloc(sizeof(*xxx));
 
     assert(!(flag & ~eFCDC_LogAll));
@@ -730,6 +730,7 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
     xxx->path    = path  &&  *path ? strdup(path) : 0;
     xxx->name    = 0;
     xxx->flag    = flag;
+
     /* initialize connector data */
     ccc->handle  = xxx;
     ccc->next    = 0;
@@ -744,6 +745,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2006/01/11 20:21:32  lavr
+ * Uniform creation/fill-up of connector structures
+ *
  * Revision 1.15  2005/12/14 21:31:04  lavr
  * Two explicit (char*) casts added
  *

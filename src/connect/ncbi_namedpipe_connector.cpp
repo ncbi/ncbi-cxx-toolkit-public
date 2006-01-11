@@ -219,9 +219,7 @@ static void s_Destroy
 {
     SNamedPipeConnector* xxx = (SNamedPipeConnector*) connector->handle;
     if (xxx) {
-        if (xxx->pipe) {
-            delete xxx->pipe;
-        }
+        delete xxx->pipe;
         delete xxx;
     }
     connector->handle = 0;
@@ -243,8 +241,8 @@ extern CONNECTOR NAMEDPIPE_CreateConnector
 (const string& pipename,
  size_t        pipebufsize) 
 {
-    CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
-    SNamedPipeConnector* xxx = new SNamedPipeConnector();
+    CONNECTOR            ccc = (SConnector*) malloc(sizeof(SConnector));
+    SNamedPipeConnector* xxx =               new SNamedPipeConnector();
 
     // Initialize internal data structures
     xxx->pipe        = new CNamedPipeClient();
@@ -269,6 +267,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.10  2006/01/11 20:21:46  lavr
+ * Uniform creation/fill-up of connector structures
+ *
  * Revision 1.9  2004/06/04 14:29:34  ivanov
  * Renamed SPipeConnector->SNamedPipeConnector
  *

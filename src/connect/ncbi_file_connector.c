@@ -126,21 +126,20 @@ static EIO_Status s_VT_Open
         mode = "ab";  break;
     }
 
-    xxx->fout = fopen(xxx->out_file_name, mode);
-    if ( !xxx->fout ) {
+    if (!xxx->out_file_name  ||
+        !(xxx->fout = fopen(xxx->out_file_name, mode))) {
         return eIO_Unknown;
     }
 
     /* open file for input */
-    xxx->finp = fopen(xxx->inp_file_name, "rb");
-    if ( !xxx->finp ) {
+    if (!xxx->inp_file_name  ||
+        !(xxx->finp = fopen(xxx->inp_file_name, "rb"))) {
         fclose(xxx->fout);
         xxx->fout = 0;
         return eIO_Unknown;
     }
 
-    /* Due to the shortage of portable 'fseek' call
-     * ignore read/write positions so far;
+    /* Due to shortage of portable 'fseek' call ignore positioning for now;
      * only 0/EOF are in use for writing, and only 0 for reading
      */
     return eIO_Success;
@@ -300,8 +299,8 @@ extern CONNECTOR FILE_CreateConnectorEx
  const char*          out_file_name,
  const SFileConnAttr* attr)
 {
-    CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
-    SFileConnector* xxx = (SFileConnector*) malloc(sizeof(SFileConnector));
+    CONNECTOR       ccc = (SConnector*)     malloc(sizeof(SConnector));
+    SFileConnector* xxx = (SFileConnector*) malloc(sizeof(*xxx));
 
     /* initialize internal data structures */
     xxx->inp_file_name = strdup(inp_file_name);
@@ -325,6 +324,9 @@ extern CONNECTOR FILE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2006/01/11 20:21:22  lavr
+ * Uniform creation/fill-up of connector structures
+ *
  * Revision 6.13  2005/04/20 18:15:59  lavr
  * +<assert.h>
  *

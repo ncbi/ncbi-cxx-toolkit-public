@@ -253,7 +253,7 @@ extern CONNECTOR PIPE_CreateConnector
  CPipe*                pipe)
 {
     CONNECTOR       ccc = (SConnector*) malloc(sizeof(SConnector));
-    SPipeConnector* xxx = new SPipeConnector();
+    SPipeConnector* xxx =               new SPipeConnector();
 
     // Initialize internal data structures
     xxx->pipe        = pipe ? pipe  : new CPipe();
@@ -280,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2006/01/11 20:21:52  lavr
+ * Uniform creation/fill-up of connector structures
+ *
  * Revision 1.7  2004/05/17 20:58:13  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

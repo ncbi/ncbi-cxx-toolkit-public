@@ -295,8 +295,8 @@ static CONNECTOR s_Init
  size_t         init_size,
  TSCC_Flags     flags)
 {
-    CONNECTOR       ccc = (SConnector    *) malloc(sizeof(SConnector    ));
-    SSockConnector* xxx = (SSockConnector*) malloc(sizeof(SSockConnector));
+    CONNECTOR       ccc = (SConnector    *) malloc(sizeof(SConnector));
+    SSockConnector* xxx = (SSockConnector*) malloc(sizeof(*xxx));
 
     /* parameter check: either sock or host/port, not both */
     assert((!sock && host && port) || (sock && !host && !port));
@@ -374,6 +374,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2006/01/11 20:21:08  lavr
+ * Uniform creation/fill-up of connector structures
+ *
  * Revision 6.20  2005/04/20 18:15:59  lavr
  * +<assert.h>
  *
