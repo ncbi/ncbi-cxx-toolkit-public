@@ -35,7 +35,8 @@
 
 /// @file reader_writer.hpp
 /// Abstract reader-writer interface classes
-/// Slightly adapted, however, to build std::streambuf on top of it.
+///
+/// Slightly adapted, however, to build std::streambuf on top of them.
 
 
 #include <corelib/ncbistl.hpp>
@@ -123,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/11 16:24:29  lavr
+ * A comment fixed
+ *
  * Revision 1.13  2004/10/01 18:55:38  lavr
  * Formatting
  *
