@@ -110,7 +110,7 @@ public:
     virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
-                               BlobAccessDescr*  blob_descr);
+                               SBlobAccessDescr*  blob_descr);
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
                                     const string&    subkey,
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/11 15:19:49  kuznets
+ * Reflecting changes in ICache
+ *
  * Revision 1.6  2006/01/10 20:09:16  kuznets
  * Implemented thread syncronization in neticache client
  *

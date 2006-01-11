@@ -497,11 +497,11 @@ bool CNetICacheClient::Read(const string& key,
 void CNetICacheClient::GetBlobAccess(const string&     key,
                                      int               version,
                                      const string&     subkey,
-                                     BlobAccessDescr*  blob_descr)
+                                     SBlobAccessDescr*  blob_descr)
 {
     CFastMutexGuard guard(m_Lock);
-    blob_descr->reader = GetReadStream_NoLock(key, version, subkey);
-    if (blob_descr->reader) {
+    blob_descr->reader.reset(GetReadStream_NoLock(key, version, subkey));
+    if (blob_descr->reader.get()) {
         blob_descr->blob_size = m_BlobSize;
     } else {
         blob_descr->blob_size = 0;
@@ -824,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/11 15:20:11  kuznets
+ * Reflecting changes in ICache
+ *
  * Revision 1.8  2006/01/11 14:16:52  kuznets
  * More error checks in network protocol
  *
