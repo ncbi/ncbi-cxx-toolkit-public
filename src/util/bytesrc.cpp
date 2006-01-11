@@ -217,8 +217,8 @@ CIRByteSourceReader::~CIRByteSourceReader(void)
 size_t CIRByteSourceReader::Read(char* buffer, size_t bufferLength)
 {
     size_t bytes_read;
-    m_Reader->Read(buffer, bufferLength, &bytes_read);
-    if ( bytes_read < bufferLength ) {
+    ERW_Result result = m_Reader->Read(buffer, bufferLength, &bytes_read);
+    if ( result == eRW_Eof ) {
         m_EOF = true;
     }
     return bytes_read;
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/01/11 19:42:01  vasilche
+ * Fixed EOF check in CIRByteSourceReader.
+ *
  * Revision 1.41  2005/11/03 15:13:47  gouriano
  * Use streampos instead of streamoff for positioning
  *
