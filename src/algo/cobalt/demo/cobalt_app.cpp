@@ -89,7 +89,7 @@ void CMultiApplication::Init(void)
                      CArgDescriptions::eDouble, "0.01");
     arg_desc->AddDefaultKey("evalue2", "evalue2", 
                      "E-value threshold for aligning filler segments",
-                     CArgDescriptions::eDouble, "10.0");
+                     CArgDescriptions::eDouble, "0.01");
     arg_desc->AddDefaultKey("g0", "penalty", 
                      "gap open penalty for initial/terminal gaps",
                      CArgDescriptions::eInteger, "5");
@@ -249,6 +249,9 @@ int main(int argc, const char* argv[])
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.4  2006/01/11 23:17:56  papadopo
+  make default e-value match that of aligner
+
   Revision 1.3  2005/12/16 23:31:50  papadopo
   make iteration optional, add pseudocount input
 
