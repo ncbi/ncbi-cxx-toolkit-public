@@ -361,52 +361,6 @@ static void s_Close(SERV_ITER iter)
 }
 
 
-static int/*bool*/ s_Tuneup(SERV_ITER iter)
-{
-    static const char service[]  = "service";
-    static const char address[]  = "address";
-    static const char platform[] = "platform";
-    struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
-    SConnNetInfo* net_info = data->net_info;
-    const char* arch;
-    const char* addr;
-
-    if (!iter->ismask  &&  strpbrk(iter->name, "?*"))
-        return 0/*failed to start wildcard search*/;
-    /* Reset request method to be GET ('cause no HTTP body is ever used) */
-    net_info->req_method = eReqMethod_Get;
-    /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
-    if (!(arch = CORE_GetPlatform())  ||  !*arch)
-        ConnNetInfo_DeleteArg(net_info, platform);
-    else
-        ConnNetInfo_PreOverrideArg(net_info, platform, arch);
-    if (!(addr = UTIL_ClientAddress(net_info->client_host))  ||  !*addr)
-        ConnNetInfo_DeleteArg(net_info, address);
-    else
-        ConnNetInfo_PreOverrideArg(net_info, address, addr);
-    if (addr != net_info->client_host)
-        free((void*) addr);
-    if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->name)) {
-        ConnNetInfo_DeleteArg(net_info, platform);
-        if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->name)) {
-            ConnNetInfo_DeleteArg(net_info, address);
-            if (!ConnNetInfo_PreOverrideArg(net_info, service, iter->name))
-                return 0/*failed*/;
-        }
-    }
-    ConnNetInfo_ExtendUserHeader(data->net_info,
-                                 "User-Agent: NCBIServiceDispatcher/"
-                                 DISP_PROTOCOL_VERSION
-#ifdef NCBI_CXX_TOOLKIT
-                                 " (C++ Toolkit)"
-#else
-                                 " (C Toolkit)"
-#endif /*NCBI_CXX_TOOLKIT*/
-                                 "\r\n");
-    return 1/*succeeded*/;
-}
-
-
 /***********************************************************************
  *  EXTERNAL
  ***********************************************************************/
@@ -418,32 +372,51 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 {
     struct SDISPD_Data* data;
 
+    if (!iter->ismask  &&  strpbrk(iter->name, "?*"))
+        return 0/*failed to start unallowed wildcard search*/;
+
     if (!(data = (struct SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
-    if (g_NCBI_ConnectRandomSeed == 0) {
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-        srand(g_NCBI_ConnectRandomSeed);
-    }
-    assert(net_info);/*called with non-NULL*/
-    if (!(data->net_info = ConnNetInfo_Clone(net_info))) {
+
+    assert(net_info); /*must called with non-NULL*/
+    if ((data->net_info = ConnNetInfo_Clone(net_info)) != 0)
+        data->net_info->service = iter->name; /* SetupStandardArgs() expects */
+    if (!ConnNetInfo_SetupStandardArgs(data->net_info)) {
+        ConnNetInfo_Destroy(data->net_info);
         free(data);
         return 0;
     }
+    /* Reset request method to be GET ('cause no HTTP body is ever used) */
+    data->net_info->req_method = eReqMethod_Get;
     if (iter->stateless)
         data->net_info->stateless = 1/*true*/;
     if (iter->type & fSERV_Firewall)
         data->net_info->firewall = 1/*true*/;
+    ConnNetInfo_ExtendUserHeader(data->net_info,
+                                 "User-Agent: NCBIServiceDispatcher/"
+                                 DISP_PROTOCOL_VERSION
+#ifdef NCBI_CXX_TOOLKIT
+                                 " (C++ Toolkit)"
+#else
+                                 " (C Toolkit)"
+#endif /*NCBI_CXX_TOOLKIT*/
+                                 "\r\n");
     iter->data = data;
-
     iter->op = &s_op; /* SERV_Update() - from HTTP callback - expects this */
-    if (!s_Tuneup(iter)  ||  !s_Resolve(iter)) {
+
+    if (g_NCBI_ConnectRandomSeed == 0) {
+        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        srand(g_NCBI_ConnectRandomSeed);
+    }
+
+    if (!s_Resolve(iter)) {
         iter->op = 0;
         s_Reset(iter);
         s_Close(iter);
         return 0;
     }
 
-    /* call GetNextInfo if info is needed */
+    /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
     return &s_op;
@@ -464,6 +437,9 @@ extern void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.74  2006/01/11 20:26:29  lavr
+ * Take advantage of ConnNetInfo_SetupStandardArgs(); other related changes
+ *
  * Revision 6.73  2006/01/11 16:29:17  lavr
  * Take advantage of UTIL_ClientAddress(), some other minor improvements
  *
