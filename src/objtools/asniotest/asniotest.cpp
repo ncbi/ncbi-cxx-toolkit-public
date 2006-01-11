@@ -694,7 +694,7 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(DefaultField);
         RUN_TEST(ZeroReal);
         RUN_TEST(UnsignedInt);
-        //        RUN_TEST(BitString);
+        RUN_TEST(BitString);
         RUN_TEST(MMDBSrv);
         RUN_TEST(FullBlobs);
 
@@ -745,6 +745,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/01/11 17:02:59  thiessen
+* re-enable BitString after now that bug is fixed
+*
 * Revision 1.33  2006/01/10 23:18:14  vakatov
 * Temporarily turn off RUN_TEST(BitString) for the daily builds' sake,
 * until we have it fixed
