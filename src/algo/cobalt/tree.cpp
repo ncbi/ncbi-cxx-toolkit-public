@@ -160,14 +160,35 @@ CTree::x_RerootTree(TPhyTreeNode *node)
     // tree whose root has three subtrees. In this case all of
     // the original tree nodes are reused, so nothing in the
     // original tree needs to be freed.
-    //
-    // Trees previously processed by this routine are already
-    // in binary form. If this routine is run again on such 
-    // a tree then one node (the root of the original tree)
-    // must be deleted to retain the strict binary property
 
     double distance = 0.0;
     TPhyTreeNode *new_root = new TPhyTreeNode;
+
+    if (node == m_Tree) {
+
+        // the root has distance zero, and if no other 
+        // tree edge has distance larger than this then
+        // the tree is degenerate. Just make it strictly
+        // binary
+
+        TPhyTreeNode *leaf = 0;
+        TPhyTreeNode::TNodeList_I child(m_Tree->SubNodeBegin());
+        while (child != m_Tree->SubNodeEnd()) {
+            if ((*child)->IsLeaf()) {
+                leaf = m_Tree->DetachNode(*child);
+                break;
+            }
+            child++;
+        }
+
+        _ASSERT(leaf);
+        new_root->GetValue().SetDist(0.0);
+        new_root->AddNode(m_Tree);
+        new_root->AddNode(leaf);
+        m_Tree = new_root;
+        return;
+    }
+
     TPhyTreeNode *parent = node->GetParent();
     
     // The node (and the entire subtree underneath it) now 
@@ -238,6 +259,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2006/01/11 16:44:44  papadopo
+  handle rerooting a tree whose distance matrix is degenerate
+
   Revision 1.4  2005/11/21 21:03:00  papadopo
   fix documentation, add doxygen
 
