@@ -47,8 +47,10 @@
  *       ConnNetInfo_AppendArg()
  *       ConnNetInfo_PrependArg()
  *       ConnNetInfo_DeleteArg()
+ *       ConnNetInfo_DeleteAllArgs()
  *       ConnNetInfo_PreOverrideArg()
  *       ConnNetInfo_PostOverrideArg()
+ *       ConnNetInfo_SetupStandardArgs()
  *       #define REG_CONN_***
  *       #define DEF_CONN_***
  *
@@ -80,10 +82,7 @@
  *       StringToHostPort()
  *       HostPortToString()
  *
- *    8.Get uniformely-sufficient client address:
- *       UTIL_ClientAddress()
- *
- *    9.CRC32
+ *    8.CRC32
  *       CRC32_Update()
  *
  */
@@ -289,10 +288,16 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
  const char*   val
  );
 
-/* delete argument from the list */
+/* delete one (first) argument from the list of arguments in "info" */
 extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteArg
 (SConnNetInfo* info,
  const char*   arg
+ );
+
+/* delete all arguments specified in "args" from the list in "info" */
+extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteAllArgs
+(SConnNetInfo* info,
+ const char*   args
  );
 
 /* same as sequence Delete then Prepend, see above */
@@ -372,6 +377,14 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_DeleteUserHeader
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
 (SConnNetInfo* info,
  const char*   url
+ );
+
+
+/* Setup standard arguments:  service, address, and platform.
+ * Return non-zero on success; zero on error.
+ */
+extern int/*bool*/ ConnNetInfo_SetupStandardArgs
+(SConnNetInfo* info
  );
 
 
@@ -705,19 +718,6 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
  );
 
 
-/* Get uniformely-sufficient textual client address, based on provided
- * client_address parameter.  If the client_address is not sufficient,
- * then the IP of client_address (current host if empty) will be obtained,
- * and returned result will be allocated on the heap (via malloc()).
- * Return NULL if client_address is passed as NULL.
- * Return client_address if it is sufficient,
- * or if no better candidate can be obtained.
- */
-extern NCBI_XCONNECT_EXPORT const char* UTIL_ClientAddress
-(const char* client_address
- );
-
-
 /* Calculate/Update CRC32
  * Return the checksum updated according to the contents of the block
  * pointed to by "ptr" and having "count" bytes in it.
@@ -740,6 +740,11 @@ extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2006/01/11 20:19:56  lavr
+ * -UTIL_ClientAddress()
+ * +ConnNetInfo_DeleteAllArgs()
+ * +ConnNetInfo_SetupStandardArgs()
+ *
  * Revision 6.45  2006/01/11 16:24:03  lavr
  * +UTIL_ClientAddress()
  *

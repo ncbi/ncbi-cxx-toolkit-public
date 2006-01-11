@@ -246,7 +246,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
 extern int/*bool*/ ConnNetInfo_AdjustForHttpProxy(SConnNetInfo* info)
 {
-    if (info->http_proxy_adjusted  ||  !*info->http_proxy_host)
+    if (!info  ||  info->http_proxy_adjusted  ||  !*info->http_proxy_host)
         return 0/*false*/;
 
     if (strlen(info->host) + 16 + strlen(info->path) >= sizeof(info->path)) {
@@ -634,6 +634,27 @@ extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
 }
 
 
+extern void ConnNetInfo_DeleteAllArgs(SConnNetInfo* info,
+                                      const char*   args)
+{
+    char* temp;
+    char* arg;
+    if (!args || !*args || !(temp = strdup(args)))
+        return;
+    arg = temp;
+    while (*arg) {
+        char* end = strchr(arg, '&');
+        if (!end)
+            end = arg + strlen(arg);
+        else
+            *end++ = '\0';
+        ConnNetInfo_DeleteArg(info, arg);
+        arg = end;
+    }
+    free(temp);
+}
+
+
 extern int/*bool*/ ConnNetInfo_PreOverrideArg(SConnNetInfo* info,
                                               const char*   arg,
                                               const char*   val)
@@ -653,6 +674,85 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
         return 1/*success*/;
     ConnNetInfo_DeleteArg(info, arg);
     return ConnNetInfo_AppendArg(info, arg, val);
+}
+
+
+static int/*bool*/ s_IsSufficientAddress(const char* addr)
+{
+    size_t i, len = strlen(addr);
+    int dots = 0, isip = 1;
+    const char* dot = 0;
+
+    for (i = 0; i < len; i++) {
+        if (!isdigit((unsigned char) addr[i]))
+            isip = 0;
+        if (addr[i] == '.') {
+            if (++dots > 3)
+                isip = 0;
+            if (isip  &&  dot  &&  &addr[i] - dot > 3)
+                isip = 0;
+            dot = &addr[i];
+        }
+    }
+    if (dots < 3)
+        isip = 0;
+    if (dot == &addr[len - 1])
+        --dots;
+    return isip ? 1 : dots < 2 ? 0 : 1;
+}
+
+
+static const char* s_ClientAddress(const char* client_host)
+{
+    unsigned int ip;
+    char addr[64];
+    char* s;
+
+    if (!client_host  ||  s_IsSufficientAddress(client_host)        ||
+        !(ip = SOCK_gethostbyname(*client_host ? client_host : 0))  ||
+        SOCK_ntoa(ip, addr, sizeof(addr)) != 0                      ||
+        !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
+        return client_host;
+    }
+    sprintf(s, "%s(%s)", client_host, addr);
+    return s;
+}
+
+
+extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info)
+{
+    static const char service[]  = "service";
+    static const char address[]  = "address";
+    static const char platform[] = "platform";
+    const char* arch;
+    const char* addr;
+
+    if (!info)
+        return 0/*failed*/;
+    if (!info->service  ||  !*info->service) {
+        assert(0);
+        return 0/*failed*/;
+    }
+    /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
+    if (!(arch = CORE_GetPlatform())  ||  !*arch)
+        ConnNetInfo_DeleteArg(info, platform);
+    else
+        ConnNetInfo_PreOverrideArg(info, platform, arch);
+    if (!(addr = s_ClientAddress(info->client_host))  ||  !*addr)
+        ConnNetInfo_DeleteArg(info, address);
+    else
+        ConnNetInfo_PreOverrideArg(info, address, addr);
+    if (addr != info->client_host)
+        free((void*) addr);
+    if (!ConnNetInfo_PreOverrideArg(info, service, info->service)) {
+        ConnNetInfo_DeleteArg(info, platform);
+        if (!ConnNetInfo_PreOverrideArg(info, service, info->service)) {
+            ConnNetInfo_DeleteArg(info, address);
+            if (!ConnNetInfo_PreOverrideArg(info, service, info->service))
+                return 0/*failed*/;
+        }
+    }
+    return 1/*succeeded*/;
 }
 
 
@@ -1706,54 +1806,6 @@ extern size_t HostPortToString(unsigned int   host,
 
 
 /****************************************************************************
- * UTIL_ClientAddress
- */
-
-
-static int/*bool*/ s_IsSufficientAddress(const char* addr)
-{
-    size_t i, len = strlen(addr);
-    int dots = 0, isip = 1;
-    const char* dot = 0;
-
-    for (i = 0; i < len; i++) {
-        if (!isdigit((unsigned char) addr[i]))
-            isip = 0;
-        if (addr[i] == '.') {
-            if (++dots > 3)
-                isip = 0;
-            if (isip  &&  dot  &&  &addr[i] - dot > 3)
-                isip = 0;
-            dot = &addr[i];
-        }
-    }
-    if (dots < 3)
-        isip = 0;
-    if (dot == &addr[len - 1])
-        --dots;
-    return isip ? 1 : dots < 2 ? 0 : 1;
-}
-
-
-extern const char* UTIL_ClientAddress(const char* client_host)
-{
-    unsigned int ip;
-    char addr[64];
-    char* s;
-
-    if (!client_host  ||  s_IsSufficientAddress(client_host)        ||
-        !(ip = SOCK_gethostbyname(*client_host ? client_host : 0))  ||
-        SOCK_ntoa(ip, addr, sizeof(addr)) != 0                      ||
-        !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
-        return client_host;
-    }
-    sprintf(s, "%s(%s)", client_host, addr);
-    return s;
-}
-
-
-
-/****************************************************************************
  * CRC32
  */
 
@@ -1801,6 +1853,11 @@ unsigned int CRC32_Update(unsigned int checksum, const void *ptr, size_t count)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.81  2006/01/11 20:20:05  lavr
+ * -UTIL_ClientAddress()
+ * +ConnNetInfo_DeleteAllArgs()
+ * +ConnNetInfo_SetupStandardArgs()
+ *
  * Revision 6.80  2006/01/11 16:25:02  lavr
  * +UTIL_ClientAddress()
  *
