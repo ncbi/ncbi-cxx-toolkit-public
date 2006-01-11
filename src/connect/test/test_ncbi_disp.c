@@ -33,6 +33,7 @@
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_servicep.h"
 #include <stdlib.h>
+#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -55,7 +56,8 @@ int main(int argc, const char* argv[])
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
-    iter = SERV_OpenP(service, fSERV_Any,
+    iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
+                      (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
@@ -128,6 +130,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2006/01/11 16:35:59  lavr
+ * Open service iterator for everything (but FIREWALL)
+ *
  * Revision 6.20  2005/12/23 18:20:33  lavr
  * Use new SERV_OpenP() for iterator opening (and thus allow service wildcards)
  *
