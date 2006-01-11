@@ -51,6 +51,13 @@
 #include <objtools/format/flat_expt.hpp>
 #include <objects/seqset/gb_release_file.hpp>
 
+#include <objects/entrez2/Entrez2_boolean_element.hpp>
+#include <objects/entrez2/Entrez2_boolean_reply.hpp>
+#include <objects/entrez2/Entrez2_boolean_exp.hpp>
+#include <objects/entrez2/Entrez2_eval_boolean.hpp>
+#include <objects/entrez2/Entrez2_id_list.hpp>
+#include <objects/entrez2/entrez2_client.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -62,6 +69,7 @@ public:
     int  Run (void);
 
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
+    bool HandleSeqID( const string& seqID );
 
 private:
     // types
@@ -84,7 +92,8 @@ private:
     void x_GetLocation(const CSeq_entry_Handle& entry,
         const CArgs& args, CSeq_loc& loc);
     CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
-
+    int x_SeqIdToGiNumber( const string& seq_id, const string database );
+    
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CNcbiOstream*               m_Os;           // Output stream
@@ -244,6 +253,18 @@ int CAsn2FlatApp::Run(void)
                     scope->AddDefaults();
                     m_FFGenerator->Generate(*sub, *scope, *m_Os);
                 }
+            } else if ( args["id"] ) {
+            
+                //
+                //  Implies gbload; otherwise this feature would be pretty 
+                //  useless...
+                //
+                if ( ! args[ "gbload" ] ) {
+                    CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+                }   
+                string seqID = args["id"].AsString();
+                HandleSeqID( seqID );
+                
             } else {  // seq-entry
                 CRef<CSeq_entry> se(new CSeq_entry);
                 if ( !se ) {
@@ -270,6 +291,113 @@ int CAsn2FlatApp::Run(void)
 }
 
 
+int CAsn2FlatApp::x_SeqIdToGiNumber( 
+    const string& seq_id,
+    const string database_name )
+{
+    CEntrez2Client m_E2Client;
+
+    CRef<CEntrez2_boolean_element> e2_element (new CEntrez2_boolean_element);
+    e2_element->SetStr(seq_id);
+        
+    CEntrez2_eval_boolean eb;
+    eb.SetReturn_UIDs(true);
+    CEntrez2_boolean_exp& query = eb.SetQuery();
+    query.SetExp().push_back(e2_element);
+    query.SetDb() = CEntrez2_db_id( database_name );
+    
+    CRef<CEntrez2_boolean_reply> reply = m_E2Client.AskEval_boolean(eb);
+    
+    switch ( reply->GetCount() ) {
+    
+    case 0:
+        // no hits whatever:
+        return 0;
+        
+    case 1: {
+        //  one hit; the expected outcome:
+        //
+        //  "it" declared here to keep the WorkShop compiler from whining.
+        CEntrez2_id_list::TConstUidIterator it 
+            = reply->GetUids().GetConstUidIterator();
+        return ( *it );
+    }    
+    default:
+        // multiple hits? Unexpected and definitely not a good thing...
+        ERR_POST( Fatal << "Unexpected: The ID " << seq_id.c_str() 
+            << " turned up multiple hits." );
+       break;
+    }
+
+    return 0;
+};
+
+
+bool CAsn2FlatApp::HandleSeqID( const string& seq_id )
+{
+    //
+    //  Let's make sure we are dealing with something that qualifies a seq id
+    //  in the first place:
+    //
+    try {
+        CSeq_id SeqId( seq_id );
+    }
+    catch ( CException& ) {
+        ERR_POST( Fatal << "The ID " << seq_id.c_str() << " is not a valid seq ID." );
+    }
+    
+    unsigned int gi_number = NStr::StringToUInt( seq_id, NStr::fConvErr_NoThrow );
+ 
+    //
+    //  We need a gi number for the remote fetching. So if seq_id does not come
+    //  as a gi number already, we have to go through a lookup step first. 
+    //
+    const char* database_names[] = { "Nucleotide", "Protein" };
+    const int num_databases = sizeof( database_names ) / sizeof( const char* );
+    
+    for ( int i=0; (gi_number == 0) && (i < num_databases); ++ i ) {
+        gi_number = x_SeqIdToGiNumber( seq_id, database_names[ i ] );
+    }
+    if ( 0 == gi_number ) {
+        ERR_POST(Fatal << "Given ID \"" << seq_id.c_str() 
+          << "\" does not resolve to a GI number." );
+    }
+       
+    //
+    //  Now use the gi_number to get the actual seq object...
+    //
+    CSeq_id id;
+    id.SetGi( gi_number );
+    CRef<CScope> scope(new CScope(*m_Objmgr));
+    scope->AddDefaults();
+    CBioseq_Handle bsh = scope->GetBioseqHandle( id );
+    if ( ! bsh ) {
+    }
+    CConstRef<CSerialObject> reply_object;
+    reply_object = bsh.GetTopLevelEntry().GetCompleteSeq_entry();
+    
+    //
+    //  ... and use that to generate the flat file:
+    //
+    CArgs args = GetArgs();
+    if ( args["from"]  ||  args["to"] ) {
+        CSeq_loc loc;
+        x_GetLocation( bsh.GetTopLevelEntry(), args, loc );
+        m_FFGenerator->Generate(loc, *scope, *m_Os);
+    } else {
+        try {
+            int count = args["count"].AsInteger();
+            for ( int i = 0; i < count; ++i ) {
+                m_FFGenerator->Generate( bsh.GetTopLevelEntry(), *m_Os);
+            }
+        } catch (CException& ) {
+            ERR_POST( Fatal << "Flat file generation failed on " << id.DumpAsFasta() );
+        }
+    }
+    return true;
+}
+
+
 bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
     if (!se) {
@@ -292,7 +420,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     }
     scope->AddDefaults();
 
-    // add entry to scope    
+    // add entry to scope   
     CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
     if ( !entry ) {
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
@@ -554,6 +682,11 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2006/01/11 15:33:22  ludwigf
+* ADDED: Support for remote fetching of single accessions.
+* CHANGED: Command line argument "-id" now implies "-gbload" if "-gbload" is
+*     not specified explicitely.
+*
 * Revision 1.16  2005/11/14 18:33:11  ludwigf
 * CHANGED: "-mode release" or "-id ..." will no longer enable remote
 * fetching. Remote fetching can still be turned on through the command line
