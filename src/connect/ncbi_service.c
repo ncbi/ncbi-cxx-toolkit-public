@@ -547,22 +547,19 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
             const char* host = referrer->host;
             const char* path = referrer->path;
             const char* args = referrer->args;
-            const char* name = iter->name;
-            char port[8];
+            char        port[8];
             if (referrer->port && referrer->port != DEF_CONN_PORT)
                 sprintf(port, ":%hu", referrer->port);
             else
                 port[0] = '\0';
             if (!BUF_Write(&buf, referrer_header, sizeof(referrer_header)-1) ||
                 !BUF_Write(&buf, "http://", 7)                               ||
-                !BUF_Write(&buf, host, strlen(host))                         ||
-                !BUF_Write(&buf, port, strlen(port))                         ||
-                !BUF_Write(&buf, path, strlen(path))                         ||
-                !BUF_Write(&buf, "?service=", 9)                             ||
-                !BUF_Write(&buf, name, strlen(name))                         ||
-                (args[0] && (!BUF_Write(&buf, "&", 1)                        ||
+                !BUF_Write(&buf, host,      strlen(host))                    ||
+                !BUF_Write(&buf, port,      strlen(port))                    ||
+                !BUF_Write(&buf, path,      strlen(path))                    ||
+                (args[0] && (!BUF_Write(&buf, "?",  1)                       ||
                              !BUF_Write(&buf, args, strlen(args))))          ||
-                !BUF_Write(&buf, "\r\n", 2)) {
+                !BUF_Write(&buf, "\r\n",    2)) {
                 BUF_Destroy(buf);
                 return 0;
             }
@@ -570,11 +567,11 @@ char* SERV_Print(SERV_ITER iter, const SConnNetInfo* referrer)
             const char* host = referrer->client_host;
             const char* name = iter->name;
             if (!BUF_Write(&buf, referrer_header, sizeof(referrer_header)-1) ||
-                !BUF_Write(&buf, "lbsm://", 7)                               ||
-                !BUF_Write(&buf, host, strlen(host))                         ||
+                !BUF_Write(&buf, "lbsm://",         7)                       ||
+                !BUF_Write(&buf, host,              strlen(host))            ||
                 !BUF_Write(&buf, "/lbsmd?service=", 15)                      ||
-                !BUF_Write(&buf, name, strlen(name))                         ||
-                !BUF_Write(&buf, "\r\n", 2)) {
+                !BUF_Write(&buf, name,              strlen(name))            ||
+                !BUF_Write(&buf, "\r\n",            2)) {
                 BUF_Destroy(buf);
                 return 0;
             }
@@ -679,6 +676,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.73  2006/01/11 20:27:51  lavr
+ * Better generation of referral header in SERV_Print()
+ *
  * Revision 6.72  2006/01/11 16:27:36  lavr
  * SERV_Update() and SERV_ITER's VT::Update() have got addt'l "code" argument
  * Changes to fix SERV_Reset() behavior as documented
