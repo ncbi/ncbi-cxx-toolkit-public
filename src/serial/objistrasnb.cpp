@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2006/01/11 15:34:56  gouriano
+* Corrected reading of bit string
+*
 * Revision 1.84  2005/12/06 20:04:06  gouriano
 * Correction and optimization of bit string reading
 *
@@ -1424,7 +1427,7 @@ void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
                     }
                 }
             } else {
-                len += 4;
+                len += 8;
             }
 #endif
         }
