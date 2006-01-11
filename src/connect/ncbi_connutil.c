@@ -1706,6 +1706,54 @@ extern size_t HostPortToString(unsigned int   host,
 
 
 /****************************************************************************
+ * UTIL_ClientAddress
+ */
+
+
+static int/*bool*/ s_IsSufficientAddress(const char* addr)
+{
+    size_t i, len = strlen(addr);
+    int dots = 0, isip = 1;
+    const char* dot = 0;
+
+    for (i = 0; i < len; i++) {
+        if (!isdigit((unsigned char) addr[i]))
+            isip = 0;
+        if (addr[i] == '.') {
+            if (++dots > 3)
+                isip = 0;
+            if (isip  &&  dot  &&  &addr[i] - dot > 3)
+                isip = 0;
+            dot = &addr[i];
+        }
+    }
+    if (dots < 3)
+        isip = 0;
+    if (dot == &addr[len - 1])
+        --dots;
+    return isip ? 1 : dots < 2 ? 0 : 1;
+}
+
+
+extern const char* UTIL_ClientAddress(const char* client_host)
+{
+    unsigned int ip;
+    char addr[64];
+    char* s;
+
+    if (!client_host  ||  s_IsSufficientAddress(client_host)        ||
+        !(ip = SOCK_gethostbyname(*client_host ? client_host : 0))  ||
+        SOCK_ntoa(ip, addr, sizeof(addr)) != 0                      ||
+        !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
+        return client_host;
+    }
+    sprintf(s, "%s(%s)", client_host, addr);
+    return s;
+}
+
+
+
+/****************************************************************************
  * CRC32
  */
 
@@ -1753,6 +1801,9 @@ unsigned int CRC32_Update(unsigned int checksum, const void *ptr, size_t count)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.80  2006/01/11 16:25:02  lavr
+ * +UTIL_ClientAddress()
+ *
  * Revision 6.79  2005/11/29 21:32:31  lavr
  * Reserve SConnNetInfo::scheme, user, and pass for future use
  *
