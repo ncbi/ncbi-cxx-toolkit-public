@@ -74,6 +74,11 @@ public:
                              const string&  cache_name,
                              const string&  client_name);
 
+	virtual
+    void ReturnSocket(CSocket* sock);
+
+
+
     // ICache interface implementation
 
     virtual void SetTimeStampPolicy(TTimeStampFlags policy,
@@ -189,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/11 17:57:23  kuznets
+ * Fixed race condition in socket pooling
+ *
  * Revision 1.7  2006/01/11 15:19:49  kuznets
  * Reflecting changes in ICache
  *

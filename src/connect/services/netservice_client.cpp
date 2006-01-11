@@ -331,10 +331,6 @@ void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
 void CNetServiceClient::ReturnSocket(CSocket* sock)
 {
     _ASSERT(sock);
-    if (m_Sock == 0) {
-        m_Sock = sock;
-        return;
-    }
     CFastMutexGuard guard(m_SockPool_Lock);
     m_SockPool.Put(sock);
 }
@@ -351,6 +347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/11 17:58:23  kuznets
+ * Fixed race condition in socket pooling
+ *
  * Revision 1.14  2006/01/10 14:44:34  kuznets
  * Save sockets: + connection pool
  *

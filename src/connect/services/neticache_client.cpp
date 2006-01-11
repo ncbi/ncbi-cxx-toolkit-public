@@ -83,6 +83,19 @@ void CNetICacheClient::SetConnectionParams(const string&  host,
 CNetICacheClient::~CNetICacheClient()
 {}
 
+void CNetICacheClient::ReturnSocket(CSocket* sock)
+{
+	{{
+    CFastMutexGuard guard(m_Lock);
+    if (m_Sock == 0) {
+        m_Sock = sock;
+        return;
+    }
+	}}
+	CNetServiceClient::ReturnSocket(sock);
+}
+
+
 bool CNetICacheClient::CheckConnect()
 {
     if (!m_Sock) {
@@ -94,18 +107,21 @@ bool CNetICacheClient::CheckConnect()
 		// we have to do that, because if client program failed to 
 		// read the whole BLOB (deserialization error?) the network protocol
 		// stucks in an incorrect state (needs to be closed)
-		WriteStr("A?", 3);
-	    WaitForServer();
-    	if (!ReadStr(*m_Sock, &m_Tmp)) {
-			delete m_Sock;
-			m_Sock = 0;
+		try {
+			WriteStr("A?", 3);
+			WaitForServer();
+    		if (!ReadStr(*m_Sock, &m_Tmp)) {
+				delete m_Sock;m_Sock = 0;
+				return CheckConnect();
+    		}
+			if (m_Tmp[0] != 'O' && m_Tmp[1] != 'K') {
+				delete m_Sock; m_Sock = 0;
+				return CheckConnect();
+			}
+		} 
+		catch (exception&) {
+			delete m_Sock; m_Sock = 0;
 			return CheckConnect();
-    	}
-		if (m_Tmp[0] != 'O' && m_Tmp[1] != 'K') {
-			delete m_Sock;
-			m_Sock = 0;
-			return CheckConnect();
-			
 		}
         return false; // we are connected, nothing to do
     }
@@ -175,8 +191,21 @@ void CNetICacheClient::CheckOK(string* str) const
     }
 }
 
+/*
+struct CStackGuard
+{
+   CStackGuard(const string& name_) : name(name_)
+   {
+	   ERR_POST("->" << name);
+   }
+   ~CStackGuard()
+   {
+	   ERR_POST("  " << name << "->");
+   }
 
-
+	string name;
+};
+*/
 
 
 void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
@@ -677,13 +706,13 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     }
 
     sg.Release();
-    CNetCacheSock_RW* rw = new CNetCacheSock_RW(m_Sock);
+    auto_ptr<CNetCacheSock_RW> rw(new CNetCacheSock_RW(m_Sock));
     
-    DetachSocket();
     rw->OwnSocket();
+    DetachSocket();
     rw->SetSocketParent(this);
 
-    return rw;
+    return rw.release();
 }
 
 
@@ -826,6 +855,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/01/11 17:58:23  kuznets
+ * Fixed race condition in socket pooling
+ *
  * Revision 1.10  2006/01/11 16:29:07  kuznets
  * Fixed bug in GetBlobAccess()
  *

@@ -143,6 +143,7 @@ public:
 
     /// Return socket to the socket pool
     /// @note thread sync. method
+	virtual
     void ReturnSocket(CSocket* sock);
 
     /// Get socket out of the socket pool (if there are sockets available)
@@ -231,6 +232,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/11 17:57:23  kuznets
+ * Fixed race condition in socket pooling
+ *
  * Revision 1.14  2006/01/10 15:00:39  kuznets
  * #include ncbimtx.hpp
  *
