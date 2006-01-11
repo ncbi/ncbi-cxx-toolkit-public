@@ -350,12 +350,13 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
     }
 
     /* HTTP status must come on the first line of the reply */
-    if (sscanf(header, " HTTP/%*d.%*d %d ", &http_status) != 1  ||
-        http_status < 200  ||  299 < http_status) {
+    if (sscanf(header, " HTTP/%*d.%*d %d ", &http_status) != 1)
+        http_status = -1;
+    if (http_status < 200 || 299 < http_status) {
         server_error = http_status;
-        if (http_status == 301  ||  http_status == 302)
+        if (http_status == 301 || http_status == 302)
             moved = 1;
-        else if (http_status == 403  ||  http_status == 404)
+        else if (http_status < 0 || http_status == 403 || http_status == 404)
             uuu->net_info->max_try = 0;
     }
 
@@ -375,10 +376,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         CORE_DATA(header, size, header_header);
     }
 
-    if (uuu->parse_http_hdr) {
-        if (!(*uuu->parse_http_hdr)
-            (header, uuu->adjust_data, server_error))
-            server_error = 1;
+    if (uuu->parse_http_hdr
+        && !(*uuu->parse_http_hdr)(header, uuu->adjust_data, server_error)) {
+        server_error = 1/*fake, but still boolean true*/;
     }
 
     if (moved) {
@@ -804,6 +804,7 @@ static EIO_Status s_VT_Flush
 
     /* The real flush will be performed on the first "READ" (or "CLOSE"),
      * or on "WAIT". Here, we just store the write timeout, that's all...
+     * ADDENDUM: fHCC_Flushable connectors are able to actually flush data.
      */
     if (timeout) {
         uuu->ww_timeout = *timeout;
@@ -812,9 +813,9 @@ static EIO_Status s_VT_Flush
         uuu->w_timeout  = timeout;
 
     assert(connector->meta);
-    return (!(uuu->flags & fHCC_Flushable)  ||  !connector->meta->wait
-            ? eIO_Success
-            : connector->meta->wait(connector->meta->c_wait, eIO_Read, &zero));
+    return !(uuu->flags & fHCC_Flushable) || !connector->meta->wait
+        ? eIO_Success
+        : connector->meta->wait(connector->meta->c_wait, eIO_Read, &zero);
 }
 
 
@@ -980,6 +981,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.70  2006/01/11 16:29:58  lavr
+ * Treat unparsable HTTP/x.y header line as a server error
+ *
  * Revision 6.69  2005/12/08 03:53:23  lavr
  * Log connection parameters right before use
  *
