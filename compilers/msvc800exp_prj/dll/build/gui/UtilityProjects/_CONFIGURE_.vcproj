@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="-CONFIGURE-"
+	ProjectGUID="{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA56}"
+	RootNamespace="MasterProject"
+	Keyword="ManagedCProj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="ReleaseDLL|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Configure"
+			>
+			<File
+				RelativePath="configure._"
+				>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Configure solution : $(SolutionName)"
+						CommandLine="@echo on&#x0D;&#x0A;set PTB_PATH=$(ProjectDir)..\..\..\..\static\bin\$(ConfigurationName)&#x0D;&#x0A;set TREE_ROOT=$(ProjectDir)..\..\..\..\..\..&#x0D;&#x0A;set SLN_PATH=$(SolutionPath)&#x0D;&#x0A;cd $(InputDir)&#x0D;&#x0A;copy /Y $(InputFileName) $(InputName).bat&#x0D;&#x0A;call $(InputName).bat&#x0D;&#x0A;del /Q $(InputName).bat&#x0D;&#x0A;"
+						AdditionalDependencies=""
+						Outputs="$(InputPath).aanofile.out"
+					/>
+				</FileConfiguration>
+			</File>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>
