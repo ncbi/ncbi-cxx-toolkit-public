@@ -96,7 +96,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
                 status = total * p;
                 p = total * (1.0 - p) / (total - access);
                 for (i = 0; i < n; i++) {
-                    cand = get_candidate(data, n);
+                    cand = get_candidate(data, i);
                     if (point <= cand->status)
                         cand->status  = p * (cand->status - access) + status;
                     else
