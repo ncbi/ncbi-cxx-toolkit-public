@@ -47,7 +47,8 @@ extern "C" {
 typedef struct {
     void        (*Reset)(SERV_ITER iter);
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter, HOST_INFO* host_info);
-    int/*bool*/ (*Update)(SERV_ITER iter, TNCBI_Time now, const char* text);
+    int/*bool*/ (*Update)(SERV_ITER iter, TNCBI_Time now,
+                          const char* text, int code);
     int/*bool*/ (*Penalize)(SERV_ITER iter, double penalty);
     void        (*Close)(SERV_ITER iter);
     const char* name;
@@ -142,11 +143,14 @@ extern NCBI_XCONNECT_EXPORT const char* SERV_CurrentName(SERV_ITER iter);
 
 
 /* Private interface: update mapper information from the given text
- * (<CR><LF> separated lines, usually taken from HTTP header).
+ * (<CR><LF> separated lines, usually taken from HTTP header), and by
+ * optionally (if non-zero) using error code provided.
+ * NB: non-zero code denotes abnormal state regardless of its value.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Update
 (SERV_ITER   iter,
- const char* text
+ const char* text,
+ int         code
  );
 
 
@@ -194,6 +198,9 @@ extern NCBI_XCONNECT_EXPORT double SERV_Preference
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2006/01/11 16:26:10  lavr
+ * SERV_Update() and SERV_ITER's VT::Update() have got addt'l "code" argument
+ *
  * Revision 6.36  2005/12/23 18:12:15  lavr
  * New bitfields in SERV_ITER (corresponding to special service flags)
  * SERV_OpenP() special requirements for "skip" entries documented
