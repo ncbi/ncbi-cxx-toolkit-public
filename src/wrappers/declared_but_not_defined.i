@@ -30,7 +30,9 @@
  *
  */
 
-%ignore ncbi::gnomon::CAlignVec::GetScore;
+%ignore *::CHandleRangeMap::AddRange(const CSeq_id&, TSeqPos, TSeqPos,
+                                     ENa_strand);
+%ignore *::CHandleRangeMap::AddRange(const CSeq_id&, TSeqPos, TSeqPos);
 
 %ignore ncbi::objects::CAnnotObject_Info::GetObject;
 %ignore ncbi::objects::CAnnotObject_Info::GetObjectPointer;
@@ -77,6 +79,10 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/11 16:49:27  jcherry
+ * %ignore some CHandleRangeMap::AddRange signatures.
+ * Drop %ignore of CAlignVec::GetScore.
+ *
  * Revision 1.14  2005/12/15 20:30:11  jcherry
  * %ignore ncbi::gnomon::CAlignVec::GetScore
  *
