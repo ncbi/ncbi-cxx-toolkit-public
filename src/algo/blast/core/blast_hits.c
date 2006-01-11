@@ -1960,7 +1960,7 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
  * extra traceback stage that could fix the inclusions.
  * @param query_blk Query sequence for the HSPs
  * @param subject_blk Subject sequence for the HSPs
- * @param query info Used to map HSPs uniquely onto the complete
+ * @param query_info Used to map HSPs uniquely onto the complete
  *                   set of query sequences
  * @param hsp_list HSP list to check (must be in standard sorted order) [in/out]
  */
