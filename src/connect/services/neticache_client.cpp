@@ -90,6 +90,23 @@ bool CNetICacheClient::CheckConnect()
     }
 
     if (m_Sock && (eIO_Success == m_Sock->GetStatus(eIO_Open))) {
+		// check if netcache session is in OK state
+		// we have to do that, because if client program failed to 
+		// read the whole BLOB (deserialization error?) the network protocol
+		// stucks in an incorrect state (needs to be closed)
+		WriteStr("A?", 3);
+	    WaitForServer();
+    	if (!ReadStr(*m_Sock, &m_Tmp)) {
+			delete m_Sock;
+			m_Sock = 0;
+			return CheckConnect();
+    	}
+		if (m_Tmp[0] != 'O' && m_Tmp[1] != 'K') {
+			delete m_Sock;
+			m_Sock = 0;
+			return CheckConnect();
+			
+		}
         return false; // we are connected, nothing to do
     }
     if (!m_Host.empty()) { // we can restore connection
@@ -807,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/11 14:16:52  kuznets
+ * More error checks in network protocol
+ *
  * Revision 1.7  2006/01/10 20:09:39  kuznets
  * Implemented thread syncronization in neticache client
  *
