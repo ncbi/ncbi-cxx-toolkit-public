@@ -172,7 +172,7 @@ public:
     virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
-                               BlobAccessDescr*  blob_descr);
+                               SBlobAccessDescr*  blob_descr);
     virtual void GetBlobOwner(const string&  key,
                               int            version,
                               const string&  subkey,
@@ -303,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/11 15:28:03  kuznets
+ * dbapi_blob_cache.hpp
+ *
  * Revision 1.18  2005/11/28 15:28:42  kuznets
  * +GetBlobOwner()
  *
