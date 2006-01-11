@@ -1906,10 +1906,10 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 void CBDB_Cache::GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
-                               BlobAccessDescr*  blob_descr)
+                               SBlobAccessDescr* blob_descr)
 {
     _ASSERT(blob_descr);
-    blob_descr->reader = 0;
+    blob_descr->reader.reset();
     blob_descr->blob_size = 0;
     blob_descr->blob_found = false;
 
@@ -1938,11 +1938,11 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     m_Statistics.AddRead(m_TmpOwnerName, curr - tz_delta);
 
     // Check if it's an overflow BLOB (external file)
-    blob_descr->reader =
+    blob_descr->reader.reset(
         x_CreateOverflowReader(overflow,
                                key, version, subkey,
-                               blob_descr->blob_size);
-    if (blob_descr->reader) {
+                               blob_descr->blob_size));
+    if (blob_descr->reader.get()) {
         blob_descr->blob_found = true;
         return;
     }
@@ -1970,7 +1970,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
         }
     } 
     
-    // speculative Fetch failed (or impossible), read it the another way
+    // speculative Fetch failed (or impossible), read it another way
     ret = m_CacheDB->Fetch();
 
     if (ret != eBDB_Ok) {
@@ -1982,8 +1982,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
     // read the BLOB into a custom in-memory buffer
     CBDB_BLobStream* bstream = m_CacheDB->CreateStream();
-    blob_descr->reader =
-        new CBDB_CacheIReader(*this, bstream, m_WSync);
+    blob_descr->reader.reset(new CBDB_CacheIReader(*this, bstream, m_WSync));
 }
 
 
@@ -3322,6 +3321,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.132  2006/01/11 15:07:23  vasilche
+ * Cleaned SBlobCacheDescr structure.
+ *
  * Revision 1.131  2006/01/03 15:40:27  kuznets
  * Fixed bug in diagnostics
  *

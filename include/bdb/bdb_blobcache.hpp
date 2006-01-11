@@ -495,7 +495,7 @@ public:
     virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
-                               BlobAccessDescr*  blob_descr);
+                               SBlobAccessDescr* blob_descr);
 
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
@@ -820,6 +820,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/01/11 15:07:23  vasilche
+ * Cleaned SBlobCacheDescr structure.
+ *
  * Revision 1.64  2005/12/05 13:44:57  kuznets
  * +InitStatistics()
  *

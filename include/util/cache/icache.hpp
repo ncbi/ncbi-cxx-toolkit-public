@@ -42,6 +42,7 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <util/reader_writer.hpp>
 #include <string>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
@@ -236,9 +237,14 @@ public:
                                    const string&  subkey) = 0;
 
     /// BLOB access descriptor
-    struct BlobAccessDescr
+    struct SBlobAccessDescr
     {
-        IReader*   reader;
+        SBlobAccessDescr(char* buf_ = 0, size_t buf_size_ = 0)
+            : buf(buf_), buf_size(buf_size_), blob_size(0), blob_found(false)
+            {
+            }
+
+        auto_ptr<IReader> reader;
         char*      buf;
         size_t     buf_size;
         size_t     blob_size;
@@ -256,7 +262,7 @@ public:
     virtual void GetBlobAccess(const string&     key,
                                int               version,
                                const string&     subkey,
-                               BlobAccessDescr*  blob_descr) = 0;
+                               SBlobAccessDescr* blob_descr) = 0;
 
     /// Return sequential stream interface to write BLOB data.
     ///
@@ -379,6 +385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/01/11 15:06:30  vasilche
+ * Cleaned SBlobCacheDescr structure.
+ *
  * Revision 1.19  2005/11/28 15:16:07  kuznets
  * +GetBlobOwner()
  *
