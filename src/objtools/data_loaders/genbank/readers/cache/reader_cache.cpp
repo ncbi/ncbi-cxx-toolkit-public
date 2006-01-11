@@ -205,19 +205,43 @@ int CCacheReader::GetMaximumConnectionsLimit(void) const
 //////////////////////////////////////////////////////////////////
 
 
+namespace {
+    bool x_Read(IReader* reader, char* buf, size_t size)
+    {
+        while ( size ) {
+            size_t count = 0;
+            if ( reader->Read(buf, size, &count) != eRW_Success ) {
+                return false;
+            }
+            buf += count;
+            size -= count;
+        }
+        return true;
+    }
+}
+
+
 
 bool CCacheReader::x_LoadIdCache(const string& key,
                                  const string& subkey,
                                  TIdCacheData& data)
 {
-    size_t size = m_IdCache->GetSize(key, 0, subkey);
-    data.resize(size / sizeof(int));
-    if ( size == 0 ) {
-        return false;
-    }
-    if ( size % sizeof(int) != 0 ||
-         !m_IdCache->Read(key, 0, subkey, &data[0], size) ) {
-        return false;
+    ICache::SBlobAccessDescr descr;
+    m_IdCache->GetBlobAccess(key, 0, subkey, &descr);
+    if ( descr.blob_found ) {
+        size_t size = descr.blob_size;
+        data.resize(size / sizeof(int));
+        if ( size == 0 ) {
+            return false;
+        }
+        if ( size % sizeof(int) != 0 ) {
+            return false;
+        }
+        if ( !x_Read(descr.reader.get(),
+                     reinterpret_cast<char*>(&data[0]),
+                     size) ) {
+            return false;
+        }
     }
     return true;
 }
