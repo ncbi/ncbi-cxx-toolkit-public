@@ -137,7 +137,7 @@ CDBLibContext::CDBLibContext(DBINT version)
         SetHostName( hostname );
     }
 
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN) && defined(FTDS_IN_USE)
     WSADATA wsaData; 
     if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
     {
@@ -281,16 +281,18 @@ CDBLibContext::~CDBLibContext()
         }
 
 #ifdef MS_DBLIB_IN_USE
-        // Fails for some reason (04/08/05) ...
+        // Fail for some reason (04/08/05) ...
         // dbfreelogin(m_Login);
         dbwinexit();
 #else
         dbloginfree(m_Login);
+#if defined(FTDS_IN_USE) || !defined(NCBI_OS_MSWIN)
         dbexit();
+#endif
 #endif
         g_pContext = NULL;
 
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN) && defined(FTDS_IN_USE)
         WSACleanup();
 #endif
     }
@@ -1085,6 +1087,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/01/11 18:06:10  ssikorsk
+ * Do not call dbexit with Sybase on Windows.
+ *
  * Revision 1.61  2006/01/09 19:19:21  ssikorsk
  * Validate server name, user name and password before connection for all drivers.
  *
