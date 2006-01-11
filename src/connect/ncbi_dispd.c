@@ -60,7 +60,7 @@ extern "C" {
 #endif /*__cplusplus*/
     static void        s_Reset      (SERV_ITER);
     static SSERV_Info* s_GetNextInfo(SERV_ITER, HOST_INFO*);
-    static int/*bool*/ s_Update     (SERV_ITER, TNCBI_Time, const char*);
+    static int/*bool*/ s_Update     (SERV_ITER, TNCBI_Time, const char*, int);
     static void        s_Close      (SERV_ITER);
 
     static const SSERV_VTable s_op = {
@@ -86,33 +86,29 @@ struct SDISPD_Data {
 static int/*bool*/ s_AddServerInfo(struct SDISPD_Data* data, SSERV_Info* info)
 {
     size_t i;
-
+    const char* name = SERV_NameOfInfo(info);
     /* First check that the new server info updates an existing one */
     for (i = 0; i < data->n_cand; i++) {
-        if (SERV_EqualInfo(data->cand[i].info, info)) {
+        if (strcasecmp(name, SERV_NameOfInfo(data->cand[i].info))
+            &&  SERV_EqualInfo(info, data->cand[i].info)) {
             /* Replace older version */
             free((void*) data->cand[i].info);
             data->cand[i].info = info;
             return 1;
         }
     }
-
     /* Next, add new service to the list */
     if (data->n_cand == data->a_cand) {
         size_t n = data->a_cand + 10;
-        SLB_Candidate* temp;
-
-        if (data->cand)
-            temp = (SLB_Candidate*) realloc(data->cand, sizeof(*temp) * n);
-        else
-            temp = (SLB_Candidate*) malloc (            sizeof(*temp) * n);
+        SLB_Candidate* temp = (SLB_Candidate*)
+            (data->cand
+             ? realloc(data->cand, n * sizeof(*temp))
+             : malloc (            n * sizeof(*temp)));
         if (!temp)
             return 0;
-
         data->cand = temp;
         data->a_cand = n;
     }
-
     data->cand[data->n_cand++].info = info;
     return 1;
 }
@@ -124,11 +120,11 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-/*ARGSUSED*/
-static int/*bool*/ s_ParseHeader(const char* header, void *iter,
-                                 int/*ignored*/ server_error)
+static int/*bool*/ s_ParseHeader(const char* header,
+                                 void*       iter,
+                                 int         server_error)
 {
-    SERV_Update((SERV_ITER) iter, header);
+    SERV_Update((SERV_ITER) iter, header, server_error);
     return 1/*header parsed okay*/;
 }
 
@@ -192,12 +188,15 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
 }
 
 
-static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
+static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now,
+                            const char* text, int code)
 {
     static const char server_info[] = "Server-Info-";
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     size_t len = strlen(text);
 
+    if (code == 400)
+        data->disp_fail = 1;
     if (len >= sizeof(server_info)  &&
         strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
         const char* name;
@@ -236,22 +235,20 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
         if (info) {
             if (info->time != SERV_TIME_INFINITE)
                 info->time += now; /* expiration time now */
-            if ((iter->pref >= 0.0  ||  !iter->host  ||  !iter->port
-                 ||  (iter->host == info->host  &&  iter->port == info->port))
-                &&  s_AddServerInfo(data, info)) {
+            if (s_AddServerInfo(data, info))
                 return 1/*updated*/;
-            }
             free(info);
         }
     } else if (len >= sizeof(HTTP_DISP_FAILURES)  &&
                strncasecmp(text, HTTP_DISP_FAILURES,
                            sizeof(HTTP_DISP_FAILURES) - 1) == 0) {
 #if defined(_DEBUG) && !defined(NDEBUG)
-        text += sizeof(HTTP_DISP_FAILURES) - 1;
-        while (*text  &&  isspace((unsigned char)(*text)))
-            text++;
-        if (data->net_info->debug_printout)
+        if (data->net_info->debug_printout) {
+            text += sizeof(HTTP_DISP_FAILURES) - 1;
+            while (*text  &&  isspace((unsigned char)(*text)))
+                text++;
             CORE_LOGF(eLOG_Warning, ("[DISPATCHER]  %s", text));
+        }
 #endif /*_DEBUG && !NDEBUG*/
         data->disp_fail = 1;
         return 1/*updated*/;
@@ -364,49 +361,6 @@ static void s_Close(SERV_ITER iter)
 }
 
 
-static int/*bool*/ s_IsSufficientAddress(const char* addr)
-{
-    size_t i, len = strlen(addr);
-    int dots = 0, isip = 1;
-    const char* dot = 0;
-
-    for (i = 0; i < len; i++) {
-        if (!isdigit((unsigned char) addr[i]))
-            isip = 0;
-        if (addr[i] == '.') {
-            if (++dots > 3)
-                isip = 0;
-            if (isip  &&  dot  &&  &addr[i] - dot > 3)
-                isip = 0;
-            dot = &addr[i];
-        }
-    }
-    if (dots < 3)
-        isip = 0;
-    if (dot == &addr[len - 1])
-        --dots;
-    return isip ? 1 : dots < 2 ? 0 : 1;
-}
-
-
-static const char* s_GetClientAddress(const char* client_host)
-{
-    unsigned int ip;
-    char addr[64];
-    char* s;
-
-    assert(client_host);
-    if (s_IsSufficientAddress(client_host)                          ||
-        !(ip = SOCK_gethostbyname(*client_host ? client_host : 0))  ||
-        SOCK_ntoa(ip, addr, sizeof(addr)) != 0                      ||
-        !(s = (char*) malloc(strlen(client_host) + strlen(addr) + 3))) {
-        return client_host;
-    }
-    sprintf(s, "%s(%s)", client_host, addr);
-    return s;
-}
-
-
 static int/*bool*/ s_Tuneup(SERV_ITER iter)
 {
     static const char service[]  = "service";
@@ -417,6 +371,8 @@ static int/*bool*/ s_Tuneup(SERV_ITER iter)
     const char* arch;
     const char* addr;
 
+    if (!iter->ismask  &&  strpbrk(iter->name, "?*"))
+        return 0/*failed to start wildcard search*/;
     /* Reset request method to be GET ('cause no HTTP body is ever used) */
     net_info->req_method = eReqMethod_Get;
     /* Dispatcher CGI arguments (sacrifice some if they all do not fit) */
@@ -424,7 +380,7 @@ static int/*bool*/ s_Tuneup(SERV_ITER iter)
         ConnNetInfo_DeleteArg(net_info, platform);
     else
         ConnNetInfo_PreOverrideArg(net_info, platform, arch);
-    if (!(addr = s_GetClientAddress(net_info->client_host))  ||  !*addr)
+    if (!(addr = UTIL_ClientAddress(net_info->client_host))  ||  !*addr)
         ConnNetInfo_DeleteArg(net_info, address);
     else
         ConnNetInfo_PreOverrideArg(net_info, address, addr);
@@ -508,6 +464,9 @@ extern void DISP_SetMessageHook(FDISP_MessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.73  2006/01/11 16:29:17  lavr
+ * Take advantage of UTIL_ClientAddress(), some other minor improvements
+ *
  * Revision 6.72  2005/12/23 18:18:17  lavr
  * Rework to use newer dispatcher protocol to closely match the functionality
  * of local (LBSM shmem based) service locator.  Factoring out invariant
