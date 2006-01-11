@@ -35,82 +35,57 @@
 #include <stdlib.h>
 
 
-typedef enum {
-    ePref_Mismatch  = 0,
-    ePref_HostMatch = 1,
-    ePref_FullMatch = 2
-} EPrefMatch;
-
-
-static EPrefMatch s_Match(SERV_ITER iter,
-                          unsigned int host, unsigned short port)
-{
-    EPrefMatch match;
-    if (!iter->pref  ||  !iter->host  ||  iter->host != host)
-        match =  ePref_Mismatch;
-    else if (!iter->port)
-        match = ePref_HostMatch;
-    else if (iter->port == port)
-        match = ePref_FullMatch;
-    else
-        match = ePref_Mismatch;
-    return match;
-}
-
-
 size_t LB_Select(SERV_ITER     iter,          void*  data,
                  FGetCandidate get_candidate, double bonus)
 {
-    double total = 0.0, access = 0.0, point = 0.0, p = 0.0, status;
-    EPrefMatch best_match = ePref_Mismatch;
+    double total = 0.0, access = 0.0, point = 0.0, p = 0.0, status = 0.0;
+    int/*bool*/ best_match;
     const SSERV_Info* info;
     SLB_Candidate* cand;
-    size_t i, n;
+    size_t i = 0, n;
 
     assert(bonus > 1.0);
     assert(iter  &&  get_candidate);
-    best_match = ePref_Mismatch;
+    if (iter->ismask  ||  iter->promiscuous)
+        return 0/*first entry (DISPD: probably) fits*/;
+    best_match = 0/*false*/;
     for (n = 0; ; n++) {
-        EPrefMatch match;
-        if (!(cand = get_candidate(data, n))) {
-            assert(n);
+        int/*bool*/ match;
+        if (!(cand = get_candidate(data, n)))
             break;
-        }
-        if (iter->ismask  ||  iter->promiscuous)
-            return 0/*first entry fits*/;
         info   = cand->info;
         status = cand->status;
-        match  = s_Match(iter, info->host, info->port);
-        assert(status > 0.0);
-        if (( best_match  &&  best_match <= match)  ||
-            (!best_match  &&  !iter->host  &&  !iter->port
-             &&  info->locl  &&  info->coef < 0.0)) {
+        match  = iter->host  &&  iter->host == info->host
+            && (!iter->port  ||  iter->port == info->port);
+        if (match  ||  (!best_match  &&  !iter->host  &&
+                        info->locl  &&  info->coef < 0.0)) {
             if (best_match < match) {
                 best_match = match;
-                access = 0.0;
+                access = point = 0.0;
             }
             if (iter->pref  ||  info->coef <= 0.0) {
                 status *= bonus;
                 if (access < status  &&  (iter->pref  ||  info->coef < 0.0)) {
-                    access =  status;
-                    point  =  total + status; /* latch this local server  */
-                    p      = -info->coef;     /* this may result negative */
+                    access =  status;         /* always take the largest */
+                    point  =  total + status; /* latch this local server */
+                    p      = -info->coef;     /* NB: may end up negative */
                     i      = n;
                 }
-            } else
+            } else /* assert(match); */
                 status *= info->coef;
         }
         total       += status;
         cand->status = total;
     }
+    assert(n > 0);
 
-    if (best_match  &&  point > 0.0  &&  iter->pref < 0.0) {
+    if (best_match  &&  iter->pref < 0.0) {
         /* Latched preference */
         cand = get_candidate(data, i);
         status = access;
     } else {
         if (iter->pref > 0.0) {
-            if (point > 0.0  &&  total != access) {
+            if (point > 0.0  &&  access > 0.0  &&  total != access) {
                 p = SERV_Preference(iter->pref, access/total, n);
 #ifdef NCBI_LB_DEBUG
                 CORE_LOGF(eLOG_Note,
