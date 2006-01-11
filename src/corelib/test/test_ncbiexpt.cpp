@@ -25,8 +25,7 @@
  *
  * Authors:  Andrei Gourianov,
  *
- * File Description:
- *   test CNcbiException
+ * File Description:   Test CNcbiException and based classes
  *
  */
 
@@ -216,6 +215,7 @@ void CExceptApplication::tp1(void)
 }
 
 //---------------------------------------------------------------------------
+
 int CExceptApplication::Run(void)
 {
 
@@ -350,10 +350,12 @@ int CExceptApplication::Run(void)
         assert(0);
     }
 
-    cout << "Test completed" << endl;
+    LOG_POST("Test completed");
     return 0;
 }
+
 END_NCBI_SCOPE
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -364,13 +366,16 @@ USING_NCBI_SCOPE;
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-//    SetDiagPostFlag(eDPF_Trace);
     return CExceptApplication().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2006/01/11 16:09:02  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 6.14  2004/11/03 19:20:34  vakatov
  * Replaced _ASSERT by assert;  fixed comp.warnings as well.
  *
@@ -415,7 +420,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 6.2  2002/06/27 13:53:40  gouriano
  * added standard NCBI info
- *
  *
  * ===========================================================================
  */
