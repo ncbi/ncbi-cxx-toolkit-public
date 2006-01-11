@@ -2594,7 +2594,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks,
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
                 if ( mask.empty()  ||
-                     MatchesMask(entry->d_name, mask.c_str(), use_case) ) {
+                    MatchesMask(entry->d_name, mask.c_str(), use_case) ) {
                     s_AddEntry(contents, base_path, entry, flags);
                     break;
                 }
@@ -2895,7 +2895,7 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
 
     // The source link must exists
     EType src_type = GetType(eIgnoreLinks);
-    if ( src_type == eUnknown)  {
+    if ( src_type == eUnknown )  {
         return false;
     }
     CSymLink dst(new_path);
@@ -2964,67 +2964,292 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
 // CFileUtil
 //
 
-Uint8 CFileUtil::GetFreeDiskSpace(const string& path)
+/// Flags to get information about file system.
+/// Each flag corresponds to one or some fields in
+/// the CFileUtil::SFileSystemInfo structure.
+enum EFileSystemInfo {
+    fFSI_Type        = (1<<1),    ///< fs_type
+    fFSI_DiskSpace   = (1<<2),    ///< total_space, free_space
+    fFSI_BlockSize   = (1<<3),    ///< block_size
+    fFSI_FileNameMax = (1<<4),    ///< filename_max
+    fFSI_All         = 0xFF       ///< get all possible information
+};
+typedef int TFileSystemInfo;      ///< Binary OR of "EFileSystemInfo"
+
+// File system identification strings
+struct SFileSystem {
+    const char*                name;
+    CFileUtil::EFileSystemType type;
+};
+
+// File system identification table
+static const SFileSystem s_FileSystem[] = {
+    { "ADFS",    CFileUtil::eADFS    },
+    { "ADVFS",   CFileUtil::eAdvFS   },
+    { "AFFS",    CFileUtil::eAFFS    },
+    { "AUTOFS",  CFileUtil::eAUTOFS  },
+    { "CACHEFS", CFileUtil::eCacheFS },
+    { "CD9669",  CFileUtil::eCDFS    },
+    { "CDFS",    CFileUtil::eCDFS    },
+    { "DEVFS",   CFileUtil::eDEVFS   },
+    { "DFS",     CFileUtil::eDFS     },
+    { "DOS",     CFileUtil::eFAT     },
+    { "EXT",     CFileUtil::eExt     },
+    { "EXT2",    CFileUtil::eExt2    },
+    { "EXT3",    CFileUtil::eExt3    },
+    { "FAT",     CFileUtil::eFAT     },
+    { "FAT32",   CFileUtil::eFAT32   },
+    { "FDFS",    CFileUtil::eFDFS    },
+    { "FFM",     CFileUtil::eFFM     },
+    { "FFS",     CFileUtil::eFFS     },
+    { "HFS",     CFileUtil::eHFS     },
+    { "HSFS",    CFileUtil::eHSFS    },
+    { "HPFS",    CFileUtil::eHPFS    },
+    { "JFS",     CFileUtil::eJFS     },
+    { "LOFS",    CFileUtil::eLOFS    },
+    { "MFS",     CFileUtil::eMFS     },
+    { "MSFS",    CFileUtil::eMSFS    },
+    { "NFS",     CFileUtil::eNFS     },
+    { "NFS2",    CFileUtil::eNFS     },
+    { "NFSV2",   CFileUtil::eNFS     },
+    { "NFS3",    CFileUtil::eNFS     },
+    { "NFSV3",   CFileUtil::eNFS     },
+    { "NFS4",    CFileUtil::eNFS     },
+    { "NFSV4",   CFileUtil::eNFS     },
+    { "NTFS",    CFileUtil::eNTFS    },
+    { "PCFS",    CFileUtil::eFAT     },
+    { "PROC",    CFileUtil::ePROC    },
+    { "PROCFS",  CFileUtil::ePROC    },
+    { "RFS",     CFileUtil::eRFS     },
+    { "SMBFS",   CFileUtil::eSMBFS   },
+    { "SPECFS",  CFileUtil::eSPECFS  },
+    { "TMP",     CFileUtil::eTMPFS   },
+    { "UFS",     CFileUtil::eUFS     },
+    { "VXFS",    CFileUtil::eVxFS    },
+    { "XFS",     CFileUtil::eXFS     }
+};
+
+
+// Macros to get filesytem status information
+
+#define GET_STATVFS_INFO                                       \
+    struct statvfs st;                                         \
+    memset(&st, 0, sizeof(st));                                \
+    if (statvfs(path.c_str(), &st) != 0) {                     \
+        NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg); \
+    }                                                          \
+    if (st.f_frsize) {                                         \
+        info->free_space = (Uint8)st.f_frsize * st.f_bavail;   \
+        info->block_size = (unsigned long)st.f_frsize;         \
+    } else {                                                   \
+        info->free_space = (Uint8)st.f_bsize * st.f_bavail;    \
+        info->block_size = (unsigned long)st.f_bsize;          \
+    }                                                          \
+    info->total_space  = (Uint8)st.f_bsize * st.f_blocks
+
+
+#define GET_STATFS_INFO                                        \
+    struct statfs st;                                          \
+    memset(&st, 0, sizeof(st));                                \
+    if (statfs(path.c_str(), &st) != 0) {                      \
+        NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg); \
+    }                                                          \
+    info->free_space   = (Uint8)st.f_bsize * st.f_bavail;      \
+    info->total_space  = (Uint8)st.f_bsize * st.f_blocks;      \
+    info->block_size   = (unsigned long)st.f_bsize
+
+
+void s_GetFileSystemInfo(const string&               path,
+                         CFileUtil::SFileSystemInfo* info,
+                         TFileSystemInfo             flags)
 {
-    Uint8 free;
+    if ( !info ) {
+        NCBI_THROW(CCoreException, eInvalidArg,
+                   "CFileUtil::GetFileSystemInfo(path, NULL) is not allowed");
+    }
+    memset(info, 0, sizeof(*info));
+    const char* msg = "CFileUtil::GetFileSystemInfo() failed";
+    char* fs_name_ptr = 0;
 
 #if defined(NCBI_OS_MSWIN)
-    if ( !::GetDiskFreeSpaceEx(path.c_str(), (PULARGE_INTEGER)&free, 0, 0) ) {
-        NCBI_THROW(CFileException, eDiskInfo, 
-                   "CFileUtil::GetFreeDiskSpace: cannot get disk space");
+    // Try to get a root disk directory from given path
+    string xpath = path;
+    // Not UNC path
+    if ( path[0] != '\\'  ||  path[1] != '\\' ) {
+        if ( !isalpha((unsigned char)path[0]) || path[1] != DISK_SEPARATOR ) {
+            // absolute or relative path without disk name -- current disk
+            // dir entry should exists
+            if ( CDirEntry(path).Exists() ) {
+                xpath = CDir::GetCwd();
+            }
+        }
+        // Get disk root directory name from the path
+        xpath[2] = '\\';
+        xpath.resize(3);
+    }
 
+    // Get volume information
+    char  fs_name[MAX_PATH+1];
+    if (flags & (fFSI_Type | fFSI_FileNameMax))  {
+        DWORD filename_max;
+        DWORD fs_flags;
+
+        if ( !::GetVolumeInformation(xpath.c_str(),
+                                    NULL, 0, // Name of the specified volume
+                                    NULL,    // Volume serial number
+                                    &filename_max,
+                                    &fs_flags,
+                                    fs_name, sizeof(fs_name)) ) {
+            NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
+        }
+        info->filename_max = filename_max;
+        fs_name_ptr = fs_name;
     }
-#elif defined(HAVE_STATVFS)
-    struct statvfs st;
-    memset(&st, 0, sizeof(st));
-    if (statvfs(path.c_str(), &st) != 0) {
-        NCBI_THROW(CFileException, eDiskInfo, 
-                   "CFileUtil::GetFreeDiskSpace: cannot get disk space");
+        
+    // Get disk spaces
+    if (flags & fFSI_DiskSpace) {
+        if ( !::GetDiskFreeSpaceEx(xpath.c_str(),
+                                (PULARGE_INTEGER)&info->free_space,
+                                (PULARGE_INTEGER)&info->total_space, 0) ) {
+            NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
+        }
     }
-    if (st.f_frsize) {
-        free = (Uint8)st.f_frsize * st.f_bavail;
-    } else {
-        free = (Uint8)st.f_bsize * st.f_bavail;
+
+    // Get volume cluster size
+    if (flags & fFSI_BlockSize) {
+        DWORD dwSectPerClust; 
+        DWORD dwBytesPerSect;
+        if ( !::GetDiskFreeSpace(xpath.c_str(),
+                                &dwSectPerClust, &dwBytesPerSect, NULL, NULL) ) {
+            NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg);
+        }
+        info->block_size = dwBytesPerSect * dwSectPerClust;
     }
-#elif defined(HAVE_STATFS)
-    struct statfs st;
-    if (statfs(path.c_str(), &st) != 0) {
-        NCBI_THROW(CFileException, eDiskInfo, 
-                   "CFileUtil::GetFreeDiskSpace: cannot get disk space");
+
+#else // defined(NCBI_OS_MSWIN)
+
+#  if defined(NCBI_OS_LINUX)  &&  defined(HAVE_STATFS)
+    
+    GET_STATFS_INFO;
+    if (flags & fFSI_Type) {
+        switch (st.f_type) {
+            case 0xADF5:      info->fs_type = CFileUtil::eADFS;     break;
+            case 0xADFF:      info->fs_type = CFileUtil::eFFS;      break;
+            case 0x012FF7B9:  info->fs_type = CFileUtil::eAFS;      break;
+            case 0x0187:      info->fs_type = CFileUtil::eAUTOFS;   break;
+            case 0x1BADFACE:  info->fs_type = CFileUtil::eBFS;      break;
+            case 0xFF534D42:  info->fs_type = CFileUtil::eCIFS;     break;
+            case 0x73757245:  info->fs_type = CFileUtil::eCODA;     break;
+            case 0x012FF7B7:  info->fs_type = CFileUtil::eCOH;      break;
+            case 0x28CD3D45:  info->fs_type = CFileUtil::eCRAMFS;   break;
+            case 0x1373:      info->fs_type = CFileUtil::eDEVFS;    break;
+            case 0x137D:      info->fs_type = CFileUtil::eExt;      break;
+            case 0xEF51:
+            case 0xEF53:      info->fs_type = CFileUtil::eExt2;     break;
+            case 0x4244:      info->fs_type = CFileUtil::eHFS;      break;
+            case 0xF995E849:  info->fs_type = CFileUtil::eHPFS;     break;
+            case 0x4004:
+            case 0x4000:
+            case 0x9660:      info->fs_type = CFileUtil::eCDFS;     break;
+            case 0x3153464A:  info->fs_type = CFileUtil::eJFS;      break;
+            case 0x07C0:      info->fs_type = CFileUtil::eJFFS;     break;
+            case 0x72B6:      info->fs_type = CFileUtil::eJFFS2;    break;
+            case 0x137F:
+            case 0x138F:      info->fs_type = CFileUtil::eMinix;    break;
+            case 0x2468:
+            case 0x2478:      info->fs_type = CFileUtil::eMinix2;   break;
+            case 0x4d44:      info->fs_type = CFileUtil::eFAT;      break;
+            case 0x564C:      info->fs_type = CFileUtil::eNCPFS;    break;
+            case 0x6969:      info->fs_type = CFileUtil::eNFS;      break;
+            case 0x5346544E:  info->fs_type = CFileUtil::eNTFS;     break;
+            case 0x9fA1:      info->fs_type = CFileUtil::eOPENPROM; break;
+            case 0x9fA0:      info->fs_type = CFileUtil::ePROC;     break;
+            case 0x002F:      info->fs_type = CFileUtil::eQNX4;     break;
+            case 0x7275:      info->fs_type = CFileUtil::eROMFS;    break;
+            case 0x517B:      info->fs_type = CFileUtil::eSMBFS;    break;
+            case 0x62656572:  info->fs_type = CFileUtil::eSYSFS;    break;
+            case 0x012FF7B6:  info->fs_type = CFileUtil::eSYSV2;    break;
+            case 0x012FF7B5:  info->fs_type = CFileUtil::eSYSV4;    break;
+            case 0x01021994:  info->fs_type = CFileUtil::eTMPFS;    break;
+            case 0x15013346:  info->fs_type = CFileUtil::eUDF;      break;
+            case 0x00011954:  info->fs_type = CFileUtil::eUFS;      break;
+            case 0x9fA2:      info->fs_type = CFileUtil::eUSBDEVICE;break;
+            case 0x012FF7B8:  info->fs_type = CFileUtil::eV7;       break;
+            case 0xa501FCF5:  info->fs_type = CFileUtil::eVxFS;     break;
+            case 0x565a4653:  info->fs_type = CFileUtil::eVZFS;     break;
+            case 0x012FF7B4:  info->fs_type = CFileUtil::eXENIX;    break;
+            case 0x58465342:  info->fs_type = CFileUtil::eXFS;      break;
+            case 0x012FD16D:  info->fs_type = CFileUtil::eXIAFS;    break;
+            default:          info->fs_type = CFileUtil::eUnknown;  break;
+        }
     }
-    free = (Uint8)st.f_bsize * st.f_bavail;
+    info->filename_max = (unsigned long)st.f_namelen;
+
+#  elif (defined(NCBI_OS_SOLARIS) ||  defined(NCBI_OS_IRIX)  ||  \
+         defined(NCBI_OS_OSF1)) &&  defined(HAVE_STATVFS)
+
+    GET_STATVFS_INFO;
+    info->filename_max = (unsigned long)st.f_namemax;
+    fs_name_ptr = st.f_basetype;
+
+#  elif (defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN))  && \
+         defined(HAVE_STATFS)
+
+    GET_STATFS_INFO;
+    info->filename_max = (unsigned long)st.f_namelen;
+    fs_name_ptr = st.f_fstypename;
+
+#  elif defined(NCBI_OS_OSF1)  &&  defined(HAVE_STATVFS)
+
+    GET_STATVFS_INFO;
+    info->filename_max = (unsigned long)st.f_namelen;
+    fs_name_ptr = st.f_fstypename;
+
+#  else
+     // Unknown UNIX OS
+#    if defined(HAVE_STATVFS)
+        GET_STATVFS_INFO;
+#    elif defined(HAVE_STATFS)
+        GET_STATFS_INFO;
+#    endif
+#  endif
 #endif
-    return free;
+
+    // Try to define file system type by name
+    if ((flags & fFSI_Type)  &&  fs_name_ptr) {
+        for (size_t i=0; 
+             i < sizeof(s_FileSystem)/sizeof(s_FileSystem[0]); i++) {
+            if ( NStr::EqualNocase(fs_name_ptr, s_FileSystem[i].name) ) {
+                info->fs_type = s_FileSystem[i].type;
+                break;
+            }
+        }
+    }
+}
+
+
+void CFileUtil::GetFileSystemInfo(const string& path,
+                                  CFileUtil::SFileSystemInfo* info)
+{
+    s_GetFileSystemInfo(path, info, fFSI_All);
+}
+
+
+Uint8 CFileUtil::GetFreeDiskSpace(const string& path)
+{
+    SFileSystemInfo info;
+    s_GetFileSystemInfo(path, &info, fFSI_DiskSpace);
+    return info.free_space;
 }
 
 
 Uint8 CFileUtil::GetTotalDiskSpace(const string& path)
 {
-    Uint8 total;
-
-#if defined(NCBI_OS_MSWIN)
-    if ( !::GetDiskFreeSpaceEx(path.c_str(), 0, (PULARGE_INTEGER)&total, 0) ){
-        NCBI_THROW(CFileException, eDiskInfo, 
-                   "CFileUtil::GetTotalDiskSpace: cannot get disk space");
-    }
-#elif defined(HAVE_STATVFS)
-    struct statvfs st;
-    memset(&st, 0, sizeof(st));
-    if (statvfs(path.c_str(), &st) != 0) {
-        NCBI_THROW(CFileException, eDiskInfo, 
-                   "CFileUtil::GetTotalDiskSpace: cannot get disk space");
-    }
-    total = (Uint8)st.f_bsize * st.f_blocks;
-#elif defined(HAVE_STATFS)
-    struct statfs st;
-    if (statfs(path.c_str(), &st) != 0) {
-        NCBI_THROW(CFileException, eDiskInfo, 
-                   "CFileUtil::GetTotalDiskSpace: cannot get disk space");
-    }
-    total = (Uint8)st.f_bsize * st.f_blocks;
-#endif
-    return total;
+    SFileSystemInfo info;
+    s_GetFileSystemInfo(path, &info, fFSI_DiskSpace);
+    return info.total_space;
 }
+
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3235,11 +3460,12 @@ string s_LastErrorMessage(void)
 {
     char* ptr = NULL;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                FORMAT_MESSAGE_FROM_SYSTEM | 
-                FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL, GetLastError(), 
-                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR) &ptr, 0, NULL);
+                  FORMAT_MESSAGE_FROM_SYSTEM     |
+                  FORMAT_MESSAGE_MAX_WIDTH_MASK  |
+                  FORMAT_MESSAGE_IGNORE_INSERTS,
+                  "%0", GetLastError(), 
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                  (LPTSTR)&ptr, 0, NULL);
     string errmsg = ptr ? ptr : "unknown reason";
     LocalFree(ptr);
     return errmsg;
@@ -3636,6 +3862,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.134  2006/01/11 13:36:53  ivanov
+ * +CFileUtil::GetFileSystemInfo. CFileUtil - use CFileErrnoException.
+ *
  * Revision 1.133  2006/01/05 17:09:21  ivanov
  * Fixed warnings on Workshop compiler in 64-bit configurations
  *

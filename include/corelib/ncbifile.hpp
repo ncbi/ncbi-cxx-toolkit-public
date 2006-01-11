@@ -66,15 +66,14 @@ BEGIN_NCBI_SCOPE
 /// CFileException inherits its basic functionality from CCoreException
 /// and defines additional error codes for file operations.
 
-class CFileException : public CCoreException
+class NCBI_XNCBI_EXPORT CFileException : public CCoreException
 {
 public:
     /// Error types that file operations can generate.
     enum EErrCode {
         eMemoryMap,
         eRelativePath,
-        eNotExists,
-        eDiskInfo
+        eNotExists
     };
 
     /// Translate from an error code value to its string representation.
@@ -84,13 +83,42 @@ public:
         case eMemoryMap:    return "eMemoryMap";
         case eRelativePath: return "eRelativePath";
         case eNotExists:    return "eNotExists";
-        case eDiskInfo:     return "eDiskInfo";
         default:            return CException::GetErrCodeString();
         }
     }
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CFileException, CCoreException);
+};
+
+
+
+
+// File exception with system errno-based message
+
+#if defined(NCBI_OS_MSWIN)
+    typedef CErrnoTemplException_Win<CFileException> CFileErrnoException_Base;
+#else
+    typedef CErrnoTemplException<CFileException> CFileErrnoException_Base;
+#endif
+
+class NCBI_XNCBI_EXPORT CFileErrnoException : public CFileErrnoException_Base
+{
+public:
+    /// Error types
+    enum EErrCode {
+        eFileSystemInfo
+    };
+    /// Translate from an error code value to its string representation.
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eFileSystemInfo:  return "eFileSystemInfo";
+        default:               return CException::GetErrCodeString();
+        }
+    }
+    // Standard exception boilerplate code.
+    NCBI_EXCEPTION_DEFAULT(CFileErrnoException, CFileErrnoException_Base);
 };
 
 
@@ -1100,9 +1128,6 @@ public:
 ///
 /// Define class to work with directories.
 ///
-/// NOTE: The following functions are unsafe in multithreaded applications:
-///       - static bool Exists() (for Mac only);
-///       - bool Exists() (for Mac only).
 
 class NCBI_XNCBI_EXPORT CDir : public CDirEntry
 {
@@ -1343,20 +1368,102 @@ public:
 /// CFileUtil --
 ///
 /// Utility functions.
-/// 
 /// Throws an exceptions on error.
 
 class NCBI_XNCBI_EXPORT CFileUtil
 {
 public:
-
     ///   Unix:
     ///       The path name to any file/dir withing filesystem.
     ///   MS Windows:
-    ///       The root directory of the disk, or UNC name. It must include
-    ///       a trailing backslash (for example, \\MyServer\MyShare\, C:\).
+    ///       The path name to any file/dir withing filesystem.
+    ///       The root directory of the disk, or UNC name
+    ///       (for example, \\MyServer\MyShare\, C:\).
     ///   The "." can be used to get disk space on current disk.
-    ///   GetDiskInformation
+
+    //// Type of file system
+    enum EFileSystemType {
+        eUnknown = 0,   ///< File system type could not be determined
+
+        eADFS,          ///< Acorn's Advanced Disc Filing System
+        eAdvFS,         ///< Tru64 UNIX Advanced File System
+        eAFFS,          ///< Amiga Fast File System
+        eAFS,           ///< AFS File System
+        eAUTOFS,        ///< Automount File Sustem
+        eBFS,           ///< The Be (BeOS) File System (BeFS)
+        eCacheFS,       ///< Cache File System
+        eCDFS,          ///< ISO 9660 CD-ROM file system (CDFS/ISO9660)
+        eCIFS,          ///< Common Internet File System
+        eCODA,          ///< Coda File System
+        eCOH,           ///< Coherent (System V)
+        eCRAMFS,        ///< Compressed ROMFS
+        eDEVFS,         ///< Device File Sytem
+        eDFS,           ///< DCE Distributed File System (DCE/DFS)
+        eExt,           ///< Extended file system
+        eExt2,          ///< Second Extended file system
+        eExt3,          ///< Journalled form of ext2
+        eFAT,           ///< Traditional 8.3 MSDOS-style file system
+        eFAT32,         ///< FAT32 file system
+        eFDFS,          ///< File Descriptor File System
+        eFFM,           ///< File-on-File Mounting file system
+        eFFS,           ///< Fast File System (*BSD)
+        eHFS,           ///< Hierarchical File System
+        eHPFS,          ///< OS/2 High-Performance File System
+        eHSFS,          ///< High Sierra File System
+        eJFS,           ///< Journalling File System
+        eJFFS,          ///< Journalling Flash File System
+        eJFFS2,         ///< Journalling Flash File System v2
+        eLOFS,          ///< Loopback File System
+        eMFS,           ///< Memory File System
+        eMinix,         ///< Minix v1
+        eMinix2,        ///< Minix v2
+        eMSFS,          ///< Mail Slot File System
+        eNCPFS,         ///< NetWare Core Protocol File System
+        eNFS,           ///< Network File System (NFS)
+        eNTFS,          ///< New Technology File System
+        eOPENPROM,      ///< /proc/openprom filesystem
+        ePROC,          ///< /proc file system
+        eRFS,           ///< Remote File Share file system (AT&T RFS)
+        eQNX4,          ///< QNX4 file system
+        eReiserFS,      ///< Reiser File System
+        eROMFS,         ///< ROM File System
+        eSMBFS,         ///< Samba File System 
+        eSPECFS,        ///< SPECial File System
+        eSquashFS,      ///< Compressed read-only filesystem (Linux)
+        eSYSFS,         ///< (Linux)
+        eSYSV2,         ///< System V
+        eSYSV4,         ///< System V
+        eTMPFS,         ///< Virtual Memory File System (TMPFS/SHMFS)
+        eUDF,           ///< Universal Disk Format
+        eUFS,           ///< UNIX File System
+        eUSBDEVICE,     ///< USBDevice file system
+        eV7,            ///< UNIX V7 File System
+        eVxFS,          ///< VERITAS File System (VxFS)
+        eVZFS,          ///< Virtuozzo File System (VZFS)
+        eXENIX,         ///< Xenix (SysV) file system
+        eXFS,           ///< XFS File System
+        eXIAFS          ///<
+    };
+
+    /// Structure to store information about file system.
+    struct SFileSystemInfo {
+        EFileSystemType  fs_type;       ///< Type of filesystem
+        Uint8            total_space;   ///< Total disk space in bytes
+        Uint8            free_space;    ///< Free disk space in bytes
+        unsigned long    block_size;    ///< Allocation unit (block) size
+        unsigned long    filename_max;  ///< Maximum filename length
+                                        ///< (part between slashes)
+    };
+
+    /// Get file system information.
+    ///
+    /// Get information for the user associated with the calling thread only.
+    /// @param path
+    ///   String that specifies filesystem for which information
+    ///   is to be returned. 
+    /// @param info
+    ///   Pointer to structure which receives file system information.
+    static void GetFileSystemInfo(const string& path, SFileSystemInfo* info);
 
     /// Get disk space information.
     ///
@@ -1369,7 +1476,7 @@ public:
     /// @return
     ///   The amount of free space.
     /// @sa 
-    ///   GetDiskInformation
+    ///   GetFileSystemInfo, GetDiskInformation
     static Uint8 GetFreeDiskSpace(const string& path);
 
     /// Get disk space information.
@@ -1378,12 +1485,12 @@ public:
     /// If per-user quotas are in use, that some returned values may be less
     /// than the total number of free/total bytes on the disk.
     /// @param path
-    ///   String that specifies filesystem for which information
+    ///   String that specifies file system for which information
     ///   is to be returned. 
     /// @return
     ///   The amount of free space.
     /// @sa 
-    ///   GetDiskInformation
+    ///   GetFileSystemInfo, GetDiskInformation
     static Uint8 GetTotalDiskSpace(const string& path);
 };
 
@@ -2535,6 +2642,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/01/11 13:36:38  ivanov
+ * +CFileUtil::GetFileSystemInfo. CFileUtil - use CFileErrnoException.
+ *
  * Revision 1.71  2005/12/28 13:05:56  dicuccio
  * Changed ncbistd.hpp to ncbiobj.hpp for new dependency on CObject
  *
