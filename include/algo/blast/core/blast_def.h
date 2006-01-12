@@ -178,6 +178,10 @@ typedef struct BlastContextInfo {
     Int4 length_adjustment; /**< Length adjustment for boundary conditions */
     Int4 query_index;       /**< Index of query (same for all frames) */
     Int1 frame;             /**< Frame number (-1, -2, -3, 0, 1, 2, or 3) */
+    Boolean is_valid;       /**< Determine if this context is valid or not.
+                              This field should be set only by the setup code
+                              and read by subsequent stages of the BLAST search
+                              */
 } BlastContextInfo;
 
 /** Information about a single pattern occurence in the query. */
