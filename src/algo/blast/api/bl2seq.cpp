@@ -196,6 +196,69 @@ CBl2Seq::PartialRun()
     ScanDB();
 }
 
+// Auxiliary comparison functors for TQueryMessages (need to dereference the
+// CRef<>'s contained)
+struct TQueryMessagesLessComparator : 
+    public binary_function< CRef<CSearchMessage>, 
+                            CRef<CSearchMessage>, 
+                            bool>
+{ 
+    result_type operator() (const first_argument_type& a,
+                            const second_argument_type& b) const {
+        return *a < *b;
+    }
+};
+
+struct TQueryMessagesEqualComparator : 
+    public binary_function< CRef<CSearchMessage>, 
+                            CRef<CSearchMessage>, 
+                            bool>
+{ 
+    result_type operator() (const first_argument_type& a,
+                            const second_argument_type& b) const {
+        return *a == *b;
+    }
+};
+
+void
+CBl2Seq::x_CopyCoreErrorsToSearchMessages(const Blast_Message* blmsg)
+{
+    if ( !blmsg ) {
+        return;
+    }
+
+    _ASSERT(m_Messages.size() == (size_t)mi_clsQueryInfo->num_queries);
+
+    const BlastContextInfo* kCtxInfo = mi_clsQueryInfo->contexts;
+
+    // First copy the errors...
+    for (int i = mi_clsQueryInfo->first_context; 
+         i <= mi_clsQueryInfo->last_context; i++) {
+
+        if ( !kCtxInfo[i].is_valid ) {
+            string msg(blmsg->message);
+            CRef<CSearchMessage> sm(new CSearchMessage(blmsg->severity,
+                                                       kCtxInfo[i].query_index,
+                                                       msg));
+            m_Messages[kCtxInfo[i].query_index].push_back(sm);
+        }
+    }
+
+    // ... then remove duplicate error messages
+    NON_CONST_ITERATE(TSearchMessages, smsgs, m_Messages) {
+
+        if (smsgs->empty()) {
+            continue;
+        }
+
+        sort(smsgs->begin(), smsgs->end(), TQueryMessagesLessComparator());
+        TQueryMessages::iterator new_end = 
+            unique(smsgs->begin(), smsgs->end(), 
+                   TQueryMessagesEqualComparator());
+        smsgs->erase(new_end, smsgs->end());
+    }
+}
+
 void 
 CBl2Seq::SetupSearch()
 {
@@ -213,6 +276,7 @@ CBl2Seq::SetupSearch()
         }
         
         SetupQueryInfo(m_tQueries, prog, strand_opt, &mi_clsQueryInfo);
+        m_Messages.resize(mi_clsQueryInfo->num_queries);
         SetupQueries(m_tQueries, mi_clsQueryInfo, &mi_clsQueries, 
                      prog, strand_opt, gc.get(), m_Messages);
 
@@ -229,12 +293,18 @@ CBl2Seq::SetupSearch()
 
         // TODO: Check that lookup_segments are not filtering the whole 
         // sequence (SSeqRange set to -1 -1)
-        if (st != 0) {
-            string msg = blmsg ? blmsg->message : "BLAST_MainSetUp failed";
+        const string error_msg(blmsg 
+                               ? blmsg->message
+                               : "BLAST_MainSetUp failed");
+        if (blmsg) {
+            x_CopyCoreErrorsToSearchMessages(blmsg);
             Blast_MessageFree(blmsg);
-            NCBI_THROW(CBlastException, eCoreBlastError, msg);
         }
-        Blast_MessageFree(blmsg);
+
+
+        if (st != 0) {
+            NCBI_THROW(CBlastException, eCoreBlastError, error_msg);
+        }
 
         LookupTableWrapInit(mi_clsQueries, 
                             m_OptsHandle->GetOptions().GetLutOpts(),
@@ -339,6 +409,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.88  2006/01/12 20:37:09  camacho
+ * + x_CopyCoreErrorsToSearchMessages
+ *
  * Revision 1.87  2005/12/16 20:51:18  camacho
  * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
  *

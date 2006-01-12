@@ -192,6 +192,8 @@ private:
     void x_ResetQueryDs();
     /// Resets subject data structures
     void x_ResetSubjectDs();
+
+    void x_CopyCoreErrorsToSearchMessages(const Blast_Message* blmsg);
 };
 
 inline void
@@ -288,6 +290,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2006/01/12 20:36:48  camacho
+* + x_CopyCoreErrorsToSearchMessages
+*
 * Revision 1.45  2005/12/16 20:51:34  camacho
 * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
 *
