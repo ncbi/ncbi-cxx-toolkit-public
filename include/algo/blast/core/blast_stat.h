@@ -197,14 +197,15 @@ Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 
 
 /** Calculate and fill the ungapped Karlin-Altschul parameters in the
- * BlastScoreBlk structure.
+ * BlastScoreBlk structure (fields kbp_std, kbp_psi, and kbp of that structure).
  * @param program BLAST program type, needed to decide whether to substitute
  *                ideal values. [in]
  * @param sbp Scoring block to work with [in] [out]
  * @param query Buffer containing (concatenated) query sequence [in]
  * @param query_info Information about offsets of concatenated queries [in]
- * @return 0 if ungapped Karlin-Altschul parameters could be 
- *               calculated for at least one context; 1 otherwise.
+ * @return 0 if ungapped Karlin-Altschul parameters could be calculated for 
+ *        all of the query sequence's contexts; 1 if any of the contexts 
+ *        failed (but all others will be populated).
  */
 Int2
 Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
