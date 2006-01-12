@@ -543,16 +543,16 @@ END_TEST_FUNCTION
 // test for serialzation of BIT STRING
 BEGIN_TEST_FUNCTION(BitString)
 
-    CRandom r(1234567);
+    CRandom r;
 
     unsigned int i, j;
-    for (i=0; i<1000; ++i) {
+    for (i=0; i<100; ++i) {
 
         // create object w/ BIT STRING of random length and content
         CPC_InfoData orig;
         orig.SetUrn().SetLabel("test");
         CBitString& b = orig.SetValue().SetBitlist();
-        unsigned int s = r.GetRand(1, 100000);
+        unsigned int s = r.GetRand(1, 10000);
         b.resize(s);
         for (j=0; j<s; ++j)
             b[j] = r.GetRand(0, 1) ? true : false;
@@ -745,6 +745,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/01/12 23:35:08  thiessen
+* scale down BitString test
+*
 * Revision 1.34  2006/01/11 17:02:59  thiessen
 * re-enable BitString after now that bug is fixed
 *
