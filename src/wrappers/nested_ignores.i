@@ -29,6 +29,8 @@
  *
  */
 
+%ignore *::CFileUtil_SFileSystemInfo::fs_type;
+
 %ignore *::I_DriverContext_SConnAttr::mode;
 
 %ignore *::CNetScheduleClient_SJobBatch::job_list;
@@ -127,6 +129,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/12 17:03:02  jcherry
+ * %ignore CFileUtil::SFileSystemInfo::fs_type
+ *
  * Revision 1.12  2006/01/05 16:00:56  jcherry
  * %ignore I_DriverContext::SConnAttr::mode
  *
