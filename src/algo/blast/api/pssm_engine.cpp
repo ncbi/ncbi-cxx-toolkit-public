@@ -364,18 +364,13 @@ CPssmEngine::x_GuardProteinQuery(const unsigned char* query,
 BlastQueryInfo*
 CPssmEngine::x_InitializeQueryInfo(unsigned int query_length)
 {
-    BlastQueryInfo* retval = NULL;
+    const int kNumQueries = 1;
+    BlastQueryInfo* retval = BlastQueryInfoNew(eBlastTypeBlastp, kNumQueries);
 
-    retval = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo));
     if ( !retval ) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "BlastQueryInfo");
     }
 
-    retval->num_queries              = 1;
-    retval->first_context            = 0;
-    retval->last_context             = 0;
-    retval->contexts                 = (BlastContextInfo*) 
-                                       calloc(1, sizeof(BlastContextInfo));
     retval->contexts[0].query_offset = 0;
     retval->contexts[0].query_length = query_length;
     retval->max_length               = query_length;
@@ -611,6 +606,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2006/01/12 20:37:30  camacho
+ * Use BlastQueryInfoNew
+ *
  * Revision 1.43  2005/10/03 21:00:35  camacho
  * Fix to auxiliary class to convert CNcbiMatrix to double**
  *

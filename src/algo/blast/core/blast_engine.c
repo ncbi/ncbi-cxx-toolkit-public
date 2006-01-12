@@ -301,13 +301,10 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    /* Substitute query info by concatenated database info for RPS BLAST search */
    if (Blast_ProgramIsRpsBlast(program_number)) {
       BlastRPSLookupTable* lut = (BlastRPSLookupTable*) lookup->lut;
-      query_info = (BlastQueryInfo*) calloc(1, sizeof(BlastQueryInfo));
-      query_info->num_queries = lut->num_profiles;
-      query_info->last_context = lut->num_profiles - 1;
+      query_info = BlastQueryInfoNew(eBlastTypeRpsBlast, lut->num_profiles);
       /* Since this will really be "subject info", not "query info",
          pass program argument such that all frames will be set to 0. */
-      s_RPSOffsetArrayToContextOffsets(query_info,
-                                       lut->rps_seq_offsets);
+      s_RPSOffsetArrayToContextOffsets(query_info, lut->rps_seq_offsets);
    }
 
    /* Loop over frames of the subject sequence */

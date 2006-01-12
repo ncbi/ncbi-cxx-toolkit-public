@@ -760,16 +760,13 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
    if (!rps_info)
       return -1;
 
-   memset(concat_db_info, 0, sizeof(BlastQueryInfo)); /* fill in QueryInfo */
+   ASSERT(concat_db_info);
 
    profile_header = rps_info->profile_header;
    num_profiles = profile_header->num_profiles;
 
    /* Construct an auxiliary BlastQueryInfo structure for the concatenated
       database. */
-   concat_db_info->num_queries = num_profiles;
-   concat_db_info->first_context = 0;
-   concat_db_info->last_context = num_profiles - 1;
    OffsetArrayToContextOffsets(concat_db_info,
                                rps_info->profile_header->start_offsets,
                                eBlastTypeRpsBlast);
@@ -849,7 +846,8 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
       return -1;
    }
    
-   concat_db_info = (BlastQueryInfo*) malloc(sizeof(BlastQueryInfo));
+   concat_db_info = BlastQueryInfoNew(program_number,
+                                      rps_info->profile_header->num_profiles);
    if ((status = 
         s_RPSGapAlignDataPrepare(concat_db_info, gap_align, rps_info)) != 0)
       return status;
