@@ -71,6 +71,7 @@
 
 #include <objtools/format/item_ostream.hpp>
 #include <objtools/format/flat_expt.hpp>
+#include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/locus_item.hpp>
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/items/accession_item.hpp>
@@ -220,11 +221,28 @@ static bool s_HasSegments(const CBioseq_Handle& seq)
     return false;
 }
 
+bool s_BioSeqHasContig( 
+    const CBioseq_Handle& seq, 
+    CFlatFileContext& ctx )
+{
+    CBioseqContext* pbsc = new CBioseqContext(seq, ctx );
+    CContigItem* pContig = new CContigItem( * pbsc );
+    CSeq_loc::E_Choice choice = pContig->GetLoc().Which();
+    delete pContig;
+    delete pbsc;
+        
+    return ( choice != CSeq_loc::e_not_set );
+}
 
-// a defualt implementation for GenBank /  DDBJ formats
+// a default implementation for GenBank /  DDBJ formats
 void CFlatGatherer::x_GatherBioseq(const CBioseq_Handle& seq) const
 {
     const CFlatFileConfig& cfg = Config();
+    if ( cfg.IsModeRelease() && cfg.IsStyleContig() && 
+      ! s_BioSeqHasContig( seq, *m_Context ) ) {
+        NcbiCerr << "Release mode failure." << endl;
+        return;
+    }
 
     // Do multiple sections (segmented style) if:
     // a. the bioseq is segmented and has near parts
@@ -1635,6 +1653,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2006/01/12 19:30:45  ludwigf
+* CHANGED: Using release mode and contig style on a sequence that does not
+*   have a contig now produces an error message and otherwise empty output.
+*   In other modes, the flat file generator still displays the empty join()
+*   statement.
+*
 * Revision 1.53  2005/12/21 14:06:39  ludwigf
 * FIXED: Reference gathering for "-style master", which would throw an
 * exception in most of my test cases.
