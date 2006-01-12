@@ -254,17 +254,18 @@ CDbapiSampleApp::Exit()
 I_DriverContext&
 CDbapiSampleApp::GetDriverContext(void)
 {
-    if ( m_DriverContext )
+    if ( m_DriverContext.get() )
         return *m_DriverContext;
 
     // Create driver context
     C_DriverMgr driver_mgr;
     string      err_msg;
-    m_DriverContext = driver_mgr.GetDriverContext(GetDriverName(),
-                                                  &err_msg,
-                                                  &GetDatabaseParameters());
+    m_DriverContext.reset
+        (driver_mgr.GetDriverContext(GetDriverName(),
+                                     &err_msg,
+                                     &GetDatabaseParameters()));
 
-    if ( !m_DriverContext ) {
+    if ( !m_DriverContext.get() ) {
         ERR_POST(Fatal << "Cannot load driver: " << GetDriverName() << " ["
                  << err_msg << "] ");
     }
@@ -535,6 +536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/01/12 16:50:49  ssikorsk
+ * Use auto_ptr to hold I_DriverContext.
+ *
  * Revision 1.15  2006/01/05 21:49:58  ucko
  * Conditionalize use of load balancer on HAVE_LIBCONNEXT.
  *
