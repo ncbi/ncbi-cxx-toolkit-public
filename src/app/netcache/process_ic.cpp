@@ -140,6 +140,9 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
     CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
     CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
 
+/*ERR_POST("   STORE:" << req.key << " " << req.version << " " << req.subkey
+         );*/
+
     do {
         size_t nn_read;
 
@@ -204,7 +207,11 @@ void CNetCacheServer::Process_IC_StoreBlob(ICache&              ic,
     CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
 
     size_t blob_size = req.i1;
-
+/*
+ERR_POST("   STORE SIZE:" << req.key << " " << req.version << " " << req.subkey << 
+         " size = " << blob_size
+         );
+*/
     if (blob_size == 0) {
         ic.Store(req.key, req.version, req.subkey, buf,
                  0, req.i0, tdata.auth);
@@ -296,7 +303,6 @@ void CNetCacheServer::Process_IC_Read(ICache&              ic,
     buf += 100;
     ba_descr.buf = buf;
     ba_descr.buf_size = GetTLS_Size() - 100;
-
     ic.GetBlobAccess(req.key, req.version, req.subkey, &ba_descr);
 
     if (!ba_descr.blob_found) {
@@ -306,7 +312,11 @@ blob_not_found:
             WriteMsg(sock, "ERR:", msg);
             return;
     }
-
+/*
+ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey << 
+         " size = " << ba_descr.blob_size
+         );
+*/
     if (ba_descr.blob_size == 0) {
         WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
         return;
@@ -447,6 +457,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/12 19:31:16  kuznets
+ * Commented out some debugging prints
+ *
  * Revision 1.5  2006/01/11 15:26:26  kuznets
  * Reflecting changes in ICache
  *

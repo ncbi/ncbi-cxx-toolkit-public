@@ -580,7 +580,7 @@ void CNetCacheServer::Process(SOCK sock)
 
             while (ReadStr(socket, &(tdata->request))) {
                 const string& rq = tdata->request;
-cerr << rq << endl;
+//ERR_POST(rq);
                 if (rq.length() < 2) { 
                     WriteMsg(socket, "ERR:", "Invalid request");
                     x_RegisterProtocolErr(eError, rq);
@@ -1323,7 +1323,10 @@ bool CNetCacheServer::ReadStr(CSocket& sock, string* str)
             flag = false;
             break;
         case eIO_Timeout:
+            return false;
+            /*
             NCBI_THROW(CNetServiceException, eTimeout, "Connection timeout");
+            */
             break;
         default: // invalid socket or request, bailing out
             return false;
@@ -1807,6 +1810,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.77  2006/01/12 19:31:16  kuznets
+ * Commented out some debugging prints
+ *
  * Revision 1.76  2006/01/11 15:26:26  kuznets
  * Reflecting changes in ICache
  *
