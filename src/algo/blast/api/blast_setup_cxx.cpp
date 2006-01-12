@@ -90,33 +90,6 @@ s_QueryInfo_SetContext(BlastQueryInfo*   qinfo,
     }
 }
 
-/// Allocate and initialize the query info structure
-static BlastQueryInfo* 
-s_BlastQueryInfoNew(EBlastProgramType program, unsigned int num_queries)
-{
-    CBlastQueryInfo retval((BlastQueryInfo*) 
-                           calloc(1, sizeof(BlastQueryInfo)));
-
-    if (retval.Get() == NULL) {
-        NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query info");
-    }
-
-    const unsigned int kNumContexts = GetNumberOfContexts(program);
-    retval->num_queries = static_cast<int>(num_queries);
-    retval->first_context = 0;
-    retval->last_context = retval->num_queries * kNumContexts - 1;
-
-    retval->contexts =
-        (BlastContextInfo*) calloc(retval->last_context + 1, 
-                                   sizeof(BlastContextInfo));
-    
-    if ( !retval->contexts ) {
-        NCBI_THROW(CBlastSystemException, eOutOfMemory, 
-                   "Context offsets array");
-    }
-    return retval.Release();
-}
-
 /// Adjust first context depending on the first query strand
 static void
 s_AdjustFirstContext(BlastQueryInfo* query_info, 
@@ -151,8 +124,10 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
                    BlastQueryInfo** qinfo)
 {
     ASSERT(qinfo);
-    CBlastQueryInfo query_info(s_BlastQueryInfoNew(prog, queries.Size()));
-    ASSERT(query_info.Get());
+    CBlastQueryInfo query_info(BlastQueryInfoNew(prog, queries.Size()));
+    if (query_info.Get() == NULL) {
+        NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query info");
+    }
 
     const unsigned int kNumContexts = GetNumberOfContexts(prog);
     bool is_na = (prog == eBlastTypeBlastn) ? true : false;
@@ -329,9 +304,20 @@ s_AddMask(EBlastProgramType prog, BlastMaskLoc* mask,
     }
 }
 
+static void
+s_InvalidateQueryContexts(BlastQueryInfo* qinfo, int query_index)
+{
+    ASSERT(qinfo);
+    for (int i = qinfo->first_context; i <= qinfo->last_context; i++) {
+        if (qinfo->contexts[i].query_index == query_index) {
+            qinfo->contexts[i].is_valid = FALSE;
+        }
+    }
+}
+
 void
 SetupQueries_OMF(const IBlastQuerySource& queries, 
-                 const BlastQueryInfo* qinfo, 
+                 BlastQueryInfo* qinfo, 
                  BLAST_SequenceBlk** seqblk,
                  EBlastProgramType prog,
                  ENa_strand strand_opt,
@@ -464,6 +450,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                 (new CSearchMessage(eBlastSevWarning, index, 
                                     e.ReportThis(eDPF_ErrCodeExplanation)));
             messages[index].push_back(m);
+            s_InvalidateQueryContexts(qinfo, index);
         }
         s_AddMask(prog, mask, index, bsl_tmp, strand,
                       BlastQueryInfoGetQueryLength(qinfo, prog, index));
@@ -1145,7 +1132,7 @@ GetNumberOfContexts(EBlastProgramType p)
 BLAST_SequenceBlk*
 SafeSetupQueries(const IBlastQuerySource& queries,
                  const CBlastOptions* options,
-                 const BlastQueryInfo* query_info,
+                 BlastQueryInfo* query_info,
                  TSearchMessages& messages)
 {
     ASSERT(options);
@@ -1187,6 +1174,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.103  2006/01/12 20:39:22  camacho
+ * Removed const from BlastQueryInfo argument to functions (to allow setting of context-validity flag)
+ *
  * Revision 1.102  2005/12/16 20:51:18  camacho
  * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
  *

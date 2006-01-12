@@ -123,7 +123,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
 
 void
 SetupQueries(const TSeqLocVector& queries, 
-             const BlastQueryInfo* qinfo, 
+             BlastQueryInfo* qinfo, 
              BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog,
              ENa_strand strand_opt,
@@ -436,6 +436,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2006/01/12 20:39:22  camacho
+* Removed const from BlastQueryInfo argument to functions (to allow setting of context-validity flag)
+*
 * Revision 1.64  2005/12/16 20:51:18  camacho
 * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
 *

@@ -232,7 +232,8 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 
 void
 SetupQueries_OMF(const IBlastQuerySource& queries,
-                 const BlastQueryInfo* qinfo, BLAST_SequenceBlk** seqblk,
+                 BlastQueryInfo* qinfo, 
+                 BLAST_SequenceBlk** seqblk,
                  EBlastProgramType prog, 
                  objects::ENa_strand strand_opt,
                  const Uint1* genetic_code,
@@ -351,7 +352,7 @@ GetSubjectEncoding(EBlastProgramType program);
 BLAST_SequenceBlk*
 SafeSetupQueries(const IBlastQuerySource& queries,
                  const CBlastOptions* options,
-                 const BlastQueryInfo* query_info,
+                 BlastQueryInfo* query_info,
                  TSearchMessages& messages);
 
 BlastQueryInfo*
@@ -367,6 +368,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2006/01/12 20:39:22  camacho
+* Removed const from BlastQueryInfo argument to functions (to allow setting of context-validity flag)
+*
 * Revision 1.56  2005/12/23 16:27:25  camacho
 * doxygen fixes
 *

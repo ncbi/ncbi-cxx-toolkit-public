@@ -133,7 +133,8 @@ SetupQueryInfo(const TSeqLocVector& queries,
 
 void
 SetupQueries(const TSeqLocVector& queries,
-             const BlastQueryInfo* qinfo, BLAST_SequenceBlk** seqblk,
+             BlastQueryInfo* qinfo, 
+             BLAST_SequenceBlk** seqblk,
              EBlastProgramType prog, 
              objects::ENa_strand strand_opt,
              const Uint1* genetic_code,
