@@ -64,9 +64,8 @@ int main(int argc, const char* argv[])
         strncpy0(obuf, argv[3], sizeof(obuf) - 2);
         obuf[n = strlen(obuf)] = '\n';
         obuf[++n]              = 0;
-    } else {
     }
-    strcpy(net_info->args, "testarg=testval&service=none");
+    strcpy(net_info->args, "testarg=val&service=none&platform=none&address=2");
     timeout = net_info->timeout;
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
@@ -167,6 +166,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2006/01/12 18:13:36  lavr
+ * Add arguments to show that they must be replaced by standard ones
+ *
  * Revision 6.34  2005/07/15 21:16:03  lavr
  * Fix int<->size_t mismatch bug causing 64-bit builds to check lamely
  *
