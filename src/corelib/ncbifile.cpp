@@ -3128,6 +3128,12 @@ void s_GetFileSystemInfo(const string&               path,
 
 #else // defined(NCBI_OS_MSWIN)
 
+#  ifdef _PC_NAME_MAX
+    info->filename_max = pathconf(path.c_str(), _PC_NAME_MAX);
+#  else
+#    define NEED_NAME_MAX
+#  endif
+
 #  if defined(NCBI_OS_LINUX)  &&  defined(HAVE_STATFS)
     
     GET_STATFS_INFO;
@@ -3183,30 +3189,34 @@ void s_GetFileSystemInfo(const string&               path,
             default:          info->fs_type = CFileUtil::eUnknown;  break;
         }
     }
+#ifdef NEED_NAME_MAX
     info->filename_max = (unsigned long)st.f_namelen;
+#endif
 
 #  elif (defined(NCBI_OS_SOLARIS) ||  defined(NCBI_OS_IRIX)  ||  \
          defined(NCBI_OS_OSF1)) &&  defined(HAVE_STATVFS)
 
     GET_STATVFS_INFO;
+#ifdef NEED_NAME_MAX
     info->filename_max = (unsigned long)st.f_namemax;
+#endif
     fs_name_ptr = st.f_basetype;
 
-#  elif defined(NCBI_OS_BSD)  &&  defined(HAVE_STATFS)
+#  elif (defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN))  && \
+         defined(HAVE_STATFS)
 
     GET_STATFS_INFO;
+#ifdef NEED_NAME_MAX
     info->filename_max = (unsigned long)st.f_namelen;
+#endif
     fs_name_ptr = st.f_fstypename;
 
 #  elif defined(NCBI_OS_OSF1)  &&  defined(HAVE_STATVFS)
 
     GET_STATVFS_INFO;
+#ifdef NEED_NAME_MAX
     info->filename_max = (unsigned long)st.f_namelen;
-    fs_name_ptr = st.f_fstypename;
-
-#  elif defined(NCBI_OS_DARWIN)  &&  defined(HAVE_STATFS)
-
-    GET_STATFS_INFO;
+#endif
     fs_name_ptr = st.f_fstypename;
 
 #  else
@@ -3866,6 +3876,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.136  2006/01/12 20:12:04  ucko
+ * s_GetFileSystemInfo: Use pathconf to determine filename_max if
+ * possible, and fall back to OS-specific code (which was also broken on
+ * at least some versions of FreeBSD) only as a last resort.
+ *
  * Revision 1.135  2006/01/12 13:30:53  ivanov
  * Fixed compilation on Darwin
  *
