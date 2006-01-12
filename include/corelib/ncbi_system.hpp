@@ -106,12 +106,17 @@ extern bool SetHeapLimit(size_t max_heap_size,
 ///   Use default handler if passed as NULL.
 /// @param parameter
 ///   Parameter carried into the print handler. Can be passed as NULL.
+/// @terminate_time
+///   The time in seconds, that have the process to terminate itself after
+///   receiving a signal about exceeding CPU usage limit. After that it
+///   can be killed by OS.
 /// @return 
 ///   Completion status.
 NCBI_XNCBI_EXPORT
-extern bool SetCpuTimeLimit(size_t max_cpu_time,
-                            TLimitsPrintHandler handler = 0, 
-                            TLimitsPrintParameter parameter = 0);
+extern bool SetCpuTimeLimit(size_t                max_cpu_time,
+                            TLimitsPrintHandler   handler = 0, 
+                            TLimitsPrintParameter parameter = 0,
+                            size_t                terminate_time = 5);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -190,6 +195,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/12 19:41:57  ivanov
+ * SetCpuTimeLimit: added new parameter - maximum process termination
+ * time (default 5 seconds)
+ *
  * Revision 1.18  2005/05/03 18:15:39  lavr
  * Sleep*Sec(0) may cause context switches (but otherwise cause no delays)
  *

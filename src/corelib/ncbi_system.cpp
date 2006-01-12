@@ -297,9 +297,10 @@ static void s_SignalHandler(int _DEBUG_ARG(sig))
 }
 
 
-bool SetCpuTimeLimit(size_t max_cpu_time,
-                     TLimitsPrintHandler handler, 
-                     TLimitsPrintParameter parameter)
+bool SetCpuTimeLimit(size_t                max_cpu_time,
+                     TLimitsPrintHandler   handler, 
+                     TLimitsPrintParameter parameter,
+                     size_t                terminate_time)
 {
     if (s_CpuTimeLimit == max_cpu_time) 
         return true;
@@ -313,7 +314,7 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
     struct rlimit rl;
     if ( max_cpu_time ) {
         rl.rlim_cur = max_cpu_time;
-        rl.rlim_max = max_cpu_time + 1;
+        rl.rlim_max = max_cpu_time + terminate_time;
     }
     else {
         // Set off CPU time limit
@@ -335,9 +336,10 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
 
 #else
 
-bool SetCpuTimeLimit(size_t max_cpu_time,
-                  TLimitsPrintHandler handler, 
-                  TLimitsPrintParameter parameter)
+bool SetCpuTimeLimit(size_t                max_cpu_time,
+                     TLimitsPrintHandler   handler, 
+                     TLimitsPrintParameter parameter,
+                     size_t                terminate_time)
 
 {
     return false;
@@ -509,6 +511,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/01/12 19:41:54  ivanov
+ * SetCpuTimeLimit: added new parameter - maximum process termination
+ * time (default 5 seconds)
+ *
  * Revision 1.44  2006/01/12 19:19:40  ivanov
  * SetCpuTimeLimit: set hard limit to 1 sec more than soft limit
  *
