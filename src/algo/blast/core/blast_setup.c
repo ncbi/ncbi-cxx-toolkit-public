@@ -53,14 +53,22 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
 {
     Int2 index = 0;
 
-    if (sbp == NULL || scoring_options == NULL)
+    if (sbp == NULL || scoring_options == NULL) {
+        *error_return = Blast_PerrorWithLocation(BLASTERR_INVALIDPARAM);
         return 1;
+    }
 
     /* Allocate and fill values for a gapped Karlin block, given the scoring
-       options, then copy it for all the query contexts. */
+       options, then copy it for all the query contexts, as long as they're
+       contexts that will be searched (i.e.: valid) */
     for (index = query_info->first_context;
          index <= query_info->last_context; index++) {
         Int2 retval = 0;
+
+        if ( !query_info->contexts[index].is_valid ) {
+            continue;
+        }
+
         sbp->kbp_gap_std[index] = Blast_KarlinBlkNew();
 
         /* At this stage query sequences are nucleotide only for blastn */
@@ -76,8 +84,9 @@ Blast_ScoreBlkKbpGappedCalc(BlastScoreBlk * sbp,
                     scoring_options->gap_open, scoring_options->gap_extend,
                     scoring_options->decline_align, sbp->name, error_return);
         }
-        if (retval)
+        if (retval) {
             return retval;
+        }
 
         /* For right now, copy the contents from kbp_gap_std to 
          * kbp_gap_psi (as in old code - BLASTSetUpSearchInternalByLoc) */
@@ -338,6 +347,7 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
 {
     BlastScoreBlk* sbp;
     Int2 status=0;      /* return value. */
+    ASSERT(blast_message);
 
     if (sbpp == NULL)
        return 1;
@@ -347,8 +357,10 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     else
        sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, query_info->last_context + 1);
 
-    if (!sbp)
+    if (!sbp) {
+        *blast_message = Blast_PerrorWithLocation(BLASTERR_MEMORY);
        return 1;
+    }
 
     *sbpp = sbp;
     sbp->scale_factor = scale_factor;
@@ -363,23 +375,58 @@ BlastSetup_ScoreBlkInit(BLAST_SequenceBlk* query_blk,
     if (Blast_ProgramIsPhiBlast(program_number)) {
        status = s_PHIScoreBlkFill(sbp, scoring_options, blast_message);
     } else {
-       if ((status = Blast_ScoreBlkKbpUngappedCalc(program_number, sbp, 
-                        query_blk->sequence, query_info)) != 0) {
-          Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
-             "Could not calculate ungapped Karlin-Altschul parameters due "
-             "to an invalid query sequence. Please verify the query "
+       if (Blast_ScoreBlkKbpUngappedCalc(program_number, sbp,
+                                         query_blk->sequence, query_info) != 0)
+       {
+          Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, 
+             "Could not calculate ungapped Karlin-Altschul parameters for "
+             "some contexts/frames due to an invalid query sequence or "
+             "its translation. Please verify the query "
              "sequence(s) and/or filtering options");
-          return status;
        }
 
        if (scoring_options->gapped_calculation) {
           status = 
               Blast_ScoreBlkKbpGappedCalc(sbp, scoring_options, program_number,
                                           query_info, blast_message);
+       } else {
+          ASSERT(sbp->kbp_gap == NULL);
        }
     }
 
     return status;
+}
+
+/** Validation function for the setup of queries for the BLAST search.
+ * @return If no valid queries are found, 1 is returned, otherwise 0.
+ */
+static Int2
+s_BlastSetup_Validate(const BlastQueryInfo* query_info,
+                      const BlastScoreBlk* score_blk) 
+{
+    int index;
+    Boolean valid_context_found = FALSE;
+    ASSERT(query_info);
+
+    for (index = query_info->first_context;
+         index <= query_info->last_context;
+         index++) {
+        if (query_info->contexts[index].is_valid) {
+            valid_context_found = TRUE;
+        } else {
+            ASSERT(score_blk->kbp[index] == NULL);
+            ASSERT(score_blk->sfp[index] == NULL);
+            if (score_blk->kbp_gap) {
+                ASSERT(score_blk->kbp_gap[index] == NULL);
+            }
+        }
+    }
+
+    if (valid_context_found) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 Int2 BLAST_MainSetUp(EBlastProgramType program_number,
@@ -400,6 +447,7 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     SBlastFilterOptions* filter_options = qsup_options->filtering_options;
     Boolean filter_options_allocated = FALSE;
 
+    ASSERT(blast_message);
 
     if (mask)
         *mask = NULL;
@@ -472,6 +520,14 @@ Int2 BLAST_MainSetUp(EBlastProgramType program_number,
     status = BlastSetup_ScoreBlkInit(query_blk, query_info, scoring_options, 
                                      program_number, sbpp, scale_factor, 
                                      blast_message);
+    if (status) {
+        return status;
+    }
+
+    if ( (status = s_BlastSetup_Validate(query_info, *sbpp) != 0)) {
+        *blast_message = Blast_Perror(BLASTERR_INVALIDQUERIES);
+        return 1;
+    }
 
     return status;
 }
@@ -537,7 +593,9 @@ Int2 BLAST_CalcEffLengths (EBlastProgramType program_number,
       
       kbp = kbp_ptr[index];
       
-      if ((query_length = query_info->contexts[index].query_length) > 0) {
+      if (query_info->contexts[index].is_valid &&
+          ((query_length = query_info->contexts[index].query_length) > 0) ) {
+
          /* Use the correct Karlin block. For blastn, two identical Karlin
           * blocks are allocated for each sequence (one per strand), but we
           * only need one of them.
