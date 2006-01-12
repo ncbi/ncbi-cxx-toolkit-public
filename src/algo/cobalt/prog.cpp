@@ -475,6 +475,11 @@ CMultiAligner::x_AlignProfileProfile(
     m_Aligner.SetStartWs(m_EndGapExtend * kScale);
     m_Aligner.SetEndWs(m_EndGapExtend * kScale);
 
+    if (freq1_size > 1.2 * freq2_size ||
+        freq2_size > 1.2 * freq1_size) {
+       m_Aligner.SetStartWs(m_EndGapExtend * kScale / 2);
+       m_Aligner.SetEndWs(m_EndGapExtend * kScale / 2); 
+    }
     if ((freq1_size > 1.5 * freq2_size ||
          freq2_size > 1.5 * freq1_size) &&
          !constraint.empty()) {
@@ -964,6 +969,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.7  2006/01/12 19:54:54  papadopo
+  halve the extend penalties for end gaps if there is a >20% length difference between the profiles being aligned
+
   Revision 1.6  2005/12/16 23:37:37  papadopo
   1. Switch from a sum-of-pairs method to a modified entropy calculation
      for detecting conserved columns
