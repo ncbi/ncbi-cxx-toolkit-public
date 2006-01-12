@@ -40,6 +40,9 @@
 USING_NCBI_SCOPE;
 
 
+#define STR(t) string("[" + (t).AsString() + "]")
+
+
 //============================================================================
 //
 // TestMisc
@@ -48,19 +51,19 @@ USING_NCBI_SCOPE;
 
 static void s_TestMisc(void)
 {
-    cout << "---------------------------" << endl;
-    cout << "Test Misc" << endl;
-    cout << "---------------------------" << endl << endl;
+    LOG_POST("---------------------------");
+    LOG_POST("Test Misc");
+    LOG_POST("---------------------------\n");
 
     // Print current time
     {{
         CTime t(CTime::eCurrent);
-        cout << "[" << t.AsString() << "]" << endl;
-        cout << "[" << (t++).AsString() << "]" << endl;
-        cout << "[" << (t++).AsString() << "]" << endl;
-        cout << "[" << (t++).AsString() << "]" << endl;
-        cout << "[" << (++t).AsString() << "]" << endl;
-        cout << "[" << (++t).AsString() << "]" << endl;
+        LOG_POST(STR(t));
+        LOG_POST(STR(t++));
+        LOG_POST(STR(t++));
+        LOG_POST(STR(t++));
+        LOG_POST(STR(++t));
+        LOG_POST(STR(++t));
     }}
 
     // Month and Day name<->num conversion
@@ -85,7 +88,7 @@ static void s_TestMisc(void)
                                        CTime::eFull)     == "Saturday"); 
         assert(CTime::DayOfWeekNumToName(6,CTime::eAbbr) == "Sat"); 
 
-        cout << "Throw exception below:" << endl;
+        LOG_POST("Throw exception below:");
         try {
             CTime::MonthNameToNum("Month"); 
         } catch (CTimeException& e) {
@@ -97,158 +100,148 @@ static void s_TestMisc(void)
     {{
         {{
             CTime t;
-            cout << "[" << t.AsString() << "]" << endl;
+            LOG_POST(STR(t));
             assert(t.AsString() == "");
         }}
         {{
             CTime t(2000, 365 / 2);
             CTime::SetFormat("M/D/Y h:m:s");
-            cout << "[" << t.AsString() << "]" << endl;
+            LOG_POST(STR(t));
             assert(t.AsString() == "06/30/2000 00:00:00");
         }}
-        cout << endl;
         {{
             CTime::SetFormat("M/D/Y");
-
-            cout << "Year 2000 problem:" << endl << endl;
+            LOG_POST("\nYear 2000 problem:");
             CTime t(1999, 12, 30); 
-            t++; cout << "[" << t.AsString() << "] " << endl;
+            t++; LOG_POST(STR(t));
             assert(t.AsString() == "12/31/1999");
-            t++; cout << "[" << t.AsString() << "] " << endl;
+            t++; LOG_POST(STR(t));
             assert(t.AsString() == "01/01/2000");
-            t++; cout << "[" << t.AsString() << "] " << endl;
+            t++; LOG_POST(STR(t));
             assert(t.AsString() == "01/02/2000");
             t="02/27/2000";
-            t++; cout << "[" << t.AsString() << "] " << endl;
+            t++; LOG_POST(STR(t));
             assert(t.AsString() == "02/28/2000");
-            t++; cout << "[" << t.AsString() << "] " << endl;
+            t++; LOG_POST(STR(t));
             assert(t.AsString() == "02/29/2000");
-            t++; cout << "[" << t.AsString() << "] " << endl;
+            t++; LOG_POST(STR(t));
             assert(t.AsString() == "03/01/2000");
-            t++; cout << "[" << t.AsString() << "] " << endl;
+            t++; LOG_POST(STR(t));
             assert(t.AsString() == "03/02/2000");
         }}
-        cout << endl;
         {{
             CTime::SetFormat("M/D/Y h:m:s");
-            cout << "String assignment:" << endl;
+            LOG_POST("\nString assignment:");
             try {
                 CTime t("02/15/2000 01:12:33");
-                cout << "[" << t.AsString() << "]" << endl;
+                LOG_POST(STR(t));
                 assert(t.AsString() == "02/15/2000 01:12:33");
                 t = "3/16/2001 02:13:34";
-                cout << "[" << t.AsString() << "]" << endl;
+                LOG_POST(STR(t));
                 assert(t.AsString() == "03/16/2001 02:13:34");
             } catch (CException& e) {
                 NCBI_REPORT_EXCEPTION("",e);
             }
         }}
-        cout << endl;
     }}
 
     // Addition
     {{
         CTime::SetFormat("M/D/Y h:m:s.S");
         {{
-            cout << "Adding Nanoseconds:" << endl;
+            LOG_POST("\nAdding Nanoseconds:");
             CTime t;
             for (CTime tmp(1999, 12, 31, 23, 59, 59, 999999995);
                  tmp <= CTime(2000, 1, 1, 0, 0, 0, 000000003);
                  t = tmp, tmp.AddNanoSecond(2)) {
-                 cout << "[" << tmp.AsString() << "] " << endl;
+                 LOG_POST(STR(tmp));
             }
             assert(t.AsString() == "01/01/2000 00:00:00.000000003");
         }}
-        cout << endl;
         {{
-            cout << "Current time with NS (10 cicles)" << endl;
+            LOG_POST("\nCurrent time with NS (10 cicles)");
             CTime t;
             for (int i = 0; i < 10; i++) {
                  t.SetCurrent();
-                 cout << "[" << t.AsString() << "] " << endl;
+                 LOG_POST(STR(t));
             }
         }}
-        cout << endl;
 
         CTime::SetFormat("M/D/Y h:m:s");
         {{
-            cout << "Adding seconds:" << endl;
+            LOG_POST("\nAdding seconds:");
             CTime t;
             for (CTime tmp(1999, 12, 31, 23, 59, 5);
                  tmp <= CTime(2000, 1, 1, 0, 1, 20);
                  t = tmp, tmp.AddSecond(11)) {
-                 cout << "[" << tmp.AsString() << "] " << endl;
+                 LOG_POST(STR(tmp));
             }
             assert(t.AsString() == "01/01/2000 00:01:17");
         }}
-        cout << endl;
         {{
-            cout << "Adding minutes:" << endl;
+            LOG_POST("\nAdding minutes:");
             for (CTime t(1999, 12, 31, 23, 45);
                  t <= CTime(2000, 1, 1, 0, 15);
                  t.AddMinute(11)) {
-                 cout << "[" << t.AsString() << "] " << endl;
+                 LOG_POST(STR(t));
             }
         }}
-        cout << endl;
         {{
-            cout << "Adding hours:" << endl;
+            LOG_POST("\nAdding hours:");
             for (CTime t(1999, 12, 31);
                  t <= CTime(2000, 1, 1, 15);
                  t.AddHour(11)) {
-                 cout << "[" << t.AsString() << "] " << endl;
+                 LOG_POST(STR(t));
             }
         }}
-        cout << endl;
         {{
-            cout << "Adding months:" << endl;
+            LOG_POST("\nAdding months:");
             for (CTime t(1998, 12, 29);
                  t <= CTime(1999, 4, 1);
                  t.AddMonth()) {
-                 cout << "[" << t.AsString() << "] " << endl;
+                 LOG_POST(STR(t));
             }
         }}
-        cout << endl;
         {{
-            cout << "Adding time span:" << endl;
+            LOG_POST("\nAdding time span:");
             CTime t0(1999, 12, 31, 23, 59, 5);
             CTimeSpan ts(1, 2, 3, 4, 555555555);
 
             for (int i=0; i<10; i++) {
                  t0.AddTimeSpan(ts);
-                 cout << "[" << t0.AsString() << "] " << endl;
+                 LOG_POST(STR(t0));
             }
             assert(t0.AsString() == "01/11/2000 20:29:50");
 
             CTime t1;
             t1 = t0 + ts;
-            cout << "[" << t1.AsString() << "] " << endl;
+            LOG_POST(STR(t1));
             assert(t0.AsString() == "01/11/2000 20:29:50");
             assert(t1.AsString() == "01/12/2000 22:32:55");
             t1 = ts + t0;
-            cout << "[" << t1.AsString() << "] " << endl;
+            LOG_POST(STR(t1));
             assert(t0.AsString() == "01/11/2000 20:29:50");
             assert(t1.AsString() == "01/12/2000 22:32:55");
             t1 = t0; t1 += ts;
-            cout << "[" << t1.AsString() << "] " << endl;
+            LOG_POST(STR(t1));
             assert(t0.AsString() == "01/11/2000 20:29:50");
             assert(t1.AsString() == "01/12/2000 22:32:55");
             t1 = t0 - ts;
-            cout << "[" << t1.AsString() << "] " << endl;
+            LOG_POST(STR(t1));
             assert(t0.AsString() == "01/11/2000 20:29:50");
             assert(t1.AsString() == "01/10/2000 18:26:45");
             t1 = t0; t1 -= ts;
-            cout << "[" << t1.AsString() << "] " << endl;
+            LOG_POST(STR(t1));
             assert(t0.AsString() == "01/11/2000 20:29:50");
             assert(t1.AsString() == "01/10/2000 18:26:45");
             ts = t0 - t1;
-            cout << "[" << ts.AsString() << "] " << endl;
+            LOG_POST(STR(ts));
             assert(ts.AsString() == "93784.555555555");
             ts = t1 - t0;
-            cout << "[" << ts.AsString() << "] " << endl;
+            LOG_POST(STR(ts));
             assert(ts.AsString() == "-93784.555555555");
         }}
-        cout << endl;
+        LOG_POST("");
     }}
 
     // Difference
@@ -257,17 +250,21 @@ static void s_TestMisc(void)
         CTime t2(2000, 10, 2, 14, 55, 1,2);
         CTimeSpan ts(1,2,51,16,1);
 
-        cout << "[" << t1.AsString() << " - " << t2.AsString() << "]" << endl;
-        printf("DiffDay        = %.2f\n", t2.DiffDay   (t1));
+        LOG_POST("[" + t1.AsString() + " - " + t2.AsString() + "]");
+        LOG_POST("DiffDay        = " +
+                 NStr::DoubleToString(t2.DiffDay(t1),2));
         assert((t2.DiffDay(t1)-1.12) < 0.01);
-        printf("DiffHour       = %.2f\n", t2.DiffHour  (t1));
+        LOG_POST("DiffHour       = " +
+                 NStr::DoubleToString(t2.DiffHour(t1),2));
         assert((t2.DiffHour(t1)-26.85) < 0.01);
-        printf("DiffMinute     = %.2f\n", t2.DiffMinute(t1));
+        LOG_POST("DiffMinute     = " +
+                 NStr::DoubleToString(t2.DiffMinute(t1),2));
         assert((t2.DiffMinute(t1)-1611.27) < 0.01);
-        printf("DiffSecond     = %d\n",   t2.DiffSecond(t1));
+        LOG_POST("DiffSecond     = " + NStr::IntToString(t2.DiffSecond(t1)));
         assert(t2.DiffSecond(t1) == 96676);
-        printf("DiffNanoSecond = %.0f\n", t2.DiffNanoSecond(t1));
-        printf("DiffTimeSpan   = %s\n", ts.AsString().c_str());
+        LOG_POST("DiffNanoSecond = " +
+                 NStr::DoubleToString(t2.DiffNanoSecond(t1),0));
+        LOG_POST("DiffTimeSpan   = " + ts.AsString());
         assert(t2.DiffTimeSpan(t1) == ts);
         assert(t1.DiffTimeSpan(t2) == -ts);
     }}
@@ -277,27 +274,27 @@ static void s_TestMisc(void)
         CTime t1(2000, 1, 1, 1, 1, 1, 10000000);
         CTime::SetFormat("M/D/Y h:m:s.S");
 
-        cout << endl << "DB time formats [" << t1.AsString() << "]" << endl;
+        LOG_POST("\nDB time formats " + STR(t1));
 
         TDBTimeU dbu = t1.GetTimeDBU();
         TDBTimeI dbi = t1.GetTimeDBI();
 
-        cout << "DBU days             = " << dbu.days << endl;
-        cout << "DBU time (min)       = " << dbu.time << endl;
-        cout << "DBI days             = " << dbi.days << endl;
-        cout << "DBI time (1/300 sec) = " << dbi.time << endl;
-        cout << endl;
+        LOG_POST("DBU days             = " + NStr::UIntToString(dbu.days));
+        LOG_POST("DBU time (min)       = " + NStr::UIntToString(dbu.time));
+        LOG_POST("DBI days             = " + NStr::UIntToString(dbi.days));
+        LOG_POST("DBI time (1/300 sec) = " + NStr::UIntToString(dbi.time));
+        LOG_POST("");
         CTime t2;
         t2.SetTimeDBU(dbu);
-        cout << "Time from DBU        = " << t2.AsString() << endl;
+        LOG_POST("Time from DBU        = " + t2.AsString());
         t2.SetTimeDBI(dbi);
-        cout << "Time from DBI        = " << t2.AsString() << endl;
+        LOG_POST("Time from DBI        = " + t2.AsString());
 
         CTime::SetFormat("M/D/Y h:m:s");
         dbi.days = 37093;
         dbi.time = 12301381;
         t2.SetTimeDBI(dbi);
-        cout << "Time from DBI        = " << t2.AsString() << endl;
+        LOG_POST("Time from DBI        = " + t2.AsString());
         assert(t2.AsString() == "07/23/2001 11:23:24");
     }}
 
@@ -373,8 +370,6 @@ static void s_TestMisc(void)
             assert(month_week_num >= 1  &&  month_week_num <= 6);
         }
     }}
-
-    cout << endl;
 }
 
 
@@ -422,9 +417,9 @@ static void s_TestFormats(void)
         {0,0}
     };
 
-    cout << "---------------------------" << endl;
-    cout << "Test Formats" << endl;
-    cout << "---------------------------" << endl << endl;
+    LOG_POST("\n---------------------------");
+    LOG_POST("Test Formats");
+    LOG_POST("---------------------------\n");
 
     for ( int hour = 0; hour < 24; ++hour ) {
         for (int i = 0;  s_Fmt[i].format;  i++) {
@@ -435,12 +430,10 @@ static void s_TestFormats(void)
             
             CTime::SetFormat(fmt);
             string t1_str = t1.AsString();
-            cout << "[" << t1_str << "]";
+            LOG_POST("[" + t1_str + "]");
             
             CTime::SetFormat("MDY__s");
-            
             CTime t2(t1_str, fmt);
-            cout << " --> [" << t1_str << "]" << endl;
             if ( s_Fmt[i].truncated ) {
                 string test_str = t2.AsString("M/D/Y h:m:s");
                 CNcbiOstrstream s;
@@ -450,7 +443,6 @@ static void s_TestFormats(void)
             } else {
                 assert(t1 == t2);
             }
-            
             CTime::SetFormat(fmt);
             string t2_str = t2;
             assert(t1_str.compare(t2_str) == 0);
@@ -559,248 +551,239 @@ static void s_TestFormats(void)
 
 static void s_TestGMT(void)
 {
-    cout << "---------------------------" << endl;
-    cout << "Test GMT and Local time"     << endl;
-    cout << "---------------------------" << endl << endl;
+    LOG_POST("\n---------------------------");
+    LOG_POST("Test GMT and Local time");
+    LOG_POST("---------------------------\n");
 
     {{
-        cout << "Write time in timezone format" << endl;
+        LOG_POST("Write time in timezone format");
 
         CTime::SetFormat("M/D/Y h:m:s Z");
 
         CTime t1(2001, 3, 12, 11, 22, 33, 999, CTime::eGmt);
-        cout << "[" << t1.AsString() << "]" << endl;
+        LOG_POST(STR(t1));
         assert(t1.AsString() == "03/12/2001 11:22:33 GMT");
         CTime t2(2001, 3, 12, 11, 22, 33, 999, CTime::eLocal);
-        cout << "[" << t2.AsString() << "]" << endl;
+        LOG_POST(STR(t2));
         assert(t2.AsString() == "03/12/2001 11:22:33 ");
 
         CTime t3(CTime::eCurrent, CTime::eLocal);
-        cout << "Local time [" << t3.AsString() << "]" << endl;
+        LOG_POST("Local time " + STR(t3));
         CTime t4(CTime::eCurrent, CTime::eGmt);
-        cout << "GMT time   [" << t4.AsString() << "]" << endl;
-        cout << endl;
+        LOG_POST("GMT time   " + STR(t4));
     }}
     {{   
-        cout << "Process timezone string" << endl;
+        LOG_POST("\nProcess timezone string:");
 
         CTime t;
         t.SetFormat("M/D/Y h:m:s Z");
         t = "03/12/2001 11:22:33 GMT";
-        cout << "[" << t.AsString() << "]" << endl;
+        LOG_POST(STR(t));
         assert(t.AsString() == "03/12/2001 11:22:33 GMT");
         t = "03/12/2001 11:22:33 ";
-        cout << "[" << t.AsString() << "]" << endl;
+        LOG_POST(STR(t));
         assert(t.AsString() == "03/12/2001 11:22:33 ");
-        cout << endl;
     }}
     {{   
-        cout << "Day of week" << endl;
+        LOG_POST("\nDay of week:");
 
         CTime t(2001, 4, 1);
         t.SetFormat("M/D/Y h:m:s w");
         int i;
         for (i = 0; t <= CTime(2001, 4, 10); t++,i++) {
-            cout << t.AsString() << " is " << t.DayOfWeek() << endl;
+            LOG_POST(t.AsString() + " is " +NStr::IntToString(t.DayOfWeek()));
             assert(t.DayOfWeek() == (i%7));
         }
-        cout << endl;
     }}
     //------------------------------------------------------------------------
     {{   
-        cout << "Test GetTimeT" << endl;
+        LOG_POST("\nTest GetTimeT");
 
         time_t timer=time(0);
         CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
         CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         CTime t(timer);
-        cout << "[" << t.AsString() << "] " << endl;
-        cout << tg.GetTimeT()/3600 << " - " << tl.GetTimeT()/3600 << " - ";
-        cout << t.GetTimeT()/3600 << " - " << timer/3600 << endl;
+        LOG_POST(STR(t));
+        LOG_POST(NStr::UIntToString(tg.GetTimeT()/3600) + " - " +
+                 NStr::UIntToString(tl.GetTimeT()/3600) + " - " +
+                 NStr::UIntToString( t.GetTimeT()/3600) + " - " +
+                 NStr::UIntToString(timer/3600) + "\n");
         assert(timer == tg.GetTimeT());
         assert(timer == tl.GetTimeT());
         assert(timer == t.GetTimeT());
-        cout << endl;
 
         for (int i = 0; i < 2; i++) {
             CTime tt(2001, 4, 1, i>0 ? 2 : 1, i>0 ? (i-1) : 59, 
                      0, 0, CTime::eLocal, CTime::eHour);
-            cout << tt.AsString() << " - " << tt.GetTimeT() / 3600 << endl; 
+            LOG_POST(tt.AsString() + " - " + 
+                     NStr::UIntToString(tt.GetTimeT()/3600)); 
         }
         for (int i = 0; i < 2; i++) {
             CTime tt(2001, 10, 28, i > 0 ? 1 : 0, i > 0 ? (i-1) : 59,
                      0, 0, CTime::eLocal, CTime::eHour);
-            cout << tt.AsString() << " - " << tt.GetTimeT() / 3600 << endl; 
+            LOG_POST(tt.AsString() + " - " + 
+                     NStr::UIntToString(tt.GetTimeT()/3600)); 
         }
-        cout << endl;
     }}
     //------------------------------------------------------------------------
     {{   
-        cout << "Test TimeZoneDiff (1)" << endl;
+        LOG_POST("\nTest TimeZoneDiff (1)");
 
         CTime tw(2001, 1, 1, 12); 
         CTime ts(2001, 6, 1, 12);
 
-        cout << "[" << tw.AsString() << "] diff from GMT = " << \
-            tw.TimeZoneDiff() / 3600 << endl;
+        LOG_POST(STR(tw) + " diff from GMT = " +
+                 NStr::IntToString(tw.TimeZoneDiff() / 3600));
         assert(tw.TimeZoneDiff() / 3600 == -5);
-        cout << "[" << ts.AsString() << "] diff from GMT = " << \
-            ts.TimeZoneDiff() / 3600 << endl;
+        LOG_POST(STR(ts) + " diff from GMT = " +
+                 NStr::IntToString(ts.TimeZoneDiff() / 3600));
         assert(ts.TimeZoneDiff()/3600 == -4);
 
         for (; tw < ts; tw++) {
             if ((tw.TimeZoneDiff() / 3600) == -4) {
-                cout << "First daylight saving day = [" << \
-                    tw.AsString() << "]" << endl;
+                LOG_POST("First daylight saving day = " + STR(tw));
                 break;
             }
         }
-        cout << endl;
     }}
     //------------------------------------------------------------------------
     {{   
-        cout << "Test TimeZoneDiff (2)" << endl;
+        LOG_POST("\nTest TimeZoneDiff (2)");
 
         CTime tw(2001, 6, 1, 12); 
         CTime ts(2002, 1, 1, 12);
-        cout << "[" << tw.AsString() << "] diff from GMT = " << \
-            tw.TimeZoneDiff() / 3600 << endl;
+        LOG_POST(STR(tw) + " diff from GMT = " +
+                 NStr::IntToString(tw.TimeZoneDiff() / 3600));
         assert(tw.TimeZoneDiff() / 3600 == -4);
-        cout << "[" << ts.AsString() << "] diff from GMT = " << \
-            ts.TimeZoneDiff() / 3600 << endl;
+        LOG_POST(STR(ts) + " diff from GMT = " +
+                 NStr::IntToString(ts.TimeZoneDiff() / 3600));
         assert(ts.TimeZoneDiff() / 3600 == -5);
 
         for (; tw < ts; tw++) {
             if ((tw.TimeZoneDiff() / 3600) == -5) {
-                cout << "First non daylight saving day = [" << \
-                    tw.AsString() << "]" << endl;
+                LOG_POST("First non daylight saving day = " + STR(tw));
                 break;
              
             }
         }
-        cout << endl;
     }}
     //------------------------------------------------------------------------
     {{   
-        cout << "Test AdjustTime" << endl;
+        LOG_POST("\nTest AdjustTime");
 
         CTime::SetFormat("M/D/Y h:m:s");
         CTime t("04/01/2001 01:01:00");
         CTime tn;
         t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
-        cout << "init  [" << t.AsString() << "]" << endl;
+        LOG_POST("init  " + STR(t));
 
         t.SetTimeZoneFormat(CTime::eGmt);
-        cout << "GMT" << endl;
+        LOG_POST("GMT");
         tn = t + 5;  
-        cout << "+5d   [" << tn.AsString() << "]" << endl;
+        LOG_POST("+5d   " + STR(tn));
         assert(tn.AsString() == "04/06/2001 01:01:00");
         tn = t + 40; 
-        cout << "+40d  [" << tn.AsString() << "]" << endl;
+        LOG_POST("+40d  " + STR(tn));
         assert(tn.AsString() == "05/11/2001 01:01:00");
 
         t.SetTimeZoneFormat(CTime::eLocal);
-        cout << "Local eNone" << endl;
+        LOG_POST("Local eNone");
         t.SetTimeZonePrecision(CTime::eNone);
-        tn=t+5;  cout << "+5d   [" << tn.AsString() << "]" << endl;
+        tn=t+5;  LOG_POST("+5d   " + STR(tn));
         assert(tn.AsString() == "04/06/2001 01:01:00");
-        tn=t+40; cout << "+40d  [" << tn.AsString() << "]" << endl;
+        tn=t+40; LOG_POST("+40d  " + STR(tn));
         assert(tn.AsString() == "05/11/2001 01:01:00");
 
         t.SetTimeZonePrecision(CTime::eMonth);
-        cout << "Local eMonth" << endl;
+        LOG_POST("Local eMonth");
         tn = t + 5;
-        cout << "+5d   [" << tn.AsString() << "]" << endl;
+        LOG_POST("+5d   " + STR(tn));
         tn = t; 
         tn.AddMonth(-1);
-        cout << "-1m   [" << tn.AsString() << "]" << endl;
+        LOG_POST("-1m   " + STR(tn));
         assert(tn.AsString() == "03/01/2001 01:01:00");
         tn = t; 
         tn.AddMonth(+1);
-        cout << "+1m   [" << tn.AsString() << "]" << endl;
+        LOG_POST("+1m   " + STR(tn));
         assert(tn.AsString() == "05/01/2001 02:01:00");
 
         t.SetTimeZonePrecision(CTime::eDay);
-        cout << "Local eDay" << endl;
+        LOG_POST("Local eDay");
         tn = t - 1; 
-        cout << "-1d   [" << tn.AsString() << "]" << endl;
+        LOG_POST("-1d   " + STR(tn));
         assert(tn.AsString() == "03/31/2001 01:01:00");
         tn++;   
-        cout << "+0d   [" << tn.AsString() << "]" << endl;
+        LOG_POST("+0d   " + STR(tn));
         assert(tn.AsString() == "04/01/2001 01:01:00");
         tn = t + 1; 
-        cout << "+1d   [" << tn.AsString() << "]" << endl;
+        LOG_POST("+1d   " + STR(tn));
         assert(tn.AsString() == "04/02/2001 02:01:00");
 
-        cout << "Local eHour" << endl;
+        LOG_POST("Local eHour");
         t.SetTimeZonePrecision(CTime::eHour);
         tn = t; 
         tn.AddHour(-3);
         CTime te = t; 
         te.AddHour(3);
-        cout << "-3h   [" << tn.AsString() << "]" << endl;
+        LOG_POST("-3h   " + STR(tn));
         assert(tn.AsString() == "03/31/2001 22:01:00");
-        cout << "+3h   [" << te.AsString() << "]" << endl;
+        LOG_POST("+3h   " + STR(te));
         assert(te.AsString() == "04/01/2001 05:01:00");
         CTime th = tn; 
         th.AddHour(49);
-        cout << "+49h  [" << th.AsString() << "]" << endl;
+        LOG_POST("+49h  " + STR(th) + "\n");
         assert(th.AsString() == "04/03/2001 00:01:00");
 
         for (int i = 0;  i < 8;  i++,  tn.AddHour()) {
-            cout << (((tn.TimeZoneDiff()/3600) == -4) ? " ":"*") \
-                 << " [" <<  tn.AsString() << "]" << endl;
+            LOG_POST(string(((tn.TimeZoneDiff()/3600) == -4) ? "  " : "* ") +
+                     STR(tn));
         }
-        cout << endl;
-
         tn.AddHour(-1);
         for (int i = 0;  i < 8;  i++,  tn.AddHour(-1)) {
-            cout << (((tn.TimeZoneDiff()/3600) == -4) ? " ":"*") \
-                 << " [" <<  tn.AsString() << "]" << endl;
+            LOG_POST(string(((tn.TimeZoneDiff()/3600) == -4) ? "  " : "* ") +
+                     STR(tn));
         }
-        cout << endl;
+        LOG_POST("");
 
         tn = "10/28/2001 00:01:00"; 
-        cout << "init  [" << tn.AsString() << "]" << endl;
+        LOG_POST("init  " + STR(tn));
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-3); 
         te.AddHour(9);
-        cout << "-3h   [" << tn.AsString() << "]" << endl;
+        LOG_POST("-3h   " + STR(tn));
         assert(tn.AsString() == "10/27/2001 21:01:00");
-        cout << "+9h   [" << te.AsString() << "]" << endl;
+        LOG_POST("+9h   " + STR(te));
         assert(te.AsString() == "10/28/2001 08:01:00");
         th = tn; 
         th.AddHour(49);
-        cout << "+49h  [" << th.AsString() << "]" << endl;
+        LOG_POST("+49h  " + STR(th));
         assert(th.AsString() == "10/29/2001 21:01:00");
+        LOG_POST("");
 
         tn.AddHour(+2);
         for (int i = 0;  i < 10;  i++,  tn.AddHour()) {
-            cout << (((tn.TimeZoneDiff()/3600) == -4) ? " ":"*") \
-                 << " [" <<  tn.AsString() << "]" << endl;
+            LOG_POST((((tn.TimeZoneDiff()/3600) == -4) ? "  ":"* ") +STR(tn));
         }
-        cout << endl;
+        LOG_POST("");
         tn.AddHour(-1);
         for (int i = 0;  i < 10;  i++,  tn.AddHour(-1)) {
-            cout << (((tn.TimeZoneDiff()/3600) == -4) ? " ":"*") \
-                 << " [" <<  tn.AsString() << "]" << endl;
+            LOG_POST((((tn.TimeZoneDiff()/3600) == -4) ? "  ":"* ") +STR(tn));
         }
-        cout << endl;
+        LOG_POST("");
 
         tn = "10/28/2001 09:01:00"; 
-        cout << "init  [" << tn.AsString() << "]" << endl;
+        LOG_POST("init  " + STR(tn));
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-10); 
         te.AddHour(+10);
-        cout << "-10h  [" << tn.AsString() << "]" << endl;
+        LOG_POST("-10h  " + STR(tn));
         assert(tn.AsString() == "10/28/2001 00:01:00");
-        cout << "+10h  [" << te.AsString() << "]" << endl;
+        LOG_POST("+10h  " + STR(te));
         assert(te.AsString() == "10/28/2001 19:01:00");
         
-        cout << endl; 
-        cout << endl;
+        LOG_POST("\n");
     }}
 }
 
@@ -829,16 +812,15 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
     t.SetFormat("M/D/Y h:m:s");
     t = "03/31/2001 00:00:00"; 
 
-    cout << "Minute add, "<< comment << endl;
-    cout << "Iterations  = " << kCount << endl;
+    LOG_POST("Minute add, " + comment);
+    LOG_POST("Iterations  = " + NStr::UIntToString(kCount));
 
     timer.Start();
     for (long i = 0; i < kCount; i++) {
         t.AddMinute();
     }
     duration = timer.Elapsed();
-    cout << "Duration    = " << duration << " sec." << endl;
-    cout << endl;
+    LOG_POST("Duration    = " + NStr::DoubleToString(duration) + " sec.");
 }
 
 
@@ -850,9 +832,9 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
 
 static void s_TestGMTSpeed(void)
 {
-    cout << "---------------------------" << endl;
-    cout << "Test CTime Speed"            << endl;
-    cout << "---------------------------" << endl << endl;
+    LOG_POST("---------------------------");
+    LOG_POST("Test CTime Speed");
+    LOG_POST("---------------------------\n");
 
     s_TestGMTSpeedRun("eLocal - eMinute", CTime::eLocal, CTime::eMinute);
     s_TestGMTSpeedRun("eLocal - eHour"  , CTime::eLocal, CTime::eHour);
@@ -870,23 +852,23 @@ static void s_TestGMTSpeed(void)
 
 static void s_TestTimeSpan(void)
 {
-    cout << "---------------------------" << endl;
-    cout << "Test TimeSpan"               << endl;
-    cout << "---------------------------" << endl << endl;
+    LOG_POST("\n---------------------------");
+    LOG_POST("Test TimeSpan");
+    LOG_POST("---------------------------\n");
 
     // Common constructors
     {{
         CTimeSpan t1(0,0,0,1,-2);
-        cout << t1.AsString() << endl;
+        LOG_POST(t1.AsString());
         assert(t1.AsString() == "0.999999998");
         CTimeSpan t2(0,0,0,-1,2);
-        cout << t2.AsString() << endl;
+        LOG_POST(t2.AsString());
         assert(t2.AsString() == "-0.999999998");
         CTimeSpan t3(0,0,0,0,-2);
-        cout << t3.AsString() << endl;
+        LOG_POST(t3.AsString());
         assert(t3.AsString() == "-0.000000002");
         CTimeSpan t4(0,0,0,0,2);
-        cout << t4.AsString() << endl;
+        LOG_POST(t4.AsString());
         assert(t4.AsString() == "0.000000002");
     }}
     {{
@@ -895,7 +877,7 @@ static void s_TestTimeSpan(void)
         assert(t1.GetCompleteMinutes() == (51*60+4));
         assert(t1.GetCompleteSeconds() == ((51*60+4)*60+5));
         assert(t1.GetNanoSecondsAfterSecond() == 6);
-        cout << t1.AsString() << endl;
+        LOG_POST(t1.AsString());
         assert(t1.AsString() == "183845.000000006");
 
         CTimeSpan t2(-2,-3,-4,-5,-6);
@@ -903,7 +885,7 @@ static void s_TestTimeSpan(void)
         assert(t2.GetCompleteMinutes() == -(51*60+4));
         assert(t2.GetCompleteSeconds() == -((51*60+4)*60+5));
         assert(t2.GetNanoSecondsAfterSecond() == -6);
-        cout << t2.AsString() << endl;
+        LOG_POST(t2.AsString());
         assert(t2.AsString() == "-183845.000000006");
 
         CTimeSpan t3(-2,+3,-4,-5,+6);
@@ -911,7 +893,7 @@ static void s_TestTimeSpan(void)
         assert(t3.GetCompleteMinutes() == -(45*60+4));
         assert(t3.GetCompleteSeconds() == -((45*60+4)*60+4));
         assert(t3.GetNanoSecondsAfterSecond() == -999999994);
-        cout << t3.AsString() << endl;
+        LOG_POST(t3.AsString());
         assert(t3.AsString() == "-162244.999999994");
     }}
 
@@ -989,20 +971,17 @@ static void s_TestTimeSpan(void)
 
         for (const char** fmt = s_Fmt;  *fmt;  fmt++) {
             CTimeSpan t1(-123456789.987654321);
-
             CTimeSpan::SetFormat(*fmt);
             string t1_str = t1.AsString();
-            cout << "[" << t1_str << "]";
             CTimeSpan::SetFormat("_s_");
-
             CTimeSpan t2(t1_str, *fmt);
             CTimeSpan::SetFormat(*fmt);
             string t2_str = t2;
-            cout << " --> [" << t2_str << "]" << endl;
+            LOG_POST("[" + t1_str + "] --> [" << t2_str << "]");
             assert(t1_str.compare(t2_str) == 0);
         }
     }}
-    cout << endl;
+    LOG_POST("");
 
     // Smart string
     {{
@@ -1013,13 +992,11 @@ static void s_TestTimeSpan(void)
             CTimeSpan diff(559, 29, 59, 41, 17000000);
             string str;
             str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eTrunc);
-            cout << str.c_str() << endl;
+            LOG_POST(str.c_str());
             str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eRound);
-            cout << str.c_str() << endl;
+            LOG_POST(str.c_str());
         }
     }}
-
-    cout << endl;
 }
 
 
@@ -1031,16 +1008,25 @@ static void s_TestTimeSpan(void)
 
 static void s_DemoStopWatch(void)
 {
-    cout << "---------------------------" << endl;
-    cout << "Demo StopWatch"            << endl;
-    cout << "---------------------------" << endl << endl;
+    LOG_POST("\n---------------------------");
+    LOG_POST("Demo StopWatch");
+    LOG_POST("---------------------------\n");
     
     CStopWatch sw;
     sw.SetFormat("S.n");
     sw.Start();
+
+    CNcbiOstrstream s;
     for (int i=0; i<10; i++) {
-        cout << sw << endl;
+        s  << sw << endl;
     }
+    sw.Stop();
+    SleepMilliSec(500);
+    sw.Start();
+    for (int i=0; i<10; i++) {
+        s << sw << endl;
+    }
+    LOG_POST((string)CNcbiOstrstreamToString(s));
 }
 
 
@@ -1079,6 +1065,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.30  2006/01/12 15:43:20  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 6.29  2005/01/04 11:59:38  ivanov
  * Get rid of an unused variable
  *

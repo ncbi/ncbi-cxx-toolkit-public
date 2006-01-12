@@ -45,9 +45,11 @@ DEFINE_STATIC_FAST_MUTEX(s_OutMutex);
 static void OUTS(int idx, long line, string value, const char* check) 
 {
     CFastMutexGuard LOCK(s_OutMutex);
-    cout << idx << " (" << line << ") - " << value << '\n';
+    LOG_POST(NStr::IntToString(idx) +
+             " (" + NStr::IntToString(line) + ") - " + value);
     if ( check  &&  value != string(check) ) {
-        cout << "LINE: " << line << " - "<< value << " != " << string(check) << endl;
+        LOG_POST("LINE: " + NStr::IntToString(line) + " - " +
+                 value + " != " + string(check));
         abort();
     }
 }
@@ -395,9 +397,7 @@ bool CTestRegApp::Thread_Run(int idx)
             s_TestFormats();
             s_TestGMT(idx);
         }
-        OUTS( idx, __LINE__, "\n", 0);
         OUTS( idx, __LINE__,  "============ End thread =============" , 0);
-        OUTS( idx, __LINE__, "\n", 0);
     } catch (CException& e) {
         ERR_POST(Fatal << e);
         return false;
@@ -408,11 +408,8 @@ bool CTestRegApp::Thread_Run(int idx)
 
 bool CTestRegApp::TestApp_Init(void)
 {
-    NcbiCout << NcbiEndl
-             << "Testing NCBITIME "
-             << NStr::IntToString(s_NumThreads)
-             << " threads..."
-             << NcbiEndl;
+    LOG_POST("Testing NCBITIME " +
+             NStr::UIntToString(s_NumThreads) + " threads...");
 
     // Set err.-posting and tracing to maximum
     SetDiagTrace(eDT_Enable);
@@ -424,11 +421,9 @@ bool CTestRegApp::TestApp_Init(void)
 
 bool CTestRegApp::TestApp_Exit(void)
 {
-    NcbiCout << "Test completed successfully!"
-             << NcbiEndl << NcbiEndl;
+    LOG_POST("Test completed successfully!\n");
     return true;
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -444,6 +439,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/01/12 15:43:20  ivanov
+ * Use LOG_POST instead of cout
+ *
  * Revision 6.9  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
@@ -472,7 +470,6 @@ int main(int argc, const char* argv[])
  *
  * Revision 6.1  2002/05/13 13:58:45  ivanov
  * Initial revision
- *
  *
  * ===========================================================================
  */
