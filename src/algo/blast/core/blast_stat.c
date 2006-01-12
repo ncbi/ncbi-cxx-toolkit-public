@@ -2340,18 +2340,41 @@ ErrExit:
    return 1;
 }
 
+/** Finds the first index of a context which is marked as not valid in the
+ * BlastQueryInfo structure.
+ * @param query_info BlastQueryInfo structure [in]
+ * @return -1 if all contexts are valid, otherwise an integer between
+ * BlastQueryInfo::first_context and BlastQueryInfo::last_context (inclusive)
+ */
+static Int2
+s_FindFirstInvalidContext(const BlastQueryInfo* query_info)
+{
+    Int2 index;
+    ASSERT(query_info);
+
+    for (index = query_info->first_context; 
+         index <= query_info->last_context; index++) {
+        if ( !query_info->contexts[index].is_valid ) {
+            return index;
+        }
+    }
+    return -1;
+}
+
 Int2
 Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
                               BlastScoreBlk* sbp, Uint1* query, 
                               const BlastQueryInfo* query_info)
 {
-   Int4 context; /* loop variable. */
-   Boolean query_valid = FALSE;
-   Blast_ResFreq* rfp,* stdrfp;
    Int2 status = 0;
+   Int4 context; /* loop variable. */
+   Blast_ResFreq* rfp,* stdrfp;
+   BlastContextInfo* contexts = query_info->contexts;
    Boolean check_ideal = 
       (program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
        program == eBlastTypeRpsTblastn);
+
+   ASSERT(contexts);
 
    /* Ideal Karlin block is filled unconditionally. */
    status = Blast_ScoreBlkKbpIdealCalc(sbp);
@@ -2370,11 +2393,17 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
       Uint1 *buffer;              /* holds sequence */
       Blast_KarlinBlk* kbp;
       
-      /* For each query, check if forward strand is present */
-      if ((query_length = query_info->contexts[context].query_length) < 0)
-         continue;
-      
-      context_offset = query_info->contexts[context].query_offset;
+      /* If no strand/frame is requested, no ungapped kbp structures are
+       * allocated */
+      if ((query_length = contexts[context].query_length) <= 0) {
+          contexts[context].is_valid = FALSE;
+          continue;
+      }
+
+      if ( !contexts[context].is_valid )
+          continue;
+
+      context_offset = contexts[context].query_offset;
       buffer = &query[context_offset];
       
       Blast_ResFreqString(sbp, rfp, (char*)buffer, query_length);
@@ -2383,7 +2412,10 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
       sbp->kbp_std[context] = kbp = Blast_KarlinBlkNew();
       status = Blast_KarlinBlkUngappedCalc(kbp, sbp->sfp[context]);
       if (status) {
-         continue;
+          contexts[context].is_valid = FALSE;
+          sbp->sfp[context] = Blast_ScoreFreqFree(sbp->sfp[context]);
+          sbp->kbp_std[context] = Blast_KarlinBlkFree(sbp->kbp_std[context]);
+          continue;
       }
       /* For searches with translated queries, check whether ideal values
          should be substituted instead of calculated values, so a more 
@@ -2392,18 +2424,30 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
          Blast_KarlinBlkCopy(kbp, sbp->kbp_ideal);
 
       sbp->kbp_psi[context] = Blast_KarlinBlkNew();
-      if ((status = Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[context], 
-                                                sbp->sfp[context])) == 0)
-         query_valid = TRUE;
+      status = Blast_KarlinBlkUngappedCalc(sbp->kbp_psi[context], 
+                                           sbp->sfp[context]);
+      if (status) {
+          contexts[context].is_valid = FALSE;
+          sbp->sfp[context] = Blast_ScoreFreqFree(sbp->sfp[context]);
+          sbp->kbp_std[context] = Blast_KarlinBlkFree(sbp->kbp_std[context]);
+          sbp->kbp_psi[context] = Blast_KarlinBlkFree(sbp->kbp_psi[context]);
+          continue;
+      }
    }
 
    rfp = Blast_ResFreqFree(rfp);
    stdrfp = Blast_ResFreqFree(stdrfp);
 
-   if (query_valid)
-      status = 0;
-   else 
-      return status;
+   /* Report failures when calculating Karlin-Altschul parameters only for
+    * non-translated query searches, because for translated query searches,
+    * invalid frames can occur and this errors can go undetected safely. */
+   if ( !Blast_QueryIsTranslated(program) ) {
+       if (s_FindFirstInvalidContext(query_info) >= 0) {
+           status = 1;
+       } else {
+           ASSERT(status == 0);
+       }
+   }
 
    /* Set ungapped Blast_KarlinBlk* alias */
    sbp->kbp = (program == eBlastTypePsiBlast) ? sbp->kbp_psi : sbp->kbp_std;
@@ -4307,6 +4351,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.138  2006/01/12 20:36:37  camacho
+ * Changes to Blast_ScoreBlkKbpUngappedCalc to set invalid contexts
+ *
  * Revision 1.137  2005/12/12 13:39:14  madden
  * Correction on how gap costs are set if they exceed maximum
  *
