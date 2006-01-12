@@ -91,16 +91,21 @@ void SequenceTable::addSequences(CSeq_entry& seqEntry)
 	}
 }
 
-unsigned SequenceTable::findSequencesInTheGroup(CRef< CSeq_id > seqId, vector< CRef< CBioseq > >& bioseqVec)
+void SequenceTable::addSequences(const SequenceTable& seqTable)
+{
+	m_table.insert(seqTable.m_table.begin(), seqTable.m_table.end());
+}
+
+unsigned SequenceTable::findSequencesInTheGroup(CRef< CSeq_id > seqId, vector< CRef< CBioseq > >& bioseqVec)const
 {
 	bioseqVec.clear();
-	pair<SeqidToBioseqMap::iterator, SeqidToBioseqMap::iterator> range = m_table.equal_range(seqId);
-	for (SeqidToBioseqMap::iterator it = range.first; it!= range.second; it++)
+	pair<SeqidToBioseqMap::const_iterator, SeqidToBioseqMap::const_iterator> range = m_table.equal_range(seqId);
+	for (SeqidToBioseqMap::const_iterator it = range.first; it!= range.second; it++)
 		bioseqVec.push_back(it->second);
 	return bioseqVec.size();
 }
 
-bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)
+bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)const
 {
 	vector< CRef< CBioseq > > bioseqVec;
 	if (findSequencesInTheGroup(seqId, bioseqVec) == 0)
@@ -121,7 +126,7 @@ bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)
 	return false;
 }
 
-bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CSeq_entry >& seqEntry)
+bool SequenceTable::findSequence(CRef< CSeq_id > seqId, CRef< CSeq_entry >& seqEntry)const
 {
 	CRef< CBioseq > bioseq;
 	if (findSequence(seqId, bioseq))
@@ -159,6 +164,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/01/12 16:07:53  cliu
+ * const change
+ *
  * Revision 1.2  2005/07/18 19:43:37  cliu
  * use multimap
  *

@@ -56,9 +56,10 @@ public:
 	void addSequences(vector< CRef<CBioseq> > & bioseqVec, bool grouped=false);
 	void addSequence(CRef< CBioseq > bioseq);
 	void addSequences(CSeq_entry& seqEntry);
-	unsigned findSequencesInTheGroup(CRef< CSeq_id > seqId, vector< CRef< CBioseq > >& bioseqVec);
-	bool findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq);
-	bool findSequence(CRef< CSeq_id > seqId, CRef< CSeq_entry >& seqEntry);
+	void addSequences(const SequenceTable& seqTable);
+	unsigned findSequencesInTheGroup(CRef< CSeq_id > seqId, vector< CRef< CBioseq > >& bioseqVec)const;
+	bool findSequence(CRef< CSeq_id > seqId, CRef< CBioseq >& bioseq)const;
+	bool findSequence(CRef< CSeq_id > seqId, CRef< CSeq_entry >& seqEntry)const;
 	void dump(string filename); //for debug
 private:
 	typedef multimap<CRef< CSeq_id >, CRef< CBioseq >, LessBySeqId> SeqidToBioseqMap;
@@ -75,6 +76,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/01/12 16:08:07  cliu
+ * const change
+ *
  * Revision 1.2  2005/07/18 19:43:19  cliu
  * use multimap
  *
