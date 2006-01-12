@@ -177,7 +177,7 @@ private:
     virtual void Exit();
 
 private:
-    I_DriverContext* m_DriverContext;
+    auto_ptr<I_DriverContext> m_DriverContext;
     auto_ptr<CDB_Connection> n_Connection;
     string m_TableUID;
     EUseSampleDatabase m_UseSampleDatabase;
@@ -200,6 +200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/12 16:50:12  ssikorsk
+ * 	   Use auto_ptr to hold I_DriverContext.
+ *
  * Revision 1.4  2006/01/05 20:23:05  ssikorsk
  * Added program option 'lb' (Use load balancer for service mapping)
  *
