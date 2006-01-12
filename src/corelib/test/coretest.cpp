@@ -735,6 +735,12 @@ static void TestStreamposConvert(void)
     CT_POS_TYPE pos = NcbiInt8ToStreampos(p1);
     Int8        p2  = NcbiStreamposToInt8(pos);
 
+    if ( sizeof(CT_POS_TYPE) < sizeof(Int8)  ||
+         sizeof(CT_OFF_TYPE) < sizeof(Int8) ) {
+        ERR_POST(Warning <<
+                 "Large streams are not supported, skipping the test");
+        return;
+    }
     assert(p1 == p2);
     assert(p1 && p2);
 }
@@ -748,7 +754,7 @@ static void TestException(void)
     TestException_Features();
     TestException_Std();
     TestException_Aux();
-    //    TestStreamposConvert();
+    TestStreamposConvert();
 }
 
 
@@ -969,6 +975,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2006/01/12 20:37:46  grichenk
+ * Skip streampos test on platforms not supporting 64 bit streampos.
+ *
  * Revision 1.103  2006/01/11 19:13:43  vakatov
  * Turn the "TestStreamposConvert()" test off until it is figured out
  *
