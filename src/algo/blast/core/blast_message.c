@@ -36,6 +36,33 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_message.h>
 
+SMessageOrigin* SMessageOriginNew(char* filename, unsigned int lineno)
+{
+    SMessageOrigin* retval = NULL;
+
+    if ( !filename || !(strlen(filename) > 0) ) {
+        return NULL;
+    }
+    
+    retval = calloc(1, sizeof(SMessageOrigin));
+    if ( !retval ) {
+        return NULL;
+    }
+
+    retval->filename = strdup(filename);
+    retval->lineno = lineno;
+    return retval;
+}
+
+SMessageOrigin* SMessageOriginFree(SMessageOrigin* msgo)
+{
+    if (msgo) {
+        sfree(msgo->filename);
+        sfree(msgo);
+    }
+    return NULL;
+}
+
 Blast_Message* 
 Blast_MessageFree(Blast_Message* blast_msg)
 {
@@ -43,6 +70,7 @@ Blast_MessageFree(Blast_Message* blast_msg)
 		return NULL;
 
 	sfree(blast_msg->message);
+    blast_msg->origin = SMessageOriginFree(blast_msg->origin);
 
 	sfree(blast_msg);
 	return NULL;
@@ -55,7 +83,7 @@ Blast_MessageWrite(Blast_Message* *blast_msg, EBlastSeverity severity,
 	if (blast_msg == NULL)
 		return 1;
 
-	*blast_msg = (Blast_Message*) malloc(sizeof(Blast_Message));
+	*blast_msg = (Blast_Message*) calloc(1, sizeof(Blast_Message));
 
 	(*blast_msg)->severity = severity;
 	(*blast_msg)->code = code;
@@ -79,9 +107,17 @@ Blast_MessagePost(Blast_Message* blast_msg)
 Blast_Message*
 Blast_Perror(Int2 error_code)
 {
+    return Blast_PerrorEx(error_code, NULL, -1);
+}
+
+Blast_Message* Blast_PerrorEx(Int2 error_code, 
+                              const char* file_name, 
+                              int lineno)
+{
     Blast_Message* retval = (Blast_Message*) calloc(1, sizeof(Blast_Message));
 
     switch (error_code) {
+
     case BLASTERR_IDEALSTATPARAMCALC:
         retval->message = strdup("Failed to calculate ideal Karlin-Altschul "
                                  "parameters");
@@ -93,9 +129,28 @@ Blast_Perror(Int2 error_code)
                                  "program type");
         retval->severity = eBlastSevError;
         break;
+
+    /* Fatal errors */
+    case BLASTERR_MEMORY:
+        retval->message = strdup("Out of memory");
+        retval->severity = eBlastSevFatal;
+        break;
+    case BLASTERR_INVALIDPARAM:
+        retval->message = strdup("Invalid argument to function");
+        retval->severity = eBlastSevFatal;
+        break;
+    case BLASTERR_INVALIDQUERIES:
+        retval->message = strdup("search cannot proceed due to errors in all "
+                                 "contexts/frames of query sequences");
+        retval->severity = eBlastSevFatal;
+        break;
+
+    /* No error, just free the structure */
     case 0:
         retval = Blast_MessageFree(retval);
         break;
+
+    /* Unknown error */
     default:
         {
             char buf[512];
@@ -106,6 +161,11 @@ Blast_Perror(Int2 error_code)
         break;
     }
 
+    if (file_name && lineno > 0) {
+        retval->origin = SMessageOriginNew((char*) file_name, 
+                                           (unsigned int) lineno);
+    }
+
     return retval;
 }
 
@@ -113,6 +173,9 @@ Blast_Perror(Int2 error_code)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2006/01/12 20:33:06  camacho
+ * + SMessageOrigin structure, Blast_PerrorEx function, and error codes
+ *
  * Revision 1.19  2005/11/16 14:27:03  madden
  * Fix spelling in CRN
  *

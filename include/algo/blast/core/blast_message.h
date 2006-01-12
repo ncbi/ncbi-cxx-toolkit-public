@@ -40,6 +40,13 @@
 extern "C" {
 #endif
 
+/** Structure to enclose the origin of an error message or warning
+ */
+typedef struct SMessageOrigin {
+    char* filename;     /**< Name of the file */
+    int lineno;         /**< Line number in the file above */
+} SMessageOrigin;
+
 /** Blast error message severities .
  * These start with 1 to be consistent
  * with the C toolkit severity numbers.
@@ -57,6 +64,7 @@ typedef struct Blast_Message {
 	Int4 code;		/**< major code for error (currently unused) */
 	Int4 subcode;	/**< minor code for this error (currently unused). */
 	char* message;	/**< User message to be saved. */
+    SMessageOrigin* origin; /**< Optional: origin of the message */
 } Blast_Message;
 
 /** Deallocates message memory.
@@ -93,15 +101,40 @@ Int2 Blast_MessagePost(Blast_Message* blast_msg);
  */
 Blast_Message* Blast_Perror(Int2 error_code);
 
+/** Convenient define to call the function Blast_PerrorEx. */
+#define Blast_PerrorWithLocation(error_code) \
+Blast_PerrorEx(error_code, __FILE__, __LINE__)
+
+/** Extended version of Blast_Perror which includes parameters for the file
+ * name and line number where the error/warning occurred. This function should
+ * be invoked via the Blast_PerrorWithLocation macro.
+ * @param error_code one of the error codes defined below [in]
+ * @param file_name name of the file where the error ocurred [in]
+ * @param lineno line number where the error ocurred in the file above [in]
+ */
+Blast_Message* Blast_PerrorEx(Int2 error_code, 
+                              const char* file_name, 
+                              int lineno);
+
 /* BLAST error codes: these are meant to describe errors that can occur in the
  * core of BLAST only 
  */
 
+/** System error: out of memory condition */
+#define BLASTERR_MEMORY                             50
+
+/** Invalid parameter: possible programmer error or pre-condition not met */
+#define BLASTERR_INVALIDPARAM                       75
+
 /** Could not compute the ideal Karlin-Altschul parameters */
 #define BLASTERR_IDEALSTATPARAMCALC                 100
+
 /** Composition based statistics/Smith-Waterman not supported for a program 
  * type */
 #define BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED     101
+
+/** All queries/contexts are determined invalid in the setup code */
+#define BLASTERR_INVALIDQUERIES                     102
 
 #ifdef __cplusplus
 }
