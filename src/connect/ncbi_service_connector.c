@@ -43,7 +43,7 @@
 
 typedef struct SServiceConnectorTag {
     const char*     name;               /* Verbal connector type             */
-    const char*     service;            /* Service name (final) to use       */
+    const char*     service;            /* Translated service name, if stored*/
     TSERV_Type      types;              /* Server types, record keeping only */
     SConnNetInfo*   net_info;           /* Connection information            */
     const char*     user_header;        /* User header currently set         */
@@ -141,6 +141,8 @@ static int/*bool*/ s_ParseHeader(const char* header,
             unsigned char o1, o2, o3, o4;
             char ipaddr[32];
 
+            if (uuu->host)
+                return 0/*failed - duplicate connection info*/;
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
             while (*header && isspace((unsigned char)(*header)))
                 header++;
@@ -148,20 +150,22 @@ static int/*bool*/ s_ParseHeader(const char* header,
                 /* Special keyword for switching into stateless mode */
                 uuu->host = (unsigned int)(-1);
 #if defined(_DEBUG) && !defined(NDEBUG)
-                if (uuu->net_info->debug_printout)
+                if (uuu->net_info->debug_printout) {
                     CORE_LOG(eLOG_Warning,
                              "[SERVICE]  Fallback to stateless requested");
+                }
 #endif
-                break;
+            } else {
+                if (sscanf(header, "%u.%u.%u.%u %hu %x",
+                           &i1, &i2, &i3, &i4, &uuu->port, &ticket) < 6) {
+                    return 0/*failed - unreadable connection info*/;
+                }
+                o1 = i1; o2 = i2; o3 = i3; o4 = i4;
+                sprintf(ipaddr, "%u.%u.%u.%u", o1, o2, o3, o4);
+                if (!(uuu->host = SOCK_gethostbyname(ipaddr)) || !uuu->port)
+                    return 0/*failed - bad host:port in connection info*/;
+                uuu->ticket = SOCK_htonl(ticket);
             }
-            if (sscanf(header, "%u.%u.%u.%u %hu %x",
-                       &i1, &i2, &i3, &i4, &uuu->port, &ticket) < 6) {
-                return 0/*failed*/;
-            }
-            o1 = i1; o2 = i2; o3 = i3; o4 = i4;
-            sprintf(ipaddr, "%u.%u.%u.%u", o1, o2, o3, o4);
-            uuu->host = SOCK_gethostbyname(ipaddr);
-            uuu->ticket = SOCK_htonl(ticket);
             break;
         }
         if ((header = strchr(header, '\n')) != 0)
@@ -174,7 +178,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
 
 static char* s_AdjustNetParams(SConnNetInfo*  net_info,
                                EReqMethod     req_method,
-                               const char*    cgi_name,
+                               const char*    cgi_path,
                                const char*    cgi_args,
                                const char*    args,
                                const char*    static_header,
@@ -184,11 +188,12 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
                                char*          dynamic_header/*will be freed*/)
 {
     char content_type[MAX_CONTENT_TYPE_LEN], *retval;
+    size_t sh_len, dh_len, ct_len;
 
     net_info->req_method = req_method;
 
-    if (cgi_name)
-        strncpy0(net_info->path, cgi_name, sizeof(net_info->path) - 1);
+    if (cgi_path)
+        strncpy0(net_info->path, cgi_path, sizeof(net_info->path) - 1);
 
     if (args)
         strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
@@ -199,19 +204,20 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
         return 0/*failed*/;
     }
 
+    sh_len = static_header  ? strlen(static_header)  : 0;
+    dh_len = dynamic_header ? strlen(dynamic_header) : 0;
     if (mime_t == SERV_MIME_TYPE_UNDEFINED    ||
         mime_s == SERV_MIME_SUBTYPE_UNDEFINED ||
         !MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e,
                                    content_type, sizeof(content_type))) {
-        *content_type = 0;
-    }
-    if ((retval = (char*) malloc((static_header ? strlen(static_header) : 0) +
-                                 strlen(content_type) + 1/*EOL*/ +
-                                 (dynamic_header? strlen(dynamic_header) : 0)
-                                 )) != 0) {
-        strcpy(retval, static_header ? static_header : "");
-        strcat(retval, content_type);
-        strcat(retval, dynamic_header ? dynamic_header : "");
+        content_type[0] = '\0';
+        ct_len = 0;
+    } else
+        ct_len = strlen(content_type);
+    if ((retval = (char*) malloc(sh_len + dh_len +ct_len + 1/*EOL*/)) != 0) {
+        strcpy(retval,                   static_header  ? static_header  : "");
+        strcpy(retval + sh_len,          dynamic_header ? dynamic_header : "");
+        strcpy(retval + sh_len + dh_len, content_type);
     }
     if (dynamic_header)
         free(dynamic_header);
@@ -249,20 +255,21 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
                                    unsigned int  n)
 {
     SServiceConnector* uuu = (SServiceConnector*) data;
-    const char* user_header = 0;
+    const char* user_header;
     const SSERV_Info* info;
 
     assert(n != 0); /* paranoid assertion :-) */
-    if (net_info->firewall && !net_info->stateless)
+    if (uuu->net_info->firewall && !uuu->net_info->stateless)
         return 0; /*cannot adjust firewall stateful client*/
 
     for (;;) {
         if (!(info = s_GetNextInfo(uuu)))
             return 0/*false - not adjusted*/;
-        /* Skip any 'stateful_capable' entries here, which might
-         * have left behind a failed stateful dispatching with a
-         * fallback to stateless HTTP mode */
-        if (!info->sful)
+        /* Skip any 'stateful_capable' or unconnectable entries here,
+         * which might have left behind by either a failed stateful
+         * dispatching with a fallback to stateless HTTP mode or
+         * a too relaxed server type selection */
+        if (!info->sful  &&  info->type != fSERV_Dns)
             break;
     }
 
@@ -307,9 +314,9 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
                                             iter_header);
             break;
         default:
-            assert(0);
             if (iter_header)
                 free(iter_header);
+            user_header = 0;
             break;
         }
     }}
@@ -324,7 +331,7 @@ static int/*bool*/ s_AdjustNetInfo(SConnNetInfo* net_info,
     if (!ConnNetInfo_OverrideUserHeader(net_info, user_header))
         return 0/*false - not adjusted*/;
 
-    if (info->type == fSERV_Ncbid || (info->type & fSERV_Http) != 0) {
+    if (info->type == fSERV_Ncbid || (info->type & fSERV_Http)) {
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
         net_info->port = info->port;
     } else {
@@ -345,10 +352,9 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         SConnNetInfo*      net_info,
                         int/*bool*/        second_try)
 {
-    const char* user_header; /* may be "" or dynamic non-empty string */
+    const char* user_header; /* may be "" or non-empty dynamic string */
     char*       iter_header;
     EReqMethod  req_method;
-    size_t      n;
 
     if (info && info->type != fSERV_Firewall) {
         /* Not a firewall/relay connection here */
@@ -401,16 +407,14 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                               eDebugPrintout_Data
                                               ? eSCC_DebugPrintout : 0);
             }
-            /* This will be a pass-thru connection, socket otherwise */
+            /* Otherwise, this will be a pass-thru connection */
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(net_info, eReqMethod_Post, 0, 0,
                                             0, user_header, info->mime_t,
                                             info->mime_s, info->mime_e, 0);
             break;
         default:
-            assert(0);
-            user_header = 0;
-            break;
+            return 0;
         }
     } else {
         EMIME_Type     mime_t;
@@ -441,22 +445,27 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
             : "Client-Mode: STATEFUL_CAPABLE\r\n";
         user_header = s_AdjustNetParams(net_info, req_method,
-                                        0, 0, 0,
-                                        user_header, mime_t, mime_s, mime_e, 0);
+                                        0, 0, 0, user_header,
+                                        mime_t, mime_s, mime_e, 0);
     }
     if (!user_header)
         return 0;
 
     if ((iter_header = SERV_Print(uuu->iter, uuu->net_info)) != 0) {
-        if ((n = strlen(user_header)) > 0) {
-            if ((iter_header = (char*)
-                 realloc(iter_header, strlen(iter_header) + n + 1)) != 0)
-                strcat(iter_header, user_header);
+        size_t uh_len;
+        if ((uh_len = strlen(user_header)) > 0) {
+            char*  ih;
+            size_t ih_len = strlen(iter_header);
+            if ((ih = (char*) realloc(iter_header, ih_len + uh_len + 1)) != 0){
+                strcpy(ih + ih_len, user_header);
+                iter_header = ih;
+            }
             free((char*) user_header);
         }
         user_header = iter_header;
     } else if (!*user_header)
         user_header = 0; /* special case of assignment of literal "" */
+
     if (uuu->user_header) {
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
         free((void*) uuu->user_header);
@@ -514,6 +523,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             assert((!info || info->type == fSERV_Firewall) && !second_try);
             /* Try to use stateless mode instead */
             net_info->stateless = 1/*true*/;
+            if (!info/*firewall mode, firewall info should have come back*/) {
+                info = s_GetNextInfo(uuu);
+                if (info && info->type != fSERV_Firewall)
+                    info = 0;
+            }
             return s_Open(uuu, timeout, info, net_info, 1/*second try*/);
         }
         if (net_info->firewall && *net_info->proxy_host)
@@ -605,7 +619,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         if (!(net_info = ConnNetInfo_Clone(uuu->net_info)))
             break;
 
-        conn = s_Open(uuu, timeout, info, net_info, 0/*second_try - false*/);
+        conn = s_Open(uuu, timeout, info, net_info, 0/*!second_try*/);
 
         ConnNetInfo_Destroy(net_info);
 
@@ -735,7 +749,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
                      ? ConnNetInfo_Clone(net_info)
                      : ConnNetInfo_Create(service));
     if (net_info  &&  xxx->net_info) {
-        xxx->service = strdup(service);
+        xxx->service = SERV_ServiceName(service);
         xxx->net_info->service = xxx->service;
     }
     if (!ConnNetInfo_SetupStandardArgs(xxx->net_info)) {
@@ -767,6 +781,10 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.68  2006/01/12 18:12:46  lavr
+ * Fix erroneous use of non-translated service name
+ * Stricter checks on uniqueness of returned Connection-Info:
+ *
  * Revision 6.67  2006/01/11 20:28:47  lavr
  * Take advantage of ConnNetInfo_SetupStandardArgs();  other changes to
  * allow to pass user-supplied parameters to services (where feasible)
