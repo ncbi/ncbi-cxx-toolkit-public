@@ -3192,8 +3192,7 @@ void s_GetFileSystemInfo(const string&               path,
     info->filename_max = (unsigned long)st.f_namemax;
     fs_name_ptr = st.f_basetype;
 
-#  elif (defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN))  && \
-         defined(HAVE_STATFS)
+#  elif defined(NCBI_OS_BSD)  &&  defined(HAVE_STATFS)
 
     GET_STATFS_INFO;
     info->filename_max = (unsigned long)st.f_namelen;
@@ -3203,6 +3202,11 @@ void s_GetFileSystemInfo(const string&               path,
 
     GET_STATVFS_INFO;
     info->filename_max = (unsigned long)st.f_namelen;
+    fs_name_ptr = st.f_fstypename;
+
+#  elif defined(NCBI_OS_DARWIN)  &&  defined(HAVE_STATFS)
+
+    GET_STATFS_INFO;
     fs_name_ptr = st.f_fstypename;
 
 #  else
@@ -3862,6 +3866,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.135  2006/01/12 13:30:53  ivanov
+ * Fixed compilation on Darwin
+ *
  * Revision 1.134  2006/01/11 13:36:53  ivanov
  * +CFileUtil::GetFileSystemInfo. CFileUtil - use CFileErrnoException.
  *
