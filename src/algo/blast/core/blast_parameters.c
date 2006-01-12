@@ -48,7 +48,11 @@ static char const rcsid[] =
  */
 static Boolean s_BlastKarlinBlkIsValid(const Blast_KarlinBlk* kbp)
 {
-    return (kbp->Lambda > 0 && kbp->K > 0 && kbp->H > 0);
+    if ( !kbp ) {
+        return FALSE;
+    } else {
+        return (kbp->Lambda > 0 && kbp->K > 0 && kbp->H > 0);
+    }
 }
 
 /** Returns the first valid Karlin-Altchul block from the list of blocks.
@@ -69,6 +73,8 @@ s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_
     ASSERT(kbp_in && query_info && kbp_ret);
 
     for (i=query_info->first_context; i<=query_info->last_context; i++) {
+         ASSERT(s_BlastKarlinBlkIsValid(kbp_in[i]) ==
+                query_info->contexts[i].is_valid);
          if (s_BlastKarlinBlkIsValid(kbp_in[i])) {
               *kbp_ret = kbp_in[i];
               status = 0;
@@ -97,6 +103,8 @@ s_BlastFindSmallestLambda(Blast_KarlinBlk** kbp_in,
     ASSERT(kbp_in && query_info);
 
     for (i=query_info->first_context; i<=query_info->last_context; i++) {
+        ASSERT(s_BlastKarlinBlkIsValid(kbp_in[i]) ==
+               query_info->contexts[i].is_valid);
         if (s_BlastKarlinBlkIsValid(kbp_in[i])) {
             if (min_lambda > kbp_in[i]->Lambda)
             {
@@ -318,6 +326,8 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
          Blast_KarlinBlk* kbp_ungap = sbp->kbp_std[index];
          const BlastInitialWordOptions* kOptions = parameters->options;
 
+         ASSERT(s_BlastKarlinBlkIsValid(kbp_ungap) ==
+                query_info->contexts[index].is_valid);
          if (s_BlastKarlinBlkIsValid(kbp_ungap)) {
             gap_trigger = (Int4) ((kOptions->gap_trigger * NCBIMATH_LN2 + 
                                    kbp_ungap->logK) / kbp_ungap->Lambda);
@@ -328,8 +338,10 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
           continue;
 
       kbp = kbp_array[index];
-      if (!s_BlastKarlinBlkIsValid(kbp))  /* skip invalid Karlin blocks */
+      if (!s_BlastKarlinBlkIsValid(kbp)) { /* skip invalid Karlin blocks */
+          ASSERT(query_info->contexts[index].is_valid == FALSE);
           continue;
+      }
 
       if (!gapped_calculation || program_number == eBlastTypeBlastn) {
          double cutoff_e = s_GetCutoffEvalue(program_number);
@@ -711,8 +723,10 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
          double evalue = options->expect_value;
 
          kbp = kbp_array[context];
-         if (!s_BlastKarlinBlkIsValid(kbp))  /* skip invalid Karlin blocks */
+         if (!s_BlastKarlinBlkIsValid(kbp)) { /* skip invalid Karlin blocks */
+             ASSERT(query_info->contexts[context].is_valid == FALSE);
              continue;
+         }
          searchsp = query_info->contexts[context].eff_searchsp;
          if (searchsp == 0)         /* skip invalid contexts */
             continue;
@@ -748,8 +762,10 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
             Int4 new_cutoff = 0;
 
             kbp = kbp_array[context];
-            if (!s_BlastKarlinBlkIsValid(kbp))  /* skip invalid Karlin blocks */
+            if (!s_BlastKarlinBlkIsValid(kbp)) {/* skip invalid Karlin blocks */
+                ASSERT(query_info->contexts[context].is_valid == FALSE);
                 continue;
+            }
             BLAST_Cutoffs(&new_cutoff, &evalue_hsp, kbp, searchsp,
                        TRUE, params->link_hsp_params->gap_decay_rate);
             /* Update the computed cutoff if new_cutoff is smaller */
@@ -859,6 +875,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2006/01/12 20:34:32  camacho
+ * + assertions for validity of context
+ *
  * Revision 1.15  2006/01/03 17:53:20  papadopo
  * 1. increase the cutoff query size for using stacks
  * 2. initialize fields for approximate nucleotide ungapped alignment
