@@ -646,7 +646,6 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, data);
     }
-    printf("%d\n", (TScore)(V+0.5));
     return (TScore)(V + 0.5);
 }
 
@@ -846,6 +845,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/13 18:28:23  papadopo
+ * fix to previous commit
+ *
  * Revision 1.8  2006/01/13 18:27:39  papadopo
  * modify score computation to match recent changes in dynamic programming recurrences
  *
