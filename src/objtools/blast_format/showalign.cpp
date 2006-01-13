@@ -278,7 +278,6 @@ static void s_DisplayIdentityInfo(CNcbiOstream& out, int aln_stop,
 static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
 {
     const int line_len = 60;
-    const int front_space = 12;
     bool do_wrap = false;
     int length = (int) str.size();
     if (length > line_len) {
@@ -289,7 +288,6 @@ static void s_WrapOutputLine(CNcbiOstream& out, const string& str)
             out << str[i];
             if(do_wrap && isspace((unsigned char) str[i])){
                 out << endl;  
-                CBlastFormatUtil::AddSpace(out, front_space);
                 do_wrap = false;
             }
         }
@@ -510,6 +508,91 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
     return concat_exon;
 }
 
+///map slave feature info to master seq
+///@param master_feat_range: master feature seqloc to be filled
+///@param feat: the feature in concern
+///@param slave_feat_range: feature info for slave
+///@param av: the alignment vector for master-slave seqalign
+///@param row: the row.
+///
+
+static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
+                                      CFeat_CI& feat,
+                                      list<CSeq_loc_CI::TRange>& slave_feat_range,
+                                      CAlnVec* av, 
+                                      int row)
+{
+    TSeqPos trans_frame = 1;
+    const CCdregion& cdr = feat->GetData().GetCdregion();
+    if(cdr.IsSetFrame()){
+        trans_frame = cdr.GetFrame();
+    }
+    TSeqPos prev_exon_len = 0;
+    bool is_first_in_range = true;
+    ITERATE(list<CSeq_loc_CI::TRange>, iter_temp,
+            slave_feat_range){
+        if(av->GetSeqRange(row).
+           IntersectingWith(*iter_temp)) {
+            TSeqPos slave_aln_from;
+            if (is_first_in_range) { //adjust frame
+                TSeqPos frame_offset = 0;
+                int curr_exon_leading_len 
+                    = av->GetSeqStart(row) - 
+                    iter_temp->GetFrom();
+                TSeqPos actual_slave_seq_start = 0;
+                if(curr_exon_leading_len >= 0) {
+                    frame_offset = (3 - 
+                                    (prev_exon_len + curr_exon_leading_len)%3 +
+                                    (trans_frame - 1)) % 3;
+                    actual_slave_seq_start =
+                        av->GetSeqStart(row)
+                        + frame_offset;
+                    
+                } else {
+                    frame_offset = (3 - 
+                                    prev_exon_len % 3 +
+                                    (trans_frame - 1)) % 3;
+                    actual_slave_seq_start = 
+                        iter_temp->GetFrom() + 
+                        frame_offset;
+                }
+                
+                slave_aln_from 
+                    = av->
+                    GetAlnPosFromSeqPos(row,
+                                        actual_slave_seq_start);   
+                
+            } else {
+                slave_aln_from =
+                    av->
+                    GetAlnPosFromSeqPos(row,
+                                        iter_temp->GetFrom(),
+                                        CAlnMap::eRight);
+            }
+            TSeqPos slave_aln_to =
+                av->GetAlnPosFromSeqPos(row,
+                                        iter_temp->GetTo(),
+                                        CAlnMap::eLeft);
+            
+            TSeqPos master_from = 
+                av->
+                GetSeqPosFromAlnPos(0, slave_aln_from, CAlnMap::eRight);
+            
+            TSeqPos master_to = 
+                av->GetSeqPosFromAlnPos(0, slave_aln_to, CAlnMap::eLeft);
+            
+            CRange<TSeqPos> master_range(master_from,
+                                         master_to);
+            master_feat_range.push_back(master_range); 
+            is_first_in_range = false;
+            
+        }
+        prev_exon_len += iter_temp->GetLength();
+    }
+}
+                    
+
+
 ///return cds coded sequence and fill the id if found
 ///@param genetic_code: the genetic code
 ///@param feat: the feature containing this cds
@@ -639,6 +722,191 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
     }
 }
 
+///make a new copy of master seq with feature info and return the scope
+///that contains this sequence
+///@param feat_range: the feature seqlocs
+///@param feat_seq_strand: the stand info
+///@param handle: the seq handle for the original master seq
+///@return: the scope containing the new master seq
+///
+static CRef<CScope> s_MakeNewMasterSeq(list<list<CRange<TSeqPos> > >& feat_range,
+                                       list<ENa_strand>& feat_seq_strand,
+                                       const CBioseq_Handle& handle) 
+{
+    CRef<CObjectManager> obj;
+    obj = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*obj);       
+    CRef<CScope> scope (new CScope(*obj));
+    scope->AddDefaults();
+    CRef<CBioseq> cbsp(new CBioseq());
+    cbsp->Assign(*(handle.GetCompleteBioseq()));
+
+    CBioseq::TAnnot& anot_list = cbsp->SetAnnot();
+    CRef<CSeq_annot> anot(new CSeq_annot);
+    CRef<CSeq_annot::TData> data(new CSeq_annot::TData);
+    data->Select(CSeq_annot::TData::e_Ftable);
+    anot->SetData(*data);
+    CSeq_annot::TData::TFtable& ftable = anot->SetData().SetFtable();
+    int counter = 0;
+    ITERATE(list<list<CRange<TSeqPos> > >, iter, feat_range) {
+        counter ++;
+        CRef<CSeq_feat> seq_feat(new CSeq_feat);
+        CRef<CSeqFeatData> feat_data(new CSeqFeatData);
+        feat_data->Select(CSeq_feat::TData::e_Cdregion);
+        seq_feat->SetData(*feat_data);
+        seq_feat->SetComment("Putative " + NStr::IntToString(counter));
+        CRef<CSeq_loc> seq_loc (new CSeq_loc);
+       
+        ITERATE(list<CRange<TSeqPos> >, iter2, *iter) {
+            seq_loc->Add(*(handle.GetRangeSeq_loc(iter2->GetFrom(),
+                                                  iter2->GetTo(),
+                                                  feat_seq_strand.front())));
+        }
+        seq_feat->SetLocation(*seq_loc);
+        ftable.push_back(seq_feat);
+        feat_seq_strand.pop_front();
+    }
+    anot_list.push_back(anot);
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->SetSeq(*cbsp);
+    scope->AddTopLevelSeqEntry(*entry);
+  
+    return scope;
+}
+
+//output feature lines
+//@param reference_feat_line: the master feature line to be compared 
+//for coloring
+//@param feat_line: the slave feature line
+//@param color_feat_mismatch: color or not
+//@param start: the alignment pos
+//@param len: the length per line
+//@param out: stream for output
+//
+static void s_OutputFeature(string& reference_feat_line, 
+                            string& feat_line,
+                            bool color_feat_mismatch,
+                            int start,
+                            int len,  
+                            CNcbiOstream& out)
+{
+    if((int)feat_line.size() > start){
+        string actual_feat = feat_line.substr(start, len);
+        string actual_reference_feat = NcbiEmptyString;
+        if(reference_feat_line != NcbiEmptyString){
+            actual_reference_feat = reference_feat_line.substr(start, len);
+        }
+        if(color_feat_mismatch && actual_reference_feat != NcbiEmptyString ){
+            string base_color = "#F805F5";
+            bool tagOpened = false;
+            for(int i = 0; i < (int)actual_feat.size() &&
+                    i < (int)actual_reference_feat.size(); i ++){
+                if (actual_feat[i] != actual_reference_feat[i]) {
+                    if(actual_feat[i] != ' ') {
+                        if(!tagOpened){
+                            out << "<font color=\""+base_color+"\"><b>";
+                            tagOpened =  true;
+                        }
+                        
+                    }
+                } else {
+                    if (actual_feat[i] != ' '){
+                        if(tagOpened){
+                            out << "</b></font>";
+                            tagOpened = false;
+                        }
+                    }
+                }
+                out << actual_feat[i];
+                if(tagOpened && i == (int)actual_feat.size() - 1){
+                    out << "</b></font>";
+                    tagOpened = false;
+                }
+            }
+        } else {
+            out << actual_feat;
+        }
+    }
+    
+}
+
+
+void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
+                                       int row, 
+                                       CAlnMap::TSignedRange alignment_range,
+                                       int aln_start,
+                                       int line_length, 
+                                       int id_length,
+                                       int start_length,
+                                       int max_feature_num, 
+                                       string& master_feat_str,
+                                       bool master_slave_same_strand,
+                                       CNcbiOstream& out)
+{
+    for (list<SAlnFeatureInfo*>::iterator 
+             iter=feature.begin(); 
+         iter != feature.end(); iter++){
+        //check blank string for cases where CDS is in range 
+        //but since it must align with the 2nd codon and is 
+        //actually not in range
+        if (alignment_range.IntersectingWith((*iter)->aln_range) && 
+            !(NStr::IsBlank((*iter)->feature_string.
+                            substr(aln_start, line_length)) &&
+              m_AlignOption & eShowCdsFeature)){  
+            if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)
+               && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
+                char checkboxBuf[200];
+                sprintf(checkboxBuf,  k_UncheckabeCheckbox.c_str(),
+                        m_QueryNumber);
+                out << checkboxBuf;
+            }
+            out<<(*iter)->feature->feature_id;
+            if((*iter)->feature_start.empty()){
+                CBlastFormatUtil::
+                    AddSpace(out, id_length + k_IdStartMargin
+                             +start_length + k_StartSequenceMargin
+                             -(*iter)->feature->feature_id.size());
+            } else {
+                int feat_start = (*iter)->feature_start.front();
+                if(feat_start > 0){
+                    CBlastFormatUtil::
+                        AddSpace(out, id_length + k_IdStartMargin
+                                 -(*iter)->feature->feature_id.size());
+                    out << feat_start;
+                    CBlastFormatUtil::
+                        AddSpace(out, start_length -
+                                 NStr::IntToString(feat_start).size() +
+                                 k_StartSequenceMargin);
+                } else { //no show start
+                    CBlastFormatUtil::
+                        AddSpace(out, id_length + k_IdStartMargin
+                                 +start_length + k_StartSequenceMargin
+                                 -(*iter)->feature->feature_id.size());
+                }
+                
+                (*iter)->feature_start.pop_front();
+            }
+            bool color_cds_mismatch = false; 
+            if(max_feature_num == 1 && (m_AlignOption & eHtml) && 
+               (m_AlignOption & eShowCdsFeature) && 
+               master_slave_same_strand && row > 0){
+                //only for slaves, only for cds feature
+                //only color mismach if only one cds exists
+                color_cds_mismatch = true;
+            }
+            s_OutputFeature(master_feat_str, 
+                            (*iter)->feature_string,
+                            color_cds_mismatch, aln_start,
+                            line_length, out);
+            if(row == 0){//set master feature as reference
+                master_feat_str = (*iter)->feature_string;
+            }
+            out<<endl;
+        }
+    }
+    
+}
+
 
 string CDisplaySeqalign::x_GetUrl(const list<CRef<CSeq_id> >& ids, int gi, 
                                   int row, int taxid) const
@@ -751,14 +1019,19 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     CAlnMap::TSignedRange* rowRng = new CAlnMap::TSignedRange[rowNum];
     int* frame = new int[rowNum];
     int* taxid = new int[rowNum];
-
+    int max_feature_num = 0;
+    string master_feat_str = NcbiEmptyString;
+    
     //Add external query feature info such as phi blast pattern
     list<SAlnFeatureInfo*>* bioseqFeature= x_GetQueryFeatureList(rowNum,
                                                                 (int)aln_stop);
     //conver to aln coordinates for mask seqloc
     list<SAlnSeqlocInfo*> alnLocList;
-    x_FillLocList(alnLocList);    
-    //prepare data for each row
+    x_FillLocList(alnLocList);   
+    
+    //prepare data for each row 
+    list<list<CRange<TSeqPos> > > feat_seq_range;
+    list<ENa_strand> feat_seq_strand;
     for (int row=0; row<rowNum; row++) {
         string type_temp = NStr::ToLower(m_BlastType);
         if(type_temp.find("mapview") != string::npos || 
@@ -781,16 +1054,36 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                    &insertStart[row], &insertLength[row],
                                    (int)m_LineLen, &seqStarts[row], &seqStops[row]);
         //make feature. Only for pairwise and untranslated for subject nuc seq
-        if(!(m_AlignOption & eMasterAnchored) && row > 0 &&
+        if(!(m_AlignOption & eMasterAnchored) &&
            !(m_AlignOption & eMultiAlign) && m_AV->GetWidth(row) != 3 &&
            !(m_AlignType & eProt)){
             if(m_AlignOption & eShowCdsFeature){
+                int master_gi = FindGi(m_AV->GetBioseqHandle(0).
+                                       GetBioseqCore()->GetId());
                 x_GetFeatureInfo(bioseqFeature[row], *m_featScope, 
-                                 CSeqFeatData::e_Cdregion, row, sequence[row]);
+                                 CSeqFeatData::e_Cdregion, row, sequence[row],
+                                 feat_seq_range, feat_seq_strand,
+                                 row == 1 && !(master_gi > 0) &&
+                                 m_AV->IsPositiveStrand(row) &&
+                                 m_AV->IsPositiveStrand(0) ? true : false);
+                
+                if(!(feat_seq_range.empty()) && row == 1) {
+                    //make a new copy of master bioseq and add the feature from
+                    //slave to make putative cds feature 
+                    CRef<CScope> master_scope_with_feat = 
+                        s_MakeNewMasterSeq(feat_seq_range, feat_seq_strand,
+                                           m_AV->GetBioseqHandle(0));
+                    //make feature string for master bioseq
+                    list<list<CRange<TSeqPos> > > temp_holder;
+                    x_GetFeatureInfo(bioseqFeature[0], *master_scope_with_feat, 
+                                     CSeqFeatData::e_Cdregion, 0, sequence[0],
+                                     temp_holder, feat_seq_strand, false);
+                }
             }
             if(m_AlignOption & eShowGeneFeature){
                 x_GetFeatureInfo(bioseqFeature[row], *m_featScope,
-                                 CSeqFeatData::e_Gene, row, sequence[row]);
+                                 CSeqFeatData::e_Gene, row, sequence[row],
+                                 feat_seq_range, feat_seq_strand, false);
             }
         }
         //make id
@@ -800,9 +1093,14 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
         maxStartLen = max<size_t>(NStr::IntToString(maxCood).size(), maxStartLen);
     }
     for(int i = 0; i < rowNum; i ++){//adjust max id length for feature id 
+        int num_feature = 0;
         for (list<SAlnFeatureInfo*>::iterator iter=bioseqFeature[i].begin();
              iter != bioseqFeature[i].end(); iter++){
             maxIdLen=max<size_t>((*iter)->feature->feature_id.size(), maxIdLen );
+            num_feature ++;
+            if(num_feature > max_feature_num){
+                max_feature_num = num_feature;
+            }
         }
     }  //end of preparing row data
     bool colorMismatch = false; //color the mismatches
@@ -856,6 +1154,14 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         delete *iterINsert;
                     }
                 }
+                //feature for query
+                if(row == 0){          
+                    x_PrintFeatures(bioseqFeature[row], row, curRange,
+                                    j,(int)actualLineLen, maxIdLen,
+                                    maxStartLen, max_feature_num, 
+                                    master_feat_str, false, out); 
+                }
+
                 if(row == 0&&(m_AlignOption&eHtml)
                    &&(m_AlignOption&eMultiAlign) 
                    && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
@@ -863,6 +1169,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(), m_QueryNumber);
                     out << checkboxBuf;
                 }
+
                 string urlLink;
                 //setup url link for seqid
                 if(row>0&&(m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)){
@@ -923,6 +1230,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     out<< "</b></font>";         
                 } 
                 
+                //print out sequence line
                 //adjust space between id and start
                 CBlastFormatUtil::AddSpace(out, 
                                            maxIdLen-seqidArray[row].size()+
@@ -976,60 +1284,20 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         insertAlready = true;
                     }
                 } 
-                //display feature. Feature, if set, 
-                //will be displayed for query regardless
-                CSeq_id no_id;
-                for (list<SAlnFeatureInfo*>::iterator 
-                         iter=bioseqFeature[row].begin(); 
-                     iter != bioseqFeature[row].end(); iter++){
-                    //check blank string for cases where CDS is in range but
-                    //since it must align with the 2nd codon and is actually
-                    //not in range
-                    if (curRange.IntersectingWith((*iter)->aln_range) && 
-                        !(NStr::IsBlank((*iter)->feature_string.
-                                        substr(j,(int)actualLineLen)) &&
-                          m_AlignOption & eShowCdsFeature)){  
-                        if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)
-                           && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
-                            char checkboxBuf[200];
-                            sprintf(checkboxBuf,  k_UncheckabeCheckbox.c_str(),
-                                    m_QueryNumber);
-                            out << checkboxBuf;
-                        }
-                        out<<(*iter)->feature->feature_id;
-                        if((*iter)->feature_start.empty()){
-                            CBlastFormatUtil::
-                                AddSpace(out, maxIdLen + k_IdStartMargin
-                                         +maxStartLen + k_StartSequenceMargin
-                                         -(*iter)->feature->feature_id.size());
-                        } else {
-                            int feat_start = (*iter)->feature_start.front();
-                            if(feat_start > 0){
-                                CBlastFormatUtil::
-                                    AddSpace(out, maxIdLen + k_IdStartMargin
-                                             -(*iter)->feature->feature_id.size());
-                                out << feat_start;
-                                CBlastFormatUtil::
-                                    AddSpace(out, maxStartLen -
-                                             NStr::IntToString(feat_start).size() +
-                                             k_StartSequenceMargin);
-                            } else { //no show start
-                                CBlastFormatUtil::
-                                    AddSpace(out, maxIdLen + k_IdStartMargin
-                                             +maxStartLen + k_StartSequenceMargin
-                                             -(*iter)->feature->feature_id.size());
-                            }
-                            
-                            (*iter)->feature_start.pop_front();
-                        }
-                        x_OutputSeq((*iter)->feature_string, no_id, j,
-                                    (int)actualLineLen, 0, row, false,  alnLocList, out);
-                        out<<endl;
-                    }
+                //display subject sequence feature.
+                if(row > 0){ 
+                    x_PrintFeatures(bioseqFeature[row], row, curRange,
+                                    j,(int)actualLineLen, maxIdLen,
+                                    maxStartLen, max_feature_num, 
+                                    master_feat_str, 
+                                    m_AV->IsPositiveStrand(row) ==
+                                    m_AV->IsPositiveStrand(0) ? true : false,
+                                    out);
                 }
                 //display middle line
                 if (row == 0 && ((m_AlignOption & eShowMiddleLine)) 
                     && !(m_AlignOption&eMultiAlign)) {
+                    CSeq_id no_id;
                     CBlastFormatUtil::
                         AddSpace(out, maxIdLen + k_IdStartMargin
                                  + maxStartLen + k_StartSequenceMargin);
@@ -1206,9 +1474,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
                                                        alnvecInfo->comp_adj_method);
                         alnvecInfo->alnvec = avRef;
                         avList.push_back(alnvecInfo);
-
                         if (toolUrl.find("dumpgnl.cgi") != string::npos 
-                            || (m_AlignOption & eLinkout)) {
+                           || (m_AlignOption & eLinkout)){
                             /*need to construct segs for dumpgnl and
                               get sub-sequence for long sequences*/
                             string idString = avRef->GetSeqId(1).GetSeqIdString();
@@ -1543,7 +1810,7 @@ HSP\"></a>";
 
 void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id, 
                                    int start, int len, int frame, int row,
-                                   bool color_mismatch, 
+                                   bool color_mismatch,
                                    list<SAlnSeqlocInfo*> loc_list, 
                                    CNcbiOstream& out) const 
 {
@@ -1655,14 +1922,17 @@ int CDisplaySeqalign::x_GetNumGaps()
 void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                         CScope& scope, 
                                         CSeqFeatData::E_Choice choice,
-                                        int row, string& sequence) const 
+                                        int row, string& sequence,
+                                        list<list<CRange<TSeqPos> > >& feat_range_list,
+                                        list<ENa_strand>& feat_seq_strand,
+                                        bool fill_feat_range ) const 
 {
-    //Only fetch features for seq that has a gi
-    CRef<CSeq_id> id 
-        = s_GetSeqIdByType(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(),
-                           CSeq_id::e_Gi);
-    if(!(id.Empty())){
-        const CBioseq_Handle& handle = scope.GetBioseqHandle(*id);
+    //Only fetch features for seq that has a gi unless it's master seq
+    const CSeq_id& id = m_AV->GetSeqId(row);
+    
+    int gi_temp = FindGi(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId());
+    if(gi_temp > 0 || row == 0){
+        const CBioseq_Handle& handle = scope.GetBioseqHandle(id);
         if(handle){
             TSeqPos seq_start = m_AV->GetSeqPosFromAlnPos(row, 0);
             TSeqPos seq_stop = m_AV->GetSeqPosFromAlnPos(row, m_AV->GetAlnStop());
@@ -1681,7 +1951,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                 //as this is easier to manipulate and remove seqloc that is
                 //not from the bioseq we are dealing with
                 for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
-                    if(loc_it.GetSeq_id().Match(*id)){
+                    if(IsSameBioseq(loc_it.GetSeq_id(), id, &scope)){
                         isolated_range.push_back(loc_it.GetRange());
                         if(first_loc){
                             feat_seq_range = loc_it.GetRange();
@@ -1784,6 +2054,22 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                               feat_strand, isolated_range,
                                               total_coding_len,
                                               raw_cdr_product);
+                    
+                   
+                    //fill slave feature info to make putative feature for
+                    //master sequence
+                    if (fill_feat_range) {
+                        list<CRange<TSeqPos> > temp_feat_range;
+                        s_MapSlaveFeatureToMaster(temp_feat_range,
+                                                  feat, isolated_range,
+                                                  m_AV, row);
+                        if(!(temp_feat_range.empty())) {
+                            feat_range_list.push_back(temp_feat_range); 
+                            feat_seq_strand.push_back(feat_strand);
+                        } 
+                    }
+                       
+                    
                     TSeqPos feat_aln_start_totalexon = 0;
                     TSeqPos prev_feat_aln_start_totalexon = 0;
                     TSeqPos prev_feat_seq_stop = 0;
@@ -1801,9 +2087,8 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     if(feat_strand == eNa_strand_minus){
                         isolated_range.reverse(); 
                     }
-
+                    
                     ITERATE(list<CSeq_loc_CI::TRange>, iter, isolated_range){
-
                         //intron refers to the distance between two exons
                         //i.e. each seqloc is an exon
                         //intron needs to be skipped
@@ -1924,6 +2209,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                                            m_AV->IsPositiveStrand(row) ?
                                            eNa_strand_plus : eNa_strand_minus,
                                            feat_strand, featInfo->feature_start); 
+                 
                 }
                 
                 if(featInfo){
@@ -2391,7 +2677,8 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
         if(isFirstAlnInList && (m_AlignOption&eShowBlastInfo)) {
             if(!(m_AlignOption & eShowNoDeflineInfo)){
                 x_PrintDefLine(bsp_handle, (*iterAv)->use_this_gi, out);
-                out<<"          Length="<<bsp_handle.GetBioseqLength()<<endl;
+                // out<<"          Length="<<bsp_handle.GetBioseqLength()<<endl;
+                out<<"Length="<<bsp_handle.GetBioseqLength()<<endl;
             }
             if((m_AlignOption&eHtml) && (m_AlignOption&eShowBlastInfo)
                && (m_AlignOption&eShowBl2seqLink)) {
@@ -2707,14 +2994,8 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
-*Revision 1.96  2005/12/27 21:51:34  coulouri
-*remove unused variable
-*
-*Revision 1.95  2005/12/27 18:37:05  jianye
-*no segs for mapview url parameters
-*
-*Revision 1.94  2005/12/14 20:44:40  jianye
-*clarify the and/or condition
+*Revision 1.97  2006/01/13 16:37:18  jianye
+*map the slave features to master seq, etc
 *
 *Revision 1.93  2005/12/05 22:33:49  jianye
 *show middle line independent of showblastinfo
