@@ -75,7 +75,7 @@ x_run=`grep '^ *CHECK_CMD' "$x_srcdir/Makefile.$x_test.app" | sed 's/^[^=]*=//'`
 
 if test -z "$x_run"; then
    # If command line not defined, then just run the test without parameters
-   x_run="$x_app$x_exeext"
+   x_run="$x_app"
 fi
 x_run=`echo "$x_run" | sed -e 's/ /%gj_s4%/g'`
 
