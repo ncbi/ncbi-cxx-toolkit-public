@@ -193,9 +193,9 @@ const
 CNWAligner::TScore CPSSMAligner::x_Align(SAlignInOut* data)
 {
     if (m_Freq1)
-        return x_AlignProfile(data);      // profile-sequence, profile-profile
+        return x_AlignProfile(data);      // profile-profile
     else if (m_Pssm1)
-        return x_AlignPSSM(data);      // profile-sequence, profile-profile
+        return x_AlignPSSM(data);      // PSSM-sequence
     else
         return CNWAligner::x_Align(data); // sequence-sequence
 }
@@ -226,10 +226,6 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
     TScore* rowF    = &stl_rowF[0];
 
     TScore* pV = rowV - 1;
-
-    const double** freq1_row = m_Freq1 + data->m_offset1 - 1;
-    const double** freq2_row = m_Freq2 + data->m_offset2 - 1;
-    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
     const TScore** pssm_row = m_Pssm1 + data->m_offset1 - 1;
     const char* seq2 = m_Seq2 + data->m_offset2 - 1;
@@ -341,54 +337,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignPSSM(SAlignInOut* data)
 
         for (j = 1; j < N2; ++j, ++k) {
 
-            if (m_Pssm1) {
-                G = pV[j] + pssm_row[i][(unsigned char)seq2[j]];
-            }
-            else {
-                double accum = 0.0, sum = 0.0;
-                double diff_freq1[kPSSM_ColumnSize];
-                double diff_freq2[kPSSM_ColumnSize];
-
-                // separate the residue frequencies into two components:
-                // a component that is the same for both columns, and
-                // a component that is different. The all-against-all
-                // score computation only takes place on the components
-                // that are different, so this will assign a higher score
-                // to more similar frequency columns
-
-                for (int m = 0; m < kPSSM_ColumnSize; m++) {
-                    if (freq1_row[i][m] < freq2_row[j][m]) {
-                        accum += freq1_row[i][m] * (double)sm[m][m];
-                        diff_freq1[m] = 0.0;
-                        diff_freq2[m] = freq2_row[j][m] - freq1_row[i][m];
-                    }
-                    else {
-                        accum += freq2_row[j][m] * (double)sm[m][m];
-                        diff_freq1[m] = freq1_row[i][m] - freq2_row[j][m];
-                        diff_freq2[m] = 0.0;
-                    }
-                }
-
-                for (int m = 0; m < kPSSM_ColumnSize; m++) {
-                    sum += diff_freq1[m];
-                }
-                if (sum > 0) {
-                    // normalize one column of differences
-
-                    for (int m = 0; m < kPSSM_ColumnSize; m++)
-                        diff_freq1[m] /= sum;
-
-                    for (int m = 0; m < kPSSM_ColumnSize; m++) {
-                        for (int n = 0; n < kPSSM_ColumnSize; n++) {
-                            accum += diff_freq1[m] * 
-                                    diff_freq2[n] * 
-                                    (double)sm[m][n];
-                        }
-                    }
-                }
-
-                G = pV[j] + (TScore)(m_FreqScale * accum + 0.5);
-            }
+            G = pV[j] + pssm_row[i][(unsigned char)seq2[j]];
 
             pV[j] = V;
 
@@ -633,6 +582,10 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
                 }
             }
 
+            // account for the frequency of gaps in the
+            // two profiles by assuming a gap in one profile
+            // causes a gap extend penalty for the other profile
+
             G = pV[j] + accum * m_FreqScale +
                 freq1_row[i][0] * ws1 * (1-freq2_row[j][0]) +
                 freq2_row[j][0] * ws2 * (1-freq1_row[i][0]);
@@ -693,6 +646,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
     if(!m_terminate) {
         x_DoBackTrace(backtrace_matrix, data);
     }
+    printf("%d\n", (TScore)(V+0.5));
     return (TScore)(V + 0.5);
 }
 
@@ -714,22 +668,109 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
     int state2 = 0;   // 0 = normal, 1 = gap
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
-    size_t offset1 = start1;
-    size_t offset2 = start2;
+    int offset1 = -1;
+    int offset2 = -1;
 
     const size_t dim = transcript.size();
-    for(size_t i = 0; i < dim; ++i) {
 
-        ETranscriptSymbol ts = transcript[i];
-        switch(ts) {
+    if (m_Pssm1) {                         // PSSM-sequence score
+        for(size_t i = 0; i < dim; ++i) {
 
-        case eTS_Replace:
-        case eTS_Match: {
-            state1 = state2 = 0;
-            if (m_Pssm1) {
+            TScore wg = 0, ws = 0;
+
+            if (offset1 < 0) {
+                if (!m_esf_L1) {
+                    wg = m_StartWg; ws = m_StartWs;
+                }
+            } else if (offset2 < 0) {
+                if (!m_esf_L2) {
+                    wg = m_StartWg; ws = m_StartWs;
+                }
+            } else if (offset1 == m_SeqLen1 - 1) {
+                if (!m_esf_R1) {
+                    wg = m_EndWg; ws = m_EndWs;
+                }
+            } else if (offset2 == m_SeqLen2 - 1) {
+                if (!m_esf_R2) {
+                    wg = m_EndWg; ws = m_EndWs;
+                }
+            } else {
+                wg = m_Wg; ws = m_Ws;
+            }
+
+            ETranscriptSymbol ts = transcript[i];
+            switch(ts) {
+    
+            case eTS_Replace:
+            case eTS_Match: {
+                ++offset1; ++offset2;
+                state1 = state2 = 0;
                 score += m_Pssm1[offset1][(unsigned char)m_Seq2[offset2]];
             }
-            else {
+            break;
+    
+            case eTS_Insert: {
+                ++offset2;
+                if(state1 != 1) score += wg;
+                state1 = 1; state2 = 0;
+                score += ws;
+            }
+            break;
+    
+            case eTS_Delete: {
+                ++offset1;
+                if(state2 != 1) score += wg;
+                state1 = 0; state2 = 1;
+                score += ws;
+            }
+            break;
+            
+            default: {
+            NCBI_THROW(CAlgoAlignException, eInternal,
+                       g_msg_InvalidTranscriptSymbol);
+            }
+            }
+        }
+    } else {                                 // profile-profile score
+        double dscore = 0.0;
+
+        for(size_t i = 0; i < dim; ++i) {
+    
+            TScore wg1 = 0, ws1 = 0;
+            TScore wg2 = 0, ws2 = 0;
+
+            if (offset1 < 0) {
+                if (!m_esf_L1) {
+                    wg1 = m_StartWg; ws1 = m_StartWs;
+                }
+            } else if (offset1 == m_SeqLen1 - 1) {
+                if (!m_esf_R1) {
+                    wg1 = m_EndWg; ws1 = m_EndWs;
+                }
+            } else {
+                wg1 = m_Wg; ws1 = m_Ws;
+            }
+
+            if (offset2 < 0) {
+                if (!m_esf_L2) {
+                    wg2 = m_StartWg; ws2 = m_StartWs;
+                }
+            } else if (offset2 == m_SeqLen2 - 1) {
+                if (!m_esf_R2) {
+                    wg2 = m_EndWg; ws2 = m_EndWs;
+                }
+            } else {
+                wg2 = m_Wg; ws2 = m_Ws;
+            }
+
+
+            ETranscriptSymbol ts = transcript[i];
+            switch(ts) {
+    
+            case eTS_Replace:
+            case eTS_Match: {
+                state1 = state2 = 0;
+                ++offset1; ++offset2;
                 double accum = 0.0, sum = 0.0;
                 double diff_freq1[kPSSM_ColumnSize];
                 double diff_freq2[kPSSM_ColumnSize];
@@ -765,77 +806,35 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                     }
                 }
 
-                score += (TScore)(m_FreqScale * accum + 0.5);
+                dscore += m_FreqScale * accum +
+                     m_Freq1[offset1][0] * ws1 * (1.0 - m_Freq2[offset2][0]) +
+                     m_Freq2[offset2][0] * ws2 * (1.0 - m_Freq1[offset1][0]);
             }
-            ++offset1; ++offset2;
+            break;
+    
+            case eTS_Insert: {
+                ++offset2;
+                if(state1 != 1) dscore += wg1 * (1.0 - m_Freq2[offset2][0]);
+                state1 = 1; state2 = 0;
+                dscore += ws1;
+            }
+            break;
+    
+            case eTS_Delete: {
+                ++offset1;
+                if(state2 != 1) dscore += wg2 * (1.0 - m_Freq1[offset1][0]);
+                state1 = 0; state2 = 1;
+                dscore += ws2;
+            }
+            break;
+            
+            default: {
+            NCBI_THROW(CAlgoAlignException, eInternal,
+                       g_msg_InvalidTranscriptSymbol);
+            }
+            }
+            score = (TScore)(dscore + 0.5);
         }
-        break;
-
-        case eTS_Insert: {
-            if(state1 != 1) score += m_Wg;
-            state1 = 1; state2 = 0;
-            score += m_Ws;
-            ++offset2;
-        }
-        break;
-
-        case eTS_Delete: {
-            if(state2 != 1) score += m_Wg;
-            state1 = 0; state2 = 1;
-            score += m_Ws;
-            ++offset1;
-        }
-        break;
-        
-        default: {
-        NCBI_THROW(CAlgoAlignException, eInternal,
-                   g_msg_InvalidTranscriptSymbol);
-        }
-        }
-    }
-
-    size_t g = 0;
-    for(size_t i = 0; i < dim; ++i) {
-        if(transcript[i] == eTS_Insert) ++g; else break;
-    }
-    if(g > 0 && start1 == 0) {
-        if (m_esf_L1 == true)
-            score -= (m_Wg + g*m_Ws);
-        else
-            score -= ((m_Wg-m_StartWg) + g*(m_Ws-m_StartWs));
-    }
-
-    g = 0;
-    for(size_t i = 0; i < dim; ++i) {
-        if(transcript[i] == eTS_Delete) ++g; else break;
-    }
-    if(g > 0 && start2 == 0) {
-        if(m_esf_L2 == true)
-            score -= (m_Wg + g*m_Ws);
-        else
-            score -= ((m_Wg-m_StartWg) + g*(m_Ws-m_StartWs));
-    }
-
-    g = 0;
-    for(int i = dim - 1; i >= 0; --i) {
-        if(transcript[i] == eTS_Insert) ++g; else break;
-    }
-    if(g > 0) {
-        if(m_esf_R1 == true)
-            score -= (m_Wg + g*m_Ws);
-        else
-            score -= ((m_Wg-m_EndWg) + g*(m_Ws-m_EndWs));
-    }
-
-    g = 0;
-    for(int i = dim - 1; i >= 0; --i) {
-        if(transcript[i] == eTS_Delete) ++g; else break;
-    }
-    if(g > 0) {
-        if(m_esf_R2 == true)
-            score -= (m_Wg + g*m_Ws);
-        else
-            score -= ((m_Wg-m_EndWg) + g*(m_Ws-m_EndWs));
     }
 
     return score;
@@ -847,6 +846,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/13 18:27:39  papadopo
+ * modify score computation to match recent changes in dynamic programming recurrences
+ *
  * Revision 1.7  2005/11/07 18:21:12  papadopo
  * 1. Split up the PSSM-sequence and profile-profile alignment members
  * 2. For profile-profile version, weight the cost of a gap open in
