@@ -279,7 +279,11 @@ int CProcess::Wait(unsigned long timeout) const
                 // Release zombie process from the system.
                 waitpid(pid, &status, 0);
             }
-            return WEXITSTATUS(status);
+            if ( WIFEXITED(status) ) {
+                return WEXITSTATUS(status);
+            }
+            // Process terminated by a signal which was not caught
+            return -1;
         } 
         else if (ws < 0  &&  errno != EINTR ) {
             // Some error
@@ -494,6 +498,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/13 17:40:39  ivanov
+ * CProcess::Wait(): return "-1" if traced process was terminated
+ * by a not caught signal
+ *
  * Revision 1.11  2005/02/11 13:20:40  dicuccio
  * Compiler fix: CreateToolhelp32Snapshot() return value compared to
  * INVALID_HANDLE_VALUE, not -1
