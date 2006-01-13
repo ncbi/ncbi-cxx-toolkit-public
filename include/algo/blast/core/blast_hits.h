@@ -103,6 +103,9 @@ typedef struct BlastHSP {
                               statistics evaluation? If unset (0), this HSP is
                               not part of a linked set, i.e. value 0 is treated
                               the same way as 1. */
+   Int2		comp_adjustment_method;  /**< which mode of composition
+                                              adjustment was used; relevant
+                                              only for blastp and tblastn */
    SPHIHspInfo* pat_info; /**< In PHI BLAST, information about this pattern
                                  match. */
 } BlastHSP;
