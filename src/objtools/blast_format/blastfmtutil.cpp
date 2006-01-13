@@ -365,9 +365,10 @@ void CBlastFormatUtil::AcknowledgeBlastQuery(const CBioseq& cbs,
         WrapOutputLine(all_id_str, line_len, out);
         out << endl;
         if(cbs.IsSetInst() && cbs.GetInst().CanGetLength()){
-            out << "          (";
-            out << cbs.GetInst().GetLength() ;
-            out << " letters)" << endl;
+            //out << "          (";
+            out << "Length=";
+            out << cbs.GetInst().GetLength() <<endl;
+            // out << " letters)" << endl;
         }
     }
 }
