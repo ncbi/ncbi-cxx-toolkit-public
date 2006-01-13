@@ -277,7 +277,9 @@ typedef struct BlastExtensionOptions {
    EBlastPrelimGapExt ePrelimGapExt; /**< type of preliminary gapped extension (normally) for calculating
                               score. */
    EBlastTbackExt eTbackExt; /**< type of traceback extension. */
-   Boolean compositionBasedStats; /**< if TRUE use composition-based stats. */
+   Int4 compositionBasedStats; /**< mode of compositional adjustment to use;
+                                   if zero then compositional adjustment is
+                                   not used */
 } BlastExtensionOptions;
 
 /** Should sum statistics be performed? If not set, the engine decides this
