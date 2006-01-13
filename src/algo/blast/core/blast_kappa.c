@@ -225,6 +225,17 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
                                align->queryIndex, 
                                0, (Int2) align->frame, align->score,
                                &editScript, &new_hsp);
+        switch (align->comp_adjustment_mode) {
+        case eNoCompositionAdjustment:
+            new_hsp->comp_adjustment_method = 0;
+            break;
+        case eCompoKeepOldMatrix:
+            new_hsp->comp_adjustment_method = 1;
+            break;
+        default:
+            new_hsp->comp_adjustment_method = 2;
+            break;
+        }
         if (status != 0)
             break;
         /* At this point, the subject and possibly the query sequence have
@@ -615,6 +626,7 @@ s_SWFindFinalEndsUsingXdrop(BlastCompo_SequenceData * query,
                                    * method rather than Smith-Waterman */
     Int4 doublingCount = 0;       /* number of times X-dropoff had to be
                                    * doubled */
+    Int4 gap_x_dropoff_orig = gap_align->gap_x_dropoff;
 
     GapPrelimEditBlockReset(gap_align->rev_prelim_tback);
     GapPrelimEditBlockReset(gap_align->fwd_prelim_tback);
@@ -634,6 +646,7 @@ s_SWFindFinalEndsUsingXdrop(BlastCompo_SequenceData * query,
         }
     } while((XdropAlignScore < score) && (doublingCount < 3));
 
+    gap_align->gap_x_dropoff = gap_x_dropoff_orig;
     *newScore = XdropAlignScore;
 }
 
@@ -1062,6 +1075,8 @@ s_NewAlignmentUsingXdrop(BlastCompo_Alignment ** pnewAlign,
     (void) ccat_query_length;
     (void) full_subject_length;
 
+    gap_align->gap_x_dropoff = gapping_params->x_dropoff;
+
     s_SWFindFinalEndsUsingXdrop(query,   queryStart, *pqueryEnd,
                                 subject, matchStart, *pmatchEnd,
                                 gap_align, scoringParams,
@@ -1074,10 +1089,16 @@ s_NewAlignmentUsingXdrop(BlastCompo_Alignment ** pnewAlign,
         Blast_PrelimEditBlockToGapEditScript(gap_align->rev_prelim_tback,
                                              gap_align->fwd_prelim_tback);
     if (editScript != NULL) {
+        /* Shifted values of the endpoints */
+        Int4 aqueryStart =  queryStart + query_range->begin;
+        Int4 aqueryEnd   = *pqueryEnd  + query_range->begin;
+        Int4 amatchStart =  matchStart + subject_range->begin;
+        Int4 amatchEnd   = *pmatchEnd  + subject_range->begin;
+
         obj = BlastCompo_AlignmentNew(newScore, whichMode,
-                                      queryStart, *pqueryEnd,
+                                      aqueryStart, aqueryEnd,
                                       query_range->context,
-                                      matchStart, *pmatchEnd,
+                                      amatchStart, amatchEnd,
                                       subject_range->context, editScript);
         if (obj == NULL) {
             GapEditScriptDelete(editScript);
@@ -1552,7 +1573,7 @@ s_GappingParamsNew(BlastKappa_GappingParamsContext * context)
 static const Blast_RedoAlignCallbacks
 redo_align_callbacks = {
     s_CalcLambda, s_SequenceGetRange, s_RedoOneAlignment,
-    s_NewAlignmentUsingXdrop
+    s_NewAlignmentUsingXdrop, s_FreeEditScript
 };
 
 
@@ -1586,7 +1607,8 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     Boolean do_link_hsps = (Boolean) (hitParams->link_hsp_params != NULL);
 
     if (do_link_hsps) {
-        cutoff_s = hitParams->cutoff_score;
+        cutoff_s =
+            (int) (hitParams->cutoff_score * context->localScalingFactor);
     } else {
         /* There is no cutoff score; we consider e-values instead */
         cutoff_s = 0;
