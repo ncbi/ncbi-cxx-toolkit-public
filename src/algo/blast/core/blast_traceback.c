@@ -999,20 +999,21 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
    results = Blast_HSPResultsNew(query_info->num_queries);
 
    if (Blast_ProgramIsRpsBlast(program_number)) {
-       status = 
-           s_RPSComputeTraceback(program_number, hsp_stream, seq_src, query, 
-                                 query_info, gap_align, score_params, ext_params,
-                                 hit_params, rps_info, results);
-   } else if ((program_number == eBlastTypeBlastp || 
+       status =
+           s_RPSComputeTraceback(program_number, hsp_stream, seq_src, query,
+                                 query_info, gap_align, score_params,
+                                 ext_params, hit_params, rps_info, results);
+   } else if ((program_number == eBlastTypeBlastp ||
+               program_number == eBlastTypeTblastn ||
                program_number == eBlastTypePhiBlastp ||
-               program_number == eBlastTypePsiBlast) && 
-              (ext_params->options->compositionBasedStats == TRUE || 
+               program_number == eBlastTypePsiBlast) &&
+              (ext_params->options->compositionBasedStats > 0 ||
                ext_params->options->eTbackExt == eSmithWatermanTbck)) {
-      status = 
-          Blast_RedoAlignmentCore(program_number, query, query_info, sbp, 
+      status =
+          Blast_RedoAlignmentCore(program_number, query, query_info, sbp,
                                   hsp_stream, seq_src, gen_code_string,
-                                  score_params, ext_params, hit_params, 
-                                  psi_options, results); 
+                                  score_params, ext_params, hit_params,
+                                  psi_options, results);
    } else {
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
