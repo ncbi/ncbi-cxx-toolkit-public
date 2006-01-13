@@ -300,6 +300,7 @@ cat >> $x_out <<EOF
 count_ok=0
 count_err=0
 count_absent=0
+count_total=0
 
 rm -f "\$res_journal"
 rm -f "\$res_log"
@@ -319,6 +320,9 @@ RunTest() {
    x_ext="\$5"
    x_timeout="\$6"
 
+   count_total=\`expr \$count_total + 1\`
+   x_log="$x_tmp/\$\$.out\$count_total"
+
    # Check existence of the test's application directory
    if [ -d "\$x_work_dir" ]; then
 
@@ -331,7 +335,7 @@ RunTest() {
 
          CHECK_TIMEOUT="\$x_timeout"
          export CHECK_TIMEOUT
-         _RLD_ARGS="-log $x_tmp/\$\$.out"
+         _RLD_ARGS="-log \$x_log"
          export _RLD_ARGS
 
          # Fix empty parameters (replace "" to \"\", '' to \'\')
@@ -388,20 +392,20 @@ RunTest() {
 
                # Run check
                start_time="\`date\`"
-               \$check_exec time -p \`eval echo \$xx_run\` >$x_tmp/\$\$.out 2>&1
+               \$check_exec time -p \`eval echo \$xx_run\` >\$x_log 2>&1
                result=\$?
                stop_time="\`date\`"
 
                sed -e '/ ["][$][@]["].*\$/ {
                   s/^.*: //
                   s/ ["][$][@]["].*$//
-               }' $x_tmp/\$\$.out >> \$x_test_out
+               }' \$x_log >> \$x_test_out
 
                # Get application execution time
-               exec_time=\`\$build_dir/sysdep.sh tl 3 $x_tmp/\$\$.out\`
+               exec_time=\`\$build_dir/sysdep.sh tl 3 \$x_log\`
                exec_time=\`echo \$exec_time | tr '\n' '?'\`
                exec_time=\`echo \$exec_time | sed -e 's/?$//' -e 's/?/, /g' -e 's/[ ] */ /g'\`
-               rm -f $x_tmp/\$\$.out
+               rm -f \$x_log
 
                # Analize check tool output
                case "\$tool_lo" in
