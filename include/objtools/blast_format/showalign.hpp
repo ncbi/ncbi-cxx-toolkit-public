@@ -448,10 +448,16 @@ private:
     ///@param choice: which feature to get
     ///@param row: current row number
     ///@param sequence: the sequence string
+    ///@param feat_seq_range: to be filled with the feature seqlocs of this row
+    ///@param feat_seq_strand: strand to be filled corresponding to feat_seq_range
+    ///@param fill_feat_range: to fill feat_seq_range?
     ///
     void x_GetFeatureInfo(list < SAlnFeatureInfo * >&feature, CScope & scope,
                           CSeqFeatData::E_Choice choice, int row,
-                          string& sequence) const;
+                          string& sequence,
+                          list<list<CRange<TSeqPos> > >& feat_seq_range,
+                          list<ENa_strand>& feat_seq_strand,
+                          bool fill_feat_range) const;
     
     ///get inserts info
     ///@param row: current row
@@ -556,6 +562,31 @@ private:
     ///
     void x_FillSeqid(string& id, int row) const;
 
+    ///print out features and fill master_feat_str if applicable
+    ///@param feature: the feature info
+    ///@param row: row num
+    ///@param alignment_range: alignment range
+    ///@param aln_start: alignment start in align coordinates
+    ///@param line_length: length per line
+    ///@param id_length: the max seq id length
+    ///@param start_length: the max seq start postion string length
+    ///@param max_feature_num: max numbe of features contained
+    ///@param master_feat_str: the feature for master seq
+    ///@param master_slave_same_strand: master and slave same strand?
+    ///@param out: the out stream
+    ///
+    void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
+                                           int row, 
+                                           CAlnMap::TSignedRange alignment_range,
+                                           int aln_start,
+                                           int line_length, 
+                                           int id_length,
+                                           int start_length,
+                                           int max_feature_num, 
+                                           string& master_feat_str,
+                                           bool master_slave_same_strand,
+                                           CNcbiOstream& out);
+
 };
 
 /***********************Inlines************************/
@@ -565,6 +596,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.42  2006/01/13 16:41:25  jianye
+*added x_PrintFeatures, etc
+*
 *Revision 1.41  2005/12/06 17:10:08  jcherry
 *NCBI_XALNUTIL_EXPORT -> NCBI_XBLASTFORMAT_EXPORT
 *
