@@ -101,7 +101,7 @@ EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size) {
 
 unsigned CBDB_BLobFile::Append(const void* data, size_t size)
 {
-    _ASSERT(m_DB_Type = eQueue);
+    _ASSERT(m_DB_Type == eQueue);
     _ASSERT(size <= GetRecLen());
 
     m_DBT_Data->data = const_cast<void*> (data);
@@ -410,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/01/13 14:42:44  vasilche
+ * Fixed comparison in assert() call.
+ *
  * Revision 1.23  2005/12/14 19:26:42  kuznets
  * Added support for queue db type
  *

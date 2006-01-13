@@ -1603,7 +1603,7 @@ static void s_TEST_BDB_BLOB_File(void)
     ret = blob.Fetch();
     assert(ret == eBDB_Ok);
     len1 = blob.LobSize();
-    assert(len1 = 5);
+    assert(len1 == 5);
     ret = blob.GetData(tbuf, sizeof(tbuf));
     assert(strcmp("TEst", tbuf) == 0);
 
@@ -2200,6 +2200,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/01/13 14:42:44  vasilche
+ * Fixed comparison in assert() call.
+ *
  * Revision 1.63  2006/01/10 14:31:20  kuznets
  * Commented out currently unused proc to make compiler happy
  *
