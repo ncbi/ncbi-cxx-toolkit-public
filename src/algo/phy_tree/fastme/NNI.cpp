@@ -374,7 +374,13 @@ void NNI(meTree *T, double **avgDistArray, int *count)
     with the minimum value pointed to by p[1]*/
   /*p[i] is index (in edgeArray) of meEdge with i-th position 
     in the heap, q[j] is the position of meEdge j in the heap */
-  while (weights[p[1]] < 0)
+  /*NOTE: the loop below should test that weights[p[1]] < 0, but
+    if compiled with optimization it is possible that weights[p[1]]
+    ends up negative and very small, so that changes to the heap
+    become cyclic and the loop becomes infinite. To avoid this
+    behavior, stop the loop short of 0.0. This is a workaround 
+    until the roundoff sensitivity is removed algorithmically */
+  while (weights[p[1]] < -1e-8)
     {
       centerEdge = edgeArray[p[1]];
       (*count)++;
@@ -420,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/13 17:09:25  papadopo
+ * add workaround to prevent infinite loops when compiled with optimization
+ *
  * Revision 1.2  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *
