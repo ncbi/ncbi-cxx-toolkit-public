@@ -168,6 +168,7 @@ s_BlastHSPCopy(const BlastHSP* hsp)
     new_hsp->num = hsp->num;
     new_hsp->num_ident = hsp->num_ident;
     new_hsp->bit_score = hsp->bit_score;
+    new_hsp->comp_adjustment_method = hsp->comp_adjustment_method;
     if (hsp->gap_info) {
         GapEditScript* edit_script = hsp->gap_info;
         GapEditScript* new_edit_script;
