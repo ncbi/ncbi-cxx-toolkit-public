@@ -954,6 +954,11 @@ s_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
     if (hsp->num_ident > 0)
         scores.push_back(s_MakeScore(score_type, 0.0, hsp->num_ident));
 
+    score_type = "comp_adjustment_method";
+    if (hsp->comp_adjustment_method > 0) {
+        scores.push_back(s_MakeScore(score_type, 0.0,
+                                     hsp->comp_adjustment_method));
+    }
     return;
 }
 
@@ -1617,6 +1622,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2006/01/13 13:42:25  madden
+* In s_BuildScoreList, add the comp_adjustment_method to the score set
+* if it is nonzero.  This field is understood by the formatter. (from Mike Gertz).
+*
 * Revision 1.63  2005/11/10 13:58:34  camacho
 * Doxygen fixes
 *
