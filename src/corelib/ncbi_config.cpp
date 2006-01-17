@@ -224,7 +224,8 @@ void s_ParamTree_ConvertSubNode(const IRegistry&      reg,
     }
 
     CConfig::TParamTree* sub_node_ptr = const_cast<CConfig::TParamTree*>
-        (node->FindNode(node_name));
+        (node->FindNode(node_name,
+                        CConfig::TParamTree::eImmediateSubNodes));
     if ( !sub_node_ptr ) {
         auto_ptr<CConfig::TParamTree> sub_node(new CConfig::TParamTree);
         sub_node->GetKey() = node_name;
@@ -537,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/01/17 19:18:32  vasilche
+ * Use only direct sub node when parsing .SubSection.
+ *
  * Revision 1.15  2005/10/27 16:48:49  grichenk
  * Redesigned CTreeNode (added search methods),
  * removed CPairTreeNode.
