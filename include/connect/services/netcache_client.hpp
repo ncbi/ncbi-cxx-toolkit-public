@@ -60,6 +60,28 @@ class CSocket;
  * @{
  */
 
+class NCBI_XCONNECT_EXPORT CNetCacheClientBase : public CNetServiceClient
+{
+public:
+    CNetCacheClientBase(const string& client_name);
+
+    CNetCacheClientBase(const string&  host,
+                        unsigned short port,
+                        const string&  client_name);
+
+protected:
+    /// Send session registration command
+    void RegisterSession(unsigned pid);
+    /// Send session unregistration command
+    void UnRegisterSession(unsigned pid);
+    bool CheckAlive();
+
+    virtual
+    void CheckOK(string* str) const;
+    virtual
+    void TrimPrefix(string* str) const;
+};
+
 /// Client API for NetCache server
 ///
 /// After any Put, Get transactions connection socket
@@ -70,6 +92,8 @@ class CSocket;
 class NCBI_XCONNECT_EXPORT CNetCacheClient : public CNetServiceClient
 {
 public:
+    typedef CNetServiceClient TParent;
+
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
     /// BLOB key 
@@ -595,6 +619,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2006/01/17 16:50:40  kuznets
+ * Added base class for all NC derived clients, +session management
+ *
  * Revision 1.51  2006/01/10 14:45:24  kuznets
  * Save sockets: + connection pool
  *

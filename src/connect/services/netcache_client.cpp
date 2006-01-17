@@ -171,9 +171,103 @@ err_throw:
 }
 
 
+CNetCacheClientBase::CNetCacheClientBase(const string& client_name)
+    : CNetServiceClient(client_name)
+{
+}
+
+CNetCacheClientBase::CNetCacheClientBase(const string&  host,
+                                         unsigned short port,
+                                         const string&  client_name)
+    : CNetServiceClient(host, port, client_name)
+{
+}
+
+void CNetCacheClientBase::RegisterSession(unsigned pid)
+{
+    _ASSERT(m_Sock);
+
+    char hostname[256];
+    string host;
+    int status = SOCK_gethostname(hostname, sizeof(hostname));
+    if (status != 0) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Cannot get host name");
+    }
+    string cmd = "SMR ";
+    cmd.append(hostname);
+    cmd.push_back(' ');
+    cmd.append(NStr::UIntToString(pid));
+    WriteStr(cmd.c_str(), cmd.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
+}
+
+void CNetCacheClientBase::UnRegisterSession(unsigned pid)
+{
+    _ASSERT(m_Sock);
+
+    char hostname[256];
+    string host;
+    int status = SOCK_gethostname(hostname, sizeof(hostname));
+    if (status != 0) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Cannot get host name");
+    }
+    string cmd = "SMU ";
+    cmd.append(hostname);
+    cmd.push_back(' ');
+    cmd.append(NStr::UIntToString(pid));
+    WriteStr(cmd.c_str(), cmd.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
+}
+
+bool CNetCacheClientBase::CheckAlive()
+{
+    _ASSERT(m_Sock);
+	try {
+		WriteStr("A?", 3);
+		WaitForServer();
+    	if (!ReadStr(*m_Sock, &m_Tmp)) {
+			delete m_Sock;m_Sock = 0;
+            return false;
+    	}
+		if (m_Tmp[0] != 'O' && m_Tmp[1] != 'K') {
+			delete m_Sock; m_Sock = 0;
+			return false;
+		}
+	}
+	catch (exception&) {
+		delete m_Sock; m_Sock = 0;
+		return false;
+	}
+    return true;
+}
+
+
+void CNetCacheClientBase::CheckOK(string* str) const
+{
+    _ASSERT(0);
+}
+
+void CNetCacheClientBase::TrimPrefix(string* str) const
+{
+    _ASSERT(0);
+}
+
+
 
 CNetCacheClient::CNetCacheClient(const string&  client_name)
-    : CNetServiceClient(client_name),
+    : TParent(client_name),
       m_PutVersion(2)
 {
 }
@@ -182,7 +276,7 @@ CNetCacheClient::CNetCacheClient(const string&  client_name)
 CNetCacheClient::CNetCacheClient(const string&  host,
                                  unsigned short port,
                                  const string&  client_name)
-    : CNetServiceClient(host, port, client_name),
+    : TParent(host, port, client_name),
       m_PutVersion(2)
 {
 }
@@ -867,6 +961,7 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
     case eIO_Success:
         {
             io_st = sock.ReadLine(msg);
+DebugBreak();
             if (io_st == eIO_Closed) {
                 goto closed_err;
             }
@@ -1000,6 +1095,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/01/17 16:51:07  kuznets
+ * Added base class for all NC derived clients, +session management
+ *
  * Revision 1.58  2006/01/10 14:44:34  kuznets
  * Save sockets: + connection pool
  *

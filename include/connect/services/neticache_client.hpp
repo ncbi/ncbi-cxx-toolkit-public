@@ -40,7 +40,7 @@
 #include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 #include <connect/ncbi_conn_reader_writer.hpp>
-#include <connect/services/netservice_client.hpp>
+#include <connect/services/netcache_client.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbimisc.hpp>
@@ -54,13 +54,20 @@
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup NetCacheClient
+ *
+ * @{
+ */
+
 /// Client to NetCache server (implements ICache interface)
 ///
 /// @note This implementation is thread safe and syncronized
 ///
-class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetServiceClient,
+class NCBI_NET_CACHE_EXPORT CNetICacheClient : public CNetCacheClientBase,
                                                public ICache
 {
+public:
+    typedef CNetCacheClientBase TParent;
 public:
     CNetICacheClient();
     CNetICacheClient(const string&  host,
@@ -77,7 +84,8 @@ public:
 	virtual
     void ReturnSocket(CSocket* sock);
 
-
+    void RegisterSession(unsigned pid); 
+    void UnRegisterSession(unsigned pid);
 
     // ICache interface implementation
 
@@ -156,7 +164,9 @@ protected:
                 int              version,
                 const string&    subkey) const;
 
+    virtual
     void TrimPrefix(string* str) const;
+    virtual
     void CheckOK(string* str) const;
 
     IReader* GetReadStream_NoLock(const string&  key,
@@ -188,12 +198,16 @@ void NCBI_EntryPoint_xcache_netcache(
 
 } // extern C
 
+/* @} */
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/17 16:50:40  kuznets
+ * Added base class for all NC derived clients, +session management
+ *
  * Revision 1.8  2006/01/11 17:57:23  kuznets
  * Fixed race condition in socket pooling
  *

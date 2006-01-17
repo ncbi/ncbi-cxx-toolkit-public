@@ -50,7 +50,7 @@
 BEGIN_NCBI_SCOPE
 
 CNetICacheClient::CNetICacheClient()
-  : CNetServiceClient("localhost", 9000, "netcache_client"),
+  : TParent("localhost", 9000, "netcache_client"),
     m_CacheName("default_cache"),
     m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -61,7 +61,7 @@ CNetICacheClient::CNetICacheClient(const string&  host,
                                    unsigned short port,
                                    const string&  cache_name,
                                    const string&  client_name)
-  : CNetServiceClient(host, port, client_name),
+  : TParent(host, port, client_name),
     m_CacheName(cache_name),
     m_Throttler(5000, CTimeSpan(60,0))
 {
@@ -127,7 +127,9 @@ bool CNetICacheClient::CheckConnect()
     }
     if (!m_Host.empty()) { // we can restore connection
 //        m_Throttler.Approve(CRequestRateControl::eSleep);
+        CSocketAPI::SetReuseAddress(eOn);
         CreateSocket(m_Host, m_Port);
+        m_Sock->SetReuseAddress(eOn);
         return true;
     }
     NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -207,6 +209,39 @@ struct CStackGuard
 };
 */
 
+void CNetICacheClient::RegisterSession(unsigned pid) 
+{
+    CFastMutexGuard guard(m_Lock);
+    bool reconnected = CheckConnect();
+    if (reconnected) { 
+        // connection reestablished
+        string auth = m_ClientName;
+        const string& client_name_comment = GetClientNameComment();
+        if (!client_name_comment.empty()) {
+            auth.append(" ");
+            auth.append(client_name_comment);
+        }
+        WriteStr(auth.c_str(), auth.length() + 1);
+    }
+    TParent::RegisterSession(pid);
+}
+
+void CNetICacheClient::UnRegisterSession(unsigned pid)
+{
+    CFastMutexGuard guard(m_Lock);
+    bool reconnected = CheckConnect();
+    if (reconnected) { 
+        // connection reestablished
+        string auth = m_ClientName;
+        const string& client_name_comment = GetClientNameComment();
+        if (!client_name_comment.empty()) {
+            auth.append(" ");
+            auth.append(client_name_comment);
+        }
+        WriteStr(auth.c_str(), auth.length() + 1);
+    }
+    TParent::UnRegisterSession(pid);
+}
 
 void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
                                           unsigned int    timeout,
@@ -389,6 +424,7 @@ void CNetICacheClient::Store(const string&  key,
     }
     TrimPrefix(&m_Tmp);
 
+    {{
     auto_ptr<CNetCacheSock_RW> wrt(new CNetCacheSock_RW(m_Sock));
     wrt->SetSocketParent(this);
     DetachSocket();
@@ -406,6 +442,16 @@ void CNetICacheClient::Store(const string&  key,
         ptr += bytes_written;
         size -= bytes_written;
     }
+    }}
+
+/*
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    TrimPrefix(&m_Tmp);
+*/
 
 /*
     auto_ptr<IWriter> wrt(GetWriteStream(key,
@@ -508,11 +554,10 @@ bool CNetICacheClient::Read(const string& key,
             buf_avail -= bytes_read;
             buf_ptr   += bytes_read;
             blob_size -= bytes_read;
+            x_read += bytes_read;
             break;
         case eRW_Eof:
-            if (x_read == 0)
-                return false;
-            return true;
+            return (x_read == blob_size);
         case eRW_Timeout:
             break;
         default:
@@ -520,7 +565,7 @@ bool CNetICacheClient::Read(const string& key,
         } // switch
     } // while
 
-    return true;
+    return (x_read == blob_size);
 }
 
 void CNetICacheClient::GetBlobAccess(const string&     key,
@@ -645,19 +690,23 @@ bool CNetICacheClient::HasBlobs(const string&  key,
 
     bool reconnected = CheckConnect();
 //    CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
+//    string& cmd = m_Tmp;
+    string cmd;
     MakeCommandPacket(&cmd, "HASB ", reconnected);
     AddKVS(&cmd, key, 0, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
+
+//    string& answer = m_Tmp;
+    string answer;
+    if (!ReadStr(*m_Sock, &answer)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
-    TrimPrefix(&m_Tmp);
+    TrimPrefix(&answer);
 
-    return NStr::StringToInt(m_Tmp) != 0;
+    return NStr::StringToInt(answer) != 0;
 }
 
 void CNetICacheClient::Purge(time_t           access_timeout,
@@ -680,23 +729,25 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
 {
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-    string& cmd = m_Tmp;
+//    string& cmd = m_Tmp;
+    string cmd;
     MakeCommandPacket(&cmd, "READ ", reconnected);
     AddKVS(&cmd, key, version, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
+//    string& answer = m_Tmp;
+    string answer;
+    if (!ReadStr(*m_Sock, &answer)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
     }
 
-    bool blob_found = CNetCacheClient::CheckErrTrim(m_Tmp);
+    bool blob_found = CNetCacheClient::CheckErrTrim(answer);
 
     if (!blob_found) {
         return NULL;
     }
-    string& answer = m_Tmp;
     string::size_type pos = answer.find("SIZE=");
     if (pos != string::npos) {
         const char* ch = answer.c_str() + pos + 5;
@@ -855,6 +906,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/17 16:51:07  kuznets
+ * Added base class for all NC derived clients, +session management
+ *
  * Revision 1.11  2006/01/11 17:58:23  kuznets
  * Fixed race condition in socket pooling
  *
