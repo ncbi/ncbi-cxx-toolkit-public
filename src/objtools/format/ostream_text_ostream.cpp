@@ -66,6 +66,13 @@ void COStreamTextOStream::AddParagraph
     // we don't care about the object
 }
 
+void COStreamTextOStream::AddLine(
+    const string& line,
+    const CSerialObject* obj )
+{
+    m_Ostream << line.c_str() << '\n';
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -75,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/01/17 18:27:40  ludwigf
+* ADDED: Implementation for the new AddLine() method.
+*
 * Revision 1.5  2005/04/07 18:25:01  shomrat
 * Use \n instead of endl
 *
