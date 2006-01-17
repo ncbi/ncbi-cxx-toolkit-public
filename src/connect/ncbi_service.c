@@ -86,30 +86,16 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER   iter,
     size_t n;
     assert(name);
     for (n = 0; n < iter->n_skip; n++) {
-        if (strcasecmp(name, SERV_NameOfInfo(iter->skip[n])) == 0
-            &&  SERV_EqualInfo(info, iter->skip[n])) {
+        if (strcasecmp(name, SERV_NameOfInfo(iter->skip[n])) == 0  &&
+            (SERV_EqualInfo(info, iter->skip[n])  ||
+             (iter->skip[n]->type == fSERV_Firewall  &&
+              iter->skip[n]->u.firewall.type == info->u.firewall.type))) {
             /* Replace older version */
             if (iter->last == iter->skip[n])
                 iter->last = info;
             free(iter->skip[n]);
             iter->skip[n] = info;
             return 1;
-        }
-    }
-    if (info->type == fSERV_Firewall) {
-        for (n = 0; n < iter->n_skip; n++) {
-            SSERV_Info* temp = iter->skip[n];
-            if (temp->type == fSERV_Firewall &&
-                temp->u.firewall.type == info->u.firewall.type) {
-                if (n < --iter->n_skip) {
-                    memmove(iter->skip + n, iter->skip + n + 1,
-                            (iter->n_skip - n) * sizeof(*iter->skip));
-                }
-                if (iter->last == temp)
-                    iter->last = 0;
-                free(temp);
-                break;
-            }
         }
     }
     if (iter->n_skip == iter->a_skip) {
@@ -498,9 +484,9 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
                 continue;
             memcpy(t, b, len);
             if (t[len - 1] == '\r')
-                t[len - 1] = 0;
+                t[len - 1] = '\0';
             else
-                t[len] = 0;
+                t[len] = '\0';
             p = t;
             if (iter->op->Update && (*iter->op->Update)(iter, now, p, code))
                 retval = 1/*updated*/;
@@ -676,6 +662,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.74  2006/01/17 20:27:42  lavr
+ * Fix addition of skipped FIREWALL infos
+ *
  * Revision 6.73  2006/01/11 20:27:51  lavr
  * Better generation of referral header in SERV_Print()
  *
