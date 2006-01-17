@@ -44,6 +44,7 @@
 #include <util/cache/icache.hpp>
 #include <util/cache/icache_clean_thread.hpp>
 
+#include "smng_thread.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -253,6 +254,9 @@ public:
     void MountICache(CConfig& conf, 
                      CPluginManager<ICache>& pm_cache);
 
+    void StartSessionManagement(unsigned session_shutdown_timeout);
+    void StopSessionManagement();
+
 protected:
     virtual void ProcessOverflow(SOCK sock);
 
@@ -271,6 +275,8 @@ private:
                    SIC_Request&          req,
                    SNC_ThreadData&       tdata,
                    NetCache_RequestStat& stat);
+
+    void ProcessSM(CSocket& socket, string& req);
 
     // IC requests
 
@@ -506,8 +512,11 @@ private:
     const IRegistry&             m_Reg;
 
     /// Map of local ICache instances
-    TLocalCacheMap               m_LocalCacheMap;
-    CFastMutex                   m_LocalCacheMap_Lock;
+    TLocalCacheMap                  m_LocalCacheMap;
+    CFastMutex                      m_LocalCacheMap_Lock;
+
+    /// Session management
+    CRef<CSessionManagementThread>  m_SessionMngThread;
 };
 
 
@@ -517,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/17 16:49:31  kuznets
+ * Added session management(auto-shutdown), cleaned-up code
+ *
  * Revision 1.3  2006/01/10 15:05:31  kuznets
  * +End-line at the end of file
  *

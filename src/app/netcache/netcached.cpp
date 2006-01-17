@@ -53,7 +53,6 @@
 
 #include "netcached.hpp"
 
-
 #define NETCACHED_VERSION \
       "NCBI NetCache server version=2.0.0  " __DATE__ " " __TIME__
 
@@ -295,11 +294,40 @@ CNetCacheServer::CNetCacheServer(unsigned int     port,
 
 CNetCacheServer::~CNetCacheServer()
 {
-    NON_CONST_ITERATE(TLocalCacheMap, it, m_LocalCacheMap) {
-        ICache *ic = it->second;
-        delete ic; it->second = 0;
+    try {
+        NON_CONST_ITERATE(TLocalCacheMap, it, m_LocalCacheMap) {
+            ICache *ic = it->second;
+            delete ic; it->second = 0;
+        }
+        StopSessionManagement();
+    } catch (...) {
+        ERR_POST("Exception in ~CNetCacheServer()");
+        _ASSERT(0);
     }
 }
+
+void CNetCacheServer::StartSessionManagement(
+                                unsigned session_shutdown_timeout)
+{
+    LOG_POST(Info << "Starting session management thread.");
+    m_SessionMngThread.Reset(
+        new CSessionManagementThread(*this,
+                            session_shutdown_timeout, 10, 2));
+    m_SessionMngThread->Run();
+}
+
+void CNetCacheServer::StopSessionManagement()
+{
+# ifdef NCBI_THREADS
+    if (!m_SessionMngThread.Empty()) {
+        LOG_POST(Info << "Stopping session management thread...");
+        m_SessionMngThread->RequestStop();
+        m_SessionMngThread->Join();
+        LOG_POST(Info << "Stopped.");
+    }
+# endif
+}
+
 
 void CNetCacheServer::SetParams()
 {
@@ -534,6 +562,52 @@ void CNetCacheServer::ProcessIC(CSocket&              socket,
 
 }
 
+void CNetCacheServer::ProcessSM(CSocket& socket, string& req)
+{
+    // SMR host pid     -- registration
+    // or
+    // SMU host pid     -- unregistration
+    //
+    if (m_SessionMngThread.Empty()) {
+        WriteMsg(socket, "ERR:", "Server does not support sessions ");
+        return;
+    }
+
+    if (req[0] == 'S' && req[1] == 'M') {
+        bool reg;
+        if (req[2] == 'R') {
+            reg = true;
+        } else
+        if (req[2] == 'U') {
+            reg = false;
+        } else {
+            goto err;
+        }
+        req.erase(0, 3);
+        NStr::TruncateSpacesInPlace(req, NStr::eTrunc_Begin);
+        string host, port_str;
+        bool split = NStr::SplitInTwo(req, " ", host, port_str);
+        if (!split) {
+            goto err;
+        }
+        unsigned port = NStr::StringToUInt(port_str);
+
+        if (!port || host.empty()) {
+            goto err;
+        }
+
+        if (reg) {
+            m_SessionMngThread->RegisterSession(host, port);
+        } else {
+            m_SessionMngThread->UnRegisterSession(host, port);
+        }
+        WriteMsg(socket, "OK:", "");
+    } else {
+        err:
+        WriteMsg(socket, "ERR:", "Invalid request ");
+    }
+}
+
 
 void CNetCacheServer::Process(SOCK sock)
 {
@@ -579,8 +653,8 @@ void CNetCacheServer::Process(SOCK sock)
             s_WaitForReadSocket(socket, m_InactivityTimeout);
 
             while (ReadStr(socket, &(tdata->request))) {
-                const string& rq = tdata->request;
-//ERR_POST(rq);
+                string& rq = tdata->request;
+                //ERR_POST(rq);
                 if (rq.length() < 2) { 
                     WriteMsg(socket, "ERR:", "Invalid request");
                     x_RegisterProtocolErr(eError, rq);
@@ -596,6 +670,10 @@ void CNetCacheServer::Process(SOCK sock)
                 } else 
                 if (rq[0] == 'A' && rq[1] == '?') {  // Alive?
                     WriteMsg(socket, "OK:", "");
+                } else
+                if (rq[0] == 'S' && rq[1] == 'M') {  // Session management
+                    ProcessSM(socket, rq);
+                    break; // need to disconnect after reg-unreg
                 } else {
                     tdata->req.Init();
                     ProcessNC(socket, 
@@ -1162,7 +1240,7 @@ void CNetCacheServer::WriteMsg(CSocket&       sock,
         sock.Write(err_msg.c_str(), err_msg.length(), &n_written);
 }
 
-
+/*
 bool CNetCacheServer::ReadBuffer(CSocket& sock,
                                  IReader* rdr, 
                                  char*    buf, 
@@ -1209,7 +1287,7 @@ bool CNetCacheServer::ReadBuffer(CSocket& sock,
 
     return ret_flag;  // false means we hit "eIO_Closed"
 }
-
+*/
 
 bool CNetCacheServer::ReadBuffer(CSocket& sock,
                                  IReader* rdr, 
@@ -1597,6 +1675,9 @@ class CNetCacheDApp : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+protected:
+    void StopSessionMngThread();
+
 private:
     CRef<CCacheCleanerThread>  m_PurgeThread;
     /// Error message logging
@@ -1777,12 +1858,25 @@ int CNetCacheDApp::Run(void)
         thr_srv->SetTLS_Size(tls_size);
 
 
-        
         // create ICache instances
 
         thr_srv->MountICache(conf, pm_cache);
 
+        // Start session management
 
+        {{
+            bool session_mng = 
+                reg.GetBool("server", "session_mng", 
+                            CConfig::eErr_NoThrow, false);
+            if (session_mng) {
+                unsigned session_shutdown_timeout =
+                    reg.GetInt("server", "session_shutdown_timeout", 
+                               CConfig::eErr_NoThrow, 0);
+                thr_srv->StartSessionManagement(session_shutdown_timeout);
+            }
+        }}
+
+        NcbiCerr << "Running server on port " << port << NcbiEndl;
         LOG_POST(Info << "Running server on port " << port);
         thr_srv->Run();
     }
@@ -1800,16 +1894,17 @@ int CNetCacheDApp::Run(void)
     return 0;
 }
 
-
-
 int main(int argc, const char* argv[])
 {
-    return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default, "netcached.ini");
+    return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default);
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2006/01/17 16:49:31  kuznets
+ * Added session management(auto-shutdown), cleaned-up code
+ *
  * Revision 1.77  2006/01/12 19:31:16  kuznets
  * Commented out some debugging prints
  *

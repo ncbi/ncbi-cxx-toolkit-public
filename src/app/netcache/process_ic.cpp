@@ -139,10 +139,10 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
 
     CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
     CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
-
-/*ERR_POST("   STORE:" << req.key << " " << req.version << " " << req.subkey
-         );*/
-
+/*
+ERR_POST("   STORE:" << req.key << " " << req.version << " " << req.subkey
+         );
+*/
     do {
         size_t nn_read;
 
@@ -163,6 +163,11 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
             if (iwrt.get() == 0) { // first read
 
                 if (not_eof == false) { // complete read
+/*
+ERR_POST("   COMPLETE READ STORE:" 
+         << req.key << " " << nn_read
+         );
+*/
                     ic.Store(req.key, req.version, req.subkey, 
                                    buf, nn_read, req.i0, tdata.auth);
                     return;
@@ -172,13 +177,16 @@ void CNetCacheServer::Process_IC_Store(ICache&              ic,
                     ic.GetWriteStream(req.key, req.version, req.subkey,
                                             req.i0, tdata.auth));
             }
-            size_t bytes_written;
-            ERW_Result res = 
-                iwrt->Write(buf, nn_read, &bytes_written);
-            if (res != eRW_Success) {
-                WriteMsg(sock, "ERR:", "Server I/O error");
-                //x_RegisterInternalErr(req.req_type, tdata.auth);
-                return;
+            while (nn_read) {
+                size_t bytes_written;
+                ERW_Result res = 
+                    iwrt->Write(buf, nn_read, &bytes_written);
+                if (res != eRW_Success) {
+                    WriteMsg(sock, "ERR:", "Server I/O error");
+                    return;
+                }
+                buf += bytes_written;
+                nn_read -= bytes_written;
             }
         } // if (nn_read)
 
@@ -201,68 +209,102 @@ void CNetCacheServer::Process_IC_StoreBlob(ICache&              ic,
 
     char* buf = tdata.buffer.get();
     size_t buf_size = GetTLS_Size();
-    bool not_eof;
 
     CSocketReaderWriter  comm_reader(&sock, eNoOwnership);
     CTransmissionReader  transm_reader(&comm_reader, eNoOwnership);
 
     size_t blob_size = req.i1;
-/*
-ERR_POST("   STORE SIZE:" << req.key << " " << req.version << " " << req.subkey << 
-         " size = " << blob_size
-         );
-*/
+
+//ERR_POST("   STORE SIZE:" << req.key << " sz=" << blob_size);
+
     if (blob_size == 0) {
         ic.Store(req.key, req.version, req.subkey, buf,
                  0, req.i0, tdata.auth);
         return;
     }
+    STimeout to = {m_InactivityTimeout, 0};
+    sock.SetTimeout(eIO_ReadWrite, &to);
 
-    do {
+    if (blob_size <= buf_size) { 
+        // read the whole BLOB
+        size_t to_read = blob_size;
+        while (to_read) {
+            size_t nn_read;
+            ERW_Result io_res = transm_reader.Read(buf, to_read, &nn_read);
+            switch (io_res) 
+            {
+            case eRW_Success:
+                break;
+            case eRW_Timeout:
+                NCBI_THROW(CNetServiceException, eTimeout, "IReader timeout");
+                break;
+            case eRW_Eof:
+                NCBI_THROW(CNetServiceException, eCommunicationError, 
+                           "Unexpected EOF");
+                break;
+            default: // invalid socket or request
+                NCBI_THROW(CNetServiceException, eCommunicationError, 
+                           "Read error");
+
+            } // switch
+            
+            to_read -= nn_read;
+            buf += nn_read;
+        } // while
+/*
+ERR_POST("   BUFFER STORE:" 
+         << req.key << " " << blob_size);
+*/
+        ic.Store(req.key, req.version, req.subkey, 
+                 tdata.buffer.get(), blob_size, req.i0, tdata.auth);
+        return;
+
+    }
+
+    // BLOB does not fit into one buffer
+
+    iwrt.reset(
+        ic.GetWriteStream(req.key, req.version, req.subkey,
+                            req.i0, tdata.auth));
+
+    size_t to_read = blob_size;
+
+    while (to_read) {
         size_t nn_read;
-
-        CStopWatch  sw(CStopWatch::eStart);
-
-        not_eof = 
-            ReadBuffer(sock, 
-                       &transm_reader, 
-                       buf, buf_size, &nn_read, blob_size);
-
-        if (nn_read == 0 && !not_eof) {
-            ic.Store(req.key, req.version, req.subkey, 
-                           buf, nn_read, req.i0, tdata.auth);
+        size_t read_cnt = min(to_read, buf_size);
+        ERW_Result io_res = transm_reader.Read(buf, read_cnt, &nn_read);
+        switch (io_res) 
+        {
+        case eRW_Success:
             break;
-        }
-
-        blob_size -= nn_read;
-
-        //stat.comm_elapsed += sw.Elapsed();
-        //stat.blob_size += nn_read;
-
-        if (nn_read) {
-            if (iwrt.get() == 0) { // first read
-
-                if (not_eof == false || (blob_size == 0)) { // complete read
-                    ic.Store(req.key, req.version, req.subkey, 
-                                   buf, nn_read, req.i0, tdata.auth);
-                    return;
-                }
-
-                iwrt.reset(
-                    ic.GetWriteStream(req.key, req.version, req.subkey,
-                                      req.i0, tdata.auth));
-            }
+        case eRW_Timeout:
+            NCBI_THROW(CNetServiceException, eTimeout, "IReader timeout");
+            break;
+        case eRW_Eof:
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                        "Unexpected stream EOF");
+            break;
+        default: // invalid socket or request
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                        "Read error");
+        } // switch
+        to_read -= nn_read;
+        char* buf_ptr = buf;
+        while (nn_read) {
             size_t bytes_written;
             ERW_Result res = 
-                iwrt->Write(buf, nn_read, &bytes_written);
+                iwrt->Write(buf_ptr, nn_read, &bytes_written);
             if (res != eRW_Success) {
                 WriteMsg(sock, "ERR:", "Server I/O error");
+                NCBI_THROW(CNetServiceException, eCommunicationError, 
+                           "Internal server I/O error");
                 //x_RegisterInternalErr(req.req_type, tdata.auth);
                 return;
             }
-        } // if (nn_read)
-
-    } while (not_eof && (blob_size > 0));
+            nn_read -= bytes_written;
+            buf_ptr += bytes_written;
+        }
+    } // while
 
     if (iwrt.get()) {
         iwrt->Flush();
@@ -322,21 +364,6 @@ ERR_POST("   FOUND:" << req.key << " " << req.version << " " << req.subkey <<
         return;
     }
 
-/*
-    if (ba_descr.blob_size == 0) { // not found
-        if (ba_descr.reader == 0) {
-blob_not_found:
-            string msg = "BLOB not found. ";
-            msg += req_id;
-            WriteMsg(sock, "ERR:", msg);
-        } else {
-            WriteMsg(sock, "OK:", "BLOB found. SIZE=0");
-        }
-        x_RegisterNoBlobErr(req.req_type, tdata.auth);
-        return;
-    }
-*/
-//    stat.blob_size = ba_descr.blob_size;
 
     if (ba_descr.reader.get() == 0) {  // all in buffer
         string msg("OK:BLOB found. SIZE=");
@@ -457,6 +484,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/17 16:49:31  kuznets
+ * Added session management(auto-shutdown), cleaned-up code
+ *
  * Revision 1.6  2006/01/12 19:31:16  kuznets
  * Commented out some debugging prints
  *
