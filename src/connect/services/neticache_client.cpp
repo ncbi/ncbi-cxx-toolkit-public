@@ -123,6 +123,7 @@ bool CNetICacheClient::CheckConnect()
 			delete m_Sock; m_Sock = 0;
 			return CheckConnect();
 		}
+
         return false; // we are connected, nothing to do
     }
     if (!m_Host.empty()) { // we can restore connection
@@ -428,6 +429,7 @@ void CNetICacheClient::Store(const string&  key,
     auto_ptr<CNetCacheSock_RW> wrt(new CNetCacheSock_RW(m_Sock));
     wrt->SetSocketParent(this);
     DetachSocket();
+    guard.Release();
     auto_ptr<CNetCache_WriterErrCheck> writer(
        new CNetCache_WriterErrCheck(wrt.release(), eTakeOwnership, 0));
 
@@ -501,10 +503,14 @@ bool CNetICacheClient::Read(const string& key,
                             void*         buf,
                             size_t        buf_size)
 {
-    CFastMutexGuard guard(m_Lock);
-
-    auto_ptr<IReader> rdr(GetReadStream_NoLock(key, version, subkey));
-    size_t blob_size = m_BlobSize;
+    size_t blob_size;
+    auto_ptr<IReader> rdr;
+    {{
+        CFastMutexGuard guard(m_Lock);
+        rdr.reset((GetReadStream_NoLock(key, version, subkey)));
+        blob_size = m_BlobSize;
+    }}
+    
 
     if (rdr.get() == 0) {
         return false;
@@ -897,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/17 20:04:18  kuznets
+ * Fixed self-mutex lock
+ *
  * Revision 1.14  2006/01/17 19:56:26  vasilche
  * Release cache mutex.
  *
