@@ -150,8 +150,8 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand,
                 else {
                     _ASSERT(m_IsSingleStrand && !m_IsCircular);
                     _ASSERT(!m_Ranges.empty());
-                    _ASSERT(more_before);
-                    _ASSERT(m_MoreAfter);
+                    //_ASSERT(more_before);
+                    //_ASSERT(m_MoreAfter);
                     m_MoreAfter = more_after;
                 }
             }
@@ -386,6 +386,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/01/17 17:21:14  vasilche
+* Commented out asserion check incompatible with alignments.
+*
 * Revision 1.27  2006/01/10 20:04:33  vasilche
 * Better indexing of annotations spanning several segments.
 *
