@@ -184,6 +184,19 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
 );
 
 
+/* Set message hook procedure for messages originating from NCBI via HTTP.
+ * Any hook will be called not more than once.  Until no hook is installed,
+ * and exactly one message is caught, a warning will be generated in
+ * the standard log file upon each message acceptance.
+ */
+
+typedef void (*FHTTP_NcbiMessageHook)(const char* message);
+
+extern NCBI_XCONNECT_EXPORT void HTTP_SetNcbiMessageHook
+(FHTTP_NcbiMessageHook            /* New hook to be installed, NULL to reset */
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -195,6 +208,10 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2006/01/17 20:17:15  lavr
+ * DISP_SetMessageHook() moved from ncbi_service_misc.h to
+ * ncbi_http_connector.h and renamed to HTTP_SetNcbiMessageHook()
+ *
  * Revision 6.14  2005/08/12 16:09:32  lavr
  * +fHCC_Flushable
  *

@@ -48,17 +48,6 @@ extern "C" {
 #endif
 
 
-/* Set message hook procedure for messages originating from NCBI network
- * dispatcher (if used).  Any hook will be called not more than once.
- * Until no hook is installed and exactly one message is caught, a warning
- * will be generated in the standard log file upon each message acceptance.
- */
-
-typedef void (*FDISP_MessageHook)(const char* message);
-
-extern NCBI_XCONNECT_EXPORT void DISP_SetMessageHook(FDISP_MessageHook);
-
-
 /* Set default behavior of keeping attached/detaching LBSM heap
  * (if has been attached) upon service iterator closure.
  * By default, on SERV_Close() the heap gets detached, but this may not be
@@ -82,6 +71,10 @@ extern NCBI_XCONNECT_EXPORT ESwitch LBSM_KeepHeapAttached(ESwitch OnOff);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2006/01/17 20:17:15  lavr
+ * DISP_SetMessageHook() moved from ncbi_service_misc.h to
+ * ncbi_http_connector.h and renamed to HTTP_SetNcbiMessageHook()
+ *
  * Revision 1.2  2005/12/23 18:08:02  lavr
  * FDISP_MessageHook documented better
  *
