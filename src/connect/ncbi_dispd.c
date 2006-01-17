@@ -38,7 +38,6 @@
 #include "ncbi_priv.h"
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_http_connector.h>
-#include <connect/ncbi_service_misc.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,11 +47,6 @@
 #define SERV_DISPD_STALE_RATIO_OK  0.8
 /* Default rate increase 20% if svc runs locally */
 #define SERV_DISPD_LOCAL_SVC_BONUS 1.2
-
-
-/* Dispatcher messaging support */
-static int               s_MessageIssued = 0;
-static FDISP_MessageHook s_MessageHook = 0;
 
 
 #ifdef __cplusplus
@@ -193,12 +187,11 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now,
 {
     static const char server_info[] = "Server-Info-";
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
-    size_t len = strlen(text);
+    int/*bool*/ failure;
 
     if (code == 400)
         data->disp_fail = 1;
-    if (len >= sizeof(server_info)  &&
-        strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
+    if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
         const char* name;
         SSERV_Info* info;
         unsigned int d1;
@@ -239,34 +232,23 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now,
                 return 1/*updated*/;
             free(info);
         }
-    } else if (len >= sizeof(HTTP_DISP_FAILURES)  &&
-               strncasecmp(text, HTTP_DISP_FAILURES,
-                           sizeof(HTTP_DISP_FAILURES) - 1) == 0) {
+    } else if (((failure = strncasecmp(text, HTTP_DISP_FAILURES,
+                                       sizeof(HTTP_DISP_FAILURES) - 1) == 0)
+                ||  strncasecmp(text, HTTP_DISP_MESSAGES,
+                                sizeof(HTTP_DISP_MESSAGES) - 1) == 0)) {
+        assert(sizeof(HTTP_DISP_FAILURES) == sizeof(HTTP_DISP_MESSAGES));
 #if defined(_DEBUG) && !defined(NDEBUG)
         if (data->net_info->debug_printout) {
             text += sizeof(HTTP_DISP_FAILURES) - 1;
             while (*text  &&  isspace((unsigned char)(*text)))
                 text++;
-            CORE_LOGF(eLOG_Warning, ("[DISPATCHER]  %s", text));
+            CORE_LOGF(eLOG_Warning, ("[DISPATCHER %s]  %s",
+                                     failure ? "FAILURE" : "MESSAGE", text));
         }
 #endif /*_DEBUG && !NDEBUG*/
-        data->disp_fail = 1;
+        if (failure)
+            data->disp_fail = 1;
         return 1/*updated*/;
-    } else if (len >= sizeof(HTTP_DISP_MESSAGE)  &&
-               strncasecmp(text, HTTP_DISP_MESSAGE,
-                           sizeof(HTTP_DISP_MESSAGE) - 1) == 0) {
-        text += sizeof(HTTP_DISP_MESSAGE) - 1;
-        while (*text  &&  isspace((unsigned char)(*text)))
-            text++;
-        if (s_MessageHook) {
-            if (s_MessageIssued <= 0) {
-                s_MessageIssued = 1;
-                s_MessageHook(text);
-            }
-        } else {
-            s_MessageIssued = -1;
-            CORE_LOGF(eLOG_Warning, ("[DISPATCHER]  %s", text));
-        }
     }
 
     return 0/*not updated*/;
@@ -423,20 +405,13 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 }
 
 
-extern void DISP_SetMessageHook(FDISP_MessageHook hook)
-{
-    if (hook) {
-        if (hook != s_MessageHook)
-            s_MessageIssued = s_MessageIssued ? -1 : -2;
-    } else if (s_MessageIssued < -1)
-        s_MessageIssued = 0;
-    s_MessageHook = hook;
-}
-
-
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.75  2006/01/17 20:25:32  lavr
+ * Handling of NCBI messages moved to HTTP connector
+ * Dispatcher messages handled separately (FAILURES vs MESSAGES)
+ *
  * Revision 6.74  2006/01/11 20:26:29  lavr
  * Take advantage of ConnNetInfo_SetupStandardArgs(); other related changes
  *
