@@ -961,7 +961,6 @@ void CNetCache_WriterErrCheck::CheckInputMessage()
     case eIO_Success:
         {
             io_st = sock.ReadLine(msg);
-DebugBreak();
             if (io_st == eIO_Closed) {
                 goto closed_err;
             }
@@ -1095,6 +1094,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/01/17 17:13:03  kuznets
+ * Removed debugging code
+ *
  * Revision 1.59  2006/01/17 16:51:07  kuznets
  * Added base class for all NC derived clients, +session management
  *
