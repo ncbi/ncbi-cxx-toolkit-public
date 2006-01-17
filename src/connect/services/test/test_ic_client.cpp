@@ -108,6 +108,7 @@ int CTestICClient::Run(void)
     unsigned short port = args["port"].AsInteger();
     const string& cache_name  = args["cache"].AsString();
 
+
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     const char test_data2[] = "New data.";
     string key;
@@ -204,6 +205,23 @@ int CTestICClient::Run(void)
 
     }}
 
+    NcbiCout << "stress write" << NcbiEndl;
+
+    // stress write
+    {{
+    string key, subkey;
+    char test_buf[240];
+    size_t test_size = sizeof(test_buf);
+    for (int i = 0; i < 100; ++i) {
+        key = NStr::IntToString(i);
+        cl.Store(key, 0, subkey, test_buf, test_size);
+    }
+    }}
+
+    NcbiCout << "Session management test" << endl;
+    cl.RegisterSession(10);
+    cl.UnRegisterSession(10);
+
     return 0;
 }
 
@@ -217,6 +235,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.4  2006/01/17 16:51:35  kuznets
+ * + test of session management
+ *
  * Revision 6.3  2006/01/10 14:44:59  kuznets
  * More tests
  *
