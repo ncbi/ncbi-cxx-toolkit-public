@@ -83,8 +83,9 @@ static int/*bool*/ s_OpenDispatcher(SServiceConnector* uuu)
 {
     assert(!uuu->user_header);
     if (!(uuu->iter = SERV_OpenEx(uuu->net_info->service, uuu->types,
-                                  SERV_LOCALHOST, uuu->net_info, 0, 0)))
+                                  SERV_LOCALHOST, uuu->net_info, 0, 0))) {
         return 0/*false*/;
+    }
     return 1/*true*/;
 }
 
@@ -142,7 +143,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
             char ipaddr[32];
 
             if (uuu->host)
-                return 0/*failed - duplicate connection info*/;
+                break/*failed - duplicate connection info*/;
             header += sizeof(HTTP_CONNECTION_INFO) - 1;
             while (*header && isspace((unsigned char)(*header)))
                 header++;
@@ -151,28 +152,98 @@ static int/*bool*/ s_ParseHeader(const char* header,
                 uuu->host = (unsigned int)(-1);
 #if defined(_DEBUG) && !defined(NDEBUG)
                 if (uuu->net_info->debug_printout) {
-                    CORE_LOG(eLOG_Warning,
+                    CORE_LOG(eLOG_Note,
                              "[SERVICE]  Fallback to stateless requested");
                 }
 #endif
             } else {
                 if (sscanf(header, "%u.%u.%u.%u %hu %x",
                            &i1, &i2, &i3, &i4, &uuu->port, &ticket) < 6) {
-                    return 0/*failed - unreadable connection info*/;
+                    break/*failed - unreadable connection info*/;
                 }
                 o1 = i1; o2 = i2; o3 = i3; o4 = i4;
                 sprintf(ipaddr, "%u.%u.%u.%u", o1, o2, o3, o4);
                 if (!(uuu->host = SOCK_gethostbyname(ipaddr)) || !uuu->port)
-                    return 0/*failed - bad host:port in connection info*/;
+                    break/*failed - bad host:port in connection info*/;
                 uuu->ticket = SOCK_htonl(ticket);
             }
-            break;
         }
         if ((header = strchr(header, '\n')) != 0)
             header++;
     }
+    if (!header || !*header)
+        return 1/*success*/;
 
-    return 1/*success*/;
+    uuu->host = 0;
+    return 0/*failure*/;
+}
+
+
+static int/*bool*/ s_ContentTypeDefined(const SConnNetInfo* net_info,
+                                        EMIME_Type          mime_t,
+                                        EMIME_SubType       mime_s,
+                                        EMIME_Encoding      mime_e)
+{
+    const char* s;
+
+    assert(net_info);
+    for (s = net_info->http_user_header; s; s = strchr(s, '\n')) {
+        if (s != net_info->http_user_header)
+            s++;
+        if (!*s)
+            break;
+        if (strncasecmp(s, "content-type: ", 14) == 0) {
+#if defined(_DEBUG) && !defined(NDEBUG)
+            EMIME_Type     m_t;
+            EMIME_SubType  m_s;
+            EMIME_Encoding m_e;
+            char           c_t[MAX_CONTENT_TYPE_LEN];
+            if (net_info->debug_printout                      &&
+                mime_t != SERV_MIME_TYPE_UNDEFINED            &&
+                mime_t != eMIME_T_Unknown                     &&
+                MIME_ParseContentTypeEx(s, &m_t, &m_s, &m_e)  &&
+                (mime_t != m_t
+                 ||  (mime_s != SERV_MIME_SUBTYPE_UNDEFINED &&
+                      mime_s != eMIME_Unknown &&
+                      m_s != eMIME_Unknown && mime_s != m_s)
+                 ||  (mime_e != eENCOD_None &&
+                      m_e != eENCOD_None && mime_e != m_e))) {
+                const char* c;
+                size_t len;
+                char* t;
+                for (s += 15; *s; s++) {
+                    if (!isspace((unsigned char)(*s)))
+                        break;
+                }
+                if (!(c = strchr(s, '\n')))
+                    c = s + strlen(s);
+                if (c > s && c[-1] == '\r')
+                    c--;
+                len = (size_t)(c - s);
+                if ((t = (char*) malloc(len + 1)) != 0) {
+                    memcpy(t, s, len);
+                    t[len] = '\0';
+                }
+                if (!MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e,
+                                               c_t, sizeof(c_t))) {
+                    *c_t = '\0';
+                }
+                CORE_LOGF(eLOG_Warning,
+                          ("[SERVICE]  Content-Type mismatch for \"%s\" "
+                           "%s%s%s%s%s", net_info->service,
+                           t && *t         ? "specified="  : "",
+                           t && *t         ? t             : "",
+                           t && *t && *c_t ? ", "          : "",
+                           *c_t            ? "configured=" : "",
+                           *c_t            ? c_t           : ""));
+                if (t)
+                    free(t);
+            }
+#endif
+            return 1/*true*/;
+        }
+    }
+    return 0/*false*/;
 }
 
 
@@ -187,7 +258,7 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
                                EMIME_Encoding mime_e,
                                char*          dynamic_header/*will be freed*/)
 {
-    char content_type[MAX_CONTENT_TYPE_LEN], *retval;
+    char c_t[MAX_CONTENT_TYPE_LEN], *retval;
     size_t sh_len, dh_len, ct_len;
 
     net_info->req_method = req_method;
@@ -206,18 +277,18 @@ static char* s_AdjustNetParams(SConnNetInfo*  net_info,
 
     sh_len = static_header  ? strlen(static_header)  : 0;
     dh_len = dynamic_header ? strlen(dynamic_header) : 0;
-    if (mime_t == SERV_MIME_TYPE_UNDEFINED    ||
-        mime_s == SERV_MIME_SUBTYPE_UNDEFINED ||
-        !MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e,
-                                   content_type, sizeof(content_type))) {
-        content_type[0] = '\0';
+    if (s_ContentTypeDefined(net_info, mime_t, mime_s, mime_e)  ||
+        mime_t == SERV_MIME_TYPE_UNDEFINED                      ||
+        mime_s == SERV_MIME_SUBTYPE_UNDEFINED                   ||
+        !MIME_ComposeContentTypeEx(mime_t, mime_s, mime_e, c_t, sizeof(c_t))) {
+        c_t[0] = '\0';
         ct_len = 0;
     } else
-        ct_len = strlen(content_type);
+        ct_len = strlen(c_t);
     if ((retval = (char*) malloc(sh_len + dh_len +ct_len + 1/*EOL*/)) != 0) {
         strcpy(retval,                   static_header  ? static_header  : "");
         strcpy(retval + sh_len,          dynamic_header ? dynamic_header : "");
-        strcpy(retval + sh_len + dh_len, content_type);
+        strcpy(retval + sh_len + dh_len, c_t);
     }
     if (dynamic_header)
         free(dynamic_header);
@@ -352,13 +423,13 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                         SConnNetInfo*      net_info,
                         int/*bool*/        second_try)
 {
-    const char* user_header; /* may be "" or non-empty dynamic string */
+    const char* user_header; /* either "" or non-empty dynamic string */
     char*       iter_header;
     EReqMethod  req_method;
 
     if (info && info->type != fSERV_Firewall) {
         /* Not a firewall/relay connection here */
-        assert(!net_info->firewall && !second_try);
+        assert(!second_try);
         /* We know the connection point, let's try to use it! */
         SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
         net_info->port = info->port;
@@ -369,11 +440,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             if (net_info->stateless) {
                 /* Connection request with data */
                 user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
-                req_method = eReqMethod_Post;
+                req_method  = eReqMethod_Post;
             } else {
                 /* We will wait for conn-info back */
                 user_header = "Connection-Mode: STATEFUL\r\n";
-                req_method = eReqMethod_Get;
+                req_method  = eReqMethod_Get;
             }
             user_header = s_AdjustNetParams(net_info, req_method,
                                             NCBID_WEBPATH,
@@ -385,10 +456,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         case fSERV_HttpGet:
         case fSERV_HttpPost:
             /* Connection directly to CGI */
-            user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
-            req_method = info->type == fSERV_HttpGet
+            req_method  = info->type == fSERV_HttpGet
                 ? eReqMethod_Get : (info->type == fSERV_HttpPost
                                     ? eReqMethod_Post : eReqMethod_Any);
+            user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(net_info, req_method,
                                             SERV_HTTP_PATH(&info->u.http),
                                             SERV_HTTP_ARGS(&info->u.http),
@@ -414,7 +485,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                             info->mime_s, info->mime_e, 0);
             break;
         default:
-            return 0;
+            user_header = 0;
+            break;
         }
     } else {
         EMIME_Type     mime_t;
@@ -523,11 +595,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             assert((!info || info->type == fSERV_Firewall) && !second_try);
             /* Try to use stateless mode instead */
             net_info->stateless = 1/*true*/;
-            if (!info/*firewall mode, firewall info should have come back*/) {
-                info = s_GetNextInfo(uuu);
-                if (info && info->type != fSERV_Firewall)
-                    info = 0;
-            }
             return s_Open(uuu, timeout, info, net_info, 1/*second try*/);
         }
         if (net_info->firewall && *net_info->proxy_host)
@@ -545,7 +612,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                       eDebugPrintout_Data
                                       ? eSCC_DebugPrintout : 0);
     }
-    net_info->max_try = uuu->net_info->max_try;
     return HTTP_CreateConnectorEx(net_info,
                                   (uuu->params.flags & fHCC_Flushable)
                                   | fHCC_AutoReconnect/*flags*/,
@@ -666,7 +732,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         if (status == eIO_Success)
             break;
 
-        s_Close(connector, timeout, 0/*don't close dispatcher!*/);
+        s_Close(connector, timeout, 0/*don't close dispatcher yet!*/);
     }
 
     uuu->status = status;
@@ -781,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.69  2006/01/17 20:28:21  lavr
+ * Do not override user-provided Content-Type
+ *
  * Revision 6.68  2006/01/12 18:12:46  lavr
  * Fix erroneous use of non-translated service name
  * Stricter checks on uniqueness of returned Connection-Info:
