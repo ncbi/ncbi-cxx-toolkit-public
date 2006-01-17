@@ -298,7 +298,7 @@ on SetProjectData()
 	
 	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "app:asn2asn", {"C++"}), commonObjLibs, {}))
 	
-	AddProject(DataPlusLibs(SimpleProjectData("asn2flat", "app:asn2flat", {"C++", "cmdline"}), objMgrLibs & {"xalnmgr"}, {}))
+	AddProject(DataPlusLibs(SimpleProjectData("asn2flat", "app:asn2flat", {"C++", "cmdline"}), objMgrLibs & {"xalnmgr", "entrez2", "entrez2cli"}, {}))
 	
 	AddProject(DataPlusLibs(ComplexProjectData("testvalidator", "objtools:validator:test", {"C++", "sockets", "libdl", "cmdline"}, {"test_validator"}), Â
 		objMgrLibs & {"xvalidate", "xobjutil", "submit"}, {}))
