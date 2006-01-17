@@ -68,6 +68,9 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope)
         return numeric_limits<TSeqPos>::max();
     }
     CBioseq_Handle hnd = scope->GetBioseqHandle(id);
+    if ( !hnd ) {
+        return numeric_limits<TSeqPos>::max();
+    }
     return hnd.GetBioseqLength();
 }
 
@@ -2614,6 +2617,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2006/01/17 20:04:04  rsmith
+* in GetLength(), check for failure of GetBioseqHandle()
+*
 * Revision 1.17  2005/02/18 15:03:07  shomrat
 * Changes to GetStop/GetStart; CSeq_loc::GetEnd changed to CSeq_loc::GetStop
 *
