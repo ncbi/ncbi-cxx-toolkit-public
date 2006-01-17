@@ -543,8 +543,10 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
                                      const string&     subkey,
                                      SBlobAccessDescr*  blob_descr)
 {
-    CFastMutexGuard guard(m_Lock);
-    blob_descr->reader.reset(GetReadStream_NoLock(key, version, subkey));
+    {{
+        CFastMutexGuard guard(m_Lock);
+        blob_descr->reader.reset(GetReadStream_NoLock(key, version, subkey));
+    }}
     if (blob_descr->reader.get()) {
         blob_descr->blob_size = m_BlobSize;
 		blob_descr->blob_found = true;
@@ -895,6 +897,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/17 19:56:26  vasilche
+ * Release cache mutex.
+ *
  * Revision 1.13  2006/01/17 17:09:19  kuznets
  * Code cleanup. Correction in GetBlobAccess()
  *
