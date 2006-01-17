@@ -506,6 +506,7 @@ public:
     /// @sa Reset(), Endm()
     /// @sa Info(), Warning(), Error(), Critical(), Fatal(), Trace()
     typedef const CNcbiDiag& (*FManip)(const CNcbiDiag&);
+    typedef ios_base& (*FIosManip)(ios_base&);
 
     /// Helper method to post error code and subcode to diagnostic stream.
     ///
@@ -534,6 +535,7 @@ public:
     {
         return manip(*this);
     }
+    const CNcbiDiag& operator<< (FIosManip manip) const;
 
     /// Post the arguments
     /// @sa Put()
@@ -1315,6 +1317,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.97  2006/01/17 16:30:02  grichenk
+ * Fixed output for std stream manipulators.
+ *
  * Revision 1.96  2005/12/29 21:19:28  grichenk
  * Export CDiagContext
  *

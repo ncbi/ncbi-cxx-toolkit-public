@@ -253,6 +253,14 @@ const CNcbiDiag& CNcbiDiag::Put(const void*, const X& x) const
 }
 #endif
 
+
+inline const CNcbiDiag& CNcbiDiag::operator<< (FIosManip manip) const
+{
+    m_Buffer.Put(*this, manip);
+    return *this;
+}
+
+
 inline const CNcbiDiag& CNcbiDiag::SetLine(size_t line) const {
     m_Line = line;
     m_ValChngFlags |= fLineIsChanged;
@@ -631,6 +639,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/01/17 16:30:02  grichenk
+ * Fixed output for std stream manipulators.
+ *
  * Revision 1.53  2005/12/20 16:16:02  grichenk
  * Fixed warnings
  *
