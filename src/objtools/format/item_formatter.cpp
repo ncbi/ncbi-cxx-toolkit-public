@@ -284,6 +284,33 @@ list<string>& CFlatItemFormatter::Wrap
 }
 
 
+void
+CFlatItemFormatter::Start(
+    IFlatTextOStream& Out )
+{
+    if ( m_Ctx->GetConfig().DoHTML() ) {
+        Out.AddLine( "Content-type: text/html" );
+        Out.AddLine( "<HTML>" );
+        Out.AddLine( "<HEAD><TITLE>Entry</TITLE></HEAD>" );
+        Out.AddLine( "<BODY>" );
+        Out.AddLine( "<hr>" );
+        Out.AddLine( "<pre>" );
+    }
+};
+
+
+void
+CFlatItemFormatter::End(
+    IFlatTextOStream& Out )
+{
+    if ( m_Ctx->GetConfig().DoHTML() ) {
+        Out.AddLine( "</pre>" );
+        Out.AddLine( "</hr>" );
+        Out.AddLine( "</BODY>" );
+        Out.AddLine( "</HTML>" );
+    }
+};
+
 
 void CFlatItemFormatter::x_FormatRefLocation
 (CNcbiOstrstream& os,
@@ -1242,6 +1269,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2006/01/17 18:29:09  ludwigf
+* ADDED: Implementation for Start() and End() methods that will write HTML
+* headers and trailers if necessary.
+*
 * Revision 1.30  2005/10/26 14:54:14  ucko
 * Clean up after previous commit: restore CFlatItemFormatter::Format
 * and make use of NStr::EndsWith to simplify logic elsewhere.
