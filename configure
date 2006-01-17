@@ -18576,8 +18576,8 @@ if test "$with_bdb" != "no" ; then
    esac
    if test -d "$BERKELEYDB_PATH"; then
       BERKELEYDB_PATH=`cd $BERKELEYDB_PATH  &&  $smart_pwd`
+      : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    fi
-   : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    if test -z "${BERKELEYDB_LIBPATH}"; then
       for d in "${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}" \
                "${compiler_pfx}${DEBUG_SFX}${bit64_sfx}" \
@@ -18589,7 +18589,11 @@ if test "$with_bdb" != "no" ; then
          test -d "${BERKELEYDB_LIBPATH}"  &&  break
       done
    fi
-   : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
+   if test -d "$BERKELEYDB_LIBPATH"; then
+      : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
+   else
+      : ${BERKELEYDB_LIBS:="-ldb"}
+   fi
    if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
       BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
    else
@@ -18654,8 +18658,8 @@ echo "${ECHO_T}$ncbi_cv_lib_berkeley_db" >&6
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
       with_bdb="no"
    else
-      echo "$as_me:$LINENO: checking Berkeley DB version (4.1 or newer required)" >&5
-echo $ECHO_N "checking Berkeley DB version (4.1 or newer required)... $ECHO_C" >&6
+      echo "$as_me:$LINENO: checking Berkeley DB version (4.3 or newer required)" >&5
+echo $ECHO_N "checking Berkeley DB version (4.3 or newer required)... $ECHO_C" >&6
 if test "${ncbi_cv_lib_berkeley_db_version+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -18679,12 +18683,12 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db_version" >&5
 echo "${ECHO_T}$ncbi_cv_lib_berkeley_db_version" >&6
       case "$ncbi_cv_lib_berkeley_db_version" in
-         1.* | 2.* | 3.* | 4.0.* )
-            { echo "$as_me:$LINENO: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.1.)" >&5
-echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.1.)" >&2;}
+         1.* | 2.* | 3.* | 4.[0-2].* )
+            { echo "$as_me:$LINENO: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.3.)" >&5
+echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.3.)" >&2;}
             with_bdb=no
             ;;
-         4.1.* | 4.2.* | 4.3.* ) ;;
+         4.3.* ) ;;
          * )
             { echo "$as_me:$LINENO: WARNING: Untested Berkeley DB version; may prove incompatible." >&5
 echo "$as_me: WARNING: Untested Berkeley DB version; may prove incompatible." >&2;}
@@ -18709,7 +18713,11 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BERKELEY_DB 1
 _ACEOF
 
-   : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+   if test -d "$BERKELEYDB_LIBPATH"; then
+      : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+   else
+      : ${BERKELEYDB_CXX_LIBS:="-ldb_cxx -ldb"}
+   fi
    if test -f "${BERKELEYDB_LIBPATH}/libdb_cxx-static.a"; then
       BERKELEYDB_CXX_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb_cxx-static -ldb-static"
    else

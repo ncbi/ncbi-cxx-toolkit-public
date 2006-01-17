@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.406 2006/01/05 21:42:29 ucko Exp $
+#  $Id: configure.ac,v 1.407 2006/01/17 19:03:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -3041,8 +3041,8 @@ if test "$with_bdb" != "no" ; then
    esac
    if test -d "$BERKELEYDB_PATH"; then
       BERKELEYDB_PATH=`cd $BERKELEYDB_PATH  &&  $smart_pwd`
+      : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    fi
-   : ${BERKELEYDB_INCLUDE:="-I$BERKELEYDB_PATH/include"}
    if test -z "${BERKELEYDB_LIBPATH}"; then
       for d in "${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}" \
                "${compiler_pfx}${DEBUG_SFX}${bit64_sfx}" \
@@ -3054,7 +3054,11 @@ if test "$with_bdb" != "no" ; then
          test -d "${BERKELEYDB_LIBPATH}"  &&  break
       done
    fi
-   : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
+   if test -d "$BERKELEYDB_LIBPATH"; then
+      : ${BERKELEYDB_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb"}
+   else
+      : ${BERKELEYDB_LIBS:="-ldb"}
+   fi
    if test -f "${BERKELEYDB_LIBPATH}/libdb-static.a"; then
       BERKELEYDB_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb-static"
    else
@@ -3071,7 +3075,7 @@ if test "$with_bdb" != "no" ; then
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
       with_bdb="no"
    else
-      AC_CACHE_CHECK([Berkeley DB version (4.1 or newer required)],
+      AC_CACHE_CHECK([Berkeley DB version (4.3 or newer required)],
          ncbi_cv_lib_berkeley_db_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
 #include <db.h>
@@ -3083,12 +3087,12 @@ ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PAT
           rm -f contest*
          ])
       case "$ncbi_cv_lib_berkeley_db_version" in
-         1.* | 2.* | 3.* | 4.0.* )
+         1.* | 2.* | 3.* | 4.[[0-2]].* )
             AC_MSG_WARN(
-               [Your Berkeley DB version is too old to use.  (Needed 4.1.)])
+               [Your Berkeley DB version is too old to use.  (Needed 4.3.)])
             with_bdb=no
             ;;
-         4.1.* | 4.2.* | 4.3.* ) ;;
+         4.3.* ) ;;
          * )
             AC_MSG_WARN(
                [Untested Berkeley DB version; may prove incompatible.])
@@ -3110,7 +3114,11 @@ else
    WithPackages="$WithPackages BerkeleyDB"
    AC_DEFINE(HAVE_BERKELEY_DB, 1,
              [Define to 1 if Berkeley DB libraries are available.])
-   : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+   if test -d "$BERKELEYDB_LIBPATH"; then
+      : ${BERKELEYDB_CXX_LIBS:="-L${BERKELEYDB_LIBPATH} ${CONF_f_runpath}${BERKELEYDB_LIBPATH} -ldb_cxx -ldb"}
+   else
+      : ${BERKELEYDB_CXX_LIBS:="-ldb_cxx -ldb"}
+   fi
    if test -f "${BERKELEYDB_LIBPATH}/libdb_cxx-static.a"; then
       BERKELEYDB_CXX_STATIC_LIBS="-L${BERKELEYDB_LIBPATH} -ldb_cxx-static -ldb-static"
    else
