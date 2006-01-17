@@ -2615,7 +2615,7 @@ void CFeatureItem::x_CleanQuals(bool& had_prot_desc, const TGeneSyn* gene_syn) c
 
         // remove protein description that equals a gene synonym
         // NC_001823 leave in prot_desc if no cds_product
-        if (gene_syn != NULL  &&  cds_prod != NULL) {
+        if (prot_desc != NULL  &&  gene_syn != NULL  &&  cds_prod != NULL) {
             ITERATE (TGeneSyn, it, *gene_syn) {
                 if (!NStr::IsBlank(*it)  &&  pdesc == *it) {
                     x_RemoveQuals(eFQ_prot_desc);
@@ -3809,6 +3809,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2006/01/17 19:43:14  ludwigf
+* FIXED: CFeatureItem::x_CleanQuals() would attempt to remove the same protein
+* description twice, resulting in an exception the second time around.
+*
 * Revision 1.68  2005/12/21 13:54:18  ludwigf
 * FIXED: Disabled variable declaration that would result in a compiler
 * warning.
