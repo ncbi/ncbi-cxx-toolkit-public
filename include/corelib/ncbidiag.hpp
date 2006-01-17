@@ -506,7 +506,7 @@ public:
     /// @sa Reset(), Endm()
     /// @sa Info(), Warning(), Error(), Critical(), Fatal(), Trace()
     typedef const CNcbiDiag& (*FManip)(const CNcbiDiag&);
-    typedef ios_base& (*FIosManip)(ios_base&);
+    typedef IOS_BASE& (*FIosManip)(IOS_BASE&);
 
     /// Helper method to post error code and subcode to diagnostic stream.
     ///
@@ -1317,6 +1317,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.98  2006/01/17 21:00:54  ucko
+ * s/ios_base/IOS_BASE/ for compatibility with GCC 2.95.
+ *
  * Revision 1.97  2006/01/17 16:30:02  grichenk
  * Fixed output for std stream manipulators.
  *
