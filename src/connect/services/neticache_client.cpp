@@ -444,34 +444,6 @@ void CNetICacheClient::Store(const string&  key,
     }
     }}
 
-/*
-    WaitForServer();
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
-                   "Communication error");
-    }
-    TrimPrefix(&m_Tmp);
-*/
-
-/*
-    auto_ptr<IWriter> wrt(GetWriteStream(key,
-                                         version,
-                                         subkey,
-                                         time_to_live,
-                                         owner));
-    _ASSERT(wrt.get());
-    size_t     bytes_written;
-    const char* ptr = (const char*) data;
-    while (size) {
-        ERW_Result res = wrt->Write(ptr, size, &bytes_written);
-        if (res != eRW_Success) {
-            NCBI_THROW(CNetServiceException, eCommunicationError, 
-                       "Communication error");
-        }
-        ptr += bytes_written;
-        size -= bytes_written;
-    }
-*/
 }
 
 size_t CNetICacheClient::GetSize(const string&  key,
@@ -481,7 +453,6 @@ size_t CNetICacheClient::GetSize(const string&  key,
     CFastMutexGuard guard(m_Lock);
 
     bool reconnected = CheckConnect();
-//    CSockGuard sg(*m_Sock);
 
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "GSIZ ", reconnected);
@@ -508,7 +479,6 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
     CFastMutexGuard guard(m_Lock);
 
     bool reconnected = CheckConnect();
-//    CSockGuard sg(*m_Sock);
 
     string& cmd = m_Tmp;
     MakeCommandPacket(&cmd, "GBLW ", reconnected);
@@ -578,6 +548,25 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
     if (blob_descr->reader.get()) {
         blob_descr->blob_size = m_BlobSize;
 		blob_descr->blob_found = true;
+
+        if (blob_descr->buf && blob_descr->buf_size > m_BlobSize) {
+            // read to buffer
+            size_t to_read = m_BlobSize;
+            char* buf_ptr = blob_descr->buf;
+            while (to_read) {
+                size_t nn_read;
+                ERW_Result rw_res =
+                    blob_descr->reader->Read(buf_ptr, to_read, &nn_read);
+                if (!nn_read) {
+                    blob_descr->reader.reset(0);
+                    NCBI_THROW(CNetServiceException, eCommunicationError, 
+                               "Communication error");
+                }
+                buf_ptr += nn_read;
+                to_read -= nn_read;
+            } // while
+            blob_descr->reader.reset(0);
+        }
     } else {
         blob_descr->blob_size = 0;
 		blob_descr->blob_found = false;
@@ -906,6 +895,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/17 17:09:19  kuznets
+ * Code cleanup. Correction in GetBlobAccess()
+ *
  * Revision 1.12  2006/01/17 16:51:07  kuznets
  * Added base class for all NC derived clients, +session management
  *
