@@ -38,7 +38,8 @@
 #define NCBID_WEBPATH           "/Service/ncbid.cgi"
 #define HTTP_CONNECTION_INFO    "Connection-Info:"
 #define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
-#define HTTP_DISP_MESSAGE       "NCBI-Message:"
+#define HTTP_DISP_MESSAGES      "Dispatcher-Messages:"
+#define HTTP_NCBI_MESSAGE       "NCBI-Message:"
 #define DISPATCHER_CFGPATH      "/var/etc/lbsmd/"
 #define DISPATCHER_CFGFILE      "servrc.cfg"
 #define DISP_PROTOCOL_VERSION   "1.1"
@@ -61,6 +62,9 @@ typedef unsigned int ticket_t;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/01/17 20:19:01  lavr
+ * HTTP_DISP_FAILURES split into FAILURES and MESSAGES (new macro)
+ *
  * Revision 6.11  2005/12/23 18:09:01  lavr
  * Bump minor version number in DISP_PROTOCOL_VERSION
  *
