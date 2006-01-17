@@ -675,13 +675,18 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_ToStderr, "config.ini");
+//    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_ToStderr, "config.ini");
+    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_ToStderr, 0);
 }
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2006/01/17 18:19:56  ludwigf
+* CHANGED: For the time being, disabled support for "config.ini" configuration
+* file.
+*
 * Revision 1.17  2006/01/11 15:33:22  ludwigf
 * ADDED: Support for remote fetching of single accessions.
 * CHANGED: Command line argument "-id" now implies "-gbload" if "-gbload" is
