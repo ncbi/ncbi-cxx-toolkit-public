@@ -80,10 +80,10 @@ public:
 
 
     // control methods
-    virtual void Start       (IFlatTextOStream&) {}
+    virtual void Start       (IFlatTextOStream&);
     virtual void StartSection(const CStartSectionItem&, IFlatTextOStream&) {}
     virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream&)   {}
-    virtual void End         (IFlatTextOStream&) {}
+    virtual void End         (IFlatTextOStream&);
 
     // Format methods
     void Format(const IFlatItem& item, IFlatTextOStream& text_os);
@@ -181,6 +181,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/01/17 18:26:22  ludwigf
+* CHANGED: Removed NOP implementations of Start() and End() methods. They are
+* being replaced (in item_formatter.cpp) by versions that will produce HTML
+* headers and trailers if necessary.
+*
 * Revision 1.14  2005/09/13 19:22:33  jcherry
 * Added export specifier.  Changed declarations of unimplemented copy ctor
 * and assignment operator from protected to private.
