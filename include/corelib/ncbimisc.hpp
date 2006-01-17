@@ -508,11 +508,11 @@ public:
 
     /// Construct the arrya using C++ new[] operator
     /// @note In this case you should use ArrayDeleter<> or compatible
-    AutoArray(size_t size)
+    explicit AutoArray(size_t size)
         : m_Ptr(new element_type[size]), m_Data(true)
     {}
 
-    AutoArray(element_type* p = 0)
+    explicit AutoArray(element_type* p = 0)
         : m_Ptr(p), m_Data(true)
     {}
 
@@ -521,7 +521,7 @@ public:
     {
     }
 
-    AutoArray(const AutoPtr<X, Del>& p)
+    AutoArray(const AutoArray<X, Del>& p)
         : m_Ptr(0), m_Data(p.m_Data)
     {
         m_Ptr = p.x_Release();
@@ -533,7 +533,7 @@ public:
     }
 
     /// Assignment operator.
-    AutoPtr<X, Del>& operator=(const AutoPtr<X, Del>& p)
+    AutoArray<X, Del>& operator=(const AutoArray<X, Del>& p)
     {
         if (this != &p) {
             bool owner = p.m_Data.second();
@@ -544,19 +544,13 @@ public:
     }
 
     /// Assignment operator.
-    AutoPtr<X, Del>& operator=(element_type* p)
+    AutoArray<X, Del>& operator=(element_type* p)
     {
         reset(p);
         return *this;
     }
     /// Bool operator for use in if() clause.
     DECLARE_OPERATOR_BOOL_PTR(m_Ptr);
-
-    /// Dereference operator.
-    element_type& operator* (void) const { return *m_Ptr; }
-
-    /// Reference operator.
-    element_type* operator->(void) const { return  m_Ptr; }
 
     /// Get pointer.
     element_type* get       (void) const { return  m_Ptr; }
@@ -595,7 +589,7 @@ private:
     /// Release for const object.
     element_type* x_Release(void) const
     {
-        return const_cast<AutoPtr<X, Del>*>(this)->release();
+        return const_cast<AutoArray<X, Del>*>(this)->release();
     }
 
 private:
@@ -936,6 +930,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.94  2006/01/17 17:23:20  vasilche
+ * Fixed definition of CAutoArray.
+ *
  * Revision 1.93  2005/12/19 18:01:31  ucko
  * Introduce a special NCBI_DEPRECATED_CTOR macro to work around a
  * fundamental incompatibility between GCC 3.2/3.3 and MS Visual Studio 2005.
