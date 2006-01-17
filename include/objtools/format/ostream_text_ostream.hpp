@@ -57,6 +57,9 @@ public:
     virtual void AddParagraph(const list<string>& text, 
                               const CSerialObject* obj = 0);
 
+    virtual void AddLine( const string& line,
+                          const CSerialObject* obj = 0);
+                          
 private:
     CNcbiOstream&   m_Ostream;
 };
@@ -90,6 +93,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/01/17 18:23:38  ludwigf
+* ADDED: Declarations for a new AddLine() method.
+*
 * Revision 1.2  2005/09/13 19:22:55  jcherry
 * Added export specifiers
 *
