@@ -72,7 +72,7 @@ static void s_REG_Set(void* user_data,
 {
     try {
         static_cast<IRWRegistry*> (user_data)->
-            Set(section, name, value,
+            Set(section, name, value ? string(value) : kEmptyStr,
                 (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
                 CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
     }
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2006/01/17 20:21:26  lavr
+ * Gracefully handle NULL pointer in s_REG_Set() [kEmptyStr effects]
+ *
  * Revision 6.32  2005/08/12 19:21:20  lavr
  * Take advantage of new NCBI_CATCH_ALL() [replaces STD_CATCH_ALL()]
  *
