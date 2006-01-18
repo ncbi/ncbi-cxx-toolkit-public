@@ -95,6 +95,10 @@ public:
     /// Get CGI Context
     CCgiContext& GetCGIContext() { return m_CgiContext; }
 
+    ///
+    void SetCompleteResponse(CNcbiIstream& is);
+    bool NeedRenderPage() const { return m_NeedRenderPage; }
+
     string GetHiddenFields() const;
 
     const string& GetJobInput() const { return m_JobInput; }
@@ -123,6 +127,7 @@ private:
     string                        m_ProgressMsg;
     string                        m_JobInput;
     string                        m_JobOutput;
+    bool                          m_NeedRenderPage;
     
     /// A copy constructor and an assignemt operator
     /// are prohibited
@@ -277,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/01/18 17:51:02  didenko
+ * When job is done just all its output to the response output stream
+ *
  * Revision 1.20  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

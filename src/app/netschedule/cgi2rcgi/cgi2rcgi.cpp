@@ -268,16 +268,12 @@ void CCgi2RCgiApp::OnJobDone(CGridJobStatus& status,
     size_t blob_size = status.GetBlobSize();
     
     if (blob_size > 0) {
-        AutoPtr<char, ArrayDeleter<char> > buff(new char[blob_size+1]);
-        is.read(buff.get(),blob_size);
-        buff.get()[blob_size] = 0;
-        m_StrPage = buff.get();
+        ctx.SetCompleteResponse(is);
     } else {
         m_StrPage = "<html><head><title>Empty Result</title>"
                     "</head><body>Empty Result</body></html>";
+        ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
     }
-
-    ctx.GetHTMLPage().SetTemplateString(m_StrPage.c_str());
 }
 
 void CCgi2RCgiApp::OnJobFailed(const string& msg, 
@@ -408,6 +404,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/18 17:51:03  didenko
+ * When job is done just all its output to the response output stream
+ *
  * Revision 1.4  2005/06/08 16:20:52  didenko
  * Got rid of a compiler warning
  *

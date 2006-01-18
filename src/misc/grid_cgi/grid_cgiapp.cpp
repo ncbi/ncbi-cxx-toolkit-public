@@ -43,7 +43,7 @@
 BEGIN_NCBI_SCOPE
 
 CGridCgiContext::CGridCgiContext(CHTMLPage& page, CCgiContext& ctx)
-    : m_Page(page), m_CgiContext(ctx)
+    : m_Page(page), m_CgiContext(ctx), m_NeedRenderPage(true)
 {
     const CCgiRequest& req = ctx.GetRequest();
     string query_string = req.GetProperty(eCgi_QueryString);
@@ -146,6 +146,12 @@ void CGridCgiContext::PersistEntry(const string& entry_name,
 void CGridCgiContext::Clear()
 {
     m_PersistedEntries.clear();
+}
+
+void CGridCgiContext::SetCompleteResponse(CNcbiIstream& is)
+{
+    m_CgiContext.GetResponse().out() << is.rdbuf();
+    m_NeedRenderPage = false;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -303,6 +309,8 @@ int CGridCgiApplication::ProcessRequest(CCgiContext& ctx)
         return 3;
     }
 
+    if (!grid_ctx.NeedRenderPage())
+        return 0;
     // Compose and flush the resultant HTML page
     try {
         response.WriteHeader();
@@ -410,6 +418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/01/18 17:51:03  didenko
+ * When job is done just all its output to the response output stream
+ *
  * Revision 1.26  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
