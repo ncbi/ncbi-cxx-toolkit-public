@@ -32,8 +32,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <connect/services/grid_worker.hpp>
 #include <connect/services/grid_control_thread.hpp>
+#include <connect/services/grid_worker_app_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -90,10 +90,13 @@ private:
     string m_Host;
 };
 
-class CGetStatisticsnProcessor : public CWorkerNodeControlThread::IRequestProcessor 
+class CGetStatisticsProcessor : public CWorkerNodeControlThread::IRequestProcessor 
 {
 public:
-    virtual ~CGetStatisticsnProcessor() {}
+    CGetStatisticsProcessor(const CWorkerNodeStatistics& stat) 
+        : m_Statistics(stat)
+    {}
+    virtual ~CGetStatisticsProcessor() {}
 
     virtual void Process(const string& request,
                          CNcbiOstream& os,
@@ -112,6 +115,8 @@ public:
         if (node.GetMaxThreads() > 1)
             os << "Maximum job threads: " << node.GetMaxThreads() << endl;
 
+        m_Statistics.Print(os);
+        /*
         os << "Jobs Succeed: " << node.GetJobsSucceedNumber() << endl
            << "Jobs Failed: "  << node.GetJobsFailedNumber() << endl
            << "Jobs Returned: "<< node.GetJobsReturnedNumber() << endl
@@ -128,14 +133,20 @@ public:
                << " -- running for " << ts.AsString("S") 
                << " seconds." << endl;
         }
+        */
     }
+private:
+    const CWorkerNodeStatistics& m_Statistics;
 };
 
 class CGetLoadProcessor : public CWorkerNodeControlThread::IRequestProcessor 
 {
 public:
+   CGetLoadProcessor(const CWorkerNodeStatistics& stat)
+        : m_Statistics(stat)
+    {}
     virtual ~CGetLoadProcessor() {}
-
+   
     virtual bool Authenticate(const string& host,
                               const string& auth, 
                               const string& queue,
@@ -164,9 +175,12 @@ public:
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
     {
-        int load = node.GetMaxThreads() - node.GetJobsRunningNumber();
+        int load = node.GetMaxThreads() - m_Statistics.GetJobsRunningNumber();
         os << "OK:" << load;
     }
+
+private:
+    const CWorkerNodeStatistics& m_Statistics;
 };
 
 class CUnknownProcessor : public CWorkerNodeControlThread::IRequestProcessor 
@@ -190,9 +204,9 @@ const string GETLOAD_CMD = "GETLOAD";
 /////////////////////////////////////////////////////////////////////////////
 // 
 ///@internal
-CWorkerNodeControlThread::CWorkerNodeControlThread(
-                                                unsigned int port, 
-                                                CGridWorkerNode& worker_node)
+CWorkerNodeControlThread::CWorkerNodeControlThread(unsigned int port, 
+                                                   CGridWorkerNode& worker_node,
+                                                   const CWorkerNodeStatistics& stat)
     : CThreadedServer(port), m_WorkerNode(worker_node), 
       m_ShutdownRequested(false)
 {
@@ -204,8 +218,8 @@ CWorkerNodeControlThread::CWorkerNodeControlThread(
 
     m_Processors[VERSION_CMD] = new CGetVersionProcessor;
     m_Processors[SHUTDOWN_CMD] = new CShutdownProcessor;
-    m_Processors[STAT_CMD] = new CGetStatisticsnProcessor;
-    m_Processors[GETLOAD_CMD] = new CGetLoadProcessor;
+    m_Processors[STAT_CMD] = new CGetStatisticsProcessor(stat);
+    m_Processors[GETLOAD_CMD] = new CGetLoadProcessor(stat);
 }
 
 CWorkerNodeControlThread::~CWorkerNodeControlThread()
@@ -281,6 +295,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2006/01/18 17:47:42  didenko
+ * Added JobWatchers mechanism
+ * Reimplement worker node statistics as a JobWatcher
+ * Added JobWatcher for diag stream
+ * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
+ *
  * Revision 6.13  2005/08/11 16:14:59  didenko
  * Changed AcceptTimeout parameter to 1 sec
  *

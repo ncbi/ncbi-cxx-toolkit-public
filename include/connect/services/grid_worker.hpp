@@ -230,24 +230,16 @@ public:
     ///
     bool IsLogRequested(void) const { return m_LogRequested; }
 
-    /// Collect a statictics on all processed jobs at the time
-    struct SJobStat {
-        string job_key;
-        string job_input;
-        CTime  start_time;
-    };
-    static void CollectStatictics(vector<SJobStat>& stat);
-
 private:    
     friend class CGridThreadContext;
     void SetThreadContext(CGridThreadContext*);
     const string& GetJobOutput() const { return m_JobOutput; }
-    string& SetJobOutput() { return m_JobOutput; }
-    string& SetJobProgressMsgKey() { return m_ProgressMsgKey; }
-    size_t& SetJobInputBlobSize() {return m_InputBlobSize; }
-
-    CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
-    bool IsJobCommitted() const       { return m_JobCommitted; }
+    string& SetJobOutput()             { return m_JobOutput; }
+    string& SetJobProgressMsgKey()     { return m_ProgressMsgKey; }
+    size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
+    CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
+    bool IsJobCommitted() const        { return m_JobCommitted; }   
+    unsigned int GetJobNumber() const  { return m_JobNumber; }
 
     /// Only a CGridWorkerNode can create an instance of this class
     friend class CGridWorkerNode;
@@ -267,12 +259,6 @@ private:
     bool                 m_LogRequested;
     const unsigned int   m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
-
-    static CWorkerNodeJobContext* m_Root;
-    CWorkerNodeJobContext*        m_Next;
-    CWorkerNodeJobContext*        m_Prev;
-    DECLARE_CLASS_STATIC_MUTEX(m_ListMutex);
-    const CTime                   m_StartTime;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -330,7 +316,27 @@ public: \
 }
 
 
-class CGridThreadContext;
+/// Jobs watcher interface
+class NCBI_XCONNECT_EXPORT IWorkerNodeJobWatcher
+{
+public:
+    enum EEvent {
+        eJobStarted,
+        eJobStopped,
+        eJobFailed,
+        eJobSucceed,
+        eJobReturned,
+        eJobCanceled,
+        eJobLost
+    };
+
+    virtual ~IWorkerNodeJobWatcher();
+
+    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event) = 0;
+
+};
+
+
 /// Grid Worker Node
 /// 
 /// It gets jobs from a NetSchedule server and runs them simultaneously
@@ -343,8 +349,9 @@ public:
     /// Construct a worker node using class factories
     ///
     CGridWorkerNode(IWorkerNodeJobFactory&      job_creator,
-                    IBlobStorageFactory& ns_storage_creator,
-                    INetScheduleClientFactory&  ns_client_creator);
+                    IBlobStorageFactory&        ns_storage_creator,
+                    INetScheduleClientFactory&  ns_client_creator,
+                    IWorkerNodeJobWatcher*      job_wather);
 
     virtual ~CGridWorkerNode();
 
@@ -376,22 +383,6 @@ public:
     void ActivateServerLog(bool on_off) 
                       { m_LogRequested = on_off; }
 
-    unsigned int GetJobsSucceedNumber() const 
-                      { return (unsigned int)m_JobsSucceed.Get(); }
-
-    unsigned int GetJobsFailedNumber() const 
-                      { return (unsigned int)m_JobsFailed.Get(); }
-
-    unsigned int GetJobsReturnedNumber() const 
-                      { return (unsigned int)m_JobsReturned.Get(); }
-
-    unsigned int GetJobsCanceledNumber() const 
-                      { return (unsigned int)m_JobsCanceled.Get(); }
-
-    unsigned int GetJobsLostNumber() const 
-                      { return (unsigned int)m_JobsLost.Get(); }
-
-    unsigned int GetJobsRunningNumber() const;
     unsigned int GetJobsStartedNumber() const { return m_JobsStarted; }
 
     void SetMasterWorkerNodes(const string& hosts);
@@ -437,6 +428,7 @@ private:
     IWorkerNodeJobFactory&       m_JobFactory;
     IBlobStorageFactory&         m_NSStorageFactory;
     INetScheduleClientFactory&   m_NSClientFactory;
+    IWorkerNodeJobWatcher*       m_JobWatcher;
 
     auto_ptr<CNetScheduleClient> m_NSReadClient;
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
@@ -448,14 +440,10 @@ private:
     CMutex                       m_NSClientFactoryMutex;
     mutable CMutex               m_JobFactoryMutex;
     CMutex                       m_StorageFactoryMutex;
+    CMutex                       m_JobWatcherMutex;
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
     unsigned int                 m_MaxProcessedJob;
     volatile unsigned int        m_JobsStarted;
-    CAtomicCounter               m_JobsSucceed;
-    CAtomicCounter               m_JobsFailed;
-    CAtomicCounter               m_JobsReturned;
-    CAtomicCounter               m_JobsCanceled;
-    CAtomicCounter               m_JobsLost;
     bool                         m_LogRequested;
     const CTime                  m_StartTime;
 
@@ -479,6 +467,15 @@ private:
             ns_client(m_NSClientFactory.CreateInstance());
         ns_client->SetProgramVersion(m_JobFactory.GetJobVersion());
         return ns_client.release();
+    }
+
+    void x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
+                            IWorkerNodeJobWatcher::EEvent event)
+    {
+        if (m_JobWatcher) {
+            CMutexGuard guard(m_JobWatcherMutex);
+            m_JobWatcher->Notify(job, event);
+        }
     }
 
     struct SHost {
@@ -515,6 +512,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/01/18 17:47:42  didenko
+ * Added JobWatchers mechanism
+ * Reimplement worker node statistics as a JobWatcher
+ * Added JobWatcher for diag stream
+ * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
+ *
  * Revision 1.30  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

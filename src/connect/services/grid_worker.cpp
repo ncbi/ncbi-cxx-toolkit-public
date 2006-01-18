@@ -61,10 +61,16 @@ const CNcbiEnvironment& IWorkerNodeInitContext::GetEnvironment() const
 
 /////////////////////////////////////////////////////////////////////////////
 //
+IWorkerNodeJobWatcher::~IWorkerNodeJobWatcher()
+{
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
 //     CWorkerNodeJobContext     -- 
 
-CWorkerNodeJobContext* CWorkerNodeJobContext::m_Root = NULL;
-DEFINE_CLASS_STATIC_MUTEX(CWorkerNodeJobContext::m_ListMutex);
+//CWorkerNodeJobContext* CWorkerNodeJobContext::m_Root = NULL;
+//DEFINE_CLASS_STATIC_MUTEX(CWorkerNodeJobContext::m_ListMutex);
 
 CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_key,
@@ -73,49 +79,13 @@ CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              bool             log_requested)
     : m_WorkerNode(worker_node), m_JobKey(job_key), m_JobInput(job_input),
       m_JobCommitted(false), m_LogRequested(log_requested), 
-      m_JobNumber(job_number), m_ThreadContext(NULL),
-      m_Next(NULL), m_Prev(NULL), m_StartTime(CTime::eCurrent)
+      m_JobNumber(job_number), m_ThreadContext(NULL)
 {
-    CMutexGuard guard(m_ListMutex);
-    if (!m_Root)
-        m_Root = this;
-    else {
-        m_Next = m_Root;
-        m_Root->m_Prev = this;
-        m_Root = this;
-    }    
 }
 
 CWorkerNodeJobContext::~CWorkerNodeJobContext()
 {
-    CMutexGuard guard(m_ListMutex);
-    if (m_Root == this) {        
-        m_Root = m_Root->m_Next;       
-        if (m_Root) 
-            m_Root->m_Prev = NULL;
-    }
-    else {
-        m_Prev->m_Next = m_Next;
-        if (m_Next)
-            m_Next->m_Prev = m_Prev;
-    }
 }
-
-void CWorkerNodeJobContext::CollectStatictics(vector<SJobStat>& stat)
-{
-    CMutexGuard guard(m_ListMutex);
-    CWorkerNodeJobContext* curr = m_Root;
-    stat.clear();
-    while (curr) {
-        SJobStat jstat;
-        jstat.job_key = curr->GetJobKey();
-        jstat.job_input = curr->GetJobInput();
-        jstat.start_time = curr->m_StartTime;
-        stat.push_back(jstat);
-        curr = curr->m_Next;
-    }
-}
-
 const string& CWorkerNodeJobContext::GetQueueName() const
 {
     return m_WorkerNode.GetQueueName();
@@ -267,23 +237,20 @@ void CWorkerNodeRequest::Process(void)
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CGridWorkerNode       -- 
-CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&      job_factory,
-                                 IBlobStorageFactory&        storage_factory,
-                                 INetScheduleClientFactory&  client_factory)
+CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
+                                 IBlobStorageFactory&       storage_factory,
+                                 INetScheduleClientFactory& client_factory,
+                                 IWorkerNodeJobWatcher*     job_watcher)
     : m_JobFactory(job_factory),
       m_NSStorageFactory(storage_factory),
       m_NSClientFactory(client_factory), 
+      m_JobWatcher(job_watcher),
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
       m_MaxProcessedJob(0), m_JobsStarted(0),
       m_LogRequested(false), m_StartTime(CTime::eCurrent)
 {
-    m_JobsSucceed.Set(0);
-    m_JobsFailed.Set(0);
-    m_JobsReturned.Set(0);
-    m_JobsCanceled.Set(0);
-    m_JobsLost.Set(0);
 }
 
 
@@ -378,14 +345,6 @@ void CGridWorkerNode::Start()
     m_NSReadClient.reset(0);
     LOG_POST(Info << "Worker Node has been stopped.");
 }
-
-unsigned int CGridWorkerNode::GetJobsRunningNumber() const
-{
-    return m_JobsStarted - m_JobsSucceed.Get() - 
-        m_JobsFailed.Get() - m_JobsReturned.Get() -
-        m_JobsCanceled.Get() - m_JobsLost.Get();
-}
-
 
 const string& CGridWorkerNode::GetQueueName() const 
 { 
@@ -569,6 +528,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/01/18 17:47:42  didenko
+ * Added JobWatchers mechanism
+ * Reimplement worker node statistics as a JobWatcher
+ * Added JobWatcher for diag stream
+ * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
+ *
  * Revision 1.35  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

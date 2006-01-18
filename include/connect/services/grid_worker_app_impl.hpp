@@ -52,7 +52,29 @@ BEGIN_NCBI_SCOPE
  * @{
  */
 
+class NCBI_XCONNECT_EXPORT CWorkerNodeStatistics : public IWorkerNodeJobWatcher
+{
+public:
+    CWorkerNodeStatistics();
+    virtual ~CWorkerNodeStatistics();
+    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event);
 
+    void Print(CNcbiOstream& os) const;
+    unsigned int GetJobsRunningNumber() const { return m_ActiveJobs.size(); }
+
+private:        
+    unsigned int m_JobsSucceed;
+    unsigned int m_JobsFailed;
+    unsigned int m_JobsReturned;
+    unsigned int m_JobsCanceled;
+    unsigned int m_JobsLost;
+    typedef map<const CWorkerNodeJobContext*, CTime> TActiveJobs;
+    TActiveJobs    m_ActiveJobs;
+    mutable CMutex m_ActiveJobsMutex;
+};
+
+
+class CWorkerNodeJobWatchers;
 /// Main Worker Node application
 ///
 /// @note
@@ -75,18 +97,21 @@ public:
     void RequestShutdown();
 
     void ForceSingleThread(){ m_SingleThreadForced = true; }
-    
+
+    void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, 
+                          EOwnership owner = eNoOwnership);
+
 
     IWorkerNodeJobFactory&      GetJobFactory() { return *m_JobFactory; }
-    IBlobStorageFactory& GetStorageFactory() 
-                                           { return *m_StorageFactory; }
+    IBlobStorageFactory& GetStorageFactory()    { return *m_StorageFactory; }
     INetScheduleClientFactory&  GetClientFactory()
-                                           { return *m_ClientFactory; }
+                                                { return *m_ClientFactory; }
 
 private:
     auto_ptr<IWorkerNodeJobFactory>      m_JobFactory;
     auto_ptr<IBlobStorageFactory>        m_StorageFactory;
     auto_ptr<INetScheduleClientFactory>  m_ClientFactory;
+    auto_ptr<CWorkerNodeJobWatchers>     m_JobWatchers;
 
     auto_ptr<CGridWorkerNode>                m_WorkerNode;
     mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
@@ -94,6 +119,7 @@ private:
     auto_ptr<CRotatingLogStream> m_ErrLog;
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
+    CWorkerNodeStatistics m_Statistics;
 
     string GetLogName(void) const;
 };
@@ -127,6 +153,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/18 17:47:42  didenko
+ * Added JobWatchers mechanism
+ * Reimplement worker node statistics as a JobWatcher
+ * Added JobWatcher for diag stream
+ * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
+ *
  * Revision 1.3  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

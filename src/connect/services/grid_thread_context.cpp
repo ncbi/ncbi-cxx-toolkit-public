@@ -46,6 +46,9 @@ CGridThreadContext::CGridThreadContext(CWorkerNodeJobContext& job_context)
     m_Writer.reset(job_context.GetWorkerNode().CreateStorage());
     m_ProgressWriter.reset(job_context.GetWorkerNode().CreateStorage());
     SetJobContext(job_context);
+    m_JobContext->GetWorkerNode()
+        .x_NotifyJobWatcher(*m_JobContext,
+                            IWorkerNodeJobWatcher::eJobStarted);
 }
 /// @internal
 void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context)
@@ -56,13 +59,19 @@ void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context)
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (debug_context) {
         debug_context->DumpInput(m_JobContext->GetJobInput(), 
-                                 m_JobContext->m_JobNumber);
+                                 m_JobContext->GetJobNumber());
     }
+    m_JobContext->GetWorkerNode()
+        .x_NotifyJobWatcher(*m_JobContext,
+                            IWorkerNodeJobWatcher::eJobStarted);
 }
 /// @internal
 void CGridThreadContext::Reset()
 {
     _ASSERT(m_JobContext);
+    m_JobContext->GetWorkerNode()
+        .x_NotifyJobWatcher(*m_JobContext,
+                            IWorkerNodeJobWatcher::eJobStopped);
     m_JobContext->SetThreadContext(NULL);
     m_JobContext = NULL;
  
@@ -100,7 +109,7 @@ CNcbiOstream& CGridThreadContext::GetOStream()
 void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immediately)
 {
     _ASSERT(m_JobContext);
-    if ( !send_immediately || !m_RateControl.Approve(CRequestRateControl::eErrCode))
+    if ( !send_immediately && !m_RateControl.Approve(CRequestRateControl::eErrCode))
         return;
     try {
         CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
@@ -123,7 +132,7 @@ void CGridThreadContext::PutProgressMessage(const string& msg, bool send_immedia
         if (debug_context) {
             debug_context->DumpProgressMessage(m_JobContext->GetJobKey(),
                                                msg, 
-                                               m_JobContext->m_JobNumber);
+                                               m_JobContext->GetJobNumber());
         }           
     } catch (exception& ex) {
         ERR_POST("Couldn't send a progress message: " << ex.what());
@@ -162,7 +171,9 @@ void CGridThreadContext::PutResult(int ret_code)
                                   m_JobContext->GetJobOutput());
         }
     }
-    m_JobContext->GetWorkerNode().m_JobsSucceed.Add(1);
+    m_JobContext->GetWorkerNode()
+        .x_NotifyJobWatcher(*m_JobContext,
+                            IWorkerNodeJobWatcher::eJobSucceed);
 }
 /// @internal
 void CGridThreadContext::ReturnJob()
@@ -182,17 +193,26 @@ void CGridThreadContext::ReturnJob()
             if (status == CNetScheduleClient::eJobNotFound || 
                 status == CNetScheduleClient::eFailed ||
                 status == CNetScheduleClient::eDone)  {
-                m_JobContext->GetWorkerNode().m_JobsLost.Add(1);
+                m_JobContext->GetWorkerNode()
+                    .x_NotifyJobWatcher(*m_JobContext,
+                                        IWorkerNodeJobWatcher::eJobLost);
+
             } else if (status == CNetScheduleClient::eCanceled) {
-                m_JobContext->GetWorkerNode().m_JobsCanceled.Add(1);
+                m_JobContext->GetWorkerNode()
+                    .x_NotifyJobWatcher(*m_JobContext,
+                                        IWorkerNodeJobWatcher::eJobCanceled);
             } else {
                 m_Reporter->ReturnJob(m_JobContext->GetJobKey());
-                m_JobContext->GetWorkerNode().m_JobsReturned.Add(1);
+                m_JobContext->GetWorkerNode()
+                    .x_NotifyJobWatcher(*m_JobContext,
+                                        IWorkerNodeJobWatcher::eJobReturned);
             }
             return;
         }
     }
-    m_JobContext->GetWorkerNode().m_JobsReturned.Add(1);
+    m_JobContext->GetWorkerNode()
+        .x_NotifyJobWatcher(*m_JobContext,
+                            IWorkerNodeJobWatcher::eJobReturned);
 }
 /// @internal
 void CGridThreadContext::PutFailure(const string& msg)
@@ -206,7 +226,9 @@ void CGridThreadContext::PutFailure(const string& msg)
             m_Reporter->PutFailure(m_JobContext->GetJobKey(),msg);
         }
     }
-    m_JobContext->GetWorkerNode().m_JobsFailed.Add(1);
+    m_JobContext->GetWorkerNode()
+        .x_NotifyJobWatcher(*m_JobContext,
+                            IWorkerNodeJobWatcher::eJobFailed);
 }
 bool CGridThreadContext::IsJobCanceled()
 {
@@ -257,7 +279,7 @@ void CGridThreadContext::CloseStreams()
     if (debug_context) {
         debug_context->DumpOutput(m_JobContext->GetJobKey(),
                                   m_JobContext->GetJobOutput(), 
-                                  m_JobContext->m_JobNumber);
+                                  m_JobContext->GetJobNumber());
     }
 }
 
@@ -266,6 +288,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2006/01/18 17:47:42  didenko
+ * Added JobWatchers mechanism
+ * Reimplement worker node statistics as a JobWatcher
+ * Added JobWatcher for diag stream
+ * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
+ *
  * Revision 6.11  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

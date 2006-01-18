@@ -49,6 +49,133 @@
 
 BEGIN_NCBI_SCOPE
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//     CWorkerNodeJobWatchers
+/// @internal
+
+class CWorkerNodeJobWatchers : public IWorkerNodeJobWatcher
+{
+public:
+    virtual ~CWorkerNodeJobWatchers() {};
+    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
+    {
+        NON_CONST_ITERATE(TCont, it, m_Watchers) {
+            IWorkerNodeJobWatcher* watcher = 
+                const_cast<IWorkerNodeJobWatcher*>(it->first);
+            watcher->Notify(job, event);
+        }        
+    }
+
+    void AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, EOwnership owner)
+    {
+        TCont::const_iterator it = m_Watchers.find(&job_watcher);
+        if (it == m_Watchers.end()) {
+            if (owner == eTakeOwnership) 
+                m_Watchers[&job_watcher] = AutoPtr<IWorkerNodeJobWatcher>(&job_watcher);
+            else
+                m_Watchers[&job_watcher] = AutoPtr<IWorkerNodeJobWatcher>();
+        }
+    } 
+
+private:
+    typedef map<IWorkerNodeJobWatcher*, AutoPtr<IWorkerNodeJobWatcher> > TCont;
+    TCont m_Watchers;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//    CLogWatcher
+/// @internal
+class CLogWatcher : public IWorkerNodeJobWatcher
+{
+public:
+    CLogWatcher(CNcbiOstream* os) : m_Os(os) {}
+    virtual ~CLogWatcher() {};
+    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
+    {
+        if (event == eJobStopped) {
+            if (m_Os) {
+                if (!IsDiagStream(m_Os)) {
+                    *m_Os << "The Diag Stream was hijacked (probably by job : " << 
+                        job.GetJobKey() << ")" << endl;
+                    m_Os->flush();
+                    m_Os = NULL;
+                }
+            }
+        }
+    }
+
+private:
+    CNcbiOstream* m_Os;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//     CWorkerNodeStatictics
+/// @internal
+CWorkerNodeStatistics::CWorkerNodeStatistics()
+    : m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
+      m_JobsCanceled(0), m_JobsLost(0)
+{
+}
+CWorkerNodeStatistics::~CWorkerNodeStatistics() 
+{
+}
+
+void CWorkerNodeStatistics::Notify(const CWorkerNodeJobContext& job, 
+                                  EEvent event)
+{
+    switch(event) {
+    case eJobStarted :
+        {
+            CMutexGuard guard(m_ActiveJobsMutex);
+            m_ActiveJobs[&job] = CTime(CTime::eCurrent);
+        }
+        break;       
+    case eJobStopped :
+        {
+            CMutexGuard guard(m_ActiveJobsMutex);
+            m_ActiveJobs.erase(&job);
+        }
+        break;
+    case eJobFailed :
+        ++m_JobsFailed;
+        break;
+    case eJobSucceed :
+        ++m_JobsSucceed;
+        break;
+    case eJobReturned :
+        ++m_JobsReturned;
+        break;
+    case eJobCanceled :
+        ++m_JobsCanceled;
+        break;
+    case eJobLost:
+        ++m_JobsLost;
+        break;
+    }
+}
+
+void CWorkerNodeStatistics::Print(CNcbiOstream& os) const
+{
+    os << "Jobs Succeed: " << m_JobsSucceed << endl
+       << "Jobs Failed: "  << m_JobsFailed  << endl
+       << "Jobs Returned: "<< m_JobsReturned << endl
+       << "Jobs Canceled: "<< m_JobsCanceled << endl
+       << "Jobs Lost: "    << m_JobsLost << endl;
+    
+    CMutexGuard guard(m_ActiveJobsMutex);
+    os << "Jobs Running: " << m_ActiveJobs.size() << endl;
+    CTime now(CTime::eCurrent);
+    ITERATE(TActiveJobs, it, m_ActiveJobs) {
+        CTimeSpan ts = now - it->second.GetLocalTime();
+        os << it->first->GetJobKey() << " " << it->first->GetJobInput()
+           << " -- running for " << ts.AsString("S") 
+           << " seconds." << endl;
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -57,21 +184,20 @@ BEGIN_NCBI_SCOPE
 class CGridWorkerNodeThread : public CThread
 {
 public:
-    CGridWorkerNodeThread(CGridWorkerNode& worker_node,
-                          CWorkerNodeControlThread& control_thread) 
-        : m_WorkerNode(worker_node), m_ControlThread(control_thread) {}
+    CGridWorkerNodeThread(CWorkerNodeControlThread& control_thread) 
+        : m_ControlThread(control_thread) {}
 
     ~CGridWorkerNodeThread() {}
 
     void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
     { 
-        m_WorkerNode.RequestShutdown(level);
+        m_ControlThread.GetWorkerNode().RequestShutdown(level);
     }
 protected:
 
     virtual void* Main(void)
     {
-        m_WorkerNode.Start();
+        m_ControlThread.GetWorkerNode().Start();
         return NULL;
     }
     virtual void OnExit(void)
@@ -82,8 +208,6 @@ protected:
     }
 
 private:
-
-    CGridWorkerNode& m_WorkerNode;
     CWorkerNodeControlThread& m_ControlThread;
 };
 
@@ -111,12 +235,13 @@ enum ELoggingType {
 };
 
 CGridWorkerApp_Impl::CGridWorkerApp_Impl(
-                               CNcbiApplication& app,
-                               IWorkerNodeJobFactory* job_factory, 
-                               IBlobStorageFactory*   storage_factory,
+                               CNcbiApplication&          app,
+                               IWorkerNodeJobFactory*     job_factory, 
+                               IBlobStorageFactory*       storage_factory,
                                INetScheduleClientFactory* client_factory)
 : m_JobFactory(job_factory), m_StorageFactory(storage_factory),
-  m_ClientFactory(client_factory), m_App(app), m_SingleThreadForced(false)
+  m_ClientFactory(client_factory), m_JobWatchers(new CWorkerNodeJobWatchers),
+  m_App(app), m_SingleThreadForced(false)
 {
     if (!m_JobFactory.get())
         NCBI_THROW(CGridWorkerAppException, 
@@ -136,13 +261,9 @@ void CGridWorkerApp_Impl::Init()
     reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
 
     if (!m_StorageFactory.get()) 
-        m_StorageFactory.reset(
-                   new CBlobStorageFactory_NetCache(reg)
-                              );
+        m_StorageFactory.reset(new CBlobStorageFactory_NetCache(reg));
     if (!m_ClientFactory.get()) 
-        m_ClientFactory.reset(
-            new CNetScheduleClientFactory(reg)
-                              );
+        m_ClientFactory.reset(new CNetScheduleClientFactory(reg));
 }
 
 int CGridWorkerApp_Impl::Run()
@@ -246,11 +367,14 @@ int CGridWorkerApp_Impl::Run()
     // All errors redirected to rotated log
     // from this moment on the server is silent...
     SetDiagStream(m_ErrLog.get());
+    AttachJobWatcher(*(new CLogWatcher(m_ErrLog.get())), eTakeOwnership);
+    AttachJobWatcher(m_Statistics);
 
 
-    m_WorkerNode.reset( new CGridWorkerNode(GetJobFactory(), 
-                                            GetStorageFactory(), 
-                                            GetClientFactory())
+    m_WorkerNode.reset(new CGridWorkerNode(GetJobFactory(), 
+                                           GetStorageFactory(), 
+                                           GetClientFactory(),
+                                           m_JobWatchers.get())
                        );
     if (udp_port == 0)
         udp_port = control_port;
@@ -265,10 +389,10 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->ActivateServerLog(server_log);
 
     {{
-    CWorkerNodeControlThread control_server(control_port, *m_WorkerNode) ;
+    CWorkerNodeControlThread control_server(control_port, *m_WorkerNode,
+                                            m_Statistics);
     CRef<CGridWorkerNodeThread> worker_thread(
-                                new CGridWorkerNodeThread(*m_WorkerNode,
-                                                          control_server));
+                                new CGridWorkerNodeThread(control_server));
     worker_thread->Run();
     // give sometime the thread to run
     SleepMilliSec(500);
@@ -326,11 +450,24 @@ string CGridWorkerApp_Impl::GetLogName(void) const
     return log_name;
 }
 
+
+void CGridWorkerApp_Impl::AttachJobWatcher(IWorkerNodeJobWatcher& job_watcher, 
+                                           EOwnership owner)
+{
+    m_JobWatchers->AttachJobWatcher(job_watcher, owner);
+};
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2006/01/18 17:47:42  didenko
+ * Added JobWatchers mechanism
+ * Reimplement worker node statistics as a JobWatcher
+ * Added JobWatcher for diag stream
+ * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
+ *
  * Revision 6.7  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

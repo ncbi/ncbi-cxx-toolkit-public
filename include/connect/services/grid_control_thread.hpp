@@ -41,6 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 class CGridWorkerNode;
+class CWorkerNodeStatistics;
 /////////////////////////////////////////////////////////////////////////////
 // 
 /// @internal
@@ -63,9 +64,11 @@ public:
                              CNcbiOstream& replay,
                              CGridWorkerNode& node) = 0;
     };
-
     CWorkerNodeControlThread(unsigned int port, 
-                             CGridWorkerNode& worker_node);
+                             CGridWorkerNode& worker_node,
+                             const CWorkerNodeStatistics& stat);
+
+    CGridWorkerNode& GetWorkerNode() { return m_WorkerNode; }
 
     virtual ~CWorkerNodeControlThread();
 
@@ -92,6 +95,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/18 17:47:42  didenko
+ * Added JobWatchers mechanism
+ * Reimplement worker node statistics as a JobWatcher
+ * Added JobWatcher for diag stream
+ * Fixed a problem with PutProgressMessage method of CWorkerNodeThreadContext class
+ *
  * Revision 1.2  2005/05/27 12:55:11  didenko
  * Added IRequestProcessor interface and Processor classes implementing this interface
  *
