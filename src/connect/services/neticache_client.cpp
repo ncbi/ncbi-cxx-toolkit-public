@@ -840,7 +840,8 @@ public:
 static const string kCFParam_server          = "server";
 static const string kCFParam_host            = "host";
 static const string kCFParam_port            = "port";
-static const string kCFParam_cache_name      = "cache_name";
+static const string kCFParam_cache_name2     = "cache_name";
+static const string kCFParam_cache_name      = "name";
 static const string kCFParam_client          = "client";
 
 
@@ -877,8 +878,17 @@ ICache* CNetICacheCF::CreateInstance(
     }
     int port =
         GetParamInt(params,kCFParam_port, true, 9000);
-    const string& cache_name =
-        GetParam(params, kCFParam_cache_name, true, kEmptyStr);
+    string cache_name; 
+    try {
+        cache_name =
+            GetParam(params, kCFParam_cache_name, true, kEmptyStr);
+    } 
+    catch (exception&)
+    {
+        cache_name =
+            GetParam(params, kCFParam_cache_name2, true, kEmptyStr);
+    }
+
     const string& client_name =
         GetParam(params, kCFParam_client, true, kEmptyStr);
 
@@ -903,6 +913,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/01/18 16:00:01  kuznets
+ * Recognize both name and cache_name config settings
+ *
  * Revision 1.15  2006/01/17 20:04:18  kuznets
  * Fixed self-mutex lock
  *
