@@ -153,7 +153,14 @@ TSeqPos
 CBlastQuerySourceTSeqLocs::GetLength(int i) const 
 { 
     TSeqPos retval = sequence::GetLength(*m_SeqLocs[i], m_Scope); 
-    ASSERT(retval != numeric_limits<TSeqPos>::max());
+
+    if (retval == numeric_limits<TSeqPos>::max()) {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   string("Could not find length of query # ")
+                   + NStr::IntToString(i) + " with Seq-id ["
+                   + m_SeqLocs[i]->GetId()->AsFastaString() + "]");
+    }
+
     return retval;
 }
 
