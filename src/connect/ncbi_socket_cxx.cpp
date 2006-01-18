@@ -167,7 +167,8 @@ EIO_Status CSocket::Connect(const string&   host,
     }
     if (timeout != kDefaultTimeout) {
         if ( timeout ) {
-            oo_timeout = *timeout;
+            if (&oo_timeout != timeout)
+                oo_timeout = *timeout;
             o_timeout  = &oo_timeout;
         } else
             o_timeout = 0;
@@ -195,7 +196,8 @@ EIO_Status CUNIXSocket::Connect(const string&   filename,
     }
     if (timeout != kDefaultTimeout) {
         if ( timeout ) {
-            oo_timeout = *timeout;
+            if (&oo_timeout != timeout)
+                oo_timeout = *timeout;
             o_timeout = &oo_timeout;
         } else
             o_timeout = 0;
@@ -216,7 +218,8 @@ EIO_Status CSocket::Reconnect(const STimeout* timeout)
 {
     if (timeout != kDefaultTimeout) {
         if ( timeout ) {
-            oo_timeout = *timeout;
+            if (&oo_timeout != timeout)
+                oo_timeout = *timeout;
             o_timeout  = &oo_timeout;
         } else
             o_timeout = 0;
@@ -244,30 +247,35 @@ EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
     switch (event) {
     case eIO_Open:
         if ( timeout ) {
-            oo_timeout = *timeout;
+            if (&oo_timeout != timeout)
+                oo_timeout = *timeout;
             o_timeout  = &oo_timeout;
         } else
             o_timeout  = 0;
         break;
     case eIO_Read:
         if ( timeout ) {
-            rr_timeout = *timeout;
+            if (&rr_timeout != timeout)
+                rr_timeout = *timeout;
             r_timeout  = &rr_timeout;
         } else
             r_timeout  = 0;
         break;
     case eIO_Write:
         if ( timeout ) {
-            ww_timeout = *timeout;
+            if (&ww_timeout != timeout)
+                ww_timeout = *timeout;
             w_timeout  = &ww_timeout;
         } else
             w_timeout  = 0;
         break;
     case eIO_ReadWrite:
         if ( timeout ) {
-            rr_timeout = *timeout;
-            ww_timeout = *timeout;
+            if (&rr_timeout != timeout)
+                rr_timeout = *timeout;
             r_timeout  = &rr_timeout;
+            if (&ww_timeout != timeout)
+                ww_timeout = *timeout;
             w_timeout  = &ww_timeout;
         } else {
             r_timeout  = 0;
@@ -276,7 +284,8 @@ EIO_Status CSocket::SetTimeout(EIO_Event event, const STimeout* timeout)
         break;
     case eIO_Close:
         if ( timeout ) {
-            cc_timeout = *timeout;
+            if (&cc_timeout != timeout)
+                cc_timeout = *timeout;
             c_timeout  = &cc_timeout;
         } else
             c_timeout  = 0;
@@ -661,6 +670,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.32  2006/01/18 03:38:17  lavr
+ * Prevent copying STimeout structs into themselves [where can occur]
+ *
  * Revision 6.31  2005/03/09 15:05:27  lavr
  * Remove CDatagramSocket::Send(...unsigned int host = 0...)
  *

@@ -262,7 +262,7 @@ extern char* CONN_Description(CONN conn)
 extern EIO_Status CONN_SetTimeout
 (CONN            conn,
  EIO_Event       event,
- const STimeout* new_timeout)
+ const STimeout* timeout)
 {
     EIO_Status status = eIO_Success;
 
@@ -270,38 +270,42 @@ extern EIO_Status CONN_SetTimeout
 
     switch (event) {
     case eIO_Open:
-        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
-            conn->oo_timeout = *new_timeout;
+        if (timeout  &&  timeout != kDefaultTimeout) {
+            if (&conn->oo_timeout != timeout)
+                conn->oo_timeout = *timeout;
             conn->o_timeout  = &conn->oo_timeout;
         } else {
-            conn->o_timeout  = new_timeout;
+            conn->o_timeout  = timeout;
         }
         break;
     case eIO_Close:
-        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
-            conn->cc_timeout = *new_timeout;
+        if (timeout  &&  timeout != kDefaultTimeout) {
+            if (&conn->cc_timeout != timeout)
+                conn->cc_timeout = *timeout;
             conn->c_timeout  = &conn->cc_timeout;
         } else {
-            conn->c_timeout  = new_timeout;
+            conn->c_timeout  = timeout;
         }
         break;
     case eIO_Read:
     case eIO_ReadWrite:
-        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
-            conn->rr_timeout = *new_timeout;
+        if (timeout  &&  timeout != kDefaultTimeout) {
+            if (&conn->rr_timeout != timeout)
+                conn->rr_timeout = *timeout;
             conn->r_timeout  = &conn->rr_timeout;
         } else {
-            conn->r_timeout  = new_timeout;
+            conn->r_timeout  = timeout;
         }
         if (event != eIO_ReadWrite)
             break;
         /*FALLTHRU*/
     case eIO_Write:
-        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
-            conn->ww_timeout = *new_timeout;
+        if (timeout  &&  timeout != kDefaultTimeout) {
+            if (&conn->ww_timeout != timeout)
+                conn->ww_timeout = *timeout;
             conn->w_timeout  = &conn->ww_timeout;
         } else {
-            conn->w_timeout  = new_timeout;
+            conn->w_timeout  = timeout;
         }
         break;
     default:
@@ -406,7 +410,7 @@ static EIO_Status s_CONN_Write
     /* call current connector's "WRITE" method */
     status = conn->meta.write(conn->meta.c_write, buf, size, n_written,
                               conn->w_timeout == kDefaultTimeout ?
-                              conn->meta.default_timeout :conn->w_timeout);
+                              conn->meta.default_timeout : conn->w_timeout);
 
     if (status != eIO_Success) {
         if ( *n_written ) {
@@ -855,6 +859,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2006/01/18 03:38:17  lavr
+ * Prevent copying STimeout structs into themselves [where can occur]
+ *
  * Revision 6.45  2005/05/18 18:15:21  lavr
  * Formatting spot
  *
