@@ -297,6 +297,7 @@ void CNetCacheServer::ParseRequestNC(const string& reqstr, SNC_Request* req)
     case 'G':
 
         if (strncmp(s, "GET", 3) == 0) {
+            req->req_type = eGet;
             s += 3;
 
             if (isspace((unsigned char)(*s))) { // "GET"
@@ -438,6 +439,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/18 17:04:17  kuznets
+ * Fixed bug in request parsing (missing request code eGet)
+ *
  * Revision 1.4  2006/01/10 14:36:27  kuznets
  * Fixing bugs in ICache network protocol
  *
