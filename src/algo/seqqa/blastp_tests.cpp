@@ -39,6 +39,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqalign/Seq_align.hpp>
@@ -118,6 +119,7 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
     int score;
     int top_score = 0;
     int length_top_match;
+    CRef<CSeq_align> top_match;
     ITERATE (list<CRef<CSeq_align> >, aln, annot->GetData().GetAlign()) {
         const CSeq_id& match_id = *(*aln)->GetSegs().GetDenseg().GetIds()[1];
         if (!(*aln)->GetNamedScore("score", score)) {
@@ -132,12 +134,11 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
                 continue;
             }
             top_score = score;
-            length_top_match =
-                scope.GetBioseqHandle(match_id).GetBioseqLength();
+            top_match = *aln;
         }
     }
 
-    if (top_score == 0) {
+    if (!top_match) {
         // no matches to different taxid
         result->SetOutput_data()
             .AddField("has_blastp_match", false);
@@ -146,12 +147,19 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
 
     result->SetOutput_data()
         .AddField("has_blastp_match", true);
+    const CSeq_id& top_match_id =
+        *top_match->GetSegs().GetDenseg().GetIds()[1];
+    CBioseq_Handle hand = scope.GetBioseqHandle(top_match_id);
+    length_top_match = hand.GetBioseqLength();
 
     result->SetOutput_data().AddField("best_score", top_score);
-    if (top_score > 0) {
-        result->SetOutput_data()
+    result->SetOutput_data()
             .AddField("length_top_match", length_top_match);
-    }
+    result->SetOutput_data().AddField("id_top_match",
+                                      top_match_id.AsFastaString());
+    result->SetOutput_data()
+            .AddField("title_top_match",
+                      sequence::GetTitle(hand, sequence::fGetTitle_Organism));
     return ref;
 }
 
@@ -162,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/18 15:19:12  jcherry
+ * Added id and title of top match of interest
+ *
  * Revision 1.5  2004/12/21 18:40:49  vasilche
  * Added missing include Seq_align.hpp.
  *
