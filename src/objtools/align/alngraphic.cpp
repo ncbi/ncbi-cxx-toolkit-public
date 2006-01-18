@@ -596,6 +596,7 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
         int front_margin = 0;
         int bar_length = 0;
         int column = 0;
+        double prev_round = 0;
         if(!(*iter)->empty()){ //table for starting white spacer
             count ++;
             tbl = new CHTML_table;
@@ -609,19 +610,22 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
         ITERATE(TAlnInfoList, iter2, **iter){ //iter2 = each alignments on one line
             current_id = (*iter2)->id;
             //white space in front of this alignment
-            temp_value = ((*iter2)->range->GetFrom() - (previous_end + 1))*pixel_factor;
+            //need to take into account of previous round as
+            //even 1 pixel difference would show up
+            temp_value = ((*iter2)->range->GetFrom() - (previous_end + 1))*
+                pixel_factor + prev_round;
             //rounding to int this way as round() is not portable
             front_margin = (int)(temp_value + (temp_value < 0.0 ? -0.5 : 0.5));
+           
             //Need to add white space
             if(front_margin > 0) {
-              
                 //connecting the alignments with the same id
                 if(m_View & eCompactView && !previous_id.Empty() 
                    && previous_id->Match(*current_id)){
                     image = new CHTML_img(m_ImagePath + kGifGrey, front_margin,
                                           kGapHeight);
                 } else {
-    
+                    
                     image = new CHTML_img(m_ImagePath + kGifWhite, front_margin,
                                           m_BarHeight);
                 }
@@ -629,11 +633,24 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                 column ++;
                 tc->SetAttribute("align", "LEFT");
                 tc->SetAttribute("valign", "CENTER");
+                prev_round = temp_value - front_margin;
+            } else {
+                prev_round = temp_value;
             }
+            
             previous_end = (*iter2)->range->GetTo();
             previous_id = current_id;
-            temp_value = (*iter2)->range->GetLength()*pixel_factor;
+        
+            temp_value = (*iter2)->range->GetLength()*pixel_factor + 
+                    prev_round;
+
             bar_length = (int)(temp_value + (temp_value < 0.0 ? -0.5 : 0.5));
+            
+            //no round if bar itself is more than 0.5 pixel
+            if(bar_length == 0 && 
+               !((*iter2)->range->GetLength()*pixel_factor < 0.50)){
+                bar_length = 1;
+            }
             if(bar_length > 0){
                 image = new CHTML_img(m_ImagePath + s_GetGif((int)(*iter2)->bits), 
                                       bar_length, m_BarHeight);
@@ -658,7 +675,10 @@ void CAlnGraphic::x_BuildHtmlTable(int master_len, CHTML_table* tbl_box, CHTML_t
                 }
                 column ++;
                 tc->SetAttribute("valign", "CENTER");
-                tc->SetAttribute("align", "LEFT");
+                tc->SetAttribute("align", "LEFT");     
+                prev_round = temp_value - bar_length;
+            } else {
+                prev_round = temp_value;
             }
         }
         if(!tbl.Empty()){   
@@ -680,6 +700,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.9  2006/01/18 16:40:05  jianye
+*Rounding pixels more strigently
+*
 *Revision 1.8  2005/11/03 17:57:10  jianye
 *not showing exception message
 *
