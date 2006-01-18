@@ -51,8 +51,7 @@ ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
     if (m_Sock->SetTimeout(eIO_Read, &zero) != eIO_Success) {
         return eRW_Error;
     }
-    char c;
-    EIO_Status status = m_Sock->Read(&c, sizeof(c), count, eIO_ReadPeek);
+    EIO_Status status = m_Sock->Read(0, 1, count, eIO_ReadPeek);
     if (m_Sock->SetTimeout(eIO_Read, tmp) != eIO_Success) {
         return eRW_Error;
     }
@@ -108,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2006/01/18 03:00:13  lavr
+ * CSocketReaderWriter::PendingCount() fixed not to use buffer when peeking
+ *
  * Revision 1.3  2005/02/01 19:06:47  lavr
  * Fix save/restore in CSocketReaderWriter::PendingCount()
  *
