@@ -259,8 +259,8 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         return (streamsize) n_read;
 
     do {
-        size_t       x_read = n < (size_t) m_BufSize? m_BufSize : n;
-        CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize? m_ReadBuf : buf;
+        size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         ERW_Result   result = eRW_Success;
 
         try {
@@ -332,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2006/01/18 03:04:45  lavr
+ * Formatting
+ *
  * Revision 1.15  2006/01/09 17:06:24  lavr
  * ~CRWStreambuf(): Do not delete reader-writer on insufficient ownership
  *
