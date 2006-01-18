@@ -111,7 +111,7 @@ CException::CException(const CDiagCompileInfo& info,
   m_Predecessor(0),
   m_InReporter(false)
 {
-    x_Init(info, message,prev_exception);
+    x_Init(info, message, prev_exception, severity);
 }
 
 
@@ -148,14 +148,15 @@ const char* CException::GetType(void) const
 
 
 void CException::AddBacklog(const CDiagCompileInfo& info,
-                            const string& message)
+                            const string& message,
+                            EDiagSev severity)
 {
     const CException* prev = m_Predecessor;
     m_Predecessor = x_Clone();
     if (prev) {
         delete prev;
     }
-    x_Init(info, message,0);
+    x_Init(info, message, 0, severity);
 }
 
 
@@ -294,8 +295,9 @@ const CException* CException::x_Clone(void) const
 
 
 void CException::x_Init(const CDiagCompileInfo& info,const string& message,
-                        const CException* prev_exception)
+                        const CException* prev_exception, EDiagSev severity)
 {
+    m_Severity = severity;
     m_File     = info.GetFile();
     m_Line     = info.GetLine();
     m_Module   = info.GetModule();
@@ -505,6 +507,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/01/18 19:45:23  ssikorsk
+ * Added an extra argument to CException::x_Init
+ *
  * Revision 1.47  2005/12/13 18:52:29  ivanov
  * CLastErrorAdapt::GetErrCodeString() - remove trailing
  * line brakes, dots and spaces in the generated message.

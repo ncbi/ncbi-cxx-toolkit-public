@@ -165,13 +165,14 @@ public:
                         const CException* prev_exception,
                         EErrCode err_code,
                         const string& message,
-                        TBlobState state)
+                        TBlobState state,
+                        EDiagSev severity = eDiag_Error)
         : CObjMgrException(info, prev_exception,
                            (CObjMgrException::EErrCode) CException::eInvalid,
-                           message),
+                           message, severity),
           m_BlobState(state)
     {
-        x_Init(info, message, prev_exception);
+        x_Init(info, message, prev_exception, severity);
         x_InitErrCode((CException::EErrCode) err_code);
     }
     CBlobStateException(const CBlobStateException& other)
@@ -229,6 +230,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2006/01/18 19:45:23  ssikorsk
+* Added an extra argument to CException::x_Init
+*
 * Revision 1.15  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

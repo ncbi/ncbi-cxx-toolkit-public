@@ -2363,7 +2363,7 @@ public:
     CParseTemplException(const CDiagCompileInfo &info,
         const CException* prev_exception,
         EErrCode err_code,const string& message,
-        string::size_type pos)
+        string::size_type pos, EDiagSev severity = eDiag_Error)
           : TBase(info, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message), m_Pos(pos)
@@ -2371,7 +2371,8 @@ public:
         this->x_Init(info,
                      string("{") + NStr::UIntToString((unsigned long)m_Pos) +
                      "} " + message,
-                     prev_exception);
+                     prev_exception,
+                     severity);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
@@ -3184,6 +3185,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.101  2006/01/18 19:45:22  ssikorsk
+ * Added an extra argument to CException::x_Init
+ *
  * Revision 1.100  2006/01/03 17:41:23  ivanov
  * Added comment for NStr:StringToDouble()
  *

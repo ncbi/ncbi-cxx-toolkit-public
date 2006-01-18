@@ -124,7 +124,8 @@ protected:
     /// Override method for initializing exception data.
     virtual void x_Init(const CDiagCompileInfo& info,
                         const string& message,
-                        const CException* prev_exception);
+                        const CException* prev_exception,
+                        EDiagSev severity);
 
     /// Override method for copying exception data.
     virtual void x_Assign(const CException& src);
@@ -397,6 +398,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/18 19:45:22  ssikorsk
+ * Added an extra argument to CException::x_Init
+ *
  * Revision 1.13  2006/01/09 16:16:52  vakatov
  * Removed extraneous comma
  *

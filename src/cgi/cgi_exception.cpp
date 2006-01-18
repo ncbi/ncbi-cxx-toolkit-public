@@ -37,9 +37,10 @@ BEGIN_NCBI_SCOPE
 
 void CCgiException::x_Init(const CDiagCompileInfo& info,
                            const string& message,
-                           const CException* prev_exception)
+                           const CException* prev_exception,
+                           EDiagSev severity)
 {
-    CException::x_Init(info, message, prev_exception);
+    CException::x_Init(info, message, prev_exception, severity);
     m_StatusCode = eStatusNotSet;
 }
 
@@ -105,6 +106,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/01/18 19:45:23  ssikorsk
+* Added an extra argument to CException::x_Init
+*
 * Revision 1.1  2006/01/04 18:37:52  grichenk
 * Initial revision
 *

@@ -515,7 +515,9 @@ public:
     CException(const CException& other);
 
     /// Add a message to backlog (to re-throw the same exception then).
-    void AddBacklog(const CDiagCompileInfo& info,const string& message);
+    void AddBacklog(const CDiagCompileInfo& info,
+                    const string& message,
+                    EDiagSev severity = eDiag_Error);
 
 
     // ---- Reporting --------------
@@ -630,8 +632,9 @@ protected:
 
     /// Helper method for initializing exception data.
     virtual void x_Init(const CDiagCompileInfo& info,
-                        const string& message,
-                        const CException* prev_exception);
+                        const string&           message,
+                        const CException*       prev_exception,
+                        EDiagSev                severity);
 
     /// Helper method for copying exception data.
     virtual void x_Assign(const CException& src);
@@ -706,7 +709,7 @@ protected: \
 ///   NCBI_EXCEPTION_DEFAULT
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class) \
     { \
-        x_Init(info, message, prev_exception); \
+        x_Init(info, message, prev_exception, severity); \
         x_InitErrCode((CException::EErrCode) err_code); \
     } \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class) \
@@ -723,7 +726,8 @@ private: \
 public:                                                             \
     exception_class(const CDiagCompileInfo& info,                   \
         const CException* prev_exception,                           \
-                    EErrCode err_code,const string& message)        \
+                    EErrCode err_code,const string& message,        \
+                    EDiagSev severity = eDiag_Error)                \
         : base_class(info, prev_exception,                          \
             (base_class::EErrCode) CException::eInvalid, (message)) \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
@@ -735,7 +739,7 @@ public:                                                             \
 /// the warning.
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL(exception_class, base_class) \
     { \
-        this->x_Init(info, message, prev_exception); \
+        this->x_Init(info, message, prev_exception, severity); \
         this->x_InitErrCode((typename CException::EErrCode) err_code); \
     } \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class)
@@ -744,7 +748,7 @@ public:                                                             \
 /// Helper macro added to support errno based templatized exceptions.
 #define NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(exception_class, base_class) \
     { \
-        this->x_Init(info, message, prev_exception); \
+        this->x_Init(info, message, prev_exception, severity); \
         this->x_InitErrCode((typename CException::EErrCode) err_code); \
     } \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class) \
@@ -965,13 +969,14 @@ public:
     /// Constructor.
     CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
                            const CException* prev_exception,
-                           EErrCode err_code, const string& message)
+                           EErrCode err_code, const string& message, 
+                           EDiagSev severity = eDiag_Error)
           : TBase(info, prev_exception,
             (typename TBase::EErrCode)(CException::eInvalid),
             message)
      {
         m_Errno = PErrCode();
-        this->x_Init(info, message, prev_exception);
+        this->x_Init(info, message, prev_exception, severity);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
@@ -979,13 +984,13 @@ public:
     CErrnoTemplExceptionEx(const CDiagCompileInfo& info,
                            const CException* prev_exception,
                            EErrCode err_code, const string& message,
-                           int errnum)
+                           int errnum, EDiagSev severity = eDiag_Error)
           : TBase(info, prev_exception,
                  (typename TBase::EErrCode)(CException::eInvalid),
                   message),
             m_Errno(errnum)
     {
-        this->x_Init(info, message, prev_exception);
+        this->x_Init(info, message, prev_exception, severity);
         this->x_InitErrCode((CException::EErrCode) err_code);
     }
 
@@ -1061,7 +1066,8 @@ public:
     CErrnoTemplException<TBase>(const CDiagCompileInfo&    info,
                                 const CException*          prev_exception,
                                 typename CParent::EErrCode err_code,
-                                const string&              message)
+                                const string&              message,
+                                EDiagSev                   severity = eDiag_Error)
         : CParent(info, prev_exception,
                  (typename CParent::EErrCode)CException::eInvalid, message)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException<TBase>, CParent)
@@ -1082,7 +1088,8 @@ public:
     CErrnoTemplException_Win<TBase>(const CDiagCompileInfo&    info,
                                     const CException*          prev_exception,
                                     typename CParent::EErrCode err_code,
-                                    const string&              message)
+                                    const string&              message,
+                                    EDiagSev                   severity = eDiag_Error)
         : CParent(info, prev_exception,
                  (typename CParent::EErrCode)CException::eInvalid, message)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_TEMPL_ERRNO(CErrnoTemplException_Win<TBase>, CParent)
@@ -1128,10 +1135,10 @@ public: \
     exception_class(const CDiagCompileInfo &info, \
         const CException* prev_exception, \
         EErrCode err_code,const string& message, \
-        extra_type extra_param) \
+        extra_type extra_param, EDiagSev severity = eDiag_Error) \
         : base_class(info, prev_exception, \
             (base_class::EErrCode) CException::eInvalid, \
-            (message), extra_param) \
+            (message), extra_param, severity) \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(exception_class, base_class)
 
 END_NCBI_SCOPE
@@ -1143,6 +1150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/01/18 19:45:22  ssikorsk
+ * Added an extra argument to CException::x_Init
+ *
  * Revision 1.67  2006/01/04 18:36:55  grichenk
  * Added macros for defining exception object without throwing it
  * and for throwing an existing exception object.

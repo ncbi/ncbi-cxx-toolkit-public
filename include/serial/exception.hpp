@@ -115,19 +115,22 @@ public:
     };
     virtual const char* GetErrCodeString(void) const;
     static const char* GetName(size_t index,
-                               const char* const names[], size_t namesCount);
+                               const char* const names[], 
+                               size_t namesCount);
 
     CInvalidChoiceSelection(const CDiagCompileInfo& diag_info,
-        size_t currentIndex, size_t mustBeIndex,
-        const char* const names[], size_t namesCount);
+                            size_t currentIndex, size_t mustBeIndex,
+                            const char* const names[], size_t namesCount, 
+                            EDiagSev severity = eDiag_Error);
     // for backward compatibility
     CInvalidChoiceSelection(const char* file, int line,
-        size_t currentIndex, size_t mustBeIndex,
-        const char* const names[], size_t namesCount);
+                            size_t currentIndex, size_t mustBeIndex,
+                            const char* const names[], size_t namesCount, 
+                            EDiagSev severity = eDiag_Error);
     // for backward compatibility
-    CInvalidChoiceSelection(
-        size_t currentIndex, size_t mustBeIndex,
-        const char* const names[], size_t namesCount);
+    CInvalidChoiceSelection(size_t currentIndex, size_t mustBeIndex,
+                            const char* const names[], size_t namesCount,
+                            EDiagSev severity = eDiag_Error);
 
     CInvalidChoiceSelection(const CInvalidChoiceSelection& other);
     virtual ~CInvalidChoiceSelection(void) throw();
@@ -149,6 +152,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/01/18 19:45:23  ssikorsk
+* Added an extra argument to CException::x_Init
+*
 * Revision 1.20  2004/09/24 22:28:23  vakatov
 * CInvalidChoiceSelection -- added pre-DIAG_COMPILE_INFO constructor
 *

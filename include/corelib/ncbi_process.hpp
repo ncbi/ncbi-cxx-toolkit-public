@@ -174,7 +174,8 @@ public:
     /// Constructor.
     CPIDGuardException(const CDiagCompileInfo& info,
                        const CException* prev_exception, EErrCode err_code,
-                       const string& message, TPid pid = 0)
+                       const string& message, TPid pid = 0, 
+                       EDiagSev severity = eDiag_Error)
         : CException(info, prev_exception, CException::eInvalid,
                      message),
           m_PID(pid)
@@ -257,6 +258,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/18 19:45:22  ssikorsk
+ * Added an extra argument to CException::x_Init
+ *
  * Revision 1.12  2005/02/11 04:39:49  lavr
  * +GetParentPid()
  *

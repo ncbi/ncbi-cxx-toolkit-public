@@ -92,7 +92,8 @@ public:
     /// Constructor.
     CHTMLException(const CDiagCompileInfo& info,
                    const CException* prev_exception, EErrCode err_code,
-                   const string& message)
+                   const string& message,
+                   EDiagSev severity = eDiag_Error)
         : CException(info, prev_exception, CException::eInvalid, message)
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CHTMLException, CException);
 
@@ -121,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/18 19:45:22  ssikorsk
+ * Added an extra argument to CException::x_Init
+ *
  * Revision 1.7  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()

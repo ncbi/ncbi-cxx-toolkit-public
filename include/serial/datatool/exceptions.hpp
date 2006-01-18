@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/01/18 19:45:23  ssikorsk
+* Added an extra argument to CException::x_Init
+*
 * Revision 1.11  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()
@@ -155,9 +158,10 @@ public:
     }
 
     CAmbiguiousTypes(const CDiagCompileInfo& info,
-        const CException* prev_exception,
-        EErrCode err_code,const string& message,
-        const list<CDataType*>& types) THROWS_NONE
+                     const CException* prev_exception,
+                     EErrCode err_code, const string& message,
+                     const list<CDataType*>& types, 
+                     EDiagSev severity = eDiag_Error) THROWS_NONE
         : CNotFoundException(info, prev_exception,
             (CNotFoundException::EErrCode) CException::eInvalid,
             message), m_Types(types)

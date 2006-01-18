@@ -66,7 +66,8 @@ const char* CInvalidChoiceSelection::GetName(
 CInvalidChoiceSelection::CInvalidChoiceSelection(
     const CDiagCompileInfo& diag_info,
     size_t currentIndex, size_t mustBeIndex,
-    const char* const names[], size_t namesCount)
+    const char* const names[], size_t namesCount, 
+    EDiagSev severity)
         : CSerialException(diag_info, 0,
           (CSerialException::EErrCode) CException::eInvalid,"")
 {
@@ -74,14 +75,15 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
            string("Invalid choice selection: ")+
            GetName(currentIndex, names, namesCount)+". "
            "Expected: "+
-           GetName(mustBeIndex, names, namesCount),0);
+           GetName(mustBeIndex, names, namesCount),0, severity);
     x_InitErrCode((CException::EErrCode)(CInvalidChoiceSelection::eFail));
 }
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(
     const char* file, int line,
     size_t currentIndex, size_t mustBeIndex,
-    const char* const names[], size_t namesCount)
+    const char* const names[], size_t namesCount,
+    EDiagSev severity)
         : CSerialException(CDiagCompileInfo(file, line), 0,
           (CSerialException::EErrCode) CException::eInvalid,"")
 {
@@ -89,13 +91,14 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
            string("Invalid choice selection: ")+
            GetName(currentIndex, names, namesCount)+". "
            "Expected: "+
-           GetName(mustBeIndex, names, namesCount),0);
+           GetName(mustBeIndex, names, namesCount),0, severity);
     x_InitErrCode((CException::EErrCode)(CInvalidChoiceSelection::eFail));
 }
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
-    const char* const names[], size_t namesCount)
+    const char* const names[], size_t namesCount,
+    EDiagSev severity)
         : CSerialException(CDiagCompileInfo("unknown", 0), 0,
           (CSerialException::EErrCode) CException::eInvalid,"")
 {
@@ -103,7 +106,7 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
            string("Invalid choice selection: ")+
            GetName(currentIndex, names, namesCount)+". "
            "Expected: "+
-           GetName(mustBeIndex, names, namesCount),0);
+           GetName(mustBeIndex, names, namesCount),0, severity);
     x_InitErrCode((CException::EErrCode)(CInvalidChoiceSelection::eFail));
 }
 
@@ -144,6 +147,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/01/18 19:45:23  ssikorsk
+* Added an extra argument to CException::x_Init
+*
 * Revision 1.16  2004/09/24 22:28:35  vakatov
 * CInvalidChoiceSelection -- added pre-DIAG_COMPILE_INFO constructor
 *

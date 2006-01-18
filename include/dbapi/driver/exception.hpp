@@ -93,7 +93,7 @@ enum EDB_Severity {
 
 
 // class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public std::exception
-class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : public CException
+class NCBI_DBAPIDRIVER_EXPORT CDB_Exception : EXCEPTION_VIRTUAL_BASE public CException
 {
     friend class CDB_MultiEx;
 
@@ -476,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/01/18 19:45:22  ssikorsk
+ * Added an extra argument to CException::x_Init
+ *
  * Revision 1.23  2006/01/17 17:59:53  ssikorsk
  * Removed virtual inheritance of CException.
  *
