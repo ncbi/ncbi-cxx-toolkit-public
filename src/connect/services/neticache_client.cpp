@@ -563,9 +563,9 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
             char* buf_ptr = blob_descr->buf;
             while (to_read) {
                 size_t nn_read;
-                ERW_Result rw_res =
+                ERW_Result rw_res = 
                     blob_descr->reader->Read(buf_ptr, to_read, &nn_read);
-                if (!nn_read) {
+                if (!nn_read || rw_res != eRW_Success) {
                     blob_descr->reader.reset(0);
                     NCBI_THROW(CNetServiceException, eCommunicationError, 
                                "Communication error");
@@ -913,6 +913,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/01/18 19:35:51  kuznets
+ * Improved error checking
+ *
  * Revision 1.16  2006/01/18 16:00:01  kuznets
  * Recognize both name and cache_name config settings
  *
