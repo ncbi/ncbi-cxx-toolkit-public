@@ -1867,8 +1867,6 @@ static int s_Recv(SOCK        sock,
                   size_t      size,
                   int/*bool*/ peek)
 {
-    char*  x_buffer = (char*) buffer;
-    char   xx_buffer[4096];
     size_t n_read;
 
     assert(sock->type != eSOCK_Datagram  &&  !sock->pending);
@@ -1878,35 +1876,35 @@ static int s_Recv(SOCK        sock,
         n_read = 0;
     } else {
         /* read (or peek) from the internal buffer */
-        n_read = peek ?
-            BUF_Peek(sock->r_buf, x_buffer, size) :
-            BUF_Read(sock->r_buf, x_buffer, size);
+        n_read = peek
+            ? BUF_Peek(sock->r_buf, buffer, size)
+            : BUF_Read(sock->r_buf, buffer, size);
         if ((n_read  &&  (n_read == size  ||  !peek))  ||
             sock->r_status == eIO_Closed  ||  sock->eof) {
             return (int) n_read;
         }
     }
 
-    /* read (not just peek) from the socket */
+    /* read from the socket */
     do {
+        char   xx_buffer[4096];
+        char*  x_buffer;
         size_t n_todo;
         int    x_read;
 
         if ( !size ) {
             /* internal upread call -- read out as much as possible */
-            n_todo    = sizeof(xx_buffer);
-            x_buffer  = xx_buffer;
-        } else if ( !buffer ) {
-            /* read to the temporary buffer (to store or discard later) */
-            n_todo    = size - n_read;
-            if (n_todo > sizeof(xx_buffer))
-                n_todo = sizeof(xx_buffer);
-            x_buffer  = xx_buffer;
+            n_todo       = sizeof(xx_buffer);
+            x_buffer     = xx_buffer;
         } else {
-            /* read to the data buffer provided by user */
-            n_todo    = size - n_read;
-            x_buffer += n_read;
+            if (!buffer  ||
+                (n_todo  = size - n_read) < sizeof(xx_buffer)) {
+                n_todo   = sizeof(xx_buffer);
+                x_buffer = xx_buffer;
+            } else
+                x_buffer = (char*) buffer + n_read;
         }
+
         /* recv */
         x_read = recv(sock->sock, x_buffer, n_todo, 0);
 
@@ -1945,21 +1943,37 @@ static int s_Recv(SOCK        sock,
             return n_read ? (int) n_read : -1;
         }
         assert(x_read > 0);
-
-        /* if "peek" -- store the new read data in the internal input buffer */
-        if (peek  &&  !BUF_Write(&sock->r_buf, x_buffer, (size_t) x_read)) {
-            CORE_LOGF_ERRNO(eLOG_Error, errno,
-                            ("%s[SOCK::s_Recv]  Cannot store data in "
-                             "peek buffer", s_ID(sock, xx_buffer)));
-            sock->eof      = 1/*failure*/;
-            sock->r_status = eIO_Closed;
-            break;
-        }
-
-        /* successful read */
-        sock->r_status = eIO_Success;
         sock->n_read  += x_read;
-        n_read        += x_read;
+        sock->r_status = eIO_Success;
+
+        n_todo = size - n_read;
+        if (buffer  &&  (void*) x_buffer != buffer) {
+            if (n_todo > x_read)
+                n_todo = x_read;
+            memcpy((char*) buffer + n_read, x_buffer, n_todo);
+        }
+        if (peek  ||  x_read > n_todo) {
+            /* store the newly read data in the internal input buffer */
+            int/*bool*/ error = !BUF_Write(&sock->r_buf, peek
+                                           ? x_buffer
+                                           : x_buffer + n_todo, peek
+                                           ? (size_t) x_read
+                                           : (size_t)(x_read - n_todo));
+            if (x_read > n_todo)
+                x_read = n_todo;
+            if (error) {
+                CORE_LOGF_ERRNO(eLOG_Error, errno,
+                                ("%s[SOCK::s_Recv]  Cannot store data in "
+                                 "peek buffer", s_ID(sock, xx_buffer)));
+                sock->eof      = 1/*failure*/;
+                sock->r_status = eIO_Closed;
+                if ( peek )
+                    return n_read ? (int) n_read : -1;
+                n_read += x_read;
+                break;
+            }
+        }
+        n_read += x_read;
     } while (!size  ||  (!buffer  &&  n_read < size));
 
     return (int) n_read;
@@ -4451,6 +4465,9 @@ unsigned int SOCK_GetLoopbackAddress(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.182  2006/01/18 02:58:39  lavr
+ * s_Recv() modified to assure minimal I/O of 4096 bytes long
+ *
  * Revision 6.181  2005/12/23 18:11:13  lavr
  * Safety parentheses in INADDR_NONE macro
  *
