@@ -57,6 +57,64 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+bool IsPartOfUrl(
+    const string& sentence,
+    size_t pos )
+{
+    const string separators( "( \t\r\n" );
+    const string legal_path_chars(
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-." );
+    
+    //
+    //  Weed out silly input:
+    //
+    if ( sentence == "" || pos > sentence.length() - 1 ) {
+        return false;
+    }
+    if ( string::npos != separators.find( sentence[ pos ] ) ) {
+        return false;
+    }
+    
+    //
+    //  Find the start of the "word" that surrounds the given position:
+    //
+    size_t left_edge = sentence.find_last_of( separators, pos );
+    if ( left_edge == string::npos ) {
+        left_edge = 0;
+    }
+    else {
+        ++left_edge;
+    }
+    
+    //
+    //  If it's a URL, it better start with a protocol specifier we approve of:
+    //
+    if ( sentence.substr( left_edge, 5 ) != "http:" ) {
+        return false;
+    }
+    
+    //
+    //  In addition to that, we require the tilde to show up in a pattern like
+    //  "/~[0..9A..Za..z_-.]+". This is inherited from the C toolkit flat file
+    //  generator:
+    //
+    if ( sentence[ pos-1 ] != '/' ) {
+        return false;
+    }
+    ++pos;
+    if ( string::npos == legal_path_chars.find( sentence[ pos ] ) ) {
+        return false;
+    }
+    
+    for ( ++pos; sentence[ pos ] != 0; ++pos ) {
+        if ( string::npos == legal_path_chars.find( sentence[ pos ] ) ) {
+            return ( sentence[ pos ] == '/' );
+        }
+    }
+    
+    return false; /* never found the terminating '/' */
+};     
+
 
 void ExpandTildes(string& s, ETildeStyle style)
 {
@@ -101,7 +159,11 @@ void ExpandTildes(string& s, ETildeStyle style)
         case eTilde_comment:
             if (tilde > 0  &&  s[tilde - 1] == '`') {
                 result.replace(result.length() - 1, 1, 1,'~');
-            } else {
+            }
+            else if ( IsPartOfUrl( s, tilde ) ) {
+                result += '~';
+            } 
+            else {
                 result += '\n';
             }
             start = tilde + 1;
@@ -185,7 +247,7 @@ void AddPeriod(string& str)
 
 void TrimSpaces(string& str, int indent)
 {
-    if (str.empty()  ||  str.length()  <= indent) {
+    if (str.empty()  ||  str.length()  <= (size_t)indent) {
         return;
     }
     if (indent < 0) {
@@ -689,6 +751,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/01/18 18:25:41  ludwigf
+* FIXED: Comments often contain URLs with unescaped tilde characters. We do
+* not want to turn these into line breaks.
+*
 * Revision 1.24  2005/11/23 16:20:56  ludwigf
 * FIXED: Function "TrimSpacesAndJunkFromEnds()" would not respect parameter
 * "allow_ellipsis".
