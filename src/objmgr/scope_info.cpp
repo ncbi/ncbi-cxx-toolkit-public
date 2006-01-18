@@ -942,7 +942,7 @@ void CTSE_ScopeInfo::ForgetTSE_Lock(void)
     }
     {{
         ITERATE ( TUsedTSE_LockSet, it, m_UsedTSE_Set ) {
-            _ASSERT((*it)->m_UsedByTSE == this);
+            _ASSERT(!(*it)->m_UsedByTSE || (*it)->m_UsedByTSE == this);
             (*it)->m_UsedByTSE = 0;
         }
         m_UsedTSE_Set.clear();
@@ -1748,6 +1748,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/01/18 20:25:18  vasilche
+* Less strict assertion check.
+*
 * Revision 1.33  2006/01/10 20:03:18  vasilche
 * Fixed warnings.
 *
