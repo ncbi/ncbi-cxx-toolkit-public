@@ -91,6 +91,22 @@ CSeqTest::x_TestAllCdregions(const CSerialObject& obj,
         ref->Set().push_back(result);
 
         (*cdregion_tester)(*id, ctx, feat_iter, *result);
+
+        if (feat_iter.GetSize() > 1) {
+            // Put the ASN.1 for the CDS feature in the results
+            // if there's more than one CDS
+            CNcbiOstrstream ostr;
+            ostr << MSerial_AsnText << feat_iter->GetMappedFeature();
+            string str = CNcbiOstrstreamToString(ostr);
+            string asn_text;
+            asn_text.reserve(str.size());
+            ITERATE (string, ch, str) {
+                if (*ch != '\n') {
+                    asn_text.push_back(*ch);
+                }
+            }
+            result->SetOutput_data().AddField("cds_feat", asn_text);
+        }
     }
 
     return ref;
@@ -211,6 +227,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/01/19 18:46:42  jcherry
+ * Add ASN.1 text of CDS feature to CDS-based test results when there
+ * is more than one CDS
+ *
  * Revision 1.9  2006/01/05 19:01:41  jcherry
  * Added ORF extension test
  *
