@@ -584,13 +584,13 @@ bool AlignmentUtility::DoLeaveNOut(
                     originalScore += GetPSSMScoreOfCharWithAverageOfBZ(
                         m_currentMultiple->GetPSSM(), masterRange->from + i, g_dpQuery->m_sequenceString[range->from + i]);
             }
-            INFO_MESSAGE("score of extracted row with PSSM(N-1) before realignment: " << originalScore);
+            INFO_MESSAGE("score of extracted row with PSSM(N-" << nToRealign << ") before realignment: " << originalScore);
 
             // call the block aligner
             if (DP_GlobalBlockAlign(dpBlocks, ScoreByPSSM, queryFrom, queryTo, &dpResult) != STRUCT_DP_FOUND_ALIGNMENT ||
                 dpResult->nBlocks != blocks.size() || dpResult->firstBlock != 0)
                 THROW_MESSAGE("DP_GlobalBlockAlign() failed");
-            INFO_MESSAGE("score of new alignment of extracted row with PSSM(N-n): " << dpResult->score);
+            INFO_MESSAGE("score of new alignment of extracted row with PSSM(N-" << nToRealign << "): " << dpResult->score);
 
             // adjust new alignment according to dp result
             BlockMultipleAlignment::ModifiableUngappedAlignedBlockList modBlocks;
@@ -748,6 +748,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/01/19 20:36:26  lanczyck
+* change info message in LeaveNOut
+*
 * Revision 1.24  2005/11/05 12:08:48  thiessen
 * fewer trace messages
 *
