@@ -72,6 +72,11 @@ public:
     //  return kMin_Int if problem obtaining the PSSM (ignores the -32768 entries)
     static int GetSmallestValueInPssm(const BMA& bma);
 
+    //   Where can't get a row's character in 'alignmentIndex' column, return '-' 
+    //   in its place.  Needs to work for both aligned columns and non-aligned 
+    //   columns in the PSSM.
+    static void BMAUtils::GetResiduesForColumn(const BMA& bma, unsigned alignmentIndex, vector< char >& residues);
+
     //   For the specified column, return the PSSM score for each row in the alignment.
     //   Where can't get a row's character in 'alignmentIndex' column, return score for '-' 
     //   in its place.  Also return the residues in the specified column if requested.
@@ -127,6 +132,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/19 20:33:48  lanczyck
+* add GetReisiduesForColumn method
+*
 * Revision 1.1  2005/06/28 13:45:25  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *

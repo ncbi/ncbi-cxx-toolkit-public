@@ -140,6 +140,36 @@ void BMAUtils::GetPSSMScoresForColumn(const BMA& bma, unsigned alignmentIndex, v
 
 }
 
+//   Where can't get a row's character in 'alignmentIndex' column, return '-' 
+//   in its place.  Needs to work for both aligned columns and non-aligned 
+//   columns in the PSSM.
+void BMAUtils::GetResiduesForColumn(const BMA& bma, unsigned alignmentIndex, vector< char >& residues) {
+
+    char residue;
+    unsigned int i, nRows, masterIndex;
+
+
+    residues.clear();
+    if (!bma.GetPSSM()) {
+        ERROR_MESSAGE_CL("Invalid PSSM for BlockMultipleAlignment object");
+        return;
+    }
+
+    // Get residue on the master, and its sequence index; if there's a problem stop.
+    if (!GetCharacterAndIndexForColumn(bma, alignmentIndex, 0, &residue, &masterIndex)) return;
+
+    nRows = bma.NRows();
+    for (i = 0; i < nRows; ++i) {
+
+        if (!GetCharacterForColumn(bma, alignmentIndex, i, &residue)) {
+            residue = '-';
+        }
+        residues.push_back(residue);
+        TRACE_MESSAGE_CL("GetResiduesForColumn " << alignmentIndex+1 << ":  (row, residue) = (" << i+1 << ", "  << residue << ")\n");
+    }
+
+}
+
 void BMAUtils::MapAlignmentIndexToSeqIndex(const BMA& bma, unsigned int row, map<unsigned int, unsigned int>& aI2sI) {
     char residue;
     bool isAlignedBlock;
@@ -583,6 +613,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2006/01/19 20:34:36  lanczyck
+* add GetReisiduesForColumn method
+*
 * Revision 1.4  2005/11/07 14:42:11  lanczyck
 * change to use diagnostic stream for all messages; make diagnostics more Cn3D friendly
 *
