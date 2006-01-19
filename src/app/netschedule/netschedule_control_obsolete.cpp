@@ -40,6 +40,11 @@
 #include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
+#if defined(NCBI_OS_UNIX) && defined(HAVE_LIBCONNEXT)
+#include <grp.h>
+#include <sys/types.h>
+#endif
+
 #include "client_admin.hpp"
 
 USING_NCBI_SCOPE;
@@ -54,6 +59,9 @@ class CNetScheduleControl : public CNcbiApplication
 public:
     void Init(void);
     int Run(void);
+
+private:
+    bool CheckPermission();
 };
 
 
@@ -190,7 +198,11 @@ int CNetScheduleControl::Run(void)
         cl.Monitor(NcbiCout);
     }
 
-    if (args["s"]) {  // shutdown
+    if (args["s"]) {  // shutdown        
+        if( !CheckPermission() ) {
+            NcbiCout << "Could not shutdown the service: Permission denied" << NcbiEndl;
+            return 1;
+        }
         nc_client.ShutdownServer();
         NcbiCout << "Shutdown request has been sent to server" << NcbiEndl;
         return 0;
@@ -208,6 +220,31 @@ int CNetScheduleControl::Run(void)
     return 0;
 }
 
+bool CNetScheduleControl::CheckPermission()
+{
+#if defined(NCBI_OS_UNIX) && defined(HAVE_LIBCONNEXT)
+    static gid_t gids[NGROUPS_MAX + 1];
+    static int n_groups = 0;
+    static uid_t uid = 0;
+
+    if (!n_groups) {
+        uid = geteuid();
+        gids[0] = getegid();
+        if ((n_groups = getgroups(sizeof(gids)/sizeof(gids[0])-1, gids+1)) < 0)
+            n_groups = 1;
+        else
+            n_groups++;
+    }
+    for(int i = 0; i < n_groups; ++i) {
+        group* grp = getgrgid(gids[i]);
+        if ( NStr::Compare(grp->gr_name, "service") == 0 )
+            return true;
+    }
+    return false;
+        
+#endif
+    return true;
+}
 
 int main(int argc, const char* argv[])
 {
@@ -218,6 +255,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/19 14:07:10  didenko
+ * Added permission check for the shutdown operation. Only a user from 'service' group
+ * can to it.
+ *
  * Revision 1.13  2005/05/16 16:21:26  kuznets
  * Added available queues listing
  *
