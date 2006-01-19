@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2006/01/19 18:21:57  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.85  2006/01/11 15:34:56  gouriano
 * Corrected reading of bit string
 *
@@ -1316,8 +1319,14 @@ void CObjectIStreamAsnBinary::SkipChoice(const CChoiceTypeInfo* choiceType)
 
 void CObjectIStreamAsnBinary::BeginBytes(ByteBlock& block)
 {
-    ExpectSysTag(eOctetString);
-    block.SetLength(ReadLength());
+    if (PeekTagByte() == MakeTagByte(eUniversal, ePrimitive, eOctetString)) {
+        ExpectSysTag(eOctetString);
+        block.SetLength(ReadLength());
+    } else {
+        ExpectSysTag(eBitString);
+        block.SetLength(ReadLength()-1);
+        ReadByte();
+    }
 }
 
 size_t CObjectIStreamAsnBinary::ReadBytes(ByteBlock& ,
@@ -1393,6 +1402,12 @@ void CObjectIStreamAsnBinary::SkipAnyContentObject(void)
 void CObjectIStreamAsnBinary::ReadBitString(CBitString& obj)
 {
     obj.clear();
+#if !BITSTRING_AS_VECTOR
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        ReadCompressedBitString(obj);
+        return;
+    }
+#endif
     ExpectSysTag(eBitString);
     size_t length = ReadLength();
     if (length == 0) {

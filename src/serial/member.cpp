@@ -344,6 +344,12 @@ CMemberInfo* CMemberInfo::SetAnyContent(void)
     return this;
 }
 
+CMemberInfo* CMemberInfo::SetCompressed(void)
+{
+    GetId().SetCompressed();
+    return this;
+}
+
 CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 {
     m_Optional = true;
@@ -1162,6 +1168,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.42  2006/01/19 18:21:57  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.41  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method

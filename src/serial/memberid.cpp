@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/01/19 18:21:57  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.18  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -114,38 +117,44 @@ BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(void)
     : m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
+    m_Compressed(false)
 {
 }
 
 CMemberId::CMemberId(TTag tag, bool explicitTag)
     : m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
+    m_Compressed(false)
 {
 }
 
 CMemberId::CMemberId(const string& name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
+    m_Compressed(false)
 {
 }
 
 CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
+    m_Compressed(false)
 {
 }
 
 CMemberId::CMemberId(const char* name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
+    m_Compressed(false)
 {
     _ASSERT(name);
 }
 
 CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
+    m_Compressed(false)
 {
     _ASSERT(name);
 }
@@ -207,6 +216,15 @@ void CMemberId::SetAnyContent(void)
 bool CMemberId::HasAnyContent(void) const
 {
     return m_AnyContent;
+}
+
+void CMemberId::SetCompressed(void)
+{
+    m_Compressed = true;
+}
+bool CMemberId::IsCompressed(void) const
+{
+    return m_Compressed;
 }
 
 END_NCBI_SCOPE

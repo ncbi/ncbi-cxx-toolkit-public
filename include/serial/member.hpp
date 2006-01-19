@@ -89,6 +89,7 @@ public:
     CMemberInfo* SetAttlist(void);
     CMemberInfo* SetNotag(void);
     CMemberInfo* SetAnyContent(void);
+    CMemberInfo* SetCompressed(void);
 
     bool NonEmpty(void) const;
     CMemberInfo* SetNonEmpty(void);
@@ -241,6 +242,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/01/19 18:22:34  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.33  2004/01/05 14:24:08  gouriano
 * Added possibility to set serialization hooks by stack path
 *

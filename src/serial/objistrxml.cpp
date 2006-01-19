@@ -938,8 +938,8 @@ void CObjectIStreamXml::SkipAnyContentObject(void)
 
 void CObjectIStreamXml::ReadBitString(CBitString& obj)
 {
-#if BITSTRING_AS_VECTOR
     obj.clear();
+#if BITSTRING_AS_VECTOR
     if (EndOpeningTagSelfClosed()) {
         return;
     }
@@ -958,9 +958,12 @@ void CObjectIStreamXml::ReadBitString(CBitString& obj)
     }
     obj.reserve(obj.size());
 #else
-    obj.clear();
     obj.resize(0);
     if (EndOpeningTagSelfClosed()) {
+        return;
+    }
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        ReadCompressedBitString(obj);
         return;
     }
     BeginData();
@@ -2307,6 +2310,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2006/01/19 18:21:57  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.87  2005/12/13 21:11:25  gouriano
 * Corrected reading of bit strings
 *

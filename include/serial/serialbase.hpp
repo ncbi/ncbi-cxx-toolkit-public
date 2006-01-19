@@ -42,6 +42,7 @@
 
 #if !BITSTRING_AS_VECTOR
 #include <util/bitset/ncbi_bitset.hpp>
+#include <util/bitset/bmserial.h>
 #endif
 
 
@@ -587,6 +588,9 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2006/01/19 18:22:34  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.42  2005/12/13 21:12:05  gouriano
 * Corrected definition of bit string class
 *

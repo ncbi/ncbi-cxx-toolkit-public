@@ -237,10 +237,9 @@ void CObjectOStreamAsn::CopyAnyContentObject(CObjectIStream& )
 void CObjectOStreamAsn::WriteBitString(const CBitString& obj)
 {
     static const char ToHex[] = "0123456789ABCDEF";
-    bool hex = false;
-#if BITSTRING_AS_VECTOR
-    hex = obj.size()%8 == 0;
+    bool hex = obj.size()%8 == 0;
     m_Output.PutChar('\'');
+#if BITSTRING_AS_VECTOR
 // CBitString is vector<bool>
     if (hex) {
         Uint1 data, mask;
@@ -260,29 +259,39 @@ void CObjectOStreamAsn::WriteBitString(const CBitString& obj)
         }
     }
 #else
-    CBitString::size_type i=0;
-    CBitString::size_type ilast = obj.size();
-    CBitString::enumerator e = obj.first();
-    hex = obj.size()%8 == 0;
-    m_Output.PutChar('\'');
-    if (hex) {
-        Uint1 data, mask;
-        while (i < ilast) {
-            for (data=0, mask=0x8; mask!=0; mask >>= 1, ++i) {
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        bm::word_t* tmp_block = obj.allocate_tempblock();
+        CBitString::statistics st;
+        obj.calc_stat(&st);
+        char* buf = (char*)malloc(st.max_serialize_mem);
+        unsigned int len = bm::serialize(obj, (unsigned char*)buf, tmp_block);
+        WriteBytes(buf,len);
+        free(buf);
+        free(tmp_block);
+        hex = true;
+    } else {
+        CBitString::size_type i=0;
+        CBitString::size_type ilast = obj.size();
+        CBitString::enumerator e = obj.first();
+        if (hex) {
+            Uint1 data, mask;
+            while (i < ilast) {
+                for (data=0, mask=0x8; mask!=0; mask >>= 1, ++i) {
+                    if (i == *e) {
+                        data |= mask;
+                        ++e;
+                    }
+                }
+                m_Output.WrapAt(78, false);
+                m_Output.PutChar(ToHex[data]);
+            }
+        } else {
+            for (; i < ilast; ++i) {
+                m_Output.WrapAt(78, false);
+                m_Output.PutChar( (i == *e) ? '1' : '0');
                 if (i == *e) {
-                    data |= mask;
                     ++e;
                 }
-            }
-            m_Output.WrapAt(78, false);
-            m_Output.PutChar(ToHex[data]);
-        }
-    } else {
-        for (; i < ilast; ++i) {
-            m_Output.WrapAt(78, false);
-            m_Output.PutChar( (i == *e) ? '1' : '0');
-            if (i == *e) {
-                ++e;
             }
         }
     }
@@ -730,6 +739,11 @@ static const char HEX[] = "0123456789ABCDEF";
 
 void CObjectOStreamAsn::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
+{
+    WriteBytes(bytes, length);
+}
+
+void CObjectOStreamAsn::WriteBytes(const char* bytes, size_t length)
 {
     while ( length-- > 0 ) {
         char c = *bytes++;

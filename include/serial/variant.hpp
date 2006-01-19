@@ -96,6 +96,7 @@ public:
 
     CVariantInfo* SetNoPrefix(void);
     CVariantInfo* SetNotag(void);
+    CVariantInfo* SetCompressed(void);
 
     bool IsInline(void) const;
     bool IsNonObjectPointer(void) const;
@@ -211,6 +212,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/01/19 18:22:34  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.12  2004/01/05 14:24:10  gouriano
 * Added possibility to set serialization hooks by stack path
 *

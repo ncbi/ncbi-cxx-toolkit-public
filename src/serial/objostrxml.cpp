@@ -700,6 +700,17 @@ void CObjectOStreamXml::WriteBitString(const CBitString& obj)
         m_Output.PutChar(ToHex[data]);
     }
 #else
+    if (TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed()) {
+        bm::word_t* tmp_block = obj.allocate_tempblock();
+        CBitString::statistics st;
+        obj.calc_stat(&st);
+        char* buf = (char*)malloc(st.max_serialize_mem);
+        unsigned int len = bm::serialize(obj, (unsigned char*)buf, tmp_block);
+        WriteBytes(buf,len);
+        free(buf);
+        free(tmp_block);
+        return;
+    }
     CBitString::size_type i=0;
     CBitString::size_type ilast = obj.size();
     CBitString::enumerator e = obj.first();
@@ -1385,6 +1396,11 @@ static const char* const HEX = "0123456789ABCDEF";
 void CObjectOStreamXml::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)
 {
+    WriteBytes(bytes,length);
+}
+
+void CObjectOStreamXml::WriteBytes(const char* bytes, size_t length)
+{
     while ( length-- > 0 ) {
         char c = *bytes++;
         m_Output.PutChar(HEX[(c >> 4) & 0xf]);
@@ -1422,6 +1438,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.92  2006/01/19 18:21:57  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.91  2005/12/06 21:03:52  gouriano
 * Corrected writing bit strings
 *

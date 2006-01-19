@@ -39,6 +39,7 @@
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <serial/datatool/comments.hpp>
+#include <serial/datatool/statictype.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -1254,6 +1255,17 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";
             }
+            if (i->dataType) {
+                const COctetStringDataType* octets =
+                    dynamic_cast<const COctetStringDataType*>(i->dataType);
+                if (octets) {
+                    const CBitStringTypeStrings* bits =
+                        dynamic_cast<const CBitStringTypeStrings*>(i->type.get());
+                    if (bits) {
+                        methods << "->SetCompressed()";
+                    }
+                }
+            }
             methods << ";\n";
         }
         if ( isAttlist || useTags ) {
@@ -1498,6 +1510,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2006/01/19 18:21:23  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.72  2005/10/12 17:00:19  gouriano
 * Replace C_E class name in unisequence types by something more unique
 * Add typedef in generated code to provide backward compatibility

@@ -609,6 +609,7 @@ protected:
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);
     const CReadObjectInfo& GetRegisteredObject(TObjectIndex index);
     virtual void x_SetPathHooks(bool set);
+    void ReadCompressedBitString(CBitString& data);
 
 public:
     // open helpers
@@ -733,6 +734,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.116  2006/01/19 18:22:34  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.115  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

@@ -89,6 +89,9 @@ public:
     void SetAnyContent(void);
     bool HasAnyContent(void) const;
 
+    void SetCompressed(void);
+    bool IsCompressed(void) const;
+
 private:
     // identification
     string m_Name;
@@ -98,6 +101,7 @@ private:
     bool m_Attlist;
     bool m_Notag;
     bool m_AnyContent;
+    bool m_Compressed;
 };
 
 
@@ -114,6 +118,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/01/19 18:22:34  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.18  2003/09/16 14:49:15  gouriano
 * Enhanced AnyContent objects to support XML namespaces and attribute info items.
 *

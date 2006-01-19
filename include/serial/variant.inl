@@ -59,6 +59,13 @@ CVariantInfo* CVariantInfo::SetNotag(void)
 }
 
 inline
+CVariantInfo* CVariantInfo::SetCompressed(void)
+{
+    GetId().SetCompressed();
+    return this;
+}
+
+inline
 bool CVariantInfo::IsInline(void) const
 {
     return GetVariantType() == eInlineVariant;
@@ -194,6 +201,9 @@ void CVariantInfo::DefaultCopyVariant(CObjectStreamCopier& stream) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2006/01/19 18:22:34  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.12  2003/12/01 19:04:23  grichenk
 * Moved Add and Sub from serialutil to ncbimisc, made them methods
 * of CRawPointer class.

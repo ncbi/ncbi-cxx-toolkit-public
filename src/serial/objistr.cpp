@@ -1550,6 +1550,18 @@ void CObjectIStream::SkipStringStore(void)
     SkipString();
 }
 
+void CObjectIStream::ReadCompressedBitString(CBitString& obj)
+{
+    ByteBlock bl(*this);
+    vector<unsigned char> v;
+    unsigned char buf[2048];
+    size_t count;
+    while ( (count = bl.Read(buf, sizeof(buf))) != 0 ) {
+        v.insert(v.end(), buf, buf + count);
+    }
+    bm::deserialize(obj, reinterpret_cast<const unsigned char*>(&v.front()));
+    bl.End();
+}
 
 char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
 {
@@ -1575,11 +1587,13 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method, size_t at_line)
     return '#';
 }
 
-
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.141  2006/01/19 18:21:57  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.140  2005/11/07 18:40:49  gouriano
 * Use Int8 in stream position calculations
 *

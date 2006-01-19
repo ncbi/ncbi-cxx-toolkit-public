@@ -233,6 +233,7 @@ protected:
 #endif
 
 private:
+    void WriteBytes(const char* bytes, size_t length);
     void WriteString(const char* str, size_t length);
 
     void OpenTagStart(void);
@@ -310,6 +311,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2006/01/19 18:22:34  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.42  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *

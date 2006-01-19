@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2006/01/19 18:21:23  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.53  2005/04/26 14:18:50  vasilche
 * Allow allocation of objects in CObjectMemoryPool.
 *
@@ -264,6 +267,7 @@
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <serial/serialdef.hpp>
+#include <serial/datatool/statictype.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -1575,6 +1579,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( i->memberTag >= 0 ) {
                 methods << "->GetId().SetTag(" << i->memberTag << ")";
+            }
+            if (i->dataType) {
+                const COctetStringDataType* octets =
+                    dynamic_cast<const COctetStringDataType*>(i->dataType);
+                if (octets) {
+                    const CBitStringTypeStrings* bits =
+                        dynamic_cast<const CBitStringTypeStrings*>(i->type.get());
+                    if (bits) {
+                        methods << "->SetCompressed()";
+                    }
+                }
             }
             methods << ";\n";
         }

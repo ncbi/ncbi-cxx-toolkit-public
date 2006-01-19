@@ -375,12 +375,29 @@ void CObjectOStreamAsnBinary::CopyAnyContentObject(CObjectIStream& )
 
 void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
 {
+#if BITSTRING_AS_VECTOR
+    bool compressed = false;
+#else
+    bool compressed = TopFrame().HasMemberId() && TopFrame().GetMemberId().IsCompressed();
+#endif
+    char* buf;
+    unsigned int len = obj.size();
+    if (compressed) {
+        CBitString::statistics st;
+        obj.calc_stat(&st);
+        buf = (char*)malloc(st.max_serialize_mem);
+        bm::word_t* tmp_block = obj.allocate_tempblock();
+        len = 8*bm::serialize(obj, (unsigned char*)buf, tmp_block);
+        free(tmp_block);
+    }
+
     WriteSysTag(eBitString);
-    WriteLength((obj.size()+7)/8+1);
-    if (obj.size() == 0) {
+    if (len == 0) {
+        WriteLength(0);
         return;
     }
-    WriteByte(TByte(obj.size()%8 ? 8-obj.size()%8 : 0));
+    WriteLength((len+7)/8+1);
+    WriteByte(TByte(len%8 ? 8-len%8 : 0));
     const size_t reserve=128;
     char bytes[reserve];
     size_t b=0;
@@ -402,6 +419,11 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
         }
     }
 #else
+    if (compressed) {
+        WriteBytes(buf,len/8);
+        free(buf);
+        return;
+    }
     CBitString::size_type i=0;
     CBitString::size_type ilast = obj.size();
     CBitString::enumerator e = obj.first();
@@ -1180,6 +1202,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.103  2006/01/19 18:21:57  gouriano
+* Added possibility to save bit string data in compressed format
+*
 * Revision 1.102  2005/12/06 18:29:57  gouriano
 * Optimized writing bit string
 *
