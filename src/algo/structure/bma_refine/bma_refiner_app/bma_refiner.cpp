@@ -261,6 +261,8 @@ int CAlignmentRefiner::Run(void)
     ostream* x_lg = args["details"] ? &args["details"].AsOutputFile() : &cout;
     ostream& detailsStream = *x_lg;
 
+    SetDiagStream(x_lg); // send all diagnostic messages to the same stream
+
     // Set up details stream first...
     if (args["details"]) {
         string str;
@@ -760,6 +762,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/19 20:35:20  lanczyck
+ * send all diag messages to same stream
+ *
  * Revision 1.7  2005/11/07 15:30:26  ucko
  * Use TERSE_INFO_MESSAGE_CL rather than INFO_MESSAGE_CL, which is no
  * longer defined.
