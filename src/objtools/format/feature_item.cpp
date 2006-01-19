@@ -1760,7 +1760,8 @@ const CFeatureItem::TGeneSyn* CFeatureItem::x_AddQuals
     }
 
     // /allele
-    if (subtype != CSeqFeatData::eSubtype_variation) {
+    if (subtype != CSeqFeatData::eSubtype_variation && 
+      subtype != CSeqFeatData::eSubtype_repeat_region ) {
         if (gene.IsSetAllele()  &&  !NStr::IsBlank(gene.GetAllele())) {
             x_AddQual(eFQ_gene_allele, new CFlatStringQVal(gene.GetAllele()));
         }
@@ -3811,6 +3812,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2006/01/19 16:01:40  ludwigf
+* CHANGED: The /allele feature is longer propagated from the gene to repeat_
+*  regions.
+*
 * Revision 1.70  2006/01/18 19:52:18  ludwigf
 * REMOVED: The /partial qualifier is no longer output because the C toolkit
 *  flat file generator does not output it.
