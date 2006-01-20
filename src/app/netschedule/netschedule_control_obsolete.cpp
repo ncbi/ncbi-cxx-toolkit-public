@@ -43,6 +43,7 @@
 #if defined(NCBI_OS_UNIX) && defined(HAVE_LIBCONNEXT)
 #include <grp.h>
 #include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #include "client_admin.hpp"
@@ -255,6 +256,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/20 01:20:21  ucko
+ * #include <unistd.h> for the permission check (necessary in certain
+ * configurations, as with GCC 2.95 on Linux).
+ *
  * Revision 1.14  2006/01/19 14:07:10  didenko
  * Added permission check for the shutdown operation. Only a user from 'service' group
  * can to it.
