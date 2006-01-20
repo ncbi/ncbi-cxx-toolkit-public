@@ -140,7 +140,7 @@ public:
 
     // (De)compress the source buffer into the destination buffer.
     // Return TRUE on success, FALSE on error.
-    // The compressor error code can be acquired via GetLastError() call.
+    // The compressor error code can be acquired via GetErrorCode() call.
     // Notice that altogether the total size of the destination buffer must
     // be little more then size of the source buffer. 
 
@@ -267,7 +267,7 @@ public:
         // Logical end of (compressed) stream is detected, no errors occurred.
         // All subsequent inquiries about data processing should be ignored.
         eStatus_EndOfData,
-        // Error has occurred. The error code can be acquired by GetLastError.
+        // Error has occurred. The error code can be acquired by GetErrorCode.
         eStatus_Error,
         // Output buffer overflow - not enough output space.
         // Buffer must be emptied and the last action repeated.
@@ -455,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/20 18:37:29  ivanov
+ * Minor comment fix
+ *
  * Revision 1.11  2005/08/22 14:25:48  ivanov
  * Cosmetics
  *
