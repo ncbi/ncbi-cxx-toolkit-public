@@ -11,6 +11,7 @@ algo/phy_tree
 algo/seqqa$
 algo/sequence$
 algo/winmask$
+app/netcache$
 app/project_tree_builder
 bdb$
 cgi$
