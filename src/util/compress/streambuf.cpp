@@ -106,7 +106,34 @@ CCompressionStreambuf::CCompressionStreambuf(
 
 CCompressionStreambuf::~CCompressionStreambuf()
 {
-    Finalize();
+    // Finalize processors
+
+    CCompressionStreamProcessor* sp;
+    const string msg_where   ("CCompressionStreambuf::~CCompressionStreambuf: ");
+    const string msg_overflow("Overflow occured, lost some processed data "
+                              "through call Finalize()");
+    const string msg_error   ("Finalize() failed")
+
+    sp = GetStreamProcessor(CCompressionStream::eRead);
+    if ( sp  &&  !sp->m_Finalized ) {
+        Finalize(CCompressionStream::eRead);
+        if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
+            ERR_POST(msg_where + msg_overflow);
+        }
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
+            ERR_POST(msg_where + msg_error);
+        }
+    }
+    sp = GetStreamProcessor(CCompressionStream::eWrite);
+    if ( sp  &&  !sp->m_Finalized ) {
+        Finalize(CCompressionStream::eWrite);
+        if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
+            ERR_POST(msg_where + msg_overflow);
+        }
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
+            ERR_POST(msg_where + msg_error);
+        }
+    }
     delete[] m_Buf;
 }
 
@@ -126,11 +153,16 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
     if ( !IsStreamProcessorOkay(dir) ) {
         return;
     }
+
+    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
+    if ( sp->m_Finalized ) {
+        return;
+    }
+
     // Sync buffers
     Sync(dir);
 
     // Finish
-    CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
     if ( sp->m_LastStatus != CP::eStatus_EndOfData ) {
 
         // Here is some unprocessed data
@@ -151,7 +183,7 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
                                                        out_size, &out_avail);
             // Check on error
             if ( sp->m_LastStatus == CP::eStatus_Error ) {
-            break;
+                break;
             }
             if ( dir == CCompressionStream::eRead ) {
                 // Update the get's pointers
@@ -214,8 +246,6 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
         } else {
             buf = sp->m_End;
         }
-        out_size = sp->m_OutBuf + sp->m_OutBufSize - buf;
-
         // Get data from processor
         sp->m_LastStatus = sp->m_Processor->Flush(buf, out_size, &out_avail);
         // Check on error
@@ -232,7 +262,7 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
             // Write data to the underlying stream only if the output buffer
             // is full or an overflow/endofdata occurs.
             if ( !WriteOutBufToStream() ) {
-                return false;
+                return -1;
             }
         }
     } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow );
@@ -329,6 +359,10 @@ bool CCompressionStreambuf::ProcessStreamRead()
             }
             m_Reader->m_LastOutAvail = out_avail;
         } else {
+            // Check available space in the output buffer
+            if ( !out_size ) {
+                return false;
+            }
             // Get unprocessed data size
             in_len = m_Reader->m_End - m_Reader->m_Begin;
         }
@@ -499,6 +533,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/01/20 17:58:58  ivanov
+ * ProcessStreamRead() -- fixed bug with possible infinite loop,
+ * added check on available space in the output buffer.
+ * ~CCompressionStreambuf() -- print out error messages if automatic
+ * Finalize() failed or caused overflow of the output buffer.
+ *
  * Revision 1.20  2005/08/22 14:35:13  ivanov
  * CCompressionStreambuf::Finalize() -- Do not forget to clean up
  * a [de]compression processor even if no more data to process.
