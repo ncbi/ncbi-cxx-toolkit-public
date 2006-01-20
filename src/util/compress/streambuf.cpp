@@ -112,7 +112,7 @@ CCompressionStreambuf::~CCompressionStreambuf()
     const string msg_where   ("CCompressionStreambuf::~CCompressionStreambuf: ");
     const string msg_overflow("Overflow occured, lost some processed data "
                               "through call Finalize()");
-    const string msg_error   ("Finalize() failed")
+    const string msg_error   ("Finalize() failed");
 
     sp = GetStreamProcessor(CCompressionStream::eRead);
     if ( sp  &&  !sp->m_Finalized ) {
@@ -533,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/01/20 18:41:17  ivanov
+ * Added missed semicolon in last revision
+ *
  * Revision 1.21  2006/01/20 17:58:58  ivanov
  * ProcessStreamRead() -- fixed bug with possible infinite loop,
  * added check on available space in the output buffer.
