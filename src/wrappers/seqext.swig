@@ -100,6 +100,13 @@ public:
 %ignore *::CFlatStringQVal::CFlatStringQVal;
 %ignore *::CFlatStringListQVal::CFlatStringListQVal;
 
+// Protected typedef (TObject)
+%ignore ncbi::objects::CTSE_Handle::x_GetScopeInfo;
+
+// ReadFasta parameter
+%template(vector_CConstRef_CSeq_loc)
+    std::vector<ncbi::CConstRef<ncbi::objects::CSeq_loc> >;
+
 %%
 
 // Obsolescent
@@ -202,6 +209,7 @@ objmgr/seq_vector_ci.hpp
 objmgr/seqdesc_ci.hpp
 // won't compile (nothing must #include this)
 //objmgr/tse_ci.hpp
+objmgr/tse_handle.hpp
 objmgr/util/feature.hpp
 // non-inline function definition in header; messes up splitting
 //objmgr/util/genbank.hpp
@@ -320,6 +328,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/20 16:49:29  jcherry
+ * Added header.  Added template.
+ *
  * Revision 1.12  2005/12/15 20:31:24  jcherry
  * Added headers
  *
