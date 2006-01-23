@@ -785,13 +785,18 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program,
  * @param culling_limit Number of higher-scoring HSPs that must contain
  *                      the query range of an HSP before that HSP is declared
  *                      to be redundant (ignored if zero) [in]
+ * @param min_diag_separation Delete HSPs whose endpoints are at most this 
+ *                       many diagonals from a higher-scoring HSP. If zero,
+ *                       delete HSPs whose query and subject ranges are
+ *                       enveloped by those of a higher-scoring HSP [in]
 */
 NCBI_XBLAST_EXPORT
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
                            double evalue, Int4 hitlist_size,
                            Boolean is_gapped,
-                           Int4 culling_limit);
+                           Int4 culling_limit,
+                           Int4 min_diag_separation);
 
 /** Initialize default options for PSI BLAST 
  * @param psi_options pointer to pointer where structure will be allocated [in]

@@ -1019,7 +1019,8 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
 Int2
 BLAST_FillHitSavingOptions(BlastHitSavingOptions* options, 
                            double evalue, Int4 hitlist_size,
-                           Boolean is_gapped, Int4 culling_limit)
+                           Boolean is_gapped, Int4 culling_limit,
+                           Int4 min_diag_separation)
 {
    if (!options)
       return 1;
@@ -1028,6 +1029,8 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       options->hitlist_size = hitlist_size;
    if (evalue)
       options->expect_value = evalue;
+   if (min_diag_separation)
+      options->min_diag_separation = min_diag_separation;
    if(!is_gapped)
      options->hsp_num_max = kUngappedHSPNumMax;
    options->culling_limit = culling_limit;
@@ -1285,6 +1288,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.179  2006/01/23 16:29:51  papadopo
+ * allow the number of diagonals used in containment tests to be specified when initializing HitSavingOptions
+ *
  * Revision 1.178  2005/12/22 14:07:48  papadopo
  * remove variable wordsize, and change signature to BlastFillLookupTableOptions
  *
