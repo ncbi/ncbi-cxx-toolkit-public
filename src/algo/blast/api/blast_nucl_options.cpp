@@ -96,7 +96,7 @@ CBlastNucleotideOptionsHandle::SetTraditionalMegablastDefaults()
     SetMBInitialWordOptionsDefaults();
     SetMBGappedExtensionDefaults();
     SetMBScoringOptionsDefaults();
-    SetHitSavingOptionsDefaults();
+    SetMBHitSavingOptionsDefaults();
     SetEffectiveLengthsOptionsDefaults();
 }
 
@@ -202,6 +202,21 @@ CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()
     SetPercentIdentity(0);
     // set some default here, allow INT4MAX to mean infinity
     SetMaxNumHspPerSequence(0); 
+    SetMinDiagSeparation(0);
+
+    SetCutoffScore(0); // will be calculated based on evalue threshold,
+    // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
+    // and passed to the engine in the params structure
+}
+void
+CBlastNucleotideOptionsHandle::SetMBHitSavingOptionsDefaults()
+{
+    SetHitlistSize(500);
+    SetEvalueThreshold(BLAST_EXPECT_VALUE);
+    SetPercentIdentity(0);
+    // set some default here, allow INT4MAX to mean infinity
+    SetMaxNumHspPerSequence(0); 
+    SetMinDiagSeparation(6);
 
     SetCutoffScore(0); // will be calculated based on evalue threshold,
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
@@ -230,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/01/23 16:37:11  papadopo
+ * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
+ *
  * Revision 1.25  2005/12/22 14:02:14  papadopo
  * remove variable-wordsize-related code
  *

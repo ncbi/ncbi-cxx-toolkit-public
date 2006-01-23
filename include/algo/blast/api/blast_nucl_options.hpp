@@ -238,6 +238,8 @@ protected:
     virtual void SetMBScoringOptionsDefaults();
     /// Overrides HitSavingOptionsDefaults for nucleotide options
     virtual void SetHitSavingOptionsDefaults();
+    /// Overrides MBHitSavingOptionsDefaults for nucleotide options
+    virtual void SetMBHitSavingOptionsDefaults();
     /// Overrides EffectiveLengthsOptionsDefaults for nucleotide options
     virtual void SetEffectiveLengthsOptionsDefaults();
     /// Overrides SubjectSequenceOptionsDefaults for nucleotide options
@@ -262,6 +264,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/01/23 16:37:45  papadopo
+ * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
+ *
  * Revision 1.28  2005/12/22 14:02:57  papadopo
  * remove variable-wordsize-related code
  *

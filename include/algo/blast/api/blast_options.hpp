@@ -242,6 +242,9 @@ public:
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 
+    int GetMinDiagSeparation() const;
+    void SetMinDiagSeparation(int d);
+
     /// Sum statistics options
     bool GetSumStatisticsMode() const;
     void SetSumStatisticsMode(bool m = true);
@@ -581,6 +584,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.114  2006/01/23 16:37:45  papadopo
+* use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
+*
 * Revision 1.113  2005/12/22 14:02:57  papadopo
 * remove variable-wordsize-related code
 *

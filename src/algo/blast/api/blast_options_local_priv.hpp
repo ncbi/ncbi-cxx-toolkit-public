@@ -184,6 +184,9 @@ public:
     double GetPercentIdentity() const;
     void SetPercentIdentity(double p);
 
+    int GetMinDiagSeparation() const;
+    void SetMinDiagSeparation(int d);
+
     /// Sum statistics options
     bool GetSumStatisticsMode() const;
     void SetSumStatisticsMode(bool m = true);
@@ -974,6 +977,18 @@ inline void
 CBlastOptionsLocal::SetPercentIdentity(double p)
 {
     m_HitSaveOpts->percent_identity = p;
+}
+
+inline int
+CBlastOptionsLocal::GetMinDiagSeparation() const
+{
+    return m_HitSaveOpts->min_diag_separation;
+}
+
+inline void
+CBlastOptionsLocal::SetMinDiagSeparation(int d)
+{
+    m_HitSaveOpts->min_diag_separation = d;
 }
 
 inline bool

@@ -1361,6 +1361,23 @@ CBlastOptions::SetPercentIdentity(double p)
     }
 }
 
+int 
+CBlastOptions::GetMinDiagSeparation() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetMinDiagSeparation() not available.");
+    }
+    return m_Local->GetMinDiagSeparation();
+}
+void 
+CBlastOptions::SetMinDiagSeparation(int d)
+{
+    if (! m_Local) {
+        x_Throwx("Error: SetMinDiagSeparation() not available.");
+    }
+    m_Local->SetMinDiagSeparation(d);
+}
+
 bool 
 CBlastOptions::GetSumStatisticsMode() const
 {
@@ -1853,6 +1870,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.75  2006/01/23 16:37:11  papadopo
+* use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
+*
 * Revision 1.74  2005/12/22 14:02:14  papadopo
 * remove variable-wordsize-related code
 *

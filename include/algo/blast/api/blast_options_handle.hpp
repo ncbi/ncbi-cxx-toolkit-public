@@ -214,6 +214,12 @@ public:
     /// @param p PercentIdentity [in]
     void SetPercentIdentity(double p) { m_Opts->SetPercentIdentity(p); }
 
+    /// Returns MinDiagSeparation
+    int GetMinDiagSeparation() const { return m_Opts->GetMinDiagSeparation(); }
+    /// Sets MinDiagSeparation
+    /// @param d MinDiagSeparation [in]
+    void SetMinDiagSeparation(int d) { m_Opts->SetMinDiagSeparation(d); }
+
     /// Returns GappedMode
     bool GetGappedMode() const { return m_Opts->GetGappedMode(); }
     /// Sets GappedMode
@@ -279,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/01/23 16:37:45  papadopo
+ * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
+ *
  * Revision 1.23  2005/07/06 17:47:07  camacho
  * Doxygen fixes
  *

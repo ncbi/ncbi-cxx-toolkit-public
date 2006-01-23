@@ -100,6 +100,7 @@ CBlastRPSOptionsHandle::SetHitSavingOptionsDefaults()
 {
     SetHitlistSize(500);
     SetEvalueThreshold(BLAST_EXPECT_VALUE);
+    SetMinDiagSeparation(0);
     SetPercentIdentity(0);
     m_Opts->SetSumStatisticsMode(false);
     // set some default here, allow INT4MAX to mean infinity
@@ -132,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/01/23 16:37:11  papadopo
+ * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
+ *
  * Revision 1.15  2005/11/29 17:28:02  camacho
  * Remove BlastHitSavingOptions::required_{start,end}
  *
