@@ -65,7 +65,7 @@ const unsigned char set_block_sgapgap = 13;  //!< SGAP compressed GAP block
 const unsigned char set_block_gap     = 14;  //!< Plain GAP block
 const unsigned char set_block_gapbit  = 15;  //!< GAP compressed bitblock 
 const unsigned char set_block_arrbit  = 16;  //!< List of bits ON
-
+const unsigned char set_block_bit_interval  = 17; //!< Interval block
 
 
 
@@ -195,7 +195,7 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
         flag = bman.is_block_zero(i, blk);
         if (flag)
         {
-
+        zero_block:
             if (bman.is_no_more_blocks(i+1)) 
             {
                 enc.put_8(set_block_azero);
@@ -308,9 +308,26 @@ unsigned serialize(const BV& bv, unsigned char* buf, bm::word_t* temp_block)
         }
         else
         {
-            enc.put_8(set_block_bit);
-            enc.put_32(blk, bm::set_block_size);
-            //enc.memcpy(blk, sizeof(bm::word_t) * bm::set_block_size);
+            unsigned head_idx, tail_idx;
+            bit_find_head_tail(blk, &head_idx, &tail_idx);
+
+            if (head_idx == (unsigned)-1) // zero block
+            {
+                goto zero_block;
+            }
+            else  // full block
+            if (head_idx == 0 && tail_idx == bm::set_block_size-1)
+            {
+                enc.put_8(set_block_bit);
+                enc.put_32(blk, bm::set_block_size);
+            } 
+            else  // interval block
+            {
+                enc.put_8(set_block_bit_interval);
+                enc.put_16((short)head_idx);
+                enc.put_16((short)tail_idx);
+                enc.put_32(blk + head_idx, tail_idx - head_idx + 1);
+            }
         }
 
     }
@@ -493,6 +510,37 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
             dec.get_32(temp_block, bm::set_block_size);
             bv.combine_operation_with_block(i, 
                                             temp_block, 
+                                            0, BM_OR);
+            continue;
+        }
+
+        if (btype == set_block_bit_interval) 
+        {
+
+            unsigned head_idx, tail_idx;
+            head_idx = dec.get_16();
+            tail_idx = dec.get_16();
+
+            if (blk == 0)
+            {
+                blk = bman.get_allocator().alloc_bit_block();
+                bman.set_block(i, blk);
+                for (unsigned i = 0; i < head_idx; ++i)
+                {
+                    blk[i] = 0;
+                }
+                dec.get_32(blk + head_idx, tail_idx - head_idx + 1);
+                for (unsigned j = tail_idx + 1; j < bm::set_block_size; ++j)
+                {
+                    blk[j] = 0;
+                }
+                continue;
+            }
+            bit_block_set(temp_block, 0);
+            dec.get_32(temp_block + head_idx, tail_idx - head_idx + 1);
+
+            bv.combine_operation_with_block(i, 
+                                            temp_block,
                                             0, BM_OR);
             continue;
         }

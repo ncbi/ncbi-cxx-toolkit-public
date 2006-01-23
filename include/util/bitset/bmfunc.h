@@ -3033,9 +3033,51 @@ bm::id_t bit_operation_xor_count(const bm::word_t* BMRESTRICT src1,
     return bit_block_xor_count(src1, src1_end, src2);
 }
 
+/**
+    \brief Inspects bit block for zero words at the head and at the end 
+
+    If there are no head-tail zeroes output parameters 
+    head_idx and tail_idx are going to be [0, bm::set_block_size-1].
+    If block is all-zero head_idx is -1
+
+    \param data - bit block pointer
+    \param head_idx - index of first non-zero word in block
+    \param tail_idx - index of the last non-zero word in block
+
+    @ingroup bitfunc
+*/
+inline
+void bit_find_head_tail(const bm::word_t* data, 
+                        unsigned*         head_idx,
+                        unsigned*         tail_idx)
+{
+    BM_ASSERT(head_idx && tail_idx);
+    *head_idx = (unsigned)-1;
+    for (unsigned i = 0; i < bm::set_block_size; ++i) 
+    {
+        if (data[i]) 
+        {
+            *head_idx = i; 
+            break;
+        }
+    } // for i
+    if (*head_idx == (unsigned)-1) 
+    {
+        return; // all zero block
+    }
+
+    for (unsigned j = bm::set_block_size-1; j >= *head_idx; --j)
+    {
+        if (data[j]) 
+        {
+            *tail_idx = j;
+            break;
+        }
+    } // for j
+
+}
 
 
-//------------------------------------------------------------------------
 
 /**
     \brief Searches for the next 1 bit in the BIT block

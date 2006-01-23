@@ -818,6 +818,183 @@ bm::id_t count_intervals(const BV& bv)
     return func.count();        
 }
 
+/*!
+    \brief Export bitset from an array of binary data representing
+    the bit vector. 
+
+    Input array can be array of ints, chars or other native C types.
+    Method works with iterators, which makes it compatible with 
+    STL containers and C arrays
+
+    \param bv     - destination bitvector
+    \param first  - first element of the iterated sequence
+    \param last   - last element of the iterated sequence
+
+    \ingroup setalgo
+*/
+template<class BV, class It>
+void export_array(BV& bv, It first, It last)
+{
+    typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
+    unsigned inp_word_size = sizeof(*first);
+    unsigned array_size = last - first;
+    unsigned bit_cnt = array_size * inp_word_size * 8;
+    int block_type;
+    bm::word_t tmp;
+    unsigned b1, b2, b3, b4;
+
+    if (bit_cnt >= bv.size())
+        bv.resize(bit_cnt + 1);
+    else 
+        bv.set_range(bit_cnt, bv.size() - 1, false);
+    
+    switch (inp_word_size)
+    {
+    case 1:
+        {
+            unsigned word_cnt = array_size / 4;
+            for (unsigned i = 0; i < bm::set_total_blocks; ++i)
+            {
+                bm::word_t* blk = 
+                    bman.check_allocate_block(i, 
+                                              false, 
+                                              BM_BIT, 
+                                              &block_type,
+                                              false /*no NULL ret*/);
+                if (block_type == 1) // gap
+                {
+                    blk = bman.convert_gap2bitset(i, BMGAP_PTR(blk));
+                }
+                
+                bm::word_t* wrd_ptr = blk;
+                if (word_cnt >= bm::set_block_size) {
+                    bm::word_t* wrd_end = blk + bm::set_block_size;
+                    do {
+                        b1 = *first++; b2 = *first++;
+                        b3 = *first++; b4 = *first++;
+                        tmp = b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
+                        *wrd_ptr++ = tmp;
+                    } while (wrd_ptr < wrd_end);
+                    word_cnt -= bm::set_block_size;
+                } 
+                else 
+                {
+                    unsigned to_convert = last - first;
+                    for (unsigned j = 0; j < to_convert / 4; ++j)
+                    {
+                        b1 = *first++; b2 = *first++;
+                        b3 = *first++; b4 = *first++;
+                        tmp = b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
+                        *wrd_ptr++ = tmp;
+                    }
+                    while (1)
+                    {
+                        if (first == last) break;
+                        *wrd_ptr = *first++;
+                        if (first == last) break;
+                        *wrd_ptr |= (*first++) << 8;
+                        if (first == last) break;
+                        *wrd_ptr |= (*first++) << 16;
+                        if (first == last) break;
+                        *wrd_ptr |= (*first++) << 24;
+                        ++wrd_ptr;
+                    }
+                }
+                if (first == last) break;
+            } // for
+        }
+        break;
+    case 2:
+        {
+            unsigned word_cnt = array_size / 2;
+            for (unsigned i = 0; i < bm::set_total_blocks; ++i)
+            {
+                bm::word_t* blk = 
+                    bman.check_allocate_block(i, 
+                                              false, 
+                                              BM_BIT, 
+                                              &block_type,
+                                              false /*no NULL ret*/);
+                if (block_type == 1) // gap
+                {
+                    blk = bman.convert_gap2bitset(i, BMGAP_PTR(blk));
+                }
+                
+                bm::word_t* wrd_ptr = blk;
+                if (word_cnt >= bm::set_block_size) {
+                    bm::word_t* wrd_end = blk + bm::set_block_size;
+                    do {
+                        b1 = *first++; b2 = *first++;
+                        tmp = b1 | (b2 << 16);
+                        *wrd_ptr++ = tmp;
+                    } while (wrd_ptr < wrd_end);
+                    word_cnt -= bm::set_block_size;
+                } 
+                else 
+                {
+                    unsigned to_convert = last - first;
+                    for (unsigned j = 0; j < to_convert / 2; ++j)
+                    {
+                        b1 = *first++; b2 = *first++;
+                        tmp = b1 | (b2 << 16);
+                        *wrd_ptr++ = tmp;
+                    }
+                    while (1)
+                    {
+                        if (first == last) break;
+                        *wrd_ptr = *first++;
+                        if (first == last) break;
+                        *wrd_ptr |= (*first++) << 16;
+                        ++wrd_ptr;
+                    }
+                }
+                if (first == last) break;
+            } // for
+        }
+        break;
+    case 4:
+        {
+            unsigned word_cnt = array_size;
+            for (unsigned i = 0; i < bm::set_total_blocks; ++i)
+            {
+                bm::word_t* blk = 
+                    bman.check_allocate_block(i, 
+                                              false, 
+                                              BM_BIT, 
+                                              &block_type,
+                                              false /*no NULL ret*/);
+                if (block_type == 1) // gap
+                {
+                    blk = bman.convert_gap2bitset(i, BMGAP_PTR(blk));
+                }
+                
+                bm::word_t* wrd_ptr = blk;
+                if (word_cnt >= bm::set_block_size) {
+                    bm::word_t* wrd_end = blk + bm::set_block_size;
+                    do {
+                        *wrd_ptr++ = *first++;
+                    } while (wrd_ptr < wrd_end);
+                    word_cnt -= bm::set_block_size;
+                } 
+                else 
+                {
+                    while (1)
+                    {
+                        if (first == last) break;
+                        *wrd_ptr = *first++;
+                        ++wrd_ptr;
+                    }
+                }
+                if (first == last) break;
+            } // for
+        }
+        break;
+    default:
+        BM_ASSERT(0);
+    } // switch
+
+}
+
 
 } // namespace bm
 
