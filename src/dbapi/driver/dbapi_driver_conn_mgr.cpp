@@ -35,6 +35,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <set>
 #include <map>
+#include <dbapi/driver/public.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -46,9 +47,10 @@ public:
     
 public:
     virtual void Configure(const IRegistry* registry = NULL);
-    virtual I_Connection* MakeConnection(
+    virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
-        const I_DriverContext::SConnAttr& conn_attr);
+        const I_DriverContext::SConnAttr& conn_attr,
+        IConnValidator* validator = NULL);
 };
 
 CDefaultConnectPolicy::~CDefaultConnectPolicy(void)
@@ -61,15 +63,32 @@ CDefaultConnectPolicy::Configure(const IRegistry*)
     // Do-nothing ...
 }
 
-I_Connection* 
-CDefaultConnectPolicy::MakeConnection(
+CDB_Connection* 
+CDefaultConnectPolicy::MakeDBConnection(
     I_DriverContext& ctx,
-    const I_DriverContext::SConnAttr& conn_attr)
+    const I_DriverContext::SConnAttr& conn_attr,
+    IConnValidator* validator)
 {
-    return CtxMakeConnection( ctx, conn_attr );
+    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, conn_attr));
+    
+    if (conn.get() && 
+        validator && 
+        validator->Validate(*conn) == IConnValidator::eInvalidConn) {
+        return NULL;
+    }
+    return conn.release();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+IConnValidator::~IConnValidator(void)
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+IDBConnectionFactory::IDBConnectionFactory(void)
+{
+}
+
 IDBConnectionFactory::~IDBConnectionFactory(void)
 {
 }
@@ -97,6 +116,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/23 13:34:21  ssikorsk
+ * Improved CDefaultConnectPolicy::MakeDBConnection to handle
+ * IConnValidator;
+ *
  * Revision 1.1  2006/01/03 19:44:08  ssikorsk
  * Initial implementation
  *
