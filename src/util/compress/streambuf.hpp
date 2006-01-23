@@ -153,8 +153,8 @@ inline bool CCompressionStreambuf::IsStreamProcessorOkay(
             CCompressionStream::EDirection dir) const
 {
     CCompressionStreamProcessor* sp = GetStreamProcessor(dir);
-    return IsOkay()  && sp  &&  !sp->m_Finalized  && 
-           sp->m_Processor  &&  sp->m_Processor->IsBusy();
+    return IsOkay()  &&  sp  &&  !sp->m_Finalized  && 
+           sp->m_Processor   &&  sp->m_Processor->IsBusy();
 }
 
 
@@ -180,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/23 13:27:19  ivanov
+ * Minor formatting
+ *
  * Revision 1.8  2005/06/27 13:47:30  ivanov
  * + CCompressionStreambuf::WriteOutBufToStream()
  *
