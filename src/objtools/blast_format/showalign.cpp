@@ -439,7 +439,7 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
                                     ENa_strand feat_strand, 
                                     list<CRange<TSeqPos> >& range,
                                     TSeqPos total_coding_len,
-                                    string& raw_cdr_product)
+                                    string& raw_cdr_product, TSeqPos frame_adj)
 {
 
     string concat_exon(total_coding_len, ' ');
@@ -451,15 +451,15 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
     TSeqPos num_base, num_coding_base;
     TSeqPos coding_start_base;
     if(feat_strand == eNa_strand_minus){
-        coding_start_base = total_coding_len - 1 - (frame -1);
+        coding_start_base = total_coding_len - 1 - (frame -1) - frame_adj;
         num_base = total_coding_len - 1;
         num_coding_base = 0;
         
     } else {
         coding_start_base = 0; 
-        coding_start_base += frame - 1;
+        coding_start_base += frame - 1 + frame_adj;
         num_base = 0;
-                        num_coding_base = 0;
+        num_coding_base = 0;
     }
     
     ITERATE(list<CRange<TSeqPos> >, iter, range){
@@ -520,13 +520,14 @@ static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
                                       CFeat_CI& feat,
                                       list<CSeq_loc_CI::TRange>& slave_feat_range,
                                       CAlnVec* av, 
-                                      int row)
+                                      int row, TSeqPos frame_adj)
 {
     TSeqPos trans_frame = 1;
     const CCdregion& cdr = feat->GetData().GetCdregion();
     if(cdr.IsSetFrame()){
         trans_frame = cdr.GetFrame();
     }
+    trans_frame += frame_adj;
     TSeqPos prev_exon_len = 0;
     bool is_first_in_range = true;
     ITERATE(list<CSeq_loc_CI::TRange>, iter_temp,
@@ -606,12 +607,13 @@ static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
 static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat, 
                                CScope& scope, list<CRange<TSeqPos> >& range,
                                const CBioseq_Handle& handle, 
-                               ENa_strand feat_strand, string& feat_id)
+                               ENa_strand feat_strand, string& feat_id,
+                               TSeqPos frame_adj)
 {
     string raw_cdr_product = NcbiEmptyString;
-    if(feat->IsSetProduct() && feat->GetProduct().IsWhole()){
+    if(feat->IsSetProduct() && feat->GetProduct().IsWhole() && frame_adj == 0){
         //show actual aa  if there is a cds product
-                        
+          
         const CSeq_id& productId = 
             feat->GetProduct().GetWhole();
         const CBioseq_Handle& productHandle 
@@ -621,14 +623,21 @@ static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat,
         productHandle.
             GetSeqVector(CBioseq_Handle::eCoding_Iupac).
             GetSeqData(0, productHandle.
-                       GetBioseqLength(), raw_cdr_product);
+            GetBioseqLength(), raw_cdr_product);
     } else { 
         CSeq_loc isolated_loc;
         ITERATE(list<CRange<TSeqPos> >, iter, range){
-            isolated_loc.
-                Add(*(handle.GetRangeSeq_loc(iter->GetFrom(),
-                                             iter->GetTo(),
-                                             feat_strand)));
+            if(feat_strand == eNa_strand_plus){
+                isolated_loc.
+                    Add(*(handle.GetRangeSeq_loc(iter->GetFrom( ) + frame_adj,
+                                                 iter->GetTo(),         
+                                                 feat_strand)));
+            } else {
+                isolated_loc.
+                    Add(*(handle.GetRangeSeq_loc(iter->GetFrom( ),
+                                                 iter->GetTo() - frame_adj,   
+                                                 feat_strand)));
+            }
         }
         CGenetic_code gc;
         CRef<CGenetic_code::C_E> ce(new CGenetic_code::C_E);
@@ -637,6 +646,7 @@ static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat,
         gc.Set().push_back(ce);
         CSeqTranslator::Translate(isolated_loc, handle,
                                   raw_cdr_product, &gc);
+      
     }
     return raw_cdr_product;
 }
@@ -1947,11 +1957,13 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                 ENa_strand feat_strand = eNa_strand_plus, prev_strand;
                 bool first_loc = true, mixed_strand = false;
                 CRange<TSeqPos> feat_seq_range;
+                TSeqPos other_seqloc_length = 0;
                 //isolate the seqloc corresponding to feature
                 //as this is easier to manipulate and remove seqloc that is
                 //not from the bioseq we are dealing with
                 for(CSeq_loc_CI loc_it(loc); loc_it; ++loc_it){
-                    if(IsSameBioseq(loc_it.GetSeq_id(), id, &scope)){
+                    const CSeq_id& id_it = loc_it.GetSeq_id();
+                    if(IsSameBioseq(id_it, id, &scope)){
                         isolated_range.push_back(loc_it.GetRange());
                         if(first_loc){
                             feat_seq_range = loc_it.GetRange();
@@ -1974,6 +1986,12 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                         }
                         first_loc = false;
                         prev_strand = feat_strand;
+                    } else {
+                        //if seqloc has other seqids then need to remove other 
+                        //seqid encoded amino acids in the front later
+                        if (first_loc) {
+                            other_seqloc_length += loc_it.GetRange().GetLength();
+                        }
                     }
                 }
                 //give up if mixed strand or no id
@@ -2021,7 +2039,8 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     string raw_cdr_product = 
                         s_GetCdsSequence(m_SlaveGeneticCode, feat, scope,
                                          isolated_range, handle, feat_strand,
-                                         featId);
+                                         featId, other_seqloc_length%3 == 0 ?
+                                         0 : 3 - other_seqloc_length%3);
                     if(raw_cdr_product == NcbiEmptyString){
                         continue;
                     }
@@ -2053,7 +2072,9 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                         s_GetConcatenatedExon(gap_char, feat, 
                                               feat_strand, isolated_range,
                                               total_coding_len,
-                                              raw_cdr_product);
+                                              raw_cdr_product,
+                                              other_seqloc_length%3 == 0 ?
+                                              0 : 3 - other_seqloc_length%3);
                     
                    
                     //fill slave feature info to make putative feature for
@@ -2062,7 +2083,10 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                         list<CRange<TSeqPos> > temp_feat_range;
                         s_MapSlaveFeatureToMaster(temp_feat_range,
                                                   feat, isolated_range,
-                                                  m_AV, row);
+                                                  m_AV, row,
+                                                  other_seqloc_length%3 == 0 ?
+                                                  0 : 
+                                                  3 - other_seqloc_length%3);
                         if(!(temp_feat_range.empty())) {
                             feat_range_list.push_back(temp_feat_range); 
                             feat_seq_strand.push_back(feat_strand);
@@ -2994,6 +3018,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.98  2006/01/23 15:45:34  jianye
+*fix problem in showing cds of seqloc with mixed seqid
+*
 *Revision 1.97  2006/01/13 16:37:18  jianye
 *map the slave features to master seq, etc
 *
