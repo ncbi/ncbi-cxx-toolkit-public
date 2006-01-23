@@ -172,7 +172,7 @@ void Blast_GetCompositionRange(int * pleft, int * pright,
  * Use composition-based statistics to adjust the scoring matrix, as
  * described in
  *
- *     Schaffer, A.A., Aravaind, L., Madden, T.L., Shavirin, S.,
+ *     Schaffer, A.A., Aravind, L., Madden, T.L., Shavirin, S.,
  *     Spouge, J.L., Wolf, Y.I., Koonin, E.V., and Altschul, S.F.
  *     (2001), "Improving the accuracy of PSI-BLAST protein database
  *     searches with composition-based statistics and other
