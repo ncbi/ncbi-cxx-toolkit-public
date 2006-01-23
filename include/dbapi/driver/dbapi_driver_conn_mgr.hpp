@@ -47,30 +47,48 @@ template <typename T> class CSafeStaticPtr;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-/// CDBConnectionFactory
+/// IConnValidator
+///
+
+class NCBI_DBAPIDRIVER_EXPORT IConnValidator : public CObject
+{
+public:
+    enum EConnStatus {eValidConn, eInvalidConn};
+    
+    virtual ~IConnValidator(void);
+    
+    virtual EConnStatus Validate(CDB_Connection& conn) = 0;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+/// IDBConnectionFactory
 ///
 
 class NCBI_DBAPIDRIVER_EXPORT IDBConnectionFactory : public CObject
 {
 public:
+    /// IDBConnectionFactory will take ownership of validator if there is any.
+    IDBConnectionFactory(void);
     virtual ~IDBConnectionFactory(void);
 
     /// Configure connection policy using registry.
     virtual void Configure(const IRegistry* registry = NULL) = 0;
     
 protected:
-    /// Create new connection object for given context 
+    /// Create new connection object for the given context 
     /// and connection attributes.
-    virtual I_Connection* MakeConnection
+    virtual CDB_Connection* MakeDBConnection
     (I_DriverContext&                  ctx,
-     const I_DriverContext::SConnAttr& conn_attr) = 0;
+     const I_DriverContext::SConnAttr& conn_attr,
+     IConnValidator* validator = NULL) = 0;
     
     /// Helper method to provide access to a protected method in I_DriverContext
     /// for child classses.
-    static I_Connection* CtxMakeConnection
+    static CDB_Connection* CtxMakeConnection
     (I_DriverContext&                  ctx,
      const I_DriverContext::SConnAttr& conn_attr);
     
+private:    
     // Friends
     friend class I_DriverContext;
 };
@@ -86,13 +104,13 @@ public:
     /// Get access to the class instance.
     static CDbapiConnMgr& Instance(void);
     
-    /// Set up a connection policy.
-    void SetConnectionFactory(IDBConnectionFactory* policy)
+    /// Set up a connection factory.
+    void SetConnectionFactory(IDBConnectionFactory* factory)
     {
-        m_ConnectFactory.Reset(policy);
+        m_ConnectFactory.Reset(factory);
     }
     
-    /// Retrieve a connection policy.
+    /// Retrieve a connection factory.
     CRef<IDBConnectionFactory> GetConnectionFactory(void) const
     {
         return m_ConnectFactory;
@@ -111,7 +129,7 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 inline
-I_Connection* 
+CDB_Connection* 
 IDBConnectionFactory::CtxMakeConnection
 (I_DriverContext&                  ctx,
  const I_DriverContext::SConnAttr& conn_attr)
@@ -126,6 +144,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/23 13:21:45  ssikorsk
+ * Added interface IConnValidator;
+ * Renamed IDBCannectionFactory::MakeConnection to MakeDBConnection;
+ * Added IConnValidator as a default argument to IDBCannectionFactory::MakeDBConnection;
+ * Changed return types of IDBCannectionFactory::MakeDBConnection and
+ *     IDBCannectionFactory::CtxMakeConnection to CDB_Connection*;
+ *
  * Revision 1.1  2006/01/03 19:25:12  ssikorsk
  * Declaration of the IDBConnectionFactory interface.
  * CDbapiConnMgr singleton to manage life time of
