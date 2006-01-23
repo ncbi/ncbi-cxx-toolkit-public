@@ -2435,6 +2435,17 @@ string CDir::GetCwd()
 }
 
 
+bool CDir::SetCwd(const string& dir)
+{
+#if defined(NCBI_OS_UNIX)
+    return chdir(dir.c_str()) == 0;
+#elif defined(NCBI_OS_MSWIN)
+    return _chdir(dir.c_str()) == 0;
+#endif
+    return false;
+}
+
+
 CDir::~CDir(void)
 {
     return;
@@ -3876,6 +3887,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.137  2006/01/23 15:25:13  ivanov
+ * + CDir::SetCwd() -- change the current working directory
+ *
  * Revision 1.136  2006/01/12 20:12:04  ucko
  * s_GetFileSystemInfo: Use pathconf to determine filename_max if
  * possible, and fall back to OS-specific code (which was also broken on

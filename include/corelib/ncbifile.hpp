@@ -1161,6 +1161,9 @@ public:
     /// Get the current working directory.
     static string GetCwd(void);
 
+    /// Change the current working directory.
+    static bool SetCwd(const string& dir);
+
     /// Define a list of pointers to directory entries.
     typedef list< AutoPtr<CDirEntry> > TEntries;
 
@@ -2642,6 +2645,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/01/23 15:24:56  ivanov
+ * + CDir::SetCwd() -- change the current working directory
+ *
  * Revision 1.72  2006/01/11 13:36:38  ivanov
  * +CFileUtil::GetFileSystemInfo. CFileUtil - use CFileErrnoException.
  *
