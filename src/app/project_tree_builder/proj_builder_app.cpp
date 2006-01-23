@@ -486,11 +486,13 @@ int CProjBulderApp::Run(void)
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             sln_gen.AddProject(p->second);
         }
-        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetName());
-        sln_gen.AddConfigureProject (configure_generator.GetPath(false), configure_generator.GetName(false));
-        sln_gen.AddConfigureProject (configure_generator.GetPath(true), configure_generator.GetName(true));
-        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj.GetAttlist().GetName());
-        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj.GetAttlist().GetName());
+        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
+        sln_gen.AddConfigureProject (configure_generator.GetPath(false),
+                                     configure_generator.GetVisualStudioProject(false));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(true),
+                                     configure_generator.GetVisualStudioProject(true));
+        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
         sln_gen.SaveSolution(m_Solution);
     }
 
@@ -582,11 +584,13 @@ int CProjBulderApp::Run(void)
         ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
             sln_gen.AddProject(p->second);
         }
-        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetName());
-        sln_gen.AddConfigureProject (configure_generator.GetPath(false), configure_generator.GetName(false));
-        sln_gen.AddConfigureProject (configure_generator.GetPath(true), configure_generator.GetName(true));
-        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj.GetAttlist().GetName());
-        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj.GetAttlist().GetName());
+        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
+        sln_gen.AddConfigureProject (configure_generator.GetPath(false),
+                                     configure_generator.GetVisualStudioProject(false));
+        sln_gen.AddConfigureProject (configure_generator.GetPath(true),
+                                     configure_generator.GetVisualStudioProject(true));
+        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+        sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
         sln_gen.SaveSolution(m_Solution);
     }
 
@@ -1133,6 +1137,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.70  2006/01/23 18:26:15  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.69  2006/01/10 17:39:21  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

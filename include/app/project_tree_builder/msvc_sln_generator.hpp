@@ -54,11 +54,9 @@ public:
     
     void AddProject(const CProjItem& project);
     
-    void AddUtilityProject (const string& full_path, const string& name);
-
-    void AddConfigureProject (const string& full_path, const string& name);
-
-    void AddBuildAllProject(const string& full_path, const string& name);
+    void AddUtilityProject  (const string& full_path, const CVisualStudioProject& prj);
+    void AddConfigureProject(const string& full_path, const CVisualStudioProject& prj);
+    void AddBuildAllProject (const string& full_path, const CVisualStudioProject& prj);
 
     void SaveSolution(const string& file_path);
     
@@ -121,6 +119,8 @@ private:
 
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
                                     const CPrjContext& project);
+    void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
+                                    const list<string>& project);
 
     void WriteUtilityProjectConfiguration(const TUtilityProject& project, 
                                           CNcbiOfstream&         ofs);
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/23 18:26:33  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.14  2006/01/10 17:39:42  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

@@ -153,6 +153,9 @@ public:
     
     /// Type of the project
     EMakeFileType m_MakeType;
+    
+    /// project GUID
+    string m_GUID;
 
 
 private:
@@ -166,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/01/23 18:26:33  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.21  2005/01/31 16:38:00  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *

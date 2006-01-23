@@ -61,6 +61,7 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
                             "/build $(ConfigurationName) "\
                             "/project $(InputName) "\
                             "\"$(SolutionPath)\"\n";
+    CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
 }
 
 
@@ -72,16 +73,11 @@ CMsvcMasterProjectGenerator::~CMsvcMasterProjectGenerator(void)
 void 
 CMsvcMasterProjectGenerator::SaveProject()
 {
-    CVisualStudioProject xmlprj;
-    CreateUtilityProject(m_Name, m_Configs, &xmlprj);
-
     {{
         CProjectTreeFolders folders(m_Tree);
-        ProcessTreeFolder(folders.m_RootParent, &xmlprj.SetFiles());
+        ProcessTreeFolder(folders.m_RootParent, &m_Xmlprj.SetFiles());
     }}
-
-
-    SaveIfNewer(GetPath(), xmlprj);
+    SaveIfNewer(GetPath(), m_Xmlprj);
 }
 
 
@@ -210,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/23 18:26:15  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.18  2004/12/20 21:07:33  gouriano
  * Eliminate compiler warnings
  *

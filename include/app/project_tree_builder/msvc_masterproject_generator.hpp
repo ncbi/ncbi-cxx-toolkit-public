@@ -61,12 +61,13 @@ public:
     void SaveProject();
 
     string GetPath() const;
-    string GetName(void) const
+    const CVisualStudioProject& GetVisualStudioProject(void) const
     {
-        return m_Name;
+        return m_Xmlprj;
     }
 
 private:
+    CVisualStudioProject m_Xmlprj;
     const CProjectItemsTree& m_Tree;
     list<SConfigInfo> m_Configs;
 
@@ -104,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/23 18:26:33  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.12  2006/01/10 17:39:42  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

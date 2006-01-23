@@ -918,6 +918,7 @@ void CreateUtilityProject(const string&            name,
         project->SetAttlist().SetName         (name);
         project->SetAttlist().SetRootNamespace
             (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
+        project->SetAttlist().SetProjectGUID  (GenerateSlnGUID());
         project->SetAttlist().SetKeyword      (MSVC_MASTERPROJECT_KEYWORD);
     }}
     
@@ -1108,6 +1109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/01/23 18:26:15  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.42  2006/01/10 17:39:21  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

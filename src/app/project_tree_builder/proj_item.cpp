@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <app/project_tree_builder/proj_item.hpp>
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -153,6 +154,7 @@ CProjItem::CProjItem(TProjType type,
     m_Defines (defines),
     m_MakeType(maketype)
 {
+    m_GUID = GenerateSlnGUID();
 }
 
 
@@ -184,7 +186,8 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_DatatoolSources= item.m_DatatoolSources;
     m_Defines        = item.m_Defines;
     m_NcbiCLibs      = item.m_NcbiCLibs;
-    m_MakeType     = item.m_MakeType;
+    m_MakeType       = item.m_MakeType;
+    m_GUID           = item.m_GUID;
 }
 
 
@@ -193,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/01/23 18:26:15  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.27  2005/01/31 16:37:38  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *

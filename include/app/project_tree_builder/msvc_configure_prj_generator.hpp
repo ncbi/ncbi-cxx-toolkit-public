@@ -68,10 +68,11 @@ public:
 
     void SaveProject(bool with_gui);
     string GetPath(bool with_gui) const;
-    string GetName(bool with_gui) const;
+    const CVisualStudioProject& GetVisualStudioProject(bool with_gui) const;
 
 private:
- 
+    CVisualStudioProject m_Xmlprj;
+    CVisualStudioProject m_XmlprjGui;
   	const string m_Name;
   	const string m_NameGui;
 
@@ -110,6 +111,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/01/23 18:26:33  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.7  2006/01/10 17:39:42  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

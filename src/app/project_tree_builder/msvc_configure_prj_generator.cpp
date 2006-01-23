@@ -125,6 +125,9 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
     m_CustomBuildCommand += "call $(InputName).bat\n";
     m_CustomBuildCommand += "del /Q $(InputName).bat\n";
+
+    CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
+    CreateUtilityProject(m_NameGui, m_Configs, &m_XmlprjGui);
 }
 
 
@@ -137,10 +140,7 @@ void CMsvcConfigureProjectGenerator::SaveProject(bool with_gui)
 {
     string name(with_gui ? m_NameGui : m_Name);
     string srcfile(with_gui ? m_SrcFileNameGui : m_SrcFileName);
-
-    CVisualStudioProject xmlprj;
-    CreateUtilityProject(name, m_Configs, &xmlprj);
-
+    CVisualStudioProject& xmlprj = with_gui ? m_XmlprjGui : m_Xmlprj;
 
     {{
         CRef<CFilter> filter(new CFilter());
@@ -183,12 +183,13 @@ string CMsvcConfigureProjectGenerator::GetPath(bool with_gui) const
     return project_path;
 }
 
-string CMsvcConfigureProjectGenerator::GetName(bool with_gui) const
+const CVisualStudioProject&
+CMsvcConfigureProjectGenerator::GetVisualStudioProject(bool with_gui) const
 {
     if (with_gui) {
-        return m_NameGui;
+        return m_XmlprjGui;
     }
-    return m_Name;
+    return m_Xmlprj;
 }
 
 void CMsvcConfigureProjectGenerator::CreateProjectFileItem(bool with_gui) const
@@ -265,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2006/01/23 18:26:15  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.27  2006/01/10 17:39:21  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

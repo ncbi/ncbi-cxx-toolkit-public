@@ -69,6 +69,7 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
         xmlprj.SetAttlist().SetProjectType (MSVC_PROJECT_PROJECT_TYPE);
         xmlprj.SetAttlist().SetVersion     (GetApp().GetRegSettings().GetProjectFileFormatVersion());
         xmlprj.SetAttlist().SetName        (project_context.ProjectName());
+        xmlprj.SetAttlist().SetProjectGUID (prj.m_GUID);
         xmlprj.SetAttlist().SetKeyword     (MSVC_PROJECT_KEYWORD_WIN32);
     }}
 
@@ -470,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/01/23 18:26:15  gouriano
+ * Generate project GUID early, sort projects in solution by GUID
+ *
  * Revision 1.43  2005/12/27 14:57:51  gouriano
  * Adjustments for MSVC 2005 Express
  *
