@@ -5409,6 +5409,79 @@ void ResizeTest()
 
 }
 
+void ExportTest()
+{
+    cout << "---------------------------- ExportTest..." << endl;
+
+    {
+    char buf[20] = {0,};
+
+    buf[0] = 1;
+    buf[1] = 1;
+    buf[2]= (char)(1 << 1);
+
+    bvect bv1;
+    export_array(bv1, buf + 0, buf + 20);
+
+    assert(bv1.count() == 3);
+    assert(bv1.test(0));
+    assert(bv1.test(8));
+    assert(bv1.test(17));
+    }
+
+    {
+    char buf[65536*10] = {0,};
+
+    buf[0] = 1;
+    buf[1] = 1;
+    buf[2]= (char)(1 << 1);
+
+    bvect bv1;
+    export_array(bv1, buf + 0, buf + 65536*10);
+
+    assert(bv1.count() == 3);
+    assert(bv1.test(0));
+    assert(bv1.test(8));
+    assert(bv1.test(17));
+    }
+
+    {
+    short buf[20] = {0,};
+
+    buf[0] = 1;
+    buf[1] = 1;
+    buf[2]= (char)(1 << 1);
+
+    bvect bv1;
+    export_array(bv1, buf + 0, buf + 20);
+
+    assert(bv1.count() == 3);
+    assert(bv1.test(0));
+    assert(bv1.test(16));
+    assert(bv1.test(33));
+    }
+
+    {
+    int buf[20] = {0,};
+
+    buf[0] = 1;
+    buf[1] = 1;
+    buf[2]= (char)(1 << 1);
+
+    bvect bv1;
+    export_array(bv1, buf + 0, buf + 20);
+
+    assert(bv1.count() == 3);
+    assert(bv1.test(0));
+    assert(bv1.test(32));
+    assert(bv1.test(65));
+    }
+
+
+    cout << "---------------------------- ExportTest Ok." << endl;
+}
+
+
 
 int main(void)
 {
@@ -5431,6 +5504,9 @@ int main(void)
 
 //   ::srand((unsigned)::time(NULL));
 
+    ExportTest();
+return 0;
+/*
     ResizeTest();
 
      MiniSetTest();
@@ -5472,7 +5548,7 @@ int main(void)
      MutationTest();
 
      MutationOperationsTest();
-   
+*/   
      SerializationTest();
 
      DesrializationTest2();
