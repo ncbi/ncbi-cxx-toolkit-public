@@ -51,8 +51,8 @@ enum EDefaultMapping
 class NCBI_DBAPIDRIVER_EXPORT CDBConnectionFactory : public IDBConnectionFactory
 {
 public:
-    // CDBConnectionFactory will take ownership of svr_name_policy.
-    // CDBConnectionFactory won't take ownership of registry.
+    /// CDBConnectionFactory will take ownership of svr_name_policy.
+    /// CDBConnectionFactory won't take ownership of registry.
     CDBConnectionFactory(IDBServiceMapper* svc_mapper, 
                          const IRegistry* registry = NULL,
                          EDefaultMapping def_mapping = eUseDefaultMapper);
@@ -60,6 +60,9 @@ public:
 
     //
     virtual void Configure(const IRegistry* registry = NULL);
+    
+    IDBServiceMapper& GetServiceMapper(void);
+    const IDBServiceMapper& GetServiceMapper(void) const;
     
     //
     unsigned int GetMaxNumOfConnAttempts(void) const;
@@ -79,9 +82,10 @@ public:
     
 protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
-    virtual I_Connection* MakeConnection(
+    virtual CDB_Connection* MakeDBConnection(
         I_DriverContext& ctx,
-        const I_DriverContext::SConnAttr& conn_attr);
+        const I_DriverContext::SConnAttr& conn_attr,
+        IConnValidator* validator = NULL);
     
     //
     TSvrRef GetDispatchedServer(const string& service_name);
@@ -93,9 +97,15 @@ protected:
     
 private:
     // Methods
-    I_Connection* DispatchServerName(
+    CDB_Connection* DispatchServerName(
         I_DriverContext& ctx,
-        const I_DriverContext::SConnAttr& conn_attr);
+        const I_DriverContext::SConnAttr& conn_attr,
+        IConnValidator* validator);
+    
+    CDB_Connection* MakeValidConnection(
+        I_DriverContext& ctx,
+        const I_DriverContext::SConnAttr& conn_attr,
+        IConnValidator* validator) const;
     
     // Data types
     typedef map<string, TSvrRef>      TDispatchedSet;
@@ -150,7 +160,75 @@ public:
 };
 
 
+///////////////////////////////////////////////////////////////////////////////
+/// CConnValidatorCoR
+///
+/// IConnValidator adaptor which implements the chain of responsibility
+/// pattern
+///
+
+class NCBI_DBAPIDRIVER_EXPORT CConnValidatorCoR : public IConnValidator
+{
+public:
+    CConnValidatorCoR(void);
+    virtual ~CConnValidatorCoR(void);
+    
+    virtual EConnStatus Validate(CDB_Connection& conn);
+    
+    void Push(const CRef<IConnValidator>& validator);
+    void Pop(void);
+    CRef<IConnValidator> Top(void) const;
+    bool Empty(void) const;
+    
+protected:
+    typedef vector<CRef<IConnValidator> > TValidators;
+    
+    mutable CFastMutex m_Mtx;
+    TValidators        m_Validators;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CTrivialConnValidator : public IConnValidator
+{
+public:
+    enum EValidateAttr {
+        eKeepModifiedConnection = 0,
+        eRestoreDefaultDB = 1
+    };
+    
+    CTrivialConnValidator(const string& db_name, 
+                          EValidateAttr attr = eRestoreDefaultDB);
+    virtual ~CTrivialConnValidator(void);
+    
+    virtual EConnStatus Validate(CDB_Connection& conn);
+    
+    const string& GetDBName(void) const
+    {
+        return m_DBName;
+    }
+    
+private:
+    const string        m_DBName;
+    const EValidateAttr m_Attr;
+};
+
+
+
 /////////////////////////////////////////////////////////////////////////////
+inline
+IDBServiceMapper& 
+CDBConnectionFactory::GetServiceMapper(void)
+{
+    return *m_DBServiceMapper;
+}
+
+inline
+const IDBServiceMapper& 
+CDBConnectionFactory::GetServiceMapper(void) const
+{
+    return *m_DBServiceMapper;
+}
+
 inline
 unsigned int 
 CDBConnectionFactory::GetMaxNumOfConnAttempts(void) const
@@ -191,6 +269,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/23 13:26:28  ssikorsk
+ * Added method GetServiceMapper to CDBConnectionFactory;
+ * Added classes CConnValidatorCoR and CTrivialConnValidator
+ *     as an implementation of the IConnValidator interface.
+ *
  * Revision 1.1  2006/01/03 19:32:22  ssikorsk
  * Added CDBConnectionFactory, CDBRedispatchFactory and CDBGiveUpFactory
  * as implementations of the IDBConnectionFactory interface.
