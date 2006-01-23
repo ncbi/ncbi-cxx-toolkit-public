@@ -475,10 +475,9 @@ static void s_NoteFinalize(
         if (addPeriod  &&  !NStr::EndsWith(noteStr, ".")) {
 
             AddPeriod(noteStr);
-            TrimSpacesAndJunkFromEnds(noteStr, true);
         }
         // Policy change: expand tilde on both descriptors and features
-        ExpandTildes(noteStr, eTilde_newline);
+//        ExpandTildes(noteStr, eTilde_newline);
 
         CRef<CFormatQual> note(new CFormatQual("note", noteStr));
         flatFeature.SetQuals().push_back(note);
@@ -3812,6 +3811,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2006/01/23 14:24:15  ludwigf
+* FIXED: Formatting for comments and notes would call function ExpandTildes()
+*  twice, effectively killing even the tildes that were supposed to survive.
+*
 * Revision 1.71  2006/01/19 16:01:40  ludwigf
 * CHANGED: The /allele feature is longer propagated from the gene to repeat_
 *  regions.
