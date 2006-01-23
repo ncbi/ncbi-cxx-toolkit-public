@@ -46,10 +46,6 @@
 extern "C" {
 #endif
 
-/** Diagonal distance between HSPs for which one can be considered included in 
-   the other in Mega BLAST */
-#define MB_DIAG_CLOSE 6 
-
 /** Split subject sequences if longer than this */
 #define MAX_DBSEQ_LEN 5000000 
 
@@ -101,40 +97,6 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
 NCBI_XBLAST_EXPORT
 BlastGapAlignStruct* 
 BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
-
-/** Mega BLAST function performing gapped alignment: 
- *  Sorts initial HSPs by diagonal; 
- *  For each HSP:
- *    - Removes HSP if it is included in another already extended HSP;
- *    - If required, performs ungapped extension;
- *    - Performs greedy gapped extension;
- *    - Saves qualifying HSPs with gapped information into an HSP list 
- *      structure.
- * @param program_number Not needed: added for prototype consistency.
- * @param query The query sequence [in]
- * @param query_info Query information structure, containing offsets into 
- *                   the concatenated sequence [in]
- * @param subject The subject sequence [in]
- * @param gap_align A placeholder for gapped alignment information and 
- *        score block. [in] [out]
- * @param score_params Options related to scoring alignments [in]
- * @param ext_params Options related to alignment extension [in]
- * @param hit_params Options related to saving HSPs [in]
- * @param init_hitlist Contains all the initial hits [in]
- * @param hsp_list_ptr List of HSPs with full extension information [out]
- * @param gapped_stats Return statistics (not filled if NULL) [out]
-*/
-Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number, 
-             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-                BLAST_SequenceBlk* subject,
-                BlastGapAlignStruct* gap_align,
-                const BlastScoringParameters* score_params, 
-                const BlastExtensionParameters* ext_params,
-                const BlastHitSavingParameters* hit_params,
-                BlastInitHitList* init_hitlist,
-                BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats);
-
-
 
 /** Performs gapped extension for all non-Mega BLAST programs, given
  * that ungapped extension has been done earlier.
