@@ -304,12 +304,17 @@ void CMsvcSite::GetLibChoiceIncludes(
         if ( lib_id.empty() )
             lib_id = *p;
         else  {
-            
             SLibChoice choice = GetLibChoiceForLib(lib_id);
             SLibInfo lib_info;
             GetLibInfo(choice.m_3PartyLib, cfg_info, &lib_info);
-            if ( IsLibOk(lib_info, true) ) {
-//                abs_includes->push_back(lib_info.m_IncludeDir);
+            bool b3;
+            if (GetApp().GetBuildType().GetType() == CBuildType::eDll/* &&
+                GetApp().GetDllsInfo().IsDllHosted(lib_id)*/) {
+                b3 = choice.m_Choice == e3PartyLib;
+            } else {
+                b3 = IsLibOk(lib_info, true);
+            }
+            if (b3) {
                 copy(lib_info.m_IncludeDir.begin(), 
                     lib_info.m_IncludeDir.end(), back_inserter(*abs_includes));
             } else {
@@ -511,6 +516,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/01/23 18:25:09  gouriano
+ * Corrected libchoice includes in dll configuration
+ *
  * Revision 1.34  2006/01/04 13:44:55  gouriano
  * Corrected analyzing build configurations for DLL build
  *
