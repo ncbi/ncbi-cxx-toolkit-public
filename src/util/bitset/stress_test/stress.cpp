@@ -5505,8 +5505,6 @@ int main(void)
 //   ::srand((unsigned)::time(NULL));
 
     ExportTest();
-return 0;
-/*
     ResizeTest();
 
      MiniSetTest();
@@ -5548,7 +5546,7 @@ return 0;
      MutationTest();
 
      MutationOperationsTest();
-*/   
+   
      SerializationTest();
 
      DesrializationTest2();
