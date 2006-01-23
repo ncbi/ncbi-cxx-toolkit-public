@@ -391,13 +391,15 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
         free(tmp_block);
     }
 
-    WriteSysTag(eBitString);
+    WriteSysTag(compressed ? eOctetString : eBitString);
     if (len == 0) {
         WriteLength(0);
         return;
     }
     WriteLength((len+7)/8+1);
-    WriteByte(TByte(len%8 ? 8-len%8 : 0));
+    if (!compressed) {
+        WriteByte(TByte(len%8 ? 8-len%8 : 0));
+    }
     const size_t reserve=128;
     char bytes[reserve];
     size_t b=0;
@@ -1202,6 +1204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.104  2006/01/23 18:05:56  gouriano
+* Corrected systag when writing compressed bit string
+*
 * Revision 1.103  2006/01/19 18:21:57  gouriano
 * Added possibility to save bit string data in compressed format
 *
