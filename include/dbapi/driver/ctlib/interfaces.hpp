@@ -104,7 +104,7 @@ public:
                                      CS_SERVERMSG* msg);
 
 protected:
-    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr);
+    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
     
 private:
     CS_CONTEXT* m_Context;
@@ -629,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/01/23 13:12:50  ssikorsk
+ * Renamed CTLibContext::MakeConnection to MakeIConnection.
+ *
  * Revision 1.22  2006/01/03 18:55:00  ssikorsk
  * Replace method Connect with MakeConnection.
  *
