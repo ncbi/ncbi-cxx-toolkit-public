@@ -272,7 +272,7 @@ static const TDbtUrl sc_url_prefix[] = {
     TDbtUrl(CDbtag::eDbtagType_CDD, "http://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid="),
     TDbtUrl(CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid="),
     TDbtUrl(CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog="),
-    TDbtUrl(CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.go.jp/db/view/main.cgi?masterid="),
+    TDbtUrl(CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid="),
     TDbtUrl(CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?"),
     TDbtUrl(CDbtag::eDbtagType_GABI, "https://gabi.rzpd.de/cgi-bin-protected/GreenCards.pl.cgi?Mode=ShowBioObject&BioObjectName="),
     TDbtUrl(CDbtag::eDbtagType_GDB, "http://www.gdb.org/gdb-bin/genera/genera/hgd/DBObject/GDB:"),
@@ -506,6 +506,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.29  2006/01/23 14:13:01  ludwigf
+ * CHANGED: URL associated with the "FANTOM_DB"/db_xref, per note from Mark
+ *  Cavanaugh.
+ *
  * Revision 6.28  2005/11/23 16:28:26  ludwigf
  * FIXED: Text strings identifying the UniProt databases.
  *
