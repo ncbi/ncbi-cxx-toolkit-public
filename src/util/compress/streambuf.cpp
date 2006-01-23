@@ -106,7 +106,34 @@ CCompressionStreambuf::CCompressionStreambuf(
 
 CCompressionStreambuf::~CCompressionStreambuf()
 {
-    Finalize();
+    // Finalize processors
+
+    CCompressionStreamProcessor* sp;
+    const string msg_where("CCompressionStreambuf::~CCompressionStreambuf: ");
+    const string msg_overflow("Overflow occured, lost some processed data "
+                              "through call Finalize()");
+    const string msg_error("Finalize() failed");
+
+    sp = GetStreamProcessor(CCompressionStream::eRead);
+    if ( sp  &&  !sp->m_Finalized ) {
+        Finalize(CCompressionStream::eRead);
+        if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
+            ERR_POST(msg_where + msg_overflow);
+        }
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
+            ERR_POST(msg_where + msg_error);
+        }
+    }
+    sp = GetStreamProcessor(CCompressionStream::eWrite);
+    if ( sp  &&  !sp->m_Finalized ) {
+        Finalize(CCompressionStream::eWrite);
+        if ( sp->m_LastStatus == CP::eStatus_Overflow ) {
+            ERR_POST(msg_where + msg_overflow);
+        }
+        if ( sp->m_LastStatus == CP::eStatus_Error ) {
+            ERR_POST(msg_where + msg_error);
+        }
+    }
     delete[] m_Buf;
 }
 
@@ -119,10 +146,7 @@ void CCompressionStreambuf::Finalize(CCompressionStream::EDirection dir)
         Finalize(CCompressionStream::eWrite);
         return;
     }
-    if ( !IsOkay() ) {
-        return;
-    }
-    // Check processor status
+    // Check processor status (exists, not busy, not finalized)
     if ( !IsStreamProcessorOkay(dir) ) {
         return;
     }
@@ -232,7 +256,7 @@ int CCompressionStreambuf::Sync(CCompressionStream::EDirection dir)
             // Write data to the underlying stream only if the output buffer
             // is full or an overflow/endofdata occurs.
             if ( !WriteOutBufToStream() ) {
-                return false;
+                return -1;
             }
         }
     } while ( out_avail  &&  sp->m_LastStatus == CP::eStatus_Overflow );
@@ -329,6 +353,10 @@ bool CCompressionStreambuf::ProcessStreamRead()
             }
             m_Reader->m_LastOutAvail = out_avail;
         } else {
+            // Check available space in the output buffer
+            if ( !out_size ) {
+                return false;
+            }
             // Get unprocessed data size
             in_len = m_Reader->m_End - m_Reader->m_Begin;
         }
@@ -499,6 +527,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/01/23 13:26:50  ivanov
+ * Return changes introduced in R1.21 with accidentally removed line of code
+ *
  * Revision 1.23  2006/01/20 18:58:04  ivanov
  * Rollback to R1.20 because last changes break other code
  *
