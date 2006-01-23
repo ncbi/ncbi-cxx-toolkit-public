@@ -75,6 +75,8 @@ class CDB_CursorCmd;
 class CDB_SendDataCmd;
 class CDB_ResultProcessor;
 
+class IConnValidator;
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -451,12 +453,24 @@ public:
 
     // Create new connection to specified server (within this context).
     // It is your responsibility to delete the returned connection object.
-    virtual CDB_Connection* Connect(const string&   srv_name,
-                                    const string&   user_name,
-                                    const string&   passwd,
-                                    TConnectionMode mode,
-                                    bool            reusable  = false,
-                                    const string&   pool_name = kEmptyStr);
+    virtual CDB_Connection* Connect
+    (const string&   srv_name,
+     const string&   user_name,
+     const string&   passwd,
+     TConnectionMode mode,
+     bool            reusable  = false,
+     const string&   pool_name = kEmptyStr);
+
+    ///
+    CDB_Connection* ConnectValidated
+    (const string&   srv_name,
+     const string&   user_name,
+     const string&   passwd,
+     IConnValidator& validator,
+     TConnectionMode mode      = fBcpIn,
+     bool            reusable  = false,
+     const string&   pool_name = kEmptyStr
+     );
 
     // Return number of currently open connections in this context.
     // If "srv_name" is not NULL, then return # of conn. open to that server.
@@ -501,8 +515,8 @@ public:
 protected:
     // To allow children of I_DriverContext to create CDB_Connection
     CDB_Connection* Create_Connection(I_Connection& connection);
-    I_Connection* MakePooledConnection(const SConnAttr& conn_attr);
-    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr) = 0;
+    CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr);
+    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr) = 0;
     
     // Used and unused(reserve) connections
     CPointerPot m_NotInUse;
@@ -649,6 +663,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/01/23 13:10:09  ssikorsk
+ * Added method I_DeriverContext::ConnectValidated;
+ * Changed return type of I_DeriverContext::MakePooledConnection;
+ *
  * Revision 1.38  2006/01/03 18:52:56  ssikorsk
  * Add I_DriverContext::SConnAttr structure.
  *
