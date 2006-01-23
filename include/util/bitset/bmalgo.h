@@ -706,7 +706,7 @@ void combine_xor(BV& bv, It  first, It last)
 template<class BV, class It>
 void combine_sub(BV& bv, It  first, It last)
 {
-    typename BV::blocks_manager& bman = bv.get_blocks_manager();
+    typename BV::blocks_manager_type& bman = bv.get_blocks_manager();
     unsigned max_id = bv.size();
 
     while (first < last)
