@@ -32,7 +32,7 @@
 #include "dbapi_conn_policy.hpp"
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/dbapi_conn_factory.hpp>
-#ifdef HAVE_CONNEXT
+#ifdef HAVE_LIBCONNEXT
 #  include <connect/ext/ncbi_dblb_svcmapper.hpp>
 #endif
 
@@ -41,25 +41,33 @@ USING_NCBI_SCOPE;
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
 CConnectPolicyApp::CConnectPolicyApp(void)
 : CDbapiSampleApp( eDoNotUseSampleDatabase )
 {
 }
 
+
 CConnectPolicyApp::~CConnectPolicyApp(void)
 {
 }
+
 
 int
 CConnectPolicyApp::RunSample(void)
 {
     try {
-#ifdef HAVE_CONNEXT
         DBLB_INSTALL_DEFAULT();
-#endif
                 
+        // CConnValidatorCoR is developed to combine other validators into a chain.
+        CConnValidatorCoR conn_validator;
+        
+        // Combine validators.
+        conn_validator.Push(CRef<IConnValidator>(new CTrivialConnValidator("tempdb")));
+        conn_validator.Push(CRef<IConnValidator>(new CTrivialConnValidator("DBAPI_Sample")));
+        
         for (int i = 0; i < 20; ++i) {
-            auto_ptr<CDB_Connection> conn(CreateConnection());
+            auto_ptr<CDB_Connection> conn(CreateConnection(&conn_validator));
         }
         
     }
@@ -71,14 +79,21 @@ CConnectPolicyApp::RunSample(void)
     return 0;
 }
 
+
 int main(int argc, const char* argv[])
 {
     return CConnectPolicyApp().AppMain(argc, argv);
 }
 
+
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/23 13:47:34  ssikorsk
+ * Added code to demonstrate IconnValidator usage;
+ *
  * Revision 1.3  2006/01/10 17:23:37  ucko
  * Conditionalize use of ncbi_dblb_svcmapper.hpp and DBLB_INSTALL_DEFAULT
  * on HAVE_CONNEXT.
