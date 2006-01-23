@@ -304,7 +304,7 @@ I_DriverContext::GetHostName(void) const
     return m_HostName;
 }
 
-I_Connection* 
+CDB_Connection* 
 I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
 {
     if (conn_attr.reusable  &&  m_NotInUse.NofItems() > 0) {
@@ -351,9 +351,9 @@ I_DriverContext::MakePooledConnection(const SConnAttr& conn_attr)
         return NULL;
     }
     
-    I_Connection* t_con = MakeConnection(conn_attr);
+    I_Connection* t_con = MakeIConnection(conn_attr);
     
-    return t_con;
+    return Create_Connection(*t_con);
 }
 
 CDB_Connection* 
@@ -364,8 +364,6 @@ I_DriverContext::Connect(const string&   srv_name,
                          bool            reusable,
                          const string&   pool_name)
 {
-    CFastMutexGuard mg(m_Mtx);
-
     SConnAttr conn_attr;
 
     conn_attr.srv_name = srv_name;
@@ -394,8 +392,10 @@ I_DriverContext::Connect(const string&   srv_name,
         DATABASE_DRIVER_ERROR( err_msg, 200010 );
     }
         
-    I_Connection* t_con = 
-        CDbapiConnMgr::Instance().GetConnectionFactory()->MakeConnection(*this, conn_attr);
+    CDB_Connection* t_con = 
+        CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
+            *this, 
+            conn_attr);
     
     if((!t_con && (mode & fDoNotConnect) != 0)) {
         return NULL;
@@ -405,7 +405,63 @@ I_DriverContext::Connect(const string&   srv_name,
                        "Cannot connect to the server '" + srv_name + "'", 
                        100011 );
     
-    return Create_Connection(*t_con);
+    // return Create_Connection(*t_con);
+    return t_con;
+}
+
+CDB_Connection* 
+I_DriverContext::ConnectValidated(const string&   srv_name,
+                                  const string&   user_name,
+                                  const string&   passwd,
+                                  IConnValidator& validator,
+                                  TConnectionMode mode,
+                                  bool            reusable,
+                                  const string&   pool_name)
+{
+    SConnAttr conn_attr;
+
+    conn_attr.srv_name = srv_name;
+    conn_attr.user_name = user_name;
+    conn_attr.passwd = passwd;
+    conn_attr.mode = mode;
+    conn_attr.reusable = reusable;
+    conn_attr.pool_name = pool_name;
+
+    // Precondition check.
+    if (conn_attr.srv_name.empty() ||  
+        conn_attr.user_name.empty() ||  
+        conn_attr.passwd.empty()) {
+        string err_msg("Insufficient info/credentials to connect.");
+        
+        if (conn_attr.srv_name.empty()) {
+            err_msg += " Server name has not been set.";
+        }
+        if (conn_attr.user_name.empty()) {
+            err_msg += " User name has not been set.";
+        }
+        if (conn_attr.passwd.empty()) {
+            err_msg += " Password has not been set.";
+        }
+        
+        DATABASE_DRIVER_ERROR( err_msg, 200010 );
+    }
+        
+    validator.DoNotDeleteThisObject();
+    CDB_Connection* t_con = 
+        CDbapiConnMgr::Instance().GetConnectionFactory()->MakeDBConnection(
+            *this, 
+            conn_attr, 
+            &validator);
+    
+    if((!t_con && (mode & fDoNotConnect) != 0)) {
+        return NULL;
+    }
+
+    CHECK_DRIVER_ERROR(t_con == NULL, 
+                       "Cannot connect to the server '" + srv_name + "'", 
+                       100011 );
+    
+    return t_con;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -469,6 +525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/23 13:35:36  ssikorsk
+ * Implemented I_DriverContext::ConnectValidated;
+ *
  * Revision 1.12  2006/01/09 19:19:21  ssikorsk
  * Validate server name, user name and password before connection for all drivers.
  *
