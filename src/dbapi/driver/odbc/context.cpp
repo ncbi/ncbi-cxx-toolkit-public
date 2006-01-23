@@ -235,17 +235,8 @@ bool CODBCContext::SetMaxTextImageSize(size_t nof_bytes)
 
 
 I_Connection* 
-CODBCContext::MakeConnection(const SConnAttr& conn_attr)
+CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    // new connection needed
-    if (conn_attr.srv_name.empty()  ||  
-        conn_attr.user_name.empty()  ||  
-        conn_attr.passwd.empty()) {
-        string err_message = "You have to provide server name, user name and " 
-            "password to connect to the server" + m_Reporter.GetExtraMsg();
-        DATABASE_DRIVER_ERROR( err_message, 100010 );
-    }
-
     SQLHDBC con = x_ConnectToServer(conn_attr.srv_name, 
                                     conn_attr.user_name, 
                                     conn_attr.passwd, 
@@ -575,6 +566,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/01/23 13:42:13  ssikorsk
+ * Renamed CODBCContext::MakeConnection to MakeIConnection;
+ * Removed connection attribut checking from this method;
+ *
  * Revision 1.33  2006/01/04 12:28:35  ssikorsk
  * Fix compilation issues
  *
