@@ -143,9 +143,9 @@ const unsigned int kTDSMaxNameLen = kDBLibMaxNameLen;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBLibContext::
-//
+///
+///  CDBLibContext::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBLibContext : public I_DriverContext
 {
@@ -156,9 +156,9 @@ public:
     virtual ~CDBLibContext(void);
 
 public:
-    //
-    // GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
-    //
+    ///
+    /// GENERIC functionality (see in <dbapi/driver/interfaces.hpp>)
+    ///
 
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0);
     virtual bool SetTimeout      (unsigned int nof_secs = 0);
@@ -166,17 +166,17 @@ public:
 
     virtual bool IsAbleTo(ECapability cpb) const;
 
-    //
-    // DBLIB specific functionality
-    //
+    ///
+    /// DBLIB specific functionality
+    ///
 
-    // the following methods are optional (driver will use the default
-    // values if not called)
-    // the values will affect the new connections only
+    /// the following methods are optional (driver will use the default
+    /// values if not called)
+    /// the values will affect the new connections only
 
-    // Deprecated. Use SetApplicationName instead.
+    /// Deprecated. Use SetApplicationName instead.
     virtual void DBLIB_SetApplicationName(const string& a_name);
-    // Deprecated. Use SetHostName instead.
+    /// Deprecated. Use SetHostName instead.
     virtual void DBLIB_SetHostName(const string& host_name);
     virtual void DBLIB_SetPacketSize(int p_size);
     virtual bool DBLIB_SetMaxNofConns(int n);
@@ -209,7 +209,7 @@ public:
     int GetTDSVersion(void) const;
     
 protected:
-    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr);
+    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
     
 private:
     short                 m_PacketSize;
@@ -230,9 +230,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CTL_Connection::
-//
+///
+///  CTL_Connection::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_Connection : public I_Connection
 {
@@ -285,12 +285,12 @@ protected:
 
     void DropCmd(CDB_BaseEnt& cmd);
 
-    // abort the connection
-    // Attention: it is not recommended to use this method unless you absolutely have to.
-    // The expected implementation is - close underlying file descriptor[s] without
-    // destroing any objects associated with a connection.
-    // Returns: true - if succeed
-    //          false - if not
+    /// abort the connection
+    /// Attention: it is not recommended to use this method unless you absolutely have to.
+    /// The expected implementation is - close underlying file descriptor[s] without
+    /// destroing any objects associated with a connection.
+    /// Returns: true - if succeed
+    ///          false - if not
     virtual bool Abort(void);
 
 private:
@@ -299,7 +299,7 @@ private:
     RETCODE x_Results(DBPROCESS* pLink);
 
 #ifdef FTDS_IN_USE
-    // Function name keept same as with ftds.
+    /// Function name keept same as with ftds.
     void TDS_SetTimeout(void);
 #endif    
 
@@ -320,9 +320,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_LangCmd::
-//
+///
+///  CDBL_LangCmd::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : public I_LangCmd
 {
@@ -370,9 +370,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CTL_RPCCmd::
-//
+///
+///  CTL_RPCCmd::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : public I_RPCCmd
 {
@@ -429,9 +429,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_CursorCmd::
-//
+///
+///  CDBL_CursorCmd::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : public I_CursorCmd
 {
@@ -481,9 +481,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_BCPInCmd::
-//
+///
+///  CDBL_BCPInCmd::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : public I_BCPInCmd
 {
@@ -517,9 +517,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_SendDataCmd::
-//
+///
+///  CDBL_SendDataCmd::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_SendDataCmd : public I_SendDataCmd 
 {
@@ -542,9 +542,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  SDBL_ColDescr::
-//
+///
+///  SDBL_ColDescr::
+///
 
 struct SDBL_ColDescr
 {
@@ -556,9 +556,9 @@ struct SDBL_ColDescr
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_RowResult::
-//
+///
+///  CDBL_RowResult::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RowResult : public I_Result
 {
@@ -600,9 +600,9 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_BlobResult::
-//
+///
+///  CDBL_BlobResult::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BlobResult : public I_Result
 {
@@ -643,12 +643,9 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_ParamResult::
-//  CDBL_ComputeResult::
-//  CDBL_StatusResult::
-//  CDBL_CursorResult::
-//
+///
+///  CDBL_ParamResult::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ParamResult : public CDBL_RowResult
 {
@@ -672,6 +669,11 @@ protected:
     bool m_1stFetch;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CDBL_ComputeResult::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_ComputeResult : public CDBL_RowResult
 {
@@ -697,6 +699,11 @@ protected:
     bool m_1stFetch;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CDBL_StatusResult::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_StatusResult : public I_Result
 {
@@ -729,6 +736,11 @@ protected:
     bool   m_1stFetch;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CDBL_CursorResult::
+///
 
 class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorResult : public I_Result
 {
@@ -769,9 +781,9 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDBL_ITDescriptor::
-//
+///
+///  CDBL_ITDescriptor::
+///
 
 #if defined(MS_DBLIB_IN_USE)
 #    define CDBL_ITDESCRIPTOR_TYPE_MAGNUM 0xd01
@@ -990,6 +1002,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/01/23 13:14:04  ssikorsk
+ * Renamed CDBLibContext::MakeConnection to MakeIConnection.
+ *
  * Revision 1.30  2006/01/03 18:55:30  ssikorsk
  * Replace method Connect with MakeConnection.
  *
