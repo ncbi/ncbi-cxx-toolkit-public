@@ -78,11 +78,11 @@ bool CMySQLContext::SetMaxTextImageSize(size_t /*nof_bytes*/)
 }
 
 
-CDB_Connection* CMySQLContext::MakeConnection(const SConnAttr& conn_attr)
+I_Connection* 
+CMySQLContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    return Create_Connection
-        (*new CMySQL_Connection(this, conn_attr.srv_name, conn_attr.user_name,
-                                conn_attr.passwd));
+    return new CMySQL_Connection(this, conn_attr.srv_name, conn_attr.user_name,
+                                 conn_attr.passwd);
 }
 
 
@@ -165,6 +165,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/01/23 13:40:46  ssikorsk
+ * Renamed CMySQLContext::MakeConnection to MakeIConnection;
+ * Fixed return type of this method;
+ *
  * Revision 1.14  2006/01/03 21:59:53  ucko
  * CMySQLContext: rename Connect to MakeConnection (and adjust its
  * interface accordingly)
