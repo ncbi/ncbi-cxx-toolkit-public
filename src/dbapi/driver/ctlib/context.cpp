@@ -199,16 +199,8 @@ bool CTLibContext::SetMaxTextImageSize(size_t nof_bytes)
 
 
 I_Connection* 
-CTLibContext::MakeConnection(const SConnAttr& conn_attr)
+CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
-    // new connection needed
-    CHECK_DRIVER_ERROR( conn_attr.srv_name.empty()  ||  
-                        conn_attr.user_name.empty()  ||  
-                        conn_attr.passwd.empty(),
-        "You have to provide server name, user name and "
-        "password to connect to the server", 
-        100010 );
-
     CS_CONNECTION* con = x_ConnectToServer(conn_attr.srv_name, 
                                            conn_attr.user_name, 
                                            conn_attr.passwd, 
@@ -1104,6 +1096,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/01/23 13:37:56  ssikorsk
+ * Removed connection attribute check from CTLibContext::MakeIConnection;
+ *
  * Revision 1.53  2006/01/03 19:01:25  ssikorsk
  * Implement method MakeConnection.
  *
