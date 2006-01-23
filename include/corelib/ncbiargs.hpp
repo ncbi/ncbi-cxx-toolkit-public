@@ -382,6 +382,29 @@ class CArgDesc;
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CArgErrorHandler --
+///
+/// Base/default error handler for arguments parsing.
+
+class NCBI_XNCBI_EXPORT CArgErrorHandler : public CObject
+{
+public:
+    /// Process invalid argument value. The base implementation returns NULL
+    /// or throws exception depending on the CArgDesc flags.
+    /// @param arg_desc
+    ///   CArgDesc object which failed to initialize.
+    /// @param value
+    ///   String value which caused the error.
+    /// @return
+    ///   Return new CArgValue object or NULL if the argument should be
+    ///   ignored (as if it has not been set in the command line).
+    virtual CArgValue* HandleError(const CArgDesc& arg_desc,
+                                   const string& value) const;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CArgDescriptions --
 ///
 /// Description of unparsed arguments.
@@ -401,7 +424,10 @@ public:
     /// If "auto_help" is passed TRUE, then a special flag "-h" will be added
     /// to the list of accepted arguments. Passing "-h" in the command line
     /// will printout USAGE and ignore all other passed arguments.
-    CArgDescriptions(bool auto_help = true);
+    /// Error handler is used to process errors when parsing arguments.
+    /// If not set the default handler is used.
+    CArgDescriptions(bool auto_help = true,
+                     CArgErrorHandler* err_handler = 0);
 
     /// Destructor.
     virtual ~CArgDescriptions(void);
@@ -445,16 +471,27 @@ public:
         // file related flags:
 
         /// Open file right away for eInputFile, eOutputFile
-        fPreOpen = (1 << 0), 
+        fPreOpen = (1 << 0),
         /// Open as binary file for eInputFile, eOutputFile
         fBinary  = (1 << 1), 
-        ///< Append to end-of-file for eOutputFile only
-        fAppend  = (1 << 2), 
+        /// Append to end-of-file for eOutputFile only
+        fAppend  = (1 << 2),
 
+        /// Mask for all file-related flags
+        fFileFlags = fPreOpen | fBinary | fAppend,
         // multiple keys flag:
 
-        ///< Repeated key arguments are legal (use with AddKey)
-        fAllowMultiple = (1 << 3) 
+        /// Repeated key arguments are legal (use with AddKey)
+        fAllowMultiple = (1 << 3),
+
+        // Error handling flags
+
+        /// Ignore invalid argument values. If not set, exceptions will be
+        /// thrown on invalid values.
+        fIgnoreInvalidValue = (1 << 4),
+        /// Post warning when an invalid value is ignored (no effect
+        /// if fIgnoreInvalidValue is not set).
+        fWarnOnInvalidValue = (1 << 5),
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
@@ -644,9 +681,28 @@ public:
     /// 
     /// @sa
     ///   See "CArgAllow_***" classes for some pre-defined constraints
-    void SetConstraint(const string&      name, 
+    void SetConstraint(const string&      name,
                        CArgAllow*         constraint,
                        EConstraintNegate  negate = eConstraint);
+
+    /// Set current arguments group name. When printing descriptions for
+    /// optionol arguments (on -help command), they will be arranged by
+    /// group name. Empty group name resets the group. Arguments without
+    /// group are listed first immediately after mandatory arguments.
+    void SetCurrentGroup(const string& group);
+
+    /// Set individual error handler for the argument.
+    /// The handler overrides the default one (if any) provided through
+    /// the constructor. The same handler may be shared by several arguments.
+    /// The handler object must be allocated by "new", and it must NOT be
+    /// freed by "delete" after it has been passed to CArgDescriptions!
+    ///
+    /// @param name
+    ///    Name of the parameter (flag) to set handler for
+    /// @param err_handler
+    ///    Error handler
+    void SetErrorHandler(const string&      name,
+                         CArgErrorHandler*  err_handler);
 
     /// Check if there is already an argument description with specified name.
     bool Exist(const string& name) const;
@@ -690,6 +746,7 @@ private:
     typedef TArgs::const_iterator     TArgsCI;  ///< Const arguments iterator
     typedef /*deque*/vector<string>   TPosArgs; ///< Positional arg. vector
     typedef list<string>              TKeyFlagArgs; ///< List of flag arguments
+    typedef vector<string>            TArgGroups;   ///< Argument groups
 
 private:
     EArgSetType  m_ArgsType;  ///< Type of arguments
@@ -698,6 +755,8 @@ private:
     TKeyFlagArgs m_KeyFlagArgs; ///< Key/flag args, in order of insertion
     unsigned     m_nExtra;    ///> # of mandatory extra args
     unsigned     m_nExtraOpt; ///< # of optional  extra args
+    TArgGroups   m_ArgGroups;    ///< Argument groups
+    int          m_CurrentGroup; ///< Currently selected group (0 = no group)
 
     // Extra USAGE info
     string    m_UsageName;         ///< Program name
@@ -707,6 +766,8 @@ private:
     bool      m_AutoHelp;          ///< Special flag "-h" activated
     bool      m_UsageIfNoArgs;     ///< Print usage and exit if no args passed
 
+    CRef<CArgErrorHandler> m_ErrorHandler; ///< Global error handler or NULL
+
     // Internal methods
 
     /// Helper method to find named parameter.
@@ -715,7 +776,11 @@ private:
     /// Helper method to find named parameter -- const version.
     TArgsCI x_Find(const string& name) const;
 
-    // Helper method for adding description.
+    /// Get group index. Returns group index in the m_ArgGroups, 0 for empty
+    /// group name or -1 for undefined group.
+    int x_GetGroupIndex(const string& group) const;
+
+    /// Helper method for adding description.
     void x_AddDesc(CArgDesc& arg); 
 
     /// Helper method for doing pre-processing consistency checks.
@@ -1170,6 +1235,11 @@ public:
     /// Get arument description.
     const string& GetComment(void) const { return m_Comment; }
 
+    /// Get argument group
+    virtual int GetGroup(void) const { return 0; }
+    /// Set argument group
+    virtual void SetGroup(int /* group */) {}
+
     /// Get usage synopsis.
     virtual string GetUsageSynopsis(bool name_only = false) const = 0;
 
@@ -1201,6 +1271,14 @@ public:
     /// Get usage constraint.
     string GetUsageConstraint(void) const;
 
+    /// Get error handler for the argument
+    virtual const CArgErrorHandler* GetErrorHandler(void) const { return 0; }
+    /// Set error handler for the argument
+    virtual void SetErrorHandler(CArgErrorHandler*) { return; }
+
+    /// Get argument flags
+    virtual CArgDescriptions::TFlags GetFlags(void) const { return 0; }
+
 private:
     string m_Name;      ///< Argument name
     string m_Comment;   ///< Argument description
@@ -1216,6 +1294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/01/23 19:17:10  grichenk
+ * Added groups and error handler for arguments.
+ *
  * Revision 1.48  2006/01/09 17:16:29  vakatov
  * CArgAllow_Strings += case-insensitivity (optional)
  *

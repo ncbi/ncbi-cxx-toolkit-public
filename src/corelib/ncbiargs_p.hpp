@@ -206,13 +206,14 @@ private:
 class CArgDescMandatory : public CArgDesc
 {
 public:
-    CArgDescMandatory(const string& name, const string& comment,
+    CArgDescMandatory(const string&            name,
+                      const string&            comment,
                       CArgDescriptions::EType  type,
                       CArgDescriptions::TFlags flags);
     virtual ~CArgDescMandatory(void);
 
     CArgDescriptions::EType  GetType (void) const { return m_Type; }
-    CArgDescriptions::TFlags GetFlags(void) const { return m_Flags; }
+    virtual CArgDescriptions::TFlags GetFlags(void) const { return m_Flags; }
 
     virtual string GetUsageSynopsis(bool name_only = false) const = 0;
     virtual string GetUsageCommentAttr(void) const;
@@ -226,23 +227,34 @@ public:
     virtual const CArgAllow* GetConstraint(void) const;
     virtual bool IsConstraintInverted() const;
 
+    virtual const CArgErrorHandler* GetErrorHandler(void) const
+        { return m_ErrorHandler.GetPointerOrNull(); }
+    virtual void SetErrorHandler(CArgErrorHandler* err_handler)
+        { m_ErrorHandler.Reset(err_handler); }
+
 private:
     CArgDescriptions::EType              m_Type;
     CArgDescriptions::TFlags             m_Flags;
     CConstRef<CArgAllow>                 m_Constraint;
     CArgDescriptions::EConstraintNegate  m_NegateConstraint;
+    CRef<CArgErrorHandler>               m_ErrorHandler;
 };
-
 
 
 class CArgDescOptional : virtual public CArgDescMandatory
 {
 public:
-    CArgDescOptional(const string& name, const string& comment,
+    CArgDescOptional(const string&            name,
+                     const string&            comment,
                      CArgDescriptions::EType  type,
                      CArgDescriptions::TFlags flags);
     virtual ~CArgDescOptional(void);
     virtual CArgValue* ProcessDefault(void) const;
+    virtual int GetGroup(void) const { return m_Group; }
+    virtual void SetGroup(int group) { m_Group = group; }
+
+private:
+    int m_Group;
 };
 
 
@@ -250,7 +262,8 @@ public:
 class CArgDescDefault : virtual public CArgDescOptional
 {
 public:
-    CArgDescDefault(const string& name, const string& comment,
+    CArgDescDefault(const string&            name,
+                    const string&            comment,
                     CArgDescriptions::EType  type,
                     CArgDescriptions::TFlags flags,
                     const string&            default_value);
@@ -300,8 +313,9 @@ private:
 class CArgDesc_Flag : public CArgDesc
 {
 public:
-    CArgDesc_Flag(const string& name, const string& comment,
-                  bool set_value = true);
+    CArgDesc_Flag(const string& name,
+                  const string& comment,
+                  bool          set_value = true);
     virtual ~CArgDesc_Flag(void);
 
     virtual string GetUsageSynopsis(bool name_only = false) const;
@@ -309,8 +323,11 @@ public:
 
     virtual CArgValue* ProcessArgument(const string& value) const;
     virtual CArgValue* ProcessDefault(void) const;
+    virtual int GetGroup(void) const { return m_Group; }
+    virtual void SetGroup(int group) { m_Group = group; }
 
 private:
+    int  m_Group;
     bool m_SetValue;  // value to set if the arg is provided  
 };
 
@@ -401,6 +418,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/23 19:17:10  grichenk
+ * Added groups and error handler for arguments.
+ *
  * Revision 1.8  2004/12/15 15:30:53  kuznets
  * Implemented constraint invertion (NOT)
  *

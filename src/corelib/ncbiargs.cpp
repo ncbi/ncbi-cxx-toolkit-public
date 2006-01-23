@@ -580,14 +580,16 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
         return;
     case CArgDescriptions::eInputFile:
         if((flags &
-            ~(CArgDescriptions::fPreOpen | CArgDescriptions::fBinary)) == 0)
+            (CArgDescriptions::fAllowMultiple | CArgDescriptions::fAppend)) == 0)
             return;
+        break;
     case CArgDescriptions::k_EType_Size:
         _TROUBLE;
         NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
             "Invalid argument type", "k_EType_Size"));
+        break;
     default:
-        if (flags == 0 || flags == CArgDescriptions::fAllowMultiple)
+        if ( (flags & CArgDescriptions::fFileFlags) == 0 )
             return;
     }
 
@@ -729,10 +731,12 @@ bool CArgDescMandatory::IsConstraintInverted() const
 //  CArgDescOptional::
 
 
-CArgDescOptional::CArgDescOptional(const string& name, const string& comment,
+CArgDescOptional::CArgDescOptional(const string&            name,
+                                   const string&            comment,
                                    CArgDescriptions::EType  type,
                                    CArgDescriptions::TFlags flags)
-    : CArgDescMandatory(name, comment, type, flags)
+    : CArgDescMandatory(name, comment, type, flags),
+      m_Group(0)
 {
     return;
 }
@@ -756,7 +760,8 @@ CArgValue* CArgDescOptional::ProcessDefault(void) const
 //  CArgDescDefault::
 
 
-CArgDescDefault::CArgDescDefault(const string& name, const string& comment,
+CArgDescDefault::CArgDescDefault(const string&            name,
+                                 const string&            comment,
                                  CArgDescriptions::EType  type,
                                  CArgDescriptions::TFlags flags,
                                  const string&            default_value)
@@ -832,9 +837,11 @@ CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
 //  CArgDesc_Flag::
 
 
-CArgDesc_Flag::CArgDesc_Flag(const string& name, const string& comment,
-                             bool set_value)
+CArgDesc_Flag::CArgDesc_Flag(const string& name,
+                             const string& comment,
+                             bool  set_value)
     : CArgDesc(name, comment),
+      m_Group(0),
       m_SetValue(set_value)
 {
     return;
@@ -1259,6 +1266,26 @@ bool CArgs::IsEmpty(void) const
 }
 
 
+///////////////////////////////////////////////////////
+//  CArgErrorHandler::
+
+CArgValue* CArgErrorHandler::HandleError(const CArgDesc& arg_desc,
+                                         const string& value) const
+{
+    if ((arg_desc.GetFlags() & CArgDescriptions::fIgnoreInvalidValue) == 0) {
+        // Re-process invalid value to throw the same exception
+        arg_desc.ProcessArgument(value);
+        // Should never get past ProcessArgument()
+    }
+    if ((arg_desc.GetFlags() & CArgDescriptions::fWarnOnInvalidValue) == 0) {
+        ERR_POST(Warning << "Invalid value " << value <<
+            " for argument " << arg_desc.GetName() <<
+            " - argument will be ignored.");
+    }
+    // return 0 to ignore the argument
+    return 0;
+}
+
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -1266,14 +1293,23 @@ bool CArgs::IsEmpty(void) const
 //
 
 
-CArgDescriptions::CArgDescriptions(bool auto_help)
+CArgDescriptions::CArgDescriptions(bool auto_help,
+                                   CArgErrorHandler* err_handler)
     : m_ArgsType(eRegularArgs),
       m_nExtra(0),
       m_nExtraOpt(0),
+      m_CurrentGroup(0),
       m_AutoHelp(auto_help),
-      m_UsageIfNoArgs(false)
+      m_UsageIfNoArgs(false),
+      m_ErrorHandler(err_handler)
 {
+    if ( !m_ErrorHandler ) {
+        // Use default error handler
+        m_ErrorHandler.Reset(new CArgErrorHandler);
+    }
+
     SetUsageContext("NCBI_PROGRAM", kEmptyStr);
+    m_ArgGroups.push_back(kEmptyStr); // create default group #0
     if ( m_AutoHelp ) {
         AddFlag(s_AutoHelp,
                 "Print USAGE and DESCRIPTION;  ignore other arguments");
@@ -1356,8 +1392,8 @@ void CArgDescriptions::AddKey
  EType         type,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_Key> arg
-        (new CArgDesc_Key(name, comment, type, flags, synopsis));
+    auto_ptr<CArgDesc_Key> arg(new CArgDesc_Key(name,
+        comment, type, flags, synopsis));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1371,8 +1407,8 @@ void CArgDescriptions::AddOptionalKey
  EType         type,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_KeyOpt> arg
-        (new CArgDesc_KeyOpt(name, comment, type, flags, synopsis));
+    auto_ptr<CArgDesc_KeyOpt> arg(new CArgDesc_KeyOpt(name,
+        comment, type, flags, synopsis));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1387,9 +1423,8 @@ void CArgDescriptions::AddDefaultKey
  const string& default_value,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_KeyDef> arg
-        (new CArgDesc_KeyDef(name, comment, type, flags, synopsis,
-                             default_value));
+    auto_ptr<CArgDesc_KeyDef> arg(new CArgDesc_KeyDef(name,
+        comment, type, flags, synopsis, default_value));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1401,8 +1436,7 @@ void CArgDescriptions::AddFlag
  const string& comment,
  bool          set_value)
 {
-    auto_ptr<CArgDesc_Flag> arg
-        (new CArgDesc_Flag(name, comment, set_value));
+    auto_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1415,8 +1449,7 @@ void CArgDescriptions::AddPositional
  EType         type,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_Pos> arg
-        (new CArgDesc_Pos(name, comment, type, flags));
+    auto_ptr<CArgDesc_Pos> arg(new CArgDesc_Pos(name, comment, type, flags));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1444,8 +1477,8 @@ void CArgDescriptions::AddDefaultPositional
  const string& default_value,
  TFlags        flags)
 {
-    auto_ptr<CArgDesc_PosDef> arg
-        (new CArgDesc_PosDef(name, comment, type, flags, default_value));
+    auto_ptr<CArgDesc_PosDef> arg(new CArgDesc_PosDef(name,
+        comment, type, flags, default_value));
 
     x_AddDesc(*arg);
     arg.release();
@@ -1493,6 +1526,28 @@ void CArgDescriptions::SetConstraint(const string&      name,
             "Attempt to set constraint for undescribed argument: "+ name);
     }
     (*it)->SetConstraint(constraint, negate);
+}
+
+
+void CArgDescriptions::SetCurrentGroup(const string& group)
+{
+    m_CurrentGroup = x_GetGroupIndex(group);
+    if (m_CurrentGroup < 0) {
+        m_ArgGroups.push_back(group);
+        m_CurrentGroup = m_ArgGroups.size() - 1;
+    }
+}
+
+
+void CArgDescriptions::SetErrorHandler(const string&      name,
+                                       CArgErrorHandler*  err_handler)
+{
+    TArgsI it = x_Find(name);
+    if (it == m_Args.end()) {
+        NCBI_THROW(CArgException, eInvalidArg,
+            "Attempt to set error handler for undescribed argument: "+ name);
+    }
+    (*it)->SetErrorHandler(err_handler);
 }
 
 
@@ -1568,6 +1623,19 @@ CArgDescriptions::TArgsI CArgDescriptions::x_Find(const string& name)
 }
 
 
+int CArgDescriptions::x_GetGroupIndex(const string& group) const
+{
+    if ( group.empty() ) {
+        return 0;
+    }
+    for (size_t i = 1; i < m_ArgGroups.size(); ++i) {
+        if ( NStr::EqualNocase(m_ArgGroups[i], group) ) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 
 void CArgDescriptions::x_PreCheck(void) const
 {
@@ -1611,6 +1679,7 @@ void CArgDescriptions::x_PreCheck(void) const
 
 CArgs* CArgDescriptions::CreateArgs(const CNcbiArguments& args) const
 {
+    const_cast<CArgDescriptions&>(*this).SetCurrentGroup(kEmptyStr);
     return CreateArgs(args.Size(), args);
 }
 
@@ -1736,8 +1805,23 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
         value = &arg1;
     }
 
-    // Process the "raw" argument value into "CArgValue"
-    CArgValue* av = arg.ProcessArgument(*value);
+    CArgValue* av = 0;
+    try {
+        // Process the "raw" argument value into "CArgValue"
+        av = arg.ProcessArgument(*value);
+    }
+    catch (CArgException) {
+        const CArgErrorHandler* err_handler = arg.GetErrorHandler();
+        if ( !err_handler ) {
+            err_handler = m_ErrorHandler.GetPointerOrNull();
+        }
+        _ASSERT(err_handler);
+        av = err_handler->HandleError(arg, *value);
+    }
+
+    if ( !av ) {
+        return arg2_used;
+    }
     CRef<CArgValue> arg_value(av);
 
     if (new_value) {
@@ -1886,6 +1970,8 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
             "Argument with this name is already defined: " + name);
     }
 
+    arg.SetGroup(m_CurrentGroup);
+
     if (s_IsKey(arg)  ||  s_IsFlag(arg)) {
         _ASSERT(find(m_KeyFlagArgs.begin(), m_KeyFlagArgs.end(), name)
                 == m_KeyFlagArgs.end());
@@ -1905,6 +1991,7 @@ void CArgDescriptions::x_AddDesc(CArgDesc& arg)
         }
     }
 
+    arg.SetErrorHandler(m_ErrorHandler.GetPointerOrNull());
     m_Args.insert(&arg);
 }
 
@@ -2039,7 +2126,6 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
         }
     }}
 
-
     // Do Printout
     TListCI      it;
     list<string> arr;
@@ -2090,9 +2176,28 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
     if (detailed) {
         list<string> req;
         list<string> opt;
+        // Collect mandatory args
         for (it = args.begin();  it != args.end();  ++it) {
-            s_PrintComment((s_IsOptional(**it) || s_IsFlag(**it)) ? opt : req,
-                        **it, m_UsageWidth);
+            if (s_IsOptional(**it) || s_IsFlag(**it)) {
+                continue;
+            }
+            s_PrintComment(req, **it, m_UsageWidth);
+        }
+        // Collect optional args
+        for (size_t grp = 0; grp < m_ArgGroups.size(); ++grp) {
+            if ( !m_ArgGroups[grp].empty() ) {
+                NStr::Wrap(m_ArgGroups[grp], m_UsageWidth, opt,
+                    NStr::fWrap_Hyphenate, " *** ");
+            }
+            for (it = args.begin();  it != args.end();  ++it) {
+                if (!s_IsOptional(**it) && !s_IsFlag(**it)) {
+                    continue;
+                }
+                if ((*it)->GetGroup() == grp) {
+                    s_PrintComment(opt, **it, m_UsageWidth);
+                }
+            }
+            opt.push_back(kEmptyStr);
         }
         if ( !req.empty() ) {
             arr.push_back(kEmptyStr);
@@ -2136,8 +2241,6 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
     str += "\n";
     return str;
 }
-
-
 
 
 ///////////////////////////////////////////////////////
@@ -2433,6 +2536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/01/23 19:17:10  grichenk
+ * Added groups and error handler for arguments.
+ *
  * Revision 1.61  2006/01/09 17:50:23  ssikorsk
  * Fixed compilation issues.
  *
