@@ -169,7 +169,7 @@ bool CTDSContext::SetMaxTextImageSize(size_t nof_bytes)
 
 
 I_Connection* 
-CTDSContext::MakeConnection(const SConnAttr& conn_attr)
+CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name, 
                                          conn_attr.user_name, 
@@ -665,6 +665,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/01/23 13:39:32  ssikorsk
+ * Renamed CTDSContext::MakeConnection to MakeIConnection;
+ *
  * Revision 1.54  2006/01/09 19:19:21  ssikorsk
  * Validate server name, user name and password before connection for all drivers.
  *
