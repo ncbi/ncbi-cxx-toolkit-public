@@ -72,7 +72,7 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
     try {
 	TIntensity Intensity(new unsigned [Ladder.size()]);
 
-	Peaks->CompareSortedRank(Ladder, Which, &Intensity, Sum, M);
+	Peaks->CompareSortedRank(Ladder, Which, &Intensity, SetSum(), SetM());
 	// Peaks->CompareSorted(Ladder, Which, &Intensity);
 
     // examine hits array
@@ -81,11 +81,11 @@ void CMSHit::RecordMatchesScan(CLadder& Ladder,
 	    // if hit, add to hitlist
 	    if(Ladder.GetHit()[i] > 0) {
     		SetHitInfo(iHitInfo).SetCharge() = (char) Ladder.GetCharge();
-    		SetHitInfo(iHitInfo).SetIon() = (char) Ladder.GetType();
+    		SetHitInfo(iHitInfo).SetIonSeries() = (char) Ladder.GetType();
     		SetHitInfo(iHitInfo).SetNumber() = (short) i + Offset;
     		SetHitInfo(iHitInfo).SetIntensity() = *(Intensity.get() + i);
     		//  for poisson test
-    		SetHitInfo(iHitInfo).SetMz() = Ladder[i];
+    		SetHitInfo(iHitInfo).SetMZ() = Ladder[i];
     		//
     		iHitInfo++;
             }
@@ -165,33 +165,34 @@ void CMSHit::RecordMatches(CLadder& BLadder,
                            int TheoreticalMassIn
 						   )
 {
-    // create hitlist.  note that this is deleted in the copy operator
-    HitInfo.reset(new CMSHitInfo[Hits]);
+    // create hitlist.  note that this is deleted in the assignment operator
+    CreateHitInfo();
+
 
 	// need to calculate the number of mods from mask and NumMod(?)
 	NumModInfo = CountMods(ModMask,NumMod);
 	ModInfo.reset(new CMSModInfo[NumModInfo]);
 
-    TheoreticalMass = TheoreticalMassIn;
+    SetTheoreticalMass() = TheoreticalMassIn;
 
     // increment thru hithist
     int iHitInfo(0); 
-    int Which = Peaks->GetWhich(Charge);
+    int Which = Peaks->GetWhich(GetCharge());
 
-    M = 0;
-    Sum = 0;
+    SetM() = 0;
+    SetSum() = 0;
     // scan thru each ladder
-    if(Charge >= Peaks->GetConsiderMult()) {
+    if(GetCharge() >= Peaks->GetConsiderMult()) {
 		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
 		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
 		RecordMatchesScan(B2Ladder, iHitInfo, Peaks, Which, Searchb1);
 		RecordMatchesScan(Y2Ladder, iHitInfo, Peaks, Which, Searchctermproduct);
-        N = Peaks->GetNum(MSCULLED2);
+        SetN() = Peaks->GetNum(MSCULLED2);
     }
     else {
 		RecordMatchesScan(BLadder, iHitInfo, Peaks, Which, Searchb1);
 		RecordMatchesScan(YLadder, iHitInfo, Peaks, Which, Searchctermproduct);
-        N = Peaks->GetNum(MSCULLED1);
+        SetN() = Peaks->GetNum(MSCULLED1);
     }
 
 
@@ -205,29 +206,57 @@ void CMSHit::RecordMatches(CLadder& BLadder,
 }
 
 // return number of hits above threshold
-int CMSHit::GetHits(double Threshold, int MaxI)
+int CMSHit::CountHits(double Threshold, int MaxI)
 {
     int i, retval(0);
 
-    for(i = 0; i < Hits; i++)
+    for(i = 0; i < GetHits(); i++)
         if(SetHitInfo(i).GetIntensity() > MaxI*Threshold)
             retval++;
     return retval;
 }
 
+
+void 
+CMSHit::CountHitsByType(int& Independent,
+                        int& Dependent, 
+                        double Threshold, 
+                        int MaxI) const
+{
+	int i;
+    Independent = Dependent = 0;
+    int LastIon(-1), LastCharge(-1), LastNumber(-1);
+	for (i = 0; i < GetHits(); i++) {
+        if(GetHitInfo(i).GetIntensity() > MaxI*Threshold) {
+            if(GetHitInfo(i).GetIonSeries() == LastIon && GetHitInfo(i).GetCharge() == LastCharge) {
+                if(LastNumber + 1 == GetHitInfo(i).GetNumber())
+                    Dependent++;
+                else 
+                    Independent++;
+            }
+            else
+                Independent++;
+            LastIon = GetHitInfo(i).GetIonSeries();
+            LastCharge = GetHitInfo(i).GetCharge();
+            LastNumber = GetHitInfo(i).GetNumber();
+        }
+    }
+}
+
+
   // for poisson test
 // return number of hits above threshold scaled by m/z positions
-int CMSHit::GetHits(double Threshold, int MaxI, int High)
+int CMSHit::CountHits(double Threshold, int MaxI, int High)
 {
     int i ;
     float retval(0);
 
-    for(i = 0; i < Hits; i++)
+    for(i = 0; i < GetHits(); i++)
       if(SetHitInfo(i).GetIntensity() > MaxI*Threshold) {
-	if (SetHitInfo(i).GetMz() > High/2)
-	  retval += 0.5 + 2.0*(High - SetHitInfo(i).GetMz())/(float)High;
+	if (SetHitInfo(i).GetMZ() > High/2)
+	  retval += 0.5 + 2.0*(High - SetHitInfo(i).GetMZ())/(float)High;
 	else
-	  retval += 1.5 - 2.0*SetHitInfo(i).GetMz()/(float)High;
+	  retval += 1.5 - 2.0*SetHitInfo(i).GetMZ()/(float)High;
       }
     return (int)(retval+0.5);
 }
@@ -242,7 +271,7 @@ int CMSHit::GetHits(double Threshold, int MaxI, int High)
 struct CMZICompare {
     bool operator() (CMZI x, CMZI y)
     {
-	if(x.MZ < y.MZ) return true;
+	if(x.GetMZ() < y.GetMZ()) return true;
 	return false;
     }
 };
@@ -251,7 +280,7 @@ struct CMZICompare {
 struct CMZICompareHigh {
     bool operator() (CMZI x, CMZI y)
     {
-	if(x.MZ > y.MZ) return true;
+	if(x.GetMZ() > y.GetMZ()) return true;
 	return false;
     }
 };
@@ -260,7 +289,7 @@ struct CMZICompareHigh {
 struct CMZICompareIntensity {
     bool operator() (CMZI x, CMZI y)
     {
-	if(x.Intensity > y.Intensity) return true;
+	if(x.GetIntensity() > y.GetIntensity()) return true;
 	return false;
     }
 };
@@ -322,31 +351,31 @@ const bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
     // initialize index using charge
     int Index = in.GetCharge() - Charges[0];
     // check to see if hitlist is full
-    if(HitListIndex[Index] >= HitListSize) {
-	// if less or equal hits than recorded min, don't bother
-	if(in.GetHits() <= LastHitNum[Index]) return false;  
-	int i, min(HitList[Index][0].GetHits()); //the minimum number of hits in the list
-	int minpos(0);     // the position of min
-	// find the minimum in the hitslist
-	for(i = 1; i < HitListSize; i++) {
-	    if(min > HitList[Index][i].GetHits()) {
-		min = HitList[Index][i].GetHits();
-		minpos = i;
-	    }
-	}
-	// keep record of min
-	LastHitNum[Index] = min;	
-	// replace in list
-	HitList[Index][minpos] = in;
-	out =  & (HitList[Index][minpos]);
-	return true;
-    } 
+    if (HitListIndex[Index] >= HitListSize) {
+        // if less or equal hits than recorded min, don't bother
+        if (in.GetHits() <= LastHitNum[Index]) return false;
+        int i, min(HitList[Index][0].GetHits()); //the minimum number of hits in the list
+        int minpos(0);     // the position of min
+        // find the minimum in the hitslist
+        for (i = 1; i < HitListSize; i++) {
+            if (min > HitList[Index][i].GetHits()) {
+                min = HitList[Index][i].GetHits();
+                minpos = i;
+            }
+        }
+        // keep record of min
+        LastHitNum[Index] = min;    
+        // replace in list
+        HitList[Index][minpos] = in;
+        out =  & (HitList[Index][minpos]);
+        return true;
+    }
     else {
-	// add to end of list
-	HitList[Index][HitListIndex[Index]] = in;
-	out = & (HitList[Index][HitListIndex[Index]]);
-	HitListIndex[Index]++;
-	return true;
+        // add to end of list
+        HitList[Index][HitListIndex[Index]] = in;
+        out = & (HitList[Index][HitListIndex[Index]]);
+        HitListIndex[Index]++;
+        return true;
     }
 }
 
@@ -363,10 +392,10 @@ const bool CMSPeak::Contains(const int value,
                              const int Which) const
 {
     CMZI precursor;
-    precursor.MZ = value -  tol; // /2;
+    precursor.SetMZ() = value -  tol; // /2;
     CMZI *p = lower_bound(MZI[Which], MZI[Which] + Num[Which], precursor, CMZICompare());
     if(p == MZI[Which] + Num[Which]) return false;
-    if(p->MZ < value + tol/*/2*/) return true;
+    if(p->GetMZ() < value + tol/*/2*/) return true;
     return false;
 }
 
@@ -382,15 +411,15 @@ const bool CMSPeak::ContainsFast(const int value,
 
     while(l <= r) {
         x = (l + r)/2;
-        if (MZI[Which][x].MZ < value - tol) 
+        if (MZI[Which][x].GetMZ() < value - tol) 
 	    l = x + 1;
-        else if (MZI[Which][x].MZ > value + tol)
+        else if (MZI[Which][x].GetMZ() > value + tol)
 	    r = x - 1;
 	else return true;
     } 
     
     if (x < Num[Which] - 1 && 
-	MZI[Which][x+1].MZ < value + tol && MZI[Which][x+1].MZ > value - tol) 
+	MZI[Which][x+1].GetMZ() < value + tol && MZI[Which][x+1].GetMZ() > value - tol) 
 	return true;
     return false;
 }
@@ -403,12 +432,12 @@ const int CMSPeak::CompareSorted(CLadder& Ladder, const int Which, TIntensity* I
     if(Ladder.size() == 0 ||  Num[Which] == 0) return 0;
 
     do {
-	if (MZI[Which][j].MZ < Ladder[i] - tol) {
+	if (MZI[Which][j].GetMZ() < Ladder[i] - tol) {
 	    j++;
 	    if(j >= Num[Which]) break;
 	    continue;
 	}
-	else if(MZI[Which][j].MZ > Ladder[i] + tol) {
+	else if(MZI[Which][j].GetMZ() > Ladder[i] + tol) {
 	    i++;
 	    if(i >= Ladder.size()) break;
 	    continue;
@@ -422,7 +451,7 @@ const int CMSPeak::CompareSorted(CLadder& Ladder, const int Which, TIntensity* I
 	    retval++;
 	    // record the intensity if requested, used for auto adjust
 	    if(Intensity) {
-		*(Intensity->get() + i) = MZI[Which][j].Intensity;
+		*(Intensity->get() + i) = MZI[Which][j].GetIntensity();
 	    }
 	    j++;
 	    if(j >= Num[Which]) break;
@@ -542,11 +571,11 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder, int Which, TIntensity* Intensity
     if (Ladder.size() == 0 ||  Num[Which] == 0) return 0;
 
     do {
-        if (MZI[Which][j].MZ < Ladder[i] - tol) {
+        if (MZI[Which][j].GetMZ() < Ladder[i] - tol) {
             j++;
             if (j >= Num[Which]) break;
             continue;
-        } else if (MZI[Which][j].MZ > Ladder[i] + tol) {
+        } else if (MZI[Which][j].GetMZ() > Ladder[i] + tol) {
             i++;
             if (i >= Ladder.size()) break;
             continue;
@@ -556,13 +585,13 @@ int CMSPeak::CompareSortedRank(CLadder& Ladder, int Which, TIntensity* Intensity
                 Used[Which][j] = 1;
                 Ladder.GetHit()[i] = Ladder.GetHit()[i] + 1;
                 // sum up the ranks
-                Sum += MZI[Which][j].Rank;
+                Sum += MZI[Which][j].GetRank();
                 M++;
             }
             retval++;
             // record the intensity if requested, used for auto adjust
             if (Intensity) {
-                *(Intensity->get() + i) = MZI[Which][j].Intensity;
+                *(Intensity->get() + i) = MZI[Which][j].GetIntensity();
             }
             j++;
             if (j >= Num[Which]) break;
@@ -592,7 +621,7 @@ const bool CMSPeak::CompareTop(CLadder& Ladder) const
 {
     unsigned i;
     for(i = 0; i < Num[MSTOPHITS]; i++) {
-	if(Ladder.ContainsFast(MZI[MSTOPHITS][i].MZ, tol)) return true;
+	if(Ladder.ContainsFast(MZI[MSTOPHITS][i].GetMZ(), tol)) return true;
     }
     return false;
 }
@@ -619,8 +648,8 @@ int CMSPeak::Read(const CMSSpectrum& Spectrum,
 	for(i = 0; i < Num[MSORIGINAL]; i++) {
         //	MZI[MSORIGINAL][i].MZ = Mz[i]*MSSCALE/MSSCALE;
         // for now, we assume one scale
-	    MZI[MSORIGINAL][i].MZ = Mz[i];
-	    MZI[MSORIGINAL][i].Intensity = Abundance[i];
+	    MZI[MSORIGINAL][i].SetMZ() = Mz[i];
+	    MZI[MSORIGINAL][i].SetIntensity() = Abundance[i];
 	}
 	Sort(MSORIGINAL);
     } catch (NCBI_NS_STD::exception& e) {
@@ -662,8 +691,8 @@ const int CMSPeak::CountRange(const double StartFraction,
 {
     CMZI Start, Stop;
     int Precursor = static_cast <int> (Precursormz + tol/2.0);
-    Start.MZ = static_cast <int> (StartFraction * Precursor);
-    Stop.MZ = static_cast <int> (StopFraction * Precursor);
+    Start.SetMZ() = static_cast <int> (StartFraction * Precursor);
+    Stop.SetMZ() = static_cast <int> (StopFraction * Precursor);
     CMZI *LoHit = lower_bound(MZI[MSORIGINAL], MZI[MSORIGINAL] +
 			      Num[MSORIGINAL], Start, CMZICompare());
     CMZI *HiHit = upper_bound(MZI[MSORIGINAL], MZI[MSORIGINAL] + 
@@ -672,11 +701,37 @@ const int CMSPeak::CountRange(const double StartFraction,
     return HiHit - LoHit;
 }
 
+const int CMSPeak::CountMZRange(const int StartIn,
+                                const int StopIn,
+                                const double MinIntensity,
+                                const int Which) const
+{
+    CMZI Start, Stop;
+    Start.SetMZ() = StartIn;
+    Stop.SetMZ() = StopIn;
+    // inclusive lower
+    CMZI *LoHit = lower_bound(MZI[Which], MZI[Which] +
+			      Num[Which], Start, CMZICompare());
+    // exclusive upper
+    CMZI *HiHit = upper_bound(MZI[Which], MZI[Which] + 
+			      Num[Which], Stop, CMZICompare());
+    int retval(0);
+
+    if(LoHit != MZI[Which] + Num[Which] &&
+       LoHit < HiHit) {
+       for(; LoHit != HiHit; ++LoHit)
+        if(LoHit->GetIntensity() >= MinIntensity ) 
+            retval++;
+    }
+
+    return retval;
+}
+
 
 const int CMSPeak::PercentBelow(void) const
 {
     CMZI precursor;
-    precursor.MZ = static_cast <int> (Precursormz + tol/2.0);
+    precursor.SetMZ() = static_cast <int> (Precursormz + tol/2.0);
     CMZI *Hit = upper_bound(MZI[MSORIGINAL], MZI[MSORIGINAL] + Num[MSORIGINAL],
 			    precursor, CMZICompare());
     Hit++;  // go above the peak
@@ -769,9 +824,9 @@ void CMSPeak::xWrite(std::ostream& FileOut, const CMZI * const Temp, const int N
     int i;
     unsigned Intensity;
     for(i = 0; i < Num; i++) {
-        Intensity = Temp[i].Intensity;
+        Intensity = Temp[i].GetIntensity();
         if(Intensity == 0.0) Intensity = 1;  // make Mascot happy
-        FileOut << MSSCALE2DBL(Temp[i].MZ) << " " << 
+        FileOut << MSSCALE2DBL(Temp[i].GetMZ()) << " " << 
 	    Intensity << endl;
     }
 }
@@ -794,7 +849,7 @@ const int CMSPeak::AboveThresh(const double Threshold, const int Which) const
     sort(MZISort, MZISort+Num[Which], CMZICompareIntensity());
 
     for(i = 1; i < Num[Which] &&
-	    (double)MZISort[i].Intensity/MZISort[0].Intensity > Threshold; i++);
+	    (double)MZISort[i].GetIntensity()/MZISort[0].GetIntensity() > Threshold; i++);
     delete [] MZISort;
     return i;
 }
@@ -819,7 +874,7 @@ void CMSPeak::TruncatePlus1(void)
 void CMSPeak::CullBaseLine(const double Threshold, CMZI *Temp, int& TempLen)
 {
     unsigned iMZI;
-    for(iMZI = 0; iMZI < TempLen && Temp[iMZI].Intensity > Threshold * Temp[0].Intensity; iMZI++);
+    for(iMZI = 0; iMZI < TempLen && Temp[iMZI].GetIntensity() > Threshold * Temp[0].GetIntensity(); iMZI++);
     TempLen = iMZI;
 }
 
@@ -830,8 +885,8 @@ void CMSPeak::CullPrecursor(CMZI *Temp, int& TempLen, const int Precursor)
     int iTemp(0), iMZI;
     
     for(iMZI = 0; iMZI < TempLen; iMZI++) { 
-	if(Temp[iMZI].MZ > Precursor - tol && 
-	    Temp[iMZI].MZ < Precursor + tol) continue;
+	if(Temp[iMZI].GetMZ() > Precursor - tol && 
+	    Temp[iMZI].GetMZ() < Precursor + tol) continue;
 	
 	Temp[iTemp] = Temp[iMZI];
 	iTemp++;
@@ -870,7 +925,7 @@ void CMSPeak::CullIterate(CMZI *Temp, int& TempLen, const TMZIbool FCN)
 // object for looking for isotopes.  true if isotope
 static bool FCompareIsotope(const CMZI& x, const CMZI& y, int tol)
 {
-    if(y.MZ < x.MZ + MSSCALE2INT(2) + tol && y.MZ > x.MZ - tol) return true;
+    if(y.GetMZ() < x.GetMZ() + MSSCALE2INT(2) + tol && y.GetMZ() > x.GetMZ() - tol) return true;
     return false;
 }
 
@@ -885,8 +940,8 @@ void CMSPeak::CullIsotope(CMZI *Temp, int& TempLen)
 // function for looking for H2O or NH3.  true if is.
 static bool FCompareH2ONH3(const CMZI& x, const CMZI& y, int tol)
 {
-    if((y.MZ > x.MZ - MSSCALE2INT(18) - tol && y.MZ < x.MZ - MSSCALE2INT(18) + tol ) ||
-       (y.MZ > x.MZ - MSSCALE2INT(17) - tol && y.MZ < x.MZ - MSSCALE2INT(17) + tol))
+    if((y.GetMZ() > x.GetMZ() - MSSCALE2INT(18) - tol && y.GetMZ() < x.GetMZ() - MSSCALE2INT(18) + tol ) ||
+       (y.GetMZ() > x.GetMZ() - MSSCALE2INT(17) - tol && y.GetMZ() < x.GetMZ() - MSSCALE2INT(17) + tol))
 	return true;
     return false;
 }
@@ -947,7 +1002,7 @@ void CMSPeak::Rank(const int Which)
 {
     int i;
     for(i = 1; i <= Num[Which]; i++)
-        MZI[Which][i-1].Rank = i;
+        MZI[Which][i-1].SetRank() = i;
 }
 
 // use smartcull on all charges
@@ -1067,7 +1122,7 @@ double Threshold, int SingleWindow,
     for(iMZI = 0; iMZI < TempLen - 1; iMZI++) { 
 	if(Deleted.count(iMZI) != 0) continue;
 	HitCount = 0;
-	if(!ConsiderMultProduct || Temp[iMZI].MZ > Precursormz) {
+	if(!ConsiderMultProduct || Temp[iMZI].GetMZ() > Precursormz) {
 	    // if charge 1 region, allow fewer peaks
 	    Window = Settings.GetSinglewin(); //27;
 	    HitsAllowed = Settings.GetSinglenum();
@@ -1081,9 +1136,9 @@ double Threshold, int SingleWindow,
 	set <int> Considered;
 	for(jMZI = iMZI + 1; jMZI < TempLen; jMZI++) { 
 	    if(Deleted.count(jMZI) != 0) continue;
-	    if(Temp[jMZI].MZ < Temp[iMZI].MZ + MSSCALE2INT(Window) + tol &&
-	       Temp[jMZI].MZ > Temp[iMZI].MZ - MSSCALE2INT(Window) - tol) {
-		if(IsMajorPeak(Temp[iMZI].MZ, Temp[jMZI].MZ, tol)) {
+	    if(Temp[jMZI].GetMZ() < Temp[iMZI].GetMZ() + MSSCALE2INT(Window) + tol &&
+	       Temp[jMZI].GetMZ() > Temp[iMZI].GetMZ() - MSSCALE2INT(Window) - tol) {
+		if(IsMajorPeak(Temp[iMZI].GetMZ(), Temp[jMZI].GetMZ(), tol)) {
 		    // link little peak to big peak
 		    MajorPeak[jMZI] = iMZI;
 		    // ignore for deletion
@@ -1149,16 +1204,16 @@ void CMSPeak::HighLow(int& High, int& Low, int& NumPeaks, const int PrecursorMas
 
     unsigned iMZI;
     for(iMZI = 0; iMZI < Num[Which]; iMZI++) {
-	if(MZI[Which][iMZI].Intensity > Threshold*MaxI &&
-	   MZI[Which][iMZI].MZ <= PrecursorMass) {
-	    if(MZI[Which][iMZI].MZ > High) {
-		High = MZI[Which][iMZI].MZ;
+	if(MZI[Which][iMZI].GetIntensity() > Threshold*MaxI &&
+	   MZI[Which][iMZI].GetMZ() <= PrecursorMass) {
+	    if(MZI[Which][iMZI].GetMZ() > High) {
+		High = MZI[Which][iMZI].GetMZ();
 	    }
-	    if(MZI[Which][iMZI].MZ < Low) {
-		Low = MZI[Which][iMZI].MZ;
+	    if(MZI[Which][iMZI].GetMZ() < Low) {
+		Low = MZI[Which][iMZI].GetMZ();
 	    }
 	    NumPeaks++;
-	    if(MZI[Which][iMZI].MZ < PrecursorMass/2.0) NumLo++;
+	    if(MZI[Which][iMZI].GetMZ() < PrecursorMass/2.0) NumLo++;
 	    else NumHi++;
 	}
     }
@@ -1186,8 +1241,8 @@ const int CMSPeak::CountAAIntervals(const CMassArray& MassArray,
 	for(; low < Num[Which]; low++) {
 	    for(i = 0; i < kNumUniqueAA; i++) {
 		if(IntMassArray[i] == 0) continue;  // skip gaps, etc.
-		if(MZI[Which][low].MZ- MZI[Which][ipeaks].MZ < IntMassArray[i] + tol/2.0 &&
-		   MZI[Which][low].MZ - MZI[Which][ipeaks].MZ > IntMassArray[i] - tol/2.0 ) {	  
+		if(MZI[Which][low].GetMZ()- MZI[Which][ipeaks].GetMZ() < IntMassArray[i] + tol/2.0 &&
+		   MZI[Which][low].GetMZ() - MZI[Which][ipeaks].GetMZ() > IntMassArray[i] - tol/2.0 ) {	  
 		    PeakCount++;
 		    //					intensity.push_back(MZI[ipeaks].Intensity);
 		    if(Nodup) goto newpeak;
@@ -1209,8 +1264,8 @@ const int CMSPeak::GetMaxI(const int Which) const
 {
     unsigned Intensity(0), i;
     for(i = 0; i < Num[Which]; i++) {
-        if(Intensity < MZI[Which][i].Intensity)
-	    Intensity = MZI[Which][i].Intensity;
+        if(Intensity < MZI[Which][i].GetIntensity())
+	    Intensity = MZI[Which][i].GetIntensity();
     }
     return Intensity;
 }

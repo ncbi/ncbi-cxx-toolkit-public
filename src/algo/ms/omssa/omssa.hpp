@@ -62,6 +62,8 @@ const int kAccLen = 20;
 // arbitrary high evalue
 const double kHighEval = 1e50;
 
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  TMassMask::
@@ -116,14 +118,25 @@ public:
                CRef <CMSModSpecSet> Modset,
                CRef <CMSSearchSettings> SettingsIn);
 
-    double CalcPoisson(double Mean, int i);
-    double CalcPoissonMean(int Start, int Stop, int Mass, CMSPeak *Peaks,
-			   int Charge, double Threshold);
-    double CalcPvalue(double Mean, int Hits, int n);
-    double CalcPvalueTopHit(double Mean, int Hits, int n, double Normal, double TopHitProb);
-    double CalcNormalTopHit(double Mean, double TopHitProb);
-    double CalcPoissonTopHit(double Mean, int i, double TopHitProb);
 
+   /**
+    * fill out MatchedPeakSet
+    * 
+    * @param MatchPeakSet Peakset to fill out
+    * @param Size length of ion series
+    * @param SeriesCharge charge of ion series
+    * @param MinIntensity the minimum intensity to consider
+    * @param Which which version of experimental peaks to use
+    * @param Peaks experimental peaks
+    * @param Mass neutral mass of peptide
+    */
+    void PepCharge(CMSMatchedPeakSet *MatchPeakSet,
+                   int Size, 
+                   int SeriesCharge,
+                   int MinIntensity,
+                   int Which,
+                   CMSPeak *Peaks,
+                   int Mass);
 
     /** 
      * Sets the scoring to use rank statistics
@@ -414,6 +427,7 @@ protected:
      * Get search response
      */
     const CRef<CMSResponse> GetResponse(void) const;
+
 
 private:
     /** blast library */
@@ -728,6 +742,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.37  2006/01/23 17:47:37  lewisg
+  refactor scoring
+
   Revision 1.36  2005/11/07 19:57:20  lewisg
   iterative search
 

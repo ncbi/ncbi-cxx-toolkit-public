@@ -441,7 +441,7 @@ CMod::TFixed& CMod::SetFixed(void)
 	
 typedef std::deque <int> TCleave;
 
-class NCBI_XOMSSA_EXPORT CCleave {
+class NCBI_XOMSSA_EXPORT CCleave : public CObject {
 public:
     CCleave(void);
 
@@ -1014,7 +1014,7 @@ public:
 class NCBI_XOMSSA_EXPORT CCleaveFactory
 {
 public:
-  static CCleave *CleaveFactory(const EMSEnzymes enzyme);
+  static CRef <CCleave> CleaveFactory(const EMSEnzymes enzyme);
 
 };
 
@@ -1037,6 +1037,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.30  2006/01/23 17:47:37  lewisg
+  refactor scoring
+
   Revision 1.29  2005/11/07 19:57:20  lewisg
   iterative search
 

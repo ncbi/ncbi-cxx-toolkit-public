@@ -49,6 +49,7 @@
 #include "msms.hpp"
 #include "msladder.hpp"
 #include "SpectrumSet.hpp"
+#include "omssascore.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -56,47 +57,11 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(omssa)
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-//  CMSHit::
-//
-//  Used by CMSPeak class to hold hits
-//
-
-// forward declaration needed for CMSHitInfo
 class CMSPeak;
 
-// class for recording ion peak type
-class NCBI_XOMSSA_EXPORT CMSHitInfo {
-public:
-    char& SetCharge(void) { return Charge; }
-    const char GetCharge(void) const { return Charge; }
-    char& SetIon(void) { return Ion; }
-    const char GetIon(void) const { return Ion; }
-    short int& SetNumber(void) { return Number; }
-    const short  GetNumber(void) const { return Number; }
-    unsigned& SetIntensity(void) { return Intensity; }
-    const unsigned GetIntensity(void) const { return Intensity; }
-
-  // for poisson test
-    int& SetMz(void) { return mz; }
-    const int GetMz(void) const { return mz; }
-  //
-
-private:
-    char Charge, Ion;
-    short Number;
-    unsigned Intensity;
-  // for poisson test
-  int mz;
-  //
-};
-
-
-///
-///  Class to hold mod information for a hit
-///
-
+/**
+ *  Class to hold mod information for a hit
+ */
 class NCBI_XOMSSA_EXPORT CMSModInfo {
 public:
 	const int GetModEnum(void) const;
@@ -162,67 +127,80 @@ int& CMSModInfo::SetIsFixed(void)
 
 
 
-// typedef for holding hit information
+/** typedef for holding hit information */
 typedef AutoPtr <CMSModInfo, ArrayDeleter<CMSModInfo> > TModInfo;
 
-// typedef for holding hit information
-typedef AutoPtr <CMSHitInfo, ArrayDeleter<CMSHitInfo> > THitInfo;
 
-// class to contain preliminary hits.  memory footprint must be kept small.
-class NCBI_XOMSSA_EXPORT CMSHit {
+/**
+ *  class to contain preliminary hits.  memory footprint must be kept small.
+ */
+class NCBI_XOMSSA_EXPORT CMSHit: public CMSSpectrumMatch {
 public:
     // tor's
     CMSHit(void);
     CMSHit(int StartIn, int StopIn, int IndexIn);
     CMSHit(int StartIn, int StopIn, int IndexIn, int MassIn, int HitsIn,
 	   int ChargeIn);
-    ~CMSHit();
 
-    // getter-setters
+    /** get sequence start */
     const int GetStart(void) const;
-    void SetStart(int StartIn);
+
+    /** set sequence start */
+    int& SetStart();
+
+    /** get sequence stop */
     const int GetStop(void) const;
-    void SetStop(int StopIn);
+
+    /** set sequence stop */
+    int& SetStop(void);
+
+    /** get blast oid */
     const int GetSeqIndex(void) const;
-    void SetSeqIndex(int IndexIn);
-    const int GetMass(void) const;
-    void SetMass(int MassIn);
-    const int GetHits(void) const;
-    void SetHits(int HitsIn);
-    const int GetCharge(void) const;
-    void SetCharge(int ChargeIn);
-    const CMSHitInfo& GetHitInfo(int n) const;
-    CMSHitInfo& SetHitInfo(int n);
+
+    /** set blast oid */
+    int& SetSeqIndex(void);
+
+    /**
+     * get modification info
+     * 
+     * @param n array index
+     */
 	const CMSModInfo& GetModInfo(int n) const;
-	const int GetNumModInfo(void) const;
+
+    /**
+     * set modification info
+     * 
+     * @param n array index
+     */
 	CMSModInfo& SetModInfo(int n);
 
     /**
-     * Return the Sum of ranks
+     * get size of modification info array
      */
-    const int GetSum(void) const; 
+	const int GetNumModInfo(void) const;
 
     /**
-     * Return the number of matched peaks
+     *  return number of hits above threshold
      */
-    const int GetM(void) const;
+    int CountHits(double Threshold, int MaxI);
+
 
     /**
-     * Return the number of experimental peaks
+     * count hits into two categories: independent hits and hits that are dependent on others
+     * 
+     * @param Independent count of independent hits
+     * @param Dependent count of dependent hits
      */
-    const int GetN(void) const;
-
-    // return number of hits above threshold
-    int GetHits(double Threshold, int MaxI);
+    void CountHitsByType(int& Independent,
+                         int& Dependent,
+                         double Threshold, 
+                         int MaxI) const;
 
     // for poisson test
-    // return number of hits above threshold scaled by m/z positions
-    int GetHits(double Threshold, int MaxI, int High);
-
     /**
-     * return theoretical mass of hit
+     *  return number of hits above threshold scaled by m/z positions
      */
-    int GetTheoreticalMass(void) const;
+    int CountHits(double Threshold, int MaxI, int High);
 
     /**     
      * Make a record of the hits to the mass ladders
@@ -300,57 +278,51 @@ protected:
                            int Offset);
 
 private:
+
+    // disallow copy
+    CMSHit(const CMSHit& in) {}
+
+    /**
+     * start and stop positions, inclusive, on sequence
+     */
     int Start, Stop;
 
     /**
      * blast ordinal
      */
     int Index;
-    /**
-     * the experimental mass
-     */
-    int Mass;
 
-    /**
-     * theoretical mass
-     */
-    int TheoreticalMass;
-
-    int Hits;  // number of peaks hit
-    int Charge;  // the charge of the hit
-    THitInfo HitInfo;
+    /** modification information array */
 	TModInfo ModInfo;
+
+    /** size of ModInfo */
 	int NumModInfo;
-    /** Sum of Ranks */
-    int Sum;
-    /** Number of matched peaks */
-    int M;
-    /** Number of exp peaks */
-    int N;
 };
 
 
 /////////////////// CMSHit inline methods
 
 inline 
-CMSHit::CMSHit(void): Hits(0)
-{}
+CMSHit::CMSHit(void)
+{
+    SetHits() = 0;
+}
 
 inline 
 CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn):
-    Start(StartIn), Stop(StopIn), Index(IndexIn), Hits(0)
-{}
+    Start(StartIn), Stop(StopIn), Index(IndexIn)
+{
+    SetHits() = 0;
+}
 
 inline 
 CMSHit::CMSHit(int StartIn, int StopIn, int IndexIn, int MassIn, int HitsIn,
 		      int ChargeIn):
-    Start(StartIn), Stop(StopIn), Index(IndexIn), Mass(MassIn),
-    Hits(HitsIn), Charge(ChargeIn)
-{}
-
-inline 
-CMSHit::~CMSHit() 
-{ 
+    Start(StartIn), Stop(StopIn), Index(IndexIn)
+{
+    SetHits() = HitsIn;
+    SetExpMass() = MassIn;
+    SetCharge() = ChargeIn;
 }
 
 inline 
@@ -360,9 +332,9 @@ const int CMSHit::GetStart(void) const
 }
 
 inline 
-void CMSHit::SetStart(int StartIn) 
+int& CMSHit::SetStart(void) 
 { 
-    Start = StartIn;
+    return Start;
 }
 
 inline 
@@ -372,9 +344,9 @@ const int CMSHit::GetStop(void) const
 }
 
 inline 
-void CMSHit::SetStop(int StopIn) 
+int& CMSHit::SetStop(void) 
 { 
-    Stop = StopIn; 
+    return Stop; 
 }
 
 inline 
@@ -384,65 +356,9 @@ const int CMSHit::GetSeqIndex(void) const
 }
 
 inline 
-void CMSHit::SetSeqIndex(int IndexIn) 
+int& CMSHit::SetSeqIndex(void) 
 { 
-    Index = IndexIn; 
-}
-
-inline 
-const int CMSHit::GetMass(void) const
-{ 
-    return Mass; 
-}
-
-inline 
-void CMSHit::SetMass(int MassIn) 
-{ 
-    Mass = MassIn; 
-}
-
-
-inline
-int CMSHit::GetTheoreticalMass(void) const
-{
-    return TheoreticalMass;
-}
-
-
-inline 
-const int CMSHit::GetHits(void) const
-{
-    return Hits;
-}
-
-inline 
-void CMSHit::SetHits(int HitsIn) 
-{ 
-    Hits = HitsIn;
-}
-
-inline 
-const int CMSHit::GetCharge(void) const
-{
-    return Charge;
-}
-
-inline 
-void CMSHit::SetCharge(int ChargeIn)
-{
-    Charge = ChargeIn;
-}
-
-inline 
-CMSHitInfo& CMSHit::SetHitInfo(int n)
-{
-    return *(HitInfo.get() + n);
-}
-
-inline 
-const CMSHitInfo& CMSHit::GetHitInfo(int n) const
-{
-    return *(HitInfo.get() + n);
+    return Index; 
 }
 
 inline 
@@ -466,37 +382,22 @@ const int CMSHit::GetNumModInfo(void) const
 inline 
 CMSHit& CMSHit::operator= (CMSHit& in) 
 { 
+    // handle self assignment
+    if(this == &in) return *this;
+
+    CMSSpectrumMatch::operator= (in);
     Start = in.Start; 
     Stop = in.Stop;
     Index = in.Index; 
-    Mass = in.Mass;
-    Hits = in.Hits;
-    Charge = in.Charge;
-    HitInfo.reset();
-    if(in.HitInfo) {
-	HitInfo.reset(new CMSHitInfo[Hits]);
-	int i;
-	for(i = 0; i < Hits; i++) SetHitInfo(i) = in.SetHitInfo(i);
+    NumModInfo = in.NumModInfo;
+    int i;
+    ModInfo.reset();
+    if(in.ModInfo) {
+        ModInfo.reset(new CMSModInfo[NumModInfo]);
+        for(i = 0; i < NumModInfo; i++) 
+            SetModInfo(i) = in.SetModInfo(i);
     }
     return *this;
-}
-
-inline
-const int CMSHit::GetSum(void) const 
-{
-    return Sum;
-} 
-
-inline
-const int CMSHit::GetM(void) const 
-{
-    return M;
-}
-
-inline
-const int CMSHit::GetN(void) const 
-{
-    return N;
 }
 
 /////////////////// end of CMSHit inline methods
@@ -510,30 +411,56 @@ const int CMSHit::GetN(void) const
 //  Used by CMSPeak class to spectral data
 //
 
-// a class for holding an m/z value and intensity
-class NCBI_XOMSSA_EXPORT CMZI {
+/**
+ *  a class for holding an m/z value, intensity, and rank
+ */
+class NCBI_XOMSSA_EXPORT CMZI: public CMSBasicPeak {
 public:
-    int MZ;
-    unsigned Intensity;
-    /** The intensity rank of the peak. 1 = most intense */
-    unsigned Rank;
     CMZI(void);
     CMZI(int MZIn, unsigned IntensityIn);
     CMZI(double MZIn, double IntensityIn);
+
+    /** get the peak rank */
+    const TMSRank GetRank(void) const;
+
+    /** set the peak rank */
+    TMSRank& SetRank(void);
+
+private:
+    /** The intensity rank of the peak. 1 = most intense */
+    TMSRank Rank;
 };
 
 ///////////////////  CMZI inline methods
 
-inline CMZI::CMZI(void) 
+inline 
+CMZI::CMZI(void) 
 {}
 
-inline CMZI::CMZI(int MZIn, unsigned IntensityIn): MZ(MZIn), Intensity(IntensityIn) 
-{}
-
-inline CMZI::CMZI(double MZIn, double IntensityIn)
+inline 
+CMZI::CMZI(int MZIn, unsigned IntensityIn)
 {
-    MZ = MSSCALE2INT(MZIn);
-    Intensity = static_cast <unsigned> (IntensityIn);
+    SetMZ() = MZIn;
+    SetIntensity() = IntensityIn;
+}
+
+inline 
+CMZI::CMZI(double MZIn, double IntensityIn)
+{
+    SetMZ() = MSSCALE2INT(MZIn);
+    SetIntensity() = static_cast <unsigned> (IntensityIn);
+}
+
+inline
+const TMSRank CMZI::GetRank(void) const
+{
+    return Rank;
+}
+
+inline
+TMSRank& CMZI::SetRank(void)
+{
+    return Rank;
 }
 
 /////////////////// end of CMZI inline methods
@@ -826,6 +753,20 @@ public:
                          const double StopFraction) const;
 
     /**
+     * return the number of peaks in a range
+     * 
+     * @param Start inclusive start of range in integer m/z
+     * @param Stop exclusive stop of range in integer m/z
+     * @param MaxIntensity the minimum intensity that a peak can have for counting
+     * @param Which which noise filtered spectrum to use
+     */
+    const int CountMZRange(const int StartIn,
+                           const int StopIn,
+                           const double MinIntensity,
+                           const int Which) const;
+        
+
+    /**
      *  takes the ratio, low/high, of two ranges in the spectrum
      */
     const double RangeRatio(const double Start,
@@ -1112,7 +1053,6 @@ private:
     char *Used[MSNUMDATA];  // used to mark m/z values as used in a match
     unsigned Num[MSNUMDATA]; // number of CMZI.  first is original, second is culled
     bool Sorted[MSNUMDATA]; // have the CMZI been sorted?
-    bool *Match;    // is a peak matched or not?
     CMZI ** IntensitySort;  // points to CMZI original, sorted.
     int Precursormz;
     int Charges[MSMAXCHARGE];  // Computed allowed charges
@@ -1402,6 +1342,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.36  2006/01/23 17:47:37  lewisg
+  refactor scoring
+
   Revision 1.35  2005/11/18 15:11:40  lewisg
   move code from CSearch into CMSPeak
 

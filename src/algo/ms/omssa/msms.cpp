@@ -495,78 +495,78 @@ CGluCDE::CGluCDE(void)
 /// Simple minded factory to return back object for enzyme
 ///
 
-CCleave *  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
+CRef <CCleave>  CCleaveFactory::CleaveFactory(const EMSEnzymes enzyme)
 {
-    if (enzyme >= eMSEnzymes_max) return 0;
+    if (enzyme >= eMSEnzymes_max) return null;
     switch (enzyme) {
     case eMSEnzymes_trypsin:
-        return new CTrypsin;
+        return CRef <CCleave> (new CTrypsin);
         break;
     case eMSEnzymes_argc:
-        return new CArgC;
+        return CRef <CCleave> (new CArgC);
         break;
     case eMSEnzymes_cnbr:
-        return new CCNBr;
+        return CRef <CCleave> (new CCNBr);
         break;
     case eMSEnzymes_chymotrypsin:
-        return new CChymotrypsin;
+        return CRef <CCleave> (new CChymotrypsin);
         break;
     case eMSEnzymes_formicacid:
-        return new CFormicAcid;
+        return CRef <CCleave> (new CFormicAcid);
         break;
     case eMSEnzymes_lysc:
-        return new CLysC;
+        return CRef <CCleave> (new CLysC);
         break;
     case eMSEnzymes_lysc_p:
-        return new CLysCP;
+        return CRef <CCleave> (new CLysCP);
         break;
     case eMSEnzymes_pepsin_a:
-        return new CPepsinA;
+        return CRef <CCleave> (new CPepsinA);
         break;
     case eMSEnzymes_tryp_cnbr:
-        return new CTrypCNBr;
+        return CRef <CCleave> (new CTrypCNBr);
         break;
     case eMSEnzymes_tryp_chymo:
-        return new CTrypChymo;
+        return CRef <CCleave> (new CTrypChymo);
         break;
     case eMSEnzymes_trypsin_p:
-        return new CTrypsinP;
+        return CRef <CCleave> (new CTrypsinP);
         break;
     case eMSEnzymes_whole_protein:
-        return new CWholeProtein;
+        return CRef <CCleave> (new CWholeProtein);
         break;
     case eMSEnzymes_aspn:
-        return new CAspN;
+        return CRef <CCleave> (new CAspN);
         break;
     case eMSEnzymes_gluc:
-        return new CGluC;
+        return CRef <CCleave> (new CGluC);
         break;
     case eMSEnzymes_aspngluc:
-        return new CGluCAspN;
+        return CRef <CCleave> (new CGluCAspN);
         break;
     case eMSEnzymes_top_down:
-        return new CTopDown;
+        return CRef <CCleave> (new CTopDown);
         break;
     case eMSEnzymes_semi_tryptic:
-        return new CSemiTryptic;
+        return CRef <CCleave> (new CSemiTryptic);
         break;
     case eMSEnzymes_no_enzyme:
-        return new CNoEnzyme;
+        return CRef <CCleave> (new CNoEnzyme);
         break;
     case eMSEnzymes_chymotrypsin_p:
-        return new CChymoP;
+        return CRef <CCleave> (new CChymoP);
         break;
     case eMSEnzymes_aspn_de:
-        return new CAspNDE;
+        return CRef <CCleave> (new CAspNDE);
         break;
     case eMSEnzymes_gluc_de:
-        return new CGluCDE;
+        return CRef <CCleave> (new CGluCDE);
         break;
     default:
-        return 0;
+        return null;
         break;
     }
-    return 0;
+    return null;
 }
 
 
@@ -631,6 +631,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.31  2006/01/23 17:47:37  lewisg
+  refactor scoring
+
   Revision 1.30  2005/12/06 18:51:02  lewisg
   arg-c cuts at c terminus
 
