@@ -67,7 +67,7 @@ void CMSResponse::PrintCSV(ostream& os, CRef <CMSModSpecSet> ModSet)
 {
 	if(!CanGetHitsets() ) return;
 
-	os << "Spectrum number, Filename/id, Peptide, E-value, Mass, gi, Accession, Start, Stop, Defline, Mods" << endl;
+	os << "Spectrum number, Filename/id, Peptide, E-value, Mass, gi, Accession, Start, Stop, Defline, Mods, Charge, Theo Mass" << endl;
     // read out hits
     
     CMSResponse::THitsets::const_iterator iHits;
@@ -152,6 +152,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/01/23 17:39:59  lewisg
+* fix csv header
+*
 * Revision 1.5  2005/11/08 22:08:14  lewisg
 * stop using depricated oid
 *
