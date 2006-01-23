@@ -561,10 +561,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    /* Pick which gapped alignment algorithm to use. */
    if (phi_lookup)
       aux_struct->GetGappedScore = PHIGetGappedScore;
-   else if (ext_options->ePrelimGapExt == eDynProgExt)
+   else 
       aux_struct->GetGappedScore = BLAST_GetGappedScore;
-   else
-      aux_struct->GetGappedScore = BLAST_MbGetGappedScore;
 
    aux_struct->hsp_list = Blast_HSPListNew(hit_options->hsp_num_max);
    return status;
