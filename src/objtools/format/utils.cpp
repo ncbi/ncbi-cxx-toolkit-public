@@ -115,7 +115,6 @@ bool IsPartOfUrl(
     return false; /* never found the terminating '/' */
 };     
 
-
 void ExpandTildes(string& s, ETildeStyle style)
 {
     if ( style == eTilde_tilde ) {
@@ -299,14 +298,11 @@ void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
         }
     }
 
+    str = str.substr( begin, end + 1 );
     if ( allow_ellipsis && (NPOS != NStr::Find(str, "...", end)) ) {
-
-        str = str.substr(begin, end + 1);
         str += "...";
 
     } else if (has_period) {
-
-        str = str.substr(begin, end + 1);
         str += '.';
     }
 }
@@ -751,6 +747,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2006/01/23 14:22:19  ludwigf
+* FIXED: Function TrimSpacesAndJunkFromEnds() forgot to handle one possible
+*  scenario. Handling for this scenario has been added.
+*
 * Revision 1.25  2006/01/18 18:25:41  ludwigf
 * FIXED: Comments often contain URLs with unescaped tilde characters. We do
 * not want to turn these into line breaks.
