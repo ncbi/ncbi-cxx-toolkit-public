@@ -216,7 +216,7 @@ void CDBLibContext::SetClientCharset(const char* charset) const
 }
 
 I_Connection* 
-CDBLibContext::MakeConnection(const SConnAttr& conn_attr)
+CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
 {
     DBPROCESS* dbcon = x_ConnectToServer(conn_attr.srv_name, 
                                          conn_attr.user_name, 
@@ -1087,6 +1087,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/01/23 13:38:52  ssikorsk
+ * Renamed CDBLibContext::MakeConnection to MakeIConnection;
+ *
  * Revision 1.62  2006/01/11 18:06:10  ssikorsk
  * Do not call dbexit with Sybase on Windows.
  *
