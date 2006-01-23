@@ -117,7 +117,7 @@ enum EBlastOptIdx {
     eBlastOpt_InclusionThreshold,
     eBlastOpt_PseudoCount,
     eBlastOpt_GapTracebackAlgorithm,
-    eBlastOpt_CompositionBasedStatsMode,
+    eBlastOpt_CompositionBasedStats,
     eBlastOpt_SmithWatermanMode
 };
 
@@ -1206,23 +1206,23 @@ CBlastOptions::SetGapTracebackAlgorithm(EBlastTbackExt a)
     }
 }
 
-bool 
-CBlastOptions::GetCompositionBasedStatsMode() const
+ECompoAdjustModes 
+CBlastOptions::GetCompositionBasedStats() const
 {
     if (! m_Local) {
-        x_Throwx("Error: GetCompositionBasedStatsMode() not available.");
+        x_Throwx("Error: GetCompositionBasedStats() not available.");
     }
-    return m_Local->GetCompositionBasedStatsMode();
+    return m_Local->GetCompositionBasedStats();
 }
 
 void 
-CBlastOptions::SetCompositionBasedStatsMode(bool m)
+CBlastOptions::SetCompositionBasedStats(ECompoAdjustModes mode)
 {
     if (m_Local) {
-        m_Local->SetCompositionBasedStatsMode(m);
+        m_Local->SetCompositionBasedStats(mode);
     }
     if (m_Remote) {
-        m_Remote->SetValue(eBlastOpt_CompositionBasedStatsMode, m);
+        m_Remote->SetValue(eBlastOpt_CompositionBasedStats, mode);
     }
 }
 
@@ -1870,6 +1870,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.76  2006/01/23 19:57:39  camacho
+* Allow new varieties of composition based statistics
+*
 * Revision 1.75  2006/01/23 16:37:11  papadopo
 * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
 *

@@ -64,14 +64,18 @@ public:
 
 /******************* Gapped extension options *******************/
 
-    /// Returns this mode, which mostly specifies whether composition of db sequence is taken
-    /// into account when calculating expect values.
-    bool GetCompositionBasedStatsMode() const { return m_Opts->GetCompositionBasedStatsMode(); }
+    /// Returns this mode, which mostly specifies whether composition of db
+    /// sequence is taken into account when calculating expect values.
+    ECompoAdjustModes GetCompositionBasedStats() const { 
+        return m_Opts->GetCompositionBasedStats(); 
+    }
 
-    /// Sets this mode, which mostly specifies whether composition of db sequence is taken
-    /// into account when calculating expect values.
+    /// Sets this mode, which mostly specifies whether composition of db
+    /// sequence is taken into account when calculating expect values.
     /// @param m composition-based statistics mode [in]
-    void SetCompositionBasedStatsMode(bool m = true)  { m_Opts->SetCompositionBasedStatsMode(m); }
+    void SetCompositionBasedStats(ECompoAdjustModes mode)  { 
+        m_Opts->SetCompositionBasedStats(mode); 
+    }
 
     /// Returns this mode, specifying that smith waterman rather than the normal blast heuristic
     /// should be used for final extensions.
@@ -104,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/23 19:57:28  camacho
+ * Allow new varieties of composition based statistics
+ *
  * Revision 1.1  2005/05/24 14:03:19  madden
  * Advanced (e.g., composition-based) protein options
  *

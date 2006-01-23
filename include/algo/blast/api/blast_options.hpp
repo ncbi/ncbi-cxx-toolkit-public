@@ -43,6 +43,7 @@
 #include <algo/blast/api/blast_exception.hpp>
 
 #include <algo/blast/core/blast_options.h>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 
 // Forward declarations of classes that need to be declared friend 
 // (mostly unit test classes)
@@ -214,8 +215,8 @@ public:
     EBlastTbackExt GetGapTracebackAlgorithm() const;
     void SetGapTracebackAlgorithm(EBlastTbackExt a);
 
-    bool GetCompositionBasedStatsMode() const;
-    void SetCompositionBasedStatsMode(bool m = true);
+    ECompoAdjustModes GetCompositionBasedStats() const;
+    void SetCompositionBasedStats(ECompoAdjustModes mode);
 
     bool GetSmithWatermanMode() const;
     void SetSmithWatermanMode(bool m = true);
@@ -502,7 +503,7 @@ END_NCBI_SCOPE
       opts_handle.SetMatrixName("PAM30");
       opts_handle.SetGapOpeningCost(9);
       opts_handle.SetGapExtensionCost(1);
-      opts_handle.SetOptions().SetCompositionBasedStatsMode();
+      opts_handle.SetOptions().SetCompositionBasedStats(eCompositionBasedStats);
       opts_handle.Validate();
 
       CBl2Seq bl2seq(query, subject, opts_handle);
@@ -584,6 +585,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.115  2006/01/23 19:57:28  camacho
+* Allow new varieties of composition based statistics
+*
 * Revision 1.114  2006/01/23 16:37:45  papadopo
 * use {Set|Get}MinDiagSeparation to specify the number of diagonals to be used in HSP containment tests
 *

@@ -37,6 +37,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 
 /** @addtogroup AlgoBlast
  *
@@ -156,8 +157,8 @@ public:
     EBlastTbackExt GetGapTracebackAlgorithm() const;
     void SetGapTracebackAlgorithm(EBlastTbackExt a);
 
-    bool GetCompositionBasedStatsMode() const;
-    void SetCompositionBasedStatsMode(bool m = true);
+    ECompoAdjustModes GetCompositionBasedStats() const;
+    void SetCompositionBasedStats(ECompoAdjustModes mode);
 
     bool GetSmithWatermanMode() const;
     void SetSmithWatermanMode(bool m = true);
@@ -876,16 +877,16 @@ CBlastOptionsLocal::SetGapTracebackAlgorithm(EBlastTbackExt a)
     m_ExtnOpts->eTbackExt = a;
 }
 
-inline bool
-CBlastOptionsLocal::GetCompositionBasedStatsMode() const
+inline ECompoAdjustModes
+CBlastOptionsLocal::GetCompositionBasedStats() const
 {
-    return m_ExtnOpts->compositionBasedStats ? true : false;
+    return static_cast<ECompoAdjustModes>(m_ExtnOpts->compositionBasedStats);
 }
 
 inline void
-CBlastOptionsLocal::SetCompositionBasedStatsMode(bool m)
+CBlastOptionsLocal::SetCompositionBasedStats(ECompoAdjustModes mode)
 {
-    m_ExtnOpts->compositionBasedStats = m;
+    m_ExtnOpts->compositionBasedStats = static_cast<Int4>(mode);
 }
 
 inline bool

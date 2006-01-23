@@ -54,7 +54,7 @@ void
 CBlastAdvancedProteinOptionsHandle::SetGappedExtensionDefaults()
 {
     CBlastProteinOptionsHandle::SetGappedExtensionDefaults();
-    m_Opts->SetCompositionBasedStatsMode(true);
+    m_Opts->SetCompositionBasedStats(eCompositionBasedStats);
     m_Opts->SetSmithWatermanMode(false);
 }
 
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/23 19:57:39  camacho
+ * Allow new varieties of composition based statistics
+ *
  * Revision 1.3  2005/10/06 19:43:07  camacho
  * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
  * Fixes problem with uninitializes program and service name for CRemoteBlast.
