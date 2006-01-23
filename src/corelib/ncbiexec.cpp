@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <corelib/ncbiexec.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_process.hpp>
 
 #if defined(NCBI_OS_MSWIN)
@@ -149,8 +150,8 @@ static void s_CheckExecArg(const char* arg)
     int lo = int((Uint8)arg & 0xffffffffU);
 #  endif
     if (lo == 0  &&  hi != 0) {
-        ERR_POST(Warning
-                 << "It is possible that you used 0 instead of NULL "
+        ERR_POST(Warning <<
+                 "It is possible that you used 0 instead of NULL "
                  "to terminate the argument list of a CExec::Spawn*() call.");
     }
 }
@@ -180,22 +181,12 @@ static void s_CheckExecArg(const char* arg)
     } \
     args[xi] = (const char*)0
 
-static const char* s_GetErrnoMsg(int err)
-{
-    switch (err) {
-    case E2BIG:     return "Argument list is too large";
-    case EINVAL:    return "Invalid mode";
-    case ENOENT:    return "File not found";
-    case ENOEXEC:   return "File is not executable";
-    case ENOMEM:    return "Out of memory";
-    default:        return "Unknown error";
-    }
-}
 
 int CExec::System(const char *cmdline)
 { 
     int status;
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = system(cmdline); 
 #elif defined(NCBI_OS_UNIX)
     status = system(cmdline);
@@ -216,15 +207,16 @@ int CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
 {
     int status;
     GET_EXEC_ARGS;
+    CDir::SetCwd("c://Perl");
+
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnv(s_GetRealMode(mode), cmdname, args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, args);
 #endif
     if (status == -1) {
-        string msg("CExec::SpawnL(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnL()");
     }
     return status;
 }
@@ -236,14 +228,13 @@ int CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, args, envp);
 #endif
     if (status == -1) {
-        string msg("CExec::SpawnLE(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnLE()");
     }
     return status;
 }
@@ -254,14 +245,13 @@ int CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
     int status;
     GET_EXEC_ARGS;
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnvp(s_GetRealMode(mode), cmdname, args);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, args);
 #endif
     if (status == -1) {
-        string msg("CExec::SpawnLP(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnLP()");
     }
     return status;
 }
@@ -273,14 +263,13 @@ int CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
     GET_EXEC_ARGS;
     char** envp = va_arg(vargs, char**);
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnve(s_GetRealMode(mode), cmdname, args, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, args, envp);
 #endif
     if (status == -1 ) {
-        string msg("CExec::SpawnLPE(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnLPE()");
     }
     return status;
 }
@@ -292,14 +281,13 @@ int CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnv(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eV, mode, cmdname, argv);
 #endif
     if (status == -1 ) {
-        string msg("CExec::SpawnV(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnV()");
     }
     return status;
 }
@@ -312,14 +300,13 @@ int CExec::SpawnVE(EMode mode, const char *cmdname,
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnve(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVE, mode, cmdname, argv, envp);
 #endif
     if (status == -1 ) {
-        string msg("CExec::SpawnVE(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnVE()");
     }
     return status;
 }
@@ -331,14 +318,13 @@ int CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnvp(s_GetRealMode(mode), cmdname, argv);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVP, mode, cmdname, argv);
 #endif
     if (status == -1 ) {
-        string msg("CExec::SpawnVP(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnVP()");
     }
     return status;
 }
@@ -351,14 +337,13 @@ int CExec::SpawnVPE(EMode mode, const char *cmdname,
     char** argp = const_cast<char**>(argv);
     argp[0] = const_cast<char*>(cmdname);
 #if defined(NCBI_OS_MSWIN)
+    _flushall();
     status = spawnvpe(s_GetRealMode(mode), cmdname, argv, envp);
 #elif defined(NCBI_OS_UNIX)
     status = s_SpawnUnix(eVPE, mode, cmdname, argv, envp);
 #endif
     if (status == -1 ) {
-        string msg("CExec::SpawnVPE(): ");
-        msg += s_GetErrnoMsg(errno);
-        NCBI_THROW(CExecException,eSpawn, msg);
+        NCBI_THROW(CExecException, eSpawn, "CExec::SpawnVPE()");
     }
     return status;
 }
@@ -376,6 +361,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/01/23 16:20:05  ivanov
+ * Flushes all streams on MS Windows before spawn a process.
+ * Removed double diagnostic messages.
+ *
  * Revision 1.24  2005/11/07 17:03:43  dicuccio
  * CExec::SpawnL()/CExec::SpawnLP(): (Win32) bugfix - use GET_EXEC_ARGS to format
  * varargs.  Added better exception text for clarity.
