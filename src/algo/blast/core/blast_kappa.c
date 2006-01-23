@@ -1547,11 +1547,14 @@ s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info)
  *                    that perform the gapped alignments.
  */
 static BlastCompo_GappingParams *
-s_GappingParamsNew(BlastKappa_GappingParamsContext * context)
+s_GappingParamsNew(BlastKappa_GappingParamsContext * context,
+                   const BlastExtensionParameters* extendParams,
+                   int num_queries)
 {
-    /* Fields of context as locals */
-    BlastGapAlignStruct * gap_align = context->gap_align;
+    int i;
+    double min_lambda = DBL_MAX;   /* smallest gapped Lambda */
     const BlastScoringParameters * scoring = context->scoringParams;
+    const BlastExtensionOptions * options = extendParams->options;
     /* The new object */
     BlastCompo_GappingParams * gapping_params = NULL;
 
@@ -1560,11 +1563,19 @@ s_GappingParamsNew(BlastKappa_GappingParamsContext * context)
         gapping_params->gap_open = scoring->gap_open;
         gapping_params->gap_extend = scoring->gap_extend;
         gapping_params->decline_align = scoring->decline_align;
-        /* YIKES! different x-dropoff due to different pass through the
-           blast code */
-        gapping_params->x_dropoff = gap_align->gap_x_dropoff;
         gapping_params->context = context;
     }
+    
+    for (i = 0;  i < num_queries;  i++) {
+        if (context->sbp->kbp_gap[i]->Lambda < min_lambda) {
+            min_lambda = context->sbp->kbp_gap[i]->Lambda;
+        }
+    }
+    gapping_params->x_dropoff = (Int4)
+        MAX(options->gap_x_dropoff_final*NCBIMATH_LN2 / min_lambda,
+            extendParams->gap_x_dropoff_final);
+    context->gap_align->gap_x_dropoff = gapping_params->x_dropoff;
+
     return gapping_params;
 }
 
@@ -1587,7 +1598,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
                  BLAST_SequenceBlk * queryBlk,
                  BlastQueryInfo* queryInfo,
                  const BlastHitSavingParameters* hitParams,
-                 int adjustParameters)
+                 const BlastExtensionParameters* extendParams)
 {
     int status = 0;    /* status code */
     int rows;          /* number of rows in the scoring matrix */
@@ -1598,14 +1609,14 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
                                      alignment */
     Blast_MatrixInfo *
         scaledMatrixInfo;         /* information about the scoring matrix */
-    Blast_KarlinBlk* kbp;         /* statistical parameters */
     /* does this kind of search translate the database sequence */
     int subject_is_translated = context->prog_number == eBlastTypeTblastn;
     /* is this a positiion-based search */
     Boolean positionBased = (Boolean) (context->sbp->psi_matrix != NULL);
     /* will BLAST_LinkHsps be called to assign e-values */
     Boolean do_link_hsps = (Boolean) (hitParams->link_hsp_params != NULL);
-
+    int compositionBasedStats = extendParams->options->compositionBasedStats;
+    
     if (do_link_hsps) {
         cutoff_s =
             (int) (hitParams->cutoff_score * context->localScalingFactor);
@@ -1622,15 +1633,14 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     if (status != 0) {
         return NULL;
     }
-    kbp = context->sbp->kbp_gap[0];
-
-    gapping_params = s_GappingParamsNew(context);
+    gapping_params = s_GappingParamsNew(context, extendParams,
+                                        queryInfo->num_queries);
     if (gapping_params == NULL) {
         return NULL;
     } else {
         return
             Blast_RedoAlignParamsNew(&scaledMatrixInfo, &gapping_params,
-                                     adjustParameters, positionBased,
+                                     compositionBasedStats, positionBased,
                                      subject_is_translated,
                                      queryInfo->max_length, cutoff_s, cutoff_e,
                                      do_link_hsps, &redo_align_callbacks);
@@ -1800,9 +1810,6 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     if (status_code != 0) {
         return status_code;
     }
-    gapAlign->gap_x_dropoff =
-        (Int4) (extendParams->gap_x_dropoff_final * localScalingFactor);
-
     gapping_params_context.gap_align = gapAlign;
     gapping_params_context.scoringParams = scoringParams;
     gapping_params_context.sbp = sbp;
@@ -1810,7 +1817,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     gapping_params_context.prog_number = program_number;
     redo_align_params =
         s_GetAlignParams(&gapping_params_context, queryBlk, queryInfo, 
-                         hitParams, adjustParameters);
+                         hitParams, extendParams);
     if (redo_align_params == NULL) {
         status_code = -1;
         goto function_cleanup;
