@@ -48,6 +48,10 @@
  * modes of composition adjustment */
 typedef enum ECompoAdjustModes {
     eNoCompositionAdjustment       = (-1),
+    eNoCompositionBasedStats       = 0,
+    eCompositionBasedStats         = 1,
+    eCompositionMatrixAdjust       = 2,
+    eCompoForceFullMatrixAdjust    = 3,
     eCompoKeepOldMatrix            = 0,
     eUnconstrainedRelEntropy       = 1,
     eRelEntropyOldMatrixNewContext = 2,
@@ -55,5 +59,13 @@ typedef enum ECompoAdjustModes {
     eUserSpecifiedRelEntropy       = 4,
     eNumCompoAdjustModes
 } ECompoAdjustModes;
+
+
+typedef enum EMatrixAdjustRules {
+    eDontAdjustMatrix = (-1),
+    eCompoScaleOldMatrix = 0
+} EMatrixAdjustRules;
+
+
 
 #endif
