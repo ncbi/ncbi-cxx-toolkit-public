@@ -139,7 +139,7 @@ public:
     }
 
 protected:
-    virtual I_Connection* MakeConnection(const SConnAttr& conn_attr);
+    virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr);
     
 private:
     SQLHENV     m_Context;
@@ -720,6 +720,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/23 13:17:11  ssikorsk
+ * Renamed CODBCContext::MakeConnection to MakeIConnection.
+ *
  * Revision 1.18  2006/01/03 18:56:03  ssikorsk
  * Replace method Connect with MakeConnection.
  *
