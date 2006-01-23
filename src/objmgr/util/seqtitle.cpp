@@ -97,14 +97,18 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
     CConstRef<CBioSource>     source(NULL);
     CConstRef<CMolInfo>       mol_info(NULL);
     bool                      third_party = false;
+    bool                      tpa_exp     = false;
+    bool                      tpa_inf     = false;
     bool                      is_nc       = false;
     bool                      is_nm       = false;
     bool                      is_nr       = false;
     bool                      wgs_master  = false;
     CMolInfo::TTech           tech        = CMolInfo::eTech_unknown;
     bool                      htg_tech    = false;
+    bool                      htgs_draft  = false;
+    bool                      htgs_cancelled = false;
     bool                      use_biosrc  = false;
-    CScope&                   scope = hnd.GetScope();
+    CScope&                   scope       = hnd.GetScope();
 
     ITERATE (CBioseq_Handle::TId, idh, hnd.GetId()) {
         CConstRef<CSeq_id> id = idh->GetSeqId();
@@ -322,22 +326,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
     }
 
-    if (third_party  &&  !title.empty()
-        &&  !NStr::StartsWith(title, "TPA: ", NStr::eNocase)) {
-        prefix += "TPA: ";
-    }
-
-    switch (tech) {
-    case CMolInfo::eTech_htgs_0:
-        if (title.find("LOW-PASS") == NPOS) {
-            suffix = ", LOW-PASS SEQUENCE SAMPLING";
-        }
-        break;
-    case CMolInfo::eTech_htgs_1:
-    case CMolInfo::eTech_htgs_2:
-    {
-        bool is_draft  = false;
-        bool cancelled = false;
+    if (htg_tech  ||  third_party) {
         const CGB_block::TKeywords* keywords = 0;
         for (CSeqdesc_CI gb(hnd, CSeqdesc::e_Genbank);  gb;  ++gb) {
             if (gb->GetGenbank().IsSetKeywords()) {
@@ -355,19 +344,49 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
         if (keywords) {
             ITERATE (CGB_block::TKeywords, it, *keywords) {
-                if (NStr::Compare(*it, "HTGS_DRAFT", NStr::eNocase) == 0) {
-                    is_draft = true;
-                    break;
-                } else if (NStr::Compare(*it, "HTGS_CANCELLED", NStr::eNocase)
-                           == 0) {
-                    cancelled = true;
-                    break;
+                if (NStr::EqualNocase(*it, "HTGS_DRAFT")) {
+                    htgs_draft = true;
+                } else if (NStr::EqualNocase(*it, "HTGS_CANCELLED")) {
+                    htgs_cancelled = true;
+                } else if (NStr::EqualNocase(*it, "TPA:experimental")) {
+                    tpa_exp = true;
+                } else if (NStr::EqualNocase(*it, "TPA:inferential")) {
+                    tpa_inf = true;
                 }
             }
         }
-        if (is_draft  &&  title.find("WORKING DRAFT") == NPOS) {
+    }
+
+    if (third_party  &&  !title.empty() ) {
+        bool tpa_start = NStr::StartsWith(title, "TPA: ", NStr::eNocase);
+        if (tpa_exp  &&  !NStr::StartsWith(title, "TPA_exp:", NStr::eNocase)) {
+            prefix += "TPA_exp: ";
+            if (tpa_start) {
+                title.erase(0, 5);
+            }
+        } else if (tpa_inf
+                   &&  !NStr::StartsWith(title, "TPA_inf:", NStr::eNocase)) {
+            prefix += "TPA_inf: ";
+            if (tpa_start) {
+                title.erase(0, 5);
+            }
+        } else if ( !tpa_start ) {
+            prefix += "TPA: ";
+        }
+    }
+
+    switch (tech) {
+    case CMolInfo::eTech_htgs_0:
+        if (title.find("LOW-PASS") == NPOS) {
+            suffix = ", LOW-PASS SEQUENCE SAMPLING";
+        }
+        break;
+    case CMolInfo::eTech_htgs_1:
+    case CMolInfo::eTech_htgs_2:
+    {
+        if (htgs_draft  &&  title.find("WORKING DRAFT") == NPOS) {
             suffix = ", WORKING DRAFT SEQUENCE";
-        } else if (!is_draft  &&  !cancelled
+        } else if ( !htgs_draft  &&  !htgs_cancelled
                    &&  title.find("SEQUENCING IN") == NPOS) {
             suffix = ", *** SEQUENCING IN PROGRESS ***";
         }
@@ -868,6 +887,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.53  2006/01/23 19:19:17  ucko
+* Per changes to the C Toolkit earlier this month, label TPA records
+* tagged as experimental or inferential accordingly.
+*
 * Revision 1.52  2005/09/13 15:29:40  ucko
 * x_TitleFromChromosome: substitute "virus" for "virion" per recent
 * changes to the C Toolkit.
