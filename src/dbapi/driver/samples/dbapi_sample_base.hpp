@@ -96,7 +96,8 @@ protected:
     /// Create new connection using server, username and password
     /// specified in the application command line
     CDB_Connection*
-    CreateConnection(I_DriverContext::TConnectionMode mode = I_DriverContext::fBcpIn,
+    CreateConnection(IConnValidator*                  validator = NULL,
+                     I_DriverContext::TConnectionMode mode = I_DriverContext::fBcpIn,
                      bool                             reusable  = false,
                      const string&                    pool_name = kEmptyStr);
 
@@ -200,6 +201,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/23 13:45:02  ssikorsk
+ * Added default argument of type IConnValidator* to
+ * CDbapiSampleApp::CreateConnection;
+ *
  * Revision 1.5  2006/01/12 16:50:12  ssikorsk
  * 	   Use auto_ptr to hold I_DriverContext.
  *

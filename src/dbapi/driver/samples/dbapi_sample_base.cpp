@@ -275,19 +275,32 @@ CDbapiSampleApp::GetDriverContext(void)
 
 
 CDB_Connection*
-CDbapiSampleApp::CreateConnection(I_DriverContext::TConnectionMode mode,
+CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
+                                  I_DriverContext::TConnectionMode mode,
                                   bool                             reusable,
                                   const string&                    pool_name)
 {
-    CDB_Connection* conn =
-    GetDriverContext().Connect(GetServerName(),
-                               GetUserName(),
-                               GetPassword(),
-                               mode,
-                               reusable,
-                               pool_name);
+    auto_ptr<CDB_Connection> conn;
+    I_DriverContext& dc(GetDriverContext());
+    
+    if (validator) {
+        conn.reset(dc.ConnectValidated(GetServerName(),
+                              GetUserName(),
+                              GetPassword(),
+                              *validator,         
+                              mode,
+                              reusable,
+                              pool_name));
+    } else {
+        conn.reset(dc.Connect(GetServerName(),
+                              GetUserName(),
+                              GetPassword(),
+                              mode,
+                              reusable,
+                              pool_name));
+    }
 
-    if ( !conn ) {
+    if ( !conn.get() ) {
         ERR_POST(Fatal << "Cannot open connection to the server: "
                  << GetServerName());
     }
@@ -321,7 +334,7 @@ CDbapiSampleApp::CreateConnection(I_DriverContext::TConnectionMode mode,
         }
     }
 
-    return conn;
+    return conn.release();
 }
 
 void
@@ -536,6 +549,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/01/23 13:45:42  ssikorsk
+ * Added default argument of type IConnValidator* to
+ * CDbapiSampleApp::CreateConnection;
+ *
  * Revision 1.16  2006/01/12 16:50:49  ssikorsk
  * Use auto_ptr to hold I_DriverContext.
  *
