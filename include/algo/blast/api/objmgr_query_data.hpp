@@ -50,7 +50,7 @@ BEGIN_SCOPE(blast)
 class NCBI_XBLAST_EXPORT CObjMgr_QueryFactory : public IQueryFactory
 {
 public:
-    CObjMgr_QueryFactory(const TSeqLocVector& queries);
+    CObjMgr_QueryFactory(TSeqLocVector& queries);
     CObjMgr_QueryFactory(CRef<objects::CSeq_loc> seqloc);
     
     /// FIXME: perhaps this can be changed to CSeq_intervals
@@ -63,7 +63,7 @@ protected:
     CRef<IRemoteQueryData> x_MakeRemoteQueryData();
 
 private:
-    const TSeqLocVector* m_SSeqLocVector;
+    TSeqLocVector* m_SSeqLocVector;
     const TSeqLocs* m_SeqLocs;
     const bool m_OwnSeqLocs;
 };
