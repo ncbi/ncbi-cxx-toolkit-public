@@ -10,13 +10,18 @@ REQUIRES = objects
 LIB =   xbma_refiner \
         xstruct_util \
         xstruct_dp \
-        xblast composition_adjustment seqdb blastdb xnetblastcli xnetblast \
-        tables xobjsimple xobjutil \
+        xblast composition_adjustment seqdb xobjread tables \
         cdd \
         scoremat \
         cn3d \
         mmdb \
-        $(OBJMGR_LIBS)
+        seqset seq seqcode sequtil \
+        pub medline biblio general taxon1 blastdb xnetblast \
+        xser xutil xconnect xncbi
+
+
+#        tables xobjsimple xobjutil \
+#        $(OBJMGR_LIBS)
 
 CXXFLAGS   = $(FAST_CXXFLAGS)
 
