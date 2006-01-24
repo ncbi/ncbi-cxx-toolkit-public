@@ -995,13 +995,13 @@ string CreateProjectName(const CProjKey& project_id)
 {
     switch (project_id.Type()) {
     case CProjKey::eApp:
-        return project_id.Id() + "_exe";
+        return project_id.Id() + ".exe";
     case CProjKey::eLib:
-        return project_id.Id() + "_lib";
+        return project_id.Id() + ".lib";
     case CProjKey::eDll:
-        return project_id.Id() + "_dll";
+        return project_id.Id() + ".dll";
     case CProjKey::eMsvc:
-        return project_id.Id() + "_vcproj";
+        return project_id.Id() + ".vcproj";
     default:
         NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
         return "";
@@ -1109,6 +1109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/01/24 21:27:57  gouriano
+ * Undo the last change
+ *
  * Revision 1.44  2006/01/24 21:00:25  gouriano
  * Changed project names to not use dot
  *
