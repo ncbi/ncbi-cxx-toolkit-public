@@ -36,16 +36,16 @@
 
 #include <objects/omssa/omssa__.hpp>
 
+// for log of gamma fcn
+#include <util/math/miscmath.h>
+// for erf fcn
+#include <algo/blast/core/ncbi_math.h>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(omssa)
 
 // this is a wrapper for msscore.hpp so that msscore.hpp can be ncbi toolkit independent
-
-// for log of gamma fcn
-#include <util/math/miscmath.h>
-// for erf fcn
-#include <algo/blast/core/ncbi_math.h>
 
 
 /** m/z type */
