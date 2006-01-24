@@ -42,6 +42,7 @@ static char const rcsid[] =
 #include <algo/blast/api/seqsrc_seqdb.hpp>      // for SeqDbBlastSeqSrcInit
 #include <algo/blast/api/blast_mtlock.hpp>      // for Blast_DiagnosticsInitMT
 
+#include "blast_aux_priv.hpp"
 #include "blast_memento_priv.hpp"
 
 // SeqAlignVector building
@@ -84,11 +85,20 @@ CRef<CPacked_seqint> s_LocalQueryData2Packed_seqint(ILocalQueryData& query_data)
 
     CRef<CPacked_seqint> retval(new CPacked_seqint);
     for (int i = 0; i < kNumQueries; i++) {
-        if (query_data.GetSeq_loc(i)->IsInt()) {
-            retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
-        } else if (const CSeq_id* id = query_data.GetSeq_loc(i)->GetId()) {
-            retval->AddInterval(*id, 0, query_data.GetSeqLength(i));
+
+        if (query_data.IsValidQuery(i)) {
+
+            if (query_data.GetSeq_loc(i)->IsInt()) {
+                retval->AddInterval(query_data.GetSeq_loc(i)->GetInt());
+            } else if (const CSeq_id* id = query_data.GetSeq_loc(i)->GetId()) {
+                retval->AddInterval(*id, 0, query_data.GetSeqLength(i));
+            }
+
+        } else {
+            const CSeq_id* id = query_data.GetSeq_loc(i)->GetId();
+            retval->AddInterval(*id, 0, 0);
         }
+
     }
 
     return retval;
@@ -98,6 +108,7 @@ BlastScoreBlk*
 CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                 CRef<ILocalQueryData> query_data,
                                 BlastSeqLoc** lookup_segments,
+                                TSearchMessages& search_messages,
                                 TSeqLocInfoVector* masked_query_regions,
                                 const CBlastRPSInfo* rps_info)
 {
@@ -128,6 +139,18 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                   &retval,
                                   &blast_msg);
 
+    Blast_Message2TSearchMessages(blast_msg.Get(), query_info, search_messages);
+    if (status != 0) {
+        string msg;
+        if (search_messages.HasMessages()) {
+            msg = search_messages.ToString();
+        } else {
+            msg = "BLAST_MainSetUp failed (" + NStr::IntToString(status) + 
+            " error code)";
+        }
+        NCBI_THROW(CBlastException, eCoreBlastError, msg);
+    }
+
     if (masked_query_regions) {
         CRef<CPacked_seqint> query_locations = 
             s_LocalQueryData2Packed_seqint(*query_data);
@@ -137,12 +160,6 @@ CSetupFactory::CreateScoreBlock(const CBlastOptionsMemento* opts_memento,
                                   *masked_query_regions);
     }
 
-    if (blast_msg.Get() || status != 0) {
-        string msg = blast_msg ? blast_msg->message : 
-            "BLAST_MainSetUp failed (" + NStr::IntToString(status) + 
-            " error code)";
-        NCBI_THROW(CBlastException, eCoreBlastError, msg);
-    }
     return retval;
 }
 
