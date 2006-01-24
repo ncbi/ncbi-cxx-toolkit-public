@@ -45,7 +45,12 @@ extern const char* kTagStart;
 extern const char* kTagEnd;
 // Tag start in the end of block definition (see page templates)
 const char* kTagStartEnd = "</@";  
- 
+
+// Template file cahing (disabled by default)
+CHTMLPage::ECacheTemplateFiles CHTMLPage::sm_CacheTemplateFiles = CHTMLPage::eCTF_Disable;
+typedef map<string, string*> TTemplateCache;
+static TTemplateCache s_TemplateCache;
+
 
 // CHTMLBasicPage
 
@@ -173,10 +178,7 @@ void CHTMLPage::Init(void)
 
 void CHTMLPage::CreateSubNodes(void)
 {
-    if (m_UsePopupMenus) {
-        AppendChild(CreateTemplate());
-    }
-    // Otherwise, done while printing to avoid latency on large files
+    AppendChild(CreateTemplate());
 }
 
 
@@ -265,85 +267,39 @@ CNcbiOstream& CHTMLPage::PrintChildren(CNcbiOstream& out, TMode mode)
 
 CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 {
-    // Get template stream
+    string  str;
+    string* pstr = &str;
+
     if ( !m_TemplateFile.empty() ) {
         CNcbiIfstream is(m_TemplateFile.c_str());
-        return x_CreateTemplate(is, out, mode);
+        if ( sm_CacheTemplateFiles == eCTF_Enable ) {
+            TTemplateCache::const_iterator i 
+                = s_TemplateCache.find(m_TemplateFile);
+            if ( i != s_TemplateCache.end() ) {
+                pstr = i->second;
+            } else {
+                pstr = new string();
+                x_ReadTemplate(is, *pstr);
+                s_TemplateCache[m_TemplateFile] = pstr;
+            }
+        } else {
+            x_ReadTemplate(is, str);
+        }
     } else if ( m_TemplateStream ) {
-        return x_CreateTemplate(*m_TemplateStream, out, mode);
+        x_ReadTemplate(*m_TemplateStream, str);
     } else if ( m_TemplateBuffer ) {
         CNcbiIstrstream is((char*)m_TemplateBuffer, m_TemplateSize);
-        return x_CreateTemplate(is, out, mode);
+        x_ReadTemplate(is, str);
     } else {
         return new CHTMLText(kEmptyStr);
-    }
-}
-
-
-CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
-                                       CNCBINode::TMode mode)
-{
-    string str;
-    char   buf[kBufferSize];
-
-    if ( !is.good() ) {
-        NCBI_THROW(CHTMLException, eTemplateAccess,
-                   "CHTMLPage::CreateTemplate(): failed to open template");
-    }
-
-    // Special case: stream large templates on the first pass
-    // to reduce latency.
-    if (out  &&  !m_UsePopupMenus) {
-        auto_ptr<CNCBINode> node(new CNCBINode);
-
-        while (is) {
-            is.read(buf, sizeof(buf));
-            str.append(buf, is.gcount());
-            SIZE_TYPE pos = str.rfind('\n');
-            if (pos != NPOS) {
-                ++pos;
-                CHTMLText* child = new CHTMLText(str.substr(0, pos));
-                child->Print(*out, mode);
-                node->AppendChild(child);
-                str.erase(0, pos);
-            }
-        }
-        if ( !str.empty() ) {
-            CHTMLText* child = new CHTMLText(str);
-            child->Print(*out, mode);
-            node->AppendChild(child);
-        }
-
-        if ( !is.eof() ) {
-            NCBI_THROW(CHTMLException, eTemplateAccess,
-                       "CHTMLPage::CreateTemplate(): error reading template");
-        }
-        
-        return node.release();
-    }
-
-    if ( m_TemplateSize ) {
-        str.reserve(m_TemplateSize);
-    }
-    while ( is ) {
-        is.read(buf, sizeof(buf));
-        if (m_TemplateSize == 0  &&  is.gcount() > 0
-            &&  str.size() == str.capacity()) {
-            // We don't know how big str will need to be, so we grow it
-            // exponentially.
-            str.reserve(str.size() +
-                        max((SIZE_TYPE)is.gcount(), str.size() / 2));
-        }
-        str.append(buf, is.gcount());
-    }
-
-    if ( !is.eof() ) {
-        NCBI_THROW(CHTMLException, eTemplateAccess,
-                   "CHTMLPage::CreateTemplate(): error reading template");
     }
 
     // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
     if ( m_UsePopupMenus ) {
+        // Copy template string because we need change it
+        if ( pstr != &str ) {
+            str.assign(*pstr);
+        }
         // a "do ... while (false)" lets us avoid a goto
         do {
             // Search </HEAD> tag
@@ -351,24 +307,25 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
             if ( pos == NPOS) {
                 break;
             }
-            pos = str.rfind("<", pos);
+            pos = str.find("<", pos);
             if ( pos == NPOS) {
                 break;
             }
 
             // Insert code for load popup menu library
+            string script;
             for (int t = CHTMLPopupMenu::ePMFirst;
                  t <= CHTMLPopupMenu::ePMLast; t++ ) 
             {
                 CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
                 TPopupMenus::const_iterator info = m_PopupMenus.find(type);
                 if ( info != m_PopupMenus.end() ) {
-                    string script
-                        = CHTMLPopupMenu::GetCodeHead(type,info->second.m_Url);
-                    str.insert(pos, script);
-                    pos += script.length();
+                    script.append(CHTMLPopupMenu::GetCodeHead(type,
+                                  info->second.m_Url));
                 }
             }
+            str.insert(pos, script);
+            pos += script.length();
 
             // Search </BODY> tag
             pos = NStr::FindNoCase(str, "/body", 0, NPOS, NStr::eLast);
@@ -381,26 +338,104 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
             }
 
             // Insert code for init popup menus
+            script.erase();
             for (int t = CHTMLPopupMenu::ePMFirst;
                  t <= CHTMLPopupMenu::ePMLast; t++ ) {
                 CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
                 TPopupMenus::const_iterator info = m_PopupMenus.find(type);
                 if ( info != m_PopupMenus.end() ) {
-                    string script = CHTMLPopupMenu::GetCodeBody(type,
-                        info->second.m_UseDynamicMenu);
-                    str.insert(pos, script);
+                    script.append(CHTMLPopupMenu::GetCodeBody(type,
+                                  info->second.m_UseDynamicMenu));
                 }
             }
+            str.insert(pos, script);
         }
         while (false);
     }
+
+
+    // Split large templates to parts to reduce latency
+/*
+    CNCBINode* node = 0;
+
+    if (out  &&  !m_UsePopupMenus) {
+        auto_ptr<CNCBINode> node(new CNCBINode);
+        while (is) {
+            is.read(buf, sizeof(buf));
+            s.append(buf, is.gcount());
+            // If needed save received template block
+            if ( pstr ) {
+                pstr->append(buf, is.gcount());
+            }
+            SIZE_TYPE pos = s.rfind('\n');
+            if (pos != NPOS) {
+                ++pos;
+                CHTMLText* child = new CHTMLText(s.substr(0, pos));
+                child->Print(*out, mode);
+                node->AppendChild(child);
+                s.erase(0, pos);
+            }
+        }
+        if ( !s.empty() ) {
+            CHTMLText* child = new CHTMLText(s);
+            child->Print(*out, mode);
+            node->AppendChild(child);
+        }
+
+        if ( !is.eof() ) {
+            NCBI_THROW(CHTMLException, eTemplateAccess,
+                       "CHTMLPage::CreateTemplate(): error reading template");
+        }
+        return node.release();
+    }
+
+*/
+
+    // Print and return node
     {{
-        auto_ptr<CHTMLText> node(new CHTMLText(str));
-        if (out) {
+        auto_ptr<CHTMLText> node(new CHTMLText(*pstr));
+        if ( out ) {
             node->Print(*out, mode);
         }
         return node.release();
     }}
+}
+
+
+void CHTMLPage::x_ReadTemplate(CNcbiIstream& is, string& str)
+{
+    if ( !is.good() ) {
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                   "CHTMLPage::CreateTemplate(): failed to open template");
+    }
+
+    char buf[kBufferSize];
+
+    if ( m_TemplateSize ) {
+        str.reserve(m_TemplateSize);
+    }
+    while ( is ) {
+        is.read(buf, sizeof(buf));
+        if (m_TemplateSize == 0  &&  is.gcount() > 0
+            &&  str.size() == str.capacity()) {
+            // We don't know how big string will need to be,
+            // so we grow it exponentially.
+            str.reserve(str.size() + max((SIZE_TYPE)is.gcount(),
+                        str.size() / 2));
+        }
+        str.append(buf, is.gcount());
+    }
+
+    if ( !is.eof() ) {
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                   "CHTMLPage::CreateTemplate(): error reading template");
+    }
+}
+
+
+void CHTMLPage::CacheTemplateFiles(ECacheTemplateFiles caching)
+{
+    sm_CacheTemplateFiles = caching;
 }
 
 
@@ -444,92 +479,113 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size,
                                   ETemplateIncludes includes, 
                                   const string& file_name /* = kEmptyStr */)
 {
-    string str("\n");
-    char   buf[kBufferSize];
+    string  buf("\n");
+    string* pstr      = &buf;
+    bool    caching   = false;
+    bool    need_read = true;
+
+    if ( !file_name.empty()  &&  sm_CacheTemplateFiles == eCTF_Enable ) {
+        TTemplateCache::const_iterator i = s_TemplateCache.find(file_name);
+        if ( i != s_TemplateCache.end() ) {
+            pstr = i->second;
+            need_read = false;
+        } else { 
+            pstr = new string();
+            caching = true;
+        }
+    }
 
     // Load template in memory all-in-all
+    if ( need_read ) {
+        char buf[kBufferSize];
+        if ( size ) {
+            pstr->reserve(size);
+        }
+        if (includes == eAllowIncludes) {
+            // Read line by line and parse it for #includes
+            string s;
+            static const char* kInclude = "#include ";
+            static const int   kIncludeLen = strlen(kInclude);
 
-    if ( size ) {
-        str.reserve(size);
-    }
-    if (includes == eAllowIncludes) {
-        // Read line by line and parse it for #includes
-        string s;
-        static const char* kInclude = "#include ";
-        static const int   kIncludeLen = strlen(kInclude);
+            for (int i = 1;  NcbiGetline(is, s, "\r\n");  ++i) {
 
-        for (int i = 1;  NcbiGetline(is, s, "\r\n");  ++i) {
-
-            if ( NStr::StartsWith(s, kInclude) ) {
-                SIZE_TYPE pos = kIncludeLen;
-                SIZE_TYPE len = s.length();
-                while (pos < len  &&  isspace((unsigned char)s[pos])) {
-                    pos++;
-                }
-                bool error = false;
-                if (pos < len  &&  s[pos] == '\"') {
-                    pos++;
-                    SIZE_TYPE pos_end = s.find("\"", pos);
-                    if (pos_end == NPOS) {
-                        error = true;
-                    } else {
-                        string file_name = s.substr(pos, pos_end - pos);
-                        LoadTemplateLibFile(file_name);
+                if ( NStr::StartsWith(s, kInclude) ) {
+                    SIZE_TYPE pos = kIncludeLen;
+                    SIZE_TYPE len = s.length();
+                    while (pos < len  &&  isspace((unsigned char)s[pos])) {
+                        pos++;
                     }
-                } else {
-                    error = true;
-                }
-                if ( error ) {
-                    NCBI_THROW(CHTMLException, eTemplateAccess,
-                               "CHTMLPage::x_LoadTemplate(): " \
-                               "incorrect #include syntax, file '" +
-                               file_name + "', line " + NStr::IntToString(i));
-                }
+                    bool error = false;
+                    if (pos < len  &&  s[pos] == '\"') {
+                        pos++;
+                        SIZE_TYPE pos_end = s.find("\"", pos);
+                        if (pos_end == NPOS) {
+                            error = true;
+                        } else {
+                            string file_name = s.substr(pos, pos_end - pos);
+                            LoadTemplateLibFile(file_name);
+                        }
+                    } else {
+                        error = true;
+                    }
+                    if ( error ) {
+                        NCBI_THROW(CHTMLException, eTemplateAccess,
+                                "CHTMLPage::x_LoadTemplateLib(): " \
+                                "incorrect #include syntax, file '" +
+                                file_name + "', line " +NStr::IntToString(i));
+                    }
 
-            } else {  // General line
+                } else {  // General line
 
-                if (str.size() == str.capacity()  &&  s.length() > 0) {
+                    if (pstr->size() == pstr->capacity() &&  s.length() > 0) {
+                        // We don't know how big str will need to be,
+                        // so we grow it exponentially.
+                        pstr->reserve(pstr->size() + max((SIZE_TYPE)is.gcount(),
+                                    pstr->size() / 2));
+                    }
+                    pstr->append(s + "\n");
+                }
+            }
+        } else {
+            // Use faster block read
+            while (is) {
+                is.read(buf, sizeof(buf));
+                if (pstr->size() == pstr->capacity()  &&  is.gcount() > 0) {
                     // We don't know how big str will need to be,
                     // so we grow it exponentially.
-                    str.reserve(str.size() + max((SIZE_TYPE)is.gcount(),
-                                str.size() / 2));
+                    pstr->reserve(pstr->size() + max((SIZE_TYPE)is.gcount(),
+                                pstr->size() / 2));
                 }
-                str.append(s + "\n");
+                pstr->append(buf, is.gcount());
             }
         }
-    } else {
-        // Use faster block read
-        while (is) {
-            is.read(buf, sizeof(buf));
-            if (str.size() == str.capacity()  &&  is.gcount() > 0) {
-                // We don't know how big str will need to be,
-                // so we grow it exponentially.
-                str.reserve(str.size() + max((SIZE_TYPE)is.gcount(),
-                            str.size() / 2));
-            }
-            str.append(buf, is.gcount());
+        if ( !is.eof() ) {
+            NCBI_THROW(CHTMLException, eTemplateAccess,
+                    "CHTMLPage::x_LoadTemplateLib(): error reading template");
         }
     }
-    if ( !is.eof() ) {
-        NCBI_THROW(CHTMLException, eTemplateAccess,
-                   "CHTMLPage::x_LoadTemplate(): error reading template");
+
+    // Cache template lib
+    if ( caching ) {
+        s_TemplateCache[file_name] = pstr;
     }
 
     // Parse template
+    // Note: never change *pstr here!
 
     const string kTagStartBOL(string("\n") + kTagStart); 
     SIZE_TYPE ts_size  = kTagStartBOL.length();
     SIZE_TYPE te_size  = strlen(kTagEnd);
     SIZE_TYPE tse_size = strlen(kTagStartEnd);
 
-    SIZE_TYPE tag_start = s_Find(str, kTagStartBOL.c_str());
+    SIZE_TYPE tag_start = s_Find(*pstr, kTagStartBOL.c_str());
 
     while ( tag_start != NPOS ) {
 
         // Get name
         string name;
         SIZE_TYPE name_start = tag_start + ts_size;
-        SIZE_TYPE name_end   = s_Find(str, kTagEnd, name_start);
+        SIZE_TYPE name_end   = s_Find(*pstr, kTagEnd, name_start);
         if ( name_end == NPOS ) {
             // Tag not closed
             NCBI_THROW(CHTMLException, eTextUnclosedTag,
@@ -538,7 +594,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size,
         }
         if (name_end != name_start) {
             // Tag found
-            name = str.substr(name_start, name_end - name_start);
+            name = pstr->substr(name_start, name_end - name_start);
         }
         SIZE_TYPE tag_end = name_end + te_size;
 
@@ -547,7 +603,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size,
         if ( !name.empty() ) {
             close_str += name + kTagEnd;
         }
-        SIZE_TYPE last = s_Find(str, close_str.c_str(), tag_end);
+        SIZE_TYPE last = s_Find(*pstr, close_str.c_str(), tag_end);
         if ( last == NPOS ) {
             // Tag not closed
             NCBI_THROW(CHTMLException, eTextUnclosedTag,
@@ -555,29 +611,29 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& is, SIZE_TYPE size,
                 "stream pos = " + NStr::IntToString(tag_end));
         }
         if ( name.empty() ) {
-            tag_start = s_Find(str, kTagStartBOL.c_str(), last + tse_size);
+            tag_start = s_Find(*pstr, kTagStartBOL.c_str(),
+                               last + tse_size);
             continue;
         }
 
         // Is it a multi-line template? Remove redundand line breaks.
-        SIZE_TYPE pos = str.find_first_not_of(" ", tag_end);
-        if (pos != NPOS  &&  str[pos] == '\n') {
+        SIZE_TYPE pos = pstr->find_first_not_of(" ", tag_end);
+        if (pos != NPOS  &&  (*pstr)[pos] == '\n') {
             tag_end = pos + 1;
         }
-        pos = str.find_first_not_of(" ", last - 1);
-        if (pos != NPOS  &&  str[pos] == '\n') {
+        pos = pstr->find_first_not_of(" ", last - 1);
+        if (pos != NPOS  &&  (*pstr)[pos] == '\n') {
             last = pos;
         }
 
         // Get sub-template
-        string subtemplate = str.substr(tag_end, last - tag_end);
-
+        string subtemplate = pstr->substr(tag_end, last - tag_end);
 
         // Add sub-template resolver
         AddTagMap(name, CreateTagMapper(new CHTMLText(subtemplate)));
 
         // Find next
-        tag_start = s_Find(str, kTagStartBOL.c_str(),
+        tag_start = s_Find(*pstr, kTagStartBOL.c_str(),
                            last + te_size + name_end - name_start + tse_size);
 
     }
@@ -610,6 +666,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/01/24 18:05:19  ivanov
+ * CHTMLPage:: added possibility to cache template files and template libs
+ * Feature to split large templates on parts to avoid latency will be
+ * added soon
+ *
  * Revision 1.46  2005/08/22 12:14:12  ivanov
  * Move 'kTagStartEnd' definition from html.cpp to page.hpp.
  * Remove obsolete comments.
