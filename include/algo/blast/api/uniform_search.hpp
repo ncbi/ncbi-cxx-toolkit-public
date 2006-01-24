@@ -165,16 +165,18 @@ public:
     
     TQueryMessages GetErrors(int min_severity = eBlastSevError) const;
 
-#if 0
     /// Retrieve the query regions which were masked by BLAST
     /// @param flt_query_regions the return value [in|out]
-    void GetFilteredQueryRegions(TSeqLocInfoVector& flt_query_regions);
-#endif
+    void GetMaskedQueryRegions(TMaskedQueryRegions& flt_query_regions) const;
+
+    void SetMaskedQueryRegions(TMaskedQueryRegions& flt_query_regions);
     
 private:
     CRef<objects::CSeq_align_set> m_Alignment;
     
     TQueryMessages m_Errors;
+
+    TMaskedQueryRegions m_Masks;
 };
 
 
