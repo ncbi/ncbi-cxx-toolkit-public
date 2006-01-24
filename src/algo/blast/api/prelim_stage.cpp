@@ -100,7 +100,6 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
-                                       //CConstRef<CBlastOptions> options,
                                        IBlastSeqSrcAdapter& ssa)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
@@ -110,7 +109,6 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
 }
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
-                                       //CConstRef<CBlastOptions> options,
                                        CRef<CBlastOptions> options,
                                        BlastSeqSrc* seqsrc)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
@@ -146,7 +144,8 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
     BlastScoreBlk* sbp =
         CSetupFactory::CreateScoreBlock(m_OptsMemento, query_data,
                                         &lookup_segments, 
-                                        /* FIXME: masked locations */ 0,
+                                        m_Messages,
+                                        &m_MasksForAllQueries,
                                         m_InternalData->m_RpsData);
     m_InternalData->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp,
                                                        BlastScoreBlkFree));
@@ -177,6 +176,11 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                                          query_data->GetNumQueries());
     m_InternalData->m_HspStream.Reset
         (new TBlastHSPStream(hsp_stream, BlastHSPStreamFree));
+
+    // 8. Get errors/warnings
+    TSearchMessages m;
+    query_data->GetMessages(m);
+    m_Messages.Combine(m);
 }
 
 CBlastPrelimSearch::~CBlastPrelimSearch()
@@ -234,6 +238,27 @@ CBlastPrelimSearch::Run()
     retval += 0;        // dummy statement to avoid compiler warnings
     
     return m_InternalData;
+}
+
+BlastHSPResults*
+CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
+                                           Uint4 max_num_hsps,
+                                           bool* rm_hsps) const
+{
+    _ASSERT(m_InternalData->m_QueryInfo->num_queries > 0);
+    Boolean removed_hsps = FALSE;
+    BlastHSPResults* retval =
+        Blast_HSPResultsFromHSPStreamWithLimit(stream,
+           (Uint4) m_InternalData->m_QueryInfo->num_queries,
+           m_OptsMemento->m_HitSaveOpts,
+           m_OptsMemento->m_ExtnOpts,
+           m_OptsMemento->m_ScoringOpts,
+           max_num_hsps,
+           &removed_hsps);
+    if (rm_hsps) {
+        *rm_hsps = removed_hsps == FALSE ? false : true;
+    }
+    return retval;
 }
 
 END_SCOPE(blast)
