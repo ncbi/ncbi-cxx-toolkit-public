@@ -232,9 +232,11 @@ CMultiAligner::x_RealignBlocks(CHitList& rps_hits,
             // regions is too large (i.e. query sequence has a big gap)
 
             if (s_range.GetLength() > 3 * q_range.GetLength() / 2) {
-                printf("ignore aligning query %d %d-%d db %d block %d-%d\n",
-                       hit->m_SeqIndex1, q_range.GetFrom(), q_range.GetTo(),
-                       db_seq, s_range.GetFrom(), s_range.GetTo());
+                if (m_Verbose) {
+                    printf("ignore aligning query %d %d-%d db %d block %d-%d\n",
+                        hit->m_SeqIndex1, q_range.GetFrom(), q_range.GetTo(),
+                        db_seq, s_range.GetFrom(), s_range.GetTo());
+                }
                 continue;
             }
 
@@ -655,6 +657,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.9  2006/01/24 17:18:22  papadopo
+  make more debug output optional
+
   Revision 1.8  2005/12/16 23:33:18  papadopo
   add documentation
 
