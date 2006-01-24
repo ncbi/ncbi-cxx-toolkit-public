@@ -316,7 +316,7 @@ s_InvalidateQueryContexts(BlastQueryInfo* qinfo, int query_index)
 }
 
 void
-SetupQueries_OMF(const IBlastQuerySource& queries, 
+SetupQueries_OMF(IBlastQuerySource& queries, 
                  BlastQueryInfo* qinfo, 
                  BLAST_SequenceBlk** seqblk,
                  EBlastProgramType prog,
@@ -326,8 +326,9 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 {
     ASSERT(seqblk);
     ASSERT( !queries.Empty() );
-    messages.clear();
-    messages.resize(queries.Size());
+    if (messages.size() != (size_t)queries.Size()) {
+        messages.resize(queries.Size());
+    }
 
     EBlastEncoding encoding = GetQueryEncoding(prog);
     
@@ -373,6 +374,11 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
                    queries.GetSeqLoc(index)->GetStart(eExtreme_Positional),
                    queries.GetSeqLoc(index)->GetStop(eExtreme_Positional));
             
+            // Set the id if this is possible
+            if (const CSeq_id* id = queries.GetSeqId(index)) {
+                messages[index].SetQueryId(id->AsFastaString());
+            }
+
             SBlastSequence sequence;
             
             if (translate) {
@@ -468,7 +474,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
 }
 
 void
-SetupSubjects_OMF(const IBlastQuerySource& subjects,
+SetupSubjects_OMF(IBlastQuerySource& subjects,
                   EBlastProgramType prog,
                   vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen)
@@ -1130,7 +1136,7 @@ GetNumberOfContexts(EBlastProgramType p)
 /////////////////////////////////////////////////////////////////////////////
 
 BLAST_SequenceBlk*
-SafeSetupQueries(const IBlastQuerySource& queries,
+SafeSetupQueries(IBlastQuerySource& queries,
                  const CBlastOptions* options,
                  BlastQueryInfo* query_info,
                  TSearchMessages& messages)
@@ -1174,6 +1180,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.104  2006/01/24 15:25:40  camacho
+ * Remove const type qualifier for IBlastQuerySoruce to SetupQueries_OMF and SetupSubjects_OMF
+ *
  * Revision 1.103  2006/01/12 20:39:22  camacho
  * Removed const from BlastQueryInfo argument to functions (to allow setting of context-validity flag)
  *
