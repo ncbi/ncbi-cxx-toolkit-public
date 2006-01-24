@@ -35,10 +35,12 @@
 #include <ncbi_pch.hpp>
 #include <set>
 #include <algo/structure/struct_util/struct_util.hpp>
+#include <algo/structure/cd_utils/cuResidueProfile.hpp>
 #include <algo/structure/bma_refine/BMAUtils.hpp>
 #include <algo/structure/bma_refine/ColumnScorer.hpp>
 
 USING_NCBI_SCOPE;
+USING_SCOPE(cd_utils);
 
 BEGIN_SCOPE(align_refine)
 
@@ -237,6 +239,34 @@ double PercentOfWeightOverThresholdColumnScorer::ColumnScore(const BMA& bma, uns
     return result;
 }
 
+
+//  scorerIndex not used for a simple scorer
+double InfoContentColumnScorer::ColumnScore(const BMA& bma, unsigned int alignmentIndex, vector< double >* rowScores, unsigned int scorerIndex) const 
+{
+    double result = SCORE_INVALID_OR_NOT_COMPUTED;
+    unsigned int n;
+    vector<char> residues;
+    ColumnResidueProfile resProfile;
+    bool inPssm, isAligned = BMAUtils::IsColumnOfType(bma, alignmentIndex, align_refine::eAlignedResidues, inPssm);
+
+    if (rowScores) {
+        vector<int> scores;
+        GetAndCopyPSSMScoresForColumn(bma, alignmentIndex, scores, rowScores);
+    }
+
+    BMAUtils::GetResiduesForColumn(bma, alignmentIndex, residues);
+    n = residues.size();
+    if (n > 0) {
+        for (unsigned int i = 0; i < n; ++i) {
+            resProfile.addOccurence(residues[i], i, isAligned);
+        }
+        result = resProfile.calcInformationContent();
+    }
+    
+    return result;
+}
+
+
 //
 //
 //  Compound column scorer implementation
@@ -279,6 +309,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/01/24 15:06:13  lanczyck
+* implement ColumnScore for InfoContent scorer
+*
 * Revision 1.2  2005/06/29 00:35:07  ucko
 * Fix GCC 2.95 build errors.
 *

@@ -205,9 +205,7 @@ class InfoContentColumnScorer : public ColumnScorer {
 public:
     InfoContentColumnScorer() : ColumnScorer(eInfoContent) {};
     virtual ~InfoContentColumnScorer() {};
-    virtual double ColumnScore(const BMA& bma, unsigned int alignmentIndex, vector< double >* rowScores = NULL, unsigned int scorerIndex = 0) const {
-        return SCORE_INVALID_OR_NOT_COMPUTED;
-    }
+    virtual double ColumnScore(const BMA& bma, unsigned int alignmentIndex, vector< double >* rowScores = NULL, unsigned int scorerIndex = 0) const;
 };
 
 
@@ -251,6 +249,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2006/01/24 15:05:26  lanczyck
+* implement ColumnScore for InfoContent scorer
+*
 * Revision 1.1  2005/06/28 13:45:25  lanczyck
 * block multiple alignment refiner code from internal/structure/align_refine
 *
