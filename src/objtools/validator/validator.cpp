@@ -93,13 +93,13 @@ CConstRef<CValidError> CValidator::Validate
 
 
 CConstRef<CValidError> CValidator::Validate
-(const CSeq_annot& sa,
- CScope* scope,
+(const CSeq_annot_Handle& sah,
  Uint4 options)
 {
-    CRef<CValidError> errors(new CValidError(&sa));
+    CConstRef<CSeq_annot> sar = sah.GetCompleteSeq_annot();
+    CRef<CValidError> errors(new CValidError(&*sar));
     CValidError_imp imp(*m_ObjMgr, &(*errors), options);
-    imp.Validate(sa, scope);
+    imp.Validate(sah);
     return errors;
 }
 
@@ -1506,6 +1506,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2006/01/24 16:21:03  rsmith
+* Validate Seq-annot handles not bare Seq-annots.
+* Get Seq entry handle one time and use it more.
+*
 * Revision 1.62  2005/12/06 19:27:01  rsmith
 * Expose validator error codes. Allow conversion between codes and descriptions.
 *

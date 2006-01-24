@@ -2498,31 +2498,33 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     }
 
     if (!prot_handle) {
-        if (transl_prot.length() > 6) {
-            bool is_nt, is_ng, is_nc;
-            s_LocIdType(location, *m_Scope, m_Imp.GetTSE(), is_nt, is_ng, is_nc);
-            if (!(is_nt || is_ng)) {
-                EDiagSev sev = eDiag_Error;
-                if (IsDeltaOrFarSeg(location, m_Scope)) {
-                    sev = eDiag_Warning;
-                }
-                if (is_nc) {
-                    sev = eDiag_Warning;
-                    if ( m_Imp.GetTSE().IsSeq()) {
-                        sev = eDiag_Info;
+        if  (!m_Imp.IsStandaloneAnnot()) {
+            if (transl_prot.length() > 6) {
+                bool is_nt, is_ng, is_nc;
+                s_LocIdType(location, *m_Scope, m_Imp.GetTSE(), is_nt, is_ng, is_nc);
+                if (!(is_nt || is_ng)) {
+                    EDiagSev sev = eDiag_Error;
+                    if (IsDeltaOrFarSeg(location, m_Scope)) {
+                        sev = eDiag_Warning;
                     }
-                }
-                if (sev != eDiag_Info) {
-                    has_errors = true;
-                    if (report_errors) {
-                        PostErr(sev, eErr_SEQ_FEAT_NoProtein, 
-                            "No protein Bioseq given", feat);
+                    if (is_nc) {
+                        sev = eDiag_Warning;
+                        if ( m_Imp.GetTSE().IsSeq()) {
+                            sev = eDiag_Info;
+                        }
+                    }
+                    if (sev != eDiag_Info) {
+                        has_errors = true;
+                        if (report_errors) {
+                            PostErr(sev, eErr_SEQ_FEAT_NoProtein, 
+                                "No protein Bioseq given", feat);
+                        }
                     }
                 }
             }
+            ReportCdTransErrors(feat, show_stop, got_stop, no_end, ragged,
+                report_errors, has_errors);
         }
-        ReportCdTransErrors(feat, show_stop, got_stop, no_end, ragged,
-            report_errors, has_errors);
         return;
     }
 
@@ -3018,11 +3020,8 @@ bool CValidError_feat::IsCDDFeat(const CSeq_feat& feat) const
 void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
 {
     // check for location on multiple near non-part bioseqs
-    CSeq_entry_Handle tse = m_Scope->GetSeq_entryHandle(m_Imp.GetTSE());
-    if (!tse  ||  !tse.IsSet()) {
-        return;
-    }
-
+    //CSeq_entry_Handle tse = m_Scope->GetSeq_entryHandle(m_Imp.GetTSE());
+    CSeq_entry_Handle tse = m_Imp.GetTSEH();
     const CSeq_loc& loc = feat.GetLocation();
     if (IsOneBioseq(loc, m_Scope)) {
         return;
@@ -3052,6 +3051,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2006/01/24 16:21:03  rsmith
+* Validate Seq-annot handles not bare Seq-annots.
+* Get Seq entry handle one time and use it more.
+*
 * Revision 1.77  2005/09/14 14:17:19  rsmith
 * add validation of Bond locations.
 *

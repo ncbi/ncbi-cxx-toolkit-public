@@ -57,19 +57,19 @@ CValidError_annot::~CValidError_annot(void)
 }
 
 
-void CValidError_annot::ValidateSeqAnnot(const CSeq_annot& annot)
+void CValidError_annot::ValidateSeqAnnot(const CSeq_annot_Handle& annot)
 {
-    if ( !annot.GetData().IsAlign() ) return;
-    if ( !annot.IsSetDesc() ) return;
+    if ( !annot.IsAlign() ) return;
+    if ( !annot.Seq_annot_IsSetDesc() ) return;
     
-    ITERATE( list< CRef< CAnnotdesc > >, iter, annot.GetDesc().Get() ) {
+    ITERATE( list< CRef< CAnnotdesc > >, iter, annot.Seq_annot_GetDesc().Get() ) {
         
         if ( (*iter)->IsUser() ) {
             const CObject_id& oid = (*iter)->GetUser().GetType();
             if ( oid.IsStr() ) {
                 if ( oid.GetStr() == "Blast Type" ) {
                     PostErr(eDiag_Error, eErr_SEQ_ALIGN_BlastAligns,
-                        "Record contains BLAST alignments", annot); // !!!
+                        "Record contains BLAST alignments", *annot.GetCompleteSeq_annot()); // !!!
                     
                     break;
                 }
@@ -89,6 +89,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/01/24 16:21:03  rsmith
+* Validate Seq-annot handles not bare Seq-annots.
+* Get Seq entry handle one time and use it more.
+*
 * Revision 1.6  2004/05/21 21:42:56  gorelenk
 * Added PCH ncbi_pch.hpp
 *

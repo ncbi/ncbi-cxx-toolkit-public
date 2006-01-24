@@ -64,6 +64,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/graph_ci.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 
@@ -107,12 +108,13 @@ private:
         const CArgs& args);
 
     void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os);
-    void PrintBatchItem(const CValidErrItem& item, CNcbiOstream& os);
+    void PrintBatchItem(const CValidErrItem& item, CNcbiOstream& os, bool printAcc = false);
 
     CRef<CObjectManager> m_ObjMgr;
     auto_ptr<CObjectIStream> m_In;
     unsigned int m_Options;
     bool m_Continue;
+    bool m_OnlyAnnots;
 
     size_t m_Level;
     size_t m_Reported;
@@ -121,7 +123,7 @@ private:
 
 CTest_validatorApplication::CTest_validatorApplication(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_Level(0),
-    m_Reported(0)
+    m_Reported(0), m_OnlyAnnots(false)
 {
 }
 
@@ -152,6 +154,8 @@ void CTest_validatorApplication::Init(void)
     arg_desc->AddFlag("ovlpep", "Report overlapping peptide as error");
     arg_desc->AddFlag("taxid", "Requires taxid");
     arg_desc->AddFlag("isojta", "Requires ISO-JTA");
+    arg_desc->AddFlag("annot", "Verify Seq-annots only");
+    arg_desc->AddFlag("acc", "Print Accession with errors");
 
     arg_desc->AddOptionalKey(
         "x", "OutFile", "Output file for error messages",
@@ -246,10 +250,20 @@ void CTest_validatorApplication::ReadClassMember
                 // Validate Seq-entry
                 CValidator validator(*m_ObjMgr);
                 CScope scope(*m_ObjMgr);
-                scope.AddTopLevelSeqEntry(*se);
-                CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
-                if ( eval ) {
-                    m_Reported += PrintBatchErrors(eval, GetArgs());
+                if ( m_OnlyAnnots ) {
+                    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
+                    for (CSeq_annot_CI ni(seh); ni; ++ni) {
+                        const CSeq_annot_Handle& sah = *ni;
+                        CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
+                        if ( eval ) {
+                            m_Reported += PrintBatchErrors(eval, GetArgs());
+                        }
+                    }
+                } else {
+                    CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
+                    if ( eval ) {
+                        m_Reported += PrintBatchErrors(eval, GetArgs());
+                    }
                 }
             } catch (exception e) {
                 if ( !m_Continue ) {
@@ -293,6 +307,7 @@ SIZE_TYPE CTest_validatorApplication::PrintBatchErrors
         return 0;
     }
 
+    bool    printAcc = args["acc"];
     EDiagSev show  = static_cast<EDiagSev>(args["q"].AsInteger());
     CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
     SIZE_TYPE reported = 0;
@@ -301,7 +316,7 @@ SIZE_TYPE CTest_validatorApplication::PrintBatchErrors
         if ( vit->GetSeverity() < show ) {
             continue;
         }
-        PrintBatchItem(*vit, *os);
+        PrintBatchItem(*vit, *os, printAcc);
         ++reported;
     }
 
@@ -326,6 +341,17 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqEntry(void)
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr);
     CScope scope(*m_ObjMgr);
+    if ( m_OnlyAnnots ) {
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
+        for (CSeq_annot_CI ni(seh); ni; ++ni) {
+            const CSeq_annot_Handle& sah = *ni;
+            CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
+            if ( eval ) {
+                m_Reported += PrintBatchErrors(eval, GetArgs());
+            }
+        }
+        return CConstRef<CValidError>();
+    }
     scope.AddTopLevelSeqEntry(*se);
     return validator.Validate(*se, &scope, m_Options);
 }
@@ -354,8 +380,8 @@ CConstRef<CValidError> CTest_validatorApplication::ProcessSeqAnnot(void)
     // Validae Seq-annot
     CValidator validator(*m_ObjMgr);
     CScope scope(*m_ObjMgr);
-    scope.AddSeq_annot(*sa);
-    return validator.Validate(*sa, &scope, m_Options);
+    CSeq_annot_Handle sah = scope.AddSeq_annot(*sa);
+    return validator.Validate(sah, m_Options);
 }
 
 
@@ -375,6 +401,8 @@ void CTest_validatorApplication::Setup(const CArgs& args)
         // be included in scopes during the CScope::AddDefaults() call.
         CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
     }
+
+    m_OnlyAnnots = args["annot"];
 
     SetupValidatorOptions(args);
 }
@@ -475,8 +503,11 @@ void CTest_validatorApplication::PrintValidErrItem
 
 void CTest_validatorApplication::PrintBatchItem
 (const CValidErrItem& item,
- CNcbiOstream&os)
+ CNcbiOstream&os, bool printAcc)
 {
+    if (printAcc) {
+        os << item.GetAccession() << ":";
+    }
     os << CValidErrItem::ConvertSeverity(item.GetSeverity()) << ": [" << item.GetErrCode() <<"] ["
        << item.GetMsg() << "]" << endl;
 }
@@ -498,6 +529,10 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2006/01/24 16:21:03  rsmith
+ * Validate Seq-annot handles not bare Seq-annots.
+ * Get Seq entry handle one time and use it more.
+ *
  * Revision 1.30  2005/06/28 20:47:41  vasilche
  * Added scope argument which is required by Validate() now.
  *

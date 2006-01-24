@@ -511,11 +511,6 @@ bool CValidError_imp::Validate
 {
     _ASSERT(scope != NULL);
 
-    CSeq_entry_Handle eh = scope->GetSeq_entryHandle(se);
-    if (!eh) {
-        return false;
-    }
-
     if ( m_PrgCallback ) {
         m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Initializing;
         if ( m_PrgCallback(&m_PrgInfo) ) {
@@ -564,7 +559,7 @@ bool CValidError_imp::Validate
         }
     }
     CValidError_feat feat_validator(*this);
-    for (CFeat_CI fi(eh); fi; ++fi) {
+    for (CFeat_CI fi(GetTSEH()); fi; ++fi) {
         const CSeq_feat& sf = fi->GetOriginalFeature();
         try {
             feat_validator.ValidateSeqFeat(sf);
@@ -598,7 +593,7 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_desc desc_validator(*this);
-    for (CSeqdesc_CI di(eh); di; ++di) {
+    for (CSeqdesc_CI di(GetTSEH()); di; ++di) {
         const CSeq_entry& ctx = *di.GetSeq_entry_Handle().GetSeq_entryCore();
         try {
             desc_validator.ValidateSeqDesc(*di, ctx);
@@ -626,7 +621,7 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_bioseq bioseq_validator(*this);
-    for (CBioseq_CI bi(eh); bi; ++bi) {
+    for (CBioseq_CI bi(GetTSEH()); bi; ++bi) {
         const CBioseq& bs = *bi->GetCompleteBioseq();
         try {
             bioseq_validator.ValidateSeqIds(bs);
@@ -693,7 +688,7 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_align align_validator(*this);
-    for (CAlign_CI ai(eh); ai; ++ai) {
+    for (CAlign_CI ai(GetTSEH()); ai; ++ai) {
         const CSeq_align& sa = ai.GetOriginalSeq_align();
         try {
             align_validator.ValidateSeqAlign(sa);
@@ -720,7 +715,7 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_graph graph_validator(*this);
-    for (CGraph_CI gi(eh); gi; ++gi) {
+    for (CGraph_CI gi(GetTSEH()); gi; ++gi) {
         const CSeq_graph& sg = gi->GetOriginalGraph();
         try {
             graph_validator.ValidateSeqGraph(sg);
@@ -755,10 +750,10 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_annot annot_validator(*this);
-    for (CSeq_annot_CI ni(eh); ni; ++ni) {
+    for (CSeq_annot_CI ni(GetTSEH()); ni; ++ni) {
         const CSeq_annot& sn = *ni->GetCompleteSeq_annot();
         try {
-            annot_validator.ValidateSeqAnnot(sn);
+            annot_validator.ValidateSeqAnnot(*ni);
             if ( m_PrgCallback ) {
                 m_PrgInfo.m_CurrentDone++;
                 m_PrgInfo.m_TotalDone++;
@@ -783,7 +778,7 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_descr descr_validator(*this);
-    for (CSeq_descr_CI ei(eh); ei; ++ei) {
+    for (CSeq_descr_CI ei(GetTSEH()); ei; ++ei) {
         const CSeq_descr& sd = *ei;
         try {
             descr_validator.ValidateSeqDescr(sd);
@@ -827,23 +822,21 @@ void CValidError_imp::Validate(const CSeq_submit& ss, CScope* scope)
 }
 
 
-// Validate standalone Seq-annot objects
-void CValidError_imp::Validate(const CSeq_annot& sa, CScope* scope)
+void CValidError_imp::Validate(const CSeq_annot_Handle& sah)
 {
-    Setup(sa, scope);
-
+    Setup(sah);
+    
     // Iterate thru components of record and validate each
 
     CValidError_annot annot_validator(*this);
-    annot_validator.ValidateSeqAnnot(sa);
+    annot_validator.ValidateSeqAnnot(sah);
 
-    CSeq_annot_Handle ah = scope->GetSeq_annotHandle(sa);
-    switch (sa.GetData().Which()) {
+    switch (sah.Which()) {
     case CSeq_annot::TData::e_Ftable :
         {
             CValidError_feat feat_validator(*this);
             // for (CTypeConstIterator <CSeq_feat> fi (sa); fi; ++fi) {
-            for (CFeat_CI fi (ah); fi; ++fi) {
+            for (CFeat_CI fi (sah); fi; ++fi) {
                 const CSeq_feat& sf = fi->GetOriginalFeature();
                 feat_validator.ValidateSeqFeat(sf);
             }
@@ -854,7 +847,7 @@ void CValidError_imp::Validate(const CSeq_annot& sa, CScope* scope)
         {
             CValidError_align align_validator(*this);
             // for (CTypeConstIterator <CSeq_align> ai (sa); ai; ++ai) {
-            for (CAlign_CI ai(ah); ai; ++ai) {
+            for (CAlign_CI ai(sah); ai; ++ai) {
                 const CSeq_align& sa = ai.GetOriginalSeq_align();
                 align_validator.ValidateSeqAlign(sa);
             }
@@ -865,7 +858,7 @@ void CValidError_imp::Validate(const CSeq_annot& sa, CScope* scope)
         {
             CValidError_graph graph_validator(*this);
             // for (CTypeConstIterator <CSeq_graph> gi (sa); gi; ++gi) {
-            for (CGraph_CI gi(ah); gi; ++gi) {
+            for (CGraph_CI gi(sah); gi; ++gi) {
                 const CSeq_graph& sg = gi->GetOriginalGraph();
                 graph_validator.ValidateSeqGraph(sg);
             }
@@ -2047,7 +2040,7 @@ bool CValidError_imp::IsFarLocation(const CSeq_loc& loc)
         CConstRef<CSeq_id> id(&citer.GetSeq_id());
         if ( id ) {
             CBioseq_Handle near_seq = 
-                m_Scope->GetBioseqHandleFromTSE(*id, *m_TSE);
+                m_Scope->GetBioseqHandleFromTSE(*id, GetTSE());
             if ( !near_seq ) {
                 return true;
             }
@@ -2204,7 +2197,16 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
     } else {
         SetScope(se);
     }
-
+    
+    try {
+        m_TSEH = m_Scope->GetSeq_entryHandle(se);
+    } catch (const CException& e) { ; }
+    if (! m_TSEH) {
+        m_TSEH = m_Scope->AddTopLevelSeqEntry(se);
+        if (! m_TSEH) {
+            _ASSERT(false);
+        }
+    }
     // If no Pubs/BioSource in CSeq_entry, post only one error
     CTypeConstIterator<CPub> pub(ConstBegin(se));
     m_NoPubs = !pub;
@@ -2353,7 +2355,6 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
 }
 
 
-
 void CValidError_imp::SetScope(const CSeq_entry& se)
 {
     m_Scope.Reset(new CScope(*m_ObjMgr));
@@ -2362,26 +2363,14 @@ void CValidError_imp::SetScope(const CSeq_entry& se)
 }
 
 
-void CValidError_imp::Setup(const CSeq_annot& sa, CScope* scope) 
+void CValidError_imp::Setup(const CSeq_annot_Handle& sah)
 {
     m_IsStandaloneAnnot = true;
-    m_TSE.Reset(new CSeq_entry); // set a dummy Seq-entry
-
-    if ( scope ) {
-        m_Scope.Reset(scope);
-    } else {
-        SetScope(sa);
+    if (! m_Scope) {
+        m_Scope.Reset(& sah.GetScope());
     }
-}
-
-
-void CValidError_imp::SetScope(const CSeq_annot& sa)
-{
-    CRef<CSeq_entry> se(new CSeq_entry);  // dummy Seq-entry
-
-    m_Scope.Reset(new CScope(*m_ObjMgr));
-    m_Scope->AttachAnnot(*se, const_cast<CSeq_annot&>(sa));
-    m_Scope->AddDefaults();
+    m_TSE.Reset(new CSeq_entry); // set a dummy Seq-entry
+    m_TSEH = m_Scope->AddTopLevelSeqEntry(*m_TSE);
 }
 
 
@@ -2678,6 +2667,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.69  2006/01/24 16:21:03  rsmith
+* Validate Seq-annot handles not bare Seq-annots.
+* Get Seq entry handle one time and use it more.
+*
 * Revision 1.68  2005/12/21 14:27:19  rsmith
 * replace more CTypeConstIterator with obj man iterators.
 *

@@ -371,7 +371,7 @@ public:
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
         CScope* scope = 0);
     void Validate(const CSeq_submit& ss, CScope* scope = 0);
-    void Validate(const CSeq_annot& sa, CScope* scope = 0);
+    void Validate(const CSeq_annot_Handle& sa);
 
     void SetProgressCallback(CValidator::TProgressCallback callback,
         void* user_data);
@@ -468,6 +468,7 @@ public:
     inline bool IsGenbank(void) const { return m_IsGB; }
     
     const CSeq_entry& GetTSE(void) { return *m_TSE; }
+    CSeq_entry_Handle GetTSEH(void) { return m_TSEH; }
 
     TFeatAnnotMap GetFeatAnnotMap(void);
 
@@ -497,9 +498,8 @@ private:
     CValidError_imp& operator= (const CValidError_imp&);
 
     void Setup(const CSeq_entry& se, CScope* scope);
-    void Setup(const CSeq_annot& sa, CScope* scope);
+    void Setup(const CSeq_annot_Handle& sa);
     void SetScope(const CSeq_entry& se);
-    void SetScope(const CSeq_annot& sa);
 
     void InitializeSourceQualTags();
     void ValidateSourceQualTags(const string& str, const CSerialObject& obj);
@@ -518,6 +518,7 @@ private:
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
+    CSeq_entry_Handle       m_TSEH;
 
     // error repoitory
     CValidError*       m_ErrRepository;
@@ -964,7 +965,7 @@ public:
     CValidError_annot(CValidError_imp& imp);
     virtual ~CValidError_annot(void);
 
-    void ValidateSeqAnnot(const CSeq_annot& annot);
+    void ValidateSeqAnnot(const CSeq_annot_Handle& annot);
 private:
 };
 
@@ -992,6 +993,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.82  2006/01/24 16:21:03  rsmith
+* Validate Seq-annot handles not bare Seq-annots.
+* Get Seq entry handle one time and use it more.
+*
 * Revision 1.81  2005/09/14 14:17:19  rsmith
 * add validation of Bond locations.
 *
