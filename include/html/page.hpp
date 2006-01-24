@@ -178,6 +178,20 @@ public:
     void LoadTemplateLibBuffer(const void*    template_buffer, size_t size);
     void LoadTemplateLibStream(istream& template_stream);
 
+    /// Template file caching state.
+    enum ECacheTemplateFiles {
+        eCTF_Enable,       ///< Enable caching
+        eCTF_Disable,      ///< Disable caching
+        eCTF_Default = eCTF_Disable
+    };
+
+    /// Enable/disable template caching.
+    ///
+    /// If caching enabled that all template and template libraries 
+    /// files, loaded by any object of CHTMLPage will be read from disk
+    /// only once.
+    static void CacheTemplateFiles(ECacheTemplateFiles caching);
+
     /// Enable using popup menus. Set URL for popup menu library.
     ///
     /// @param type
@@ -209,12 +223,11 @@ public:
 private:
     void Init(void);
 
-    /// Create the static part of the page.
+    /// Read template to the string.
     ///
     /// This is an internal version that gets around some
     /// issues with local versus externally-supplied streams.
-    CNCBINode* x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
-                                TMode mode);
+    void x_ReadTemplate(CNcbiIstream& is, string& str);
 
     // Allow/disable processing of #include directives for template libraries.
     // eAllowIncludes used by default for LoadTemplateLibFile().
@@ -256,6 +269,8 @@ private:
     istream*    m_TemplateStream; ///< Stream
     const void* m_TemplateBuffer; ///< Some buffer
     size_t      m_TemplateSize;   ///< Size of input, if known (0 otherwise)
+
+    static ECacheTemplateFiles sm_CacheTemplateFiles;
 
     /// Popup menu info structure.
     struct SPopupMenuInfo {
@@ -388,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/01/24 18:04:23  ivanov
+ * CHTMLPage:: added possibility to cache template files and template libs
+ *
  * Revision 1.36  2005/08/01 16:00:42  ivanov
  * Added support #include command for template libraries
  *
