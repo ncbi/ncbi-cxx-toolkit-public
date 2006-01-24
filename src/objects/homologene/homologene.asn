@@ -31,22 +31,23 @@ HG-Entry ::= SEQUENCE {
 
 
 HG-Gene ::= SEQUENCE {
-	geneid		INTEGER OPTIONAL,
-	otherid		INTEGER OPTIONAL, 	-- internal use only!!!!!
-	symbol		VisibleString OPTIONAL,
-	aliases		SET OF VisibleString OPTIONAL,
-	title		VisibleString,
-	taxid		INTEGER,		--taxid of gene node
-	prot-gi		INTEGER OPTIONAL,
-	prot-acc	VisibleString OPTIONAL,
-	prot-len	INTEGER OPTIONAL,
-	nuc-gi		INTEGER OPTIONAL,
-	nuc-acc		VisibleString OPTIONAL,
+	geneid			INTEGER OPTIONAL,
+	otherid			INTEGER OPTIONAL,  							-- internal use only!!!!!
+	symbol			VisibleString OPTIONAL,
+	aliases			SET OF VisibleString OPTIONAL,
+	title				VisibleString,
+	taxid				INTEGER,	 											--taxid of gene node
+	prot-gi			INTEGER OPTIONAL,
+	prot-acc		VisibleString OPTIONAL,
+	prot-len		INTEGER OPTIONAL,
+	nuc-gi			INTEGER OPTIONAL,
+	nuc-acc			VisibleString OPTIONAL,
 	gene-links	SET OF HG-Link OPTIONAL,
 	prot-links	SET OF HG-Link OPTIONAL,
-	domains		SET OF HG-Domain OPTIONAL,
-   chr             VisibleString OPTIONAL,
-   location        Seq-loc OPTIONAL        -- location on the genome
+	domains			SET OF HG-Domain OPTIONAL,
+	chr     		VisibleString OPTIONAL,
+	location		Seq-loc OPTIONAL,        				-- location on the genome
+	locus-tag		VisibleString OPTIONAL
 }
 
 
