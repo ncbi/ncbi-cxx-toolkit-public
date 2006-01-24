@@ -644,20 +644,12 @@ CDbBlast::GetResults()
     // If results are not ready, extract them from the HSP stream
     if (!m_ipResults) {
         const CBlastOptions& kOptions = GetOptionsHandle().GetOptions();
-        SBlastHitsParameters* blasthit_params=NULL;
-        SBlastHitsParametersNew(kOptions.GetHitSaveOpts(), 
-                                kOptions.GetExtnOpts(), 
-                                kOptions.GetScoringOpts(), &blasthit_params);
-
-        m_ipResults = Blast_HSPResultsNew((int) x_GetNumberOfQueries());
-
-        BlastHSPList* hsp_list = NULL;
-        BlastHSPStream* hsp_stream = GetHSPStream();
-        while (BlastHSPStreamRead(hsp_stream, &hsp_list) 
-               != kBlastHSPStream_Eof) {
-            Blast_HSPResultsInsertHSPList(m_ipResults, hsp_list, blasthit_params->prelim_hitlist_size);
-        }
-        blasthit_params = SBlastHitsParametersFree(blasthit_params);
+        m_ipResults = 
+            Blast_HSPResultsFromHSPStream(GetHSPStream(), 
+                                          x_GetNumberOfQueries(),
+                                          kOptions.GetHitSaveOpts(),
+                                          kOptions.GetExtnOpts(),
+                                          kOptions.GetScoringOpts());
     }
     return m_ipResults;
 }
@@ -797,6 +789,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.86  2006/01/24 15:42:46  camacho
+ * Call new function Blast_HSPResultsFromHSPStream from CDbBlast::GetResults
+ *
  * Revision 1.85  2005/12/16 20:51:18  camacho
  * Diffuse the use of CSearchMessage, TQueryMessages, and TSearchMessages
  *
