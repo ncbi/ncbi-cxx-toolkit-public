@@ -48,6 +48,9 @@ static char const rcsid[] =
 #include <serial/iterator.hpp>
 #include "blast_seqalign.hpp"
 
+#include "dust_filter.hpp"
+#include "repeats_filter.hpp"
+
 // PSI-BLAST includes
 #include <algo/blast/api/psiblast_options.hpp>
 #include <algo/blast/api/psi_pssm_input.hpp>
@@ -64,28 +67,88 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-
+// N.B.: the const is removed, but the v object is never really changed,
+// therefore we keep it as a const argument
 CBlastQuerySourceOM::CBlastQuerySourceOM(const TSeqLocVector& v)
-    : m_TSeqLocVector(v)
+    : m_TSeqLocVector(const_cast<TSeqLocVector*>(&v)),
+      m_OwnTSeqLocVector(false), 
+      m_Options(0), 
+      m_CalculatedMasks(true)
 {}
+
+CBlastQuerySourceOM::CBlastQuerySourceOM(TSeqLocVector& v,
+                                         const CBlastOptions* opts)
+    : m_TSeqLocVector(&v), 
+      m_OwnTSeqLocVector(false), 
+      m_Options(opts), 
+      m_CalculatedMasks(false)
+{}
+
+void
+CBlastQuerySourceOM::x_CalculateMasks(void)
+{
+    /// Calculate the masks only once
+    if (m_CalculatedMasks) {
+        return;
+    }
+
+    // Without the options we cannot obtain the parameters to do the filtering
+    // on the queries to obtain the masks
+    if ( !m_Options ) {
+        m_CalculatedMasks = true;
+        return;
+    }
+
+    if (Blast_QueryIsNucleotide(m_Options->GetProgramType()) &&
+        !Blast_QueryIsTranslated(m_Options->GetProgramType())) {
+
+        if (m_Options->GetDustFiltering()) {
+            Blast_FindDustFilterLoc(*m_TSeqLocVector, 
+                    static_cast<Uint4>(m_Options->GetDustFilteringLevel()),
+                    static_cast<Uint4>(m_Options->GetDustFilteringWindow()),
+                    static_cast<Uint4>(m_Options->GetDustFilteringLinker()));
+        }
+        if (m_Options->GetRepeatFiltering()) {
+            Blast_FindRepeatFilterLoc(*m_TSeqLocVector,
+                                      m_Options->GetRepeatFilteringDB());
+        }
+    }
+    m_CalculatedMasks = true;
+}
+
+CBlastQuerySourceOM::~CBlastQuerySourceOM()
+{
+    if (m_OwnTSeqLocVector && m_TSeqLocVector) {
+        delete m_TSeqLocVector;
+        m_TSeqLocVector = NULL;
+    }
+}
 
 ENa_strand 
 CBlastQuerySourceOM::GetStrand(int i) const
 {
-    return sequence::GetStrand(*m_TSeqLocVector[i].seqloc,
-                               m_TSeqLocVector[i].scope);
+    return sequence::GetStrand(*(*m_TSeqLocVector)[i].seqloc,
+                               (*m_TSeqLocVector)[i].scope);
 }
 
 CConstRef<CSeq_loc>
-CBlastQuerySourceOM::GetMask(int i) const
+CBlastQuerySourceOM::GetMask(int i)
 {
-    return m_TSeqLocVector[i].mask;
+    x_CalculateMasks();
+    return (*m_TSeqLocVector)[i].mask;
 }
 
 CConstRef<CSeq_loc>
 CBlastQuerySourceOM::GetSeqLoc(int i) const
 {
-    return m_TSeqLocVector[i].seqloc;
+    return (*m_TSeqLocVector)[i].seqloc;
+}
+
+const CSeq_id*
+CBlastQuerySourceOM::GetSeqId(int i) const
+{
+    return & sequence::GetId(*(*m_TSeqLocVector)[i].seqloc,
+                             (*m_TSeqLocVector)[i].scope);
 }
 
 SBlastSequence
@@ -95,21 +158,30 @@ CBlastQuerySourceOM::GetBlastSequence(int i,
                                       ESentinelType sentinel,
                                       string* warnings) const
 {
-    return GetSequence(*m_TSeqLocVector[i].seqloc, encoding,
-                       m_TSeqLocVector[i].scope, strand, sentinel, warnings);
+    return GetSequence(*(*m_TSeqLocVector)[i].seqloc, encoding,
+                       (*m_TSeqLocVector)[i].scope, strand, sentinel, warnings);
 }
 
 TSeqPos
 CBlastQuerySourceOM::GetLength(int i) const
 {
-    return sequence::GetLength(*m_TSeqLocVector[i].seqloc,
-                               m_TSeqLocVector[i].scope);
+    TSeqPos retval = sequence::GetLength(*(*m_TSeqLocVector)[i].seqloc, 
+                                         (*m_TSeqLocVector)[i].scope);
+
+    if (retval == numeric_limits<TSeqPos>::max()) {
+        NCBI_THROW(CBlastException, eInvalidArgument,
+                   string("Could not find length of query # ")
+                   + NStr::IntToString(i) + " with Seq-id ["
+                   + GetSeqId(i)->AsFastaString() + "]");
+    }
+
+    return retval;
 }
 
 TSeqPos
 CBlastQuerySourceOM::Size() const
 {
-    return static_cast<TSeqPos>(m_TSeqLocVector.size());
+    return static_cast<TSeqPos>(m_TSeqLocVector->size());
 }
 
 void
@@ -130,7 +202,8 @@ SetupQueries(const TSeqLocVector& queries,
              const Uint1* genetic_code,
              TSearchMessages& messages)
 {
-    SetupQueries_OMF(CBlastQuerySourceOM(queries), qinfo, seqblk, prog, 
+    CBlastQuerySourceOM query_src(queries);
+    SetupQueries_OMF(query_src, qinfo, seqblk, prog, 
                      strand_opt, genetic_code, messages);
 }
 
@@ -140,8 +213,8 @@ SetupSubjects(const TSeqLocVector& subjects,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)
 {
-    SetupSubjects_OMF(CBlastQuerySourceOM(subjects), prog, seqblk_vec, 
-                      max_subjlen);
+    CBlastQuerySourceOM subj_src(subjects);
+    SetupSubjects_OMF(subj_src, prog, seqblk_vec, max_subjlen);
 }
 
 class CBlastSeqVectorOM : public IBlastSeqVector
@@ -436,6 +509,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2006/01/24 15:28:42  camacho
+* 1. Changes to CBlastQuerySourceOM to conform to new IBlastQuerySource interface
+* 2. Masks are calculated on demand and filtering is applied as requested in the
+*    BLAST options in CBlastQuerySourceOM
+*
 * Revision 1.65  2006/01/12 20:39:22  camacho
 * Removed const from BlastQueryInfo argument to functions (to allow setting of context-validity flag)
 *

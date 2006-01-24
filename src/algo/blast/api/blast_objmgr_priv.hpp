@@ -56,6 +56,7 @@ END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
+class CBlastOptions;
 class CPSIBlastOptionsHandle;
 
 /// Implements the object manager dependant version of the IBlastQuerySource
@@ -64,16 +65,29 @@ public:
     /// Constructor which takes a TSeqLocVector
     /// @param v vector of SSeqLoc structures containing the queries [in]
     CBlastQuerySourceOM(const TSeqLocVector & v);
+
+    /// Constructor which takes a TSeqLocVector
+    /// @param v vector of SSeqLoc structures containing the queries [in]
+    /// @param opts BLAST algorithm options [in]
+    /// @note that the v argument might be changed with the filtering locations
+    CBlastQuerySourceOM(TSeqLocVector & v, const CBlastOptions* opts);
+
+    /// dtor which determines if the internal pointer to its data should be
+    /// deleted or not.
+    virtual ~CBlastQuerySourceOM();
     
     /// Return strand for a sequence
     /// @param i index of the sequence in the sequence container [in]
     virtual objects::ENa_strand GetStrand(int i) const;
     /// Return the filtered (masked) regions for a sequence
     /// @param i index of the sequence in the sequence container [in]
-    virtual CConstRef<objects::CSeq_loc> GetMask(int i) const;
+    virtual CConstRef<objects::CSeq_loc> GetMask(int i);
     /// Return the CSeq_loc associated with a sequence
     /// @param i index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int i) const;
+    /// Return the sequence identifier associated with a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual const objects::CSeq_id* GetSeqId(int index) const;
     /// Return the sequence data for a sequence
     /// @param i index of the sequence in the sequence container [in]
     /// @param encoding desired encoding [in]
@@ -95,9 +109,22 @@ public:
     /// Return the number of elements in the sequence container
     virtual TSeqPos Size() const;
     
-private:
+protected:
     /// Reference to input TSeqLocVector
-    const TSeqLocVector& m_TSeqLocVector;
+    TSeqLocVector* m_TSeqLocVector;
+    /// flag to determine if the member above should or not be deleted in the
+    /// destructor
+    bool m_OwnTSeqLocVector;
+    /// BLAST algorithm options
+    const CBlastOptions* m_Options;
+
+private:
+    /// this flag allows for lazy initialization of the masking locations
+    bool m_CalculatedMasks;
+
+    /// Performs filtering on the query sequences to calculate the masked
+    /// locations
+    void x_CalculateMasks(void);
 };
 
 /** Allocates the query information structure and fills the context 
