@@ -3138,13 +3138,13 @@ Blast_HSPResultsFromHSPStream(BlastHSPStream* hsp_stream,
                               const BlastScoringOptions* scoring_options)
 {
     BlastHSPResults* retval = NULL;
-
     SBlastHitsParameters* bhp = NULL;
+    BlastHSPList* hsp_list = NULL;
+
     SBlastHitsParametersNew(hit_options, ext_options, scoring_options, &bhp);
 
     retval = Blast_HSPResultsNew((Int4) num_queries);
 
-    BlastHSPList* hsp_list = NULL;
     while (BlastHSPStreamRead(hsp_stream, &hsp_list) != kBlastHSPStream_Eof) {
         Blast_HSPResultsInsertHSPList(retval, hsp_list, 
                                       bhp->prelim_hitlist_size);
@@ -3197,6 +3197,7 @@ s_TrimResultsByTotalHSPLimit(BlastHSPResults* results, Uint4 total_hsp_limit)
 
     for (query_index = 0; query_index < results->num_queries; ++query_index) {
         BlastHitList* hit_list = NULL;
+        BlastHSPList** hsplist_array = NULL;
         Int4 hsplist_count = 0;
         int subj_index;
 
@@ -3204,7 +3205,7 @@ s_TrimResultsByTotalHSPLimit(BlastHSPResults* results, Uint4 total_hsp_limit)
             continue;
         /* The count of HSPs is separate for each query. */
         hsplist_count = hit_list->hsplist_count;
-        BlastHSPList** hsplist_array = (BlastHSPList**) 
+        hsplist_array = (BlastHSPList**) 
             malloc(hsplist_count*sizeof(BlastHSPList*));
         
         for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
