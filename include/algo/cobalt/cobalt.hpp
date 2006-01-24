@@ -374,21 +374,18 @@ public:
     void FindPatternHits();
 
     /// Given the current list of domain and local hits, generate a 
-    /// phylogenetic tree that clusters the current input sequences
+    /// phylogenetic tree that clusters the current input sequences.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
     ///
     void ComputeTree();
 
     /// Given the current domain, local, pattern and user hits, along with
-    /// the current tree, compute a multiple alignment of the input sequences
+    /// the current tree, compute a multiple alignment of the input sequences.
     /// Intended for applications that want fine-grained control of the 
     /// alignment process
     ///
     void BuildAlignment();
-
-private:
-    static const int kRpsScaleFactor = 100;
 
     typedef struct SSegmentLoc {
         int seq_index;
@@ -404,6 +401,8 @@ private:
         TOffset GetTo() const { return range.GetTo(); }
     } SSegmentLoc;
     
+private:
+    static const int kRpsScaleFactor = 100;
     
     typedef struct SGraphNode {
         CHit *hit;                  ///< the alignment represented by this node
@@ -526,6 +525,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.12  2006/01/24 20:44:27  papadopo
+  make strucutre definition public to make Workshop happy
+
   Revision 1.11  2005/12/16 23:39:04  papadopo
   1. Make iteration optional, add pseudocount parameter
   2. Change the default conserved cutoff to account for a different
