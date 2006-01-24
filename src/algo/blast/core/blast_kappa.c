@@ -227,13 +227,13 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
                                &editScript, &new_hsp);
         switch (align->comp_adjustment_mode) {
         case eNoCompositionAdjustment:
-            new_hsp->comp_adjustment_method = 0;
+            new_hsp->comp_adjustment_method = eNoCompositionBasedStats;
             break;
         case eCompoKeepOldMatrix:
-            new_hsp->comp_adjustment_method = 1;
+            new_hsp->comp_adjustment_method = eCompositionBasedStats;
             break;
         default:
-            new_hsp->comp_adjustment_method = 2;
+            new_hsp->comp_adjustment_method = eCompositionMatrixAdjust;
             break;
         }
         if (status != 0)
