@@ -47,6 +47,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CSeq_submit;
 class CSeq_annot;
+class CSeq_annot_Handle;
 class CBioseq;
 class CSeqdesc;
 class CObjectManager;
@@ -266,7 +267,7 @@ public:
     // Validate Seq-annot
     // Validates stand alone Seq-annot objects. This will supress any
     // check on the context of the annotaions.
-    CConstRef<CValidError> Validate(const CSeq_annot& sa, CScope* scope = 0,
+    CConstRef<CValidError> Validate(const CSeq_annot_Handle& sa, 
         Uint4 options = 0);
 
     // progress reporting
@@ -389,6 +390,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2006/01/24 16:19:42  rsmith
+* validate Seq-annot-handles not bare Seq-annots.
+*
 * Revision 1.21  2005/12/06 19:26:22  rsmith
 * Expose validator error codes. Allow conversion between codes and descriptions.
 *
