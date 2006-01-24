@@ -56,7 +56,9 @@ int
 CDemoeApp::Run(void)
 {
     try {
+#ifdef HAVE_LIBCONNEXT
         DBLB_INSTALL_DEFAULT();
+#endif
                 
         CDBLibContext my_context;
 
@@ -115,6 +117,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/24 14:05:27  ssikorsk
+ * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
+ *
  * Revision 1.12  2006/01/24 12:53:24  ssikorsk
  * Revamp demo applications to use CNcbiApplication;
  * Use load balancer and configuration in an ini-file to connect to a

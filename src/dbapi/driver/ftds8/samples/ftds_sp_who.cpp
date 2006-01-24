@@ -30,16 +30,36 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbiapp.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ftds/interfaces.hpp>
+
+#include <dbapi/driver/dbapi_conn_factory.hpp>
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#endif
 
 
 USING_NCBI_SCOPE;
 
 
-int main()
+class CDemoeApp : public CNcbiApplication
+{
+public:
+    virtual ~CDemoeApp(void) {}
+
+    virtual int Run(void);
+};
+
+int
+CDemoeApp::Run(void)
 {
     try {
+#ifdef HAVE_LIBCONNEXT
+        DBLB_INSTALL_DEFAULT();
+#endif
+                
         CTDSContext my_context;
 
         auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV2", 
@@ -82,8 +102,16 @@ int main()
         
         myExHandler.HandleIt(&e);
         return 1;
+    } catch (const CException& e) {
+        return 1;
     }
+
     return 0;
+}
+
+int main(int argc, const char* argv[])
+{
+    return CDemoeApp().AppMain(argc, argv);
 }
 
 
@@ -91,6 +119,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/24 14:05:27  ssikorsk
+ * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
+ *
  * Revision 1.5  2006/01/24 12:53:25  ssikorsk
  * Revamp demo applications to use CNcbiApplication;
  * Use load balancer and configuration in an ini-file to connect to a
