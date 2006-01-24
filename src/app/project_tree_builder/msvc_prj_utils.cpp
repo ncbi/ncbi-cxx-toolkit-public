@@ -995,13 +995,13 @@ string CreateProjectName(const CProjKey& project_id)
 {
     switch (project_id.Type()) {
     case CProjKey::eApp:
-        return project_id.Id() + ".exe";
+        return project_id.Id() + "_exe";
     case CProjKey::eLib:
-        return project_id.Id() + ".lib";
+        return project_id.Id() + "_lib";
     case CProjKey::eDll:
-        return project_id.Id() + ".dll";
+        return project_id.Id() + "_dll";
     case CProjKey::eMsvc:
-        return project_id.Id() + ".vcproj";
+        return project_id.Id() + "_vcproj";
     default:
         NCBI_THROW(CProjBulderAppException, eProjectType, project_id.Id());
         return "";
@@ -1109,6 +1109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/01/24 21:00:25  gouriano
+ * Changed project names to not use dot
+ *
  * Revision 1.43  2006/01/23 18:26:15  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *
