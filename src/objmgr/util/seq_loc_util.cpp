@@ -195,7 +195,7 @@ static const CSeq_id* s_GetId(const CSeq_loc& loc, CScope* scope,
         msg->erase();
     }
 
-    for (CSeq_loc_CI it(loc); it; ++it) {
+    for (CSeq_loc_CI it(loc, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         const CSeq_id& id = it.GetSeq_id();
         if (id.Which() == CSeq_id::e_not_set) {
             continue;
@@ -2617,6 +2617,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.19  2006/01/24 15:54:01  grichenk
+* Allow empty seq-locs in GetId()
+*
 * Revision 1.18  2006/01/17 20:04:04  rsmith
 * in GetLength(), check for failure of GetBioseqHandle()
 *
