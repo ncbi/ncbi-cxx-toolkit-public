@@ -187,8 +187,14 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const CBlastOptionsHandle* opts_
     if (nucl_handle == NULL || nucl_handle->GetRepeatFiltering() == false)
        return;
 
+    Blast_FindRepeatFilterLoc(query, nucl_handle->GetRepeatFilteringDB());
+}
+
+void
+Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db)
+{
     bool kIsProt = false;
-    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(nucl_handle->GetRepeatFilteringDB(), kIsProt);
+    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(filter_db, kIsProt);
     char* error_str = BlastSeqSrcGetInitError(seq_src);
     if (error_str) {
         string msg(error_str);
@@ -235,6 +241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.24  2006/01/24 15:35:08  camacho
+ *  Overload Blast_FindRepeatFilterLoc with repeats database filtering arguments
+ *
  *  Revision 1.23  2005/10/25 14:19:32  camacho
  *  repeats_filter.hpp is now a private header
  *

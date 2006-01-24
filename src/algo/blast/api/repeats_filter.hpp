@@ -61,6 +61,16 @@ void
 Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc, 
                           const CBlastOptionsHandle* opts_handle);
 
+/** Overloaded version of the function above which takes the name of the
+ * repeats filtering database to use
+ * @param query_loc Vector of sequence locations. [in] [out]
+ * @param filter_db Name of the BLAST database with repeats to use for
+ * filtering [in]
+ */
+NCBI_XBLAST_EXPORT
+void
+Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db);
+
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
 
@@ -70,6 +80,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2006/01/24 15:35:08  camacho
+* Overload Blast_FindRepeatFilterLoc with repeats database filtering arguments
+*
 * Revision 1.8  2005/08/08 16:28:17  dondosha
 * Removed unused header
 *
