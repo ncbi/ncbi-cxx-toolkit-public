@@ -73,6 +73,16 @@ public:
     /// Borrow the internal data and results results. 
     CRef<SInternalData> Run();
 
+    /// Return HSPs in a structure other than the HSPStream? Provide
+    /// conversion? How to combine this with CBlastTracebackStage?
+    BlastHSPResults* ComputeBlastHSPResults(BlastHSPStream* stream,
+                                            Uint4 max_num_hsps = 0,
+                                            bool* rm_hsps = NULL) const;
+
+    TSearchMessages GetSearchMessages() const;
+
+    TSeqLocInfoVector GetFilteredQueryRegions() const;
+
 private:
     /// Prohibit copy constructor
     CBlastPrelimSearch(const CBlastPrelimSearch& rhs);
@@ -91,8 +101,25 @@ private:
     CRef<IQueryFactory>             m_QueryFactory;
     CRef<SInternalData>             m_InternalData;
     const CBlastOptionsMemento*     m_OptsMemento;
+
+    /// Warnings and error messages
+    TSearchMessages                 m_Messages;
+
+    /// Query masking information
+    TSeqLocInfoVector               m_MasksForAllQueries;
 };
 
+inline TSearchMessages
+CBlastPrelimSearch::GetSearchMessages() const
+{
+    return m_Messages;
+}
+
+inline TSeqLocInfoVector
+CBlastPrelimSearch::GetFilteredQueryRegions() const
+{
+    return m_MasksForAllQueries;
+}
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
