@@ -32,7 +32,6 @@
  *
  */
 
-#include <ncbi_pch.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <util/range.hpp>
@@ -65,6 +64,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.2  2006/01/24 16:30:43  dicuccio
+*Drop precompiled header include
+*
 *Revision 1.1  2004/08/05 16:20:22  jianye
 *Initial check in
 *
