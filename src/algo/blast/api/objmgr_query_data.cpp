@@ -65,109 +65,40 @@ BEGIN_SCOPE(blast)
 
 /// Implements the IBlastQuerySource interface using a list of Seq-locs as data
 /// source
-class CBlastQuerySourceTSeqLocs : public IBlastQuerySource {
+class CBlastQuerySourceTSeqLocs : public CBlastQuerySourceOM {
 public:
     /// Parametrized constructor
-    CBlastQuerySourceTSeqLocs(const CObjMgr_QueryFactory::TSeqLocs& seqlocs);
-
-    /// Return strand for a sequence
-    /// @param i of the sequence in the sequence container [in]
-    virtual ENa_strand GetStrand(int i) const;
-
-    /// Return the filtered (masked) regions for a sequence
-    /// @param i index of the sequence in the sequence container [in]
-    virtual CConstRef<CSeq_loc> GetMask(int i) const;
-
-    /// Return the CSeq_loc associated with a sequence
-    /// @param i index of the sequence in the sequence container [in]
-    virtual CConstRef<CSeq_loc> GetSeqLoc(int i) const;
-
-    /// Return the sequence data for a sequence
-    /// @param i index of the sequence in the sequence container [in]
-    /// @param encoding desired encoding [in]
-    /// @param strand strand to fetch [in]
-    /// @param sentinel specifies to use or not to use sentinel bytes around
-    ///        sequence data [in]
-    /// @param warnings if not NULL, warnings will be returned in this string
-    ///        [in|out]
-    /// @return SBlastSequence structure containing sequence data requested
-    virtual SBlastSequence GetBlastSequence(int i,
-                                            EBlastEncoding encoding,
-                                            ENa_strand strand,
-                                            ESentinelType sentinel,
-                                            string* warnings = 0) const;
-
-    /// Return the length of a sequence
-    /// @param i index of the sequence in the sequence container [in]
-    virtual TSeqPos GetLength(int i) const;
-
-    /// Return the number of elements in the sequence container
-    virtual TSeqPos Size() const;
-
+    CBlastQuerySourceTSeqLocs(const CObjMgr_QueryFactory::TSeqLocs& seqlocs,
+                              const CBlastOptions* opts);
 private:
-    vector< CRef<CSeq_loc> > m_SeqLocs;
-    mutable CRef<CScope> m_Scope;
+    TSeqLocVector* 
+    x_CreateTSeqLocVector(const CObjMgr_QueryFactory::TSeqLocs& seqlocs);
 };
 
 CBlastQuerySourceTSeqLocs::CBlastQuerySourceTSeqLocs
+    (const CObjMgr_QueryFactory::TSeqLocs& seqlocs, const CBlastOptions* opts)
+    : CBlastQuerySourceOM(*x_CreateTSeqLocVector(seqlocs), opts)
+{
+    // this will ensure that the parent class deletes the TSeqLocVector
+    // allocated above
+    m_OwnTSeqLocVector = true;  
+}
+
+TSeqLocVector*
+CBlastQuerySourceTSeqLocs::x_CreateTSeqLocVector
     (const CObjMgr_QueryFactory::TSeqLocs& seqlocs)
 {
-    m_SeqLocs.reserve(seqlocs.size());
-    ITERATE(CObjMgr_QueryFactory::TSeqLocs, itr, seqlocs) {
-        ASSERT(itr->GetNonNullPointer());
-        m_SeqLocs.push_back(*itr);
-    }
-    m_Scope = CSimpleOM::NewScope();
-}
+    TSeqLocVector* retval = new TSeqLocVector;
+    retval->reserve(seqlocs.size());
 
-inline ENa_strand 
-CBlastQuerySourceTSeqLocs::GetStrand(int i) const 
-{ 
-    return m_SeqLocs[i]->GetStrand(); 
-}
+    CRef<CScope> scope(CSimpleOM::NewScope());
 
-inline CConstRef<CSeq_loc> 
-CBlastQuerySourceTSeqLocs::GetMask(int /*i*/) const 
-{ 
-    return CConstRef<CSeq_loc>(0); 
-}
-
-inline CConstRef<CSeq_loc> 
-CBlastQuerySourceTSeqLocs::GetSeqLoc(int i) const 
-{ 
-    return m_SeqLocs[i]; 
-}
-
-inline SBlastSequence 
-CBlastQuerySourceTSeqLocs::GetBlastSequence(int i,
-                                            EBlastEncoding encoding,
-                                            ENa_strand strand,
-                                            ESentinelType sentinel,
-                                            string* warnings) const 
-{
-    return GetSequence(*m_SeqLocs[i], encoding, m_Scope, strand, sentinel, 
-                       warnings);
-}
-
-TSeqPos 
-CBlastQuerySourceTSeqLocs::GetLength(int i) const 
-{ 
-    TSeqPos retval = sequence::GetLength(*m_SeqLocs[i], m_Scope); 
-
-    if (retval == numeric_limits<TSeqPos>::max()) {
-        NCBI_THROW(CBlastException, eInvalidArgument,
-                   string("Could not find length of query # ")
-                   + NStr::IntToString(i) + " with Seq-id ["
-                   + m_SeqLocs[i]->GetId()->AsFastaString() + "]");
+    ITERATE(CObjMgr_QueryFactory::TSeqLocs, cref_seqloc, seqlocs) {
+        _ASSERT(cref_seqloc->GetNonNullPointer());
+        retval->push_back(SSeqLoc(cref_seqloc->GetPointer(), scope));
     }
 
     return retval;
-}
-
-inline TSeqPos 
-CBlastQuerySourceTSeqLocs::Size() const 
-{ 
-    return m_SeqLocs.size(); 
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -236,7 +167,7 @@ s_TSeqLocsToBioseqSet(const CObjMgr_QueryFactory::TSeqLocs* seqlocs)
 class CObjMgr_LocalQueryData : public ILocalQueryData
 {
 public:
-    CObjMgr_LocalQueryData(const TSeqLocVector* queries,
+    CObjMgr_LocalQueryData(TSeqLocVector* queries,
                            const CBlastOptions* options);
     CObjMgr_LocalQueryData(const CObjMgr_QueryFactory::TSeqLocs* seqlocs,
                            const CBlastOptions* options);
@@ -261,18 +192,18 @@ private:
     AutoPtr<IBlastQuerySource> m_QuerySource;
 };
 
-CObjMgr_LocalQueryData::CObjMgr_LocalQueryData(const TSeqLocVector * queries,
+CObjMgr_LocalQueryData::CObjMgr_LocalQueryData(TSeqLocVector * queries,
                                                const CBlastOptions * opts)
     : m_Queries(queries), m_SeqLocs(0), m_Options(opts)
 {
-    m_QuerySource.reset(new CBlastQuerySourceOM(*queries));
+    m_QuerySource.reset(new CBlastQuerySourceOM(*queries, opts));
 }
 
 CObjMgr_LocalQueryData::CObjMgr_LocalQueryData
     (const CObjMgr_QueryFactory::TSeqLocs* seqlocs, const CBlastOptions* opts)
     : m_Queries(0), m_SeqLocs(seqlocs), m_Options(opts)
 {
-    m_QuerySource.reset(new CBlastQuerySourceTSeqLocs(*seqlocs));
+    m_QuerySource.reset(new CBlastQuerySourceTSeqLocs(*seqlocs, opts));
 }
 
 BLAST_SequenceBlk*
@@ -390,7 +321,7 @@ CObjMgr_RemoteQueryData::GetSeqLocs()
 //
 /////////////////////////////////////////////////////////////////////////////
 
-CObjMgr_QueryFactory::CObjMgr_QueryFactory(const TSeqLocVector& queries)
+CObjMgr_QueryFactory::CObjMgr_QueryFactory(TSeqLocVector& queries)
     : m_SSeqLocVector(&queries), m_SeqLocs(0), m_OwnSeqLocs(false)
 {
     if (queries.empty()) {
