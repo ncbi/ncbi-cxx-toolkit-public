@@ -77,13 +77,16 @@ public:
     CBlastTracebackSearch(CRef<IQueryFactory> query_factory,
                           CRef<SInternalData> internal_data,
                           const CBlastOptions& opts,
-                          const IBlastSeqInfoSrc& seqinfo_src);
+                          const IBlastSeqInfoSrc& seqinfo_src,
+                          TSearchMessages& search_msgs);
     
     // is this enough? 
     virtual ~CBlastTracebackSearch();
     
     CSearchResultSet Run();
 
+    /// Specifies how the Seq-align-set returned as part of the results if
+    /// formatted.
     void SetResultType(EResultType type);
     
 private:
