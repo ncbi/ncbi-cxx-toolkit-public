@@ -89,12 +89,14 @@ CLocalBlast::Run()
     ASSERT(m_PrelimSearch);
     ASSERT(m_Opts);
 
-    // For now I assume that whatever warnings and other data are
-    // needed from the preliminary stage can be passed via the memento
-    // data somehow.
+    // Note: we need to pass the search messages ...
+    // filtered query regions should be masked in the BLAST_SequenceBlk
+    // already.
     
     m_InternalData = m_PrelimSearch->Run();
     ASSERT(m_InternalData);
+
+    TSearchMessages search_msgs = m_PrelimSearch->GetSearchMessages();
 
     auto_ptr<IBlastSeqInfoSrc>
         seqinfo_src(InitSeqInfoSrc(m_InternalData->m_SeqSrc->GetPointer()));
@@ -102,8 +104,19 @@ CLocalBlast::Run()
     m_TbackSearch.Reset(new CBlastTracebackSearch(m_QueryFactory,
                                                   m_InternalData,
                                                   *m_Opts,
-                                                  *seqinfo_src));
-    return m_TbackSearch->Run();
+                                                  *seqinfo_src,
+                                                  search_msgs));
+    CSearchResultSet retval = m_TbackSearch->Run();
+
+    // Add the filtered query regions, if any
+    TSeqLocInfoVector masks = m_PrelimSearch->GetFilteredQueryRegions();
+    if ( !masks.empty() ) {
+        _ASSERT(masks.size() == (size_t)retval.GetNumResults());
+        for (int i = 0; i < retval.GetNumResults(); i++) {
+            retval[i].SetMaskedQueryRegions(masks[i]);
+        }
+    }
+    return retval;
 }
 
 END_SCOPE(blast)

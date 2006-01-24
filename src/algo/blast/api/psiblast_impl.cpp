@@ -141,13 +141,20 @@ s_SetUpInternalDataStructures(CRef<IQueryFactory> query_factory,
 
     // 3. Create the BlastScoreBlk
     BlastSeqLoc* lookup_segments(0);
+    TSearchMessages search_messages;
     BlastScoreBlk* sbp =
         CSetupFactory::CreateScoreBlock(opts_memento, query_data,
                                         &lookup_segments,
+                                        search_messages,
                                         /* FIXME: masked locations */ 0);
     retval->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp, BlastScoreBlkFree));
     if (pssm.NotEmpty()) {
         PsiBlastSetupScoreBlock(sbp, pssm);
+    }
+    if (search_messages.HasMessages()) {
+        // FIXME: this shouldn't be throw, this is just so that the code
+        // compiles
+        throw search_messages;
     }
 
     // 4. Create lookup table
@@ -200,7 +207,9 @@ CPsiBlastImpl::Run()
     // Run the traceback stage
     IBlastSeqInfoSrc* seqinfo_src(m_Subject->MakeSeqInfoSrc());
     ASSERT(seqinfo_src);
-    CBlastTracebackSearch tback(m_Query, core_data, opts, *seqinfo_src);
+    TSearchMessages search_msgs;
+    CBlastTracebackSearch tback(m_Query, core_data, opts, *seqinfo_src,
+                                search_msgs);
     tback.SetResultType(m_ResultType);
     m_Results = tback.Run();
     return CRef<CSearchResults>(&m_Results[0]);
