@@ -260,7 +260,7 @@ CBlastQuerySourceBioseqSet::Size() const
 }
 
 CConstRef<objects::CSeq_loc> 
-CBlastQuerySourceBioseqSet::GetMask(int /*index*/) const 
+CBlastQuerySourceBioseqSet::GetMask(int /*index*/)
 {
     return CConstRef<objects::CSeq_loc>(0);
 }
@@ -273,6 +273,12 @@ CBlastQuerySourceBioseqSet::GetSeqLoc(int index) const
     // FIXME: make sure this works (perhaps we need to build our own
     // Seq-interval
     return retval;
+}
+
+const CSeq_id*
+CBlastQuerySourceBioseqSet::GetSeqId(int index) const
+{
+    return m_Bioseqs[index]->GetFirstId();
 }
 
 SBlastSequence

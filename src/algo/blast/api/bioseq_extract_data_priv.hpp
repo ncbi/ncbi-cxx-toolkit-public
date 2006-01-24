@@ -127,10 +127,13 @@ public:
     virtual TSeqPos Size() const;
     /// Return the filtered (masked) regions for a sequence
     /// @param index index of the sequence in the sequence container [in]
-    virtual CConstRef<objects::CSeq_loc> GetMask(int index) const;
+    virtual CConstRef<objects::CSeq_loc> GetMask(int index);
     /// Return the CSeq_loc associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int index) const;
+    /// Return the sequence identifier associated with a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual const objects::CSeq_id* GetSeqId(int index) const;
     /// Return the sequence data for a sequence
     /// @param index index of the sequence in the sequence container [in]
     /// @param encoding desired encoding [in]
