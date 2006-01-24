@@ -193,6 +193,7 @@ public:
     CreateScoreBlock(const CBlastOptionsMemento* opts_memento, 
                      CRef<ILocalQueryData> query_data, 
                      BlastSeqLoc** lookup_segments, 
+                     TSearchMessages& search_messages,
                      TSeqLocInfoVector* masked_query_regions = NULL,
                      const CBlastRPSInfo* rps_info = NULL);
 
