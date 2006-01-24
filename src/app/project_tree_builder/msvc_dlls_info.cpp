@@ -192,9 +192,10 @@ static void s_InitalizeDllProj(const string&                  dll_id,
                                CProjItem*                     dll,
                                CProjectItemsTree*             tree_dst)
 {
-    dll->m_Name           = dll_id;
-    dll->m_ID             = dll_id;
-    dll->m_ProjType       = CProjKey::eDll;
+    dll->m_Name     = dll_id;
+    dll->m_ID       = dll_id;
+    dll->m_ProjType = CProjKey::eDll;
+    dll->m_GUID     = GenerateSlnGUID();;
 
     ITERATE(list<string>, p, dll_info.m_Depends) {
 
@@ -595,6 +596,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/01/24 14:54:38  gouriano
+ * Generate GUID for DLL projects
+ *
  * Revision 1.33  2006/01/04 13:44:55  gouriano
  * Corrected analyzing build configurations for DLL build
  *
