@@ -69,14 +69,22 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
     if (nucl_handle == NULL || nucl_handle->GetDustFiltering() == false)
        return;
 
+    Blast_FindDustFilterLoc(queries, nucl_handle->GetDustFilteringLevel(),
+                          nucl_handle->GetDustFilteringWindow(),
+                          nucl_handle->GetDustFilteringLinker());
+}
+
+void
+Blast_FindDustFilterLoc(TSeqLocVector& queries, 
+                        Uint4 level, Uint4 window, Uint4 linker)
+{
+
     NON_CONST_ITERATE(TSeqLocVector, query, queries)
     {
         CSeqVector data(*query->seqloc, *query->scope, 
                         CBioseq_Handle::eCoding_Iupac);
 
-        CSymDustMasker duster(nucl_handle->GetDustFilteringLevel(),
-                          nucl_handle->GetDustFilteringWindow(),
-                          nucl_handle->GetDustFilteringLinker());
+        CSymDustMasker duster(level, window, linker);
         CSeq_id& query_id = const_cast<CSeq_id&>(*query->seqloc->GetId());
 
         CRef<CPacked_seqint> masked_locations =
@@ -135,6 +143,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.5  2006/01/24 15:34:14  camacho
+ *  Overload Blast_FindDustFilterLoc with dust filtering arguments
+ *
  *  Revision 1.4  2005/10/25 14:19:17  camacho
  *  dust_filter.hpp is now a private header
  *

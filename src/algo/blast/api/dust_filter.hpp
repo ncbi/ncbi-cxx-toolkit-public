@@ -38,6 +38,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <algo/blast/api/sseqloc.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
+#include <algo/dustmask/symdust.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -59,6 +60,20 @@ void
 Blast_FindDustFilterLoc(TSeqLocVector& query, 
                         const CBlastNucleotideOptionsHandle* nucl_handle);
 
+/** Overloaded version of the function above which takes the filtering
+ * implementation's arguments directly
+ * @param query Vector of sequence locations. [in] [out]
+ * @param level Dust filtering level argument [in]
+ * @param window Dust filtering window argument [in]
+ * @param linker Dust filtering linker argument [in]
+ */
+NCBI_XBLAST_EXPORT
+void 
+Blast_FindDustFilterLoc(TSeqLocVector& query, 
+                        Uint4 level = CSymDustMasker::DEFAULT_LEVEL,
+                        Uint4 window = CSymDustMasker::DEFAULT_WINDOW,
+                        Uint4 linker = CSymDustMasker::DEFAULT_LINKER);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE 
 
@@ -70,6 +85,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.3  2006/01/24 15:34:14  camacho
+ *  Overload Blast_FindDustFilterLoc with dust filtering arguments
+ *
  *  Revision 1.2  2005/09/28 18:21:34  camacho
  *  Rearrangement of headers/functions to segregate object manager dependencies.
  *
