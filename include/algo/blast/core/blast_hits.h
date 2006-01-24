@@ -682,6 +682,25 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
         BlastHSPList* hsp_list, Int4 hitlist_size);
 
+// Forward declaration
+struct BlastHSPStream;
+
+BlastHSPResults*
+Blast_HSPResultsFromHSPStream(struct BlastHSPStream* hsp_stream, 
+                              size_t num_queries, 
+                              const BlastHitSavingOptions* hit_options, 
+                              const BlastExtensionOptions* ext_options, 
+                              const BlastScoringOptions* scoring_options);
+
+BlastHSPResults*
+Blast_HSPResultsFromHSPStreamWithLimit(struct BlastHSPStream* hsp_stream, 
+                                   Uint4 num_queries, 
+                                   const BlastHitSavingOptions* hit_options, 
+                                   const BlastExtensionOptions* ext_options, 
+                                   const BlastScoringOptions* scoring_options,
+                                   Uint4 max_num_hsps,
+                                   Boolean* removed_hsps);
+
 /** Splits the BlastHSPResults structure for a PHI BLAST search into an array of
  * BlastHSPResults structures, corresponding to different pattern occurrences in
  * query. All HSPs are copied, so it is safe to free the returned 

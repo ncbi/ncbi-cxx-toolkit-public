@@ -39,6 +39,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_util.h>
+#include <algo/blast/core/blast_hspstream.h>
 #include "blast_hits_priv.h"
 #include "blast_itree.h"
 
@@ -3128,3 +3129,136 @@ PHIBlast_HSPResultsSplit(const BlastHSPResults* results,
 
     return phi_results;
 }
+
+BlastHSPResults*
+Blast_HSPResultsFromHSPStream(BlastHSPStream* hsp_stream, 
+                              size_t num_queries, 
+                              const BlastHitSavingOptions* hit_options, 
+                              const BlastExtensionOptions* ext_options, 
+                              const BlastScoringOptions* scoring_options)
+{
+    BlastHSPResults* retval = NULL;
+
+    SBlastHitsParameters* bhp = NULL;
+    SBlastHitsParametersNew(hit_options, ext_options, scoring_options, &bhp);
+
+    retval = Blast_HSPResultsNew((Int4) num_queries);
+
+    BlastHSPList* hsp_list = NULL;
+    while (BlastHSPStreamRead(hsp_stream, &hsp_list) != kBlastHSPStream_Eof) {
+        Blast_HSPResultsInsertHSPList(retval, hsp_list, 
+                                      bhp->prelim_hitlist_size);
+    }
+    bhp = SBlastHitsParametersFree(bhp);
+    return retval;
+}
+
+/** Comparison function for sorting HSP lists in increasing order of the 
+ * number of HSPs in a hit. Needed for s_TrimResultsByTotalHSPLimit below. 
+ * @param v1 Pointer to the first HSP list [in]
+ * @param v2 Pointer to the second HSP list [in]
+ */
+static int
+s_CompareHsplistHspcnt(const void* v1, const void* v2)
+{
+   BlastHSPList* r1 = *((BlastHSPList**) v1);
+   BlastHSPList* r2 = *((BlastHSPList**) v2);
+
+   if (r1->hspcnt < r2->hspcnt)
+      return -1;
+   else if (r1->hspcnt > r2->hspcnt)
+      return 1;
+   else
+      return 0;
+}
+
+/** Removes extra results if a limit is imposed on the total number of HSPs
+ * returned. If the search involves multiple query sequences, the total HSP 
+ * limit is applied separately to each query.
+ * The trimming algorithm makes sure that at least 1 HSP is returned for each
+ * database sequence hit. Suppose results for a given query consist of HSP 
+ * lists for N database sequences, and the limit is T. HSP lists are sorted in
+ * order of increasing number of HSPs in each list. Then the algorithm proceeds
+ * by leaving at most i*T/N HSPs for the first i HSP lists, for every 
+ * i = 1, 2, ..., N.
+ * @param results Results after preliminary stage of a BLAST search [in|out]
+ * @param total_hsp_limit Limit on total number of HSPs [in]
+ * @return TRUE if HSP limit has been exceeded, FALSE otherwise.
+ */
+static Boolean
+s_TrimResultsByTotalHSPLimit(BlastHSPResults* results, Uint4 total_hsp_limit)
+{
+    int query_index;
+    Boolean hsp_limit_exceeded = FALSE;
+    
+    if (total_hsp_limit == 0) {
+        return hsp_limit_exceeded;
+    }
+
+    for (query_index = 0; query_index < results->num_queries; ++query_index) {
+        BlastHitList* hit_list = NULL;
+        Int4 hsplist_count = 0;
+        int subj_index;
+
+        if ( !(hit_list = results->hitlist_array[query_index]) )
+            continue;
+        /* The count of HSPs is separate for each query. */
+        hsplist_count = hit_list->hsplist_count;
+        BlastHSPList** hsplist_array = (BlastHSPList**) 
+            malloc(hsplist_count*sizeof(BlastHSPList*));
+        
+        for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
+            hsplist_array[subj_index] = hit_list->hsplist_array[subj_index];
+        }
+ 
+        qsort((void*)hsplist_array, hsplist_count,
+              sizeof(BlastHSPList*), s_CompareHsplistHspcnt);
+        
+        {
+            Int4 tot_hsps = 0;  /* total number of HSPs */
+            Uint4 hsp_per_seq = MAX(1, total_hsp_limit/hsplist_count);
+            for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
+                Int4 allowed_hsp_num = ((subj_index+1)*hsp_per_seq) - tot_hsps;
+                BlastHSPList* hsp_list = hsplist_array[subj_index];
+                if (hsp_list->hspcnt > allowed_hsp_num) {
+                    /* Free the extra HSPs */
+                    int hsp_index;
+                    for (hsp_index = allowed_hsp_num; 
+                         hsp_index < hsp_list->hspcnt; ++hsp_index) {
+                        Blast_HSPFree(hsp_list->hsp_array[hsp_index]);
+                    }
+                    hsp_list->hspcnt = allowed_hsp_num;
+                    hsp_limit_exceeded = TRUE;
+                }
+                tot_hsps += hsp_list->hspcnt;
+            }
+        }
+        sfree(hsplist_array);
+    }
+
+    return hsp_limit_exceeded;
+}
+
+BlastHSPResults*
+Blast_HSPResultsFromHSPStreamWithLimit(BlastHSPStream* hsp_stream, 
+                                   Uint4 num_queries, 
+                                   const BlastHitSavingOptions* hit_options, 
+                                   const BlastExtensionOptions* ext_options, 
+                                   const BlastScoringOptions* scoring_options,
+                                   Uint4 max_num_hsps,
+                                   Boolean* removed_hsps)
+{
+    Boolean rm_hsps = FALSE;
+    BlastHSPResults* retval = Blast_HSPResultsFromHSPStream(hsp_stream,
+                                                            num_queries,
+                                                            hit_options,
+                                                            ext_options,
+                                                            scoring_options);
+
+    rm_hsps = s_TrimResultsByTotalHSPLimit(retval, max_num_hsps);
+    if (removed_hsps) {
+        *removed_hsps = rm_hsps;
+    }
+    return retval;
+}
+
