@@ -121,11 +121,13 @@ CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory>   qf,
 CBlastTracebackSearch::CBlastTracebackSearch(CRef<IQueryFactory> qf,
                                              CRef<SInternalData> internal_data, 
                                              const CBlastOptions& opts, 
-                                             const IBlastSeqInfoSrc& seqinfosrc)
+                                             const IBlastSeqInfoSrc& seqinfosrc,
+                                             TSearchMessages& search_msgs)
     : m_QueryFactory (qf),
       m_Options      (const_cast<CBlastOptions*>(&opts)),
       m_InternalData (internal_data),
       m_OptsMemento  (opts.CreateSnapshot()),
+      m_Messages     (search_msgs),
       m_HspResults   (0),
       m_SeqInfoSrc   (const_cast<IBlastSeqInfoSrc*>(&seqinfosrc)),
       m_OwnSeqInfoSrc(false),
@@ -173,14 +175,17 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
 		Blast_ProgramIsPhiBlast(m_OptsMemento->m_ProgramType) ? true : false;
 
     // 4. Create the BlastScoreBlk
+    // Note: we don't need masked query regions, as these are generally created
+    // in the preliminary stage of the BLAST search
     BlastSeqLoc* lookup_segments(0);
+    TSearchMessages m;
     BlastScoreBlk* sbp =
         CSetupFactory::CreateScoreBlock(m_OptsMemento, query_data, 
                                         kIsPhiBlast ? &lookup_segments : 0, 
-                                        /* FIXME: masked locations */ 0,
-                                        m_InternalData->m_RpsData);
+                                        m, 0, m_InternalData->m_RpsData);
     m_InternalData->m_ScoreBlk.Reset
         (new TBlastScoreBlk(sbp, BlastScoreBlkFree));
+    m_Messages.Combine(m);
 
     // N.B.: Only PHI BLAST pseudo lookup table is necessary
     if (kIsPhiBlast) {
