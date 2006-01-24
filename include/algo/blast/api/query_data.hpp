@@ -73,20 +73,14 @@ public:
     /// Get the length of the sequence indicated by index.
     virtual int GetSeqLength(int index) = 0;
 
-    /// Retrieve error/warning messages
-    void GetMessages(TSearchMessages& messages) {
-        messages = m_Messages;
-    }
+    /// Retrieve all error/warning messages
+    void GetMessages(TSearchMessages& messages) const;
 
-    void GetQueryMessages(int index, TQueryMessages& qmsgs) {
-        if (index < 0 || index > GetNumQueries()) {
-            throw std::out_of_range("Index " + NStr::IntToString(index) +
-                                    " out of range (" +
-                                    NStr::IntToString(GetNumQueries()) + 
-                                    " max)");
-        }
-        qmsgs = m_Messages[index];
-    }
+    /// Retrieve error/warning messages for a specific query
+    void GetQueryMessages(int index, TQueryMessages& qmsgs);
+
+    /// Determine if a given query sequence is valid or not
+    bool IsValidQuery(int index);
     
 protected:
     /// Data member to cache the BLAST_SequenceBlk
@@ -96,6 +90,9 @@ protected:
 
     /// Error/warning messages are stored here
     TSearchMessages m_Messages;
+
+private:
+    void x_ValidateIndex(int index);
 };
 
 class IRemoteQueryData : public CObject
