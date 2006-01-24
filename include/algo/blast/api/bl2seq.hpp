@@ -192,8 +192,6 @@ private:
     void x_ResetQueryDs();
     /// Resets subject data structures
     void x_ResetSubjectDs();
-
-    void x_CopyCoreErrorsToSearchMessages(const Blast_Message* blmsg);
 };
 
 inline void
@@ -290,6 +288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.47  2006/01/24 15:15:20  camacho
+* Remove refactored method
+*
 * Revision 1.46  2006/01/12 20:36:48  camacho
 * + x_CopyCoreErrorsToSearchMessages
 *

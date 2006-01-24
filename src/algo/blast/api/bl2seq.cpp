@@ -54,7 +54,7 @@
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
 #include <algo/blast/core/hspstream_collector.h>
-
+#include "blast_aux_priv.hpp"
 
 
 /** @addtogroup AlgoBlast
@@ -196,69 +196,6 @@ CBl2Seq::PartialRun()
     ScanDB();
 }
 
-// Auxiliary comparison functors for TQueryMessages (need to dereference the
-// CRef<>'s contained)
-struct TQueryMessagesLessComparator : 
-    public binary_function< CRef<CSearchMessage>, 
-                            CRef<CSearchMessage>, 
-                            bool>
-{ 
-    result_type operator() (const first_argument_type& a,
-                            const second_argument_type& b) const {
-        return *a < *b;
-    }
-};
-
-struct TQueryMessagesEqualComparator : 
-    public binary_function< CRef<CSearchMessage>, 
-                            CRef<CSearchMessage>, 
-                            bool>
-{ 
-    result_type operator() (const first_argument_type& a,
-                            const second_argument_type& b) const {
-        return *a == *b;
-    }
-};
-
-void
-CBl2Seq::x_CopyCoreErrorsToSearchMessages(const Blast_Message* blmsg)
-{
-    if ( !blmsg ) {
-        return;
-    }
-
-    _ASSERT(m_Messages.size() == (size_t)mi_clsQueryInfo->num_queries);
-
-    const BlastContextInfo* kCtxInfo = mi_clsQueryInfo->contexts;
-
-    // First copy the errors...
-    for (int i = mi_clsQueryInfo->first_context; 
-         i <= mi_clsQueryInfo->last_context; i++) {
-
-        if ( !kCtxInfo[i].is_valid ) {
-            string msg(blmsg->message);
-            CRef<CSearchMessage> sm(new CSearchMessage(blmsg->severity,
-                                                       kCtxInfo[i].query_index,
-                                                       msg));
-            m_Messages[kCtxInfo[i].query_index].push_back(sm);
-        }
-    }
-
-    // ... then remove duplicate error messages
-    NON_CONST_ITERATE(TSearchMessages, smsgs, m_Messages) {
-
-        if (smsgs->empty()) {
-            continue;
-        }
-
-        sort(smsgs->begin(), smsgs->end(), TQueryMessagesLessComparator());
-        TQueryMessages::iterator new_end = 
-            unique(smsgs->begin(), smsgs->end(), 
-                   TQueryMessagesEqualComparator());
-        smsgs->erase(new_end, smsgs->end());
-    }
-}
-
 void 
 CBl2Seq::SetupSearch()
 {
@@ -296,12 +233,8 @@ CBl2Seq::SetupSearch()
         const string error_msg(blmsg 
                                ? blmsg->message
                                : "BLAST_MainSetUp failed");
-        if (blmsg) {
-            x_CopyCoreErrorsToSearchMessages(blmsg);
-            Blast_MessageFree(blmsg);
-        }
-
-
+        Blast_Message2TSearchMessages(blmsg, mi_clsQueryInfo, m_Messages);
+        blmsg = Blast_MessageFree(blmsg);
         if (st != 0) {
             NCBI_THROW(CBlastException, eCoreBlastError, error_msg);
         }
@@ -409,6 +342,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.89  2006/01/24 15:18:55  camacho
+ * Remove refactored method
+ *
  * Revision 1.88  2006/01/12 20:37:09  camacho
  * + x_CopyCoreErrorsToSearchMessages
  *
