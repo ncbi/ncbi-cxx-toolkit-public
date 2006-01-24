@@ -164,6 +164,7 @@ typedef SOCKET TSOCK_Handle;
 #  define SOCK_ECONNABORTED   WSAECONNABORTED
 #  define SOCK_ECONNREFUSED   WSAECONNREFUSED
 #  define SOCK_ENETRESET      WSAENETRESET
+#  define SOCK_ETIMEDOUT      WSAETIMEDOUT
 #  define SOCK_NFDS(s)        0
 #  define SOCK_CLOSE(s)       closesocket(s)
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
@@ -190,6 +191,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_ECONNABORTED   ECONNABORTED
 #  define SOCK_ECONNREFUSED   ECONNREFUSED
 #  define SOCK_ENETRESET      ENETRESET
+#  define SOCK_ETIMEDOUT      ETIMEDOUT
 #  define SOCK_NFDS(s)        (s + 1)
 #  ifdef NCBI_OS_BEOS
 #    define SOCK_CLOSE(s)     closesocket(s)
@@ -238,6 +240,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_ECONNABORTED   ECONNABORTED
 #  define SOCK_ECONNREFUSED   ECONNREFUSED
 #  define SOCK_ENETRESET      ENETRESET
+#  define SOCK_ETIMEDOUT      ETIMEDOUT
 #  define SOCK_NFDS(s)        (s + 1)
 #  define SOCK_CLOSE(s)       close(s)
 #  define SOCK_SHUTDOWN(s,h)  shutdown(s,h)
@@ -373,11 +376,11 @@ typedef struct SOCK_tag {
  * Please note the following implementation details:
  *
  * 1. w_buf is used for stream sockets to keep initial data segment
- *    that has to be sent upon the connection establishment.
+ *    that has to be sent upon connection establishment.
  *
  * 2. eof is used differently for stream and datagram sockets:
- *    =1 for stream sockets means that read had hit EOF;
- *    =1 for datagram sockets means that the message in w_buf is complete.
+ *    =1 for stream sockets means that read has hit EOF;
+ *    =1 for datagram sockets means that message in w_buf has been completed.
  *
  * 3. r_status keeps completion code of the last low-level read call;
  *    however, eIO_Closed is there when the socket is shut down for reading;
@@ -396,7 +399,7 @@ typedef struct SOCK_tag {
  * eIO_Closed     |       0       |  Socket shut down for reading
  * eIO_Closed     |       1       |  Read severely failed
  * not eIO_Closed |       0       |  Read completed with r_status error
- * not eIO_Closed |       1       |  Read hit EOF (and later r_status)
+ * not eIO_Closed |       1       |  Read hit EOF (and [maybe later] r_status)
  * ---------------+---------------+--------------------------------------------
  */
 
@@ -680,25 +683,24 @@ static void s_DoLog
                              tail, sizeof(tail));
             sprintf(tail + strlen(tail), ", msg# %u",
                     (unsigned)(event == eIO_Read ? sock->n_in : sock->n_out));
-        } else {
-            if (sa)
-                strncpy0(tail, " OUT-OF-BAND", sizeof(tail) - 1);
-            else
-                *tail = '\0';
-        }
+        } else if (ptr)
+            strncpy0(tail, " OUT-OF-BAND", sizeof(tail) - 1);
+        else
+            *tail = '\0';
         sprintf(head, "%s%s%s at offset %lu%s%s", s_ID(sock, _id),
                 event == eIO_Read
                 ? (sock->type != eSOCK_Datagram  &&  !size
-                   ? (data ? "EOF hit" : SOCK_STRERROR(SOCK_ERRNO))
+                   ? (data ? SOCK_STRERROR(*((int*) data)) : "EOF hit")
                    : "Read")
                 : (sock->type != eSOCK_Datagram  &&  !size
-                   ? SOCK_STRERROR(SOCK_ERRNO) : "Written"),
+                   ? SOCK_STRERROR(*((int*) data)) : "Written"),
                 sock->type == eSOCK_Datagram  ||  size ? "" :
                 (event == eIO_Read ? " while reading" : " while writing"),
                 (unsigned long) (event == eIO_Read
                                  ? sock->n_read : sock->n_written),
-                sock->type == eSOCK_Datagram  &&  sa
-                ? (event == eIO_Read ? " from " : " to ") : "", tail);
+                sock->type == eSOCK_Datagram
+                ? (event == eIO_Read ? " from " : " to ")
+                : "", tail);
         CORE_DATA(data, size, head);
         break;
     case eIO_Close:
@@ -1569,13 +1571,11 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
     }
 
 #ifdef NCBI_OS_UNIX
-    if ( lsock->path[0] ) {
+    if ( lsock->path[0] )
         c = lsock->path;
-    } else
+    else
 #endif /*NCBI_OS_UNIX*/
-        {
-            c = HostPortToString(0, lsock->port, s, sizeof(s)) ? s : ":?";
-        }
+        c = HostPortToString(0, lsock->port, s, sizeof(s)) ? s : ":?";
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
@@ -1696,7 +1696,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
     if (status != eIO_Success  ||  poll.revent != eIO_Write) {
         if ( !*x_errno )
             *x_errno = SOCK_ERRNO;
-        if (*x_errno == SOCK_ECONNREFUSED)
+        if (*x_errno == SOCK_ECONNREFUSED  ||  *x_errno == SOCK_ETIMEDOUT)
             sock->r_status = sock->w_status = status = eIO_Closed;
         else if (status == eIO_Success)
             status = eIO_Unknown;
@@ -1889,6 +1889,7 @@ static int s_Recv(SOCK        sock,
     do {
         char   xx_buffer[4096];
         char*  x_buffer;
+        int    x_errno;
         size_t n_todo;
         int    x_read;
 
@@ -1910,30 +1911,31 @@ static int s_Recv(SOCK        sock,
 
         /* success */
         if (x_read >= 0  ||
-            (x_read < 0  &&  (SOCK_ERRNO == SOCK_ENOTCONN      ||
-                              SOCK_ERRNO == SOCK_ECONNRESET    ||
-                              SOCK_ERRNO == SOCK_ECONNABORTED  ||
-                              SOCK_ERRNO == SOCK_ENETRESET))) {
+            (x_read < 0  &&  ((x_errno = SOCK_ERRNO) == SOCK_ENOTCONN      ||
+                              x_errno                == SOCK_ETIMEDOUT     ||
+                              x_errno                == SOCK_ECONNRESET    ||
+                              x_errno                == SOCK_ECONNABORTED  ||
+                              x_errno                == SOCK_ENETRESET))) {
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(sock, eIO_Read, x_read >= 0 ? x_buffer : 0,
+                s_DoLog(sock, eIO_Read, (x_read < 0 ? (void*) &x_errno :
+                                         x_read > 0 ? x_buffer : 0),
                         (size_t)(x_read < 0 ? 0 : x_read), 0);
             }
             if (x_read <= 0) {
                 /* catch EOF/failure */
                 sock->eof = 1/*true*/;
-                if (x_read == 0)
-                    sock->r_status = eIO_Success;
-                else
+                if (x_read)
                     sock->r_status = sock->w_status = eIO_Closed;
+                else
+                    sock->r_status = eIO_Success;
                 break;
             }
         } else {
             /* some error */
-            int x_errno = SOCK_ERRNO;
-            if (x_errno != SOCK_EWOULDBLOCK  &&
-                x_errno != SOCK_EAGAIN       &&
-                x_errno != SOCK_EINTR) {
+            if ((x_errno = SOCK_ERRNO) != SOCK_EWOULDBLOCK  &&
+                x_errno                != SOCK_EAGAIN       &&
+                x_errno                != SOCK_EINTR) {
                 /* catch unknown ERROR */
                 sock->r_status = eIO_Unknown;
                 CORE_LOGF_ERRNO_EX(eLOG_Trace, x_errno, SOCK_STRERROR(x_errno),
@@ -2211,7 +2213,7 @@ static EIO_Status s_Send(SOCK        sock,
             /* forcibly closed by peer or shut down? */
             if (x_errno != SOCK_EPIPE      &&  x_errno != SOCK_ENOTCONN     &&
                 x_errno != SOCK_ECONNRESET &&  x_errno != SOCK_ECONNABORTED &&
-                x_errno != SOCK_ENETRESET) {
+                x_errno != SOCK_ENETRESET  &&  x_errno != SOCK_ETIMEDOUT) {
                 CORE_LOGF_ERRNO_EX(eLOG_Trace, x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_Send] "
                                     " Failed send()", s_ID(sock, _id)));
@@ -2221,7 +2223,7 @@ static EIO_Status s_Send(SOCK        sock,
             if (x_errno != SOCK_EPIPE)
                 sock->r_status = eIO_Closed;
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
-                s_DoLog(sock, eIO_Write, 0, 0, 0);
+                s_DoLog(sock, eIO_Write, &x_errno, 0, 0);
             break;
         }
 
@@ -4465,6 +4467,9 @@ unsigned int SOCK_GetLoopbackAddress(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.183  2006/01/24 20:07:49  lavr
+ * +SOCK_ETIMEDOUT
+ *
  * Revision 6.182  2006/01/18 02:58:39  lavr
  * s_Recv() modified to assure minimal I/O of 4096 bytes long
  *
