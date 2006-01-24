@@ -57,7 +57,9 @@ int
 CConnectPolicyApp::RunSample(void)
 {
     try {
+#ifdef HAVE_LIBCONNEXT
         DBLB_INSTALL_DEFAULT();
+#endif
                 
         // CConnValidatorCoR is developed to combine other validators into a chain.
         CConnValidatorCoR conn_validator;
@@ -91,6 +93,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/24 13:47:19  ssikorsk
+ * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
+ *
  * Revision 1.4  2006/01/23 13:47:34  ssikorsk
  * Added code to demonstrate IconnValidator usage;
  *
