@@ -299,6 +299,7 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
         // Copy template string because we need change it
         if ( pstr != &str ) {
             str.assign(*pstr);
+            pstr = &str;
         }
         // a "do ... while (false)" lets us avoid a goto
         do {
@@ -355,7 +356,43 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 
 
     // Split large templates to parts to reduce latency
+
+
+
 /*
+    auto_ptr<CHTMLText> node(0);
+    if (pstr->) {
+        node.reset(new CHTMLText(*pstr));
+    } else {
+        node.reset(new CHTMLNode());
+    }
+
+    while (is) {
+        is.read(buf, sizeof(buf));
+        s.append(buf, is.gcount());
+        // If needed save received template block
+        if ( pstr ) {
+            pstr->append(buf, is.gcount());
+        }
+        SIZE_TYPE pos = s.rfind('\n');
+        if (pos != NPOS) {
+            ++pos;
+            CHTMLText* child = new CHTMLText(s.substr(0, pos));
+            child->Print(*out, mode);
+            node->AppendChild(child);
+            s.erase(0, pos);
+        }
+    }
+    if ( !s.empty() ) {
+        CHTMLText* child = new CHTMLText(s);
+        child->Print(*out, mode);
+        node->AppendChild(child);
+    }
+*/
+
+
+/*
+???
     CNCBINode* node = 0;
 
     if (out  &&  !m_UsePopupMenus) {
@@ -666,6 +703,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/01/24 19:01:30  ivanov
+ * CHTMLPage::CreateTemplate() - fixed bug with using popup menues in
+ * templates loaded from cache
+ *
  * Revision 1.47  2006/01/24 18:05:19  ivanov
  * CHTMLPage:: added possibility to cache template files and template libs
  * Feature to split large templates on parts to avoid latency will be
