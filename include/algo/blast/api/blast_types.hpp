@@ -128,7 +128,7 @@ public:
     bool operator==(const CSearchMessage& rhs) const;
     bool operator!=(const CSearchMessage& rhs) const;
     bool operator<(const CSearchMessage& rhs) const;
-    
+
 private:
     EBlastSeverity m_Severity;
     int            m_ErrorId;
@@ -136,12 +136,27 @@ private:
 };
 
 /// typedef for the messages for an individual query sequence
-typedef vector< CRef<CSearchMessage> > TQueryMessages;
+class TQueryMessages : public vector< CRef<CSearchMessage> >
+{
+public:
+    void SetQueryId(const string& id);
+    string GetQueryId() const;
+    void Combine(const TQueryMessages& other);
+
+private:
+    string m_IdString;
+};
 
 /// typedef for the messages for an entire BLAST search, which could be
 /// comprised of multiple query sequences
-typedef vector<TQueryMessages> TSearchMessages;
-
+class TSearchMessages : public vector<TQueryMessages>
+{
+public:
+    bool HasMessages() const;
+    string ToString() const;
+    void Combine(const TSearchMessages& other_msgs);
+    void RemoveDuplicates();
+};
 
 /// Specifies the style of Seq-aligns that should be built from the
 /// internal BLAST data structures
@@ -191,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2006/01/24 15:14:09  camacho
+* Change TSearchMessages and TQueryMessages from typedefs to classes
+*
 * Revision 1.23  2006/01/10 20:19:58  camacho
 * + equality and < operators to CSearchMessage
 *
