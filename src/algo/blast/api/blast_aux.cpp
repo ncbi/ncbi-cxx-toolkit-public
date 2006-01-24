@@ -47,6 +47,7 @@
 #include <algo/blast/api/blast_exception.hpp>
 #include <algo/blast/core/blast_seqsrc_impl.h>
 #include "blast_setup.hpp"
+#include "blast_aux_priv.hpp"
 
 /** @addtogroup AlgoBlast
  *
@@ -671,6 +672,103 @@ Blast_GetSeqLocInfoVector(EBlastProgramType program,
     }
 }
 
+//
+// TSearchMessages
+//
+
+void
+TQueryMessages::SetQueryId(const string& id)
+{
+    m_IdString = id;
+}
+
+string
+TQueryMessages::GetQueryId() const
+{
+    return m_IdString;
+}
+
+void
+TQueryMessages::Combine(const TQueryMessages& other)
+{
+    // Combine the Seq-id's
+    if (m_IdString.empty()) {
+        m_IdString = other.m_IdString;
+    } else {
+        if ( !other.m_IdString.empty() ) {
+            _ASSERT(m_IdString == other.m_IdString);
+        }
+    }
+
+    if ((*this).empty()) {
+        *this = other;
+        return;
+    }
+
+    copy(other.begin(), other.end(), back_inserter(*this));
+}
+
+//
+// TSearchMessages
+//
+
+bool
+TSearchMessages::HasMessages() const
+{
+    ITERATE(vector<TQueryMessages>, qm, *this) {
+        if ( !qm->empty() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+string
+TSearchMessages::ToString() const
+{
+    string retval;
+    ITERATE(vector<TQueryMessages>, qm, *this) {
+        if (qm->empty()) {
+            continue;
+        }
+        ITERATE(TQueryMessages, msg, *qm) {
+            retval += (*msg)->GetMessage() + " ";
+        }
+    }
+    return retval;
+}
+
+void
+TSearchMessages::Combine(const TSearchMessages& other)
+{
+    if (empty()) {
+        *this = other;
+        return;
+    }
+
+    _ASSERT(size() == other.size());
+
+    for (size_t i = 0; i < other.size(); i++) {
+        (*this)[i].Combine(other[i]);
+    }
+
+    RemoveDuplicates();
+}
+
+void
+TSearchMessages::RemoveDuplicates()
+{
+    NON_CONST_ITERATE(TSearchMessages, sm, (*this)) {
+        if (sm->empty()) {
+            continue;
+        }
+        sort(sm->begin(), sm->end(), TQueryMessagesLessComparator());
+        TQueryMessages::iterator new_end = 
+            unique(sm->begin(), sm->end(), TQueryMessagesEqualComparator());
+        sm->erase(new_end, sm->end());
+    }
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -680,6 +778,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.87  2006/01/24 15:21:45  camacho
+ * + implementation of TSearchMessages and TQueryMessages methods
+ *
  * Revision 1.86  2005/12/22 23:05:11  camacho
  * Use TMaskedQueryRegions typedef
  *
