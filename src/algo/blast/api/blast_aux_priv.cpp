@@ -75,6 +75,38 @@ CConstRef<CSeq_loc> CreateWholeSeqLocFromIds(const list< CRef<CSeq_id> > seqids)
     return retval;
 }
 
+void
+Blast_Message2TSearchMessages(const Blast_Message* blmsg,
+                              const BlastQueryInfo* query_info,
+                              TSearchMessages& messages)
+{
+    if ( !blmsg || !query_info ) {
+        return;
+    }
+
+    if (messages.size() != (size_t) query_info->num_queries) {
+        messages.resize(query_info->num_queries);
+    }
+
+    const BlastContextInfo* kCtxInfo = query_info->contexts;
+
+    // First copy the errors...
+    for (int i = query_info->first_context; 
+         i <= query_info->last_context; i++) {
+
+        if ( !kCtxInfo[i].is_valid ) {
+            string msg(blmsg->message);
+            CRef<CSearchMessage> sm(new CSearchMessage(blmsg->severity,
+                                                       kCtxInfo[i].query_index,
+                                                       msg));
+            messages[kCtxInfo[i].query_index].push_back(sm);
+        }
+    }
+
+    // ... then remove duplicate error messages
+    messages.RemoveDuplicates();
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

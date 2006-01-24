@@ -35,6 +35,7 @@
 #define ALGO_BLAST_API___BLAST_AUX_PRIV__HPP
 
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/api/blast_types.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -42,6 +43,8 @@
  */
 
 struct BlastSeqSrc;
+struct Blast_Message;
+struct BlastQueryInfo;
 
 BEGIN_NCBI_SCOPE
 
@@ -65,6 +68,36 @@ IBlastSeqInfoSrc* InitSeqInfoSrc(const BlastSeqSrc* seqsrc);
  */
 CConstRef<objects::CSeq_loc> 
 CreateWholeSeqLocFromIds(const list< CRef<objects::CSeq_id> > seqids);
+
+// Auxiliary comparison functors for TQueryMessages (need to dereference the
+// CRef<>'s contained)
+struct TQueryMessagesLessComparator : 
+    public binary_function< CRef<CSearchMessage>, 
+                            CRef<CSearchMessage>, 
+                            bool>
+{ 
+    result_type operator() (const first_argument_type& a,
+                            const second_argument_type& b) const {
+        return *a < *b;
+    }
+};
+
+struct TQueryMessagesEqualComparator : 
+    public binary_function< CRef<CSearchMessage>, 
+                            CRef<CSearchMessage>, 
+                            bool>
+{ 
+    result_type operator() (const first_argument_type& a,
+                            const second_argument_type& b) const {
+        return *a == *b;
+    }
+};
+
+/// Converts the Blast_Message structure into a TSearchMessages object.
+void
+Blast_Message2TSearchMessages(const Blast_Message* blmsg,
+                              const BlastQueryInfo* query_info,
+                              TSearchMessages& messages);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
