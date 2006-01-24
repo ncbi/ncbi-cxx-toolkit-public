@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Anatoliy Kuznetsov, Mike DiCuccio
+ * Author:  Mike DiCuccio
  *
  * File Description:
  *    Defines to provide correct exporting from CONNECT DLL in Windows.
@@ -84,6 +84,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.7  2006/01/24 21:56:50  lavr
+ * Fix comment
+ *
  * Revision 6.6  2004/03/15 17:16:10  gorelenk
  * Removed #undef NCBI_DLL_BUILD when defined _LIB .
  *
