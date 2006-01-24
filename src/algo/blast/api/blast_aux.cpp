@@ -746,8 +746,6 @@ TSearchMessages::Combine(const TSearchMessages& other)
         return;
     }
 
-    _ASSERT(size() == other.size());
-
     for (size_t i = 0; i < other.size(); i++) {
         (*this)[i].Combine(other[i]);
     }
@@ -778,6 +776,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.88  2006/01/24 19:16:46  camacho
+ * Remove unnecessary assertion
+ *
  * Revision 1.87  2006/01/24 15:21:45  camacho
  * + implementation of TSearchMessages and TQueryMessages methods
  *
