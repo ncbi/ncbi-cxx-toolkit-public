@@ -120,14 +120,19 @@ CSearchDatabase::GetGiListLimitation() const
     return m_GiListLimitation; 
 }
 
-#if 0
 void
-CSearchResults::GetFilteredQueryRegions(TSeqLocInfoVector& flt_query_regions)
+CSearchResults::GetMaskedQueryRegions
+    (TMaskedQueryRegions& flt_query_regions) const
 {
-    throw runtime_error("CSearchResults::GetFilteredQueryRegions "
-                        "unimplemented");
+    flt_query_regions = m_Masks;
 }
-#endif
+
+void
+CSearchResults::SetMaskedQueryRegions
+    (TMaskedQueryRegions& flt_query_regions)
+{
+    m_Masks = flt_query_regions;
+}
 
 TQueryMessages
 CSearchResults::GetErrors(int min_severity) const
