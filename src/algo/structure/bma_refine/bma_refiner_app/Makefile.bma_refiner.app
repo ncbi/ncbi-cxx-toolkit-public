@@ -8,20 +8,16 @@ SRC = bma_refiner
 REQUIRES = objects
 
 LIB =   xbma_refiner \
+        xcd_utils ncbimime taxon1 \
         xstruct_util \
         xstruct_dp \
-        xblast composition_adjustment seqdb xobjread tables \
+        xblast composition_adjustment seqdb blastdb xnetblastcli xnetblast \
+        tables xobjsimple xobjutil \
         cdd \
         scoremat \
         cn3d \
         mmdb \
-        seqset seq seqcode sequtil \
-        pub medline biblio general taxon1 blastdb xnetblast \
-        xser xutil xconnect xncbi
-
-
-#        tables xobjsimple xobjutil \
-#        $(OBJMGR_LIBS)
+        $(OBJMGR_LIBS)
 
 CXXFLAGS   = $(FAST_CXXFLAGS)
 
