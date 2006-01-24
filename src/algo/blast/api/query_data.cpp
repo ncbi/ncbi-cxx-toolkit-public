@@ -70,6 +70,56 @@ IQueryFactory::MakeRemoteQueryData()
     return m_RemoteQueryData;
 }
 
+//
+// ILocalQueryData
+//
+
+void
+ILocalQueryData::x_ValidateIndex(int index)
+{
+    if (index < 0 || index > GetNumQueries()) {
+        throw std::out_of_range("Index " + NStr::IntToString(index) +
+                                " out of range (" +
+                                NStr::IntToString(GetNumQueries()) +
+                                " max)");
+    }
+}
+
+bool
+ILocalQueryData::IsValidQuery(int index)
+{
+    x_ValidateIndex(index);
+
+    const BlastQueryInfo* query_info = GetQueryInfo();
+    _ASSERT(query_info);
+
+    bool all_contexts_valid = true;
+    for (int i = query_info->first_context;
+         i <= query_info->last_context; 
+         i++) {
+        if (query_info->contexts[i].query_index == index) {
+            if ( !query_info->contexts[i].is_valid ) {
+                all_contexts_valid = false;
+                break;
+            }
+        }
+    }
+    return all_contexts_valid;
+}
+
+void
+ILocalQueryData::GetQueryMessages(int index, TQueryMessages& qmsgs)
+{
+    x_ValidateIndex(index);
+    qmsgs = m_Messages[index];
+}
+
+void
+ILocalQueryData::GetMessages(TSearchMessages& messages) const
+{
+    messages = m_Messages;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
