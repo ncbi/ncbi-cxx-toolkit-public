@@ -115,11 +115,15 @@ public:
     
     /// Return the filtered (masked) regions for a sequence
     /// @param index index of the sequence in the sequence container [in]
-    virtual CConstRef<objects::CSeq_loc> GetMask(int index) const = 0;
+    virtual CConstRef<objects::CSeq_loc> GetMask(int index) = 0;
     
     /// Return the CSeq_loc associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int index) const = 0;
+
+    /// Return the sequence identifier associated with a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual const objects::CSeq_id* GetSeqId(int index) const = 0;
     
     /// Return the sequence data for a sequence
     /// @param index index of the sequence in the sequence container [in]
@@ -231,7 +235,7 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 /// blast::FindGeneticCode()
 
 void
-SetupQueries_OMF(const IBlastQuerySource& queries,
+SetupQueries_OMF(IBlastQuerySource& queries,
                  BlastQueryInfo* qinfo, 
                  BLAST_SequenceBlk** seqblk,
                  EBlastProgramType prog, 
@@ -246,7 +250,7 @@ SetupQueries_OMF(const IBlastQuerySource& queries,
  * @param max_subjlen Maximal length of the subject sequences [out]
  */
 void
-SetupSubjects_OMF(const IBlastQuerySource& subjects,
+SetupSubjects_OMF(IBlastQuerySource& subjects,
                   EBlastProgramType program,
                   vector<BLAST_SequenceBlk*>* seqblk_vec,
                   unsigned int* max_subjlen);
@@ -350,7 +354,7 @@ EBlastEncoding
 GetSubjectEncoding(EBlastProgramType program);
 
 BLAST_SequenceBlk*
-SafeSetupQueries(const IBlastQuerySource& queries,
+SafeSetupQueries(IBlastQuerySource& queries,
                  const CBlastOptions* options,
                  BlastQueryInfo* query_info,
                  TSearchMessages& messages);
@@ -368,6 +372,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.58  2006/01/24 15:24:30  camacho
+* 1. + IBlastQuerySource::GetSeqId
+* 2. IBlastQuerySource::GetMask is not a const method anymore
+* 3. Remove const type qualifier for IBlastQuerySource argument to
+*    SetupQueries_OMF and SetupSubjects_OMF
+*
 * Revision 1.57  2006/01/12 20:39:22  camacho
 * Removed const from BlastQueryInfo argument to functions (to allow setting of context-validity flag)
 *
