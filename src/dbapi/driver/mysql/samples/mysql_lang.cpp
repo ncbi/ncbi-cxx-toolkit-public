@@ -30,147 +30,209 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbiapp.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 
-#include <memory>
+#include <dbapi/driver/dbapi_conn_factory.hpp>
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#endif
+
 
 USING_NCBI_SCOPE;
 
-int main(int argc, char **argv)
+
+class CDemoeApp : public CNcbiApplication
 {
-  if(argc != 5)
-  {
-    cerr << "Usage: " << argv[0] << " host database user_name passwd" << endl;
-    return 1;
-  }
+public:
+    virtual ~CDemoeApp(void) {}
 
-  try
-  {
-    CMySQLContext my_context;
-    auto_ptr<CDB_Connection> con(my_context.Connect(argv[1], argv[3], argv[4], 0));
+    virtual void Init(void);
+    virtual int Run(void);
+};
 
-    // changing database
-    {
-      auto_ptr<CDB_LangCmd>
-        lcmd(con->LangCmd(string("use ") + argv[2]));
-      lcmd->Send();
-      cout << "Database changed" << endl;
-    }
 
-    // creating table
-    {
-      auto_ptr<CDB_LangCmd>
-        lcmd(con->LangCmd(
-                          "create temporary table tmp_t1("
-                          "a int,"
-                          "b datetime,"
-                          "c varchar(100),"
-                          "d text,"
-                          "e double,"
-                          "bl BLOB)"
-                         ));
-      lcmd->Send();
-      cout << "Table created" << endl;
-    }
+void
+CDemoeApp::Init()
+{
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
-    int nBlobSize = 0xffff;
-    auto_ptr<char> buff( new char[nBlobSize]);
-    
-    // inserting data
-    {
-      char* p = buff.get();
-      for( int i = 0; i < nBlobSize; i++)
-        *(p++) = i;
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "MySQL Sample Application");
 
-      auto_ptr<CDB_LangCmd>
-        lcmd(con->LangCmd(
-                          "insert into tmp_t1 values"
-                          "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415, '"
-                         ));
-      lcmd->More( reinterpret_cast<CMySQL_LangCmd*>(lcmd.get())->EscapeString( buff.get(), nBlobSize));
-      lcmd->More( "')");
-      lcmd->Send();
-      cout << "Data inserted " << lcmd->RowCount() << " row(s) affected" << endl;
-    }
+    // Describe the expected command-line arguments
+    arg_desc->AddKey("S", "server",
+                            "Name of the SQL server to connect to",
+                            CArgDescriptions::eString);
 
-    // selecting data
-    {
-      auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
-      lcmd->Send();
-      while (lcmd->HasMoreResults())
-      {
-        auto_ptr<CDB_Result> r(lcmd->Result());
-        while (r->Fetch())
-        {
-          CDB_Int a;
-          CDB_DateTime b;
-          CDB_VarChar c;
-          CDB_VarChar d;
-          CDB_Double e;
-          CDB_Image blob;
+    arg_desc->AddDefaultKey("U", "username",
+                            "User name",
+                            CArgDescriptions::eString, 
+                            "anyone");
 
-          r->GetItem(&a);
-          r->GetItem(&b);
-          r->GetItem(&c);
-          r->GetItem(&d);
-          r->GetItem(&e);
-          r->GetItem(&blob);
+    arg_desc->AddDefaultKey("P", "password",
+                            "Password",
+                            CArgDescriptions::eString, 
+                            "allowed");
 
-	  auto_ptr<char> buff2( new char[blob.Size()]);
-	  blob.Read( buff2.get(), blob.Size());
-          int correct = memcmp( buff2.get(), buff.get(), nBlobSize);
-          
-          cout
-            << "a=" << a.Value() << endl
-            << "b=" << b.Value().AsString() << endl
-            << "c=" << c.Value() << endl
-            << "d=" << d.Value() << endl
-            << "e=" << e.Value() << endl
-            << "blob size is " << nBlobSize << " blob data is " << (!correct ? "correct" : "not correct") << endl;
-        }
-      }
-    }
+    arg_desc->AddKey("D", "database",
+                            "Name of a database",
+                            CArgDescriptions::eString);
 
-    // selecting data as strings
-    {
-      auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
-      lcmd->Send();
-      while (lcmd->HasMoreResults())
-      {
-        auto_ptr<CDB_Result> r(lcmd->Result());
-        for(unsigned i = 0; i < r->NofItems(); ++i)
-          cout << "[" << r->ItemName(i) << "]";
-        cout << endl;
-
-        while (r->Fetch())
-        {
-          for(unsigned i = 0; i < r->NofItems(); ++i)
-          {
-            CDB_VarChar field;
-            r->GetItem(&field);
-            if(! field.IsNULL())
-              cout << field.Value() << endl;
-            else
-              cout << "NULL\n";
-
-          }
-        }
-      }
-    }
-  }
-  catch (CDB_Exception& e)
-  {
-    CDB_UserHandler_Stream myExHandler(&cerr);
-    myExHandler.HandleIt(&e);
-    return 1;
-  }
-  return 0;
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
 }
+
+
+int
+CDemoeApp::Run(void)
+{
+    const CArgs& args = GetArgs();
+
+    // Get command-line arguments ...
+    string ServerName = args["S"].AsString();
+    string UserName   = args["U"].AsString();
+    string Password   = args["P"].AsString();
+    string Database   = args["D"].AsString();
+
+    try {
+        DBLB_INSTALL_DEFAULT();
+                
+        CMySQLContext my_context;
+        auto_ptr<CDB_Connection> con(my_context.Connect(ServerName, UserName, Password, 0));
+
+        // changing database
+        {
+            auto_ptr<CDB_LangCmd>
+                lcmd(con->LangCmd(string("use ") + Database));
+            lcmd->Send();
+            cout << "Database changed" << endl;
+        }
+
+        // creating table
+        {
+            auto_ptr<CDB_LangCmd>
+                lcmd(con->LangCmd("create temporary table tmp_t1("
+                                  "a int,"
+                                  "b datetime,"
+                                  "c varchar(100),"
+                                  "d text,"
+                                  "e double,"
+                                  "bl BLOB)"
+                                  ));
+            lcmd->Send();
+            cout << "Table created" << endl;
+        }
+
+        int nBlobSize = 0xffff;
+        auto_ptr<char> buff( new char[nBlobSize]);
+    
+        // inserting data
+        {
+            char* p = buff.get();
+            for( int i = 0; i < nBlobSize; i++)
+                *(p++) = i;
+            
+            auto_ptr<CDB_LangCmd>
+                lcmd(con->LangCmd("insert into tmp_t1 values"
+                                  "(1, '2002-11-25 12:45:59', 'Hello, world', 'SOME TEXT', 3.1415, '"
+                                  ));
+            lcmd->More( reinterpret_cast<CMySQL_LangCmd*>(lcmd.get())->EscapeString( buff.get(), nBlobSize));
+            lcmd->More( "')");
+            lcmd->Send();
+            cout << "Data inserted " << lcmd->RowCount() << " row(s) affected" << endl;
+        }
+
+        // selecting data
+        {
+            auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
+            lcmd->Send();
+            while (lcmd->HasMoreResults()) {
+                auto_ptr<CDB_Result> r(lcmd->Result());
+                while (r->Fetch()) {
+                    CDB_Int a;
+                    CDB_DateTime b;
+                    CDB_VarChar c;
+                    CDB_VarChar d;
+                    CDB_Double e;
+                    CDB_Image blob;
+
+                    r->GetItem(&a);
+                    r->GetItem(&b);
+                    r->GetItem(&c);
+                    r->GetItem(&d);
+                    r->GetItem(&e);
+                    r->GetItem(&blob);
+
+                    auto_ptr<char> buff2( new char[blob.Size()]);
+                    blob.Read( buff2.get(), blob.Size());
+                    int correct = memcmp( buff2.get(), buff.get(), nBlobSize);
+                    
+                    cout
+                        << "a=" << a.Value() << endl
+                        << "b=" << b.Value().AsString() << endl
+                        << "c=" << c.Value() << endl
+                        << "d=" << d.Value() << endl
+                        << "e=" << e.Value() << endl
+                        << "blob size is " << nBlobSize << " blob data is " 
+                        << (!correct ? "correct" : "not correct") << endl;
+                }
+            }
+        }
+
+        // selecting data as strings
+        {
+            auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from tmp_t1"));
+            lcmd->Send();
+            while (lcmd->HasMoreResults()) {
+                auto_ptr<CDB_Result> r(lcmd->Result());
+                for(unsigned i = 0; i < r->NofItems(); ++i)
+                    cout << "[" << r->ItemName(i) << "]";
+                cout << endl;
+
+                while (r->Fetch()) {
+                    for(unsigned i = 0; i < r->NofItems(); ++i) {
+                        CDB_VarChar field;
+                        r->GetItem(&field);
+                        if(! field.IsNULL())
+                            cout << field.Value() << endl;
+                                else
+                                    cout << "NULL\n";
+
+                    }
+                }
+            }
+        }
+    } catch (CDB_Exception& e) {
+        CDB_UserHandler_Stream myExHandler(&cerr);
+        
+        myExHandler.HandleIt(&e);
+        return 1;
+    } catch (const CException& e) {
+        return 1;
+    }
+
+    return 0;
+}
+
+int main(int argc, const char* argv[])
+{
+    return CDemoeApp().AppMain(argc, argv);
+}
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/24 12:53:25  ssikorsk
+ * Revamp demo applications to use CNcbiApplication;
+ * Use load balancer and configuration in an ini-file to connect to a
+ * secondary server in case of problems with a primary server;
+ *
  * Revision 1.8  2004/05/17 21:15:48  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

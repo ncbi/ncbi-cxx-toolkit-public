@@ -30,25 +30,47 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbiapp.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/ctlib/interfaces.hpp>
+
+#include <dbapi/driver/dbapi_conn_factory.hpp>
+#ifdef HAVE_LIBCONNEXT
+#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
+#endif
+
 
 USING_NCBI_SCOPE;
 
 
-int main()
+class CDemoeApp : public CNcbiApplication
+{
+public:
+    virtual ~CDemoeApp(void) {}
+
+    virtual int Run(void);
+};
+
+int
+CDemoeApp::Run(void)
 {
     try {
+        DBLB_INSTALL_DEFAULT();
+                
         CTLibContext my_context;
 
-        CDB_Connection* con = my_context.Connect("SCHUMANN", "anyone", "allowed", 0);
+        auto_ptr<CDB_Connection> con(my_context.Connect("SCHUMANN", 
+                                                        "anyone", 
+                                                        "allowed", 
+                                                        0));
 
-        CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
+        auto_ptr<CDB_RPCCmd> rcmd(con->RPC("sp_who", 0));
         rcmd->Send();
 
         while (rcmd->HasMoreResults()) {
-            CDB_Result* r = rcmd->Result();
-            if (!r)
+            auto_ptr<CDB_Result> r(rcmd->Result());
+            if (!r.get())
                 continue;
             
             if (r->ResultType() == eDB_RowResult) {
@@ -73,25 +95,34 @@ int main()
                     }
                     cout << endl;
                 }
-                delete r;
             }
         }
-        delete rcmd;
-        delete con;
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
         
         myExHandler.HandleIt(&e);
         return 1;
+    } catch (const CException& e) {
+        return 1;
     }
+
     return 0;
 }
 
+int main(int argc, const char* argv[])
+{
+    return CDemoeApp().AppMain(argc, argv);
+}
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/24 12:53:24  ssikorsk
+ * Revamp demo applications to use CNcbiApplication;
+ * Use load balancer and configuration in an ini-file to connect to a
+ * secondary server in case of problems with a primary server;
+ *
  * Revision 1.8  2005/08/16 11:13:27  ssikorsk
  * Use SCHUMANN instead of BARTOK as a Sybase server.
  *

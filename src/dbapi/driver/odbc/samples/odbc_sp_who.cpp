@@ -41,14 +41,17 @@ int main()
     try {
         CODBCContext my_context;
 
-        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
+        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV1", 
+                                                        "anyone", 
+                                                        "allowed", 
+                                                        0));
 
-        CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
+        auto_ptr<CDB_RPCCmd> rcmd(con->RPC("sp_who", 0));
         rcmd->Send();
         
         while (rcmd->HasMoreResults()) {
-            CDB_Result* r = rcmd->Result();
-            if (!r)
+            auto_ptr<CDB_Result> r(rcmd->Result());
+            if (!r.get())
                 continue;
             
             if (r->ResultType() == eDB_RowResult) {
@@ -72,11 +75,8 @@ int main()
                     }
                     cout << endl;
                 }
-                delete r;
             }
         }
-        delete rcmd;
-        delete con;
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
 
@@ -91,6 +91,11 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/24 12:53:25  ssikorsk
+ * Revamp demo applications to use CNcbiApplication;
+ * Use load balancer and configuration in an ini-file to connect to a
+ * secondary server in case of problems with a primary server;
+ *
  * Revision 1.4  2004/05/17 21:16:12  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

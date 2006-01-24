@@ -41,16 +41,20 @@ int main()
     try {
         CTDSContext my_context;
 
-        CDB_Connection* con = my_context.Connect("MS_DEV2", "anyone", "allowed", 0);
+        auto_ptr<CDB_Connection> con(my_context.Connect("MS_DEV2", 
+                                                        "anyone", 
+                                                        "allowed", 
+                                                        0));
 
-        CDB_LangCmd* lcmd =
-            con->LangCmd("select name, crdate from sysdatabases");
+        auto_ptr<CDB_LangCmd> lcmd
+            (con->LangCmd("select name, crdate from sysdatabases"));
         lcmd->Send();
 
         while (lcmd->HasMoreResults()) {
-            CDB_Result* r = lcmd->Result();
-            if (!r)
+            auto_ptr<CDB_Result> r(lcmd->Result());
+            if (!r.get())
                 continue;
+
             cout
                 << r->ItemName(0) << " \t\t\t"
                 << r->ItemName(1) << endl
@@ -68,10 +72,7 @@ int main()
                     << dbname.Value() << ' '
                     << crdate.Value().AsString("M/D/Y h:m") << endl;
             }
-            delete r;
         }
-        delete lcmd;
-        delete con;
     } catch (CDB_Exception& e) {
         CDB_UserHandler_Stream myExHandler(&cerr);
 
@@ -86,6 +87,11 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/24 12:53:25  ssikorsk
+ * Revamp demo applications to use CNcbiApplication;
+ * Use load balancer and configuration in an ini-file to connect to a
+ * secondary server in case of problems with a primary server;
+ *
  * Revision 1.6  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

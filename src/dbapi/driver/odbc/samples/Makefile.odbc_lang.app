@@ -5,9 +5,10 @@ SRC = odbc_lang
 
 REQUIRES = ODBC
 
-LIB  = ncbi_xdbapi_odbc dbapi_driver xncbi
+LIB  = ncbi_xdbapi_odbc dbapi_driver $(XCONNEXT) xconnect xncbi
 LIBS = $(ODBC_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ODBC_INCLUDE) $(ORIG_CPPFLAGS)
 
+CHECK_COPY = odbc_lang.ini
 CHECK_CMD =

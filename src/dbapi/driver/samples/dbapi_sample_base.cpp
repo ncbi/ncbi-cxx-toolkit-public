@@ -329,9 +329,7 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
         //  Change default database:
         auto_ptr<CDB_LangCmd> set_cmd(conn->LangCmd("use DBAPI_Sample"));
         set_cmd->Send();
-        while ( set_cmd->HasMoreResults() ) {
-            auto_ptr<CDB_Result> r(set_cmd->Result());
-        }
+        set_cmd->DumpResults();
     }
 
     return conn.release();
@@ -347,9 +345,7 @@ CDbapiSampleApp::DeleteTable(const string& table_name)
         sql = "DROP TABLE " + table_name;
         auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd(sql));
         lcmd->Send();
-        while ( lcmd->HasMoreResults() ) {
-            auto_ptr<CDB_Result> r(lcmd->Result());
-        }
+        lcmd->DumpResults();
     } catch ( const CDB_Exception& ) {
     }
 }
@@ -507,10 +503,7 @@ CDbapiSampleApp::CreateTable (const string& table_name)
 
     auto_ptr<CDB_LangCmd> lcmd(GetConnection().LangCmd (sql));
     lcmd->Send();
-
-    while ( lcmd->HasMoreResults() ) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
-    }
+    lcmd->DumpResults();
 
     // Create a new table.
     sql  = " create table " + table_name + "( \n";
@@ -524,10 +517,7 @@ CDbapiSampleApp::CreateTable (const string& table_name)
 
     lcmd.reset(GetConnection().LangCmd ( sql ));
     lcmd->Send();
-
-    while ( lcmd->HasMoreResults() ) {
-        auto_ptr<CDB_Result> r(lcmd->Result());
-    }
+    lcmd->DumpResults();
 }
 
 
@@ -549,6 +539,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/01/24 12:53:25  ssikorsk
+ * Revamp demo applications to use CNcbiApplication;
+ * Use load balancer and configuration in an ini-file to connect to a
+ * secondary server in case of problems with a primary server;
+ *
  * Revision 1.17  2006/01/23 13:45:42  ssikorsk
  * Added default argument of type IConnValidator* to
  * CDbapiSampleApp::CreateConnection;
