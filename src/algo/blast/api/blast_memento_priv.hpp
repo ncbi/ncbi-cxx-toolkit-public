@@ -89,6 +89,7 @@ private:
     // Recipients of data 
     friend class CSetupFactory; 
     friend class CPrelimSearchRunner;
+    friend class CBlastPrelimSearch;
     friend class CBlastTracebackSearch;
 
     // The data that is being shared (not that this object doesn't own these)
