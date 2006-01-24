@@ -56,6 +56,8 @@ public:
     // destructor
     ~CHG_Gene(void);
 
+		typedef list<string> TAliases;
+		typedef TAliases::const_iterator TAliases_iter; 
     // alias for old code support
     typedef TGene_links TLinks;
     bool IsSetLinks(void) const { return IsSetGene_links(); }
@@ -63,12 +65,13 @@ public:
     void ResetLinks(void) { ResetGene_links(); }
     const TLinks& GetLinks(void) const { return GetGene_links(); }
     TLinks& SetLinks(void) { return SetGene_links(); }
+		CHG_Gene::TSymbol GetLabel(void) const;
 
 private:
     // Prohibit copy constructor and assignment operator
     CHG_Gene(const CHG_Gene& value);
     CHG_Gene& operator=(const CHG_Gene& value);
-
+		CHG_Gene::TSymbol x_GetGeneidLabel(void) const;
 };
 
 
@@ -94,6 +97,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/01/24 22:50:27  hassant
+* Added method GetLabel that implements the logic for getting gene label
+*
 * Revision 1.1  2005/09/12 19:13:09  jang
 * moved from Gene.hpp
 *
