@@ -882,7 +882,13 @@ CNetCacheSock_RW::~CNetCacheSock_RW()
 { 
     if (m_Sock) { 
         if (m_Parent) {
-            m_Parent->ReturnSocket(m_Sock);
+            try {
+                m_Parent->ReturnSocket(m_Sock);
+            } 
+            catch(exception& ex)
+            {
+                ERR_POST("Exception when returning socket " << ex.what());
+            }
             m_Sock = 0;
         } else {
             m_Sock->Close();
@@ -1094,6 +1100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/01/25 17:49:18  kuznets
+ * catch possible exception in ~CNetCacheSock_RW
+ *
  * Revision 1.60  2006/01/17 17:13:03  kuznets
  * Removed debugging code
  *
