@@ -85,6 +85,20 @@ CNetICacheClient::~CNetICacheClient()
 
 void CNetICacheClient::ReturnSocket(CSocket* sock)
 {
+    // check if socket has unattended input
+
+    do {
+        STimeout to = {0, 0};
+        EIO_Status io_st = sock->Wait(eIO_Read, &to);
+        if (io_st == eIO_Success) {
+            ERR_POST("ReturnSocket detected unread input.");
+            delete sock;
+            break;
+        } else {
+            break;
+        }
+    } while (1);
+
 	{{
     CFastMutexGuard guard(m_Lock);
     if (m_Sock == 0) {
@@ -549,17 +563,19 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
                                      const string&     subkey,
                                      SBlobAccessDescr*  blob_descr)
 {
+    size_t blob_size;
     {{
         CFastMutexGuard guard(m_Lock);
         blob_descr->reader.reset(GetReadStream_NoLock(key, version, subkey));
+        blob_size = m_BlobSize;
     }}
     if (blob_descr->reader.get()) {
-        blob_descr->blob_size = m_BlobSize;
+        blob_descr->blob_size = blob_size;
 		blob_descr->blob_found = true;
 
-        if (blob_descr->buf && blob_descr->buf_size > m_BlobSize) {
+        if (blob_descr->buf && blob_descr->buf_size > blob_size) {
             // read to buffer
-            size_t to_read = m_BlobSize;
+            size_t to_read = blob_size;
             char* buf_ptr = blob_descr->buf;
             while (to_read) {
                 size_t nn_read;
@@ -686,7 +702,6 @@ bool CNetICacheClient::HasBlobs(const string&  key,
     CFastMutexGuard guard(m_Lock);
 
     bool reconnected = CheckConnect();
-//    CSockGuard sg(*m_Sock);
 //    string& cmd = m_Tmp;
     string cmd;
     MakeCommandPacket(&cmd, "HASB ", reconnected);
@@ -913,6 +928,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/01/25 17:27:22  kuznets
+ * Fixed race condition, close socket if previous operation failed
+ *
  * Revision 1.17  2006/01/18 19:35:51  kuznets
  * Improved error checking
  *
