@@ -40,8 +40,10 @@ BEGIN_NCBI_SCOPE
 
 
 /// Tag delimiters
-const char* kTagStart = "<@";   ///< Tag start.
-const char* kTagEnd   = "@>";   ///< Tag end.
+const char* kTagStart = "<@";   ///< Tag start
+const char* kTagEnd   = "@>";   ///< Tag end
+const SIZE_TYPE kTagStartLen = 2;
+const SIZE_TYPE kTagEndLen   = 2;
 
 
 #define INIT_STREAM_WRITE  \
@@ -368,9 +370,6 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
         return PrintString(out, mode, text);
     }
 
-    SIZE_TYPE tag_start_size = strlen(kTagStart);
-    SIZE_TYPE tag_end_size   = strlen(kTagEnd);
-
     // Check flag to enabe output buffering
     bool enable_buffering = !(m_Flags & fDisableBuffering);
     CNcbiOstrstream *pstr = 0;
@@ -385,7 +384,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     // Map all tags
     SIZE_TYPE last = tagStart;
     do {
-        SIZE_TYPE tagNameStart = tagStart + tag_start_size;
+        SIZE_TYPE tagNameStart = tagStart + kTagStartLen;
         SIZE_TYPE tagNameEnd = s_Find(text, kTagEnd, tagNameStart);
         if ( tagNameEnd == NPOS ) {
             // tag not closed
@@ -414,7 +413,7 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
                 }
                 break;
             }
-            last = tagNameEnd + tag_end_size;
+            last = tagNameEnd + kTagStartLen;
             tagStart = s_Find(text, kTagStart, last);
         }
     } while ( tagStart != NPOS );
@@ -2320,6 +2319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.125  2006/01/25 17:48:16  ivanov
+ * CHTMLText::PrintBegin() -- use constant for length of tag delimiter
+ *
  * Revision 1.124  2005/10/25 18:19:11  ivanov
  * CHTML_table::Cell() -- added check on -1 values for row and col position
  *
