@@ -79,6 +79,19 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
+CConstRef<CValidError> CValidator::Validate
+(const CSeq_entry_Handle& seh,
+ Uint4 options)
+{
+    CRef<CValidError> errors(new CValidError(&*seh.GetCompleteSeq_entry()));
+    CValidError_imp imp(*m_ObjMgr, &(*errors), options);
+    imp.SetProgressCallback(m_PrgCallback, m_UserData);
+    if ( !imp.Validate(seh, 0) ) {
+        errors.Reset();
+    }
+    return errors;
+}
+
 
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_submit& ss,
@@ -1506,6 +1519,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2006/01/25 19:16:05  rsmith
+* Validate(Seq-entry-handle)
+*
 * Revision 1.63  2006/01/24 16:21:03  rsmith
 * Validate Seq-annot handles not bare Seq-annots.
 * Get Seq entry handle one time and use it more.

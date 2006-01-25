@@ -45,6 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_entry;
+class CSeq_entry_Handle;
 class CSeq_submit;
 class CSeq_annot;
 class CSeq_annot_Handle;
@@ -260,6 +261,8 @@ public:
     // top-level Seq-entry in that scope.
     CConstRef<CValidError> Validate(const CSeq_entry& se, CScope* scope = 0,
         Uint4 options = 0);
+    CConstRef<CValidError> Validate(const CSeq_entry_Handle& se,
+        Uint4 options = 0);
     // Validate Seq-submit.
     // Validates each of the Seq-entry contained in the submission.
     CConstRef<CValidError> Validate(const CSeq_submit& ss, CScope* scope = 0,
@@ -390,6 +393,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2006/01/25 19:16:00  rsmith
+* Validate(Seq-entry-handle)
+*
 * Revision 1.22  2006/01/24 16:19:42  rsmith
 * validate Seq-annot-handles not bare Seq-annots.
 *

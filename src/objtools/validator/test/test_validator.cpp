@@ -260,7 +260,9 @@ void CTest_validatorApplication::ReadClassMember
                         }
                     }
                 } else {
-                    CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
+                    // CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
+                    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*se);
+                    CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
                     if ( eval ) {
                         m_Reported += PrintBatchErrors(eval, GetArgs());
                     }
@@ -529,6 +531,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/01/25 19:16:06  rsmith
+ * Validate(Seq-entry-handle)
+ *
  * Revision 1.31  2006/01/24 16:21:03  rsmith
  * Validate Seq-annot handles not bare Seq-annots.
  * Get Seq entry handle one time and use it more.

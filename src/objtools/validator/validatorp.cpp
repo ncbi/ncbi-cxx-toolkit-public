@@ -195,7 +195,7 @@ void CValidError_imp::PostErr
     const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
     if (desc != 0) {
         LOG_POST("Seqdesc validation error must have a context");
-        //PostErr (sv, et, msg, *desc);
+        // PostErr (sv, et, msg, *desc);
         return;
     }
     const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
@@ -236,18 +236,18 @@ void CValidError_imp::PostErr
 }
 
 
-//void CValidError_imp::PostErr
-//(EDiagSev       sv,
-// EErrType       et,
-// const string&  msg,
-// TDesc          ds)
-//{
-//    // Append Descriptor label
-//    string desc = "DESCRIPTOR: ";
-//    ds.GetLabel (&desc, CSeqdesc::eBoth);
-//
-//    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, *m_Scope);
-//}
+void CValidError_imp::PostErr
+(EDiagSev       sv,
+ EErrType       et,
+ const string&  msg,
+ TDesc          ds)
+{
+    // Append Descriptor label
+    string desc = "DESCRIPTOR: ";
+    ds.GetLabel (&desc, CSeqdesc::eBoth);
+    desc += ", NO Descriptor Context";
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, *m_Scope);
+}
 
 
 void CValidError_imp::PostErr
@@ -509,7 +509,25 @@ bool CValidError_imp::Validate
  const CCit_sub* cs,
  CScope* scope)
 {
-    _ASSERT(scope != NULL);
+    CSeq_entry_Handle seh;
+    try {
+        seh = scope->GetSeq_entryHandle(se);
+    } catch (const CException& e) { ; }
+    if (! seh) {
+        seh = scope->AddTopLevelSeqEntry(se);
+        if (!seh) {
+            return false;
+        }
+    }
+    return Validate(seh, cs);
+}
+
+
+bool CValidError_imp::Validate
+(const CSeq_entry_Handle& seh,
+ const CCit_sub* cs)
+{
+    _ASSERT(seh);
 
     if ( m_PrgCallback ) {
         m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Initializing;
@@ -519,20 +537,20 @@ bool CValidError_imp::Validate
     }
 
     // Check that CSeq_entry has data
-    if (se.Which() == CSeq_entry::e_not_set) {
+    if (seh.Which() == CSeq_entry::e_not_set) {
         ERR_POST(Warning << "Seq_entry not set");
         return false;
     }
 
+    Setup(seh);
+ 
     // Get first CBioseq object pointer for PostErr below.
-    CTypeConstIterator<CBioseq> seq(ConstBegin(se));
+    CTypeConstIterator<CBioseq> seq(ConstBegin(*m_TSE));
     if (!seq) {
         ERR_POST("No Bioseq anywhere on this Seq-entry");
         return false;
     }
 
-    Setup(se, scope);
- 
     // If m_NonASCII is true, then this flag was set by the caller
     // of validate to indicate that a non ascii character had been
     // read from a file being used to create a CSeq_entry, that the
@@ -581,7 +599,7 @@ bool CValidError_imp::Validate
          feat_validator.GetNumGeneXrefs() > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
             "There are " + NStr::IntToString(feat_validator.GetNumGeneXrefs()) +
-            " gene xrefs and no gene features in this record.", se);
+            " gene xrefs and no gene features in this record.", *m_TSE);
     }
 
     // Descriptors:
@@ -649,7 +667,7 @@ bool CValidError_imp::Validate
             NStr::IntToString(bioseq_validator.GetTpaWithHistory()) +
             " TPAs with history and " + 
             NStr::IntToString(bioseq_validator.GetTpaWithoutHistory()) +
-            " without history in this record.", se);
+            " without history in this record.", *m_TSE);
     }
 
     // Bioseq sets:
@@ -661,7 +679,7 @@ bool CValidError_imp::Validate
         m_PrgCallback(&m_PrgInfo);
     }
     CValidError_bioseqset bioseqset_validator(*this);
-    for (CTypeConstIterator<CBioseq_set> si(se); si; ++si) {
+    for (CTypeConstIterator<CBioseq_set> si(*m_TSE); si; ++si) {
         try {
             bioseqset_validator.ValidateBioseqSet(*si);
             if ( m_PrgCallback ) {
@@ -739,7 +757,7 @@ bool CValidError_imp::Validate
         PostErr(eDiag_Critical, eErr_SEQ_PKG_GraphPackagingProblem,
             string("There ") + ((misplaced > 1) ? "are" : "is") + num + 
             " mispackaged graph" + ((misplaced > 1) ? "s" : "") + " in this record.",
-            se);
+            *m_TSE);
     }
 
     // Annotation:
@@ -797,8 +815,8 @@ bool CValidError_imp::Validate
         }
     }
 
-    ReportMissingPubs(se, cs);
-    ReportMissingBiosource(se);
+    ReportMissingPubs(*m_TSE, cs);
+    ReportMissingBiosource(*m_TSE);
     ReportProtWithoutFullRef();
     ReportBioseqsWithNoMolinfo();
     return true;
@@ -2187,34 +2205,23 @@ bool CValidError_imp::IsMixedStrands(const CSeq_loc& loc)
 }
 
 
-void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope) 
+void CValidError_imp::Setup(const CSeq_entry_Handle& seh) 
 {
     // "Save" the Seq-entry
-    m_TSE = &se;
+    m_TSEH = seh;
 
-    if ( scope ) {
-        m_Scope.Reset(scope);
-    } else {
-        SetScope(se);
-    }
+    m_Scope.Reset(&m_TSEH.GetScope());
     
-    try {
-        m_TSEH = m_Scope->GetSeq_entryHandle(se);
-    } catch (const CException& e) { ; }
-    if (! m_TSEH) {
-        m_TSEH = m_Scope->AddTopLevelSeqEntry(se);
-        if (! m_TSEH) {
-            _ASSERT(false);
-        }
-    }
+    m_TSE = m_TSEH.GetCompleteSeq_entry();
+    
     // If no Pubs/BioSource in CSeq_entry, post only one error
-    CTypeConstIterator<CPub> pub(ConstBegin(se));
+    CTypeConstIterator<CPub> pub(ConstBegin(*m_TSE));
     m_NoPubs = !pub;
-    CTypeConstIterator<CBioSource> src(ConstBegin(se));
+    CTypeConstIterator<CBioSource> src(ConstBegin(*m_TSE));
     m_NoBioSource = !src;
     
     // Look for genomic product set
-    for (CTypeConstIterator <CBioseq_set> si (se); si; ++si) {
+    for (CTypeConstIterator <CBioseq_set> si (*m_TSE); si; ++si) {
         if (si->IsSetClass ()) {
             if (si->GetClass () == CBioseq_set::eClass_gen_prod_set) {
                 m_IsGPS = true;
@@ -2223,7 +2230,7 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
     }
 
     // Examine all Seq-ids on Bioseqs
-    for (CTypeConstIterator <CBioseq> bi (se); bi; ++bi) {
+    for (CTypeConstIterator <CBioseq> bi (*m_TSE); bi; ++bi) {
         ITERATE (CBioseq::TId, id, bi->GetId()) {
             CSeq_id::E_Choice typ = (**id).Which();
             switch (typ) {
@@ -2310,35 +2317,35 @@ void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope)
     
     if ( m_PrgCallback ) {
         m_NumAlign = 0;
-        for (CTypeConstIterator<CSeq_align> i(se); i; ++i) {
+        for (CTypeConstIterator<CSeq_align> i(*m_TSE); i; ++i) {
             m_NumAlign++;
         }
         m_NumAnnot = 0;
-        for (CTypeConstIterator<CSeq_annot> i(se); i; ++i) {
+        for (CTypeConstIterator<CSeq_annot> i(*m_TSE); i; ++i) {
             m_NumAnnot++;
         }
         m_NumBioseq = 0;
-        for (CTypeConstIterator<CBioseq> i(se); i; ++i) {
+        for (CTypeConstIterator<CBioseq> i(*m_TSE); i; ++i) {
             m_NumBioseq++;
         }
         m_NumBioseq_set = 0;
-        for (CTypeConstIterator<CBioseq_set> i(se); i; ++i) {
+        for (CTypeConstIterator<CBioseq_set> i(*m_TSE); i; ++i) {
             m_NumBioseq_set++;
         }
         m_NumDesc = 0;
-        for (CTypeConstIterator<CSeqdesc> i(se); i; ++i) {
+        for (CTypeConstIterator<CSeqdesc> i(*m_TSE); i; ++i) {
             m_NumDesc++;
         }
         m_NumDescr = 0;
-        for (CTypeConstIterator<CSeq_descr> i(se); i; ++i) {
+        for (CTypeConstIterator<CSeq_descr> i(*m_TSE); i; ++i) {
             m_NumDescr++;
         }
         m_NumFeat = 0;
-        for (CTypeConstIterator<CSeq_feat> i(se); i; ++i) {
+        for (CTypeConstIterator<CSeq_feat> i(*m_TSE); i; ++i) {
             m_NumFeat++;
         }
         m_NumGraph = 0;
-        for (CTypeConstIterator<CSeq_graph> i(se); i; ++i) {
+        for (CTypeConstIterator<CSeq_graph> i(*m_TSE); i; ++i) {
             m_NumGraph++;
         }
         m_PrgInfo.m_Total = m_NumAlign + m_NumAnnot + m_NumBioseq + 
@@ -2667,6 +2674,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.70  2006/01/25 19:16:05  rsmith
+* Validate(Seq-entry-handle)
+*
 * Revision 1.69  2006/01/24 16:21:03  rsmith
 * Validate Seq-annot handles not bare Seq-annots.
 * Get Seq entry handle one time and use it more.

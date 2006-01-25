@@ -370,6 +370,7 @@ public:
     // Validation methods
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
         CScope* scope = 0);
+    bool Validate(const CSeq_entry_Handle& seh, const CCit_sub* cs = 0);
     void Validate(const CSeq_submit& ss, CScope* scope = 0);
     void Validate(const CSeq_annot_Handle& sa);
 
@@ -393,7 +394,7 @@ public:
     // Posts errors.
     void PostErr(EDiagSev sv, EErrType et, const string& msg,
         const CSerialObject& obj);
-    //void PostErr(EDiagSev sv, EErrType et, const string& msg, TDesc ds);
+    void PostErr(EDiagSev sv, EErrType et, const string& msg, TDesc ds);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TFeat ft);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TBioseq sq);
     void PostErr(EDiagSev sv, EErrType et, const string& msg, TEntry ctx,
@@ -497,7 +498,7 @@ private:
     CValidError_imp(const CValidError_imp&);
     CValidError_imp& operator= (const CValidError_imp&);
 
-    void Setup(const CSeq_entry& se, CScope* scope);
+    void Setup(const CSeq_entry_Handle& seh);
     void Setup(const CSeq_annot_Handle& sa);
     void SetScope(const CSeq_entry& se);
 
@@ -993,6 +994,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.83  2006/01/25 19:16:05  rsmith
+* Validate(Seq-entry-handle)
+*
 * Revision 1.82  2006/01/24 16:21:03  rsmith
 * Validate Seq-annot handles not bare Seq-annots.
 * Get Seq entry handle one time and use it more.
