@@ -72,8 +72,7 @@ bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
             init.m_Mutex = local;
         }
     }
-    _ASSERT(local);
-    mutex = local;
+    local.Swap(mutex);
     _ASSERT(mutex);
     return true;
 }
@@ -93,6 +92,7 @@ void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
     if ( local->ReferencedOnlyOnce() ) {
         m_MutexList.push_back(local);
     }
+    _ASSERT(!mutex);
 }
 
 
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2006/01/25 15:22:45  vasilche
+* Take benefits of Swap().
+*
 * Revision 1.7  2006/01/25 14:16:24  vasilche
 * Fixed race condition.
 *
