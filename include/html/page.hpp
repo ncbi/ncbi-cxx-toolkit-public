@@ -223,11 +223,20 @@ public:
 private:
     void Init(void);
 
-    /// Read template to the string.
+    /// Read template into string.
     ///
-    /// This is an internal version that gets around some
-    /// issues with local versus externally-supplied streams.
-    void x_ReadTemplate(CNcbiIstream& is, string& str);
+    /// Used by CreateTemplate() to cache templates and add
+    /// on the fly modifications into it, like adding JS code for
+    /// used popup menus.
+    void x_LoadTemplate(CNcbiIstream& is, string& str);
+
+    /// Create and print template.
+    ///
+    /// Calls by CreateTemplate() only when it can create and print
+    /// template at one time, to avoid latency on large templates. 
+    /// Otherwise x_ReadTemplate() will be used.
+    CNCBINode* x_PrintTemplate(CNcbiIstream& is, CNcbiOstream* out,
+                               CNCBINode::TMode mode);
 
     // Allow/disable processing of #include directives for template libraries.
     // eAllowIncludes used by default for LoadTemplateLibFile().
@@ -403,6 +412,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/01/25 17:55:14  ivanov
+ * Split up x_CreateTemplate to x_LoadTemplate and x_PrintTemplate.
+ * Restored feature of creating templates while printing to avoid latency
+ * on large templates.
+ *
  * Revision 1.37  2006/01/24 18:04:23  ivanov
  * CHTMLPage:: added possibility to cache template files and template libs
  *

@@ -178,7 +178,14 @@ void CHTMLPage::Init(void)
 
 void CHTMLPage::CreateSubNodes(void)
 {
-    AppendChild(CreateTemplate());
+    bool create_on_print = (!m_UsePopupMenus  &&  
+                              (m_TemplateFile.empty()  || 
+                               sm_CacheTemplateFiles == eCTF_Disable));
+    if ( !create_on_print ) {
+        AppendChild(CreateTemplate());
+    }
+    // Otherwise, create template while printing to avoid
+    // latency on large files
 }
 
 
@@ -269,7 +276,9 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 {
     string  str;
     string* pstr = &str;
+    bool    print_template = (out  &&  !m_UsePopupMenus);
 
+    // File
     if ( !m_TemplateFile.empty() ) {
         CNcbiIfstream is(m_TemplateFile.c_str());
         if ( sm_CacheTemplateFiles == eCTF_Enable ) {
@@ -279,24 +288,35 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
                 pstr = i->second;
             } else {
                 pstr = new string();
-                x_ReadTemplate(is, *pstr);
+                x_LoadTemplate(is, *pstr);
                 s_TemplateCache[m_TemplateFile] = pstr;
             }
         } else {
-            x_ReadTemplate(is, str);
+            if ( print_template ) {
+                return x_PrintTemplate(is, out, mode);
+            }
+            x_LoadTemplate(is, str);
         }
+
+    // Stream
     } else if ( m_TemplateStream ) {
-        x_ReadTemplate(*m_TemplateStream, str);
+        if ( print_template ) {
+            return x_PrintTemplate(*m_TemplateStream, out, mode);
+        }
+        x_LoadTemplate(*m_TemplateStream, str);
+
+    // Buffer
     } else if ( m_TemplateBuffer ) {
-        CNcbiIstrstream is((char*)m_TemplateBuffer, m_TemplateSize);
-        x_ReadTemplate(is, str);
+        str.assign((char*)m_TemplateBuffer, m_TemplateSize);
+
+    // Otherwise
     } else {
         return new CHTMLText(kEmptyStr);
     }
 
     // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
     if ( m_UsePopupMenus ) {
-        // Copy template string because we need change it
+        // Copy template string, we need to change it
         if ( pstr != &str ) {
             str.assign(*pstr);
             pstr = &str;
@@ -354,80 +374,6 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
         while (false);
     }
 
-
-    // Split large templates to parts to reduce latency
-
-
-
-/*
-    auto_ptr<CHTMLText> node(0);
-    if (pstr->) {
-        node.reset(new CHTMLText(*pstr));
-    } else {
-        node.reset(new CHTMLNode());
-    }
-
-    while (is) {
-        is.read(buf, sizeof(buf));
-        s.append(buf, is.gcount());
-        // If needed save received template block
-        if ( pstr ) {
-            pstr->append(buf, is.gcount());
-        }
-        SIZE_TYPE pos = s.rfind('\n');
-        if (pos != NPOS) {
-            ++pos;
-            CHTMLText* child = new CHTMLText(s.substr(0, pos));
-            child->Print(*out, mode);
-            node->AppendChild(child);
-            s.erase(0, pos);
-        }
-    }
-    if ( !s.empty() ) {
-        CHTMLText* child = new CHTMLText(s);
-        child->Print(*out, mode);
-        node->AppendChild(child);
-    }
-*/
-
-
-/*
-???
-    CNCBINode* node = 0;
-
-    if (out  &&  !m_UsePopupMenus) {
-        auto_ptr<CNCBINode> node(new CNCBINode);
-        while (is) {
-            is.read(buf, sizeof(buf));
-            s.append(buf, is.gcount());
-            // If needed save received template block
-            if ( pstr ) {
-                pstr->append(buf, is.gcount());
-            }
-            SIZE_TYPE pos = s.rfind('\n');
-            if (pos != NPOS) {
-                ++pos;
-                CHTMLText* child = new CHTMLText(s.substr(0, pos));
-                child->Print(*out, mode);
-                node->AppendChild(child);
-                s.erase(0, pos);
-            }
-        }
-        if ( !s.empty() ) {
-            CHTMLText* child = new CHTMLText(s);
-            child->Print(*out, mode);
-            node->AppendChild(child);
-        }
-
-        if ( !is.eof() ) {
-            NCBI_THROW(CHTMLException, eTemplateAccess,
-                       "CHTMLPage::CreateTemplate(): error reading template");
-        }
-        return node.release();
-    }
-
-*/
-
     // Print and return node
     {{
         auto_ptr<CHTMLText> node(new CHTMLText(*pstr));
@@ -439,11 +385,11 @@ CNCBINode* CHTMLPage::CreateTemplate(CNcbiOstream* out, CNCBINode::TMode mode)
 }
 
 
-void CHTMLPage::x_ReadTemplate(CNcbiIstream& is, string& str)
+void CHTMLPage::x_LoadTemplate(CNcbiIstream& is, string& str)
 {
     if ( !is.good() ) {
         NCBI_THROW(CHTMLException, eTemplateAccess,
-                   "CHTMLPage::CreateTemplate(): failed to open template");
+                   "CHTMLPage::x_LoadTemplate(): failed to open template");
     }
 
     char buf[kBufferSize];
@@ -465,8 +411,51 @@ void CHTMLPage::x_ReadTemplate(CNcbiIstream& is, string& str)
 
     if ( !is.eof() ) {
         NCBI_THROW(CHTMLException, eTemplateAccess,
-                   "CHTMLPage::CreateTemplate(): error reading template");
+                   "CHTMLPage::x_LoadTemplate(): error reading template");
     }
+}
+
+
+CNCBINode* CHTMLPage::x_PrintTemplate(CNcbiIstream& is, CNcbiOstream* out,
+                                      CNCBINode::TMode mode)
+{
+    if ( !is.good() ) {
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                   "CHTMLPage::x_PrintTemplate(): failed to open template");
+    }
+    if ( !out ) {
+        NCBI_THROW(CHTMLException, eNullPtr,
+                   "CHTMLPage::x_PrintTemplate(): output stream must be specified");
+    }
+
+    string str;
+    char   buf[kBufferSize];
+    auto_ptr<CNCBINode> node(new CNCBINode);
+
+    while (is) {
+        is.read(buf, sizeof(buf));
+        str.append(buf, is.gcount());
+        SIZE_TYPE pos = str.rfind('\n');
+        if (pos != NPOS) {
+            ++pos;
+            CHTMLText* child = new CHTMLText(str.substr(0, pos));
+            child->Print(*out, mode);
+            node->AppendChild(child);
+            str.erase(0, pos);
+        }
+    }
+    if ( !str.empty() ) {
+        CHTMLText* child = new CHTMLText(str);
+        child->Print(*out, mode);
+        node->AppendChild(child);
+    }
+
+    if ( !is.eof() ) {
+        NCBI_THROW(CHTMLException, eTemplateAccess,
+                    "CHTMLPage::x_PrintTemplate(): error reading template");
+    }
+    
+    return node.release();
 }
 
 
@@ -703,6 +692,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2006/01/25 17:55:22  ivanov
+ * Split up x_CreateTemplate to x_LoadTemplate and x_PrintTemplate.
+ * Restored feature of creating templates while printing to avoid latency
+ * on large templates.
+ *
  * Revision 1.48  2006/01/24 19:01:30  ivanov
  * CHTMLPage::CreateTemplate() - fixed bug with using popup menues in
  * templates loaded from cache
