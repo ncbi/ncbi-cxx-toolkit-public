@@ -44,7 +44,6 @@ namespace bm
 class encoder
 {
 public:
-
     encoder(unsigned char* buf, unsigned size);
     void put_8(unsigned char c);
     void put_16(bm::short_t  s);
@@ -52,9 +51,7 @@ public:
     void put_32(bm::word_t  w);
     void put_32(const bm::word_t* w, unsigned count);
     unsigned size() const;
-
 private:
-
     unsigned char*  buf_;
     unsigned char*  start_;
     unsigned int    size_;
@@ -62,22 +59,62 @@ private:
 
 // ----------------------------------------------------------------
 /**
+    Base class for all decoding functionality
+*/
+class decoder_base
+{
+public:
+    decoder_base(const unsigned char* buf) { buf_ = start_ = buf; }
+    /// Reads character from the decoding buffer. 
+    unsigned char get_8() { return *buf_++; }
+    /// Returns size of the current decoding stream.
+    unsigned size() const { return (unsigned)(buf_ - start_); }
+protected:
+   const unsigned char*   buf_;
+   const unsigned char*   start_;
+};
+
+
+// ----------------------------------------------------------------
+/**
    Class for decoding data from memory buffer.
    Properly handles aligment issues with integer data types.
 */
-class decoder
+class decoder : public decoder_base
 {
 public:
     decoder(const unsigned char* buf);
-    unsigned char get_8();
     bm::short_t get_16();
     bm::word_t get_32();
     void get_32(bm::word_t* w, unsigned count);
     void get_16(bm::short_t* s, unsigned count);
-    unsigned size() const;
-private:
-   const unsigned char*   buf_;
-   const unsigned char*   start_;
+};
+
+// ----------------------------------------------------------------
+/**
+   Class for decoding data from memory buffer.
+   Properly handles aligment issues with integer data types.
+   Converts data to big endian architecture 
+   (presumed it was encoded as little endian)
+*/
+typedef decoder decoder_big_endian;
+
+
+// ----------------------------------------------------------------
+/**
+   Class for decoding data from memory buffer.
+   Properly handles aligment issues with integer data types.
+   Converts data to little endian architecture 
+   (presumed it was encoded as big endian)
+*/
+class decoder_little_endian : public decoder_base
+{
+public:
+    decoder_little_endian(const unsigned char* buf);
+    bm::short_t get_16();
+    bm::word_t get_32();
+    void get_32(bm::word_t* w, unsigned count);
+    void get_16(bm::short_t* s, unsigned count);
 };
 
 
@@ -138,14 +175,6 @@ inline void encoder::put_16(const bm::short_t* s, unsigned count)
     } while (s < s_end);
     
     buf_ = (unsigned char*)buf;
-    
-    
-/*
-    for (unsigned i = 0; i < count; ++i) 
-    {
-        put_16(s[i]);
-    }
-*/
 }
 
 
@@ -176,10 +205,23 @@ inline void encoder::put_32(bm::word_t w)
 */
 inline void encoder::put_32(const bm::word_t* w, unsigned count)
 {
-    for (unsigned i = 0; i < count; ++i) 
+    unsigned char* buf = buf_;
+    const bm::word_t* w_end = w + count;
+    do 
     {
-        put_32(w[i]);
-    }
+        bm::word_t w32 = *w++;
+        unsigned char a = (unsigned char) w32;
+        unsigned char b = (unsigned char) (w32 >> 8);
+        unsigned char c = (unsigned char) (w32 >> 16);
+        unsigned char d = (unsigned char) (w32 >> 24);
+
+        *buf++ = a;
+        *buf++ = b;
+        *buf++ = c;
+        *buf++ = d;
+    } while (w < w_end);
+    
+    buf_ = (unsigned char*)buf;
 }
 
 
@@ -191,17 +233,8 @@ inline void encoder::put_32(const bm::word_t* w, unsigned count)
    \param buf - pointer to the decoding memory. 
 */
 inline decoder::decoder(const unsigned char* buf) 
-: buf_(buf), start_(buf)
+: decoder_base(buf)
 {
-}
-
-/*!
-   \fn unsigned char decoder::get_8()  
-   \brief Reads character from the decoding buffer.
-*/
-inline unsigned char decoder::get_8() 
-{
-    return *buf_++;
 }
 
 /*!
@@ -236,10 +269,17 @@ inline bm::word_t decoder::get_32()
 */
 inline void decoder::get_32(bm::word_t* w, unsigned count)
 {
-    for (unsigned i = 0; i < count; ++i) 
+
+    const unsigned char* buf = buf_;
+    const bm::word_t* w_end = w + count;
+    do 
     {
-        w[i] = get_32();
-    }
+        bm::word_t a = buf[0]+ ((unsigned)buf[1] << 8) +
+                   ((unsigned)buf[2] << 16) + ((unsigned)buf[3] << 24);
+        *w++ = a;
+        buf += sizeof(a);
+    } while (w < w_end);
+    buf_ = (unsigned char*)buf;
 }
 
 /*!
@@ -250,19 +290,66 @@ inline void decoder::get_32(bm::word_t* w, unsigned count)
 */
 inline void decoder::get_16(bm::short_t* s, unsigned count)
 {
-    for (unsigned i = 0; i < count; ++i) 
+    const unsigned char* buf = buf_;
+    const bm::short_t* s_end = s + count;
+    do 
     {
-        s[i] = get_16();
-    }
+        bm::short_t a = (bm::short_t)(buf[0] + ((bm::short_t)buf[1] << 8));
+        *s++ = a;
+        buf += sizeof(a);
+    } while (s < s_end);
+    buf_ = (unsigned char*)buf;
 }
 
-/*!
-   \fn unsigned decoder::size() const
-   \brief Returns size of the current decoding stream.
-*/
-inline unsigned decoder::size() const
+
+
+// ---------------------------------------------------------------------
+
+inline decoder_little_endian::decoder_little_endian(const unsigned char* buf)
+: decoder_base(buf)
 {
-    return (unsigned)(buf_ - start_);
+}
+
+inline bm::short_t decoder_little_endian::get_16()
+{
+    bm::short_t a = ((bm::short_t)buf_[0] << 8) + ((bm::short_t)buf_[1]);
+    buf_ += sizeof(a);
+    return a;
+}
+
+inline bm::word_t decoder_little_endian::get_32() 
+{
+    bm::word_t a = ((unsigned)buf_[0] << 24)+ ((unsigned)buf_[1] << 16) +
+                   ((unsigned)buf_[2] << 8) + ((unsigned)buf_[3]);
+    buf_+=sizeof(a);
+    return a;
+}
+
+inline void decoder_little_endian::get_32(bm::word_t* w, unsigned count)
+{
+    const unsigned char* buf = buf_;
+    const bm::word_t* w_end = w + count;
+    do 
+    {
+        bm::word_t a = ((unsigned)buf[0] << 24)+ ((unsigned)buf[1] << 16) +
+                       ((unsigned)buf[2] << 8) + ((unsigned)buf[3]);
+        *w++ = a;
+        buf += sizeof(a);
+    } while (w < w_end);
+    buf_ = (unsigned char*)buf;
+}
+
+inline void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
+{
+    const unsigned char* buf = buf_;
+    const bm::short_t* s_end = s + count;
+    do 
+    {
+        bm::short_t a = ((bm::short_t)buf[0] << 8) + ((bm::short_t)buf[1]);
+        *s++ = a;
+        buf += sizeof(a);
+    } while (s < s_end);
+    buf_ = (unsigned char*)buf;
 }
 
 

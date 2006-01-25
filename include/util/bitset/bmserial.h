@@ -351,6 +351,23 @@ unsigned serialize(BV& bv, unsigned char* buf)
 }
 
 
+template<class BV, class DEC>
+class deserializer
+{
+public:
+    typedef BV bvector_type;
+    typedef DEC decoder_type;
+public:
+    static
+    unsigned deserialize(bvector_type&        bv, 
+                         const unsigned char* buf, 
+                         bm::word_t*          temp_block);
+protected:
+   typedef typename BV::blocks_manager_type blocks_manager_type;
+   typedef typename BV::allocator_type allocator_type;
+
+};
+
 
 /*!
     @brief Bitvector deserialization from memory.
@@ -366,12 +383,47 @@ unsigned serialize(BV& bv, unsigned char* buf)
     between current bitset and previously serialized one.
 */
 template<class BV>
-unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
+unsigned deserialize(BV& bv, 
+                     const unsigned char* buf, 
+                     bm::word_t* temp_block=0)
 {
-    typedef typename BV::blocks_manager_type blocks_manager_type;
-    blocks_manager_type& bman = bv.get_blocks_manager();
+    ByteOrder bo_current = globals<true>::byte_order();
 
-    typedef typename BV::allocator_type allocator_type;
+    bm::decoder dec(buf);
+    /*unsigned char header_flag =*/ dec.get_8();
+    ByteOrder bo = (bm::ByteOrder)dec.get_8();
+
+    if (bo_current == bo)
+    {
+        return 
+            deserializer<BV, bm::decoder>::deserialize(bv, buf, temp_block);
+    }
+    switch (bo_current) 
+    {
+    case BigEndian:
+        return 
+        deserializer<BV, bm::decoder_big_endian>::deserialize(bv, 
+                                                              buf, 
+                                                              temp_block);
+    case LittleEndian:
+        return 
+        deserializer<BV, bm::decoder_little_endian>::deserialize(bv, 
+                                                                 buf, 
+                                                                 temp_block);
+    default:
+        BM_ASSERT(0);
+    };
+    return 0;
+}
+
+
+
+template<class BV, class DEC>
+unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv, 
+                                            const unsigned char* buf,
+                                            bm::word_t*          temp_block)
+{
+    blocks_manager_type& bman = bv.get_blocks_manager();
 
     bm::wordop_t* tmp_buf = 
         temp_block ? (bm::wordop_t*) temp_block 
@@ -381,9 +433,7 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
 
     gap_word_t   gap_temp_block[set_block_size*2+10];
 
-
-    ByteOrder bo_current = globals<true>::byte_order();
-    bm::decoder dec(buf);
+    decoder_type dec(buf);
 
     bv.forget_count();
 
@@ -392,9 +442,7 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
     // Reading header
 
     unsigned char header_flag =  dec.get_8();
-    ByteOrder bo = (bm::ByteOrder)dec.get_8();
-
-    BM_ASSERT(bo == bo_current); // TO DO: Add Byte-Order convertions here
+    /*ByteOrder bo = (bm::ByteOrder)*/dec.get_8();
 
     unsigned i;
 
@@ -690,7 +738,6 @@ unsigned deserialize(BV& bv, const unsigned char* buf, bm::word_t* temp_block=0)
     return dec.size();
 
 }
-
 
 
 
