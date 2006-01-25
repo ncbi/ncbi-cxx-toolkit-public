@@ -486,7 +486,7 @@ GENBANK_READER_CACHE_LDEP = $(GENBANK_READER_LIBS)
 GENBANK_READER_CACHE_LIBS = ncbi_xreader_cache $(GENBANK_READER_CACHE_LDEP)
 
 SEQ_LIBS = seq seqcode sequtil
-SOBJMGR_LDEP = seqset $(SEQ_LIBS) pub medline biblio general \
+SOBJMGR_LDEP = seqset seqedit $(SEQ_LIBS) pub medline biblio general \
 	xser xutil xncbi
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
