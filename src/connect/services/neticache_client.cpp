@@ -86,18 +86,14 @@ CNetICacheClient::~CNetICacheClient()
 void CNetICacheClient::ReturnSocket(CSocket* sock)
 {
     // check if socket has unattended input
-
-    do {
+    {{
         STimeout to = {0, 0};
         EIO_Status io_st = sock->Wait(eIO_Read, &to);
         if (io_st == eIO_Success) {
             ERR_POST("ReturnSocket detected unread input.");
             delete sock;
-            break;
-        } else {
-            break;
         }
-    } while (1);
+    }}
 
 	{{
     CFastMutexGuard guard(m_Lock);
@@ -928,6 +924,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/25 17:31:35  kuznets
+ * code cleanup
+ *
  * Revision 1.18  2006/01/25 17:27:22  kuznets
  * Fixed race condition, close socket if previous operation failed
  *
