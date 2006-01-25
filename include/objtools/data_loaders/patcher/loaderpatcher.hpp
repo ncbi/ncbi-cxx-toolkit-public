@@ -40,7 +40,6 @@
 #include <objmgr/data_loader.hpp>
 #include <objmgr/impl/tse_assigner.hpp>
 #include <objmgr/edit_saver.hpp>
-#include <objmgr/seq_id_translator.hpp>
 #include <objmgr/edits_db_engine.hpp>
 
 
@@ -188,6 +187,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.9  2006/01/25 19:59:23  ucko
+ * -#include <objmgr/seq_id_translator.hpp> (removed, and no longer needed)
+ *
  * Revision 1.8  2006/01/25 18:59:03  didenko
  * Redisgned bio objects edit facility
  *
