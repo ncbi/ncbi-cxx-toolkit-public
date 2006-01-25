@@ -691,7 +691,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'F': case 'G': case 'H': case 'I': 
             case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
             case 'N': case 'R': case 'T': case 'V':
-            case 'W':                               return eAcc_gb_est;
+            case 'W': case 'Y':                     return eAcc_gb_est;
             case 'P':                               return eAcc_gb_htgs;
             case 'Q':                               return eAcc_gb_dirsub;
             case 'S':                               return eAcc_gb_con;
@@ -1614,6 +1614,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.119  2006/01/25 15:59:26  ucko
+ * IdentifyAccession: DY has been assigned to GenBank ESTs (eAcc_gb_est)
+ *
  * Revision 6.118  2006/01/03 19:42:37  ucko
  * IdentifyAccession: DX -> eAcc_gb_gss.
  *
