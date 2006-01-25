@@ -33,7 +33,6 @@
 */
 
 #include <objmgr/impl/tse_chunk_info.hpp>
-#include <objmgr/seq_id_translator.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,12 +54,16 @@ public:
 
     virtual ~ITSE_Assigner() {}
 
-    virtual void AddDescInfo(CTSE_Info&, const TDescInfo& info, TChunkId chunk_id) = 0;
-    virtual void AddAnnotPlace(CTSE_Info&, const TPlace& place, TChunkId chunk_id) = 0;
-    virtual void AddBioseqPlace(CTSE_Info&, TBioseq_setId place_id, TChunkId chunk_id) = 0;
+    virtual void AddDescInfo(CTSE_Info&, const TDescInfo& info,
+                             TChunkId chunk_id) = 0;
+    virtual void AddAnnotPlace(CTSE_Info&, const TPlace& place, 
+                               TChunkId chunk_id) = 0;
+    virtual void AddBioseqPlace(CTSE_Info&, TBioseq_setId place_id, 
+                                TChunkId chunk_id) = 0;
     virtual void AddSeq_data(CTSE_Info&, const TLocationSet& location, 
                              CTSE_Chunk_Info& chunk) = 0;
-    virtual void AddAssemblyInfo(CTSE_Info&, const TAssemblyInfo& info, TChunkId chunk_id) = 0;
+    virtual void AddAssemblyInfo(CTSE_Info&, const TAssemblyInfo& info, 
+                                 TChunkId chunk_id) = 0;
 
     virtual void UpdateAnnotIndex(CTSE_Info&, CTSE_Chunk_Info& chunk) = 0;
 
@@ -85,18 +88,6 @@ public:
     static CBioseq_Info& x_GetBioseq(CTSE_Info& tse, const TBioseqId& id);
     static CBioseq_set_Info& x_GetBioseq_set(CTSE_Info& tse, TBioseq_setId id);
 
-    void SetSeqIdTranslator(CRef<ISeq_id_Translator> translator) { m_SeqIdTranslator = translator; }
-
-protected:
-
-    void PatchId(CSeq_entry& orig) const;
-    CSeq_id_Handle PatchId(const CSeq_id_Handle& orig) const;
-    TPlace PatchId(const TPlace& orig) const;
-    void PatchId(CSeq_annot& orig) const;
-
-    CRef<ISeq_id_Translator> m_SeqIdTranslator;
-
-
 };
 
 
@@ -110,10 +101,12 @@ public:
 
     virtual void AddDescInfo(CTSE_Info&, const TDescInfo& info, TChunkId chunk_id);
     virtual void AddAnnotPlace(CTSE_Info&, const TPlace& place, TChunkId chunk_id);
-    virtual void AddBioseqPlace(CTSE_Info&, TBioseq_setId place_id, TChunkId chunk_id);
+    virtual void AddBioseqPlace(CTSE_Info&, TBioseq_setId place_id, 
+                                TChunkId chunk_id);
     virtual void AddSeq_data(CTSE_Info&, const TLocationSet& location, 
                              CTSE_Chunk_Info& chunk);
-    virtual void AddAssemblyInfo(CTSE_Info&, const TAssemblyInfo& info, TChunkId chunk_id);
+    virtual void AddAssemblyInfo(CTSE_Info&, const TAssemblyInfo& info, 
+                                 TChunkId chunk_id);
 
     virtual void UpdateAnnotIndex(CTSE_Info&, CTSE_Chunk_Info& chunk);
 
@@ -131,28 +124,7 @@ public:
     virtual void LoadSeq_entry(CTSE_Info&, CSeq_entry& entry, 
                                CTSE_SetObjectInfo* set_info);
 
-protected:
-    void LoadDescr_NoPatch(CTSE_Info& tse, 
-                           const TPlace& place, 
-                           const CSeq_descr& descr);
-    void LoadAnnot_NoPatch(CTSE_Info& tse,
-                           const TPlace& place, 
-                           CRef<CSeq_annot> annot);
-    void LoadBioseq_NoPatch(CTSE_Info& tse,
-                            const TPlace& place, 
-                            CRef<CSeq_entry> entry);
-    void LoadSequence_NoPatch(CTSE_Info& tse, 
-                              const TPlace& place, 
-                              TSeqPos pos, 
-                              const TSequence& sequence);
-    void LoadSeq_entry_NoPatch(CTSE_Info& tse,
-                               CSeq_entry& entry, 
-                               CTSE_SetObjectInfo* set_info);
-
-
 private:
-
-
     CTSE_Default_Assigner(const CTSE_Default_Assigner&);
     CTSE_Default_Assigner& operator=(const CTSE_Default_Assigner&);
 };
@@ -161,76 +133,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-inline ITSE_Assigner::TPlace 
-PatchSeqId(const ITSE_Assigner::TPlace& info, 
-           const ISeq_id_Translator& tr)
-{
-    return make_pair(tr.TranslateToOrig(info.first), info.second);
-}
 
-inline CSeq_id_Handle PatchSeqId(const CSeq_id_Handle& id, 
-                                 const ISeq_id_Translator& tr)
-{
-    return tr.TranslateToOrig(id);
-}
-
-inline void PatchSeqId(CSeq_id& id, const ISeq_id_Translator& tr)
-{
-    CSeq_id_Handle handle = tr.TranslateToOrig(CSeq_id_Handle::GetHandle(id));
-    id.Assign(*handle.GetSeqId());
-}
-
-template<class TCont> 
-inline void PatchSeqIds( TCont& ids, const ISeq_id_Translator& tr)
-{
-    typedef typename TCont::iterator TContIt;
-    typedef typename TCont::value_type value_type;
-
-    for( TContIt it = ids.begin(); it != ids.end(); ++it ) {
-        value_type& sid = *it;
-        PatchSeqId(*sid, tr);
-    }   
-}
-
-template<class T>
-inline CRef<T> PatchSeqId_Copy(const T& orig, const ISeq_id_Translator& tr)
-{
-    CRef<T> ret(new T);
-    ret->Assign(orig);
-    PatchSeqId(*ret, tr);
-    return ret;
-}
-
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CSeq_loc& loc, const ISeq_id_Translator& tr);
-
-class CSeq_feat;
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CSeq_feat& feat, const ISeq_id_Translator& tr);
-
-class CSeq_align;
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CSeq_align& align, const ISeq_id_Translator& tr);
-
-class CSeq_graph;
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CSeq_graph& graph, const ISeq_id_Translator& tr);
-
-class CSeq_annot;
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CSeq_annot& annot, const ISeq_id_Translator& tr);
-
-class CSeq_entry;
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CSeq_entry& entry, const ISeq_id_Translator& tr);
-
-class CBioseq;
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CBioseq& bioseq, const ISeq_id_Translator& tr);
-
-class CBioseq_set;
-NCBI_XOBJMGR_EXPORT
-void PatchSeqId(CBioseq_set& bioseq_set, const ISeq_id_Translator& tr);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -239,6 +142,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2006/01/25 19:22:18  didenko
+* Redesigned bio object edit facility
+*
 * Revision 1.5  2005/11/15 15:54:31  vasilche
 * Replaced CTSE_SNP_InfoMap with CTSE_SetObjectInfo to allow additional info.
 *
