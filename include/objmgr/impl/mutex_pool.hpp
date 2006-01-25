@@ -61,7 +61,7 @@ public:
     CInitMutexPool(void);
     ~CInitMutexPool(void);
 
-    class NCBI_XOBJMGR_EXPORT CPoolMutex : public CObject
+    class CPoolMutex : public CObject
     {
     public:
         CPoolMutex(CInitMutexPool& pool)
@@ -137,7 +137,7 @@ private:
 
 
 template<class C>
-class NCBI_XOBJMGR_EXPORT CInitMutex : public CInitMutex_Base
+class CInitMutex : public CInitMutex_Base
 {
 public:
     typedef C TObjectType;
@@ -206,7 +206,7 @@ public:
 
     const CInitMutex<TObjectType>& operator=(const CRef<TObjectType>& ref)
         {
-            m_Object.Reset(const_cast<TObjectType*>(ref.GetPointerOrNull()));
+            m_Object.Reset(ref.GetNCPointerOrNull());
             return *this;
         }
     operator CRef<TObjectType>(void) const
@@ -223,7 +223,7 @@ public:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CInitGuard
+class CInitGuard
 {
 public:
     CInitGuard(CInitMutex_Base& init, CInitMutexPool& pool)
@@ -276,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/01/25 14:17:09  vasilche
+* Do not export completely inlined classes.
+*
 * Revision 1.8  2005/04/20 15:42:40  vasilche
 * Use DECLARE_OPERATOR_BOOL* macro.
 *
