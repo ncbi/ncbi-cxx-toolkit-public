@@ -270,21 +270,27 @@ CSeq_feat_Handle
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_feat& new_obj) const
 {
 
-    return CSeq_feat_Handle(*this, x_GetInfo().Add(new_obj));
+    CSeq_feat_Handle handle(*this, x_GetInfo().Add(new_obj));
+    x_GetScopeImpl().x_ClearAnnotCache();
+    return handle;
 }
 
 
 CSeq_align_Handle 
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_align& new_obj) const
 {
-    return CSeq_align_Handle(*this, x_GetInfo().Add(new_obj));
+    CSeq_align_Handle handle(*this, x_GetInfo().Add(new_obj));
+    x_GetScopeImpl().x_ClearAnnotCache();
+    return handle;
 }
 
 
 CSeq_graph_Handle 
 CSeq_annot_EditHandle::x_RealAdd(const CSeq_graph& new_obj) const
 {
-    return CSeq_graph_Handle(*this, x_GetInfo().Add(new_obj));
+    CSeq_graph_Handle handle(*this, x_GetInfo().Add(new_obj));
+    x_GetScopeImpl().x_ClearAnnotCache();
+    return handle;
 }
 
 
@@ -294,6 +300,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.20  2005/11/15 22:00:57  ucko
 * Don't return expressions from functions declared void.
 *

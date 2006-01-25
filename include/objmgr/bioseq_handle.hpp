@@ -75,6 +75,7 @@ class CBioseq_EditHandle;
 class CBioseq_set_EditHandle;
 class CSeq_annot_EditHandle;
 class CSeq_entry_EditHandle;
+class CBioObjectId;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -99,6 +100,10 @@ public:
 
     /// Get id used to obtain this bioseq handle
     CConstRef<CSeq_id> GetSeqId(void) const;
+    
+    /// Get unique object id
+    const CBioObjectId& GetBioObjectId(void) const;
+
 
     /// Get handle of id used to obtain this bioseq handle
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
@@ -803,6 +808,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.84  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

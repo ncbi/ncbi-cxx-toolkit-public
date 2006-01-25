@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/impl/tse_info_object.hpp>
+
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Seq_descr.hpp>
 
@@ -114,6 +115,8 @@ public:
     bool IsSetAnnot(void) const;
     bool HasAnnots(void) const;
     const TAnnot& GetAnnot(void) const;
+    const TAnnot& GetLoadedAnnot(void) const;
+
     void ResetAnnot(void);
     CRef<CSeq_annot_Info> AddAnnot(CSeq_annot& annot);
     void AddAnnot(CRef<CSeq_annot_Info> annot);
@@ -162,6 +165,7 @@ private:
     typedef vector<TDescTypeMask> TDescTypeMasks;
     TDescTypeMasks      m_DescrTypeMasks;
     TChunkIds           m_AnnotChunks;
+
 };
 
 
@@ -208,6 +212,12 @@ const CBioseq_Base_Info::TAnnot& CBioseq_Base_Info::GetAnnot(void) const
     return m_Annot;
 }
 
+inline
+const CBioseq_Base_Info::TAnnot& CBioseq_Base_Info::GetLoadedAnnot(void) const
+{
+    return m_Annot;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -215,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2006/01/25 18:59:03  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.12  2005/09/20 15:42:16  vasilche
  * AttachAnnot takes non-const object.
  *

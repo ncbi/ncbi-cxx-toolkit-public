@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/blob_id.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -42,6 +43,30 @@ string CBlob_id::ToString(void) const
         ostr << ",sub="<<GetSubSat();
     ostr << ')';
     return CNcbiOstrstreamToString(ostr);
+}
+
+/* static */
+CBlob_id* CBlob_id::CreateFromString(const string& str)
+{
+    int sat = -1;
+    int sat_key = 0;
+    int sub_sat = 0;
+    if (str.find(",sub=") != string::npos) {
+        if( sscanf(str.c_str(), "Blob(%d,%d,sub=%d)", &sat, &sat_key, &sub_sat) != 3)
+            NCBI_THROW(CLoaderException, eOtherError,
+                       "\"" + str + "\" is not a valid Genbank BlobId");
+
+    } else {
+        if( sscanf(str.c_str(), "Blob(%d,%d)", &sat, &sat_key) != 2)
+            NCBI_THROW(CLoaderException, eOtherError,
+                       "\"" + str + "\" is not a valid Genbank BlobId");
+    }
+        
+    CBlob_id* blobid = new CBlob_id;
+    blobid->SetSat(sat);
+    blobid->SetSubSat(sub_sat);
+    blobid->SetSatKey(sat_key);
+    return blobid;
 }
 
 
@@ -68,6 +93,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.4  2006/01/25 18:59:04  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.3  2005/10/27 15:18:38  vasilche
  * Use LessByTypeId() from parent class to avoid warning on MSVC.
  *

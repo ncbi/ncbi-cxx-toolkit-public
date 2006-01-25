@@ -66,7 +66,10 @@ void CSeq_entry_SelectNone_EditCommand::Do(IScopeTransaction_Impl& tr)
     m_Scope.SelectNone(m_Handle);
     if (saver) {
         tr.AddEditSaver(saver);
-        saver->Reset(m_Handle, IEditSaver::eDo);
+        if (m_BioseqHandle.IsRemoved())
+            saver->Detach(m_Handle, m_BioseqHandle, IEditSaver::eDo);
+        else if(m_BioseqSetHandle.IsRemoved())
+            saver->Detach(m_Handle, m_BioseqSetHandle, IEditSaver::eDo);
     }
 
 }
@@ -103,7 +106,7 @@ void CSeq_entry_Remove_EditCommand::Do(IScopeTransaction_Impl& tr)
     m_Scope.RemoveEntry(m_Handle);
     if (saver) {
         tr.AddEditSaver(saver);
-        saver->Remove(m_ParentHandle, m_Handle, IEditSaver::eDo);
+        saver->Remove(m_ParentHandle, m_Handle, m_Index, IEditSaver::eDo);
     }
 }
 
@@ -151,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/25 18:59:04  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.1  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *

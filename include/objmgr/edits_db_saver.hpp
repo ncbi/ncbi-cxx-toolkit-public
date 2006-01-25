@@ -1,5 +1,5 @@
-#ifndef __UNSUPPORTED_EDIT_SAVER__HPP
-#define __UNSUPPORTED_EDIT_SAVER__HPP
+#ifndef __SIMPLE_EDITS_DB_SAVER__HPP
+#define __SIMPLE_EDITS_DB_SAVER__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -34,33 +34,28 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbimisc.hpp>
 
-#include <objmgr/edit_saver.hpp>
+#include <objmgr/unsupp_editsaver.hpp>
+
+#include <list>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class IEditsDBEngine;
+class CSeqEdit_Cmd;
 
-class CUnsupportedEditSaverException : public CException
+class NCBI_XOBJMGR_EXPORT CEditsSaver : public CUnsupportedEditSaver
 {
 public:
-    enum EErrCode {
-        eUnsupported
-    };
-    virtual const char* GetErrCodeString(void) const {
-        switch ( GetErrCode() ) {
-        case eUnsupported:
-            return "Unsupported operation";
-        default:
-            return CException::GetErrCodeString();
-        }
-    }
-    NCBI_EXCEPTION_DEFAULT(CUnsupportedEditSaverException, CException);
-};
 
-class NCBI_XOBJMGR_EXPORT CUnsupportedEditSaver : public IEditSaver
-{
-public:
+    CEditsSaver(IEditsDBEngine&);
+    virtual ~CEditsSaver();
+
+    virtual void BeginTransaction();
+    virtual void CommitTransaction();   
+    virtual void RollbackTransaction();
 
     virtual void AddDescr(const CBioseq_Handle&, const CSeq_descr&, ECallMode);
     virtual void AddDescr(const CBioseq_set_Handle&, const CSeq_descr&, ECallMode);
@@ -69,18 +64,18 @@ public:
     virtual void SetDescr(const CBioseq_set_Handle&, const CSeq_descr&, ECallMode);
 
     virtual void ResetDescr(const CBioseq_Handle&, ECallMode);
-    virtual void ResetDescr(const CBioseq_set_Handle&, ECallMode);
+    virtual void ResetDescr(const  CBioseq_set_Handle&, ECallMode);
 
     virtual void AddDesc(const CBioseq_Handle&, const CSeqdesc&, ECallMode);
     virtual void AddDesc(const CBioseq_set_Handle&, const CSeqdesc&, ECallMode);
 
     virtual void RemoveDesc(const CBioseq_Handle&, const CSeqdesc&, ECallMode);
     virtual void RemoveDesc(const CBioseq_set_Handle&, const CSeqdesc&, ECallMode);
-
     //------------------------------------------------------------------
     virtual void SetSeqInst(const CBioseq_Handle&, const CSeq_inst&, ECallMode);
     virtual void SetSeqInstRepr(const CBioseq_Handle&, CSeq_inst::TRepr, ECallMode);
     virtual void SetSeqInstMol(const CBioseq_Handle&, CSeq_inst::TMol, ECallMode);
+    
     virtual void SetSeqInstLength(const CBioseq_Handle&, 
                                   CSeq_inst::TLength,
                                   ECallMode);
@@ -96,7 +91,7 @@ public:
                                 const CSeq_inst::THist& hist, ECallMode);
     virtual void SetSeqInstSeq_data(const CBioseq_Handle& info, 
                                     const CSeq_inst::TSeq_data& data, ECallMode);
-    
+
     virtual void ResetSeqInst(const CBioseq_Handle&, ECallMode);
     virtual void ResetSeqInstRepr(const CBioseq_Handle&, ECallMode);
     virtual void ResetSeqInstMol(const CBioseq_Handle&, ECallMode);
@@ -108,11 +103,12 @@ public:
     virtual void ResetSeqInstHist(const CBioseq_Handle&, ECallMode);
     virtual void ResetSeqInstSeq_data(const CBioseq_Handle&, ECallMode);
 
-    //----------------------------------------------------------------
-    virtual void AddId(const CBioseq_Handle&, const CSeq_id_Handle&, ECallMode);
-    virtual void RemoveId(const CBioseq_Handle&, const CSeq_id_Handle&, ECallMode);
+    virtual void AddId(const CBioseq_Handle&, const CSeq_id_Handle&,
+                       ECallMode);
+    virtual void RemoveId(const CBioseq_Handle&, const CSeq_id_Handle&, 
+                          ECallMode);
     virtual void ResetIds(const CBioseq_Handle&, const TIds&, ECallMode);
-
+    //----------------------------------------------------------------
     virtual void SetBioseqSetId(const CBioseq_set_Handle&,
                                 const CBioseq_set::TId&, ECallMode);
     virtual void SetBioseqSetColl(const CBioseq_set_Handle&,
@@ -132,9 +128,9 @@ public:
     virtual void ResetBioseqSetClass(const CBioseq_set_Handle&, ECallMode);
     virtual void ResetBioseqSetRelease(const CBioseq_set_Handle&, ECallMode);
     virtual void ResetBioseqSetDate(const CBioseq_set_Handle&, ECallMode);
-  
     //-----------------------------------------------------------------
-    virtual void Attach(const CSeq_entry_Handle& entry, 
+
+    virtual void Attach(const CSeq_entry_Handle& entry,  
                         const CBioseq_Handle& what, ECallMode );
     virtual void Attach(const CSeq_entry_Handle& entry, 
                         const CBioseq_set_Handle& what, ECallMode );
@@ -144,7 +140,7 @@ public:
                         const CBioseq_set_Handle& what, ECallMode );
 
     virtual void Attach(const CSeq_entry_Handle& entry, 
-                        const CSeq_annot_Handle& what, ECallMode);
+                        const CSeq_annot_Handle& what, ECallMode); 
     virtual void Remove(const CSeq_entry_Handle& entry, 
                         const CSeq_annot_Handle& what, ECallMode);
 
@@ -154,7 +150,6 @@ public:
     virtual void Remove(const CBioseq_set_Handle& handle, 
                         const CSeq_entry_Handle&, 
                         int Index, ECallMode);
-
     //-----------------------------------------------------------------
     virtual void Replace(const CSeq_feat_Handle& handle,
                          const CSeq_feat& old_value, ECallMode);
@@ -165,7 +160,7 @@ public:
 
     virtual void Add(const CSeq_annot_Handle& handle,
                      const CSeq_feat& obj, ECallMode);
-    virtual void Add(const CSeq_annot_Handle& handle,
+    virtual void Add(const CSeq_annot_Handle& handle, 
                      const CSeq_align& obj, ECallMode);
     virtual void Add(const CSeq_annot_Handle& handle,
                      const CSeq_graph& obj, ECallMode);
@@ -176,9 +171,26 @@ public:
                         const CSeq_align& old_value, ECallMode);
     virtual void Remove(const CSeq_annot_Handle& handle, 
                         const CSeq_graph& old_value, ECallMode);
-
+    /*
     //-----------------------------------------------------------------
-    virtual void RemoveTSE(const CTSE_Handle& handle, ECallMode);
+    // virtual void RemoveTSE(const CTSE_Handle& handle, ECallMode);
+    */
+
+    IEditsDBEngine& GetDBEngine() { return *m_Engine; }
+
+    typedef list<CRef<CSeqEdit_Cmd> >   TCommands;
+private:
+
+    typedef map<CSeq_id_Handle, string> TChangedIds;
+
+    CRef<IEditsDBEngine> m_Engine;
+    TCommands            m_Commands;
+    TChangedIds          m_ChangedIds;
+
+       
+private:
+    CEditsSaver(const CEditsSaver&);
+    CEditsSaver& operator=(const CEditsSaver&);
 };
 
 END_SCOPE(objects)
@@ -187,13 +199,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2006/01/25 18:59:03  didenko
+ * Revision 1.1  2006/01/25 18:59:03  didenko
  * Redisgned bio objects edit facility
- *
- * Revision 1.1  2005/11/15 19:22:06  didenko
- * Added transactions and edit commands support
  *
  * ===========================================================================
  */
 
-#endif // __UNSUPPORTED_EDIT_SAVER__HPP
+#endif //__SIMPLE_EDITS_DB_SAVER__HPP

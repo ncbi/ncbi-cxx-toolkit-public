@@ -42,13 +42,13 @@
 //#include <objmgr/annot_name.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/blob_id.hpp>
+#include <objmgr/bio_object_id.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
-#include <objmgr/seq_id_translator.hpp>
 
 #include <map>
 #include <set>
@@ -75,10 +75,11 @@ class CSeq_entry;
 
 class CSeq_literal;
 
-class ISeq_id_Translator;
 class ITSE_Assigner;
 class CTSE_Default_Assigner;
 class IEditSaver;
+
+class CSeq_annot_Finder;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -144,14 +145,19 @@ public:
     struct SSeq_annot_Info {
         CRef<CSeq_annot_SNP_Info> m_SNP_annot_Info;
     };
+    //    struct SBioseq_Info {
+    //        vector<CSeq_id_Handle> m_Removed_ids;
+    //    };
     struct SBioseq_set_Info {
         int m_LoadOrder;
     };
     typedef map<CConstRef<CSeq_annot>, SSeq_annot_Info> TSeq_annot_InfoMap;
     typedef map<CConstRef<CBioseq_set>, SBioseq_set_Info> TBioseq_set_InfoMap;
+    //    typedef map<CConstRef<CBioseq>, SBioseq_Info> TBioseq_InfoMap;
 
     TSeq_annot_InfoMap  m_Seq_annot_InfoMap;
     TBioseq_set_InfoMap m_Bioseq_set_InfoMap;
+    //    TBioseq_InfoMap m_Bioseq_InfoMap;
 
 private:
     CTSE_SetObjectInfo(const CTSE_SetObjectInfo&);
@@ -210,10 +216,7 @@ public:
 
     CTSE_Info& Assign(const CTSE_Lock& tse);
     CTSE_Info& Assign(const CTSE_Lock& tse, 
-                      CRef<CSeq_entry> entry);
-    CTSE_Info& Assign(const CTSE_Lock& tse, 
-                      CRef<CSeq_entry> entry, 
-                      CRef<ITSE_Assigner> listener);
+                      CRef<CSeq_entry> entry); 
 
     // Additional TSE info not available in CSeq_entry
     const TBlobId& GetBlobId(void) const;
@@ -308,9 +311,6 @@ public:
     const CSeq_id_Handle& GetRequestedId(void) const;
     void SetRequestedId(const CSeq_id_Handle& requested_id) const;
 
-    void SetSeqIdTranslator(CRef<ISeq_id_Translator> tr);
-
-
     // annot object map mutex
     typedef CRWLock        TAnnotLock;
     typedef TAnnotLock::TReadLockGuard  TAnnotLockReadGuard;
@@ -318,6 +318,11 @@ public:
     TAnnotLock& GetAnnotLock(void) const;
 
     CRef<IEditSaver> GetEditSaver() const;
+
+    CBioseq_set_Info& x_GetBioseq_set(int id);
+    CBioseq_Info& x_GetBioseq(const CSeq_id_Handle& id);
+
+    CTSE_Info_Object* x_FindBioObject(const CBioObjectId& uniq_id) const;
 
 private:
     friend class CTSE_Guard;
@@ -329,18 +334,18 @@ private:
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
     friend class CBioseq_set_Info;
+    friend class CTSE_Info_Object;
     friend class CTSE_Chunk_Info;
     friend class CTSE_Split_Info;
     friend class CSeq_annot_SNP_Info;
 
     friend class ITSE_Assigner;
     friend class CTSE_Default_Assigner;
+    friend class CSeq_annot_Finder;
+
 
     void x_Initialize(void);
-
-    CBioseq_set_Info& x_GetBioseq_set(int id);
-    CBioseq_Info& x_GetBioseq(const CSeq_id_Handle& id);
-    
+   
     void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
@@ -412,6 +417,13 @@ private:
 
     void x_DoUpdate(TNeedUpdateFlags flags);
 
+    //    void x_RegisterRemovedIds(const CConstRef<CBioseq>&, CBioseq_Info*);
+    CBioObjectId x_IndexBioseq(CBioseq_Info*);
+    CBioObjectId x_IndexBioseq_set(CBioseq_set_Info*);
+
+    CBioObjectId x_RegisterBioObject(CTSE_Info_Object& info);
+    void x_UnregisterBioObject(CTSE_Info_Object& info);
+
     friend class CTSE_Lock;
     friend class CTSE_LoadLock;
 
@@ -464,6 +476,8 @@ private:
     // ID to bioseq-info
     TBioseq_sets           m_Bioseq_sets;
     TBioseqs               m_Bioseqs;
+    TBioseq_sets           m_Removed_Bioseq_sets;
+    TBioseqs               m_Removed_Bioseqs;
     mutable CFastMutex     m_BioseqsMutex;
 
     // Split chunks
@@ -501,8 +515,10 @@ private:
     };
     auto_ptr<SBaseTSE> m_BaseTSE;
 
-    CRef<ISeq_id_Translator> m_SeqIdTranslator;
-    CRef<IEditSaver>         m_EditSaver;
+    CRef<IEditSaver>              m_EditSaver;
+    int                           m_InternalBioObjNumber;
+    typedef map<CBioObjectId, CTSE_Info_Object*> TBioObjects;
+    TBioObjects m_BioObjects;
 
 private:
     // Hide copy methods
@@ -668,11 +684,6 @@ bool CTSE_Info::OnlyGiAnnotIds(void) const
     return (m_AnnotIdsFlags & fAnnotIds_NonGi) == 0;
 }
 
-inline 
-void CTSE_Info::SetSeqIdTranslator(CRef<ISeq_id_Translator> tr)
-{
-    m_SeqIdTranslator = tr;
-}
 
 inline
 CRef<IEditSaver> CTSE_Info::GetEditSaver() const

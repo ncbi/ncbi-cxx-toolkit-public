@@ -156,8 +156,8 @@ struct RemoveAction<CBioseq_set_EditHandle> {
 
     static inline void DoInDB(IEditSaver& saver,
                               const CSeq_entry_EditHandle& entry,
-                              const Handle& )
-    { saver.Reset(entry, IEditSaver::eDo); }
+                              const Handle& handle)
+    { saver.Detach(entry, handle, IEditSaver::eDo); }
     static inline void UndoInDB(IEditSaver& saver,
                                 const CSeq_entry_EditHandle& entry,
                                 const Handle& handle)
@@ -210,7 +210,7 @@ public:
         IEditSaver* saver = GetEditSaver(m_Handle);
         m_Scope.RemoveEntry(m_Return);
         if (saver) {
-            saver->Remove(m_Handle, m_Return, IEditSaver::eUndo);
+            saver->Remove(m_Handle, m_Return, m_Index, IEditSaver::eUndo);
         }
     }
 
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.1  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *

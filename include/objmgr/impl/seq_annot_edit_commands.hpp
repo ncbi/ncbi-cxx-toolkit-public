@@ -158,7 +158,7 @@ public:
             if (!m_WasRemoved)
                 saver->Replace(m_Handle, *m_Data, IEditSaver::eUndo);
             else
-                saver->Remove(m_Handle, IEditSaver::eUndo);
+                saver->Remove(m_Handle.GetAnnot(), *m_Data, IEditSaver::eUndo);
         }
     }
 
@@ -199,10 +199,10 @@ public:
     }    
     virtual void Undo() 
     {
-        IEditSaver* saver = GetEditSaver(m_Handle);
+        IEditSaver* saver = GetEditSaver(m_Handle);        
         m_Ret.x_RealRemove();
         if (saver) {
-            saver->Remove(m_Ret, IEditSaver::eUndo);
+            saver->Remove(m_Handle, *m_Data, IEditSaver::eUndo);
         }
     }
 
@@ -246,7 +246,7 @@ public:
         tr.AddCommand(CRef<IEditCommand>(this));       
         if (saver) {
             tr.AddEditSaver(saver);
-            saver->Remove(m_Handle, IEditSaver::eDo);
+            saver->Remove(m_Handle.GetAnnot(), *m_Data, IEditSaver::eDo);
         }
     }    
     virtual void Undo() 
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.2  2005/12/06 20:26:52  vasilche
 * Fixed Undo of deleted annotation.
 *

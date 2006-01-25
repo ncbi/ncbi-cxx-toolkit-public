@@ -192,6 +192,7 @@ void CSeq_entry_Info::x_Select(CSeq_entry::E_Choice which,
 void CSeq_entry_Info::Reset(void)
 {
     x_Select(CSeq_entry::e_not_set, 0);
+    SetBioObjectId(GetTSE_Info().x_RegisterBioObject(*this));
 }
 
 
@@ -556,6 +557,22 @@ void CSeq_entry_Info::RemoveEntry(CRef<CSeq_entry_Info> entry)
     SetSet().RemoveEntry(entry);
 }
 
+const CBioObjectId& CSeq_entry_Info::GetBioObjectId(void) const
+{
+    if (m_Contents)
+        return m_Contents->GetBioObjectId();
+    return TParent::GetBioObjectId();
+}
+
+const CSeq_entry_Info::TAnnot& CSeq_entry_Info::GetLoadedAnnot(void) const
+{
+    _ASSERT(m_Contents);
+    if (!m_Contents)
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "The CSeq_entry_Handle must be selected first.");
+    return m_Contents->GetLoadedAnnot();
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -563,6 +580,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/01/25 18:59:04  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.32  2006/01/06 20:52:21  vasilche
  * Fixed GetCompleteSeq_entry().
  *

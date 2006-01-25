@@ -208,25 +208,11 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
     _ASSERT(IsRegular());
     switch ( Which() ) {
     case C_Data::e_Ftable:
-    {
-        const CSeq_feat& feat = *GetFeatFast();
-        hrmaps.resize(feat.IsSetProduct()? 2: 1);
-        hrmaps[0].clear();
-        hrmaps[0].AddLocation(feat.GetLocation());
-        if ( feat.IsSetProduct() ) {
-            hrmaps[1].clear();
-            hrmaps[1].AddLocation(feat.GetProduct());
-        }
+        x_ProcessFeat(hrmaps, *GetFeatFast());
         break;
-    }
     case C_Data::e_Graph:
-    {
-        const CSeq_graph& graph = *GetGraphFast();
-        hrmaps.resize(1);
-        hrmaps[0].clear();
-        hrmaps[0].AddLocation(graph.GetLoc());
+        x_ProcessGraph(hrmaps, *GetGraphFast());
         break;
-    }
     case C_Data::e_Align:
     {
         const CSeq_align& align = GetAlign();
@@ -262,6 +248,26 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
     }
 }
 
+/* static */
+void CAnnotObject_Info::x_ProcessFeat(vector<CHandleRangeMap>& hrmaps,
+                                      const CSeq_feat& feat) 
+{
+    hrmaps.resize(feat.IsSetProduct()? 2: 1);
+    hrmaps[0].clear();
+    hrmaps[0].AddLocation(feat.GetLocation());
+    if ( feat.IsSetProduct() ) {
+        hrmaps[1].clear();
+        hrmaps[1].AddLocation(feat.GetProduct());
+    }
+}
+/* static */
+void CAnnotObject_Info::x_ProcessGraph(vector<CHandleRangeMap>& hrmaps,
+                                      const CSeq_graph& graph) 
+{
+    hrmaps.resize(1);
+    hrmaps[0].clear();
+    hrmaps[0].AddLocation(graph.GetLoc());
+}
 
 const CSeq_entry_Info& CAnnotObject_Info::GetSeq_entry_Info(void) const
 {
@@ -365,10 +371,10 @@ void CAnnotObject_Info::x_Locs_AddFeatSubtype(int ftype,
     }
 }
 
-
+/* static */
 void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                                        const CSeq_align& align,
-                                       int loc_index_shift) const
+                                       int loc_index_shift)
 {
     //### Check the implementation.
     switch ( align.GetSegs().Which() ) {
@@ -566,6 +572,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.44  2005/09/20 15:45:36  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

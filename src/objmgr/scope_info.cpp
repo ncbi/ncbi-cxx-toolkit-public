@@ -1657,6 +1657,7 @@ void CBioseq_ScopeInfo::ResetId(void)
         x_GetTSE_ScopeInfo().x_UnindexBioseq(*it, this);
     }
     m_Ids.clear();
+    x_GetScopeImpl().x_ClearCacheOnRemoveData();
 }
 
 
@@ -1668,6 +1669,7 @@ bool CBioseq_ScopeInfo::AddId(const CSeq_id_Handle& id)
     }
     m_Ids.push_back(id);
     x_GetTSE_ScopeInfo().x_IndexBioseq(id, this);
+    x_GetScopeImpl().x_ClearCacheOnNewData();
     return true;
 }
 
@@ -1682,6 +1684,7 @@ bool CBioseq_ScopeInfo::RemoveId(const CSeq_id_Handle& id)
     _ASSERT(it != m_Ids.end());
     m_Ids.erase(it);
     x_GetTSE_ScopeInfo().x_UnindexBioseq(id, this);
+    x_GetScopeImpl().x_ClearCacheOnRemoveData();
     return true;
 }
 
@@ -1748,6 +1751,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.34  2006/01/18 20:25:18  vasilche
 * Less strict assertion check.
 *

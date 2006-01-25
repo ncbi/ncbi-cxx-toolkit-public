@@ -34,11 +34,10 @@
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/bio_object_id.hpp>
 
 #include <objmgr/impl/scope_impl.hpp>
-
-#include <objmgr/seq_vector.hpp>
-
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/handle_range.hpp>
@@ -123,6 +122,10 @@ CConstRef<CSeq_id> CBioseq_Handle::GetSeqId(void) const
     return GetSeq_id_Handle().GetSeqIdOrNull();
 }
 
+const CBioObjectId& CBioseq_Handle::GetBioObjectId(void) const
+{
+    return x_GetInfo().GetBioObjectId();
+}
 
 CConstRef<CBioseq> CBioseq_Handle::GetCompleteBioseq(void) const
 {
@@ -1104,6 +1107,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.97  2005/11/15 22:00:57  ucko
 * Don't return expressions from functions declared void.
 *

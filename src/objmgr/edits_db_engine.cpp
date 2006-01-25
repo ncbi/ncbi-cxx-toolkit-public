@@ -26,55 +26,22 @@
 * Author: Maxim Didenko
 *
 * File Description:
-*   Scope transaction
 *
 */
 
 
 #include <ncbi_pch.hpp>
 
-#include <objmgr/impl/bioseq_edit_commands.hpp>
-#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/edits_db_engine.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-CResetIds_EditCommand::CResetIds_EditCommand(const CBioseq_EditHandle& handle)
-    : m_Handle(handle)
-{
-}
-CResetIds_EditCommand::~CResetIds_EditCommand() 
+IEditsDBEngine::~IEditsDBEngine()
 {
 }
 
-void CResetIds_EditCommand::Do(IScopeTransaction_Impl& tr)
-{
-    if (m_Handle.IsSetId()) {
-        const CBioseq_EditHandle::TId& ids = m_Handle.GetId();
-        m_Ids.insert(ids.begin(), ids.end());
-        m_Handle.x_RealResetId();
-        tr.AddCommand(CRef<IEditCommand>(this));
-        IEditSaver* saver = GetEditSaver(m_Handle);
-        if (saver) {
-            tr.AddEditSaver(saver);
-            saver->ResetIds(m_Handle, m_Ids, IEditSaver::eDo);
-        }
-    }   
-}
-void CResetIds_EditCommand::Undo()
-{
-    ITERATE(TIds, it, m_Ids) {
-        m_Handle.x_RealAddId(*it);
-    }
-    IEditSaver* saver = GetEditSaver(m_Handle);
-    if (saver) {
-        ITERATE(TIds, it, m_Ids) {
-            saver->AddId(m_Handle, *it, IEditSaver::eUndo);
-        }
-    }             
-}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -82,11 +49,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.2  2006/01/25 18:59:04  didenko
+ * Revision 1.1  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
- *
- * Revision 1.1  2005/11/15 19:22:07  didenko
- * Added transactions and edit commands support
  *
  * ===========================================================================
  */

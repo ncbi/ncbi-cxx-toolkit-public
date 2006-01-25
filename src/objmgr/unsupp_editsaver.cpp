@@ -39,7 +39,7 @@ BEGIN_SCOPE(objects)
 
 void CUnsupportedEditSaver::AddDescr(const CBioseq_Handle&, 
                               const CSeq_descr&, 
-                              IEditSaver::ECallMode)
+                              ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -48,7 +48,7 @@ void CUnsupportedEditSaver::AddDescr(const CBioseq_Handle&,
 
 void CUnsupportedEditSaver::AddDescr(const CBioseq_set_Handle&, 
                               const CSeq_descr&, 
-                              IEditSaver::ECallMode)
+                              ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -56,7 +56,7 @@ void CUnsupportedEditSaver::AddDescr(const CBioseq_set_Handle&,
 }
 
 void CUnsupportedEditSaver::SetDescr(const CBioseq_Handle&, 
-                              const CSeq_descr&, IEditSaver::ECallMode)
+                              const CSeq_descr&, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -64,7 +64,7 @@ void CUnsupportedEditSaver::SetDescr(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetDescr(const CBioseq_set_Handle&, 
                               const CSeq_descr&, 
-                              IEditSaver::ECallMode)
+                              ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -72,14 +72,14 @@ void CUnsupportedEditSaver::SetDescr(const CBioseq_set_Handle&,
 }
 
 void CUnsupportedEditSaver::ResetDescr(const CBioseq_Handle&, 
-                                       IEditSaver::ECallMode)
+                                       ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetDescr(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetDescr(const CBioseq_set_Handle&, 
-                                       IEditSaver::ECallMode)
+                                       ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -87,14 +87,14 @@ void CUnsupportedEditSaver::ResetDescr(const CBioseq_set_Handle&,
 }
 
 void CUnsupportedEditSaver::AddDesc(const CBioseq_Handle&, 
-                             const CSeqdesc&, IEditSaver::ECallMode)
+                             const CSeqdesc&, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "AddDesc(const CBioseq_Handle&, const CSeqdesc&, ECallMode)");
 }
 void CUnsupportedEditSaver::AddDesc(const CBioseq_set_Handle&, 
-                             const CSeqdesc&, IEditSaver::ECallMode)
+                             const CSeqdesc&, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -102,14 +102,14 @@ void CUnsupportedEditSaver::AddDesc(const CBioseq_set_Handle&,
 }
 
 void CUnsupportedEditSaver::RemoveDesc(const CBioseq_Handle&, 
-                                const CSeqdesc&, IEditSaver::ECallMode)
+                                const CSeqdesc&, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "RemoveDesc(const CBioseq_Handle&, const CSeqdesc&, ECallMode)");
 }
 void CUnsupportedEditSaver::RemoveDesc(const CBioseq_set_Handle&, 
-                                const CSeqdesc&, IEditSaver::ECallMode)
+                                const CSeqdesc&, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -118,21 +118,21 @@ void CUnsupportedEditSaver::RemoveDesc(const CBioseq_set_Handle&,
 
     //------------------------------------------------------------------
 void CUnsupportedEditSaver::SetSeqInst(const CBioseq_Handle&, 
-                                const CSeq_inst&, IEditSaver::ECallMode)
+                                const CSeq_inst&, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "SetSeqInst(const CBioseq_Handle&, const CSeq_inst&, ECallMode)");
 }
 void CUnsupportedEditSaver::SetSeqInstRepr(const CBioseq_Handle&, 
-                                    CSeq_inst::TRepr, IEditSaver::ECallMode)
+                                    CSeq_inst::TRepr, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "SetSeqInstRepr(const CBioseq_Handle&, CSeq_inst::TRepr, ECallMode)");
 }
 void CUnsupportedEditSaver::SetSeqInstMol(const CBioseq_Handle&, 
-                                   CSeq_inst::TMol, IEditSaver::ECallMode)
+                                   CSeq_inst::TMol, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -140,7 +140,7 @@ void CUnsupportedEditSaver::SetSeqInstMol(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetSeqInstLength(const CBioseq_Handle&, 
                                       CSeq_inst::TLength,
-                                      IEditSaver::ECallMode)
+                                      ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -148,7 +148,7 @@ void CUnsupportedEditSaver::SetSeqInstLength(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetSeqInstFuzz(const CBioseq_Handle&, 
                                     const CSeq_inst::TFuzz&, 
-                                    IEditSaver::ECallMode)
+                                    ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -156,7 +156,7 @@ void CUnsupportedEditSaver::SetSeqInstFuzz(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetSeqInstTopology(const CBioseq_Handle&, 
                                         CSeq_inst::TTopology,
-                                        IEditSaver::ECallMode)
+                                        ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -164,7 +164,7 @@ void CUnsupportedEditSaver::SetSeqInstTopology(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetSeqInstStrand(const CBioseq_Handle&, 
                                       CSeq_inst::TStrand, 
-                                      IEditSaver::ECallMode)
+                                      ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -172,7 +172,7 @@ void CUnsupportedEditSaver::SetSeqInstStrand(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetSeqInstExt(const CBioseq_Handle&, 
                                    const CSeq_inst::TExt&, 
-                                   IEditSaver::ECallMode)
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -180,7 +180,7 @@ void CUnsupportedEditSaver::SetSeqInstExt(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetSeqInstHist(const CBioseq_Handle&, 
                                     const CSeq_inst::THist&, 
-                                    IEditSaver::ECallMode)
+                                    ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -188,7 +188,7 @@ void CUnsupportedEditSaver::SetSeqInstHist(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::SetSeqInstSeq_data(const CBioseq_Handle&, 
                                         const CSeq_inst::TSeq_data&, 
-                                        IEditSaver::ECallMode)
+                                        ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -196,70 +196,70 @@ void CUnsupportedEditSaver::SetSeqInstSeq_data(const CBioseq_Handle&,
 }
     
 void CUnsupportedEditSaver::ResetSeqInst(const CBioseq_Handle&, 
-                                         IEditSaver::ECallMode)
+                                         ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInst(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstRepr(const CBioseq_Handle&, 
-                                             IEditSaver::ECallMode)
+                                             ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstRepr(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstMol(const CBioseq_Handle&, 
-                                            IEditSaver::ECallMode)
+                                            ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstMol(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstLength(const CBioseq_Handle&, 
-                                               IEditSaver::ECallMode)
+                                               ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstLength(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstFuzz(const CBioseq_Handle&, 
-                                             IEditSaver::ECallMode)
+                                             ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstFuzz(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstTopology(const CBioseq_Handle&, 
-                                                 IEditSaver::ECallMode)
+                                                 ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstFuzz(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstStrand(const CBioseq_Handle&, 
-                                               IEditSaver::ECallMode)
+                                               ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstStrand(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstExt(const CBioseq_Handle&, 
-                                            IEditSaver::ECallMode)
+                                            ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstExt(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstHist(const CBioseq_Handle&, 
-                                             IEditSaver::ECallMode)
+                                             ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetSeqInstHist(const CBioseq_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetSeqInstSeq_data(const CBioseq_Handle&, 
-                                                 IEditSaver::ECallMode)
+                                                 ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -269,7 +269,7 @@ void CUnsupportedEditSaver::ResetSeqInstSeq_data(const CBioseq_Handle&,
     //----------------------------------------------------------------
 void CUnsupportedEditSaver::AddId(const CBioseq_Handle&, 
                                   const CSeq_id_Handle&, 
-                                  IEditSaver::ECallMode)
+                                  ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -277,14 +277,15 @@ void CUnsupportedEditSaver::AddId(const CBioseq_Handle&,
 }
 void CUnsupportedEditSaver::RemoveId(const CBioseq_Handle&, 
                                      const CSeq_id_Handle&, 
-                                     IEditSaver::ECallMode)
+                                     ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "RemoveId(const CBioseq_Handle&, const CSeq_id_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetIds(const CBioseq_Handle&, 
-                                     IEditSaver::ECallMode)
+                                     const TIds&,
+                                     ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -293,7 +294,7 @@ void CUnsupportedEditSaver::ResetIds(const CBioseq_Handle&,
 
 void CUnsupportedEditSaver::SetBioseqSetId(const CBioseq_set_Handle&,
                                            const CBioseq_set::TId&, 
-                                           IEditSaver::ECallMode)
+                                           ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -301,7 +302,7 @@ void CUnsupportedEditSaver::SetBioseqSetId(const CBioseq_set_Handle&,
 }
 void CUnsupportedEditSaver::SetBioseqSetColl(const CBioseq_set_Handle&,
                                              const CBioseq_set::TColl&, 
-                                             IEditSaver::ECallMode)
+                                             ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -309,7 +310,7 @@ void CUnsupportedEditSaver::SetBioseqSetColl(const CBioseq_set_Handle&,
 }
 void CUnsupportedEditSaver::SetBioseqSetLevel(const CBioseq_set_Handle&,
                                               CBioseq_set::TLevel, 
-                                              IEditSaver::ECallMode)
+                                              ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -317,7 +318,7 @@ void CUnsupportedEditSaver::SetBioseqSetLevel(const CBioseq_set_Handle&,
 }
 void CUnsupportedEditSaver::SetBioseqSetClass(const CBioseq_set_Handle&,
                                               CBioseq_set::TClass, 
-                                              IEditSaver::ECallMode)
+                                              ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -325,7 +326,7 @@ void CUnsupportedEditSaver::SetBioseqSetClass(const CBioseq_set_Handle&,
 }
 void CUnsupportedEditSaver::SetBioseqSetRelease(const CBioseq_set_Handle&,
                                                 const CBioseq_set::TRelease&, 
-                                                IEditSaver::ECallMode)
+                                                ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -334,7 +335,7 @@ void CUnsupportedEditSaver::SetBioseqSetRelease(const CBioseq_set_Handle&,
 }
 void CUnsupportedEditSaver::SetBioseqSetDate(const CBioseq_set_Handle&,
                                              const CBioseq_set::TDate&, 
-                                             IEditSaver::ECallMode)
+                                             ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -342,42 +343,42 @@ void CUnsupportedEditSaver::SetBioseqSetDate(const CBioseq_set_Handle&,
 }
  
 void CUnsupportedEditSaver::ResetBioseqSetId(const CBioseq_set_Handle&, 
-                                             IEditSaver::ECallMode)
+                                             ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetBioseqSetId(const CBioseq_set_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetBioseqSetColl(const CBioseq_set_Handle&, 
-                                               IEditSaver::ECallMode)
+                                               ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetBioseqSetColl(const CBioseq_set_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetBioseqSetLevel(const CBioseq_set_Handle&, 
-                                                IEditSaver::ECallMode)
+                                                ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetBioseqSetLevel(const CBioseq_set_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetBioseqSetClass(const CBioseq_set_Handle&, 
-                                                IEditSaver::ECallMode)
+                                                ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetBioseqSetClass(const CBioseq_set_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetBioseqSetRelease(const CBioseq_set_Handle&, 
-                                                  IEditSaver::ECallMode)
+                                                  ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "ResetBioseqSetRelease(const CBioseq_set_Handle&, ECallMode)");
 }
 void CUnsupportedEditSaver::ResetBioseqSetDate(const CBioseq_set_Handle&,
-                                               IEditSaver::ECallMode)
+                                               ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -387,7 +388,7 @@ void CUnsupportedEditSaver::ResetBioseqSetDate(const CBioseq_set_Handle&,
     //-----------------------------------------------------------------
 void CUnsupportedEditSaver::Attach(const CSeq_entry_Handle&, 
                                    const CBioseq_Handle&, 
-                                   IEditSaver::ECallMode)
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -395,23 +396,30 @@ void CUnsupportedEditSaver::Attach(const CSeq_entry_Handle&,
 }
 void CUnsupportedEditSaver::Attach(const CSeq_entry_Handle&, 
                                    const CBioseq_set_Handle&, 
-                                   IEditSaver::ECallMode)
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode)");
 }
-void CUnsupportedEditSaver::Reset(const CSeq_entry_Handle&, 
-                                  IEditSaver::ECallMode)
+void CUnsupportedEditSaver::Detach(const CSeq_entry_Handle&, 
+                                   const CBioseq_Handle&, ECallMode )
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
-               "Reset(const CSeq_entry_Handle&, ECallMode)");
+               "Detach(const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode)");
+}
+void CUnsupportedEditSaver::Detach(const CSeq_entry_Handle&, 
+                                   const CBioseq_set_Handle&, ECallMode )
+{
+    NCBI_THROW(CUnsupportedEditSaverException,
+               eUnsupported,
+               "Detach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode)");
 }
 
 void CUnsupportedEditSaver::Attach(const CSeq_entry_Handle&, 
                                    const CSeq_annot_Handle&, 
-                                   IEditSaver::ECallMode)
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -419,7 +427,7 @@ void CUnsupportedEditSaver::Attach(const CSeq_entry_Handle&,
 }
 void CUnsupportedEditSaver::Remove(const CSeq_entry_Handle&, 
                                    const CSeq_annot_Handle&, 
-                                   IEditSaver::ECallMode)
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -428,7 +436,7 @@ void CUnsupportedEditSaver::Remove(const CSeq_entry_Handle&,
 
 void CUnsupportedEditSaver::Attach(const CBioseq_set_Handle&, 
                             const CSeq_entry_Handle&, 
-                            int Index, IEditSaver::ECallMode)
+                            int Index, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -436,14 +444,14 @@ void CUnsupportedEditSaver::Attach(const CBioseq_set_Handle&,
 }
 void CUnsupportedEditSaver::Remove(const CBioseq_set_Handle&, 
                                    const CSeq_entry_Handle&, 
-                                   IEditSaver::ECallMode)
+                                   int Index, ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
-               "Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&, ECallMode)");
+               "Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&, int, ECallMode)");
 }
 void CUnsupportedEditSaver::RemoveTSE(const CTSE_Handle&, 
-                                      IEditSaver::ECallMode)
+                                      ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -455,7 +463,7 @@ void CUnsupportedEditSaver::RemoveTSE(const CTSE_Handle&,
 
 void CUnsupportedEditSaver::Replace(const CSeq_feat_Handle&,
                                     const CSeq_feat&, 
-                                    IEditSaver::ECallMode)
+                                    ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -463,7 +471,7 @@ void CUnsupportedEditSaver::Replace(const CSeq_feat_Handle&,
 }
 void CUnsupportedEditSaver::Replace(const CSeq_align_Handle&,
                                     const CSeq_align&, 
-                                    IEditSaver::ECallMode)
+                                    ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -471,7 +479,7 @@ void CUnsupportedEditSaver::Replace(const CSeq_align_Handle&,
 }
 void CUnsupportedEditSaver::Replace(const CSeq_graph_Handle&,
                                     const CSeq_graph&, 
-                                    IEditSaver::ECallMode)
+                                    ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -480,7 +488,7 @@ void CUnsupportedEditSaver::Replace(const CSeq_graph_Handle&,
 
 void CUnsupportedEditSaver::Add(const CSeq_annot_Handle&,
                                 const CSeq_feat&, 
-                                IEditSaver::ECallMode)
+                                ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -488,7 +496,7 @@ void CUnsupportedEditSaver::Add(const CSeq_annot_Handle&,
 }
 void CUnsupportedEditSaver::Add(const CSeq_annot_Handle&,
                                 const CSeq_align&, 
-                                IEditSaver::ECallMode)
+                                ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
@@ -496,33 +504,36 @@ void CUnsupportedEditSaver::Add(const CSeq_annot_Handle&,
 }
 void CUnsupportedEditSaver::Add(const CSeq_annot_Handle&,
                                 const CSeq_graph&, 
-                                IEditSaver::ECallMode)
+                                ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
                "Add(const CSeq_annot_Handle&, const CSeq_graph&, ECallMode)");
 }
 
-void CUnsupportedEditSaver::Remove(const CSeq_feat_Handle&, 
-                                   IEditSaver::ECallMode)
+void CUnsupportedEditSaver::Remove(const CSeq_annot_Handle&, 
+                                   const CSeq_feat&, 
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
-               "Remove(const CSeq_feat_Handle&, ECallMode)");
+               "Remove(const CSeq_annot_Handle&, const CSeq_feat&, ECallMode)");
 }
-void CUnsupportedEditSaver::Remove(const CSeq_align_Handle&, 
-                                   IEditSaver::ECallMode)
+void CUnsupportedEditSaver::Remove(const CSeq_annot_Handle&, 
+                                   const CSeq_align&, 
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
-               "Remove(const CSeq_align_Handle&, ECallMode)");
+               "Remove(const CSeq_annot_Handle&, const CSeq_align&, ECallMode)");
 }
-void CUnsupportedEditSaver::Remove(const CSeq_graph_Handle&, 
-                                   IEditSaver::ECallMode)
+void CUnsupportedEditSaver::Remove(const CSeq_annot_Handle&, 
+                                   const CSeq_graph&, 
+                                   ECallMode)
 {
     NCBI_THROW(CUnsupportedEditSaverException,
                eUnsupported,
-               "Remove(const CSeq_graph_Handle&, ECallMode)");
+               "Remove(const CSeq_annot_Handle&, const CSeq_graph&, ECallMode)");
 }
 
 END_SCOPE(objects)
@@ -532,6 +543,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/25 18:59:04  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.1  2005/11/15 19:22:08  didenko
  * Added transactions and edit commands support
  *

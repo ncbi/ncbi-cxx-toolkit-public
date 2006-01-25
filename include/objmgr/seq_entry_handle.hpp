@@ -69,6 +69,7 @@ class CBioseq_Info;
 class CTSE_Info;
 
 class CSeqdesc;
+class CBioObjectId;
 
 
 class CSeq_entry_ScopeInfo : public CScopeInfo_Base
@@ -109,6 +110,9 @@ public:
 
     /// Get scope this handle belongs to
     CScope& GetScope(void) const;
+
+    /// Get unique object id
+    const CBioObjectId& GetBioObjectId(void) const;
 
     // Navigate object tree
     /// Check if current seq-entry has a parent
@@ -675,6 +679,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.25  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

@@ -178,7 +178,8 @@ void CSeq_annot_Info::x_TSEDetachContents(CTSE_Info& tse)
 
 const CAnnotName& CSeq_annot_Info::GetName(void) const
 {
-    return m_Name.IsNamed()? m_Name: GetTSE_Info().GetName();
+    return m_Name.IsNamed()? m_Name: 
+        HasTSE_Info() ? GetTSE_Info().GetName() : m_Name;
 }
 
 
@@ -741,7 +742,9 @@ void CSeq_annot_Info::x_MapAnnotObject(CAnnotObject_Info& info)
     }
 
     CTSE_Info& tse = GetTSE_Info();
-    CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+    CDataSource::TAnnotLockWriteGuard guard;
+    if (HasDataSource())
+        guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
     
     // remove annotation from TSE index
@@ -792,7 +795,9 @@ void CSeq_annot_Info::x_UnmapAnnotObject(CAnnotObject_Info& info)
     }
 
     CTSE_Info& tse = GetTSE_Info();
-    CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+    CDataSource::TAnnotLockWriteGuard guard;
+    if (HasDataSource())
+        guard.Guard(GetDataSource());
     CTSE_Info::TAnnotLockWriteGuard guard2(tse.GetAnnotLock());
     
     // remove annotation from TSE index
@@ -1088,6 +1093,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/01/25 18:59:04  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.36  2005/09/29 19:34:38  grichenk
  * Report and skip alignments of zero length
  *

@@ -35,6 +35,8 @@
 
 #include <corelib/ncbiobj.hpp>
 
+#include <objmgr/bio_object_id.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -63,6 +65,10 @@ public:
     CTSE_Info_Object(void);
     CTSE_Info_Object(const CTSE_Info_Object& src, TObjectCopyMap* copy_map);
     virtual ~CTSE_Info_Object(void);
+
+    // Get unique bio object id
+    virtual const CBioObjectId& GetBioObjectId(void) const;
+    virtual void SetBioObjectId(const CBioObjectId& id);
 
     // info tree
     bool HasDataSource(void) const;
@@ -148,6 +154,7 @@ protected:
     void x_AttachObject(CTSE_Info_Object& object);
     void x_DetachObject(CTSE_Info_Object& object);
 
+
 private:
     CTSE_Info_Object(const CTSE_Info_Object&);
     CTSE_Info_Object& operator=(const CTSE_Info_Object&);
@@ -157,6 +164,9 @@ private:
     CTSE_Info_Object*       m_Parent_Info;
     bool                    m_DirtyAnnotIndex;
     TNeedUpdateFlags        m_NeedUpdateFlags;
+
+    CBioObjectId            m_UniqueId;
+
 };
 
 
@@ -202,13 +212,15 @@ bool CTSE_Info_Object::x_NeedUpdate(ENeedUpdate flag) const
     return (m_NeedUpdateFlags & flag) != 0;
 }
 
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2006/01/25 18:59:03  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.9  2005/06/22 14:21:07  vasilche
  * Added support for original->edited map.
  * Added BelongsToTSE().

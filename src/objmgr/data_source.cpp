@@ -662,19 +662,35 @@ void CDataSource::x_ResetDirtyAnnotIndex(CTSE_Info& tse)
 }
 
 
+CDSAnnotLockReadGuard::CDSAnnotLockReadGuard()
+{
+}
+
 CDSAnnotLockReadGuard::CDSAnnotLockReadGuard(CDataSource& ds)
     : m_MainGuard(ds.m_DSMainLock),
       m_AnnotGuard(ds.m_DSAnnotLock)
 {
 }
+void CDSAnnotLockReadGuard::Guard(CDataSource& ds)
+{
+    m_MainGuard.Guard(ds.m_DSMainLock);
+    m_AnnotGuard.Guard(ds.m_DSAnnotLock);
+}
 
 
+CDSAnnotLockWriteGuard::CDSAnnotLockWriteGuard()
+{
+}
 CDSAnnotLockWriteGuard::CDSAnnotLockWriteGuard(CDataSource& ds)
     : m_MainGuard(ds.m_DSMainLock),
       m_AnnotGuard(ds.m_DSAnnotLock)
 {
 }
-
+void CDSAnnotLockWriteGuard::Guard(CDataSource& ds)
+{
+    m_MainGuard.Guard(ds.m_DSMainLock);
+    m_AnnotGuard.Guard(ds.m_DSAnnotLock);
+}
 
 void CDataSource::UpdateAnnotIndex(void)
 {

@@ -993,6 +993,7 @@ CScope_Impl::x_GetTSE_Lock(const CTSE_ScopeInfo& tse)
 
 void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
 {
+    entry.GetCompleteSeq_entry();
     if ( !entry.GetParentEntry() ) {
         CTSE_Handle tse = entry.GetTSE_Handle();
         // TODO entry.Reset();
@@ -1020,9 +1021,9 @@ void CScope_Impl::RemoveAnnot(const CSeq_annot_EditHandle& annot)
 void CScope_Impl::SelectNone(const CSeq_entry_EditHandle& entry)
 {
     _ASSERT(entry);
+    entry.GetCompleteSeq_entry();
 
     TWriteLockGuard guard(m_ConfLock);
-    
     entry.GetTSE_Handle().x_GetScopeInfo().ResetEntry(entry.x_GetScopeInfo());
 
     x_ClearCacheOnRemoveData();

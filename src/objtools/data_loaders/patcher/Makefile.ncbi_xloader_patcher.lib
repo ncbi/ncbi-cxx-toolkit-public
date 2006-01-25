@@ -1,7 +1,7 @@
 # $Id$
 
 LIB = ncbi_xloader_patcher
-SRC = loaderpatcher datapatcher_iface
+SRC = loaderpatcher
 
-ASN_DEP = seq seqset
+ASN_DEP = seq seqset seqedit
 

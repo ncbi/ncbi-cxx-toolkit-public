@@ -169,9 +169,13 @@ void CBioseq_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 void CBioseq_Info::x_TSEAttachContents(CTSE_Info& tse)
 {
     TParent::x_TSEAttachContents(tse);
+    SetBioObjectId(tse.x_IndexBioseq(this));
+    /*
+    x_RegisterRemovedIds(m_Object, *this);
     ITERATE ( TId, it, m_Id ) {
         tse.x_SetBioseqId(*it, this);
     }
+    */
 }
 
 
@@ -319,8 +323,12 @@ const CBioseq_Info::TId& CBioseq_Info::GetId(void) const
 
 void CBioseq_Info::ResetId(void)
 {
+    ITERATE(TId, id, m_Id) {
+        GetTSE_Info().x_ResetBioseqId(*id,this);        
+    }
     m_Id.clear();
     m_Object->ResetId();
+    SetBioObjectId(GetTSE_Info().x_RegisterBioObject(*this));
 }
 
 
@@ -340,6 +348,7 @@ bool CBioseq_Info::AddId(const CSeq_id_Handle& id)
     CRef<CSeq_id> seq_id(new CSeq_id);
     seq_id->Assign(*id.GetSeqId());
     m_Object->SetId().push_back(seq_id);
+    GetTSE_Info().x_SetBioseqId(id,this);
     return true;
 }
 
@@ -356,6 +365,10 @@ bool CBioseq_Info::RemoveId(const CSeq_id_Handle& id)
             m_Object->SetId().erase(it);
             break;
         }
+    }
+    GetTSE_Info().x_ResetBioseqId(id,this);
+    if (GetBioObjectId() == CBioObjectId(id)) {
+        SetBioObjectId(GetTSE_Info().x_RegisterBioObject(*this));
     }
     return true;
 }
@@ -1114,6 +1127,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.34  2005/12/08 14:31:01  vasilche
 * Reset CSeqMap when Bioseq.inst is changed.
 *

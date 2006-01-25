@@ -195,6 +195,7 @@ public:
     virtual void GetBlobs(TTSE_LockSets& tse_sets);
 
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
+    virtual TBlobId GetBlobIdFromString(const string& str) const;
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
     bool CanGetBlobById(void) const;
     TTSE_Lock GetBlobById(const TBlobId& id);

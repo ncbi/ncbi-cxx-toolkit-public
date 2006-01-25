@@ -5,7 +5,7 @@
 
 LIB_PROJ = ncbi_xloader_patcher
 
-SUB_PROJ = test
+#SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

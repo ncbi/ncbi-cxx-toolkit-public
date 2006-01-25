@@ -129,12 +129,14 @@ void CTSE_Info_Object::x_TSEAttachContents(CTSE_Info& tse)
 {
     _ASSERT(!m_TSE_Info);
     m_TSE_Info = &tse;
+    SetBioObjectId(CBioObjectId());
 }
 
 
 void CTSE_Info_Object::x_TSEDetachContents(CTSE_Info& _DEBUG_ARG(tse))
 {
     _ASSERT(m_TSE_Info == &tse);
+    m_TSE_Info->x_UnregisterBioObject(*this);
     m_TSE_Info = 0;
 }
 
@@ -329,6 +331,15 @@ void CTSE_Info_Object::x_LoadChunks(const TChunkIds& chunk_ids) const
     GetTSE_Info().x_LoadChunks(chunk_ids);
 }
 
+const CBioObjectId& CTSE_Info_Object::GetBioObjectId(void) const
+{
+    return m_UniqueId;
+}
+
+void CTSE_Info_Object::SetBioObjectId(const CBioObjectId& id)
+{
+    m_UniqueId = id;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -336,6 +347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/25 18:59:04  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.6  2005/06/22 14:21:12  vasilche
  * Added support for original->edited map.
  * Added BelongsToTSE().

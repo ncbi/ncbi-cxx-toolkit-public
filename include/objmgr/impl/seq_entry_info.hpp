@@ -86,6 +86,8 @@ public:
     const CSeq_entry_Info& GetParentSeq_entry_Info(void) const;
     CSeq_entry_Info& GetParentSeq_entry_Info(void);
 
+    // Get unique bio object id
+    virtual const CBioObjectId& GetBioObjectId(void) const;
 
     typedef CSeq_entry TObject;
 
@@ -140,6 +142,9 @@ public:
     CRef<CSeq_annot_Info> AddAnnot(CSeq_annot& annot);
     void AddAnnot(CRef<CSeq_annot_Info> annot);
     void RemoveAnnot(CRef<CSeq_annot_Info> annot);
+
+    typedef vector< CRef<CSeq_annot_Info> > TAnnot;
+    const TAnnot& GetLoadedAnnot(void) const;
 
     CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1);
     void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
@@ -207,6 +212,7 @@ protected:
 
     // Hide copy methods
     CSeq_entry_Info& operator= (const CSeq_entry_Info&);
+    
 };
 
 
@@ -216,7 +222,6 @@ protected:
 //  Inline methods
 //
 /////////////////////////////////////////////////////////////////////
-
 
 inline
 bool CSeq_entry_Info::HasSeq_entry(void) const
@@ -271,6 +276,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.25  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *

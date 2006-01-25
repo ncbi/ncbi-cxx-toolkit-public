@@ -61,6 +61,7 @@ public:
         }
 
     string ToString(void) const;
+    static CBlob_id* CreateFromString(const string& str);
 
     bool operator<(const CBlobId& blob_id) const;
     bool operator==(const CBlobId& blob_id) const;
@@ -161,6 +162,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.4  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.3  2005/10/26 14:36:46  vasilche
 * Updated for new CBlobId interface.
 *

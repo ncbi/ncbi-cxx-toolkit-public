@@ -92,6 +92,7 @@ class CBioseq_EditHandle;
 class CSeq_annot_EditHandle;
 class CSeq_entry_EditHandle;
 class CBioseq_set_EditHandle;
+class CSeq_annot_EditHandle;
 class CHandleRangeMap;
 class CDataSource_ScopeInfo;
 class CTSE_ScopeInfo;
@@ -101,6 +102,8 @@ class CPriorityTree;
 class CPriorityNode;
 class IScopeTransaction_Impl;
 class CScopeTransaction_Impl;
+class CBioseq_ScopeInfo;
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CScope_Impl
@@ -488,6 +491,7 @@ private:
     friend class CBioseq_EditHandle;
     friend class CBioseq_set_EditHandle;
     friend class CSeq_entry_EditHandle;
+    friend class CSeq_annot_EditHandle;
     friend class CTSE_CI;
     friend class CSeq_annot_CI;
     friend class CSeqMap_CI;
@@ -495,6 +499,8 @@ private:
     friend class CDataSource_ScopeInfo;
     friend class CTSE_ScopeInfo;
     friend class CScopeTransaction_Impl;
+
+    friend class CBioseq_ScopeInfo;
 };
 
 

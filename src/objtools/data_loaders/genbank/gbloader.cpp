@@ -696,6 +696,11 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobId(const CSeq_id_Handle& sih)
     return TBlobId();
 }
 
+CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromString(const string& str) const
+{
+    return TBlobId(CBlob_id::CreateFromString(str));
+}
+
 
 void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {

@@ -254,6 +254,7 @@ public:
     typedef CBlobIdKey TBlobId;
     typedef int TBlobVersion;
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
+    virtual TBlobId GetBlobIdFromString(const string& str) const;
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
 
     virtual bool CanGetBlobById(void) const;
@@ -342,6 +343,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.46  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

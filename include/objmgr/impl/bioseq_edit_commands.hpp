@@ -51,7 +51,7 @@
 
 #include <objects/seq/seq_id_handle.hpp>
 
-#include <vector>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -62,7 +62,7 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJMGR_EXPORT CResetIds_EditCommand : public IEditCommand
 {
 public:
-    typedef vector<CSeq_id_Handle> TIds;
+    typedef set<CSeq_id_Handle> TIds;
 
     CResetIds_EditCommand(const CBioseq_EditHandle& handle);
     virtual ~CResetIds_EditCommand();
@@ -331,8 +331,8 @@ struct RemoveAction<CBioseq_EditHandle> {
 
     static inline void DoInDB(IEditSaver& saver,
                               const CSeq_entry_EditHandle& entry,
-                              const Handle& )
-    { saver.Reset(entry, IEditSaver::eDo); }
+                              const Handle& handle)
+    { saver.Detach(entry, handle, IEditSaver::eDo); }
     static inline void UndoInDB(IEditSaver& saver,
                                 const CSeq_entry_EditHandle& entry,
                                 const Handle& handle)
@@ -349,6 +349,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.1  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

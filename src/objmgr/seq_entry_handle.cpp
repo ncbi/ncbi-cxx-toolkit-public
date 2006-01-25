@@ -37,6 +37,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_set_handle.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bio_object_id.hpp>
 
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
@@ -78,6 +79,10 @@ void CSeq_entry_Handle::Reset(void)
     m_Info.Reset();
 }
 
+const CBioObjectId& CSeq_entry_Handle::GetBioObjectId(void) const
+{
+    return x_GetInfo().GetBioObjectId();
+}
 
 const CSeq_entry_Info& CSeq_entry_Handle::x_GetInfo(void) const
 {
@@ -672,6 +677,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.21  2005/11/15 19:22:08  didenko
 * Added transactions and edit commands support
 *

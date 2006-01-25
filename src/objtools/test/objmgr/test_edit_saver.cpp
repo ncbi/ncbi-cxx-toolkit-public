@@ -66,21 +66,20 @@ using namespace sequence;
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CTestPatcher : public IDataPatcher
+
+class CEmptyDBEngine : public  IEditsDBEngine
 {
 public:
-    CTestPatcher() : m_Assigner( new CTSE_Default_Assigner ) {}
-    ~CTestPatcher() {}
     
-    virtual CRef<ITSE_Assigner> GetAssigner() { return m_Assigner; }
-    virtual CRef<ISeq_id_Translator> GetSeqIdTranslator() 
-    { return CRef<ISeq_id_Translator>(); }
-    virtual EPatchLevel IsPatchNeeded(const CTSE_Info& tse) { return eNone; }
+    virtual ~CEmptyDBEngine() {};
 
-    virtual void Patch(const CTSE_Info& tse, CSeq_entry& entry) {}
-private:
+    virtual bool HasBlob(const string& blobid) const { return false; }
+    virtual bool FindSeqId(const CSeq_id_Handle& id, string& blobid) const 
+    { return false; }
+    virtual void NotifyIdsChanged(const TChangedIds&) {}
 
-    CRef<ITSE_Assigner> m_Assigner;
+    virtual void SaveCommand(const CSeqEdit_Cmd& cmd) {}
+    virtual void GetCommands(const string& blobid, TCommands& cmds) const {}
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -101,19 +100,21 @@ public:
 
     virtual void Add(const CSeq_annot_Handle&, const CSeq_feat&, ECallMode);
     virtual void Replace(const CSeq_feat_Handle&, const CSeq_feat&, ECallMode);
-    virtual void Remove(const CSeq_feat_Handle&, ECallMode);
+    virtual void Remove(const CSeq_annot_Handle&, const CSeq_feat&, ECallMode);
 
     virtual void Attach(const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode);
     virtual void Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&, ECallMode);
-    virtual void Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&, ECallMode);
+    virtual void Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&,
+                        int, ECallMode);
     virtual void Attach(const CBioseq_set_Handle&, const CSeq_entry_Handle&, 
                         int, ECallMode);
 
-
-    virtual void Reset(const CSeq_entry_Handle&, ECallMode);
+    virtual void Detach(const CSeq_entry_Handle&, const CBioseq_Handle&, ECallMode mode);
+    virtual void Detach(const CSeq_entry_Handle&, const CBioseq_set_Handle&,
+                        ECallMode mode);
     virtual void Remove(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
     virtual void Attach(const CSeq_entry_Handle&, const CSeq_annot_Handle&, ECallMode);
-
+    
 private:
     CTestApp& m_App;
 };
@@ -148,7 +149,8 @@ public:
     DEFINE_OP(AttachBioseq_set);
     DEFINE_OP(AttachSeq_entry);
     DEFINE_OP(RemoveSeq_entry);
-    DEFINE_OP(ResetSeq_entry);
+    DEFINE_OP(DetachBioseq);
+    DEFINE_OP(DetachBioseq_set);
 
     void Clear();
 
@@ -172,7 +174,8 @@ private:
     int m_AttachBioseq_set;
     int m_AttachSeq_entry;
     int m_RemoveSeq_entry;
-    int m_ResetSeq_entry;
+    int m_DetachBioseq;
+    int m_DetachBioseq_set;
 
 };
 
@@ -200,7 +203,8 @@ void CTestApp::Clear()
     m_AttachBioseq_set = 0;
     m_AttachSeq_entry = 0;
     m_RemoveSeq_entry = 0;
-    m_ResetSeq_entry = 0;
+    m_DetachBioseq = 0;
+    m_DetachBioseq_set = 0;
 
 }
 
@@ -242,7 +246,7 @@ void CTestEditSaver::Add(const CSeq_annot_Handle&, const CSeq_feat&,
 {
     m_App.CallAddFeat();
 }
-void CTestEditSaver::Remove(const CSeq_feat_Handle&, IEditSaver::ECallMode mode)
+void CTestEditSaver::Remove(const CSeq_annot_Handle&, const CSeq_feat&, ECallMode)
 {
     m_App.CallRemoveFeat();
 }
@@ -261,13 +265,13 @@ void CTestEditSaver::Attach(const CSeq_entry_Handle&, const CBioseq_set_Handle&,
 {
     m_App.CallAttachBioseq_set();
 }
-void CTestEditSaver::Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&, 
-                            IEditSaver::ECallMode mode)
+void CTestEditSaver::Remove(const CBioseq_set_Handle&, const CSeq_entry_Handle&,
+                            int, IEditSaver::ECallMode mode)
 {
     m_App.CallRemoveSeq_entry();
 }
-void CTestEditSaver::Attach(const CBioseq_set_Handle&, const CSeq_entry_Handle&, int, 
-                            IEditSaver::ECallMode mode)
+void CTestEditSaver::Attach(const CBioseq_set_Handle&, const CSeq_entry_Handle&, 
+                            int, IEditSaver::ECallMode mode)
 {
     m_App.CallAttachSeq_entry();
 }
@@ -281,9 +285,17 @@ void CTestEditSaver::Remove(const CSeq_entry_Handle&,
 {
     m_App.CallRemoveAnnot();
 }
-void CTestEditSaver::Reset(const CSeq_entry_Handle&, IEditSaver::ECallMode mode)
+void CTestEditSaver::Detach(const CSeq_entry_Handle&, 
+                            const CBioseq_Handle&,
+                            IEditSaver::ECallMode mode)
 {
-    m_App.CallResetSeq_entry();
+    m_App.CallDetachBioseq();
+}
+void CTestEditSaver::Detach(const CSeq_entry_Handle&, 
+                            const CBioseq_set_Handle&,
+                            IEditSaver::ECallMode mode)
+{
+    m_App.CallDetachBioseq_set();
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -393,14 +405,13 @@ int CTestApp::Run(void)
                                                   "ID2",
                                                   CObjectManager::eDefault)
            .GetLoader());
-
-    CRef<IDataPatcher> patcher(new CTestPatcher);
+    CRef<IEditsDBEngine> dbengine(new CEmptyDBEngine);
     CRef<IEditSaver> saver(new CTestEditSaver(*this));
 
     
     CDataLoaderPatcher::RegisterInObjectManager(*object_manager,
                                                 loader,
-                                                patcher,
+                                                dbengine,
                                                 saver,
                                                 CObjectManager::eDefault,
                                                 88);
@@ -425,13 +436,13 @@ int CTestApp::Run(void)
                 CScopeTransaction tr = scope.GetTransaction();
                 entry.GetEditHandle().ConvertSeqToSet();
                 CHECK(BeginTransaction, 1);
-                CHECK(ResetSeq_entry, 1);
+                CHECK(DetachBioseq, 1);
                 CHECK(AttachBioseq_set, 1);
                 CHECK(AttachSeq_entry, 1);
                 CHECK(AttachBioseq, 1);
             }
             CHECK(RollbackTransaction, 1);
-            CHECK(ResetSeq_entry, 3);
+            CHECK(DetachBioseq_set, 1);
             CHECK(RemoveSeq_entry, 1);
             CHECK(AttachBioseq, 2);
             {
@@ -450,16 +461,16 @@ int CTestApp::Run(void)
                 CScopeTransaction tr = scope.GetTransaction();
                 entry.GetEditHandle().ConvertSetToSeq();
                 CHECK(BeginTransaction, 1);
-                CHECK(ResetSeq_entry, 2);
+                CHECK(DetachBioseq_set, 1);
                 CHECK(AttachBioseq, 1);
             }
             CHECK(RollbackTransaction, 1);
-            CHECK(ResetSeq_entry, 3);
+            CHECK(DetachBioseq, 2);
             CHECK(AttachBioseq_set, 1);
             CHECK(AttachBioseq, 2);
             bioseq = entry.GetEditHandle().ConvertSetToSeq();
             CHECK(BeginTransaction, 1);
-            CHECK(ResetSeq_entry, 2);
+            CHECK(DetachBioseq_set, 1);
             CHECK(AttachBioseq, 1);
             CHECK(CommitTransaction, 1);
         }
@@ -513,7 +524,7 @@ int CTestApp::Run(void)
         {
             CScopeTransaction tr = scope.GetTransaction();
             bioseq.GetEditHandle().Remove();
-            CHECK(ResetSeq_entry, 1);
+            CHECK(DetachBioseq, 1);
             CHECK(RemoveSeq_entry, 1);
         }
         CHECK(AttachSeq_entry, 1);
@@ -555,6 +566,9 @@ int main(int argc, const char* argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.3  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.2  2005/11/16 21:11:56  didenko
 * Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
 *

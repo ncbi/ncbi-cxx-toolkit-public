@@ -165,6 +165,15 @@ public:
     const TGraph::iterator& x_GetGraphIter(void) const;
     const TLocs::iterator& x_GetLocsIter(void) const;
 
+    static void x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
+                               const CSeq_align& align,
+                               int loc_index_shift);
+    static void x_ProcessFeat(vector<CHandleRangeMap>& hrmaps,
+                              const CSeq_feat& feat);
+    static void x_ProcessGraph(vector<CHandleRangeMap>& hrmaps,
+                               const CSeq_graph& graph);
+
+
 private:
     friend class CSeq_annot_Info;
 
@@ -172,9 +181,6 @@ private:
     // for sequence segments. The annot object points to the seq-annot
     // containing the original annotation object.
 
-    void x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
-                        const CSeq_align& align,
-                        int loc_index_shift) const;
     void x_Locs_AddFeatSubtype(int ftype,
                                int subtype,
                                TTypeIndexSet& idx_set) const;
@@ -458,6 +464,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.21  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

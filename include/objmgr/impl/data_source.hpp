@@ -442,7 +442,10 @@ private:
 class NCBI_XOBJMGR_EXPORT CDSAnnotLockReadGuard
 {
 public:
+    CDSAnnotLockReadGuard();
     CDSAnnotLockReadGuard(CDataSource& ds);
+
+    void Guard(CDataSource& ds);
 
 private:
     CDataSource::TMainLock::TReadLockGuard     m_MainGuard;
@@ -453,7 +456,10 @@ private:
 class NCBI_XOBJMGR_EXPORT CDSAnnotLockWriteGuard
 {
 public:
+    CDSAnnotLockWriteGuard();
     CDSAnnotLockWriteGuard(CDataSource& ds);
+
+    void Guard(CDataSource& ds);
 
 private:
     CDataSource::TMainLock::TReadLockGuard      m_MainGuard;

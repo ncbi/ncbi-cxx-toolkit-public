@@ -136,6 +136,7 @@ void CBioseq_set_Info::x_TSEAttachContents(CTSE_Info& tse)
             tse.x_SetBioseq_setId(m_Bioseq_set_Id, this);
         }
     }
+    SetBioObjectId(tse.x_IndexBioseq_set(this));
     // members
     NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
         (*it)->x_TSEAttach(tse);
@@ -428,8 +429,6 @@ int CBioseq_set_Info::GetEntryIndex(const CSeq_entry_Info& info) const
     return -1;
 }
 
-
-
 void CBioseq_set_Info::x_AttachEntry(CRef<CSeq_entry_Info> entry)
 {
     _ASSERT(!entry->HasParent_Info());
@@ -472,6 +471,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/01/25 18:59:04  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.15  2005/11/15 19:22:07  didenko
  * Added transactions and edit commands support
  *

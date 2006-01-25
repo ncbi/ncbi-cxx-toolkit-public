@@ -72,7 +72,7 @@ class CSeq_annot_EditHandle;
 class CSeq_entry_Info;
 
 class CBioseq_set_Info;
-
+class CBioObjectId;
 
 class CBioseq_set_ScopeInfo : public CScopeInfo_Base
 {
@@ -129,6 +129,9 @@ public:
     /// The object is guaranteed to have basic information loaded. 
     /// Some information may be not loaded yet.
     CConstRef<CBioseq_set> GetBioseq_setCore(void) const;
+
+    /// Get unique object id
+    const CBioObjectId& GetBioObjectId(void) const;
 
     /// Check if the bioseq set is empty
     bool IsEmptySeq_set(void) const;
@@ -609,6 +612,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.23  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

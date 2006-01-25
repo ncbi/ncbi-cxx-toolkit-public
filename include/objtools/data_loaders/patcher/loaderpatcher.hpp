@@ -41,7 +41,8 @@
 #include <objmgr/impl/tse_assigner.hpp>
 #include <objmgr/edit_saver.hpp>
 #include <objmgr/seq_id_translator.hpp>
-#include <objtools/data_loaders/patcher/datapatcher_iface.hpp>
+#include <objmgr/edits_db_engine.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -53,9 +54,9 @@ BEGIN_SCOPE(objects)
 
 // Parameter names used by loader factory
 
-const string kCFParam_DLP_DataLoader = "DataLoader"; 
-const string kCFParam_DLP_DataPatcher = "DataPatcher"; 
-const string kCFParam_DLP_EditSaver = "EditSaver"; 
+const string kCFParam_DLP_DataLoader =    "DataLoader"; 
+const string kCFParam_DLP_EditsDBEngine = "EdtisDBEngine"; 
+const string kCFParam_DLP_EditSaver =     "EditSaver"; 
 
 class NCBI_XLOADER_PATCHER_EXPORT CDataLoaderPatcher : public CDataLoader
 {
@@ -64,16 +65,16 @@ public:
 
     struct SParam
     {
-        SParam(CRef<CDataLoader>  data_loader,
-               CRef<IDataPatcher> patcher,
-               CRef<IEditSaver>   saver) 
-            : m_DataLoader(data_loader), m_Patcher(patcher),
+        SParam(CRef<CDataLoader>    data_loader,
+               CRef<IEditsDBEngine> db_engine,
+               CRef<IEditSaver>     saver) 
+            : m_DataLoader(data_loader), m_DBEngine(db_engine),
               m_EditSaver(saver)
         {}
         
-        CRef<CDataLoader>  m_DataLoader;
-        CRef<IDataPatcher> m_Patcher;
-        CRef<IEditSaver>   m_EditSaver;
+        CRef<CDataLoader>    m_DataLoader;
+        CRef<IEditsDBEngine> m_DBEngine;
+        CRef<IEditSaver>     m_EditSaver;
 
     };
 
@@ -81,17 +82,17 @@ public:
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         CRef<CDataLoader>,
-        CRef<IDataPatcher>,
+        CRef<IEditsDBEngine>,
         CRef<IEditSaver> saver = CRef<IEditSaver>(),
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 
     static string GetLoaderNameFromArgs(const SParam& param);
-    static string GetLoaderNameFromArgs(CRef<CDataLoader> data_loader,
-                                        CRef<IDataPatcher> patcher,
-                                        CRef<IEditSaver>   saver)
+    static string GetLoaderNameFromArgs(CRef<CDataLoader>    data_loader,
+                                        CRef<IEditsDBEngine> db_engine,
+                                        CRef<IEditSaver>     saver)
     {
-        return GetLoaderNameFromArgs(SParam(data_loader, patcher, saver));
+        return GetLoaderNameFromArgs(SParam(data_loader, db_engine, saver));
     }
     
     virtual ~CDataLoaderPatcher();
@@ -112,13 +113,14 @@ public:
     /// CDataLoader has reasonable default implementation.
     virtual TTSE_LockSet GetExternalRecords(const CBioseq_Info& bioseq);
 
-    virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
+    //virtual void GetIds(const CSeq_id_Handle& idh, TIds& ids);
 
     // blob operations
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
 
     virtual bool CanGetBlobById(void) const;
+    virtual TBlobId GetBlobIdFromString(const string& str) const;
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
 
     virtual void GetChunk(TChunk chunk_info);
@@ -136,18 +138,20 @@ public:
     
 private:
 
-    CRef<CDataLoader>  m_DataLoader;
-    CRef<IDataPatcher> m_Patcher;
-    CRef<IEditSaver>   m_EditSaver;
+    CRef<CDataLoader>    m_DataLoader;
+    CRef<IEditsDBEngine> m_DBEngine;
+    CRef<IEditSaver>     m_EditSaver;
 
     typedef CParamLoaderMaker<CDataLoaderPatcher, SParam> TMaker;
     friend class CParamLoaderMaker<CDataLoaderPatcher, SParam>;
     
-    void PatchLockSet(const TTSE_LockSet& orig_locks, 
+    void x_PatchLockSet(const TTSE_LockSet& orig_locks, 
                       TTSE_LockSet& new_locks);
 
-    TTSE_Lock   PatchLock(const TTSE_Lock& lock);
+    TTSE_Lock   x_PatchLock(const TTSE_Lock& lock);
 
+    bool x_IsPatchNeeded(const CTSE_Info& tse);
+    void x_ApplyPatches(CTSE_Info& tse);
 
     CDataLoaderPatcher(const string& loader_name,
                        const SParam& param);
@@ -184,6 +188,9 @@ END_NCBI_SCOPE
 
 /* ========================================================================== 
  * $Log$
+ * Revision 1.8  2006/01/25 18:59:03  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.7  2005/12/05 19:45:58  rsmith
  * take out illegal class sepcifier in class def.
  *

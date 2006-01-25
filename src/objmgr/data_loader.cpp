@@ -160,6 +160,12 @@ CDataLoader::TTSE_Lock CDataLoader::GetBlobById(const TBlobId& /*blob_id*/)
                "CDataLoader::GetBlobById() is not implemented in subclass");
 }
 
+CDataLoader::TBlobId CDataLoader::GetBlobIdFromString(const string& str) const
+{
+    NCBI_THROW(CLoaderException, eNotImplemented,
+               "CDataLoader::GetBlobIdFromString(str) is not implemented in subclass");
+}
+
 
 void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
@@ -398,6 +404,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.27  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *

@@ -34,6 +34,7 @@
 #include <objmgr/bioseq_set_handle.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/bio_object_id.hpp>
 
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
@@ -91,6 +92,10 @@ bool CBioseq_set_Handle::IsEmptySeq_set(void) const
     return x_GetInfo().IsEmptySeq_set();
 }
 
+const CBioObjectId& CBioseq_set_Handle::GetBioObjectId(void) const
+{
+    return x_GetInfo().GetBioObjectId();
+}
 
 CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
 {
@@ -734,6 +739,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/01/25 18:59:04  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.22  2005/11/15 22:00:57  ucko
 * Don't return expressions from functions declared void.
 *

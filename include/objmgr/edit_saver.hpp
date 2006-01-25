@@ -37,6 +37,7 @@
 
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,7 +57,6 @@ class CSeq_graph;
 
 class CSeq_descr;
 class CSeqdesc;
-class CSeq_id_Handle;
 
 /// Edit Saver Interface
 ///
@@ -137,7 +137,8 @@ public:
     /// ID operation
     virtual void AddId   (const CBioseq_Handle&, const CSeq_id_Handle&, ECallMode) = 0;
     virtual void RemoveId(const CBioseq_Handle&, const CSeq_id_Handle&, ECallMode) = 0;
-    virtual void ResetIds(const CBioseq_Handle&, ECallMode) = 0;
+    typedef set<CSeq_id_Handle> TIds;
+    virtual void ResetIds(const CBioseq_Handle&, const TIds&, ECallMode) = 0;
 
     //----------------------------------------------------------------
     // Bioseq_set operations
@@ -173,8 +174,10 @@ public:
                         const CBioseq_Handle& what, ECallMode ) = 0;
     virtual void Attach(const CSeq_entry_Handle& entry, 
                         const CBioseq_set_Handle& what, ECallMode ) = 0;
-    virtual void Reset (const CSeq_entry_Handle& entry, ECallMode) = 0;
-
+    virtual void Detach(const CSeq_entry_Handle& entry, 
+                        const CBioseq_Handle& what, ECallMode ) = 0;
+    virtual void Detach(const CSeq_entry_Handle& entry, 
+                        const CBioseq_set_Handle& what, ECallMode ) = 0;
 
     virtual void Attach(const CSeq_entry_Handle& entry, 
                         const CSeq_annot_Handle& what, ECallMode) = 0;
@@ -185,7 +188,8 @@ public:
                         const CSeq_entry_Handle& entry, 
                         int Index, ECallMode) = 0;
     virtual void Remove(const CBioseq_set_Handle& handle, 
-                        const CSeq_entry_Handle&, ECallMode) = 0;
+                        const CSeq_entry_Handle&,
+                        int Index, ECallMode) = 0;
 
     //-----------------------------------------------------------------
     // Annotation operations
@@ -203,9 +207,12 @@ public:
     virtual void Add(const CSeq_annot_Handle& handle,
                      const CSeq_graph& obj, ECallMode) = 0;
 
-    virtual void Remove(const CSeq_feat_Handle& handle, ECallMode) = 0;
-    virtual void Remove(const CSeq_align_Handle& handle, ECallMode) = 0;
-    virtual void Remove(const CSeq_graph_Handle& handle, ECallMode) = 0;
+    virtual void Remove(const CSeq_annot_Handle& handle, 
+                        const CSeq_feat& old_value, ECallMode) = 0;
+    virtual void Remove(const CSeq_annot_Handle& handle, 
+                        const CSeq_align& old_value, ECallMode) = 0;
+    virtual void Remove(const CSeq_annot_Handle& handle, 
+                        const CSeq_graph& old_value, ECallMode) = 0;
 
     //-----------------------------------------------------------------
     virtual void RemoveTSE(const CTSE_Handle& handle, ECallMode) = 0;
@@ -238,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/25 18:59:03  didenko
+ * Redisgned bio objects edit facility
+ *
  * Revision 1.1  2005/11/15 19:22:06  didenko
  * Added transactions and edit commands support
  *

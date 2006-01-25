@@ -112,7 +112,7 @@ public:
         m_Scope.SelectNone(m_Handle);
         IEditSaver* saver = GetEditSaver(m_Handle);
         if (saver) {
-            saver->Reset(m_Handle, IEditSaver::eUndo);
+            saver->Detach(m_Handle, m_RetHandle, IEditSaver::eUndo);
         }
     }
     Handle GetRet() const { return m_RetHandle; }
@@ -329,6 +329,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2006/01/25 18:59:03  didenko
+* Redisgned bio objects edit facility
+*
 * Revision 1.1  2005/11/15 19:22:07  didenko
 * Added transactions and edit commands support
 *
