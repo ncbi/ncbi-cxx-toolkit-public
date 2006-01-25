@@ -52,6 +52,13 @@ CHG_Gene::~CHG_Gene(void)
 {
 }
 
+inline
+CHG_Gene::TSymbol CHG_Gene::x_GetGeneidLabel(void) const 
+{ 
+	return( "GeneId:" + NStr::IntToString( GetGeneid() ) );  
+} // end CHG_Gene::x_GetGeneidLabel
+
+
 ////////////////////////////////////////////////////////// CHG_Gene::GetLabel \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 // 
 CHG_Gene::TSymbol CHG_Gene::GetLabel(void) const
@@ -78,15 +85,6 @@ CHG_Gene::TSymbol CHG_Gene::GetLabel(void) const
 } // end CHG_Gene::GetLabel
 
 
-////////////////////////////////////////////////////////// CHG_Gene::x_GetGeneidLabel \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// 
-inline
-CHG_Gene::TSymbol CHG_Gene::x_GetGeneidLabel(void) const 
-{ 
-	return( "GeneId:" + NStr::IntToString( GetGeneid() ) );  
-} // end CHG_Gene::x_GetGeneidLabel
-
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -96,6 +94,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/01/25 18:15:52  ucko
+* Move x_GetGeneidLabel up for the sake of WorkShop 5.3, which insists
+* that inline functions must be defined before they are called.
+*
 * Revision 1.1  2006/01/24 22:48:05  hassant
 * Added method GetLabel that implements the logic for getting gene label
 *
