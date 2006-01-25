@@ -55,7 +55,8 @@ ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
     if (m_Sock->SetTimeout(eIO_Read, tmp) != eIO_Success) {
         return eRW_Error;
     }
-    return status == eIO_Success ? eRW_Success : eRW_Error;
+    return status == eIO_Success  ||  status == eIO_Timeout
+        ? eRW_Success : eRW_Error;
 }
 
 
@@ -107,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2006/01/25 20:28:41  lavr
+ * CSocketReaderWriter::PendingCount():  Return success on timeout (poll)
+ *
  * Revision 1.4  2006/01/18 03:00:13  lavr
  * CSocketReaderWriter::PendingCount() fixed not to use buffer when peeking
  *
