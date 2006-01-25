@@ -67,7 +67,7 @@ const ISeq_id_Translator& GetSeqIdTranslator()
 {
     static auto_ptr<ISeq_id_Translator> s_Translator;
     if (!s_Translator.get()) {
-        CSeq_id_Translator_Simple* translator = new CSeq_id_Translator_Simple;
+        CSimpleSeq_id_Translator* translator = new CSimpleSeq_id_Translator;
         s_Translator.reset(translator);
         translator->AddMapEntry(id_orig,id_patched);
     }
@@ -152,6 +152,9 @@ test_suite* init_unit_test_suite(int argc, char * argv[])
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/01/25 19:28:59  didenko
+* Removed unsed files
+*
 * Revision 1.4  2005/12/05 17:07:49  ucko
 * Add support for Boost 1.33.x, which is now installed on Solaris 10.
 *

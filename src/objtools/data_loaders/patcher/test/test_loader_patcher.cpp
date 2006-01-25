@@ -44,7 +44,6 @@
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/patcher/loaderpatcher.hpp>
-#include <objtools/data_loaders/patcher/datapatcher_iface.hpp>
 
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
@@ -59,13 +58,11 @@ public:
     ~CDataPatcher() {}
     
     virtual CRef<ITSE_Assigner> GetAssigner();
-    virtual CRef<ISeq_id_Translator> GetSeqIdTranslator(); 
     virtual EPatchLevel IsPatchNeeded(const CTSE_Info& tse) { return ePartTSE ; }
 
 private:
 
     CRef<ITSE_Assigner> m_Assigner;
-    CRef<ISeq_id_Translator> m_Translator;
     CSeq_id_Handle m_OrigId;
     CSeq_id_Handle m_PatchedId;
 };
@@ -81,21 +78,11 @@ CRef<ITSE_Assigner> CDataPatcher::GetAssigner()
 {
     if (!m_Assigner) {
         m_Assigner.Reset(new CTSE_Default_Assigner);
-        m_Assigner->SetSeqIdTranslator(GetSeqIdTranslator());
     }
     return m_Assigner;
 }
 
 
-CRef<ISeq_id_Translator> CDataPatcher::GetSeqIdTranslator()
-{
-    if (!m_Translator) {
-        CSeq_id_Translator_Simple* translator = new CSeq_id_Translator_Simple;
-        m_Translator.Reset(translator);
-        translator->AddMapEntry(m_OrigId, m_PatchedId);
-    }
-    return m_Translator;
-}
 
 
 class CLoaderPatcherTester : public CNcbiApplication
@@ -163,7 +150,7 @@ int CLoaderPatcherTester::Run(void)
         bioseq2 = bh.GetCompleteBioseq();
     }
 
-    CRef<CBioseq> bioseq3 = PatchSeqId_Copy(*bioseq1, *patcher->GetSeqIdTranslator());
+    //    CRef<CBioseq> bioseq3 = PatchSeqId_Copy(*bioseq1, *patcher->GetSeqIdTranslator());
 
     if (bioseq3->Equals(*bioseq2) ){
         NcbiCout << "Passed" << NcbiEndl;
@@ -191,6 +178,9 @@ int main(int argc, const char** argv)
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2006/01/25 19:32:10  didenko
+* Removed unsed files
+*
 * Revision 1.4  2005/11/16 21:11:56  didenko
 * Fixed IDataPatcher and Patcher loader so they can corretly handle a whole TSE replacement
 *
