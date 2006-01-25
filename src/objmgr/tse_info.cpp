@@ -38,6 +38,7 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_assigner.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
@@ -45,8 +46,8 @@
 #include <objmgr/impl/handle_range.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+
 #include <objmgr/objmgr_exception.hpp>
-#include <objmgr/seq_id_translator.hpp>
 
 #include <algorithm>
 
@@ -113,7 +114,8 @@ SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& _DEBUG_ARG(objs))
 //
 
 
-CTSE_Info::CTSE_Info(void)
+CTSE_Info::CTSE_Info(void) 
+    : m_InternalBioObjNumber(0)
 {
     x_Initialize();
 
@@ -123,6 +125,8 @@ CTSE_Info::CTSE_Info(void)
 
 CTSE_Info::CTSE_Info(const TBlobId& blob_id,
                      TBlobVersion blob_version)
+    : m_InternalBioObjNumber(0)
+
 {
     x_Initialize();
 
@@ -137,6 +141,8 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
                      TBlobState blob_state,
                      const TBlobId& blob_id,
                      TBlobVersion blob_version)
+    : m_InternalBioObjNumber(0)
+
 {
     x_Initialize();
 
@@ -153,6 +159,8 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
 
 CTSE_Info::CTSE_Info(CSeq_entry& entry,
                      TBlobState blob_state)
+    : m_InternalBioObjNumber(0)
+
 {
     x_Initialize();
 
@@ -166,7 +174,9 @@ CTSE_Info::CTSE_Info(CSeq_entry& entry,
 
 
 CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
-    : m_BaseTSE(new SBaseTSE(tse))
+    : m_BaseTSE(new SBaseTSE(tse)),
+      m_InternalBioObjNumber(0)
+
 {
     x_Initialize();
 
@@ -174,6 +184,7 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
     m_Name = tse->m_Name;
     m_UsedMemory = tse->m_UsedMemory;
     m_LoadState = eLoaded;
+
 
     x_SetObject(*tse, &m_BaseTSE->m_ObjectCopyMap);
     x_TSEAttach(*this);
@@ -189,7 +200,8 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
         CDataLoader* ld = tse->GetDataSource().GetDataLoader();
         if ( ld ) {
             m_EditSaver = ld->GetEditSaver();
-            m_BlobId = CBlobIdKey(new CBlobIdString(tse->m_BlobId.ToString()));
+            m_BlobId = tse->m_BlobId;
+            //CBlobIdKey(new CBlobIdString(tse->m_BlobId.ToString()));
         }
     }
 }
@@ -228,6 +240,7 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
 
 CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse, 
                              CRef<CSeq_entry> entry)
+//                             CRef<ITSE_Assigner> listener)
 {
     m_BlobState = tse->m_BlobState;
     m_Name = tse->m_Name;
@@ -236,17 +249,13 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse,
     if (entry)
         SetSeq_entry(*entry);
 
-    return *this;
-}
-
-CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse, 
-                             CRef<CSeq_entry> entry, 
-                             CRef<ITSE_Assigner> listener)
-{
-    Assign(tse,entry);
-
     m_Split = tse->m_Split;
     if (m_Split) {
+        CRef<ITSE_Assigner> listener = m_Split->GetAssigner(*tse);
+        if( !listener ) 
+            listener.Reset(new CTSE_Default_Assigner);
+        m_Split->x_TSEAttach(*this, listener);
+        /*
         if( !listener ) {
             listener = m_Split->GetAssigner(*tse);
             if( !listener ) {
@@ -254,6 +263,7 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse,
             }
         }
         m_Split->x_TSEAttach(*this, listener);
+        */
     }
 
     //x_TSEAttach(*this);
@@ -332,7 +342,114 @@ void CTSE_Info::SetSeq_entry(CSeq_entry& entry, CTSE_SetObjectInfo* set_info)
     }
 }
 
+CBioObjectId CTSE_Info::x_IndexBioseq(CBioseq_Info* info) 
+{
+    //    x_RegisterRemovedIds(bioseq,info);
+    CBioObjectId uniq_id;
+    _ASSERT(info->GetBioObjectId().GetType() == CBioObjectId::eUnSet);
+    ITERATE ( CBioseq_Info::TId, it, info->GetId() ) {
+        x_SetBioseqId(*it, info);
+        if ( it->IsGi() )
+            uniq_id = CBioObjectId(*it);
+    }
+    if (uniq_id.GetType() == CBioObjectId::eUnSet) {
+        if (!info->GetId().empty()) 
+            uniq_id = CBioObjectId(*info->GetId().begin());
+        else 
+            uniq_id = x_RegisterBioObject(*info);
+    }
+    return uniq_id;
+}
+CBioObjectId CTSE_Info::x_IndexBioseq_set(CBioseq_set_Info* info) 
+{
+    CBioObjectId uniq_id;
+    _ASSERT(info->GetBioObjectId().GetType() == CBioObjectId::eUnSet);
+    if (info->m_Bioseq_set_Id > 0)
+        uniq_id = CBioObjectId(CBioObjectId::eSetId, info->m_Bioseq_set_Id);
+    else 
+        uniq_id = x_RegisterBioObject(*info);
+    return uniq_id;
+}
 
+CBioObjectId CTSE_Info::x_RegisterBioObject(CTSE_Info_Object& info)
+{
+    CBioObjectId uniq_id = info.GetBioObjectId();
+    if (uniq_id.GetType() == CBioObjectId::eUniqNumber) {
+        if (m_BioObjects.find(uniq_id) != m_BioObjects.end())
+            return uniq_id;
+    }
+        
+    uniq_id = CBioObjectId(CBioObjectId::eUniqNumber,
+                           m_InternalBioObjNumber++);
+    m_BioObjects[uniq_id] = &info;
+    return uniq_id;
+}
+
+void CTSE_Info::x_UnregisterBioObject(CTSE_Info_Object& info)
+{
+    const CBioObjectId& uid = info.GetBioObjectId();
+    if (uid.GetType() == CBioObjectId::eUniqNumber) {
+        TBioObjects::iterator i = m_BioObjects.find(uid);
+        if (i != m_BioObjects.end()) {
+            // i->second->x_SetBioObjectId(CBioObjectId());
+            m_BioObjects.erase(i);
+        }
+    }    
+}
+
+CTSE_Info_Object* CTSE_Info::x_FindBioObject(const CBioObjectId& uniq_id) const
+{
+    switch (uniq_id.GetType()) {
+    case CBioObjectId::eUniqNumber:
+        {
+            TBioObjects::const_iterator i = m_BioObjects.find(uniq_id);
+            if (i != m_BioObjects.end())
+                return i->second;
+        }
+        return NULL;
+    case CBioObjectId::eSeqId:
+        {
+            x_GetRecords(uniq_id.GetSeqId(), true);
+            CFastMutexGuard guard(m_BioseqsMutex);
+            TBioseqs::const_iterator it = m_Bioseqs.find(uniq_id.GetSeqId());
+            if ( it != m_Bioseqs.end() ) {
+                return it->second;
+            }
+        }
+        return NULL;
+    case CBioObjectId::eSetId:
+        {
+            TBioseq_sets::const_iterator it = 
+                m_Bioseq_sets.find(uniq_id.GetSetId());
+            if ( it != m_Bioseq_sets.end() ) {
+                return it->second;
+            }
+        }
+        return NULL;
+    default:
+        _ASSERT(0);
+    }
+    return NULL;
+}
+
+/*
+void CTSE_Info::x_RegisterRemovedIds(const CConstRef<CBioseq>& bioseq, 
+                                     CBioseq_Info* info)
+{
+    if (m_SetObjectInfo) {
+        CTSE_SetObjectInfo::TBioseq_InfoMap::iterator iter =
+            m_SetObjectInfo->m_Bioseq_InfoMap.find(bioseq);
+        if ( iter != m_SetObjectInfo->m_Bioseq_InfoMap.end() ) {
+            vector<CSeq_id_Handle>& ids = iter->second.m_Removed_ids;
+            for( vector<CSeq_id_Handle>::const_iterator idit = ids.begin();
+                 idit != ids.end(); ++idit) {
+                _ASSERT( m_Removed_Bioseqs.find(*idit) == m_Removed_Bioseqs.end());
+                m_Removed_Bioseqs.insert(TBioseqs::value_type(*idit, info));
+            }
+        }
+    }
+}
+*/
 CRef<CSeq_annot_SNP_Info>
 CTSE_Info::x_GetSNP_Info(const CConstRef<CSeq_annot>& annot)
 {
@@ -492,18 +609,9 @@ void CTSE_Info::x_DoUpdate(TNeedUpdateFlags flags)
     TParent::x_DoUpdate(flags);
 }
 
-
 void CTSE_Info::GetBioseqsIds(TBioseqsIds& ids) const
 {
     
-    if ( m_Split ) {
-        m_Split->GetBioseqsIds(ids);
-    }
-    if ( m_Split && m_SeqIdTranslator ) {
-        TBioseqsIds t_ids;
-        m_SeqIdTranslator->TranslateToOrig(ids, t_ids);
-        t_ids.swap(ids);
-    }
     {{
         CFastMutexGuard guard(m_BioseqsMutex);
         ITERATE ( TBioseqs, it, m_Bioseqs ) {
@@ -528,9 +636,7 @@ bool CTSE_Info::ContainsBioseq(const CSeq_id_Handle& id) const
         }
     }}
     if ( m_Split ) {
-        return m_SeqIdTranslator ? 
-            m_Split->ContainsBioseq(m_SeqIdTranslator->TranslateToPatched(id)) : 
-            m_Split->ContainsBioseq(id);
+        return m_Split->ContainsBioseq(id);
     }
     return false;
 }
@@ -605,10 +711,7 @@ SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
 void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
     if ( m_Split ) {
-        if ( m_SeqIdTranslator )
-            m_Split->x_GetRecords(m_SeqIdTranslator->TranslateToPatched(id), bioseq);
-        else
-            m_Split->x_GetRecords(id, bioseq);
+        m_Split->x_GetRecords(id, bioseq);
     }
 }
 
@@ -647,7 +750,7 @@ void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& id,
 
 
 void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& id,
-                                CBioseq_Info* _DEBUG_ARG(info))
+                                CBioseq_Info* info)
 {
     {{
         CFastMutexGuard guard(m_BioseqsMutex);
@@ -657,6 +760,13 @@ void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& id,
         }
         _ASSERT(iter->second == info);
         m_Bioseqs.erase(iter);
+
+        if (m_Split) {
+            iter = m_Removed_Bioseqs.find(id);
+            if (iter == m_Removed_Bioseqs.end())
+                m_Removed_Bioseqs.insert(TBioseqs::value_type(id, info));
+        }
+
     }}
     x_UnindexSeqTSE(id);
 }
@@ -679,13 +789,18 @@ void CTSE_Info::x_SetBioseq_setId(int key,
 
 
 void CTSE_Info::x_ResetBioseq_setId(int key,
-                                    CBioseq_set_Info* _DEBUG_ARG(info))
+                                    CBioseq_set_Info* info)
 {
     TBioseq_sets::iterator iter = m_Bioseq_sets.lower_bound(key);
     if ( iter != m_Bioseq_sets.end() && iter->first == key ) {
         _ASSERT(iter->second == info);
         m_Bioseq_sets.erase(iter);
-    }
+        if (m_Split) {
+            iter = m_Removed_Bioseq_sets.find(key);
+            if (iter == m_Removed_Bioseq_sets.end())
+                m_Removed_Bioseq_sets.insert(TBioseq_sets::value_type(key, info));
+        }
+    }    
 }
 
 
@@ -735,7 +850,9 @@ void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
 {
     _ASSERT(&object.GetTSE_Info() == this);
     if ( object.x_DirtyAnnotIndex() ) {
-        CDataSource::TAnnotLockWriteGuard guard(GetDataSource());
+        CDataSource::TAnnotLockWriteGuard guard;
+        if (HasDataSource())
+            guard.Guard(GetDataSource());
         TAnnotLockWriteGuard guard2(GetAnnotLock());
         object.x_UpdateAnnotIndex(*this);
         _ASSERT(!object.x_DirtyAnnotIndex());
@@ -1043,7 +1160,14 @@ void CTSE_Info::x_UnmapAnnotObjects(const SAnnotObjectsIndex& infos)
 
 CBioseq_set_Info& CTSE_Info::x_GetBioseq_set(int id)
 {
-    TBioseq_sets::iterator iter = m_Bioseq_sets.find(id);
+    TBioseq_sets::iterator iter;
+    if (m_Split) {
+        iter = m_Removed_Bioseq_sets.find(id);
+        if ( iter != m_Removed_Bioseq_sets.end() )
+            return *iter->second;
+    }
+        
+    iter = m_Bioseq_sets.find(id);
     if ( iter == m_Bioseq_sets.end() ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
                    "cannot find Bioseq-set by local id");
@@ -1055,7 +1179,14 @@ CBioseq_set_Info& CTSE_Info::x_GetBioseq_set(int id)
 CBioseq_Info& CTSE_Info::x_GetBioseq(const CSeq_id_Handle& id)
 {
     CFastMutexGuard guard(m_BioseqsMutex);
-    TBioseqs::iterator iter = m_Bioseqs.find(id);
+    TBioseqs::iterator iter;
+    if (m_Split) {
+        iter = m_Removed_Bioseqs.find(id);
+        if ( iter != m_Removed_Bioseqs.end() ) 
+            return *iter->second;
+    }
+
+    iter = m_Bioseqs.find(id);
     if ( iter == m_Bioseqs.end() ) {
         NCBI_THROW(CObjMgrException, eRegisterError,
                    "cannot find Bioseq by Seq-id "+id.AsString());
