@@ -2184,7 +2184,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
             s_PrintComment(req, **it, m_UsageWidth);
         }
         // Collect optional args
-        for (size_t grp = 0; grp < m_ArgGroups.size(); ++grp) {
+        for (int grp = 0; grp < int(m_ArgGroups.size()); ++grp) {
             if ( !m_ArgGroups[grp].empty() ) {
                 NStr::Wrap(m_ArgGroups[grp], m_UsageWidth, opt,
                     NStr::fWrap_Hyphenate, " *** ");
@@ -2536,6 +2536,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/01/25 19:43:27  grichenk
+ * Fixed warning
+ *
  * Revision 1.62  2006/01/23 19:17:10  grichenk
  * Added groups and error handler for arguments.
  *
