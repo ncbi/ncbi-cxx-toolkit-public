@@ -92,6 +92,7 @@ void CNetICacheClient::ReturnSocket(CSocket* sock)
         if (io_st == eIO_Success) {
             ERR_POST("ReturnSocket detected unread input.");
             delete sock;
+            return;
         }
     }}
 
@@ -124,7 +125,7 @@ bool CNetICacheClient::CheckConnect()
 				delete m_Sock;m_Sock = 0;
 				return CheckConnect();
     		}
-			if (m_Tmp[0] != 'O' && m_Tmp[1] != 'K') {
+			if (m_Tmp[0] != 'O' || m_Tmp[1] != 'K') {
 				delete m_Sock; m_Sock = 0;
 				return CheckConnect();
 			}
@@ -924,6 +925,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/01/25 19:28:07  vasilche
+ * Fixed deletion of bad sockets.
+ *
  * Revision 1.19  2006/01/25 17:31:35  kuznets
  * code cleanup
  *
