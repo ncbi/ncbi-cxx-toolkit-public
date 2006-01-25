@@ -602,16 +602,18 @@ static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
 ///@param handle: the bioseq handle
 ///@param feat_strand: the feature strand
 ///@param feat_id: the feature id to be filled
+///@param frame_adj: frame adjustment
+///@param mix_loc: is this seqloc mixed with other seqid?
 ///@return: the encoded protein sequence
 ///
 static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat, 
                                CScope& scope, list<CRange<TSeqPos> >& range,
                                const CBioseq_Handle& handle, 
                                ENa_strand feat_strand, string& feat_id,
-                               TSeqPos frame_adj)
+                               TSeqPos frame_adj, bool mix_loc)
 {
     string raw_cdr_product = NcbiEmptyString;
-    if(feat->IsSetProduct() && feat->GetProduct().IsWhole() && frame_adj == 0){
+    if(feat->IsSetProduct() && feat->GetProduct().IsWhole() && !mix_loc){
         //show actual aa  if there is a cds product
           
         const CSeq_id& productId = 
@@ -806,13 +808,17 @@ static void s_OutputFeature(string& reference_feat_line,
         if(reference_feat_line != NcbiEmptyString){
             actual_reference_feat = reference_feat_line.substr(start, len);
         }
-        if(color_feat_mismatch && actual_reference_feat != NcbiEmptyString ){
+        if(color_feat_mismatch 
+           && actual_reference_feat != NcbiEmptyString &&
+           !NStr::IsBlank(actual_reference_feat)){
             string base_color = "#F805F5";
             bool tagOpened = false;
             for(int i = 0; i < (int)actual_feat.size() &&
                     i < (int)actual_reference_feat.size(); i ++){
                 if (actual_feat[i] != actual_reference_feat[i]) {
-                    if(actual_feat[i] != ' ') {
+                    if(actual_feat[i] != ' ' &&
+                       actual_feat[i] != k_IntronChar &&
+                       actual_reference_feat[i] != k_IntronChar) {
                         if(!tagOpened){
                             out << "<font color=\""+base_color+"\"><b>";
                             tagOpened =  true;
@@ -820,7 +826,8 @@ static void s_OutputFeature(string& reference_feat_line,
                         
                     }
                 } else {
-                    if (actual_feat[i] != ' '){
+                    if (actual_feat[i] != ' '){ //no close if space to 
+                        //minimizing the open and close of tags
                         if(tagOpened){
                             out << "</b></font>";
                             tagOpened = false;
@@ -828,6 +835,7 @@ static void s_OutputFeature(string& reference_feat_line,
                     }
                 }
                 out << actual_feat[i];
+                //close tag at the end of line
                 if(tagOpened && i == (int)actual_feat.size() - 1){
                     out << "</b></font>";
                     tagOpened = false;
@@ -1955,7 +1963,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                 bool has_id = false;
                 list<CSeq_loc_CI::TRange> isolated_range;
                 ENa_strand feat_strand = eNa_strand_plus, prev_strand;
-                bool first_loc = true, mixed_strand = false;
+                bool first_loc = true, mixed_strand = false, mix_loc = false;
                 CRange<TSeqPos> feat_seq_range;
                 TSeqPos other_seqloc_length = 0;
                 //isolate the seqloc corresponding to feature
@@ -1991,6 +1999,7 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                         //seqid encoded amino acids in the front later
                         if (first_loc) {
                             other_seqloc_length += loc_it.GetRange().GetLength();
+                            mix_loc = true;
                         }
                     }
                 }
@@ -2040,7 +2049,8 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                         s_GetCdsSequence(m_SlaveGeneticCode, feat, scope,
                                          isolated_range, handle, feat_strand,
                                          featId, other_seqloc_length%3 == 0 ?
-                                         0 : 3 - other_seqloc_length%3);
+                                         0 : 3 - other_seqloc_length%3,
+                                         mix_loc);
                     if(raw_cdr_product == NcbiEmptyString){
                         continue;
                     }
@@ -3018,6 +3028,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.99  2006/01/25 17:31:13  jianye
+*no mismatch highlighting for intron
+*
 *Revision 1.98  2006/01/23 15:45:34  jianye
 *fix problem in showing cds of seqloc with mixed seqid
 *
