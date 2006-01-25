@@ -47,13 +47,15 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/data_loader.hpp>
+
+#include <objmgr/edits_db_saver.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/data_loaders/patcher/loaderpatcher.hpp>
 
 
-#include "sample_patcher.hpp"
-#include "sample_saver.hpp"
-#include "asn_db.hpp"
+//#include "sample_patcher.hpp"
+//#include "sample_saver.hpp"
+#include "file_db_engine.hpp"
 
 using namespace ncbi;
 using namespace objects;
@@ -71,6 +73,13 @@ class CEditBioseqSampleApp : public CNcbiApplication
 public:
     virtual void Init(void);
     virtual int  Run (void);
+
+private:
+    void x_RunEdits(const CSeq_id& id, IEditsDBEngine& engine, 
+                    CNcbiOstream& os);
+    void x_RunCheck(const CSeq_id& id, IEditsDBEngine& engine, 
+                    CNcbiOstream& os);
+
 };
 
 
@@ -113,6 +122,16 @@ void s_PrintDescr(const CBioseq_Handle& handle, CNcbiOstream& os)
     os << "# of descriptors:  " << desc_count << NcbiEndl;
 }
 
+void s_PrintIds(const CBioseq_Handle& handle, CNcbiOstream& os)
+{
+    const CBioseq_Handle::TId& ids = handle.GetId();
+    ITERATE(CBioseq_Handle::TId, id, ids) {
+        if (id != ids.begin()) os << " ; ";
+        os << id->AsString();
+    }
+    os << NcbiEndl;
+}
+
 void s_PrintFeat(const CBioseq_Handle& handle, CNcbiOstream& os)
 {
     unsigned feat_count = 0;
@@ -131,7 +150,7 @@ void s_RemoveBioseq(int gi, CScope& scope, CNcbiOstream& os)
 
     // Terminate the program if the GI cannot be resolved to a Bioseq.
     if ( !handle ) {
-        ERR_POST(Fatal << "Bioseq not found, with GI=" << gi);
+        ERR_POST( "Bioseq not found, with GI=" << gi);
         return;
     }
     handle.GetEditHandle().Remove();
@@ -146,31 +165,40 @@ int CEditBioseqSampleApp::Run(void)
     const CArgs& args = GetArgs();
     int gi = args["gi"].AsInteger();
 
-    /////////////////////////////////////////////////////////////////////////
-    // Create object manager
-    // * We use CRef<> here to automatically delete the OM on exit.
-    // * While the CRef<> exists GetInstance() will return the same object.
+    string db_path = "AsnDB";    
+    CFileDBEngine engine(db_path);
+    engine.CleanDB();
+
+    // Create Seq-id, set it to the GI specified on the command line
+    CSeq_id seq_id;
+    seq_id.SetGi(gi);
+
+    CNcbiOstream& os = NcbiCout;
+
+    x_RunEdits(seq_id, engine, os);
+    os << NcbiEndl;
+    x_RunCheck(seq_id, engine, os);
+    return 0;
+}
+
+void CEditBioseqSampleApp::x_RunEdits(const CSeq_id& seq_id, 
+                                      IEditsDBEngine& engine,
+                                      CNcbiOstream& os)
+{
+    CRef<IEditsDBEngine> ref_engine(&engine);
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
-
-    // Create GenBank data loader and register it with the OM.
-    // * The GenBank loader is automatically marked as a default loader
-    // * to be included in scopes during the CScope::AddDefaults() call.
-
     CRef<CDataLoader> loader(
                  CGBDataLoader::RegisterInObjectManager(*object_manager,
-                                                        "ID2",
-                                                        CObjectManager::eDefault)
+                                           "ID2",
+                                            CObjectManager::eNonDefault)
                  .GetLoader());
 
-    string db_path = "AsnDB";
-    auto_ptr<CAsnDB> asnDB(new CAsnDB(db_path));
-    CRef<IDataPatcher> patcher(new CSampleDataPatcher(*asnDB));
-    CRef<IEditSaver> saver(new CSampleEditSaver(*asnDB));
 
+    CRef<IEditSaver> saver(new CEditsSaver(engine));
     
     CDataLoaderPatcher::RegisterInObjectManager(*object_manager,
                                                 loader,
-                                                patcher,
+                                                ref_engine,
                                                 saver,
                                                 CObjectManager::eDefault,
                                                 88);
@@ -180,13 +208,7 @@ int CEditBioseqSampleApp::Run(void)
     // Add default loaders (GB loader in this demo) to the scope.
     scope.AddDefaults();
         
-
-    // Create Seq-id, set it to the GI specified on the command line
-    CSeq_id seq_id;
-    seq_id.SetGi(gi);
-    
-    CNcbiOstream& os = NcbiCout;
-
+  
     s_RemoveBioseq(45679, scope, os);
 
     /////////////////////////////////////////////////////////////////////////
@@ -208,8 +230,9 @@ int CEditBioseqSampleApp::Run(void)
 
     // Terminate the program if the GI cannot be resolved to a Bioseq.
     if ( !bioseq_handle ) {
-        ERR_POST(Fatal << "Bioseq not found, with GI=" << gi);
+        ERR_POST(Fatal << "Bioseq not found, with GI=" << seq_id.GetGi());
     }
+    s_PrintIds(bioseq_handle, os);
 
     /////////////////////////////////////////////////////////////////////////
     // Use CSeqdesc iterator.
@@ -218,6 +241,13 @@ int CEditBioseqSampleApp::Run(void)
 
     CBioseq_EditHandle edit = bioseq_handle.GetEditHandle();
     CSeq_entry_Handle parent = bioseq_handle.GetParentEntry();
+
+    CSeq_id id_to_add;
+    id_to_add.SetGi(2122545143);
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id_to_add);
+    edit.AddId(idh);
+    //    edit.RemoveId(idh);
+    
     os << "---------------- Before descr is added -----------" << NcbiEndl;       
     s_PrintDescr(bioseq_handle, os);
     os << "----------------------- end ----------------------" << NcbiEndl;
@@ -229,35 +259,89 @@ int CEditBioseqSampleApp::Run(void)
         edit.AddSeqdesc(*desc);
         trans.Commit();
     }
+    /*
     os << "------------- After descr is added -----" << NcbiEndl;       
     s_PrintDescr(bioseq_handle, os);
     os << "--------------------  end  -------------" << NcbiEndl;       
 
-
-    os << "Before featre is added : ";
+    */
+    os << "Before featre is removed : ";
+    CSeq_annot_Handle annot;
     s_PrintFeat(bioseq_handle, os);
-
     {       
         CScopeTransaction tr = scope.GetTransaction();
         for (CFeat_CI feat_it(bioseq_handle); feat_it; ++feat_it) {
+            annot = feat_it.GetAnnot();
+            //            annot.GetEditHandle().Remove();
+            const CMappedFeat& feat = *feat_it;
+            feat.GetSeq_feat_Handle().Remove();
+            break;
+            
+        }
+        tr.Commit();
+    }
+    os << "Before featre is added : ";
+    {       
+        CScopeTransaction tr = scope.GetTransaction();
+        if (annot) {
+            CSeq_feat *nf = new CSeq_feat;
+            nf->SetTitle("Add Featue");
+            nf->SetData().SetComment();
+            nf->SetLocation().SetWhole().Assign(*bioseq_handle.GetSeqId());           
+            annot.GetEditHandle().AddFeat(*nf);
+            /*        for (CFeat_CI feat_it(bioseq_handle); feat_it; ++feat_it) {
             CSeq_annot_Handle annot = feat_it.GetAnnot();
             CSeq_feat *nf = new CSeq_feat;
             nf->SetTitle("Add Featue");
             nf->SetData().SetComment();
-            nf->SetLocation().SetWhole().SetGi(gi);           
-            annot.GetEditHandle().AddFeat(*nf);
-        }
+            nf->SetLocation().SetWhole().Assign(*bioseq_handle.GetSeqId());           
+            annot.GetEditHandle().AddFeat(*nf);*/
+            }
         tr.Commit();
     }
     os << "After featre is added : ";
     s_PrintFeat(bioseq_handle, os);
-
     // Done
-    NcbiCout << "Done" << NcbiEndl;
-    return 0;
+    os << "Changes are made." << NcbiEndl;
 }
 
 
+void CEditBioseqSampleApp::x_RunCheck(const CSeq_id& seq_id, 
+                                      IEditsDBEngine& engine, 
+                                      CNcbiOstream& os)
+{
+    CRef<IEditsDBEngine> ref_engine(&engine);
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CDataLoader> loader(
+                 CGBDataLoader::RegisterInObjectManager(*object_manager,
+                                           "ID2",
+                                            CObjectManager::eNonDefault)
+                 .GetLoader());
+
+
+    CRef<IEditSaver> saver(new CEditsSaver(engine));
+    
+    CDataLoaderPatcher::RegisterInObjectManager(*object_manager,
+                                                loader,
+                                                ref_engine,
+                                                saver,
+                                                CObjectManager::eDefault,
+                                                88);
+  
+    // Create a new scope ("attached" to our OM).
+    CScope scope(*object_manager);
+    // Add default loaders (GB loader in this demo) to the scope.
+    scope.AddDefaults();
+
+    CBioseq_Handle bioseq_handle = scope.GetBioseqHandle(seq_id);
+    s_PrintIds(bioseq_handle, os);
+    os << "*******************************" << NcbiEndl;
+    s_PrintDescr(bioseq_handle, os);
+    os << "*******************************" << NcbiEndl;
+    s_PrintFeat(bioseq_handle, os);
+
+    os << "Check is done." << NcbiEndl;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
@@ -274,6 +358,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/01/25 19:00:55  didenko
+ * Redisigned bio objects edit facility
+ *
  * Revision 1.1  2005/11/15 19:25:22  didenko
  * Added bioseq_edit_sample sample
  *

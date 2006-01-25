@@ -5,7 +5,7 @@
 REQUIRES = objects dbapi
 
 APP = bioseq_edit_sample
-SRC = bioseq_edit_sample sample_saver sample_patcher asn_db
+SRC = bioseq_edit_sample file_db_engine
 
 LOADER_PATCHER = ncbi_xloader_patcher
 
