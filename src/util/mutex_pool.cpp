@@ -85,23 +85,14 @@ void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
     if ( !init ) {
         return;
     }
-    CRef<TMutex> local(mutex);
-    mutex.Reset();
+    CFastMutexGuard guard(m_Pool_Mtx);
+    CRef<TMutex> local;
+    local.Swap(mutex);
     _ASSERT(local);
-    if ( init.m_Mutex ) {
-        CFastMutexGuard guard(m_Pool_Mtx);
-        init.m_Mutex.Reset();
-        if ( local->ReferencedOnlyOnce() ) {
-            m_MutexList.push_back(local);
-        }
+    init.m_Mutex.Reset();
+    if ( local->ReferencedOnlyOnce() ) {
+        m_MutexList.push_back(local);
     }
-    else {
-        if ( local->ReferencedOnlyOnce() ) {
-            CFastMutexGuard guard(m_Pool_Mtx);
-            m_MutexList.push_back(local);
-        }
-    }
-    _ASSERT(!mutex);
 }
 
 
@@ -111,6 +102,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/01/25 14:16:24  vasilche
+* Fixed race condition.
+*
 * Revision 1.6  2004/08/31 14:25:36  vasilche
 * Keep mutex in place if object is not initialized yet.
 *
