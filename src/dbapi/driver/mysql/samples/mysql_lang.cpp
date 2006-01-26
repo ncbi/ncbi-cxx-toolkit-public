@@ -34,11 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
-
-#include <dbapi/driver/dbapi_conn_factory.hpp>
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
-#endif
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -100,9 +96,7 @@ CDemoeApp::Run(void)
     string Database   = args["D"].AsString();
 
     try {
-#ifdef HAVE_LIBCONNEXT
         DBLB_INSTALL_DEFAULT();
-#endif
                 
         CMySQLContext my_context;
         auto_ptr<CDB_Connection> con(my_context.Connect(ServerName, UserName, Password, 0));
@@ -230,6 +224,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/01/26 12:15:37  ssikorsk
+ * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
+ * Removed protection of DBLB_INSTALL_DEFAULT;
+ *
  * Revision 1.10  2006/01/24 14:05:27  ssikorsk
  * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
  *

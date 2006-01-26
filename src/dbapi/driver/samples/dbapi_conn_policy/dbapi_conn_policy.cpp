@@ -31,10 +31,7 @@
 
 #include "dbapi_conn_policy.hpp"
 #include <dbapi/driver/public.hpp>
-#include <dbapi/driver/dbapi_conn_factory.hpp>
-#ifdef HAVE_LIBCONNEXT
-#  include <connect/ext/ncbi_dblb_svcmapper.hpp>
-#endif
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -57,9 +54,7 @@ int
 CConnectPolicyApp::RunSample(void)
 {
     try {
-#ifdef HAVE_LIBCONNEXT
         DBLB_INSTALL_DEFAULT();
-#endif
                 
         // CConnValidatorCoR is developed to combine other validators into a chain.
         CConnValidatorCoR conn_validator;
@@ -93,6 +88,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/26 12:15:37  ssikorsk
+ * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
+ * Removed protection of DBLB_INSTALL_DEFAULT;
+ *
  * Revision 1.5  2006/01/24 13:47:19  ssikorsk
  * Protect DBLB_INSTALL_DEFAULT with HAVE_LIBCONNEXT
  *

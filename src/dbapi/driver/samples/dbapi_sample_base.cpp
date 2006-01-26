@@ -46,10 +46,7 @@
 #include <corelib/ncbi_process.hpp>
 #include <util/smalldns.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
-#include <dbapi/driver/dbapi_conn_factory.hpp>
-#ifdef HAVE_LIBCONNEXT
-#include <connect/ext/ncbi_dblb_svcmapper.hpp>
-#endif
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <util/random_gen.hpp>
 
 #include <algorithm>
@@ -205,8 +202,8 @@ CDbapiSampleApp::Run()
     }
     
     if (UseSvcMapper()) {
-#ifdef HAVE_LIBCONNEXT
         DBLB_INSTALL_DEFAULT();
+#ifdef HAVE_LIBCONNEXT
         LOG_POST("Using load-balancer service to server mapper ...");
 #else
         ERR_POST("Load balancing requested, but not available in this build");
@@ -539,6 +536,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2006/01/26 12:15:37  ssikorsk
+ * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
+ * Removed protection of DBLB_INSTALL_DEFAULT;
+ *
  * Revision 1.18  2006/01/24 12:53:25  ssikorsk
  * Revamp demo applications to use CNcbiApplication;
  * Use load balancer and configuration in an ini-file to connect to a
