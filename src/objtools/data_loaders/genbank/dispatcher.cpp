@@ -793,6 +793,8 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
         CReader& reader = *rdr->second;
         command.GetResult().SetLevel(rdr->first);
         int retry_count = 0;
+        int max_retry_count =
+            reader.GetRetryCount()*reader.GetMaximumConnections();
         do {
             ++retry_count;
             try {
@@ -820,7 +822,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
                     retry_count = kMax_Int;
                 }
                 else {
-                    if ( retry_count >= reader.GetRetryCount() &&
+                    if ( retry_count >= max_retry_count &&
                          !reader.MayBeSkippedOnErrors() ) {
                         throw;
                     }
@@ -830,7 +832,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
             }
             catch ( exception& exc ) {
                 // error in the command
-                if ( retry_count >= reader.GetRetryCount() &&
+                if ( retry_count >= max_retry_count &&
                      !reader.MayBeSkippedOnErrors() ) {
                     throw;
                 }
@@ -840,7 +842,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command)
             if ( command.IsDone() ) {
                 return;
             }
-        } while ( retry_count < reader.GetRetryCount() );
+        } while ( retry_count < max_retry_count );
         if ( !reader.MayBeSkippedOnErrors() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed, command.GetErrMsg());
         }
