@@ -186,7 +186,7 @@ void CCacheReader::x_ConnectAtSlot(TConn /*conn*/)
 
 int CCacheReader::GetRetryCount(void) const
 {
-    return 0;
+    return 2;
 }
 
 
@@ -206,15 +206,21 @@ int CCacheReader::GetMaximumConnectionsLimit(void) const
 
 
 namespace {
-    bool x_Read(IReader* reader, char* buf, size_t size)
+    inline
+    bool x_Read(ICache::SBlobAccessDescr& descr, char* buf, size_t size)
     {
-        while ( size ) {
-            size_t count = 0;
-            if ( reader->Read(buf, size, &count) != eRW_Success ) {
-                return false;
+        if ( descr.reader.get() ) {
+            while ( size ) {
+                size_t count = 0;
+                if ( descr.reader->Read(buf, size, &count) != eRW_Success ) {
+                    return false;
+                }
+                buf += count;
+                size -= count;
             }
-            buf += count;
-            size -= count;
+        }
+        else {
+            memcpy(buf, descr.buf, size);
         }
         return true;
     }
@@ -226,7 +232,8 @@ bool CCacheReader::x_LoadIdCache(const string& key,
                                  const string& subkey,
                                  TIdCacheData& data)
 {
-    ICache::SBlobAccessDescr descr;
+    char buffer[256];
+    ICache::SBlobAccessDescr descr(buffer, sizeof(buffer));
     m_IdCache->GetBlobAccess(key, 0, subkey, &descr);
     if ( descr.blob_found ) {
         size_t size = descr.blob_size;
@@ -237,9 +244,7 @@ bool CCacheReader::x_LoadIdCache(const string& key,
         if ( size % sizeof(int) != 0 ) {
             return false;
         }
-        if ( !x_Read(descr.reader.get(),
-                     reinterpret_cast<char*>(&data[0]),
-                     size) ) {
+        if ( !x_Read(descr, reinterpret_cast<char*>(&data[0]), size) ) {
             return false;
         }
     }
