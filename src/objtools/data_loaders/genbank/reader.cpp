@@ -211,22 +211,22 @@ void CReader::x_AbortConnection(TConn conn)
     CMutexGuard guard(m_ConnectionsMutex);
     try {
         x_DisconnectAtSlot(conn);
+        x_ReleaseConnection(conn, true);
+        return;
     }
     catch ( exception& exc ) {
         ERR_POST("CReader("<<conn<<"): cannot reuse connection: "<<exc.what());
-        // cannot reuse connection number, allocate new one
-        try {
-            x_RemoveConnectionSlot(conn);
-        }
-        catch ( ... ) {
-            // ignore
-        }
-        _ASSERT(m_MaxConnections > 0);
-        --m_MaxConnections;
-        x_AddConnection();
-        return;
     }
-    x_ReleaseConnection(conn, true);
+    // cannot reuse connection number, allocate new one
+    try {
+        x_RemoveConnectionSlot(conn);
+    }
+    catch ( ... ) {
+        // ignore
+    }
+    _ASSERT(m_MaxConnections > 0);
+    --m_MaxConnections;
+    x_AddConnection();
 }
 
 
