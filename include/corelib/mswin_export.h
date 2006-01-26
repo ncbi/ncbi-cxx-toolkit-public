@@ -101,6 +101,7 @@
 #  define NCBI_SEQLOC_EXPORTS
 #  define NCBI_SEQRES_EXPORTS
 #  define NCBI_SEQSET_EXPORTS
+#  define NCBI_SEQEDIT_EXPORTS
 #  define NCBI_SEQTEST_EXPORTS
 #  define NCBI_SUBMIT_EXPORTS
 #  define NCBI_TAXON1_EXPORTS
@@ -661,6 +662,14 @@
 #  define NCBI_SEQSET_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library seqedit
+ */
+#ifdef NCBI_SEQEDIT_EXPORTS
+#  define NCBI_SEQEDIT_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_SEQEDIT_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library seqtest
  */
 #ifdef NCBI_SEQTEST_EXPORTS
@@ -1111,6 +1120,7 @@
 #  define NCBI_SEQLOC_EXPORT
 #  define NCBI_SEQRES_EXPORT
 #  define NCBI_SEQSET_EXPORT
+#  define NCBI_SEQEDIT_EXPORT
 #  define NCBI_SEQTEST_EXPORT
 #  define NCBI_SEQUENCE_EXPORT
 #  define NCBI_SEQ_EXPORT
@@ -1182,6 +1192,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.110  2006/01/26 17:35:50  didenko
+ * Added NCBI_SEQEDIT_EXPORT specifier
+ *
  * Revision 1.109  2006/01/09 20:00:07  dicuccio
  * Added NET_CACTE exports to corelib
  *
