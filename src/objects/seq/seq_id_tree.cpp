@@ -1508,7 +1508,7 @@ void CSeq_id_Patent_Tree::x_Unindex(const CSeq_id_Info* info)
     else if ( pid.GetCit().GetId().IsApp_number() ) {
         SPat_idMap::TByNumber::iterator app_it =
             pats.m_ByApp_number.find(pid.GetCit().GetId().GetApp_number());
-        _ASSERT(app_it == pats.m_ByApp_number.end());
+        _ASSERT(app_it != pats.m_ByApp_number.end());
         SPat_idMap::TBySeqid::iterator seqid_it =
             app_it->second.find(pid.GetSeqid());
         _ASSERT(seqid_it != app_it->second.end());
@@ -1710,6 +1710,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2006/01/26 13:53:54  ludwigf
+* FIXED: Inverted assertion condition in CSeq_id_Patent_Tree::x_Unindex().
+*  The original condition would cause (in debug build) an exception during
+*  object release.
+*
 * Revision 1.22  2005/04/28 16:29:19  vasilche
 * Added Seq-id tree for gpipe type.
 * Removed obsolete structure.
