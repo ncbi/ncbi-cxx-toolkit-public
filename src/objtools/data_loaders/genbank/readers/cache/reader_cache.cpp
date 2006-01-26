@@ -232,6 +232,7 @@ bool CCacheReader::x_LoadIdCache(const string& key,
                                  const string& subkey,
                                  TIdCacheData& data)
 {
+    CConn conn(this);
     char buffer[256];
     ICache::SBlobAccessDescr descr(buffer, sizeof(buffer));
     m_IdCache->GetBlobAccess(key, 0, subkey, &descr);
@@ -239,15 +240,19 @@ bool CCacheReader::x_LoadIdCache(const string& key,
         size_t size = descr.blob_size;
         data.resize(size / sizeof(int));
         if ( size == 0 ) {
+            conn.Release();
             return false;
         }
         if ( size % sizeof(int) != 0 ) {
+            conn.Release();
             return false;
         }
         if ( !x_Read(descr, reinterpret_cast<char*>(&data[0]), size) ) {
+            conn.Release();
             return false;
         }
     }
+    conn.Release();
     return true;
 }
 
@@ -307,14 +312,15 @@ bool CCacheReader::ReadSeq_ids(const string& key,
         return true;
     }
 
-    auto_ptr<IReader> reader
-        (m_IdCache->GetReadStream(key, 0, GetSeq_idsSubkey()));
-    if ( !reader.get() ) {
-        return false;
-    }
-
     CLoadInfoSeq_ids::TSeq_ids seq_ids;
     {{
+        CConn conn(this);
+        auto_ptr<IReader> reader
+            (m_IdCache->GetReadStream(key, 0, GetSeq_idsSubkey()));
+        if ( !reader.get() ) {
+            conn.Release();
+            return false;
+        }
         CRStream r_stream(reader.get());
         CObjectIStreamAsnBinary obj_stream(r_stream);
         CSeq_id id;
@@ -322,6 +328,7 @@ bool CCacheReader::ReadSeq_ids(const string& key,
             obj_stream >> id;
             seq_ids.push_back(CSeq_id_Handle::GetHandle(id));
         }
+        conn.Release();
     }}
     ids->m_Seq_ids.swap(seq_ids);
     ids.SetLoaded();
@@ -402,9 +409,13 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     string key = GetBlobKey(blob_id);
     string subkey = GetBlobSubkey(chunk_id);
     if ( !blob.IsSetBlobVersion() ) {
-        if ( !m_BlobCache->HasBlobs(key, subkey) ) {
-            return false;
-        }
+        {{
+            CConn conn(this);
+            if ( !m_BlobCache->HasBlobs(key, subkey) ) {
+                conn.Release();
+                return false;
+            }
+        }}
         m_Dispatcher->LoadBlobVersion(result, blob_id);
         if ( !blob.IsSetBlobVersion() ) {
             return false;
@@ -412,8 +423,10 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     }
     TBlobVersion version = blob.GetBlobVersion();
 
+    CConn conn(this);
     auto_ptr<IReader> reader(m_BlobCache->GetReadStream(key, version, subkey));
     if ( !reader.get() ) {
+        conn.Release();
         return false;
     }
 
@@ -433,6 +446,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                    NStr::IntToString(processor_magic));
     }
     processor.ProcessStream(result, blob_id, chunk_id, stream);
+    conn.Release();
     return true;
 }
 
