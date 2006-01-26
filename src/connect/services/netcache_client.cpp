@@ -921,12 +921,15 @@ ERW_Result CNetCacheSock_RW::Read(void*   buf,
     if (!m_BlobSizeControl) {
         return TParent::Read(buf, count, bytes_read);
     }
-    if (!m_BlobBytesToRead) {
-        return eRW_Eof;
+    if ( m_BlobBytesToRead < count ) {
+        count = m_BlobBytesToRead;
     }
-    size_t nn_read;
-    ERW_Result res = TParent::Read(buf, count, &nn_read);
-    if (bytes_read) {
+    ERW_Result res = eRW_Eof;
+    size_t nn_read = 0;
+    if ( count ) {
+        res = TParent::Read(buf, count, &nn_read);
+    }
+    if ( bytes_read ) {
         *bytes_read = nn_read;
     }
     m_BlobBytesToRead -= nn_read;
@@ -1126,6 +1129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/01/26 17:50:12  vasilche
+ * Do not read beyond blob. Always update bytes_read.
+ *
  * Revision 1.62  2006/01/26 16:08:02  kuznets
  * Added BLOB size control to socket based reader
  *
