@@ -9259,6 +9259,7 @@ _ACEOF
 fi
 
 # Perform a full-fledged check in C++ to be sure of an actual declaration.
+# Accommodate the old Solaris interface that returns char* rather than int. :-/
 echo "$as_me:$LINENO: checking for getlogin_r" >&5
 echo $ECHO_N "checking for getlogin_r... $ECHO_C" >&6
 if test "${ncbi_cv_func_getlogin_r+set}" = set; then
@@ -9275,7 +9276,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-char buf[64]; return getlogin_r(buf, 64);
+char buf[64]; /* return */ getlogin_r(buf, 64);
   ;
   return 0;
 }

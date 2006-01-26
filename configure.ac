@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.408 2006/01/26 20:31:44 ucko Exp $
+#  $Id: configure.ac,v 1.409 2006/01/26 20:48:41 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2119,11 +2119,12 @@ if test "$ncbi_cv_func_getpwuid_r" != "no" ; then
 fi
 
 # Perform a full-fledged check in C++ to be sure of an actual declaration.
+# Accommodate the old Solaris interface that returns char* rather than int. :-/
 AC_CACHE_CHECK([for getlogin_r], ncbi_cv_func_getlogin_r,
    [ncbi_cv_func_getlogin_r="no"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[#include <unistd.h>]],
-       [[char buf[64]; return getlogin_r(buf, 64);]])],
+       [[char buf[64]; /* return */ getlogin_r(buf, 64);]])],
        [ncbi_cv_func_getlogin_r=yes], [ncbi_cv_func_getlogin_r=no])])
 if test $ncbi_cv_func_getlogin_r = yes; then
    AC_DEFINE(HAVE_GETLOGIN_R, 1,
