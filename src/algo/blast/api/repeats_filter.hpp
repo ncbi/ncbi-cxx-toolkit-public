@@ -63,7 +63,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc,
 
 /** Overloaded version of the function above which takes the name of the
  * repeats filtering database to use
- * @param query_loc Vector of sequence locations. [in] [out]
+ * @param query Vector of sequence locations. [in] [out]
  * @param filter_db Name of the BLAST database with repeats to use for
  * filtering [in]
  */
@@ -80,6 +80,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/01/26 14:18:04  camacho
+* Doxygen fix
+*
 * Revision 1.9  2006/01/24 15:35:08  camacho
 * Overload Blast_FindRepeatFilterLoc with repeats database filtering arguments
 *

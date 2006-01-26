@@ -72,7 +72,7 @@ public:
 
     /// Sets this mode, which mostly specifies whether composition of db
     /// sequence is taken into account when calculating expect values.
-    /// @param m composition-based statistics mode [in]
+    /// @param mode composition-based statistics mode [in]
     void SetCompositionBasedStats(ECompoAdjustModes mode)  { 
         m_Opts->SetCompositionBasedStats(mode); 
     }
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/26 14:17:24  camacho
+ * Doxygen fix
+ *
  * Revision 1.2  2006/01/23 19:57:28  camacho
  * Allow new varieties of composition based statistics
  *

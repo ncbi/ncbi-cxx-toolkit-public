@@ -183,6 +183,7 @@ public:
     /// not filtered, needed for the lookup table creation (otherwise pass
     /// NULL). If this is passed to this function it should also be passed to
     /// CreateLookupTable [in|out]
+    /// @param search_messages Error/warning messages [in|out]
     /// @param masked_query_regions Regions of the query which were masked
     /// including those masked outside the CORE). If non-NULL they will be
     /// populated and caller assumes ownership of the object [in|out]
