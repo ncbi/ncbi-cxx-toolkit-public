@@ -193,11 +193,13 @@ class NCBI_DBAPIDRIVER_EXPORT CTrivialConnValidator : public IConnValidator
 public:
     enum EValidateAttr {
         eKeepModifiedConnection = 0,
-        eRestoreDefaultDB = 1
+        eRestoreDefaultDB = 1,
+        eCheckSysobjects = 2
     };
+    enum {eDefaultValidateAttr = eRestoreDefaultDB | eCheckSysobjects};
     
     CTrivialConnValidator(const string& db_name, 
-                          EValidateAttr attr = eRestoreDefaultDB);
+                          int attr = eDefaultValidateAttr);
     virtual ~CTrivialConnValidator(void);
     
     virtual EConnStatus Validate(CDB_Connection& conn);
@@ -208,8 +210,8 @@ public:
     }
     
 private:
-    const string        m_DBName;
-    const EValidateAttr m_Attr;
+    const string m_DBName;
+    const int    m_Attr;
 };
 
 
@@ -269,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/26 12:01:40  ssikorsk
+ * Improved class CTrivialConnValidator.
+ *
  * Revision 1.2  2006/01/23 13:26:28  ssikorsk
  * Added method GetServiceMapper to CDBConnectionFactory;
  * Added classes CConnValidatorCoR and CTrivialConnValidator
