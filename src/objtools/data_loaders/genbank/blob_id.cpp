@@ -31,6 +31,8 @@
 #include <objtools/data_loaders/genbank/blob_id.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
+#include <stdio.h>   // for sscanf
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -93,6 +95,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.5  2006/01/26 14:27:50  didenko
+ * + #include <stdio.h> from sscanf function
+ *
  * Revision 1.4  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
  *
