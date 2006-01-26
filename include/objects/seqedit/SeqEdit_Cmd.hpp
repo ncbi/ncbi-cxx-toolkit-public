@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /////////////////////////////////////////////////////////////////////////////
-class CSeqEdit_Cmd : public CSeqEdit_Cmd_Base
+class NCBI_SEQ_EXPORT CSeqEdit_Cmd : public CSeqEdit_Cmd_Base
 {
     typedef CSeqEdit_Cmd_Base Tparent;
 public:
@@ -103,6 +103,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/01/26 16:19:02  dicuccio
+* Temporary fix: provide export specifier
+*
 * Revision 1.1  2006/01/25 17:10:59  didenko
 * Added Edit Commands ASN definition
 *
