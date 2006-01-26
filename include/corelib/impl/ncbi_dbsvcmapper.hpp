@@ -93,7 +93,6 @@ public:
         }
     };
     
-             IDBServiceMapper    (const string&    name) : m_Name(name) {}
     virtual ~IDBServiceMapper    (void) {}
     
     virtual void    Configure    (const IRegistry* registry = NULL) = 0;
@@ -113,18 +112,23 @@ public:
     virtual void    SetPreference(const string&    service,
                                   const TSvrRef&   preferred_server,
                                   double           preference = 100) = 0;
-    
-    const   string& GetName      (void) const
-    {
-        return m_Name;
-    }
-    
-private:
-    const string m_Name;
 };
 
+///////////////////////////////////////////////////////////////////////////////
+/// DBServiceMapperTraits
+/// IDBServiceMapper traits
+///
 
-
+template <class T>
+class CDBServiceMapperTraits
+{
+public:
+    static string GetName(void)
+    {
+        _ASSERT(false);
+        return "none";
+    }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -171,6 +175,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/26 11:54:14  ssikorsk
+ * Removed IDBServiceMapper::GetName;
+ * Added template class CDBServiceMapperTraits;
+ *
  * Revision 1.2  2006/01/05 15:23:38  ssikorsk
  * Spelling correction
  *
