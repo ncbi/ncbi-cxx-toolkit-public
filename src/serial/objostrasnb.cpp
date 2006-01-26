@@ -396,7 +396,7 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
         WriteLength(0);
         return;
     }
-    WriteLength((len+7)/8+1);
+    WriteLength((len+7)/8+(compressed ? 0 : 1));
     if (!compressed) {
         WriteByte(TByte(len%8 ? 8-len%8 : 0));
     }
@@ -1204,6 +1204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.105  2006/01/26 15:08:04  gouriano
+* Corrected length when writing bit string
+*
 * Revision 1.104  2006/01/23 18:05:56  gouriano
 * Corrected systag when writing compressed bit string
 *
