@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
+#include <dbapi/driver/exception.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <algorithm>
 
@@ -37,8 +38,76 @@ USING_NCBI_SCOPE;
 
 
 ///////////////////////////////////////////////////////////////////////////////
+static
+TSvrRef 
+make_server(const string& specification, double& preference)
+{
+    vector<string> server_attr;
+    string server;
+    string host;
+    unsigned int port = 0;
+    string::size_type pos = 0;
+
+    pos = specification.find_first_of("@(", pos);
+    if (pos != string::npos) {
+        server = specification.substr(0, pos);
+        
+        if (specification[pos] == '@') {
+            string::size_type old_pos = pos + 1;
+            pos = specification.find_first_of(":(", pos + 1);
+            if (pos != string::npos) {
+                host = specification.substr(old_pos, pos - old_pos);
+                if (specification[pos] == ':') {
+                    port = NStr::StringToUInt(specification.c_str() + pos + 1,
+                                              NStr::fAllowLeadingSpaces |
+                                              NStr::fAllowTrailingSymbols | 
+                                              NStr::fConvErr_NoThrow);
+                    pos = specification.find("(", pos + 1);
+                    if (pos != string::npos) {
+                        // preference = NStr::StringToDouble(
+                        preference = NStr::StringToUInt(
+                            specification.c_str() + pos + 1,
+                            NStr::fAllowLeadingSpaces |
+                            NStr::fAllowTrailingSymbols |
+                            NStr::fConvErr_NoThrow);
+                    }
+                } else {
+                    // preference = NStr::StringToDouble(
+                    preference = NStr::StringToUInt(
+                        specification.c_str() + pos + 1,
+                        NStr::fAllowLeadingSpaces |
+                        NStr::fAllowTrailingSymbols |
+                        NStr::fConvErr_NoThrow);
+                }
+            } else {
+                host = specification.substr(old_pos);
+            }
+        } else {
+            // preference = NStr::StringToDouble(
+            preference = NStr::StringToUInt(
+                specification.c_str() + pos + 1,
+                NStr::fAllowLeadingSpaces |
+                NStr::fAllowTrailingSymbols |
+                NStr::fConvErr_NoThrow);
+        }
+    } else {
+        server = specification;
+    }
+    
+    if (server.empty() && host.empty()) {
+        DATABASE_DRIVER_FATAL("Either server name or host name expected.", 110100 );
+    }
+    if (server.empty() && !host.empty()) {
+        server = host;
+    }
+    
+    return TSvrRef(new CDBServer(server, host, port));
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
 CDBDefaultServiceMapper::CDBDefaultServiceMapper(void)
-: IDBServiceMapper("DEFAULT_NAME_MAPPER")
 {
 }
 
@@ -81,12 +150,6 @@ CDBDefaultServiceMapper::SetPreference(const string&,
 
 ///////////////////////////////////////////////////////////////////////////////
 CDBServiceMapperCoR::CDBServiceMapperCoR(void)
-: IDBServiceMapper("COR_NAME_MAPPER")
-{
-}
-
-CDBServiceMapperCoR::CDBServiceMapperCoR(const string& name)
-: IDBServiceMapper(name)
 {
 }
 
@@ -150,10 +213,505 @@ CDBServiceMapperCoR::ConfigureFromRegistry(const IRegistry* registry)
     }
 }
 
+void 
+CDBServiceMapperCoR::Push(const CRef<IDBServiceMapper>& mapper)
+{
+    if (mapper.NotNull()) {
+        CFastMutexGuard mg(m_Mtx); 
+
+        m_Delegates.push_back(mapper);
+    }
+}
+
+void 
+CDBServiceMapperCoR::Pop(void)
+{
+    CFastMutexGuard mg(m_Mtx); 
+
+    m_Delegates.pop_back();
+}
+
+CRef<IDBServiceMapper> 
+CDBServiceMapperCoR::Top(void) const
+{
+    CFastMutexGuard mg(m_Mtx); 
+
+    return m_Delegates.back();
+}
+
+bool 
+CDBServiceMapperCoR::Empty(void) const
+{
+    CFastMutexGuard mg(m_Mtx); 
+
+    return m_Delegates.empty();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+CDBUDRandomMapper::CDBUDRandomMapper(const IRegistry* registry)
+{
+    ConfigureFromRegistry(registry);
+}
+
+CDBUDRandomMapper::~CDBUDRandomMapper(void)
+{
+}
+
+void    
+CDBUDRandomMapper::Configure(const IRegistry* registry)
+{
+    CFastMutexGuard mg(m_Mtx); 
+    
+    ConfigureFromRegistry(registry);
+}
+
+void 
+CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
+{
+    const string section_name
+        (CDBServiceMapperTraits<CDBUDRandomMapper>::GetName());
+    list<string> entries;
+    
+    // Get current registry ...
+    if (!registry) {
+        registry = &CNcbiApplication::Instance()->GetConfig();
+    }
+    
+    _ASSERT(registry);
+    
+    // Erase previous data ...
+    m_ServerMap.clear();
+    m_PreferenceMap.clear();
+    
+    registry->EnumerateEntries(section_name, &entries);
+    ITERATE(list<string>, cit, entries) {
+        vector<string> server_name;
+        string service_name = *cit;
+        
+        NStr::Tokenize(registry->GetString(section_name, service_name, service_name),
+                       " ,;",
+                       server_name);
+        
+        // Replace with new data ...
+        if (!server_name.empty()) {
+            TSvrMap& server_list = m_ServerMap[service_name];
+            TSvrMap& service_preferences = m_PreferenceMap[service_name];
+            
+            // Set equal preferences for all servers.
+            double curr_preference = 100 / server_name.size();
+            bool non_default_preferences = false;
+            
+            ITERATE(vector<string>, sn_it, server_name) {
+                double tmp_preference = 0;
+                
+                // Parsee server preferences.
+                TSvrRef cur_server = make_server(*sn_it, tmp_preference);
+                
+                if (tmp_preference > 0) {
+                    non_default_preferences = true;
+                }
+
+                server_list.insert(
+                    TSvrMap::value_type(cur_server, tmp_preference));
+                service_preferences.insert(
+                    TSvrMap::value_type(cur_server, curr_preference));
+            }
+            if (non_default_preferences) {
+                ITERATE(TSvrMap, sl_it, server_list) {
+                    if (sl_it->second > 0) {
+                        SetServerPreference(service_name, sl_it->second, sl_it->first);
+                    }
+                }
+            }
+        }
+        
+    }
+}
+
+TSvrRef 
+CDBUDRandomMapper::GetServer(const string& service)
+{
+    CFastMutexGuard mg(m_Mtx); 
+    
+    if (m_LBNameMap.find(service) != m_LBNameMap.end() &&
+        m_LBNameMap[service] == false) {
+        // We've tried this service already. It is not served by load
+        // balancer. There is no reason to try it again.
+        return TSvrRef();
+    }
+
+    const TSvrMap& svr_map = m_PreferenceMap[service];
+    if (!svr_map.empty()) {
+//         static CRandom rdm_gen(time(NULL));
+//         double cur_pref = rdm_gen.GetRand(0, 100000) / 1000;
+        srand((unsigned int)time(NULL));
+        double cur_pref = rand() / (RAND_MAX / 100);
+        double pref = 0;
+        
+        ITERATE(TSvrMap, sr_it, svr_map) {
+            pref += sr_it->second;
+            if (pref >= cur_pref) {
+                m_LBNameMap[service] = true;
+                return sr_it->first;
+            }
+        }
+    }
+
+    m_LBNameMap[service] = false;
+    return TSvrRef();
+}
+
+void 
+CDBUDRandomMapper::ScalePreference(const string& service, double coeff)
+{
+    TSvrMap& svr_map = m_PreferenceMap[service];
+    
+    NON_CONST_ITERATE(TSvrMap, sr_it, svr_map) {
+        sr_it->second *= coeff;
+    }
+}
+
+void 
+CDBUDRandomMapper::SetPreference(const string& service, double pref)
+{
+    TSvrMap& svr_map = m_PreferenceMap[service];
+
+    NON_CONST_ITERATE(TSvrMap, sr_it, svr_map) {
+        sr_it->second = pref;
+    }
+}
+
+void 
+CDBUDRandomMapper::SetServerPreference(const string& service, 
+                                       double preference, 
+                                       const TSvrRef& server)
+{
+    TSvrMap& svr_map = m_PreferenceMap[service];
+    TSvrMap::iterator sr_it = svr_map.find(server);
+    
+    if (sr_it != svr_map.end()) {
+        // Scale ...
+        if (preference >= 100) {
+            // Set the rest of service preferences to 0 ...
+            SetPreference(service, 0);
+        } else if (preference <= 0) {
+            // Means *no preferences*
+            SetServerPreference(service, 100 / m_PreferenceMap.size(), server);
+        } else {
+            // (100 - new) / (100 - old)
+            ScalePreference(service, (100 - preference) / (100 - sr_it->second));
+        }
+        
+        // Set the server preference finally ...
+        sr_it->second = preference;
+    }
+}
+
+void    
+CDBUDRandomMapper::Exclude(const string& service, const TSvrRef& server)
+{
+    CFastMutexGuard mg(m_Mtx); 
+    
+    TSvrMap& svr_map = m_PreferenceMap[service];
+    TSvrMap::iterator sr_it = svr_map.find(server);
+    if (sr_it != svr_map.end()) {
+        // Recalculate preferences ...
+        if (svr_map.size() > 1) {
+            if (sr_it->second >= 100) {
+                // Divide preferences equally.
+                SetPreference(service, 100 / (m_PreferenceMap.size() - 1));
+            } else {
+                // Rescale preferences.
+                ScalePreference(service, 100 / (100 - sr_it->second));
+            }
+        }
+
+        svr_map.erase(sr_it);
+    }
+}
+
+void    
+CDBUDRandomMapper::SetPreference(const string&  service,
+                                 const TSvrRef& preferred_server,
+                                 double         preference)
+{
+    CFastMutexGuard mg(m_Mtx); 
+    
+    // Set absolute value.
+    m_ServerMap[service][preferred_server] = preference;
+    // Set relative value;
+    SetServerPreference(service, preference, preferred_server);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+CDBUDPriorityMapper::CDBUDPriorityMapper(const IRegistry* registry)
+{
+    ConfigureFromRegistry(registry);
+}
+
+CDBUDPriorityMapper::~CDBUDPriorityMapper(void)
+{
+}
+
+void    
+CDBUDPriorityMapper::Configure(const IRegistry* registry)
+{
+    CFastMutexGuard mg(m_Mtx); 
+    
+    ConfigureFromRegistry(registry);
+}
+
+void 
+CDBUDPriorityMapper::ConfigureFromRegistry(const IRegistry* registry)
+{
+    const string section_name
+        (CDBServiceMapperTraits<CDBUDPriorityMapper>::GetName());
+    list<string> entries;
+    
+    // Get current registry ...
+    if (!registry) {
+        registry = &CNcbiApplication::Instance()->GetConfig();
+    }
+    
+    _ASSERT(registry);
+    
+    // Erase previous data ...
+    m_ServerMap.clear();
+    m_ServiceUsageMap.clear();
+    
+    registry->EnumerateEntries(section_name, &entries);
+    
+    ITERATE(list<string>, cit, entries) {
+        vector<string> server_name;
+        string service_name = *cit;
+        
+        NStr::Tokenize(registry->GetString(section_name, service_name, service_name),
+                       " ,;",
+                       server_name);
+        
+        // Replace with new data ...
+        if (!server_name.empty()) {
+            TSvrMap& server_list = m_ServerMap[service_name];
+            TServerUsageMap& usage_map = m_ServiceUsageMap[service_name];
+            
+            ITERATE(vector<string>, sn_it, server_name) {
+                double tmp_preference = 0;
+                
+                // Parsee server preferences.
+                TSvrRef cur_server = make_server(*sn_it, tmp_preference);
+                
+                if (tmp_preference < 0) {
+                    tmp_preference = 0;
+                } else if (tmp_preference > 100) {
+                    tmp_preference = 100;
+                }
+
+                server_list.insert(
+                    TSvrMap::value_type(cur_server, tmp_preference));
+                usage_map.insert(TServerUsageMap::value_type(
+                    100 - tmp_preference, 
+                    cur_server));
+            }
+        }
+        
+    }
+}
+
+TSvrRef 
+CDBUDPriorityMapper::GetServer(const string& service)
+{
+    CFastMutexGuard mg(m_Mtx); 
+        
+    if (m_LBNameMap.find(service) != m_LBNameMap.end() &&
+        m_LBNameMap[service] == false) {
+        // We've tried this service already. It is not served by load
+        // balancer. There is no reason to try it again.
+        return TSvrRef();
+    }
+
+    TServerUsageMap& usage_map = m_ServiceUsageMap[service];
+    TSvrMap& server_map = m_ServerMap[service];
+    
+    if (!server_map.empty() && !usage_map.empty()) {
+        TServerUsageMap::iterator su_it = usage_map.begin();
+        double new_preference = su_it->first;
+        TSvrRef cur_server = su_it->second;
+
+        // Recalculate preferences ...
+        TSvrMap::const_iterator pr_it = server_map.find(cur_server);
+
+        if (pr_it != server_map.end()) {
+            new_preference +=  100 - pr_it->second;
+        } else {
+            new_preference +=  100;
+        }
+        
+        // Reset usage map ...
+        usage_map.erase(su_it);
+        usage_map.insert(TServerUsageMap::value_type(new_preference,
+                                                     cur_server));
+
+        m_LBNameMap[service] = true;
+        return cur_server;
+    }
+
+    m_LBNameMap[service] = false;
+    return TSvrRef();
+}
+
+void    
+CDBUDPriorityMapper::Exclude(const string& service,
+                             const TSvrRef& server)
+{
+    CFastMutexGuard mg(m_Mtx); 
+    
+    TServerUsageMap& usage_map = m_ServiceUsageMap[service];
+    
+    NON_CONST_ITERATE(TServerUsageMap, su_it, usage_map) {
+        if (su_it->second == server) {
+            usage_map.erase(su_it);
+        }
+    }
+}
+
+void    
+CDBUDPriorityMapper::SetPreference(const string&  service,
+                                   const TSvrRef& preferred_server,
+                                   double         preference)
+{
+    CFastMutexGuard mg(m_Mtx); 
+    
+    TSvrMap& server_map = m_ServerMap[service];
+    TSvrMap::iterator pr_it = server_map.find(preferred_server);
+
+    if (preference < 0) {
+        preference = 0;
+    } else if (preference > 100) {
+        preference = 100;
+    }
+    
+    if (pr_it != server_map.end()) {
+        pr_it->second = preference;
+    } 
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+CDBUniversalMapper::CDBUniversalMapper(const TMapperConf& ext_mapper, 
+                                       const IRegistry* registry)
+{
+    if (!ext_mapper.first.empty() && ext_mapper.second != NULL) {
+        m_ExtMapperConf = ext_mapper;
+    }
+    
+    this->ConfigureFromRegistry(registry);
+    CDBServiceMapperCoR::ConfigureFromRegistry(registry);
+}
+
+CDBUniversalMapper::~CDBUniversalMapper(void)
+{
+}
+
+void
+CDBUniversalMapper::Configure(const IRegistry* registry)
+{
+    CFastMutexGuard mg(m_Mtx);
+
+    this->ConfigureFromRegistry(registry);
+    CDBServiceMapperCoR::ConfigureFromRegistry(registry);
+}
+
+void
+CDBUniversalMapper::ConfigureFromRegistry(const IRegistry* registry)
+{
+    const string section_name
+        (CDBServiceMapperTraits<CDBUniversalMapper>::GetName());
+    const string def_mapper_name = 
+        (m_ExtMapperConf.second ? m_ExtMapperConf.first : 
+         CDBServiceMapperTraits<CDBUDRandomMapper>::GetName());
+
+    // Get current registry ...
+    if (!registry) {
+        registry = &CNcbiApplication::Instance()->GetConfig();
+    }
+
+    _ASSERT(registry);
+
+    vector<string> service_name;
+
+    NStr::Tokenize(registry->GetString
+                   (section_name, "MAPPERS",
+                    def_mapper_name),
+                   " ,;",
+                   service_name);
+
+    ITERATE(vector<string>, it, service_name) {
+        IDBServiceMapper* mapper = NULL;
+        string mapper_name = *it;
+
+        if (NStr::CompareNocase
+            (mapper_name,
+             CDBServiceMapperTraits<CDBDefaultServiceMapper>::GetName()) == 0) {
+            mapper = new CDBDefaultServiceMapper();
+        } else if (NStr::CompareNocase
+                   (mapper_name,
+                    CDBServiceMapperTraits<CDBUDRandomMapper>::GetName())
+                   == 0) {
+            mapper = new CDBUDRandomMapper(registry);
+        } else if (NStr::CompareNocase
+                   (mapper_name,
+                    CDBServiceMapperTraits<CDBUDPriorityMapper>::GetName())
+                   == 0) {
+            mapper = new CDBUDPriorityMapper(registry);
+        } else if (m_ExtMapperConf.second && NStr::CompareNocase
+            (mapper_name, m_ExtMapperConf.first) == 0) {
+            mapper = (*m_ExtMapperConf.second)(registry);
+        }
+        
+        Push(CRef<IDBServiceMapper>(mapper));
+    }
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+string 
+CDBServiceMapperTraits<CDBDefaultServiceMapper>::GetName(void)
+{
+    return "DEFAULT_NAME_MAPPER";
+}
+
+string 
+CDBServiceMapperTraits<CDBServiceMapperCoR>::GetName(void)
+{
+    return "COR_NAME_MAPPER";
+}
+
+string 
+CDBServiceMapperTraits<CDBUDRandomMapper>::GetName(void)
+{
+    return "USER_DEFINED_RANDOM_DBNAME_MAPPER";
+}
+
+string 
+CDBServiceMapperTraits<CDBUDPriorityMapper>::GetName(void)
+{
+    return "USER_DEFINED_PRIORITY_DBNAME_MAPPER";
+}
+
+string 
+CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
+{
+    return "UNIVERSAL_NAME_MAPPER";
+}
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/26 12:10:32  ssikorsk
+ * Added implementation of CDBUDRandomMapper, CDBUDPriorityMapper and CDBUniversalMapper.
+ *
  * Revision 1.3  2006/01/04 15:01:13  ucko
  * ConfigureFromRegistry: switch to NON_CONST_ITERATE because SGI's STL
  * implementation deals poorly with functions whose return type is void.
