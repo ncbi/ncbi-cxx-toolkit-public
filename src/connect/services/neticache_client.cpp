@@ -699,16 +699,16 @@ bool CNetICacheClient::HasBlobs(const string&  key,
     CFastMutexGuard guard(m_Lock);
 
     bool reconnected = CheckConnect();
-//    string& cmd = m_Tmp;
-    string cmd;
+    string& cmd = m_Tmp;
+//    string cmd;
     MakeCommandPacket(&cmd, "HASB ", reconnected);
     AddKVS(&cmd, key, 0, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
 
-//    string& answer = m_Tmp;
-    string answer;
+    string& answer = m_Tmp;
+//    string answer;
     if (!ReadStr(*m_Sock, &answer)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
@@ -738,15 +738,15 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
 {
     bool reconnected = CheckConnect();
     CSockGuard sg(*m_Sock);
-//    string& cmd = m_Tmp;
-    string cmd;
+    string& cmd = m_Tmp;
+//    string cmd;
     MakeCommandPacket(&cmd, "READ ", reconnected);
     AddKVS(&cmd, key, version, subkey);
 
     WriteStr(cmd.c_str(), cmd.length() + 1);
     WaitForServer();
-//    string& answer = m_Tmp;
-    string answer;
+    string& answer = m_Tmp;
+//    string answer;
     if (!ReadStr(*m_Sock, &answer)) {
         NCBI_THROW(CNetServiceException, eCommunicationError, 
                    "Communication error");
@@ -771,6 +771,7 @@ CNetICacheClient::GetReadStream_NoLock(const string&  key,
     rw->OwnSocket();
     DetachSocket();
     rw->SetSocketParent(this);
+    rw->SetBlobSize(m_BlobSize);
 
     return rw.release();
 }
@@ -925,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/01/26 16:08:02  kuznets
+ * Added BLOB size control to socket based reader
+ *
  * Revision 1.20  2006/01/25 19:28:07  vasilche
  * Fixed deletion of bad sockets.
  *

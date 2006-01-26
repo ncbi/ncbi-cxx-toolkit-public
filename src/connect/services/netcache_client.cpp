@@ -875,7 +875,9 @@ bool CNetCacheClient::x_CheckErrTrim(string& answer)
 
 CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) 
 : CSocketReaderWriter(sock),
-  m_Parent(0)
+  m_Parent(0),
+  m_BlobSizeControl(false),
+  m_BlobBytesToRead(0)
 {}
 
 CNetCacheSock_RW::~CNetCacheSock_RW() 
@@ -906,6 +908,30 @@ void CNetCacheSock_RW::SetSocketParent(CNetServiceClient* parent)
     m_Parent = parent;
 }
 
+void CNetCacheSock_RW::SetBlobSize(size_t blob_size)
+{
+    m_BlobSizeControl = true;
+    m_BlobBytesToRead = blob_size;
+}
+
+ERW_Result CNetCacheSock_RW::Read(void*   buf,
+                                  size_t  count,
+                                  size_t* bytes_read)
+{
+    if (!m_BlobSizeControl) {
+        return TParent::Read(buf, count, bytes_read);
+    }
+    if (!m_BlobBytesToRead) {
+        return eRW_Eof;
+    }
+    size_t nn_read;
+    ERW_Result res = TParent::Read(buf, count, &nn_read);
+    if (bytes_read) {
+        *bytes_read = nn_read;
+    }
+    m_BlobBytesToRead -= nn_read;
+    return res;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1100,6 +1126,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/01/26 16:08:02  kuznets
+ * Added BLOB size control to socket based reader
+ *
  * Revision 1.61  2006/01/25 17:49:18  kuznets
  * catch possible exception in ~CNetCacheSock_RW
  *

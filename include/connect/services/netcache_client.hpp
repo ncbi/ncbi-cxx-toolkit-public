@@ -549,6 +549,8 @@ public:
 class NCBI_XCONNECT_EXPORT CNetCacheSock_RW : public CSocketReaderWriter
 {
 public:
+    typedef CSocketReaderWriter TParent;
+public:
     CNetCacheSock_RW(CSocket* sock);
     virtual ~CNetCacheSock_RW();
 
@@ -562,11 +564,26 @@ public:
 
     /// Access to CSocketReaderWriter::m_Sock
     CSocket& GetSocket() { _ASSERT(m_Sock); return *m_Sock; }
+
+    /// Turn ON blob size control.
+    /// When turned on IReader returns EOF if all BLOB bytes being
+    /// read from the socket (without expecting the server to close it)
+    void SetBlobSize(size_t blob_size);
+
+    virtual ERW_Result Read(void*   buf,
+                            size_t  count,
+                            size_t* bytes_read = 0);
+
 private:
     CNetCacheSock_RW(const CNetCacheSock_RW&);
     CNetCacheSock_RW& operator=(const CNetCacheSock_RW&);
 protected:
     CNetServiceClient*  m_Parent;
+    /// Flag that EOF is controlled not on the socket level (sock close)
+    /// but based on the BLOB size
+    bool                m_BlobSizeControl;
+    /// Remaining BLOB size to be read
+    size_t              m_BlobBytesToRead;
 };
 
 /// IWriter with error checking
@@ -619,6 +636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2006/01/26 16:07:37  kuznets
+ * Added BLOB size control to socket based reader
+ *
  * Revision 1.52  2006/01/17 16:50:40  kuznets
  * Added base class for all NC derived clients, +session management
  *
