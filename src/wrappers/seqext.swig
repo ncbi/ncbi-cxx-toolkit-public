@@ -199,7 +199,6 @@ objmgr/seq_feat_handle.hpp
 objmgr/seq_graph_handle.hpp
 objects/seq/seq_id_handle.hpp
 objects/seq/seq_id_mapper.hpp
-objmgr/seq_id_translator.hpp
 objmgr/seq_loc_mapper.hpp
 objmgr/seq_map.hpp
 objmgr/seq_map_ci.hpp
@@ -328,6 +327,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/26 16:03:56  jcherry
+ * Removed a deleted header
+ *
  * Revision 1.13  2006/01/20 16:49:29  jcherry
  * Added header.  Added template.
  *
