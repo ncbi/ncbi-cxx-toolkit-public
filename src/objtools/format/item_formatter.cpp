@@ -874,21 +874,44 @@ static void s_FormatCitSub
 static void s_FormatPatent
 (const CReferenceItem& ref,
  string& journal,
- CFlatFileConfig::TFormat format)
+ const CFlatFileConfig& cfg)
 {
     _ASSERT(ref.IsSetPatent());
 
     const CCit_pat& pat = ref.GetPatent();
-    bool embl    = (format == CFlatFileConfig::eFormat_EMBL);
-    bool genbank = (format == CFlatFileConfig::eFormat_GenBank);
+    bool embl    = (cfg.GetFormat() == CFlatFileConfig::eFormat_EMBL);
+    bool genbank = (cfg.GetFormat() == CFlatFileConfig::eFormat_GenBank);
 
     journal.erase();
 
     string header;
     string suffix;
+    //
+    //  Pre grant publication handling:
+    //  As the ASN.1 spec does not dedicate fields for this intermediate state,
+    //  the application oriented slots are used.
+    //  Recognize pre grant publications by using of app-number and app-date, and
+    //  by specifying the doc-type as "".
+    //
+    bool use_pre_grant_formatting = pat.CanGetApp_number() && pat.CanGetApp_date() && 
+        pat.CanGetDoc_type() && NStr::IsBlank( pat.GetDoc_type() );
+    //
+    //  2006-01-26:
+    //  Pre grant formatting currently only in non-release mode until quarantine
+    //  period is over.
+    //
+    use_pre_grant_formatting = use_pre_grant_formatting &&
+        ( cfg.GetMode() != CFlatFileConfig::eMode_Release );
+        
     if (genbank) {
-        header = "Patent: ";
-        suffix = " ";
+        if ( use_pre_grant_formatting ) {
+            header = "Pre-Grant Patent: ";
+            suffix = " ";
+        }
+        else {
+            header = "Patent: ";
+            suffix = " ";
+        }
     } else if (embl) {
         header = "Patent number ";
     }
@@ -902,7 +925,12 @@ static void s_FormatPatent
     if (pat.IsSetNumber()  &&  !NStr::IsBlank(pat.GetNumber())) {
         jour << pat.GetNumber();
     } else if (pat.IsSetApp_number()  &&  !NStr::IsBlank(pat.GetApp_number())) {
-        jour << '(' << pat.GetApp_number() << ')';
+        if ( use_pre_grant_formatting ) {
+            jour << pat.GetApp_number();
+        }
+        else {
+            jour << '(' << pat.GetApp_number() << ')';
+        }
     }
     if (pat.IsSetDoc_type()  &&  !NStr::IsBlank(pat.GetDoc_type())) {
         jour << '-' << pat.GetDoc_type();
@@ -1234,7 +1262,7 @@ void CFlatItemFormatter::x_FormatRefJournal
 
         case CReferenceItem::ePub_pat:
             if (ref.IsSetPatent()) {
-                s_FormatPatent(ref, journal, cfg.GetFormat());
+                s_FormatPatent(ref, journal, cfg);
             }
             break;
 
@@ -1269,6 +1297,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2006/01/26 19:47:56  ludwigf
+* ADDED: Special handling of patent information for pre grant publications.
+*
 * Revision 1.31  2006/01/17 18:29:09  ludwigf
 * ADDED: Implementation for Start() and End() methods that will write HTML
 * headers and trailers if necessary.
