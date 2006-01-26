@@ -64,7 +64,13 @@ public:
                          const string& server,
                          const string& database = kEmptyStr);
 
-    virtual IConnection* CloneConnection(EOwnership ownership);
+    virtual void ConnectValidated(IConnValidator& validator,
+								  const string& user,
+                                  const string& password,
+                                  const string& server,
+                                  const string& database = kEmptyStr);
+
+	virtual IConnection* CloneConnection(EOwnership ownership);
 
     // New part begin
 
@@ -157,6 +163,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.21  2006/01/26 18:08:23  kholodov
+* Added: ConnectValidated() method
+*
 * Revision 1.20  2005/04/04 13:03:56  ssikorsk
 * Revamp of DBAPI exception class CDB_Exception
 *

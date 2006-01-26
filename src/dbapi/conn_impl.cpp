@@ -114,6 +114,26 @@ void CConnection::Connect(const string& user,
 
 }
 
+void CConnection::ConnectValidated(IConnValidator& validator,
+								   const string& user,
+                                   const string& password,
+								   const string& server,
+                                   const string& database)
+{
+
+    m_connection = m_ds->
+        GetDriverContext()->ConnectValidated(server,
+                                    user,
+                                    password,
+									validator,
+                                    m_modeMask,
+                                    m_ds->IsPoolUsed());
+    if(m_connection) {
+        SetDbName(database);
+    }
+
+}
+
 CConnection::~CConnection()
 {
     try {
@@ -514,6 +534,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.41  2006/01/26 18:08:23  kholodov
+* Added: ConnectValidated() method
+*
 * Revision 1.40  2005/11/02 15:02:25  ssikorsk
 * Catch all exceptions in destructors.
 *

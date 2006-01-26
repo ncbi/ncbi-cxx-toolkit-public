@@ -40,6 +40,7 @@
 #include <dbapi/variant.hpp>
 #include <util/reader_writer.hpp>
 
+
 /** @addtogroup DbAPI
  *
  * @{
@@ -627,7 +628,7 @@ public:
     /// Get parent datasource object.
     virtual IDataSource* GetDataSource() = 0;
 
-    /// Connect to the database.
+    /// Connect to a database.
     ///
     /// @param user
     ///   User name.
@@ -638,6 +639,24 @@ public:
     /// @param database
     ///   Database to connect to.
     virtual void Connect(const string& user,
+             const string& password,
+             const string& server,
+             const string& database = kEmptyStr) = 0;
+
+    /// Connect to a database using connect validator
+    /// 
+    /// @param validator
+    ///   Validator implementation class.
+    /// @param user
+    ///   User name.
+    /// @param password
+    ///   User's password.
+    /// @param server
+    ///   Server to connect to.
+    /// @param database
+    ///   Database to connect to.
+    virtual void ConnectValidated(IConnValidator& validator,
+		     const string& user,
              const string& password,
              const string& server,
              const string& database = kEmptyStr) = 0;
@@ -791,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/01/26 18:08:41  kholodov
+ * Added: ConnectValidated() method
+ *
  * Revision 1.44  2005/12/28 17:25:00  kholodov
  * Added: more detailed HasMoreResults() description
  *
