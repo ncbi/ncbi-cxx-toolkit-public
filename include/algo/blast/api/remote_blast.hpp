@@ -301,12 +301,44 @@ public:
     /// @param warnings A null-seperated list of warnings.
     static void
     GetSequences(vector< CRef<objects::CSeq_id> > & seqids,    // in
-                 const string            & database,  // in
-                 char                      seqtype,   // 'p' or 'n'
+                 const string                     & database,  // in
+                 char                               seqtype,   // 'p' or 'n'
                  vector< CRef<objects::CBioseq> > & bioseqs,   // out
-                 string                  & errors,    // out
-                 string                  & warnings); // out
-        
+                 string                           & errors,    // out
+                 string                           & warnings); // out
+    
+    /// Get the database used by the search.
+    ///
+    /// An object is returned, describing the name and type of
+    /// database used as the subject of this search.
+    ///
+    /// @return An object describing the searched database(s).
+    CRef<objects::CBlast4_database> GetDatabases();
+    
+    /// Get the program used for this search.
+    /// @return The value of the program parameter.
+    string GetProgram();
+    
+    /// Get the service used for this search.
+    /// @return The value of the service parameter.
+    string GetService();
+    
+    /// Get the created-by string associated with this search.
+    ///
+    /// The created by string for this search will be returned.
+    ///
+    /// @return The value of the created-by string.
+    string GetCreatedBy();
+    
+    /// Get the queries used for this search.
+    ///
+    /// The queries specified for this search will be returned.  The
+    /// returned object will include either a list of seq-locs, a
+    /// CBioseq, or a PSSM query.
+    ///
+    /// @return The queries used for this search.
+    CRef<objects::CBlast4_queries> GetQueries();
+    
 private:
     /// An alias for the most commonly used part of the Blast4 search results.
     typedef objects::CBlast4_get_search_results_reply TGSRR;
@@ -442,9 +474,11 @@ private:
     static void
     x_GetSeqsFromReply(CRef<objects::CBlast4_reply>       reply,
                        vector< CRef<objects::CBioseq> > & bioseqs,   // out
-                       string                  & errors,    // out
-                       string                  & warnings); // out
-
+                       string                           & errors,    // out
+                       string                           & warnings); // out
+    
+    void x_GetRequestInfo();
+    
     
     /// Prohibit copy construction.
     CRemoteBlast(const CRemoteBlast &);
@@ -484,6 +518,30 @@ private:
     
     /// Bitfield to track whether all necessary configuration is done.
     ENeedConfig m_NeedConfig;
+    
+    
+    // "Get request info" fields.
+    
+    /// Databases
+    CRef<objects::CBlast4_database> m_Dbs;
+    
+    /// Program value used when submitting this search
+    string m_Program;
+    
+    /// Service value used when submitting this search
+    string m_Service;
+    
+    /// Created-by attribution for this search.
+    string m_CreatedBy;
+    
+    /// Queries associated with this search.
+    CRef<objects::CBlast4_queries> m_Queries;
+    
+    /// Options relevant to the search algorithm.
+    CRef<objects::CBlast4_parameters> m_AlgoOpts;
+    
+    /// Options relevant to the search application.
+    CRef<objects::CBlast4_parameters> m_ProgramOpts;
 };
 
 
@@ -496,6 +554,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/01/26 15:51:43  bealer
+ *  - Get request info functionality.
+ *
  * Revision 1.26  2005/12/19 21:47:25  bealer
  * - Remove (no longer needed) per-search-type constructors for CRemoteBlast.
  * - Add timing info to the verbose output for CRemoteBlast network ops.

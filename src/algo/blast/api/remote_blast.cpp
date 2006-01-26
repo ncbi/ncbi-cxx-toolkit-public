@@ -1036,6 +1036,172 @@ CRemoteBlast::GetSequences(vector< CRef<objects::CSeq_id> > & seqids,   // in
 }
 
 
+void
+CRemoteBlast::x_GetRequestInfo()
+{
+    // Must have an RID to do this.
+    
+    if (m_RID.empty()) {
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+                   "Cannot fetch query info: No RID was specified.");
+    }
+    
+    // First... poll until done.
+    
+    x_PollUntilDone(ePollAsync, x_DefaultTimeout());
+    
+    if (x_GetState() != eDone) {
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+                   "Polling terminated, but search is in incomplete state.");
+    }
+    
+    // Build the request
+    
+    CRef<CBlast4_request_body> body(new CBlast4_request_body);
+    CRef<CBlast4_request> request(new CBlast4_request);
+    
+    body->SetGet_request_info().SetRequest_id(m_RID);
+    request->SetBody(*body);
+    
+    CRef<CBlast4_reply> reply(new CBlast4_reply);
+    
+    if (eDebug == m_Verbose) {
+        NcbiCout << MSerial_AsnText << *request << endl;
+    }
+    
+    try {
+        CStopWatch sw(CStopWatch::eStart);
+        
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Starting network transaction (" << sw.Elapsed() << ")" << endl;
+        }
+        
+        // Send request.
+        CBlast4Client().Ask(*request, *reply);
+        
+        if (eDebug == m_Verbose) {
+            NcbiCout << "Done network transaction (" << sw.Elapsed() << ")" << endl;
+        }
+    }
+    catch(const CEofException&) {
+        NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+                   "No response from server, cannot complete request.");
+    }
+    
+    if (eDebug == m_Verbose) {
+        NcbiCout << MSerial_AsnText << *reply << endl;
+    }
+    
+    if (reply->CanGetBody()) {
+        if (reply->GetBody().IsGet_request_info()) {
+            CRef<CBlast4_get_request_info_reply> grir
+                (& reply->SetBody().SetGet_request_info());
+            
+            m_Dbs.Reset( & grir->SetDatabase() );
+            
+            m_Program   = grir->GetProgram();
+            m_Service   = grir->GetService();
+            m_CreatedBy = grir->GetCreated_by();
+            
+            m_Queries    .Reset( & grir->SetQueries() );
+            m_AlgoOpts   .Reset( & grir->SetAlgorithm_options() );
+            m_ProgramOpts.Reset( & grir->SetProgram_options() );
+            
+            return;
+        }
+    }
+    
+    NCBI_THROW(CRemoteBlastException, eServiceNotAvailable,
+               "Could not get information from search.");
+}
+
+
+CRef<CBlast4_database>
+CRemoteBlast::GetDatabases()
+{
+    if (! m_Dbs.Empty()) {
+        return m_Dbs;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_Dbs;
+}
+
+string
+CRemoteBlast::GetProgram()
+{
+    if (! m_Program.empty()) {
+        return m_Program;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_Program;
+}
+
+string
+CRemoteBlast::GetService()
+{
+    if (! m_Service.empty()) {
+        return m_Service;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_Service;
+}
+
+string
+CRemoteBlast::GetCreatedBy()
+{
+    if (! m_CreatedBy.empty()) {
+        return m_CreatedBy;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_CreatedBy;
+}
+
+CRef<CBlast4_queries>
+CRemoteBlast::GetQueries()
+{
+    if (! m_Queries.Empty()) {
+        return m_Queries;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_Queries;
+}
+
+#if 0
+CRef<CBlast4_parameters>
+CRemoteBlast::GetAlgorithmOptions()
+{
+    if (! m_AlgoOpts.Empty()) {
+        return m_AlgoOpts;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_AlgoOpts;
+}
+
+CRef<CBlast4_parameters>
+CRemoteBlast::GetProgramOptions()
+{
+    if (! m_ProgramOpts.Empty()) {
+        return m_ProgramOpts;
+    }
+    
+    x_GetRequestInfo();
+    
+    return m_ProgramOpts;
+}
+#endif
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1045,6 +1211,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.36  2006/01/26 15:51:43  bealer
+*  - Get request info functionality.
+*
 * Revision 1.35  2005/12/19 21:47:25  bealer
 * - Remove (no longer needed) per-search-type constructors for CRemoteBlast.
 * - Add timing info to the verbose output for CRemoteBlast network ops.
