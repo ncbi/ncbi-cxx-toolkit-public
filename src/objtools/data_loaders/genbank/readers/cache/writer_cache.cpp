@@ -349,17 +349,22 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
         return null;
     }
 
-    CLoadLockBlob blob(result, blob_id);
-    CRef<CBlobStream> stream
-        (new CCacheBlobStream(m_BlobCache, GetBlobKey(blob_id),
-                              blob.GetBlobVersion(),
-                              GetBlobSubkey(chunk_id)));
-    if ( !stream->CanWrite() ) {
+    try {
+        CLoadLockBlob blob(result, blob_id);
+        CRef<CBlobStream> stream
+            (new CCacheBlobStream(m_BlobCache, GetBlobKey(blob_id),
+                                  blob.GetBlobVersion(),
+                                  GetBlobSubkey(chunk_id)));
+        if ( !stream->CanWrite() ) {
+            return null;
+        }
+        
+        WriteProcessorTag(**stream, processor);
+        return stream;
+    }
+    catch ( ... ) {
         return null;
     }
-
-    WriteProcessorTag(**stream, processor);
-    return stream;
 }
 
 
