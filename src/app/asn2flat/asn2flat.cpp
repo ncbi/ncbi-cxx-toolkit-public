@@ -70,7 +70,17 @@ public:
 
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
     bool HandleSeqID( const string& seqID );
-
+    
+    bool ObtainSeqEntryFromSeqEntry( 
+        auto_ptr<CObjectIStream>& is, 
+        CRef<CSeq_entry>& se );
+    bool ObtainSeqEntryFromBioseq( 
+        auto_ptr<CObjectIStream>& is, 
+        CRef<CSeq_entry>& se );
+    bool ObtainSeqEntryFromBioseqSet( 
+        auto_ptr<CObjectIStream>& is, 
+        CRef<CSeq_entry>& se );
+        
 private:
     // types
     typedef CFlatFileConfig::TFormat    TFormat;
@@ -124,6 +134,13 @@ void CAsn2FlatApp::Init(void)
         // id
         arg_desc->AddOptionalKey("id", "ID", 
             "Specific ID to display", CArgDescriptions::eString);
+            
+        // input type:
+        arg_desc->AddDefaultKey( "type", "AsnType", "ASN.1 object type",
+            CArgDescriptions::eString, "any" );
+        arg_desc->SetConstraint( "type", 
+            &( *new CArgAllow_Strings, "any", "seq-entry", "bioseq", "bioseq-set" ) );
+        
     }}
 
     // batch processing
@@ -229,60 +246,107 @@ int CAsn2FlatApp::Run(void)
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
 
-    // open the input file (default: stdin)
     auto_ptr<CObjectIStream> is(x_OpenIStream(args));
-    is->UseMemoryPool();
-    if (is.get() != NULL) {
-        if ( args["batch"] ) {
-            CGBReleaseFile in(*is.release());
-            in.RegisterHandler(this);
-            in.Read();  // HandleSeqEntry will be called from this function
-        } else {
-            if (args["sub"]) {  // submission
-                CRef<CSeq_submit> sub(new CSeq_submit);
-                if (sub.Empty()) {
-                    NCBI_THROW(CFlatException, eInternal, 
-                        "Could not allocate Seq-submit object");
+    if (is.get() == NULL) {
+        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+                        "Unable to read data from stdin";
+        NCBI_THROW(CFlatException, eInternal, msg);
+    }
+
+    if ( args["batch"] ) {
+        CGBReleaseFile in(*is.release());
+        in.RegisterHandler(this);
+        in.Read();  // HandleSeqEntry will be called from this function
+    } else {
+        
+        if (args["sub"]) {  // submission
+            CRef<CSeq_submit> sub(new CSeq_submit);
+            if (sub.Empty()) {
+                NCBI_THROW(CFlatException, eInternal, 
+                    "Could not allocate Seq-submit object");
+            }
+            *is >> *sub;
+            if (sub->IsSetSub()  &&  sub->IsSetData()) {
+                CRef<CScope> scope(new CScope(*m_Objmgr));
+                if ( !scope ) {
+                    NCBI_THROW(CFlatException, eInternal, "Could not create scope");
                 }
-                *is >> *sub;
-                if (sub->IsSetSub()  &&  sub->IsSetData()) {
-                    CRef<CScope> scope(new CScope(*m_Objmgr));
-                    if ( !scope ) {
-                        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
-                    }
-                    scope->AddDefaults();
-                    m_FFGenerator->Generate(*sub, *scope, *m_Os);
-                }
-            } else if ( args["id"] ) {
+                scope->AddDefaults();
+                m_FFGenerator->Generate(*sub, *scope, *m_Os);
+            }
+        } else if ( args["id"] ) {
+        
+            //
+            //  Implies gbload; otherwise this feature would be pretty 
+            //  useless...
+            //
+            if ( ! args[ "gbload" ] ) {
+                CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+            }   
+            string seqID = args["id"].AsString();
+            HandleSeqID( seqID );
             
+        } else {
+            string asn_type = args["type"].AsString();
+            CRef<CSeq_entry> se(new CSeq_entry);
+            
+            if ( asn_type == "seq-entry" ) {
                 //
-                //  Implies gbload; otherwise this feature would be pretty 
-                //  useless...
+                //  Straight through processing: Read a seq_entry, then process
+                //  a seq_entry:
                 //
-                if ( ! args[ "gbload" ] ) {
-                    CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-                }   
-                string seqID = args["id"].AsString();
-                HandleSeqID( seqID );
-                
-            } else {  // seq-entry
-                CRef<CSeq_entry> se(new CSeq_entry);
-                if ( !se ) {
-                    NCBI_THROW(CFlatException, eInternal, 
-                        "Could not allocate Seq-entry object");
-                }
-                *is >> *se;
-                if (se->Which() == CSeq_entry::e_not_set) {
-                    NCBI_THROW(CFlatException, eInternal, "Invalid Seq-entry");
+                if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
+                    NCBI_THROW( 
+                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
                 }
                 HandleSeqEntry(se);
 				//m_Objmgr.Reset();
+			}
+			else if ( asn_type == "bioseq" ) {				
+				//
+				//  Read object as a bioseq, wrap it into a seq_entry, then process
+				//  the wrapped bioseq as a seq_entry:
+				//
+                if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
+                    NCBI_THROW( 
+                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
+                }
+                HandleSeqEntry( se );
+			}
+			else if ( asn_type == "bioseq-set" ) {
+				//
+				//  Read object as a bioseq_set, wrap it into a seq_entry, then 
+				//  process the wrapped bioseq_set as a seq_entry:
+				//
+                if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+                    NCBI_THROW( 
+                        CFlatException, eInternal, "Unable to construct Seq-entry object" );
+                }
+                HandleSeqEntry( se );
+			}
+            else if ( asn_type == "any" ) {
+                //
+                //  Try the first three in turn:
+                //
+                string strNextTypeName = is->PeekNextTypeName();
+                
+                if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
+                    is->Close();
+                    is.reset( x_OpenIStream( args ) );
+                    if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+                        is->Close();
+                        is.reset( x_OpenIStream( args ) );
+                        if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
+                            NCBI_THROW( 
+                                CFlatException, eInternal, 
+                                "Unable to construct Seq-entry object" 
+                            );
+                        }
+                    }
+                }
+                HandleSeqEntry(se);
             }
         }
-    } else {  // error opening input file
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-                                "Unable to read data from stdin";
-        NCBI_THROW(CFlatException, eInternal, msg);
     }
 
     m_Os->flush();
@@ -290,6 +354,61 @@ int CAsn2FlatApp::Run(void)
     return 0;
 }
 
+bool CAsn2FlatApp::ObtainSeqEntryFromSeqEntry( 
+    auto_ptr<CObjectIStream>& is, 
+    CRef<CSeq_entry>& se )
+{
+    try {
+        *is >> *se;
+        if (se->Which() == CSeq_entry::e_not_set) {
+            return false;
+        }
+        return true;
+    }
+    catch( ... ) {
+        return false;
+    }
+}
+
+bool CAsn2FlatApp::ObtainSeqEntryFromBioseq( 
+    auto_ptr<CObjectIStream>& is, 
+    CRef<CSeq_entry>& se )
+{
+    try {
+		CRef<CBioseq> bs( new CBioseq );
+		if ( ! bs ) {
+            NCBI_THROW(CFlatException, eInternal, 
+            "Could not allocate Bioseq object");
+		}
+	    *is >> *bs;
+
+        se->SetSeq( bs.GetObject() );
+        return true;
+    }
+    catch( ... ) {
+        return false;
+    }
+}
+
+bool CAsn2FlatApp::ObtainSeqEntryFromBioseqSet( 
+    auto_ptr<CObjectIStream>& is, 
+    CRef<CSeq_entry>& se )
+{
+    try {
+		CRef<CBioseq_set> bss( new CBioseq_set );
+		if ( ! bss ) {
+            NCBI_THROW(CFlatException, eInternal, 
+            "Could not allocate Bioseq object");
+		}
+	    *is >> *bss;
+
+        se->SetSet( bss.GetObject() );
+        return true;
+    }
+    catch( ... ) {
+        return false;
+    }
+}
 
 int CAsn2FlatApp::x_SeqIdToGiNumber( 
     const string& seq_id,
@@ -397,7 +516,6 @@ bool CAsn2FlatApp::HandleSeqID( const string& seq_id )
     return true;
 }
 
-
 bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
     if (!se) {
@@ -449,7 +567,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {
     // determine the file serialization format.
-    // deafult for batch files is binary, otherwise text.
+    // default for batch files is binary, otherwise text.
     ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary :eSerial_AsnText;
     if ( args["serial"] ) {
         const string& val = args["serial"].AsString();
@@ -463,9 +581,14 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
     }
 
     // open the input file, or standard input if no file specified.
-    return args["i"] ?
+    CObjectIStream* pI = ( args["i"] ?
         CObjectIStream::Open(args["i"].AsString(), serial) :
-        CObjectIStream::Open(serial, cin);
+        CObjectIStream::Open(serial, cin) );
+        
+    if ( 0 != pI ) {
+        pI->UseMemoryPool();
+    }
+    return pI;
 }
 
 
@@ -683,6 +806,13 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2006/01/26 14:11:53  ludwigf
+* ADDED: Support for specifying the ASN.1 object type of the source on the
+*  command line. By default, asn2flat will try any object type it knows about
+*  until if finds a fit.
+*  In the past, asn2flat would blindly assume a Seq_entry as the top level
+*  ASN.1 element, and choke if the assumtion was wrong.
+*
 * Revision 1.18  2006/01/17 18:19:56  ludwigf
 * CHANGED: For the time being, disabled support for "config.ini" configuration
 * file.
