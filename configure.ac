@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.407 2006/01/17 19:03:32 ucko Exp $
+#  $Id: configure.ac,v 1.408 2006/01/26 20:31:44 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -681,7 +681,7 @@ changequote([, ])dnl
 with_mt=${with_mt:="no"}
 if test "$with_mt" = "yes" ; then
    case "$host_os:$compiler" in
-    darwin* | irix*          )  ;;
+    darwin* | irix* | cygwin*)  ;;
     solaris*:WorkShop*       )  : ${MT_FLAG:="-mt"} ;;
     solaris*:GCC             )  : ${MT_FLAG:="-pthreads"} ;;
     *:KCC                    )  : ${MT_FLAG:="--thread_safe"} ;;
@@ -2118,6 +2118,17 @@ if test "$ncbi_cv_func_getpwuid_r" != "no" ; then
      arguments it takes (normally 4 or 5).])
 fi
 
+# Perform a full-fledged check in C++ to be sure of an actual declaration.
+AC_CACHE_CHECK([for getlogin_r], ncbi_cv_func_getlogin_r,
+   [ncbi_cv_func_getlogin_r="no"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <unistd.h>]],
+       [[char buf[64]; return getlogin_r(buf, 64);]])],
+       [ncbi_cv_func_getlogin_r=yes], [ncbi_cv_func_getlogin_r=no])])
+if test $ncbi_cv_func_getlogin_r = yes; then
+   AC_DEFINE(HAVE_GETLOGIN_R, 1,
+      [Define to 1 if you have the `getlogin_r' function])
+fi
 
 AC_LANG_PUSH(C)
 # some of these can lose in C++ due to the way autoconf works
@@ -3321,8 +3332,12 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
                darwin* ) ;; # threading always implicitly enabled
                IRIX*   ) ;; # threading always disabled (unsupported)
                *       ) BOOST_TAG="${BOOST_TAG}-mt" ;;
-            esac 
+            esac
          fi
+         case "$BOOST_TAG" in
+            *-mt) ;;
+            *) BOOST_INCLUDE="$BOOST_INCLUDE -DBOOST_DISABLE_THREADS" ;;
+         esac
          test "$with_debug" = "no"   ||  BOOST_TAG="${BOOST_TAG}-d"
          BOOST_TAG="${BOOST_TAG}-${ncbi_cv_lib_boost_version}"
          test "$bit64_sfx"  = "64"   &&  BOOST_TAG="${BOOST_TAG}-64"

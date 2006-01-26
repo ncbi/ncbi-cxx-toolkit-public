@@ -96,6 +96,9 @@
 /* Define to 1 if you have the `getloadavg' function. */
 #undef HAVE_GETLOADAVG
 
+/* Define to 1 if you have the `getlogin_r' function */
+#undef HAVE_GETLOGIN_R
+
 /* Define to 1 if you have the `getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
