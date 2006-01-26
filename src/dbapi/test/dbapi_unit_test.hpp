@@ -197,6 +197,8 @@ protected:
         return m_TableName;
     }
     static void DumpResults(const auto_ptr<IStatement>& auto_stmt);
+    static int GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
+                               const string& table_name);
     
 private:
     const CTestArguments m_args;
@@ -222,6 +224,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2006/01/26 17:51:12  ssikorsk
+ * Added method GetNumOfRecords.
+ *
  * Revision 1.30  2005/10/26 11:31:08  ssikorsk
  * Added CTestArguments::m_TDSVersion
  *
