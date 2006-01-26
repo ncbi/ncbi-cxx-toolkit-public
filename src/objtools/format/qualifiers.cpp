@@ -806,11 +806,23 @@ static size_t s_CountAccessions(const CUser_field& field)
     if (!field.IsSetData()  ||  !field.GetData().IsFields()) {
         return 0;
     }
+    
+    //
+    //  Each accession consists of yet another block of "Fields" one of which carries
+    //  a label named "accession":
+    //
     ITERATE (CUser_field::TData::TFields, it, field.GetData().GetFields()) {
         const CUser_field& uf = **it;
-        if (uf.IsSetLabel()  &&  uf.GetLabel().IsStr()  &&
-            uf.GetLabel().GetStr() == "accession") {
-            ++count;
+        if ( uf.CanGetData()  &&  uf.GetData().IsFields() ) {
+        
+            ITERATE( CUser_field::TData::TFields, it2, uf.GetData().GetFields() ) {
+                const CUser_field& inner = **it2;
+                if ( inner.IsSetLabel() && inner.GetLabel().IsStr() ) {
+                    if ( inner.GetLabel().GetStr() == "accession" ) {
+                        ++count;
+                    }
+                }
+            }
         }
     }
     return count;
@@ -834,6 +846,9 @@ void CFlatModelEvQVal::Format
         const string& label = field.GetLabel().GetStr();
         if (label == "Method") {
             method = &label;
+            if ( field.CanGetData() && field.GetData().IsStr() ) {
+                method = &( field.GetData().GetStr() );
+            }
         } else if (label == "mRNA") {
             num_mrna = s_CountAccessions(field);
         } else if (label == "EST") {
@@ -863,14 +878,14 @@ void CFlatModelEvQVal::Format
     }
     if (num_est > 0) {
         text << prefix << num_est << " EST";
-        if (num_mrna > 1) {
+        if (num_est > 1) {
             text << 's';
         }
         prefix = ", ";
     }
     if (num_prot > 0) {
         text << prefix << num_prot << " Protein";
-        if (num_mrna > 1) {
+        if (num_prot > 1) {
             text << 's';
         }
     }
@@ -977,6 +992,14 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2006/01/26 19:54:37  ludwigf
+* FIXED: User object methods would always be displayed as "Method" regardless
+*  of what the ASN.1 said.
+* FIXED: "Supporting evidence" in user objects would not get the count of si-
+*  milar mRNAs, ESTs, and Proteins right.
+* FIXED: Even with correct counts, appending a plural 's' for similarity
+*  counts greater than one wasn't working right.
+*
 * Revision 1.33  2005/11/23 16:26:21  ludwigf
 * CHANGED: Replaced calls to function "JoinNoRedund()" to call function
 * "JoinString()" instead.
