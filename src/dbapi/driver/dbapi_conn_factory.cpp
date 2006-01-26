@@ -55,8 +55,8 @@ m_LoginTimeout( 1 )
     if (def_mapping == eUseDefaultMapper) {
         CDBServiceMapperCoR* mapper = new CDBServiceMapperCoR();
         
-        mapper->push(new CDBDefaultServiceMapper());
-        mapper->push(svc_mapper);
+        mapper->Push(CRef<IDBServiceMapper>(new CDBDefaultServiceMapper()));
+        mapper->Push(CRef<IDBServiceMapper>(svc_mapper));
         
         m_DBServiceMapper.reset(mapper);
     } else {
@@ -375,7 +375,7 @@ CConnValidatorCoR::Empty(void) const
 
 ///////////////////////////////////////////////////////////////////////////////
 CTrivialConnValidator::CTrivialConnValidator(const string& db_name, 
-                                             EValidateAttr attr) : 
+                                             int attr) : 
 m_DBName(db_name),
 m_Attr(attr)
 {
@@ -392,6 +392,12 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
         // Try to change a database ...
         {
             auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("use " + GetDBName()));
+            set_cmd->Send();
+            set_cmd->DumpResults();
+        }
+        
+        if (m_Attr & eCheckSysobjects) {
+            auto_ptr<CDB_LangCmd> set_cmd(conn.LangCmd("SELECT id FROM sysobjects"));
             set_cmd->Send();
             set_cmd->DumpResults();
         }
@@ -416,6 +422,9 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/01/26 12:08:27  ssikorsk
+ * Improved implementation of the class CTrivialConnValidator.
+ *
  * Revision 1.3  2006/01/23 13:32:36  ssikorsk
  * CDBConnectionFactory class: improved methods MakeDBConnection and
  * DispathServerName, implemented MakeValidConnection;
