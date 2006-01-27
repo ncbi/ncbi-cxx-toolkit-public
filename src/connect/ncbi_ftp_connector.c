@@ -351,7 +351,7 @@ static EIO_Status s_FTPPasv(SFTPConnector* xxx)
             return eIO_Unknown;
     }
     i = (((((o[0] << 8) | o[1]) << 8) | o[2]) << 8) | o[3];
-    host = SOCK_htonl(i);
+    host = SOCK_HostToNetLong(i);
     i = (o[4] << 8) | o[5];
     port = (unsigned short) i;
     if (SOCK_ntoa(host, buf, sizeof(buf)) == 0  &&
@@ -745,6 +745,9 @@ extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2006/01/27 17:01:19  lavr
+ * Replace obsolete call names with current ones
+ *
  * Revision 1.16  2006/01/11 20:21:32  lavr
  * Uniform creation/fill-up of connector structures
  *
