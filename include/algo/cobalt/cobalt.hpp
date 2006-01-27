@@ -39,7 +39,6 @@ Contents: Interface for CMultiAligner
 #include <util/math/matrix.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algo/blast/api/sseqloc.hpp>
-#include <algo/blast/core/blast_stat.h>
 #include <algo/align/nw/nw_pssm_aligner.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -449,6 +448,8 @@ private:
 
     CHitList m_UserHits;
 
+    const char *m_MatrixName;
+
     CTree m_Tree;
     CPSSMAligner m_Aligner;
     double m_ConservedCutoff;
@@ -525,8 +526,11 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.13  2006/01/27 20:55:58  papadopo
+  remove unneeded header, add matrix name member
+
   Revision 1.12  2006/01/24 20:44:27  papadopo
-  make strucutre definition public to make Workshop happy
+  make structure definition public to make Workshop happy
 
   Revision 1.11  2005/12/16 23:39:04  papadopo
   1. Make iteration optional, add pseudocount parameter
