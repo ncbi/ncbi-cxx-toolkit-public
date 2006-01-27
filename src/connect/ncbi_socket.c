@@ -37,7 +37,7 @@
  */
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_connutil.h>
+#include <connect/ncbi_buffer.h>
 #include <connect/ncbi_socket_unix.h>
 
 /* OS must be specified in the command-line ("-D....") or in the conf. header
@@ -131,6 +131,7 @@
 
 /* Portable standard C headers
  */
+#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 
@@ -647,8 +648,9 @@ static void s_DoLog
                     sprintf(tail, "%hu", ntohs(sin->sin_port));
                 } else {
                     strcpy(head, "Datagram socket connected to ");
-                    HostPortToString(sin->sin_addr.s_addr,ntohs(sin->sin_port),
-                                     tail, sizeof(tail));
+                    SOCK_HostPortToString(sin->sin_addr.s_addr,
+                                          ntohs(sin->sin_port),
+                                          tail, sizeof(tail));
                 }
             }
         } else {
@@ -660,8 +662,9 @@ static void s_DoLog
                 strcpy(head, "Accepted from ");
             if (sa->sa_family == AF_INET) {
                 const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
-                HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
-                                 tail, sizeof(tail));
+                SOCK_HostPortToString(sin->sin_addr.s_addr,
+                                      ntohs(sin->sin_port),
+                                      tail, sizeof(tail));
             }
 #ifdef NCBI_OS_UNIX
             else if (sa->sa_family == AF_UNIX) {
@@ -679,8 +682,9 @@ static void s_DoLog
         if (sock->type == eSOCK_Datagram) {
             const struct sockaddr_in* sin = (const struct sockaddr_in*) sa;
             assert(sa && sa->sa_family == AF_INET);
-            HostPortToString(sin->sin_addr.s_addr, ntohs(sin->sin_port),
-                             tail, sizeof(tail));
+            SOCK_HostPortToString(sin->sin_addr.s_addr,
+                                  ntohs(sin->sin_port),
+                                  tail, sizeof(tail));
             sprintf(tail + strlen(tail), ", msg# %u",
                     (unsigned)(event == eIO_Read ? sock->n_in : sock->n_out));
         } else if (ptr)
@@ -1341,7 +1345,8 @@ static EIO_Status s_CreateListening(const char*    path,
 #ifdef HAVE_SIN_LEN
             addr.sin.sin_len         = addrlen;
 #endif /*HAVE_SIN_LEN*/
-            c = HostPortToString(htonl(ip), port, s, sizeof(s)) ? s : "?:?";
+            c = SOCK_HostPortToString(htonl(ip), port, s, sizeof(s))
+                ? s : "?:?";
         }
     if (bind(x_lsock, &addr.sa, addrlen) != 0) {
         int x_errno = SOCK_ERRNO;
@@ -1575,7 +1580,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
         c = lsock->path;
     else
 #endif /*NCBI_OS_UNIX*/
-        c = HostPortToString(0, lsock->port, s, sizeof(s)) ? s : ":?";
+        c = SOCK_HostPortToString(0, lsock->port, s, sizeof(s)) ? s : ":?";
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
@@ -1776,7 +1781,8 @@ static EIO_Status s_Connect(SOCK            sock,
 #endif /*HAVE_SIN_LEN*/
             sock->host = x_host;
             sock->port = x_port;
-            c = HostPortToString(x_host,ntohs(x_port),s,sizeof(s)) ? s : "???";
+            c = SOCK_HostPortToString(x_host, ntohs(x_port), s, sizeof(s))
+                ? s : "???";
         }
 
     /* check the new socket */
@@ -1887,7 +1893,7 @@ static int s_Recv(SOCK        sock,
 
     /* read from the socket */
     do {
-        char   xx_buffer[4096];
+        char   xx_buffer[SOCK_BUF_CHUNK_SIZE];
         char*  x_buffer;
         int    x_errno;
         size_t n_todo;
@@ -1950,18 +1956,18 @@ static int s_Recv(SOCK        sock,
 
         n_todo = size - n_read;
         if (buffer  &&  (void*) x_buffer != buffer) {
-            if (n_todo > x_read)
-                n_todo = x_read;
+            if (n_todo > (size_t) x_read)
+                n_todo = (size_t) x_read;
             memcpy((char*) buffer + n_read, x_buffer, n_todo);
         }
-        if (peek  ||  x_read > n_todo) {
+        if (peek  ||  (size_t) x_read > n_todo) {
             /* store the newly read data in the internal input buffer */
             int/*bool*/ error = !BUF_Write(&sock->r_buf, peek
                                            ? x_buffer
                                            : x_buffer + n_todo, peek
                                            ? (size_t) x_read
                                            : (size_t)(x_read - n_todo));
-            if (x_read > n_todo)
+            if ((size_t) x_read > n_todo)
                 x_read = n_todo;
             if (error) {
                 CORE_LOGF_ERRNO(eLOG_Error, errno,
@@ -2301,8 +2307,8 @@ static EIO_Status s_WritePending(SOCK                  sock,
                             &sock->path[trunc ? len - sizeof(addr) + 6 : 0]);
                 } else
 #endif /*NCBI_OS_UNIX*/
-                    HostPortToString(sock->host, ntohs(sock->port),
-                                     addr, sizeof(addr));
+                    SOCK_HostPortToString(sock->host, ntohs(sock->port),
+                                          addr, sizeof(addr));
                 CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_WritePending]  Failed pending "
                                     "connect() to %s", s_ID(sock, _id), addr));
@@ -2319,7 +2325,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
     sock->w_timeout = tv;
     off = BUF_Size(sock->w_buf) - sock->w_len;
     do {
-        char   buf[4096];
+        char   buf[SOCK_BUF_CHUNK_SIZE];
         size_t n_written = 0;
         size_t n_write = BUF_PeekAt(sock->w_buf, off, buf, sizeof(buf));
         status = s_WriteSliced(sock, buf, n_write, &n_written, 0);
@@ -3529,7 +3535,7 @@ extern char* SOCK_GetPeerAddressString(SOCK   sock,
         strncpy0(buf, sock->path, buflen - 1);
     else
 #endif /*NCBI_OS_UNIX*/
-        HostPortToString(sock->host, ntohs(sock->port), buf, buflen);
+        SOCK_HostPortToString(sock->host, ntohs(sock->port), buf, buflen);
     return buf;
 }
 
@@ -3780,7 +3786,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
     if (connect(sock->sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
         char addr[80];
         int x_errno = SOCK_ERRNO;
-        HostPortToString(sock->host, ntohs(sock->port), addr, sizeof(addr));
+        SOCK_HostPortToString(sock->host, ntohs(sock->port),addr,sizeof(addr));
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                            ("%s[DSOCK::Connect]  Failed connect() to %s",
                             s_ID(sock, _id), addr));
@@ -4219,7 +4225,7 @@ extern int SOCK_ntoa(unsigned int host,
                      size_t       buflen)
 {
     const unsigned char* b = (const unsigned char*) &host;
-    char str[16];
+    char str[16/*sizeof("255.255.255.255")*/];
 
     assert(buf && buflen > 0);
     verify(sprintf(str, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]) > 0);
@@ -4242,6 +4248,18 @@ extern unsigned int SOCK_HostToNetLong(unsigned int value)
 
 
 extern unsigned short SOCK_HostToNetShort(unsigned short value)
+{
+    return htons(value);
+}
+
+
+extern unsigned int SOCK_htonl(unsigned int value)
+{
+    return htonl(value);
+}
+
+
+extern unsigned short SOCK_htons(unsigned short value)
 {
     return htons(value);
 }
@@ -4464,9 +4482,81 @@ unsigned int SOCK_GetLoopbackAddress(void)
 }
 
 
+extern const char* SOCK_StringToHostPort(const char*     str,
+                                         unsigned int*   host,
+                                         unsigned short* port)
+{
+    unsigned short p;
+    unsigned int h;
+    char abuf[256];
+    const char* s;
+    size_t alen;
+    int n = 0;
+
+    if (host)
+        *host = 0;
+    if (port)
+        *port = 0;
+    for (s = str; *s; s++) {
+        if (isspace((unsigned char)(*s)) || *s == ':')
+            break;
+    }
+    if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
+        return str;
+    if (alen) {
+        strncpy0(abuf, str, alen);
+        if (!(h = SOCK_gethostbyname(abuf)))
+            return str;
+    } else
+        h = 0;
+    if (*s == ':') {
+        if (sscanf(++s, "%hu%n", &p, &n) < 1 ||
+            (s[n] && !isspace((unsigned char) s[n])))
+            return alen ? 0 : str;
+    } else
+        p = 0;
+    if (host)
+        *host = h;
+    if (port)
+        *port = p;
+    return s + n;
+}
+
+
+extern size_t SOCK_HostPortToString(unsigned int   host,
+                                    unsigned short port,
+                                    char*          buf,
+                                    size_t         buflen)
+{
+    char   x_buf[16/*sizeof("255.255.255.255")*/ + 8/*:port*/];
+    size_t n;
+
+    if (!buf || !buflen)
+        return 0;
+    if (!host)
+        *x_buf = 0;
+    else if (SOCK_ntoa(host, x_buf, sizeof(x_buf)) != 0) {
+        *buf = 0;
+        return 0;
+    }
+    n = strlen(x_buf);
+    if (port || !host)
+        n += sprintf(x_buf + n, ":%hu", port);
+    assert(n < sizeof(x_buf));
+    if (n >= buflen)
+        n = buflen - 1;
+    memcpy(buf, x_buf, n);
+    buf[n] = 0;
+    return n;
+}
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.184  2006/01/27 17:11:41  lavr
+ * Added SOCK_StringToHostPort() and SOCK_HostPortToString() [from ncbi_connutil]
+ *
  * Revision 6.183  2006/01/24 20:07:49  lavr
  * +SOCK_ETIMEDOUT
  *
@@ -4477,7 +4567,8 @@ unsigned int SOCK_GetLoopbackAddress(void)
  * Safety parentheses in INADDR_NONE macro
  *
  * Revision 6.180  2005/07/25 15:03:45  rsmith
- * take out special SOCK_socklen_t case for MAC_OS since changes to mitsock make it unnecessary.
+ * take out special SOCK_socklen_t case for MAC_OS since changes to mitsock
+ * make it unnecessary.
  *
  * Revision 6.179  2005/07/22 21:31:39  vakatov
  * Narrow down the previous commit to MAC.
