@@ -3298,12 +3298,12 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment.
-    if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
-         args.GetServerType() == CTestArguments::eMsSql ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+//     if ( (args.GetDriverName() == "ftds" || args.GetDriverName() == "ftds63" ) &&
+//          args.GetServerType() == CTestArguments::eMsSql ) {
+//         tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Bulk_Writing, DBAPIInstance);
+//         tc->depends_on(tc_init);
+//         add(tc);
+//     }
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
     tc->depends_on(tc_init);
@@ -3476,6 +3476,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.61  2006/01/27 19:32:14  ssikorsk
+ * Disable Test_Bulk_Writing temporarily;
+ *
  * Revision 1.60  2006/01/26 17:51:29  ssikorsk
  * Added method GetNumOfRecords.
  *
