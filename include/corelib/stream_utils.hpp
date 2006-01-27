@@ -116,8 +116,8 @@ struct NCBI_XUTIL_EXPORT CStreamUtils {
 
 // Read at most "buf_size" bytes from the stream "is" into a buffer pointed
 // to by "buf". This call tries its best to be non-blocking.
-// Return the number of bytes actually read (or 0 if nothing was read, in
-// case of either an error or no data currently available).
+// Return the number of bytes actually read (or 0 if nothing was read
+// in case of either an error or EOF).
     static streamsize Readsome(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size);
@@ -134,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2006/01/27 16:58:42  lavr
+ * Note that Readsome() to block for at least one char be read
+ *
  * Revision 1.18  2004/01/20 20:33:52  lavr
  * Remove HAVE_BUGGY_IOS_CALLBACKS from this header
  *
