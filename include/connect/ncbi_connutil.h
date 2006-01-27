@@ -695,11 +695,13 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentType
 #else
 #  define NCBI_CONNUTIL_DEPRECATED NCBI_DEPRECATED
 #endif
-extern NCBI_XCONNECT_EXPORT const char* StringToHostPort
-(const char*, unsigned int*, unsigned short*) NCBI_CONNUTIL_DEPRECATED;
+extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED
+const char* StringToHostPort
+(const char*, unsigned int*, unsigned short*);
 
-extern NCBI_XCONNECT_EXPORT size_t HostPortToString
-(unsigned int, unsigned short, char*, size_t) NCBI_CONNUTIL_DEPRECATED;
+extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED
+size_t HostPortToString
+(unsigned int, unsigned short, char*, size_t);
 
 
 /* Calculate/Update CRC32
@@ -737,6 +739,9 @@ extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUsername
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2006/01/27 19:17:41  lavr
+ * Fix NCBI_DEPRECATED placement to satify MSVC compiler
+ *
  * Revision 6.48  2006/01/27 17:08:35  lavr
  * Spell CONNUTIL_GetUsername() this way
  *

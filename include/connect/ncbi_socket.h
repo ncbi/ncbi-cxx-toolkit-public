@@ -983,9 +983,11 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_HostToNetShort
 #else
 #  define NCBI_SOCK_DEPRECATED NCBI_DEPRECATED
 #endif
-unsigned int   SOCK_htonl(unsigned int)   NCBI_SOCK_DEPRECATED;
+extern NCBI_XCONNECT_EXPORT NCBI_SOCK_DEPRECATED
+unsigned int   SOCK_htonl(unsigned int);
 #define        SOCK_ntohl SOCK_htonl
-unsigned short SOCK_htons(unsigned short) NCBI_SOCK_DEPRECATED;
+extern NCBI_XCONNECT_EXPORT NCBI_SOCK_DEPRECATED
+unsigned short SOCK_htons(unsigned short);
 #define        SOCK_ntohs SOCK_htons
 
 
@@ -1057,6 +1059,9 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2006/01/27 19:17:41  lavr
+ * Fix NCBI_DEPRECATED placement to satify MSVC compiler
+ *
  * Revision 6.57  2006/01/27 16:57:15  lavr
  * Added SOCK_StringHostToPort() and SOCK_HostPortToString() [from ncbi_connutil]
  *
