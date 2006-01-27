@@ -33,7 +33,7 @@
 /// @file tblastn_options.hpp
 /// Declares the CTBlastnOptionsHandle class.
 
-#include <algo/blast/api/blast_prot_options.hpp>
+#include <algo/blast/api/blast_advprot_options.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -50,7 +50,7 @@ BEGIN_SCOPE(blast)
 /// this type of search.
 
 class NCBI_XBLAST_EXPORT CTBlastnOptionsHandle : 
-                                            public CBlastProteinOptionsHandle
+                                public CBlastAdvancedProteinOptionsHandle
 {
 public:
 
@@ -104,6 +104,8 @@ protected:
     void SetHitSavingOptionsDefaults();
     /// Sets SubjectSequenceOptionsDefaults for tblastn options
     void SetSubjectSequenceOptionsDefaults();
+    /// Overrides  SetGappedExtensionDefaults for tblastn options
+    void  SetGappedExtensionDefaults();
 
 private:
     /// Disallow copy constructor
@@ -122,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/01/27 14:20:59  camacho
+ * + Change base class to CBlastAdvancedProteinOptionsHandle to support composition based statistics
+ *
  * Revision 1.10  2005/05/09 20:08:48  bealer
  * - Add program and service strings to CBlastOptions for remote blast.
  * - New CBlastOptionsHandle constructor for CRemoteBlast.

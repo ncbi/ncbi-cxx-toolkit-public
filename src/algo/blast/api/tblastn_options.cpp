@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CTBlastnOptionsHandle::CTBlastnOptionsHandle(EAPILocality locality)
-    : CBlastProteinOptionsHandle(locality)
+    : CBlastAdvancedProteinOptionsHandle(locality)
 {
     SetDefaults();
     m_Opts->SetProgram(eTblastn);
@@ -71,6 +71,14 @@ CTBlastnOptionsHandle::SetHitSavingOptionsDefaults()
 }
 
 void
+CTBlastnOptionsHandle::SetGappedExtensionDefaults()
+{
+    CBlastProteinOptionsHandle::SetGappedExtensionDefaults();
+    m_Opts->SetCompositionBasedStats(eNoCompositionBasedStats);
+    m_Opts->SetSmithWatermanMode(false);
+}
+
+void
 CTBlastnOptionsHandle::SetSubjectSequenceOptionsDefaults()
 {
     SetDbGeneticCode(BLAST_GENETIC_CODE);
@@ -86,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/01/27 14:21:04  camacho
+ * + Change base class to CBlastAdvancedProteinOptionsHandle to support composition based statistics
+ *
  * Revision 1.6  2005/10/06 19:43:08  camacho
  * CBlastOptionsHandle subclasses must call SetDefaults unconditionally.
  * Fixes problem with uninitializes program and service name for CRemoteBlast.
