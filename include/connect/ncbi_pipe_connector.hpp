@@ -39,8 +39,8 @@
 /// connector("CONNECTOR", "SConnectorTag") methods and structures.
 
 
-#include <connect/ncbi_connector.h>
 #include <connect/ncbi_pipe.hpp>
+#include <connect/ncbi_connector.h>
 
 
 /** @addtogroup Connectors
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/01/27 16:56:26  lavr
+ * Headers rearranged to pickup corelib stuff first
+ *
  * Revision 1.2  2003/09/23 21:04:08  lavr
  * Allow to create the connector on top of existing pipe (and don't delete it!)
  *

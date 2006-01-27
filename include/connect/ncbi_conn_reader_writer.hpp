@@ -33,8 +33,8 @@
  *
  */
 
-#include <connect/ncbi_socket.hpp>
 #include <util/reader_writer.hpp>
+#include <connect/ncbi_socket.hpp>
 
 
 /** @addtogroup ReaderWriter
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/01/27 16:55:57  lavr
+ * Headers rearranged to pickup corelib stuff first
+ *
  * Revision 1.4  2004/10/08 12:30:12  lavr
  * m_Owned -> m_IsOwned
  *

@@ -40,9 +40,9 @@
 ///     CNamedPipeServer  -  class for server-side named pipes
 
 
-#include <connect/ncbi_core.h>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
+#include <connect/ncbi_core.h>
 #include <vector>
 
 #if defined(NCBI_OS_MSWIN)
@@ -357,6 +357,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/01/27 16:56:15  lavr
+ * Headers rearranged to pickup corelib stuff first
+ *
  * Revision 1.11  2005/05/20 16:24:49  ivanov
  * CNamedPipe::GetName() -- return const string&.
  * Renamed CNamedPipe::x_SetPipeName() -> CNamedPipe::x_SetName().

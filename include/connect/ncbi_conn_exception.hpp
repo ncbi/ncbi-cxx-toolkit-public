@@ -33,8 +33,8 @@
  *
  */
 
-#include <connect/ncbi_core.h>
 #include <corelib/ncbiexpt.hpp>
+#include <connect/ncbi_core.h>
 
 
 /** @addtogroup ConnExcep
@@ -130,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2006/01/27 16:55:52  lavr
+ * Headers rearranged to pickup corelib stuff first
+ *
  * Revision 6.11  2005/06/10 19:26:35  lavr
  * Small code formatting issue
  *

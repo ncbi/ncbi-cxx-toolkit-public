@@ -38,9 +38,9 @@
  * ---------------------------------------------------------------------------
  */
 
-#include <connect/ncbi_socket_unix.h>
 #include <corelib/ncbitype.h>
 #include <corelib/ncbimisc.hpp>
+#include <connect/ncbi_socket_unix.h>
 #include <string>
 #include <vector>
 
@@ -656,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2006/01/27 16:56:41  lavr
+ * Headers rearranged to pickup corelib stuff first
+ *
  * Revision 6.44  2005/08/15 15:07:58  lavr
  * +CSocket::ReadLine() in C-style (see ncbi_socket.h)
  *

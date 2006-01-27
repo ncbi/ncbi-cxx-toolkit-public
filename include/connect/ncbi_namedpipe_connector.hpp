@@ -39,8 +39,8 @@
 /// connector("CONNECTOR", "SConnectorTag") methods and structures.
  
 
-#include <connect/ncbi_connector.h>
 #include <connect/ncbi_namedpipe.hpp>
+#include <connect/ncbi_connector.h>
 
 
 /** @addtogroup Connectors
@@ -76,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/01/27 16:56:20  lavr
+ * Headers rearranged to pickup corelib stuff first
+ *
  * Revision 1.5  2004/03/22 17:00:17  ivanov
  * Replaced CNamedPipe::kDefaultPipeSize with 0 -- default pipe buffer size.
  *
