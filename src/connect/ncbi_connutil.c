@@ -37,6 +37,10 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
+#ifdef NCBI_OS_UNIX
+#include <pwd.h>
+#include <unistd.h>
+#endif
 
 
 static const char* s_GetValue(const char* service, const char* param,
@@ -1731,76 +1735,22 @@ extern int/*bool*/ MIME_ParseContentType
 
 
 /****************************************************************************
- * Reading and writing [host][:port] addresses
+ * Reading and writing [host][:port] addresses:  Deprecated here, use upcalls.
  */
-
 
 extern const char* StringToHostPort(const char*     str,
                                     unsigned int*   host,
                                     unsigned short* port)
 {
-    unsigned short p;
-    unsigned int h;
-    char abuf[256];
-    const char* s;
-    size_t alen;
-    int n = 0;
-
-    if (host)
-        *host = 0;
-    if (port)
-        *port = 0;
-    for (s = str; *s; s++) {
-        if (isspace((unsigned char)(*s)) || *s == ':')
-            break;
-    }
-    if ((alen = (size_t)(s - str)) > sizeof(abuf) - 1)
-        return str;
-    if (alen) {
-        strncpy0(abuf, str, alen);
-        if (!(h = SOCK_gethostbyname(abuf)))
-            return str;
-    } else
-        h = 0;
-    if (*s == ':') {
-        if (sscanf(++s, "%hu%n", &p, &n) < 1 ||
-            (s[n] && !isspace((unsigned char) s[n])))
-            return alen ? 0 : str;
-    } else
-        p = 0;
-    if (host)
-        *host = h;
-    if (port)
-        *port = p;
-    return s + n;
+    return SOCK_StringToHostPort(str, host, port);
 }
-
 
 extern size_t HostPortToString(unsigned int   host,
                                unsigned short port,
                                char*          buf,
                                size_t         buflen)
 {
-    char   x_buf[16/*sizeof("255.255.255.255")*/ + 8/*:port*/];
-    size_t n;
-
-    if (!buf || !buflen)
-        return 0;
-    if (!host)
-        *x_buf = 0;
-    else if (SOCK_ntoa(host, x_buf, sizeof(x_buf)) != 0) {
-        *buf = 0;
-        return 0;
-    }
-    n = strlen(x_buf);
-    if (port || !host)
-        n += sprintf(x_buf + n, ":%hu", port);
-    assert(n < sizeof(x_buf));
-    if (n >= buflen)
-        n = buflen - 1;
-    memcpy(buf, x_buf, n);
-    buf[n] = 0;
-    return n;
+    return SOCK_HostPortToString(host, port, buf, buflen);
 }
 
 
@@ -1835,7 +1785,8 @@ static void s_CRC32_Init(void)
 }
 
 
-unsigned int CRC32_Update(unsigned int checksum, const void *ptr, size_t count)
+extern unsigned int CRC32_Update(unsigned int checksum,
+                                 const void *ptr, size_t count)
 {
     const unsigned char* str = (const unsigned char*) ptr;
     size_t j;
@@ -1850,9 +1801,58 @@ unsigned int CRC32_Update(unsigned int checksum, const void *ptr, size_t count)
 }
 
 
+
+/****************************************************************************
+ * CONNUTIL_GetUserName
+ */
+
+
+extern const char* CONNUTIL_GetUserName(char* buf, size_t bufsize)
+{
+    assert(buf  &&  bufsize);
+    {{
+#ifdef NCBI_OS_UNIX
+        /* Get the user login name. FIXME: not MT-safe */
+        const char* login_name;
+        CORE_LOCK_WRITE;
+        login_name = getlogin();
+        if (!login_name) {
+            struct passwd* pwd = getpwuid(getuid());
+            if (!pwd) {
+                if (!(login_name = getenv("USER"))  &&
+                    !(login_name = getenv("LOGNAME"))) {
+                    CORE_UNLOCK;
+                    return 0;
+                }
+            } else
+                login_name = pwd->pw_name;
+        }
+#else
+        /* Temporary solution for login name */
+        const char* login_name = "anonymous";
+#  ifdef NCBI_OS_MSWIN
+        const char* user_name = getenv("USERNAME");
+        if (user_name)
+            login_name = user_name;
+#  endif
+#endif
+        strncpy0(buf, login_name, bufsize - 1);
+#ifdef NCBI_OS_UNIX
+        CORE_UNLOCK;
+#endif
+    }}
+    return 0;
+}
+
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.82  2006/01/27 17:00:52  lavr
+ * New CONNUTIL_GetUsername();  StringHostToPort() and HostPortToString()
+ * to remain obsoleted and upcall standardized SOCK_...() replacements
+ *
  * Revision 6.81  2006/01/11 20:20:05  lavr
  * -UTIL_ClientAddress()
  * +ConnNetInfo_DeleteAllArgs()
