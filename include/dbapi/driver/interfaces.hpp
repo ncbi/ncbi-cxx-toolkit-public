@@ -79,11 +79,11 @@ class IConnValidator;
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  I_ITDescriptor::
-//
-// Image or Text descriptor.
-//
+///
+///  I_ITDescriptor::
+///
+/// Image or Text descriptor.
+///
 
 class NCBI_DBAPIDRIVER_EXPORT I_ITDescriptor
 {
@@ -106,11 +106,11 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  EDB_ResType::
-//
-// Type of result set
-//
+///
+///  EDB_ResType::
+///
+/// Type of result set
+///
 
 enum EDB_ResType {
     eDB_RowResult,
@@ -123,13 +123,13 @@ enum EDB_ResType {
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  CDB_BaseEnt::
-//
-// Base class for most interface classes.
-// It keeps a double-reference to itself, and resets this reference
-// (used by others to access this object) on the object destruction.
-//
+///
+///  CDB_BaseEnt::
+///
+/// Base class for most interface classes.
+/// It keeps a double-reference to itself, and resets this reference
+/// (used by others to access this object) on the object destruction.
+///
 
 class NCBI_DBAPIDRIVER_EXPORT CDB_BaseEnt
 {
@@ -153,11 +153,11 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  I_BaseCmd::
-//
-// Abstract base class for most "command" interface classes.
-//
+///
+///  I_BaseCmd::
+///
+/// Abstract base class for most "command" interface classes.
+///
 
 class NCBI_DBAPIDRIVER_EXPORT I_BaseCmd : public CDB_BaseEnt
 {
@@ -167,44 +167,44 @@ public:
     virtual ~I_BaseCmd(void);
     
 public:
-    // Send command to the server
+    /// Send command to the server
     virtual bool Send(void) = 0;
     virtual bool WasSent(void) const = 0;
 
-    // Cancel the command execution
+    /// Cancel the command execution
     virtual bool Cancel(void) = 0;
     virtual bool WasCanceled(void) const = 0;
 
-    // Get result set
+    /// Get result set
     virtual CDB_Result* Result(void) = 0;
     virtual bool HasMoreResults(void) const = 0;
 
     // Check if command has failed
     virtual bool HasFailed(void) const = 0;
 
-    // Get the number of rows affected by the command
-    // Special case:  negative on error or if there is no way that this
-    //                command could ever affect any rows (like PRINT).
+    /// Get the number of rows affected by the command
+    /// Special case:  negative on error or if there is no way that this
+    ///                command could ever affect any rows (like PRINT).
     virtual int RowCount(void) const = 0;
 
-    // Dump the results of the command
-    // if result processor is installed for this connection, it will be called for
-    // each result set
+    /// Dump the results of the command
+    /// if result processor is installed for this connection, it will be called for
+    /// each result set
     virtual void DumpResults(void)= 0;
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  I_LangCmd::
-//  I_RPCCmd::
-//  I_BCPInCmd::
-//  I_CursorCmd::
-//  I_SendDataCmd::
-//
-// "Command" interface classes.
-//
+///
+///  I_LangCmd::
+///  I_RPCCmd::
+///  I_BCPInCmd::
+///  I_CursorCmd::
+///  I_SendDataCmd::
+///
+/// "Command" interface classes.
+///
 
 
 class NCBI_DBAPIDRIVER_EXPORT I_LangCmd : public I_BaseCmd
@@ -216,13 +216,13 @@ public:
     virtual ~I_LangCmd(void);
     
 protected:
-    // Add more text to the language command
+    /// Add more text to the language command
     virtual bool More(const string& query_text) = 0;
 
-    // Bind cmd parameter with name "name" to the object pointed by "value"
+    /// Bind cmd parameter with name "name" to the object pointed by "value"
     virtual bool BindParam(const string& name, CDB_Object* param_ptr) = 0;
 
-    // Set cmd parameter with name "name" to the object pointed by "value"
+    /// Set cmd parameter with name "name" to the object pointed by "value"
     virtual bool SetParam(const string& name, CDB_Object* param_ptr) = 0;
 };
 
@@ -237,15 +237,15 @@ public:
     virtual ~I_RPCCmd(void);
 
 protected:
-    // Binding
+    /// Binding
     virtual bool BindParam(const string& name, CDB_Object* param_ptr,
                            bool out_param = false) = 0;
 
-    // Setting
+    /// Setting
     virtual bool SetParam(const string& name, CDB_Object* param_ptr,
                           bool out_param = false) = 0;
 
-    // Set the "recompile before execute" flag for the stored proc
+    /// Set the "recompile before execute" flag for the stored proc
     virtual void SetRecompile(bool recompile = true) = 0;
 };
 
@@ -260,21 +260,21 @@ public:
     virtual ~I_BCPInCmd(void);
 
 protected:
-    // Binding
+    /// Binding
     virtual bool Bind(unsigned int column_num, CDB_Object* param_ptr) = 0;
 
-    // Send row to the server
+    /// Send row to the server
     virtual bool SendRow(void) = 0;
 
-    // Complete batch -- to store all rows transferred by far in this batch
-    // into the table
+    /// Complete batch -- to store all rows transferred by far in this batch
+    /// into the table
     virtual bool CompleteBatch(void) = 0;
 
-    // Cancel the BCP command
+    /// Cancel the BCP command
     virtual bool Cancel(void) = 0;
 
-    // Complete the BCP and store all rows transferred in last batch into
-    // the table
+    /// Complete the BCP and store all rows transferred in last batch into
+    /// the table
     virtual bool CompleteBCP(void) = 0;
 };
 
@@ -289,16 +289,16 @@ public:
     virtual ~I_CursorCmd(void);
 
 protected:
-    // Binding
+    /// Binding
     virtual bool BindParam(const string& name, CDB_Object* param_ptr) = 0;
 
-    // Open the cursor.
-    // Return NULL if cursor resulted in no data.
-    // Throw exception on error.
+    /// Open the cursor.
+    /// Return NULL if cursor resulted in no data.
+    /// Throw exception on error.
     virtual CDB_Result* Open(void) = 0;
 
-    // Update the last fetched row.
-    // NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
+    /// Update the last fetched row.
+    /// NOTE: the cursor must be declared for update in CDB_Connection::Cursor()
     virtual bool Update(const string& table_name, const string& upd_query) = 0;
 
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data,
@@ -306,17 +306,17 @@ protected:
 
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size,
                                          bool log_it = true) = 0;
-    // Delete the last fetched row.
-    // NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
+    /// Delete the last fetched row.
+    /// NOTE: the cursor must be declared for delete in CDB_Connection::Cursor()
     virtual bool Delete(const string& table_name) = 0;
 
-    // Get the number of fetched rows
-    // Special case:  negative on error or if there is no way that this
-    //                command could ever affect any rows (like PRINT).
+    /// Get the number of fetched rows
+    /// Special case:  negative on error or if there is no way that this
+    ///                command could ever affect any rows (like PRINT).
     virtual int RowCount(void) const = 0;
 
-    // Close the cursor.
-    // Return FALSE if the cursor is closed already (or not opened yet)
+    /// Close the cursor.
+    /// Return FALSE if the cursor is closed already (or not opened yet)
     virtual bool Close(void) = 0;
 };
 
@@ -331,17 +331,17 @@ public:
     virtual ~I_SendDataCmd(void);
 
 protected:
-    // Send chunk of data to the server.
-    // Return number of bytes actually transferred to server.
+    /// Send chunk of data to the server.
+    /// Return number of bytes actually transferred to server.
     virtual size_t SendChunk(const void* pChunk, size_t nofBytes) = 0;
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  I_Result::
-//
+///
+///  I_Result::
+///
 
 class NCBI_DBAPIDRIVER_EXPORT I_Result : public CDB_BaseEnt
 {
@@ -352,63 +352,63 @@ public:
     virtual ~I_Result(void);
 
 public:
-    // Get type of the result
+    /// Get type of the result
     virtual EDB_ResType ResultType(void) const = 0;
 
-    // Get # of items (columns) in the result
+    /// Get # of items (columns) in the result
     virtual unsigned int NofItems(void) const = 0;
 
-    // Get name of a result item.
-    // Return NULL if "item_num" >= NofItems().
+    /// Get name of a result item.
+    /// Return NULL if "item_num" >= NofItems().
     virtual const char* ItemName(unsigned int item_num) const = 0;
 
-    // Get size (in bytes) of a result item.
-    // Return zero if "item_num" >= NofItems().
+    /// Get size (in bytes) of a result item.
+    /// Return zero if "item_num" >= NofItems().
     virtual size_t ItemMaxSize(unsigned int item_num) const = 0;
 
-    // Get datatype of a result item.
-    // Return 'eDB_UnsupportedType' if "item_num" >= NofItems().
+    /// Get datatype of a result item.
+    /// Return 'eDB_UnsupportedType' if "item_num" >= NofItems().
     virtual EDB_Type ItemDataType(unsigned int item_num) const = 0;
 
-    // Fetch next row
+    /// Fetch next row
     virtual bool Fetch(void) = 0;
 
-    // Return current item number we can retrieve (0,1,...)
-    // Return "-1" if no more items left (or available) to read.
+    /// Return current item number we can retrieve (0,1,...)
+    /// Return "-1" if no more items left (or available) to read.
     virtual int CurrentItemNo(void) const = 0;
 
-    // Return number of columns in the recordset.
+    /// Return number of columns in the recordset.
     virtual int GetColumnNum(void) const = 0;
     
-    // Get a result item (you can use either GetItem or ReadItem).
-    // If "item_buf" is not NULL, then use "*item_buf" (its type should be
-    // compatible with the type of retrieved item!) to retrieve the item to;
-    // otherwise allocate new "CDB_Object".
+    /// Get a result item (you can use either GetItem or ReadItem).
+    /// If "item_buf" is not NULL, then use "*item_buf" (its type should be
+    /// compatible with the type of retrieved item!) to retrieve the item to;
+    /// otherwise allocate new "CDB_Object".
     virtual CDB_Object* GetItem(CDB_Object* item_buf = 0) = 0;
 
-    // Read a result item body (for text/image mostly).
-    // Return number of successfully read bytes.
-    // Set "*is_null" to TRUE if the item is <NULL>.
-    // Throw an exception on any error.
+    /// Read a result item body (for text/image mostly).
+    /// Return number of successfully read bytes.
+    /// Set "*is_null" to TRUE if the item is <NULL>.
+    /// Throw an exception on any error.
     virtual size_t ReadItem(void* buffer, size_t buffer_size,
                             bool* is_null = 0) = 0;
 
-    // Get a descriptor for text/image column (for SendData).
-    // Return NULL if this result doesn't (or can't) have img/text descriptor.
-    // NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
-    //       before calling this method!
+    /// Get a descriptor for text/image column (for SendData).
+    /// Return NULL if this result doesn't (or can't) have img/text descriptor.
+    /// NOTE: you need to call ReadItem (maybe even with buffer_size == 0)
+    ///       before calling this method!
     virtual I_ITDescriptor* GetImageOrTextDescriptor(void) = 0;
 
-    // Skip result item
+    /// Skip result item
     virtual bool SkipItem(void) = 0;
 };
 
 
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  I_DriverContext::
-//
+///
+///  I_DriverContext::
+///
 
 class NCBI_DBAPIDRIVER_EXPORT I_DriverContext
 {
@@ -419,14 +419,14 @@ public:
     virtual ~I_DriverContext(void);
     
 
-    // Connection mode
+    /// Connection mode
     enum EConnectionMode {
         fBcpIn             = 0x1,
         fPasswordEncrypted = 0x2,
-        fDoNotConnect      = 0x4   // Use just connections from NotInUse pool
+        fDoNotConnect      = 0x4   //< Use just connections from NotInUse pool
         // all driver-specific mode flags > 0x100
     };
-    typedef int TConnectionMode;  // holds a binary OR of "EConnectionMode"
+    typedef int TConnectionMode;  //< holds a binary OR of "EConnectionMode"
 
     struct NCBI_DBAPIDRIVER_EXPORT SConnAttr {
         SConnAttr(void);
@@ -439,20 +439,20 @@ public:
         string          pool_name;
     };
     
-    // Set login and connection timeouts.
-    // NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
-    //        DB API), then set the timeout to infinite.
-    // Return FALSE on error.
+    /// Set login and connection timeouts.
+    /// NOTE:  if "nof_secs" is zero or is "too big" (depends on the underlying
+    ///        DB API), then set the timeout to infinite.
+    /// Return FALSE on error.
     virtual bool SetLoginTimeout (unsigned int nof_secs = 0) = 0;
     virtual bool SetTimeout      (unsigned int nof_secs = 0) = 0;
 
-    // Set maximal size for Text and Image objects. Text and Image objects
-    // exceeding this size will be truncated.
-    // Return FALSE on error (e.g. if "nof_bytes" is too big).
+    /// Set maximal size for Text and Image objects. Text and Image objects
+    /// exceeding this size will be truncated.
+    /// Return FALSE on error (e.g. if "nof_bytes" is too big).
     virtual bool SetMaxTextImageSize(size_t nof_bytes) = 0;
 
-    // Create new connection to specified server (within this context).
-    // It is your responsibility to delete the returned connection object.
+    /// Create new connection to specified server (within this context).
+    /// It is your responsibility to delete the returned connection object.
     virtual CDB_Connection* Connect
     (const string&   srv_name,
      const string&   user_name,
@@ -467,32 +467,32 @@ public:
      const string&   user_name,
      const string&   passwd,
      IConnValidator& validator,
-     TConnectionMode mode      = fBcpIn,
+     TConnectionMode mode      = 0,
      bool            reusable  = false,
      const string&   pool_name = kEmptyStr
      );
 
-    // Return number of currently open connections in this context.
-    // If "srv_name" is not NULL, then return # of conn. open to that server.
+    /// Return number of currently open connections in this context.
+    /// If "srv_name" is not NULL, then return # of conn. open to that server.
     virtual unsigned int NofConnections(const string& srv_name  = kEmptyStr,
                                         const string& pool_name = kEmptyStr)
         const;
 
-    // Add message handler "h" to process 'context-wide' (not bound
-    // to any particular connection) error messages.
+    /// Add message handler "h" to process 'context-wide' (not bound
+    /// to any particular connection) error messages.
     virtual void PushCntxMsgHandler(CDB_UserHandler* h);
 
-    // Remove message handler "h" and all handlers above it in the stack
+    /// Remove message handler "h" and all handlers above it in the stack
     virtual void PopCntxMsgHandler(CDB_UserHandler* h);
 
-    // Add `per-connection' err.message handler "h" to the stack of default
-    // handlers which are inherited by all newly created connections.
+    /// Add `per-connection' err.message handler "h" to the stack of default
+    /// handlers which are inherited by all newly created connections.
     virtual void PushDefConnMsgHandler(CDB_UserHandler* h);
 
-    // Remove `per-connection' mess. handler "h" and all above it in the stack.
+    /// Remove `per-connection' mess. handler "h" and all above it in the stack.
     virtual void PopDefConnMsgHandler(CDB_UserHandler* h);
 
-    // Report if the driver supports this functionality
+    /// Report if the driver supports this functionality
     enum ECapability {
         eBcp,
         eReturnITDescriptors,
@@ -500,12 +500,12 @@ public:
     };
     virtual bool IsAbleTo(ECapability cpb) const = 0;
 
-    // close reusable deleted connections for specified server and/or pool
+    /// close reusable deleted connections for specified server and/or pool
     void CloseUnusedConnections(const string& srv_name  = kEmptyStr,
                                 const string& pool_name = kEmptyStr);
 
-    // app_name defines the application name that a connection will use when 
-    // connecting to a server.
+    /// app_name defines the application name that a connection will use when 
+    /// connecting to a server.
     void SetApplicationName(const string& app_name);
     const string& GetApplicationName(void) const;
 
@@ -518,19 +518,21 @@ protected:
     CDB_Connection* MakePooledConnection(const SConnAttr& conn_attr);
     virtual I_Connection* MakeIConnection(const SConnAttr& conn_attr) = 0;
     
-    // Used and unused(reserve) connections
+    /// Used connections
     CPointerPot m_NotInUse;
+    /// Unused(reserve) connections
     CPointerPot m_InUse;
 
-    // Stacks of `per-context' and `per-connection' err.message handlers
+    /// Stack of `per-context' err.message handlers
     CDBHandlerStack m_CntxHandlers;
+    /// Stacks of `per-connection' err.message handlers
     CDBHandlerStack m_ConnHandlers;
 
     mutable CFastMutex m_Mtx;
 
 private:
-    // Return unused connection "conn" to the driver context for future
-    // reuse (if "conn_reusable" is TRUE) or utilization
+    /// Return unused connection "conn" to the driver context for future
+    /// reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(I_Connection* conn, bool conn_reusable);
     
     string  m_AppName;
@@ -541,9 +543,9 @@ private:
 };
 
 /////////////////////////////////////////////////////////////////////////////
-//
-//  I_Connection::
-//
+///
+///  I_Connection::
+///
 
 class NCBI_DBAPIDRIVER_EXPORT I_Connection : public CDB_BaseEnt
 {
@@ -555,85 +557,85 @@ public:
     virtual ~I_Connection(void);
 
 protected:
-    // Check out if connection is alive (this function doesn't ping the server,
-    // it just checks the status of connection which was set by the last
-    // i/o operation)
+    /// Check out if connection is alive (this function doesn't ping the server,
+    /// it just checks the status of connection which was set by the last
+    /// i/o operation)
     virtual bool IsAlive(void) = 0;
 
-    // These methods:  LangCmd(), RPC(), BCPIn(), Cursor() and SendDataCmd()
-    // create and return a "command" object, register it for later use with
-    // this (and only this!) connection.
-    // On error, an exception will be thrown (they never return NULL!).
-    // It is the user's responsibility to delete the returned "command" object.
+    /// These methods:  LangCmd(), RPC(), BCPIn(), Cursor() and SendDataCmd()
+    /// create and return a "command" object, register it for later use with
+    /// this (and only this!) connection.
+    /// On error, an exception will be thrown (they never return NULL!).
+    /// It is the user's responsibility to delete the returned "command" object.
 
-    // Language command
+    /// Language command
     virtual CDB_LangCmd* LangCmd(const string& lang_query,
                                  unsigned int  nof_params = 0) = 0;
-    // Remote procedure call
+    /// Remote procedure call
     virtual CDB_RPCCmd* RPC(const string& rpc_name,
                             unsigned int  nof_args) = 0;
-    // "Bulk copy in" command
+    /// "Bulk copy in" command
     virtual CDB_BCPInCmd* BCPIn(const string& table_name,
                                 unsigned int  nof_columns) = 0;
-    // Cursor
+    /// Cursor
     virtual CDB_CursorCmd* Cursor(const string& cursor_name,
                                   const string& query,
                                   unsigned int  nof_params,
                                   unsigned int  batch_size = 1) = 0;
-    // "Send-data" command
+    /// "Send-data" command
     virtual CDB_SendDataCmd* SendDataCmd(I_ITDescriptor& desc,
                                          size_t          data_size,
                                          bool            log_it = true) = 0;
 
-    // Shortcut to send text and image to the server without using the
-    // "Send-data" command (SendDataCmd)
+    /// Shortcut to send text and image to the server without using the
+    /// "Send-data" command (SendDataCmd)
     virtual bool SendData(I_ITDescriptor& desc, CDB_Text& txt,
                           bool log_it = true) = 0;
     virtual bool SendData(I_ITDescriptor& desc, CDB_Image& img,
                           bool log_it = true) = 0;
 
-    // Reset the connection to the "ready" state (cancel all active commands)
+    /// Reset the connection to the "ready" state (cancel all active commands)
     virtual bool Refresh(void) = 0;
 
-    // Get the server name, user login name, and password
+    /// Get the server name, user login name, and password
     virtual const string& ServerName(void) const = 0;
     virtual const string& UserName(void) const = 0;
     virtual const string& Password(void) const = 0;
 
-    // Get the bitmask for the connection mode (BCP, secure login, ...)
+    /// Get the bitmask for the connection mode (BCP, secure login, ...)
     virtual I_DriverContext::TConnectionMode ConnectMode(void) const = 0;
 
-    // Check if this connection is a reusable one
+    /// Check if this connection is a reusable one
     virtual bool IsReusable(void) const = 0;
 
-    // Find out which connection pool this connection belongs to
+    /// Find out which connection pool this connection belongs to
     virtual const string& PoolName(void) const = 0;
 
-    // Get pointer to the driver context
+    /// Get pointer to the driver context
     virtual I_DriverContext* Context(void) const = 0;
 
-    // Put the message handler into message handler stack
+    /// Put the message handler into message handler stack
     virtual void PushMsgHandler(CDB_UserHandler* h) = 0;
 
-    // Remove the message handler (and all above it) from the stack
+    /// Remove the message handler (and all above it) from the stack
     virtual void PopMsgHandler(CDB_UserHandler* h) = 0;
 
     virtual CDB_ResultProcessor* SetResultProcessor(CDB_ResultProcessor* rp)=0;
 
-    // These methods to allow the children of I_Connection to create
-    // various command-objects
+    /// These methods to allow the children of I_Connection to create
+    /// various command-objects
     static CDB_LangCmd*     Create_LangCmd     (I_LangCmd&     lang_cmd    );
     static CDB_RPCCmd*      Create_RPCCmd      (I_RPCCmd&      rpc_cmd     );
     static CDB_BCPInCmd*    Create_BCPInCmd    (I_BCPInCmd&    bcpin_cmd   );
     static CDB_CursorCmd*   Create_CursorCmd   (I_CursorCmd&   cursor_cmd  );
     static CDB_SendDataCmd* Create_SendDataCmd (I_SendDataCmd& senddata_cmd);
 
-    // abort the connection
-    // Attention: it is not recommended to use this method unless you absolutely have to.
-    // The expected implementation is - close underlying file descriptor[s] without
-    // destroing any objects associated with a connection.
-    // Returns: true - if succeed
-    //          false - if not
+    /// abort the connection
+    /// Attention: it is not recommended to use this method unless you absolutely have to.
+    /// The expected implementation is - close underlying file descriptor[s] without
+    /// destroing any objects associated with a connection.
+    /// Returns: true - if succeed
+    ///          false - if not
     virtual bool Abort(void)= 0;
 };
 
@@ -663,6 +665,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/01/27 12:43:39  ssikorsk
+ * Disabled BCP as a default connection mode;
+ * Added Doxigen comments;
+ *
  * Revision 1.39  2006/01/23 13:10:09  ssikorsk
  * Added method I_DeriverContext::ConnectValidated;
  * Changed return type of I_DeriverContext::MakePooledConnection;
