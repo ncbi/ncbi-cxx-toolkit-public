@@ -78,13 +78,11 @@
  *       SOCK_StripToPattern()
  *       BUF_StripToPattern()
  *
- *    7.Convert "[host][:port]" from verbal into binary form and vice versa:
- *       StringToHostPort()
- *       HostPortToString()
- *
- *    8.CRC32
+ *    7.CRC32
  *       CRC32_Update()
  *
+ *    8.Miscellaneous
+ *       CONNUTIL_GetUserName()
  */
 
 #include <connect/ncbi_buffer.h>
@@ -690,32 +688,18 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ MIME_ParseContentType
  );
 
 
-/* Read (skipping leading blanks) "[host][:port]" from a string.
- * On success, return the advanced pointer past the host/port read.
- * If no host/port detected, return 'str'.
- * On format error, return 0.
- * If host and/or port fragments are missing,
- * then corresponding 'host'/'port' value returned as 0.
- * Note that 'host' returned is in network byte order,
- * unlike 'port', which always comes out in host (native) byte order.
+/* Deprecated:  Use SOCK_StringHostToPort() and SOCK_HostPortToString() instead
  */
+#ifndef NCBI_DEPRECATED
+#  define NCBI_CONNUTIL_DEPRECATED
+#else
+#  define NCBI_CONNUTIL_DEPRECATED NCBI_DEPRECATED
+#endif
 extern NCBI_XCONNECT_EXPORT const char* StringToHostPort
-(const char*     str,   /* must not be NULL */
- unsigned int*   host,  /* must not be NULL */
- unsigned short* port   /* must not be NULL */
- );
+(const char*, unsigned int*, unsigned short*) NCBI_CONNUTIL_DEPRECATED;
 
-
-/* Print host:port into provided buffer string, not to exceed 'buflen' size.
- * Suppress printing host if parameter 'host' is zero.
- * Return the number of bytes printed.
- */
 extern NCBI_XCONNECT_EXPORT size_t HostPortToString
-(unsigned int   host,
- unsigned short port,
- char*          buf,
- size_t         buflen
- );
+(unsigned int, unsigned short, char*, size_t) NCBI_CONNUTIL_DEPRECATED;
 
 
 /* Calculate/Update CRC32
@@ -726,6 +710,19 @@ extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
 (unsigned int checksum,  /* Checksum to update (start with 0) */
  const void*  ptr,       /* Block of data                     */
  size_t       count      /* Size of data                      */
+ );
+
+
+/* Obtain and store current user's name in the buffer provided.
+ * Return 0 when the user name cannot be determined.
+ * Otherwise, return "buf".
+ * Note that resultant strlen(buf) is always guaranteed to be less
+ * than "bufsize", extra non-fit characters discarded.
+ * Both "buf" and "bufsize" must not be zeros.
+ */
+extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUserName
+(char*        buf,       /* Pointer to buffer to store the user name at */
+ size_t       bufsize    /* Size of buffer in bytes                     */
  );
 
 
@@ -740,6 +737,10 @@ extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2006/01/27 16:57:53  lavr
+ * Obsoleted StringHostToPort() and HostPortToString()
+ * Added new CONNUTIL_GetUserName()
+ *
  * Revision 6.46  2006/01/11 20:19:56  lavr
  * -UTIL_ClientAddress()
  * +ConnNetInfo_DeleteAllArgs()
