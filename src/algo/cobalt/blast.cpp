@@ -121,7 +121,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
         // are ignored
 
         ITERATE(CRangeCollection<TOffset>, itr, collection) {
-            if (itr->GetFrom() - seg_start > CHit::kMinHitSize + 1) {
+            if (itr->GetFrom() - seg_start > CHit::kMinHitSize) {
                 x_AddNewSegment(filler_locs, m_tQueries[i], seg_start, 
                                 itr->GetFrom() - 1, filler_segs, i);
             }
@@ -134,7 +134,7 @@ CMultiAligner::x_MakeFillerBlocks(TSeqLocVector& filler_locs,
         int seq_length = sequence::GetLength(*m_tQueries[i].seqloc,
                                              m_tQueries[i].scope);
 
-        if (seq_length - seg_start > CHit::kMinHitSize + 1) {
+        if (seq_length - seg_start > CHit::kMinHitSize) {
             x_AddNewSegment(filler_locs, m_tQueries[i], seg_start,
                             seq_length - 1, filler_segs, i);
         }
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.10  2006/01/27 19:13:02  papadopo
+  fix off-by-one error
+
   Revision 1.9  2005/11/17 22:28:09  papadopo
   fix documentation, add doxygen
 
