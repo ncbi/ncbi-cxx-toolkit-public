@@ -196,7 +196,13 @@ void CExceptApplication::f3(void)
 
 void CExceptApplication::f4(void)
 {
-    NCBI_THROW(CSupersystemException,eSuper2,"from f4");
+//    NCBI_THROW(CSupersystemException,eSuper2,"from f4");
+
+    NCBI_EXCEPTION_VAR(f4_ex, CSupersystemException, eSuper2, "from f4");
+    f4_ex.SetSeverity(eDiag_Critical);
+    NCBI_EXCEPTION_THROW(f4_ex);
+
+//    throw CSupersystemException(DIAG_COMPILE_INFO, 0, CSupersystemException::eSuper2, "from f4", eDiag_Warning);
 }
 
 void CExceptApplication::t1(void)
@@ -373,6 +379,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2006/01/27 13:23:36  gouriano
+ * Added Severity setting
+ *
  * Revision 6.15  2006/01/11 16:09:02  ivanov
  * Use LOG_POST instead of cout
  *
