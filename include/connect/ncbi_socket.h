@@ -114,6 +114,8 @@
  *  SOCK_gethostbyname
  *  SOCK_gethostbyaddr
  *  SOCK_GetLoopbackAddress
+ *  SOCK_StringToHostPort
+ *  SOCK_HostPortToString
  *
  */
 
@@ -974,11 +976,17 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_HostToNetShort
 
 #define SOCK_NetToHostShort SOCK_HostToNetShort
 
-/* Deprecated */
-#define SOCK_htonl SOCK_HostToNetLong
-#define SOCK_ntohl SOCK_NetToHostLong
-#define SOCK_htons SOCK_HostToNetShort
-#define SOCK_ntohs SOCK_NetToHostShort
+
+/* Deprecated:  Use SOCK_{Host|Net}To{Net|Host}{Long|Short}() instead */
+#ifndef NCBI_DEPRECATED
+#  define NCBI_SOCK_DEPRECATED
+#else
+#  define NCBI_SOCK_DEPRECATED NCBI_DEPRECATED
+#endif
+unsigned int   SOCK_htonl(unsigned int)   NCBI_SOCK_DEPRECATED;
+#define        SOCK_ntohl SOCK_htonl
+unsigned short SOCK_htons(unsigned short) NCBI_SOCK_DEPRECATED;
+#define        SOCK_ntohs SOCK_htons
 
 
 /* Return INET host address (in network byte order) of the
@@ -1010,6 +1018,34 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
 
 
+/* Read (skipping leading blanks) "[host][:port]" from a string.
+ * On success, return the advanced pointer past the host/port read.
+ * If no host/port detected, return 'str'.
+ * On format error, return 0.
+ * If host and/or port fragments are missing,
+ * then corresponding 'host'/'port' value returned as 0.
+ * Note that 'host' returned is in network byte order,
+ * unlike 'port', which always comes out in host (native) byte order.
+ */
+extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
+(const char*     str,   /* must not be NULL */
+ unsigned int*   host,  /* must not be NULL */
+ unsigned short* port   /* must not be NULL */
+ );
+
+
+/* Print host:port into provided buffer string, not to exceed 'buflen' size.
+ * Suppress printing host if parameter 'host' is zero.
+ * Return the number of bytes printed.
+ */
+extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
+(unsigned int   host,
+ unsigned short port,
+ char*          buf,
+ size_t         buflen
+ );
+
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -1021,6 +1057,9 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2006/01/27 16:57:15  lavr
+ * Added SOCK_StringHostToPort() and SOCK_HostPortToString() [from ncbi_connutil]
+ *
  * Revision 6.56  2005/07/19 19:54:56  lavr
  * +SOCK_GetLoopbackAddress()
  *
