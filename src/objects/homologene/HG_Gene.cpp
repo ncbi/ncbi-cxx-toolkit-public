@@ -81,6 +81,9 @@ CHG_Gene::TSymbol CHG_Gene::GetLabel(void) const
 	else if ( IsSetGeneid() ) {											// if gene name is NOT set and no aliases, set name to gene_id
 		gene_symbol = x_GetGeneidLabel();
 	}
+	else {
+		gene_symbol = "(Unknown)";
+	}
 	return gene_symbol;
 } // end CHG_Gene::GetLabel
 
@@ -94,6 +97,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2006/01/27 19:17:59  hassant
+* Updated GetLabel to a default gene name (Unknown) in case geneid is missing
+*
 * Revision 1.2  2006/01/25 18:15:52  ucko
 * Move x_GetGeneidLabel up for the sake of WorkShop 5.3, which insists
 * that inline functions must be defined before they are called.
