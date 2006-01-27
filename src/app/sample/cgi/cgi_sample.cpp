@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov, Anatoliy Kuznetsov
+ * Author:  Denis Vakatov
  *
  * File Description:
  *   Plain example of a CGI/FastCGI application.
@@ -236,6 +236,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/01/27 16:59:02  lavr
+ * Fixup
+ *
  * Revision 1.17  2005/05/31 13:45:02  didenko
  * Removed obsolete cgi2grid.[hc]pp files
  *
