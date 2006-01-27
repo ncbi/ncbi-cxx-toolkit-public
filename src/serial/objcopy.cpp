@@ -106,12 +106,13 @@ void CObjectStreamCopier::Copy(TTypeInfo type, ENoFileHeader)
 void CObjectStreamCopier::CopyPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStream::CopyPointer("<<declaredType->GetName()<<")");
-    if ( !In().DetectLoops() ) {
+    CObjectIStream::EPointerType ptype = In().ReadPointerType();
+    if ( ptype != CObjectIStream::eNullPointer && !In().DetectLoops() ) {
         CopyObject(declaredType);
         return;
     }
     TTypeInfo typeInfo;
-    switch ( In().ReadPointerType() ) {
+    switch ( ptype ) {
     case CObjectIStream::eNullPointer:
         _TRACE("CObjectIStream::CopyPointer: null");
         Out().WriteNullPointer();
@@ -282,6 +283,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.14  2006/01/27 19:55:25  gouriano
+* Corrected serialization of NULL pointers
+*
 * Revision 1.13  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

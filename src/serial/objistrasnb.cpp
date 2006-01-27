@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2006/01/27 19:55:25  gouriano
+* Corrected serialization of NULL pointers
+*
 * Revision 1.86  2006/01/19 18:21:57  gouriano
 * Added possibility to save bit string data in compressed format
 *
@@ -1467,6 +1470,8 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     //    eApplication, !constructed, eObjectReference  -> object reference
     // any other -> this class
     if ( byte == MakeTagByte(eUniversal, ePrimitive, eNull) ) {
+        m_CurrentTagState = eTagParsed;
+        m_CurrentTagLength = 1;
         ExpectShortLength(0);
         EndOfTag();
         return eNullPointer;
