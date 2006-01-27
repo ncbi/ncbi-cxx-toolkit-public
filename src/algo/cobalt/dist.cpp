@@ -76,7 +76,8 @@ void
 CDistances::x_GetSelfScores(vector<CSequence>& query_data, 
                             CHitList& hitlist,
                             SNCBIFullScoreMatrix& score_matrix,
-                            vector<double>& self_score)
+                            vector<double>& self_score,
+                            Blast_KarlinBlk& karlin_blk)
 {
     // Fill in the self scores for each sequence
 
@@ -135,7 +136,7 @@ CDistances::x_GetSelfScores(vector<CSequence>& query_data,
             unsigned char c = query_data[i].GetLetter(j);
             score += score_matrix.s[c][c];
         }
-        self_score[i] = score;
+        self_score[i] = karlin_blk.Lambda * score - karlin_blk.logK;
     }
 
 #if 0
@@ -156,14 +157,16 @@ CDistances::x_GetSelfScores(vector<CSequence>& query_data,
 void
 CDistances::ComputeMatrix(vector<CSequence>& query_data,
                           CHitList& hitlist,
-                          SNCBIFullScoreMatrix& score_matrix)
+                          SNCBIFullScoreMatrix& score_matrix,
+                          Blast_KarlinBlk& karlin_blk)
 {
     int num_queries = query_data.size();
     vector<double> self_score(num_queries);
 
     // Get the self score of each sequence
 
-    x_GetSelfScores(query_data, hitlist, score_matrix, self_score);
+    x_GetSelfScores(query_data, hitlist, score_matrix, 
+                    self_score, karlin_blk);
 
     // All sequences start out equally far from each other
 
@@ -184,9 +187,11 @@ CDistances::ComputeMatrix(vector<CSequence>& query_data,
         CHit *hit = hitlist.GetHit(i);
         int j = hit->m_SeqIndex1;
         int k = hit->m_SeqIndex2;
+        double align_score = karlin_blk.Lambda * 
+                                hit->m_Score - karlin_blk.logK;
 
         _ASSERT(j < k);
-        m_Matrix(j,k) -= 0.5 * hit->m_Score * 
+        m_Matrix(j,k) -= 0.5 * align_score * 
                      (1.0 / self_score[j] + 1.0 / self_score[k]);
     }
 
@@ -209,6 +214,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2006/01/27 20:56:54  papadopo
+  input a Karlin block for computing raw scores to bit scores before calculating distances
+
   Revision 1.5  2005/11/18 20:18:35  papadopo
   1. Use raw scores instead of bit scores
   2. Add documentation, add doxygen

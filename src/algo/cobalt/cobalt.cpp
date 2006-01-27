@@ -36,6 +36,7 @@ Contents: Implementation of CMultiAligner class
 ******************************************************************************/
 
 #include <ncbi_pch.hpp>
+#include <algo/blast/api/blast_exception.hpp>
 #include <algo/cobalt/cobalt.hpp>
 
 /// @file cobalt.cpp
@@ -56,6 +57,7 @@ CMultiAligner::CMultiAligner(const char *matrix_name,
                              double pseudocount)
     : m_BlastpEvalue(blastp_evalue),
       m_LocalResFreqBoost(filler_res_boost),
+      m_MatrixName(matrix_name),
       m_ConservedCutoff(conserved_cutoff),
       m_Pseudocount(pseudocount),
       m_GapOpen(gap_open),
@@ -107,6 +109,8 @@ CMultiAligner::SetScoreMatrix(const char *matrix_name)
         m_Aligner.SetScoreMatrix(&NCBISM_Pam70);
     else if (strcmp(matrix_name, "PAM250") == 0)
         m_Aligner.SetScoreMatrix(&NCBISM_Pam250);
+    
+    m_MatrixName = matrix_name;
 }
 
 
@@ -125,12 +129,28 @@ CMultiAligner::Reset()
 void 
 CMultiAligner::ComputeTree()
 {
-    // convert the current collection of pairwise
-    // hits into a distance matrix
+    // Convert the current collection of pairwise
+    // hits into a distance matrix. This is the only
+    // nonlinear operation that involves the scores of
+    // alignments, so the raw scores should be converted
+    // into bit scores before becoming distances.
+    //
+    // To do that, we need Karlin parameters for the 
+    // score matrix and gap penalties chosen. Since both
+    // of those can change independently, calculate the
+    // Karlin parameters right now
+
+    Blast_KarlinBlk karlin_blk;
+    if (Blast_KarlinBlkGappedLoadFromTables(&karlin_blk, -m_GapOpen,
+                                -m_GapExtend, 32768, m_MatrixName) != 0) {
+        NCBI_THROW(blast::CBlastException, eInvalidArgument,
+                     "Cannot generate Karlin block");
+    }
 
     CDistances distances(m_QueryData, 
                          m_CombinedHits, 
-                         m_Aligner.GetMatrix());
+                         m_Aligner.GetMatrix(),
+                         karlin_blk);
 
     //--------------------------------
     if (m_Verbose) {
@@ -179,6 +199,9 @@ END_NCBI_SCOPE
 
 /*-----------------------------------------------------------------------
   $Log$
+  Revision 1.7  2006/01/27 20:57:11  papadopo
+  input a Karlin block for computing raw scores to bit scores before calculating distances
+
   Revision 1.6  2005/12/16 23:33:51  papadopo
   make iteration optional, add pseudocount parameter
 

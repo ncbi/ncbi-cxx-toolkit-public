@@ -41,6 +41,7 @@ Contents: Interface for CDistances class
 
 #include <util/math/matrix.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
+#include <algo/blast/core/blast_stat.h>
 
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/seq.hpp>
@@ -65,14 +66,16 @@ public:
     ///                paris of the sequences in query_data [in]
     /// @param score_matrix log-odds score matrix to use in the
     ///                     distance calculations [in]
-    /// @param kbp Karlin-Altschul parameters to use in the 
+    /// @param karlin_blk Karlin-Altschul parameters to use in the 
     ///            distance calculations [in]
     ///
     CDistances(vector<CSequence>& query_data,
                CHitList& hitlist, 
-               SNCBIFullScoreMatrix& score_matrix)
+               SNCBIFullScoreMatrix& score_matrix,
+               Blast_KarlinBlk& karlin_blk)
     {
-        ComputeMatrix(query_data, hitlist, score_matrix);
+        ComputeMatrix(query_data, hitlist, 
+                      score_matrix, karlin_blk);
     }
 
     /// Destructor
@@ -86,10 +89,13 @@ public:
     ///                paris of the sequences in query_data [in]
     /// @param score_matrix log-odds score matrix to use in the
     ///                     distance calculations [in]
+    /// @param karlin_blk Karlin-Altschul parameters to use in the 
+    ///            distance calculations [in]
     ///
     void ComputeMatrix(vector<CSequence>& query_data,
                        CHitList& hitlist, 
-                       SNCBIFullScoreMatrix& score_matrix);
+                       SNCBIFullScoreMatrix& score_matrix,
+                       Blast_KarlinBlk& karlin_blk);
 
     /// Access the current distance matrix
     /// @return The distance matrix
@@ -106,11 +112,14 @@ private:
     /// @param score_matrix log-odds score matrix to use in the
     ///                     distance calculations [in]
     /// @param self_score The computed self scores [out]
+    /// @param karlin_blk Karlin-Altschul parameters to use in the 
+    ///            distance calculations [in]
     ///
     void x_GetSelfScores(vector<CSequence>& query_data,
                          CHitList& hitlist,
                          SNCBIFullScoreMatrix& score_matrix,
-                         vector<double>& self_score);
+                         vector<double>& self_score,
+                         Blast_KarlinBlk& karlin_blk);
 };
 
 END_SCOPE(cobalt)
@@ -120,6 +129,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.5  2006/01/27 20:56:35  papadopo
+  input a Karlin block for computing raw scores to bit scores before calculating distances
+
   Revision 1.4  2005/11/18 20:15:12  papadopo
   remove unneeded Karlin block
 
