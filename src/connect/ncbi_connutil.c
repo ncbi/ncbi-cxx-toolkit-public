@@ -1803,11 +1803,11 @@ extern unsigned int CRC32_Update(unsigned int checksum,
 
 
 /****************************************************************************
- * CONNUTIL_GetUserName
+ * CONNUTIL_GetUsername
  */
 
 
-extern const char* CONNUTIL_GetUserName(char* buf, size_t bufsize)
+extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 {
     assert(buf  &&  bufsize);
     {{
@@ -1849,6 +1849,9 @@ extern const char* CONNUTIL_GetUserName(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.83  2006/01/27 17:08:56  lavr
+ * Spell CONNUTIL_GetUsername() this way
+ *
  * Revision 6.82  2006/01/27 17:00:52  lavr
  * New CONNUTIL_GetUsername();  StringHostToPort() and HostPortToString()
  * to remain obsoleted and upcall standardized SOCK_...() replacements

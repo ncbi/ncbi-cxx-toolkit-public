@@ -82,7 +82,7 @@
  *       CRC32_Update()
  *
  *    8.Miscellaneous
- *       CONNUTIL_GetUserName()
+ *       CONNUTIL_GetUsername()
  */
 
 #include <connect/ncbi_buffer.h>
@@ -720,7 +720,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int CRC32_Update
  * than "bufsize", extra non-fit characters discarded.
  * Both "buf" and "bufsize" must not be zeros.
  */
-extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUserName
+extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUsername
 (char*        buf,       /* Pointer to buffer to store the user name at */
  size_t       bufsize    /* Size of buffer in bytes                     */
  );
@@ -737,9 +737,12 @@ extern NCBI_XCONNECT_EXPORT const char* CONNUTIL_GetUserName
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2006/01/27 17:08:35  lavr
+ * Spell CONNUTIL_GetUsername() this way
+ *
  * Revision 6.47  2006/01/27 16:57:53  lavr
  * Obsoleted StringHostToPort() and HostPortToString()
- * Added new CONNUTIL_GetUserName()
+ * Added new CONNUTIL_GetUsername()
  *
  * Revision 6.46  2006/01/11 20:19:56  lavr
  * -UTIL_ClientAddress()
