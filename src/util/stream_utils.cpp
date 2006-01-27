@@ -437,6 +437,8 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
     _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
 #  undef NCBI_NO_READSOME
+    if ( !is.good() )
+        return 0; // simulate construction of sentry in real readsome()
     // Special case: GCC had no readsome() prior to ver 3.0;
     // read() will set "eof" (and "fail") flag if gcount() < buf_size
     streamsize avail = is.rdbuf()->in_avail();
@@ -492,6 +494,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.43  2006/01/27 17:14:29  lavr
+ * Home-made s_Readsome() that does not call standard readsome() to
+ * simulate sentry construction by checking good()ness of the stream
+ *
  * Revision 1.42  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
