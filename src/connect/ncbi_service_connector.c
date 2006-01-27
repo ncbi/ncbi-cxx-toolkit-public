@@ -165,7 +165,7 @@ static int/*bool*/ s_ParseHeader(const char* header,
                 sprintf(ipaddr, "%u.%u.%u.%u", o1, o2, o3, o4);
                 if (!(uuu->host = SOCK_gethostbyname(ipaddr)) || !uuu->port)
                     break/*failed - bad host:port in connection info*/;
-                uuu->ticket = SOCK_htonl(ticket);
+                uuu->ticket = SOCK_HostToNetLong(ticket);
             }
         }
         if ((header = strchr(header, '\n')) != 0)
@@ -847,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.70  2006/01/27 17:10:24  lavr
+ * Replace obsolete call names with current ones
+ *
  * Revision 6.69  2006/01/17 20:28:21  lavr
  * Do not override user-provided Content-Type
  *

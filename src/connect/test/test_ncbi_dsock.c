@@ -249,7 +249,7 @@ static int s_Client(int x_port, unsigned int max_try)
             CORE_LOGF(eLOG_Note, ("[Client]  Attempt #%u", (unsigned int) m));
         id++;
 
-        *((unsigned long*) buf) = SOCK_htonl((unsigned long) id);
+        *((unsigned long*) buf) = SOCK_HostToNetLong((unsigned long) id);
 
         if ((status = DSOCK_SendMsg(client, "127.0.0.1", port, buf, msglen))
             != eIO_Success) {
@@ -282,7 +282,7 @@ static int s_Client(int x_port, unsigned int max_try)
         }
 
         memcpy(&tmp, &buf[msglen], sizeof(tmp));
-        if (SOCK_ntohl(tmp) != id) {
+        if (SOCK_NetToHostLong(tmp) != id) {
             m++;
             CORE_LOGF(m < max_try ? eLOG_Warning : eLOG_Error,
                       ("[Client]  Stale message received%s",
@@ -381,6 +381,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2006/01/27 17:12:10  lavr
+ * Replace obsolete call names with current ones
+ *
  * Revision 6.17  2005/07/11 18:24:36  lavr
  * Spell ADDEND
  *

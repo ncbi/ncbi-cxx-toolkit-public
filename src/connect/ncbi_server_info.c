@@ -148,7 +148,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         memcpy(s, attr->tag, attr->tag_len);
         s += attr->tag_len;
         *s++ = ' ';
-        s += HostPortToString(info->host, info->port, s, reserve);
+        s += SOCK_HostPortToString(info->host, info->port, s, reserve);
         if ((n = strlen(str + reserve)) != 0) {
             *s++ = ' ';
             memmove(s, str + reserve, n + 1);
@@ -193,7 +193,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* info_str, const char* name)
         return 0;
     while (*str && isspace((unsigned char)(*str)))
         str++;
-    if (!(str = StringToHostPort(str, &host, &port)))
+    if (!(str = SOCK_StringToHostPort(str, &host, &port)))
         return 0;
     while (*str && isspace((unsigned char)(*str)))
         str++;
@@ -913,6 +913,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.61  2006/01/27 17:09:32  lavr
+ * Replace obsolete call names with current ones
+ *
  * Revision 6.60  2006/01/11 16:31:41  lavr
  * Cosmetics
  *

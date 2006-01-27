@@ -136,7 +136,7 @@ static EIO_Status s_VT_Open
             char           addr[MAX_IP_ADDR_LEN];
 
             SOCK_GetPeerAddress(xxx->sock, &host, &port, eNH_HostByteOrder);
-            if (SOCK_ntoa(SOCK_htonl(host), addr, sizeof(addr)) != 0)
+            if (SOCK_ntoa(SOCK_HostToNetLong(host), addr, sizeof(addr)) != 0)
                 return eIO_Unknown;
             xxx->host = strdup(addr);
             xxx->port = port;
@@ -374,6 +374,9 @@ extern CONNECTOR SOCK_CreateConnectorOnTopEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2006/01/27 17:10:54  lavr
+ * Replace obsolete call names with current ones
+ *
  * Revision 6.21  2006/01/11 20:21:08  lavr
  * Uniform creation/fill-up of connector structures
  *
