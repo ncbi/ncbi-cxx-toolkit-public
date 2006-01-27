@@ -656,7 +656,7 @@ CMultiAligner::x_RealignSequences(
 
     CSequence::CompressSequences(tmp_align, cluster_idx);
     CSequence::CompressSequences(tmp_align, other_idx);
-    x_AlignProfileProfile(cluster_seq_list, other_seq_list,
+    x_AlignProfileProfile(other_seq_list, cluster_seq_list,
                           tmp_align, pair_info, iteration);
 
     double new_score = x_GetScore(tmp_align);
@@ -969,6 +969,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.8  2006/01/27 19:13:45  papadopo
+  reverse order of profiles given to aligner for realignment; it shouldn't make a difference, but does
+
   Revision 1.7  2006/01/12 19:54:54  papadopo
   halve the extend penalties for end gaps if there is a >20% length difference between the profiles being aligned
 
