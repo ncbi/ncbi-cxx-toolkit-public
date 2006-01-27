@@ -178,22 +178,6 @@ CMultiAligner::x_FindConsistentHitSubset()
 {
     m_CombinedHits.MakeCanonical();
 
-    //---------------------------------------
-    if (m_Verbose) {
-        printf("\n\nAlignments before graph phase:\n");
-        for (int i = 0; i < m_CombinedHits.Size(); i++) {
-            CHit *hit = m_CombinedHits.GetHit(i);
-            printf("query %2d %3d - %3d query %2d %3d - %3d score %d\n",
-                   hit->m_SeqIndex1,
-                   hit->m_SeqRange1.GetFrom(), hit->m_SeqRange1.GetTo(),
-                   hit->m_SeqIndex2,
-                   hit->m_SeqRange2.GetFrom(), hit->m_SeqRange2.GetTo(),
-                   hit->m_Score);
-        }
-        printf("\n\n");
-    }
-    //---------------------------------------
-
     // For each pair of queries, find a maximal-scoring subset
     // of nonoverlapping alignments
 
@@ -222,6 +206,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.11  2006/01/27 19:14:08  papadopo
+  remove unnecessary debug output
+
   Revision 1.10  2005/11/21 21:03:00  papadopo
   fix documentation, add doxygen
 
