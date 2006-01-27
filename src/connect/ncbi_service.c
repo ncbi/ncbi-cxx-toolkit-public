@@ -275,7 +275,8 @@ static void s_SkipSkip(SERV_ITER iter, time_t now)
     n = 0;
     while (n < iter->n_skip) {
         SSERV_Info* temp = iter->skip[n];
-        if (temp->time != SERV_TIME_INFINITE && (!now || temp->time < now)) {
+        if (temp->time != SERV_TIME_INFINITE &&
+            (!now || temp->time < (TNCBI_Time) now)) {
             if (n < --iter->n_skip) {
                 memmove(iter->skip + n, iter->skip + n + 1,
                         sizeof(*iter->skip)*(iter->n_skip - n));
@@ -662,6 +663,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.75  2006/01/27 17:10:08  lavr
+ * Explicit casts that heed signed/unsigned comparison warning
+ *
  * Revision 6.74  2006/01/17 20:27:42  lavr
  * Fix addition of skipped FIREWALL infos
  *
