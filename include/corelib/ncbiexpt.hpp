@@ -461,7 +461,7 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 
 /// Generic macro to re-throw the same exception.
 #define NCBI_RETHROW_SAME(prev_exception, message)              \
-    do { prev_exception.AddBacklog(DIAG_COMPILE_INFO, message); \
+    do { prev_exception.AddBacklog(DIAG_COMPILE_INFO, message, prev_exception.GetSeverity()); \
     throw; }  while (0)
 
 /// Generate a report on the exception.
@@ -1150,6 +1150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2006/01/27 13:21:15  gouriano
+ * Added SetSeverity to NCBI_RETHROW_SAME macro
+ *
  * Revision 1.68  2006/01/18 19:45:22  ssikorsk
  * Added an extra argument to CException::x_Init
  *
