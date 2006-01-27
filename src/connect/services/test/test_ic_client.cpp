@@ -110,7 +110,6 @@ int CTestICClient::Run(void)
 
 
     const char test_data[] = "A quick brown fox, jumps over lazy dog.";
-    const char test_data2[] = "New data.";
     string key;
 
     CNetICacheClient cl(host, port, cache_name, "test_icache");
@@ -192,7 +191,7 @@ int CTestICClient::Run(void)
 
     cl.Read(key, version, subkey, test_buf, test_size);
     
-    for (int i = 0; i < test_size; ++i) {
+    for (size_t i = 0; i < test_size; ++i) {
         if (test_buf[i] != 127) {
             assert(0);
         }
@@ -235,6 +234,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.5  2006/01/27 15:06:16  kuznets
+ * Code cleanup
+ *
  * Revision 6.4  2006/01/17 16:51:35  kuznets
  * + test of session management
  *
