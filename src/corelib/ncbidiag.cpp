@@ -1508,14 +1508,14 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         string err_type(pex->GetType());
         err_type += "::";
         err_type += pex->GetErrCodeString();
-        SDiagMessage diagmsg(eDiag_Error, 
+        SDiagMessage diagmsg(pex->GetSeverity(),
                              text.c_str(), 
                              text.size(),
                              pex->GetFile().c_str(),
                              pex->GetLine(),
                              GetPostFlags(),
                              NULL,
-                             0,
+                             pex->GetErrCode(),
                              0,
                              err_type.c_str(),
                              pex->GetModule().c_str(),
@@ -1526,6 +1526,7 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
         *this << "    "; // indentation
         *this << report;
     }
+    
 
     return *this;
 }
@@ -1909,6 +1910,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.106  2006/01/27 13:22:46  gouriano
+ * Changed SDiagMessage info in x_Put
+ *
  * Revision 1.105  2006/01/06 22:25:46  grichenk
  * Fixed env. vars naming for CParam<>.
  * Fixed printing of trace messages and location in ncbidiag.
