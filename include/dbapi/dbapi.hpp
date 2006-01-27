@@ -588,6 +588,8 @@ public:
 ///
 ///  Interface for a database connection.
 
+class IConnValidator;
+
 class NCBI_DBAPI_EXPORT IConnection
 {
 public:
@@ -810,6 +812,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/01/27 17:19:27  kholodov
+ * Added: forward declaration of IConnValidator
+ *
  * Revision 1.45  2006/01/26 18:08:41  kholodov
  * Added: ConnectValidated() method
  *
