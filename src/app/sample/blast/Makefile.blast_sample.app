@@ -15,5 +15,7 @@ LIB = xblast composition_adjustment xalgodustmask \
 		scoremat seqdb blastdb tables $(OBJMGR_LIBS)
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+LDFLAGS = $(FAST_LDFLAGS)
+
 REQUIRES = objects
 ### END COPIED SETTINGS
