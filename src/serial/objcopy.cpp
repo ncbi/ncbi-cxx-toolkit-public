@@ -178,6 +178,16 @@ void CObjectStreamCopier::CopyPointer(TTypeInfo declaredType)
     return;
 }
 
+bool CObjectStreamCopier::CopyNullPointer(void)
+{
+    CObjectIStream::EPointerType ptype = In().ReadPointerType();
+    if ( ptype == CObjectIStream::eNullPointer ) {
+        Out().WriteNullPointer();
+        return true;
+    }
+    return false;
+}
+
 void CObjectStreamCopier::CopyByteBlock(void)
 {
     CObjectIStream::ByteBlock ib(In());
@@ -283,6 +293,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.15  2006/01/30 19:27:46  gouriano
+* Added copying NULL pointers
+*
 * Revision 1.14  2006/01/27 19:55:25  gouriano
 * Corrected serialization of NULL pointers
 *

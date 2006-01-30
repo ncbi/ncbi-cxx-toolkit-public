@@ -96,6 +96,7 @@ public:
     void CopyNamedType(TTypeInfo namedTypeInfo, TTypeInfo objectType);
 
     void CopyPointer(TTypeInfo declaredType);
+    bool CopyNullPointer(void);
 
     void CopyContainer(const CContainerTypeInfo* containerType);
 
@@ -147,6 +148,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2006/01/30 19:28:06  gouriano
+* Added copying NULL pointers
+*
 * Revision 1.16  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/01/30 19:27:46  gouriano
+* Added copying NULL pointers
+*
 * Revision 1.20  2005/08/17 18:16:22  gouriano
 * Documented and classified FailFlags;
 * Added EndOfData method
@@ -203,7 +206,9 @@ void CAutoPointerTypeInfo::CopyAutoPtr(CObjectStreamCopier& copier,
     const CAutoPointerTypeInfo* autoPtrType =
         CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
 
-    autoPtrType->GetPointedType()->CopyData(copier);
+    if (!copier.CopyNullPointer()) {
+        autoPtrType->GetPointedType()->CopyData(copier);
+    }
 }
 
 void CAutoPointerTypeInfo::SkipAutoPtr(CObjectIStream& in,
