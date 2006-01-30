@@ -225,11 +225,11 @@ s_HSPListFromDistinctAlignments(BlastCompo_Alignment ** alignments,
                                align->queryIndex, 
                                0, (Int2) align->frame, align->score,
                                &editScript, &new_hsp);
-        switch (align->comp_adjustment_mode) {
-        case eNoCompositionAdjustment:
+        switch (align->matrix_adjust_rule) {
+        case eDontAdjustMatrix:
             new_hsp->comp_adjustment_method = eNoCompositionBasedStats;
             break;
-        case eCompoKeepOldMatrix:
+        case eCompoScaleOldMatrix:
             new_hsp->comp_adjustment_method = eCompositionBasedStats;
             break;
         default:
@@ -559,7 +559,7 @@ s_ResultHspToDistinctAlign(BlastHSP * hsp_array[], Int4 hspcnt,
         queryEnd = hsp->query.end + queryStart;
         new_align =
             BlastCompo_AlignmentNew((int) (hsp->score * localScalingFactor),
-                                    eNoCompositionAdjustment,
+                                    eDontAdjustMatrix,
                                     queryOffset, queryEnd, hsp->context,
                                     hsp->subject.offset, hsp->subject.end,
                                     hsp->subject.frame, hsp);
@@ -972,8 +972,7 @@ typedef struct BlastKappa_GappingParamsContext {
  *                          an implicit side effect on the gap_align.
  * @param query_range       the range of the query used in this alignment
  * @param subject_range     the range of the subject used in this alignment
- * @param whichMode         the mode of composition-based statistics used
- *                          to compute the alignment
+ * @param matrix_adjust_rule   the rule used to compute the scoring matrix
  *
  * @return the new alignment on success or NULL on error
  */
@@ -982,7 +981,7 @@ s_NewAlignmentFromGapAlign(BlastGapAlignStruct * gap_align,
                            GapEditScript ** edit_script,
                            BlastCompo_SequenceRange * query_range,
                            BlastCompo_SequenceRange * subject_range,
-                           ECompoAdjustModes whichMode)
+                           EMatrixAdjustRule matrix_adjust_rule)
 {
     /* parameters to BlastCompo_AlignmentNew */
     int queryStart, queryEnd, queryIndex, matchStart, matchEnd, frame;
@@ -997,7 +996,7 @@ s_NewAlignmentFromGapAlign(BlastGapAlignStruct * gap_align,
     matchEnd   = gap_align->subject_stop  + subject_range->begin;
     frame      = subject_range->context;
 
-    obj = BlastCompo_AlignmentNew(gap_align->score, whichMode,
+    obj = BlastCompo_AlignmentNew(gap_align->score, matrix_adjust_rule,
                                   queryStart, queryEnd, queryIndex,
                                   matchStart, matchEnd, frame,
                                   *edit_script);
@@ -1037,8 +1036,8 @@ s_NewAlignmentFromGapAlign(BlastGapAlignStruct * gap_align,
  * @param full_subject_length   length of the full subject sequence
  * @param gapping_params        parameters used to compute gapped
  *                              alignments
- * @param whichMode        which mode of composition adjustment has
- *                         been used to adjust the scoring matrix
+ * @param matrix_adjust_rule    the rule used to compute the scoring matrix
+ *
  * @returns 0   (posts a fatal error if it fails)
  * @sa new_xdrop_align_type
  */
@@ -1053,7 +1052,7 @@ s_NewAlignmentUsingXdrop(BlastCompo_Alignment ** pnewAlign,
                          BlastCompo_SequenceRange * subject_range,
                          Int4 full_subject_length,
                          BlastCompo_GappingParams * gapping_params,
-                         ECompoAdjustModes whichMode)
+                         EMatrixAdjustRule matrix_adjust_rule)
 {
     Int4 newScore;
     /* Extent of the alignment as computed by an x-drop alignment
@@ -1095,7 +1094,7 @@ s_NewAlignmentUsingXdrop(BlastCompo_Alignment ** pnewAlign,
         Int4 amatchStart =  matchStart + subject_range->begin;
         Int4 amatchEnd   = *pmatchEnd  + subject_range->begin;
 
-        obj = BlastCompo_AlignmentNew(newScore, whichMode,
+        obj = BlastCompo_AlignmentNew(newScore, matrix_adjust_rule,
                                       aqueryStart, aqueryEnd,
                                       query_range->context,
                                       amatchStart, amatchEnd,
@@ -1115,8 +1114,7 @@ s_NewAlignmentUsingXdrop(BlastCompo_Alignment ** pnewAlign,
  * performing an x-drop alignment in both directions
  *
  * @param in_align         the existing alignment, without traceback
- * @param whichMode        which mode of composition adjustment has
- *                         been used to adjust the scoring matrix
+ * @param matrix_adjust_rule    the rule used to compute the scoring matrix
  * @param query_data       query sequence data
  * @param query_range      range of this query in the concatenated
  *                         query
@@ -1131,7 +1129,7 @@ s_NewAlignmentUsingXdrop(BlastCompo_Alignment ** pnewAlign,
  */
 static BlastCompo_Alignment *
 s_RedoOneAlignment(BlastCompo_Alignment * in_align,
-                   ECompoAdjustModes whichMode,
+                   EMatrixAdjustRule matrix_adjust_rule,
                    BlastCompo_SequenceData * query_data,
                    BlastCompo_SequenceRange * query_range,
                    int ccat_query_length,
@@ -1200,7 +1198,7 @@ s_RedoOneAlignment(BlastCompo_Alignment * in_align,
     if (status == 0) {
         return s_NewAlignmentFromGapAlign(gapAlign, &gapAlign->edit_script,
                                           query_range, subject_range,
-                                          whichMode);
+                                          matrix_adjust_rule);
     } else {
         return NULL;
     }
@@ -1259,15 +1257,15 @@ s_SavedParametersFree(BlastKappa_SavedParameters ** searchParams)
 /**
  * Create a new instance of BlastKappa_SavedParameters
  *
- * @param rows              number of rows in the scoring matrix
- * @param numQueries        number of queries in this search
- * @param adjustParameters  if >0, use composition-based statistics
- * @param positionBased     if true, the search is position-based
+ * @param rows               number of rows in the scoring matrix
+ * @param numQueries         number of queries in this search
+ * @param compo_adjust_mode  if >0, use composition-based statistics
+ * @param positionBased      if true, the search is position-based
  */
 static BlastKappa_SavedParameters *
 s_SavedParametersNew(Int4 rows,
                      Int4 numQueries,
-                     Int4 adjustParameters,
+                     ECompoAdjustModes compo_adjust_mode,
                      Boolean positionBased)
 {
     int i;
@@ -1294,7 +1292,7 @@ s_SavedParametersNew(Int4 rows,
             goto error_return;
         }
     }
-    if (adjustParameters) {
+    if (compo_adjust_mode != eNoCompositionBasedStats) {
         if (positionBased) {
             sp->origMatrix = Nlm_Int4MatrixNew(rows, BLASTAA_SIZE);
         } else {
@@ -1314,11 +1312,11 @@ error_return:
  * Record the initial value of the search parameters that are to be
  * adjusted.
  *
- * @param searchParams      holds the recorded values [out]
- * @param sbp               a score block [in]
- * @param scoring           gapped alignment parameters [in]
- * @param query_length      length of the concatenated query [in]
- * @param adjustParameters  composition adjustment mode [in]
+ * @param searchParams       holds the recorded values [out]
+ * @param sbp                a score block [in]
+ * @param scoring            gapped alignment parameters [in]
+ * @param query_length       length of the concatenated query [in]
+ * @param compo_adjust_mode  composition adjustment mode [in]
  * @param positionBased     is this search position-based [in]
  */
 static void
@@ -1326,7 +1324,7 @@ s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
                       BlastScoreBlk* sbp,
                       const BlastScoringParameters* scoring,
                       int query_length,
-                      int adjustParameters,
+                      ECompoAdjustModes compo_adjust_mode,
                       Boolean positionBased)
 {
     int i;
@@ -1340,9 +1338,9 @@ s_RecordInitialSearch(BlastKappa_SavedParameters * searchParams,
         Blast_KarlinBlkCopy(searchParams->kbp_gap_orig[i], sbp->kbp_gap[i]);
     }
 
-    if (adjustParameters) {
+    if (compo_adjust_mode != eNoCompositionBasedStats) {
         Int4 **matrix;              /* scoring matrix */
-        Int4 i, j;                  /* iteration indices */
+        int j;                      /* iteration index */
         int rows;                   /* number of rows in matrix */
         if (positionBased) {
             matrix = sbp->psi_matrix->pssm->data;
@@ -1394,12 +1392,12 @@ s_RescaleSearch(BlastScoreBlk* sbp,
 /**
  * Restore the parameters that were adjusted to their original values.
  *
- * @param sbp               the score block to be restored
- * @param scoring           the scoring parameters to be restored
- * @param searchParams      the initial recorded values of the parameters
- * @param query_length      the concatenated query length
- * @param positionBased     is this search position-based
- * @param adjustParameters  mode of composition adjustment
+ * @param sbp                the score block to be restored
+ * @param scoring            the scoring parameters to be restored
+ * @param searchParams       the initial recorded values of the parameters
+ * @param query_length       the concatenated query length
+ * @param positionBased      is this search position-based
+ * @param compo_adjust_mode  mode of composition adjustment
  */
 static void
 s_RestoreSearch(BlastScoreBlk* sbp,
@@ -1407,7 +1405,7 @@ s_RestoreSearch(BlastScoreBlk* sbp,
                 const BlastKappa_SavedParameters * searchParams,
                 int query_length,
                 Boolean positionBased,
-                int adjustParameters)
+                ECompoAdjustModes compo_adjust_mode)
 {
     int i;
 
@@ -1419,8 +1417,8 @@ s_RestoreSearch(BlastScoreBlk* sbp,
     for (i = 0;  i < searchParams->num_queries;  i++) {
         Blast_KarlinBlkCopy(sbp->kbp_gap[i], searchParams->kbp_gap_orig[i]);
     }
-    if(adjustParameters) {
-        Int4 i, j;          /* iteration indices */
+    if(compo_adjust_mode != eNoCompositionBasedStats) {
+        int  j;             /* iteration index */
         Int4 ** matrix;     /* matrix to be restored */
         int rows;           /* number of rows in the matrix */
 
@@ -1545,6 +1543,8 @@ s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info)
  *
  * @param context     the data structures needed by callback functions
  *                    that perform the gapped alignments.
+ * @param extendParams parameters used for a gapped extension
+ * @param num_queries  the number of queries in the concatenated query
  */
 static BlastCompo_GappingParams *
 s_GappingParamsNew(BlastKappa_GappingParamsContext * context,
@@ -1615,7 +1615,8 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     Boolean positionBased = (Boolean) (context->sbp->psi_matrix != NULL);
     /* will BLAST_LinkHsps be called to assign e-values */
     Boolean do_link_hsps = (Boolean) (hitParams->link_hsp_params != NULL);
-    int compositionBasedStats = extendParams->options->compositionBasedStats;
+    ECompoAdjustModes compo_adjust_mode =
+        (ECompoAdjustModes) extendParams->options->compositionBasedStats;
     
     if (do_link_hsps) {
         cutoff_s =
@@ -1640,7 +1641,7 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     } else {
         return
             Blast_RedoAlignParamsNew(&scaledMatrixInfo, &gapping_params,
-                                     compositionBasedStats, positionBased,
+                                     compo_adjust_mode, positionBased,
                                      subject_is_translated,
                                      queryInfo->max_length, cutoff_s, cutoff_e,
                                      do_link_hsps, &redo_align_callbacks);
@@ -1742,7 +1743,8 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     BlastCompo_QueryInfo * query_info = NULL;
     Blast_RedoAlignParams * redo_align_params = NULL;
     Boolean positionBased = (Boolean) (sbp->psi_matrix != NULL);
-    int adjustParameters = extendParams->options->compositionBasedStats;
+    ECompoAdjustModes compo_adjust_mode =
+        (ECompoAdjustModes) extendParams->options->compositionBasedStats;
     Boolean smithWaterman =
         (Boolean) (extendParams->options->eTbackExt == eSmithWatermanTbck);
     /* alignment data for the current query-subject match */
@@ -1762,18 +1764,21 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         return -1;
     }
     if (0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20") &&
-       !adjustParameters) {
+        compo_adjust_mode == eNoCompositionBasedStats) {
         return -1;                   /* BLOSUM62_20 only makes sense if
-                                      * adjustParameters is on */
+                                      * compo_adjust_mode is on */
     }
     if (positionBased) {
-        adjustParameters = adjustParameters ? 1 : 0;
-
+        /* Position based searches can only use traditional
+         * composition based stats */
+        if ((int) compo_adjust_mode > 1) {
+            compo_adjust_mode = eCompositionBasedStats;
+        }
         /* A position-based search can only have one query */
         ASSERT(queryInfo->num_queries == 1);
         ASSERT(queryBlk->length == (Int4)sbp->psi_matrix->pssm->ncols);
     }
-    if (adjustParameters > 1 &&
+    if ((int) compo_adjust_mode > 1 &&
         !Blast_FrequencyDataIsAvailable(scoringParams->options->matrix)) {
         return -1;   /* Unsupported matrix */
     }
@@ -1784,15 +1789,15 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
     /* Initialize savedParams */
     savedParams =
         s_SavedParametersNew(queryInfo->max_length, queryInfo->num_queries,
-                             adjustParameters, positionBased);
+                             compo_adjust_mode, positionBased);
     if (savedParams == NULL) {
         status_code = -1;
         goto function_cleanup;
     }
     s_RecordInitialSearch(savedParams, sbp, scoringParams,
-                          queryInfo->max_length, adjustParameters,
+                          queryInfo->max_length, compo_adjust_mode,
                           positionBased);
-    if (adjustParameters) {
+    if (compo_adjust_mode != eNoCompositionBasedStats) {
         if((0 == strcmp(scoringParams->options->matrix, "BLOSUM62_20"))) {
             localScalingFactor = SCALING_FACTOR / 10;
         } else {
@@ -1808,7 +1813,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
                                 BlastSeqSrcGetMaxSeqLen(seqSrc), sbp,
                                 &gapAlign);
     if (status_code != 0) {
-        return status_code;
+        return (Int2) status_code;
     }
     gapping_params_context.gap_align = gapAlign;
     gapping_params_context.scoringParams = scoringParams;
@@ -1849,7 +1854,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             goto function_cleanup;
         }
     }
-    if( adjustParameters > 1 && !positionBased ) {
+    if( (int) compo_adjust_mode > 1 && !positionBased ) {
         NRrecord = Blast_CompositionWorkspaceNew();
         status_code =
             Blast_CompositionWorkspaceInit(NRrecord,
@@ -2016,9 +2021,9 @@ function_cleanup:
         gapAlign = BLAST_GapAlignStructFree(gapAlign);
     }
     s_RestoreSearch(sbp, scoringParams, savedParams, queryBlk->length,
-                    positionBased, adjustParameters);
+                    positionBased, compo_adjust_mode);
     s_SavedParametersFree(&savedParams);
     Blast_CompositionWorkspaceFree(&NRrecord);
 
-    return status_code;
+    return (Int2) status_code;
 }
