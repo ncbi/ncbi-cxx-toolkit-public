@@ -58,6 +58,10 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Turn on/off workaround for linux PID and PPID
+#if defined(NCBI_OS_LINUX)
+#  define NCBI_THREAD_PID_WORKAROUND
+#endif
 
 /// Process identifier (PID) and process handle.
 #if defined(NCBI_OS_UNIX)
@@ -143,6 +147,20 @@ public:
     int Wait(unsigned long timeout = kMax_ULong) const;
 
 private:
+#if defined NCBI_THREAD_PID_WORKAROUND
+    // Flags for internal x_GetPid()
+    enum EGetPidFlag {
+        // get real or cached PID depending on thread ID
+        ePID_GetCurrent,
+        // get parent PID - real or cached depending on thread ID
+        ePID_GetParent,
+        // get real PID (of the thread) but do not cache it
+        ePID_GetThread
+    };
+    static TPid sx_GetPid(EGetPidFlag flag);
+    friend class CThread;
+#endif
+
     long          m_Process;   ///< Process identifier.
     EProcessType  m_Type;      ///< Type of process identifier.
 };
@@ -258,6 +276,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/01/30 19:53:09  grichenk
+ * Added workaround for PID on linux.
+ *
  * Revision 1.13  2006/01/18 19:45:22  ssikorsk
  * Added an extra argument to CException::x_Init
  *

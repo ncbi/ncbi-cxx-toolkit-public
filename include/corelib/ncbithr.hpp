@@ -46,6 +46,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <memory>
 #include <set>
 #include <list>
@@ -273,14 +274,22 @@ protected:
     TThreadHandle GetThreadHandle();
 
 private:
-    TID           m_ID;            /// thread ID
-    TThreadHandle m_Handle;        /// platform-dependent thread handle
-    bool          m_IsRun;         /// if Run() was called for the thread
-    bool          m_IsDetached;    /// if the thread is detached
-    bool          m_IsJoined;      /// if Join() was called for the thread
-    bool          m_IsTerminated;  /// if Exit() was called for the thread
-    CRef<CThread> m_SelfRef;       /// "this" -- to avoid premature destruction
-    void*         m_ExitData;      /// as returned by Main() or passed to Exit()
+    TID           m_ID;            ///< thread ID
+    TThreadHandle m_Handle;        ///< platform-dependent thread handle
+    bool          m_IsRun;         ///< if Run() was called for the thread
+    bool          m_IsDetached;    ///< if the thread is detached
+    bool          m_IsJoined;      ///< if Join() was called for the thread
+    bool          m_IsTerminated;  ///< if Exit() was called for the thread
+    CRef<CThread> m_SelfRef;       ///< "this" -- to avoid premature destruction
+    void*         m_ExitData;      ///< as returned by Main() or passed to Exit()
+
+#if defined NCBI_THREAD_PID_WORKAROUND
+    friend class CProcess;
+    TPid          m_ThreadPID;     ///< Cache thread PID to detect forks
+
+    static TPid sx_GetThreadPid(void);
+    static void sx_SetThreadPid(TPid pid);
+#endif
 
     /// Function to use (internally) as the thread's startup function
     static TWrapperRes Wrapper(TWrapperArg arg);
@@ -390,6 +399,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/01/30 19:53:09  grichenk
+ * Added workaround for PID on linux.
+ *
  * Revision 1.25  2005/05/17 17:52:56  grichenk
  * Added flag to run threads with low priority (MS-Win only)
  *

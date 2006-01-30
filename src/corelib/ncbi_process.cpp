@@ -33,6 +33,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbithr.hpp>
 
 
 #if defined(NCBI_OS_UNIX)
@@ -79,8 +80,50 @@ CProcess::CProcess(HANDLE process, EProcessType type)
 #endif
 
 
+#if defined NCBI_THREAD_PID_WORKAROUND
+TPid CProcess::sx_GetPid(EGetPidFlag flag)
+{
+    if ( flag == ePID_GetThread ) {
+        // Return real PID, do not cache it.
+        return getpid();
+    }
+
+    DEFINE_STATIC_FAST_MUTEX(s_GetPidMutex);
+    static TPid s_CurrentPid = 0;
+    static TPid s_ParentPid = 0;
+
+    if (CThread::GetSelf() == 0) {
+        // For main thread always force caching of PIDs
+        CFastMutexGuard guard(s_GetPidMutex);
+        s_CurrentPid = getpid();
+        s_ParentPid = getppid();
+    }
+    else {
+        // For child threads update cached PIDs only if there was a fork
+        // First call is always from the main thread (explicit or through
+        // CThread::Run()), s_CurrentPid must be != 0 in any child thread.
+        _ASSERT(s_CurrentPid);
+        TPid pid = getpid();
+        TPid thr_pid = CThread::sx_GetThreadPid();
+        if (thr_pid  &&  thr_pid != pid) {
+            // Thread's PID has changed - fork detected.
+            // Use current PID and PPID as globals.
+            CThread::sx_SetThreadPid(pid);
+            CFastMutexGuard guard(s_GetPidMutex);
+            s_CurrentPid = pid;
+            s_ParentPid = getppid();
+        }
+    }
+    return flag == ePID_GetCurrent ? s_CurrentPid : s_ParentPid;
+}
+#endif
+
+
 TPid CProcess::GetCurrentPid(void)
 {
+#if defined NCBI_THREAD_PID_WORKAROUND
+    return sx_GetPid(ePID_GetCurrent);
+#endif
 #if defined(NCBI_OS_UNIX)
     return getpid();
 #elif defined(NCBI_OS_MSWIN)
@@ -93,6 +136,9 @@ TPid CProcess::GetCurrentPid(void)
 
 TPid CProcess::GetParentPid(void)
 {
+#if defined NCBI_THREAD_PID_WORKAROUND
+    return sx_GetPid(ePID_GetParent);
+#endif
 #if defined(NCBI_OS_UNIX)
     return getppid();
 #elif defined(NCBI_OS_MSWIN)
@@ -498,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/01/30 19:53:09  grichenk
+ * Added workaround for PID on linux.
+ *
  * Revision 1.12  2006/01/13 17:40:39  ivanov
  * CProcess::Wait(): return "-1" if traced process was terminated
  * by a not caught signal

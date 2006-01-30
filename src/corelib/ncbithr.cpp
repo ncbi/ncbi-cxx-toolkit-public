@@ -350,6 +350,12 @@ TWrapperRes CThread::Wrapper(TWrapperArg arg)
         GetThreadsTls().SetValue(thread_obj);
     }}
 
+#if defined NCBI_THREAD_PID_WORKAROUND
+    // Store this thread's PID. Changed PID means forking of the thread.
+    thread_obj->m_ThreadPID =
+        CProcess::sx_GetPid(CProcess::ePID_GetThread);
+#endif
+
     // Run user-provided thread main function here
     try {
         thread_obj->m_ExitData = thread_obj->Main();
@@ -396,6 +402,9 @@ CThread::CThread(void)
       m_IsJoined(false),
       m_IsTerminated(false),
       m_ExitData(0)
+#if defined NCBI_THREAD_PID_WORKAROUND
+      , m_ThreadPID(0)
+#endif
 {
     DoDeleteThisObject();
 #if defined(HAVE_PTHREAD_SETCONCURRENCY)  &&  defined(NCBI_POSIX_THREADS)
@@ -434,6 +443,24 @@ extern "C" {
 #endif
 
 
+#if defined NCBI_THREAD_PID_WORKAROUND
+TPid CThread::sx_GetThreadPid(void)
+{
+    CThread* thread_ptr = GetThreadsTls().GetValue();
+    return thread_ptr ? thread_ptr->m_ThreadPID : 0;
+}
+
+
+void CThread::sx_SetThreadPid(TPid pid)
+{
+    CThread* thread_ptr = GetThreadsTls().GetValue();
+    if ( thread_ptr ) {
+        thread_ptr->m_ThreadPID = pid;
+    }
+}
+#endif
+
+
 bool CThread::Run(TRunMode flags)
 {
     // Do not allow the new thread to run until m_Handle is set
@@ -444,6 +471,10 @@ bool CThread::Run(TRunMode flags)
                    "CThread::Run() -- called for already started thread");
 
     m_IsDetached = (flags & fRunDetached) != 0;
+
+#if defined NCBI_THREAD_PID_WORKAROUND
+    CProcess::sx_GetPid(CProcess::ePID_GetCurrent);
+#endif
 
 #if defined(NCBI_WIN32_THREADS)
     // We need this parameter in WinNT - can not use NULL instead!
@@ -668,6 +699,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/01/30 19:53:09  grichenk
+ * Added workaround for PID on linux.
+ *
  * Revision 1.33  2005/08/12 19:22:39  lavr
  * Use NCBI_CATCH_ALL() instead of STD_CATCH_ALL()
  *
