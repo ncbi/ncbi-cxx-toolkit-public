@@ -3,8 +3,8 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-SUB_PROJ = cobalt dustmask blast align sequence structure ms gnomon tree \
-           phy_tree seqqa winmask
+SUB_PROJ = dustmask blast align sequence structure ms gnomon tree \
+           phy_tree seqqa winmask cobalt
 
 REQUIRES = objects
 
