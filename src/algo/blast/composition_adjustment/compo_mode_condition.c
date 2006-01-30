@@ -53,20 +53,54 @@ static char const rcsid[] =
 /** type of function used to choose a mode for composition-based
  * statistics. The variables are Queryseq_length, Matchseq_length,
  * query_amino_count, match_amino_account and matrix_name.*/
-typedef ECompoAdjustModes
+typedef EMatrixAdjustRule
 (*Condition) (int, int, const double *, const double *,
               const char *);
+
+
+/* Return eDontAdjustMatrix unconditionally */
+static EMatrixAdjustRule
+s_NeverAdjustMatrix(int Len_query, int Len_match,
+                  const double * P_query, const double * P_match,
+                  const char *matrix_name)
+{
+    /* Suppress unused variable warnings */
+    (void) Len_query;
+    (void) Len_match;
+    (void) P_query;
+    (void) P_match;
+    (void) matrix_name;
+
+     return eDontAdjustMatrix;
+}
+
+
+/* Return eCompoScaleOldMatrix unconditionally */
+static EMatrixAdjustRule
+s_JustScaleOldMatrix(int Len_query, int Len_match,
+                     const double * P_query, const double * P_match,
+                     const char *matrix_name)
+{
+    /* Suppress unused variable warnings */
+    (void) Len_query;
+    (void) Len_match;
+    (void) P_query;
+    (void) P_match;
+    (void) matrix_name;
+
+    return eCompoScaleOldMatrix;
+}
 
 
 /** A function used to choose a mode for composition-based statistics.
  * If this function is used relative-entropy score adjustment is
  * always applied, with a fixed value as the target relative entropy*/
-static ECompoAdjustModes
-TestToApplyREAdjustmentUnconditional(int Len_query,
-                                     int Len_match,
-                                     const double * P_query,
-                                     const double * P_match,
-                                     const char *matrix_name)
+static EMatrixAdjustRule
+s_TestToApplyREAdjustmentUnconditional(int Len_query,
+                                       int Len_match,
+                                       const double * P_query,
+                                       const double * P_match,
+                                       const char *matrix_name)
 {
     /* Suppress unused variable warnings */
     (void) Len_query;
@@ -85,14 +119,14 @@ TestToApplyREAdjustmentUnconditional(int Len_query,
  * based on lengths and letter counts of the two matched sequences;
  * matrix_name is the underlying score matrix; for now only BLOSUM62
  * is supported */
-static ECompoAdjustModes
-TestToApplyREAdjustmentConditional(int Len_query,
-                                   int Len_match,
-                                   const double * P_query,
-                                   const double * P_match,
-                                   const char *matrix_name)
+static EMatrixAdjustRule
+s_TestToApplyREAdjustmentConditional(int Len_query,
+                                     int Len_match,
+                                     const double * P_query,
+                                     const double * P_match,
+                                     const char *matrix_name)
 {
-    ECompoAdjustModes mode_value; /* which relative entropy mode to
+    EMatrixAdjustRule which_rule; /* which relative entropy mode to
                                      return */
     int i;                       /* loop indices */
     double p_query[COMPO_NUM_TRUE_AA];
@@ -144,11 +178,11 @@ TestToApplyREAdjustmentConditional(int Len_query,
     if ((D_m_q > QUERY_MATCH_DISTANCE_THRESHOLD) &&
         (len_large / len_small > LENGTH_RATIO_THRESHOLD) &&
         (angle > ANGLE_DEGREE_THRESHOLD)) {
-        mode_value = eCompoKeepOldMatrix;
+        which_rule = eCompoScaleOldMatrix;
     } else {
-        mode_value = eUserSpecifiedRelEntropy;
+        which_rule = eUserSpecifiedRelEntropy;
     }
-    return mode_value;
+    return which_rule;
 }
 
 
@@ -156,21 +190,25 @@ TestToApplyREAdjustmentConditional(int Len_query,
  * An array of functions that can be used to decide which optimization
  * formulation should be used for score adjustment */
 static Condition Cond_func[] = {
-    TestToApplyREAdjustmentConditional,
-    TestToApplyREAdjustmentUnconditional,
+    s_NeverAdjustMatrix,
+    s_JustScaleOldMatrix,
+    s_TestToApplyREAdjustmentConditional,
+    s_TestToApplyREAdjustmentUnconditional,
     NULL
 };
 
 
 /* Documented in compo_mode_condition.h. */
-ECompoAdjustModes
-Blast_ChooseCompoAdjustMode(int length1,
-                            int length2,
-                            const double * probArray1,
-                            const double * probArray2,
-                            const char *matrixName,
-                            int testFunctionIndex)
+EMatrixAdjustRule
+Blast_ChooseMatrixAdjustRule(int length1,
+                             int length2,
+                             const double * probArray1,
+                             const double * probArray2,
+                             const char *matrixName,
+                             ECompoAdjustModes composition_adjust_mode)
 {
+    int testFunctionIndex = (int) composition_adjust_mode;
+
     return
         Cond_func[testFunctionIndex] (length1,    length2,
                                       probArray1, probArray2, matrixName);
