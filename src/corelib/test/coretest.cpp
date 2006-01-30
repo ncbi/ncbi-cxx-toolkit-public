@@ -546,7 +546,7 @@ Message for warning error PRINT_BadFormat.\n\
 
     assert(!info.GetDescription(ErrCode(1,3), &desc));
 
-    SetDiagErrCodeInfo(&info);
+    SetDiagErrCodeInfo(&info, false);
     SetDiagPostFlag(eDPF_All);
     SetDiagPostPrefix("Prefix");
 
@@ -568,6 +568,7 @@ Message for warning error PRINT_BadFormat.\n\
     UnsetDiagPostFlag(eDPF_ErrCodeExplanation);
     SetDiagPostFlag(eDPF_ErrCodeUseSeverity);
     diag << ErrCode(1,1) << "This message has severity \"Critical\"" << Endm;
+    SetDiagErrCodeInfo(0);
 }
 
 
@@ -975,6 +976,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.105  2006/01/30 15:12:37  gouriano
+ * Corrected TestDiag_ErrCodeInfo
+ *
  * Revision 1.104  2006/01/12 20:37:46  grichenk
  * Skip streampos test on platforms not supporting 64 bit streampos.
  *
