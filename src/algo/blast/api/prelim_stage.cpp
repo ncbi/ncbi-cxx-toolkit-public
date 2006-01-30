@@ -212,7 +212,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch()
     // ... and wait for the threads to finish
     bool error_occurred(false);
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
-        int result(0);
+        long result(0);
         (*thread)->Join(reinterpret_cast<void**>(&result));
         if (result != 0) {
             error_occurred = true;
