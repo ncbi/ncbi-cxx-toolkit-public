@@ -409,7 +409,9 @@ public:
     CDiagContext(void);
     ~CDiagContext(void);
 
+    /// Unique process ID
     typedef Int8 TUID;
+
     /// Return (create if not created yet) unique diagnostic ID.
     /// Prints start message if AutoWrite flag is set.
     TUID GetUID(void) const;
@@ -426,7 +428,7 @@ public:
 
     /// Get application context property by name, return empty string if the
     /// property is not set.
-    string GetProperty(const string name) const;
+    string GetProperty(const string& name) const;
 
     /// Forced dump of all set properties regardless of the AutoPrint flag.
     void PrintProperties(void) const;
@@ -436,6 +438,13 @@ public:
 
     /// Check old/new format flag (for compatibility only)
     static bool IsSetOldPostFormat(void);
+
+    /// Set username property
+    /// @sa SetDiagUserAndHost
+    void SetUsername(const string& username);
+    /// Set hostname property
+    /// @sa SetDiagUserAndHost
+    void SetHostname(const string& hostname);
 
 private:
     // Initialize UID
@@ -450,6 +459,7 @@ private:
 };
 
 
+/// Get diag context instance
 NCBI_XNCBI_EXPORT CDiagContext& GetDiagContext(void);
 
 //
@@ -1317,6 +1327,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.99  2006/01/30 19:54:32  grichenk
+ * Added SetUsername() and SetHostname() to CDiagContext.
+ *
  * Revision 1.98  2006/01/17 21:00:54  ucko
  * s/ios_base/IOS_BASE/ for compatibility with GCC 2.95.
  *

@@ -322,7 +322,7 @@ void CDiagContext::SetProperty(const string& name, const string& value)
 }
 
 
-string CDiagContext::GetProperty(const string name) const
+string CDiagContext::GetProperty(const string& name) const
 {
     CMutexGuard LOCK(s_DiagMutex);
     TProperties::const_iterator prop = m_Properties.find(name);
@@ -369,6 +369,18 @@ void CDiagContext::x_PrintMessage(const string& message) const
 bool CDiagContext::IsSetOldPostFormat(void)
 {
     return TOldPostFormatParam::GetDefault();
+}
+
+
+void CDiagContext::SetUsername(const string& username)
+{
+    SetProperty("username", username);
+}
+
+
+void CDiagContext::SetHostname(const string& hostname)
+{
+    SetProperty("hostname", hostname);
 }
 
 
@@ -1911,6 +1923,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.108  2006/01/30 19:54:32  grichenk
+ * Added SetUsername() and SetHostname() to CDiagContext.
+ *
  * Revision 1.107  2006/01/30 15:11:29  gouriano
  * Corrected SetDiagErrCodeInfo
  *
