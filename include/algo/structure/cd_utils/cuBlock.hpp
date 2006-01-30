@@ -90,7 +90,7 @@ public:
 	pair<BlockModel*, bool> operator+(const DeltaBlockModel& delta) const;
 	BlockModel& operator=(const BlockModel& rhs);
 	//complete cast this to target.  return 0 if fails
-	BlockModel* BlockModel::completeCastTo(const BlockModel& target) const;
+	BlockModel* completeCastTo(const BlockModel& target) const;
 	//BlockModel& operator+=(const BlockModel& delta);
 	//BlockModel operator-(const BlockModel& rhs);
 	void findIntersectingBlocks(const Block& target, vector<int>& result)const ;

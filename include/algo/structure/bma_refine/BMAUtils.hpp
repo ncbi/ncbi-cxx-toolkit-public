@@ -75,7 +75,7 @@ public:
     //   Where can't get a row's character in 'alignmentIndex' column, return '-' 
     //   in its place.  Needs to work for both aligned columns and non-aligned 
     //   columns in the PSSM.
-    static void BMAUtils::GetResiduesForColumn(const BMA& bma, unsigned alignmentIndex, vector< char >& residues);
+    static void GetResiduesForColumn(const BMA& bma, unsigned alignmentIndex, vector< char >& residues);
 
     //   For the specified column, return the PSSM score for each row in the alignment.
     //   Where can't get a row's character in 'alignmentIndex' column, return score for '-' 
@@ -132,6 +132,9 @@ END_SCOPE(align_refine)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/01/30 18:02:49  rsmith
+* remove redundant & illegal class specifier.
+*
 * Revision 1.2  2006/01/19 20:33:48  lanczyck
 * add GetReisiduesForColumn method
 *
