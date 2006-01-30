@@ -375,6 +375,7 @@ on SetProjectData()
 			ObjectFileData("seqres", {})}
 		AddProject(ProjectData("seq", {}, seqFileData))
 		
+		AddObject("seqedit")
 		AddObject("seqset")
 		AddObject("seqcode")
 		AddObject("seqsplit")
@@ -515,7 +516,7 @@ on SetProjectData()
 		-- Plugin's automatically have fltk and plugin features.
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
 		
-		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil", "seqsplit"}
+		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil", "seqsplit", "seqedit"}
 		set SomeObjects to {"biblio", "general", "medline", "pub", "pubmed", "gbseq", "entrez2", "entrez2cli", "entrezgene", "entrezgene"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "ncbi_xreader_cache", "biotree"}
