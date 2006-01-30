@@ -1166,18 +1166,19 @@ Blast_AdjustScores(Int4 ** matrix,
                    const Blast_AminoAcidComposition * subject_composition,
                    int subjectLength,
                    const Blast_MatrixInfo * matrixInfo,
-                   int RE_rule,
+                   ECompoAdjustModes composition_adjust_mode,
                    int RE_pseudocounts,
                    Blast_CompositionWorkspace *NRrecord,
-                   ECompoAdjustModes *whichMode,
+                   EMatrixAdjustRule *matrix_adjust_rule,
                    double calc_lambda(double *,int,int,double))
 {
     double LambdaRatio;      /* the ratio of the corrected
                                 lambda to the original lambda */
 
-    if (matrixInfo->positionBased || RE_rule == 0) {
+    if (matrixInfo->positionBased ||
+        composition_adjust_mode == eCompositionBasedStats) {
         /* Use old-style composition-based statistics unconditionally. */
-        *whichMode =  eCompoKeepOldMatrix;
+        *matrix_adjust_rule =  eCompoScaleOldMatrix;
         return Blast_CompositionBasedStats(matrix, &LambdaRatio,
                                            matrixInfo,
                                            query_composition->prob,
@@ -1194,14 +1195,14 @@ Blast_AdjustScores(Int4 ** matrix,
         s_GatherLetterProbs(permutedQueryProbs, query_composition->prob);
         s_GatherLetterProbs(permutedMatchProbs, subject_composition->prob);
 
-        *whichMode =
-            Blast_ChooseCompoAdjustMode(queryLength, subjectLength,
-                                        permutedQueryProbs,
-                                        permutedMatchProbs,
-                                        matrixInfo->matrixName,
-                                        RE_rule-1);
+        *matrix_adjust_rule =
+            Blast_ChooseMatrixAdjustRule(queryLength, subjectLength,
+                                         permutedQueryProbs,
+                                         permutedMatchProbs,
+                                         matrixInfo->matrixName,
+                                         composition_adjust_mode);
         /* compute and plug in new matrix here */
-        if (eCompoKeepOldMatrix == *whichMode) {
+        if (eCompoScaleOldMatrix == *matrix_adjust_rule) {
             /* Yi-Kuo's code chose to use composition-based stats */
             return Blast_CompositionBasedStats(matrix, &LambdaRatio,
                                                matrixInfo,
@@ -1216,7 +1217,7 @@ Blast_AdjustScores(Int4 ** matrix,
             REscoreMatrix = Nlm_DenseMatrixNew(COMPO_PROTEIN_ALPHABET,
                                                COMPO_PROTEIN_ALPHABET);
             if (REscoreMatrix != NULL) {
-                NRrecord->flag = *whichMode;
+                NRrecord->flag = *matrix_adjust_rule;
                 status =
                     Blast_CompositionMatrixAdj(query_composition->
                                                numTrueAminoAcids,

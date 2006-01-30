@@ -99,15 +99,15 @@ typedef struct s_WindowInfo
 /* Documented in redo_alignment.h. */
 BlastCompo_Alignment *
 BlastCompo_AlignmentNew(int score,
-                           ECompoAdjustModes comp_adjustment_mode,
-                           int queryStart, int queryEnd, int queryIndex,
-                           int matchStart, int matchEnd, int frame,
-                           void * context)
+                        EMatrixAdjustRule matrix_adjust_rule,
+                        int queryStart, int queryEnd, int queryIndex,
+                        int matchStart, int matchEnd, int frame,
+                        void * context)
 {
     BlastCompo_Alignment * align = malloc(sizeof(BlastCompo_Alignment));
     if (align != NULL) {
         align->score = score;
-        align->comp_adjustment_mode = comp_adjustment_mode;
+        align->matrix_adjust_rule = matrix_adjust_rule;
         align->queryIndex = queryIndex;
         align->queryStart = queryStart;
         align->queryEnd = queryEnd;
@@ -288,13 +288,13 @@ static BlastCompo_Alignment *
 s_AlignmentCopy(const BlastCompo_Alignment * align)
 {
     return BlastCompo_AlignmentNew(align->score,
-                                      align->comp_adjustment_mode,
-                                      align->queryStart,
-                                      align->queryEnd,
-                                      align->queryIndex,
-                                      align->matchStart,
-                                      align->matchEnd, align->frame,
-                                      align->context);
+                                   align->matrix_adjust_rule,
+                                   align->queryStart,
+                                   align->queryEnd,
+                                   align->queryIndex,
+                                   align->matchStart,
+                                   align->matchEnd, align->frame,
+                                   align->context);
     
 }
 
@@ -911,7 +911,8 @@ Blast_RedoAlignParamsFree(Blast_RedoAlignParams ** pparams)
 Blast_RedoAlignParams *
 Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          BlastCompo_GappingParams ** pgapping_params,
-                         int adjustParameters, int positionBased,
+                         ECompoAdjustModes compo_adjust_mode,
+                         int positionBased,
                          int subject_is_translated,
                          int ccat_query_length, int cutoff_s,
                          double cutoff_e, int do_link_hsps,
@@ -924,7 +925,7 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
         params->gapping_params = *pgapping_params;
         *pgapping_params = NULL;
 
-        params->adjustParameters = adjustParameters;
+        params->compo_adjust_mode = compo_adjust_mode;
         params->positionBased = positionBased;
         params->RE_pseudocounts = kReMatrixAdjustmentPseudocounts;
         params->subject_is_translated = subject_is_translated;
@@ -958,19 +959,18 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
     int window_index;                /* loop index */
     int query_index;                 /* index of the current query */
     /* which mode of composition adjustment is actually used? */
-    ECompoAdjustModes whichMode = eNoCompositionAdjustment;
+    EMatrixAdjustRule matrix_adjust_rule = eDontAdjustMatrix;
 
     /* fields of params, as local variables */
     Blast_MatrixInfo * scaledMatrixInfo = params->matrix_info;
-    int adjustParameters = params->adjustParameters;
+    ECompoAdjustModes compo_adjust_mode = params->compo_adjust_mode;
     int positionBased = params->positionBased;
-    int RE_rule = params->adjustParameters - 1;
     int RE_pseudocounts = params->RE_pseudocounts;
     int subject_is_translated = params->subject_is_translated;
     BlastCompo_GappingParams * gapping_params = params->gapping_params;
     const Blast_RedoAlignCallbacks * callbacks = params->callbacks;
 
-    assert(adjustParameters < 2 || !positionBased);
+    assert((int) compo_adjust_mode < 2 || !positionBased);
     for (query_index = 0;  query_index < numQueries;  query_index++) {
         alignments[query_index] = NULL;
     }
@@ -1013,7 +1013,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                 /* adjust_search_failed is true only if Blast_AdjustScores
                  * is called and returns a nonzero value */
                 int adjust_search_failed = 0;
-                if (adjustParameters &&
+                if (compo_adjust_mode != eNoCompositionBasedStats &&
                     (subject_is_translated || hsp_index == 0)) {
                     Blast_AminoAcidComposition subject_composition;
                     s_GetSubjectComposition(&subject_composition,
@@ -1025,9 +1025,9 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                                            query->length,
                                            &subject_composition,
                                            subject.length,
-                                           scaledMatrixInfo, RE_rule,
+                                           scaledMatrixInfo, compo_adjust_mode,
                                            RE_pseudocounts, NRrecord,
-                                           &whichMode,
+                                           &matrix_adjust_rule,
                                            callbacks->calc_lambda);
                     if (adjust_search_failed < 0) { /* fatal error */
                         status = adjust_search_failed;
@@ -1037,7 +1037,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                 if ( !adjust_search_failed ) {
                     newAlign =
                         callbacks->
-                        redo_one_alignment(in_align, whichMode,
+                        redo_one_alignment(in_align, matrix_adjust_rule,
                                            query, &window->query_range,
                                            ccat_query_length,
                                            &subject, &window->subject_range,
@@ -1091,13 +1091,12 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
     int window_index;                   /* loop index */
     int query_index;                    /* index of the current query */
     /* which mode of composition adjustment is actually used? */
-    ECompoAdjustModes whichMode = eNoCompositionAdjustment;
+    EMatrixAdjustRule matrix_adjust_rule = eDontAdjustMatrix;
 
     /* fields of params, as local variables */
     Blast_MatrixInfo * scaledMatrixInfo = params->matrix_info;
-    int adjustParameters = params->adjustParameters;
+    ECompoAdjustModes compo_adjust_mode = params->compo_adjust_mode;
     int positionBased = params->positionBased;
-    int RE_rule = params->adjustParameters - 1;
     int RE_pseudocounts = params->RE_pseudocounts;
     int subject_is_translated = params->subject_is_translated;
     int do_link_hsps = params->do_link_hsps;
@@ -1108,7 +1107,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
     int gap_open = gapping_params->gap_open;
     int gap_extend = gapping_params->gap_extend;
 
-    assert(adjustParameters < 2 || !positionBased);
+    assert((int) compo_adjust_mode < 2 || !positionBased);
     for (query_index = 0;  query_index < numQueries;  query_index++) {
         alignments[query_index] = NULL;
     }
@@ -1147,7 +1146,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
             
         /* For Smith-Waterman alignments, adjust the search using the
          * composition of the highest scoring alignment in window */
-        if (adjustParameters) {
+        if (compo_adjust_mode != eNoCompositionBasedStats) {
             Blast_AminoAcidComposition subject_composition;
             s_GetSubjectComposition(&subject_composition,
                                         &subject, &window->subject_range,
@@ -1156,9 +1155,9 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                 Blast_AdjustScores(matrix,
                                    query_composition, query->length,
                                    &subject_composition, subject.length, 
-                                   scaledMatrixInfo,
-                                   RE_rule, RE_pseudocounts, NRrecord,
-                                   &whichMode, callbacks->calc_lambda);
+                                   scaledMatrixInfo, compo_adjust_mode,
+                                   RE_pseudocounts, NRrecord,
+                                   &matrix_adjust_rule, callbacks->calc_lambda);
             if (adjust_search_failed < 0) { /* fatal error */
                 status = adjust_search_failed;
                 goto window_index_loop_cleanup;
@@ -1243,7 +1242,7 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
                                         ccat_query_length,
                                         &subject, &window->subject_range,
                                         matchingSeq->length,
-                                        gapping_params, whichMode);
+                                        gapping_params, matrix_adjust_rule);
                     if (status != 0) {
                         goto window_index_loop_cleanup;
                     }
