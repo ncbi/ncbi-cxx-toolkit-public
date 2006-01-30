@@ -444,17 +444,19 @@ void CLDS_Query::ScreenSequence(const SLDS_SeqIdBase&    sbase,
         cur_int_idx.From << sbase.int_id;
         while (cur_int_idx.Fetch() == eBDB_Ok) {
             rec_id = m_db.obj_seqid_int_idx.row_id;
+            if (rec_id) {
+                obj_ids->set(rec_id);
+            }
         }
     } else if (!sbase.str_id.empty()) {
         cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
         cur_txt_idx.From << sbase.str_id;
         while (cur_txt_idx.Fetch() == eBDB_Ok) {
             rec_id = m_db.obj_seqid_txt_idx.row_id;
+            if (rec_id) {
+                obj_ids->set(rec_id);
+            }
         }
-    }
-
-    if (rec_id) {
-        obj_ids->set(rec_id);
     }
 }
 
@@ -654,6 +656,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/01/30 19:42:58  kuznets
+ * Fixed bug in searching candidate molecules
+ *
  * Revision 1.19  2005/11/21 18:51:10  jcherry
  * Added export specifier for CLDS_Query::CSequenceFinder, plus explicit
  * destructor (required for export)
