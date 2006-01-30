@@ -682,7 +682,7 @@ NCBI_XBLAST_EXPORT
 Int2 Blast_HSPResultsInsertHSPList(BlastHSPResults* results, 
         BlastHSPList* hsp_list, Int4 hitlist_size);
 
-// Forward declaration
+/* Forward declaration */
 struct BlastHSPStream;
 
 BlastHSPResults*
