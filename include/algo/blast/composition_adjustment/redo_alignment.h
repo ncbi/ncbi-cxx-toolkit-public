@@ -39,6 +39,7 @@
 #define __REDO_ALIGNMENT__
 
 #include <algo/blast/composition_adjustment/composition_adjustment.h>
+#include <algo/blast/composition_adjustment/composition_constants.h>
 #include <algo/blast/composition_adjustment/smith_waterman.h>
 #include <algo/blast/composition_adjustment/compo_heap.h>
 
@@ -52,7 +53,8 @@
  */
 typedef struct BlastCompo_Alignment {
     int score;           /**< the score of this alignment */
-    ECompoAdjustModes comp_adjustment_mode;  /**< how the score was computed */
+    EMatrixAdjustRule matrix_adjust_rule; 
+    /**< how the score matrix was computed */
     int queryIndex;      /**< index of the query in a concatenated query */
     int queryStart;      /**< the start of the alignment in the query */
     int queryEnd;        /**< one past the end of the alignment in the query */
@@ -72,7 +74,7 @@ typedef struct BlastCompo_Alignment {
 NCBI_XBLAST_EXPORT
 BlastCompo_Alignment *
 BlastCompo_AlignmentNew(int score,
-                        ECompoAdjustModes comp_adjustment_mode,
+                        EMatrixAdjustRule whichRule,
                         int queryIndex, int queryStart, int queryEnd,
                         int matchStart, int matchEnd, int frame,
                         void * context);
@@ -201,6 +203,7 @@ get_range_type(const BlastCompo_MatchingSequence * sequence,
  * performing an x-drop alignment in both directions
  *
  * @param in_align         the existing alignment, without traceback
+ * @param matrix_adjust_rule   rule used to compute the scoring matrix
  * @param whichMode        which mode of composition adjustment has
  *                         been used to adjust the scoring matrix
  * @param query_data       query sequence data
@@ -216,7 +219,7 @@ get_range_type(const BlastCompo_MatchingSequence * sequence,
  */
 typedef BlastCompo_Alignment *
 redo_one_alignment_type(BlastCompo_Alignment * in_align,
-                        ECompoAdjustModes whichMode,
+                        EMatrixAdjustRule matrix_adjust_rule,
                         BlastCompo_SequenceData * query_data,
                         BlastCompo_SequenceRange * query_range,
                         int ccat_query_length,
@@ -255,8 +258,7 @@ redo_one_alignment_type(BlastCompo_Alignment * in_align,
  * @param full_subject_length   length of the full subject sequence
  * @param gapping_params        parameters used to compute gapped
  *                              alignments
- * @param whichMode        which mode of composition adjustment has
- *                         been used to adjust the scoring matrix
+ * @param matrix_adjust_rule   rule used to compute the scoring matrix
  * @return   0 on success, -1 for out-of-memory error
  */
 typedef int
@@ -270,7 +272,7 @@ new_xdrop_align_type(BlastCompo_Alignment **palign,
                      BlastCompo_SequenceRange * subject_range,
                      Int4 full_subject_length,
                      BlastCompo_GappingParams * gapping_params,
-                     ECompoAdjustModes whichMode);
+                     EMatrixAdjustRule matrix_adjust_rule);
 
 /** Function type: free traceback data in a BlastCompo_Alignment.
  *
@@ -303,7 +305,7 @@ typedef struct Blast_RedoAlignParams {
     BlastCompo_GappingParams *
         gapping_params;              /**< parameters for performing a
                                           gapped aligment */
-    int adjustParameters;   /**< composition adjustment mode */
+    ECompoAdjustModes compo_adjust_mode;   /**< composition adjustment mode */
     int positionBased;      /**< true if the search is position-based */
     int RE_pseudocounts;    /**< number of pseudocounts to use in
                                  relative-entropy based composition
@@ -332,7 +334,8 @@ NCBI_XBLAST_EXPORT
 Blast_RedoAlignParams *
 Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          BlastCompo_GappingParams **pgapping_params,
-                         int adjustParameters, int positionBased,
+                         ECompoAdjustModes compo_adjust_mode,
+                         int positionBased,
                          int subject_is_translated,
                          int ccat_query_length, int cutoff_s,
                          double cutoff_e, int do_link_hsps,

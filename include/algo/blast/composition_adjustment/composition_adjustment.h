@@ -36,8 +36,8 @@
 #include <algo/blast/core/ncbi_std.h>
 #include <algo/blast/composition_adjustment/compo_mode_condition.h>
 
-/** Number of standard amino acids */
-#define COMPO_NUM_TRUE_AA 20
+/** Number of amino acids, including nonstandard ones */
+#define COMPO_PROTEIN_ALPHABET 26
 
 #ifdef __cplusplus
 extern "C" {
@@ -247,13 +247,13 @@ int Blast_CompositionMatrixAdj(int length1, int length2,
  * @param subjectLength           length of the subject sequence
  * @param matrixInfo    information about the underlying,
  *                      non-adjusted, scoring matrix.
- * @param RE_rule       the rule to use for computing the scoring
- *                      matrix
+ * @param composition_adjust_mode   mode of composition-based statistics
+ *                                  to use
  * @param RE_pseudocounts    the number of pseudocounts to use in some
  *                           rules of composition adjustment
  * @param NRrecord      workspace used to perform compositional
  *                      adjustment
- * @param *whichMode    which mode of compositional adjustment was
+ * @param *matrix_adjust_rule    rule used to compute the scoring matrix
  *                      actually used
  * @param calc_lambda   a function that can calculate the statistical
  *                      parameter Lambda from a set of score
@@ -269,10 +269,10 @@ Blast_AdjustScores(Int4 ** matrix,
                    const Blast_AminoAcidComposition * subject_composition,
                    int subjectLength,
                    const Blast_MatrixInfo * matrixInfo,
-                   int RE_rule,
+                   ECompoAdjustModes composition_adjust_mode,
                    int RE_pseudocounts,
                    Blast_CompositionWorkspace *NRrecord,
-                   ECompoAdjustModes *whichMode,
+                   EMatrixAdjustRule *whichMode,
                    double calc_lambda(double *,int,int,double));
 
 

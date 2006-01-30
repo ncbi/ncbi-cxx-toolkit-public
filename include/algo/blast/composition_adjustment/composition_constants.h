@@ -35,36 +35,30 @@
 
 #include <algo/blast/core/ncbi_std.h>
 
-/** Number of standard amino acids */
-#define COMPO_NUM_TRUE_AA 20
-
-/** Number of amino acids, including nonstandard ones */
-#define COMPO_PROTEIN_ALPHABET 26
-
 /** Minimum score in a matrix */
 #define COMPO_SCORE_MIN INT2_MIN
 
 /** An collection of constants that specify all permissible
  * modes of composition adjustment */
 typedef enum ECompoAdjustModes {
-    eNoCompositionAdjustment       = (-1),
     eNoCompositionBasedStats       = 0,
     eCompositionBasedStats         = 1,
     eCompositionMatrixAdjust       = 2,
     eCompoForceFullMatrixAdjust    = 3,
-    eCompoKeepOldMatrix            = 0,
-    eUnconstrainedRelEntropy       = 1,
-    eRelEntropyOldMatrixNewContext = 2,
-    eRelEntropyOldMatrixOldContext = 3,
-    eUserSpecifiedRelEntropy       = 4,
     eNumCompoAdjustModes
 } ECompoAdjustModes;
 
 
-typedef enum EMatrixAdjustRules {
-    eDontAdjustMatrix = (-1),
-    eCompoScaleOldMatrix = 0
-} EMatrixAdjustRules;
+/** An collection of constants that specify all rules that may
+ *  be used to generate a compositionally adjusted matrix.  */
+typedef enum EMatrixAdjustRule {
+    eDontAdjustMatrix              = (-1),
+    eCompoScaleOldMatrix           = 0,
+    eUnconstrainedRelEntropy       = 1,
+    eRelEntropyOldMatrixNewContext = 2,
+    eRelEntropyOldMatrixOldContext = 3,
+    eUserSpecifiedRelEntropy       = 4
+} EMatrixAdjustRule;
 
 
 

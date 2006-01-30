@@ -52,16 +52,15 @@ extern "C" {
  *                    a 20 letter amino-acid alphabet
  * @param probArray2  arrays of probabilities for the other sequence
  * @param matrixName  name of the scoring matrix
- * @param testFunctionIndex    allows different rules to be tested
- *                             for the relative entropy decision.
+ * @param composition_adjust_mode   requested mode of composition adjustment
  */
 NCBI_XBLAST_EXPORT
-ECompoAdjustModes
-Blast_ChooseCompoAdjustMode(int length1, int length2,
-                            const double * probArray1,
-                            const double * probArray2,
-                            const char * matrixName,
-                            int testFunctionIndex);
+EMatrixAdjustRule
+Blast_ChooseMatrixAdjustRule(int length1, int length2,
+                             const double * probArray1,
+                             const double * probArray2,
+                             const char * matrixName,
+                             ECompoAdjustModes composition_adjust_mode);
 
 #ifdef __cplusplus
 }
