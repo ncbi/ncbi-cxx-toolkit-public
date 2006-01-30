@@ -1810,6 +1810,7 @@ extern unsigned int CRC32_Update(unsigned int checksum,
 extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 {
     assert(buf  &&  bufsize);
+    *buf = '\0';
     {{
 #ifdef NCBI_OS_UNIX
         /* Get the user login name. FIXME: not MT-safe */
@@ -1841,7 +1842,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
         CORE_UNLOCK;
 #endif
     }}
-    return 0;
+    return buf;
 }
 
 
@@ -1849,6 +1850,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.84  2006/01/30 18:03:04  lavr
+ * Fix CONNUTIL_GetUsername() to return "buf" (instead of constant 0)
+ *
  * Revision 6.83  2006/01/27 17:08:56  lavr
  * Spell CONNUTIL_GetUsername() this way
  *
