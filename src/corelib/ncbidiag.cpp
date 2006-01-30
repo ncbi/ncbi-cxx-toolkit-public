@@ -1323,7 +1323,8 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 extern void SetDiagErrCodeInfo(CDiagErrCodeInfo* info, bool can_delete)
 {
     CMutexGuard LOCK(s_DiagMutex);
-    if ( CDiagBuffer::sm_CanDeleteErrCodeInfo )
+    if ( CDiagBuffer::sm_CanDeleteErrCodeInfo  &&
+         CDiagBuffer::sm_ErrCodeInfo )
         delete CDiagBuffer::sm_ErrCodeInfo;
     CDiagBuffer::sm_ErrCodeInfo = info;
     CDiagBuffer::sm_CanDeleteErrCodeInfo = can_delete;
@@ -1910,6 +1911,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.107  2006/01/30 15:11:29  gouriano
+ * Corrected SetDiagErrCodeInfo
+ *
  * Revision 1.106  2006/01/27 13:22:46  gouriano
  * Changed SDiagMessage info in x_Put
  *
