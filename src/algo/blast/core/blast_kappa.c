@@ -1466,12 +1466,6 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
     memcpy(self->matrixName, matrixName, lenName + 1);
 
     if (self->positionBased) {
-        self->ungappedLambda = sbp->kbp_psi[0]->Lambda / scale_factor;
-    } else {
-        self->ungappedLambda = sbp->kbp_ideal->Lambda / scale_factor;
-    }
-
-    if (self->positionBased) {
         status = s_GetPosBasedStartFreqRatios(self->startFreqRatios,
                                               queryBlk->length,
                                               queryBlk->sequence,
@@ -1482,8 +1476,10 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
                                       sbp->psi_matrix->freq_ratios,
                                       queryBlk->sequence,
                                       queryBlk->length, sbp, scale_factor);
+            self->ungappedLambda = sbp->kbp_psi[0]->Lambda / scale_factor;
         }
     } else {
+        self->ungappedLambda = sbp->kbp_ideal->Lambda / scale_factor;
         status = s_GetStartFreqRatios(self->startFreqRatios, matrixName);
         if (status == 0) {
             Blast_Int4MatrixFromFreq(self->startMatrix, BLASTAA_SIZE,
