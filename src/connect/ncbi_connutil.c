@@ -1827,10 +1827,12 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
     assert(buf  &&  bufsize);
 
 #ifndef NCBI_OS_UNIX
+#  ifdef NCBI_OS_MSWIN
     if ((login = getenv("USERNAME")) != 0) {
         strncpy0(buf, login, bufsize - 1);
         return buf;
     }
+#  endif
 #else /*!NCBI_OS_UNIX*/
 
 #  if defined(NCBI_OS_SOLARIS)  ||  !defined(HAVE_GETLOGIN_R)
@@ -1900,6 +1902,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.86  2006/01/31 17:22:55  lavr
+ * CONNUTIL_GetUsername(): Consider USERNAME environment on Windows only
+ *
  * Revision 6.85  2006/01/31 17:11:53  lavr
  * MT-safe (as much as possible) implementation of CONNUTIL_GetUsername()
  *
