@@ -48,10 +48,6 @@
 #    define WIN32_LEAN_AND_MEAN
 #  endif
 #  include <windows.h>
-#  if defined(_UNICODE)  &&  defined(GetUserName)
-#    undef  GetUserName
-#    define GetUserName GetUserNameA
-#  endif
 #endif
 
 
@@ -1918,6 +1914,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.89  2006/01/31 19:32:55  lavr
+ * Use GetUserName() as provided by <winbase.h>
+ *
  * Revision 6.88  2006/01/31 19:24:40  lavr
  * CONNUTIL_GetUsername():  Clean ASCII username on MS-Windows
  *
