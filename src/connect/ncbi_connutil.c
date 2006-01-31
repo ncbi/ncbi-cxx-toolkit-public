@@ -41,7 +41,9 @@
 #  ifndef NCBI_OS_SOLARIS
 #    include <limits.h>
 #  endif
-#  include <pwd.h>
+#  if defined(HAVE_GETPWUID)  ||  defined(HAVE_GETPWUID_R)
+#    include <pwd.h>
+#  endif
 #  include <unistd.h>
 #elif defined(NCBI_OS_MSWIN)
 #  if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
@@ -1914,6 +1916,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.90  2006/01/31 20:26:46  lavr
+ * #include <pwd.h> only us getpwuid[_r]() is known to exist
+ *
  * Revision 6.89  2006/01/31 19:32:55  lavr
  * Use GetUserName() as provided by <winbase.h>
  *
