@@ -63,7 +63,7 @@ typedef struct SPatternHit {
 void
 CMultiAligner::FindPatternHits()
 {
-    int num_queries = m_QueryData.size();
+    size_t num_queries = m_QueryData.size();
     char pattern[512];
 
     if (m_PatternFile.empty())
@@ -84,7 +84,7 @@ CMultiAligner::FindPatternHits()
 
     // for each pattern
 
-    for (int i = 0; !pattern_stream.eof(); i++) {
+    for (size_t i = 0; !pattern_stream.eof(); i++) {
 
         vector<SPatternHit> phi_hits;
 
@@ -102,7 +102,7 @@ CMultiAligner::FindPatternHits()
 
         // for each sequence
 
-        for (int j = 0; j < num_queries; j++) {
+        for (size_t j = 0; j < num_queries; j++) {
 
             // scan the sequence through the compiled pattern,
             // saving any hits found
@@ -111,7 +111,7 @@ CMultiAligner::FindPatternHits()
                                   (const Uint1 *)(m_QueryData[j].GetSequence()),
                                   m_QueryData[j].GetLength(),
                                   FALSE, phi_pattern);
-            for (int k = 0; k < twice_num_hits; k += 2) {
+            for (size_t k = 0; k < (size_t)twice_num_hits; k += 2) {
                 phi_hits.push_back(SPatternHit(j, TRange(hit_offsets[k+1],
                                                          hit_offsets[k])));
             }
@@ -121,8 +121,8 @@ CMultiAligner::FindPatternHits()
         // create a pairwise alignment. Temporarily hijack the score
         // of the alignment to store the identity of the pattern
 
-        for (int j = 0; j < (int)phi_hits.size() - 1; j++) {
-            for (int k = j + 1; k < (int)phi_hits.size(); k++) {
+        for (size_t j = 0; j < phi_hits.size() - 1; j++) {
+            for (size_t k = j + 1; k < phi_hits.size(); k++) {
                 if (phi_hits[j].query_idx != phi_hits[k].query_idx) {
 
                     m_PatternHits.AddToHitList(new CHit(phi_hits[j].query_idx,
@@ -169,6 +169,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.7  2006/01/31 19:27:39  papadopo
+  fix compile warnings
+
   Revision 1.6  2005/12/16 23:32:55  papadopo
   protect against empty patterns; also assign a small score to pattern hits so they do *not* override other alignments
 
