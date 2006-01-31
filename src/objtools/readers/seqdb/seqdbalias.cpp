@@ -886,18 +886,18 @@ public:
     ///   A database volume
     virtual void AddString(const string & value)
     {
-        m_Value += NStr::StringToUInt(value);
+        m_Value += NStr::StringToInt8(value);
     }
     
     /// Returns the accumulated number of OIDs.
-    int GetNum() const
+    Int8 GetNum() const
     {
         return m_Value;
     }
     
 private:
     /// The accumulated number of OIDs.
-    int m_Value;
+    Int8 m_Value;
 };
 
 
@@ -1356,7 +1356,7 @@ string CSeqDBAliasNode::GetTitle(const CSeqDBVolSet & volset) const
 }
 
 
-int CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
+Int8 CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
 {
     CSeqDB_NSeqsWalker walk;
     WalkNodes(& walk, vols);
@@ -1364,7 +1364,7 @@ int CSeqDBAliasNode::GetNumSeqs(const CSeqDBVolSet & vols) const
     return walk.GetNum();
 }
 
-int CSeqDBAliasNode::GetNumOIDs(const CSeqDBVolSet & vols) const
+Int8 CSeqDBAliasNode::GetNumOIDs(const CSeqDBVolSet & vols) const
 {
     CSeqDB_NOIDsWalker walk;
     WalkNodes(& walk, vols);

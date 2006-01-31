@@ -405,7 +405,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of included sequences
-    int GetNumSeqs(const CSeqDBVolSet & volset) const;
+    Int8 GetNumSeqs(const CSeqDBVolSet & volset) const;
     
     /// Get the size of the OID range
     ///
@@ -418,7 +418,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of OIDs found during traversal
-    int GetNumOIDs(const CSeqDBVolSet & volset) const;
+    Int8 GetNumOIDs(const CSeqDBVolSet & volset) const;
     
     /// Get the total length of the set of databases
     ///
@@ -877,7 +877,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of included sequences
-    int GetNumSeqs(const CSeqDBVolSet & volset) const
+    Int8 GetNumSeqs(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetNumSeqs(volset);
     }
@@ -893,7 +893,7 @@ public:
     ///   The set of database volumes
     /// @return
     ///   The number of OIDs found during traversal
-    int GetNumOIDs(const CSeqDBVolSet & volset) const
+    Int8 GetNumOIDs(const CSeqDBVolSet & volset) const
     {
         return m_Node.GetNumOIDs(volset);
     }

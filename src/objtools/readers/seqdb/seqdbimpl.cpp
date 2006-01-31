@@ -506,7 +506,7 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid) const
     
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         bool have_oidlist = m_OIDList.NotEmpty();
-        int memb_bit    = m_Aliases.GetMembBit(m_VolSet);
+        int memb_bit      = m_Aliases.GetMembBit(m_VolSet);
         
         return vol->GetSeqIDs(vol_oid,
                               have_oidlist,
@@ -546,22 +546,33 @@ Uint8 CSeqDBImpl::GetVolumeLength() const
 int CSeqDBImpl::x_GetNumSeqs() const
 {
     CHECK_MARKER();
-    return m_Aliases.GetNumSeqs(m_VolSet);
+    
+    // GetNumSeqs should not overflow, even for alias files.
+    
+    Int8 rv = m_Aliases.GetNumSeqs(m_VolSet);
+    _ASSERT((rv & 0x7FFFFFFF) == rv);
+    
+    return rv;
 }
 
 int CSeqDBImpl::x_GetNumOIDs() const
 {
     CHECK_MARKER();
-    int num_oids = m_VolSet.GetNumOIDs();
+    Int8 num_oids = m_VolSet.GetNumOIDs();
     
     // The aliases file may have more of these, because walking the
     // alias tree will count volumes each time they appear in the
     // volume set.  The volset number is the "good" one, because it
     // corresponds to the range of OIDs we accept in methods like
-    // "GetSequence()".  you toss this API an OID, that is the range
-    // it must have.
+    // "GetSequence()".  If you give SeqDB an OID, the volset number
+    // is the range for that oid.
+    
+    // However, at this layer, we need to use Int8, because the alias
+    // number can overestimate so much that it wraps a signed int.
     
     _ASSERT(num_oids <= m_Aliases.GetNumOIDs(m_VolSet));
+    
+    _ASSERT((num_oids & 0x7FFFFFFF) == num_oids);
     
     return num_oids;
 }
