@@ -337,6 +337,16 @@ static void TEST_ConnNetInfo(void)
 }
 
 
+static void TEST_GetUsername(void)
+{
+    char buffer[512];
+    const char* username = CONNUTIL_GetUsername(buffer, sizeof(buffer));
+    printf("Username = %s%s%s\n",
+           username ? (*username ? "" : "\"") : "<",
+           username ?   username              : "NULL",
+           username ? (*username ? "" : "\"") : ">");
+}
+
 
 /***********************************************************************
  *  MAIN
@@ -354,6 +364,7 @@ int main(void)
     TEST_BASE64_Encoding();
     TEST_MIME();
     TEST_ConnNetInfo();
+    TEST_GetUsername();
 
     CORE_SetLOG(0);
     return 0;
@@ -363,6 +374,9 @@ int main(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2006/01/31 17:12:07  lavr
+ * CONNUTIL_GetUsername() test added
+ *
  * Revision 6.21  2005/08/18 19:00:48  lavr
  * More thorough BASE64_{En|De}code() tests
  *
