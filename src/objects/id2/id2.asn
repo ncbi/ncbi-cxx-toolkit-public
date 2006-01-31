@@ -1,4 +1,4 @@
---$Revision: 1.17 $
+--$Revision: 1.18 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -316,7 +316,10 @@ ID2-Reply-Get-Blob-Id ::= SEQUENCE {
         annot-info      SEQUENCE OF ID2S-Seq-annot-Info OPTIONAL,
 
         -- this Blob-id is the last one in the request
-        end-of-reply    NULL OPTIONAL
+        end-of-reply    NULL OPTIONAL,
+
+        -- state of the blob
+        blob-state      ID2-Blob-State OPTIONAL
 }
 
 
