@@ -37,12 +37,19 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
 #  ifndef NCBI_OS_SOLARIS
 #    include <limits.h>
 #  endif
 #  include <pwd.h>
 #  include <unistd.h>
+#elif defined(NCBI_OS_MSWIN)
+#  if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
+#    define WIN32_LEAN_AND_MEAN
+#  else
+#    define GetUserNameA GetUserName
+#  endif
+#  include <windows.h>
 #endif
 
 
@@ -1815,12 +1822,14 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_SOLARIS)
     char loginbuf[_POSIX_LOGIN_NAME_MAX + 1];
 #endif
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
     struct passwd* pw;
 #  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETPWUID_R)
     struct passwd pwd;
     char pwdbuf[256];
 #  endif
+#elif defined(NCBI_OS_MSWIN)
+    char loginbuf[256 + 1];
 #endif
     const char* login;
 
@@ -1828,6 +1837,11 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 
 #ifndef NCBI_OS_UNIX
 #  ifdef NCBI_OS_MSWIN
+    if (GetUserNameA(loginbuf, sizeof(loginbuf) - 1)) {
+        loginbuf[sizeof(loginbuf) - 1] = '\0';
+        strncpy(buf, loginbuf, bufsize - 1);
+        return buf;
+    }
     if ((login = getenv("USERNAME")) != 0) {
         strncpy0(buf, login, bufsize - 1);
         return buf;
@@ -1902,6 +1916,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.87  2006/01/31 19:14:28  lavr
+ * CONNUTIL_GetUsername():  MS-Windows-specific username discovery
+ *
  * Revision 6.86  2006/01/31 17:22:55  lavr
  * CONNUTIL_GetUsername(): Consider USERNAME environment on Windows only
  *
