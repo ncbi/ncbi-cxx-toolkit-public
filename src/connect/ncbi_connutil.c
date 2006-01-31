@@ -1829,7 +1829,8 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
     char pwdbuf[256];
 #  endif
 #elif defined(NCBI_OS_MSWIN)
-    char loginbuf[256 + 1];
+    char  loginbuf[256 + 1];
+    DWORD loginbufsize = sizeof(loginbuf) - 1;
 #endif
     const char* login;
 
@@ -1837,8 +1838,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 
 #ifndef NCBI_OS_UNIX
 #  ifdef NCBI_OS_MSWIN
-    if (GetUserName(loginbuf, sizeof(loginbuf) - 1)) {
-        loginbuf[sizeof(loginbuf) - 1] = '\0';
+    if (GetUserName(loginbuf, &loginbufsize)) {
+        assert(loginbufsize < sizeof(loginbuf));
+        loginbuf[loginbufsize] = '\0';
         strncpy0(buf, loginbuf, bufsize - 1);
         return buf;
     }
@@ -1916,6 +1918,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.92  2006/01/31 20:38:12  lavr
+ * CONNUTIL_GetUsername():  Pass pointer to buffer size in GetUserName()
+ *
  * Revision 6.91  2006/01/31 20:29:24  lavr
  * CONNUTIL_GetUsername():  use strncpy0 everywhere
  *
