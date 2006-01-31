@@ -51,7 +51,7 @@ public:
     typedef typename TData::const_iterator const_iterator;
 
     CNcbiMatrix();
-    CNcbiMatrix(size_t r, size_t c, T val = T(0));
+    CNcbiMatrix(size_t r, size_t c, T val = T());
 
     /// make this matrix an identity matrix of a given size
     void Identity(size_t size);
@@ -70,7 +70,7 @@ public:
     void Transpose();
 
     /// resize this matrix, filling the empty cells with a known value
-    void Resize(size_t i, size_t j, T val = T(0));
+    void Resize(size_t i, size_t j, T val = T());
 
     /// swap two rows in the matrix
     void SwapRows(size_t i, size_t j);
@@ -996,6 +996,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/01/31 15:44:27  ucko
+ * Change default value for empty elements from T(0) to T() for compatibility
+ * with a wider range of types, fixing cobalt build errors under MIPSpro.
+ *
  * Revision 1.8  2005/06/02 16:54:25  dicuccio
  * Doxygenated comments.  Added RemoveRow(), RemoveCol()
  *
