@@ -46,10 +46,12 @@
 #elif defined(NCBI_OS_MSWIN)
 #  if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
 #    define WIN32_LEAN_AND_MEAN
-#  else
-#    define GetUserNameA GetUserName
 #  endif
 #  include <windows.h>
+#  if defined(_UNICODE)  &&  defined(GetUserName)
+#    undef  GetUserName
+#    define GetUserName GetUserNameA
+#  endif
 #endif
 
 
@@ -1837,7 +1839,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 
 #ifndef NCBI_OS_UNIX
 #  ifdef NCBI_OS_MSWIN
-    if (GetUserNameA(loginbuf, sizeof(loginbuf) - 1)) {
+    if (GetUserName(loginbuf, sizeof(loginbuf) - 1)) {
         loginbuf[sizeof(loginbuf) - 1] = '\0';
         strncpy(buf, loginbuf, bufsize - 1);
         return buf;
@@ -1916,6 +1918,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.88  2006/01/31 19:24:40  lavr
+ * CONNUTIL_GetUsername():  Clean ASCII username on MS-Windows
+ *
  * Revision 6.87  2006/01/31 19:14:28  lavr
  * CONNUTIL_GetUsername():  MS-Windows-specific username discovery
  *
