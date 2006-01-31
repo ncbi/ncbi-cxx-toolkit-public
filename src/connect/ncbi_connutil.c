@@ -38,8 +38,11 @@
 #include <errno.h>
 #include <stdlib.h>
 #ifdef NCBI_OS_UNIX
-#include <pwd.h>
-#include <unistd.h>
+#  ifndef NCBI_OS_SOLARIS
+#    include <limits.h>
+#  endif
+#  include <pwd.h>
+#  include <unistd.h>
 #endif
 
 
@@ -1809,47 +1812,97 @@ extern unsigned int CRC32_Update(unsigned int checksum,
 
 extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 {
-    assert(buf  &&  bufsize);
-    *buf = '\0';
-    {{
+#if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_SOLARIS)
+    char loginbuf[_POSIX_LOGIN_NAME_MAX + 1];
+#endif
 #ifdef NCBI_OS_UNIX
-        /* Get the user login name. FIXME: not MT-safe */
-        const char* login_name;
-        CORE_LOCK_WRITE;
-        login_name = getlogin();
-        if (!login_name) {
-            struct passwd* pwd = getpwuid(getuid());
-            if (!pwd) {
-                if (!(login_name = getenv("USER"))  &&
-                    !(login_name = getenv("LOGNAME"))) {
-                    CORE_UNLOCK;
-                    return 0;
-                }
-            } else
-                login_name = pwd->pw_name;
-        }
-#else
-        /* Temporary solution for login name */
-        const char* login_name = "anonymous";
-#  ifdef NCBI_OS_MSWIN
-        const char* user_name = getenv("USERNAME");
-        if (user_name)
-            login_name = user_name;
+    struct passwd* pw;
+#  if !defined(NCBI_OS_SOLARIS)  &&  defined(HAVE_GETPWUID_R)
+    struct passwd pwd;
+    char pwdbuf[256];
 #  endif
 #endif
-        strncpy0(buf, login_name, bufsize - 1);
-#ifdef NCBI_OS_UNIX
-        CORE_UNLOCK;
-#endif
-    }}
+    const char* login;
+
+    assert(buf  &&  bufsize);
+
+#ifndef NCBI_OS_UNIX
+    if ((login = getenv("USERNAME")) != 0) {
+        strncpy0(buf, login, bufsize - 1);
+        return buf;
+    }
+#else /*!NCBI_OS_UNIX*/
+
+#  if defined(NCBI_OS_SOLARIS)  ||  !defined(HAVE_GETLOGIN_R)
+    /* NB:  getlogin() is MT-safe on Solaris, yet getlogin_r() comes in two
+     * flavors that differ only in return type, so to make things simpler,
+     * use plain getlogin() here */
+#    ifndef NCBI_OS_SOLARIS
+    CORE_LOCK_WRITE;
+#    endif
+    if ((login = getlogin()) != 0)
+        strncpy0(buf, login, bufsize - 1);
+#    ifndef NCBI_OS_SOLARIS
+    CORE_UNLOCK;
+#    endif
+    if (login)
+        return buf;
+#  else
+    if (getlogin_r(loginbuf, sizeof(loginbuf) - 1) == 0) {
+        strncpy0(buf, loginbuf, bufsize - 1);
+        return buf;
+    }
+#  endif
+
+#  if defined(NCBI_OS_SOLARIS)  ||  \
+    (!defined(HAVE_GETPWUID_R)  &&  defined(HAVE_GETPWUID))
+    /* NB:  getpwuid() is MT safe on Solaris, so use it here, if available. */
+#  ifndef NCBI_OS_SOLARIS
+    CORE_LOCK_WRITE;
+#  endif
+    if ((pw = getpwuid(getuid())) != 0  &&  pw->pw_name)
+        strncpy0(buf, pw->pw_name, bufsize - 1);
+#  ifndef NCBI_OS_SOLARIS
+    CORE_UNLOCK;
+#  endif
+    if (pw  &&  pw->pw_name)
+        return buf;
+#  elif defined(HAVE_GETPWUID_R)
+#    if   HAVE_GETPWUID_R == 4
+    /* obsolete but still existent */
+    pw = getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf));
+#    elif HAVE_GETPWUID_R == 5
+    /* POSIX-conforming */
+    if (getpwuid_r(getuid(), &pwd, pwdbuf, sizeof(pwdbuf), &pw) != 0)
+        pw = 0;
+#    else
+#      error "Unknown value of HAVE_GETPWUID_R, 4 or 5 expected."
+#    endif
+    if (pw  &&  pw->pw_name) {
+        assert(pw == &pwd);
+        strncpy0(buf, pw->pw_name, bufsize - 1);
+        return buf;
+    }
+#  endif /*HAVE_GETPWUID_R*/
+
+#endif /*!NCBI_OS_UNIX*/
+
+    /* last resort */
+    if (!(login = getenv("USER"))  &&  !(login = getenv("LOGNAME"))) {
+        buf[0] = '\0';
+        return 0;
+    }
+    strncpy0(buf, login, bufsize - 1);
     return buf;
 }
-
 
 
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.85  2006/01/31 17:11:53  lavr
+ * MT-safe (as much as possible) implementation of CONNUTIL_GetUsername()
+ *
  * Revision 6.84  2006/01/30 18:03:04  lavr
  * Fix CONNUTIL_GetUsername() to return "buf" (instead of constant 0)
  *
