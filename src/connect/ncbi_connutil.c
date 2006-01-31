@@ -1839,7 +1839,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 #  ifdef NCBI_OS_MSWIN
     if (GetUserName(loginbuf, sizeof(loginbuf) - 1)) {
         loginbuf[sizeof(loginbuf) - 1] = '\0';
-        strncpy(buf, loginbuf, bufsize - 1);
+        strncpy0(buf, loginbuf, bufsize - 1);
         return buf;
     }
     if ((login = getenv("USERNAME")) != 0) {
@@ -1916,6 +1916,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.91  2006/01/31 20:29:24  lavr
+ * CONNUTIL_GetUsername():  use strncpy0 everywhere
+ *
  * Revision 6.90  2006/01/31 20:26:46  lavr
  * #include <pwd.h> only us getpwuid[_r]() is known to exist
  *
