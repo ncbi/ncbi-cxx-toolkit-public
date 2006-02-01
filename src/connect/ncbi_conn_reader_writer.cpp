@@ -31,10 +31,17 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "ncbi_core_cxxp.hpp"
 #include <connect/ncbi_conn_reader_writer.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+
+CConnReaderWriterBase::CConnReaderWriterBase()
+{
+    CONNECT_InitInternal();
+}
 
 
 ERW_Result CSocketReaderWriter::PendingCount(size_t* count)
@@ -108,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2006/02/01 16:22:50  lavr
+ * Introduce CConnReaderWriterBase to be able to init connect lib if needed
+ *
  * Revision 1.5  2006/01/25 20:28:41  lavr
  * CSocketReaderWriter::PendingCount():  Return success on timeout (poll)
  *

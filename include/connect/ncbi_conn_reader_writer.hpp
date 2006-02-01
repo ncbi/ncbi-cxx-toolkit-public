@@ -46,7 +46,18 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public IReaderWriter
+/*
+ * Helper hook-up class that installs default logging/registry/locking
+ * (but only if they have not yet been installed explicitly by user).
+ */
+class NCBI_XCONNECT_EXPORT CConnReaderWriterBase : public IReaderWriter
+{
+protected:
+    CConnReaderWriterBase();
+};
+
+
+class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public CConnReaderWriterBase
 {
 public:
     CSocketReaderWriter(CSocket* sock, EOwnership if_to_own = eNoOwnership);
@@ -94,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/02/01 16:22:27  lavr
+ * Introduce CConnReaderWriterBase to be able to init connect lib if needed
+ *
  * Revision 1.5  2006/01/27 16:55:57  lavr
  * Headers rearranged to pickup corelib stuff first
  *
