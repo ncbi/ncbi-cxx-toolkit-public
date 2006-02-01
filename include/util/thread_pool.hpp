@@ -298,6 +298,9 @@ public:
     /// Check if the queue is full
     bool IsFull(void) const { return m_Queue.IsFull(); }
 
+    /// Check if the queue is empty
+    bool IsEmpty(void) const { return m_Queue.IsEmpty(); }
+
     /// Check whether a new request could be immediately processed
     ///
     /// @param urgent
@@ -748,6 +751,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/02/01 16:40:19  didenko
+* + IsEmpty method to CPoolOfThreads class
+*
 * Revision 1.27  2005/07/14 18:53:21  ucko
 * Keep exceptions thrown by threads in the pool from interfering with
 * proper unregistration.
