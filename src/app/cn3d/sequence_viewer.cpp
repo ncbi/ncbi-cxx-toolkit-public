@@ -36,6 +36,8 @@
 
 #include <memory>
 
+#include <objects/seq/Bioseq.hpp>
+
 #include "sequence_viewer.hpp"
 #include "sequence_viewer_window.hpp"
 #include "sequence_display.hpp"
@@ -48,6 +50,7 @@
 #include "cn3d_pssm.hpp"
 
 USING_NCBI_SCOPE;
+USING_SCOPE(objects);
 
 
 BEGIN_SCOPE(Cn3D)
@@ -200,29 +203,13 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
         if (titleList.size() == 0) {
 
             // create full title line for first instance of this sequence
-            bool prevID = false;
-            if (seq->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-                oss << "gi|" << seq->identifier->gi;
-                prevID = true;
+            CBioseq::TId::const_iterator i, ie = seq->bioseqASN->GetId().end();
+            for (i=seq->bioseqASN->GetId().begin(); i!=ie; ++i) {
+                if (i != seq->bioseqASN->GetId().begin())
+                    oss << '|';
+                oss << (*i)->AsFastaString();
             }
-            if (seq->identifier->pdbID.size() > 0) {
-                if (prevID) oss << '|';
-                if (seq->identifier->pdbID == "query" || seq->identifier->pdbID == "consensus") {
-                    oss << "lcl|" << seq->identifier->pdbID;
-                } else {
-                    oss << "pdb|" << seq->identifier->pdbID;
-                    if (seq->identifier->pdbChain != ' ')
-                        oss << '|' << (char) seq->identifier->pdbChain << " Chain "
-                           << (char) seq->identifier->pdbChain << ',';
-                }
-                prevID = true;
-            }
-            if (seq->identifier->accession.size() > 0) {
-                if (prevID) oss << '|';
-                oss << seq->identifier->accession;
-                prevID = true;
-            }
-			string descr = seq->GetDescription();
+            string descr = seq->GetDescription();
             if (descr.size() > 0)
                 oss << ' ' << descr;
 
@@ -232,8 +219,8 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
             anyRepeat = true;
         }
 
-        titleList.resize(titleList.size() + 1);
         oss << '\n';
+        titleList.resize(titleList.size() + 1);
         titleList.back() = (string) CNcbiOstrstreamToString(oss);
     }
 
@@ -574,6 +561,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2006/02/01 20:55:15  thiessen
+* better format for fasta deflines
+*
 * Revision 1.78  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
