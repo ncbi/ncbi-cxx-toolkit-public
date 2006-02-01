@@ -380,15 +380,17 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
         if(m_NSReadClient.get()) {
             int try_count = 0;
             try {
-                if (IsOnHold())
-                    m_HoldSem.Wait();
+                if (IsOnHold()) {
+                    if (!m_HoldSem.TryWait(m_NSTimeout)) 
+                        return false;
+                }
                 if ( x_AreMastersBusy()) {
                     job_exists = 
                         m_NSReadClient->WaitJob(&job_key, &input,
                                                 m_NSTimeout, m_UdpPort);
                     if (job_exists && m_OnHold) {
                         m_NSReadClient->ReturnJob(job_key);
-                        job_exists = false;
+                        return false;
                     }
                 } else {
                     SleepSec(m_NSTimeout);
@@ -551,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/02/01 19:06:01  didenko
+ * Improved main loop processing
+ *
  * Revision 1.37  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *
