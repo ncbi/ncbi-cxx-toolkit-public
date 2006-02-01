@@ -341,9 +341,9 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
-                                 CBioseq_Handle&  top_level_seq,
-                                 ESeqMapDirection direction)
+CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
+                                 const CBioseq_Handle&  top_level_seq,
+                                 ESeqMapDirection       direction)
     : m_Scope(&top_level_seq.GetScope()),
       m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
@@ -2077,6 +2077,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2006/02/01 19:48:22  grichenk
+* CBioseq_Handle& top_level_seq argument made const.
+*
 * Revision 1.43  2005/12/08 17:33:17  vasilche
 * Fixed exception with null scope where it's optional.
 *

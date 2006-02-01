@@ -188,9 +188,9 @@ public:
     ///  Top level bioseq
     /// @param direction
     ///  Direction of mapping: up (from segments to master) or down.
-    CSeq_loc_Mapper(size_t           depth,
-                    CBioseq_Handle&  top_level_seq,
-                    ESeqMapDirection direction);
+    CSeq_loc_Mapper(size_t                depth,
+                    const CBioseq_Handle& top_level_seq,
+                    ESeqMapDirection      direction);
 
     /// Depth-limited mapping through a seq-map.
     /// @param depth
@@ -557,6 +557,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2006/02/01 19:48:22  grichenk
+* CBioseq_Handle& top_level_seq argument made const.
+*
 * Revision 1.27  2005/04/13 19:39:27  grichenk
 * Extend partial ranges when mapping prot to nuc.
 *
