@@ -227,6 +227,7 @@ void CDemoApp::Init(void)
                             "Max depth of segments to iterate",
                             CArgDescriptions::eInteger, "100");
     arg_desc->AddFlag("adaptive", "Use adaptive depth of segments");
+    arg_desc->AddFlag("exact_depth", "Use exact depth of segments");
     arg_desc->AddFlag("unnamed",
                       "include features from unnamed Seq-annots");
     arg_desc->AddOptionalKey("named", "NamedAnnots",
@@ -424,6 +425,7 @@ int CDemoApp::Run(void)
     int max_feat = args["max_feat"].AsInteger();
     int depth = args["depth"].AsInteger();
     bool adaptive = args["adaptive"];
+    bool exact_depth = args["exact_depth"];
     CSeqFeatData::E_Choice feat_type =
         GetVariant<CSeqFeatData>(args["feat_type"]);
     CSeqFeatData::ESubtype feat_subtype =
@@ -780,6 +782,7 @@ int CDemoApp::Run(void)
             .SetMaxSize(max_feat)
             .SetResolveDepth(depth)
             .SetAdaptiveDepth(adaptive)
+            .SetExactDepth(exact_depth)
             .SetUnresolvedFlag(missing);
         if ( externals_only ) {
             base_sel.SetSearchExternal(handle);
@@ -1062,8 +1065,10 @@ int CDemoApp::Run(void)
             for (size_t level = 0;  level < 5;  ++level) {
                 NcbiCout << "Level " << level << NcbiEndl;
                 TSeqPos total_length = 0;
-                CSeqMap::TFlags flags =
-                    CSeqMap::fDefaultFlags | CSeqMap::fFindExactLevel;
+                CSeqMap::TFlags flags = CSeqMap::fDefaultFlags;
+                if ( exact_depth ) {
+                    flags |= CSeqMap::fFindExactLevel;
+                }
                 CSeqMap::const_iterator seg =
                     seq_map.ResolvedRangeIterator(&scope,
                                                   range_from,
@@ -1076,10 +1081,15 @@ int CDemoApp::Run(void)
                     NcbiCout << " @" << seg.GetPosition() << "-" <<
                         seg.GetEndPosition() << " +" <<
                         seg.GetLength() << ": ";
+                    _ASSERT(seg.GetEndPosition()-seg.GetPosition() == seg.GetLength());
                     switch (seg.GetType()) {
                     case CSeqMap::eSeqRef:
                         NcbiCout << "ref: " <<
-                            seg.GetRefSeqid().AsString();
+                            seg.GetRefSeqid().AsString() << " " <<
+                            (seg.GetRefMinusStrand()? "minus ": "") <<
+                            seg.GetRefPosition() << "-" <<
+                            seg.GetRefEndPosition();
+                        _ASSERT(seg.GetRefEndPosition()-seg.GetRefPosition() == seg.GetLength());
                         break;
                     case CSeqMap::eSeqData:
                         NcbiCout << "data: ";
@@ -1184,6 +1194,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2006/02/01 19:16:38  vasilche
+* Added -exact_depth option.
+*
 * Revision 1.110  2005/12/15 19:15:54  vasilche
 * Check exact level CSeqMap iteration.
 *
