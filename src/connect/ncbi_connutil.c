@@ -1874,6 +1874,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
         return buf;
 #  else
     if (getlogin_r(loginbuf, sizeof(loginbuf) - 1) == 0) {
+        loginbuf[sizeof(loginbuf) - 1] = '\0';
         strncpy0(buf, loginbuf, bufsize - 1);
         return buf;
     }
@@ -1881,7 +1882,7 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 
 #  if defined(NCBI_OS_SOLARIS)  ||  \
     (!defined(HAVE_GETPWUID_R)  &&  defined(HAVE_GETPWUID))
-    /* NB:  getpwuid() is MT safe on Solaris, so use it here, if available. */
+    /* NB:  getpwuid() is MT safe on Solaris, so use it here, if available */
 #  ifndef NCBI_OS_SOLARIS
     CORE_LOCK_WRITE;
 #  endif
@@ -1925,6 +1926,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.94  2006/02/01 16:24:24  lavr
+ * CONNUTIL_GetUsername(): '\0'-terminate returned result of getlogin_r()
+ *
  * Revision 6.93  2006/02/01 00:54:45  ucko
  * One more fix to CONNUTIL_GetUsername: favor LOGIN_NAME_MAX over
  * _POSIX_LOGIN_NAME_MAX, which tends to be smaller, and may not be
