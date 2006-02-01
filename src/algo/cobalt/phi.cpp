@@ -121,8 +121,8 @@ CMultiAligner::FindPatternHits()
         // create a pairwise alignment. Temporarily hijack the score
         // of the alignment to store the identity of the pattern
 
-        for (size_t j = 0; j < phi_hits.size() - 1; j++) {
-            for (size_t k = j + 1; k < phi_hits.size(); k++) {
+        for (int j = 0; j < (int)phi_hits.size() - 1; j++) {
+            for (int k = j + 1; k < (int)phi_hits.size(); k++) {
                 if (phi_hits[j].query_idx != phi_hits[k].query_idx) {
 
                     m_PatternHits.AddToHitList(new CHit(phi_hits[j].query_idx,
@@ -169,6 +169,9 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.8  2006/02/01 23:36:35  papadopo
+  fix to previous commit
+
   Revision 1.7  2006/01/31 19:27:39  papadopo
   fix compile warnings
 
