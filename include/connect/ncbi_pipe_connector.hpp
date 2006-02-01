@@ -54,8 +54,8 @@ BEGIN_NCBI_SCOPE
 
 /// Create CPipe-based CONNECTOR.
 ///
-/// Create new CONNECTOR structure to handle a data transfer between two
-/// processes over interprocess pipe.  Return NULL on error.
+/// Create new CONNECTOR structure to handle data transfer between
+/// two processes over interprocess pipe.  Return NULL on error.
 extern NCBI_XCONNECT_EXPORT CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/02/01 16:24:42  lavr
+ * Comment fixup
+ *
  * Revision 1.3  2006/01/27 16:56:26  lavr
  * Headers rearranged to pickup corelib stuff first
  *
