@@ -77,9 +77,6 @@ int main(void)
     size_t i, j, k, l, size;
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
 
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    srand(g_NCBI_ConnectRandomSeed);
-
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
@@ -276,6 +273,9 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.45  2006/02/01 17:14:15  lavr
+ * Let CONNECT_Init() initialize g_NCBI_ConnectRandomSeed all by itself
+ *
  * Revision 6.44  2005/07/22 16:09:07  lavr
  * Implement data xfer timeout
  *
