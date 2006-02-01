@@ -270,7 +270,7 @@ private:
 class CWorkerNodeIdleThread;
 /// Worker Node Idle Task Context
 ///
-class CWorkerNodeIdleTaskContext
+class NCBI_XCONNECT_EXPORT CWorkerNodeIdleTaskContext
 {
 public:
     
@@ -585,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/02/01 17:17:26  didenko
+ * Added missing export specifier
+ *
  * Revision 1.32  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *
