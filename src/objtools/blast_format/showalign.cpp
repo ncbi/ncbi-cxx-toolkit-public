@@ -492,7 +492,7 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
                         //a.a to the 2nd base
                         if(num_coding_base / 3 < 
                            raw_cdr_product.size() &&
-                           coding_start_base > num_coding_base){
+                           coding_start_base >= num_coding_base){
                             //make sure the coding region is no
                             //more than the protein seq as there
                             //could errors in ncbi record
@@ -513,12 +513,14 @@ static string s_GetConcatenatedExon(char gap_char, CFeat_CI& feat,
 ///@param feat: the feature in concern
 ///@param slave_feat_range: feature info for slave
 ///@param av: the alignment vector for master-slave seqalign
-///@param row: the row.
+///@param row: the row
+///@param frame_adj: frame adjustment
 ///
 
 static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
-                                      CFeat_CI& feat,
+                                      ENa_strand& master_feat_strand, CFeat_CI& feat,
                                       list<CSeq_loc_CI::TRange>& slave_feat_range,
+                                      ENa_strand slave_feat_strand,
                                       CAlnVec* av, 
                                       int row, TSeqPos frame_adj)
 {
@@ -528,70 +530,104 @@ static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
         trans_frame = cdr.GetFrame();
     }
     trans_frame += frame_adj;
+
     TSeqPos prev_exon_len = 0;
     bool is_first_in_range = true;
+
+    if ((av->IsPositiveStrand(1) && slave_feat_strand == eNa_strand_plus) || 
+        (av->IsNegativeStrand(1) && slave_feat_strand == eNa_strand_minus)) {
+        master_feat_strand = eNa_strand_plus;
+    } else {
+        master_feat_strand = eNa_strand_minus;
+    }
+    
+    list<CSeq_loc_CI::TRange> acutal_slave_feat_range = slave_feat_range;
+    if ((av->IsNegativeStrand(1) && slave_feat_strand == eNa_strand_plus)) {
+        acutal_slave_feat_range.reverse();
+    }
+
     ITERATE(list<CSeq_loc_CI::TRange>, iter_temp,
-            slave_feat_range){
-        if(av->GetSeqRange(row).
-           IntersectingWith(*iter_temp)) {
-            TSeqPos slave_aln_from;
-            if (is_first_in_range) { //adjust frame
-                TSeqPos frame_offset = 0;
-                int curr_exon_leading_len 
-                    = av->GetSeqStart(row) - 
-                    iter_temp->GetFrom();
-                TSeqPos actual_slave_seq_start = 0;
-                if(curr_exon_leading_len >= 0) {
-                    frame_offset = (3 - 
-                                    (prev_exon_len + curr_exon_leading_len)%3 +
-                                    (trans_frame - 1)) % 3;
-                    actual_slave_seq_start =
-                        av->GetSeqStart(row)
-                        + frame_offset;
+            acutal_slave_feat_range){
+        CRange<TSeqPos> actual_feat_seq_range = av->GetSeqRange(row).
+            IntersectionWith(*iter_temp);          
+        if(!actual_feat_seq_range.Empty()){
+            TSeqPos slave_aln_from = 0, slave_aln_to = 0;
+            TSeqPos frame_offset = 0;
+            int curr_exon_leading_len = 0;
+            //adjust frame 
+            if (is_first_in_range) {  
+                if (slave_feat_strand == eNa_strand_plus) {
+                    curr_exon_leading_len 
+                        = actual_feat_seq_range.GetFrom() - iter_temp->GetFrom();
                     
                 } else {
-                    frame_offset = (3 - 
-                                    prev_exon_len % 3 +
-                                    (trans_frame - 1)) % 3;
-                    actual_slave_seq_start = 
-                        iter_temp->GetFrom() + 
-                        frame_offset;
+                    curr_exon_leading_len 
+                        = iter_temp->GetTo() - actual_feat_seq_range.GetTo();
                 }
+                is_first_in_range = false;
+                frame_offset = (3 - (prev_exon_len + curr_exon_leading_len)%3
+                                + (trans_frame - 1)) % 3;
+            }
+            
+            if (av->IsPositiveStrand(1) && 
+                slave_feat_strand == eNa_strand_plus) {
+                slave_aln_from 
+                    = av->GetAlnPosFromSeqPos(row, actual_feat_seq_range.GetFrom() + 
+                                              frame_offset, CAlnMap::eRight );   
+                
+                slave_aln_to =
+                    av->GetAlnPosFromSeqPos(row, actual_feat_seq_range.GetTo(),
+                                            CAlnMap::eLeft);
+            } else if (av->IsNegativeStrand(1) && 
+                       slave_feat_strand == eNa_strand_plus) {
                 
                 slave_aln_from 
-                    = av->
-                    GetAlnPosFromSeqPos(row,
-                                        actual_slave_seq_start);   
+                    = av->GetAlnPosFromSeqPos(row, actual_feat_seq_range.GetTo(),
+                                              CAlnMap::eRight);   
                 
-            } else {
-                slave_aln_from =
-                    av->
-                    GetAlnPosFromSeqPos(row,
-                                        iter_temp->GetFrom(),
-                                        CAlnMap::eRight);
+                slave_aln_to =
+                    av->GetAlnPosFromSeqPos(row,
+                                            actual_feat_seq_range.GetFrom() +
+                                            frame_offset, CAlnMap::eLeft);
+            }  else if (av->IsPositiveStrand(1) && 
+                        slave_feat_strand == eNa_strand_minus) {
+                slave_aln_from 
+                    = av->GetAlnPosFromSeqPos(row, actual_feat_seq_range.GetFrom(),
+                                              CAlnMap::eRight);   
+                
+                slave_aln_to =
+                    av->GetAlnPosFromSeqPos(row, actual_feat_seq_range.GetTo() -
+                                            frame_offset, CAlnMap::eLeft);
+
+            } else if (av->IsNegativeStrand(1) && 
+                       slave_feat_strand == eNa_strand_minus){
+                slave_aln_from 
+                    = av->GetAlnPosFromSeqPos(row, actual_feat_seq_range.GetTo() - 
+                                              frame_offset, CAlnMap::eRight );   
+                
+                slave_aln_to =
+                    av->GetAlnPosFromSeqPos(row, actual_feat_seq_range.GetFrom(),
+                                            CAlnMap::eLeft);
             }
-            TSeqPos slave_aln_to =
-                av->GetAlnPosFromSeqPos(row,
-                                        iter_temp->GetTo(),
-                                        CAlnMap::eLeft);
             
             TSeqPos master_from = 
-                av->
-                GetSeqPosFromAlnPos(0, slave_aln_from, CAlnMap::eRight);
+                av->GetSeqPosFromAlnPos(0, slave_aln_from, CAlnMap::eRight);
             
             TSeqPos master_to = 
                 av->GetSeqPosFromAlnPos(0, slave_aln_to, CAlnMap::eLeft);
             
-            CRange<TSeqPos> master_range(master_from,
-                                         master_to);
+            CRange<TSeqPos> master_range(master_from, master_to);
             master_feat_range.push_back(master_range); 
-            is_first_in_range = false;
             
         }
         prev_exon_len += iter_temp->GetLength();
     }
+    if ((av->IsNegativeStrand(1) && slave_feat_strand == eNa_strand_plus)) {
+        master_feat_range.reverse();
+    }
+    
 }
-                    
+
 
 
 ///return cds coded sequence and fill the id if found
@@ -629,15 +665,17 @@ static string s_GetCdsSequence(int genetic_code, CFeat_CI& feat,
     } else { 
         CSeq_loc isolated_loc;
         ITERATE(list<CRange<TSeqPos> >, iter, range){
+            TSeqPos from = iter->GetFrom();
+            TSeqPos to = iter->GetTo();
             if(feat_strand == eNa_strand_plus){
                 isolated_loc.
-                    Add(*(handle.GetRangeSeq_loc(iter->GetFrom( ) + frame_adj,
-                                                 iter->GetTo(),         
+                    Add(*(handle.GetRangeSeq_loc(from + frame_adj,
+                                                 to,         
                                                  feat_strand)));
             } else {
                 isolated_loc.
-                    Add(*(handle.GetRangeSeq_loc(iter->GetFrom( ),
-                                                 iter->GetTo() - frame_adj,   
+                    Add(*(handle.GetRangeSeq_loc(from,
+                                                 to - frame_adj,   
                                                  feat_strand)));
             }
         }
@@ -858,7 +896,6 @@ void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
                                        int start_length,
                                        int max_feature_num, 
                                        string& master_feat_str,
-                                       bool master_slave_same_strand,
                                        CNcbiOstream& out)
 {
     for (list<SAlnFeatureInfo*>::iterator 
@@ -906,8 +943,7 @@ void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
             }
             bool color_cds_mismatch = false; 
             if(max_feature_num == 1 && (m_AlignOption & eHtml) && 
-               (m_AlignOption & eShowCdsFeature) && 
-               master_slave_same_strand && row > 0){
+               (m_AlignOption & eShowCdsFeature) && row > 0){
                 //only for slaves, only for cds feature
                 //only color mismach if only one cds exists
                 color_cds_mismatch = true;
@@ -1081,9 +1117,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 x_GetFeatureInfo(bioseqFeature[row], *m_featScope, 
                                  CSeqFeatData::e_Cdregion, row, sequence[row],
                                  feat_seq_range, feat_seq_strand,
-                                 row == 1 && !(master_gi > 0) &&
-                                 m_AV->IsPositiveStrand(row) &&
-                                 m_AV->IsPositiveStrand(0) ? true : false);
+                                 row == 1 && !(master_gi > 0) ? true : false);
                 
                 if(!(feat_seq_range.empty()) && row == 1) {
                     //make a new copy of master bioseq and add the feature from
@@ -1177,7 +1211,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     x_PrintFeatures(bioseqFeature[row], row, curRange,
                                     j,(int)actualLineLen, maxIdLen,
                                     maxStartLen, max_feature_num, 
-                                    master_feat_str, false, out); 
+                                    master_feat_str, out); 
                 }
 
                 if(row == 0&&(m_AlignOption&eHtml)
@@ -1307,10 +1341,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                     x_PrintFeatures(bioseqFeature[row], row, curRange,
                                     j,(int)actualLineLen, maxIdLen,
                                     maxStartLen, max_feature_num, 
-                                    master_feat_str, 
-                                    m_AV->IsPositiveStrand(row) ==
-                                    m_AV->IsPositiveStrand(0) ? true : false,
-                                    out);
+                                    master_feat_str, out);
                 }
                 //display middle line
                 if (row == 0 && ((m_AlignOption & eShowMiddleLine)) 
@@ -2090,16 +2121,17 @@ void CDisplaySeqalign::x_GetFeatureInfo(list<SAlnFeatureInfo*>& feature,
                     //fill slave feature info to make putative feature for
                     //master sequence
                     if (fill_feat_range) {
-                        list<CRange<TSeqPos> > temp_feat_range;
-                        s_MapSlaveFeatureToMaster(temp_feat_range,
+                        list<CRange<TSeqPos> > master_feat_range;
+                        ENa_strand master_strand = eNa_strand_plus;
+                        s_MapSlaveFeatureToMaster(master_feat_range, master_strand,
                                                   feat, isolated_range,
-                                                  m_AV, row,
+                                                  feat_strand, m_AV, row,
                                                   other_seqloc_length%3 == 0 ?
                                                   0 : 
                                                   3 - other_seqloc_length%3);
-                        if(!(temp_feat_range.empty())) {
-                            feat_range_list.push_back(temp_feat_range); 
-                            feat_seq_strand.push_back(feat_strand);
+                        if(!(master_feat_range.empty())) {
+                            feat_range_list.push_back(master_feat_range); 
+                            feat_seq_strand.push_back(master_strand);
                         } 
                     }
                        
@@ -3028,6 +3060,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.100  2006/02/01 15:32:00  jianye
+*fix missing the end base on negative strand
+*
 *Revision 1.99  2006/01/25 17:31:13  jianye
 *no mismatch highlighting for intron
 *
