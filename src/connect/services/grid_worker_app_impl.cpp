@@ -35,7 +35,6 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
@@ -407,8 +406,6 @@ void CGridWorkerApp_Impl::Init()
     SetDiagPostFlag(eDPF_DateTime);
   
     IRWRegistry& reg = m_App.GetConfig();
-    CONNECT_Init(&reg);
-
     reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
 
     if (!m_StorageFactory.get()) 
@@ -632,6 +629,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.10  2006/02/01 19:04:38  didenko
+ * - call to CONNECT_Init function
+ *
  * Revision 6.9  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *
