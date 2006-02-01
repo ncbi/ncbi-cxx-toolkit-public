@@ -243,14 +243,14 @@ private:
 
 /// BDB Cursor guard. Automatically closes cursor, when goes out of scope.
 ///
-class CCursorGuard
+class CBDB_CursorGuard
 {
 public:
-    CCursorGuard(CBDB_FileCursor& cur) : m_Cur(cur) {}
-    ~CCursorGuard() { m_Cur.Close(); }
+    CBDB_CursorGuard(CBDB_FileCursor& cur) : m_Cur(cur) {}
+    ~CBDB_CursorGuard() { m_Cur.Close(); }
 private:
-    CCursorGuard(CCursorGuard&);
-    CCursorGuard& operator=(const CCursorGuard&);
+    CBDB_CursorGuard(CBDB_CursorGuard&);
+    CBDB_CursorGuard& operator=(const CBDB_CursorGuard&);
 private:
     CBDB_FileCursor& m_Cur;
 };
@@ -310,6 +310,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/02/01 16:15:55  kuznets
+ * CCursorGuard renamed CBDB_CursorGuard
+ *
  * Revision 1.17  2006/02/01 14:47:00  kuznets
  * +CCursorGuard
  *
