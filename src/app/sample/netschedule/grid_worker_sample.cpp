@@ -156,18 +156,53 @@ private:
     int m_SleepSec;
 };
 
+// if an Idle task is needed then an implementaion of IWorkerNodeIdelTask
+// should be created.
+class CSampleIdleTask : public IWorkerNodeIdleTask
+{
+public:
+    CSampleIdleTask(const IWorkerNodeInitContext& context) 
+        : m_Count(0)
+    {
+    }
+    virtual ~CSampleIdleTask() {}
+
+    virtual void Run(CWorkerNodeIdleTaskContext& context)
+    {
+        LOG_POST( "Staring idle task...");
+        for (int i = 0; i < 10; ++i) {
+            LOG_POST( "Idle task: iteration: " << i);
+            if (context.IsShutdownRequested() )
+                break;
+            SleepSec(2);
+        }
+        if (++m_Count % 3 == 0)
+            context.SetRunAgain();
+        LOG_POST( "Stopping idle task...");
+    }
+private:
+    int m_Count;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
 //  Routine magic spells
 
 // Use this marcos to implement the main function for the CSampleJob version 1.0.1
-NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1)
+// with idle task CSampleIdleTask
+NCBI_WORKERNODE_MAIN_EX(CSampleJob, CSampleIdleTask, 1.0.1);
+
+// if you don't need an Idle task just use this marcos.
+//NCBI_WORKERNODE_MAIN(CSampleJob, 1.0.1);
+
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 1.16  2005/06/22 14:37:13  vasilche
  * #include <algorithm> for std::sort().
  *

@@ -35,6 +35,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/blob_storage_netcache.hpp>
@@ -117,7 +118,7 @@ private:
 /// @internal
 CWorkerNodeStatistics::CWorkerNodeStatistics()
     : m_JobsSucceed(0), m_JobsFailed(0), m_JobsReturned(0),
-      m_JobsCanceled(0), m_JobsLost(0)
+      m_JobsCanceled(0), m_JobsLost(0), m_StartTime(CTime::eCurrent)
 {
 }
 CWorkerNodeStatistics::~CWorkerNodeStatistics() 
@@ -160,6 +161,7 @@ void CWorkerNodeStatistics::Notify(const CWorkerNodeJobContext& job,
 
 void CWorkerNodeStatistics::Print(CNcbiOstream& os) const
 {
+    os << "Started: " << m_StartTime.AsString() << endl;
     os << "Jobs Succeed: " << m_JobsSucceed << endl
        << "Jobs Failed: "  << m_JobsFailed  << endl
        << "Jobs Returned: "<< m_JobsReturned << endl
@@ -228,6 +230,152 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 //
+//     CWorkerNodeIdleThread      -- 
+class CWorkerNodeIdleThread : public CThread
+{
+public:
+    CWorkerNodeIdleThread(IWorkerNodeIdleTask&, 
+                          CGridWorkerNode& worker_node,
+                          unsigned run_delay,
+                          bool exclusive_mode);
+
+    void RequestShutdown() 
+    { 
+        m_ShutdownFlag = true; 
+        m_Wait1.Post(); 
+        m_Wait2.Post(); 
+    }
+    void Schedule() 
+    { 
+        if (m_StopFlag) {
+            m_StopFlag = false; 
+            m_Wait1.Post(); 
+        }
+    }
+    void Suspend() 
+    { 
+        m_StopFlag = true; 
+    }
+    
+    bool IsShutdownRequested() const { return m_ShutdownFlag; }
+
+
+protected:
+    virtual void* Main(void);
+    virtual void OnExit(void);
+
+    CWorkerNodeIdleTaskContext& GetContext();
+    
+private:
+    IWorkerNodeIdleTask& m_Task;
+    CGridWorkerNode& m_WorkerNode;
+    auto_ptr<CWorkerNodeIdleTaskContext> m_TaskContext;
+    mutable CSemaphore  m_Wait1; 
+    mutable CSemaphore  m_Wait2; 
+    volatile bool       m_StopFlag;
+    volatile bool       m_ShutdownFlag;
+    unsigned int        m_RunInterval;
+    bool                m_ExclusiveMode;
+
+    CWorkerNodeIdleThread(const CWorkerNodeIdleThread&);
+    CWorkerNodeIdleThread& operator=(const CWorkerNodeIdleThread&);
+};
+
+CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask& task,
+                                             CGridWorkerNode& worker_node,
+                                             unsigned run_delay,
+                                             bool exclusive_mode)
+    : m_Task(task), m_WorkerNode(worker_node),
+      m_Wait1(0,1000000), m_Wait2(0,1000000),
+      m_StopFlag(false), m_ShutdownFlag(false),
+      m_RunInterval(run_delay), m_ExclusiveMode(exclusive_mode)
+{
+}
+void* CWorkerNodeIdleThread::Main()
+{
+    while (!m_ShutdownFlag) {
+        if (m_Wait1.TryWait(m_RunInterval, 0)) {
+            if (m_ShutdownFlag)
+                continue;
+            if (m_Wait2.TryWait(m_RunInterval, 0))
+                continue;  // Shutdown is requested
+        } 
+        if (!m_StopFlag) {
+            if (m_ExclusiveMode)
+                m_WorkerNode.PutOnHold(true);
+            try {
+                do {
+                    GetContext().Reset();
+                    m_Task.Run(GetContext());
+                } while( GetContext().NeedRunAgain() && !m_ShutdownFlag);
+            } NCBI_CATCH_ALL("CWorkerNodeIdleThread::Main: Idle Task failed");
+            if (m_ExclusiveMode)
+                m_WorkerNode.PutOnHold(false);
+        }
+    }
+    return 0;
+}
+
+void CWorkerNodeIdleThread::OnExit(void)
+{
+    LOG_POST(Info << "Idle Thread stopped.");
+}
+
+CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
+{
+    if (!m_TaskContext.get())
+        m_TaskContext.reset(new CWorkerNodeIdleTaskContext(*this));
+    return *m_TaskContext;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//     CWorkerNodeIdleTaskContext      -- 
+CWorkerNodeIdleTaskContext::
+CWorkerNodeIdleTaskContext(const CWorkerNodeIdleThread& thread)
+    : m_Thread(thread), m_RunAgain(false)
+{
+}
+bool CWorkerNodeIdleTaskContext::IsShutdownRequested() const
+{
+    return m_Thread.IsShutdownRequested();
+}
+void CWorkerNodeIdleTaskContext::Reset()
+{
+    m_RunAgain = false;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//    CIdleWatcher
+/// @internal
+class CIdleWatcher : public IWorkerNodeJobWatcher
+{
+public:
+    CIdleWatcher(CWorkerNodeIdleThread& idle) 
+        : m_Idle(idle), m_RunningJobs(0) {}
+    virtual ~CIdleWatcher() {};
+    virtual void Notify(const CWorkerNodeJobContext& job, EEvent event)
+    {
+        if (event == eJobStarted) {
+            ++m_RunningJobs;
+            m_Idle.Suspend();
+        } else if (event == eJobStopped) {
+            --m_RunningJobs;
+            if (m_RunningJobs == 0)
+                m_Idle.Schedule();
+        }
+    }
+
+private:
+    CWorkerNodeIdleThread& m_Idle;
+    volatile int m_RunningJobs;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 enum ELoggingType {
     eRotatingLog = 0x0,
     eSelfRotatingLog,
@@ -246,6 +394,7 @@ CGridWorkerApp_Impl::CGridWorkerApp_Impl(
     if (!m_JobFactory.get())
         NCBI_THROW(CGridWorkerAppException, 
                  eJobFactoryIsNotSet, "The JobFactory is not set.");
+
 }
 
 CGridWorkerApp_Impl::~CGridWorkerApp_Impl()
@@ -258,6 +407,8 @@ void CGridWorkerApp_Impl::Init()
     SetDiagPostFlag(eDPF_DateTime);
   
     IRWRegistry& reg = m_App.GetConfig();
+    CONNECT_Init(&reg);
+
     reg.Set(kNetScheduleDriverName, "discover_low_priority_servers", "true");
 
     if (!m_StorageFactory.get()) 
@@ -303,7 +454,13 @@ int CGridWorkerApp_Impl::Run()
     if (NStr::CompareNocase(s_log_type, "non_rotating")==0) 
         log_type = eNonRotatingLog;
 
+    unsigned int idle_run_delay = 
+        reg.GetInt("server","idle_run_delay",30,0,IRegistry::eReturn);
+    if (idle_run_delay < 1) idle_run_delay = 1;
                              
+    bool idle_exclusive =
+        reg.GetBool("server", "idle_exclusive", true, 0, 
+                    CNcbiRegistry::eReturn);
 
     unsigned int log_size = 
         reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
@@ -388,6 +545,15 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
 
+    IWorkerNodeIdleTask* task = GetJobFactory().GetIdleTask();
+    if (task) {
+        m_IdleThread.Reset(new CWorkerNodeIdleThread(*task, *m_WorkerNode, 
+                                                     idle_run_delay,
+                                                     idle_exclusive));
+        m_IdleThread->Run();
+        AttachJobWatcher(*(new CIdleWatcher(*m_IdleThread)), eTakeOwnership);
+    }
+
     {{
     CWorkerNodeControlThread control_server(control_port, *m_WorkerNode,
                                             m_Statistics);
@@ -398,7 +564,7 @@ int CGridWorkerApp_Impl::Run()
     SleepMilliSec(500);
     if (m_WorkerNode->GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
         LOG_POST("\n=================== NEW RUN : " 
-                 << m_WorkerNode->GetStartTime().AsString()
+                 << m_Statistics.GetStartTime().AsString()
                  << " ===================\n"
                  << GetJobFactory().GetJobVersion() << WN_BUILD_DATE << " is started.\n"
                  << "Waiting for control commands on TCP port " << control_port << "\n"
@@ -416,6 +582,10 @@ int CGridWorkerApp_Impl::Run()
         }
     }
     worker_thread->Join();
+    if (m_IdleThread) {
+        m_IdleThread->RequestShutdown();
+        m_IdleThread->Join();
+    }
     }}
     m_WorkerNode.reset(0);    
     // give sometime the thread to shutdown
@@ -462,6 +632,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.9  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 6.8  2006/01/18 17:47:42  didenko
  * Added JobWatchers mechanism
  * Reimplement worker node statistics as a JobWatcher

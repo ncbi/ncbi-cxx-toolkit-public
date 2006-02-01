@@ -232,8 +232,6 @@ void CWorkerNodeRequest::Process(void)
     s_RunJob(x_GetThreadContext());
 }
 
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 //     CGridWorkerNode       -- 
@@ -249,7 +247,8 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
       m_MaxProcessedJob(0), m_JobsStarted(0),
-      m_LogRequested(false), m_StartTime(CTime::eCurrent)
+      m_LogRequested(false), m_OnHold(false),
+      m_HoldSem(0,100)
 {
 }
 
@@ -331,13 +330,13 @@ void CGridWorkerNode::Start()
                 if (m_MaxProcessedJob > 0 && m_JobsStarted > m_MaxProcessedJob - 1) {
                     RequestShutdown(CNetScheduleClient::eNormalShutdown);
                 }
-            }
+            }            
         } catch (exception& ex) {
             ERR_POST(ex.what());
             RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         }
     }
-    LOG_POST(Info << "Shutting down...");
+    LOG_POST(Info << "Shutting down...");   
     if (m_MaxThreads > 1 ) {
         m_ThreadsPool->KillAllThreads(true);
         m_ThreadsPool.reset(0);
@@ -381,12 +380,22 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
         if(m_NSReadClient.get()) {
             int try_count = 0;
             try {
-                if (x_AreMastersBusy()) {
+                if (IsOnHold())
+                    m_HoldSem.Wait();
+                if ( x_AreMastersBusy()) {
                     job_exists = 
                         m_NSReadClient->WaitJob(&job_key, &input,
                                                 m_NSTimeout, m_UdpPort);
+                    if (job_exists && m_OnHold) {
+                        m_NSReadClient->ReturnJob(job_key);
+                        job_exists = false;
+                    }
                 } else {
                     SleepSec(m_NSTimeout);
+                }
+                {
+                CMutexGuard guard(m_HoldMutex);
+                m_HoldSem.TryWait(0,100);
                 }
             }
             catch (CNetServiceException& ex) {
@@ -523,11 +532,28 @@ bool CGridWorkerNode::x_AreMastersBusy() const
     return true;
 }
 
+void CGridWorkerNode::PutOnHold(bool hold) 
+{ 
+    CMutexGuard guard(m_HoldMutex);
+    m_OnHold = hold; 
+    if (!m_OnHold)
+        m_HoldSem.Post();
+}
+
+bool CGridWorkerNode::IsOnHold() const 
+{ 
+    CMutexGuard guard(m_HoldMutex);
+    return m_OnHold; 
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 1.36  2006/01/18 17:47:42  didenko
  * Added JobWatchers mechanism
  * Reimplement worker node statistics as a JobWatcher

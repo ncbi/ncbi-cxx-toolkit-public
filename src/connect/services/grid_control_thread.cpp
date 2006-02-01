@@ -107,33 +107,18 @@ public:
         if (app)
             os << "Executable path: " << app->GetProgramExecutablePath() << endl;
 
-        os << "Started: " << node.GetStartTime().AsString() << endl;
-        if (node.GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
-                os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
-        }
         os << "Queue name: " << node.GetQueueName() << endl;
         if (node.GetMaxThreads() > 1)
             os << "Maximum job threads: " << node.GetMaxThreads() << endl;
 
-        m_Statistics.Print(os);
-        /*
-        os << "Jobs Succeed: " << node.GetJobsSucceedNumber() << endl
-           << "Jobs Failed: "  << node.GetJobsFailedNumber() << endl
-           << "Jobs Returned: "<< node.GetJobsReturnedNumber() << endl
-           << "Jobs Canceled: "<< node.GetJobsCanceledNumber() << endl
-           << "Jobs Lost: "    << node.GetJobsLostNumber() << endl
-           << "Jobs Running: " << node.GetJobsRunningNumber() << endl;
-
-        vector<CWorkerNodeJobContext::SJobStat> jobs;
-        CWorkerNodeJobContext::CollectStatictics(jobs);
-        CTime now(CTime::eCurrent);
-        ITERATE(vector<CWorkerNodeJobContext::SJobStat>, it, jobs) {
-            CTimeSpan ts = now - it->start_time.GetLocalTime();
-            os << it->job_key << " " << it->job_input
-               << " -- running for " << ts.AsString("S") 
-               << " seconds." << endl;
+        if (node.GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+                os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
         }
-        */
+        m_Statistics.Print(os);
+        if (node.IsOnHold()) {
+                os << "THE NODE IDLE TASK IS RUNNING..." << endl;
+        }
+
     }
 private:
     const CWorkerNodeStatistics& m_Statistics;
@@ -175,7 +160,9 @@ public:
                          CNcbiOstream& os,
                          CGridWorkerNode& node)
     {
-        int load = node.GetMaxThreads() - m_Statistics.GetJobsRunningNumber();
+        int load = 0;
+        if (!node.IsOnHold())
+            load = node.GetMaxThreads() - m_Statistics.GetJobsRunningNumber();
         os << "OK:" << load;
     }
 
@@ -295,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 6.14  2006/01/18 17:47:42  didenko
  * Added JobWatchers mechanism
  * Reimplement worker node statistics as a JobWatcher

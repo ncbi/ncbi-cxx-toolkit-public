@@ -42,6 +42,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbithr.hpp>
 #include <corelib/blob_storage.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/ns_client_factory.hpp>
@@ -266,6 +267,42 @@ private:
     CWorkerNodeJobContext& operator=(const CWorkerNodeJobContext&);
 };
 
+class CWorkerNodeIdleThread;
+/// Worker Node Idle Task Context
+///
+class CWorkerNodeIdleTaskContext
+{
+public:
+    
+    bool IsShutdownRequested() const;
+    void SetRunAgain() { m_RunAgain = true; }
+    bool NeedRunAgain() const { return m_RunAgain; }
+
+    void Reset();
+
+private:
+    friend class CWorkerNodeIdleThread;
+    CWorkerNodeIdleTaskContext(const CWorkerNodeIdleThread& thread);
+
+    const CWorkerNodeIdleThread& m_Thread;
+    bool m_RunAgain;
+};
+
+/// Worker Node Idle Task Interaface
+///
+///  @sa IWorkerNodeJobFactory, CWorkerNodeIdleTaskContext
+///
+class IWorkerNodeIdleTask 
+{
+public:
+    virtual ~IWorkerNodeIdleTask() {};
+    
+    /// Do an Idle Taks here. 
+    /// It should not take a lot time, because while it is running
+    /// no real jobs will be processed.
+    virtual void Run(CWorkerNodeIdleTaskContext&) = 0;
+};
+
 /// Worker Node Job Factory interface
 ///
 /// @sa IWorkerNodeJob
@@ -273,6 +310,7 @@ private:
 class IWorkerNodeJobFactory
 {
 public:
+    virtual ~IWorkerNodeJobFactory() {}
     /// Create a job
     ///
     virtual IWorkerNodeJob* CreateInstance(void) = 0;
@@ -284,6 +322,10 @@ public:
     /// Get the job version
     ///
     virtual string GetJobVersion(void) const = 0;
+
+    /// Get an Idle task
+    ///
+    virtual IWorkerNodeIdleTask* GetIdleTask() { return NULL; }
 };
 
 template <typename TWorkerNodeJob>
@@ -303,17 +345,47 @@ private:
     const IWorkerNodeInitContext* m_WorkerNodeInitContext;
 };
 
-
-#define NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version) \
-\
+#define NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version)         \
 class TWorkerNodeJob##Factory : public CSimpleJobFactory<TWorkerNodeJob> \
-{ \
-public: \
-    virtual string GetJobVersion() const  \
-    { \
-        return #TWorkerNodeJob " version " #Version; \
-    } \
+{                                                                        \
+public:                                                                  \
+    virtual string GetJobVersion() const                                 \
+    {                                                                    \
+        return #TWorkerNodeJob " version " #Version;                     \
+    }                                                                    \
 }
+
+template <typename TWorkerNodeJob, typename TWorkerNodeIdleTask>
+class CSimpleJobFactoryEx : public IWorkerNodeJobFactory
+{
+public:
+    virtual void Init(const IWorkerNodeInitContext& context) 
+    {
+        m_WorkerNodeInitContext = &context;
+        m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
+    }
+    virtual IWorkerNodeJob* CreateInstance(void)
+    {
+        return new TWorkerNodeJob(*m_WorkerNodeInitContext);
+    }
+    virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
+
+private:
+    const IWorkerNodeInitContext* m_WorkerNodeInitContext;
+    auto_ptr<TWorkerNodeIdleTask> m_IdleTask;
+};
+
+#define NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob,TWorkerNodeIdleTask, Version) \
+class TWorkerNodeJob##FactoryEx                                          \
+    : public CSimpleJobFactoryEx<TWorkerNodeJob, TWorkerNodeIdleTask>    \
+{                                                                        \
+public:                                                                  \
+    virtual string GetJobVersion() const                                 \
+    {                                                                    \
+        return #TWorkerNodeJob " version " #Version;                     \
+    }                                                                    \
+}
+
 
 
 /// Jobs watcher interface
@@ -422,7 +494,8 @@ public:
     ///
     string GetConnectionInfo() const;
 
-    const CTime& GetStartTime() const { return m_StartTime; }
+    void PutOnHold(bool hold);
+    bool IsOnHold() const;
    
 private:
     IWorkerNodeJobFactory&       m_JobFactory;
@@ -445,9 +518,9 @@ private:
     unsigned int                 m_MaxProcessedJob;
     volatile unsigned int        m_JobsStarted;
     bool                         m_LogRequested;
-    const CTime                  m_StartTime;
-
-
+    volatile bool                m_OnHold;
+    CSemaphore                   m_HoldSem;
+    mutable CMutex               m_HoldMutex;
 
     friend class CGridThreadContext;
     IWorkerNodeJob* CreateJob()
@@ -512,6 +585,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 1.31  2006/01/18 17:47:42  didenko
  * Added JobWatchers mechanism
  * Reimplement worker node statistics as a JobWatcher

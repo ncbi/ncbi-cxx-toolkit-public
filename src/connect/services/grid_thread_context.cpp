@@ -46,9 +46,6 @@ CGridThreadContext::CGridThreadContext(CWorkerNodeJobContext& job_context)
     m_Writer.reset(job_context.GetWorkerNode().CreateStorage());
     m_ProgressWriter.reset(job_context.GetWorkerNode().CreateStorage());
     SetJobContext(job_context);
-    m_JobContext->GetWorkerNode()
-        .x_NotifyJobWatcher(*m_JobContext,
-                            IWorkerNodeJobWatcher::eJobStarted);
 }
 /// @internal
 void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context)
@@ -288,6 +285,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 6.12  2006/01/18 17:47:42  didenko
  * Added JobWatchers mechanism
  * Reimplement worker node statistics as a JobWatcher

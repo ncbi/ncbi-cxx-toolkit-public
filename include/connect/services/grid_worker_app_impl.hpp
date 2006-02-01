@@ -62,12 +62,15 @@ public:
     void Print(CNcbiOstream& os) const;
     unsigned int GetJobsRunningNumber() const { return m_ActiveJobs.size(); }
 
+    const CTime& GetStartTime() const { return m_StartTime; }
 private:        
     unsigned int m_JobsSucceed;
     unsigned int m_JobsFailed;
     unsigned int m_JobsReturned;
     unsigned int m_JobsCanceled;
     unsigned int m_JobsLost;
+    const CTime  m_StartTime;
+
     typedef map<const CWorkerNodeJobContext*, CTime> TActiveJobs;
     TActiveJobs    m_ActiveJobs;
     mutable CMutex m_ActiveJobsMutex;
@@ -75,6 +78,7 @@ private:
 
 
 class CWorkerNodeJobWatchers;
+class CWorkerNodeIdleThread;
 /// Main Worker Node application
 ///
 /// @note
@@ -116,6 +120,8 @@ private:
     auto_ptr<CGridWorkerNode>                m_WorkerNode;
     mutable auto_ptr<IWorkerNodeInitContext> m_WorkerNodeInitContext;
 
+    CRef<CWorkerNodeIdleThread>  m_IdleThread;
+
     auto_ptr<CRotatingLogStream> m_ErrLog;
     CNcbiApplication& m_App;
     bool m_SingleThreadForced;
@@ -153,6 +159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 1.4  2006/01/18 17:47:42  didenko
  * Added JobWatchers mechanism
  * Reimplement worker node statistics as a JobWatcher

@@ -118,13 +118,20 @@ private:
     auto_ptr<CGridWorkerApp_Impl> m_AppImpl;
 };
 
-#define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version) \
-\
+#define NCBI_WORKERNODE_MAIN(TWorkerNodeJob, Version)     \
 NCBI_DECLARE_WORKERNODE_FACTORY(TWorkerNodeJob, Version); \
-int main(int argc, const char* argv[]) \
-{ \
-    CGridWorkerApp app(new TWorkerNodeJob##Factory); \
-    return app.AppMain(argc, argv); \
+int main(int argc, const char* argv[])                    \
+{                                                         \
+    CGridWorkerApp app(new TWorkerNodeJob##Factory);      \
+    return app.AppMain(argc, argv);                       \
+}
+
+#define NCBI_WORKERNODE_MAIN_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version)     \
+NCBI_DECLARE_WORKERNODE_FACTORY_EX(TWorkerNodeJob, TWorkerNodeIdleTask, Version); \
+int main(int argc, const char* argv[])                                            \
+{                                                                                 \
+    CGridWorkerApp app(new TWorkerNodeJob##FactoryEx);                            \
+    return app.AppMain(argc, argv);                                               \
 }
 
 /* @} */
@@ -135,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/02/01 16:39:01  didenko
+ * Added Idle Task facility to the Grid Worker Node Framework
+ *
  * Revision 1.11  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib
