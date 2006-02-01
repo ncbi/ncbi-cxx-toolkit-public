@@ -213,6 +213,24 @@ public:
     int GetParent(int id_tax);
 
     //---------------------------------------------
+    // Get species tax_id (id_tax should be below species).
+    // There are 2 species search modes: one finds the nearest ancestor
+    // whose rank is 'species' while another finds the highest ancestor in 
+    // the node's lineage having true value of flag 'is_species' defined
+    // in the Taxon2_data structure.
+    // Returns: tax_id of species node (> 1)
+    //       or 0 if no species above (maybe id_tax above species level)
+    //       or -1 if error
+    // NOTE:
+    //   Root of the tree has tax_id of 1
+    ///
+    enum ESpeciesMode {
+	eSpeciesMode_RankOnly,
+	eSpeciesMode_Flag
+    };
+    int GetSpecies(int id_tax, ESpeciesMode mode = eSpeciesMode_Flag);
+
+    //---------------------------------------------
     // Get genus tax_id (id_tax should be below genus)
     // Returns: tax_id of genus or -1 if error or no genus in the lineage
     ///
@@ -652,6 +670,9 @@ END_NCBI_SCOPE
 
 //
 // $Log$
+// Revision 1.20  2006/02/01 23:21:21  domrach
+// GetSpecies() member f-n added
+//
 // Revision 1.19  2005/05/09 18:45:08  ucko
 // Ensure that widely-included classes with virtual methods have virtual dtors.
 //

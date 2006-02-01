@@ -909,6 +909,61 @@ CTaxon1::GetParent(int id_tax)
     return 0;
 }
 
+//---------------------------------------------
+// Get species tax_id (id_tax should be below species).
+// There are 2 species search modes: one based solely on node rank and
+// another based on the flag is_species returned in the Taxon2_data 
+// structure.
+// Returns: tax_id of species node (> 1)
+//       or 0 if no species above (maybe id_tax above species)
+//       or -1 if error
+// NOTE:
+//   Root of the tree has tax_id of 1
+///
+int
+CTaxon1::GetSpecies(int id_tax, ESpeciesMode mode)
+{
+    CTaxon1Node* pNode = 0;
+    SetLastError(NULL);
+    if( m_plCache->LookupAndAdd( id_tax, &pNode )
+        && pNode ) {
+	if( mode == eSpeciesMode_RankOnly ) {
+	    int species_rank(m_plCache->GetSpeciesRank());
+	    while( !pNode->IsRoot() ) {
+		int rank( pNode->GetRank() );
+		if( rank == species_rank )
+		    return pNode->GetTaxId();
+		if( (rank > 0) && (rank < species_rank))
+		    return 0;
+		pNode = pNode->GetParent();
+	    }
+	    return 0;
+	} else { // Based on flag
+	    CTaxon1Node* pResult = NULL;
+	    CTaxon2_data* pData = NULL;
+	    while( !pNode->IsRoot() ) {
+		if( m_plCache->LookupAndInsert( pNode->GetTaxId(), &pData ) ) {
+		    if( !pData )
+			return -1;
+		    if( !(pData->IsSetIs_species_level() &&
+			  pData->GetIs_species_level()) ) {
+			if( pResult ) {
+			    return pResult->GetTaxId();
+			} else {
+			    return 0;
+			}
+		    }
+		    pResult = pNode;
+		    pNode = pNode->GetParent();
+		} else { // Node in the lineage not found
+		    return -1;
+		}
+	    }
+	}
+    }
+    return -1;
+}
+
 int
 CTaxon1::GetGenus(int id_tax)
 {
@@ -1943,6 +1998,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.37  2006/02/01 23:21:21  domrach
+ * GetSpecies() member f-n added
+ *
  * Revision 6.36  2005/11/28 18:55:23  domrach
  * Checking of partial tree root corrected
  *
