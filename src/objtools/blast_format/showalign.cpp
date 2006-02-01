@@ -542,9 +542,6 @@ static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
     }
     
     list<CSeq_loc_CI::TRange> acutal_slave_feat_range = slave_feat_range;
-    if ((av->IsNegativeStrand(1) && slave_feat_strand == eNa_strand_plus)) {
-        acutal_slave_feat_range.reverse();
-    }
 
     ITERATE(list<CSeq_loc_CI::TRange>, iter_temp,
             acutal_slave_feat_range){
@@ -622,10 +619,6 @@ static void s_MapSlaveFeatureToMaster(list<CRange<TSeqPos> >& master_feat_range,
         }
         prev_exon_len += iter_temp->GetLength();
     }
-    if ((av->IsNegativeStrand(1) && slave_feat_strand == eNa_strand_plus)) {
-        master_feat_range.reverse();
-    }
-    
 }
 
 
@@ -3060,6 +3053,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.101  2006/02/01 19:20:52  jianye
+*fixed cds frame calculation on minus strand
+*
 *Revision 1.100  2006/02/01 15:32:00  jianye
 *fix missing the end base on negative strand
 *
