@@ -30,8 +30,8 @@
  */
 
 #include <ncbi_pch.hpp>
+#include "ncbi_core_cxxp.hpp"
 #include <connect/threaded_server.hpp>
-
 #include <connect/ncbi_socket.hpp>
 #include <util/thread_pool.hpp>
 
@@ -51,6 +51,12 @@ private:
     CThreadedServer& m_Server;
     SOCK             m_Sock;
 };
+
+
+void CThreadedServer::x_Init(void)
+{
+    CONNECT_InitInternal();
+}
 
 
 void CThreadedServer::Run(void)
@@ -120,6 +126,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.16  2006/02/01 16:23:38  lavr
+ * Introduce CThreadedServer::x_Init() to be able to init connect lib if needed
+ *
  * Revision 6.15  2005/01/05 15:12:31  ucko
  * Close the listening socket before killing all threads to avoid
  * misleading belated clients.

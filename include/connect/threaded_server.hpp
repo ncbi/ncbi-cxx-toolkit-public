@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_exception.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.h>
 
 
@@ -86,7 +87,7 @@ public:
         m_InitThreads(5), m_MaxThreads(10), m_QueueSize(20),
         m_SpawnThreshold(1), m_AcceptTimeout(kInfiniteTimeout),
         m_TemporarilyStopListening(false), m_Port(port)
-        {}
+    { x_Init(); }
 
     /// Enter the main loop.
     void Run(void);
@@ -124,6 +125,8 @@ protected:
     bool            m_TemporarilyStopListening;
 
 private:
+    void            x_Init(void); ///< Init connect library (if necessary)
+
     unsigned short  m_Port; ///< TCP port to listen on
 };
 
@@ -137,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2006/02/01 16:23:28  lavr
+ * Introduce CThreadedServer::x_Init() to be able to init connect lib if needed
+ *
  * Revision 6.14  2005/05/02 16:01:42  lavr
  * Proper exception class derivation
  *
