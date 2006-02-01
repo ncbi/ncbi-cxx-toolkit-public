@@ -65,9 +65,6 @@ extern "C" {
 #endif /*__cplusplus*/
 
 
-int g_NCBIConnectRandomSeed = 0;
-
-
 struct SDISPD_Data {
     int/*bool*/    disp_fail;
     SConnNetInfo*  net_info;
@@ -408,6 +405,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.76  2006/02/01 17:13:30  lavr
+ * Remove spurious definition of g_NCBI_ConnectRandomSeed (ncbi_priv.c has it)
+ *
  * Revision 6.75  2006/01/17 20:25:32  lavr
  * Handling of NCBI messages moved to HTTP connector
  * Dispatcher messages handled separately (FAILURES vs MESSAGES)
