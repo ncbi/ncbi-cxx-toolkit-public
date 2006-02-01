@@ -446,14 +446,14 @@ extern "C" {
 #if defined NCBI_THREAD_PID_WORKAROUND
 TPid CThread::sx_GetThreadPid(void)
 {
-    CThread* thread_ptr = GetThreadsTls().GetValue();
+    CThread* thread_ptr = GetCurrentThread();
     return thread_ptr ? thread_ptr->m_ThreadPID : 0;
 }
 
 
 void CThread::sx_SetThreadPid(TPid pid)
 {
-    CThread* thread_ptr = GetThreadsTls().GetValue();
+    CThread* thread_ptr = GetCurrentThread();
     if ( thread_ptr ) {
         thread_ptr->m_ThreadPID = pid;
     }
@@ -628,7 +628,7 @@ void CThread::Join(void** exit_data)
 void CThread::Exit(void* exit_data)
 {
     // Don't exit from the main thread
-    CThread* x_this = GetThreadsTls().GetValue();
+    CThread* x_this = GetCurrentThread();
     xncbi_Validate(x_this != 0,
                    "CThread::Exit() -- attempt to call for the main thread");
 
@@ -671,7 +671,7 @@ void CThread::AddUsedTls(CTlsBase* tls)
     CFastMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
 
     // Get current thread object
-    CThread* x_this = GetThreadsTls().GetValue();
+    CThread* x_this = GetCurrentThread();
     if ( x_this ) {
         x_this->m_UsedTls.insert(CRef<CTlsBase>(tls));
     }
@@ -699,6 +699,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/02/01 19:47:09  grichenk
+ * Added CThread::GetCurrentThread()
+ *
  * Revision 1.34  2006/01/30 19:53:09  grichenk
  * Added workaround for PID on linux.
  *

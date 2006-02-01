@@ -252,6 +252,9 @@ public:
     typedef unsigned int TID;
     static TID GetSelf(void);
 
+    /// Get current CThread object (or NULL, if main thread)
+    static CThread* GetCurrentThread(void);
+
     /// Get system ID of the current thread - for internal use only.
     /// The ID is unique only while the thread is running and may be
     /// re-used by another thread later.
@@ -357,10 +360,10 @@ inline
 void* CTlsBase::x_GetValue(void)
 const
 {
-    /// Get TLS-stored structure
+    // Get TLS-stored structure
     STlsData* tls_data = x_GetTlsData();
 
-    /// If assigned, extract and return user data
+    // If assigned, extract and return user data
     return tls_data ? tls_data->m_Value : 0;
 }
 
@@ -373,11 +376,19 @@ const
 inline
 CThread::TID CThread::GetSelf(void)
 {
-    /// Get pointer to the current thread object
-    CThread* thread_ptr = GetThreadsTls().GetValue();
+    // Get pointer to the current thread object
+    CThread* thread_ptr = GetCurrentThread();
 
-    /// If zero, it is main thread which has no CThread object
+    // If zero, it is main thread which has no CThread object
     return thread_ptr ? thread_ptr->m_ID : 0/*main thread*/;
+}
+
+
+inline
+CThread* CThread::GetCurrentThread(void)
+{
+    // Get pointer to the current thread object
+    return GetThreadsTls().GetValue();
 }
 
 
@@ -399,6 +410,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2006/02/01 19:47:09  grichenk
+ * Added CThread::GetCurrentThread()
+ *
  * Revision 1.26  2006/01/30 19:53:09  grichenk
  * Added workaround for PID on linux.
  *
