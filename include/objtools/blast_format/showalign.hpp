@@ -572,7 +572,6 @@ private:
     ///@param start_length: the max seq start postion string length
     ///@param max_feature_num: max numbe of features contained
     ///@param master_feat_str: the feature for master seq
-    ///@param master_slave_same_strand: master and slave same strand?
     ///@param out: the out stream
     ///
     void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
@@ -584,7 +583,6 @@ private:
                                            int start_length,
                                            int max_feature_num, 
                                            string& master_feat_str,
-                                           bool master_slave_same_strand,
                                            CNcbiOstream& out);
 
 };
@@ -596,6 +594,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.43  2006/02/01 15:33:27  jianye
+*delete unneeded parameter
+*
 *Revision 1.42  2006/01/13 16:41:25  jianye
 *added x_PrintFeatures, etc
 *
