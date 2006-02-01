@@ -1820,7 +1820,14 @@ extern unsigned int CRC32_Update(unsigned int checksum,
 extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 {
 #if defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_SOLARIS)
-    char loginbuf[_POSIX_LOGIN_NAME_MAX + 1];
+#  ifndef LOGIN_NAME_MAX
+#    ifdef _POSIX_LOGIN_NAME_MAX
+#      define LOGIN_NAME_MAX _POSIX_LOGIN_NAME_MAX
+#    else
+#      define LOGIN_NAME_MAX 256
+#    endif
+#  endif
+    char loginbuf[LOGIN_NAME_MAX + 1];
 #endif
 #if defined(NCBI_OS_UNIX)
     struct passwd* pw;
@@ -1918,6 +1925,12 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.93  2006/02/01 00:54:45  ucko
+ * One more fix to CONNUTIL_GetUsername: favor LOGIN_NAME_MAX over
+ * _POSIX_LOGIN_NAME_MAX, which tends to be smaller, and may not be
+ * defined at all on some BSDish systems, and fall back to 256 if neither
+ * is defined.
+ *
  * Revision 6.92  2006/01/31 20:38:12  lavr
  * CONNUTIL_GetUsername():  Pass pointer to buffer size in GetUserName()
  *
