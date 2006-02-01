@@ -241,6 +241,20 @@ private:
     friend class CBDB_FC_Condition;
 };
 
+/// BDB Cursor guard. Automatically closes cursor, when goes out of scope.
+///
+class CCursorGuard
+{
+public:
+    CCursorGuard(CBDB_FileCursor& cur) : m_Cur(cur) {}
+    ~CCursorGuard() { m_Cur.Close(); }
+private:
+    CCursorGuard(CCursorGuard&);
+    CCursorGuard& operator=(const CCursorGuard&);
+private:
+    CBDB_FileCursor& m_Cur;
+};
+
 
 /* @} */
 
@@ -296,6 +310,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/01 14:47:00  kuznets
+ * +CCursorGuard
+ *
  * Revision 1.16  2005/09/22 13:37:30  kuznets
  * Implemented reading BLOBs in cursors
  *
