@@ -53,6 +53,7 @@ extern "C" {
  * @param error_msg Error message, if any.
  * @return 0 on success, -1 on failure.
  */
+NCBI_XBLAST_EXPORT
 Int2 SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp, 
                             SPHIPatternSearchBlk* *pattern_blk, 
                             Blast_Message* *error_msg);
@@ -61,6 +62,7 @@ Int2 SPHIPatternSearchBlkNew(char* pattern, Boolean is_dna, BlastScoreBlk* sbp,
  * @param pattern_blk The structure to deallocate [in]
  * @return NULL.
  */
+NCBI_XBLAST_EXPORT
 SPHIPatternSearchBlk* 
 SPHIPatternSearchBlkFree(SPHIPatternSearchBlk* pattern_blk);
 
@@ -81,6 +83,7 @@ SPHIPatternSearchBlkFree(SPHIPatternSearchBlk* pattern_blk);
  * @param array_size length of the offset arrays [in]
  * @return The number of hits found.
  */
+NCBI_XBLAST_EXPORT
 Int4 PHIBlastScanSubject(const LookupTableWrap* lookup_wrap,
         const BLAST_SequenceBlk *query_blk, const BLAST_SequenceBlk *subject, 
         Int4* offset, BlastOffsetPair* NCBI_RESTRICT offset_pairs,

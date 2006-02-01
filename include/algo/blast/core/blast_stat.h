@@ -113,6 +113,7 @@ typedef struct SPsiBlastScoreMatrix {
  * @return NULL in case of memory allocation failure, else new
  * SPsiBlastScoreMatrix structure
  */
+NCBI_XBLAST_EXPORT
 SPsiBlastScoreMatrix*
 SPsiBlastScoreMatrixNew(size_t ncols);
 
@@ -120,6 +121,7 @@ SPsiBlastScoreMatrixNew(size_t ncols);
  * @param matrix structure to deallocate [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 SPsiBlastScoreMatrix*
 SPsiBlastScoreMatrixFree(SPsiBlastScoreMatrix* matrix);
 
@@ -178,12 +180,14 @@ typedef struct Blast_ResFreq {
  * @param number_of_contexts how many strands or sequences [in]
  * @return BlastScoreBlk*
 */
+NCBI_XBLAST_EXPORT
 BlastScoreBlk* BlastScoreBlkNew (Uint1 alphabet, Int4 number_of_contexts);
 
 /** Deallocates BlastScoreBlk as well as all associated structures.
  * @param sbp BlastScoreBlk to be deallocated [in]
  * @return NULL pointer.
  */
+NCBI_XBLAST_EXPORT
 BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
 
 /** Set the ambiguous residue (e.g, 'N', 'X') in the BlastScoreBlk*.
@@ -193,6 +197,7 @@ BlastScoreBlk* BlastScoreBlkFree (BlastScoreBlk* sbp);
  * @param ambiguous_res the residue to be set on the BlastScoreBlk
  * @return zero on success, others on error
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
 
 
@@ -207,6 +212,7 @@ Int2 BLAST_ScoreSetAmbigRes (BlastScoreBlk* sbp, char ambiguous_res);
  *        all of the query sequence's contexts; 1 if any of the contexts 
  *        failed (but all others will be populated).
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program, 
                               BlastScoreBlk* sbp, Uint1* query, 
@@ -219,11 +225,13 @@ Blast_ScoreBlkKbpUngappedCalc(EBlastProgramType program,
  * @param sbp Scoring block [in] [out]
  * @param matrix Full path to the matrix in the directory structure [in]
 */
+NCBI_XBLAST_EXPORT
 Int2 Blast_ScoreBlkMatrixFill (BlastScoreBlk* sbp, char* matrix);
  
 /** Callocs a Blast_KarlinBlk
  * @return pointer to the Blast_KarlinBlk
 */
+NCBI_XBLAST_EXPORT
 Blast_KarlinBlk* Blast_KarlinBlkNew (void);
 
 /** Copies contents of one Karlin block to another. Both must be allocated
@@ -232,6 +240,7 @@ Blast_KarlinBlk* Blast_KarlinBlkNew (void);
  * @param kbp_from Karlin block to copy values from [in]
  * @return 0 on success; -1 if either argument is NULL on input.
  */ 
+NCBI_XBLAST_EXPORT
 Int2 Blast_KarlinBlkCopy(Blast_KarlinBlk* kbp_to, Blast_KarlinBlk* kbp_from);
 
 
@@ -239,6 +248,7 @@ Int2 Blast_KarlinBlkCopy(Blast_KarlinBlk* kbp_to, Blast_KarlinBlk* kbp_from);
  * @param kbp KarlinBlk to be deallocated [in]
  * @return NULL
 */
+NCBI_XBLAST_EXPORT
 Blast_KarlinBlk* Blast_KarlinBlkFree(Blast_KarlinBlk* kbp);
 
 /** Fills in lambda, H, and K values, as calculated by Stephen Altschul 
@@ -251,6 +261,7 @@ Blast_KarlinBlk* Blast_KarlinBlkFree(Blast_KarlinBlk* kbp);
  * @param error_return filled in with error message if needed [out]
  * @return zero on success
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open, 
         Int4 gap_extend, Int4 decline_align, const char* matrix_name, 
         Blast_Message** error_return);
@@ -270,6 +281,7 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
  *      score in some cases [in|out]
  * @param error_return Pointer to error message. [in] [out]
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, 
                               Int4 gap_extend, Int4 reward, Int4 penalty,
@@ -286,6 +298,7 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
  * @param sbp ScoreBlk used to calculate "ideal" values. [in|out]
  * @return 0 on success, 1 on failure
 */
+NCBI_XBLAST_EXPORT
 Int2 Blast_ScoreBlkKbpIdealCalc(BlastScoreBlk* sbp);
 
 /** Attempts to fill KarlinBlk for given gap opening, extensions etc.
@@ -299,12 +312,14 @@ Int2 Blast_ScoreBlkKbpIdealCalc(BlastScoreBlk* sbp);
  *          1 if matrix not found
  *           2 if matrix found, but open, extend etc. values not supported.
 */
+NCBI_XBLAST_EXPORT
 Int2 Blast_KarlinBlkGappedLoadFromTables(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, const char* matrix_name);
 
 /** Prints a messages about the allowed matrices, BlastKarlinBlkGappedFill should return 1 before this is called. 
  * @param matrix the matrix to print a message about [in]
  * @return the message
  */
+NCBI_XBLAST_EXPORT
 char* BLAST_PrintMatrixMessage(const char *matrix);
 
 /** Prints a messages about the allowed open etc values for the given matrix, 
@@ -315,9 +330,11 @@ char* BLAST_PrintMatrixMessage(const char *matrix);
  * @param decline_align cost of declining to align [in]
  * @return message
  */
+NCBI_XBLAST_EXPORT
 char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
 /** Calculates the parameter Lambda given an initial guess for its value */
+NCBI_XBLAST_EXPORT
 double
 Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess);
 
@@ -328,6 +345,7 @@ Blast_KarlinLambdaNR(Blast_ScoreFreq* sfp, double initialLambdaGuess);
  * @param searchsp total search space to be used [in]
  * @return the expect value
  */
+NCBI_XBLAST_EXPORT
 double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, Int8  searchsp);
 
 /** Compute a divisor used to weight the evalue of a collection of
@@ -346,6 +364,7 @@ double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, Int8  searchsp);
  * @param nsegs the number of HSPs in the sum group [in]
  * @return divisor used to compensate for multiple tests
  */
+NCBI_XBLAST_EXPORT
 double BLAST_GapDecayDivisor(double decayrate, unsigned nsegs );
 
 /** Calculate the cutoff score from the expected number of HSPs or vice versa.
@@ -356,6 +375,7 @@ double BLAST_GapDecayDivisor(double decayrate, unsigned nsegs );
  * @param dodecay Use gap decay feature? [in]
  * @param gap_decay_rate Gap decay rate to use, if dodecay is set [in]
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_Cutoffs (Int4 *S, double* E, Blast_KarlinBlk* kbp, 
                     Int8 searchsp, Boolean dodecay, double gap_decay_rate);
 
@@ -374,6 +394,7 @@ Int2 BLAST_Cutoffs (Int4 *S, double* E, Blast_KarlinBlk* kbp,
  *    the calling routine [in]
  * @return the expect value 
  */
+NCBI_XBLAST_EXPORT
 double BLAST_SmallGapSumE (Int4 start_points, Int2 num,  double xsum,
                            Int4 query_length, Int4 subject_length,
                            Int8 searchsp_eff, double weight_divisor);
@@ -401,6 +422,7 @@ double BLAST_SmallGapSumE (Int4 start_points, Int2 num,  double xsum,
  *    the calling routine [in]
  * @return sum expect value.
  */
+NCBI_XBLAST_EXPORT
 double BLAST_UnevenGapSumE (Int4 query_start_points, Int4 subject_start_points,
                             Int2 num, double xsum,
                             Int4 query_length, Int4 subject_length,
@@ -419,6 +441,7 @@ double BLAST_UnevenGapSumE (Int4 query_start_points, Int4 subject_start_points,
  *    calling routine [in]
  * @return sum expect value.
  */
+NCBI_XBLAST_EXPORT
 double BLAST_LargeGapSumE (Int2 num,  double xsum,
                            Int4 query_length, Int4 subject_length,
                            Int8 searchsp_eff, double weight_divisor );
@@ -430,6 +453,7 @@ double BLAST_LargeGapSumE (Int2 num,  double xsum,
  * @param gap_extension returns recommended extension cost [in|out]
  * @return zero on success 
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName,
                                        Int4* gap_existence,
                                        Int4* gap_extension);
@@ -442,6 +466,7 @@ Int2 BLAST_GetProteinGapExistenceExtendParams(const char* matrixName,
  * @param gap_extension returns recommended extension cost [in|out]
  * @return zero on success 
  */
+NCBI_XBLAST_EXPORT
 Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
                                        Int4 penalty,
                                        Int4* gap_existence,
@@ -457,6 +482,7 @@ Int2 BLAST_GetNucleotideGapExistenceExtendParams(Int4 reward,
  * @param gap_extend extension cost of a gap [in]
  * @param kbp_ungapped Karlin block with ungapped values of the parameters [in]
 */
+NCBI_XBLAST_EXPORT
 void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
                          double *beta, Boolean gapped, Int4 gap_open, 
                          Int4 gap_extend, const Blast_KarlinBlk* kbp_ungapped);
@@ -475,6 +501,7 @@ void BLAST_GetAlphaBeta (const char* matrixName, double *alpha,
  * @param alpha Alpha parameter for this scoring system [out]
  * @param beta Beta parameter for this scoring system [out]
  */
+NCBI_XBLAST_EXPORT
 Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open, 
                             Int4 gap_extend, Blast_KarlinBlk* kbp,
                             Boolean gapped_calculation,
@@ -496,6 +523,7 @@ Int2 Blast_GetNuclAlphaBeta(Int4 reward, Int4 penalty, Int4 gap_open,
  * @param matrix_name Name of the score matrix underlying the RPS search [in]
  * @return rescaled pssm 
  */
+NCBI_XBLAST_EXPORT
 Int4 ** RPSRescalePssm(double scalingFactor, Int4 rps_query_length, 
                    const Uint1 * rps_query_seq, Int4 db_seq_length, 
                    Int4 **posMatrix, const char *matrix_name);
@@ -540,6 +568,7 @@ Int4 ** RPSRescalePssm(double scalingFactor, Int4 rps_query_length,
  * @return   0 if length_adjustment is known to be the largest integer less
  *           than the fixed point of f(ell); 1 otherwise.
  */
+NCBI_XBLAST_EXPORT
 Int4
 BLAST_ComputeLengthAdjustment(double K,
                               double logK,
@@ -555,11 +584,13 @@ BLAST_ComputeLengthAdjustment(double K,
     based upon the contents of sbp.
  * @param sbp The BlastScoreBlk* used to init prob [in]
 */
+NCBI_XBLAST_EXPORT
 Blast_ResFreq* Blast_ResFreqNew(const BlastScoreBlk* sbp);
 
 /** Deallocates Blast_ResFreq and prob0 element.
  * @param rfp the Blast_ResFreq to be deallocated.
 */
+NCBI_XBLAST_EXPORT
 Blast_ResFreq* Blast_ResFreqFree(Blast_ResFreq* rfp);
 
 
@@ -568,6 +599,7 @@ Blast_ResFreq* Blast_ResFreqFree(Blast_ResFreq* rfp);
  * @param rfp the prob element on this Blast_ResFreq is used.
  * @return zero on success
 */
+NCBI_XBLAST_EXPORT
 Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
 
 /** Creates a new structure to keep track of score frequencies for a scoring
@@ -576,6 +608,7 @@ Int2 Blast_ResFreqStdComp(const BlastScoreBlk* sbp, Blast_ResFreq* rfp);
  * @param score_max Maximum score [in]
  * @return allocated and initialized pointer to Blast_ScoreFreq
  */
+NCBI_XBLAST_EXPORT
 Blast_ScoreFreq*
 Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
 
@@ -583,6 +616,7 @@ Blast_ScoreFreqNew(Int4 score_min, Int4 score_max);
  * @param sfp the structure to deallocate [in]
  * @return NULL
  */
+NCBI_XBLAST_EXPORT
 Blast_ScoreFreq*
 Blast_ScoreFreqFree(Blast_ScoreFreq* sfp);
 
@@ -594,6 +628,7 @@ Blast_ScoreFreqFree(Blast_ScoreFreq* sfp);
  * @param residue_size size of "residues" buffer [in]
  * @return Number of residues in alphabet or negative returns upon error.
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues, 
                      Uint4 residue_size);
@@ -605,6 +640,7 @@ Blast_GetStdAlphabet(Uint1 alphabet_code, Uint1* residues,
  * @param sfp array of probabilities for all scores [in]
  * @return zero on success, 1 on error.
  */
+NCBI_XBLAST_EXPORT
 Int2
 Blast_KarlinBlkUngappedCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
 
@@ -616,6 +652,7 @@ Blast_KarlinBlkUngappedCalc(Blast_KarlinBlk* kbp, Blast_ScoreFreq* sfp);
  * @param length the length of the sequence [in]
  * @param resProb the object to be filled in [in|out]
  */
+NCBI_XBLAST_EXPORT
 void
 Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resProb);
 
@@ -628,6 +665,7 @@ Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resPro
  [in|out]
  * @return zero on success.
 */
+NCBI_XBLAST_EXPORT
 Int2 BlastScoreBlkNuclMatrixCreate(BlastScoreBlk* sbp);
 
 #ifdef __cplusplus

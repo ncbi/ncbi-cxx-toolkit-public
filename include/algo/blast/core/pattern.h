@@ -175,17 +175,20 @@ typedef struct SPHIPatternSearchBlk {
  * @param patternSearch Pattern information [in]
  * @return Twice the number of hits (length of hitArray filled in)
 */
+NCBI_XBLAST_EXPORT
 Int4 FindPatternHits(Int4 * hitArray, const Uint1 * seq, Int4 len,
                      Boolean is_dna,
                      const SPHIPatternSearchBlk * patternSearch);
 
 /** Allocates the pattern occurrences structure. */
+NCBI_XBLAST_EXPORT
 SPHIQueryInfo* SPHIQueryInfoNew(void);
 
 /** Frees the pattern information structure. 
  * @param pat_info Structure to free. [in]
  * @return NULL.
  */
+NCBI_XBLAST_EXPORT
 SPHIQueryInfo*
 SPHIQueryInfoFree(SPHIQueryInfo* pat_info);
 
@@ -193,6 +196,7 @@ SPHIQueryInfoFree(SPHIQueryInfo* pat_info);
  * @param pat_info Structure to copy [in]
  * @return New structure.
  */
+NCBI_XBLAST_EXPORT
 SPHIQueryInfo* 
 SPHIQueryInfoCopy(SPHIQueryInfo* pat_info);
 
@@ -206,6 +210,7 @@ SPHIQueryInfoCopy(SPHIQueryInfo* pat_info);
  * @param pattern_info Structure containing pattern occurrences. Must be 
  *                     allocated before this call. [out]
  */
+NCBI_XBLAST_EXPORT
 Int4 PHIGetPatternOccurrences(const SPHIPatternSearchBlk * pattern_blk,
                               const BLAST_SequenceBlk    * query,
                               const BlastSeqLoc          * location, 
