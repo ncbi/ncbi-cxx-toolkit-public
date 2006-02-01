@@ -223,10 +223,14 @@ CDBLibContext::MakeIConnection(const SConnAttr& conn_attr)
                                          conn_attr.passwd, 
                                          conn_attr.mode);
 
-    CHECK_DRIVER_ERROR( 
-        !dbcon,
-        "Cannot connect to server", 
-        200011 );
+    if (!dbcon) {
+        string err;
+        
+        err += "Cannot connect to the server '" + conn_attr.srv_name;
+        err += "' as user '" + conn_attr.user_name + "'";
+        DATABASE_DRIVER_ERROR( err, 200011 );
+    }
+    
 
 #ifdef MS_DBLIB_IN_USE
     dbsetopt(dbcon, DBTEXTLIMIT, "0" ); // No limit
@@ -1087,6 +1091,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/02/01 13:58:29  ssikorsk
+ * Report server and user names in case of a failed connection attempt.
+ *
  * Revision 1.63  2006/01/23 13:38:52  ssikorsk
  * Renamed CDBLibContext::MakeConnection to MakeIConnection;
  *

@@ -176,11 +176,14 @@ CTDSContext::MakeIConnection(const SConnAttr& conn_attr)
                                          conn_attr.passwd, 
                                          conn_attr.mode);
 
-    CHECK_DRIVER_ERROR( 
-        !dbcon,
-        "Cannot connect to server", 
-        200011 );
-
+    if (!dbcon) {
+        string err;
+        
+        err += "Cannot connect to the server '" + conn_attr.srv_name;
+        err += "' as user '" + conn_attr.user_name + "'";
+        DATABASE_DRIVER_ERROR( err, 200011 );
+    }
+    
     CTDS_Connection* t_con = NULL;
     t_con = new CTDS_Connection(this, 
                                 dbcon, 
@@ -665,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/02/01 13:58:45  ssikorsk
+ * Report server and user names in case of a failed connection attempt.
+ *
  * Revision 1.55  2006/01/23 13:39:32  ssikorsk
  * Renamed CTDSContext::MakeConnection to MakeIConnection;
  *

@@ -206,7 +206,13 @@ CTLibContext::MakeIConnection(const SConnAttr& conn_attr)
                                            conn_attr.passwd, 
                                            conn_attr.mode);
     
-    CHECK_DRIVER_ERROR( con == 0, "Cannot connect to the server", 100011 );
+    if (!con) {
+        string err;
+        
+        err += "Cannot connect to the server '" + conn_attr.srv_name;
+        err += "' as user '" + conn_attr.user_name + "'";
+        DATABASE_DRIVER_ERROR( err, 100011 );
+    }
 
     CTL_Connection* t_con = new CTL_Connection(this, 
                                                con, 
@@ -1096,6 +1102,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/02/01 13:58:18  ssikorsk
+ * Report server and user names in case of a failed connection attempt.
+ *
  * Revision 1.54  2006/01/23 13:37:56  ssikorsk
  * Removed connection attribute check from CTLibContext::MakeIConnection;
  *

@@ -401,9 +401,13 @@ I_DriverContext::Connect(const string&   srv_name,
         return NULL;
     }
 
-    CHECK_DRIVER_ERROR(t_con == NULL, 
-                       "Cannot connect to the server '" + srv_name + "'", 
-                       100011 );
+    if (!t_con) {
+        string err;
+        
+        err += "Cannot connect to the server '" + srv_name;
+        err += "' as user '" + user_name + "'";
+        DATABASE_DRIVER_ERROR( err, 100011 );
+    }
     
     // return Create_Connection(*t_con);
     return t_con;
@@ -457,9 +461,13 @@ I_DriverContext::ConnectValidated(const string&   srv_name,
         return NULL;
     }
 
-    CHECK_DRIVER_ERROR(t_con == NULL, 
-                       "Cannot connect to the server '" + srv_name + "'", 
-                       100011 );
+    if (!t_con) {
+        string err;
+        
+        err += "Cannot connect to the server '" + srv_name;
+        err += "' as user '" + user_name + "'";
+        DATABASE_DRIVER_ERROR( err, 100011 );
+    }
     
     return t_con;
 }
@@ -525,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/02/01 13:55:07  ssikorsk
+ * Report server and user names in case of a failed connection attempt.
+ *
  * Revision 1.13  2006/01/23 13:35:36  ssikorsk
  * Implemented I_DriverContext::ConnectValidated;
  *
