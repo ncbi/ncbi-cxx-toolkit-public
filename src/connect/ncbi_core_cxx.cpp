@@ -234,9 +234,10 @@ static void s_Init(IRWRegistry*      reg = 0,
                    FConnectInitFlags flags = 0,
                    EConnectInit      how = eConnectInit_Weak)
 {
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    srand(g_NCBI_ConnectRandomSeed);
-
+    if (g_NCBI_ConnectRandomSeed == 0) {
+        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        srand(g_NCBI_ConnectRandomSeed);
+    }
     CORE_SetLOCK(MT_LOCK_cxx2c(lock,
                                flags & eConnectInit_OwnLock ? true : false));
     CORE_SetLOG(LOG_cxx2c());
@@ -282,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2006/02/01 17:12:51  lavr
+ * Initialize g_NCBI_ConnectRandomSeed conditionally
+ *
  * Revision 6.33  2006/01/17 20:21:26  lavr
  * Gracefully handle NULL pointer in s_REG_Set() [kEmptyStr effects]
  *
