@@ -389,7 +389,7 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                         m_NSReadClient->WaitJob(&job_key, &input,
                                                 m_NSTimeout, m_UdpPort);
                     if (job_exists && m_OnHold) {
-                        m_NSReadClient->ReturnJob(job_key);
+                        x_ReturnJob(job_key);
                         return false;
                     }
                 } else {
@@ -553,6 +553,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/02/01 19:10:22  didenko
+ * Cosmetics
+ *
  * Revision 1.38  2006/02/01 19:06:01  didenko
  * Improved main loop processing
  *
