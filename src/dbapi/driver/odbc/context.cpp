@@ -242,9 +242,12 @@ CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
                                     conn_attr.passwd, 
                                     conn_attr.mode);
     
-    if (con == 0) {
-        string err_message = "Cannot connect to the server" + m_Reporter.GetExtraMsg();
-        DATABASE_DRIVER_ERROR( err_message, 100011 );
+    if (!con) {
+        string err;
+        
+        err += "Cannot connect to the server '" + conn_attr.srv_name;
+        err += "' as user '" + conn_attr.user_name + "'" + m_Reporter.GetExtraMsg();
+        DATABASE_DRIVER_ERROR( err, 100011 );
     }
 
     CODBC_Connection* t_con = new CODBC_Connection(this, 
@@ -566,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/02/01 13:59:19  ssikorsk
+ * Report server's and user's names in case of a failed connection attempt.
+ *
  * Revision 1.34  2006/01/23 13:42:13  ssikorsk
  * Renamed CODBCContext::MakeConnection to MakeIConnection;
  * Removed connection attribut checking from this method;
