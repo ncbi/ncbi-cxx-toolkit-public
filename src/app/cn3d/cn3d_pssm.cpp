@@ -94,6 +94,10 @@ PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
 
         // use PssmMaker to create PSSM using consensus
         cd_utils::PssmMaker pm(&c, true, true);
+        cd_utils::PssmMakerOptions options; // comes with defaults
+        options.requestFrequencyRatios = true;
+        options.scalingFactor = 100;
+        pm.setOptions(options);
         pssm = pm.make();
 
         // blast functions require a master (query) sequence to be present; give it a recognizable id
@@ -304,6 +308,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2006/02/02 19:47:29  thiessen
+* generate frequencies and scaling factor of 100 in scoremats
+*
 * Revision 1.18  2006/02/02 15:18:12  thiessen
 * fix pssm generation when alignment has only one row
 *
