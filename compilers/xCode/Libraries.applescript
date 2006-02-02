@@ -148,6 +148,7 @@ property seqset : {name:"seqset", path:"objects:seqset", inc:{"seqset__.cpp", "s
 property seqcode : {name:"seqcode", path:"objects:seqcode", inc:{"seqcode__.cpp", "seqcode___.cpp"}, asn1:true}
 property seqsplit : {name:"seqsplit", path:"objects:seqsplit", inc:{"seqsplit__.cpp", "seqsplit___.cpp"}, asn1:true}
 property seqtest : {name:"seqtest", path:"objects:seqtest", inc:{"seqtest__.cpp", "seqtest___.cpp"}, asn1:true}
+property seqedit : {name:"seqedit", path:"objects:seqedit", inc:{"seqedit__.cpp", "seqedit___.cpp"}, asn1:true}
 property submit : {name:"submit", path:"objects:submit", inc:{"submit__.cpp", "submit___.cpp"}, asn1:true}
 property taxon1 : {name:"taxon1", path:"objects:taxon1", inc:{"taxon1__.cpp", "taxon1___.cpp", "taxon1.cpp", "cache.cpp", "utils.cpp", "ctreecont.cpp"}, asn1:true}
 property tinyseq : {name:"tinyseq", path:"objects:tinyseq", inc:{"tinyseq__.cpp", "tinyseq___.cpp"}, asn1:true}
@@ -253,6 +254,7 @@ property gui_algo_external_out : {name:"gui_algo_external_out", path:"gui:plugin
 property gui_algo_gnomon : {name:"gui_algo_gnomon", path:"gui:plugins:algo:gnomon"}
 property gui_algo_linkout : {name:"gui_algo_linkout", path:"gui:plugins:algo:linkout"}
 property gui_algo_phylo : {name:"gui_algo_phylo", path:"gui:plugins:algo:phylo"}
+property gui_algo_webpage : {name:"gui_algo_webpage", path:"gui:plugins:algo:web_page"}
 property gui_ncbi_init : {name:"gui_ncbi_init", path:"gui:plugins:algo:init"}
 -- view
 property gui_view_align : {name:"gui_view_align", path:"gui:plugins:view:align"}
@@ -279,7 +281,7 @@ property ncbi_general : {name:"ncbi_general", libs:{general}, dep:"ncbi_core", r
 property ncbi_algo : {name:"ncbi_algo", libs:{xalgoalign, xalgosplign, xalgocontig_assembly, xalgoalignnw, xalgoaligutil, xalgoseq, xalgoseqqa, blast, blast_composition, xblast, xalgognomon, xalgowinmask, xalgodustmask, xalgophytree, fastme}, dep:"ncbi_core ncbi_seq ncbi_misc ncbi_general ncbi_seqext ncbi_xobjsimple", req:true}
 property ncbi_misc : {name:"ncbi_misc", libs:{access, biotree, docsum, entrez2, entrez2cli, insdseq, entrezgene, featdef, gbseq, mim, objprt, tinyseq, proj, omssa, pcassay, pcsubstance}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_pub", req:true}
 property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacli, pub, pubmed}, dep:"ncbi_core ncbi_general", req:true}
-property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
+property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
 property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
@@ -317,6 +319,7 @@ property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_cor
 property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils ncbi_xcache_bdb gui_dialogs gui_widgets gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_misc ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_cache" & FLTK_LIBS, bundle:true, req:true}
 property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_web ncbi_seq ncbi_seqext", bundle:true, req:true}
 property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
+property algo_webpage : {name:"algo_webpage", libs:{gui_algo_webpage}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext", bundle:true, req:true}
 property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator" & FLTK_LIBS, bundle:true, req:true}
 property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_xloader_genbank ncbi_xcache_bdb ncbi_bdb ncbi_core ncbi_lds ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_pub" & FLTK_LIBS, bundle:true, req:true}
 property dload_table : {name:"dload_table", libs:{gui_doc_table}, dep:"gui_core gui_dialogs gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_sqlite ncbi_xloader_table", bundle:true, req:true}
@@ -353,6 +356,7 @@ property test_objmgr_basic : {name:"test_objmgr_basic", path:"objmgr:test", inc:
 --property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property gi2taxid : {name:"gi2taxid", path:"app:gi2taxid", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
+property ini2reg : {name:"ini2reg", path:"gui:objutils:test", inc:{"ini2reg.cpp"}, dep:"ncbi_core ", req:true}
 
 property id1_fetch : {name:"id1_fetch", path:"app:id1_fetch", inc:{"id1_fetch.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:{"id1_fetch_simple.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext", req:false}
@@ -399,7 +403,7 @@ property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench
 
 
 -- All Libraries to build
-property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_blastdb, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
+property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_blastdb, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_webpage, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
@@ -427,6 +431,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.88  2006/02/02 19:16:08  lebedev
+ * +=seqedit +=web_page
+ *
  * Revision 1.87  2005/12/12 13:36:22  lebedev
  * view_text += gui_config
  *
