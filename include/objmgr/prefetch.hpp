@@ -58,7 +58,7 @@ BEGIN_SCOPE(objects)
 ///  Data prefetching token
 
 
-class CPrefetchToken
+class CPrefetchTokenOld
 {
 public:
     typedef CPrefetchToken_Impl::TIds TIds;
@@ -67,7 +67,7 @@ public:
         eNon_locking_prefetch
     };
 
-    CPrefetchToken(void);
+    CPrefetchTokenOld(void);
 
     /// Find the first loader in the scope, request prefetching from
     /// this loader. Scope may be destroyed after creating token, but
@@ -80,36 +80,36 @@ public:
     ///  Set of seq-ids to prefetch
     /// @param depth
     ///  Number of TSEs allowed to be prefetched.
-    CPrefetchToken(CScope& scope, const TIds& ids, unsigned int depth = 2);
+    CPrefetchTokenOld(CScope& scope, const TIds& ids, unsigned int depth = 2);
 
     /// Do not lock prefetched TSEs, prefetch depth is ignored.
-    CPrefetchToken(CScope& scope, const TIds& ids, ENon_locking_prefetch);
-    ~CPrefetchToken(void);
+    CPrefetchTokenOld(CScope& scope, const TIds& ids, ENon_locking_prefetch);
+    ~CPrefetchTokenOld(void);
 
-    CPrefetchToken(const CPrefetchToken& token);
-    CPrefetchToken& operator =(const CPrefetchToken& token);
+    CPrefetchTokenOld(const CPrefetchTokenOld& token);
+    CPrefetchTokenOld& operator =(const CPrefetchTokenOld& token);
 
     DECLARE_OPERATOR_BOOL(m_Impl  &&  *m_Impl);
 
     /// Get bioseq handle and move to the next requested id
     /// Scope must contain the loader used for prefetching.
-    /// @sa CPrefetchToken
+    /// @sa CPrefetchTokenOld
     CBioseq_Handle NextBioseqHandle(CScope& scope);
 
 private:
-    CRef<CPrefetchToken_Impl> m_Impl;
+    CRef<CPrefetchTokenOld_Impl> m_Impl;
 };
 
 
 inline
-CPrefetchToken::CPrefetchToken(void)
+CPrefetchTokenOld::CPrefetchTokenOld(void)
 {
     return;
 }
 
 
 inline
-CPrefetchToken::~CPrefetchToken(void)
+CPrefetchTokenOld::~CPrefetchTokenOld(void)
 {
     if (m_Impl) {
         m_Impl->RemoveTokenReference();
@@ -119,10 +119,10 @@ CPrefetchToken::~CPrefetchToken(void)
 
 
 inline
-CPrefetchToken::CPrefetchToken(CScope& scope,
+CPrefetchTokenOld::CPrefetchTokenOld(CScope& scope,
                                const TIds& ids,
                                unsigned int depth)
-    : m_Impl(new CPrefetchToken_Impl(ids, depth))
+    : m_Impl(new CPrefetchTokenOld_Impl(ids, depth))
 {
     m_Impl->AddTokenReference();
     m_Impl->x_InitPrefetch(scope);
@@ -131,10 +131,10 @@ CPrefetchToken::CPrefetchToken(CScope& scope,
 
 
 inline
-CPrefetchToken::CPrefetchToken(CScope& scope,
+CPrefetchTokenOld::CPrefetchTokenOld(CScope& scope,
                                const TIds& ids,
                                ENon_locking_prefetch)
-    : m_Impl(new CPrefetchToken_Impl(ids, 2))
+    : m_Impl(new CPrefetchTokenOld_Impl(ids, 2))
 {
     m_Impl->AddTokenReference();
     m_Impl->x_SetNon_locking();
@@ -144,14 +144,14 @@ CPrefetchToken::CPrefetchToken(CScope& scope,
 
 
 inline
-CPrefetchToken::CPrefetchToken(const CPrefetchToken& token)
+CPrefetchTokenOld::CPrefetchTokenOld(const CPrefetchTokenOld& token)
 {
     *this = token;
 }
 
 
 inline
-CPrefetchToken& CPrefetchToken::operator =(const CPrefetchToken& token)
+CPrefetchTokenOld& CPrefetchTokenOld::operator =(const CPrefetchTokenOld& token)
 {
     if (this != &token) {
         if (m_Impl) {
@@ -167,7 +167,7 @@ CPrefetchToken& CPrefetchToken::operator =(const CPrefetchToken& token)
 
 
 inline
-CBioseq_Handle CPrefetchToken::NextBioseqHandle(CScope& scope)
+CBioseq_Handle CPrefetchTokenOld::NextBioseqHandle(CScope& scope)
 {
     _ASSERT(*this);
     return m_Impl->NextBioseqHandle(scope);
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2006/02/02 14:35:32  vasilche
+* Renamed old prefetch classes.
+*
 * Revision 1.10  2005/02/22 17:51:58  grichenk
 * Fixed enum warning
 *

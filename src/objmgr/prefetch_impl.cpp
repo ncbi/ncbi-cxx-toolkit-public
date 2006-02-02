@@ -46,7 +46,7 @@ BEGIN_SCOPE(objects)
 // NOTE: Max. value for semaphore must be prefetch depth + 1, because
 // one extra-Post will be called when the token impl. is released.
 
-CPrefetchToken_Impl::CPrefetchToken_Impl(const TIds& ids, unsigned int depth)
+CPrefetchTokenOld_Impl::CPrefetchTokenOld_Impl(const TIds& ids, unsigned int depth)
     : m_TokenCount(0),
       m_TSESemaphore(depth, max(depth+1, depth)),
       m_Non_locking(false)
@@ -55,13 +55,13 @@ CPrefetchToken_Impl::CPrefetchToken_Impl(const TIds& ids, unsigned int depth)
 }
 
 
-CPrefetchToken_Impl::~CPrefetchToken_Impl(void)
+CPrefetchTokenOld_Impl::~CPrefetchTokenOld_Impl(void)
 {
     return;
 }
 
 
-void CPrefetchToken_Impl::x_InitPrefetch(CScope& scope)
+void CPrefetchTokenOld_Impl::x_InitPrefetch(CScope& scope)
 {
     m_TSEs.resize(m_Ids.size());
     m_CurrentId = 0;
@@ -73,13 +73,13 @@ void CPrefetchToken_Impl::x_InitPrefetch(CScope& scope)
 }
 
 
-void CPrefetchToken_Impl::x_SetNon_locking(void)
+void CPrefetchTokenOld_Impl::x_SetNon_locking(void)
 {
     m_Non_locking = true;
 }
 
 
-void CPrefetchToken_Impl::AddResolvedId(size_t id_idx, TTSE_Lock tse)
+void CPrefetchTokenOld_Impl::AddResolvedId(size_t id_idx, TTSE_Lock tse)
 {
     CFastMutexGuard guard(m_Lock);
     if ( m_Non_locking ) {
@@ -99,21 +99,21 @@ void CPrefetchToken_Impl::AddResolvedId(size_t id_idx, TTSE_Lock tse)
 }
 
 
-bool CPrefetchToken_Impl::IsEmpty(void) const
+bool CPrefetchTokenOld_Impl::IsEmpty(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_Ids.empty();
 }
 
 
-bool CPrefetchToken_Impl::IsValid(void) const
+bool CPrefetchTokenOld_Impl::IsValid(void) const
 {
     CFastMutexGuard guard(m_Lock);
     return m_CurrentId < m_Ids.size();
 }
 
 
-CBioseq_Handle CPrefetchToken_Impl::NextBioseqHandle(CScope& scope)
+CBioseq_Handle CPrefetchTokenOld_Impl::NextBioseqHandle(CScope& scope)
 {
     TTSE_Lock tse;
     CSeq_id_Handle id;
@@ -139,13 +139,13 @@ CBioseq_Handle CPrefetchToken_Impl::NextBioseqHandle(CScope& scope)
 }
 
 
-void CPrefetchToken_Impl::AddTokenReference(void)
+void CPrefetchTokenOld_Impl::AddTokenReference(void)
 {
     ++m_TokenCount;
 }
 
 
-void CPrefetchToken_Impl::RemoveTokenReference(void)
+void CPrefetchTokenOld_Impl::RemoveTokenReference(void)
 {
     if ( !(--m_TokenCount) ) {
         // No more tokens, reset the queue
@@ -159,7 +159,7 @@ void CPrefetchToken_Impl::RemoveTokenReference(void)
 }
 
 
-CPrefetchThread::CPrefetchThread(CDataSource& data_source)
+CPrefetchThreadOld::CPrefetchThreadOld(CDataSource& data_source)
     : m_DataSource(data_source),
       m_Stop(false)
 {
@@ -167,13 +167,13 @@ CPrefetchThread::CPrefetchThread(CDataSource& data_source)
 }
 
 
-CPrefetchThread::~CPrefetchThread(void)
+CPrefetchThreadOld::~CPrefetchThreadOld(void)
 {
     return;
 }
 
 
-void CPrefetchThread::AddRequest(CPrefetchToken_Impl& token)
+void CPrefetchThreadOld::AddRequest(CPrefetchTokenOld_Impl& token)
 {
     {{
         CFastMutexGuard guard(m_Lock);
@@ -182,21 +182,21 @@ void CPrefetchThread::AddRequest(CPrefetchToken_Impl& token)
 }
 
 
-void CPrefetchThread::Terminate(void)
+void CPrefetchThreadOld::Terminate(void)
 {
     {{
         CFastMutexGuard guard(m_Lock);
         m_Stop = true;
     }}
     // Unlock the thread
-    m_Queue.Put(CRef<CPrefetchToken_Impl>(0));
+    m_Queue.Put(CRef<CPrefetchTokenOld_Impl>(0));
 }
 
 
-void* CPrefetchThread::Main(void)
+void* CPrefetchThreadOld::Main(void)
 {
     do {
-        CRef<CPrefetchToken_Impl> token = m_Queue.Get();
+        CRef<CPrefetchTokenOld_Impl> token = m_Queue.Get();
         {{
             CFastMutexGuard guard(m_Lock);
             if (m_Stop) {
@@ -253,6 +253,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2006/02/02 14:35:33  vasilche
+* Renamed old prefetch classes.
+*
 * Revision 1.8  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

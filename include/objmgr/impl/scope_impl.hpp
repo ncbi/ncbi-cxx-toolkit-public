@@ -495,7 +495,7 @@ private:
     friend class CTSE_CI;
     friend class CSeq_annot_CI;
     friend class CSeqMap_CI;
-    friend class CPrefetchToken_Impl;
+    friend class CPrefetchTokenOld_Impl;
     friend class CDataSource_ScopeInfo;
     friend class CTSE_ScopeInfo;
     friend class CScopeTransaction_Impl;

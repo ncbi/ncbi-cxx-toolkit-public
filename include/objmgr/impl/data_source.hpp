@@ -75,8 +75,8 @@ class CBioseq_Info;
 
 // others
 class CBioseq_Handle;
-class CPrefetchToken_Impl;
-class CPrefetchThread;
+class CPrefetchTokenOld_Impl;
+class CPrefetchThreadOld;
 class CDSAnnotLockReadGuard;
 class CDSAnnotLockWriteGuard;
 class CScope_Impl;
@@ -259,7 +259,7 @@ public:
     void GetLoadedBlob_ids(const CSeq_id_Handle& idh,
                            TLoadedBlob_ids& blob_ids) const;
 
-    virtual void Prefetch(CPrefetchToken_Impl& token);
+    virtual void Prefetch(CPrefetchTokenOld_Impl& token);
 
     TMainLock& GetMainLock() const { return m_DSMainLock; }
 
@@ -299,7 +299,7 @@ private:
     friend class CSeq_annot_Info;
     friend class CBioseq_set_Info;
     friend class CBioseq_Info;
-    friend class CPrefetchToken_Impl;
+    friend class CPrefetchTokenOld_Impl;
     friend class CScope_Impl;
     friend class CDSAnnotLockReadGuard;
     friend class CDSAnnotLockWriteGuard;
@@ -427,7 +427,7 @@ private:
     mutable TBlob_Cache   m_Blob_Cache;     // unlocked blobs
 
     // Prefetching thread and lock, used when initializing the thread
-    CRef<CPrefetchThread> m_PrefetchThread;
+    CRef<CPrefetchThreadOld> m_PrefetchThread;
     CFastMutex            m_PrefetchLock;
 
     // mutex pool

@@ -48,35 +48,35 @@ class CScope;
 class CSeq_id;
 class CSeq_id_Handle;
 class CBioseq_Handle;
-class CPrefetchThread;
+class CPrefetchThreadOld;
 class CDataSource;
 class CTSE_Lock;
 
-class NCBI_XOBJMGR_EXPORT CPrefetchToken_Impl : public CObject
+class NCBI_XOBJMGR_EXPORT CPrefetchTokenOld_Impl : public CObject
 {
 public:
     typedef vector<CSeq_id_Handle> TIds;
 
-    ~CPrefetchToken_Impl(void);
+    ~CPrefetchTokenOld_Impl(void);
 
     DECLARE_OPERATOR_BOOL(IsValid());
 
 private:
-    friend class CPrefetchToken;
-    friend class CPrefetchThread;
+    friend class CPrefetchTokenOld;
+    friend class CPrefetchThreadOld;
 
     typedef CTSE_Lock TTSE_Lock;
     typedef vector<TTSE_Lock>   TFetchedTSEs;
     typedef map<TTSE_Lock, int> TTSE_Map;
 
-    CPrefetchToken_Impl(const TIds& ids, unsigned int depth);
+    CPrefetchTokenOld_Impl(const TIds& ids, unsigned int depth);
 
     void x_InitPrefetch(CScope& scope);
     void x_SetNon_locking(void);
 
     // Hide copy methods
-    CPrefetchToken_Impl(const CPrefetchToken_Impl&);
-    CPrefetchToken_Impl& operator=(const CPrefetchToken_Impl&);
+    CPrefetchTokenOld_Impl(const CPrefetchTokenOld_Impl&);
+    CPrefetchTokenOld_Impl& operator=(const CPrefetchTokenOld_Impl&);
 
     bool IsValid(void) const;
     
@@ -88,7 +88,7 @@ private:
     // Called by fetching function when id is loaded
     void AddResolvedId(size_t id_idx, TTSE_Lock tse);
 
-    // Checked by CPrefetchThread before processing next id
+    // Checked by CPrefetchThreadOld before processing next id
     bool IsEmpty(void) const;
 
     int            m_TokenCount;    // Number of tokens referencing this impl
@@ -103,13 +103,13 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CPrefetchThread : public CThread
+class NCBI_XOBJMGR_EXPORT CPrefetchThreadOld : public CThread
 {
 public:
-    CPrefetchThread(CDataSource& data_source);
+    CPrefetchThreadOld(CDataSource& data_source);
 
     // Add request to the fetcher queue
-    void AddRequest(CPrefetchToken_Impl& token);
+    void AddRequest(CPrefetchTokenOld_Impl& token);
 
     // Stop the thread (since Exit() can not be called from
     // data loader's destructor).
@@ -118,11 +118,11 @@ public:
 protected:
     virtual void* Main(void);
     // protected destructor as required by CThread
-    ~CPrefetchThread(void);
+    ~CPrefetchThreadOld(void);
 
 private:
     // Using list to be able to delete elements
-    typedef CBlockingQueue<CRef<CPrefetchToken_Impl> > TPrefetchQueue;
+    typedef CBlockingQueue<CRef<CPrefetchTokenOld_Impl> > TPrefetchQueue;
 
     CDataSource&   m_DataSource;
     TPrefetchQueue m_Queue;
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2006/02/02 14:35:32  vasilche
+* Renamed old prefetch classes.
+*
 * Revision 1.9  2005/03/29 19:21:56  jcherry
 * Added export specifiers
 *

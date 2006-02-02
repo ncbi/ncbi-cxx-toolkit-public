@@ -282,7 +282,7 @@ private:
     friend class CAnnot_Collector;
     friend class CBioseq_CI;
     friend class CHeapScope;
-    friend class CPrefetchToken_Impl;
+    friend class CPrefetchTokenOld_Impl;
     friend class CScopeTransaction;
 
     CRef<CScope>      m_HeapScope;
@@ -310,6 +310,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2006/02/02 14:35:32  vasilche
+* Renamed old prefetch classes.
+*
 * Revision 1.89  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *
