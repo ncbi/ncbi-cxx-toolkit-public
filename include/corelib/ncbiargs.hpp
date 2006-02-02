@@ -1,5 +1,5 @@
-#ifndef NCBIARGS__HPP
-#define NCBIARGS__HPP
+#ifndef CORELIB___NCBIARGS__HPP
+#define CORELIB___NCBIARGS__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -403,6 +403,7 @@ public:
 };
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CArgDescriptions --
@@ -491,7 +492,7 @@ public:
         fIgnoreInvalidValue = (1 << 4),
         /// Post warning when an invalid value is ignored (no effect
         /// if fIgnoreInvalidValue is not set).
-        fWarnOnInvalidValue = (1 << 5),
+        fWarnOnInvalidValue = (1 << 5)
     };
     typedef unsigned int TFlags;  ///< Binary OR of "EFlags"
 
@@ -1294,6 +1295,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2006/02/02 21:29:43  vakatov
+ * Heed minor (extra comma) warning
+ *
  * Revision 1.49  2006/01/23 19:17:10  grichenk
  * Added groups and error handler for arguments.
  *
@@ -1457,4 +1461,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* NCBIARGS__HPP */
+#endif  /* CORELIB___NCBIARGS__HPP */
