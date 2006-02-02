@@ -1211,11 +1211,11 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                                        diag_lower, diag_upper, &d, best_diag, 
                                        op_cost, &new_seq2_index);
 
-                if (seq2_index - new_seq2_index > 0) 
+                if (seq2_index - new_seq2_index > 0) {
                     GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
                                     seq2_index - new_seq2_index);
-
-                seq2_index = new_seq2_index;
+                    seq2_index = new_seq2_index;
+                }
             } 
             else if (state == eGapAlignIns) {
                 /* gap in seq1 */
