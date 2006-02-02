@@ -75,6 +75,8 @@ public:
             return !m_Scope;
         }
 
+    DECLARE_OPERATOR_BOOL_REF(m_Scope);
+
     bool operator==(const CHeapScope& scope) const
         {
             return m_Scope == scope.m_Scope;
@@ -140,6 +142,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2006/02/02 14:31:23  vasilche
+* Operator bool.
+*
 * Revision 1.5  2005/06/22 14:14:38  vasilche
 * Avoid exporting inlined methods.
 *
