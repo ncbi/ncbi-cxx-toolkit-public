@@ -212,7 +212,7 @@ public:
     
 protected:
     struct SItemHandleGreater {
-        bool operator()(const TItemHandle& i1, const TItemHandle& i2)
+        bool operator()(const TItemHandle& i1, const TItemHandle& i2) const
         { return *i1 > *i2; }
     };
     
@@ -682,14 +682,16 @@ void CBlockingQueue<TRequest>::SetUserPriority(TItemHandle handle,
         return;
     }
     CMutexGuard guard(m_Mutex);
-    typename TRealQueue::iterator it = m_Queue.find(handle);
+    // Having the mutex, we can safely drop "volatile"
+    TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
+    typename TRealQueue::iterator it = q.find(handle);
     // These sanity checks protect against race conditions and
     // accidental use of handles from other queues.
-    if (it != m_Queue.end()  &&  *it == handle) {
-        m_Queue.erase(it);
+    if (it != q.end()  &&  *it == handle) {
+        q.erase(it);
         TPriority counter = handle->m_Priority & 0xFFFFFF;
         handle->m_Priority = (priority << 24) | counter;
-        m_Queue.insert(handle);
+        q.insert(handle);
     }
 }
 
@@ -701,11 +703,13 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
         return;
     }
     CMutexGuard guard(m_Mutex);
-    typename TRealQueue::iterator it = m_Queue.find(handle);
+    // Having the mutex, we can safely drop "volatile"
+    TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
+    typename TRealQueue::iterator it = q.find(handle);
     // These sanity checks protect against race conditions and
     // accidental use of handles from other queues.
-    if (it != m_Queue.end()  &&  *it == handle) {
-        m_Queue.erase(it);
+    if (it != q.end()  &&  *it == handle) {
+        q.erase(it);
         handle->m_Status = CQueueItem::eWithdrawn;
     }
 }
@@ -899,6 +903,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2006/02/02 18:18:09  ucko
+* Fix const- and volatile-correctness issues caught by MSVC.
+*
 * Revision 1.30  2006/02/02 16:54:24  ucko
 * Fix incorrect enum scopes that somehow slipped past GCC.
 *
