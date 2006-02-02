@@ -359,16 +359,19 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
 
     if (third_party  &&  !title.empty() ) {
         bool tpa_start = NStr::StartsWith(title, "TPA: ", NStr::eNocase);
-        if (tpa_exp  &&  !NStr::StartsWith(title, "TPA_exp:", NStr::eNocase)) {
-            prefix += "TPA_exp: ";
-            if (tpa_start) {
-                title.erase(0, 5);
+        if (tpa_exp) {
+            if ( !NStr::StartsWith(title, "TPA_exp:", NStr::eNocase) ) {
+                prefix += "TPA_exp: ";
+                if (tpa_start) {
+                    title.erase(0, 5);
+                }
             }
-        } else if (tpa_inf
-                   &&  !NStr::StartsWith(title, "TPA_inf:", NStr::eNocase)) {
-            prefix += "TPA_inf: ";
-            if (tpa_start) {
-                title.erase(0, 5);
+        } else if (tpa_inf) {
+            if ( !NStr::StartsWith(title, "TPA_inf:", NStr::eNocase) ) {
+                prefix += "TPA_inf: ";
+                if (tpa_start) {
+                    title.erase(0, 5);
+                }
             }
         } else if ( !tpa_start ) {
             prefix += "TPA: ";
@@ -887,6 +890,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.54  2006/02/02 15:44:19  ucko
+* Fix logic error in handling of sequences already flagged as TPA_exp or TPA_inf.
+*
 * Revision 1.53  2006/01/23 19:19:17  ucko
 * Per changes to the C Toolkit earlier this month, label TPA records
 * tagged as experimental or inferential accordingly.
