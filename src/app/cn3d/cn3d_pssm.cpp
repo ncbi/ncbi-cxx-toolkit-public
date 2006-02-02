@@ -84,7 +84,7 @@ PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
         bma->GetUngappedAlignedBlocks(&blocks);
 
         // fill out Seq-entry and Seq-annot based on BMA (row order is irrelevant here)
-        for (unsigned int i=1; i<bma->NRows(); ++i) {
+        for (unsigned int i=((bma->NRows() > 1) ? 1 : 0); i<bma->NRows(); ++i) {
             seq.Reset(new CSeq_entry);
             seq->SetSeq().Assign(multiple->GetSequenceOfRow(i)->bioseqASN.GetObject());
             c.SetSequences().SetSet().SetSeq_set().push_back(seq);
@@ -304,6 +304,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2006/02/02 15:18:12  thiessen
+* fix pssm generation when alignment has only one row
+*
 * Revision 1.17  2006/01/05 15:51:20  thiessen
 * tweaks
 *
