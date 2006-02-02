@@ -37,7 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/tse_scope_lock.hpp>
-#include <objects/seq/Seq_entry.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
