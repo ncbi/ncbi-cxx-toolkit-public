@@ -678,7 +678,7 @@ void CBlockingQueue<TRequest>::SetUserPriority(TItemHandle handle,
                                                TUserPriority priority)
 {
     if (handle->GetUserPriority() == priority
-        ||  handle->GetStatus() != TItemHandle::ePending) {
+        ||  handle->GetStatus() != CQueueItem::ePending) {
         return;
     }
     CMutexGuard guard(m_Mutex);
@@ -697,7 +697,7 @@ void CBlockingQueue<TRequest>::SetUserPriority(TItemHandle handle,
 template <typename TRequest>
 void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
 {
-    if (handle->GetStatus() != TItemHandle::ePending) {
+    if (handle->GetStatus() != CQueueItem::ePending) {
         return;
     }
     CMutexGuard guard(m_Mutex);
@@ -706,7 +706,7 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
     // accidental use of handles from other queues.
     if (it != m_Queue.end()  &&  *it == handle) {
         m_Queue.erase(it);
-        handle->m_Status = TItemHandle::eWithdrawn;
+        handle->m_Status = CQueueItem::eWithdrawn;
     }
 }
 
@@ -899,6 +899,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2006/02/02 16:54:24  ucko
+* Fix incorrect enum scopes that somehow slipped past GCC.
+*
 * Revision 1.29  2006/02/02 15:59:13  ucko
 * When accepting a request, return a handle by which the caller can
 * query its status, change its priority, or withdraw it altogether.
