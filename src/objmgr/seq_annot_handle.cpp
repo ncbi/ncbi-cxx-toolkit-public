@@ -72,6 +72,12 @@ CConstRef<CSeq_annot> CSeq_annot_Handle::GetCompleteSeq_annot(void) const
 }
 
 
+CConstRef<CSeq_annot> CSeq_annot_Handle::GetSeq_annotCore(void) const
+{
+    return GetCompleteSeq_annot();
+}
+
+
 CSeq_entry_Handle CSeq_annot_Handle::GetParentEntry(void) const
 {
     return CSeq_entry_Handle(x_GetInfo().GetParentSeq_entry_Info(),
@@ -300,6 +306,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/02/02 14:28:19  vasilche
+* Added TObject, GetCompleteObject(), GetObjectCore() for templates.
+*
 * Revision 1.21  2006/01/25 18:59:04  didenko
 * Redisgned bio objects edit facility
 *

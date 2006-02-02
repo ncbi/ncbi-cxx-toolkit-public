@@ -132,8 +132,14 @@ public:
 
     /// Complete and return const reference to the current seq-annot
     CConstRef<CSeq_annot> GetCompleteSeq_annot(void) const;
+    CConstRef<CSeq_annot> GetSeq_annotCore(void) const;
 
-     /// Get parent Seq-entry handle
+    /// Unified interface for templates
+    typedef CSeq_annot TObject;
+    CConstRef<TObject> GetCompleteObject(void) const;
+    CConstRef<TObject> GetObjectCore(void) const;
+
+    /// Get parent Seq-entry handle
     ///
     /// @sa 
     ///     GetSeq_entry_Handle()
@@ -316,6 +322,20 @@ bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& handle) const
 
 
 inline
+CConstRef<CSeq_annot> CSeq_annot_Handle::GetCompleteObject(void) const
+{
+    return GetCompleteSeq_annot();
+}
+
+
+inline
+CConstRef<CSeq_annot> CSeq_annot_Handle::GetObjectCore(void) const
+{
+    return GetSeq_annotCore();
+}
+
+
+inline
 CSeq_annot_EditHandle::CSeq_annot_EditHandle(void)
 {
 }
@@ -351,6 +371,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2006/02/02 14:28:19  vasilche
+* Added TObject, GetCompleteObject(), GetObjectCore() for templates.
+*
 * Revision 1.24  2005/11/15 19:22:06  didenko
 * Added transactions and edit commands support
 *

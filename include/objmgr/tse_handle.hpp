@@ -100,6 +100,11 @@ public:
     /// Get const reference to the seq-entry
     CConstRef<CSeq_entry> GetTSECore(void) const;
 
+    /// Unified interface for templates
+    typedef CSeq_entry TObject;
+    CConstRef<TObject> GetCompleteObject(void) const;
+    CConstRef<TObject> GetObjectCore(void) const;
+
     /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
     
@@ -127,9 +132,9 @@ protected:
     friend class CScope_Impl;
     friend class CTSE_ScopeInfo;
 
-    typedef CTSE_ScopeInfo TObject;
+    typedef CTSE_ScopeInfo TScopeInfo;
 
-    CTSE_Handle(TObject& object);
+    CTSE_Handle(TScopeInfo& object);
 
 private:
 
@@ -140,7 +145,7 @@ public: // non-public section
 
     CTSE_Handle(const CTSE_ScopeUserLock& lock);
 
-    TObject& x_GetScopeInfo(void) const;
+    TScopeInfo& x_GetScopeInfo(void) const;
     const CTSE_Info& x_GetTSE_Info(void) const;
     CScope_Impl& x_GetScopeImpl(void) const;
 };
@@ -193,9 +198,23 @@ bool CTSE_Handle::operator<(const CTSE_Handle& tse) const
 
 
 inline
-CTSE_Handle::TObject& CTSE_Handle::x_GetScopeInfo(void) const
+CTSE_Handle::TScopeInfo& CTSE_Handle::x_GetScopeInfo(void) const
 {
-    return const_cast<TObject&>(*m_TSE);
+    return const_cast<TScopeInfo&>(*m_TSE);
+}
+
+
+inline
+CConstRef<CSeq_entry> CTSE_Handle::GetCompleteObject(void) const
+{
+    return GetCompleteTSE();
+}
+
+
+inline
+CConstRef<CSeq_entry> CTSE_Handle::GetObjectCore(void) const
+{
+    return GetTSECore();
 }
 
 

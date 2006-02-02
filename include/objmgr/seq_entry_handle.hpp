@@ -141,6 +141,11 @@ public:
     /// Get const reference to the seq-entry
     CConstRef<CSeq_entry> GetSeq_entryCore(void) const;
 
+    /// Unified interface for templates
+    typedef CSeq_entry TObject;
+    CConstRef<TObject> GetCompleteObject(void) const;
+    CConstRef<TObject> GetObjectCore(void) const;
+
     // Seq-entry accessors
     typedef CSeq_entry::E_Choice E_Choice;
     E_Choice Which(void) const;
@@ -596,6 +601,20 @@ const CSeq_entry_ScopeInfo& CSeq_entry_Handle::x_GetScopeInfo(void) const
 
 
 inline
+CConstRef<CSeq_entry> CSeq_entry_Handle::GetCompleteObject(void) const
+{
+    return GetCompleteSeq_entry();
+}
+
+
+inline
+CConstRef<CSeq_entry> CSeq_entry_Handle::GetObjectCore(void) const
+{
+    return GetSeq_entryCore();
+}
+
+
+inline
 bool CSeq_entry_Handle::IsRemoved(void) const
 {
     return m_Info.IsRemoved();
@@ -679,6 +698,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2006/02/02 14:28:19  vasilche
+* Added TObject, GetCompleteObject(), GetObjectCore() for templates.
+*
 * Revision 1.26  2006/01/25 18:59:03  didenko
 * Redisgned bio objects edit facility
 *

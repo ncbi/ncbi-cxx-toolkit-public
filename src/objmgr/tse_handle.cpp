@@ -52,7 +52,7 @@ BEGIN_SCOPE(objects)
 
 #define _CHECK() _ASSERT(!*this || &m_TSE->GetScopeImpl() == m_Scope.GetImpl())
 
-CTSE_Handle::CTSE_Handle(TObject& object)
+CTSE_Handle::CTSE_Handle(TScopeInfo& object)
     : m_Scope(object.GetScopeImpl().GetScope()),
       m_TSE(&object)
 {

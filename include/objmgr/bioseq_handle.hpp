@@ -172,6 +172,11 @@ public:
     /// Get the complete bioseq
     CConstRef<CBioseq> GetCompleteBioseq(void) const;
 
+    /// Unified interface for templates
+    typedef CBioseq TObject;
+    CConstRef<TObject> GetCompleteObject(void) const;
+    CConstRef<TObject> GetObjectCore(void) const;
+
     //////////////////////////////////////////////////////////////////
     // Bioseq members
     // id
@@ -779,6 +784,20 @@ CBioseq_Info& CBioseq_EditHandle::x_GetInfo(void) const
 
 
 inline
+CConstRef<CBioseq> CBioseq_Handle::GetCompleteObject(void) const
+{
+    return GetCompleteBioseq();
+}
+
+
+inline
+CConstRef<CBioseq> CBioseq_Handle::GetObjectCore(void) const
+{
+    return GetBioseqCore();
+}
+
+
+inline
 CBioseq_Handle::TMol CBioseq_Handle::GetSequenceType(void) const
 {
     return GetInst_Mol();
@@ -808,6 +827,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2006/02/02 14:28:19  vasilche
+* Added TObject, GetCompleteObject(), GetObjectCore() for templates.
+*
 * Revision 1.85  2006/01/25 18:59:03  didenko
 * Redisgned bio objects edit facility
 *
