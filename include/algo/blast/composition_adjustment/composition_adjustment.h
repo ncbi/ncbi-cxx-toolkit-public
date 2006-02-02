@@ -272,7 +272,7 @@ Blast_AdjustScores(Int4 ** matrix,
                    ECompoAdjustModes composition_adjust_mode,
                    int RE_pseudocounts,
                    Blast_CompositionWorkspace *NRrecord,
-                   EMatrixAdjustRule *whichMode,
+                   EMatrixAdjustRule *matrix_adjust_rule,
                    double calc_lambda(double *,int,int,double));
 
 
