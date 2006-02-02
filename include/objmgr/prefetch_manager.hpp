@@ -166,6 +166,10 @@ protected:
 
 private:
     CRef<CPrefetchManager_Impl> m_Impl;
+
+private:
+    CPrefetchManager(const CPrefetchManager&);
+    void operator=(const CPrefetchManager&);
 };
 
 
