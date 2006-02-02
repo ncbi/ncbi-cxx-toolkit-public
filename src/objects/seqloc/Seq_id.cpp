@@ -696,7 +696,14 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'Q':                               return eAcc_gb_dirsub;
             case 'S':                               return eAcc_gb_con;
             case 'U': case 'X':                     return eAcc_gb_gss;
+            case 'Z':                               return eAcc_gb_patent;
             default:                                return eAcc_unreserved_nuc;
+            }
+
+        case 'E':
+            switch (pfx[1]) {
+            case 'A':                     return eAcc_gb_patent;
+            default:                      return eAcc_unreserved_nuc;
             }
 
         default: return eAcc_unreserved_nuc;
@@ -1614,6 +1621,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.120  2006/02/02 16:07:51  ucko
+ * IdentifyAccession: DZ and EA are GenBank patents (eAcc_gb_patent).
+ *
  * Revision 6.119  2006/01/25 15:59:26  ucko
  * IdentifyAccession: DY has been assigned to GenBank ESTs (eAcc_gb_est)
  *
