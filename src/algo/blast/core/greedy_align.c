@@ -140,7 +140,7 @@ s_GetMBSpace(SMBSpace* pool, Int4 num_alloc)
     @param diag_lower Array of lower bounds on diagonal index [in]
     @param diag_upper Array of upper bounds on diagonal index [in]
     @param d Starting distance [in][out]
-    @param diag Starting diagonal [in]
+    @param diag The diagonal of the current traceback position [in]
     @param op_cost The sum of the match and mismatch scores [in]
     @param seq2_index The offset into the second sequence after the traceback
                 operation has completed [out]
@@ -153,6 +153,10 @@ s_GetNextAffineTbackFromMatch(SGreedyOffset** last_seq2_off, Int4* diag_lower,
 {
     Int4 new_seq2_index;
     
+    /* the goal here is to choose the largest seq2 offset
+       that leads to the current distance. There are three 
+       choices possible and each is checked in turn */
+
     if (diag >= diag_lower[(*d) - op_cost] && 
         diag <= diag_upper[(*d) - op_cost]) {
 
@@ -186,7 +190,7 @@ s_GetNextAffineTbackFromMatch(SGreedyOffset** last_seq2_off, Int4* diag_lower,
     @param diag_lower Array of lower bounds on diagonal index [in]
     @param diag_upper Array of upper bounds on diagonal index [in]
     @param d Starting distance [in][out]
-    @param diag Starting diagonal [in]
+    @param diag The diagonal of the current traceback position [in]
     @param gap_open open a gap [in]
     @param gap_extend (Modified) cost to extend a gap [in]
     @param IorD The state of the traceback at present [in]
@@ -201,10 +205,22 @@ s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower,
     Int4 new_seq2_index;
     Int4 gap_open_extend = gap_open + gap_extend;
 
+    /* as with the previous routine, the traceback operation
+       that leads to the current one must be determined. Either
+       a gap is opened from a previous run of matches, or a
+       gap is extended. If several traceback choices are 
+       available, choose the one that generates the largest 
+       seq2 offset */
+
+    /* if the previous traceback operation is a gap, then it
+       starts one diagonal away from the current diagonal... */
+
     if (IorD == eGapAlignIns)
         new_diag = diag - 1;
     else 
         new_diag = diag + 1;
+
+    /* ...and its seq2 offset is fixed */
 
     if (new_diag >= diag_lower[(*d) - gap_extend] && 
         new_diag <= diag_upper[(*d) - gap_extend]) {
@@ -220,6 +236,10 @@ s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower,
         new_seq2_index = -100;
     }
 
+    /* make the previous traceback operation a match if it is
+       valid to do so and the resulting seq2 offset exceeds the
+       one derived from extending a gap */
+
     if (new_diag >= diag_lower[(*d) - gap_open_extend] && 
         new_diag <= diag_upper[(*d) - gap_open_extend] && 
         new_seq2_index < 
@@ -234,7 +254,7 @@ s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower,
 }
 
 /** During the traceback for a non-affine greedy alignment,
-    compute the distance that will result from the next 
+    compute the diagonal that will result from the next 
     traceback operation
 
     @param last_seq2_off Array of offsets into the second sequence;
@@ -245,23 +265,28 @@ s_GetNextAffineTbackFromIndel(SGreedyOffset** last_seq2_off, Int4* diag_lower,
     @param diag Index of diagonal that produced the starting distance [in]
     @param seq2_index The offset into the second sequence after the traceback
                 operation has completed [out]
-    @return The next distance remaining after the traceback operation
+    @return The diagonal resulting from the next traceback operation
+                being applied
 */
 static Int4 
 s_GetNextNonAffineTback(Int4 **last_seq2_off, Int4 d, 
                         Int4 diag, Int4 *seq2_index)
 {
+    /* choose the traceback operation that results in the
+       largest seq2 offset at this point, then compute the
+       new diagonal that is implied by the operation */
+
     if (last_seq2_off[d-1][diag-1] > 
                 MAX(last_seq2_off[d-1][diag], last_seq2_off[d-1][diag+1])) {
         *seq2_index = last_seq2_off[d-1][diag-1];
-        return diag - 1;
+        return diag - 1;    /* gap in seq2 */
     } 
     if (last_seq2_off[d-1][diag] > last_seq2_off[d-1][diag+1]) {
         *seq2_index = last_seq2_off[d-1][diag];
-        return diag;
+        return diag;        /* match */
     }
     *seq2_index = last_seq2_off[d-1][diag+1];
-    return diag + 1;
+    return diag + 1;        /* gap in seq1 */
 }
 
 /** see greedy_align.h for description */
@@ -296,7 +321,13 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
        the way. Instead of score, this code tracks the 'distance'
        (number of mismatches plus number of gaps) between seq1
        and seq2. Instead of walking through sequence offsets, it
-       walks through diagonals that can achieve a given distance */
+       walks through diagonals that can achieve a given distance.
+     
+       Note that in what follows, the numbering of diagonals implies
+       a dot matrix where increasing seq1 offsets go to the right on 
+       the x axis, and increasing seq2 offsets go up the y axis.
+       The gapped alignment thus proceeds up and to the right in
+       the graph, and diagonals are numbered increasing to the right */
 
     best_dist = 0;
     best_diag = 0;
@@ -381,9 +412,11 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
     seq1_index = index;
 
     if (index == len1 || index == len2) {
+        /* Return the number of differences, which is zero here */
+
         if (edit_block != NULL)
             GapPrelimEditBlockAdd(edit_block, eGapAlignSub, index);
-        return 0; /* This function returns number of differences, here it is zero. */
+        return 0; 
     }
 
     /* set up the memory pool */
@@ -641,7 +674,6 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
 
     while (d > 0) {
         Int4 new_diag;
-        Int4 new_seq1_index;
         Int4 new_seq2_index;
 
         /* retrieve the value of the diagonal after the next
@@ -650,7 +682,6 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
 
         new_diag = s_GetNextNonAffineTback(last_seq2_off, d, 
                                            best_diag, &new_seq2_index);
-        new_seq1_index = new_seq2_index + new_diag - diag_origin;
 
         if (new_diag == best_diag) {
 
@@ -684,7 +715,6 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
         }
         d--; 
         best_diag = new_diag; 
-        seq1_index = new_seq1_index;
         seq2_index = new_seq2_index; 
     }
 
@@ -764,7 +794,13 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
        the way. Instead of score, this code tracks the 'distance'
        (number of mismatches plus number of gaps) between seq1
        and seq2. Instead of walking through sequence offsets, it
-       walks through diagonals that can achieve a given distance */
+       walks through diagonals that can achieve a given distance 
+     
+       Note that in what follows, the numbering of diagonals implies
+       a dot matrix where increasing seq1 offsets go to the right on 
+       the x axis, and increasing seq2 offsets go up the y axis.
+       The gapped alignment thus proceeds up and to the right in
+       the graph, and diagonals are numbered increasing to the right */
 
     best_dist = 0;
     best_diag = 0;
@@ -858,9 +894,10 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
     seq1_index = index;
 
     if (index == len1 || index == len2) {
+        /* return the score of the run of matches */
         if (edit_block != NULL)
             GapPrelimEditBlockAdd(edit_block, eGapAlignSub, index);
-       return (index*match_score);
+       return index * match_score;
     }
 
     /* set up the memory pool */
@@ -888,9 +925,9 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
        can come from distances further back than d-1 (which is
        sufficient for non-affine alignment). Where non-affine
        alignment only needs to track the current bounds on diagonals
-       to test, the present code must also track bounds for 
-       max_penalty previous distances. These share the same
-       preallocated array */
+       to test, the present code must also track the upper and
+       lower bounds on diagonals for max_penalty previous distances. 
+       These share the same preallocated array */
 
     diag_lower = aux_data->diag_bounds;
     diag_upper = aux_data->diag_bounds + 
@@ -1211,6 +1248,14 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                                        diag_lower, diag_upper, &d, best_diag, 
                                        op_cost, &new_seq2_index);
 
+                /* Note that a block of substitutions is issued only
+                   if the seq2 offset returned exceeds the seq2 offset
+                   expected. The above will be called several times 
+                   before this happens, possibly because other paths 
+                   can achieve a higher seq2 offset than we're looking 
+                   for but those other paths are not reachable from 
+                   the current point in the traceback */
+
                 if (seq2_index - new_seq2_index > 0) {
                     GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
                                     seq2_index - new_seq2_index);
@@ -1218,7 +1263,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                 }
             } 
             else if (state == eGapAlignIns) {
-                /* gap in seq1 */
+                /* gap in seq2 */
                 state = s_GetNextAffineTbackFromIndel(last_seq2_off, 
                                      diag_lower, diag_upper, &d, best_diag, 
                                      gap_open, gap_extend, eGapAlignIns);
@@ -1226,7 +1271,7 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                 GapPrelimEditBlockAdd(edit_block, eGapAlignIns, 1);
             } 
             else {
-                /* gap in seq2 */
+                /* gap in seq1 */
                 GapPrelimEditBlockAdd(edit_block, eGapAlignDel, 1);
                 state = s_GetNextAffineTbackFromIndel(last_seq2_off, 
                                      diag_lower, diag_upper, &d, best_diag, 
