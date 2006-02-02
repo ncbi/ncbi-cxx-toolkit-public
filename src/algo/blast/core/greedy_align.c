@@ -1249,12 +1249,15 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* seq1, Int4 len1,
                                        op_cost, &new_seq2_index);
 
                 /* Note that a block of substitutions is issued only
-                   if the seq2 offset returned exceeds the seq2 offset
-                   expected. The above will be called several times 
-                   before this happens, possibly because other paths 
-                   can achieve a higher seq2 offset than we're looking 
-                   for but those other paths are not reachable from 
-                   the current point in the traceback */
+                   if the seq2 offset returned does not exceed the 
+                   seq2 offset expected. The above may be called several 
+                   times before this happens, possibly because other 
+                   paths can achieve a better seq2 offset than we're 
+                   looking for but those other paths are not reachable 
+                   from the current point in the traceback. Each call 
+                   to s_GetNextAffineTbackFromMatch reduces the current 
+                   distance, so eventually the process terminates with
+                   a valid block of substitutions */
 
                 if (seq2_index - new_seq2_index > 0) {
                     GapPrelimEditBlockAdd(edit_block, eGapAlignSub, 
