@@ -24,6 +24,9 @@ case "$1" in
      elif /netopt/gcc/$1/$platform/bin/$CXX -dumpversion >/dev/null 2>&1; then
        CXX=/netopt/gcc/$1/$platform/bin/$CXX
        CC=/netopt/gcc/$1/$platform/bin/$CC
+     elif $CXX-$1 -dumpversion >/dev/null 2>&1; then
+       CXX="$CXX-$1"
+       CC="$CC-$1"
      elif $CXX -V$1 -dumpversion >/dev/null 2>&1; then
        CXX="$CXX -V$1"
        CC="$CC -V$1"
