@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2006/02/02 14:36:46  vasilche
+* Updated for new prefetch API.
+*
 * Revision 1.21  2005/11/03 19:45:42  vasilche
 * Added simple tests for ResetHistory() and GetEditHandles().
 *
@@ -190,7 +193,8 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/annot_ci.hpp>
-#include <objmgr/prefetch.hpp>
+#include <objmgr/prefetch_manager.hpp>
+#include <objmgr/prefetch_actions.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
@@ -403,14 +407,46 @@ bool CTestOM::Thread_Run(int idx)
     int pause = m_pause;
 
     set<CBioseq_Handle> handles;
-
+    
+    SAnnotSelector sel(CSeqFeatData::e_not_set);
+    if ( m_no_named ) {
+        sel.ResetAnnotsNames().AddUnnamedAnnots();
+    }
+    else if ( m_no_snp ) {
+        sel.ExcludeNamedAnnots("SNP");
+    }
+    if ( m_no_external ) {
+        sel.SetExcludeExternal();
+    }
+    if ( m_adaptive ) {
+        sel.SetAdaptiveDepth();
+    }
+    if ( idx%2 == 0 ) {
+        sel.SetResolveMethod(sel.eResolve_All);
+    }
+    else if ( idx%4 == 1 ) {
+        sel.SetOverlapType(sel.eOverlap_Intervals);
+    }
+    
     bool ok = true;
     for ( int pass = 0; pass < m_pass_count; ++pass ) {
-        CPrefetchToken token;
+        CRef<CStdPrefetch> prefetch;
+        vector<CPrefetchToken> pf_bh_tokens, pf_fi_tokens;
         if (m_prefetch) {
             LOG_POST("Using prefetch");
             // Initialize prefetch token;
-            token = CPrefetchToken(scope, m_Ids);
+            prefetch = new CStdPrefetch();
+            pf_bh_tokens.resize(m_Ids.size());
+            pf_fi_tokens.resize(m_Ids.size());
+            for ( int i = from, end = to+delta; i != end; i += delta ) {
+                CSeq_id_Handle sih = m_Ids[i];
+                pf_bh_tokens[i] = prefetch->GetBioseqHandle(scope, sih);
+                pf_fi_tokens[i] =
+                    prefetch->GetFeat_CI(scope, sih,
+                                         CRange<TSeqPos>::GetWhole(),
+                                         eNa_strand_unknown,
+                                         sel);
+            }
         }
 
         const int kMaxErrorCount = 30;
@@ -436,12 +472,8 @@ bool CTestOM::Thread_Run(int idx)
 
                 CBioseq_Handle handle;
                 if (m_prefetch) {
-                    if (!token) {
-                        LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                                 ": INVALID PREFETCH TOKEN");
-                        continue;
-                    }
-                    handle = token.NextBioseqHandle(scope);
+                    //static int count = 0; if ( ++count == 100 ) return 0;
+                    handle = CStdPrefetch::GetBioseqHandle(pf_bh_tokens[i]);
                 }
                 else {
                     handle = scope.GetBioseqHandle(sih);
@@ -531,25 +563,18 @@ bool CTestOM::Thread_Run(int idx)
                     SetValue(m_DescMap, sih, desc_count);
 
                     // enumerate features
-                    SAnnotSelector sel(CSeqFeatData::e_not_set);
-                    if ( m_no_named ) {
-                        sel.ResetAnnotsNames().AddUnnamedAnnots();
-                    }
-                    else if ( m_no_snp ) {
-                        sel.ExcludeNamedAnnots("SNP");
-                    }
-                    if ( m_no_external ) {
-                        sel.SetExcludeExternal();
-                    }
-                    if ( m_adaptive ) {
-                        sel.SetAdaptiveDepth();
-                    }
 
                     feats.clear();
                     set<CSeq_annot_Handle> annots;
                     if ( idx%2 == 0 ) {
-                        sel.SetResolveMethod(sel.eResolve_All);
-                        for ( CFeat_CI it(handle, sel); it; ++it ) {
+                        CFeat_CI it;
+                        if ( m_prefetch ) {
+                            it = CStdPrefetch::GetFeat_CI(pf_fi_tokens[i]);
+                        }
+                        else {
+                            it = CFeat_CI(handle, sel);
+                        }
+                        for ( ; it; ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
                         }
@@ -578,10 +603,16 @@ bool CTestOM::Thread_Run(int idx)
                         _ASSERT(annots == annots2);
                     }
                     else if ( idx%4 == 1 ) {
-                        sel.SetOverlapType(sel.eOverlap_Intervals);
                         CSeq_loc loc;
                         loc.SetWhole(const_cast<CSeq_id&>(*sih.GetSeqId()));
-                        for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
+                        CFeat_CI it;
+                        if ( m_prefetch ) {
+                            it = CStdPrefetch::GetFeat_CI(pf_fi_tokens[i]);
+                        }
+                        else {
+                            it = CFeat_CI(scope, loc, sel);
+                        }
+                        for ( ; it;  ++it ) {
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
                         }
@@ -629,8 +660,10 @@ bool CTestOM::Thread_Run(int idx)
                     scope.ResetHistory();
                     CAnnot_CI annot_it(handle);
                 }
-                if ( m_no_reset && m_keep_handles ) {
-                    handles.insert(handle);
+                if ( m_no_reset ) {
+                    if ( m_keep_handles ) {
+                        handles.insert(handle);
+                    }
                 }
             }
             catch (CLoaderException& e) {
