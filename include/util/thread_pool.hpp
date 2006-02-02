@@ -67,6 +67,28 @@ template <typename TRequest>
 class CBlockingQueue
 {
 public:
+    /// Every request has an associated 32-bit priority field, but
+    /// only the top eight bits are under direct user control.  (The
+    /// rest are a counter.)
+    typedef Uint4 TPriority;
+    typedef Uint1 TUserPriority;
+
+    class CQueueItem;
+    typedef CRef<CQueueItem> TItemHandle;
+
+    /// It may be desirable to store handles obtained from GetHandle() in
+    /// instances of CCompletingHandle to ensure that they are marked as
+    /// complete when all is said and done, even in the face of exceptions.
+    class CCompletingHandle : public TItemHandle
+    {
+    public:
+        ~CCompletingHandle() {
+            if (this->NotEmpty()) {
+                this->GetObject().MarkAsComplete();
+            }
+        }
+    };
+
     /// Constructor
     ///
     /// @param max_size
@@ -84,7 +106,7 @@ public:
     /// @param priority
     ///   A priority of the request. The higher the priority 
     ///   the sooner the request will be processed.   
-    void         Put(const TRequest& request, Uint1 priority = 0); 
+    TItemHandle  Put(const TRequest& request, TUserPriority priority = 0); 
 
     /// Wait for the room in the queue up to
     /// timeout_sec + timeout_nsec/1E9 seconds.
@@ -106,14 +128,28 @@ public:
     void         WaitForHunger(unsigned int timeout_sec  = kMax_UInt,
                                unsigned int timeout_nsec = 0) const;
 
-    /// Get the first available requst from the queue. 
-    /// Blocks politely if empty. 
+    /// Get the first available request from the queue, and return a
+    /// handle to it.
+    /// Blocks politely if empty.
     /// Waits up to timeout_sec + timeout_nsec/1E9 seconds.
     ///
     /// @param timeout_sec
     ///   Number of seconds
     /// @param timeout_nsec
     ///   Number of nanoseconds
+    TItemHandle  GetHandle(unsigned int timeout_sec  = kMax_UInt,
+                           unsigned int timeout_nsec = 0);
+
+    /// Get the first available request from the queue, and return
+    /// just the request.
+    /// Blocks politely if empty.
+    /// Waits up to timeout_sec + timeout_nsec/1E9 seconds.
+    ///
+    /// @param timeout_sec
+    ///   Number of seconds
+    /// @param timeout_nsec
+    ///   Number of nanoseconds
+    NCBI_DEPRECATED
     TRequest     Get(unsigned int timeout_sec  = kMax_UInt,
                      unsigned int timeout_nsec = 0);
 
@@ -129,36 +165,62 @@ public:
     /// Check if the queue is full
     bool         IsFull     (void) const { return GetSize() == GetMaxSize(); }
 
-protected:
-    class CQueueItem
+    /// Adjust a pending request's priority.
+    void         SetUserPriority(TItemHandle handle, TUserPriority priority);
+
+    /// Withdraw a pending request from consideration.
+    void         Withdraw(TItemHandle handle);
+
+    class CQueueItem : public CObject
     {
     public:
+        // typedef CBlockingQueue<TRequest> TQueue;
+
+        enum EStatus {
+            ePending,  ///< still in the queue
+            eActive,   ///< extracted but not yet released
+            eComplete, ///< extracted and released
+            eWithdrawn ///< dropped by submitter's request
+        };
+
         CQueueItem(Uint4 priority, TRequest request) 
-            : m_Priority(priority), m_Request(request) {}
+            : m_Request(request), m_Priority(priority), m_Status(ePending)
+            { }
     
         bool operator> (const CQueueItem& item) const 
         { return m_Priority > item.m_Priority; }
 
-        Uint4& GetPriority(void) { return m_Priority; }
-        TRequest& GetRequest(void)  { return m_Request; } 
+        const TRequest&  GetRequest(void) const   { return m_Request; } 
+        const TPriority& GetPriority(void) const  { return m_Priority; }
+        const EStatus&   GetStatus(void) const    { return m_Status; }
+        TUserPriority    GetUserPriority(void) const 
+            { return m_Priority >> 24; }
+
+        TRequest& SetRequest(void) { return m_Request; }
+        // void      SetUserPriority(TUserPriority p);
+        void      MarkAsComplete(void) { m_Status = eComplete; }
+        // void      Withdraw(void);
         
     private:
-        Uint4 m_Priority;
-        TRequest m_Request;
+        friend class CBlockingQueue<TRequest>;
+
+        // TQueue&   m_Queue;
+        TRequest  m_Request;
+        TPriority m_Priority;
+        EStatus   m_Status;
     };
     
-    struct SQueueItemGreater {
-        bool operator()(const CQueueItem& i1, const CQueueItem& i2)
-        { return i1 > i2; }
+protected:
+    struct SItemHandleGreater {
+        bool operator()(const TItemHandle& i1, const TItemHandle& i2)
+        { return *i1 > *i2; }
     };
-    // WorkShop otherwise won't let it see CQueueItem.
-    friend struct SQueueItemGreater;
     
     /// The type of the queue
-    typedef set<CQueueItem, SQueueItemGreater > TQueue;
+    typedef set<TItemHandle, SItemHandleGreater> TRealQueue;
 
     // Derived classes should take care to use these members properly.
-    volatile TQueue     m_Queue;     ///< The queue
+    volatile TRealQueue m_Queue;     ///< The queue
     CSemaphore          m_GetSem;    ///< Raised if the queue contains data
     mutable CSemaphore  m_PutSem;    ///< Raised if the queue has room
     mutable CSemaphore  m_HungerSem; ///< Raised if Get has to wait
@@ -239,6 +301,10 @@ public:
     typedef CThreadInPool<TRequest> TThread;
     typedef typename TThread::ERunMode ERunMode;
 
+    typedef CBlockingQueue<TRequest> TQueue;
+    typedef typename TQueue::TUserPriority TUserPriority;
+    typedef typename TQueue::TItemHandle   TItemHandle;
+
     /// Constructor
     ///
     /// @param max_threads
@@ -275,7 +341,8 @@ public:
     /// @param priority
     ///   A priority of the request. The higher the priority 
     ///   the sooner the request will be processed.   
-    void AcceptRequest(const TRequest& request, Uint1 priority = 0);
+    TItemHandle AcceptRequest(const TRequest& request,
+                              TUserPriority priority = 0);
 
     /// Puts a request in the queue with the highest priority
     /// It will run a new thread even if the maximum of allowed threads 
@@ -283,7 +350,7 @@ public:
     ///
     /// @param request
     ///   A request
-    void AcceptUrgentRequest(const TRequest& request);
+    TItemHandle AcceptUrgentRequest(const TRequest& request);
 
     /// Wait for the room in the queue up to
     /// timeout_sec + timeout_nsec/1E9 seconds.
@@ -306,6 +373,13 @@ public:
     /// @param urgent
     ///  Whether the request would be urgent.
     bool HasImmediateRoom(bool urgent = false) const;
+
+    /// Adjust a pending request's priority.
+    void         SetUserPriority(TItemHandle handle, TUserPriority priority);
+
+    /// Withdraw a pending request from consideration.
+    void         Withdraw(TItemHandle handle)
+        { m_Queue.Withdraw(handle); }
 
 protected:
 
@@ -345,14 +419,14 @@ protected:
     /// The guard for m_MaxThreads and m_MaxUrgentThreads
     CMutex                   m_Mutex;
     /// The request queue
-    CBlockingQueue<TRequest> m_Queue;
+    TQueue                   m_Queue;
     bool                     m_QueuingForbidden;
 
 private:
     friend class CThreadInPool<TRequest>;
-    void x_AcceptRequest(const TRequest& req, 
-                         Uint1 priority,
-                         bool urgent);
+    TItemHandle x_AcceptRequest(const TRequest& req, 
+                                TUserPriority priority,
+                                bool urgent);
 
 };
 
@@ -480,11 +554,12 @@ private:
 //
 
 template <typename TRequest>
-void CBlockingQueue<TRequest>::Put(const TRequest& data, Uint1 priority)
+typename CBlockingQueue<TRequest>::TItemHandle
+CBlockingQueue<TRequest>::Put(const TRequest& data, TUserPriority priority)
 {
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
-    TQueue& q = const_cast<TQueue&>(m_Queue);
+    TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
     if (q.size() == m_MaxSize) {
         NCBI_THROW(CBlockingQueueException, eFull, "CBlockingQueue<>::Put: "
                    "attempt to insert into a full queue");
@@ -493,10 +568,9 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data, Uint1 priority)
     }
     if (m_RequestCounter == 0) {
         m_RequestCounter = 0xFFFFFF;
-        for (typename TQueue::iterator it = q.begin(); it != q.end(); ++it) {
-            CQueueItem& val = const_cast<CQueueItem&>(*it);
-            val.GetPriority() = (val.GetPriority() & 0xFF000000) 
-                                    + m_RequestCounter--;
+        NON_CONST_ITERATE (typename TRealQueue, it, q) {
+            CQueueItem& val = const_cast<CQueueItem&>(**it);
+            val.m_Priority = (val.m_Priority & 0xFF000000) | m_RequestCounter--;
         }
     }
     /// Structure of the internal priority
@@ -504,12 +578,14 @@ void CBlockingQueue<TRequest>::Put(const TRequest& data, Uint1 priority)
     /// the next 3 bytes are a counter which insures that 
     /// requests with the same user's priority are processed 
     /// in FIFO order
-    Uint4 real_priority = (priority << 24) + m_RequestCounter--;
-    q.insert( CQueueItem(real_priority,data) );
+    TPriority real_priority = (priority << 24) | m_RequestCounter--;
+    TItemHandle handle(new CQueueItem(real_priority, data));
+    q.insert(handle);
     m_HungerSem.TryWait();
     if (q.size() == m_MaxSize) {
         m_PutSem.TryWait();
     }
+    return handle;
 }
 
 
@@ -547,8 +623,9 @@ void CBlockingQueue<TRequest>::WaitForHunger(unsigned int timeout_sec,
 
 
 template <typename TRequest>
-TRequest CBlockingQueue<TRequest>::Get(unsigned int timeout_sec,
-                                       unsigned int timeout_nsec)
+typename CBlockingQueue<TRequest>::TItemHandle
+CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
+                                    unsigned int timeout_nsec)
 {
     if ( !m_GetSem.TryWait() ) {
         // nothing available at present
@@ -562,9 +639,9 @@ TRequest CBlockingQueue<TRequest>::Get(unsigned int timeout_sec,
 
     CMutexGuard guard(m_Mutex);
     // Having the mutex, we can safely drop "volatile"
-    TQueue& q = const_cast<TQueue&>(m_Queue);
-    CQueueItem& item = const_cast<CQueueItem&>(*q.begin());
-    TRequest result = item.GetRequest();
+    TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
+    TItemHandle handle(*q.begin());
+    handle->m_Status = CQueueItem::eActive;
     q.erase(q.begin());
     if ( ! q.empty() ) {
         m_GetSem.Post();
@@ -575,7 +652,16 @@ TRequest CBlockingQueue<TRequest>::Get(unsigned int timeout_sec,
     // to insert multiple objects atomically.
     m_PutSem.TryWait();
     m_PutSem.Post();
-    return result;
+    return handle;
+}
+
+template <typename TRequest>
+TRequest CBlockingQueue<TRequest>::Get(unsigned int timeout_sec,
+                                       unsigned int timeout_nsec)
+{
+    TItemHandle handle = GetHandle(timeout_sec, timeout_nsec);
+    handle->MarkAsComplete(); // almost certainly premature, but our last chance
+    return handle->GetRequest();
 }
 
 
@@ -583,7 +669,45 @@ template <typename TRequest>
 size_t CBlockingQueue<TRequest>::GetSize(void) const
 {
     CMutexGuard guard(m_Mutex);
-    return const_cast<const TQueue&>(m_Queue).size();
+    return const_cast<const TRealQueue&>(m_Queue).size();
+}
+
+
+template <typename TRequest>
+void CBlockingQueue<TRequest>::SetUserPriority(TItemHandle handle,
+                                               TUserPriority priority)
+{
+    if (handle->GetUserPriority() == priority
+        ||  handle->GetStatus() != TItemHandle::ePending) {
+        return;
+    }
+    CMutexGuard guard(m_Mutex);
+    typename TRealQueue::iterator it = m_Queue.find(handle);
+    // These sanity checks protect against race conditions and
+    // accidental use of handles from other queues.
+    if (it != m_Queue.end()  &&  *it == handle) {
+        m_Queue.erase(it);
+        TPriority counter = handle->m_Priority & 0xFFFFFF;
+        handle->m_Priority = (priority << 24) | counter;
+        m_Queue.insert(handle);
+    }
+}
+
+
+template <typename TRequest>
+void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
+{
+    if (handle->GetStatus() != TItemHandle::ePending) {
+        return;
+    }
+    CMutexGuard guard(m_Mutex);
+    typename TRealQueue::iterator it = m_Queue.find(handle);
+    // These sanity checks protect against race conditions and
+    // accidental use of handles from other queues.
+    if (it != m_Queue.end()  &&  *it == handle) {
+        m_Queue.erase(it);
+        handle->m_Status = TItemHandle::eWithdrawn;
+    }
 }
 
 
@@ -596,12 +720,15 @@ void* CThreadInPool<TRequest>::Main(void)
 {
     m_Pool->Register(*this);
 
+    typename CBlockingQueue<TRequest>::CCompletingHandle handle;
+
     try {
         Init();
 
         for (;;) {
             m_Pool->m_Delta.Add(-1);
-            ProcessRequest(m_Pool->m_Queue.Get());
+            handle.Reset(m_Pool->m_Queue.GetHandle());
+            ProcessRequest(handle->GetRequest());
             if (m_RunMode == eRunOnce) {
                 m_Pool->UnRegister(*this);
                 break;
@@ -662,16 +789,19 @@ void CPoolOfThreads<TRequest>::Spawn(unsigned int num_threads)
 
 template <typename TRequest>
 inline
-void CPoolOfThreads<TRequest>::AcceptRequest(const TRequest& req, 
-                                             Uint1 priority)
+typename CPoolOfThreads<TRequest>::TItemHandle
+CPoolOfThreads<TRequest>::AcceptRequest(const TRequest& req, 
+                                             TUserPriority priority)
 {
-    x_AcceptRequest(req, priority, false);
+    return x_AcceptRequest(req, priority, false);
 }
+
 template <typename TRequest>
 inline
-void CPoolOfThreads<TRequest>::AcceptUrgentRequest(const TRequest& req)
+typename CPoolOfThreads<TRequest>::TItemHandle
+CPoolOfThreads<TRequest>::AcceptUrgentRequest(const TRequest& req)
 {
-    x_AcceptRequest(req, 0xFF, true);
+    return x_AcceptRequest(req, 0xFF, true);
 }
 
 template <typename TRequest>
@@ -705,11 +835,13 @@ void CPoolOfThreads<TRequest>::WaitForRoom(unsigned int timeout_sec,
 
 template <typename TRequest>
 inline
-void CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req, 
-                                               Uint1 priority,
-                                               bool urgent)
+typename CPoolOfThreads<TRequest>::TItemHandle
+CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req, 
+                                          TUserPriority priority,
+                                          bool urgent)
 {
     bool new_thread = false;
+    TItemHandle handle;
     {{
         CMutexGuard guard(m_Mutex);
         // we reserved 0xFF priority for urgent requests
@@ -720,7 +852,7 @@ void CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
                        "CPoolOfThreads<>::x_AcceptRequest: "
                        "attempt to insert into a full queue");
         }
-        m_Queue.Put(req, priority);
+        handle = m_Queue.Put(req, priority);
         if (m_Delta.Add(1) >= m_Threshold
             &&  m_ThreadCount.Get() < m_MaxThreads) {
             // Add another thread to the pool because they're all busy.
@@ -739,6 +871,22 @@ void CPoolOfThreads<TRequest>::x_AcceptRequest(const TRequest& req,
                              TThread::eNormal;
         NewThread(mode)->Run();
     }
+
+    return handle;
+}
+
+template <typename TRequest>
+inline
+void CPoolOfThreads<TRequest>::SetUserPriority(TItemHandle handle,
+                                               TUserPriority priority)
+{
+    // Maintain segregation between urgent and non-urgent requests
+    if (handle->GetUserPriority() == 0xFF) {
+        return;
+    } else if (priority == 0xFF) {
+        priority = 0xFE;
+    }
+    m_Queue.SetUserPriority(handle, priority);
 }
 
 END_NCBI_SCOPE
@@ -751,6 +899,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2006/02/02 15:59:13  ucko
+* When accepting a request, return a handle by which the caller can
+* query its status, change its priority, or withdraw it altogether.
+*
 * Revision 1.28  2006/02/01 16:40:19  didenko
 * + IsEmpty method to CPoolOfThreads class
 *
