@@ -57,10 +57,14 @@ CMsvcMasterProjectGenerator::CMsvcMasterProjectGenerator
      m_FilesSubdir   ("UtilityProjectsFiles")
 {
     m_CustomBuildCommand  = "@echo on\n";
-    m_CustomBuildCommand += "devenv "\
-                            "/build $(ConfigurationName) "\
-                            "/project $(InputName) "\
-                            "\"$(SolutionPath)\"\n";
+    if (CMsvc7RegSettings::GetMsvcVersion() == CMsvc7RegSettings::eMsvc710) {
+        m_CustomBuildCommand += "devenv "\
+                                "/build $(ConfigurationName) "\
+                                "/project $(InputName) "\
+                                "\"$(SolutionPath)\"\n";
+    } else {
+        m_CustomBuildCommand += "msbuild \"$(SolutionPath)\" /t:\"$(InputName)\" /p:Configuration=$(ConfigurationName)";
+    }
     CreateUtilityProject(m_Name, m_Configs, &m_Xmlprj);
 }
 
@@ -158,9 +162,13 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>&   filter,
         CreateProjectFileItem(project_id);
 
         SCustomBuildInfo build_info;
+        string project_name = CreateProjectName(project_id);
+        if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+            project_name = NStr::Replace( project_name, ".", "_");
+        }
         string source_file_path_abs = 
             CDirEntry::ConcatPath(m_ProjectDir, 
-                                  CreateProjectName(project_id) + m_ProjectItemExt);
+                                  project_name + m_ProjectItemExt);
         source_file_path_abs = CDirEntry::NormalizePath(source_file_path_abs);
 
         build_info.m_SourceFile  = source_file_path_abs;
@@ -182,8 +190,12 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>&   filter,
 void 
 CMsvcMasterProjectGenerator::CreateProjectFileItem(const CProjKey& project_id)
 {
+    string project_name = CreateProjectName(project_id);
+    if (CMsvc7RegSettings::GetMsvcVersion() > CMsvc7RegSettings::eMsvc710) {
+        project_name = NStr::Replace( project_name, ".", "_");
+    }
     string file_path = 
-        CDirEntry::ConcatPath(m_ProjectDir, CreateProjectName(project_id));
+        CDirEntry::ConcatPath(m_ProjectDir, project_name);
 
     file_path += m_ProjectItemExt;
 
@@ -206,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/03 15:31:30  gouriano
+ * Corrections for MSVC 2005 express
+ *
  * Revision 1.19  2006/01/23 18:26:15  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *
