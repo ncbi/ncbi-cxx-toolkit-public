@@ -306,8 +306,14 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
             limits.SetFrom( max(limits.GetFrom(),origalign.MaxCdsLimits().GetFrom()-7) );
             limits.SetTo( min(limits.GetTo(),origalign.MaxCdsLimits().GetTo()+7) );
         }
-        limits.SetFrom( RevSeqMap(limits.GetFrom()) );
-        limits.SetTo( RevSeqMap(limits.GetTo()) );
+        int a = -1;
+        int aa = limits.GetFrom();
+        while(a < 0) a = m_rev_seq_map[(aa--)-From()]; // just in case we stumled on the insertion because of 7
+        int b = -1;
+        int bb = limits.GetTo();
+        while(b < 0) b = m_rev_seq_map[(bb++)-From()]; // just in case we stumled on the insertion because of 7
+        limits.SetFrom(a );
+        limits.SetTo( b );
 
         if(origalign.Type() == CAlignVec::eWall)
         {
@@ -1404,7 +1410,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
                 }
             }
 
-            if(stop-start+1 < 21) continue;
+            if(stop-start+1 < 75) continue;
             
             double s = cdrscr[frame][stop]-cdrscr[frame][start+2];
             
@@ -1479,7 +1485,7 @@ void CGnomonEngine::GetScore(CAlignVec& model, bool uselims) const
                     {
                         int new_start = starts[frame][1];
                         int newlen = stop-new_start+1;
-                        if(newlen > 21 && (!uselims || new_start+3 <= lim_start)) start = new_start;
+                        if(newlen > 75 && (!uselims || new_start+3 <= lim_start)) start = new_start;
                     }
                 }
                 
@@ -1514,6 +1520,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2006/02/03 20:22:37  souvorov
+ * Minimal CDS 21->75
+ *
  * Revision 1.7  2005/11/15 21:04:08  souvorov
  * NonConsensusMargin = 1500
  *
