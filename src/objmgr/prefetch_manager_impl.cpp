@@ -56,7 +56,10 @@ public:
         {
         }
 
-    static CPrefetchThread* GetCurrentThread(void);
+    static CPrefetchThread* GetCurrentThread(void)
+        {
+            return dynamic_cast<CPrefetchThread*>(CThread::GetCurrentThread());
+        }
 
     CPrefetchToken GetCurrentToken(void) const
         {
@@ -73,8 +76,6 @@ public:
             SetCurrentToken(CPrefetchToken());
         }
 
-    virtual void Init(void);
-    virtual void x_OnExit(void);
     virtual void ProcessRequest(const CPrefetchToken& token);
 
     void CancelAll(void);
@@ -328,15 +329,6 @@ void CPrefetchManager_Impl::UnRegister(TThread& thread)
 }
 
 
-static CSafeStaticRef< CTls<CPrefetchThread> > s_PrefetchThread;
-
-
-CPrefetchThread* CPrefetchThread::GetCurrentThread(void)
-{
-    return s_PrefetchThread.Get().GetValue();
-}
-
-
 class CSaveCurrentToken
 {
 public:
@@ -367,20 +359,6 @@ void CPrefetchThread::CancelAll(void)
     if ( CPrefetchToken token = GetCurrentToken() ) {
         token.Cancel();
     }
-}
-
-
-void CPrefetchThread::Init(void)
-{
-    s_PrefetchThread.Get().SetValue(this);
-    TParent::Init();
-}
-
-
-void CPrefetchThread::x_OnExit(void)
-{
-    s_PrefetchThread.Get().SetValue(0);
-    TParent::x_OnExit();
 }
 
 
