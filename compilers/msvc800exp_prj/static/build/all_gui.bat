@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: all_gui.bat,v 1.1 2006/01/11 17:33:41 gouriano Exp $
+REM $Id: all_gui.bat,v 1.2 2006/02/03 16:32:21 gouriano Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -64,6 +64,7 @@ GOTO EXIT
 TIME /T
 ECHO INFO: Building "static\gui\%CFG%"
 msbuild gui\ncbi_gui.sln /t:"-BUILD-ALL-" /p:Configuration=%CFG%
+REM vcbuild /M2 /time gui\ncbi_gui.sln "%CFG%|Win32"
 IF ERRORLEVEL 1 GOTO ABORT
 
 SHIFT
@@ -77,3 +78,4 @@ GOTO EXIT
 :COMPLETE
 ECHO INFO: Build complete.
 :EXIT
+set CFG=
