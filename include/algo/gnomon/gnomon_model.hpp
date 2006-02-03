@@ -138,27 +138,17 @@ public:
     enum {eWall, eNested, eEST, emRNA, eProt};
 
     enum EStatus {
-        eOK,
-        eSkipped,
-        eAcceptedChain,
-        eRejectedChain
+        eOk = 0,
+        eOpen = 1,
+        ePStop = 2,
+        eSkipped = 4,
+        eLeftTrimmed = 8,
+        eRightTrimmed = 16,
+        eRejectedChain = 32
     };
 
-    string StatusString()
-    {
-        switch (m_status) {
-        case eOK:            return "OK";
-        case eSkipped:       return "eSkipped";
-        case eAcceptedChain: return "AcceptedChain";
-        case eRejectedChain: return "RejectedChain";
-        default:             return "unknown";
-        }
-    }
-
     CAlignVec(EStrand s = ePlus, int i = 0, int t = eEST, TSignedSeqRange cdl = TSignedSeqRange::GetEmpty()) :
-        m_cds_limits(cdl),
-        m_type(t), m_strand(s), m_id(i), m_status(eOK),
-        m_score(BadScore()), m_open_cds(false), m_pstop(false) {}
+        m_cds_limits(cdl), m_type(t), m_strand(s), m_id(i), m_status(eOk), m_score(BadScore()) {}
 
 
     void Insert(const CAlignExon& p);
@@ -193,8 +183,8 @@ public:
     int ID() const { return m_id; }
     void SetName(const string& name) { m_name = name; }
     const string& Name() const { return m_name; }
-    void ChangeStatus(EStatus status) { m_status = status; }
-    EStatus Status() const { return m_status; }
+    unsigned int& Status() { return m_status; }
+    const unsigned int& Status() const { return m_status; }
     bool operator<(const CAlignVec& a) const { return Precede(Limits(),a.Limits()); }
     void Init();
     void SetScore(double s) { m_score = s; }
@@ -231,10 +221,10 @@ public:
         else if(Strand() == eMinus && m_cds_limits.GetFrom() > Limits().GetFrom()+2 && m_max_cds_limits.GetTo() < Limits().GetTo()) return true;
         else return false;  
     }
-    bool OpenCds() const { return m_open_cds; }  // "optimal" CDS is not internal
-    void SetOpenCds(bool op) { m_open_cds = op; }
-    bool PStop() const { return m_pstop; }  // has premature stop(s)
-    void SetPStop(bool ps) { m_pstop = ps; }
+    bool OpenCds() const { return m_status & eOpen; }  // "optimal" CDS is not internal
+    void SetOpenCds(bool op) { if(op) m_status |= eOpen; else m_status &= ~eOpen; }
+    bool PStop() const { return m_status & ePStop; }  // has premature stop(s)
+    void SetPStop(bool ps) { if(ps) m_status |= ePStop; else m_status &= ~ePStop; }
     
     int FShiftedLen(TSignedSeqPos a, TSignedSeqPos b) const;
     
@@ -268,9 +258,8 @@ private:
     TSignedSeqRange m_limits;
     int m_id;
     string m_name;
-    EStatus m_status;
+    unsigned int m_status;
     double m_score;
-    bool m_open_cds, m_pstop;
     TFrameShifts m_fshifts;
 };
 
@@ -391,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/02/03 20:25:46  souvorov
+ * Use flags for CAlignVec properties
+ *
  * Revision 1.15  2005/12/16 14:29:13  chetvern
  * remove extra method declaration
  *
