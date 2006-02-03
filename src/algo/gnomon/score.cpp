@@ -308,10 +308,10 @@ bool rightwall, string cntg, double mpp, double consensuspenalty)
         }
         int a = -1;
         int aa = limits.GetFrom();
-        while(a < 0) a = m_rev_seq_map[(aa--)-From()]; // just in case we stumled on the insertion because of 7
+        while(a < 0) a = m_rev_seq_map[(aa--)-From()]; // just in case we stumbled on the insertion because of 7
         int b = -1;
         int bb = limits.GetTo();
-        while(b < 0) b = m_rev_seq_map[(bb++)-From()]; // just in case we stumled on the insertion because of 7
+        while(b < 0) b = m_rev_seq_map[(bb++)-From()]; // just in case we stumbled on the insertion because of 7
         limits.SetFrom(a );
         limits.SetTo( b );
 
@@ -1520,8 +1520,8 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
- * Revision 1.8  2006/02/03 20:22:37  souvorov
- * Minimal CDS 21->75
+ * Revision 1.9  2006/02/03 20:31:20  souvorov
+ * Typo
  *
  * Revision 1.7  2005/11/15 21:04:08  souvorov
  * NonConsensusMargin = 1500
