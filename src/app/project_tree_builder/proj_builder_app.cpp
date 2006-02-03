@@ -44,6 +44,11 @@
 
 BEGIN_NCBI_SCOPE
 
+// When defined, this environment variable
+// instructs PTB to exclude CONFIGURE, INDEX, and HIERARCHICAL VIEW
+// projects
+const char* s_ptb_skipconfig = "__PTB__SKIP__CONFIG__";
+
 #ifdef COMBINED_EXCLUDE
 struct PIsExcludedByProjectMakefile
 {
@@ -407,6 +412,7 @@ int CProjBulderApp::Run(void)
 
     const list<SConfigInfo>* configurations = 0;
     LOG_POST(Info << "*** Generating MSVC projects ***");
+    bool skip_config = !GetEnvironment().Get(s_ptb_skipconfig).empty();
     if (GetBuildType().GetType() == CBuildType::eStatic) {
         
         // Static build
@@ -437,7 +443,9 @@ int CProjBulderApp::Run(void)
         CMsvcMasterProjectGenerator master_prj_gen(projects_tree,
                                                    GetRegSettings().m_ConfigInfo,
                                                    utility_projects_dir);
-        master_prj_gen.SaveProject();
+        if (!skip_config) {
+            master_prj_gen.SaveProject();
+        }
 
         // ConfigureProject
         string output_dir = GetProjectTreeInfo().m_Compilers;
@@ -456,8 +464,10 @@ int CProjBulderApp::Run(void)
                                                m_Subtree,
                                                m_Solution,
                                                m_BuildPtb);
-        configure_generator.SaveProject(false);
-        configure_generator.SaveProject(true);
+        if (!skip_config) {
+            configure_generator.SaveProject(false);
+            configure_generator.SaveProject(true);
+        }
 
         // INDEX dummy project
         CVisualStudioProject index_xmlprj;
@@ -467,7 +477,9 @@ int CProjBulderApp::Run(void)
         string index_prj_path = 
             CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
         index_prj_path += MSVC_PROJECT_FILE_EXT;
-        SaveIfNewer(index_prj_path, index_xmlprj);
+        if (!skip_config) {
+            SaveIfNewer(index_prj_path, index_xmlprj);
+        }
         //
 
         // BuildAll utility project
@@ -486,12 +498,14 @@ int CProjBulderApp::Run(void)
         ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             sln_gen.AddProject(p->second);
         }
-        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
-        sln_gen.AddConfigureProject (configure_generator.GetPath(false),
-                                     configure_generator.GetVisualStudioProject(false));
-        sln_gen.AddConfigureProject (configure_generator.GetPath(true),
-                                     configure_generator.GetVisualStudioProject(true));
-        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+        if (!skip_config) {
+            sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
+            sln_gen.AddConfigureProject (configure_generator.GetPath(false),
+                                         configure_generator.GetVisualStudioProject(false));
+            sln_gen.AddConfigureProject (configure_generator.GetPath(true),
+                                         configure_generator.GetVisualStudioProject(true));
+            sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+        }
         sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
         sln_gen.SaveSolution(m_Solution);
     }
@@ -535,7 +549,9 @@ int CProjBulderApp::Run(void)
         CMsvcMasterProjectGenerator master_prj_gen(dll_projects_tree,
                                                    dll_configs,
                                                    utility_projects_dir);
-        master_prj_gen.SaveProject();
+        if (!skip_config) {
+            master_prj_gen.SaveProject();
+        }
 
         // ConfigureProject
         string output_dir = GetProjectTreeInfo().m_Compilers;
@@ -554,8 +570,10 @@ int CProjBulderApp::Run(void)
                                m_Subtree,
                                m_Solution,
                                m_BuildPtb);
-        configure_generator.SaveProject(false);
-        configure_generator.SaveProject(true);
+        if (!skip_config) {
+            configure_generator.SaveProject(false);
+            configure_generator.SaveProject(true);
+        }
 
         // INDEX dummy project
         CVisualStudioProject index_xmlprj;
@@ -565,7 +583,9 @@ int CProjBulderApp::Run(void)
         string index_prj_path = 
             CDirEntry::ConcatPath(utility_projects_dir, "_INDEX_");
         index_prj_path += MSVC_PROJECT_FILE_EXT;
-        SaveIfNewer(index_prj_path, index_xmlprj);
+        if (!skip_config) {
+            SaveIfNewer(index_prj_path, index_xmlprj);
+        }
         //
 
         // BuildAll utility project
@@ -584,12 +604,14 @@ int CProjBulderApp::Run(void)
         ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
             sln_gen.AddProject(p->second);
         }
-        sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
-        sln_gen.AddConfigureProject (configure_generator.GetPath(false),
-                                     configure_generator.GetVisualStudioProject(false));
-        sln_gen.AddConfigureProject (configure_generator.GetPath(true),
-                                     configure_generator.GetVisualStudioProject(true));
-        sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+        if (!skip_config) {
+            sln_gen.AddUtilityProject (master_prj_gen.GetPath(), master_prj_gen.GetVisualStudioProject());
+            sln_gen.AddConfigureProject (configure_generator.GetPath(false),
+                                         configure_generator.GetVisualStudioProject(false));
+            sln_gen.AddConfigureProject (configure_generator.GetPath(true),
+                                         configure_generator.GetVisualStudioProject(true));
+            sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+        }
         sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
         sln_gen.SaveSolution(m_Solution);
     }
@@ -1137,6 +1159,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2006/02/03 15:31:01  gouriano
+ * Added possibility to omit CONFIG projects
+ *
  * Revision 1.70  2006/01/23 18:26:15  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *
