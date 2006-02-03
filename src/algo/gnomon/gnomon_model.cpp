@@ -322,8 +322,8 @@ void CAlignVec::Init()
     m_limits = TSignedSeqRange::GetEmpty();
     m_cds_limits = TSignedSeqRange::GetEmpty();
     m_max_cds_limits = TSignedSeqRange::GetEmpty();
-    m_open_cds = false;
-    m_pstop = false;
+    SetOpenCds(false);
+    SetPStop(false);
     m_fshifts.clear();
 }
 
@@ -751,6 +751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/03 20:24:32  souvorov
+ * Use methods for open_cds and pstop
+ *
  * Revision 1.8  2005/11/21 21:34:25  chetvern
  * Small changes in CAlignExon and CClusterSet interfaces
  *
