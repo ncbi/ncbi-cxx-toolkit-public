@@ -64,6 +64,12 @@ x_root_dir=`echo "$x_build_dir" | sed -e 's%/compilers/.*$%%'`
 
 if test -z "$x_list"; then
    x_list="$x_build_dir/check.sh.list"
+   test -f "$x_list"  ||  x_list="$x_build_dir/../check.sh.list"
+fi
+# Check list
+if test ! -f "$x_list"; then
+   echo "Check list file \"$x_list\" not found."
+   exit 1 
 fi
 
 if test -z "$x_out"; then
@@ -72,12 +78,6 @@ fi
 
 x_script_name=`echo "$x_out" | sed -e 's%^.*/%%'`
 
-
-# Check list
-if test ! -f "$x_list"; then
-   echo "Check list file \"$x_list\" not found."
-   exit 1 
-fi
 
 # Change script's command interpreter from /bin/sh to /bin/bash.
 # Cygwin's shell don't works correctly with process pids.
