@@ -98,23 +98,19 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
 
             if( name == "t_threshold" && get_threshold() == 0 )
                 set_threshold( 
-                    NStr::StringToUInt(line.substr(val_start, NPOS), 
-                                       NStr::fStringToNumDefault, 0));
+                    NStr::StringToUInt(line.substr(val_start, NPOS), 0, 0));
 
             if( name == "t_extend" && get_textend() == 0 )
                 set_textend(
-                    NStr::StringToUInt(line.substr(val_start, NPOS),
-                                       NStr::fStringToNumDefault, 0));
+                    NStr::StringToUInt(line.substr(val_start, NPOS), 0, 0));
 
             if( name == "t_low" && get_min_count() == 0 )
                 set_min_count(
-                    NStr::StringToUInt(line.substr(val_start, NPOS),
-                                       NStr::fStringToNumDefault, 0));
+                    NStr::StringToUInt(line.substr(val_start, NPOS), 0, 0));
 
             if( name == "t_high" && get_max_count() == 0 )
                 set_max_count(
-                    NStr::StringToUInt(line.substr(val_start, NPOS),
-                                       NStr::fStringToNumDefault, 0));
+                    NStr::StringToUInt(line.substr(val_start, NPOS), 0, 0));
 
             continue;
         }
@@ -141,7 +137,7 @@ CSeqMaskerIstatAscii::CSeqMaskerIstatAscii( const string & name,
 
         Uint4 unit = NStr::StringToUInt(line.substr(unit_start, 
                                                     unit_end - unit_start),
-                                        NStr::fStringToNumDefault, 16);
+                                        0, 16);
         Uint4 cnt = NStr::StringToUInt(line.substr(cnt_start));
 
         if( cnt < ambig_len ) {
@@ -193,6 +189,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2006/02/06 16:13:41  ivanov
+ * Replace NStr::fStringToNumDefault to 0
+ *
  * Revision 1.2  2005/08/04 13:10:52  ivanov
  * Use 'flag' version of NStr::StringTo*()
  *
