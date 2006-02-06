@@ -26,7 +26,7 @@ error()
 
 }
 
-generate_msvc7_error_check_file() {
+generate_msvc8_error_check_file() {
   cat <<-EOF >$1
 	/.*--* (Reb|B)uild( All | )started: Project:/ {
 	  expendable = ""
@@ -72,7 +72,7 @@ for dir in $dirs ; do
    if [ $dir = dll ] ; then
      test $cfg_configure != ReleaseDLL -a $cfg_configure != DebugDLL  &&  continue  
    fi
-   sols=`eval echo $"sol_${dir}"`
+   sols=`eval echo "$"sol_${dir}""`
    for sol in $sols ; do
      alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
      start=`eval $timer`
@@ -90,7 +90,7 @@ done
 # Generate errors check script
 
 check_awk=$build_dir/build_check.awk
-generate_msvc7_error_check_file $check_awk
+generate_msvc8_error_check_file $check_awk
 
 
 # Build
@@ -100,7 +100,7 @@ for cfg in $cfgs ; do
      if [ $dir = dll ] ; then
        test $cfg != ReleaseDLL -a $cfg != DebugDLL  &&  continue  
      fi
-     sols=`eval echo $"sol_${dir}"`
+     sols=`eval echo "$"sol_${dir}""`
      for sol in $sols ; do
        alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
        start=`eval $timer`
