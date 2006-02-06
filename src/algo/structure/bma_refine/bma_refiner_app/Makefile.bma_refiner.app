@@ -5,7 +5,7 @@ APP = bma_refiner
 
 SRC = bma_refiner
 
-REQUIRES = objects C-Toolkit
+REQUIRES = objects
 
 LIB =   xbma_refiner \
         xcd_utils ncbimime taxon1 \
