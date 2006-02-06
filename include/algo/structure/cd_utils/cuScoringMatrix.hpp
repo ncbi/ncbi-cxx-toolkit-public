@@ -42,7 +42,6 @@
 
 #include <map>
 #include <vector>
-#include <ncbierr.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -175,6 +174,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2006/02/06 16:38:49  cliu
+ * remove c dependency
+ *
  * Revision 1.2  2005/06/03 16:20:29  lavr
  * Explicit (unsigned char) casts in ctype routines
  *

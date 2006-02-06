@@ -44,7 +44,21 @@ struct LessBySeqId : public binary_function <CRef<CSeq_id>, CRef<CSeq_id>, bool>
 {
 	bool operator()(const CRef<CSeq_id>& left, const CRef<CSeq_id>& right) const
 	{
-		return (left->AsFastaString()) < (right->AsFastaString());
+		if (left->IsPdb() && right->IsPdb())
+		{
+			const CPDB_seq_id& leftPdb = left->GetPdb();
+			const CPDB_seq_id& rightPdb = right->GetPdb();
+			int comp = leftPdb.GetMol().Get().compare(rightPdb.GetMol().Get());
+			if (comp == 0)
+			{
+				int compChain = leftPdb.GetChain() - rightPdb.GetChain();
+				return compChain < 0;
+			}
+			else
+				return comp < 0;
+		}
+		else
+			return (*left) < (*right);
 	}
 };
 
@@ -76,6 +90,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2006/02/06 16:38:49  cliu
+ * remove c dependency
+ *
  * Revision 1.3  2006/01/12 16:08:07  cliu
  * const change
  *

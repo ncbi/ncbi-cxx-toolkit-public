@@ -3,7 +3,7 @@
 # Build library "xcd_utils"
 ##################################
 
-REQUIRES = objects C-Toolkit
+REQUIRES = objects
 
 ASN_DEP = cdd ncbimime taxon1
 
@@ -50,5 +50,4 @@ SRC = \
 	cuSeqTreeRootedLayout \
 	cuSeqTreeAPI
 
-CPPFLAGS = $(ORIG_CPPFLAGS) \
-			$(NCBI_C_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS)

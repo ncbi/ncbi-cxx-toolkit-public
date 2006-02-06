@@ -37,7 +37,6 @@
 #define CU_PSSM_MAKER_HPP
 #include <algo/blast/api/pssm_input.hpp>
 #include <algo/blast/api/blast_exception.hpp>
-#include <algo/structure/cd_utils/structure_util.hpp>
 #include <algo/structure/cd_utils/cuCdCore.hpp>
 #include <algo/structure/cd_utils/cuCppNCBI.hpp>
 #include <algo/structure/cd_utils/cuResidueProfile.hpp>
@@ -159,6 +158,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2006/02/06 16:38:49  cliu
+ * remove c dependency
+ *
  * Revision 1.5  2005/11/29 19:29:16  cliu
  * remove makeBlastMatrix
  *
