@@ -335,14 +335,17 @@ bool CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* msg)
             sev = eDiag_Fatal;
         }
 
-//         CDB_ClientEx ex(sev, msg->msgnumber, "cslib", msg->msgstring);
         CDB_ClientEx ex( kBlankCompileInfo, 0, msg->msgstring, sev, msg->msgnumber);
         drv->m_CntxHandlers.PostMsg(&ex);
     }
     else if (msg->severity != CS_SV_INFORM) {
+        ostrstream err_str;
+        
         // nobody can be informed, so put it to stderr
-        cerr << "CSLIB error handler detects the following error" << endl
-             << msg->msgstring << endl;
+        err_str << "CSLIB error handler detects the following error" << endl
+                << msg->msgstring << endl;
+
+        ERR_POST(string(err_str.str(), err_str.pcount()));
     }
 
     return true;
@@ -379,21 +382,25 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
     }
     else {
         if (msg->severity != CS_SV_INFORM) {
+            ostrstream err_str;
+            
             // nobody can be informed, let's put it in stderr
-            cerr << "CTLIB error handler detects the following error" << endl
-                 << "Severity:" << msg->severity
-                 << " Msg # " << msg->msgnumber << endl
-                 << msg->msgstring << endl;
+            err_str << "CTLIB error handler detects the following error" << endl
+                    << "Severity:" << msg->severity << err_str << " Msg # "
+                    << msg->msgnumber << endl;
+            err_str << msg->msgstring << endl;
             
             if (msg->osstringlen > 1) {
-                cerr << "OS # "    << msg->osnumber
-                     << " OS msg " << msg->osstring << endl;
+                err_str << "OS # "    << msg->osnumber
+                        << " OS msg " << msg->osstring << endl;
             }
             
             if (msg->sqlstatelen > 1  &&
                 (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-                cerr << "SQL: " << msg->sqlstate << endl;
+                err_str << "SQL: " << msg->sqlstate << endl;
             }
+            
+            ERR_POST(string(err_str.str(), err_str.pcount()));
         }
         
         return true;
@@ -517,25 +524,29 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         message += "'";
     }
     else {
-        cerr << "Message from the server ";
+        ostrstream err_str;
+        
+        err_str << "Message from the server ";
         
         if (msg->svrnlen > 0) {
-            cerr << "<" << msg->svrname << "> ";
+            err_str << "<" << msg->svrname << "> ";
         }
         
-        cerr << "msg # " << msg->msgnumber
-             << " severity: " << msg->severity << endl;
+        err_str << "msg # " << msg->msgnumber
+                << " severity: " << msg->severity << endl;
         
         if (msg->proclen > 0) {
-            cerr << "Proc: " << msg->proc << " line: " << msg->line << endl;
+            err_str << "Proc: " << msg->proc << " line: " << msg->line << endl;
         }
         
         if (msg->sqlstatelen > 1  &&
             (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
-            cerr << "SQL: " << msg->sqlstate << endl;
+            err_str << "SQL: " << msg->sqlstate << endl;
         }
         
-        cerr << msg->text << endl;
+        err_str << msg->text << endl;
+        
+        ERR_POST(string(err_str.str(), err_str.pcount()));
         
         return true;
     }
@@ -1102,6 +1113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/02/06 16:21:11  ssikorsk
+ *     Use ERR_POST instead of cerr to report error messages.
+ *
  * Revision 1.55  2006/02/01 13:58:18  ssikorsk
  * Report server and user names in case of a failed connection attempt.
  *
