@@ -123,6 +123,9 @@ string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
         if (CSymResolver::IsDefine(raw_macro)) {
             macro = CSymResolver::StripDefine(raw_macro);
             definition = m_Registry.GetString("Configure", macro, "");
+            if (definition.empty()) {
+                definition = m_Registry.GetString(CMsvc7RegSettings::GetMsvcSection(), macro, "");
+            }
             if (definition.empty() && preserve_unresolved) {
                 // preserve unresolved macros
                 done = end;
@@ -516,6 +519,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/02/06 16:35:13  gouriano
+ * Added parameterization into 3rd party lib build location
+ *
  * Revision 1.35  2006/01/23 18:25:09  gouriano
  * Corrected libchoice includes in dll configuration
  *
