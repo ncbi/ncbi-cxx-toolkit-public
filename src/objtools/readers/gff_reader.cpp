@@ -79,8 +79,7 @@ static string& s_URLDecode(const string& s, string& out) {
             pos = pos2 + 1;
         } else if (s[pos2] == '%') {
             try {
-                out += (char)NStr::StringToInt(s.substr(pos2 + 1, 2),
-                                               NStr::fStringToNumDefault, 16);
+                out += (char)NStr::StringToInt(s.substr(pos2 + 1, 2), 0, 16);
                 pos = pos2 + 3;
             } catch (CStringException&) {
                 // some sources neglect to encode % (!)
@@ -1147,6 +1146,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2006/02/06 17:03:49  ucko
+* Use 0 instead of NStr::fStringToNumDefault
+*
 * Revision 1.20  2005/09/26 18:43:45  dicuccio
 * Fixed bugs in GFF reader:
 *  - Clear total range cache in gene features when expanding gene locations
