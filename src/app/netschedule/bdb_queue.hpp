@@ -45,302 +45,34 @@
 #include <corelib/ncbicntr.hpp>
 
 #include <connect/services/netschedule_client.hpp>
-
-#include <bdb/bdb_file.hpp>
-#include <bdb/bdb_env.hpp>
-#include <bdb/bdb_cursor.hpp>
-#include <map>
-#include <vector>
-
-#include <util/logrotate.hpp>
-
-#include "job_status.hpp"
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
-#include "job_time_line.hpp"
-#include "queue_vc.hpp"
-#include "queue_monitor.hpp"
-#include "access_list.hpp"
-#include "nslb.hpp"
+#include "ns_db.hpp"
 
 BEGIN_NCBI_SCOPE
 
-/// BDB table to store queue information
-///
-/// @internal
-///
-struct SQueueDB : public CBDB_File
-{
-    CBDB_FieldUint4        id;              ///< Job id
-
-    CBDB_FieldInt4         status;          ///< Current job status
-    CBDB_FieldUint4        time_submit;     ///< Job submit time
-    CBDB_FieldUint4        time_run;        ///<     run time
-    CBDB_FieldUint4        time_done;       ///<     result submission time
-    CBDB_FieldUint4        timeout;         ///<     individual timeout
-    CBDB_FieldUint4        run_timeout;     ///<     job run timeout
-
-    CBDB_FieldUint4        subm_addr;       ///< netw BO (for notification)
-    CBDB_FieldUint4        subm_port;       ///< notification port
-    CBDB_FieldUint4        subm_timeout;    ///< notification timeout
-
-    CBDB_FieldUint4        worker_node1;    ///< IP of wnode 1 (netw BO)
-    CBDB_FieldUint4        worker_node2;    ///<       wnode 2
-    CBDB_FieldUint4        worker_node3;
-    CBDB_FieldUint4        worker_node4;
-    CBDB_FieldUint4        worker_node5;
-
-    CBDB_FieldUint4        run_counter;     ///< Number of execution attempts
-    CBDB_FieldInt4         ret_code;        ///< Return code
-
-    CBDB_FieldUint4        time_lb_first_eval;  ///< First LB evaluation time
-
-    CBDB_FieldString       input;           ///< Input data
-    CBDB_FieldString       output;          ///< Result data
-
-    CBDB_FieldString       err_msg;         ///< Error message (exception::what())
-    CBDB_FieldString       progress_msg;    ///< Progress report message
 
 
-    CBDB_FieldString       cout;            ///< Reserved
-    CBDB_FieldString       cerr;            ///< Reserved
-
-    SQueueDB()
-    {
-        DisableNull(); 
-
-        BindKey("id",      &id);
-
-        BindData("status", &status);
-        BindData("time_submit", &time_submit);
-        BindData("time_run",    &time_run);
-        BindData("time_done",   &time_done);
-        BindData("timeout",     &timeout);
-        BindData("run_timeout", &run_timeout);
-
-        BindData("subm_addr",    &subm_addr);
-        BindData("subm_port",    &subm_port);
-        BindData("subm_timeout", &subm_timeout);
-
-        BindData("worker_node1", &worker_node1);
-        BindData("worker_node2", &worker_node2);
-        BindData("worker_node3", &worker_node3);
-        BindData("worker_node4", &worker_node4);
-        BindData("worker_node5", &worker_node5);
-
-        BindData("run_counter",        &run_counter);
-        BindData("ret_code",           &ret_code);
-        BindData("time_lb_first_eval", &time_lb_first_eval);
-
-        BindData("input",  &input,  kNetScheduleMaxDataSize);
-        BindData("output", &output, kNetScheduleMaxDataSize);
-
-        BindData("err_msg", &err_msg, kNetScheduleMaxErrSize);
-        BindData("progress_msg", &progress_msg, kNetScheduleMaxDataSize);
-
-        BindData("cout",  &cout, kNetScheduleMaxDataSize);
-        BindData("cerr",  &cerr, kNetScheduleMaxDataSize);
-    }
-};
-
-/// Types of event notification subscribers
-///
-/// @internal
-enum ENetScheduleListenerType
-{
-    eNS_Worker        = (1 << 0),  ///< Regular worker node
-    eNS_BackupWorker  = (1 << 1)   ///< Backup worker node (second priority notifications)
-};
-
-
-/// @internal
-typedef unsigned TNetScheduleListenerType;
-
-
-/// Queue watcher (client) description. Client is predominantly a worker node
-/// waiting for new jobs.
-///
-/// @internal
-///
-struct SQueueListener
-{
-    unsigned int               host;         ///< host name (network BO)
-    unsigned short             udp_port;     ///< Listening UDP port
-    time_t                     last_connect; ///< Last registration timestamp
-    int                        timeout;      ///< Notification expiration timeout
-    string                     auth;         ///< Authentication string
-    TNetScheduleListenerType   client_type;  ///< Client type mask
-
-    SQueueListener(unsigned int             host_addr,
-                   unsigned short           udp_port_number,
-                   time_t                   curr,
-                   int                      expiration_timeout,
-                   const string&            client_auth,
-                   TNetScheduleListenerType ctype = eNS_Worker)
-    : host(host_addr),
-      udp_port(udp_port_number),
-      last_connect(curr),
-      timeout(expiration_timeout),
-      auth(client_auth),
-      client_type(ctype)
-    {}
-};
-
-/// Runtime queue statistics
-///
-/// @internal
-struct SQueueStatictics
-{
-    double   total_run_time; ///< Accumulated job running time
-    unsigned run_count;      ///< Number of runs
-
-    double   total_turn_around_time; ///< time from subm to completion
-
-    SQueueStatictics() 
-        : total_run_time(0.0), run_count(0), total_turn_around_time(0)
-    {}
-};
 
 /// Batch submit record
 ///
 /// @internal
+///
 struct SNS_BatchSubmitRec
 {
-    char input[kNetScheduleMaxDataSize];
-};
+    char      input[kNetScheduleMaxDataSize];
+    char      affinity_token[kNetScheduleMaxDataSize];
+    unsigned  affinity_id;
+    unsigned  job_id;
 
-
-
-/// @internal
-enum ENSLB_RunDelayType
-{
-    eNSLB_Constant,   ///< Constant delay
-    eNSLB_RunTimeAvg  ///< Running time based delay (averaged)
-};
-
-/// Mutex protected Queue database with job status FSM
-///
-/// @internal
-///
-struct SLockedQueue
-{
-    SQueueDB                        db;               ///< Database
-    auto_ptr<CBDB_FileCursor>       cur;              ///< DB cursor
-    CFastMutex                      lock;             ///< db, cursor lock
-    CNetScheduler_JobStatusTracker  status_tracker;   ///< status FSA
-
-    // queue parameters
-    int                             timeout;       ///< Result exp. timeout
-    int                             notif_timeout; ///< Notification interval
-
-    // List of active worker node listeners waiting for pending jobs
-
-    typedef vector<SQueueListener*> TListenerList;
-
-    TListenerList                wnodes;       ///< worker node listeners
-    time_t                       last_notif;   ///< last notification time
-    CRWLock                      wn_lock;      ///< wnodes locker
-    string                       q_notif;      ///< Queue notification message
-
-    // Timeline object to control job execution timeout
-    CJobTimeLine*                run_time_line;
-    int                          run_timeout;
-    CRWLock                      rtl_lock;      ///< run_time_line locker
-
-    // datagram notification socket 
-    // (used to notify worker nodes and waiting clients)
-    CDatagramSocket              udp_socket;    ///< UDP notification socket
-    CFastMutex                   us_lock;       ///< UDP socket lock
-
-    /// Client program version control
-    CQueueClientInfoList         program_version_list;
-
-    /// Host access list for job submission
-    CNetSchedule_AccessList      subm_hosts;
-    /// Host access list for job execution (workers)
-    CNetSchedule_AccessList      wnode_hosts;
-
-
-    /// Queue monitor
-    CNetScheduleMonitor          monitor;
-
-    /// Database records when they are deleted can be dumped to an archive
-    /// file for further processing
-    CRotatingLogStream           rec_dump;
-    CFastMutex                   rec_dump_lock;
-    bool                         rec_dump_flag;
-
-    mutable bool                 lb_flag;  ///< Load balancing flag
-    CNSLB_Coordinator*           lb_coordinator;
-
-    ENSLB_RunDelayType           lb_stall_delay_type;
-    unsigned                     lb_stall_time;      ///< job delay (seconds)
-    double                       lb_stall_time_mult; ///< stall coeff
-    CFastMutex                   lb_stall_time_lock;
-
-    SQueueStatictics             qstat;
-    CFastMutex                   qstat_lock;
-
-    SLockedQueue(const string& queue_name) 
-        : timeout(3600), 
-          notif_timeout(7), 
-          last_notif(0), 
-          q_notif("NCBI_JSQ_"),
-          run_time_line(0),
-
-          rec_dump("jsqd_"+queue_name+".dump", 10 * (1024 * 1024)),
-          rec_dump_flag(false),
-          lb_flag(false),
-          lb_coordinator(0),
-          lb_stall_delay_type(eNSLB_Constant),
-          lb_stall_time(6),
-          lb_stall_time_mult(1.0)
+    SNS_BatchSubmitRec()
     {
-        _ASSERT(!queue_name.empty());
-        q_notif.append(queue_name);
-    }
-
-    ~SLockedQueue()
-    {
-        NON_CONST_ITERATE(TListenerList, it, wnodes) {
-            SQueueListener* node = *it;
-            delete node;
-        }
-        delete run_time_line;
-        delete lb_coordinator;
+        input[0] = affinity_token[0] = 0;
+        affinity_id = job_id = 0;
     }
 };
 
-/// Queue database manager
-///
-/// @internal
-///
-class CQueueCollection
-{
-public:
-    typedef map<string, SLockedQueue*> TQueueMap;
 
-public:
-    CQueueCollection();
-    ~CQueueCollection();
-
-    void Close();
-
-    SLockedQueue& GetLockedQueue(const string& qname);
-    bool QueueExists(const string& qname) const;
-
-    /// Collection takes ownership of queue
-    void AddQueue(const string& name, SLockedQueue* queue);
-
-    const TQueueMap& GetMap() const { return m_QMap; }
-
-private:
-    CQueueCollection(const CQueueCollection&);
-    CQueueCollection& operator=(const CQueueCollection&);
-private:
-    TQueueMap              m_QMap;
-    mutable CRWLock        m_Lock;
-};
 
 
 /// Top level queue database.
@@ -416,7 +148,8 @@ public:
                             unsigned      host_addr = 0,
                             unsigned      port = 0,
                             unsigned      wait_timeout = 0,
-                            const char*   progress_msg = 0);
+                            const char*   progress_msg = 0,
+                            const char*   affinity_token = 0);
 
         /// Submit job batch
         /// @return 
@@ -442,7 +175,8 @@ public:
                              char*          input,
                              const string&  host,
                              unsigned       port,
-                             bool           update_tl);
+                             bool           update_tl,
+                             const string&  client_name);
 
 
         void PutProgressMessage(unsigned int  job_id,
@@ -458,15 +192,17 @@ public:
 
         void GetJob(unsigned int   worker_node,
                     unsigned int*  job_id, 
-                    char*          input);
+                    char*          input,
+                    const string&  client_name);
+
         // Get job and generate key
         void GetJob(char* key_buf, 
                     unsigned int   worker_node,
                     unsigned int*  job_id, 
                     char*          input,
                     const string&  host,
-                    unsigned       port
-                    );
+                    unsigned       port,
+                    const string&  client_name);
         void ReturnJob(unsigned int job_id);
 
 
@@ -497,6 +233,9 @@ public:
         ///    Number of deleted jobs
         unsigned CheckDeleteBatch(unsigned batch_size,
                                   CNetScheduleClient::EJobStatus status);
+
+        /// Delete all job ids already deleted (phisically) from the queue
+        void ClearAffinityIdx();
 
         /// Remove all jobs
         void Truncate();
@@ -580,6 +319,21 @@ public:
                               unsigned add_job_id,
                               time_t   curr);
     private:
+        /// Put done job, then find the pending job.
+        /// This method takes into account jobs available
+        /// in the job status matrix and current 
+        /// worker node affinity association
+        ///
+        /// Sync.Locks: affinity map lock, main queue lock, status matrix
+        ///
+        /// @return job_id
+        unsigned 
+        PutDone_FindPendingJob(const string&  client_name,
+                               unsigned       client_addr,
+                               unsigned int   done_job_id,
+                                bool*         need_db_update,
+                               CFastMutex&    aff_map_lock);
+
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
 
@@ -603,7 +357,8 @@ public:
                                unsigned      host_addr,
                                unsigned      port,
                                unsigned      wait_timeout,
-                               const char*   progress_msg);
+                               const char*   progress_msg,
+                               unsigned      aff_id);
 
         /// Info on how to notify job submitter
         struct SSubmitNotifInfo
@@ -639,10 +394,28 @@ public:
                                     CBDB_Transaction&    trans,
                                     unsigned int         worker_node,
                                     unsigned             job_id,
-                                    char*                input);
+                                    char*                input,
+                                    unsigned*            aff_id);
 
         SQueueDB*        x_GetLocalDb();
         CBDB_FileCursor* x_GetLocalCursor(CBDB_Transaction& trans);
+
+        /// Update the affinity index (no locking)
+        void x_AddToAffIdx_NoLock(unsigned aff_id, 
+                                  unsigned job_id);
+
+        void x_AddToAffIdx_NoLock(const vector<SNS_BatchSubmitRec>& batch);
+
+        /// Read queue affinity index, retrieve all jobs, with
+        /// given set of affinity ids
+        ///
+        /// @param aff_id_set
+        ///     set of affinity ids to read
+        /// @param job_candidates
+        ///     OUT set of jobs associated with specified affinities
+        ///
+        void x_ReadAffIdx_NoLock(const bm::bvector<>& aff_id_set,
+                                 bm::bvector<>*       job_candidates);
 
     private:
         CQueue(const CQueue&);
@@ -708,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/02/06 14:10:29  kuznets
+ * Added job affinity
+ *
  * Revision 1.35  2005/08/30 14:19:33  kuznets
  * Added thread-local database for better scalability
  *

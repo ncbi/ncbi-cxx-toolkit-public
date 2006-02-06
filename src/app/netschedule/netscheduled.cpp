@@ -46,6 +46,7 @@
 
 #include <util/logrotate.hpp>
 
+#include <connect/ncbi_core_cxx.hpp>
 #include <connect/threaded_server.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_client.hpp>
@@ -70,7 +71,7 @@ USING_NCBI_SCOPE;
 
 
 #define NETSCHEDULED_VERSION \
-    "NCBI NetSchedule server version=1.6.5  build " __DATE__ " " __TIME__
+    "NCBI NetSchedule server version=1.7.0  build " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -118,6 +119,7 @@ struct SJS_Request
     char               output[kNetScheduleMaxDataSize];
     char               progress_msg[kNetScheduleMaxDataSize];
     char               err[kNetScheduleMaxErrSize];
+    char               affinity_token[kNetScheduleMaxDataSize];
     string             job_key_str;
     unsigned int       jcount;
     unsigned int       job_id;
@@ -129,7 +131,7 @@ struct SJS_Request
 
     void Init()
     {
-        input[0] = output[0] = progress_msg[0] = 0;
+        input[0] = output[0] = progress_msg[0] = affinity_token[0] = 0;
         job_key_str.erase(); err_msg.erase();
         jcount = job_id = job_return_code = port = timeout = 0;
     }
@@ -156,7 +158,8 @@ struct SThreadData
 
     char        msg_buf[kMaxMessageSize];
 
-    string      lmsg; /// < LOG message
+    string      lmsg;       ///< LOG message
+    unsigned    peer_addr;  ///< Peer address
 
     SJS_Request req;
 
@@ -363,6 +366,8 @@ private:
 private:
     /// Host name where server runs
     string             m_Host;
+    unsigned           m_HostNetAddr;
+    unsigned           m_LocalNetAddr;
     bool               m_Shutdown; 
     /// Time to wait for the client (seconds)
     unsigned           m_InactivityTimeout;
@@ -419,7 +424,10 @@ bool s_WaitForReadSocket(CSocket& sock, unsigned time_to_wait)
         { req->req_type = eError; req->err_msg = "Message too long"; return; }
 #define NS_GETSTRING(x, str) \
     for (;*x && !(*x == ' ' || *x == '\t'); ++x) { str.push_back(*x); }
-
+#define NS_SKIPNUM(x)  \
+    for (; *x && isdigit((unsigned char)(*x)); ++x) {}
+#define NS_RETEND(x) \
+    if (!*x) return;
 
 
 
@@ -437,11 +445,17 @@ CNetScheduleServer::CNetScheduleServer(unsigned int    port,
     m_AccessLog("ns_access.log", 100 * 1024 * 1024)
 {
     m_QueueDB = qdb;
+/*
     char hostname[256];
     int status = SOCK_gethostname(hostname, sizeof(hostname));
     if (status == 0) {
         m_Host = hostname;
     }
+*/
+    m_Host = CSocketAPI::gethostname();
+    m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);
+    m_LocalNetAddr = CSocketAPI::GetLoopbackAddress();
+
 
     m_MaxThreads = max_threads ? max_threads : 25;
     m_InitThreads = init_threads ? 
@@ -495,6 +509,12 @@ void CNetScheduleServer::Process(SOCK sock)
 
     try {
         x_SetSocketParams(&socket);
+        socket.GetPeerAddress(&tdata->peer_addr, 0, eNH_NetworkByteOrder);
+        // always use localhost(127.0*) address for clients coming from 
+        // the same net address (sometimes it can be 127.* or full address)
+        if (tdata->peer_addr == m_HostNetAddr) {
+            tdata->peer_addr = m_LocalNetAddr;
+        }
 
         // Process requests
 
@@ -514,10 +534,8 @@ void CNetScheduleServer::Process(SOCK sock)
         io_st = socket.ReadLine(tdata->queue);
         JS_CHECK_IO_STATUS(io_st)
 
-        unsigned peer_ha;
-        socket.GetPeerAddress(&peer_ha, 0, eNH_NetworkByteOrder);
-
-        CQueueDataBase::CQueue queue(*m_QueueDB, tdata->queue, peer_ha);
+        CQueueDataBase::CQueue queue(*m_QueueDB, 
+                                     tdata->queue, tdata->peer_addr);
         monitor = queue.GetMonitor();
 
         if (!queue.IsVersionControl()) {
@@ -864,14 +882,16 @@ void CNetScheduleServer::ProcessSubmit(CSocket&                sock,
                                        CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
+/*
     unsigned client_address = 0;
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-
+*/
     unsigned job_id =
         queue.Submit(req.input, 
-                     client_address, 
+                     tdata.peer_addr, 
                      req.port, req.timeout, 
-                     req.progress_msg);
+                     req.progress_msg,
+                     req.affinity_token);
 
     char buf[1024];
     sprintf(buf, NETSCHEDULE_JOBMASK, 
@@ -898,14 +918,14 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
                                             SThreadData&            tdata,
                                             CQueueDataBase::CQueue& queue)
 {
-    char    buf[kNetScheduleMaxDataSize * 4 + 1];
+    char    buf[kNetScheduleMaxDataSize * 6 + 1];
     size_t  n_read;
 
     WriteMsg(sock, "OK:", "Batch submit ready");
-
+/*
     unsigned client_address = 0;
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-
+*/
     s_WaitForReadSocket(sock, m_InactivityTimeout);
     //SJS_Request& req = tdata.req;
     EIO_Status io_st;
@@ -974,6 +994,32 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
             } // for
             
             *ptr = 0;
+
+            ++s;
+            NS_SKIPSPACE(s)
+
+            if (strncmp(s, "aff=", 4) == 0) {
+                // affinity token
+                s += 4;
+                if (*s != '"') {
+                    WriteMsg(sock, "ERR:",
+                             "Batch submit error: error in affinity token");
+                }
+                ++s;
+                char *ptr = rec.affinity_token;
+                for (++s; *s != '"'; ++s) {
+                    if (*s == 0) {
+                        WriteMsg(sock, "ERR:",
+                        "Batch submit error: unexpected end of affinity str");
+                        return;
+                    }
+                    *ptr++ = *s;
+                } // for
+                *ptr = 0;
+
+            }
+            
+
         } // for batch_size
 
         s_WaitForReadSocket(sock, m_InactivityTimeout);
@@ -996,7 +1042,7 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
 
         unsigned job_id =
             queue.SubmitBatch(tdata.batch_subm_vec, 
-                              client_address, 
+                              tdata.peer_addr,
                               0, 0, 0);
 
         double db_elapsed = sw2.Elapsed();
@@ -1171,12 +1217,14 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
 {
     SJS_Request& req = tdata.req;
     unsigned job_id;
+/*
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-
+*/
     char key_buf[1024];
     queue.GetJob(key_buf,
-                 client_address, &job_id, req.input, m_Host, GetPort());
+                 tdata.peer_addr, &job_id, req.input, m_Host, GetPort(),
+                 tdata.auth);
 
     if (job_id) {
         x_MakeGetAnswer(key_buf, tdata);
@@ -1199,9 +1247,9 @@ void CNetScheduleServer::ProcessGet(CSocket&                sock,
     }
 
     if (req.port) {  // unregister notification
-        sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
+//        sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
         queue.RegisterNotificationListener(
-            client_address, req.port, 0, tdata.auth);
+            tdata.peer_addr, req.port, 0, tdata.auth);
    }
 }
 
@@ -1212,9 +1260,10 @@ CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
 {
     SJS_Request& req = tdata.req;
     unsigned job_id;
+/*
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-
+*/
     char key_buf[1024];
 
     unsigned done_job_id;
@@ -1224,9 +1273,10 @@ CNetScheduleServer::ProcessJobExchange(CSocket&                sock,
         done_job_id = 0;
     }
     queue.PutResultGetJob(done_job_id, req.job_return_code, req.output,
-                          key_buf, client_address, &job_id,
+                          key_buf, tdata.peer_addr, &job_id,
                           req.input, m_Host, GetPort(),
-                          false /*don't change the timeline*/);
+                          false /*don't change the timeline*/,
+                          tdata.auth);
 
     if (job_id) {
         x_MakeGetAnswer(key_buf, tdata);
@@ -1258,12 +1308,14 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
 {
     SJS_Request& req = tdata.req;
     unsigned job_id;
+/*
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-
+*/
     char key_buf[1024];
     queue.GetJob(key_buf,
-                 client_address, &job_id, req.input, m_Host, GetPort());
+                 tdata.peer_addr, &job_id, req.input, m_Host, GetPort(),
+                 tdata.auth);
     if (job_id) {
         x_MakeGetAnswer(key_buf, tdata);
         WriteMsg(sock, "OK:", tdata.answer.c_str());
@@ -1274,9 +1326,9 @@ void CNetScheduleServer::ProcessWaitGet(CSocket&                sock,
 
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 
-    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
+//    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
     queue.RegisterNotificationListener(
-        client_address, req.port, req.timeout, tdata.auth);
+        tdata.peer_addr, req.port, req.timeout, tdata.auth);
 
 }
 
@@ -1666,6 +1718,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // Request formats and types:
     //
     // 1. SUBMIT "NCID_01_1..." ["Progress msg"] [udp_port notif_wait] 
+    //           [aff="Affinity token"]
     // 2. CANCEL JSID_01_1
     // 3. STATUS JSID_01_1
     // 4. GET udp_port
@@ -1751,24 +1804,36 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
 
             // optional UDP notification parameters
 
-            if (!*s) {
-                return;
+            NS_RETEND(s)
+
+            if (isdigit((unsigned char)(*s))) {
+                req->port = (unsigned)atoi(s);
+                NS_SKIPNUM(s)
+                NS_SKIPSPACE(s)
+                NS_RETEND(s)
             }
 
-            int port = atoi(s);
-            if (port > 0) {
-                req->port = (unsigned)port;
+            if (isdigit((unsigned char)(*s))) {
+                req->timeout = atoi(s);
+                NS_SKIPNUM(s)
+                NS_SKIPSPACE(s)
+                NS_RETEND(s)
             }
 
-            for (; *s && isdigit((unsigned char)(*s)); ++s) {}
-            NS_SKIPSPACE(s)
-            if (!*s) {
-                return;
-            }
-
-            int timeout = atoi(s);
-            if (timeout > 0) {
-                req->timeout = timeout;
+            // optional affinity token
+            if (strncmp(s, "aff=", 4) == 0) {
+                s += 4;
+                if (*s != '"') {
+                    NS_RETURN_ERROR("Misformed SUBMIT request")
+                }
+                ++s;
+                char *ptr = req->affinity_token;
+                for (++s; *s != '"'; ++s) {
+                    NS_CHECKEND(s, "Misformed SUBMIT request")
+                    NS_CHECKSIZE(ptr-req->affinity_token, 
+                                 kNetScheduleMaxDataSize);
+                    *ptr++ = *s;
+                }
             }
             return;
         }
@@ -1881,7 +1946,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
             req->req_type = ePutJobResult;
             s += 3;
             NS_SKIPSPACE(s)
-            parse_put_params:
+        parse_put_params:
             NS_GETSTRING(s, req->job_key_str)
             NS_SKIPSPACE(s)
 
@@ -2231,6 +2296,8 @@ void CNetScheduleDApp::Init(void)
     arg_desc->AddFlag("reinit", "Recreate the storage directory.");
 
     SetupArgDescriptions(arg_desc.release());
+
+    CONNECT_Init(&GetConfig());
 }
 
 
@@ -2436,6 +2503,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.61  2006/02/06 14:10:29  kuznets
+ * Added job affinity
+ *
  * Revision 1.60  2006/01/09 12:41:24  kuznets
  * Reflected changes in CStopWatch
  *

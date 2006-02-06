@@ -79,21 +79,46 @@ public:
 
     /// Return job id (job is moved from pending to running)
     /// @return job id, 0 - no pending jobs
-    unsigned int GetPendingJob();
+    unsigned GetPendingJob();
+
+    /// Get pending job out of a certain candidate set
+    /// Method cleans candidates if they are no longer available 
+    /// for scheduling (it means job was already dispatched)
+    /// 
+    /// @param done_job_id
+    ///     job id going from running to done status. Ignored if 0.
+    /// @param need_db_update
+    ///     (out) TRUE if database needs to be updated (for done job id). 
+    ///     Update is not needed if database 
+    /// @param job_id 
+    ///     OUT job id (moved from pending to running)
+    ///     job_id is taken out of candidates 
+    ///     When 0 - means no pending candidates
+    /// @return true - if there are any available pending jobs
+    ///         false - queue has no pending jobs whatsoever 
+    ///         (not just candidates)
+    bool PutDone_GetPending(unsigned int done_job_id,
+                            bool*        need_db_update,
+                            bm::bvector<>* candidate_set,
+                            unsigned*      job_id);
+
+    /// Logical AND of candidates and pending jobs
+    /// (candidate_set &= pending_set)
+    void PendingIntersect(bm::bvector<>* candidate_set);
 
     /// Set running job to done status, find and return pending job
     /// @param done_job_id
     ///     job id going from running to done status. Ignored if 0.
     /// @param need_db_update
-    ///     (out) TRUE if database needs to be updated. 
+    ///     (out) TRUE if database needs to be updated (for done job id). 
     ///     Update is not needed if database 
     /// @return job_id, 0 - no pending jobs
-    unsigned int PutDone_GetPending(unsigned int done_job_id,
-                                    bool*        need_db_update);
+    unsigned PutDone_GetPending(unsigned int done_job_id,
+                                bool*        need_db_update);
 
     /// Return job id (job is taken out of the regular job matrix)
     /// 0 - no pending jobs
-    unsigned int BorrowPendingJob();
+    unsigned BorrowPendingJob();
 
     /// Return borrowed job to the specified status
     /// (pending or running)
@@ -185,6 +210,10 @@ protected:
     unsigned int GetPendingJobNoLock();
     void FreeUnusedMemNoLock();
     void IncDoneJobs();
+
+    /// Transfer job to done status 
+    void PutDone_NoLock(unsigned int done_job_id,
+                        bool*        need_db_update);
 
 private:
     CNetScheduler_JobStatusTracker(const CNetScheduler_JobStatusTracker&);
@@ -289,6 +318,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/02/06 14:10:29  kuznets
+ * Added job affinity
+ *
  * Revision 1.12  2005/08/26 12:36:10  kuznets
  * Performance optimization
  *

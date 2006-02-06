@@ -324,13 +324,121 @@ CNetScheduler_JobStatusTracker::AddPendingBatch(
     bv.set_range(job_id_from, job_id_to);
 }
 
-unsigned int CNetScheduler_JobStatusTracker::GetPendingJob()
+unsigned CNetScheduler_JobStatusTracker::GetPendingJob()
 {
     CWriteLockGuard guard(m_Lock);
     return GetPendingJobNoLock();
 }
 
-unsigned int 
+bool 
+CNetScheduler_JobStatusTracker::PutDone_GetPending(
+                                        unsigned int done_job_id,
+                                        bool*        need_db_update,
+                                        bm::bvector<>* candidate_set,
+                                        unsigned*      job_id)
+{
+    *job_id = 0;
+    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+
+    {{
+        unsigned p_id;
+        {{
+        CWriteLockGuard guard(m_Lock);
+
+        if (done_job_id) { // return job first
+            PutDone_NoLock(done_job_id, need_db_update);
+        }
+
+        if (!bv.any()) {
+            Return2PendingNoLock();
+            if (!bv.any()) {
+                return false;
+            }
+        }
+        p_id = bv.get_first();
+        }}
+
+        // here i'm trying to check if gap between head of candidates
+        // and head of pending set is big enough to justify a preliminary
+        // filtering using logical operation
+        // often logical AND costs more than just iterating the bitset
+        //  
+
+        unsigned c_id = candidate_set->get_first();
+        unsigned min_id = min(c_id, p_id);
+        unsigned max_id = max(c_id, p_id);
+        // comparison value is a pure guess, nobody knows the optimal value
+        if ((max_id - min_id) > 250) {
+            // Filter candidates to use only pending jobs
+            CReadLockGuard guard(m_Lock);
+            *candidate_set &= bv;
+        }
+    }}
+
+    unsigned candidate_id = 0;
+    while ( 0 == candidate_id ) {
+        // STAGE 1: (read lock)
+        // look for the first pending candidate bit 
+        {{
+        CReadLockGuard guard(m_Lock);
+        bm::bvector<>::enumerator en(candidate_set->first());
+        if (!en.valid()) { // no more candidates
+            return bv.any();
+        }
+        for (; en.valid(); ++en) {
+            unsigned id = *en;
+            if (bv[id]) { // check if candidate is pending
+                candidate_id = id;
+                break;
+            }
+        }
+        }}
+
+        // STAGE 2: (write lock)
+        // candidate job goes to running status 
+        // set of candidates is corrected to reflect new disposition
+        // (clear all non-pending candidates)
+        //
+        if (candidate_id) {
+            CWriteLockGuard guard(m_Lock);
+            // clean the candidate set, to reflect stage 1 scan
+            candidate_set->set_range(0, candidate_id, false);
+            if (bv[candidate_id]) { // still pending?
+                x_SetClearStatusNoLock(candidate_id, 
+                                       CNetScheduleClient::eRunning,
+                                       CNetScheduleClient::ePending);
+                *job_id = candidate_id;
+                return true;
+            } else {
+                // somebody picked up this id already
+                candidate_id = 0;
+            }
+        } else {
+            // previous step did not pick up a sutable(pending) candidate
+            // candidate set is dismissed, pending search stopped
+            candidate_set->clear(true); // clear with memfree
+            break;
+        }
+    } // while
+
+    {{
+    CReadLockGuard guard(m_Lock);
+    return bv.any();
+    }}
+
+}
+
+void 
+CNetScheduler_JobStatusTracker::PendingIntersect(bm::bvector<>* candidate_set)
+{
+    CReadLockGuard guard(m_Lock);
+
+    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    *candidate_set &= bv;
+}
+
+
+unsigned 
 CNetScheduler_JobStatusTracker::GetPendingJobNoLock()
 {
     TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
@@ -345,22 +453,18 @@ CNetScheduler_JobStatusTracker::GetPendingJobNoLock()
             m_LastPending = job_id;
             break;
         } else {
-            Return2PendingNoLock();
+            Return2PendingNoLock();            
         }
     } while (++i < 2);
     return job_id;
 }
 
-unsigned int 
-CNetScheduler_JobStatusTracker::PutDone_GetPending(
-                                            unsigned int done_job_id,
-                                            bool*        need_db_update)
+void CNetScheduler_JobStatusTracker::PutDone_NoLock(
+                                    unsigned int done_job_id,
+                                    bool*        need_db_update)
 {
     _ASSERT(need_db_update);
-
     CNetScheduleClient::EJobStatus old_status;
-
-    CWriteLockGuard guard(m_Lock);
 
     // Running -> Done
 
@@ -395,11 +499,26 @@ CNetScheduler_JobStatusTracker::PutDone_GetPending(
                 ReportInvalidStatus(done_job_id,
                                     CNetScheduleClient::eDone,
                                     old_status);
-                return 0;
+                return;
             }
         } 
         break;
     } // while
+
+}
+
+
+unsigned int 
+CNetScheduler_JobStatusTracker::PutDone_GetPending(
+                                            unsigned int done_job_id,
+                                            bool*        need_db_update)
+{
+    CWriteLockGuard guard(m_Lock);
+
+    if (done_job_id) {
+        _ASSERT(need_db_update);
+        PutDone_NoLock(done_job_id, need_db_update);
+    }
 
     return GetPendingJobNoLock();
 }
@@ -630,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/02/06 14:10:29  kuznets
+ * Added job affinity
+ *
  * Revision 1.22  2005/08/26 12:36:10  kuznets
  * Performance optimization
  *

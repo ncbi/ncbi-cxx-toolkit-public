@@ -103,18 +103,6 @@ private:
     unsigned int     m_Id;
 };
 
-/// @internal
-class CCursorGuard
-{
-public:
-    CCursorGuard(CBDB_FileCursor& cur) : m_Cur(cur) {}
-    ~CCursorGuard() { m_Cur.Close(); }
-private:
-    CCursorGuard(CCursorGuard&);
-    CCursorGuard& operator=(const CCursorGuard&);
-private:
-    CBDB_FileCursor& m_Cur;
-};
 
 
 
@@ -582,9 +570,15 @@ void CQueueDataBase::MountQueue(const string& queue_name,
     q->db.SetPageSize(8 * 1024);
     q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
 
+    fname = string("jsq_") + queue_name + string("_affid.idx");
+    q->aff_idx.SetEnv(*m_Env);
+    q->aff_idx.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
     q->timeout = timeout;
     q->notif_timeout = notif_timeout;
     q->last_notif = time(0);
+
+    q->affinity_dict.Open(*m_Env, queue_name);
 
     m_QueueCollection.AddQueue(queue_name, q.release());
 
@@ -636,6 +630,7 @@ void CQueueDataBase::MountQueue(const string& queue_name,
     if (!program_name.empty()) {
         queue.program_version_list.AddClientInfo(program_name);
     }
+
 
     LOG_POST(Info << "Queue records = " << recs);
     
@@ -827,6 +822,14 @@ void CQueueDataBase::Purge()
         m_DeleteChkPointCnt += total_del_rec;
         if (m_DeleteChkPointCnt > 1000) {
             m_DeleteChkPointCnt = 0;
+
+            // remove unused affinity elements
+            ITERATE(CQueueCollection::TQueueMap, it, qm) {
+                const string qname = it->first;
+                CQueue jq(*this, qname, 0);
+                jq.ClearAffinityIdx();
+            }
+
             m_Env->TransactionCheckpoint();
         }
 
@@ -1064,7 +1067,7 @@ void CQueueDataBase::CQueue::PrintAllJobDbStat(CNcbiOstream & out)
     db.SetTransaction(&trans);
 
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
+    CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eGE);
     cur.From << 0;
@@ -1142,7 +1145,8 @@ CQueueDataBase::CQueue::Submit(const char*   input,
                                unsigned      host_addr,
                                unsigned      port,
                                unsigned      wait_timeout,
-                               const char*   progress_msg)
+                               const char*   progress_msg,
+                               const char*   affinity_token)
 {
     unsigned int job_id = m_Db.GetNextId();
 
@@ -1154,14 +1158,26 @@ CQueueDataBase::CQueue::Submit(const char*   input,
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
 
+    unsigned aff_id = 0;
+    if (affinity_token && *affinity_token) {
+        aff_id = m_LQueue.affinity_dict.CheckToken(affinity_token, trans);
+    }
+
     {{
     CFastMutexGuard guard(m_LQueue.lock);
 	db.SetTransaction(&trans);
 
     x_AssignSubmitRec(
-        job_id, input, host_addr, port, wait_timeout, progress_msg);
+        job_id, input, host_addr, port, wait_timeout, progress_msg, aff_id);
 
     db.Insert();
+
+    // update affinity index
+    if (aff_id) {
+        m_LQueue.aff_idx.SetTransaction(&trans);
+        x_AddToAffIdx_NoLock(aff_id, job_id);
+    }
+
     }}
 
     trans.Commit();
@@ -1181,21 +1197,51 @@ CQueueDataBase::CQueue::SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
     unsigned job_id = m_Db.GetNextIdBatch(batch.size());
 
     SQueueDB& db = m_LQueue.db;
+
+    // process affinity ids
+    {{
+    CBDB_Transaction trans(*db.GetEnv(), 
+                        CBDB_Transaction::eTransASync,
+                        CBDB_Transaction::eNoAssociation);
+    NON_CONST_ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
+//        {{
+//        CBDB_Transaction trans(*db.GetEnv(), 
+//                            CBDB_Transaction::eTransASync,
+//                            CBDB_Transaction::eNoAssociation);
+
+        SNS_BatchSubmitRec& subm = *it;
+        if (subm.affinity_token[0]) {
+            subm.affinity_id = 
+                m_LQueue.affinity_dict.CheckToken(subm.affinity_token, trans);
+        }
+//        trans.Commit();
+//        }}
+    }
+    trans.Commit();
+    }}
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
+
+
     {{
     CFastMutexGuard guard(m_LQueue.lock);
 	db.SetTransaction(&trans);
 
     unsigned job_id_cnt = job_id;
-    ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
+    NON_CONST_ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
+        it->job_id = job_id_cnt;
         x_AssignSubmitRec(
             job_id_cnt, 
-            it->input, host_addr, port, wait_timeout, 0/*progress_msg*/);
+            it->input, host_addr, port, wait_timeout, 0/*progress_msg*/, 
+            it->affinity_id);
         ++job_id_cnt;
         db.Insert();
     } // ITERATE
+
+    // Store the affinity index
+    m_LQueue.aff_idx.SetTransaction(&trans);
+    x_AddToAffIdx_NoLock(batch);
 
     }}
     trans.Commit();
@@ -1213,7 +1259,8 @@ CQueueDataBase::CQueue::x_AssignSubmitRec(unsigned      job_id,
                                           unsigned      host_addr,
                                           unsigned      port,
                                           unsigned      wait_timeout,
-                                          const char*   progress_msg)
+                                          const char*   progress_msg,
+                                          unsigned      aff_id)
 {
     SQueueDB& db = m_LQueue.db;
 
@@ -1239,6 +1286,7 @@ CQueueDataBase::CQueue::x_AssignSubmitRec(unsigned      job_id,
     db.run_counter = 0;
     db.ret_code = 0;
     db.time_lb_first_eval = 0;
+    db.aff_id = aff_id;
 
     if (input) {
         db.input = input;
@@ -1319,7 +1367,7 @@ void CQueueDataBase::CQueue::DropJob(unsigned job_id)
     db.SetTransaction(&trans);
 
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
+    CBDB_CursorGuard cg(cur);    
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
 
@@ -1368,7 +1416,7 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(&trans);
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);
+    CBDB_CursorGuard cg(cur);
     rec_updated = 
         x_UpdateDB_PutResultNoLock(db, curr, cur, 
                                    job_id, ret_code, output, &si);
@@ -1510,7 +1558,8 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
                                         char*          input,
                                         const string&  host,
                                         unsigned       port,
-                                        bool           update_tl)
+                                        bool           update_tl,
+                                        const string&  client_name)
 {
     _ASSERT(job_id);
     _ASSERT(input);
@@ -1518,9 +1567,11 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     time_t curr = time(0);
     
     bool need_update;
-    // TODO: implementation for load balancing...
     unsigned pending_job_id = 
-        m_LQueue.status_tracker.PutDone_GetPending(done_job_id, &need_update);
+        PutDone_FindPendingJob(client_name,
+                               worker_node,
+                               done_job_id, &need_update,
+                               m_LQueue.aff_map_lock);
     bool done_rec_updated;
 
 
@@ -1534,6 +1585,8 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         use_db_mutex = true;
         pqdb = &m_LQueue.db;
     }
+
+    unsigned job_aff_id = 0;
 
     CBDB_Transaction trans(*(pqdb->GetEnv()), 
                            CBDB_Transaction::eTransASync,
@@ -1556,7 +1609,7 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         }
         //CBDB_FileCursor& cur = *GetCursor(trans);
         CBDB_FileCursor& cur = *pcur;
-        CCursorGuard cg(cur);
+        CBDB_CursorGuard cg(cur);
 
         // put result
         if (need_update) {
@@ -1570,7 +1623,8 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
             EGetJobUpdateStatus upd_status;
             upd_status =
                 x_UpdateDB_GetJobNoLock(*pqdb, curr, cur, trans,
-                                        worker_node, pending_job_id, input);
+                                        worker_node, pending_job_id, input,
+                                        &job_aff_id);
             switch (upd_status) {
             case eGetJobUpdate_JobFailed:
                 m_LQueue.status_tracker.ChangeStatus(*job_id, 
@@ -1608,6 +1662,12 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
     trans.Commit();
 
 
+    if (job_aff_id) {
+        CFastMutexGuard aff_guard(m_LQueue.aff_map_lock);
+        m_LQueue.worker_aff_map.AddAffinity(worker_node, 
+                                            client_name, 
+                                            job_aff_id);
+    }
 
     if (*job_id) {
         sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
@@ -1650,7 +1710,7 @@ void CQueueDataBase::CQueue::PutProgressMessage(unsigned int  job_id,
 
     {{
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
+    CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
@@ -1697,7 +1757,7 @@ void CQueueDataBase::CQueue::JobFailed(unsigned int  job_id,
     db.SetTransaction(&trans);
 
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
+    CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
@@ -1770,7 +1830,7 @@ void CQueueDataBase::CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
     db.SetTransaction(&trans);
 
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
+    CBDB_CursorGuard cg(cur);    
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
@@ -1976,7 +2036,7 @@ fetch_db:
         db.SetTransaction(&trans);
 
         CBDB_FileCursor& cur = *GetCursor(trans);
-        CCursorGuard cg(cur);    
+        CBDB_CursorGuard cg(cur);    
 
         cur.SetCondition(CBDB_FileCursor::eEQ);
         cur.From << *job_id;
@@ -2188,10 +2248,78 @@ grant_job:
     }
 }
 
+unsigned 
+CQueueDataBase::CQueue::PutDone_FindPendingJob(const string&  client_name,
+                                               unsigned       client_addr,
+                                               unsigned int   done_job_id,
+                                               bool*          need_db_update,
+                                               CFastMutex&    aff_map_lock)
+{
+    unsigned job_id = 0;
+
+    // affinity: get list of job candidates
+    // previous GetPendingJob() call may have precomputed candidate jobids
+
+    {{
+        CFastMutexGuard aff_guard(aff_map_lock);
+        CWorkerNodeAffinity::SAffinityInfo* ai = 
+            m_LQueue.worker_aff_map.GetAffinity(client_addr, client_name);
+
+        if (ai != 0) {  // established affinity association
+            while (1) {
+                if (ai->cand_jobs.any()) {  // candidates?
+
+                    bool pending_jobs_avail = 
+                        m_LQueue.status_tracker.PutDone_GetPending(
+                                                        done_job_id, 
+                                                        need_db_update, 
+                                                        &ai->cand_jobs,
+                                                        &job_id);
+                    done_job_id = 0;
+                    if (job_id)
+                        return job_id;
+                    if (!pending_jobs_avail) {
+                        return 0;
+                    }
+                }
+                // no candidates immediately available - find candidates                
+                if (ai->aff_ids.any()) { // there is an affinity association
+                    {{
+                        CFastMutexGuard guard(m_LQueue.lock);
+                        x_ReadAffIdx_NoLock(ai->aff_ids, &ai->cand_jobs);
+                    }}
+                    if (!ai->cand_jobs.any()) { // no candidates
+                        break;
+                    }
+                    m_LQueue.status_tracker.PendingIntersect(&ai->cand_jobs);
+                    ai->cand_jobs.count(); // re-calc count to speed up any()
+                    if (!ai->cand_jobs.any()) {
+                        break;
+                    }
+                    ai->cand_jobs.optimize(0, bm::bvector<>::opt_free_0);
+                }
+            } // while
+        }
+    }}
+
+    // no affinity association or there are no more jobs with 
+    // established affinity, we just take the first available
+    // in the queue
+
+    _ASSERT(job_id == 0);
+    job_id = 
+        m_LQueue.status_tracker.PutDone_GetPending(done_job_id, 
+                                                   need_db_update);
+    done_job_id = 0; // paranoiya assignment
+
+    return job_id;
+}
+
 
 void CQueueDataBase::CQueue::GetJob(unsigned int   worker_node,
                                     unsigned int*  job_id, 
-                                    char*          input)
+                                    char*          input,
+                                    const string&  client_name)
 {
     if (m_LQueue.lb_flag) {
         GetJobLB(worker_node, job_id, input);
@@ -2210,14 +2338,21 @@ get_job_id:
         *job_id = 0;
         return;
     }
+    time_t curr = time(0);
 
-    *job_id = m_LQueue.status_tracker.GetPendingJob();
+    // affinity: get list of job candidates
+    // previous GetJob() call may have precomputed sutable job ids
+    //
+
+    *job_id = PutDone_FindPendingJob(client_name,
+                                     worker_node,
+                                     0, 0, // no done job here
+                                     m_LQueue.aff_map_lock);
     if (!*job_id) {
         return;
     }
 
-    time_t curr = time(0);
-
+    unsigned job_aff_id = 0;
 
     try {
         SQueueDB& db = m_LQueue.db;
@@ -2231,11 +2366,12 @@ get_job_id:
         db.SetTransaction(&trans);
 
         CBDB_FileCursor& cur = *GetCursor(trans);
-        CCursorGuard cg(cur); 
+        CBDB_CursorGuard cg(cur); 
 
         upd_status = 
             x_UpdateDB_GetJobNoLock(db, curr, cur, trans, 
-                                    worker_node, *job_id, input);
+                                    worker_node, *job_id, input,
+                                    &job_aff_id);
         }}
         trans.Commit();
 
@@ -2282,6 +2418,13 @@ get_job_id:
         goto get_job_id;
     }
 
+    if (job_aff_id) {
+        CFastMutexGuard aff_guard(m_LQueue.aff_map_lock);
+        m_LQueue.worker_aff_map.AddAffinity(worker_node, 
+                                            client_name, 
+                                            job_aff_id);
+    }
+
 
     // setup the job in the timeline
     if (*job_id && m_LQueue.run_time_line) {
@@ -2302,7 +2445,8 @@ CQueueDataBase::CQueue::x_UpdateDB_GetJobNoLock(
                                             CBDB_Transaction&    trans,
                                             unsigned int         worker_node,
                                             unsigned             job_id,
-                                            char*                input)
+                                            char*                input,
+                                            unsigned*            aff_id)
 {
     const unsigned kMaxGetAttempts = 100;
 
@@ -2318,6 +2462,7 @@ CQueueDataBase::CQueue::x_UpdateDB_GetJobNoLock(
             continue;
         }
         int status = db.status;
+        *aff_id = db.aff_id;
 
         // internal integrity check
         if (!(status == (int)CNetScheduleClient::ePending ||
@@ -2432,9 +2577,10 @@ void CQueueDataBase::CQueue::GetJob(char*          key_buf,
                                     unsigned int*  job_id,
                                     char*          input,
                                     const string&  host,
-                                    unsigned       port)
+                                    unsigned       port,
+                                    const string&  client_name)
 {
-    GetJob(worker_node, job_id, input);
+    GetJob(worker_node, job_id, input, client_name);
     if (*job_id) {
         sprintf(key_buf, NETSCHEDULE_JOBMASK, *job_id, host.c_str(), port);
     }
@@ -2514,7 +2660,7 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
     db.SetTransaction(&trans);
 
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
+    CBDB_CursorGuard cg(cur);    
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
 
@@ -2615,6 +2761,82 @@ CQueueDataBase::CQueue::CheckDeleteBatch(unsigned batch_size,
     } // for
     return dcnt;
 }
+
+void CQueueDataBase::CQueue::ClearAffinityIdx()
+{
+    // read the queue database, find the first phisically available job_id,
+    // then scan all index records, delete all the old (obsolete) record 
+    // (job_id) references
+
+    SQueueDB& db = m_LQueue.db;
+
+    unsigned first_job_id = 0;
+    {{
+    CFastMutexGuard guard(m_LQueue.lock);
+    CBDB_Transaction trans(*db.GetEnv(), 
+                           CBDB_Transaction::eTransASync,
+                           CBDB_Transaction::eNoAssociation);
+
+    db.SetTransaction(&trans);
+
+    // get the first phisically available record in the queue database
+
+    CBDB_FileCursor& cur = *GetCursor(trans);
+    CBDB_CursorGuard cg(cur);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << 0;
+
+    if (cur.Fetch() == eBDB_Ok) {
+        first_job_id = db.id;
+    }
+    }}
+
+    if (first_job_id <= 1) {
+        return;
+    }
+
+
+    bm::bvector<> bv(bm::BM_GAP);
+
+    // get list of all affinity tokens in the index
+    {{
+    CFastMutexGuard guard(m_LQueue.lock);
+    CBDB_FileCursor cur(m_LQueue.aff_idx);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    while (cur.Fetch() == eBDB_Ok) {
+        unsigned aff_id = m_LQueue.aff_idx.aff_id;
+        bv.set(aff_id);
+    }
+    }}
+
+    // clear all "hanging references
+    bm::bvector<>::enumerator en(bv.first());
+    for(; en.valid(); ++en) {
+        unsigned aff_id = *en;
+        {{
+        CFastMutexGuard guard(m_LQueue.lock);
+        CBDB_Transaction trans(*db.GetEnv(), 
+                                CBDB_Transaction::eTransASync,
+                                CBDB_Transaction::eNoAssociation);
+        m_LQueue.aff_idx.SetTransaction(&trans);
+        SQueueAffinityIdx::TParent::TBitVector bvect(bm::BM_GAP);
+        m_LQueue.aff_idx.aff_id = aff_id;
+        /*EBDB_ErrCode ret = */
+            m_LQueue.aff_idx.ReadVectorOr(&bvect);
+        bvect.set_range(0, first_job_id-1, false);
+        bvect.optimize();
+        m_LQueue.aff_idx.aff_id = aff_id;
+        if (bvect.any()) {
+            m_LQueue.aff_idx.WriteVector(bvect, SQueueAffinityIdx::eNoCompact);
+        } else {
+            m_LQueue.aff_idx.Delete();
+        }
+        trans.Commit();
+        }}
+    } // for
+
+}
+
 
 void CQueueDataBase::CQueue::Truncate()
 {
@@ -2858,7 +3080,7 @@ time_t CQueueDataBase::CQueue::CheckExecutionTimeout(unsigned job_id,
     db.SetTransaction(&trans);
 
     CBDB_FileCursor& cur = *GetCursor(trans);
-    CCursorGuard cg(cur);    
+    CBDB_CursorGuard cg(cur);
 
     cur.SetCondition(CBDB_FileCursor::eEQ);
     cur.From << job_id;
@@ -2935,6 +3157,82 @@ CQueueDataBase::CQueue::x_ComputeExpirationTime(unsigned time_run,
     return exp_time;
 }
 
+void CQueueDataBase::CQueue::x_AddToAffIdx_NoLock(unsigned aff_id, 
+                                                  unsigned job_id)
+{
+    SQueueAffinityIdx::TParent::TBitVector bv(bm::BM_GAP);
+
+    // check if vector is in the database
+
+    // read vector from the file
+    m_LQueue.aff_idx.aff_id = aff_id;
+    /*EBDB_ErrCode ret = */m_LQueue.aff_idx.ReadVectorOr(&bv);
+    bv.set(job_id);
+    m_LQueue.aff_idx.aff_id = aff_id;
+    m_LQueue.aff_idx.WriteVector(bv, SQueueAffinityIdx::eNoCompact);
+}
+
+void CQueueDataBase::CQueue::x_AddToAffIdx_NoLock(
+                                    const vector<SNS_BatchSubmitRec>& batch)
+{
+    typedef SQueueAffinityIdx::TParent::TBitVector TBVector;
+    typedef map<unsigned, TBVector*>               TBVMap;
+    
+    TBVMap  bv_map;
+    try {
+        ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
+            unsigned aff_id = it->affinity_id;
+            unsigned job_id = it->job_id;
+            TBVMap::iterator aff_it = bv_map.find(aff_id);
+            if (aff_it == bv_map.end()) { // new element
+                auto_ptr<TBVector> bv(new TBVector(bm::BM_GAP));
+                m_LQueue.aff_idx.aff_id = aff_id;
+                /*EBDB_ErrCode ret = */
+                    m_LQueue.aff_idx.ReadVectorOr(bv.get());
+                bv->set(job_id);
+                bv_map[aff_id] = bv.release();
+            } else {
+                TBVector* bv = aff_it->second;
+                bv->set(job_id);
+            }
+        } // ITERATE batch
+
+        // save all changes to the database
+        NON_CONST_ITERATE(TBVMap, it, bv_map) {
+            unsigned aff_id = it->first;
+            TBVector* bv = it->second;
+            bv->optimize();
+
+            m_LQueue.aff_idx.aff_id = aff_id;
+            m_LQueue.aff_idx.WriteVector(*bv, SQueueAffinityIdx::eNoCompact);
+
+            delete it->second; it->second = 0;
+        }
+    } 
+    catch (exception& )
+    {
+        NON_CONST_ITERATE(TBVMap, it, bv_map) {
+            delete it->second; it->second = 0;
+        }
+        throw;
+    }
+
+}
+
+void 
+CQueueDataBase::CQueue::x_ReadAffIdx_NoLock(
+                        const bm::bvector<>& aff_id_set,
+                        bm::bvector<>*       job_candidates)
+{
+    m_LQueue.aff_idx.SetTransaction(0);
+    bm::bvector<>::enumerator en(aff_id_set.first());
+    for(; en.valid(); ++en) {  // for each affinity id
+        unsigned aff_id = *en;
+        m_LQueue.aff_idx.aff_id = aff_id;
+        m_LQueue.aff_idx.ReadVectorOr(job_candidates);
+    }
+}
+
 
 
 END_NCBI_SCOPE
@@ -2942,6 +3240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/02/06 14:10:29  kuznets
+ * Added job affinity
+ *
  * Revision 1.53  2005/11/01 15:16:14  kuznets
  * Cleaned unused variables
  *
@@ -3052,55 +3353,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.17  2005/03/17 16:04:38  kuznets
  * Get job algorithm improved to re-get if job expired
- *
- * Revision 1.16  2005/03/15 20:14:30  kuznets
- * Implemented notification to client waiting for job
- *
- * Revision 1.15  2005/03/15 14:52:39  kuznets
- * Better datagram socket management, DropJob implemenetation
- *
- * Revision 1.14  2005/03/10 14:19:57  kuznets
- * Implemented individual run timeouts
- *
- * Revision 1.13  2005/03/09 19:05:36  kuznets
- * Fixed unintialized variable
- *
- * Revision 1.12  2005/03/09 17:40:08  kuznets
- * Fixed GCC warning
- *
- * Revision 1.11  2005/03/09 17:37:16  kuznets
- * Added node notification thread and execution control timeline
- *
- * Revision 1.10  2005/03/09 15:22:07  kuznets
- * Use another datagram Send
- *
- * Revision 1.9  2005/03/04 12:06:41  kuznets
- * Implemented UDP callback to clients
- *
- * Revision 1.8  2005/02/28 12:24:17  kuznets
- * New job status Returned, better error processing and queue management
- *
- * Revision 1.7  2005/02/24 12:35:10  kuznets
- * Cosmetics..
- *
- * Revision 1.6  2005/02/23 19:16:38  kuznets
- * Implemented garbage collection thread
- *
- * Revision 1.5  2005/02/22 16:13:00  kuznets
- * Performance optimization
- *
- * Revision 1.4  2005/02/14 17:57:41  kuznets
- * Fixed a bug in queue procesing
- *
- * Revision 1.3  2005/02/10 19:58:51  kuznets
- * +GetOutput()
- *
- * Revision 1.2  2005/02/09 18:55:18  kuznets
- * Implemented correct database shutdown
- *
- * Revision 1.1  2005/02/08 16:42:55  kuznets
- * Initial revision
- *
  *
  * ===========================================================================
  */
