@@ -21,7 +21,6 @@ SRC = \
 	cuMatrix \
 	cuUtils \
 	cuSort  \
-	structure_util \
 	cuCdFamily \
 	cuAlignedDM \
 	cuAlignmentCollection \
