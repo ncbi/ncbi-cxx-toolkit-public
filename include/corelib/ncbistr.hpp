@@ -173,10 +173,6 @@ public:
     };
     typedef int TNumToStringFlags;    ///< Bitwise OR of "ENumToStringFlags"
 
-/*--------------
-// Temporary commented out.
-// See class TStringToNumFlags below...
-
     /// String to number conversion flags.
     enum EStringToNumFlags {
         fConvErr_NoThrow      = (1 <<  9),   ///< Return "natural null"
@@ -193,41 +189,6 @@ public:
         fAllStringToNumFlags  = 0x7F00
     };
     typedef int TStringToNumFlags;   ///< Binary OR of "EStringToNumFlags"
-----------------*/
-
-    // Temporary class to keep a "string to number" conversion flags.
-    // Will be replaces to int-bit based flags, commented above
-    // after transition to flags versions of StringTo*().
-    class TStringToNumFlags
-    {
-        public:
-        TStringToNumFlags(int v, 
-                          int /*to prevent construction from int*/)
-            { m_Value = v; }
-        TStringToNumFlags& operator=(const TStringToNumFlags& other)
-            { m_Value = other.m_Value; return *this; }
-        TStringToNumFlags operator|(const TStringToNumFlags& other)
-            { TStringToNumFlags f(m_Value | (int)other, 0); return f; }
-        TStringToNumFlags operator&(const TStringToNumFlags& other)
-            { TStringToNumFlags f(m_Value & (int)other, 0); return f; }
-        TStringToNumFlags& operator|=(const TStringToNumFlags& other)
-            { m_Value |= (int)other; return *this; }
-        operator int(void) const
-            { return m_Value; }
-        int m_Value;
-    };
-    static TStringToNumFlags fConvErr_NoThrow;
-    static TStringToNumFlags fMandatorySign;
-    static TStringToNumFlags fAllowCommas;
-    static TStringToNumFlags fAllowLeadingSpaces;
-    static TStringToNumFlags fAllowLeadingSymbols;
-    static TStringToNumFlags fAllowTrailingSpaces;
-    static TStringToNumFlags fAllowTrailingSymbols;
-    static TStringToNumFlags fAllStringToNumFlags;
-    // do not use this flag directly, it will be removed after transition.
-    // int-bit based value for it is 0.
-    static TStringToNumFlags fStringToNumDefault;
-
 
     /// Convert string to int.
     ///
@@ -243,7 +204,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static int StringToInt(const CTempString& str,
-                           TStringToNumFlags  flags = fStringToNumDefault,
+                           TStringToNumFlags  flags = 0,
                            int                base  = 10);
 
     /// Convert string to unsigned int.
@@ -260,7 +221,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static unsigned int StringToUInt(const CTempString& str,
-                                     TStringToNumFlags  flags = fStringToNumDefault,
+                                     TStringToNumFlags  flags = 0,
                                      int                base  = 10);
 
     /// Convert string to long.
@@ -277,7 +238,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static long StringToLong(const CTempString& str,
-                             TStringToNumFlags  flags = fStringToNumDefault,
+                             TStringToNumFlags  flags = 0,
                              int                base  = 10);
 
     /// Convert string to unsigned long.
@@ -294,7 +255,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static unsigned long StringToULong(const CTempString& str,
-                                       TStringToNumFlags  flags = fStringToNumDefault,
+                                       TStringToNumFlags  flags = 0,
                                        int                base  = 10);
 
     /// Convert string to double.
@@ -310,7 +271,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static double StringToDouble(const CTempString& str,
-                                 TStringToNumFlags  flags = fStringToNumDefault);
+                                 TStringToNumFlags  flags = 0);
 
     /// Convert string to Int8.
     ///
@@ -326,7 +287,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static Int8 StringToInt8(const CTempString& str,
-                             TStringToNumFlags  flags = fStringToNumDefault,
+                             TStringToNumFlags  flags = 0,
                              int                base  = 10);
 
     /// Convert string to Uint8.
@@ -343,7 +304,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static Uint8 StringToUInt8(const CTempString& str,
-                               TStringToNumFlags  flags = fStringToNumDefault,
+                               TStringToNumFlags  flags = 0,
                                int                base  = 10);
 
     /// Convert string to number of bytes. 
@@ -366,7 +327,7 @@ public:
     ///     that does not fit into range, and flag fConvErr_NoThrow is set.
     ///   - Throw an exception otherwise.
     static Uint8 StringToUInt8_DataSize(const CTempString& str,
-                                        TStringToNumFlags  flags = fStringToNumDefault,
+                                        TStringToNumFlags  flags = 0,
                                         int                base  = 10);
 
     /// Convert string to pointer.
@@ -3185,6 +3146,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.102  2006/02/06 15:46:58  ivanov
+ * Replaced class-based NStr::TStringToNumFlags to int-based counterparts
+ *
  * Revision 1.101  2006/01/18 19:45:22  ssikorsk
  * Added an extra argument to CException::x_Init
  *

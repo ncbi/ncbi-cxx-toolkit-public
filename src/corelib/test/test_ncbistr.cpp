@@ -92,7 +92,7 @@ struct SStringNumericValues
     }
 };
 
-#define DF NStr::fStringToNumDefault
+#define DF 0
 
 //                str  flags  num   int   uint  Int8  Uint8  double
 #define BAD(v)   {  v, DF, -1, kBad, kBad, kBad, kBad, kBad }
@@ -188,31 +188,26 @@ static const SStringNumericValues s_Str2NumTests[] = {
     BAD("- 123"),
     BAD(" 123"),
 
-//+++ FIX ME: after transition to new flag versions of StringTo*() replace (>>*) with real flags !!!
-// It compiles fine, but on moment of execution each flag here have an zero vlaue.
-
-    { " 123", (1<<12)/*NStr::fAllowLeadingSpaces*/,  -1, 123,  123,  123,  123,  123. },
-    { " 123", (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/, -1, 123,  123,  123,  123,  123. },
+    { " 123",     NStr::fAllowLeadingSpaces,  -1, 123,  123,  123,  123,  123. },
+    { " 123",     NStr::fAllowLeadingSymbols, -1, 123,  123,  123,  123,  123. },
     BAD("123 "),
-    { "123 ",     (1<<14)/*NStr::fAllowTrailingSpaces*/,  -1, 123,  123,  123,  123,  123. },
-    { "123 ",     (1<<14)|(1<<15)/*NStr::fAllowTrailingSymbols*/, -1, 123,  123,  123,  123,  123. },
-    { "123(45) ", (1<<14)|(1<<15)/*NStr::fAllowTrailingSymbols*/, -1, 123,  123,  123,  123,  123. },
-    { " 123 ",    (1<<12)|(1<<14)/*NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces*/, -1, 123,  123,  123,  123,  123. },
+    { "123 ",     NStr::fAllowTrailingSpaces,  -1, 123,  123,  123,  123,  123. },
+    { "123 ",     NStr::fAllowTrailingSymbols, -1, 123,  123,  123,  123,  123. },
+    { "123(45) ", NStr::fAllowTrailingSymbols, -1, 123,  123,  123,  123,  123. },
+    { " 123 ",    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces, -1, 123,  123,  123,  123,  123. },
     
-    { "1,234",     (1<<11)/*NStr::fAllowCommas*/, -1,    1234,    1234,    1234,    1234, kBad },
-    { "1,234,567", (1<<11)/*NStr::fAllowCommas*/, -1, 1234567, 1234567, 1234567, 1234567, kBad },
-    { "12,34",     (1<<11)/*NStr::fAllowCommas*/, -1,    kBad,    kBad,    kBad,    kBad, kBad },
-    { ",123",      (1<<11)/*NStr::fAllowCommas*/, -1,    kBad,    kBad,    kBad,    kBad, kBad },
-    { ",123",      (1<<11)|(1<<12)|(1<<13)/*NStr::fAllowCommas | NStr::fAllowLeadingSymbols*/, -1, 123, 123, 123, 123, 123 },
+    { "1,234",    NStr::fAllowCommas, -1,    1234,    1234,    1234,    1234, kBad },
+    { "1,234,567",NStr::fAllowCommas, -1, 1234567, 1234567, 1234567, 1234567, kBad },
+    { "12,34",    NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad },
+    { ",123",     NStr::fAllowCommas, -1,    kBad,    kBad,    kBad,    kBad, kBad },
+    { ",123",     NStr::fAllowCommas | NStr::fAllowLeadingSymbols, -1, 123, 123, 123, 123, 123 },
 
-    { "+123", 0, 123, 123, 123, 123, 123, 123 },
-    // fix StringToDouble(), should be: 
-    { "123",  (1<<10)/*NStr::fMandatorySign*/, 123, kBad, kBad, kBad, kBad, kBad },
-    { "+123", (1<<10)/*NStr::fMandatorySign*/, 123,  123,  123,  123,  123, 123 },
-    { "-123", (1<<10)/*NStr::fMandatorySign*/,  -1, -123, kBad, -123, kBad, -123 },
-    { "+123", (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/, 123,  123,  123,  123,  123,  123 },
-    { "-123", (1<<12)|(1<<13)/*NStr::fAllowLeadingSymbols*/,  -1, -123, kBad, -123, kBad, -123 }
-//---
+    { "+123",     0, 123, 123, 123, 123, 123, 123 },
+    { "123",      NStr::fMandatorySign, 123, kBad, kBad, kBad, kBad, kBad },
+    { "+123",     NStr::fMandatorySign, 123,  123,  123,  123,  123, 123 },
+    { "-123",     NStr::fMandatorySign,  -1, -123, kBad, -123, kBad, -123 },
+    { "+123",     NStr::fAllowLeadingSymbols, 123,  123,  123,  123,  123,  123 },
+    { "-123",     NStr::fAllowLeadingSymbols,  -1, -123, kBad, -123, kBad, -123 }
 };
 
 static void s_StringToNum()
@@ -224,10 +219,7 @@ static void s_StringToNum()
     for (size_t i = 0;  i < count;  ++i) {
         const SStringNumericValues* test = &s_Str2NumTests[i];
         const char*                 str  = test->str;
-//+++ FIX ME: -- after transition to new flag versions of StringTo*()
-        //NStr::TStringToNumFlags flags = test->flags;
-        NStr::TStringToNumFlags flags(test->flags, 0);
-//---
+        NStr::TStringToNumFlags flags = test->flags;
         NStr::TNumToStringFlags str_flags = 0;
         if ( flags & NStr::fMandatorySign ) 
             str_flags |= NStr::fWithSign;
@@ -500,9 +492,7 @@ static void s_StringToNumRadix()
         // Int
         try {
             if ( test->value <= (Uint8)kMax_Int ) {
-                int val = NStr::StringToInt(test->str, 
-                                            NStr::fStringToNumDefault,
-                                            test->base);
+                int val = NStr::StringToInt(test->str, 0, test->base);
                 string str;
                 if ( test->base ) {
                     NStr::IntToString(str, val, 0, test->base);
@@ -523,10 +513,8 @@ static void s_StringToNumRadix()
         // UInt
         try {
             if ( test->value <= kMax_UInt ) {
-                unsigned int val = NStr::StringToUInt(
-                                        test->str, 
-                                        NStr::fStringToNumDefault,
-                                        test->base);
+                unsigned int val = 
+                    NStr::StringToUInt(test->str, 0, test->base);
                 string str;
                 if ( test->base ) {
                     NStr::UIntToString(str, val, 0, test->base);
@@ -546,9 +534,7 @@ static void s_StringToNumRadix()
         // Int8
         try {
             if ( test->value <= (Uint8)kMax_I8 ) {
-                Int8 val = NStr::StringToInt8(test->str, 
-                                              NStr::fStringToNumDefault,
-                                              test->base);
+                Int8 val = NStr::StringToInt8(test->str, 0, test->base);
                 string str;
                 if ( test->base ) {
                     NStr::Int8ToString(str, val, 0, test->base);
@@ -567,9 +553,7 @@ static void s_StringToNumRadix()
 
         // Uint8
         try {
-            Uint8 val = NStr::StringToUInt8(test->str, 
-                                            NStr::fStringToNumDefault,
-                                            test->base);
+            Uint8 val = NStr::StringToUInt8(test->str, 0, test->base);
             string str;
             if ( test->base ) {
                 NStr::UInt8ToString(str, val, 0, test->base);
@@ -631,13 +615,10 @@ static void s_StringToNumRadix()
 
 struct SStringDataSizeValues
 {
-    const char* str;
-//+++ FIX ME
-//    NStr::TStringToNumFlags flags;
-    int         flags;
-//---    
-    int         base;
-    Uint8       expected;
+    const char*             str;
+    NStr::TStringToNumFlags flags;
+    int                     base;
+    Uint8                   expected;
 
     bool IsGood(void) const {
         return expected != (Uint8)kBad;
@@ -686,12 +667,9 @@ static void s_StringToNumDataSize()
 
     for (size_t i = 0;  i < count;  ++i)
     {
-        const SStringDataSizeValues* test = &s_Str2DataSizeTests[i];
-        const char*                  str  = test->str;
-//+++ FIX ME: -- after transition to new flags StringTo*()
-        //NStr::TStringToNumFlags flags = test->flags;
-        NStr::TStringToNumFlags flags(test->flags, 0);
-//---
+        const SStringDataSizeValues* test  = &s_Str2DataSizeTests[i];
+        const char*                  str   = test->str;
+        NStr::TStringToNumFlags      flags = test->flags;
         NcbiCout << "\n*** Checking string '" << str << "'***" << NcbiEndl;
 
         try {
@@ -1499,6 +1477,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.56  2006/02/06 15:47:40  ivanov
+ * Replaced class-based NStr::TStringToNumFlags to int-based counterparts
+ *
  * Revision 6.55  2006/01/03 17:40:26  ivanov
  * NStr:StringToDouble() added support for TStringToNumFlags flags
  *

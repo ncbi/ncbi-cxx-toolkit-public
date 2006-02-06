@@ -41,17 +41,6 @@
 
 BEGIN_NCBI_SCOPE
 
-NStr::TStringToNumFlags NStr::fConvErr_NoThrow      (1 <<  9, 0);
-NStr::TStringToNumFlags NStr::fMandatorySign        (1 << 10, 0);
-NStr::TStringToNumFlags NStr::fAllowCommas          (1 << 11, 0);
-NStr::TStringToNumFlags NStr::fAllowLeadingSpaces   (1 << 12, 0);
-NStr::TStringToNumFlags NStr::fAllowLeadingSymbols  ((1 << 13) | (1 << 12), 0);
-NStr::TStringToNumFlags NStr::fAllowTrailingSpaces  (1 << 14, 0);
-NStr::TStringToNumFlags NStr::fAllowTrailingSymbols ((1 << 15) | (1 << 14), 0);
-NStr::TStringToNumFlags NStr::fAllStringToNumFlags  (0x7F00, 0);
-NStr::TStringToNumFlags NStr::fStringToNumDefault   (0, 0);
-
-
 // Hex symbols
 static const char s_Hex[] = "0123456789ABCDEF";
 
@@ -796,9 +785,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
         if (str[pos] == '+') {
             pos++;
             // strip fMandatorySign flag
-//+++ FIX ME: -- after transition to bit-values flags
-//          flags &= ~fMandatorySign;
-            flags = TStringToNumFlags((int)flags & ~fMandatorySign,0);
+            flags &= ~fMandatorySign;
         } else {
             if (flags & fMandatorySign) {
                 S2N_CONVERT_ERROR(DataSize, EINVAL, true, pos);
@@ -1723,8 +1710,7 @@ string NStr::ParseEscapes(const string& str)
             }
             if (pos2 >= pos) {
                 out += static_cast<char>
-                    (StringToUInt(str.substr(pos, pos2 - pos + 1),
-                     fStringToNumDefault, 16));
+                    (StringToUInt(str.substr(pos, pos2 - pos + 1), 0, 16));
             } else {
                 NCBI_THROW2(CStringException, eFormat,
                             "\\x used with no following digits", pos);
@@ -2402,6 +2388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.172  2006/02/06 15:47:09  ivanov
+ * Replaced class-based NStr::TStringToNumFlags to int-based counterparts
+ *
  * Revision 1.171  2006/01/03 17:39:39  ivanov
  * NStr:StringToDouble() added support for TStringToNumFlags flags
  *
