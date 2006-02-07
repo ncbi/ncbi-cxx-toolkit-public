@@ -732,6 +732,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
         while(blobRs->Next()) {
             ostream& ostrm = auto_cursor->GetBlobOStream(1, out.pcount(), eDisableLog); 
             ostrm.write(out.str(), out.pcount());
+            out.freeze(false);
             BOOST_CHECK_EQUAL(ostrm.fail(), false);
             ostrm.flush();
             BOOST_CHECK_EQUAL(ostrm.fail(), false);
@@ -1578,7 +1579,9 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // PushCntxMsgHandler - Add message handler "h" to process 'context-wide' (not bound
     // to any particular connection) error messages.
     {
-        CTestErrHandler* drv_err_handler = new CTestErrHandler();
+        auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+        auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         local_conn->Connect( 
             m_args.GetUserName(), 
@@ -1587,7 +1590,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             m_args.GetDatabaseName() 
             );
 
-        drv_context->PushCntxMsgHandler( drv_err_handler );
+        drv_context->PushCntxMsgHandler( drv_err_handler.get() );
 
         // Connection process should be affected ...
         {
@@ -1646,16 +1649,14 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
         // Push a message handler into a connection ...
         {
-            CTestErrHandler* err_handler = new CTestErrHandler();
-
-            local_conn->GetCDB_Connection()->PushMsgHandler(err_handler);
+            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
             try {
                 Test_ES_01(*local_conn);
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( err_handler->GetSucceed() );
+                BOOST_CHECK( msg_handler->GetSucceed() );
             }
         }
 
@@ -1689,7 +1690,11 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // PushDefConnMsgHandler - Add `per-connection' err.message handler "h" to the stack of default
     // handlers which are inherited by all newly created connections.
     {
-        CTestErrHandler* drv_err_handler = new CTestErrHandler();
+        auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
+        auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+        auto_ptr<CTestErrHandler> msg_handler02(new CTestErrHandler());
+
+        
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         local_conn->Connect( 
             m_args.GetUserName(), 
@@ -1698,7 +1703,7 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
             m_args.GetDatabaseName() 
             );
 
-        drv_context->PushDefConnMsgHandler( drv_err_handler );
+        drv_context->PushDefConnMsgHandler( drv_err_handler.get() );
 
         // Current connection should not be affected ...
         {
@@ -1714,16 +1719,14 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Push a message handler into a connection ...
         // This is supposed to be okay.
         {
-            CTestErrHandler* err_handler = new CTestErrHandler();
-
-            local_conn->GetCDB_Connection()->PushMsgHandler(err_handler);
+            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
             try {
                 Test_ES_01(*local_conn);
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( err_handler->GetSucceed() );
+                BOOST_CHECK( msg_handler->GetSucceed() );
             }
         }
 
@@ -1752,16 +1755,14 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Push a message handler into a connection ...
         // This is supposed to be okay.
         {
-            CTestErrHandler* err_handler = new CTestErrHandler();
-
-            new_conn->GetCDB_Connection()->PushMsgHandler(err_handler);
+            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler02.get());
 
             try {
                 Test_ES_01(*new_conn);
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( err_handler->GetSucceed() );
+                BOOST_CHECK( msg_handler02->GetSucceed() );
             }
         }
 
@@ -3589,6 +3590,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.63  2006/02/07 18:45:58  ssikorsk
+ * Use auto_ptr to manage lifetime of user-defined error handlers
+ *
  * Revision 1.62  2006/02/07 16:31:01  ssikorsk
  * Added Test_BlobStream to the test-suite.
  *
