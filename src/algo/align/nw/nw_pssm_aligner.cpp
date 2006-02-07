@@ -555,7 +555,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
             // Begin by separating out the common portion of each
             // profile, including the frequency associated with gaps
 
-            for (int m = 0; m < kPSSM_ColumnSize; m++) {
+            for (int m = 1; m < kPSSM_ColumnSize; m++) {
                 if (freq1_row[i][m] < freq2_row[j][m]) {
                     accum += freq1_row[i][m] * (double)sm[m][m];
                     diff_freq1[m] = 0.0;
@@ -568,13 +568,23 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
                 }
             }
 
-            // normalize one column of differences
-            for (int m = 0; m < kPSSM_ColumnSize; m++) 
-                sum += diff_freq1[m];
+            // normalize difference for profile with larger gap
+            if (freq1_row[i][0] >=  freq2_row[j][0]) {
+                for (int m = 1; m < kPSSM_ColumnSize; m++)
+                    sum += diff_freq1[m];
+            } else {
+                for (int m = 1; m < kPSSM_ColumnSize; m++)
+                    sum += diff_freq2[m];
+            }
 
             if (sum > 0) {
-                for (int m = 0; m < kPSSM_ColumnSize; m++)
-                    diff_freq1[m] /= sum;
+                if (freq1_row[i][0] >=  freq2_row[j][0]) {
+                    for (int m = 1; m < kPSSM_ColumnSize; m++)
+                        diff_freq1[m] /= sum;
+                } else {
+                    for (int m = 1; m < kPSSM_ColumnSize; m++)
+                        diff_freq2[m] /= sum;
+                }
 
                 // add in the cross terms (not counting gaps)
 
@@ -587,22 +597,9 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
                 }
             }
 
-            // account for the frequency of gaps in the
-            // two profiles by assuming a gap in one profile
-            // causes a gap extend penalty for the other profile.
-            // Note that the penalty itself is always m_Ws
-
-            accum *= m_FreqScale;
-            if (diff_freq1[0]) {
-                for (int m = 1; m < kPSSM_ColumnSize; m++)
-                    accum += diff_freq1[0] * diff_freq2[m] * m_Ws;
-            }
-            else {
-                for (int m = 1; m < kPSSM_ColumnSize; m++)
-                    accum += diff_freq1[m] * diff_freq2[0] * m_Ws;
-            }
-
-            G = pV[j] + accum;
+            G = pV[j] + accum * m_FreqScale +
+                freq1_row[i][0] * m_Ws * (1-freq2_row[j][0]) +
+                freq2_row[j][0] * m_Ws * (1-freq1_row[i][0]);
 
             pV[j] = V;
 
@@ -776,7 +773,6 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                 wg2 = m_Wg; ws2 = m_Ws;
             }
 
-
             ETranscriptSymbol ts = transcript[i];
             switch(ts) {
     
@@ -788,7 +784,7 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                 double diff_freq1[kPSSM_ColumnSize];
                 double diff_freq2[kPSSM_ColumnSize];
 
-                for (int m = 0; m < kPSSM_ColumnSize; m++) {
+                for (int m = 1; m < kPSSM_ColumnSize; m++) {
                     if (m_Freq1[offset1][m] < m_Freq2[offset2][m]) {
                         accum += m_Freq1[offset1][m] * (double)sm[m][m];
                         diff_freq1[m] = 0.0;
@@ -803,33 +799,34 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                     }
                 }
 
-                for (int m = 0; m < kPSSM_ColumnSize; m++)
-                    sum += diff_freq1[m];
+                if (m_Freq1[offset1][0] >=  m_Freq2[offset2][0]) {
+                    for (int m = 1; m < kPSSM_ColumnSize; m++)
+                        sum += diff_freq1[m];
+                } else {
+                    for (int m = 1; m < kPSSM_ColumnSize; m++)
+                        sum += diff_freq2[m];
+                }
 
                 if (sum > 0) {
-                    for (int m = 0; m < kPSSM_ColumnSize; m++)
-                        diff_freq1[m] /= sum;
+                    if (m_Freq1[offset1][0] >=  m_Freq2[offset2][0]) {
+                        for (int m = 1; m < kPSSM_ColumnSize; m++)
+                            diff_freq1[m] /= sum;
+                    } else {
+                        for (int m = 1; m < kPSSM_ColumnSize; m++)
+                            diff_freq2[m] /= sum;
+                    }
 
                     for (int m = 1; m < kPSSM_ColumnSize; m++) {
                         for (int n = 1; n < kPSSM_ColumnSize; n++) {
-                            accum += m_Freq1[offset1][m] * 
-                                     m_Freq2[offset2][n] * 
+                            accum += diff_freq1[m] * 
+                                     diff_freq2[n] * 
                                     (double)sm[m][n];
                         }
                     }
                 }
-                accum *= m_FreqScale;
-
-                if (diff_freq1[0]) {
-                    for (int m = 1; m < kPSSM_ColumnSize; m++)
-                        accum += diff_freq1[0] * diff_freq2[m] * m_Ws;
-                }
-                else {
-                    for (int m = 1; m < kPSSM_ColumnSize; m++)
-                        accum += diff_freq1[m] * diff_freq2[0] * m_Ws;
-                }
-
-                dscore += accum;
+                dscore += accum * m_FreqScale +
+                        m_Freq1[offset1][0] * m_Ws * (1-m_Freq2[offset2][0]) +
+                        m_Freq2[offset2][0] * m_Ws * (1-m_Freq1[offset1][0]);
             }
             break;
     
@@ -867,6 +864,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/02/07 15:59:36  papadopo
+ * 1. Change normalization of profile-profile columns
+ * 2. Fix a bug computing score from transcript
+ *
  * Revision 1.10  2006/02/01 16:37:48  papadopo
  * 1. Modify profile-profile score function to be symmetric
  * 2. Fix compile warning
