@@ -568,8 +568,8 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
                 }
             }
 
-            // normalize difference for profile with larger gap
-            if (freq1_row[i][0] >=  freq2_row[j][0]) {
+            // normalize difference for profile with smaller gap
+            if (freq1_row[i][0] <=  freq2_row[j][0]) {
                 for (int m = 1; m < kPSSM_ColumnSize; m++)
                     sum += diff_freq1[m];
             } else {
@@ -578,7 +578,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
             }
 
             if (sum > 0) {
-                if (freq1_row[i][0] >=  freq2_row[j][0]) {
+                if (freq1_row[i][0] <=  freq2_row[j][0]) {
                     for (int m = 1; m < kPSSM_ColumnSize; m++)
                         diff_freq1[m] /= sum;
                 } else {
@@ -799,7 +799,7 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                     }
                 }
 
-                if (m_Freq1[offset1][0] >=  m_Freq2[offset2][0]) {
+                if (m_Freq1[offset1][0] <=  m_Freq2[offset2][0]) {
                     for (int m = 1; m < kPSSM_ColumnSize; m++)
                         sum += diff_freq1[m];
                 } else {
@@ -808,7 +808,7 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                 }
 
                 if (sum > 0) {
-                    if (m_Freq1[offset1][0] >=  m_Freq2[offset2][0]) {
+                    if (m_Freq1[offset1][0] <=  m_Freq2[offset2][0]) {
                         for (int m = 1; m < kPSSM_ColumnSize; m++)
                             diff_freq1[m] /= sum;
                     } else {
@@ -864,6 +864,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/02/07 20:56:17  papadopo
+ * normalize profile with smaller gap frequency instead of larger
+ *
  * Revision 1.11  2006/02/07 15:59:36  papadopo
  * 1. Change normalization of profile-profile columns
  * 2. Fix a bug computing score from transcript
