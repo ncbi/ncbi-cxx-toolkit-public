@@ -58,6 +58,14 @@ if [ ! -d $build_dir ] ; then
 fi
 cd $build_dir
 
+
+for cfg in $cfgs ; do
+    if [ $cfg = Release -o $cfg = Debug ] ; then
+       error "$cfg configuration is not buildable on this platform." 
+    fi
+done
+
+
 # Configuration to build configure
 cfg_configure=ReleaseDLL
 
