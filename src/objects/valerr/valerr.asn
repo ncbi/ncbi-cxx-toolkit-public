@@ -1,0 +1,35 @@
+--$Revision: 1.1 $
+--**********************************************************************
+--
+--  NCBI Validator Errors
+--  by Robert Smith
+--
+--**********************************************************************
+
+NCBI-ValErrors DEFINITIONS ::=
+BEGIN
+
+EXPORTS ValidErrItem, ValidError;
+
+ValidErrItem ::= SEQUENCE {
+    sev         INTEGER {
+        info (0),
+        warning (1),
+        error (2),
+        critical (3),
+        fatal (4),
+        trace (5)
+    },
+    errIndex    INTEGER,
+    msg         VisibleString,
+    objDesc     VisibleString,
+    accession   VisibleString
+}
+
+
+ValidError ::= SEQUENCE {
+    errs SET OF ValidErrItem
+}
+
+END
+

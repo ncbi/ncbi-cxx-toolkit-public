@@ -1,0 +1,8 @@
+[-]
+_export = NCBI_VALERR_EXPORT
+
+[ValError]
+errs._type = vector
+
+[ValErrorItem]
+errIndex._type = unsigned int
