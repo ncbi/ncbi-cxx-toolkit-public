@@ -145,6 +145,7 @@
 #  define NCBI_PROJ_EXPORTS
 #  define NCBI_PCASSAY_EXPORTS
 #  define NCBI_PCSUBSTANCE_EXPORTS
+#  define NCBI_VALERR_EXPORTS
 #endif
 
 
@@ -718,6 +719,14 @@
 #  define NCBI_VALIDATOR_EXPORT __declspec(dllimport)
 #endif
 
+/* Export specifier for library valerr
+ */
+#ifdef NCBI_VALERR_EXPORTS
+#  define NCBI_VALERR_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_VALERR_EXPORT __declspec(dllimport)
+#endif
+
 /* Export specifier for library cleanup
  */
 #ifdef NCBI_CLEANUP_EXPORTS
@@ -1128,6 +1137,7 @@
 #  define NCBI_TAXON1_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
 #  define NCBI_VALIDATOR_EXPORT
+#  define NCBI_VALERR_EXPORT
 #  define NCBI_CLEANUP_EXPORT
 #  define NCBI_XALGOALIGN_EXPORT
 #  define NCBI_XALGOCONTIG_ASSEMBLY_EXPORT
@@ -1192,6 +1202,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.111  2006/02/07 15:27:44  rsmith
+ * add NCBI_VALERR_EXPORT
+ *
  * Revision 1.110  2006/01/26 17:35:50  didenko
  * Added NCBI_SEQEDIT_EXPORT specifier
  *
