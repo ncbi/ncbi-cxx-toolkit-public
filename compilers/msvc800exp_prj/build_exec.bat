@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: build_exec.bat,v 1.3 2006/02/07 15:10:10 ivanov Exp $
+REM $Id: build_exec.bat,v 1.4 2006/02/07 15:21:13 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -31,6 +31,7 @@ REM and configuration. Cygwin cannot run devenv directly inside shell-script.
 REM
 REM ===========================================================================
 
+call msvcvars.bat
 
 if _%1% == _  goto be_abort
 goto be_build
