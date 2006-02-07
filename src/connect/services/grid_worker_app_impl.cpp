@@ -254,6 +254,7 @@ public:
     void Suspend() 
     { 
         m_StopFlag = true; 
+        m_Wait2.Post(); 
     }
     
     bool IsShutdownRequested() const { return m_ShutdownFlag; }
@@ -629,6 +630,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.11  2006/02/07 20:59:34  didenko
+ * Fixed Idle task timeout calculation
+ *
  * Revision 6.10  2006/02/01 19:04:38  didenko
  * - call to CONNECT_Init function
  *
