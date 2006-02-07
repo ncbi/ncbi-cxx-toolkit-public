@@ -135,25 +135,49 @@ CDBAPIUnitTest::TestInit(void)
 
     auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
 
+//     {
+//         auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("TestProc") );
+//
+//         auto_stmt->Execute();
+//         while(auto_stmt->HasMoreResults()) {
+//             if( auto_stmt->HasRows() ) {
+//                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+//
+//                 switch( rs->GetResultType() ) {
+//                 case eDB_RowResult:
+//                     while(rs->Next()) {
+//                         // retrieve row results
+//                     }
+//                     break;
+//                 case eDB_ParamResult:
+//                     while(rs->Next()) {
+//                         // Retrieve parameter row
+//                     }
+//                     break;
+//                 default:
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+    
     // Create a test table ...
     string sql;
 
     sql  = " CREATE TABLE " + GetTableName() + "( \n";
     sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
     sql += "    int_field INT NOT NULL, \n";
-    if ( m_args.GetServerName() != "MOZART" ) {
-        sql += "    vc1000_field VARCHAR(1000) NULL, \n";
-    }
+    sql += "    vc1000_field VARCHAR(1000) NULL, \n";
     sql += "    text_field TEXT NULL \n";
     sql += " )";
-
+    
     // Create the table
     auto_stmt->ExecuteUpdate(sql);
-    
+
     sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
     // Create an index
     auto_stmt->ExecuteUpdate( sql );
-    
+
     // Table for bulk insert ...
     if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
         sql  = " CREATE TABLE #bulk_insert_table( \n";
@@ -165,7 +189,7 @@ CDBAPIUnitTest::TestInit(void)
 
         // Create the table
         auto_stmt->ExecuteUpdate(sql);
-        
+
         sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
         sql += "    id INT PRIMARY KEY, \n";
         sql += "    vb8000_field VARBINARY(8000) NULL, \n";
@@ -175,23 +199,21 @@ CDBAPIUnitTest::TestInit(void)
         auto_stmt->ExecuteUpdate(sql);
     } else
     {
-        if ( m_args.GetServerName() != "MOZART" ) {
-            sql  = " CREATE TABLE #bulk_insert_table( \n";
-            sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vc8000_field VARCHAR(1900) NULL, \n";
-            sql += " )";
+        sql  = " CREATE TABLE #bulk_insert_table( \n";
+        sql += "    id INT PRIMARY KEY, \n";
+        sql += "    vc8000_field VARCHAR(1900) NULL, \n";
+        sql += " )";
 
-            // Create the table
-            auto_stmt->ExecuteUpdate(sql);
-            
-            sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
-            sql += "    id INT PRIMARY KEY, \n";
-            sql += "    vb8000_field VARBINARY(1900) NULL \n";
-            sql += " )";
+        // Create the table
+        auto_stmt->ExecuteUpdate(sql);
 
-            // Create the table
-            auto_stmt->ExecuteUpdate(sql);
-        }
+        sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
+        sql += "    id INT PRIMARY KEY, \n";
+        sql += "    vb8000_field VARBINARY(1900) NULL \n";
+        sql += " )";
+
+        // Create the table
+        auto_stmt->ExecuteUpdate(sql);
     }
 }
 
@@ -671,6 +693,94 @@ CDBAPIUnitTest::Test_LOB(void)
                     size_t blob_size = value.GetBlobSize();
                     BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
                     // Int8 value = rs->GetVariant(1).GetInt8();
+                }
+            } 
+        }
+    }
+}
+
+void 
+CDBAPIUnitTest::Test_BlobStream(void)
+{
+    string sql;
+    enum {test_size = 10000};
+    
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // Prepare data ...
+    {
+        ostrstream out;
+
+        for (int i = 0; i < test_size; ++i) {
+            out << i << " ";
+        }
+        
+        // Clean table ...
+        auto_stmt->ExecuteUpdate( "DELETE FROM "+ GetTableName() );
+        
+        // Insert data ...
+        sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
+        sql += " VALUES(0, '')";
+        auto_stmt->ExecuteUpdate( sql );
+        
+        sql  = " SELECT text_field FROM " + GetTableName();
+        
+        auto_ptr<ICursor> auto_cursor(m_Conn->GetCursor("test03", sql));
+
+        // blobRs should be destroyed before auto_cursor ...
+        auto_ptr<IResultSet> blobRs(auto_cursor->Open());
+        while(blobRs->Next()) {
+            ostream& ostrm = auto_cursor->GetBlobOStream(1, out.pcount(), eDisableLog); 
+            ostrm.write(out.str(), out.pcount());
+            BOOST_CHECK_EQUAL(ostrm.fail(), false);
+            ostrm.flush();
+            BOOST_CHECK_EQUAL(ostrm.fail(), false);
+            BOOST_CHECK_EQUAL(ostrm.good(), true);
+            // BOOST_CHECK_EQUAL(int(ostrm.tellp()), int(out.pcount()));
+        }
+        
+        auto_stmt->SendSql( "SELECT datalength(text_field) FROM " + GetTableName() );
+
+        while (auto_stmt->HasMoreResults()) {
+            if (auto_stmt->HasRows()) {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+                BOOST_CHECK( rs.get() != NULL );
+                BOOST_CHECK( rs->Next() );
+                long data_len = rs->GetVariant(1).GetInt4(); 
+                BOOST_CHECK_EQUAL( data_len, out.pcount() );
+                while (rs->Next()) {}
+            }
+        }
+    }
+    
+    // Retrieve data ...
+    {
+        auto_stmt->ExecuteUpdate("set textsize 2000000");
+        
+        sql = "SELECT text_field FROM "+ GetTableName();
+        
+        auto_stmt->SendSql( sql );
+        while( auto_stmt->HasMoreResults() ) { 
+            if( auto_stmt->HasRows() ) { 
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet()); 
+
+                try {
+                    while (rs->Next()) {
+                        istream& strm = rs->GetBlobIStream();
+                        int j = 0;
+                        for (int i = 0; i < test_size; ++i) {
+                            strm >> j;
+                            if (i == 5000) {
+                                DATABASE_DRIVER_FATAL( "Exception safety test.", 0 );
+                            }
+                            BOOST_CHECK_EQUAL(strm.good(), true);
+                            BOOST_CHECK_EQUAL(strm.eof(), false);
+                            BOOST_CHECK_EQUAL(j, i);
+                        }
+                    }
+                }
+                catch( const CDB_Exception& ) {
+                    rs->Close();
                 }
             } 
         }
@@ -3247,6 +3357,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             tc->depends_on(tc_cursor);
             add(tc);
+            
+            tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream, DBAPIInstance);
+            tc->depends_on(tc_init);
+            tc->depends_on(tc_cursor);
+            add(tc);
         }
     }
 
@@ -3290,11 +3405,9 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     tc->depends_on(tc_init);
     add(tc);
 
-    if ( args.GetServerName() != "MOZART" ) {
-        tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
-        tc->depends_on(tc_init);
-        add(tc);
-    }
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant2, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
 
     // !!! ctlib/dblib do not work at the moment.
     // !!! ftds works with MS SQL Server only at the moment.
@@ -3476,6 +3589,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.62  2006/02/07 16:31:01  ssikorsk
+ * Added Test_BlobStream to the test-suite.
+ *
  * Revision 1.61  2006/01/27 19:32:14  ssikorsk
  * Disable Test_Bulk_Writing temporarily;
  *

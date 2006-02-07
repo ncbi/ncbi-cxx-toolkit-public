@@ -165,6 +165,7 @@ public:
     void Test_Bulk_Overflow(void);
     void Test_GetColumnNo(void);
     void Test_LOB(void);
+    void Test_BlobStream(void);
     void Test_UNIQUE(void);
     void Test_DateTime(void);
     void Test_Insert(void);
@@ -224,6 +225,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/02/07 16:30:52  ssikorsk
+ * Added Test_BlobStream to the test-suite.
+ *
  * Revision 1.31  2006/01/26 17:51:12  ssikorsk
  * Added method GetNumOfRecords.
  *
