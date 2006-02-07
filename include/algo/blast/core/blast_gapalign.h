@@ -64,8 +64,8 @@ typedef struct BlastGapAlignStruct {
    GapStateArrayStruct* state_struct; /**< Structure to keep extension 
                                                 state information */
    GapEditScript* edit_script; /**< The traceback (gap) information */
-   GapPrelimEditBlock *fwd_prelim_tback; /**< traceback from left extensions */
-   GapPrelimEditBlock *rev_prelim_tback; /**< traceback from right extensions */
+   GapPrelimEditBlock *fwd_prelim_tback; /**< traceback from right extensions */
+   GapPrelimEditBlock *rev_prelim_tback; /**< traceback from left extensions */
    SGreedyAlignMem* greedy_align_mem;/**< Preallocated memory for the greedy 
                                          gapped extension */
    BlastGapDP* dp_mem; /**< scratch structures for dynamic programming */
