@@ -111,6 +111,10 @@ public:
     /// @param version
     ///   Numeric value -- normally version number, overriden as sequence
     ///   number for patents.
+    /// @param release_in
+    ///   Historically used to convey release identifiers; for patents,
+    ///   may be set to "pgp" (case-insensitive) to indicate a
+    ///   Pre-Grant Patent [application].
     CSeq_id(E_Choice      the_type,
             const string& acc_in,
             const string& name_in    = kEmptyStr,
@@ -574,6 +578,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2006/02/07 19:29:48  ucko
+ * Document that release_in may be set to "pgp" for pre-grant patents.
+ *
  * Revision 1.52  2005/06/29 19:19:08  ucko
  * Refactor, introducing Set methods that can be called on previously
  * initialized IDs and a static ParseFastaIDs method.
