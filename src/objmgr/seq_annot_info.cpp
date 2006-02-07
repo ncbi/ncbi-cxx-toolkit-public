@@ -691,7 +691,7 @@ void CSeq_annot_Info::x_InitAlignKeys(void)
 
 void CSeq_annot_Info::x_InitLocsKeys(void)
 {
-    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetFtable().size());
+    _ASSERT(m_ObjectIndex.GetInfos().size() >= m_Object->GetData().GetLocs().size());
     if ( !m_ObjectIndex.GetKeys().empty() ) {
         return;
     }
@@ -1093,6 +1093,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/02/07 00:15:12  katargir
+ * Fixed typo in x_InitLocsKeys which caused exception from ASSERT statement
+ *
  * Revision 1.37  2006/01/25 18:59:04  didenko
  * Redisgned bio objects edit facility
  *
