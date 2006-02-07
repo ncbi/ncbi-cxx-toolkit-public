@@ -58,6 +58,9 @@
 #include <objects/entrez2/Entrez2_id_list.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
+#include <util/compress/zlib.hpp>
+#include <util/compress/stream.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
@@ -246,18 +249,20 @@ int CAsn2FlatApp::Run(void)
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
 
-    auto_ptr<CObjectIStream> is(x_OpenIStream(args));
+    auto_ptr<CObjectIStream> is;
+    is.reset( x_OpenIStream( args ) );
     if (is.get() == NULL) {
         string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
                         "Unable to read data from stdin";
         NCBI_THROW(CFlatException, eInternal, msg);
     }
-
+    
     if ( args["batch"] ) {
         CGBReleaseFile in(*is.release());
         in.RegisterHandler(this);
         in.Read();  // HandleSeqEntry will be called from this function
-    } else {
+    } 
+    else {
         
         if (args["sub"]) {  // submission
             CRef<CSeq_submit> sub(new CSeq_submit);
@@ -566,6 +571,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
 CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
 {
+    
     // determine the file serialization format.
     // default for batch files is binary, otherwise text.
     ESerialDataFormat serial = args["batch"] ? eSerial_AsnBinary :eSerial_AsnText;
@@ -579,12 +585,28 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
             serial = eSerial_Xml;
         }
     }
-
-    // open the input file, or standard input if no file specified.
-    CObjectIStream* pI = ( args["i"] ?
-        CObjectIStream::Open(args["i"].AsString(), serial) :
-        CObjectIStream::Open(serial, cin) );
+    
+    // make sure of the underlying input stream. If -i was given on the command line 
+    // then the input comes from a file. Otherwise, it comes from stdin:
+    CNcbiIstream* pInputStream = &cin;
+    if ( args["i"] ) {
+        pInputStream = new CNcbiIfstream( args["i"].AsString().c_str(), ios::binary  );
+    }
         
+    // if -c was specified then wrap the input stream into a gzip decompressor before 
+    // turning it into an object stream:
+    CObjectIStream* pI = 0;
+    if ( args["c"] ) {
+        CZipStreamDecompressor* pDecompressor = new CZipStreamDecompressor(
+            512, 512, kZlibDefaultWbits, CZipCompression::fCheckFileHeader );
+        CCompressionIStream* pUnzipStream = new CCompressionIStream(
+            *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
+        pI = CObjectIStream::Open( serial, *pUnzipStream, true );
+    }
+    else {
+        pI = CObjectIStream::Open( serial, *pInputStream, true );
+    }
+    
     if ( 0 != pI ) {
         pI->UseMemoryPool();
     }
@@ -806,6 +828,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2006/02/07 17:53:02  ludwigf
+* ADDED: Support for (gzip-) compressed input.
+*
 * Revision 1.19  2006/01/26 14:11:53  ludwigf
 * ADDED: Support for specifying the ASN.1 object type of the source on the
 *  command line. By default, asn2flat will try any object type it knows about
