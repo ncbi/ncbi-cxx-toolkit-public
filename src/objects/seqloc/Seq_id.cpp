@@ -432,6 +432,7 @@ static const TChoiceMapEntry sc_ChoiceArray[] = {
     TChoiceMapEntry("pat",          CSeq_id::e_Patent),
     TChoiceMapEntry("patent",       CSeq_id::e_Patent),
     TChoiceMapEntry("pdb",          CSeq_id::e_Pdb),
+    TChoiceMapEntry("pgp",          CSeq_id::e_Patent),
     TChoiceMapEntry("pir",          CSeq_id::e_Pir),
     TChoiceMapEntry("prf",          CSeq_id::e_Prf),
     TChoiceMapEntry("ref",          CSeq_id::e_Other),
@@ -457,6 +458,7 @@ static const char* const s_TextId[CSeq_id::e_MaxChoice+1] =
     "pir",  // pir = pir|accession|name
     "sp",   // swissprot = sp|accession|name
     "pat",  // patent = pat|country|patent number (string)|seq number (integer)
+            //     *OR* pgp|country|application number|seq number
     "ref",  // other = ref|accession|name|release - changed from oth to ref
     "gnl",  // general = gnl|database(string)|id (string or number)
     "gi",   // gi = gi|integer
@@ -806,10 +808,6 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
     }
 
     switch (choice) {   
-    default:
-        *label += s_TextId[choice];
-        break;
-
     case CSeq_id::e_General:
         // we may encode 'gnl' or the database name as requested
         if (flags & CSeq_id::fLabel_GeneralDbIsContent) {
@@ -817,6 +815,13 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
         } else {
             *label += "gnl";
         }
+        break;
+
+    case CSeq_id::e_Patent:
+        *label += id.GetPatent().GetCit().GetId().IsNumber() ? "pat" : "pgp";
+        
+    default:
+        *label += s_TextId[choice];
         break;
     }
 
@@ -976,7 +981,11 @@ void CSeq_id::WriteAsFasta(ostream& out)
     if (the_type >= e_MaxChoice)  // New SeqId type
         the_type = e_not_set;
 
-    out << s_TextId[the_type] << '|';
+    if (IsPatent()  &&  !GetPatent().GetCit().GetId().IsNumber() ) {
+        out << "pgp|";
+    } else {
+        out << s_TextId[the_type] << '|';
+    }
 
     switch (the_type) {
     case e_not_set:
@@ -1413,6 +1422,9 @@ void CSeq_id::x_Init(list<string>& fasta_pieces)
                        "Bad sequence number " + fields[2] + " for " + fields[0]
                        + " patent " + fields[1]);
         }
+        // to distinguish applications from granted patents; the numeric
+        // content has already made its way into ver.
+        fields[2] = typestr;
     }
 
     Set(type, fields[0] /* acc */, fields[1] /* name */, ver,
@@ -1539,17 +1551,11 @@ CSeq_id& CSeq_id::Set(E_Choice      the_type,
             CId_pat::C_Id&   id_pat_id = id_pat.SetId();
             id_pat.SetCountry(acc);
 
-#if 0 // not standard treatment AFAICT; breaks round-tripping
-            const char      app_str[] = "App=";
-            const SIZE_TYPE app_str_len = sizeof(app_str) - 1;
-            if (NStr::StartsWith(app_str, NStr::eNocase)) {
-                id_pat_id.SetApp_number(name.substr(app_str_len));
+            if (NStr::EqualNocase(release, "pgp")) {
+                id_pat_id.SetApp_number(name);
             } else {
                 id_pat_id.SetNumber(name);
             }
-#else
-            id_pat_id.SetNumber(name);
-#endif
             id_pat.ResetDoc_type();
             pat.SetSeqid(version);
             break;
@@ -1621,6 +1627,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.121  2006/02/07 19:29:11  ucko
+ * Use pgp|... rather than pat|... for "pre-grant patents" (applications).
+ *
  * Revision 6.120  2006/02/02 16:07:51  ucko
  * IdentifyAccession: DZ and EA are GenBank patents (eAcc_gb_patent).
  *
