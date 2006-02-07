@@ -327,7 +327,7 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaSwissprot)
 #endif
 }
 
-BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPatent)
+BOOST_AUTO_UNIT_TEST(s_TestInitFromPatent)
 {
     CRef<CSeq_id> id;
 
@@ -346,20 +346,21 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaPatent)
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188|Z")));
     CHECK_THROW_SEQID(id.Reset(new CSeq_id("pat|US|RE33188")));
 
-    CHECK_NO_THROW(id.Reset(new CSeq_id("pat|EP|App=0238993|7")));
+    CHECK_NO_THROW(id.Reset(new CSeq_id("pgp|EP|0238993|7")));
     CHECK(id->IsPatent());
     CHECK_EQUAL(id->GetPatent().GetSeqid(), 7);
     CHECK_EQUAL(id->GetPatent().GetCit().GetCountry(), string("EP"));
-#if 0 // Cliff had it this way, but for input only, and the C Toolkit
-    // seems not to use this syntax at all....
     CHECK(id->GetPatent().GetCit().GetId().IsApp_number());
     CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
                 string("0238993"));
-#else
-    CHECK(id->GetPatent().GetCit().GetId().IsNumber());
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
-                string("App=0238993"));
-#endif
+
+    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
+                                        "US", "RE33188", 1)));
+    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(), "RE33188");
+
+    CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
+                                        "EP", "0238993", 7, "PGP")));
+    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(), "0238993");
 }
 
 BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaRefseq)
@@ -575,7 +576,7 @@ static const char* kTestFastaStrings[] = {
     "sp|Q7CQJ0|RS22_SALTY",
     "sp|Q7CQJ0.1|",
     "pat|US|RE33188|1",
-    "pat|EP|App=0238993|7",
+    "pgp|EP|0238993|7",
     "ref|NM_000170.1|",
     "gnl|EcoSeq|EcoAce",
     "gnl|taxon|9606",
@@ -694,6 +695,9 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/02/07 19:30:19  ucko
+* Verify proper handling of pre-grant patents (applications).
+*
 * Revision 1.5  2005/12/28 17:05:50  ucko
 * Verify that FASTA-style IDs can have extra parts if and only if those
 * parts are all empty.
