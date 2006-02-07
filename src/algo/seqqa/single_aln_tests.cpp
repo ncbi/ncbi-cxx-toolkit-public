@@ -235,6 +235,9 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
                 result->SetOutput_data()
                     .AddField("dist_stop_to_exon_end",
                               int(exon.GetSeqStop(0) - cds_to));
+                result->SetOutput_data()
+                    .AddField("dist_stop_to_last_intron",
+                              int((*++disc.rbegin())->GetSeqStop(0) - cds_to));
             }
         }
 
@@ -495,6 +498,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/07 17:49:35  jcherry
+ * Added dist_stop_to_last_intron for NMD detection
+ *
  * Revision 1.16  2005/12/12 20:19:46  jcherry
  * Added test "dist_stop_to_exon_end" for cases with introns
  * 3' of translational stop
