@@ -331,7 +331,7 @@ SQLHDBC CODBCContext::x_ConnectToServer(const string&   srv_name,
 #endif
 
 
-    string extra_msg = "SERVER: " + srv_name + "; USER: " + user_name;
+    string extra_msg = " SERVER: " + srv_name + "; USER: " + user_name;
     m_Reporter.SetExtraMsg( extra_msg );
         
     if(!m_UseDSN) {
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/02/07 17:24:01  ssikorsk
+ * Added an extra space prior server name in the regular exception string.
+ *
  * Revision 1.35  2006/02/01 13:59:19  ssikorsk
  * Report server's and user's names in case of a failed connection attempt.
  *

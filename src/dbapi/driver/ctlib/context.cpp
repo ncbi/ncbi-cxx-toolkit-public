@@ -371,7 +371,7 @@ bool CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context, CS_CONNECTION* con,
                      (void*) &link, (CS_INT) sizeof(link),
                      &outlen) == CS_SUCCEED  &&  link != 0) {
         hs = &link->m_MsgHandlers;
-        message += "SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
     }
     else if (cs_config(context, CS_GET, CS_USERDATA,
                        (void*) &p_pot, (CS_INT) sizeof(p_pot),
@@ -506,7 +506,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         link != 0) {
         
         hs = &link->m_MsgHandlers;
-        message += "SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
     }
     else if (cs_config(context, CS_GET, 
                        CS_USERDATA,
@@ -519,7 +519,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         hs = &drv->m_CntxHandlers;
         
         // Get server name from the message ...
-        message += "SERVER: '";
+        message += " SERVER: '";
         message.append( msg->svrname, msg->svrnlen );
         message += "'";
     }
@@ -1113,6 +1113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/02/07 17:24:24  ssikorsk
+ * Added an extra space prior server name in the regular exception string.
+ *
  * Revision 1.56  2006/02/06 16:21:11  ssikorsk
  *     Use ERR_POST instead of cerr to report error messages.
  *
