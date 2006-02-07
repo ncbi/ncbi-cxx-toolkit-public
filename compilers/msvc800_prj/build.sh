@@ -59,11 +59,7 @@ fi
 cd $build_dir
 
 # Configuration to build configure
-cfg_configure=`echo $cfgs | sed 's| .*$||g'`
-if [ -s $cfg_configure ] ; then
-  error "Configuration to build configure is not specified"
-  exit 2
-fi
+cfg_configure=ReleaseDLL
 
 
 # Configure
