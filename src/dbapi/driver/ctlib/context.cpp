@@ -495,18 +495,15 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     CTL_Connection*  link = 0;
     CDBHandlerStack* hs;
     string           message;
+    string           ext_info;
     
-    if ( msg->text ) {
-        message += msg->text;
-    }
-
     if (con != 0  &&  ct_con_props(con, CS_GET, CS_USERDATA,
                                    (void*) &link, (CS_INT) sizeof(link),
                                    &outlen) == CS_SUCCEED  &&
         link != 0) {
         
         hs = &link->m_MsgHandlers;
-        message += " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
+        ext_info = " SERVER: '" + link->m_Server + "' USER: '" + link->m_User + "'";
     }
     else if (cs_config(context, CS_GET, 
                        CS_USERDATA,
@@ -519,9 +516,9 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         hs = &drv->m_CntxHandlers;
         
         // Get server name from the message ...
-        message += " SERVER: '";
-        message.append( msg->svrname, msg->svrnlen );
-        message += "'";
+        ext_info += " SERVER: '";
+        ext_info.append( msg->svrname, msg->svrnlen );
+        ext_info += "'";
     }
     else {
         ostrstream err_str;
@@ -551,6 +548,12 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         return true;
     }
 
+    if ( msg->text ) {
+        message += msg->text;
+    }
+
+    message += ext_info;
+    
     if (msg->msgnumber == 1205 /*DEADLOCK*/) {
         CDB_DeadlockEx dl(kBlankCompileInfo,
                           0, 
@@ -560,7 +563,7 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     else {
         EDiagSev sev =
             msg->severity <  10 ? eDiag_Info :
-            msg->severity == 10 ? eDiag_Warning :
+            msg->severity == 10 ? (msg->msgnumber == 0 ? eDiag_Info : eDiag_Warning) :
             msg->severity <  16 ? eDiag_Error : eDiag_Fatal;
 
         if (msg->proclen > 0) {
@@ -1113,6 +1116,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/02/08 17:25:07  ssikorsk
+ * Treat messages with msg->severity == 10 && msg->msgnumber == 0 as
+ * having informational severity.
+ *
  * Revision 1.57  2006/02/07 17:24:24  ssikorsk
  * Added an extra space prior server name in the regular exception string.
  *
