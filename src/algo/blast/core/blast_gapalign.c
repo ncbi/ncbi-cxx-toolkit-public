@@ -3150,7 +3150,7 @@ s_BlastOOFTracebackToGapEditScript(GapPrelimEditBlock *rev_prelim_tback,
     /* form the final edit block */
 
     *edit_script_ptr = e_script =
-        Blast_PrelimEditBlockToGapEditScript(rev_prelim_tback,
+        Blast_PrelimEditBlockToGapEditScript(tmp_prelim_tback,
                                          fwd_prelim_tback);
 
     /* postprocess the edit script */
