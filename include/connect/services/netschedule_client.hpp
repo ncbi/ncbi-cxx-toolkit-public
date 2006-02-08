@@ -198,18 +198,22 @@ public:
     /// @return job key
     virtual
     string SubmitJob(const string& input, 
-                     const string& progress_msg = kEmptyStr);
+                     const string& progress_msg   = kEmptyStr,
+                     const string& affinity_token = kEmptyStr);
 
 
     /// Job description for batch submission
     ///
     struct SBatchSubm
     {
-        string     input;   ///< job input
+        string     input;           ///< job input
+        string     affinity_token;  ///< affinity token
         unsigned   job_id;  ///< integer job id (assigned after submission)
 
         SBatchSubm() : job_id(0) {}
         SBatchSubm(const string& inp) : input(inp), job_id(0) {}
+        SBatchSubm(const string& inp, const string& aff) 
+            : input(inp), affinity_token(aff), job_id(0) {}
     };
 
     /// Job vector for batch submission
@@ -853,6 +857,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/02/08 15:16:30  kuznets
+ * Added support of job affinity
+ *
  * Revision 1.43  2005/08/24 14:25:02  kuznets
  * Fixing bug in comm. protocol
  *

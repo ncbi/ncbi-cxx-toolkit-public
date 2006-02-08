@@ -230,7 +230,8 @@ void CNetScheduleClient::ActivateRequestRateControl(bool on_off)
 }
 
 string CNetScheduleClient::SubmitJob(const string& input,
-                                     const string& progress_msg)
+                                     const string& progress_msg,
+                                     const string& affinity_token)
 {
     if (input.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
@@ -250,6 +251,12 @@ string CNetScheduleClient::SubmitJob(const string& input,
     if (!progress_msg.empty()) {
         m_Tmp.append(" \"");
         m_Tmp.append(progress_msg);
+        m_Tmp.append("\"");
+    }
+
+    if (!affinity_token.empty()) {
+        m_Tmp.append(" aff=\"");
+        m_Tmp.append(affinity_token);
         m_Tmp.append("\"");
     }
 
@@ -315,15 +322,33 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
             batch_size = kMax_Batch;
         }
 
-        char buf[kNetScheduleMaxDataSize * 4];
+        char buf[kNetScheduleMaxDataSize * 6];
         sprintf(buf, "BTCH %u", batch_size);
 
         WriteStr(buf, strlen(buf)+1);
 
         unsigned batch_start = i;
+        string aff_prev;
         for (unsigned j = 0; j < batch_size; ++j,++i) {
             const string& input = subm.job_list[i].input;
-            sprintf(buf, "\"%s\"", input.c_str());
+            const string& aff = subm.job_list[i].affinity_token;
+            if (aff[0]) {
+                if (aff == aff_prev) { // exactly same affinity(sorted jobs)
+                    sprintf(buf, "\"%s\" affp", 
+                            input.c_str(),
+                            aff.c_str()
+                            );     
+                } else {
+                    sprintf(buf, "\"%s\" aff=\"%s\"", 
+                            input.c_str(),
+                            aff.c_str()
+                            );
+                    aff_prev = aff;
+                }
+            } else {
+                aff_prev.erase();
+                sprintf(buf, "\"%s\"", input.c_str());
+            }
             WriteStr(buf, strlen(buf)+1);
         }
 
@@ -1500,6 +1525,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2006/02/08 15:16:47  kuznets
+ * Added support of job affinity
+ *
  * Revision 1.41  2005/08/24 14:25:21  kuznets
  * Fixing bug in comm. protocol
  *
