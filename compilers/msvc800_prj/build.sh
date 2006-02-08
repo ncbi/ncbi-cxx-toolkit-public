@@ -28,7 +28,7 @@ error()
 
 generate_msvc8_error_check_file() {
   cat <<-EOF >$1
-	/.*--* (Reb|B)uild( All | )started: Project:/ {
+	/^Target .*:/ {
 	  expendable = ""
 	}
 
@@ -36,7 +36,7 @@ generate_msvc8_error_check_file() {
 	  expendable = \$0
 	}
 
-	/(^| : |^The source )([fatal error ${filt_warn}]* [CDULNKPRJVT]*[0-9]*: |The .* are both configured to produce |Error executing )/ {
+	/: [fatal error]* [A-Z]*[0-9]*: / {
 	if (!expendable) {
 	  print \$0
 	  exit
