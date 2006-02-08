@@ -508,9 +508,9 @@ CRef< CBioseq > GetBioseqWithFootprintForNthRow(CCdCore* cd, int N, string& errs
 
     errstr.erase();
     if (N >= cd->GetNumRows()) {
-        char buf[1024];
-        sprintf(buf, "can't return bioseq for %dth row, because CD has only %d rows.\n", N, cd->GetNumRows());
-        errstr = buf;
+        errstr = "can't return bioseq for " + NStr::IntToString(N)
+            + "th row, because CD has only "
+            + NStr::IntToString(cd->GetNumRows()) + "rows.\n";
         BioseqForNthRow->Assign(*bioseq);
         return(BioseqForNthRow);
     }
@@ -901,6 +901,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.16  2006/02/08 21:24:28  ucko
+ * GetBioseqWithFootprintForNthRow: use NStr::IntToString rather than
+ * sprintf, which hasn't necessarily been declared (and is discouraged anyway)
+ *
  * Revision 1.15  2006/01/10 16:54:51  lanczyck
  * eliminate unused variable warnings
  *
