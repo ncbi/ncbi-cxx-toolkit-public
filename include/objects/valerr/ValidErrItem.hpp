@@ -307,7 +307,7 @@ enum EErrType {
 };
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_ACCESS_EXPORT CValidErrItem : public CValidErrItem_Base
+class NCBI_VALERR_EXPORT CValidErrItem : public CValidErrItem_Base
 {
     typedef CValidErrItem_Base Tparent;
 public:
@@ -410,6 +410,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/02/08 16:30:31  rsmith
+* fix export specs
+*
 * Revision 1.1  2006/02/07 18:35:41  rsmith
 * initial checkin
 *

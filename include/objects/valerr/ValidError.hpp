@@ -52,7 +52,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CSeqdesc;
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_ACCESS_EXPORT CValidError : public CValidError_Base
+class NCBI_VALERR_EXPORT CValidError : public CValidError_Base
 {
     typedef CValidError_Base Tparent;
 public:
@@ -107,7 +107,7 @@ private:
 };
 
 
-class NCBI_VALIDATOR_EXPORT CValidError_CI
+class NCBI_VALERR_EXPORT CValidError_CI
 {
 public:
     CValidError_CI(void);
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2006/02/08 16:30:31  rsmith
+* fix export specs
+*
 * Revision 1.1  2006/02/07 18:35:41  rsmith
 * initial checkin
 *
