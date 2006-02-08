@@ -72,13 +72,13 @@ for dir in $dirs ; do
    if [ $dir = dll ] ; then
      test $cfg_configure != ReleaseDLL -a $cfg_configure != DebugDLL  &&  continue  
    fi
-   sols=`eval echo $"sol_${dir}"`
+   sols=`eval echo "$"sol_${dir}""`
    for sol in $sols ; do
      alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
      start=`eval $timer`
      echo Start time: $start
      echo "INFO: Configure \"$dir\\$alias\""
-     $build_dir/build_exec.bat "$dir\\build\\$sol" rebuild $cfg_configure "-CONFIGURE-"
+     $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg_configure "-CONFIGURE-"
      if [ $? -ne 0 ] ; then
        exit 3
      fi
@@ -100,7 +100,7 @@ for cfg in $cfgs ; do
      if [ $dir = dll ] ; then
        test $cfg != ReleaseDLL -a $cfg != DebugDLL  &&  continue  
      fi
-     sols=`eval echo $"sol_${dir}"`
+     sols=`eval echo "$"sol_${dir}""`
      for sol in $sols ; do
        alias=`echo $sol | sed -e 's|\\\\.*$||g' -e 's|_.*$||g'`
        start=`eval $timer`
