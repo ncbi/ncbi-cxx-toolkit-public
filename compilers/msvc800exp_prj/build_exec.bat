@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: build_exec.bat,v 1.4 2006/02/07 15:21:13 ivanov Exp $
+REM $Id: build_exec.bat,v 1.5 2006/02/08 16:47:24 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -41,5 +41,5 @@ echo Usage: "%0 <solution> <command> <cfg> <target>"
 exit 1
 
 :be_build
-msbuild %1 /t:"%4:%2" /p:Configuration=%3
+msbuild %1 /t:"%4:%2" /p:Configuration=%3 /v:d
 
