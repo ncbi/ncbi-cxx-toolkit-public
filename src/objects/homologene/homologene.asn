@@ -31,7 +31,7 @@ HG-Entry ::= SEQUENCE {
 
 
 HG-Gene ::= SEQUENCE {
-	geneid			INTEGER OPTIONAL,
+	geneid			INTEGER,
 	otherid			INTEGER OPTIONAL,  							-- internal use only!!!!!
 	symbol			VisibleString OPTIONAL,
 	aliases			SET OF VisibleString OPTIONAL,
