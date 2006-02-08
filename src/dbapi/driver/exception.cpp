@@ -443,10 +443,18 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
     if ( !ex )
         return true;
 
-    if ( m_Prefix.empty() ) {
-        LOG_POST( ex->what() );
+    if (ex->GetSeverity() == eDiag_Info) {
+        if ( m_Prefix.empty() ) {
+            LOG_POST( ex->GetMsg() );
+        } else {
+            LOG_POST(m_Prefix << ' ' << ex->GetMsg());
+        }
     } else {
-        LOG_POST(m_Prefix << ' ' << ex->what());
+        if ( m_Prefix.empty() ) {
+            LOG_POST( ex->what() );
+        } else {
+            LOG_POST(m_Prefix << ' ' << ex->what());
+        }
     }
 
     return true;
@@ -510,6 +518,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/08 17:23:01  ssikorsk
+ * For exceptions with informational severity print only a message.
+ *
  * Revision 1.19  2005/11/02 14:32:39  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
