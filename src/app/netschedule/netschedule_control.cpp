@@ -109,7 +109,7 @@ void CNetScheduleControl::Init(void)
 
     arg_desc->AddOptionalKey("monitor",
                              "monitor",
-                             "Queue monitoring",
+                             "Queue monitoring (-monitor queue_name)",
                              CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("retry",
@@ -256,6 +256,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/02/08 15:17:33  kuznets
+ * Tuning and bug fixing of job affinity
+ *
  * Revision 1.15  2006/01/20 01:20:21  ucko
  * #include <unistd.h> for the permission check (necessary in certain
  * configurations, as with GCC 2.95 on Linux).

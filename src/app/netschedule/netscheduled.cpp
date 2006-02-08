@@ -922,12 +922,7 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
     size_t  n_read;
 
     WriteMsg(sock, "OK:", "Batch submit ready");
-/*
-    unsigned client_address = 0;
-    sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
-*/
     s_WaitForReadSocket(sock, m_InactivityTimeout);
-    //SJS_Request& req = tdata.req;
     EIO_Status io_st;
 
     while (1) {
@@ -963,8 +958,6 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
 
         for (unsigned i = 0; i < batch_size; ++i) {
             s_WaitForReadSocket(sock, m_InactivityTimeout);
-            
-      
 
             io_st = sock.ReadLine(buf, sizeof(buf)-1, &n_read);
             JS_CHECK_IO_STATUS(io_st)
@@ -998,27 +991,40 @@ void CNetScheduleServer::ProcessSubmitBatch(CSocket&                sock,
             ++s;
             NS_SKIPSPACE(s)
 
-            if (strncmp(s, "aff=", 4) == 0) {
-                // affinity token
-                s += 4;
-                if (*s != '"') {
-                    WriteMsg(sock, "ERR:",
-                             "Batch submit error: error in affinity token");
-                }
-                ++s;
-                char *ptr = rec.affinity_token;
-                for (++s; *s != '"'; ++s) {
-                    if (*s == 0) {
+            // *s == "aff'
+            if (s[0] == 'a' && s[1] == 'f' && s[2] == 'f') {
+                s += 3;
+                if (*s == '=') {
+                    ++s;
+                    // affinity token
+                    if (*s != '"') {
                         WriteMsg(sock, "ERR:",
-                        "Batch submit error: unexpected end of affinity str");
-                        return;
+                                "Batch submit error: error in affinity token");
                     }
-                    *ptr++ = *s;
-                } // for
-                *ptr = 0;
+                    char *ptr = rec.affinity_token;
+                    for (++s; *s != '"'; ++s) {
+                        if (*s == 0) {
+                            WriteMsg(sock, "ERR:",
+                            "Batch submit error: unexpected end of affinity str");
+                            return;
+                        }
+                        *ptr++ = *s;
+                    } // for
+                    *ptr = 0;
+                } 
+                else
+                if (*s == 'p') {
+                    ++s;
+                    // "affp" - take previous affinity
+                    rec.affinity_id = kMax_I4;
+                }
+                else {
+                    WriteMsg(sock, "ERR:",
+                    "Batch submit error: unrecognised affinity clause");
+                    return;
+                }
 
             }
-            
 
         } // for batch_size
 
@@ -2462,7 +2468,7 @@ int CNetScheduleDApp::Run(void)
             thr_srv->SetAdminHosts(admin_hosts);
         }
 
-        
+        NcbiCout << "Running server on port " << port << NcbiEndl;
         LOG_POST(Info << "Running server on port " << port);
 
         thr_srv->Run();
@@ -2503,6 +2509,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2006/02/08 15:17:33  kuznets
+ * Tuning and bug fixing of job affinity
+ *
  * Revision 1.61  2006/02/06 14:10:29  kuznets
  * Added job affinity
  *

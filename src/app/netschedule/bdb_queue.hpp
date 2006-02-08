@@ -402,7 +402,8 @@ public:
 
         /// Update the affinity index (no locking)
         void x_AddToAffIdx_NoLock(unsigned aff_id, 
-                                  unsigned job_id);
+                                  unsigned job_id_from,
+                                  unsigned job_id_to = 0);
 
         void x_AddToAffIdx_NoLock(const vector<SNS_BatchSubmitRec>& batch);
 
@@ -481,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/02/08 15:17:33  kuznets
+ * Tuning and bug fixing of job affinity
+ *
  * Revision 1.36  2006/02/06 14:10:29  kuznets
  * Added job affinity
  *

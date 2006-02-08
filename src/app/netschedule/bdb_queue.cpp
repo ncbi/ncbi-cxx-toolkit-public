@@ -1198,27 +1198,37 @@ CQueueDataBase::CQueue::SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
 
     SQueueDB& db = m_LQueue.db;
 
+    unsigned batch_aff_id = 0; // if batch comes with the same affinity
+    bool     batch_has_aff = false;
+
     // process affinity ids
     {{
     CBDB_Transaction trans(*db.GetEnv(), 
                         CBDB_Transaction::eTransASync,
                         CBDB_Transaction::eNoAssociation);
-    NON_CONST_ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
-//        {{
-//        CBDB_Transaction trans(*db.GetEnv(), 
-//                            CBDB_Transaction::eTransASync,
-//                            CBDB_Transaction::eNoAssociation);
+    for (unsigned i = 0; i < batch.size(); ++i) {
+        SNS_BatchSubmitRec& subm = batch[i];
+        if (subm.affinity_id == kMax_I4) { // take prev. token
+            _ASSERT(i > 0);
+            subm.affinity_id = batch[i-1].affinity_id;
+        } else {
+            if (subm.affinity_token[0]) {
+                subm.affinity_id = 
+                    m_LQueue.affinity_dict.CheckToken(
+                                        subm.affinity_token, trans);
+                batch_has_aff = true;
+                batch_aff_id = (i == 0 )? subm.affinity_id : 0;
+            } else {
+                subm.affinity_id = 0;
+                batch_aff_id = 0;
+            }
 
-        SNS_BatchSubmitRec& subm = *it;
-        if (subm.affinity_token[0]) {
-            subm.affinity_id = 
-                m_LQueue.affinity_dict.CheckToken(subm.affinity_token, trans);
         }
-//        trans.Commit();
-//        }}
     }
+  
     trans.Commit();
     }}
+
     CBDB_Transaction trans(*db.GetEnv(), 
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
@@ -1241,7 +1251,15 @@ CQueueDataBase::CQueue::SubmitBatch(vector<SNS_BatchSubmitRec> & batch,
 
     // Store the affinity index
     m_LQueue.aff_idx.SetTransaction(&trans);
-    x_AddToAffIdx_NoLock(batch);
+    if (batch_has_aff) {
+        if (batch_aff_id) {  // whole batch comes with the same affinity
+            x_AddToAffIdx_NoLock(batch_aff_id,
+                                 job_id, 
+                                 job_id + batch.size() - 1);
+        } else {
+            x_AddToAffIdx_NoLock(batch);
+        }
+    }
 
     }}
     trans.Commit();
@@ -3158,7 +3176,9 @@ CQueueDataBase::CQueue::x_ComputeExpirationTime(unsigned time_run,
 }
 
 void CQueueDataBase::CQueue::x_AddToAffIdx_NoLock(unsigned aff_id, 
-                                                  unsigned job_id)
+                                                  unsigned job_id_from,
+                                                  unsigned job_id_to)
+
 {
     SQueueAffinityIdx::TParent::TBitVector bv(bm::BM_GAP);
 
@@ -3167,7 +3187,11 @@ void CQueueDataBase::CQueue::x_AddToAffIdx_NoLock(unsigned aff_id,
     // read vector from the file
     m_LQueue.aff_idx.aff_id = aff_id;
     /*EBDB_ErrCode ret = */m_LQueue.aff_idx.ReadVectorOr(&bv);
-    bv.set(job_id);
+    if (job_id_to == 0) {
+        bv.set(job_id_from);
+    } else {
+        bv.set_range(job_id_from, job_id_to);
+    }
     m_LQueue.aff_idx.aff_id = aff_id;
     m_LQueue.aff_idx.WriteVector(bv, SQueueAffinityIdx::eNoCompact);
 }
@@ -3180,22 +3204,48 @@ void CQueueDataBase::CQueue::x_AddToAffIdx_NoLock(
     
     TBVMap  bv_map;
     try {
-        ITERATE(vector<SNS_BatchSubmitRec>, it, batch) {
-            unsigned aff_id = it->affinity_id;
-            unsigned job_id = it->job_id;
+
+        unsigned bsize = batch.size();
+        for (unsigned i = 0; i < bsize; ++i) {
+            const SNS_BatchSubmitRec& bsub = batch[i];
+            unsigned aff_id = bsub.affinity_id;
+            unsigned job_id_start = bsub.job_id;
+
+            TBVector* aff_bv;
+
             TBVMap::iterator aff_it = bv_map.find(aff_id);
             if (aff_it == bv_map.end()) { // new element
                 auto_ptr<TBVector> bv(new TBVector(bm::BM_GAP));
                 m_LQueue.aff_idx.aff_id = aff_id;
                 /*EBDB_ErrCode ret = */
                     m_LQueue.aff_idx.ReadVectorOr(bv.get());
-                bv->set(job_id);
+                aff_bv = bv.get();
                 bv_map[aff_id] = bv.release();
             } else {
-                TBVector* bv = aff_it->second;
-                bv->set(job_id);
+                aff_bv = aff_it->second;
             }
-        } // ITERATE batch
+
+
+            // look ahead for the same affinity id
+            unsigned j;
+            for (j=i+1; j < bsize; ++j) {
+                if (batch[j].affinity_id != aff_id) {
+                    break;
+                }
+                _ASSERT(batch[j].job_id == (batch[j-1].job_id+1));
+                //job_id_end = batch[j].job_id;
+            }
+            --j;
+
+            if ((i!=j) && (aff_id == batch[j].affinity_id)) {
+                unsigned job_id_end = batch[j].job_id;
+                aff_bv->set_range(job_id_start, job_id_end);
+                i = j;
+            } else { // look ahead failed
+                aff_bv->set(job_id_start);
+            }
+
+        } // for
 
         // save all changes to the database
         NON_CONST_ITERATE(TBVMap, it, bv_map) {
@@ -3240,6 +3290,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/02/08 15:17:33  kuznets
+ * Tuning and bug fixing of job affinity
+ *
  * Revision 1.54  2006/02/06 14:10:29  kuznets
  * Added job affinity
  *
