@@ -356,11 +356,13 @@ BOOST_AUTO_UNIT_TEST(s_TestInitFromPatent)
 
     CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
                                         "US", "RE33188", 1)));
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(), "RE33188");
+    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetNumber(),
+                string("RE33188"));
 
     CHECK_NO_THROW(id.Reset(new CSeq_id(CSeq_id::e_Patent,
                                         "EP", "0238993", 7, "PGP")));
-    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(), "0238993");
+    CHECK_EQUAL(id->GetPatent().GetCit().GetId().GetApp_number(),
+                string("0238993"));
 }
 
 BOOST_AUTO_UNIT_TEST(s_TestInitFromFastaRefseq)
@@ -695,6 +697,10 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2006/02/08 21:50:23  ucko
+* Remember to mark string literals supplied to CHECK_EQUAL for the sake
+* of WorkShop.
+*
 * Revision 1.6  2006/02/07 19:30:19  ucko
 * Verify proper handling of pre-grant patents (applications).
 *
