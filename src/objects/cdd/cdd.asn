@@ -1,4 +1,4 @@
---$Revision: 1.24 $
+--$Revision: 1.25 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -108,8 +108,11 @@ Cdd-book-ref ::= SEQUENCE {             -- record a link to Entrez Books
                              glossary(7),     -- glossary
                              appendix(8),     -- appendix
                              other(255) },
-  elementid    INTEGER,                 -- address of the text-element
-  subelementid INTEGER OPTIONAL         -- exact address, used with section
+  elementid     INTEGER OPTIONAL,       -- numerical address of the text-element
+  subelementid  INTEGER OPTIONAL,       -- exact address, used with section
+  celementid    VisibleString OPTIONAL, -- address of the text element, if character string
+  csubelementid VisibleString OPTIONAL  -- exact address, if character string
+
 }
 
 -- The description of CDD's refers to the specific set of aligned sequences,
@@ -341,6 +344,7 @@ Algorithm-type ::= SEQUENCE {
                               aligned-score-filled (5),
                               blast-footprint      (6),
                               blast-full           (7),
+			      hybrid-aligned-score (8),
                               other           (255) },
   clustering-Method INTEGER { unassigned             (0),
                               single-linkage         (1),
