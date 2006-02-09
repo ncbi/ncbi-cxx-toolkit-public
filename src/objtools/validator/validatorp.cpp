@@ -194,8 +194,8 @@ void CValidError_imp::PostErr
 {
     const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
     if (desc != 0) {
-        LOG_POST("Seqdesc validation error must have a context");
-        // PostErr (sv, et, msg, *desc);
+        LOG_POST(Warning << "Seqdesc validation error using default context.");
+        PostErr (sv, et, msg, GetTSE(), *desc);
         return;
     }
     const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
@@ -236,6 +236,7 @@ void CValidError_imp::PostErr
 }
 
 
+/*
 void CValidError_imp::PostErr
 (EDiagSev       sv,
  EErrType       et,
@@ -248,6 +249,7 @@ void CValidError_imp::PostErr
     desc += ", NO Descriptor Context";
     m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, *m_Scope);
 }
+*/
 
 
 void CValidError_imp::PostErr
@@ -2674,6 +2676,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.71  2006/02/09 14:50:45  rsmith
+* report descr errors even when no context.
+*
 * Revision 1.70  2006/01/25 19:16:05  rsmith
 * Validate(Seq-entry-handle)
 *
