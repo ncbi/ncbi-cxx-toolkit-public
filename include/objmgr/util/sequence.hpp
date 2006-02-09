@@ -444,8 +444,8 @@ public:
                        const CSeq_loc* location = 0);
 
     /// These versions set up a temporary object manager scope
-    void Write(CSeq_entry& entry, const CSeq_loc* location = 0);
-    void Write(CBioseq&    seq,   const CSeq_loc* location = 0);
+    void Write(const CSeq_entry& entry, const CSeq_loc* location = 0);
+    void Write(const CBioseq&    seq,   const CSeq_loc* location = 0);
 
     /// Used only by Write(CSeq_entry[_Handle], ...); permissive by default
     virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
@@ -705,6 +705,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.65  2006/02/09 20:30:23  ucko
+* The versions of CFastaOstream::Write that set up a temporary OM scope
+* no longer need to take non-const arguments.
+*
 * Revision 1.64  2006/02/09 18:49:19  ucko
 * CFastaOstream: support a saner (handle-based) SkipBioseq interface
 * that delegates to the non-handle version by default for compatibility

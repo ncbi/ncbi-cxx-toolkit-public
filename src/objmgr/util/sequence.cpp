@@ -1511,7 +1511,7 @@ void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
 }
 
 
-void CFastaOstream::Write(CSeq_entry& entry, const CSeq_loc* location)
+void CFastaOstream::Write(const CSeq_entry& entry, const CSeq_loc* location)
 {
     CScope scope(*CObjectManager::GetInstance());
 
@@ -1519,11 +1519,11 @@ void CFastaOstream::Write(CSeq_entry& entry, const CSeq_loc* location)
 }
 
 
-void CFastaOstream::Write(CBioseq& seq, const CSeq_loc* location)
+void CFastaOstream::Write(const CBioseq& seq, const CSeq_loc* location)
 {
-    CSeq_entry entry;
-    entry.SetSeq(seq);
-    Write(entry, location);
+    CScope scope(*CObjectManager::GetInstance());
+
+    Write(scope.AddBioseq(seq), location);
 }
 
 
@@ -2517,6 +2517,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.135  2006/02/09 20:30:28  ucko
+* The versions of CFastaOstream::Write that set up a temporary OM scope
+* no longer need to take non-const arguments.
+*
 * Revision 1.134  2006/02/09 18:49:25  ucko
 * CFastaOstream: support a saner (handle-based) SkipBioseq interface
 * that delegates to the non-handle version by default for compatibility
