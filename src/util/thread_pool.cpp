@@ -36,6 +36,17 @@
 
 BEGIN_NCBI_SCOPE
 
+
+EMPTY_TEMPLATE
+void CBlockingQueue<CRef<CStdRequest> >::CQueueItem::x_SetStatus
+(EStatus new_status)
+{
+    EStatus old_status = GetStatus();
+    CQueueItemBase::x_SetStatus(new_status);
+    m_Request->OnStatusChange(old_status, new_status);
+}
+
+
 class CFatalRequest : public CStdRequest
 {
 protected:
@@ -113,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/02/09 20:16:18  ucko
+* Supply status change notifications to CStdRequest-derived objects.
+*
 * Revision 1.9  2005/07/14 18:52:48  ucko
 * Don't attempt to (un)register threads while KillAllThreads is running.
 *
