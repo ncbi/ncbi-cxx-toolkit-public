@@ -175,9 +175,6 @@
 /* Define to 1 if FreeTDS libraries are available. */
 #undef HAVE_LIBFTDS
 
-/* Define to 1 if NCBI GEO DB library is available. */
-#undef HAVE_LIBGEODB
-
 /* Define to 1 if libgif is available. */
 #undef HAVE_LIBGIF
 

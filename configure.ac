@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.409 2006/01/26 20:48:41 ucko Exp $
+#  $Id: configure.ac,v 1.410 2006/02/09 23:14:03 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -156,10 +156,6 @@ AC_ARG_WITH(sssdb,
    [ --without-sssdb         do not use NCBI SSS DB library])
 AC_ARG_WITH(included-sss,
    [ --with-included-sss     use the in-tree copy of SSS])
-AC_ARG_WITH(geo,
-   [ --without-geo           do not use NCBI GEO libraries])
-AC_ARG_WITH(included-geo,
-   [ --with-included-geo     use the in-tree copy of GEO])
 
 ## Third-party and system packages
 AC_ARG_WITH(z,
@@ -348,7 +344,6 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
-geo included-geo \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
@@ -3867,7 +3862,6 @@ fi
 case "$host_os:$compiler:$compiler_version" in
    linux*:GCC:34*)
       : ${with_included_sss=yes}
-      : ${with_included_geo=yes}
    ;;
 esac
 
@@ -3973,88 +3967,6 @@ else
          WithoutPackages="$WithoutPackages SSSDB"
       fi
    fi
-fi
-
-
-# GEO
-with_geo=${with_geo:="yes"}
-
-if test "$with_sssdb" = "no"  -o  "$with_sssutils" = "no" ; then
-   with_geo="no"
-fi
-
-if test "$with_geo" != "no" ; then
-   local_geo='<internal/geo>'
-   if test "${with_included_geo-no}" = "yes" \
-       -a -f "${real_srcdir}/include/internal/geo/geodb/geo_api.hpp" \
-       -a -f "${real_srcdir}/src/internal/geo/geodb/utils.cpp"; then
-      with_included_geo=yes
-      NCBI_GEO_PATH=$local_geo
-      NCBI_GEO_INCLUDE='$(includedir)/internal/geo/geodb -I$(includedir0)/internal/geo/geodb'
-      NCBI_GEO_LIBPATH='$(libdir)'
-      geo=geo
-   else
-      with_included_geo=no
-      geo=
-   fi
-   NCBI_GEO_PATH=${NCBI_GEO_PATH:="$NCBI/geo/production"}
-   NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
-   if test -z "$NCBI_GEO_LIBPATH" ; then
-      NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"
-   fi
-   AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
-   if test "$with_included_geo" = "yes"; then
-      AC_MSG_RESULT([yes])
-   elif test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
-      AC_MSG_RESULT([no])
-      with_geo="no"
-   else
-      AC_MSG_RESULT([yes])
-   fi
-fi
-
-if test "$with_geo" = "no" ; then
-   NCBI_GEO_INCLUDE=
-   NCBI_GEO_LIBPATH=
-   LIBGEODB=
-else
-   if test "$with_included_geo" = "yes"; then
-      NCBI_GEO_LIBPATH= # Not needed
-      ncbi_cv_lib_geodb=yes
-   else
-      NCBI_GEO_LIBPATH="-L${NCBI_GEO_LIBPATH}"
-   fi
-   # GEO_API defaults to GeoTest, leading to link errors.
-   NCBI_GEO_INCLUDE="-I${NCBI_GEO_INCLUDE} -DGEO_API=Geo"
-   LIBGEODB="-lgeodb"
-
-   # We have to be careful here, since GEO uses our libxncbi and SSS; as such,
-   # we must simply assume success in some cases.
-   case "$compiler" in
-      WorkShop*) ncbi_cv_lib_geodb=yes ;;
-      *)         test "$with_included_sss" = yes  &&  ncbi_cv_lib_geodb=yes ;;
-   esac
-   AC_CACHE_CHECK([for the NCBI GEO DB library], ncbi_cv_lib_geodb,
-     [CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$real_srcdir/include $orig_CPPFLAGS"
-      LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
-      AC_LINK_IFELSE([AC_LANG_PROGRAM(
-         [[#define FORWARDING_NCBICONF_H
-           #include <geo_api.hpp>]],
-         [[GEO_API::Pattern* p; if (p->isValid()) p->bind(1, "x", true, "y"); ]])],
-         [ncbi_cv_lib_geodb=yes], [ncbi_cv_lib_geodb=no])])
-
-   if test "$ncbi_cv_lib_geodb" = yes; then
-      AC_DEFINE(HAVE_LIBGEODB, 1,
-                [Define to 1 if NCBI GEO DB library is available.])
-   else
-      with_geo=no
-   fi
-fi
-
-if test "$with_geo" != "no" ; then
-   WithPackages="$WithPackages GEO"
-else
-   WithoutPackages="$WithoutPackages GEO"
 fi
 
 
@@ -5218,10 +5130,6 @@ AC_SUBST(LIBSSSDB)
 AC_SUBST(sss)
 AC_SUBST(ssssrv)
 AC_SUBST(stax)
-AC_SUBST(NCBI_GEO_INCLUDE)
-AC_SUBST(NCBI_GEO_LIBPATH)
-AC_SUBST(LIBGEODB)
-AC_SUBST(geo)
 AC_SUBST(SP_INCLUDE)
 AC_SUBST(SP_LIBS)
 AC_SUBST(ORBACUS_INCLUDE)
