@@ -425,8 +425,68 @@ CNetScheduler_JobStatusTracker::PutDone_GetPending(
     CReadLockGuard guard(m_Lock);
     return bv.any();
     }}
-
 }
+
+bool 
+CNetScheduler_JobStatusTracker::PutDone_GetPending(
+                                unsigned int         done_job_id,
+                                bool*                need_db_update,
+                                const bm::bvector<>& unwanted_jobs,
+                                unsigned*            job_id)
+{
+    *job_id = 0;
+    TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
+    TBVector  bv_pending;
+    {{
+        unsigned p_id;
+        {{
+            CWriteLockGuard guard(m_Lock);
+            if (done_job_id) { // return job first
+                PutDone_NoLock(done_job_id, need_db_update);
+            }
+            Return2PendingNoLock();
+            bv_pending = bv;
+        }}
+
+        bv_pending -= unwanted_jobs;
+    }}
+
+
+    unsigned candidate_id = 0;
+    while ( 0 == candidate_id ) {
+        {{
+            bm::bvector<>::enumerator en(bv_pending.first());
+            if (!en.valid()) { // no more candidates
+                return bv.any();
+            }
+            candidate_id = *en;
+        }}
+        bv_pending.set(candidate_id, false);
+
+        if (candidate_id) {
+            CWriteLockGuard guard(m_Lock);
+            if (bv[candidate_id]) { // still pending?
+                x_SetClearStatusNoLock(candidate_id, 
+                                       CNetScheduleClient::eRunning,
+                                       CNetScheduleClient::ePending);
+                *job_id = candidate_id;
+                return true;
+            } else {
+                // somebody picked up this id already
+                candidate_id = 0;
+            }
+        } else {
+            break;
+        }
+
+    } // while
+
+    {{
+    CReadLockGuard guard(m_Lock);
+    return bv.any();
+    }}
+}
+
 
 void 
 CNetScheduler_JobStatusTracker::PendingIntersect(bm::bvector<>* candidate_set)
@@ -749,6 +809,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/02/09 17:07:42  kuznets
+ * Various improvements in job scheduling with respect to affinity
+ *
  * Revision 1.23  2006/02/06 14:10:29  kuznets
  * Added job affinity
  *

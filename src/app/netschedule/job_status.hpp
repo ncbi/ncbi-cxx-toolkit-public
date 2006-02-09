@@ -102,9 +102,14 @@ public:
                             bm::bvector<>* candidate_set,
                             unsigned*      job_id);
 
-    /// Logical AND of candidates and pending jobs
-    /// (candidate_set &= pending_set)
-    void PendingIntersect(bm::bvector<>* candidate_set);
+    /// Get any pending job, but it should NOT be in the unwanted list
+    /// Presumed, that unwanted jobs are speculatively assigned to other
+    /// worker nodes or postponed
+    bool PutDone_GetPending(unsigned int         done_job_id,
+                            bool*                need_db_update,
+                            const bm::bvector<>& unwanted_jobs,
+                            unsigned*            job_id);
+
 
     /// Set running job to done status, find and return pending job
     /// @param done_job_id
@@ -115,6 +120,10 @@ public:
     /// @return job_id, 0 - no pending jobs
     unsigned PutDone_GetPending(unsigned int done_job_id,
                                 bool*        need_db_update);
+
+    /// Logical AND of candidates and pending jobs
+    /// (candidate_set &= pending_set)
+    void PendingIntersect(bm::bvector<>* candidate_set);
 
     /// Return job id (job is taken out of the regular job matrix)
     /// 0 - no pending jobs
@@ -318,6 +327,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/02/09 17:07:41  kuznets
+ * Various improvements in job scheduling with respect to affinity
+ *
  * Revision 1.13  2006/02/06 14:10:29  kuznets
  * Added job affinity
  *

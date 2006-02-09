@@ -142,6 +142,10 @@ public:
     /// vector of ids
     void RemoveAffinity(const bm::bvector<>& bv);
 
+    /// Retrieve all affinity ids assigned to all(any) worker nodes
+    /// Logical OR (Union) of all SAffinityInfo::aff_ids
+    void GetAllAssignedAffinity(bm::bvector<>* aff_ids);
+
 
     /// Free unused memory
     void OptimizeMemory();
@@ -152,7 +156,7 @@ private:
     CWorkerNodeAffinity(const CWorkerNodeAffinity&);
     CWorkerNodeAffinity& operator=(const CWorkerNodeAffinity&);
 private:
-    TAffMap     m_AffinityMap;
+    TAffMap        m_AffinityMap;
 };
 
 
@@ -163,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/02/09 17:07:42  kuznets
+ * Various improvements in job scheduling with respect to affinity
+ *
  * Revision 1.1  2006/02/06 14:10:29  kuznets
  * Added job affinity
  *

@@ -2321,8 +2321,43 @@ CQueueDataBase::CQueue::PutDone_FindPendingJob(const string&  client_name,
     }}
 
     // no affinity association or there are no more jobs with 
-    // established affinity, we just take the first available
-    // in the queue
+    // established affinity
+
+
+    // try to find a vacant(not taken by any other worker node) affinity id
+    {{
+        bm::bvector<> assigned_aff;
+        {{
+        CFastMutexGuard aff_guard(aff_map_lock);
+        m_LQueue.worker_aff_map.GetAllAssignedAffinity(&assigned_aff);
+        }}
+
+        if (assigned_aff.any()) {
+            // get all jobs belonging to other (already assigned) affinities
+            bm::bvector<> assigned_candidate_jobs;
+            {{
+            CFastMutexGuard guard(m_LQueue.lock);
+            x_ReadAffIdx_NoLock(assigned_aff, &assigned_candidate_jobs);
+            }}
+            // we got list of jobs we do NOT want to schedule
+            bool pending_jobs_avail = 
+                m_LQueue.status_tracker.PutDone_GetPending(
+                                                done_job_id, 
+                                                need_db_update, 
+                                                assigned_candidate_jobs,
+                                                &job_id);
+            done_job_id = 0;
+            if (job_id)
+                return job_id;
+            if (!pending_jobs_avail) {
+                return 0;
+            }
+        }
+
+    }}
+    
+
+    // we just take the first available job in the queue
 
     _ASSERT(job_id == 0);
     job_id = 
@@ -3290,6 +3325,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2006/02/09 17:07:42  kuznets
+ * Various improvements in job scheduling with respect to affinity
+ *
  * Revision 1.55  2006/02/08 15:17:33  kuznets
  * Tuning and bug fixing of job affinity
  *
