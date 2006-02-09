@@ -112,108 +112,113 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
 void 
 CDBAPIUnitTest::TestInit(void)
 {
-    if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
-        m_max_varchar_size = 8000;
-    } else {
-        // Sybase
-        m_max_varchar_size = 1900;
-    }
-    
-    m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
+    try {
+        if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+            m_max_varchar_size = 8000;
+        } else {
+            // Sybase
+            m_max_varchar_size = 1900;
+        }
 
-    m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
-    BOOST_CHECK( m_Conn.get() != NULL );
-    
-    m_Conn->SetMode(IConnection::eBulkInsert);
-    
-    m_Conn->Connect( 
-        m_args.GetUserName(), 
-        m_args.GetUserPassword(), 
-        m_args.GetServerName(), 
-        m_args.GetDatabaseName() 
-        );
+        m_DS = m_DM.CreateDs( m_args.GetDriverName(), &m_args.GetDBParameters() );
 
-    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+        m_Conn.reset( m_DS->CreateConnection( CONN_OWNERSHIP ) );
+        BOOST_CHECK( m_Conn.get() != NULL );
 
-//     {
-//         auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("TestProc") );
+        m_Conn->SetMode(IConnection::eBulkInsert);
+
+        m_Conn->Connect( 
+            m_args.GetUserName(), 
+            m_args.GetUserPassword(), 
+            m_args.GetServerName(), 
+            m_args.GetDatabaseName() 
+            );
+
+        auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+
+//         {
+//             auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("TestProc") );
 //
-//         auto_stmt->Execute();
-//         while(auto_stmt->HasMoreResults()) {
-//             if( auto_stmt->HasRows() ) {
-//                 auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+//             auto_stmt->Execute();
+//             while(auto_stmt->HasMoreResults()) {
+//                 if( auto_stmt->HasRows() ) {
+//                     auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
 //
-//                 switch( rs->GetResultType() ) {
-//                 case eDB_RowResult:
-//                     while(rs->Next()) {
-//                         // retrieve row results
+//                     switch( rs->GetResultType() ) {
+//                     case eDB_RowResult:
+//                         while(rs->Next()) {
+//                             // retrieve row results
+//                         }
+//                         break;
+//                     case eDB_ParamResult:
+//                         while(rs->Next()) {
+//                             // Retrieve parameter row
+//                         }
+//                         break;
+//                     default:
+//                         break;
 //                     }
-//                     break;
-//                 case eDB_ParamResult:
-//                     while(rs->Next()) {
-//                         // Retrieve parameter row
-//                     }
-//                     break;
-//                 default:
-//                     break;
 //                 }
 //             }
 //         }
-//     }
-    
-    // Create a test table ...
-    string sql;
 
-    sql  = " CREATE TABLE " + GetTableName() + "( \n";
-    sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
-    sql += "    int_field INT NOT NULL, \n";
-    sql += "    vc1000_field VARCHAR(1000) NULL, \n";
-    sql += "    text_field TEXT NULL \n";
-    sql += " )";
-    
-    // Create the table
-    auto_stmt->ExecuteUpdate(sql);
+        // Create a test table ...
+        string sql;
 
-    sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
-    // Create an index
-    auto_stmt->ExecuteUpdate( sql );
-
-    // Table for bulk insert ...
-    if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
-        sql  = " CREATE TABLE #bulk_insert_table( \n";
-        sql += "    id INT PRIMARY KEY, \n";
-        sql += "    vc8000_field VARCHAR(8000) NULL, \n";
-        sql += "    int_field INT NULL, \n";
-        sql += "    bigint_field BIGINT NULL \n";
+        sql  = " CREATE TABLE " + GetTableName() + "( \n";
+        sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
+        sql += "    int_field INT NOT NULL, \n";
+        sql += "    vc1000_field VARCHAR(1000) NULL, \n";
+        sql += "    text_field TEXT NULL \n";
         sql += " )";
 
         // Create the table
         auto_stmt->ExecuteUpdate(sql);
 
-        sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
-        sql += "    id INT PRIMARY KEY, \n";
-        sql += "    vb8000_field VARBINARY(8000) NULL, \n";
-        sql += " )";
+        sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
+        // Create an index
+        auto_stmt->ExecuteUpdate( sql );
 
-        // Create the table
-        auto_stmt->ExecuteUpdate(sql);
-    } else
-    {
-        sql  = " CREATE TABLE #bulk_insert_table( \n";
-        sql += "    id INT PRIMARY KEY, \n";
-        sql += "    vc8000_field VARCHAR(1900) NULL, \n";
-        sql += " )";
+        // Table for bulk insert ...
+        if ( m_args.GetServerType() == CTestArguments::eMsSql ) {
+            sql  = " CREATE TABLE #bulk_insert_table( \n";
+            sql += "    id INT PRIMARY KEY, \n";
+            sql += "    vc8000_field VARCHAR(8000) NULL, \n";
+            sql += "    int_field INT NULL, \n";
+            sql += "    bigint_field BIGINT NULL \n";
+            sql += " )";
 
-        // Create the table
-        auto_stmt->ExecuteUpdate(sql);
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
 
-        sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
-        sql += "    id INT PRIMARY KEY, \n";
-        sql += "    vb8000_field VARBINARY(1900) NULL \n";
-        sql += " )";
+            sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
+            sql += "    id INT PRIMARY KEY, \n";
+            sql += "    vb8000_field VARBINARY(8000) NULL, \n";
+            sql += " )";
 
-        // Create the table
-        auto_stmt->ExecuteUpdate(sql);
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
+        } else
+        {
+            sql  = " CREATE TABLE #bulk_insert_table( \n";
+            sql += "    id INT PRIMARY KEY, \n";
+            sql += "    vc8000_field VARCHAR(1900) NULL, \n";
+            sql += " )";
+
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
+
+            sql  = " CREATE TABLE #bin_bulk_insert_table( \n";
+            sql += "    id INT PRIMARY KEY, \n";
+            sql += "    vb8000_field VARBINARY(1900) NULL \n";
+            sql += " )";
+
+            // Create the table
+            auto_stmt->ExecuteUpdate(sql);
+        }
+    }
+    catch (...) {
+        BOOST_FAIL("Couldn't initialize the test-suite.");
     }
 }
 
@@ -3358,7 +3363,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
             tc->depends_on(tc_init);
             tc->depends_on(tc_cursor);
             add(tc);
-            
+
             tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_BlobStream, DBAPIInstance);
             tc->depends_on(tc_init);
             tc->depends_on(tc_cursor);
@@ -3381,7 +3386,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
     {
         boost::unit_test::test_case* select_stmt_tc =
             BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_SelectStmt, DBAPIInstance);
-        tc->depends_on(tc_init);
+        select_stmt_tc->depends_on(tc_init);
         add(select_stmt_tc);
 
         if ( args.GetServerType() == CTestArguments::eMsSql &&
@@ -3590,6 +3595,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.64  2006/02/09 15:24:51  ssikorsk
+ * Added dependency of Test_SelectStmt on TestInit.
+ *
  * Revision 1.63  2006/02/07 18:45:58  ssikorsk
  * Use auto_ptr to manage lifetime of user-defined error handlers
  *
