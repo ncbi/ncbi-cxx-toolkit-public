@@ -82,7 +82,7 @@ for dir in $dirs ; do
      start=`eval $timer`
      echo Start time: $start
      echo "INFO: Configure \"$dir\\$alias\""
-     $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg_configure "-CONFIGURE-"
+     $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg_configure "-CONFIGURE-:Rebuild"
      if [ $? -ne 0 ] ; then
        exit 3
      fi
