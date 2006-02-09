@@ -97,9 +97,15 @@ typedef   int   ssize_t;
 #define NETDB_REENTRANT                 1
 
 /*
+ *  Suppress 'function deprecated' warning on MSVC 2005 express
+ */
+#if _MSC_VER == 1400
+#pragma warning(disable: 4996)
+#endif
+
+/*
  *  Site localization
  */
-
 
 /* PROJECT_TREE_BUILDER-generated site localization
  */
