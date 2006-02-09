@@ -61,17 +61,55 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///     CQueueItemBase -- skeleton blocking-queue item, sans actual request
+
+class CQueueItemBase : public CObject {
+public:
+    enum EStatus {
+        ePending,  ///< still in the queue
+        eActive,   ///< extracted but not yet released
+        eComplete, ///< extracted and released
+        eWithdrawn ///< dropped by submitter's request
+    };
+
+    /// Every request has an associated 32-bit priority field, but
+    /// only the top eight bits are under direct user control.  (The
+    /// rest are a counter.)
+    typedef Uint4 TPriority;
+    typedef Uint1 TUserPriority;
+
+    CQueueItemBase(TPriority priority) 
+        : m_Priority(priority), m_Status(ePending)
+        { }
+    
+    bool operator> (const CQueueItemBase& item) const 
+        { return m_Priority > item.m_Priority; }
+
+    const TPriority& GetPriority(void) const     { return m_Priority; }
+    const EStatus&   GetStatus(void) const       { return m_Status; }
+    TUserPriority    GetUserPriority(void) const { return m_Priority >> 24; }
+
+    void             MarkAsComplete(void)        { x_SetStatus(eComplete); }
+
+protected:
+    TPriority m_Priority;
+    EStatus   m_Status;
+
+    virtual void x_SetStatus(EStatus new_status)
+        { m_Status = new_status; }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///     CBlockingQueue<>  -- queue of requests, with efficiently blocking Get()
 
 template <typename TRequest>
 class CBlockingQueue
 {
 public:
-    /// Every request has an associated 32-bit priority field, but
-    /// only the top eight bits are under direct user control.  (The
-    /// rest are a counter.)
-    typedef Uint4 TPriority;
-    typedef Uint1 TUserPriority;
+    typedef CQueueItemBase::TPriority     TPriority;
+    typedef CQueueItemBase::TUserPriority TUserPriority;
 
     class CQueueItem;
     typedef CRef<CQueueItem> TItemHandle;
@@ -82,6 +120,10 @@ public:
     class CCompletingHandle : public TItemHandle
     {
     public:
+        CCompletingHandle(const TItemHandle& h)
+            : TItemHandle(h)
+            { }
+
         ~CCompletingHandle() {
             if (this->NotEmpty()) {
                 this->GetObject().MarkAsComplete();
@@ -171,43 +213,29 @@ public:
     /// Withdraw a pending request from consideration.
     void         Withdraw(TItemHandle handle);
 
-    class CQueueItem : public CObject
+    class CQueueItem : public CQueueItemBase
     {
     public:
         // typedef CBlockingQueue<TRequest> TQueue;
-
-        enum EStatus {
-            ePending,  ///< still in the queue
-            eActive,   ///< extracted but not yet released
-            eComplete, ///< extracted and released
-            eWithdrawn ///< dropped by submitter's request
-        };
-
-        CQueueItem(Uint4 priority, TRequest request) 
-            : m_Request(request), m_Priority(priority), m_Status(ePending)
+        CQueueItem(Uint4 priority, TRequest request)
+            : CQueueItemBase(priority), m_Request(request)
             { }
-    
-        bool operator> (const CQueueItem& item) const 
-        { return m_Priority > item.m_Priority; }
 
-        const TRequest&  GetRequest(void) const   { return m_Request; } 
-        const TPriority& GetPriority(void) const  { return m_Priority; }
-        const EStatus&   GetStatus(void) const    { return m_Status; }
-        TUserPriority    GetUserPriority(void) const 
-            { return m_Priority >> 24; }
+        const TRequest& GetRequest(void) const { return m_Request; } 
+        TRequest&       SetRequest(void)       { return m_Request; }
+        // void SetUserPriority(TUserPriority p);
+        // void Withdraw(void);
 
-        TRequest& SetRequest(void) { return m_Request; }
-        // void      SetUserPriority(TUserPriority p);
-        void      MarkAsComplete(void) { m_Status = eComplete; }
-        // void      Withdraw(void);
+    protected:
+        // Specialized for CRef<CStdRequest> in thread_pool.cpp
+        void x_SetStatus(EStatus new_status)
+            { CQueueItemBase::x_SetStatus(new_status); }
         
     private:
         friend class CBlockingQueue<TRequest>;
 
         // TQueue&   m_Queue;
         TRequest  m_Request;
-        TPriority m_Priority;
-        EStatus   m_Status;
     };
     
 protected:
@@ -243,6 +271,9 @@ class CThreadInPool : public CThread
 {
 public:
     typedef CPoolOfThreads<TRequest> TPool;
+    typedef typename CBlockingQueue<TRequest>::TItemHandle TItemHandle;
+    typedef typename CBlockingQueue<TRequest>::CCompletingHandle
+        TCompletingHandle;
 
     /// Thread run mode 
     enum ERunMode {
@@ -271,6 +302,9 @@ protected:
     ///
     /// @param
     ///   A request for processing
+    virtual void ProcessRequest(TItemHandle handle);
+
+    /// Older interface (still delegated to by default)
     virtual void ProcessRequest(const TRequest& req) = 0;
 
     /// Clean up. It is called by OnExit()
@@ -448,6 +482,11 @@ public:
     /// Do the actual job
     /// Called by whichever thread handles this request.
     virtual void Process(void) = 0;
+
+    typedef CQueueItemBase::EStatus EStatus;
+
+    /// Callback for status changes
+    virtual void OnStatusChange(EStatus /* old */, EStatus /* new */) {}
 };
 
 
@@ -641,7 +680,7 @@ CBlockingQueue<TRequest>::GetHandle(unsigned int timeout_sec,
     // Having the mutex, we can safely drop "volatile"
     TRealQueue& q = const_cast<TRealQueue&>(m_Queue);
     TItemHandle handle(*q.begin());
-    handle->m_Status = CQueueItem::eActive;
+    handle->x_SetStatus(CQueueItem::eActive);
     q.erase(q.begin());
     if ( ! q.empty() ) {
         m_GetSem.Post();
@@ -710,7 +749,7 @@ void CBlockingQueue<TRequest>::Withdraw(TItemHandle handle)
     // accidental use of handles from other queues.
     if (it != q.end()  &&  *it == handle) {
         q.erase(it);
-        handle->m_Status = CQueueItem::eWithdrawn;
+        handle->x_SetStatus(CQueueItem::eWithdrawn);
     }
 }
 
@@ -724,7 +763,7 @@ void* CThreadInPool<TRequest>::Main(void)
 {
     m_Pool->Register(*this);
 
-    typename CBlockingQueue<TRequest>::CCompletingHandle handle;
+    TItemHandle handle;
 
     try {
         Init();
@@ -732,7 +771,7 @@ void* CThreadInPool<TRequest>::Main(void)
         for (;;) {
             m_Pool->m_Delta.Add(-1);
             handle.Reset(m_Pool->m_Queue.GetHandle());
-            ProcessRequest(handle->GetRequest());
+            ProcessRequest(handle);
             if (m_RunMode == eRunOnce) {
                 m_Pool->UnRegister(*this);
                 break;
@@ -763,6 +802,13 @@ void CThreadInPool<TRequest>::OnExit(void)
         m_Pool->m_ThreadCount.Add(-1);
     else 
         m_Pool->m_UrgentThreadCount.Add(-1);
+}
+
+template <typename TRequest>
+void CThreadInPool<TRequest>::ProcessRequest(TItemHandle handle)
+{
+    TCompletingHandle completer = handle;
+    ProcessRequest(completer->GetRequest());
 }
 
 
@@ -903,6 +949,13 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2006/02/09 20:15:31  ucko
+* - Reorganize some more, factoring out a non-templatized CQueueItemBase.
+* - Support status change notifications.
+* - Add a version of CThreadInPool::ProcessRequest that takes the whole
+*   handle (but delegates to the older interface for compatibility with
+*   existing code).
+*
 * Revision 1.31  2006/02/02 18:18:09  ucko
 * Fix const- and volatile-correctness issues caught by MSVC.
 *
