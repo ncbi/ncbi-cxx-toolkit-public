@@ -8,7 +8,7 @@
 ########### Arguments
 
 script="$0"
-cfgs="${1:-DebugDLL Debug ReleaseDLL Release}"
+cfgs="${1:-DebugDLL ReleaseDLL}"
  
 ########### Global variables
 
@@ -28,7 +28,7 @@ error()
 
 generate_msvc8_error_check_file() {
   cat <<-EOF >$1
-	/^Target .*:/ {
+	/.*--* (Reb|B)uild( All | )started: Project:/ {
 	  expendable = ""
 	}
 
@@ -36,7 +36,7 @@ generate_msvc8_error_check_file() {
 	  expendable = \$0
 	}
 
-	/: [fatal error]* [A-Z]*[0-9]*: / {
+	/(^| : |^The source )([fatal error]* [CDULNKPRJVT]*[0-9]*: |The .* are both configured to produce |Error executing )/ {
 	if (!expendable) {
 	  print \$0
 	  exit
@@ -58,7 +58,6 @@ if [ ! -d $build_dir ] ; then
 fi
 cd $build_dir
 
-
 for cfg in $cfgs ; do
     if [ $cfg = Release -o $cfg = Debug ] ; then
        error "$cfg configuration is not buildable on this platform." 
@@ -69,6 +68,7 @@ done
 # Configuration to build configure
 cfg_configure=ReleaseDLL
 
+out=".build.$$"
 
 # Configure
 
@@ -82,8 +82,11 @@ for dir in $dirs ; do
      start=`eval $timer`
      echo Start time: $start
      echo "INFO: Configure \"$dir\\$alias\""
-     $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg_configure "-CONFIGURE-:Rebuild"
-     if [ $? -ne 0 ] ; then
+     $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg_configure "-CONFIGURE-" $out
+     status=$?
+     cat $out
+     rm -f $out >/dev/null 2>&1
+     if [ $status -ne 0 ] ; then
        exit 3
      fi
      echo "Build time: $start - `eval $timer`"
@@ -110,21 +113,21 @@ for cfg in $cfgs ; do
        start=`eval $timer`
        echo Start time: $start
        echo "INFO: Building \"$dir\\$cfg\\$alias\""
-       $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg "-BUILD-ALL-" >/tmp/build.$$ 2>&1
+       $build_dir/build_exec.bat "$dir\\build\\$sol" build $cfg "-BUILD-ALL-" $out
        status=$?
-       cat /tmp/build.$$
+       cat $out
        echo "Build time: $start - `eval $timer`"
        if [ $status -ne 0 ] ; then
          # Check on errors (skip expendable projects)
          failed="1"
          grep '^ *Build: .* succeeded, .* failed' /tmp/build.$$ >/dev/null 2>&1  && \
-           awk -f $check_awk /tmp/build.$$ >/tmp/res.$$ 2>/dev/null  &&  test ! -s /tmp/res.$$  &&  failed="0"
-         rm -f /tmp/build.$$ /tmp/res.$$ >/dev/null 2>&1
+           awk -f $check_awk $out >$out.res 2>/dev/null  &&  test ! -s $out.res  &&  failed="0"
+         rm -f $out.res >/dev/null 2>&1
          if [ "$failed" = "1" ]; then
            exit 4
          fi
        fi
-       rm -f /tmp/build.$$ >/dev/null 2>&1
+       rm -f $out >/dev/null 2>&1
      done
   done
 done

@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: build_exec.bat,v 1.6 2006/02/08 19:07:56 ivanov Exp $
+REM $Id: build_exec.bat,v 1.7 2006/02/09 16:11:00 ivanov Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -37,9 +37,11 @@ if _%1% == _  goto be_abort
 goto be_build
 
 :be_abort
-echo Usage: "%0 <solution> <command> <cfg> <target>"
+rem You should specify logfile or you will not see an output
+echo Usage: "%0 <solution> <command> <cfg> <target> <logfile>"
 exit 1
 
 :be_build
-msbuild %1 /t:"%4" /p:Configuration=%3 /v:d
+rem Next command should be executed last! No other code after it, please.
 
+vcexpress %1 /%2 %3 /project "%4" /out "%5"
