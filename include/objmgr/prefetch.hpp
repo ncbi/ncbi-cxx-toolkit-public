@@ -61,7 +61,7 @@ BEGIN_SCOPE(objects)
 class CPrefetchTokenOld
 {
 public:
-    typedef CPrefetchToken_Impl::TIds TIds;
+    typedef CPrefetchTokenOld_Impl::TIds TIds;
 
     enum ENon_locking_prefetch {
         eNon_locking_prefetch
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2006/02/09 17:35:11  vasilche
+* Fixed renamed class.
+*
 * Revision 1.11  2006/02/02 14:35:32  vasilche
 * Renamed old prefetch classes.
 *
