@@ -29,6 +29,12 @@
  *
  */
 
+
+// hide util/thread_pool.hpp due to classes nested in CBlockingQueue
+#define THREAD_POOL__HPP
+// fallout from that
+%ignore CPrefetchManager_Impl;
+
 %ignore *::CFileUtil_SFileSystemInfo::fs_type;
 
 %ignore *::I_DriverContext_SConnAttr::mode;
@@ -129,6 +135,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/02/09 19:42:51  jcherry
+ * Work around problem with classes nested in CBlockingQueue (a template)
+ *
  * Revision 1.13  2006/01/12 17:03:02  jcherry
  * %ignore CFileUtil::SFileSystemInfo::fs_type
  *
