@@ -1378,7 +1378,7 @@ void CPhrap_Contig::x_AddBaseSegFeats(CRef<CSeq_annot>& annot) const
             while (rd_start < TSignedSeqPos(GetPaddedLength())) {
                 TSignedSeqPos aln_start = rd_start + read->GetAlignedFrom();
                 TSignedSeqPos aln_stop = rd_start + read->GetAlignedTo();
-                if (TSignedSeqPos(bs->m_Start) >= aln_start  &&
+                if (/*TSignedSeqPos(bs->m_Start) >= aln_start  &&*/
                     TSignedSeqPos(bs->m_End) <= aln_stop) {
                     break;
                 }
@@ -1703,6 +1703,7 @@ private:
         ePhrap_RT, // {...}
         ePhrap_CT, // {...}
         ePhrap_WA, // {...}
+        ePhrap_WR, // WRong, tag must be ignored
 
         // Old format tags
         ePhrap_DNA,
@@ -1728,10 +1729,12 @@ private:
     void x_ConvertContig(void);
     void x_ReadContig(void);
     void x_ReadRead(void);
-    void x_ReadTag(string tag); // CT{} and RT{}
-    void x_ReadWA(void);        // WA{}
+    void x_ReadTag(const string& tag);  // CT{} and RT{}
+    void x_ReadWA(void);                // WA{}
+    void x_SkipTag(const string& tag,
+                   const string& data); // WR{}, standalone CT{} and RT{}
 
-    void x_ReadOldFormatData(void); // Read old ACE format data
+    void x_ReadOldFormatData(void);     // Read old ACE format data
     void x_ReadOldSequence(CPhrap_Sequence& seq);
     CRef<CPhrap_Contig> x_AddContig(CPhrap_Sequence& seq);
     CRef<CPhrap_Read> x_AddRead(CPhrap_Sequence& seq);
@@ -1743,7 +1746,7 @@ private:
 
     void x_UngetTag(EPhrapTag tag);
 
-    CPhrap_Seq& x_FindSeq(const string& name);
+    CPhrap_Seq* x_FindSeq(const string& name);
 
     void x_CreateDesc(CBioseq_set& bioseq) const;
 
@@ -1952,8 +1955,11 @@ CPhrapReader::EPhrapTag CPhrapReader::x_GetNewTag(void)
         }
         break;
     case 'W': // WA
-        if (m_Stream.get() == 'A') {
+        switch (m_Stream.get()) {
+        case 'A':
             return ePhrap_WA;
+        case 'R':
+            return ePhrap_WR;
         }
         break;
     }
@@ -2012,19 +2018,19 @@ CPhrapReader::EPhrapTag CPhrapReader::x_GetOldTag(void)
 
 
 inline
-CPhrap_Seq& CPhrapReader::x_FindSeq(const string& name)
+CPhrap_Seq* CPhrapReader::x_FindSeq(const string& name)
 {
     TSeqs::iterator seq = m_Seqs.find(name);
     if (seq == m_Seqs.end()) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "ReadPhrap: referenced contig or read not found: " + name + ".",
-                    m_Stream.tellg() - CT_POS_TYPE(0));
+        ERR_POST(Warning <<
+            "Referenced contig or read not found: " << name << ".");
+        return 0;
     }
-    return *seq->second;
+    return &*seq->second;
 }
 
 
-void CPhrapReader::x_ReadTag(string tag)
+void CPhrapReader::x_ReadTag(const string& tag)
 {
     m_Stream >> ws;
     if (m_Stream.get() != '{') {
@@ -2035,8 +2041,13 @@ void CPhrapReader::x_ReadTag(string tag)
     string name;
     m_Stream >> name;
     CheckStreamState(m_Stream, tag + "{} data.");
-    CPhrap_Seq& seq = x_FindSeq(name);
-    seq.ReadTag(m_Stream, tag[0]);
+    CPhrap_Seq* seq = x_FindSeq(name);
+    if ( seq ) {
+        seq->ReadTag(m_Stream, tag[0]);
+    }
+    else {
+        x_SkipTag(tag, "{\n" + name + " ");
+    }
 }
 
 
@@ -2061,6 +2072,21 @@ void CPhrapReader::x_ReadWA(void)
         wt.m_Comments.push_back(c);
     }
     m_AssmTags.push_back(wt);
+}
+
+
+void CPhrapReader::x_SkipTag(const string& tag, const string& data)
+{
+    m_Stream >> ws;
+    string content = data;
+    for (string c = NStr::TruncateSpaces(ReadLine(m_Stream));
+        c != "}"; c = NStr::TruncateSpaces(ReadLine(m_Stream))) {
+        content += c + "\n";
+    }
+    content += "}";
+    CheckStreamState(m_Stream, tag + "{} data.");
+    ERR_POST(Warning << "Skipping tag:\n" << tag << content);
+    m_Stream >> ws;
 }
 
 
@@ -2109,6 +2135,9 @@ void CPhrapReader::x_ReadContig(void)
             continue;
         case ePhrap_WA:
             x_ReadWA();
+            continue;
+        case ePhrap_WR:
+            x_SkipTag("WR", kEmptyStr);
             continue;
         case ePhrap_eof:
             return;
@@ -2347,6 +2376,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/02/09 15:52:29  grichenk
+* Allow aligned segment to be shorter than base segment.
+* Skip WR tag; skip CT and RT tags if sequence is not available.
+* Generate warnings when skipping tags.
+*
 * Revision 1.13  2005/09/20 18:49:20  grichenk
 * Add descriptor to indicate complemented reads.
 *
