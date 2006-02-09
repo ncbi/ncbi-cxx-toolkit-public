@@ -119,7 +119,7 @@ void CODBC_Reporter::ReportErrors(void) const
                 CDB_SQLEx se(kBlankCompileInfo,
                              0,
                              err_msg.c_str(),
-                             eDiag_Warning,
+                             (NativeError == 0 ? eDiag_Info : eDiag_Warning),
                              NativeError,
                              (const char*)SqlState,
                              0);
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2006/02/09 12:03:19  ssikorsk
+ * Set severity level of error messages with native error num == 0 to informational.
+ *
  * Revision 1.36  2006/02/07 17:24:01  ssikorsk
  * Added an extra space prior server name in the regular exception string.
  *
