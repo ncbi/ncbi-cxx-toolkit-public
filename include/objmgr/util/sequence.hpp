@@ -449,6 +449,11 @@ public:
 
     /// Used only by Write(CSeq_entry[_Handle], ...); permissive by default
     virtual bool SkipBioseq(const CBioseq& /* seq */) { return false; }
+    /// Delegates to the non-handle version by default for
+    /// compatibility with older code; newer code should override this
+    /// version.
+    virtual bool SkipBioseq(const CBioseq_Handle& handle)
+    { return SkipBioseq(*handle.GetCompleteBioseq()); }
 
     /// To adjust various parameters...
     TSeqPos GetWidth   (void) const    { return m_Width;   }
@@ -700,6 +705,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.64  2006/02/09 18:49:19  ucko
+* CFastaOstream: support a saner (handle-based) SkipBioseq interface
+* that delegates to the non-handle version by default for compatibility
+* with older code.
+*
 * Revision 1.63  2005/06/02 15:13:15  dicuccio
 * Added GetMolInfo() - returns a pointer to the MolInfo object for a bioseq handle
 *

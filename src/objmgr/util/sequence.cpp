@@ -1440,7 +1440,7 @@ void CFastaOstream::Write(const CSeq_entry_Handle& handle,
                           const CSeq_loc* location)
 {
     for (CBioseq_CI it(handle);  it;  ++it) {
-        if ( !SkipBioseq(*it->GetCompleteBioseq()) ) {
+        if ( !SkipBioseq(*it) ) {
             if (location) {
                 CSeq_loc loc2;
                 loc2.SetWhole().Assign(*it->GetSeqId());
@@ -2517,6 +2517,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.134  2006/02/09 18:49:25  ucko
+* CFastaOstream: support a saner (handle-based) SkipBioseq interface
+* that delegates to the non-handle version by default for compatibility
+* with older code.
+*
 * Revision 1.133  2005/11/07 15:40:19  vasilche
 * Fixed warning in switch (enum).
 *
