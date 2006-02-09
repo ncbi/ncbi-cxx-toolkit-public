@@ -182,14 +182,15 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
            if (program_number != eBlastTypeBlastn)
            {
                if (blast_message)
-                  Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, 
+                  Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
                    "SBlastFilterOptionsValidate: Repeat filtering only supported with blastn");
                return 1;
            }
-           if (filter_options->repeatFilterOptions->database == NULL)
+           if (filter_options->repeatFilterOptions->database == NULL ||
+               strlen(filter_options->repeatFilterOptions->database) == 0)
            {
                if (blast_message)
-                  Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, 
+                  Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
                    "SBlastFilterOptionsValidate: No repeat database specified for repeat filtering");
                return 1;
            }
@@ -200,7 +201,7 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
            if (program_number != eBlastTypeBlastn)
            {
                if (blast_message)
-                  Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, 
+                  Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
                    "SBlastFilterOptionsValidate: Dust filtering only supported with blastn");
                return 1;
            }
@@ -211,7 +212,7 @@ Int2 SBlastFilterOptionsValidate(EBlastProgramType program_number, const SBlastF
            if (program_number == eBlastTypeBlastn)
            {
                if (blast_message)
-                  Blast_MessageWrite(blast_message, eBlastSevWarning, 2, 1, 
+                  Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
                    "SBlastFilterOptionsValidate: SEG filtering is not supported with blastn");
                return 1;
            }
@@ -1288,6 +1289,10 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.180  2006/02/09 18:47:07  camacho
+ * Correct error reporting when there are errors in validation of filtering
+ * options.
+ *
  * Revision 1.179  2006/01/23 16:29:51  papadopo
  * allow the number of diagonals used in containment tests to be specified when initializing HitSavingOptions
  *

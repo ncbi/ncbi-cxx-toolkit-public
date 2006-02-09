@@ -996,6 +996,7 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk,
 
     ASSERT(query_info && query_blk && filter_maskloc);
 
+    ASSERT(blast_message);
     ASSERT(kNumContexts == 
            query_info->num_queries*BLAST_GetNumberOfContexts(program_number));
     *filter_maskloc = BlastMaskLocNew(kNumContexts);
@@ -1012,9 +1013,11 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk,
                                                       &filter_per_context, 
                                                       blast_message);
         if (status) {
-           Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
-              "Failure at filtering");
-           return status;
+            if (*blast_message == NULL) {
+                Blast_MessageWrite(blast_message, eBlastSevError, 2, 1, 
+                                   "Failure at filtering");
+            }
+            return status;
         }
 
     /* NB: for translated searches filter locations are returned in 
