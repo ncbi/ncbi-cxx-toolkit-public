@@ -2279,6 +2279,7 @@ debug optimization profiling dll static runpath mt 64 projects ncbi-public \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 check static-exe bin-release strip version lfs pch caution ccache distcc \
 ncbi-c wxwin wxwidgets fastcgi sss sssdb sssutils included-sss \
+geo included-geo \
 z bz2 pcre sybase sybase-local sybase-new ftds mysql orbacus freetype \
 fltk opengl mesa glut bdb odbc python sqlite icu cppunit boost boost-tag \
 sp expat sablot libxml libxslt xerces xalan oechem gif jpeg tiff png xpm \
