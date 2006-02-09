@@ -149,7 +149,8 @@ objmgr/impl/data_source.hpp
 objmgr/impl/handle_range.hpp
 objmgr/impl/handle_range_map.hpp
 objmgr/impl/mutex_pool.hpp
-objmgr/impl/prefetch_impl.hpp
+//objmgr/impl/prefetch_impl.hpp
+objmgr/impl/prefetch_manager_impl.hpp
 objmgr/impl/priority.hpp
 objmgr/impl/scope_impl.hpp
 objmgr/impl/scope_info.hpp
@@ -168,7 +169,9 @@ objmgr/impl/tse_info_object.hpp
 objmgr/impl/tse_loadlock.hpp
 objmgr/impl/tse_lock.hpp
 
-objmgr/prefetch.hpp
+//objmgr/prefetch.hpp
+objmgr/prefetch_actions.hpp
+objmgr/prefetch_manager.hpp
 objmgr/align_ci.hpp
 objmgr/annot_ci.hpp
 objmgr/annot_name.hpp
@@ -327,6 +330,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/02/09 19:43:26  jcherry
+ * Reflect Object Manager prefetch changes
+ *
  * Revision 1.14  2006/01/26 16:03:56  jcherry
  * Removed a deleted header
  *
