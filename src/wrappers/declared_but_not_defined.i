@@ -30,6 +30,12 @@
  *
  */
 
+%ignore ncbi::objects::CPrefetchToken::GetPriority;
+%ignore ncbi::objects::CPrefetchToken::SetPriority;
+%ignore ncbi::objects::CPrefetchManager::GetThreadCount;
+%ignore ncbi::objects::CPrefetchManager::SetThreadCount;
+%ignore ncbi::objects::CPrefetchToken_Impl::SetListener;
+
 %ignore *::CHandleRangeMap::AddRange(const CSeq_id&, TSeqPos, TSeqPos,
                                      ENa_strand);
 %ignore *::CHandleRangeMap::AddRange(const CSeq_id&, TSeqPos, TSeqPos);
@@ -79,6 +85,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/02/09 19:43:56  jcherry
+ * %ignore's for Object Manager prefetch stuff
+ *
  * Revision 1.15  2006/01/11 16:49:27  jcherry
  * %ignore some CHandleRangeMap::AddRange signatures.
  * Drop %ignore of CAlignVec::GetScore.
