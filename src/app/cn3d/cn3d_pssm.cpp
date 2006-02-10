@@ -258,10 +258,41 @@ void PSSMWrapper::UnpackMatrix(ncbi::cd_utils::PssmMaker& pm)
         master2consensus[i] = bmp.mapToMaster(i);
 }
 
-void PSSMWrapper::OutputPSSM(ncbi::CNcbiOstream& os) const
+void PSSMWrapper::OutputPSSM(ncbi::CNcbiOstream& os, const string& title) const
 {
+    // create a copy of the pssm, massaged a bit so that it'll work correctly with psi-blast, rps-blast
+    CPssmWithParameters copy;
+    copy.Assign(*pssm);
+    if (!copy.GetPssm().IsSetQuery() || !copy.GetPssm().GetQuery().IsSeq()) {
+        ERRORMSG("PssmWithParameters from cd_utils::PssmMaker() doesn't contain the master/query sequence");
+        return;
+    }
+
+    CBioseq::TId keep;
+    CBioseq::TId::iterator i, ie = copy.SetPssm().SetQuery().SetSeq().SetId().end();
+    for (i=copy.SetPssm().SetQuery().SetSeq().SetId().begin(); i!=ie; ++i) {
+        if ((*i)->IsLocal() && (*i)->GetLocal().IsStr())
+            (*i)->SetLocal().SetStr(title);
+        if (!(*i)->IsGeneral() || (*i)->GetGeneral().GetDb() != "Cdd")
+            keep.push_back(*i);
+    }
+    copy.SetPssm().SetQuery().SetSeq().SetId() = keep;
+
+    CSeq_descr::Tdata::iterator d, de = copy.SetPssm().SetQuery().SetSeq().SetDescr().Set().end();
+    for (d=copy.SetPssm().SetQuery().SetSeq().SetDescr().Set().begin(); d!=de; ++d) {
+        if ((*d)->IsTitle()) {
+            (*d)->SetTitle(title);
+            break;
+        }
+    }
+    if (d == de) {
+        CRef < CSeqdesc > descr(new CSeqdesc);
+        descr->SetTitle(title);
+        copy.SetPssm().SetQuery().SetSeq().SetDescr().Set().push_front(descr);
+    }
+
     CObjectOStreamAsn osa(os, false);
-    osa << *pssm;
+    osa << copy;
 }
 
 static inline int Round(double Num)
@@ -308,6 +339,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2006/02/10 14:14:59  thiessen
+* add user title to pssm
+*
 * Revision 1.19  2006/02/02 19:47:29  thiessen
 * generate frequencies and scaling factor of 100 in scoremats
 *

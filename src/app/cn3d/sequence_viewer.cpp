@@ -549,8 +549,17 @@ void SequenceViewer::ExportAlignment(eExportType type)
             DumpText((type == asHTML), alignmentManager->GetCurrentMultipleAlignment(),
                 rowOrder, sequenceWindow->GetCurrentJustification(), *ofs);
         } else if (type == asPSSM) {
-            INFOMSG("exporting PSSM to " << outputFile.c_str());
-            alignmentManager->GetCurrentMultipleAlignment()->GetPSSM().OutputPSSM(*ofs);
+            static string prevTitle;
+            if (prevTitle.size() == 0)
+                prevTitle = GetWorkingTitle();
+            string title = wxGetTextFromUser(
+                "Enter a name for this PSSM (to be used by other applications like PSI-BLAST or RPS-BLAST):",
+                "PSSM Title?", prevTitle.c_str(), *viewerWindow).Strip(wxString::both).c_str();
+            if (title.size() > 0) {
+                INFOMSG("exporting PSSM (" << title << ") to " << outputFile.c_str());
+                alignmentManager->GetCurrentMultipleAlignment()->GetPSSM().OutputPSSM(*ofs, title);
+                prevTitle = title;
+            }
         }
     }
 }
@@ -561,6 +570,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2006/02/10 14:14:59  thiessen
+* add user title to pssm
+*
 * Revision 1.79  2006/02/01 20:55:15  thiessen
 * better format for fasta deflines
 *

@@ -68,7 +68,7 @@ public:
     PSSMWrapper(const BlockMultipleAlignment *bma);
 
     int GetPSSMScore(unsigned char ncbistdaa, unsigned int realMasterIndex) const;
-    void OutputPSSM(ncbi::CNcbiOstream& os) const;
+    void OutputPSSM(ncbi::CNcbiOstream& os, const std::string& title) const;
 
     const ncbi::objects::CPssmWithParameters& GetPSSM(void) const { return *pssm; }
     int MapConsensusToMaster(unsigned int consensusIndex) const { return consensus2master[consensusIndex]; }
@@ -81,6 +81,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/02/10 14:14:59  thiessen
+* add user title to pssm
+*
 * Revision 1.6  2005/12/07 18:58:17  thiessen
 * toss my BMA->PSIMsa conversion, use PssmMaker instead to generate consensus-based PSSMs
 *
