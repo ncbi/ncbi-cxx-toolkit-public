@@ -54,8 +54,7 @@ test -d "$builddir"  ||  error "Absent build dir \"$builddir\""
 
 # Reset the public directory
 test -d "$target"  &&  find "$target" -type f -exec rm -f {} \; >/dev/null 2>&1
-test -d "$target"  ||  mkdir -p "$target"
-test -d "$target"  ||  error "Cannot create target dir \"$target\""
+makedir "$target" -p
 
 
 # Documentation
@@ -112,8 +111,8 @@ done
 makedir "$bindir" -p
 for i in 'DLL' '' ; do
   if test -d "$builddir"/compilers/$compiler/static/bin/Release$i ; then
-    if ls "$builddir"/compilers/$compiler/static/bin/Release$i/*.exe >/dev/null 2>&1 ; then
-      cd "$builddir"/compilers/$compiler/static/bin/Release$i
+    cd "$builddir"/compilers/$compiler/static/bin/Release$i
+    if ls *.exe >/dev/null 2>&1 ; then
       cp -p *.exe *.dll *.exp "$bindir"
       break
     fi
@@ -127,7 +126,7 @@ pdb_files=`find "$builddir"/compilers -type f -a \( -name '*.pdb' -o  -name '*.c
 cd "$cldir"
 for pdb in $pdb_files ; do
   rel_dir=`echo $pdb | sed -e "s|$builddir/compilers/||" -e 's|/[^/]*$||'`
-  mkdir -p $rel_dir -p > /dev/null 2>&1
+  makedir "$rel_dir" -p
   cp -pr "$pdb" "$rel_dir"
 done
 
