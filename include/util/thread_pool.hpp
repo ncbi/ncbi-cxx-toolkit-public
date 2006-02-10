@@ -241,7 +241,8 @@ public:
 protected:
     struct SItemHandleGreater {
         bool operator()(const TItemHandle& i1, const TItemHandle& i2) const
-        { return *i1 > *i2; }
+            { return static_cast<CQueueItemBase>(*i1)
+                    > static_cast<CQueueItemBase>(*i2); }
     };
     
     /// The type of the queue
@@ -949,6 +950,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2006/02/10 14:59:02  ucko
+* Add some static_cast<>s to SItemHandleGreater for the sake of GCC 2.95,
+* which otherwise ignores our operator > in favor of an unsuitable template.
+*
 * Revision 1.32  2006/02/09 20:15:31  ucko
 * - Reorganize some more, factoring out a non-templatized CQueueItemBase.
 * - Support status change notifications.
