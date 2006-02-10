@@ -123,6 +123,7 @@ for cfg in $cfgs ; do
          grep '^ *Build: .* succeeded, .* failed' /tmp/build.$$ >/dev/null 2>&1  && \
            awk -f $check_awk $out >$out.res 2>/dev/null  &&  test ! -s $out.res  &&  failed="0"
          rm -f $out.res >/dev/null 2>&1
+         rm -f $out     >/dev/null 2>&1
          if [ "$failed" = "1" ]; then
            exit 4
          fi
