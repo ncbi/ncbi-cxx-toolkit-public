@@ -183,11 +183,32 @@ public:
     virtual void Reset() {};
 };
 
+///////////////////////////////////////////////////////////////////////////////
+///
+/// Blob Storage Factory interafce
+///
+/// @sa IBlobStorageFactory
+///
+class CBlobStorageFactory_Null : public IBlobStorageFactory
+{
+public:
+    virtual ~CBlobStorageFactory_Null() {}
+
+    /// Create an instance of Blob Storage
+    ///
+    virtual IBlobStorage* CreateInstance(void) 
+    { return  new CBlobStorage_Null;}
+};
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/02/10 18:40:46  didenko
+ * Added CBlobStorageFactory_Null
+ *
  * Revision 1.1  2005/12/20 17:13:34  didenko
  * Added new IBlobStorage interface
  *
