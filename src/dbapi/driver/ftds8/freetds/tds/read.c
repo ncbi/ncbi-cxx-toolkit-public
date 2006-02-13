@@ -77,7 +77,7 @@ struct timeval selecttimeout;
 			} while((retcode == 0) && timeleft > 0);
 			len = READ(tds->s, buf+got, buflen);
 			if (len <= 0) {
-				if (len < 0 && (errno == EINTR || errno == EINPROGRESS || errno == EAGAIN)) len = 0;
+				if (len < 0 && (errno == EINTR || errno == TDSSOCK_EINPROGRESS || errno == EAGAIN)) len = 0;
 				else return (-1); /* SOCKET_ERROR); */
 			}
 
