@@ -1052,6 +1052,9 @@ int CSplignApp::Run()
 #else
     const bool is_querydb = false;
     const bool is_subjdb = false;
+
+    const bool is_mkmeridx = false;
+    const bool is_usemeridx = false;
 #endif
     const bool is_cross   = args["cross"];
 
@@ -1506,6 +1509,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/02/13 20:03:35  kapustin
+ * Intermediate update
+ *
  * Revision 1.58  2006/02/13 19:31:54  kapustin
  * Do not pre-load mRNA
  *
