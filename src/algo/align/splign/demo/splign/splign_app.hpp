@@ -33,6 +33,8 @@
 * ===========================================================================
 */
 
+#include "mermatchindex.hpp"
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -45,7 +47,7 @@
 #include <algo/blast/api/bl2seq.hpp>
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/sseqloc.hpp>
-#include <algo/blast/core/blast_seqsrc.h>
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 #include <objmgr/scope.hpp>
 
@@ -56,6 +58,9 @@
 
 BEGIN_NCBI_SCOPE
 
+class CSnap;
+typedef vector<CSnap> TSnaps;
+
 class CSplignApp: public CNcbiApplication
 {
 public:
@@ -65,6 +70,7 @@ public:
 
 protected:
 
+    typedef CSplign::THit     THit;
     typedef CSplign::THitRef  THitRef;
     typedef CSplign::THitRefs THitRefs;
 
@@ -82,9 +88,11 @@ protected:
                          CRef<objects::CScope>  scope,
                          THitRefs* phitrefs);
 
-    void x_GetDbBlastHits(BlastSeqSrc* seq_src,
+    void x_GetDbBlastHits(CSeqDB& seq_src,
                           blast::TSeqLocVector& queries,
-                          THitRefs* phitrefs);
+                          THitRefs* phitrefs,
+                          size_t chunk,
+                          size_t total_chunks);
 
     static THitRef s_ReadBlastHit(const string& m8);
 
@@ -94,13 +102,23 @@ protected:
     CNcbiOstream*    m_logstream;
     void x_LogStatus(size_t model_id,
                      bool query_strand,
-                     const CAlignShadow::TId& query,
-                     const CAlignShadow::TId& subj,
+                     const CSplign::THit::TId& query,
+                     const CSplign::THit::TId& subj,
                      bool error,
                      const string& msg);
 
     bool x_GetNextPair(istream& ifs, THitRefs* hitrefs);
     bool x_GetNextPair(const THitRefs& hitrefs, THitRefs* hitrefs_pair);
+
+    void x_DoIncremental(void);
+    void x_DoBatch2(void);
+    void x_DoBatch2_mer(void);
+
+    void x_ProcessSnaps(TSnaps& snaps, CSeqDB& seqdb, CRef<CSeq_id> seqid_subj, 
+                        TSeqPos right_bound);
+
+    typedef map<int, CRef<CSeq_id> > TOidToSeqId;
+    TOidToSeqId     m_Oid2SeqId;
 
     string                          m_firstline;
     THitRefs                        m_PendingHits;
@@ -111,12 +129,44 @@ protected:
 };
 
 
+
+
+struct CSnap {
+public:
+
+    CSnap(void){};
+
+    void Init(Uint4 subj_coord, const CMerMatcherIndex::TMatch* pmatch) {
+
+        m_SubjCoord = subj_coord;
+        m_MatchPtr = pmatch;
+    }
+
+    // for debugging purpose
+    friend ostream& operator<< (ostream& ostr, const CSnap& snap)
+    {
+        if(snap.m_MatchPtr) {
+            ostr << *snap.m_MatchPtr;
+        }
+
+        ostr << '\t' << snap.m_SubjCoord;
+        return ostr;
+    }
+
+    Uint4 m_SubjCoord;
+    const CMerMatcherIndex::TMatch* m_MatchPtr;
+};
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/02/13 19:31:54  kapustin
+ * Do not pre-load mRNA
+ *
  * Revision 1.17  2005/12/07 15:51:34  kapustin
  * +CSplignApp::s_ReadBlastHit()
  *

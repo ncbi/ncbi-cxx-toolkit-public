@@ -46,6 +46,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 
 #include <deque>
 #include <math.h>
@@ -78,6 +79,7 @@ CSplign::CSplign( void )
     m_strand = true;
     m_nopolya = false;
     m_model_id = 0;
+    m_MaxCompsPerQuery = 0;
 }
 
 CRef<CSplign::TAligner>& CSplign::SetAligner( void ) {
@@ -172,6 +174,16 @@ double CSplign::s_GetDefaultMinCompartmentIdty(void)
 {
     return 0.5;
 }
+
+void CSplign::SetMaxCompsPerQuery(size_t m) {
+    m_MaxCompsPerQuery = m;
+}
+
+size_t CSplign::GetMaxCompsPerQuery(void) const {
+    return m_MaxCompsPerQuery;
+}
+
+
 
 CRef<objects::CScope> CSplign::GetScope(void) const
 {
@@ -268,8 +280,7 @@ void CSplign::x_LoadSequence(vector<char>* seq,
     
     catch(CAlgoAlignException& e) {
         e.SetSeverity(eDiag_Fatal);
-        NCBI_RETHROW_SAME(e, "CSplign::x_LoadSequence(): "
-                          "Sequence data problem");
+        NCBI_RETHROW_SAME(e, "CSplign::x_LoadSequence(): Sequence data problem");
     }
 }
 
@@ -431,12 +442,12 @@ void CSplign::x_SetPattern(THitRefs* phitrefs)
 // PRE:  Input Blast hits.
 // POST: TResults - a vector of aligned compartments.
 
-void CSplign::Run( THitRefs* phitrefs )
+void CSplign::Run(THitRefs* phitrefs)
 {
     if(!phitrefs) {
-        NCBI_THROW( CAlgoAlignException,
-                    eInternal,
-                    "Unexpected NULL pointers" );
+        NCBI_THROW(CAlgoAlignException,
+                   eInternal,
+                   "Unexpected NULL pointers");
     }
 
     THitRefs& hitrefs = *phitrefs;
@@ -450,34 +461,22 @@ void CSplign::Run( THitRefs* phitrefs )
     }
   
     if(m_aligner.IsNull()) {
-      NCBI_THROW( CAlgoAlignException,
-		  eNotInitialized,
-                  g_msg_AlignedNotSpecified);
+        NCBI_THROW(CAlgoAlignException,
+                   eNotInitialized,
+                   g_msg_AlignedNotSpecified);
     }
-
+    
     if(hitrefs.size() == 0) {
-      NCBI_THROW( CAlgoAlignException,
-		  eNoData,
-		  g_msg_EmptyHitVectorPassed );
+        NCBI_THROW(CAlgoAlignException,
+                   eNoData,
+                   g_msg_EmptyHitVectorPassed );
     }
 
     m_result.clear();
 
-    // pre-load the spliced sequence and calculate min coverage
-    m_mrna.clear();
-    //const string query (hitrefs.front()->GetQueryId()->GetSeqIdString(true));
-    //m_sa->Load(query, &m_mrna, 0, kMax_UInt, false);
+    THit::TId id_query (hitrefs.front()->GetQueryId());
 
-    x_LoadSequence(&m_mrna, *(hitrefs.front()->GetQueryId()), 
-                   0, numeric_limits<THit::TCoord>::max(),
-                   false);
-
-    if(!m_strand) { // make reverse complimentary
-        reverse (m_mrna.begin(), m_mrna.end());
-        transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
-    }
-
-    const size_t mrna_size = m_mrna.size();
+    const size_t mrna_size = objects::sequence::GetLength(*id_query, m_Scope);
     const size_t comp_penalty_bps = size_t(m_compartment_penalty * mrna_size);
     const size_t min_matches = size_t(m_MinCompartmentIdty * mrna_size);
 
@@ -485,13 +484,31 @@ void CSplign::Run( THitRefs* phitrefs )
     CCompartmentAccessor<THit> comps (hitrefs.begin(), hitrefs.end(),
                                       comp_penalty_bps,
                                       min_matches);
-    
+
+    size_t dim = comps.GetCount();    
+    if(dim > 0) {
+        
+        // pre-load cDNA
+        m_mrna.clear();
+        x_LoadSequence(&m_mrna, *id_query, 0, 
+                       numeric_limits<THit::TCoord>::max(), false);
+
+        if(!m_strand) {
+            // make reverse complimentary
+            reverse (m_mrna.begin(), m_mrna.end());
+            transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
+        }
+    }
+
     // compartments share the space between them
     size_t smin = 0, smax = kMax_UInt;
     bool same_strand = false;
 
     const THit::TCoord* box = comps.GetBox(0);
-    for(size_t i = 0, dim = comps.GetCount(); i < dim; ++i, box += 4) {
+    if(m_MaxCompsPerQuery > 0 && dim > m_MaxCompsPerQuery) {
+        dim = m_MaxCompsPerQuery;
+    }
+    for(size_t i = 0; i < dim; ++i, box += 4) {
         
         if(i+1 == dim) {
             smax = kMax_UInt;
@@ -509,12 +526,14 @@ void CSplign::Run( THitRefs* phitrefs )
             THitRefs comp_hits;
             comps.Get(i, comp_hits);
 
-            SAlignedCompartment ac = x_RunOnCompartment(&comp_hits,smin,smax);
+            SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin, smax);
             ac.m_id = ++m_model_id;
             ac.m_segments = m_segments;
             ac.m_error = false;
             ac.m_msg = "Ok";
             m_result.push_back(ac);
+
+            cerr << "Done compartment " << i << " out of " << dim << endl;
         }
 
         catch(CException& e) {
@@ -1688,8 +1707,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/02/13 19:31:54  kapustin
+ * Do not pre-load mRNA
+ *
  * Revision 1.45  2005/12/13 18:41:22  kapustin
- * Limit space to look beyond blast hit boundary with the max genomic extent for non-covered queries above kNonCoveredEndThreshold
+ * Limit space to look beyond blast hit boundary with the max genomic extent 
+ * for non-covered queries above kNonCoveredEndThreshold
  *
  * Revision 1.44  2005/12/01 18:31:55  kapustin
  * +CSplign::PreserveScope()
