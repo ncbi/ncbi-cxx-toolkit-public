@@ -295,11 +295,9 @@ public:
                        streamsize buf_size = kConn_DefaultBufSize);
     virtual ~CConn_MemoryStream();
 
-    string& ToString(string&)  ///< fill in the data, return the argument
-#ifdef __GNUG__
-        __attribute__ ((deprecated)) ///< please use the other method below
-#endif
-        ;
+    NCBI_DEPRECATED
+    string& ToString(string&); ///< fill in the data, return the argument
+
     void    ToString(string*); ///< fill in the data, NULL is not accepted
     char*   ToCStr(void);      ///< '\0'-terminated; delete when done using it 
 
@@ -405,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.40  2006/02/13 18:45:07  lavr
+ * CConn_MemoryStream::ToString(string&) marked with NCBI_DEPRECATED
+ *
  * Revision 6.39  2005/11/22 20:51:49  lavr
  * Added a note about auto-magic initing
  *
