@@ -2418,10 +2418,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.174  2006/02/13 19:47:35  ucko
+ * Tweak CVS log to avoid accidental comment-end markers.
+ *
  * Revision 1.173  2006/02/13 19:34:33  ivanov
  * Tokenize*() -- do not use reserve() for vectors, which already have
  * items, usually this works mutch slower.
- * Split*/Tokenize*() -- avoid using temporary string objects,
+ * Split* /Tokenize*() -- avoid using temporary string objects,
  * use assign() instead.
  *
  * Revision 1.172  2006/02/06 15:47:09  ivanov
