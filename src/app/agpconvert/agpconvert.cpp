@@ -59,6 +59,10 @@
 #include <corelib/ncbiexec.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -110,8 +114,32 @@ void CAgpconvertApplication::Init(void)
                              CArgDescriptions::eInputFile);
     arg_desc->AddFlag("no_testval",
                       "Do not validate using testval");
+
+    arg_desc->AddOptionalKey("dl", "definition_line",
+                             "Definition line (title descriptor)",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("nt", "tax_id",
+                             "NCBI Taxonomy Database ID",
+                             CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("on", "org_name",
+                             "Organism name",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("sn", "strain_name",
+                             "Strain name",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("cm", "chromosome",
+                             "Chromosome (for BioSource.subtype)",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("cn", "clone",
+                             "Clone (for BioSource.subtype)",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("sc", "source_comment",
+                             "Source comment (for BioSource.subtype = other)",
+                             CArgDescriptions::eString);
+
+
     arg_desc->AddExtra
-        (1, 100, "AGP files to process",
+        (1, 32766, "AGP files to process",
          CArgDescriptions::eInputFile);
 
     // Setup arg.descriptions for this application
@@ -229,6 +257,76 @@ int CAgpconvertApplication::Run(void)
         }
     }
 
+    // Deal with any descriptor info from command line
+    if (args["dl"]) {
+        const string& dl = args["dl"].AsString();
+        ITERATE (CSeq_descr::Tdata, desc,
+                 ent_templ.GetSeq().GetDescr().Get()) {
+            if ((*desc)->IsTitle()) {
+                throw runtime_error("-dl given but template contains a title");
+            }
+        }
+        CRef<CSeqdesc> title_desc(new CSeqdesc);
+        title_desc->SetTitle(dl);
+        ent_templ.SetSeq().SetDescr().Set().push_back(title_desc);
+    }
+    if (args["nt"] || args["on"] || args["sn"] || args["cm"]
+        || args["cn"] || args["sc"]) {
+        // consistency checks
+        ITERATE (CSeq_descr::Tdata, desc,
+                 ent_templ.GetSeq().GetDescr().Get()) {
+            if ((*desc)->IsSource()) {
+                throw runtime_error("BioSource specified on command line but "
+                                    "template contains BioSource");
+            }
+        }
+        if (args["chromosomes"]) {
+            throw runtime_error("-chromosomes cannot be given with "
+                                "-nt, -on, -sn, -cm, -cn, or -sc");
+        }
+
+        // build a BioSource desc and add it to template
+        CRef<CSeqdesc> source_desc(new CSeqdesc);
+        CRef<CSubSource> sub_source;
+        if (args["cm"]) {
+            sub_source = new CSubSource;
+            sub_source->SetSubtype(CSubSource::eSubtype_chromosome);
+            sub_source->SetName(args["cm"].AsString());
+            source_desc->SetSource().SetSubtype().push_back(sub_source);
+        }
+        if (args["cn"]) {
+            sub_source = new CSubSource;
+            sub_source->SetSubtype(CSubSource::eSubtype_clone);
+            sub_source->SetName(args["cn"].AsString());
+            source_desc->SetSource().SetSubtype().push_back(sub_source);
+        }
+        if (args["sc"]) {
+            sub_source = new CSubSource;
+            sub_source->SetSubtype(CSubSource::eSubtype_other);
+            sub_source->SetName(args["sc"].AsString());
+            source_desc->SetSource().SetSubtype().push_back(sub_source);
+        }
+        if (args["nt"]) {
+            CRef<CDbtag> dbtag(new CDbtag);
+            dbtag->SetDb("taxon");
+            dbtag->SetTag().SetId(args["nt"].AsInteger());
+            source_desc->SetSource().SetOrg().SetDb().push_back(dbtag);
+        }
+        if (args["on"]) {
+            source_desc->SetSource().SetOrg()
+                .SetTaxname(args["on"].AsString());
+        }
+        if (args["sn"]) {
+            CRef<COrgMod> mod(new COrgMod);
+            mod->SetSubtype(COrgMod::eSubtype_strain);
+            mod->SetSubname(args["sn"].AsString());
+            source_desc->SetSource().SetOrg()
+                .SetOrgname().SetMod().push_back(mod);
+        }
+        ent_templ.SetSeq().SetDescr().Set().push_back(source_desc);
+    }
+
+    // Iterate over AGP files
     for (unsigned int i = 1; i <= args.GetNExtra(); ++i) {
 
         CNcbiIstream& istr = args[i].AsInputFile();
@@ -412,6 +510,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/02/13 19:31:09  jcherry
+ * Added ability to specify Title and BioSource info on command line
+ *
  * Revision 1.6  2005/07/21 18:21:12  jcherry
  * Added -no_testval flag.  Use CExec::SpawnLP rather than CExec::System
  * for executing testval.
