@@ -83,6 +83,8 @@ public:
     void  SetSubjStrand(bool strand);
     void  FlipStrands(void);
 
+    void  SwapQS(void);
+
     typedef TSeqPos TCoord;
     
     const TCoord* GetBox(void) const;
@@ -145,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/02/13 19:48:23  kapustin
+ * +SwapQS()
+ *
  * Revision 1.14  2005/09/13 15:55:51  kapustin
  * +FlipStrand()
  *

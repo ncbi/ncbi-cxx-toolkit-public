@@ -240,6 +240,19 @@ void CAlignShadow::SetSubjStrand(bool strand)
 }
 
 
+void CAlignShadow::SwapQS(void)
+{
+    TCoord a = m_Box[0], b = m_Box[1];
+    m_Box[0] = m_Box[2]; 
+    m_Box[1] = m_Box[3];
+    m_Box[2] = a; 
+    m_Box[3] = b;
+    TId id = GetQueryId();
+    SetQueryId(GetSubjId());
+    SetSubjId(id);
+}
+
+
 void CAlignShadow::FlipStrands(void) 
 {
     SetQueryStrand(!GetQueryStrand());
@@ -666,6 +679,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.15  2006/02/13 19:48:33  kapustin
+ * +SwapQS()
+ *
  * Revision 1.14  2005/10/19 17:53:40  kapustin
  * Use rounded coordinates when adjusting hit boundaries in Modify()
  *
