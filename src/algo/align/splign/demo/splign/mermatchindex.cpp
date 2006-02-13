@@ -339,7 +339,13 @@ void CMerMatcherIndex::GetHits(TKey key,
 
 END_NCBI_SCOPE
 
-/* $Log$
+/* 
+ * $Log$
+ * Revision 1.2  2006/02/13 20:06:10  kapustin
+ * Fix log tags
+ *
+ *
  * Revision 1.1  2006/02/13 20:03:18  kapustin
  * Initial revision
- * */
+ * 
+ */
