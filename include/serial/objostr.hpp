@@ -293,7 +293,10 @@ public:
     void HandleEOF(CEofException&);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const;
-    // deprecated; use GetStreamPos instead
+
+    /// @deprecated
+    ///   Use GetStreamPos() instead
+    /// @sa GetStreamPos()
     NCBI_DEPRECATED CNcbiStreampos GetStreamOffset(void) const;
     CNcbiStreampos GetStreamPos(void) const;
 
@@ -551,6 +554,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2006/02/13 19:05:23  vakatov
+* Doxigen'ize the deprecation of GetStreamOffset()
+*
 * Revision 1.96  2005/11/29 17:42:49  gouriano
 * Added CBitString class
 *
