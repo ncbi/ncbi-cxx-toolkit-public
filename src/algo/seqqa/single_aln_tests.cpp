@@ -106,19 +106,23 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     bool has_cds(it);
     TSeqPos cds_from;
     TSeqPos cds_to;
+    CAlnVec::TSignedRange cds_range;
     if (has_cds) {
         const CSeq_loc& loc = it->GetLocation();
         cds_from = sequence::GetStart(loc, 0);
         cds_to   = sequence::GetStop(loc, 0);
+        cds_range.SetFrom(static_cast<TSignedSeqPos>(cds_from));
+        cds_range.SetTo(static_cast<TSignedSeqPos>(cds_to));
     }
 
 
     TSeqPos last_genomic_end = 0;
     TSeqPos aligned_residue_count = 0;
     TSeqPos cds_aligned_residue_count = 0;
-    TSeqPos match_count = 0;
-    TSeqPos cds_match_count = 0;
+    TSeqPos match_count = 0, possible_match_count = 0;
+    TSeqPos cds_match_count = 0, cds_possible_match_count = 0;
     vector<int> cds_match_count_by_frame(3);
+    vector<int> cds_possible_match_count_by_frame(3);
     TSeqPos total_splices = 0;
     TSeqPos consensus_splices = 0;
     TSeqPos total_cds_splices = 0;
@@ -128,10 +132,13 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     TSeqPos min_exon_length = 0, max_exon_length = 0;      // initialize to
     TSeqPos min_intron_length = 0, max_intron_length = 0;  // avoid warnings
     TSeqPos exon_length, intron_length;
-    TSeqPos exon_match_count;
+    TSeqPos exon_match_count, exon_possible_match_count;
     double worst_exon_match_frac = 1.1;  // guarantee that something is worse
     TSeqPos worst_exon_match_count;
+    TSeqPos worst_exon_possible_match_count;
     TSeqPos worst_exon_length;
+    int indel_count = 0;
+    int cds_indel_count = 0;
 
     int lag;  // cumulative gaps in xcript minus genomic in cds
     int frame;
@@ -227,7 +234,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         }
         if (cds_to >= exon.GetSeqStart(0)
             && cds_to <= exon.GetSeqStop(0)) {
-            unsigned int downstream_intron_count = disc.size() - exon_index - 1;
+            unsigned int downstream_intron_count =
+                disc.size() - exon_index - 1;
             result->SetOutput_data()
                 .AddField("introns_3_prime_of_stop",
                           (int) downstream_intron_count);
@@ -246,6 +254,7 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         avec.SetGapChar('-');
         avec.SetEndChar('-');
         exon_match_count = 0;
+        exon_possible_match_count = 0;
 
         // need to be careful here because segment may begin with gap
         bool in_cds = has_cds
@@ -269,7 +278,8 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
                     if (avec.GetResidue(0, i) == avec.GetResidue(1, i)) {
                         ++exon_match_count;
                         if (in_cds) {
-                            if (cds_match_count == 0) {
+                            if (cds_match_count == 0
+                                && cds_possible_match_count == 0) {
                                 // this is first cds match (probably start)
                                 lag = 0;
                             }
@@ -279,6 +289,29 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
                                 frame += 3;
                             }
                             ++cds_match_count_by_frame[frame];
+                        }
+                    } else if (!gap_in_xcript) {
+                        unsigned char cdna_res =
+                            CAlnVec::FromIupac(avec.GetResidue(0, i));
+                        unsigned char genomic_res =
+                            CAlnVec::FromIupac(avec.GetResidue(1, i));
+                        // count as a possible match if
+                        // cdna is a subset of genomic
+                        if (!(cdna_res & ~genomic_res)) {
+                            ++exon_possible_match_count;
+                            if (in_cds) {
+                                if (cds_match_count == 0
+                                    && cds_possible_match_count == 0) {
+                                    // this is first cds match (probably start)
+                                    lag = 0;
+                                }
+                                ++cds_possible_match_count;
+                                frame = lag % 3;
+                                if (frame < 0) {
+                                    frame += 3;
+                                }
+                                ++cds_possible_match_count_by_frame[frame];
+                            }
                         }
                     }
                 }
@@ -291,14 +324,46 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
             }
         }
         match_count += exon_match_count;
+        possible_match_count += exon_possible_match_count;
 
         // look for "worst" exon
-        double exon_match_frac = double(exon_match_count) / exon_length;
+        double exon_match_frac =
+            double(exon_match_count + exon_possible_match_count) / exon_length;
         if (exon_match_frac < worst_exon_match_frac) {
             worst_exon_match_frac = exon_match_frac;
             worst_exon_match_count = exon_match_count;
+            worst_exon_possible_match_count = exon_possible_match_count;
             worst_exon_length = exon_length;
         }
+
+        // count indels (count as 1, regardless of length)
+        in_cds = has_cds
+            && avec.GetSeqStart(0) > cds_from
+            && avec.GetSeqStart(0) <= cds_to;  // only for mRNA gaps
+
+        for (int seg = 0; seg < avec.GetNumSegs();  ++seg) {
+            if (avec.GetStart(0, seg) == -1) {
+                ++indel_count;
+                if (in_cds) {
+                    ++cds_indel_count;
+                }
+            } else {
+                if (avec.GetStart(1, seg) == -1) {
+                    ++indel_count;
+                    // any overlap of segment with cds counts
+                    if (has_cds
+                        && cds_range.IntersectingWith(avec.GetRange(0, seg))) {
+                        ++cds_indel_count;
+                    }
+                }
+                in_cds = has_cds
+                    && avec.GetStop(0, seg)
+                    >= static_cast<TSignedSeqPos>(cds_from)
+                    && avec.GetStop(0, seg)
+                    < static_cast<TSignedSeqPos>(cds_to);
+            }
+        }
+
         ++exon_index;
     }
 
@@ -316,14 +381,22 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
         .AddField("aligned_residues", (int) aligned_residue_count);
     result->SetOutput_data()
         .AddField("matching_residues", (int) match_count);
+    result->SetOutput_data()
+        .AddField("possibly_matching_residues", (int) possible_match_count);
     if (has_cds) {
         result->SetOutput_data()
             .AddField("cds_matching_residues", (int) cds_match_count);
+        result->SetOutput_data()
+            .AddField("cds_possibly_matching_residues",
+                      (int) cds_possible_match_count);
         result->SetOutput_data()
             .AddField("cds_aligned_residues", (int) cds_aligned_residue_count);
         result->SetOutput_data()
             .AddField("in_frame_cds_matching_residues",
                       (int) cds_match_count_by_frame[0]);
+        result->SetOutput_data()
+            .AddField("in_frame_cds_possibly_matching_residues",
+                      (int) cds_possible_match_count_by_frame[0]);
     }
 
     result->SetOutput_data()
@@ -357,7 +430,15 @@ CTestSingleAln_All::RunTest(const CSerialObject& obj,
     result->SetOutput_data()
         .AddField("worst_exon_matches", int(worst_exon_match_count));
     result->SetOutput_data()
+        .AddField("worst_exon_possible_matches",
+                  int(worst_exon_possible_match_count));
+    result->SetOutput_data()
         .AddField("worst_exon_length", int(worst_exon_length));
+
+    result->SetOutput_data()
+        .AddField("indel_count", indel_count);
+    result->SetOutput_data()
+        .AddField("cds_indel_count", cds_indel_count);
 
 
     // Some tests involving the genomic sequence
@@ -498,6 +579,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/02/13 16:51:47  jcherry
+ * Added ambiguous match tests, changed "worst exon" tests accordingly,
+ * and added explicit indel count
+ *
  * Revision 1.17  2006/02/07 17:49:35  jcherry
  * Added dist_stop_to_last_intron for NMD detection
  *
