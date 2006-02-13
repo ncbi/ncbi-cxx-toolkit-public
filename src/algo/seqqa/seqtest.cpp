@@ -147,6 +147,8 @@ void CSeqTestManager::RegisterStandardTests()
                  new CTestTranscript_CodingPropensity);
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_OrfExtension);
+    RegisterTest(CSeq_id::GetTypeInfo(),
+                 new CTestTranscript_CountAmbiguities);
 
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestProtProd_ProteinLength);
@@ -227,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/02/13 14:53:41  jcherry
+ * Added counts of ambiguous residues
+ *
  * Revision 1.10  2006/01/19 18:46:42  jcherry
  * Add ASN.1 text of CDS feature to CDS-based test results when there
  * is more than one CDS

@@ -43,6 +43,7 @@
 #include <objects/seqtest/Seq_test_result.hpp>
 #include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
@@ -318,7 +319,8 @@ static void s_CodingPropensity(const CSeq_id& id, const CSeqTestContext* ctx,
     string model_file_name = (*ctx)["gnomon_model_file"];
 
     int gccontent=0;
-    double score = CCodingPropensity::GetScore(model_file_name, cds, ctx->GetScope(), &gccontent);
+    double score = CCodingPropensity::GetScore(model_file_name, cds,
+                                               ctx->GetScope(), &gccontent);
 
     // Record results
     result.SetOutput_data()
@@ -335,7 +337,8 @@ CRef<CSeq_test_result_set>
 CTestTranscript_CodingPropensity::RunTest(const CSerialObject& obj,
                                           const CSeqTestContext* ctx)
 {
-    return x_TestAllCdregions(obj, ctx, "coding_propensity", s_CodingPropensity);
+    return x_TestAllCdregions(obj, ctx, "coding_propensity",
+                              s_CodingPropensity);
 }
 
 
@@ -839,12 +842,65 @@ CTestTranscript_OrfExtension::RunTest(const CSerialObject& obj,
 }
 
 
+static TSeqPos s_CountAmbiguities(const CSeqVector& vec)
+{
+    CSeqVector vec_copy(vec);
+    vec_copy.SetIupacCoding();
+    string seq;
+    vec_copy.GetSeqData(0, vec_copy.size(), seq);
+
+    CSeq_data in_seq, out_seq;
+    in_seq.SetIupacna().Set(seq);
+    vector<TSeqPos> out_indices;
+
+    return CSeqportUtil::GetAmbigs(in_seq, &out_seq, &out_indices);
+}
+
+
+static void s_CdsCountAmbiguities(const CSeq_id& id,
+                                  const CSeqTestContext* ctx,
+                                  CFeat_CI feat_iter, CSeq_test_result& result)
+{
+    CSeqVector vec(feat_iter->GetLocation(), ctx->GetScope());
+    result.SetOutput_data()
+        .AddField("cds_ambiguity_count",
+                  static_cast<int>(s_CountAmbiguities(vec)));
+}
+
+
+CRef<CSeq_test_result_set>
+CTestTranscript_CountAmbiguities::RunTest(const CSerialObject& obj,
+                                          const CSeqTestContext* ctx)
+{
+    CRef<CSeq_test_result_set> rv;
+    const CSeq_id* id = dynamic_cast<const CSeq_id*>(&obj);
+    if ( !id  ||  !ctx ) {
+        return rv;
+    }
+
+    // count for each coding region
+    rv = x_TestAllCdregions(obj, ctx, "count_ambiguities",
+                            s_CdsCountAmbiguities);
+
+    // count for entire transcript
+    CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
+    CSeqVector vec = hand.GetSeqVector();
+    rv->Set().front()->SetOutput_data()
+        .AddField("ambiguity_count",
+                  static_cast<int>(s_CountAmbiguities(vec)));
+    return rv;
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/13 14:53:41  jcherry
+ * Added counts of ambiguous residues
+ *
  * Revision 1.19  2006/01/05 19:01:41  jcherry
  * Added ORF extension test
  *

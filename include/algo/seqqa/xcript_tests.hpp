@@ -141,12 +141,20 @@ DECLARE_TRANSCRIPT_TEST(Code_break);
 ///
 DECLARE_TRANSCRIPT_TEST(OrfExtension);
 
+///
+/// Count ambiguous residues in transcript and CDS
+///
+DECLARE_TRANSCRIPT_TEST(CountAmbiguities);
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/02/13 14:53:42  jcherry
+ * Added counts of ambiguous residues
+ *
  * Revision 1.4  2006/01/05 19:01:43  jcherry
  * Added ORF extension test
  *
