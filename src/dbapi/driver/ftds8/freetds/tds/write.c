@@ -206,6 +206,7 @@ int retval;
 		retval = WRITE(tds->s,p,left);
 
 		if (retval <= 0) {
+		    if (!retval ||  (errno != EINTR  &&  errno != EAGAIN)) {
 			tdsdump_log(TDS_DBG_NETWORK, "TDS: Write failed in tds_write_packet\nError: %d (%s)\n", errno, strerror(errno));
 			tds_client_msg(tds->tds_ctx, tds, 10018, 9, 0, 0, "The connection was closed");
 			tds->in_pos=0;
@@ -214,6 +215,8 @@ int retval;
 			tds->s=0;
 			result = 0;
 			break;
+	            }
+	            retval = 0;
 		}
 		left -= retval;
 		p += retval;
