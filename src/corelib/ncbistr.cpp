@@ -1421,10 +1421,16 @@ list<string>& NStr::Split(const string& str, const string& delim,
         }
         pos = str.find_first_of(delim, prev_pos);
         if (pos == NPOS) {
-            arr.push_back(str.substr(prev_pos));
+            // Avoid using temporary objects
+            // ~ arr.push_back(str.substr(prev_pos));
+            arr.push_back(kEmptyStr);
+            arr.back().assign(str, prev_pos, str.length() - prev_pos);
             break;
         } else {
-            arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            // Avoid using temporary objects
+            // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            arr.push_back(kEmptyStr);
+            arr.back().assign(str, prev_pos, pos - prev_pos);
             ++pos;
         }
     }
@@ -1445,31 +1451,47 @@ vector<string>& NStr::Tokenize(const string& str, const string& delim,
 
     SIZE_TYPE pos, prev_pos;
 
-    // Count number of tokens to determine the array size
-    size_t tokens = 0;
-
-    for (pos = 0; pos < str.length(); ++pos) {
-        char c = str[pos];
-        SIZE_TYPE dpos = delim.find(c);
-        if (dpos != string::npos) {
+    // Reserve vector size only for empty vectors.
+    // For vectors which already have items this usualy works slower.
+    if ( !arr.size() ) {
+        // Count number of tokens to determine the array size
+        size_t tokens = 0;
+        
+        for (pos = 0;;) {
+            prev_pos = (merge == NStr::eMergeDelims ? 
+                            str.find_first_not_of(delim, pos) : pos);
+            if (prev_pos == NPOS) {
+                break;
+            } 
+            pos = str.find_first_of(delim, prev_pos);
             ++tokens;
+            if (pos == NPOS) {
+                break;
+            }
+            ++pos;
         }
+        arr.reserve(tokens);
     }
-    arr.reserve(arr.size() + tokens + 1);
 
     // Tokenization
     for (pos = 0;;) {
-        prev_pos = (merge == eMergeDelims ? str.find_first_not_of(delim, pos)
-                    : pos);
+        prev_pos = (merge == eMergeDelims ? 
+                        str.find_first_not_of(delim, pos) : pos);
         if (prev_pos == NPOS) {
             break;
         }
         pos = str.find_first_of(delim, prev_pos);
         if (pos == NPOS) {
-            arr.push_back(str.substr(prev_pos));
+            // Avoid using temporary objects
+            // ~ arr.push_back(str.substr(prev_pos));
+            arr.push_back(kEmptyStr);
+            arr.back().assign(str, prev_pos, str.length() - prev_pos);
             break;
         } else {
-            arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            // Avoid using temporary objects
+            // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            arr.push_back(kEmptyStr);
+            arr.back().assign(str, prev_pos, pos - prev_pos);
             ++pos;
         }
     }
@@ -1491,23 +1513,30 @@ vector<string>& NStr::TokenizePattern(const string& str,
 
     SIZE_TYPE pos, prev_pos;
 
-    // Count number of tokens to determine the array size
-    size_t tokens = 0;
-
-    for (pos = 0, prev_pos = 0; pos != NPOS; ) {
-        pos = str.find(pattern, prev_pos);
-        if ( merge != eMergeDelims  ||  (pos != NPOS  &&  pos > prev_pos) ) {
-            ++tokens;
+    // Reserve vector size only for empty vectors.
+    // For vectors which already have items this usualy works slower.
+    if ( !arr.size() ) {
+        // Count number of tokens to determine the array size
+        size_t tokens = 0;
+        
+        for (pos = 0, prev_pos = 0; pos != NPOS; ) {
+            pos = str.find(pattern, prev_pos);
+            if ( merge != eMergeDelims  ||
+                (pos != NPOS  &&  pos > prev_pos) ) {
+                ++tokens;
+            }
+            prev_pos = pos + pattern.length();
         }
-        prev_pos = pos + pattern.length();
+        arr.reserve(tokens);
     }
-    arr.reserve(arr.size() + tokens);
 
     // Tokenization
     for (pos = 0, prev_pos = 0; pos != NPOS; ) {
         pos = str.find(pattern, prev_pos);
         if ( merge != eMergeDelims  ||  (pos != NPOS  &&  pos > prev_pos) ) {
-            arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            // ~ arr.push_back(str.substr(prev_pos, pos - prev_pos));
+            arr.push_back(kEmptyStr);
+            arr.back().assign(str, prev_pos, pos - prev_pos);
         }
         prev_pos = pos + pattern.length();
     }
@@ -1524,9 +1553,10 @@ bool NStr::SplitInTwo(const string& str, const string& delim,
         str2 = kEmptyStr;
         return false;
     }
-    str1 = str.substr(0, delim_pos);
-    str2 = str.substr(delim_pos + 1); // skip only one delimiter character.
-
+    str1.assign(str, 0, delim_pos);
+    // skip only one delimiter character.
+    str2.assign(str, delim_pos + 1, str.length() - delim_pos - 1);
+    
     return true;
 }
 
@@ -2388,6 +2418,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.173  2006/02/13 19:34:33  ivanov
+ * Tokenize*() -- do not use reserve() for vectors, which already have
+ * items, usually this works mutch slower.
+ * Split*/Tokenize*() -- avoid using temporary string objects,
+ * use assign() instead.
+ *
  * Revision 1.172  2006/02/06 15:47:09  ivanov
  * Replaced class-based NStr::TStringToNumFlags to int-based counterparts
  *
