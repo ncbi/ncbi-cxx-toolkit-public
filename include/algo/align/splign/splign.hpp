@@ -98,6 +98,9 @@ public:
         return m_model_id + 1;
     }
 
+    void SetMaxCompsPerQuery(size_t m);
+    size_t GetMaxCompsPerQuery(void) const;
+
     typedef CBlastTabular           THit;
     typedef CRef<THit>              THitRef;
     typedef vector<THitRef>         THitRefs;
@@ -221,6 +224,8 @@ protected:
     size_t       m_model_id;
     TResults     m_result;
 
+    size_t       m_MaxCompsPerQuery;
+
     SAlignedCompartment x_RunOnCompartment( THitRefs* hitrefs,
                                             size_t range_left,
                                             size_t range_right );
@@ -244,6 +249,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.32  2006/02/13 19:47:12  kapustin
+ * +SetMaxCompsPerQuery()
+ *
  * Revision 1.31  2005/12/01 18:31:40  kapustin
  * +CSplign::PreserveScope()
  *
