@@ -113,7 +113,7 @@ extern NCBI_XCONNECT_EXPORT const char* g_CORE_Sprintf(const char* fmt, ...)
 #  define CORE_TRACEF(fmt_args)  CORE_LOGF(eLOG_Trace, fmt_args)
 #else
 #  define CORE_TRACE(message)    ((void) 0)
-#  define CORE_TRACE(fmt_args)   ((void) 0)
+#  define CORE_TRACEF(fmt_args)  ((void) 0)
 #endif /*_DEBUG*/
 
 #define CORE_DATA(data, size, message)  do { \
@@ -204,6 +204,9 @@ extern NCBI_XCONNECT_EXPORT char* g_CORE_RegistryGET
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2006/02/14 18:26:00  ucko
+ * Fix typo in non-_DEBUG definition of CORE_TRACEF.
+ *
  * Revision 6.16  2006/02/14 15:49:42  lavr
  * Introduce and use CORE_TRACE macros (NOP in Release mode)
  *
