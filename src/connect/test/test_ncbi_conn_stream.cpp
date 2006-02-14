@@ -69,13 +69,25 @@ static CNcbiRegistry* s_CreateRegistry(void)
 END_NCBI_SCOPE
 
 
-int main(void)
+int main(int argc, const char* argv[])
 {
     USING_NCBI_SCOPE;
+    unsigned long seed;
     TFCDC_Flags flag = 0;
     SConnNetInfo* net_info;
     size_t i, j, k, l, size;
     const char* env = getenv("CONN_DEBUG_PRINTOUT");
+
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+    if (argc <= 1)
+        seed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    else
+        sscanf(argv[1], "%lu", &seed);
+    CORE_LOGF(eLOG_Note, ("Random SEED = %lu", seed));
+    g_NCBI_ConnectRandomSeed = seed;
+    srand(g_NCBI_ConnectRandomSeed);
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
@@ -85,6 +97,37 @@ int main(void)
     LOG_POST(Info << "Checking error log setup"); // short explanatory mesg
     ERR_POST(Info << "Test log message using C++ Toolkit posting");
     CORE_LOG(eLOG_Note, "Another test message using C Toolkit posting");
+
+    // Testing memory stream out-of-sequence interleaving operations
+    CConn_MemoryStream ms;
+    k = (rand() & 0x00FF) + 1;
+    size = 0;
+    for (i = 0;  i < k;  i++) {
+        l = (rand() & 0x00FF) + 1;
+        string data;
+        data.resize(l);
+        for (j = 0;  j < l;  j++) {
+            data[j] = "0123456789"[rand() % 10];
+        }
+        size += l;
+        string back;
+        if (rand() & 1) {
+            assert(ms << data);
+            ms.ToString(&back);
+        } else {
+            assert(ms << data << endl);
+            ms >> back;
+            assert(ms.good());
+            SetDiagTrace(eDT_Disable);
+            ms >> ws;
+            SetDiagTrace(eDT_Enable);
+            ms.clear();
+        }
+        assert(back == data);
+    }
+    ERR_POST(Info << "Memory stream test completed in " <<
+             (int) k    << " iteration(s) with " <<
+             (int) size << " byte(s) transferred");
 
     if (!(net_info = ConnNetInfo_Create(0))) {
         ERR_POST(Fatal << "Cannot create net info");
@@ -273,6 +316,11 @@ int main(void)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.46  2006/02/14 20:41:57  lavr
+ * Added: 1. Random seed management
+ *        2. Test of CConn_MemoryStream::to-string-like extractions and
+ *           their interleaving with standard stream extractions
+ *
  * Revision 6.45  2006/02/01 17:14:15  lavr
  * Let CONNECT_Init() initialize g_NCBI_ConnectRandomSeed all by itself
  *
