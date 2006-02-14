@@ -58,7 +58,7 @@ public:
                     streamsize buf_size, bool tie);
     virtual ~CConn_Streambuf();
     CONN    GetCONN(void) const { return m_Conn; }
-    void    Close(void)         { x_Cleanup(); }
+    void    Close(void)         { x_Cleanup();   }
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2006/02/14 20:40:05  lavr
+ * Formatting
+ *
  * Revision 6.37  2005/05/17 00:19:18  lavr
  * OnClose safety hook added; GPos bug fixed
  *
