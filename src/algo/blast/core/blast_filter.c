@@ -1038,7 +1038,7 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
 
         Int4 index, start, stop;
         const Uint1 kMaskingLetter = is_na ? kNuclMask : kProtMask;
-
+        
         if (reverse) {
             start = length - 1 - mask_loc->ssr->right;
             stop = length - 1 - mask_loc->ssr->left;
@@ -1046,10 +1046,13 @@ Blast_MaskTheResidues(Uint1 * buffer, Int4 length, Boolean is_na,
             start = mask_loc->ssr->left;
             stop = mask_loc->ssr->right;
         }
-
+        
         start -= offset;
         stop -= offset;
-
+        
+        ASSERT(start < length);
+        ASSERT(stop < length);
+        
         for (index = start; index <= stop; index++)
             buffer[index] = kMaskingLetter;
     }
