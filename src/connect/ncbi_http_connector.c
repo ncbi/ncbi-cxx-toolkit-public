@@ -471,7 +471,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         /* read until EOF */
         SOCK_StripToPattern(uuu->sock, 0, 0, &buf, 0);
         if (!(size = BUF_Size(buf))) {
-            CORE_LOG(eLOG_Trace, "[HTTP]  No body received with this error");
+            CORE_LOG(eLOG_Trace,
+                     "[HTTP]  No HTTP body received with this error");
         } else if ((body = (char*) malloc(size)) != 0) {
             size_t n = BUF_Read(buf, body, size);
             if (n != size) {
@@ -480,7 +481,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
                                        (unsigned long) n,
                                        (unsigned long) size));
             }
-            CORE_DATA(body, n, "HTTP server error body");
+            CORE_DATA(body, n, "Server error body");
             free(body);
         } else {
             CORE_LOGF(eLOG_Error, ("[HTTP]  Cannot allocate server error "
@@ -1040,6 +1041,9 @@ extern void HTTP_SetNcbiMessageHook(FHTTP_NcbiMessageHook hook)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.72  2006/02/14 15:49:42  lavr
+ * Introduce and use CORE_TRACE macros (NOP in Release mode)
+ *
  * Revision 6.71  2006/01/17 20:24:35  lavr
  * Handle NCBI messages, and properly handle fHCC_KeepHeader
  *

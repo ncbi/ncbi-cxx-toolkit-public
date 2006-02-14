@@ -53,7 +53,11 @@
              : "Unknown", IO_StatusStr(status)))
 
 #define CONN_LOG(level, descr)  CONN_LOG_EX(level, descr, status)
-
+#ifdef _DEBUG
+#  define CONN_TRACE(descr)  CONN_LOG(eLOG_Trace, descr)
+#else
+#  define CONN_TRACE(descr)  ((void) 0)
+#endif /*_DEBUG*/
 
 /* Standard macros to verify that the passed connection handle is not NULL
  */
@@ -414,7 +418,7 @@ static EIO_Status s_CONN_Write
 
     if (status != eIO_Success) {
         if ( *n_written ) {
-            CONN_LOG(eLOG_Trace, "[CONN_Write]  Write error");
+            CONN_TRACE("[CONN_Write]  Write error");
             status = eIO_Success;
         } else if ( size )
             CONN_LOG(eLOG_Error, "[CONN_Write]  Cannot write data");
@@ -566,12 +570,15 @@ static EIO_Status s_CONN_Read
 
     if (status != eIO_Success) {
         if ( *n_read ) {
-            CONN_LOG(eLOG_Trace, "[CONN_Read]  Read error");
+            CONN_TRACE("[CONN_Read]  Read error");
             status = eIO_Success;
         } else if ( size ) {
-            CONN_LOG(status == eIO_Closed  ? eLOG_Trace   :
-                     status == eIO_Timeout ? eLOG_Warning : eLOG_Error,
-                     "[CONN_Read]  Cannot read data");
+            const char msg[] = "[CONN_Read]  Cannot read data";
+            if (status == eIO_Closed) {
+                CONN_TRACE(msg);
+            } else {
+                CONN_LOG(status == eIO_Timeout? eLOG_Warning : eLOG_Error,msg);
+            }
         }
     }
     return status;
@@ -859,6 +866,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.47  2006/02/14 15:49:42  lavr
+ * Introduce and use CORE_TRACE macros (NOP in Release mode)
+ *
  * Revision 6.46  2006/01/18 03:38:17  lavr
  * Prevent copying STimeout structs into themselves [where can occur]
  *
@@ -930,7 +940,7 @@ extern EIO_Status CONN_WaitAsync
  * Checks for kDefaultTimeout and use of default_timeout of meta-connector
  *
  * Revision 6.23  2002/04/24 21:18:04  lavr
- * Beautifying: pup open check before buffer check in CONN_Wait()
+ * Beautifying: move open check in front of buffer check in CONN_Wait()
  *
  * Revision 6.22  2002/04/22 19:30:01  lavr
  * Do not put trace message on polling wait (tmo={0,0})
@@ -998,7 +1008,7 @@ extern EIO_Status CONN_WaitAsync
  *
  * Revision 6.2  2000/12/29 17:52:59  lavr
  * Adapted to use new connector structure; modified to have
- * Internal tri-state {Unusable | Open | Closed }.
+ * an internal tri-state {Unusable | Open | Closed }.
  *
  * Revision 6.1  2000/03/24 22:53:34  vakatov
  * Initial revision

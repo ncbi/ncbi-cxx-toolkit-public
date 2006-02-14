@@ -675,7 +675,7 @@ static void s_DoLog
             else
                 strcpy(tail, "???");
         }
-        CORE_LOGF(eLOG_Trace, ("%s%s%s", s_ID(sock, _id), head, tail));
+        CORE_TRACEF(("%s%s%s", s_ID(sock, _id), head, tail));
         break;
     case eIO_Read:
     case eIO_Write:
@@ -732,9 +732,9 @@ static void s_DoLog
                         sock->n_in == 1 ? "" : "s");
             }
         }}
-        CORE_LOGF(eLOG_Trace, ("%s%s (out: %s, in: %s)", s_ID(sock, _id),
-                               sock->type == eSOCK_ServerSideKeep
-                               ? "Leaving" : "Closing", head,tail));
+        CORE_TRACEF(("%s%s (out: %s, in: %s)", s_ID(sock, _id),
+                     sock->type == eSOCK_ServerSideKeep
+                     ? "Leaving" : "Closing", head,tail));
         break;
     default:
         CORE_LOGF(eLOG_Error, ("%s[SOCK::s_DoLog]  Invalid event %u",
@@ -1395,8 +1395,8 @@ static EIO_Status s_CreateListening(const char*    path,
 
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
-        CORE_LOGF(eLOG_Trace,("LSOCK#%u[%u]: Listening on %s",
-                              x_id, (unsigned int) x_lsock, c));
+        CORE_TRACEF(("LSOCK#%u[%u]: Listening on %s",
+                     x_id, (unsigned int) x_lsock, c));
     }
 
     return eIO_Success;
@@ -1570,9 +1570,9 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 
     /* set the socket back to blocking mode */
     if ( !s_SetNonblock(lsock->sock, 0/*false*/) ) {
-        CORE_LOGF(eLOG_Warning, ("LSOCK#%u[%u]: [LSOCK::Close] "
-                                 " Cannot set socket back to blocking mode",
-                                 lsock->id, (unsigned int) lsock->sock));
+        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: [LSOCK::Close] "
+                               " Cannot set socket back to blocking mode",
+                               lsock->id, (unsigned int) lsock->sock));
     }
 
 #ifdef NCBI_OS_UNIX
@@ -1584,10 +1584,10 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
-        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Closing at %s "
-                               "(%u accept%s total)", lsock->id,
-                               (unsigned int) lsock->sock, c,
-                               lsock->n_accept, lsock->n_accept == 1? "":"s"));
+        CORE_TRACEF(("LSOCK#%u[%u]: Closing at %s "
+                     "(%u accept%s total)", lsock->id,
+                     (unsigned int) lsock->sock, c,
+                     lsock->n_accept, lsock->n_accept == 1? "":"s"));
     }
 
     status = eIO_Success;
@@ -1712,7 +1712,7 @@ static EIO_Status s_IsConnected(SOCK                  sock,
                !s_SetReuseAddress(sock->sock, 1/*true*/)) {
         int x_errno = SOCK_ERRNO;
         char _id[32];
-        CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
+        CORE_LOGF_ERRNO_EX(eLOG_Note, x_errno, SOCK_STRERROR(x_errno),
                            ("%s[SOCK::s_IsConnected]  Failed "
                             "setsockopt(REUSEADDR)", s_ID(sock, _id)));
     }
@@ -2384,9 +2384,9 @@ static EIO_Status s_Read(SOCK        sock,
         if (sock->r_status == eIO_Closed  ||  sock->eof) {
             if ( !sock->eof ) {
                 char _id[32];
-                CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Read]  Socket has already "
-                                       "been shut down for reading",
-                                       s_ID(sock, _id)));
+                CORE_TRACEF(("%s[SOCK::s_Read]  Socket has already "
+                             "been shut down for reading",
+                             s_ID(sock, _id)));
             }
             return eIO_Closed;
         }
@@ -2452,9 +2452,9 @@ static EIO_Status s_Write(SOCK        sock,
     if (sock->w_status == eIO_Closed) {
         if (size != 0) {
             char _id[32];
-            CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Write]  Socket has already "
-                                   "been shut down for writing",
-                                   s_ID(sock, _id)));
+            CORE_TRACEF(("%s[SOCK::s_Write]  Socket has already "
+                         "been shut down for writing",
+                         s_ID(sock, _id)));
         }
         return eIO_Closed;
     }
@@ -2598,7 +2598,7 @@ static EIO_Status s_Close(SOCK sock)
             if (setsockopt(sock->sock, SOL_SOCKET, SO_LINGER,
                            (char*) &lgr, sizeof(lgr)) != 0) {
                 int x_errno = SOCK_ERRNO;
-                CORE_LOGF_ERRNO_EX(eLOG_Warning,x_errno,SOCK_STRERROR(x_errno),
+                CORE_LOGF_ERRNO_EX(eLOG_Trace, x_errno, SOCK_STRERROR(x_errno),
                                    ("%s[SOCK::s_Close]  Failed "
                                     "setsockopt(SO_LINGER)", s_ID(sock, _id)));
             }
@@ -2610,8 +2610,8 @@ static EIO_Status s_Close(SOCK sock)
 
         /* set the socket back to blocking mode */
         if ( !s_SetNonblock(sock->sock, 0/*false*/) ) {
-            CORE_LOGF(eLOG_Warning,("%s[SOCK::s_Close]  Cannot set socket "
-                                    "back to blocking mode", s_ID(sock, _id)));
+            CORE_LOGF(eLOG_Trace, ("%s[SOCK::s_Close]  Cannot set socket "
+                                   "back to blocking mode", s_ID(sock, _id)));
         }
     } else {
         status = s_WritePending(sock, sock->c_timeout, 0, 0);
@@ -4554,6 +4554,9 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.185  2006/02/14 15:49:42  lavr
+ * Introduce and use CORE_TRACE macros (NOP in Release mode)
+ *
  * Revision 6.184  2006/01/27 17:11:41  lavr
  * Added SOCK_StringToHostPort() and SOCK_HostPortToString() [from ncbi_connutil]
  *
