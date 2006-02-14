@@ -108,6 +108,11 @@ CDBAPIUnitTest::CDBAPIUnitTest(const CTestArguments& args)
     SetDiagFilter(eDiagFilter_All, "!/dbapi/driver/ctlib");
 }
 
+CDBAPIUnitTest::~CDBAPIUnitTest(void)
+{
+    // m_Conn.release();
+}
+
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
 CDBAPIUnitTest::TestInit(void)
@@ -283,11 +288,11 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
 
     if (ex && ex->Severity() > m_max_severity)
     {
-        m_max_severity= ex->Severity();
+        m_max_severity = ex->Severity();
     }
 
-    // return false to find the next handler in the stack
-    // there always has one default stack
+    // return false to find the next handler on the stack.
+    // There is always one default stack
 
     return false;
 }
@@ -359,7 +364,7 @@ CDBAPIUnitTest::Test_DateTime(void)
     {
         sql = 
             "CREATE TABLE #test_datetime ( \n"
-            "	id INT , \n"
+            "   id INT , \n"
             "   dt_field DATETIME NULL \n"
             ") \n";
         
@@ -577,7 +582,7 @@ CDBAPIUnitTest::Test_UNIQUE(void)
     {
         sql = 
             "CREATE TABLE #test_unique ( \n"
-            "	id INT , \n"
+            "   id INT , \n"
             "   unique_field UNIQUEIDENTIFIER DEFAULT NEWID() \n"
             ") \n";
         
@@ -805,25 +810,25 @@ CDBAPIUnitTest::Test_GetColumnNo(void)
     {
         sql = 
             "CREATE TABLE #Overlaps ( \n"
-            "	pairId int NOT NULL , \n"
-            "	overlapNum smallint NOT NULL , \n"
-            "	start1 int NOT NULL , \n"
-            "	start2 int NOT NULL , \n"
-            "	stop1 int NOT NULL , \n"
-            "	stop2 int NOT NULL , \n"
-            "	orient char (2) NOT NULL , \n"
-            "	gaps int NOT NULL , \n"
-            "	mismatches int NOT NULL , \n"
-            "	adjustedLen int NOT NULL , \n"
-            "	length int NOT NULL , \n"
-            "	contained tinyint NOT NULL , \n"
-            "	seq_align text  NULL , \n"
-            "	merged_sa char (1) NOT NULL , \n"
-            "	PRIMARY KEY  \n"
-            "	( \n"
-            "		pairId, \n"
-            "		overlapNum \n"
-            "	) \n"
+            "   pairId int NOT NULL , \n"
+            "   overlapNum smallint NOT NULL , \n"
+            "   start1 int NOT NULL , \n"
+            "   start2 int NOT NULL , \n"
+            "   stop1 int NOT NULL , \n"
+            "   stop2 int NOT NULL , \n"
+            "   orient char (2) NOT NULL , \n"
+            "   gaps int NOT NULL , \n"
+            "   mismatches int NOT NULL , \n"
+            "   adjustedLen int NOT NULL , \n"
+            "   length int NOT NULL , \n"
+            "   contained tinyint NOT NULL , \n"
+            "   seq_align text  NULL , \n"
+            "   merged_sa char (1) NOT NULL , \n"
+            "   PRIMARY KEY  \n"
+            "   ( \n"
+            "       pairId, \n"
+            "       overlapNum \n"
+            "   ) \n"
             ") \n";
         
         auto_stmt->ExecuteUpdate( sql );
@@ -1585,7 +1590,6 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // to any particular connection) error messages.
     {
         auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
-        auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
 
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
         local_conn->Connect( 
@@ -1654,7 +1658,9 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
 
         // Push a message handler into a connection ...
         {
-            local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            local_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
 
             try {
                 Test_ES_01(*local_conn);
@@ -1663,6 +1669,9 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 // Ignore it
                 BOOST_CHECK( msg_handler->GetSucceed() );
             }
+
+            // Remove handler ...
+            local_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
         }
 
         // New connection should not be affected
@@ -1688,6 +1697,9 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 BOOST_CHECK( !drv_err_handler->GetSucceed() );
             }
         }
+
+        // Remove all inserted handlers ...
+        drv_context->PopCntxMsgHandler( drv_err_handler.get() );
     }
 
 
@@ -1696,8 +1708,6 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
     // handlers which are inherited by all newly created connections.
     {
         auto_ptr<CTestErrHandler> drv_err_handler(new CTestErrHandler());
-        auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
-        auto_ptr<CTestErrHandler> msg_handler02(new CTestErrHandler());
 
         
         auto_ptr<IConnection> local_conn( m_DS->CreateConnection( CONN_OWNERSHIP ) );
@@ -1724,6 +1734,8 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Push a message handler into a connection ...
         // This is supposed to be okay.
         {
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
             local_conn->GetCDB_Connection()->PushMsgHandler(msg_handler.get());
 
             try {
@@ -1733,6 +1745,9 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 // Ignore it
                 BOOST_CHECK( msg_handler->GetSucceed() );
             }
+
+            // Remove handler ...
+            local_conn->GetCDB_Connection()->PopMsgHandler(msg_handler.get());
         }
 
 
@@ -1760,15 +1775,20 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
         // Push a message handler into a connection ...
         // This is supposed to be okay.
         {
-            new_conn->GetCDB_Connection()->PushMsgHandler(msg_handler02.get());
+            auto_ptr<CTestErrHandler> msg_handler(new CTestErrHandler());
+
+            new_conn->GetCDB_Connection()->PushMsgHandler( msg_handler.get() );
 
             try {
                 Test_ES_01(*new_conn);
             }
             catch( const CDB_Exception& ) {
                 // Ignore it
-                BOOST_CHECK( msg_handler02->GetSucceed() );
+                BOOST_CHECK( msg_handler->GetSucceed() );
             }
+
+            // Remove handler ...
+            new_conn->GetCDB_Connection()->PopMsgHandler( msg_handler.get() );
         }
 
         // New connection should be affected
@@ -1791,6 +1811,9 @@ CDBAPIUnitTest::Test_UserErrorHandler(void)
                 BOOST_CHECK( drv_err_handler->GetSucceed() );
             }
         }
+
+        // Remove handlers ...
+        drv_context->PopDefConnMsgHandler( drv_err_handler.get() );
     }
 }
 
@@ -3332,7 +3355,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
         BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestInit, DBAPIInstance);
 
     add(tc_init);
-    
+
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
@@ -3341,13 +3364,15 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     {
         boost::unit_test::test_case* tc_parameters =
-            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, DBAPIInstance);
+            BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_StatementParameters, 
+                                  DBAPIInstance);
         tc_parameters->depends_on(tc_init);
         add(tc_parameters);
 
         // Cursors work either with ftds + MSSQL or with ctlib at the moment ...
         // !!! It does not work in case of a new FTDS driver.
-        if ((args.GetDriverName() == "ftds" && args.GetServerType() == CTestArguments::eMsSql) ||
+        if ((args.GetDriverName() == "ftds" && 
+            args.GetServerType() == CTestArguments::eMsSql) ||
             args.GetDriverName() == "ctlib" ||
             // args.GetDriverName() == "dblib" ||
             args.GetDriverName() == "ftds63" ) {
@@ -3595,6 +3620,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.65  2006/02/14 17:50:39  ssikorsk
+ * Added removing of added message handlers from a handler stack in Test_UserErrorHandler.
+ *
  * Revision 1.64  2006/02/09 15:24:51  ssikorsk
  * Added dependency of Test_SelectStmt on TestInit.
  *
