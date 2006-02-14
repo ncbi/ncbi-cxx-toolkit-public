@@ -70,7 +70,8 @@ SAnnotSelector::SAnnotSelector(TAnnotType annot,
       m_AdaptiveDepth(false),
       m_ExactDepth(false),
       m_ExcludeExternal(false),
-      m_CollectSeq_annots(false)
+      m_CollectSeq_annots(false),
+      m_CollectTypes(false)
 {
     if ( feat != CSeqFeatData::e_not_set ) {
         SetFeatType(feat);
@@ -94,7 +95,8 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
       m_AdaptiveDepth(false),
       m_ExactDepth(false),
       m_ExcludeExternal(false),
-      m_CollectSeq_annots(false)
+      m_CollectSeq_annots(false),
+      m_CollectTypes(false)
 {
 }
 
@@ -114,7 +116,8 @@ SAnnotSelector::SAnnotSelector(TFeatSubtype feat_subtype)
       m_AdaptiveDepth(false),
       m_ExactDepth(false),
       m_ExcludeExternal(false),
-      m_CollectSeq_annots(false)
+      m_CollectSeq_annots(false),
+      m_CollectTypes(false)
 {
 }
 
@@ -147,6 +150,7 @@ SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
         m_ExactDepth = sel.m_ExactDepth;
         m_ExcludeExternal = sel.m_ExcludeExternal;
         m_CollectSeq_annots = sel.m_CollectSeq_annots;
+        m_CollectTypes = sel.m_CollectTypes;
         m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
         m_ExcludedTSE = sel.m_ExcludedTSE;
         m_AnnotTypesBitset = sel.m_AnnotTypesBitset;
@@ -619,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.29  2005/12/15 21:33:55  vasilche
 * Added SetExactDepth() option.
 * Fixed constness of getters.

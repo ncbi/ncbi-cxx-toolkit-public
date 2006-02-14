@@ -384,6 +384,13 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
             return *this;
         }
 
+    /// Collect available annot types rather than annots.
+    SAnnotSelector& SetCollectTypes(bool value = true)
+        {
+            m_CollectTypes = value;
+            return *this;
+        }
+
 protected:
     friend class CAnnot_Collector;
 
@@ -423,6 +430,7 @@ protected:
     bool                  m_ExactDepth;
     bool                  m_ExcludeExternal;
     bool                  m_CollectSeq_annots;
+    bool                  m_CollectTypes;
     TAdaptiveTriggers     m_AdaptiveTriggers;
     TTSE_Limits           m_ExcludedTSE;
     TAnnotTypesBitset     m_AnnotTypesBitset;
@@ -438,6 +446,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.48  2005/12/15 21:33:55  vasilche
 * Added SetExactDepth() option.
 * Fixed constness of getters.

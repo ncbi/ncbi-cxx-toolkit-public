@@ -34,6 +34,7 @@
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
@@ -201,12 +202,28 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 }
 
 
+CAnnotTypes_CI::TAnnotTypes CAnnotTypes_CI::GetAnnotTypes(void) const
+{
+    if ( m_AnnotTypes.empty() ) {
+        for (size_t i = 0; i < m_DataCollector->m_TypesBitset.size(); ++i) {
+            if ( m_DataCollector->m_TypesBitset.test(i) ) {
+                m_AnnotTypes.push_back(CAnnotType_Index::GetTypeSelector(i));
+            }
+        }
+    }
+    return m_AnnotTypes;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.129  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.128  2005/06/22 14:07:41  vasilche
 * Added constructor from CBioseq_Handle, CRange, and strand.
 * Moved constructors out of inline section.

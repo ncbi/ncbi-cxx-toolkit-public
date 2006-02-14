@@ -331,6 +331,7 @@ private:
     typedef set< CConstRef<CSeq_loc> >   TAnnotLocsSet;
     typedef map<const CTSE_Info*, CTSE_Handle> TTSE_LockMap;
     typedef map<const CSeq_annot_Info*, CSeq_annot_Handle> TAnnotLockMap;
+    typedef SAnnotSelector::TAnnotTypesBitset TAnnotTypesBitset;
 
     const SAnnotSelector*            m_Selector;
     CHeapScope                       m_Scope;
@@ -345,6 +346,7 @@ private:
     CRef<CCreatedFeat_Ref>  m_CreatedOriginal;
     CRef<CCreatedFeat_Ref>  m_CreatedMapped;
     auto_ptr<TAnnotLocsSet> m_AnnotLocsSet;
+    TAnnotTypesBitset       m_TypesBitset;
 
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
@@ -778,6 +780,9 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.33  2005/09/20 15:45:35  vasilche
 * Feature editing API.
 * Annotation handles remember annotations by index.

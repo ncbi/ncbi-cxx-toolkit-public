@@ -1663,7 +1663,10 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
         }
     }
 
-    if ( x_NeedSNPs() ) {
+    static const size_t kAnnotTypeIndex_SNP =
+        CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::eSubtype_variation);
+
+    if ( x_NeedSNPs()  &&  !m_TypesBitset.test(kAnnotTypeIndex_SNP) ) {
         CHandleRange::TRange range = hr.GetOverlappingRange();
         ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
             const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
@@ -1680,6 +1683,11 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                     }
                     if ( snp.NotThis(range) ) {
                         continue;
+                    }
+
+                    m_TypesBitset.set(kAnnotTypeIndex_SNP);
+                    if (m_Selector->m_CollectTypes) {
+                        break;
                     }
 
                     CAnnotObject_Ref annot_ref(snp_annot, *snp_it);
@@ -1744,6 +1752,10 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
             _ASSERT(objs);
         }
         for ( size_t index = from_idx; index < to_idx; ++index ) {
+            if (m_Selector->m_CollectTypes  &&  m_TypesBitset.test(index)) {
+                continue;
+            }
+
             size_t start_size = m_AnnotSet.size(); // for rollback
 
             if ( objs->x_RangeMapIsEmpty(index) ) {
@@ -1755,12 +1767,21 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
             ITERATE(CHandleRange, rg_it, hr) {
                 CHandleRange::TRange range = rg_it->first;
-                
+
                 for ( CTSE_Info::TRangeMap::const_iterator
                     aoit(rmap.begin(range));
                     aoit; ++aoit ) {
                     const CAnnotObject_Info& annot_info =
                         *aoit->second.m_AnnotObject_Info;
+
+                    // Collect types
+                    if (m_Selector->m_CollectTypes) {
+                        if (x_MatchLimitObject(annot_info)  &&
+                            x_MatchRange(hr, aoit->first, aoit->second) ) {
+                            m_TypesBitset.set(index);
+                            break;
+                        }
+                    }
 
                     if ( annot_info.IsChunkStub() ) {
                         const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
@@ -1878,6 +1899,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
                         continue;
                     }
+                    m_TypesBitset.set(index);
 
                     bool is_circular = aoit->second.m_HandleRange  &&
                         aoit->second.m_HandleRange->GetData().IsCircular();
@@ -2241,6 +2263,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.69  2005/12/15 21:38:52  vasilche
 * Implemented exact resolve depth in annot iterators.
 *

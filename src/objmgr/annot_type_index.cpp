@@ -162,12 +162,34 @@ CAnnotType_Index::GetIndexRange(const SAnnotTypeSelector& sel,
 }
 
 
+SAnnotTypeSelector CAnnotType_Index::GetTypeSelector(size_t index)
+{
+    SAnnotTypeSelector sel;
+    switch (index) {
+    case 0:
+        sel.SetAnnotType(CSeq_annot::C_Data::e_Align);
+        break;
+    case 1:
+        sel.SetAnnotType(CSeq_annot::C_Data::e_Graph);
+        break;
+    default:
+        sel.SetFeatSubtype(SAnnotTypeSelector::TFeatSubtype(index -
+            sm_AnnotTypeIndexRange[CSeq_annot::C_Data::e_Ftable].first));
+        break;
+    }
+    return sel;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.6  2005/05/23 14:09:55  grichenk
 * Fixed indexing of feature types
 *

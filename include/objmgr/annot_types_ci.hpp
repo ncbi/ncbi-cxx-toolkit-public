@@ -84,6 +84,10 @@ public:
     // Get number of annotations
     size_t GetSize(void) const;
 
+    typedef vector<SAnnotTypeSelector> TAnnotTypes;
+    // Get annot types
+    TAnnotTypes GetAnnotTypes(void) const;
+
 protected:
     friend class CAnnot_CI;
 
@@ -111,6 +115,7 @@ private:
     CRef<CAnnot_Collector> m_DataCollector;
     // Current annotation
     TIterator              m_CurrAnnot;
+    mutable TAnnotTypes    m_AnnotTypes;
 };
 
 
@@ -199,6 +204,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.75  2005/06/22 14:07:41  vasilche
 * Added constructor from CBioseq_Handle, CRange, and strand.
 * Moved constructors out of inline section.

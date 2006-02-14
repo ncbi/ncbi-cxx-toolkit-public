@@ -74,6 +74,8 @@ public:
     static TIndexRange GetTypeIndex(const CAnnotObject_Info& info);
     static TIndexRange GetTypeIndex(const SAnnotObject_Key& key);
 
+    static SAnnotTypeSelector GetTypeSelector(size_t index);
+
 private:
     typedef vector<TIndexRange> TIndexRangeTable;
     typedef vector<size_t>      TIndexTable;
@@ -148,6 +150,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2006/02/14 15:47:41  grichenk
+* Added methods for collecting types of annotations.
+*
 * Revision 1.2  2005/05/23 14:09:55  grichenk
 * Fixed indexing of feature types
 *
