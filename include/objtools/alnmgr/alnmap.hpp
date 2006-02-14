@@ -161,8 +161,6 @@ public:
 
     static bool IsTypeInsert(TSegTypeFlags type);
 
-    TSeqPos GetInsertedSeqLengthOnRight(TNumrow row, TNumseg seg) const;
-
     // Alignment segments
     TSeqPos GetAlnStart(TNumseg seg) const;
     TSeqPos GetAlnStop (TNumseg seg) const;
@@ -173,10 +171,6 @@ public:
     TNumrow GetAnchor  (void)           const;
     void    SetAnchor  (TNumrow anchor);
     void    UnsetAnchor(void);
-
-    // get number of
-    TNumseg GetNumberOfInsertedSegmentsOnRight(TNumrow row, TNumseg seg) const;
-    TNumseg GetNumberOfInsertedSegmentsOnLeft (TNumrow row, TNumseg seg) const;
 
     //
     // Position mapping funcitons
@@ -665,15 +659,6 @@ CAlnMap::TSignedRange CAlnMap::GetSeqAlnRange(TNumrow row) const
 }
 
 
-inline
-TSeqPos CAlnMap::GetInsertedSeqLengthOnRight(TNumrow row, TNumseg seg) const
-{
-    return (IsPositiveStrand(row) ?
-            GetStop(row, seg+1) - GetStart(row, seg) :
-            GetStart(row, seg+1) - GetStop(row, seg));
-}
-
-
 inline 
 CAlnMap::TSegTypeFlags 
 CAlnMap::x_GetRawSegType(TNumrow row, TNumseg seg) const
@@ -720,6 +705,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2006/02/14 21:38:23  todorov
+* Removed unused code.
+*
 * Revision 1.44  2005/07/18 17:49:13  ucko
 * WorkShop 5.5 needs all of CAlnMap to be friends with CAlnChunkVec.
 *
