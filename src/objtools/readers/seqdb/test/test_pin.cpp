@@ -403,7 +403,7 @@ int test1(int argc, char ** argv)
                  " Microbial/265669 Microbial/267410 Microbial/221109 Microbial/93062"
                  " Microbial/282458 Microbial/282459 Microbial/196620 Microbial/158878"
                  " Microbial/158879 Microbial/176280 Microbial/176279 Microbial/279808"
-                 " Microbial/147452 Microbial/272562 Microbial/195102 Microbial/212717"
+                 " Microbial/272562 Microbial/195102 Microbial/212717"
                  " Microbial/203119 Microbial/272564 Microbial/264732 Microbial/335541"
                  " Microbial/273068 Microbial/226185 Microbial/333849 Microbial/272621"
                  " Microbial/321967 Microbial/321956 Microbial/257314 Microbial/220668"
@@ -416,7 +416,7 @@ int test1(int argc, char ** argv)
                  " Microbial/243273 Microbial/295358 Microbial/262722 Microbial/262719"
                  " Microbial/267748 Microbial/272632 Microbial/272633 Microbial/272634"
                  " Microbial/272635 Microbial/262723 Microbial/262768 Microbial/273119"
-                 " Microbial/224324 Microbial/1108 Microbial/243164 Microbial/255470"
+                 " Microbial/224324 Microbial/243164 Microbial/255470"
                  " Microbial/319795 Microbial/243230 Microbial/190304 Microbial/209882"
                  " Microbial/243090 Microbial/234267 Microbial/243274 Microbial/262724"
                  " Microbial/300852 Microbial/156889 Microbial/283166 Microbial/283165"
@@ -918,6 +918,52 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-bioseqs]";
         
+        if (s == "-get-hdr") {
+            CSeqDB db(dbname, seqtype);
+            
+            if (args.empty() || (! isdigit((unsigned char) args.begin()->c_str()[0]))) {
+                cout << "The get-hdr command needs a GI to work with." << endl;
+                return 1;
+            }
+            
+            int gi = atoi(args.begin()->c_str());
+            args.pop_front();
+            
+            if (gi < 1) {
+                cout << "The GI " << gi << " is not valid." << endl;
+                return 1;
+            }
+            
+            int oid(0);
+            
+            if (! db.GiToOid(gi, oid)) {
+                cout << "The GI " << gi << " was not found." << endl;
+                return 0;
+            }
+            
+            CStopWatch sw(CStopWatch::eStart);
+            
+            CRef<CBlast_def_line_set> bs;
+            
+            int N = 50*1000;
+            
+            for(int i = 0; i<N; i++) {
+                bs = db.GetHdr(oid);
+            }
+            
+            cout << "--- gi " << gi
+                 << "\n --- elapsed " << sw.Elapsed()
+                 << "\n --- N " << N
+                 << "\n\n" << endl;
+            
+            auto_ptr<CObjectOStream>
+                outpstr(CObjectOStream::Open(eSerial_AsnText, cout));
+            
+            *outpstr << *bs;
+            
+            return 0;
+        } else desc += " [-gi2bs] [-gi2bs-target]";
+
         if ((s == "-gi2bs") || (s == "-gi2bs-target")) {
             CSeqDB db(dbname, seqtype);
             
