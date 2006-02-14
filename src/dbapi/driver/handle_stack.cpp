@@ -55,8 +55,13 @@ void CDBHandlerStack::Push(CDB_UserHandler* h)
 void CDBHandlerStack::Pop(CDB_UserHandler* h, bool last)
 {
     if ( last ) {
-        while ( !m_Stack.empty() && m_Stack.back() != h ) {
-            m_Stack.pop_back();
+        while ( !m_Stack.empty() ) {
+            if (m_Stack.back() == h) {
+                m_Stack.pop_back();
+                break;
+            } else {
+                m_Stack.pop_back();
+            }
         }
     } else {
         deque<CDB_UserHandler*>::iterator cit;
@@ -107,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/14 17:48:23  ssikorsk
+ * Fixed algorithm of deleting a handler from a stack in CDBHandlerStack::Pop.
+ *
  * Revision 1.8  2005/10/31 21:28:04  ucko
  * Tweak PostMsg to compile under WorkShop, and to take advantage of the
  * REVERSE_ITERATE macro.
