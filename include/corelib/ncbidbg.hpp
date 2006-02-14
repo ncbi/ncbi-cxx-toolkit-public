@@ -68,17 +68,17 @@ BEGIN_NCBI_SCOPE
         NCBI_NS_NCBI::CNcbiDiag::DiagAssert(DIAG_COMPILE_INFO, #expr); \
     } while ( 0 )
 
-#  define _VERIFY(expr) _ASSERT(expr)
+#  define _VERIFY(expr)   _ASSERT(expr)
 
 #  define _DEBUG_ARG(arg) arg
 
 
 #else  /* _DEBUG */
 
-#  define _TRACE(message)  ((void)0)
+#  define _TRACE(message) ((void)0)
 #  define _TROUBLE
-#  define _ASSERT(expr) ((void)0)
-#  define _VERIFY(expr) ((void)(expr))
+#  define _ASSERT(expr)   ((void)0)
+#  define _VERIFY(expr)   ((void)(expr))
 #  define _DEBUG_ARG(arg)
 
 #endif  /* else!_DEBUG */
@@ -110,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.35  2006/02/14 15:48:21  lavr
+ * Indenting
+ *
  * Revision 1.34  2005/12/27 14:54:36  gouriano
  * Before defining _ASSERT check if it is already defined
  *
