@@ -1109,7 +1109,7 @@ int CSplignApp::Run()
             mmidx.Create(seqdb, oid_begin, oid_end);
             const string filename = args["mkmeridx"].AsString() + ".v" +
                 NStr::IntToString(q) + ".idx";
-            CNcbiOfstream ofstr (filename.c_str(), ios_base::binary);
+            CNcbiOfstream ofstr (filename.c_str(), IOS_BASE::binary);
             mmidx.Dump(ofstr);
         }
 
@@ -1509,6 +1509,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/02/14 02:21:35  ucko
+ * Use our IOS_BASE macro rather than ios_base for compatibility with GCC 2.95.
+ *
  * Revision 1.59  2006/02/13 20:03:35  kapustin
  * Intermediate update
  *
