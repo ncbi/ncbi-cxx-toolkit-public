@@ -5,4 +5,6 @@ util/compress
 util/regexp$
 util/cache$
 util/unicode_plans$
+connect$
+connect/ext$
 dbapi
