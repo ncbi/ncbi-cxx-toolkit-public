@@ -532,8 +532,6 @@ void CSplign::Run(THitRefs* phitrefs)
             ac.m_error = false;
             ac.m_msg = "Ok";
             m_result.push_back(ac);
-
-            cerr << "Done compartment " << i << " out of " << dim << endl;
         }
 
         catch(CException& e) {
@@ -548,6 +546,52 @@ void CSplign::Run(THitRefs* phitrefs)
         smin = same_strand? box[3] + 1: 0;
     }
 }
+
+
+bool CSplign::AlignSingleCompartment(THitRefs* phitrefs,
+                                     size_t subj_min, size_t subj_max,
+                                     SAlignedCompartment* result)
+{
+    m_mrna.resize(0);
+
+    THit::TId id_query (phitrefs->front()->GetQueryId());
+
+    x_LoadSequence(&m_mrna, *id_query, 0, 
+                   numeric_limits<THit::TCoord>::max(), false);
+
+    if(!m_strand) {
+
+        reverse (m_mrna.begin(), m_mrna.end());
+        transform(m_mrna.begin(), m_mrna.end(), m_mrna.begin(), SCompliment());
+    }
+
+    bool rv = true;
+    try {
+        SAlignedCompartment ac = x_RunOnCompartment(phitrefs, subj_min, subj_max);
+        ac.m_id = 1;
+        ac.m_segments = m_segments;
+        ac.m_error = false;
+        ac.m_msg = "Ok";
+
+        *result = ac;        
+        m_mrna.resize(0);
+    }
+
+    catch(CException& e) {
+
+        m_mrna.resize(0);        
+
+        if(e.GetSeverity() == eDiag_Fatal) {
+            throw;
+        }
+        
+        *result = SAlignedCompartment(0, true, e.GetMsg().c_str());
+        rv = false;
+    }
+
+    return rv;
+}
+
 
 
 // naive polya detection
@@ -693,8 +737,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
 
     const size_t seg_dim = m_segments.size();
     if(seg_dim == 0) {
-        NCBI_THROW( CAlgoAlignException, eNoData,
-                    g_msg_NoAlignment);
+        NCBI_THROW(CAlgoAlignException, eNoData, g_msg_NoAlignment);
     }
     
     // try to extend the last segment into the PolyA area  
@@ -722,7 +765,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(
             // correct annotation
             const size_t ann_dim = s.m_annot.size();
             if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
-                //++q;
+
                 s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
                 ++q;
                 s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
@@ -1707,6 +1750,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/02/14 15:41:25  kapustin
+ * +AlignSingleCompartment()
+ *
  * Revision 1.46  2006/02/13 19:31:54  kapustin
  * Do not pre-load mRNA
  *

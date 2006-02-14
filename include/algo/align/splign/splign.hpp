@@ -101,11 +101,6 @@ public:
     void SetMaxCompsPerQuery(size_t m);
     size_t GetMaxCompsPerQuery(void) const;
 
-    typedef CBlastTabular           THit;
-    typedef CRef<THit>              THitRef;
-    typedef vector<THitRef>         THitRefs;
-
-    void Run(THitRefs* hitrefs);
   
     // a segment can represent an exon or an unaligning piece of mRna (a gap)
     struct NCBI_XALGOALIGN_EXPORT SSegment {
@@ -168,11 +163,23 @@ public:
         void FromBuffer (const TNetCacheBuffer& buf);
     };
     
+    typedef CBlastTabular           THit;
+    typedef CRef<THit>              THitRef;
+    typedef vector<THitRef>         THitRefs;
+
+    // identify compartments and align each of them
+    void Run(THitRefs* hitrefs);
     typedef vector<SAlignedCompartment> TResults;
     
+    // retrieve results computed with Run()
     const TResults& GetResult(void) const {
         return m_result;
     }
+
+    // align as a single compartment within given genomic bounds
+    bool AlignSingleCompartment(THitRefs* hitrefs,
+                                size_t range_left, size_t range_right,
+                                SAlignedCompartment* result);
 
 protected:
 
@@ -249,6 +256,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2006/02/14 15:41:35  kapustin
+ * +AlignSingleCompartment()
+ *
  * Revision 1.32  2006/02/13 19:47:12  kapustin
  * +SetMaxCompsPerQuery()
  *
