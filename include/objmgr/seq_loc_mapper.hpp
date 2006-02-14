@@ -130,7 +130,6 @@ public:
         eLocationToProduct,
         eProductToLocation
     };
-    /// Method of treating locations already on the destination
     enum ESeqMapDirection {
         eSeqMap_Up,    ///< map from segments to the top level bioseq
         eSeqMap_Down   ///< map from a segmented bioseq to segments
@@ -557,6 +556,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2006/02/14 15:02:34  grichenk
+* Removed wrong comment
+*
 * Revision 1.28  2006/02/01 19:48:22  grichenk
 * CBioseq_Handle& top_level_seq argument made const.
 *
