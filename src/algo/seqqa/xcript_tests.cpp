@@ -883,9 +883,14 @@ CTestTranscript_CountAmbiguities::RunTest(const CSerialObject& obj,
                             s_CdsCountAmbiguities);
 
     // count for entire transcript
+    if (!rv) {
+        rv.Reset(new CSeq_test_result_set());
+    }
     CBioseq_Handle hand = ctx->GetScope().GetBioseqHandle(*id);
     CSeqVector vec = hand.GetSeqVector();
-    rv->Set().front()->SetOutput_data()
+    CRef<CSeq_test_result> result = x_SkeletalTestResult("count_ambiguities");
+    rv->Set().push_back(result);
+    result->SetOutput_data()
         .AddField("ambiguity_count",
                   static_cast<int>(s_CountAmbiguities(vec)));
     return rv;
@@ -898,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/02/14 20:53:32  jcherry
+ * Rearranged ambiguity count to deal with case of no CDS
+ *
  * Revision 1.20  2006/02/13 14:53:41  jcherry
  * Added counts of ambiguous residues
  *
