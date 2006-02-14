@@ -204,7 +204,8 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 
 CAnnotTypes_CI::TAnnotTypes CAnnotTypes_CI::GetAnnotTypes(void) const
 {
-    if ( m_AnnotTypes.empty() ) {
+    if (m_AnnotTypes.empty()  &&
+        m_DataCollector->m_TypesBitset.any()) {
         for (size_t i = 0; i < m_DataCollector->m_TypesBitset.size(); ++i) {
             if ( m_DataCollector->m_TypesBitset.test(i) ) {
                 m_AnnotTypes.push_back(CAnnotType_Index::GetTypeSelector(i));
@@ -221,6 +222,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.130  2006/02/14 16:57:14  grichenk
+* Do not collect types by default.
+*
 * Revision 1.129  2006/02/14 15:47:41  grichenk
 * Added methods for collecting types of annotations.
 *

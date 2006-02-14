@@ -1666,7 +1666,9 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
     static const size_t kAnnotTypeIndex_SNP =
         CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::eSubtype_variation);
 
-    if ( x_NeedSNPs()  &&  !m_TypesBitset.test(kAnnotTypeIndex_SNP) ) {
+    if ( x_NeedSNPs()  &&
+        (!m_Selector->m_CollectTypes  ||
+        !m_TypesBitset.test(kAnnotTypeIndex_SNP)) ) {
         CHandleRange::TRange range = hr.GetOverlappingRange();
         ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
             const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
@@ -1685,8 +1687,8 @@ void CAnnot_Collector::x_SearchObjects(const CTSE_Handle&    tseh,
                         continue;
                     }
 
-                    m_TypesBitset.set(kAnnotTypeIndex_SNP);
                     if (m_Selector->m_CollectTypes) {
+                        m_TypesBitset.set(kAnnotTypeIndex_SNP);
                         break;
                     }
 
@@ -1899,7 +1901,6 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
                         continue;
                     }
-                    m_TypesBitset.set(index);
 
                     bool is_circular = aoit->second.m_HandleRange  &&
                         aoit->second.m_HandleRange->GetData().IsCircular();
@@ -2263,6 +2264,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2006/02/14 16:57:14  grichenk
+* Do not collect types by default.
+*
 * Revision 1.70  2006/02/14 15:47:41  grichenk
 * Added methods for collecting types of annotations.
 *
