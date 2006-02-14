@@ -467,26 +467,28 @@ void CSeqDBAliasSets::x_ReadAliasSetFile(const CSeqDB_Path & aset_path,
     // Now, for each offset, read the "ALIAS_FILE" line and store the
     // contents of that (virtual) file in the alias set.
     
-    size_t last_start = offsets.size() - 2;
-    
-    string name, value;
-    
-    TAliasGroup & group = m_Groups[aset_path.GetPathS()];
-    
-    for(size_t i = 0; i < last_start; i += 2) {
-        s_SeqDB_ReadLine(offsets[i],
-                         offsets[i+1],
-                         name,
-                         value);
+    if (offsets.size() > 2) {
+        size_t last_start = offsets.size() - 2;
         
-        if (name != key || value.empty()) {
-            string msg("Alias set file: syntax error near offset "
-                       + NStr::IntToString(offsets[i] - bp) + ".");
+        string name, value;
+        
+        TAliasGroup & group = m_Groups[aset_path.GetPathS()];
+        
+        for(size_t i = 0; i < last_start; i += 2) {
+            s_SeqDB_ReadLine(offsets[i],
+                             offsets[i+1],
+                             name,
+                             value);
             
-            NCBI_THROW(CSeqDBException, eFileErr, msg);
+            if (name != key || value.empty()) {
+                string msg("Alias set file: syntax error near offset "
+                           + NStr::IntToString(offsets[i] - bp) + ".");
+                
+                NCBI_THROW(CSeqDBException, eFileErr, msg);
+            }
+            
+            group[value].assign(offsets[i+1], offsets[i+2]);
         }
-        
-        group[value].assign(offsets[i+1], offsets[i+2]);
     }
     
     m_Atlas.RetRegion(lease);
