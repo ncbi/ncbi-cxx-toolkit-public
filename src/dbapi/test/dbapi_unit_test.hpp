@@ -131,6 +131,7 @@ class CDBAPIUnitTest
 {
 public:
     CDBAPIUnitTest(const CTestArguments& args);
+    ~CDBAPIUnitTest(void);
 
 public:
     void TestInit(void);
@@ -225,6 +226,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2006/02/14 18:43:41  ucko
+ * Declare ~CDBAPIUnitTest, which has acquired a (trivial) definition.
+ *
  * Revision 1.32  2006/02/07 16:30:52  ssikorsk
  * Added Test_BlobStream to the test-suite.
  *
