@@ -164,9 +164,9 @@ void CMerMatcherIndex::Create(CSeqDB& seqdb, int oid_begin, int oid_end)
 
 void CMerMatcherIndex::x_AddNode(TKey key, const TMatch& match)
 {
-    SNode& node = m_Nodes.at(m_CurIdxNodes++);
+    SNode& node = m_Nodes[m_CurIdxNodes++];
     node.m_Key = key;
-    m_MatchVec.at(node.m_Data = m_CurIdxMV++).push_back(match);
+    m_MatchVec[node.m_Data = m_CurIdxMV++].push_back(match);
 }
 
 
@@ -341,6 +341,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.3  2006/02/14 02:21:08  ucko
+ * Use [] rather than .at() for compatibility with GCC 2.95.
+ *
  * Revision 1.2  2006/02/13 20:06:10  kapustin
  * Fix log tags
  *

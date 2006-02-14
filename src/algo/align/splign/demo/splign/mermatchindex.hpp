@@ -93,7 +93,7 @@ public:
     };
 
     const SNode& GetNode(Uint4 idx) const {
-        return m_Nodes.at(idx);
+        return m_Nodes[idx];
     }
     
     struct SMatch {
@@ -115,7 +115,7 @@ public:
     typedef SMatch            TMatch;
 
     const TMatch& GetMatch(Uint4 idx) const {
-        return m_PlainMatches.at(idx);
+        return m_PlainMatches[idx];
     }
 
 protected:
@@ -149,6 +149,9 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.3  2006/02/14 02:21:08  ucko
+ * Use [] rather than .at() for compatibility with GCC 2.95.
+ *
  * Revision 1.2  2006/02/13 20:06:10  kapustin
  * Fix log tags
  *
