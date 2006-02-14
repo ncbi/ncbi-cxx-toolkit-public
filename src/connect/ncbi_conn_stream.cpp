@@ -117,7 +117,7 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 }
 
 
-static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info_in,
+static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* a_net_info,
                                         const char*         url,
                                         const char*         host,
                                         unsigned short      port,
@@ -127,8 +127,8 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info_in,
                                         THCC_Flags          flags,
                                         const STimeout*     timeout)
 {
-    SConnNetInfo* net_info = net_info_in ?
-        ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(0);
+    SConnNetInfo* net_info = a_net_info ?
+        ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(0);
     if (!net_info)
         return 0;
     if (url && !ConnNetInfo_ParseURL(net_info, url))
@@ -214,12 +214,12 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
 
 static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                                            TSERV_Type            types,
-                                           const SConnNetInfo*   net_info_in,
+                                           const SConnNetInfo*   a_net_info,
                                            const SSERVICE_Extra* params,
                                            const STimeout*       timeout)
 {
-    SConnNetInfo* net_info = net_info_in ?
-        ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(service);
+    SConnNetInfo* net_info = a_net_info ?
+        ConnNetInfo_Clone(a_net_info) : ConnNetInfo_Create(service);
     if (!net_info)
         return 0;
     if (timeout && timeout != kDefaultTimeout) {
@@ -306,13 +306,12 @@ void CConn_MemoryStream::ToString(string* str)
                    "CConn_MemoryStream::ToString(NULL) is not allowed");
     }
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
+    streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
     str->resize(size);
     if (sb) {
-        size_t s;
-        verify(CONN_Read(sb->GetCONN(), &(*str)[0], size, &s, eIO_ReadPersist)
-               == eIO_Success);
+        streamsize s = sb->sgetn(&(*str)[0], size);
         assert(size == s);
+        str->resize(s);  // NB: this is essentially a NOP when size == s
     }
 }
 
@@ -321,10 +320,17 @@ char* CConn_MemoryStream::ToCStr(void)
 {
     flush();
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
+    streamsize size = sb ? (size_t)(tellp() - tellg()) : 0;
     char* str = new char[size + 1];
-    if (sb)
-        CONN_Read(sb->GetCONN(), str, size, &size, eIO_ReadPersist);
+    if (!str) {
+        NCBI_THROW(CIO_Exception, eUnknown,
+                   "CConn_MemoryStream::ToCStr() cannot allocate buffer");
+    }
+    if (sb) {
+        streamsize s = sb->sgetn(str, size);
+        assert(size == s);
+        size = s;
+    }
     str[size] = '\0';
     return str;
 }
@@ -393,6 +399,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2006/02/14 20:39:54  lavr
+ * CConn_MemoryStream::ToString() and CConn_MemoryStream::ToCStr()
+ * rewritten to call xsgetn() for proper tracking of stream position
+ *
  * Revision 6.49  2005/12/15 15:13:50  lavr
  * Line wrap
  *
