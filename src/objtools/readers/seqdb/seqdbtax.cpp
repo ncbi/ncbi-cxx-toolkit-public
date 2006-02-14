@@ -50,10 +50,15 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
     
     m_IndexFN =
         SeqDB_FindBlastDBPath("taxdb.bti", '-', 0, true, m_Atlas, locked);
-    m_DataFN = m_IndexFN;
-    m_DataFN[m_DataFN.size()-1] = 'd';
+
+    if (m_IndexFN.size()) {
+        m_DataFN = m_IndexFN;
+        m_DataFN[m_DataFN.size()-1] = 'd';
+    }
     
-    if (! (CFile(m_IndexFN).Exists() &&
+    if (! (m_IndexFN.size() &&
+           m_DataFN.size()  &&
+           CFile(m_IndexFN).Exists() &&
            CFile(m_DataFN).Exists())) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
