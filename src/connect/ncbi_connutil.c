@@ -132,7 +132,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     if (!SOCK_gethostbyaddr(0, info->client_host, sizeof(info->client_host)))
         SOCK_gethostname(info->client_host, sizeof(info->client_host));
 
-    /* Future extentions, clear up for now */
+    /* Future extensions, clear up for now */
     info->scheme  = eURL_Unspec;
     info->user[0] = '\0';
     info->pass[0] = '\0';
@@ -1926,6 +1926,9 @@ extern const char* CONNUTIL_GetUsername(char* buf, size_t bufsize)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.95  2006/02/14 15:50:22  lavr
+ * Introduce and use CONN_TRACE (via CORE_TRACE) -- NOP in Release mode
+ *
  * Revision 6.94  2006/02/01 16:24:24  lavr
  * CONNUTIL_GetUsername(): '\0'-terminate returned result of getlogin_r()
  *
