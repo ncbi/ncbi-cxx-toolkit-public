@@ -39,11 +39,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
-#include <connect/connect_export.h>
-#include <connect/ncbi_types.h>
 #include <connect/ncbi_socket.hpp>
-
 #include <util/resource_pool.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -98,7 +96,6 @@ public:
 
     static
     EUseName GetNameUse();
-
 
     /// Set communication timeout default for all new connections
     static
@@ -176,7 +173,6 @@ protected:
         CSocket*    m_Sock;
     };
 
-
 private:
     CNetServiceClient(const CNetServiceClient&);
     CNetServiceClient& operator=(const CNetServiceClient&);
@@ -190,6 +186,7 @@ protected:
     STimeout                m_Timeout;
     string                  m_ClientNameComment;
     string                  m_Tmp;                 ///< Temporary string
+
 private:
     CResourcePool<CSocket>  m_SockPool;
     CFastMutex              m_SockPool_Lock;
@@ -222,7 +219,6 @@ public:
 };
 
 
-
 /* @} */
 
 
@@ -232,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/02/15 18:36:01  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.15  2006/01/11 17:57:23  kuznets
  * Fixed race condition in socket pooling
  *

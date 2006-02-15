@@ -31,14 +31,10 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <util/transmissionrw.hpp>
 #include <memory>
 
 
@@ -52,6 +48,7 @@ CNetCache_Key::CNetCache_Key(const string& key_str)
 {
     ParseBlobKey(key_str);
 }
+
 
 void CNetCache_Key::ParseBlobKey(const string& key_str)
 {
@@ -95,7 +92,6 @@ void CNetCache_Key::ParseBlobKey(const string& key_str)
     }
     ++ch;
 
-
     // hostname
     for (;*ch && *ch != '_'; ++ch) {
         hostname += *ch;
@@ -133,6 +129,7 @@ void CNetCache_Key::GenerateBlobKey(string*        key,
     *key += "_";
     *key += tmp;
 }
+
 
 unsigned int CNetCache_Key::GetBlobId(const string& key_str)
 {
@@ -176,12 +173,14 @@ CNetCacheClientBase::CNetCacheClientBase(const string& client_name)
 {
 }
 
+
 CNetCacheClientBase::CNetCacheClientBase(const string&  host,
                                          unsigned short port,
                                          const string&  client_name)
     : CNetServiceClient(host, port, client_name)
 {
 }
+
 
 void CNetCacheClientBase::RegisterSession(unsigned pid)
 {
@@ -207,6 +206,7 @@ void CNetCacheClientBase::RegisterSession(unsigned pid)
     CheckOK(&m_Tmp);
 }
 
+
 void CNetCacheClientBase::UnRegisterSession(unsigned pid)
 {
     _ASSERT(m_Sock);
@@ -230,6 +230,7 @@ void CNetCacheClientBase::UnRegisterSession(unsigned pid)
     }
     CheckOK(&m_Tmp);
 }
+
 
 bool CNetCacheClientBase::CheckAlive()
 {
@@ -259,11 +260,11 @@ void CNetCacheClientBase::CheckOK(string* str) const
     _ASSERT(0);
 }
 
+
 void CNetCacheClientBase::TrimPrefix(string* str) const
 {
     _ASSERT(0);
 }
-
 
 
 CNetCacheClient::CNetCacheClient(const string&  client_name)
@@ -293,7 +294,6 @@ CNetCacheClient::CNetCacheClient(CSocket*      sock,
 CNetCacheClient::~CNetCacheClient()
 {
 }
-
 
 
 void CNetCacheClient::CheckConnect(const string& key)
@@ -327,6 +327,7 @@ string CNetCacheClient::PutData(const void*  buf,
 {
     return CNetCacheClient::PutData(kEmptyStr, buf, size, time_to_live);
 }
+
 
 void CNetCacheClient::PutInitiate(string*   key, 
                                   unsigned  time_to_live,
@@ -371,7 +372,6 @@ void CNetCacheClient::PutInitiate(string*   key,
 }
 
 
-
 string  CNetCacheClient::PutData(const string& key,
                                  const void*   buf,
                                  size_t        size,
@@ -396,7 +396,8 @@ string  CNetCacheClient::PutData(const string& key,
     return k;
 }
 
-IWriter* CNetCacheClient::PutData(string* key, unsigned int  time_to_live)
+
+IWriter* CNetCacheClient::PutData(string* key, unsigned int time_to_live)
 {
     _ASSERT(key);
     _ASSERT(m_PutVersion == 0 || m_PutVersion == 2);
@@ -428,6 +429,7 @@ bool CNetCacheClient::IsAlive()
     return !version.empty();
 }
 
+
 string CNetCacheClient::ServerVersion()
 {
     CheckConnect(kEmptyStr);
@@ -456,6 +458,7 @@ string CNetCacheClient::ServerVersion()
     return version;
 }
 
+
 CVersionInfo CNetCacheClient::ServerVersionInfo()
 {
     string version = ServerVersion();
@@ -471,6 +474,7 @@ CVersionInfo CNetCacheClient::ServerVersionInfo()
     return info;
 }
 
+
 string CNetCacheClient::GetCommErrMsg()
 {
     string ret(m_CommErrMsg);
@@ -478,10 +482,12 @@ string CNetCacheClient::GetCommErrMsg()
     return ret;
 }
 
+
 void CNetCacheClient::SetCommErrMsg(const string& msg)
 {
     m_CommErrMsg = msg;
 }
+
 
 void CNetCacheClient::SendClientName()
 {
@@ -493,6 +499,7 @@ void CNetCacheClient::SendClientName()
     const char* client = m_ClientName.c_str();
     WriteStr(client, client_len + 1);
 }
+
 
 void CNetCacheClient::MakeCommandPacket(string* out_str, 
                                         const string& cmd_str)
@@ -514,6 +521,7 @@ void CNetCacheClient::MakeCommandPacket(string* out_str,
     out_str->append(cmd_str);
 }
 
+
 void CNetCacheClient::Remove(const string& key)
 {
     CheckConnect(key);
@@ -524,6 +532,7 @@ void CNetCacheClient::Remove(const string& key)
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
 }
+
 
 
 bool CNetCacheClient::IsLocked(const string& key)
@@ -560,6 +569,7 @@ bool CNetCacheClient::IsLocked(const string& key)
     return locked;
 }
 
+
 string CNetCacheClient::GetOwner(const string& key)
 {
     CheckConnect(key);
@@ -583,6 +593,7 @@ string CNetCacheClient::GetOwner(const string& key)
     }
     return kEmptyStr;
 }
+
 
 IReader* CNetCacheClient::GetData(const string& key, 
                                   size_t*       blob_size,
@@ -641,6 +652,7 @@ IReader* CNetCacheClient::GetData(const string& key,
     return reader;
 }
 
+
 CNetCacheClient::EReadResult 
 CNetCacheClient::GetData(const string& key, SBlobData& blob_to_read)
 {
@@ -657,7 +669,7 @@ CNetCacheClient::GetData(const string& key, SBlobData& blob_to_read)
     unsigned char* ptr = blob_to_read.blob.get();
     size_t to_read = blob_size;
     
-    while(1) {
+    for (;;) {
         size_t bytes_read;
         ERW_Result res = reader->Read(ptr, to_read, &bytes_read);
         switch (res) {
@@ -674,12 +686,11 @@ CNetCacheClient::GetData(const string& key, SBlobData& blob_to_read)
             NCBI_THROW(CNetServiceException, eCommunicationError, 
                        "Error while reading BLOB");
         } // switch
-    } // while
+    } // for
 ret:
     blob_to_read.blob_size = blob_size;
     return eReadComplete;
 }
-
 
 
 CNetCacheClient::EReadResult
@@ -697,9 +708,7 @@ CNetCacheClient::GetData(const string&  key,
     size_t x_blob_size = 0;
     size_t x_read = 0;
 
-
     try {
-
         auto_ptr<IReader> reader(GetData(key, &x_blob_size));
         if (blob_size)
             *blob_size = x_blob_size;
@@ -738,8 +747,7 @@ CNetCacheClient::GetData(const string&  key,
         } // while
 
     } 
-    catch (CNetCacheException& ex)
-    {
+    catch (CNetCacheException& ex) {
         const string& str = ex.what();
         if (str.find_first_of("BLOB not found") > 0) {
             return CNetCacheClient::eNotFound;
@@ -766,7 +774,8 @@ void CNetCacheClient::ShutdownServer()
     WriteStr(command, sizeof(command));
 }
 
-void CNetCacheClient::PrintConfig(CNcbiOstream & out)
+
+void CNetCacheClient::PrintConfig(CNcbiOstream& out)
 {
     CheckConnect(kEmptyStr);
     CSockGuard sg(*m_Sock);
@@ -777,6 +786,7 @@ void CNetCacheClient::PrintConfig(CNcbiOstream & out)
     WriteStr(command, sizeof(command));
     PrintServerOut(out);    
 }
+
 
 void CNetCacheClient::PrintStat(CNcbiOstream& out)
 {
@@ -789,6 +799,7 @@ void CNetCacheClient::PrintStat(CNcbiOstream& out)
     WriteStr(command, sizeof(command));
     PrintServerOut(out);
 }
+
 
 void CNetCacheClient::DropStat()
 {
@@ -816,8 +827,6 @@ void CNetCacheClient::Logging(bool on_off)
 
     WriteStr(command, strlen(command));
 }
-
-
 
 
 bool CNetCacheClient::IsError(const char* str)
@@ -848,6 +857,7 @@ void CNetCacheClient::TransmitBuffer(const char* buf, size_t len)
     err_wrt.Flush();
 }
 
+
 bool CNetCacheClient::x_CheckErrTrim(string& answer)
 {
     if (NStr::strncmp(answer.c_str(), "OK:", 3) == 0) {
@@ -871,14 +881,18 @@ bool CNetCacheClient::x_CheckErrTrim(string& answer)
     return true;
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
+
 
 CNetCacheSock_RW::CNetCacheSock_RW(CSocket* sock) 
 : CSocketReaderWriter(sock),
   m_Parent(0),
   m_BlobSizeControl(false),
   m_BlobBytesToRead(0)
-{}
+{
+}
+
 
 CNetCacheSock_RW::~CNetCacheSock_RW() 
 { 
@@ -898,21 +912,25 @@ CNetCacheSock_RW::~CNetCacheSock_RW()
     }
 }
 
+
 void CNetCacheSock_RW::OwnSocket() 
 { 
     m_IsOwned = eTakeOwnership; 
 }
+
 
 void CNetCacheSock_RW::SetSocketParent(CNetServiceClient* parent)
 {
     m_Parent = parent;
 }
 
+
 void CNetCacheSock_RW::SetBlobSize(size_t blob_size)
 {
     m_BlobSizeControl = true;
     m_BlobBytesToRead = blob_size;
 }
+
 
 ERW_Result CNetCacheSock_RW::Read(void*   buf,
                                   size_t  count,
@@ -936,6 +954,7 @@ ERW_Result CNetCacheSock_RW::Read(void*   buf,
     return res;
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -950,9 +969,11 @@ CNetCache_WriterErrCheck::CNetCache_WriterErrCheck
     _ASSERT(wrt);
 }
 
+
 CNetCache_WriterErrCheck::~CNetCache_WriterErrCheck()
 {
 }
+
 
 ERW_Result CNetCache_WriterErrCheck::Write(const void* buf,
                                            size_t      count,
@@ -970,6 +991,7 @@ ERW_Result CNetCache_WriterErrCheck::Write(const void* buf,
     return res;
 }
 
+
 ERW_Result CNetCache_WriterErrCheck::Flush(void)
 {
     if (!m_RW) {
@@ -981,6 +1003,7 @@ ERW_Result CNetCache_WriterErrCheck::Flush(void)
     }
     return res;
 }
+
 
 void CNetCache_WriterErrCheck::CheckInputMessage()
 {
@@ -1114,6 +1137,7 @@ protected:
 
 };
 
+
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcache(
      CPluginManager<CNetCacheClient>::TDriverInfoList&   info_list,
      CPluginManager<CNetCacheClient>::EEntryPointRequest method)
@@ -1123,12 +1147,16 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcache(
 
 }
 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2006/02/15 18:38:41  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.63  2006/01/26 17:50:12  vasilche
  * Do not read beyond blob. Always update bytes_read.
  *

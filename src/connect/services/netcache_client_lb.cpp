@@ -32,13 +32,10 @@
 
 #include <ncbi_pch.hpp>
 #include "../ncbi_servicep.h"
-#include <corelib/ncbistd.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <util/transmissionrw.hpp>
-
 #include <memory>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -101,7 +98,6 @@ bool s_ConnectClient_Reserve(CNetCacheClient* nc_client,
 }
 
 
-
 /// Configure NetCache client using NCBI load balancer
 ///
 /// Functions retrieves current status of netcache servers, then connects
@@ -121,15 +117,10 @@ NetCache_ConfigureWithLB(
                     int              backup_mode_mask)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
-#if 0
-    SERV_ITER srv_it = SERV_Open(service_name.c_str(), fSERV_Any,
-                                 SERV_LOCALHOST, net_info);
-#else
     SERV_ITER srv_it = SERV_OpenP(service_name.c_str(), fSERV_Any,
                                   SERV_LOCALHOST, 0/*port*/, 90.0/*pref*/,
                                   net_info, 0/*skip*/, 0/*n_skip*/,
                                   0/*external*/, 0/*arg*/, 0/*val*/);
-#endif
     ConnNetInfo_Destroy(net_info);
 
     STimeout& to = nc_client->SetCommunicationTimeout();
@@ -233,14 +224,17 @@ CNetCacheClient_LB::CNetCacheClient_LB(const string& client_name,
     SetClientNameComment(lb_service_name);
 }
 
+
 CNetCacheClient_LB::~CNetCacheClient_LB()
 {
 }
+
 
 void CNetCacheClient_LB::EnableServiceBackup(TServiceBackupMode backup_mode)
 {
     m_ServiceBackup = backup_mode;
 }
+
 
 string CNetCacheClient_LB::PutData(const void*   buf,
                                    size_t        size,
@@ -251,6 +245,7 @@ string CNetCacheClient_LB::PutData(const void*   buf,
     ++m_Requests;
     return k;
 }
+
 
 string CNetCacheClient_LB::PutData(const string& key,
                                    const void*   buf,
@@ -283,6 +278,7 @@ string CNetCacheClient_LB::PutData(const string& key,
     ++m_Requests;
     return k;
 }
+
 
 IWriter* CNetCacheClient_LB::PutData(string* key, unsigned int time_to_live)
 {
@@ -380,6 +376,7 @@ IReader* CNetCacheClient_LB::GetData(const string& key,
     return rd;
 }
 
+
 CNetCacheClient::EReadResult 
 CNetCacheClient_LB::GetData(const string& key, SBlobData& blob_to_read)
 {
@@ -408,6 +405,7 @@ bool CNetCacheClient_LB::IsLocked(const string& key)
     return false;
 }
 
+
 string CNetCacheClient_LB::GetOwner(const string& key)
 {
     if (!key.empty()) {
@@ -429,6 +427,7 @@ string CNetCacheClient_LB::GetOwner(const string& key)
     return kEmptyStr;
 }
 
+
 void CNetCacheClient_LB::Remove(const string& key)
 {
     if (!key.empty()) {
@@ -446,6 +445,7 @@ void CNetCacheClient_LB::Remove(const string& key)
     cl.SetClientNameComment(m_ClientNameComment);
     cl.Remove(key);
 }
+
 
 CNetCacheClient::EReadResult 
 CNetCacheClient_LB::GetData(const string&  key,
@@ -475,6 +475,7 @@ CNetCacheClient_LB::GetData(const string&  key,
     cl.SetClientNameComment(m_ClientNameComment);
     return cl.GetData(key, buf, buf_size, n_read, blob_size);
 }
+
 
 void CNetCacheClient_LB::CheckConnect(const string& key)
 {
@@ -508,12 +509,16 @@ void CNetCacheClient_LB::CheckConnect(const string& key)
     TParent::CheckConnect(key);
 }
 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/02/15 18:38:56  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.31  2005/12/23 18:20:04  lavr
  * Document preference in SERV_OpenP() call
  *

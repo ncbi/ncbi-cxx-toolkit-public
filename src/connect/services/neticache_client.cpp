@@ -31,23 +31,16 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
-#include <memory>
-
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
-#include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/neticache_client.hpp>
-#include <connect/services/netcache_client.hpp>
-
-#include <util/transmissionrw.hpp>
 #include <util/cache/icache_cf.hpp>
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE
+
 
 CNetICacheClient::CNetICacheClient()
   : TParent("localhost", 9000, "netcache_client"),
@@ -56,6 +49,7 @@ CNetICacheClient::CNetICacheClient()
 {
     m_Timeout.sec = 180000;
 }
+
 
 CNetICacheClient::CNetICacheClient(const string&  host,
                                    unsigned short port,
@@ -81,7 +75,9 @@ void CNetICacheClient::SetConnectionParams(const string&  host,
 
 
 CNetICacheClient::~CNetICacheClient()
-{}
+{
+}
+
 
 void CNetICacheClient::ReturnSocket(CSocket* sock)
 {
@@ -148,6 +144,7 @@ bool CNetICacheClient::CheckConnect()
         "Cannot establish connection with a server. Unknown host name.");
 }
 
+
 void CNetICacheClient::MakeCommandPacket(string* out_str, 
                                          const string& cmd_str,
                                          bool          connected) const
@@ -182,6 +179,7 @@ void CNetICacheClient::MakeCommandPacket(string* out_str,
     out_str->append(cmd_str);
 }
 
+
 void CNetICacheClient::TrimPrefix(string* str) const
 {
     CheckOK(str);
@@ -205,6 +203,7 @@ void CNetICacheClient::CheckOK(string* str) const
     }
 }
 
+
 /*
 struct CStackGuard
 {
@@ -220,6 +219,7 @@ struct CStackGuard
 	string name;
 };
 */
+
 
 void CNetICacheClient::RegisterSession(unsigned pid) 
 {
@@ -238,6 +238,7 @@ void CNetICacheClient::RegisterSession(unsigned pid)
     TParent::RegisterSession(pid);
 }
 
+
 void CNetICacheClient::UnRegisterSession(unsigned pid)
 {
     CFastMutexGuard guard(m_Lock);
@@ -254,6 +255,7 @@ void CNetICacheClient::UnRegisterSession(unsigned pid)
     }
     TParent::UnRegisterSession(pid);
 }
+
 
 void CNetICacheClient::SetTimeStampPolicy(TTimeStampFlags policy,
                                           unsigned int    timeout,
@@ -306,6 +308,7 @@ ICache::TTimeStampFlags CNetICacheClient::GetTimeStampPolicy() const
     return flags;
 }
 
+
 int CNetICacheClient::GetTimeout() const
 {
     CFastMutexGuard guard(m_Lock);
@@ -355,6 +358,7 @@ bool CNetICacheClient::IsOpen() const
 
 }
 
+
 void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
 {
     CFastMutexGuard guard(m_Lock);
@@ -384,6 +388,7 @@ void CNetICacheClient::SetVersionRetention(EKeepVersions policy)
     }
     CheckOK(&m_Tmp);
 }
+
 
 ICache::EKeepVersions CNetICacheClient::GetVersionRetention() const
 {
@@ -459,6 +464,7 @@ void CNetICacheClient::Store(const string&  key,
 
 }
 
+
 size_t CNetICacheClient::GetSize(const string&  key,
                                  int            version,
                                  const string&  subkey)
@@ -508,6 +514,7 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
     *owner = m_Tmp;
 }
 
+
 bool CNetICacheClient::Read(const string& key,
                             int           version,
                             const string& subkey,
@@ -555,10 +562,11 @@ bool CNetICacheClient::Read(const string& key,
     return (x_read == blob_size);
 }
 
+
 void CNetICacheClient::GetBlobAccess(const string&     key,
                                      int               version,
                                      const string&     subkey,
-                                     SBlobAccessDescr*  blob_descr)
+                                     SBlobAccessDescr* blob_descr)
 {
     size_t blob_size;
     {{
@@ -649,6 +657,7 @@ void CNetICacheClient::Remove(const string& key)
     CheckOK(&m_Tmp);
 }
 
+
 void CNetICacheClient::Remove(const string&    key,
                               int              version,
                               const string&    subkey)
@@ -669,6 +678,7 @@ void CNetICacheClient::Remove(const string&    key,
     }
     CheckOK(&m_Tmp);
 }
+
 
 time_t CNetICacheClient::GetAccessTime(const string&  key,
                                        int            version,
@@ -692,6 +702,7 @@ time_t CNetICacheClient::GetAccessTime(const string&  key,
 
     return NStr::StringToInt(m_Tmp);
 }
+
 
 bool CNetICacheClient::HasBlobs(const string&  key,
                                 const string&  subkey)
@@ -718,11 +729,13 @@ bool CNetICacheClient::HasBlobs(const string&  key,
     return NStr::StringToInt(answer) != 0;
 }
 
+
 void CNetICacheClient::Purge(time_t           access_timeout,
                              EKeepVersions    keep_last_version)
 {
     // do nothing, this a server-side responsibility
 }
+
 
 void CNetICacheClient::Purge(const string&    key,
                              const string&    subkey,
@@ -730,6 +743,7 @@ void CNetICacheClient::Purge(const string&    key,
                              EKeepVersions    keep_last_version)
 {
 }
+
 
 IReader* 
 CNetICacheClient::GetReadStream_NoLock(const string&  key,
@@ -785,6 +799,7 @@ IReader* CNetICacheClient::GetReadStream(const string&  key,
     return GetReadStream_NoLock(key, version, subkey);
 }
 
+
 void CNetICacheClient::AddKVS(string*          out_str, 
                               const string&    key,
                               int              version,
@@ -812,15 +827,13 @@ string CNetICacheClient::GetCacheName(void) const
     return m_CacheName;
 }
 
+
 bool CNetICacheClient::SameCacheParams(const TCacheParams* params) const
 {
     CFastMutexGuard guard(m_Lock);
 
     return false;
 }
-
-
-
 
 
 const char* kNetICacheDriverName = "netcache";
@@ -856,7 +869,6 @@ static const string kCFParam_port            = "port";
 static const string kCFParam_cache_name2     = "cache_name";
 static const string kCFParam_cache_name      = "name";
 static const string kCFParam_client          = "client";
-
 
 
 ICache* CNetICacheCF::CreateInstance(
@@ -911,8 +923,6 @@ ICache* CNetICacheCF::CreateInstance(
 }
 
 
-
-
 void NCBI_EntryPoint_xcache_netcache(
      CPluginManager<ICache>::TDriverInfoList&   info_list,
      CPluginManager<ICache>::EEntryPointRequest method)
@@ -923,9 +933,13 @@ void NCBI_EntryPoint_xcache_netcache(
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/02/15 18:42:57  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.21  2006/01/26 16:08:02  kuznets
  * Added BLOB size control to socket based reader
  *
@@ -988,7 +1002,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2006/01/03 15:36:44  kuznets
  * Added network ICache client
- *
  *
  * ===========================================================================
  */

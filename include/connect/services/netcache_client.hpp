@@ -37,23 +37,16 @@
 /// NetCache client specs. 
 ///
 
-#include <connect/connect_export.h>
-#include <connect/ncbi_types.h>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netservice_client.hpp>
-#include <corelib/ncbistd.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/version.hpp>
-#include <util/reader_writer.hpp>
 #include <util/transmissionrw.hpp>
-
 
 
 BEGIN_NCBI_SCOPE
 
-
-class CSocket;
 
 /** @addtogroup NetCacheClient
  *
@@ -294,8 +287,6 @@ protected:
     /// Reinit server side statistics collector
     void DropStat();
 
-protected:
-
     /// Set communication error message
     virtual
     void SetCommErrMsg(const string& msg);
@@ -338,6 +329,7 @@ protected:
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
+
 protected:
     string    m_Tmp;
     unsigned  m_PutVersion;
@@ -365,7 +357,6 @@ protected:
 class NCBI_XCONNECT_EXPORT CNetCacheClient_LB : public CNetCacheClient
 {
 public:
-
     typedef CNetCacheClient  TParent;
 
     /// Construct load-balanced client.
@@ -504,6 +495,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CNetCacheException, CNetServiceException);
 };
 
+
 /// Meaningful information encoded in the NetCache key
 ///
 /// @sa CNetCache_ParseBlobKey
@@ -532,6 +524,7 @@ public:
     /// Parse blob key, extract id
     static 
     unsigned int GetBlobId(const string& key_str);
+
 public:
     string       prefix;    ///< Key prefix
     unsigned     version;   ///< Key version
@@ -550,7 +543,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheSock_RW : public CSocketReaderWriter
 {
 public:
     typedef CSocketReaderWriter TParent;
-public:
+
     CNetCacheSock_RW(CSocket* sock);
     virtual ~CNetCacheSock_RW();
 
@@ -577,6 +570,7 @@ public:
 private:
     CNetCacheSock_RW(const CNetCacheSock_RW&);
     CNetCacheSock_RW& operator=(const CNetCacheSock_RW&);
+
 protected:
     CNetServiceClient*  m_Parent;
     /// Flag that EOF is controlled not on the socket level (sock close)
@@ -586,6 +580,7 @@ protected:
     size_t              m_BlobBytesToRead;
 };
 
+
 /// IWriter with error checking
 ///
 /// @internal
@@ -594,7 +589,7 @@ class NCBI_XCONNECT_EXPORT CNetCache_WriterErrCheck
 {
 public:
     typedef CTransmissionWriter TParent;
-public:
+
     CNetCache_WriterErrCheck(CNetCacheSock_RW* wrt, 
                              EOwnership        own_writer,
                              CNetCacheClient*  parent);
@@ -607,8 +602,10 @@ public:
 
     virtual 
     ERW_Result Flush(void);
+
 protected:
     void CheckInputMessage();
+
 protected:
     CNetCacheSock_RW*  m_RW;
     CNetCacheClient*   m_NC_Client;
@@ -627,6 +624,7 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetcache(
 
 //} // extern C
 
+
 /* @} */
 
 
@@ -636,6 +634,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2006/02/15 18:37:18  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.53  2006/01/26 16:07:37  kuznets
  * Added BLOB size control to socket based reader
  *

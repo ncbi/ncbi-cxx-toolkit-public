@@ -37,22 +37,13 @@
 /// NetCache ICache client specs. 
 ///
 
-#include <connect/connect_export.h>
-#include <connect/ncbi_types.h>
-#include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netcache_client.hpp>
-#include <corelib/ncbistd.hpp>
-#include <corelib/plugin_manager.hpp>
-#include <corelib/ncbimisc.hpp>
-#include <corelib/version.hpp>
-
 #include <util/request_control.hpp>
-#include <util/reader_writer.hpp>
-#include <util/transmissionrw.hpp>
 #include <util/cache/icache.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
 
 /** @addtogroup NetCacheClient
  *
@@ -198,13 +189,19 @@ void NCBI_EntryPoint_xcache_netcache(
 
 } // extern C
 
+
 /* @} */
 
+
 END_NCBI_SCOPE
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/02/15 18:42:44  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.9  2006/01/17 16:50:40  kuznets
  * Added base class for all NC derived clients, +session management
  *

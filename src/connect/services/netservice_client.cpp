@@ -31,29 +31,23 @@
  */
 
 #include <ncbi_pch.hpp>
-
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
-
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netservice_client.hpp>
-
-
 #include <memory>
 
 
 BEGIN_NCBI_SCOPE
 
 
-static 
-STimeout s_DefaultCommTimeout = {12, 0};
+static STimeout s_DefaultCommTimeout = {12, 0};
 
 
 static string  s_GlobalClientName;
 static CNetServiceClient::EUseName  s_UseName = 
                         CNetServiceClient::eUseName_Both;
+
 
 void CNetServiceClient::SetGlobalName(const string&  global_name,
                                       EUseName       use_name)
@@ -62,10 +56,12 @@ void CNetServiceClient::SetGlobalName(const string&  global_name,
     s_UseName = use_name;
 }
 
+
 const string& CNetServiceClient::GetGlobalName()
 {
     return s_GlobalClientName;
 }
+
 
 CNetServiceClient::EUseName CNetServiceClient::GetNameUse()
 {
@@ -85,6 +81,7 @@ CNetServiceClient::CNetServiceClient(const string& client_name)
     }
 }
 
+
 CNetServiceClient::CNetServiceClient(const string&  host,
                                      unsigned short port,
                                      const string&  client_name)
@@ -100,6 +97,7 @@ CNetServiceClient::CNetServiceClient(const string&  host,
         m_ClientName = client_name;
     }
 }
+
 
 CNetServiceClient::CNetServiceClient(CSocket*      sock,
                                      const string& client_name)
@@ -122,6 +120,7 @@ CNetServiceClient::CNetServiceClient(CSocket*      sock,
     }
 }
 
+
 CNetServiceClient::~CNetServiceClient()
 {
     if (m_OwnSocket == eTakeOwnership) {
@@ -129,10 +128,12 @@ CNetServiceClient::~CNetServiceClient()
     }
 }
 
+
 void CNetServiceClient::SetDefaultCommunicationTimeout(const STimeout& to)
 {
     s_DefaultCommTimeout = to;
 }
+
 
 void CNetServiceClient::SetCommunicationTimeout(const STimeout& to)
 {
@@ -141,15 +142,19 @@ void CNetServiceClient::SetCommunicationTimeout(const STimeout& to)
         m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     }
 }
+
+
 STimeout& CNetServiceClient::SetCommunicationTimeout() 
 { 
     return m_Timeout; 
 }
 
+
 STimeout CNetServiceClient::GetCommunicationTimeout() const
 { 
     return m_Timeout;
 }
+
 
 void CNetServiceClient::RestoreHostPort()
 {
@@ -164,6 +169,7 @@ void CNetServiceClient::RestoreHostPort()
     //cerr << m_Host << " ";
 }
 
+
 void CNetServiceClient::SetSocket(CSocket* sock, EOwnership own)
 {
     if (m_OwnSocket == eTakeOwnership) {
@@ -175,6 +181,7 @@ void CNetServiceClient::SetSocket(CSocket* sock, EOwnership own)
         RestoreHostPort();
     }
 }
+
 
 EIO_Status CNetServiceClient::Connect(unsigned int addr, unsigned short port)
 {
@@ -189,10 +196,12 @@ EIO_Status CNetServiceClient::Connect(unsigned int addr, unsigned short port)
     return m_Sock->GetStatus(eIO_Open);
 }
 
+
 CSocket* CNetServiceClient::DetachSocket() 
 {
     CSocket* s = m_Sock; m_Sock = 0; return s; 
 }
+
 
 bool CNetServiceClient::ReadStr(CSocket& sock, string* str)
 {
@@ -211,10 +220,11 @@ bool CNetServiceClient::ReadStr(CSocket& sock, string* str)
         break;
     default: // invalid socket or request, bailing out
         return false;
-    };
+    }
 
     return true;    
 }
+
 
 void CNetServiceClient::WriteStr(const char* str, size_t len)
 {
@@ -228,6 +238,7 @@ void CNetServiceClient::WriteStr(const char* str, size_t len)
         buf_ptr       += n_written;
     } // while
 }
+
 
 void CNetServiceClient::CreateSocket(const string& hostname,
                                      unsigned      port)
@@ -283,6 +294,7 @@ void CNetServiceClient::CreateSocket(const string& hostname,
     m_Port = port;
 }
 
+
 void CNetServiceClient::WaitForServer()
 {
     STimeout to = {2, 0};
@@ -295,6 +307,7 @@ void CNetServiceClient::WaitForServer()
     }
 }
 
+
 void CNetServiceClient::TrimErr(string* err_msg)
 {
     _ASSERT(err_msg);
@@ -303,6 +316,7 @@ void CNetServiceClient::TrimErr(string* err_msg)
         *err_msg = NStr::ParseEscapes(*err_msg);
     }
 }
+
 
 void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
 {
@@ -328,12 +342,14 @@ void CNetServiceClient::PrintServerOut(CNcbiOstream & out)
     }
 }
 
+
 void CNetServiceClient::ReturnSocket(CSocket* sock)
 {
     _ASSERT(sock);
     CFastMutexGuard guard(m_SockPool_Lock);
     m_SockPool.Put(sock);
 }
+
 
 CSocket* CNetServiceClient::GetPoolSocket()
 {
@@ -344,9 +360,13 @@ CSocket* CNetServiceClient::GetPoolSocket()
 
 END_NCBI_SCOPE
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/02/15 18:36:49  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.15  2006/01/11 17:58:23  kuznets
  * Fixed race condition in socket pooling
  *
@@ -391,7 +411,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2005/02/07 12:59:10  kuznets
  * Initial revision
- *
  *
  * ===========================================================================
  */
