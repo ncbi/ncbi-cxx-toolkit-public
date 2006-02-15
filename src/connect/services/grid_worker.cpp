@@ -34,6 +34,7 @@
 #include <corelib/ncbiexpt.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/services/grid_worker.hpp>
+#include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <util/thread_pool.hpp>
 
@@ -69,9 +70,6 @@ IWorkerNodeJobWatcher::~IWorkerNodeJobWatcher()
 //
 //     CWorkerNodeJobContext     -- 
 
-//CWorkerNodeJobContext* CWorkerNodeJobContext::m_Root = NULL;
-//DEFINE_CLASS_STATIC_MUTEX(CWorkerNodeJobContext::m_ListMutex);
-
 CWorkerNodeJobContext::CWorkerNodeJobContext(CGridWorkerNode& worker_node,
                                              const string&    job_key,
                                              const string&    job_input,
@@ -90,7 +88,7 @@ const string& CWorkerNodeJobContext::GetQueueName() const
 {
     return m_WorkerNode.GetQueueName();
 }
-const string& CWorkerNodeJobContext::GetClientName()const
+const string& CWorkerNodeJobContext::GetClientName() const
 {
     return m_WorkerNode.GetClientName();
 }
@@ -130,7 +128,22 @@ CWorkerNodeJobContext::GetShutdownLevel(void) const
     _ASSERT(m_ThreadContext);
     if (m_ThreadContext->IsJobCanceled())
         return CNetScheduleClient::eShutdownImmidiate;
-    return m_WorkerNode.GetShutdownLevel();
+    return CGridGlobals::GetInstance().GetShutdownLevel();
+}
+
+void CWorkerNodeJobContext::Reset(const string& job_key,
+                                  const string& job_input,
+                                  unsigned int  job_number)
+{
+    m_JobKey = job_key;
+    m_JobInput = job_input;
+    m_JobNumber = job_number;
+    
+    m_JobOutput = "";
+    m_ProgressMsgKey = "";
+    m_JobCommitted = false;
+    m_InputBlobSize = 0;
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -183,6 +196,10 @@ CGridThreadContext& CWorkerNodeRequest::x_GetThreadContext()
 
 static void s_RunJob(CGridThreadContext& thr_context)
 {    
+    bool more_jobs = false;
+    do {
+        more_jobs = false;
+        string new_job_key, new_job_input;
     try {
         auto_ptr<IWorkerNodeJob> job( thr_context.CreateJob());
         int ret_code = job->Do(thr_context.GetJobContext());
@@ -191,7 +208,9 @@ static void s_RunJob(CGridThreadContext& thr_context)
         while(1) {
             try {
                 if (thr_context.IsJobCommitted()) {
-                    thr_context.PutResult(ret_code);
+                    more_jobs = thr_context.PutResult(ret_code, 
+                                                      new_job_key,
+                                                      new_job_input);
                 }
                 else {
                     thr_context.ReturnJob();
@@ -224,7 +243,12 @@ static void s_RunJob(CGridThreadContext& thr_context)
         }
     }
     thr_context.CloseStreams();
+    CWorkerNodeJobContext& job_context = thr_context.GetJobContext();
     thr_context.Reset();
+    if (more_jobs)
+        thr_context.SetJobContext(job_context, new_job_key, new_job_input);
+    } while (more_jobs);
+
 
 }
 void CWorkerNodeRequest::Process(void)
@@ -245,8 +269,6 @@ CGridWorkerNode::CGridWorkerNode(IWorkerNodeJobFactory&     job_factory,
       m_JobWatcher(job_watcher),
       m_UdpPort(9111), m_MaxThreads(4), m_InitThreads(4),
       m_NSTimeout(30), m_ThreadsPoolTimeout(30), 
-      m_ShutdownLevel(CNetScheduleClient::eNoShutdown),
-      m_MaxProcessedJob(0), m_JobsStarted(0),
       m_LogRequested(false), m_OnHold(false),
       m_HoldSem(0,100)
 {
@@ -270,12 +292,14 @@ void CGridWorkerNode::Start()
         }
         catch (exception& ex) {
             ERR_POST(ex.what());
-            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
             return;
         }
         catch (...) {
             ERR_POST("Unknown error");
-            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
             return;
         }
     }
@@ -285,7 +309,8 @@ void CGridWorkerNode::Start()
     bool      job_exists = false;
 
     while (1) {
-        if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
+        if (CGridGlobals::GetInstance().
+            GetShutdownLevel() != CNetScheduleClient::eNoShutdown)
             break;
         try {
             
@@ -300,17 +325,18 @@ void CGridWorkerNode::Start()
             job_exists = x_GetNextJob(job_key, input);
 
             if (job_exists) {
-                if (GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+                if (CGridGlobals::GetInstance().
+                    GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
                     x_ReturnJob(job_key);
                     break;
                 }
+                int job_number = CGridGlobals::GetInstance().GetNewJobNumber();
                 auto_ptr<CWorkerNodeJobContext> 
                     job_context(new CWorkerNodeJobContext(*this, 
                                                           job_key, 
                                                           input, 
-                                                          m_JobsStarted,
+                                                          job_number,
                                                           m_LogRequested));
-                ++const_cast<unsigned int&>(m_JobsStarted);
                 if (m_MaxThreads > 1 ) {
                     CRef<CStdRequest> job_req(
                                     new CWorkerNodeRequest(job_context));
@@ -327,13 +353,11 @@ void CGridWorkerNode::Start()
                     CGridThreadContext thr_context(*job_context);
                     s_RunJob(thr_context);
                 }
-                if (m_MaxProcessedJob > 0 && m_JobsStarted > m_MaxProcessedJob - 1) {
-                    RequestShutdown(CNetScheduleClient::eNormalShutdown);
-                }
             }            
         } catch (exception& ex) {
             ERR_POST(ex.what());
-            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         }
     }
     LOG_POST(Info << "Shutting down...");   
@@ -374,7 +398,8 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
         debug_context->GetDebugMode() == CGridDebugContext::eGDC_Execute) {
         job_exists = debug_context->GetNextJob(job_key, input);
         if (!job_exists) {
-            RequestShutdown(CNetScheduleClient::eNormalShutdown);
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleClient::eNormalShutdown);
         }         
     } else {
         if(m_NSReadClient.get()) {
@@ -405,7 +430,8 @@ bool CGridWorkerNode::x_GetNextJob(string& job_key, string& input)
                     throw;
                 ERR_POST("Communication Error : " << ex.what());
                 if (++try_count >= 2) {
-                    RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+                    CGridGlobals::GetInstance().
+                        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
                 }
                 SleepMilliSec(1000 + try_count*2000);
             }
@@ -434,15 +460,18 @@ bool CGridWorkerNode::x_CreateNSReadClient()
         m_NSReadClient.reset(CreateClient());
     } catch (exception& ex) {
         ERR_POST(ex.what());
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        CGridGlobals::GetInstance().
+            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return false;
     } catch (...) {
         ERR_POST("Unknown error");
-        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        CGridGlobals::GetInstance().
+            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
         return false;
     }
     return true;
 }
+
 void CGridWorkerNode::SetMasterWorkerNodes(const string& hosts)
 {
     vector<string> vhosts;
@@ -548,11 +577,47 @@ bool CGridWorkerNode::IsOnHold() const
     return m_OnHold; 
 }
 
+void CGridWorkerNode::AcivatePermanentConnection(bool on_off)
+{
+    if( !on_off )
+        m_SharedNSClient.reset();
+    else {
+        m_SharedNSClient.reset(m_NSClientFactory.CreateInstance());
+        m_SharedNSClient->SetProgramVersion(m_JobFactory.GetJobVersion());
+        m_SharedNSClient->ActivateRequestRateControl(false);
+        m_SharedNSClient->SetConnMode(CNetScheduleClient::eKeepConnection);
+    }
+}
+
+INSCWrapper* CGridWorkerNode::CreateClient()
+{
+    CMutexGuard guard(m_NSClientFactoryMutex);
+    auto_ptr<INSCWrapper> ret;
+    if ( m_SharedNSClient.get() ) {
+        ret.reset(new CNSCWrapperShared(*m_SharedNSClient, 
+                                        m_SharedClientMutex));
+    } else {
+        auto_ptr<CNetScheduleClient> 
+            ns_client(m_NSClientFactory.CreateInstance());
+        ns_client->SetProgramVersion(m_JobFactory.GetJobVersion());
+        ret.reset(new CNSCWrapperExclusive(ns_client.release()));
+    }
+    return ret.release();
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2006/02/15 15:19:03  didenko
+ * Implemented an optional possibility for a worker node to have a permanent connection
+ * to a NetSchedule server.
+ * To expedite the job exchange between a worker node and a NetSchedule server,
+ * a call to CNetScheduleClient::PutResult method is replaced to a
+ * call to CNetScheduleClient::PutResultGetJob method.
+ *
  * Revision 1.39  2006/02/01 19:10:22  didenko
  * Cosmetics
  *

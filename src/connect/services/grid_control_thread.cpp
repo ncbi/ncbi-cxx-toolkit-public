@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_control_thread.hpp>
 #include <connect/services/grid_worker_app_impl.hpp>
 
@@ -80,9 +81,10 @@ public:
 
     virtual void Process(const string& request,
                          CNcbiOstream& os,
-                         CGridWorkerNode& node)
+                         CGridWorkerNode& )
     {
-        node.RequestShutdown(CNetScheduleClient::eNormalShutdown);
+        CGridGlobals::GetInstance().
+            RequestShutdown(CNetScheduleClient::eNormalShutdown);
         os << "OK:";
         LOG_POST("Shutdown request has been received from host: " << m_Host);
     }
@@ -111,7 +113,8 @@ public:
         if (node.GetMaxThreads() > 1)
             os << "Maximum job threads: " << node.GetMaxThreads() << endl;
 
-        if (node.GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+        if (CGridGlobals::GetInstance().
+            GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
                 os << "THE NODE IS IN A SHUTTING DOWN MODE!!!" << endl;
         }
         m_Statistics.Print(os);
@@ -282,6 +285,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2006/02/15 15:19:03  didenko
+ * Implemented an optional possibility for a worker node to have a permanent connection
+ * to a NetSchedule server.
+ * To expedite the job exchange between a worker node and a NetSchedule server,
+ * a call to CNetScheduleClient::PutResult method is replaced to a
+ * call to CNetScheduleClient::PutResultGetJob method.
+ *
  * Revision 6.15  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *

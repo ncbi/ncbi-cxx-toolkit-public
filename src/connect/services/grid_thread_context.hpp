@@ -33,8 +33,9 @@
  *    NetSchedule Worker Node implementation
  */
 
-#include <connect/services/grid_worker.hpp>
 #include <util/request_control.hpp>
+#include <connect/services/grid_worker.hpp>
+#include <connect/services/ns_client_wrappers.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -50,6 +51,9 @@ public:
     CWorkerNodeJobContext& GetJobContext();
 
     void SetJobContext(CWorkerNodeJobContext& job_context);
+    void SetJobContext(CWorkerNodeJobContext& job_context,
+                       const string& new_job_key, 
+                       const string& new_job_input);
     void CloseStreams();
     void Reset();
 
@@ -60,7 +64,7 @@ public:
     void SetJobRunTimeout(unsigned time_to_run);
 
     bool IsJobCommitted() const;
-    void PutResult(int ret_code);
+    bool PutResult(int ret_code, string& new_job_key, string& new_job_input);
     void ReturnJob();
     void PutFailure(const string& msg);
     bool IsJobCanceled();
@@ -68,7 +72,7 @@ public:
     IWorkerNodeJob* CreateJob();
 private:
     CWorkerNodeJobContext*        m_JobContext;
-    auto_ptr<CNetScheduleClient>  m_Reporter;
+    auto_ptr<INSCWrapper>         m_Reporter;
     auto_ptr<IBlobStorage>        m_Reader;
     auto_ptr<IBlobStorage>        m_Writer;
     auto_ptr<IBlobStorage>        m_ProgressWriter;
@@ -83,6 +87,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.7  2006/02/15 15:19:03  didenko
+ * Implemented an optional possibility for a worker node to have a permanent connection
+ * to a NetSchedule server.
+ * To expedite the job exchange between a worker node and a NetSchedule server,
+ * a call to CNetScheduleClient::PutResult method is replaced to a
+ * call to CNetScheduleClient::PutResultGetJob method.
+ *
  * Revision 6.6  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

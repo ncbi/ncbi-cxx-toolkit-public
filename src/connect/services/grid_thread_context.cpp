@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include "grid_thread_context.hpp"
 
@@ -47,6 +48,16 @@ CGridThreadContext::CGridThreadContext(CWorkerNodeJobContext& job_context)
     m_ProgressWriter.reset(job_context.GetWorkerNode().CreateStorage());
     SetJobContext(job_context);
 }
+
+void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context,
+                                       const string& new_job_key, 
+                                       const string& new_job_input)
+{
+    job_context.Reset(new_job_key, new_job_input, 
+                      CGridGlobals::GetInstance().GetNewJobNumber());
+    SetJobContext(job_context);
+}
+
 /// @internal
 void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context)
 {
@@ -71,7 +82,6 @@ void CGridThreadContext::Reset()
                             IWorkerNodeJobWatcher::eJobStopped);
     m_JobContext->SetThreadContext(NULL);
     m_JobContext = NULL;
- 
 }
 /// @internal
 CWorkerNodeJobContext& CGridThreadContext::GetJobContext()
@@ -155,22 +165,36 @@ void CGridThreadContext::SetJobRunTimeout(unsigned time_to_run)
 }
 
 /// @internal
-void CGridThreadContext::PutResult(int ret_code)
+bool CGridThreadContext::PutResult(int ret_code, 
+                                   string& new_job_key,
+                                   string& new_job_input)
 {
     _ASSERT(m_JobContext);
+    bool more_jobs = false;
     CGridDebugContext* debug_context = CGridDebugContext::GetInstance();
     if (!debug_context || 
         debug_context->GetDebugMode() != CGridDebugContext::eGDC_Execute) {
 
         if (m_Reporter.get()) {
-            m_Reporter->PutResult(m_JobContext->GetJobKey(),
-                                  ret_code,
-                                  m_JobContext->GetJobOutput());
+            if (CGridGlobals::GetInstance().
+                GetShutdownLevel() != CNetScheduleClient::eNoShutdown) {
+                m_Reporter->PutResult(m_JobContext->GetJobKey(),
+                                      ret_code,
+                                      m_JobContext->GetJobOutput());
+            } else {
+                more_jobs = 
+                    m_Reporter->PutResultGetJob(m_JobContext->GetJobKey(),
+                                                ret_code,
+                                                m_JobContext->GetJobOutput(),
+                                                &new_job_key, 
+                                                &new_job_input);
+            }
         }
     }
     m_JobContext->GetWorkerNode()
         .x_NotifyJobWatcher(*m_JobContext,
                             IWorkerNodeJobWatcher::eJobSucceed);
+    return more_jobs;
 }
 /// @internal
 void CGridThreadContext::ReturnJob()
@@ -285,6 +309,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2006/02/15 15:19:03  didenko
+ * Implemented an optional possibility for a worker node to have a permanent connection
+ * to a NetSchedule server.
+ * To expedite the job exchange between a worker node and a NetSchedule server,
+ * a call to CNetScheduleClient::PutResult method is replaced to a
+ * call to CNetScheduleClient::PutResultGetJob method.
+ *
  * Revision 6.13  2006/02/01 16:39:01  didenko
  * Added Idle Task facility to the Grid Worker Node Framework
  *

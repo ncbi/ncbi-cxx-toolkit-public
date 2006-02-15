@@ -41,6 +41,7 @@
 #include <connect/services/grid_worker_app_impl.hpp>
 #include <connect/services/grid_debug_context.hpp>
 #include <connect/services/grid_control_thread.hpp>
+#include <connect/services/grid_globals.hpp>
 
 
 #if defined(NCBI_OS_UNIX)
@@ -189,11 +190,6 @@ public:
         : m_ControlThread(control_thread) {}
 
     ~CGridWorkerNodeThread() {}
-
-    void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
-    { 
-        m_ControlThread.GetWorkerNode().RequestShutdown(level);
-    }
 protected:
 
     virtual void* Main(void)
@@ -460,6 +456,10 @@ int CGridWorkerApp_Impl::Run()
         reg.GetBool("server", "idle_exclusive", true, 0, 
                     CNcbiRegistry::eReturn);
 
+    bool permanent_conntction =
+        reg.GetBool("server", "use_permanent_connection", false, 0, 
+                    CNcbiRegistry::eReturn);
+
     unsigned int log_size = 
         reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
     string log_file_name = GetLogName();
@@ -538,10 +538,12 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetInitThreads(init_threads);
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
-    m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
+    CGridGlobals::GetInstance().SetMaxJobsAllowed(max_total_jobs);
+    //    m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
     m_WorkerNode->SetMasterWorkerNodes(masters);
     m_WorkerNode->SetAdminHosts(admin_hosts);
     m_WorkerNode->ActivateServerLog(server_log);
+    m_WorkerNode->AcivatePermanentConnection(permanent_conntction);
 
     IWorkerNodeIdleTask* task = GetJobFactory().GetIdleTask();
     if (task) {
@@ -560,7 +562,8 @@ int CGridWorkerApp_Impl::Run()
     worker_thread->Run();
     // give sometime the thread to run
     SleepMilliSec(500);
-    if (m_WorkerNode->GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
+    if (CGridGlobals::GetInstance().
+        GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
         LOG_POST("\n=================== NEW RUN : " 
                  << m_Statistics.GetStartTime().AsString()
                  << " ===================\n"
@@ -593,8 +596,8 @@ int CGridWorkerApp_Impl::Run()
 
 void CGridWorkerApp_Impl::RequestShutdown()
 {
-    if (m_WorkerNode.get())
-        m_WorkerNode->RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+    CGridGlobals::GetInstance().
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
 }
 
 
@@ -630,6 +633,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2006/02/15 15:19:03  didenko
+ * Implemented an optional possibility for a worker node to have a permanent connection
+ * to a NetSchedule server.
+ * To expedite the job exchange between a worker node and a NetSchedule server,
+ * a call to CNetScheduleClient::PutResult method is replaced to a
+ * call to CNetScheduleClient::PutResultGetJob method.
+ *
  * Revision 6.11  2006/02/07 20:59:34  didenko
  * Fixed Idle task timeout calculation
  *

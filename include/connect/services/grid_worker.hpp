@@ -46,6 +46,7 @@
 #include <corelib/blob_storage.hpp>
 #include <connect/connect_export.h>
 #include <connect/services/ns_client_factory.hpp>
+#include <connect/services/ns_client_wrappers.hpp>
 #include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -250,6 +251,10 @@ private:
                           unsigned int       job_nubmer,
                           bool               log_requested);
 
+    void Reset(const string& job_key,
+               const string& job_input,
+               unsigned int  job_nubmer);
+
     CGridWorkerNode&     m_WorkerNode;
     string               m_JobKey;
     string               m_JobInput;
@@ -258,7 +263,7 @@ private:
     bool                 m_JobCommitted;
     size_t               m_InputBlobSize;
     bool                 m_LogRequested;
-    const unsigned int   m_JobNumber;
+    unsigned int   m_JobNumber;
     CGridThreadContext*  m_ThreadContext;
 
     /// The copy constructor and the assignment operator
@@ -448,14 +453,10 @@ public:
     void SetThreadsPoolTimeout(unsigned int timeout)
                       { m_ThreadsPoolTimeout = timeout; }
 
-    void SetMaxTotalJobs(unsigned int number) 
-                      { m_MaxProcessedJob = number; }
-    unsigned int GetMaxTotalJobs() const { return m_MaxProcessedJob; }
-
     void ActivateServerLog(bool on_off) 
                       { m_LogRequested = on_off; }
 
-    unsigned int GetJobsStartedNumber() const { return m_JobsStarted; }
+    void AcivatePermanentConnection(bool on_off);
 
     void SetMasterWorkerNodes(const string& hosts);
     void SetAdminHosts(const string& hosts);
@@ -463,16 +464,6 @@ public:
     /// Start jobs execution.
     ///
     void Start();
-
-    /// Request node shutdown
-    void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
-                      { m_ShutdownLevel = level; }
-
-
-    /// Check if shutdown was requested.
-    ///
-    CNetScheduleClient::EShutdownLevel GetShutdownLevel(void) 
-                      { return m_ShutdownLevel; }
 
     /// Get a name of a queue where this node is connected to.
     ///
@@ -503,7 +494,10 @@ private:
     INetScheduleClientFactory&   m_NSClientFactory;
     IWorkerNodeJobWatcher*       m_JobWatcher;
 
-    auto_ptr<CNetScheduleClient> m_NSReadClient;
+    auto_ptr<INSCWrapper>        m_NSReadClient;
+    CFastMutex                   m_SharedClientMutex;
+    auto_ptr<CNetScheduleClient> m_SharedNSClient;
+
     auto_ptr<CStdPoolOfThreads>  m_ThreadsPool;
     unsigned int                 m_UdpPort;
     unsigned int                 m_MaxThreads;
@@ -514,9 +508,6 @@ private:
     mutable CMutex               m_JobFactoryMutex;
     CMutex                       m_StorageFactoryMutex;
     CMutex                       m_JobWatcherMutex;
-    volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
-    unsigned int                 m_MaxProcessedJob;
-    volatile unsigned int        m_JobsStarted;
     bool                         m_LogRequested;
     volatile bool                m_OnHold;
     CSemaphore                   m_HoldSem;
@@ -533,14 +524,7 @@ private:
         CMutexGuard guard(m_StorageFactoryMutex);
         return  m_NSStorageFactory.CreateInstance();
     }
-    CNetScheduleClient* CreateClient()
-    {
-        CMutexGuard guard(m_NSClientFactoryMutex);
-        auto_ptr<CNetScheduleClient> 
-            ns_client(m_NSClientFactory.CreateInstance());
-        ns_client->SetProgramVersion(m_JobFactory.GetJobVersion());
-        return ns_client.release();
-    }
+    INSCWrapper* CreateClient();
 
     void x_NotifyJobWatcher(const CWorkerNodeJobContext& job,
                             IWorkerNodeJobWatcher::EEvent event)
@@ -585,6 +569,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/02/15 15:19:03  didenko
+ * Implemented an optional possibility for a worker node to have a permanent connection
+ * to a NetSchedule server.
+ * To expedite the job exchange between a worker node and a NetSchedule server,
+ * a call to CNetScheduleClient::PutResult method is replaced to a
+ * call to CNetScheduleClient::PutResultGetJob method.
+ *
  * Revision 1.33  2006/02/01 17:17:26  didenko
  * Added missing export specifier
  *
