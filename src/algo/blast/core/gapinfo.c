@@ -57,34 +57,73 @@ GapStateFree(GapStateArrayStruct* state_struct)
 
 /* see gapinfo.h for description */
 GapEditScript* 
-GapEditScriptNew(GapEditScript* old)
+GapEditScriptNew(Int4 size)
 
 {
     GapEditScript* new;
 
+    if (size <= 0) 
+       return NULL;
+
     new = (GapEditScript*) calloc(1, sizeof(GapEditScript));
-    if (old == NULL)
-        return new;
-
-    while (old->next != NULL) {
-        old = old->next;
+    if (new)
+    {
+         new->size = size;
+         new->op_type = (EGapAlignOpType*) calloc(size, sizeof(EGapAlignOpType));
+         new->num = (Int4*) calloc(size, sizeof(Int4));
     }
-
-    old->next = new;
     return new;
 }
 
 GapEditScript*
 GapEditScriptDelete(GapEditScript* old)
 {
-    GapEditScript* next;
 
-    while (old) {
-        next = old->next;
-        sfree(old);
-        old = next;
+    if (old)
+    {
+       sfree(old->op_type);
+       sfree(old->num);
+       sfree(old);
     }
     return old;
+}
+
+/* see gapinfo.h for description */
+GapEditScript* 
+GapEditScriptDup(const GapEditScript* old)
+{
+    GapEditScript* new = NULL;
+    if (old)
+    {
+        new = GapEditScriptNew(old->size);
+        if (new)
+        {
+            memcpy(new->op_type, old->op_type, (old->size)*sizeof(EGapAlignOpType));
+            memcpy(new->num, old->num, (old->size)*sizeof(Int4));
+        }
+    }
+    return new;
+}
+
+Int2
+GapEditScriptPartialCopy(GapEditScript* new, int offset, const GapEditScript* old, int start, int stop)
+{
+     int size = 1+stop-start;
+     int new_index = 0;
+     int old_index = 0;
+
+     if (old == NULL || new == NULL || stop-start+1 > new->size)
+        return -1;
+
+     old_index = start;
+     for (new_index=offset; new_index<size+offset; new_index++)
+     {
+         new->num[new_index] = old->num[old_index];
+         new->op_type[new_index] = old->op_type[old_index];
+         old_index++;
+     }
+
+     return 0;
 }
 
 /** Ensures that a preliminary edit script has enough memory allocated
