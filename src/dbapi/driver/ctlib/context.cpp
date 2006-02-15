@@ -485,7 +485,10 @@ bool CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                                         CS_CONNECTION* con,
                                         CS_SERVERMSG* msg)
 {
-    if ((msg->severity == 0  &&  msg->msgnumber == 0)  ||
+    if (
+        /* (msg->severity == 0  &&  msg->msgnumber == 0)  ||*/ 
+        // commented out because nobody remember why it is there and PubSeqOS does
+        // send messages with 0 0 that need to be processed
         msg->msgnumber == 5701  ||  msg->msgnumber == 5703) {
         return true;
     }
@@ -1116,6 +1119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.59  2006/02/15 22:53:49  soussov
+ * removes filter for messages that have msgnum == 0 and severity == 0
+ *
  * Revision 1.58  2006/02/08 17:25:07  ssikorsk
  * Treat messages with msg->severity == 10 && msg->msgnumber == 0 as
  * having informational severity.
