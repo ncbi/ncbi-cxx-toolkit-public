@@ -429,7 +429,7 @@ int CProjBulderApp::Run(void)
             m_CurrentBuildTree = &projects_tree;
         }
         CMsvcProjectGenerator prj_gen(GetRegSettings().m_ConfigInfo);
-        ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
+        NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, projects_tree.m_Projects) {
             prj_gen.Generate(p->second);
         }
 
@@ -534,7 +534,7 @@ int CProjBulderApp::Run(void)
             m_CurrentBuildTree = &dll_projects_tree;
         }
         CMsvcProjectGenerator prj_gen(dll_configs);
-        ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
+        NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, dll_projects_tree.m_Projects) {
             prj_gen.Generate(p->second);
         }
 
@@ -1159,6 +1159,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2006/02/15 19:47:24  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.71  2006/02/03 15:31:01  gouriano
  * Added possibility to omit CONFIG projects
  *

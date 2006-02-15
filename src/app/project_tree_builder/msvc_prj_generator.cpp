@@ -33,7 +33,7 @@ CMsvcProjectGenerator::~CMsvcProjectGenerator(void)
 }
 
 
-void CMsvcProjectGenerator::Generate(const CProjItem& prj)
+void CMsvcProjectGenerator::Generate(CProjItem& prj)
 {
     // Already have it
     if ( prj.m_ProjType == CProjKey::eMsvc) {
@@ -44,24 +44,35 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
     CVisualStudioProject xmlprj;
 
     // Checking configuration availability:
-    string str_log;
+    string str_log, req_log;
     list<SConfigInfo> project_configs;
+    int failed=0;
     ITERATE(list<SConfigInfo>, p , m_Configs) {
         const SConfigInfo& cfg_info = *p;
-        string unmet;
+        string unmet, unmet_req;
         // Check config availability
-        if ( !project_context.IsConfigEnabled(cfg_info, &unmet) ) {
+        if ( !project_context.IsConfigEnabled(cfg_info, &unmet, &unmet_req) ) {
             str_log += " " + cfg_info.m_Name + "(because of " + unmet + ")";
         } else {
+            if (!unmet_req.empty()) {
+                ++failed;
+                req_log += " " + cfg_info.m_Name + "(because of " + unmet_req + ")";
+            }
             project_configs.push_back(cfg_info);
         }
     }
     if (!str_log.empty()) {
         LOG_POST(Warning << prj.m_ID << ": disabled configurations: " << str_log);
     }
+    if (!req_log.empty()) {
+        LOG_POST(Warning << prj.m_ID << ": problem configurations: " << req_log);
+    }
     if (project_configs.empty()) {
         LOG_POST(Warning << prj.m_ID << ": skipped (all configurations are disabled)");
         return;
+    }
+    if (failed == m_Configs.size()) {
+        prj.m_MakeType = eMakeType_ExcludedByReq;
     }
     
     // Attributes:
@@ -471,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/02/15 19:47:24  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.44  2006/01/23 18:26:15  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *

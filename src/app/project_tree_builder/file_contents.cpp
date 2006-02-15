@@ -42,6 +42,7 @@ string MakeFileTypeAsString(EMakeFileType type)
     case eMakeType_Expendable: return "EXPENDABLE";
     case eMakeType_Potential:  return "POTENTIAL";
     case eMakeType_Excluded:   return "EXCLUDED";
+    case eMakeType_ExcludedByReq:   return "EXCLUDEDBYREQ";
     default:                   return "INCORRECT!";
     }
 }
@@ -258,6 +259,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2006/02/15 19:47:24  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.17  2005/03/08 15:21:49  gouriano
  * Fixed handling line continuation mark
  *

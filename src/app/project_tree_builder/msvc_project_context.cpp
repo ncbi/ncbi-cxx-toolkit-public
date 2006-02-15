@@ -552,7 +552,8 @@ bool CMsvcPrjProjectContext::IsRequiresOk(const CProjItem& prj, string* unmet)
 }
 
 
-bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* unmet) const
+bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config,
+    string* unmet, string* unmet_req) const
 {
     list<string> libs_3party;
     ITERATE(list<string>, p, m_ProjectLibs) {
@@ -570,11 +571,12 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* 
     libs_3party.unique();
 
     // Test third-party libs and requires:
+    const CMsvcSite& site = GetApp().GetSite();
     bool result = true;
     ITERATE(list<string>, p, libs_3party) {
         const string& requires = *p;
         SLibInfo lib_info;
-        GetApp().GetSite().GetLibInfo(requires, config, &lib_info);
+        site.GetLibInfo(requires, config, &lib_info);
         
         if ( lib_info.IsEmpty() ) {
             bool st = 
@@ -592,7 +594,7 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* 
             continue;
         }
 
-        if ( !GetApp().GetSite().IsLibEnabledInConfig(requires, config) ) {
+        if ( !site.IsLibEnabledInConfig(requires, config) ) {
             if (unmet) {
                 if (!unmet->empty()) {
                     *unmet += ", ";
@@ -603,6 +605,15 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* 
             s_DisabledPackages[config.m_Name].insert(requires);
         } else {
             s_EnabledPackages[config.m_Name].insert(requires);
+        }
+
+        if ( !site.IsLibOk(lib_info,true) && !site.Is3PartyLibWithChoice(requires) ) {
+            if (unmet_req) {
+                if (!unmet_req->empty()) {
+                    *unmet_req += ", ";
+                }
+                *unmet_req += requires;
+            }
         }
     }
 
@@ -1065,6 +1076,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/02/15 19:47:24  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.56  2005/11/17 20:46:53  gouriano
  * Allow datatool to find out-of-tree ASN spec in ASN projects
  *

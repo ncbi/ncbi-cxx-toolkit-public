@@ -45,7 +45,8 @@ enum EMakeFileType {
     eMakeType_Undefined  = 0,
     eMakeType_Expendable = 1,
     eMakeType_Potential  = 2,
-    eMakeType_Excluded   = 3
+    eMakeType_Excluded   = 3,
+    eMakeType_ExcludedByReq = 4
 };
 
 string MakeFileTypeAsString(EMakeFileType type);
@@ -123,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/15 19:47:44  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.8  2005/01/31 16:38:00  gouriano
  * Keep track of subproject types and propagate it down the project tree
  *

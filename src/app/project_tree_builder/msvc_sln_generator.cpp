@@ -86,10 +86,45 @@ CMsvcSolutionGenerator::AddBuildAllProject(const string& full_path,
     m_PathToName[full_path] = prj.GetAttlist().GetName();
 }
 
+void CMsvcSolutionGenerator::VerifyProjectDependencies(void)
+{
+    for (bool changed=true; changed;) {
+        changed = false;
+        NON_CONST_ITERATE(TProjects, p, m_Projects) {
+            CPrjContext& project = p->second;
+            if (project.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
+                continue;
+            }
+            ITERATE(list<CProjKey>, p, project.m_Project.m_Depends) {
+                const CProjKey& id = *p;
+                if ( id.Type() == CProjKey::eLib &&
+                     GetApp().GetSite().IsLibWithChoice(id.Id()) &&
+                     GetApp().GetSite().GetChoiceForLib(id.Id()) == CMsvcSite::e3PartyLib ) {
+                        continue;
+                }
+                TProjects::const_iterator n = m_Projects.find(id);
+                if (n == m_Projects.end()) {
+                    CProjKey id_alt(CProjKey::eMsvc,id.Id());
+                    n = m_Projects.find(id_alt);
+                }
+                if (n != m_Projects.end()) {
+                    const CPrjContext& prj_i = n->second;
+                    if (prj_i.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
+                        project.m_Project.m_MakeType = eMakeType_ExcludedByReq;
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
 
 void 
 CMsvcSolutionGenerator::SaveSolution(const string& file_path)
 {
+    VerifyProjectDependencies();
+
     CDirEntry::SplitPath(file_path, &m_SolutionDir);
 
     // Create dir for output sln file
@@ -397,6 +432,10 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
             LOG_POST(Info << "For reference only: " << prj_i.m_ProjectName);
             continue;
         }
+        if (prj_i.m_Project.m_MakeType == eMakeType_ExcludedByReq) {
+            LOG_POST(Info << "Cannot be built due to unmet requirements: " << prj_i.m_ProjectName);
+            continue;
+        }
         proj_guid.push_back(prj_i.m_GUID);
     }
 
@@ -507,6 +546,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/02/15 19:47:24  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.30  2006/01/23 18:26:15  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *

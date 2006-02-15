@@ -58,6 +58,7 @@ public:
     void AddConfigureProject(const string& full_path, const CVisualStudioProject& prj);
     void AddBuildAllProject (const string& full_path, const CVisualStudioProject& prj);
 
+    void VerifyProjectDependencies(void);
     void SaveSolution(const string& file_path);
     
 private:
@@ -138,6 +139,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/02/15 19:47:44  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.15  2006/01/23 18:26:33  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *

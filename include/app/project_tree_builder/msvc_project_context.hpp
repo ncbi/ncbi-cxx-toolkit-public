@@ -114,7 +114,7 @@ public:
     static bool IsRequiresOk(const CProjItem& prj, string* unmet);
 
     
-    bool IsConfigEnabled(const SConfigInfo& config, string* unmet) const;
+    bool IsConfigEnabled(const SConfigInfo& config, string* unmet, string* unmet_req) const;
 
 
     const list<SCustomBuildInfo>& GetCustomBuildInfo(void) const
@@ -547,6 +547,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/02/15 19:47:44  gouriano
+ * Exclude projects with unmet requirements from BUILD-ALL
+ *
  * Revision 1.25  2005/11/17 20:43:59  gouriano
  * Added SrcRoot
  *
