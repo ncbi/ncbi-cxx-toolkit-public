@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  *
  */
@@ -140,6 +140,29 @@ typedef IO_PREFIX::ios           CNcbiIos;
 
 /// Portable alias for streambuf.
 typedef IO_PREFIX::streambuf     CNcbiStreambuf;
+
+#ifdef NCBI_COMPILER_MIPSPRO
+/// Special workaround for MIPSPro 1-byte look-ahead issues
+class CMIPSPRO_ReadsomeTolerantStreambuf : public CNcbiStreambuf
+{
+public:
+    /// NB: Do not use these two ugly, weird, ad-hoc methods, ever!!!
+    void MIPSPRO_ReadsomeBegin(void)
+    {
+        if (!m_MIPSPRO_ReadsomeGptrSetLevel++)
+            m_MIPSPRO_ReadsomeGptr = gptr();
+    }
+    void MIPSPRO_ReadsomeEnd  (void)
+    {
+        --m_MIPSPRO_ReadsomeGptrSetLevel;
+    }
+protected:
+    CMIPSPRO_ReadsomeTolerantStreambuf() : m_MIPSPRO_ReadsomeGptrSetLevel(0) {}
+    
+    const CT_CHAR_TYPE* m_MIPSPRO_ReadsomeGptr;
+    unsigned int        m_MIPSPRO_ReadsomeGptrSetLevel;
+};
+#endif // NCBI_COMPILER_MIPSPRO
 
 /// Portable alias for istream.
 typedef IO_PREFIX::istream       CNcbiIstream;
@@ -315,7 +338,6 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiFailbit              IOS_PREFIX::failbit
 #define NcbiBadbit               IOS_PREFIX::badbit
 #define NcbiHardfail             IOS_PREFIX::hardfail
-
 
 
 /// Platform-specific EndOfLine
@@ -567,6 +589,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/02/15 17:39:21  lavr
+ * Readsome-tolerant MIPSPro-specific streambuf moved to <corelib/ncbistre.hpp>
+ *
  * Revision 1.47  2005/10/12 13:34:12  kuznets
  * include ncbitypes.h for Int8 definition
  *

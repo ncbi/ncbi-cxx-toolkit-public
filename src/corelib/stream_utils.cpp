@@ -38,7 +38,6 @@
 #include <util/stream_utils.hpp>
 #include <string.h>
 
-
 #ifdef NCBI_COMPILER_MIPSPRO
 #  define CPushback_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
@@ -494,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.44  2006/02/15 17:42:26  lavr
+ * Readsome-tolerant MIPSPro-specific streambuf moved to <corelib/ncbistre.hpp>
+ *
  * Revision 1.43  2006/01/27 17:14:29  lavr
  * Home-made s_Readsome() that does not call standard readsome() to
  * simulate sentry construction by checking good()ness of the stream

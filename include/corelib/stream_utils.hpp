@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Anton Lavrentiev
+ * Authors:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
  *   Stream utilities:
@@ -38,51 +38,13 @@
 #include <corelib/ncbistre.hpp>
 
 
+BEGIN_NCBI_SCOPE
+
+
 /** @addtogroup StreamSupport
  *
  * @{
  */
-
-
-BEGIN_NCBI_SCOPE
-
-
-#ifdef NCBI_COMPILER_MIPSPRO
-
-class CMIPSPRO_ReadsomeTolerantStreambuf : public CNcbiStreambuf
-{
-public:
-    // Do not use these two ugly, weird, ad-hoc methods, ever!!!
-    void MIPSPRO_ReadsomeBegin(void);
-    void MIPSPRO_ReadsomeEnd  (void);
-
-protected:
-    CMIPSPRO_ReadsomeTolerantStreambuf();
-
-    const CT_CHAR_TYPE* m_MIPSPRO_ReadsomeGptr;
-    unsigned int        m_MIPSPRO_ReadsomeGptrSetLevel;
-};
-
-inline
-CMIPSPRO_ReadsomeTolerantStreambuf::CMIPSPRO_ReadsomeTolerantStreambuf() :
-    m_MIPSPRO_ReadsomeGptrSetLevel(0)
-{
-}
-
-inline
-void CMIPSPRO_ReadsomeTolerantStreambuf::MIPSPRO_ReadsomeBegin(void)
-{
-    if (!m_MIPSPRO_ReadsomeGptrSetLevel++)
-        m_MIPSPRO_ReadsomeGptr = gptr();
-}
-
-inline
-void CMIPSPRO_ReadsomeTolerantStreambuf::MIPSPRO_ReadsomeEnd(void)
-{
-    --m_MIPSPRO_ReadsomeGptrSetLevel;
-}
-
-#endif // NCBI_COMPILER_MIPSPRO
 
 
 struct NCBI_XUTIL_EXPORT CStreamUtils {
@@ -134,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2006/02/15 17:39:22  lavr
+ * Readsome-tolerant MIPSPro-specific streambuf moved to <corelib/ncbistre.hpp>
+ *
  * Revision 1.19  2006/01/27 16:58:42  lavr
  * Note that Readsome() to block for at least one char be read
  *
