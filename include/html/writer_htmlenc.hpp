@@ -35,7 +35,7 @@
 /// passing it to a standard ostream.
 
 #include <corelib/ncbistre.hpp>
-#include <util/reader_writer.hpp>
+#include <corelib/reader_writer.hpp>
 
 
 /** @addtogroup HTMLStream
@@ -88,6 +88,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/02/15 18:26:08  lavr
+ * IReader/IWriter moved to corelib
+ *
  * Revision 1.2  2005/04/12 14:50:30  ucko
  * Add an export declaration.
  *

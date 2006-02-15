@@ -33,7 +33,7 @@
  *
  */
 
-#include <util/reader_writer.hpp>
+#include <corelib/reader_writer.hpp>
 #include <connect/ncbi_socket.hpp>
 
 
@@ -105,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/02/15 18:25:50  lavr
+ * IReader/IWriter moved to corelib
+ *
  * Revision 1.6  2006/02/01 16:22:27  lavr
  * Introduce CConnReaderWriterBase to be able to init connect lib if needed
  *

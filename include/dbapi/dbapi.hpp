@@ -36,9 +36,9 @@
 /// Defines the database API innterfaces for a variety of DBMS.
 
 #include <corelib/ncbiobj.hpp>
+#include <corelib/reader_writer.hpp>
 #include <dbapi/driver_mgr.hpp>
 #include <dbapi/variant.hpp>
-#include <util/reader_writer.hpp>
 
 
 /** @addtogroup DbAPI
@@ -812,6 +812,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2006/02/15 18:26:01  lavr
+ * IReader/IWriter moved to corelib
+ *
  * Revision 1.46  2006/01/27 17:19:27  kholodov
  * Added: forward declaration of IConnValidator
  *

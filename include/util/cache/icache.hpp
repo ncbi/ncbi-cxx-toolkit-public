@@ -40,7 +40,7 @@
 
 
 #include <corelib/plugin_manager_impl.hpp>
-#include <util/reader_writer.hpp>
+#include <corelib/reader_writer.hpp>
 #include <string>
 #include <memory>
 
@@ -385,6 +385,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/02/15 18:26:17  lavr
+ * IReader/IWriter moved to corelib
+ *
  * Revision 1.20  2006/01/11 15:06:30  vasilche
  * Cleaned SBlobCacheDescr structure.
  *
