@@ -55,9 +55,9 @@ typedef enum EGapAlignOpType {
 
 /** Edit script: linked list of correspondencies between two sequences */
 typedef struct GapEditScript {
-   EGapAlignOpType op_type;    /**< Type of operation */
-   Int4 num;                   /**< Number of operations */
-   struct GapEditScript* next; /**< Pointer to next link */
+   EGapAlignOpType* op_type;    /**< Array of type of operation */
+   Int4* num;                   /**< Array of number of operations */
+   Int4 size;                   /**< Size of above arrays. */
 } GapEditScript;
 
 /** A version of GapEditScript used to store initial results
@@ -86,19 +86,37 @@ typedef struct GapStateArrayStruct {
 } GapStateArrayStruct;
 
 /** Initialize the edit script structure. 
- *  @param old Pointer to existing edit script to which
- *         the new script will be appended
+ *  @param size number of elements to allocate.
  *  @return Pointer to the new edit script
  */
 GapEditScript* 
-GapEditScriptNew (GapEditScript* old);
+GapEditScriptNew (Int4 size); 
 
-/** Free all links of an edit script structure. 
- *  @param esp Pointer to first link in the edit script [in]
- *  @return Always NULL
+/** Free edit script structure. 
+ *  @param esp Pointer to the edit script [in]
+ *  @return NULL
  */
 GapEditScript* 
 GapEditScriptDelete (GapEditScript* esp);
+
+/** Duplicates the edit script structure. 
+ *  @param old object to be duplicated [in]
+ *  @return Pointer to the new edit script
+ */
+GapEditScript* 
+GapEditScriptDup (const GapEditScript* old);
+
+/** Copies the portion of the GapEditScript specified by start and stop to a new one
+ * the new one should already exist.
+ *  @param new edit script to copy to [in|out]
+ *  @param offset starting element in new one to copy to [in]
+ *  @param old edit script to copy from [in]
+ *  @param start first element to copy from (zero-offset) [in]
+ *  @param stop last element to copy [in]
+ *  @return 0 on success
+ */
+Int2
+GapEditScriptPartialCopy(GapEditScript* new_esp, int offset, const GapEditScript* old_esp, int start, int stop);
 
 /** Frees a preliminary edit block structure 
  *  @param edit_block The edit block to free [in]
