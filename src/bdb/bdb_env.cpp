@@ -34,6 +34,16 @@
 #include <bdb/bdb_env.hpp>
 #include <db.h>
 
+
+// Berkeley DB 4.4.x renamed "set_tas_spins" to "mutex_set_tas_spins"
+#if DB_VERSION_MAJOR >= 4 
+    #if DB_VERSION_MINOR >= 4
+        #define BDB_USE_MUTEX_TAS
+    #endif
+#endif
+
+
+
 BEGIN_NCBI_SCOPE
 
 CBDB_Env::CBDB_Env()
@@ -365,8 +375,13 @@ void CBDB_Env::SetLogInMemory(bool on_off)
 
 void CBDB_Env::SetTasSpins(unsigned tas_spins)
 {
+#ifdef BDB_USE_MUTEX_TAS
+    int ret = m_Env->mutex_set_tas_spins(m_Env, tas_spins);
+    BDB_CHECK(ret, "DB_ENV::mutex_set_tas_spins");
+#else
     int ret = m_Env->set_tas_spins(m_Env, tas_spins);
     BDB_CHECK(ret, "DB_ENV::set_tas_spins");
+#endif
 }
 
 void CBDB_Env::OpenErrFile(const char* file_name)
@@ -464,6 +479,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/02/15 15:12:38  kuznets
+ * Fixed compilation of set_tas_spin for BerkeleyDB 4.4
+ *
  * Revision 1.33  2006/01/03 15:39:55  kuznets
  * Cosmetics
  *
