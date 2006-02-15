@@ -674,6 +674,57 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\src\corelib\ncbi_param.cpp">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="DebugMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseDLL|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="ReleaseMT|Win32">
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="NCBI_USE_PCH"
+						UsePrecompiledHeader="3"
+						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\src\corelib\ncbi_process.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -1940,6 +1991,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\src\corelib\rwstreambuf.cpp">
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\src\corelib\syslog.cpp">
 				<FileConfiguration
 					Name="Debug|Win32">
@@ -2041,57 +2095,6 @@
 						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath="..\..\..\..\..\src\corelib\ncbi_param.cpp">
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugDLL|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="DebugMT|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseDLL|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="ReleaseMT|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						UsePrecompiledHeader="3"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"/>
-				</FileConfiguration>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -2128,6 +2131,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\corelib\ncbi_os_unix.hpp">
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\ncbi_param.hpp">
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\corelib\ncbi_process.hpp">
@@ -2232,6 +2238,9 @@
 				RelativePath="..\..\..\..\..\include\corelib\plugin_manager_store.hpp">
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\include\corelib\impl\rwstreambuf.hpp">
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\include\corelib\syslog.hpp">
 			</File>
 			<File
@@ -2239,9 +2248,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\corelib\version.hpp">
-			</File>
-			<File
-				RelativePath="..\..\..\..\..\include\corelib\ncbi_param.hpp">
 			</File>
 			<Filter
 				Name="Private"
