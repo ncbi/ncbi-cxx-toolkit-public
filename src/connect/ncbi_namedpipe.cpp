@@ -1141,30 +1141,36 @@ const STimeout* CNamedPipe::GetTimeout(EIO_Event event) const
 
 void CNamedPipe::x_SetName(const string& pipename)
 {
-    const char* separators = ":/\\";
-    if ( pipename.find_first_of(separators) != NPOS ) {
+#ifdef NCBI_OS_MSWIN
+    static const char separators[] = ":/\\";
+#else
+    static const char separators[] = "/";
+#endif
+    if (pipename.find_first_of(separators) != NPOS) {
         m_PipeName = pipename;
         return;
     }
-#  if defined(NCBI_OS_MSWIN)
+
+#if defined(NCBI_OS_MSWIN)
     m_PipeName = "\\\\.\\pipe\\" + pipename;
-    
-#  elif defined(NCBI_OS_UNIX)
+#elif defined(NCBI_OS_UNIX)
     static const mode_t k_writeable = S_IWUSR | S_IWGRP | S_IWOTH;
     struct stat st;
     int    err;
-    
-    char*  pipedir = "/var/tmp";
-    if ((err = lstat(pipedir, &st)) != 0  ||
-        !(S_ISDIR(st.st_mode)  &&  (st.st_mode & k_writeable))) {
+
+    const char* pipedir = "/var/tmp";
+    if ((err = stat(pipedir, &st)) != 0  ||  !S_ISDIR(st.st_mode)  ||
+        (st.st_mode & k_writeable) != k_writeable) {
         pipedir = "/tmp";
-        if ((err = lstat(pipedir, &st)) != 0  ||
-            !(S_ISDIR(st.st_mode)  &&  (st.st_mode & k_writeable))) {
+        if ((err = stat(pipedir, &st)) != 0  || !S_ISDIR(st.st_mode)  ||
+            (st.st_mode & k_writeable) != k_writeable) {
             pipedir = ".";
         }
     }
     m_PipeName = string(pipedir) + "/" + pipename;
-#  endif
+#else
+    m_PipeName = pipename;
+#endif
 }
 
 
@@ -1277,6 +1283,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/02/15 22:01:55  lavr
+ * Properly use stat() [not lstat()] to detect writeable-for-all
+ * default directory to store socket files on UNIX
+ *
  * Revision 1.32  2005/06/28 16:26:57  lavr
  * Call CONNECT_InitInternal() for auto-magic init in ctors
  *
