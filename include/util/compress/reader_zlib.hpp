@@ -32,7 +32,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <util/bytesrc.hpp>
-#include <util/reader_writer.hpp>
 #include <memory>
 
 
@@ -166,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2006/02/15 18:27:48  lavr
+ * IReader/IWriter already included by <util/bytesrc.hpp>
+ *
  * Revision 1.5  2005/03/14 17:31:54  vasilche
  * Removed obsolete methods and data members.
  *
