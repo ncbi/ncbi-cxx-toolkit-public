@@ -38,6 +38,7 @@
 #include <corelib/ncbienv.hpp>
 
 #include <dbapi/dbapi.hpp>
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <vector>
 
 USING_NCBI_SCOPE;
@@ -92,6 +93,8 @@ void CDbapiTest::Init()
   
 int CDbapiTest::Run() 
 {
+
+    DBLB_INSTALL_DEFAULT();
 
     CArgs args = GetArgs();
 
@@ -149,8 +152,9 @@ int CDbapiTest::Run()
         // library tries to open additional connections implicitly, 
         // like creating multiple statements.
         //conn->ForceSingle(true);
+		CTrivialConnValidator val("DBAPI_Sample");
 
-        conn->Connect("anyone",
+		conn->ConnectValidated(val, "anyone",
                       "allowed",
                       server,
                       "DBAPI_Sample");
@@ -658,12 +662,14 @@ end";
         for(int i = 0; i < COUNT; ++i ) {
             string im = "BLOB data " + NStr::IntToString(i);
             col1 = i;
-            // col2.Truncate();
+            col2.Truncate();
             col2.Append(im.c_str(), im.size());
-            // col3.Truncate();
+            col3.Truncate();
             col3.Append(im.c_str(), im.size());
             bi->AddRow();
         }
+		//NcbiCout << "Blob size: " << col3.GetBlobSize() << endl;
+
         bi->Complete();
 
         delete bi;
@@ -798,6 +804,7 @@ from BlobSample where id = 1");
         stmt->ExecuteUpdate(sql);
         NcbiCout << "Done." << endl;
 
+		delete conn;
     }
     catch(out_of_range) {
         NcbiCout << "Exception: Out of range" << endl;
@@ -808,6 +815,7 @@ from BlobSample where id = 1");
         NcbiCout << ds->GetErrorInfo();
         return 1;
     }
+
 
     return 0;
 }
@@ -827,6 +835,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2006/02/15 16:01:47  kholodov
+* CVariant::Truncate() call is necessary to write a BLOB
+*
 * Revision 1.23  2005/12/28 15:33:32  kholodov
 * Replaced the deprecated Execute() calls by SendSql()
 *
