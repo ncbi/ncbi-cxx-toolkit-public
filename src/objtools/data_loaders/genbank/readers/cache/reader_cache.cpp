@@ -37,16 +37,14 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/rwstream.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <util/cache/icache.hpp>
-
-#include <util/rwstream.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
-
-#include <corelib/plugin_manager_store.hpp>
 
 #include <serial/objistrasnb.hpp>       // for reading Seq-ids
 #include <serial/serial.hpp>            // for reading Seq-ids

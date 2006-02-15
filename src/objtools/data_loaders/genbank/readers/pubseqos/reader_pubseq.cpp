@@ -48,14 +48,14 @@
 
 #include <corelib/ncbicntr.hpp>
 #include <corelib/plugin_manager_impl.hpp>
+#include <corelib/plugin_manager_store.hpp>
+#include <corelib/rwstream.hpp>
 
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
-#include <util/rwstream.hpp>
 #include <util/compress/zlib.hpp>
-#include <corelib/plugin_manager_store.hpp>
 
 #define ALLOW_GZIPPED 1
 

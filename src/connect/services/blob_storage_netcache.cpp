@@ -31,9 +31,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <connect/services/blob_storage_netcache.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <util/rwstream.hpp>
+#include <corelib/rwstream.hpp>
+#include <connect/services/blob_storage_netcache.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -358,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/02/15 20:39:17  lavr
+ * CRWStream moved to corelib
+ *
  * Revision 6.1  2005/12/20 17:26:22  didenko
  * Reorganized netschedule storage facility.
  * renamed INetScheduleStorage to IBlobStorage and moved it to corelib

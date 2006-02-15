@@ -35,15 +35,16 @@
 #include <objtools/data_loaders/genbank/request_result.hpp>
 #include <objtools/data_loaders/genbank/dispatcher.hpp>
 
-#include <util/cache/icache.hpp>
-#include <util/rwstream.hpp>
+#include <corelib/rwstream.hpp>
+#include <corelib/plugin_manager_store.hpp>
 
 #include <serial/objostrasnb.hpp>
+#include <serial/serial.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 
-#include <corelib/plugin_manager_store.hpp>
-#include <serial/serial.hpp>
+#include <util/cache/icache.hpp>
+
 #include <memory>
 
 BEGIN_NCBI_SCOPE

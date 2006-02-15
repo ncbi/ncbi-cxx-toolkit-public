@@ -32,14 +32,14 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/rwstream.hpp>
 
 #include <html/html.hpp>
 #include <html/page.hpp>
 #include <html/writer_htmlenc.hpp>
 
-#include <util/rwstream.hpp>
-
 #include <test/test_assert.h>  /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 
@@ -220,6 +220,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/02/15 20:39:39  lavr
+ * CRWStream moved to corelib
+ *
  * Revision 1.7  2005/04/11 18:00:51  ucko
  * Test/demonstrate CWriter_HTMLEncoder.
  *

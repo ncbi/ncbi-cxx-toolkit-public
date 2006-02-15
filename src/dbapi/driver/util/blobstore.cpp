@@ -28,7 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <util/rwstream.hpp>
+#include <corelib/rwstream.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
 #include <util/compress/bzip2.hpp>

@@ -29,6 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/rwstream.hpp>
+
 #include <objtools/data_loaders/genbank/processor.hpp>
 #include <objtools/data_loaders/genbank/processors.hpp>
 #include <objtools/data_loaders/genbank/request_result.hpp>
@@ -64,7 +66,6 @@
 
 #include <util/compress/reader_zlib.hpp>
 #include <util/compress/zlib.hpp>
-#include <util/rwstream.hpp>
 
 #include <serial/pack_string.hpp>
 

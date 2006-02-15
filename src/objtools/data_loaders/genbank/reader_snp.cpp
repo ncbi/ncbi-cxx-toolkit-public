@@ -63,7 +63,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/iterator.hpp>
 
-#include <util/reader_writer.hpp>
+#include <corelib/reader_writer.hpp>
 
 #include <algorithm>
 #include <numeric>
@@ -594,6 +594,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.28  2006/02/15 20:39:58  lavr
+ * CRWStream moved to corelib
+ *
  * Revision 1.27  2006/01/06 22:25:47  grichenk
  * Fixed env. vars naming for CParam<>.
  * Fixed printing of trace messages and location in ncbidiag.
