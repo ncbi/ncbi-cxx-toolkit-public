@@ -31,9 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
-#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <util/request_control.hpp>
@@ -52,7 +50,6 @@ const string kNetSchedule_KeyPrefix = "JSID";
 /// @internal
 ///
 static CRequestRateControl s_Throttler(20000, CTimeSpan(60,0));
-
 
 
 unsigned CNetSchedule_GetJobId(const string&  key_str)
@@ -81,6 +78,7 @@ unsigned CNetSchedule_GetJobId(const string&  key_str)
     }
     NCBI_THROW(CNetScheduleException, eKeyFormatError, "Key syntax error.");
 }
+
 
 void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str)
 {
@@ -140,6 +138,7 @@ void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str)
     key->port = atoi(ch);
 }
 
+
 void CNetSchedule_GenerateJobKey(string*        key, 
                                   unsigned       id, 
                                   const string&  host, 
@@ -161,8 +160,6 @@ void CNetSchedule_GenerateJobKey(string*        key,
 }
 
 
-
-
 CNetScheduleClient::CNetScheduleClient(const string& client_name,
                                        const string& queue_name)
     : CNetServiceClient(client_name),
@@ -172,6 +169,7 @@ CNetScheduleClient::CNetScheduleClient(const string& client_name,
       m_ConnMode(eCloseConnection)
 {
 }
+
 
 CNetScheduleClient::CNetScheduleClient(const string&  host,
                                        unsigned short port,
@@ -184,6 +182,7 @@ CNetScheduleClient::CNetScheduleClient(const string&  host,
       m_ConnMode(eCloseConnection)
 {
 }
+
 
 CNetScheduleClient::CNetScheduleClient(CSocket*      sock,
                                        const string& client_name,
@@ -200,9 +199,11 @@ CNetScheduleClient::CNetScheduleClient(CSocket*      sock,
     }
 }
 
+
 CNetScheduleClient::~CNetScheduleClient()
 {
 }
+
 
 string CNetScheduleClient::StatusToString(EJobStatus status)
 {
@@ -219,15 +220,18 @@ string CNetScheduleClient::StatusToString(EJobStatus status)
     return kEmptyStr;
 }
 
+
 string CNetScheduleClient::GetConnectionInfo() const
 {
     return m_Host + ':' + NStr::UIntToString(m_Port);
 }
 
+
 void CNetScheduleClient::ActivateRequestRateControl(bool on_off)
 {
     m_RequestRateControl = on_off;
 }
+
 
 string CNetScheduleClient::SubmitJob(const string& input,
                                      const string& progress_msg,
@@ -275,6 +279,7 @@ string CNetScheduleClient::SubmitJob(const string& input,
 
     return m_Tmp;
 }
+
 
 void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
 {
@@ -335,9 +340,8 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
             if (aff[0]) {
                 if (aff == aff_prev) { // exactly same affinity(sorted jobs)
                     sprintf(buf, "\"%s\" affp", 
-                            input.c_str(),
-                            aff.c_str()
-                            );     
+                            input.c_str()
+                            );
                 } else {
                     sprintf(buf, "\"%s\" aff=\"%s\"", 
                             input.c_str(),
@@ -423,9 +427,7 @@ void CNetScheduleClient::SubmitJobBatch(SJobBatch& subm)
 
     m_Sock->DisableOSSendDelay(true);
 
-
     WriteStr("ENDS", 5);
-
 }
 
 
@@ -454,22 +456,21 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
     *output = kEmptyStr;
 
     {{
-    bool connected = CheckConnect(kEmptyStr);
-    CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
+        bool connected = CheckConnect(kEmptyStr);
+        CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
-    MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
-    m_Tmp.append(input);
-    m_Tmp.append("\" ");
-    m_Tmp.append(NStr::UIntToString(udp_port));
-    m_Tmp.append(" ");
-    m_Tmp.append(NStr::UIntToString(wait_time));
-    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
-    WaitForServer();
-    if (!ReadStr(*m_Sock, &m_Tmp)) {
-        NCBI_THROW(CNetServiceException, eCommunicationError, 
-                   "Communication error");
-    }
-
+        MakeCommandPacket(&m_Tmp, "SUBMIT \"", connected);
+        m_Tmp.append(input);
+        m_Tmp.append("\" ");
+        m_Tmp.append(NStr::UIntToString(udp_port));
+        m_Tmp.append(" ");
+        m_Tmp.append(NStr::UIntToString(wait_time));
+        WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+        WaitForServer();
+        if (!ReadStr(*m_Sock, &m_Tmp)) {
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                       "Communication error");
+        }
     }}
     TrimPrefix(&m_Tmp);
 
@@ -487,6 +488,7 @@ CNetScheduleClient::SubmitJobAndWait(const string&  input,
 
     return GetStatus(*job_key, ret_code, output, err_msg);
 }
+
 
 void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
                                              unsigned short udp_port,
@@ -521,8 +523,7 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
     start_time = time(0);
     end_time = start_time + wait_time;
 
-    for (;true;) {
-
+    for (;;) {
         curr_time = time(0);
         to.sec = end_time - curr_time;  // remaining
         if (to.sec <= 0) {
@@ -551,7 +552,6 @@ void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
 }
 
 
-
 void CNetScheduleClient::CancelJob(const string& job_key)
 {
     if (m_RequestRateControl) {
@@ -565,6 +565,7 @@ void CNetScheduleClient::CancelJob(const string& job_key)
 
     CheckOK(&m_Tmp);
 }
+
 
 void CNetScheduleClient::DropJob(const string& job_key)
 {
@@ -580,6 +581,7 @@ void CNetScheduleClient::DropJob(const string& job_key)
     CheckOK(&m_Tmp);
 }
 
+
 void CNetScheduleClient::Logging(bool on_off)
 {
     bool connected = CheckConnect(kEmptyStr);
@@ -588,6 +590,7 @@ void CNetScheduleClient::Logging(bool on_off)
     CommandInitiate("LOG ", on_off ? "ON" : "OFF", &m_Tmp, connected);
     CheckOK(&m_Tmp);
 }
+
 
 void CNetScheduleClient::SetRunTimeout(const string& job_key, 
                                        unsigned      time_to_run)
@@ -737,6 +740,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
     return status;
 }
 
+
 bool CNetScheduleClient::GetJob(string*        job_key, 
                                 string*        input,
                                 unsigned short udp_port)
@@ -826,7 +830,6 @@ bool CNetScheduleClient::GetJobWaitNotify(string*    job_key,
 }
 
 
-
 bool CNetScheduleClient::WaitJob(string*    job_key, 
                                  string*    input, 
                                  unsigned   wait_time,
@@ -885,7 +888,7 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
     // minilal length is prefix "NCBI_JSQ_" + queue length
     size_t min_msg_len = m_Queue.length() + 9;
 
-    for (;true;) {
+    for (;;) {
 
         curr_time = time(0);
         if (curr_time >= end_time) {
@@ -928,7 +931,6 @@ void CNetScheduleClient::WaitQueueNotification(unsigned       wait_time,
 }
 
 
-
 void CNetScheduleClient::ParseGetJobResponse(string*        job_key, 
                                              string*        input, 
                                              const string&  response)
@@ -955,10 +957,6 @@ void CNetScheduleClient::ParseGetJobResponse(string*        job_key,
         input->push_back(*str);
     }
 }
-
-
-
-
 
 
 void CNetScheduleClient::PutResult(const string& job_key, 
@@ -1070,6 +1068,7 @@ void CNetScheduleClient::PutProgressMsg(const string& job_key,
     CheckOK(&m_Tmp);
 }
 
+
 string CNetScheduleClient::GetProgressMsg(const string& job_key)
 {
     if (m_RequestRateControl) {
@@ -1165,6 +1164,7 @@ void CNetScheduleClient::ShutdownServer()
     CheckOK(&m_Tmp);
 }
 
+
 void CNetScheduleClient::ReloadServerConfig()
 {
     if (m_RequestRateControl) {
@@ -1183,6 +1183,7 @@ void CNetScheduleClient::ReloadServerConfig()
     }
     TrimPrefix(&m_Tmp);
 }
+
 
 string CNetScheduleClient::ServerVersion()
 {
@@ -1211,6 +1212,7 @@ string CNetScheduleClient::ServerVersion()
     return m_Tmp;
 }
 
+
 void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
                                    const string& job_key)
 {
@@ -1229,6 +1231,7 @@ void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
     PrintServerOut(out);
 }
 
+
 void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
 {
     if (m_RequestRateControl) {
@@ -1244,6 +1247,7 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
     WaitForServer();
     PrintServerOut(out);
 }
+
 
 void CNetScheduleClient::Monitor(CNcbiOstream & out)
 {
@@ -1316,6 +1320,7 @@ void CNetScheduleClient::DropQueue()
     TrimPrefix(&m_Tmp);
 }
 
+
 void CNetScheduleClient::CommandInitiate(const string& command, 
                                          const string& job_key,
                                          string*       answer,
@@ -1338,6 +1343,7 @@ void CNetScheduleClient::TrimPrefix(string* str)
     CheckOK(str);
     str->erase(0, 3); // "OK:"
 }
+
 
 void CNetScheduleClient::CheckOK(string* str)
 {
@@ -1365,10 +1371,9 @@ void CNetScheduleClient::CheckOK(string* str)
 }
 
 
-void 
-CNetScheduleClient::MakeCommandPacket(string*       out_str,
-                                      const string& cmd_str,
-                                      bool          /*connected*/)
+void CNetScheduleClient::MakeCommandPacket(string*       out_str,
+                                           const string& cmd_str,
+                                           bool          /*connected*/)
 {
     // Check if authentication prefix has already been added
     // and sent to the server
@@ -1459,6 +1464,7 @@ bool CNetScheduleClient::CheckConnect(const string& key)
     return false;
 }
 
+
 bool CNetScheduleClient::CheckConnExpired()
 {
     _ASSERT(m_Sock);
@@ -1487,12 +1493,14 @@ bool CNetScheduleClient::CheckConnExpired()
     return false;
 }
 
+
 void CNetScheduleClient::CloseConnection()
 {
     if (m_Sock) {
         m_Sock->Close();
     }
 }
+
 
 bool CNetScheduleClient::IsError(const char* str)
 {
@@ -1513,6 +1521,7 @@ void CNetScheduleClient::MakeJobKey(string*       job_key,
     *job_key = buf;
 }
 
+
 EIO_Status CNetScheduleClient::Connect(unsigned int   addr, 
                                        unsigned short port)
 {
@@ -1520,11 +1529,17 @@ EIO_Status CNetScheduleClient::Connect(unsigned int   addr,
     return TParent::Connect(addr, port);
 }
 
+
 END_NCBI_SCOPE
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/02/15 19:06:51  lavr
+ * Remove inclusion of unnecessary header files
+ * Remove extra parameter for unmatching format spec. in sprintf()
+ *
  * Revision 1.42  2006/02/08 15:16:47  kuznets
  * Added support of job affinity
  *
@@ -1651,7 +1666,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2005/02/07 13:02:47  kuznets
  * Initial revision
- *
  *
  * ===========================================================================
  */
