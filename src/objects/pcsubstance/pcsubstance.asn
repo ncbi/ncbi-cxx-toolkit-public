@@ -1,4 +1,4 @@
--- $Id: pcsubstance.asn,v 1.18 2005/11/23 16:39:39 bolton Exp $
+-- $Id: pcsubstance.asn,v 1.19 2006/02/15 13:17:10 bolton Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -133,7 +133,9 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         aid              INTEGER,                 -- PubChem BioAssay ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        mim              INTEGER                  -- MIM, Mendelian Inheritance in Man, Number 
+        mim              INTEGER,                 -- MIM, Mendelian Inheritance in Man, Number 
+                                                  --   Note: Must be greater than "0" or, if invalid, "0"
+        gene             INTEGER                  -- Entrez Gene ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
 }
 
@@ -658,6 +660,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcsubstance.asn,v $
+-- Revision 1.19  2006/02/15 13:17:10  bolton
+-- Added XRef for Entrez Gene ID's.
+--
 -- Revision 1.18  2005/11/23 16:39:39  bolton
 -- Minor change to support additional URN Release information.
 --
@@ -760,5 +765,6 @@ END
 -- structural information.
 --
 -- ===========================================================================
+
 
 
