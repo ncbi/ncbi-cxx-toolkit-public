@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 auto_ptr<CGridGlobals> CGridGlobals::sm_Instance;
 
 CGridGlobals::CGridGlobals()
-    : m_JobsStarted(0), m_MaxJobsAllowed(0),
+    : m_JobsStarted(0), m_MaxJobsAllowed(0), m_ReuseJobObject(false),
       m_ShutdownLevel(CNetScheduleClient::eNoShutdown)
 {
 }
@@ -79,6 +79,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.2  2006/02/15 19:48:34  didenko
+ * Added new optional config parameter "reuse_job_object" which allows reusing
+ * IWorkerNodeJob objects in the jobs' threads instead of creating
+ * a new object for each job.
+ *
  * Revision 6.1  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.

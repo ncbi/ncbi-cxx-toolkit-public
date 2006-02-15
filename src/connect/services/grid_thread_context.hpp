@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 class CGridThreadContext
 {
 public:
-    CGridThreadContext(CWorkerNodeJobContext& job_context);
+    CGridThreadContext(CGridWorkerNode& node);
 
     CWorkerNodeJobContext& GetJobContext();
 
@@ -69,9 +69,10 @@ public:
     void PutFailure(const string& msg);
     bool IsJobCanceled();
    
-    IWorkerNodeJob* CreateJob();
+    IWorkerNodeJob* GetJob();
 private:
     CWorkerNodeJobContext*        m_JobContext;
+    CRef<IWorkerNodeJob>          m_Job;
     auto_ptr<INSCWrapper>         m_Reporter;
     auto_ptr<IBlobStorage>        m_Reader;
     auto_ptr<IBlobStorage>        m_Writer;
@@ -87,6 +88,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2006/02/15 19:48:34  didenko
+ * Added new optional config parameter "reuse_job_object" which allows reusing
+ * IWorkerNodeJob objects in the jobs' threads instead of creating
+ * a new object for each job.
+ *
  * Revision 6.7  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.

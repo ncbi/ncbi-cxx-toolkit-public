@@ -466,6 +466,10 @@ int CGridWorkerApp_Impl::Run()
         reg.GetBool("server", "use_permanent_connection", false, 0, 
                     CNcbiRegistry::eReturn);
 
+    bool reuse_job_object =
+        reg.GetBool("server", "reuse_job_object", false, 0, 
+                    CNcbiRegistry::eReturn);
+
     unsigned int log_size = 
         reg.GetInt("server","log_file_size",1024*1024,0,IRegistry::eReturn);
     string log_file_name = GetLogName();
@@ -545,6 +549,7 @@ int CGridWorkerApp_Impl::Run()
     m_WorkerNode->SetNSTimeout(ns_timeout);
     m_WorkerNode->SetThreadsPoolTimeout(threads_pool_timeout);
     CGridGlobals::GetInstance().SetMaxJobsAllowed(max_total_jobs);
+    CGridGlobals::GetInstance().SetReuseJobObject(reuse_job_object);
     //    m_WorkerNode->SetMaxTotalJobs(max_total_jobs);
     m_WorkerNode->SetMasterWorkerNodes(masters);
     m_WorkerNode->SetAdminHosts(admin_hosts);
@@ -639,6 +644,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.14  2006/02/15 19:48:34  didenko
+ * Added new optional config parameter "reuse_job_object" which allows reusing
+ * IWorkerNodeJob objects in the jobs' threads instead of creating
+ * a new object for each job.
+ *
  * Revision 6.13  2006/02/15 17:16:02  didenko
  * Added ReqeustShutdown method to worker node idle task context
  *

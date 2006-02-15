@@ -186,12 +186,19 @@ CGridThreadContext& CWorkerNodeRequest::x_GetThreadContext()
 {
     CGridThreadContext* context = s_tls->GetValue();
     if (!context) {
-        context = new CGridThreadContext(*m_Context);
+        context = new CGridThreadContext(m_Context->GetWorkerNode());
         s_tls->SetValue(context, s_TlsCleanup);
-    } else {
-        context->SetJobContext(*m_Context);
-    }   
+    }
+    context->SetJobContext(*m_Context);
     return *context;
+}
+
+static auto_ptr<CGridThreadContext> s_SingleTHreadContext;
+static CGridThreadContext& s_GetSingleTHreadContext(CGridWorkerNode& node)
+{
+    if (!s_SingleTHreadContext.get())
+        s_SingleTHreadContext.reset(new CGridThreadContext(node));
+    return *s_SingleTHreadContext;
 }
 
 static void s_RunJob(CGridThreadContext& thr_context)
@@ -201,7 +208,7 @@ static void s_RunJob(CGridThreadContext& thr_context)
         more_jobs = false;
         string new_job_key, new_job_input;
     try {
-        auto_ptr<IWorkerNodeJob> job( thr_context.CreateJob());
+        CRef<IWorkerNodeJob> job(thr_context.GetJob());
         int ret_code = job->Do(thr_context.GetJobContext());
         thr_context.CloseStreams();
         int try_count = 0;
@@ -350,7 +357,8 @@ void CGridWorkerNode::Start()
                     }
                 }
                 else {
-                    CGridThreadContext thr_context(*job_context);
+                    CGridThreadContext& thr_context = s_GetSingleTHreadContext(*this);
+                    thr_context.SetJobContext(*job_context);
                     s_RunJob(thr_context);
                 }
             }            
@@ -611,6 +619,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2006/02/15 19:48:34  didenko
+ * Added new optional config parameter "reuse_job_object" which allows reusing
+ * IWorkerNodeJob objects in the jobs' threads instead of creating
+ * a new object for each job.
+ *
  * Revision 1.40  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.

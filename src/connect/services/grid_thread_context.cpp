@@ -33,20 +33,20 @@
 #include <corelib/ncbiexpt.hpp>
 #include <connect/services/grid_globals.hpp>
 #include <connect/services/grid_debug_context.hpp>
+#include <connect/services/grid_globals.hpp>
 #include "grid_thread_context.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 /// @internal
-CGridThreadContext::CGridThreadContext(CWorkerNodeJobContext& job_context)
+CGridThreadContext::CGridThreadContext(CGridWorkerNode& node)
     : m_JobContext(NULL), m_RateControl(1)
 {
-    m_Reporter.reset(job_context.GetWorkerNode().CreateClient());
-    m_Reader.reset(job_context.GetWorkerNode().CreateStorage());
-    m_Writer.reset(job_context.GetWorkerNode().CreateStorage());
-    m_ProgressWriter.reset(job_context.GetWorkerNode().CreateStorage());
-    SetJobContext(job_context);
+    m_Reporter.reset(node.CreateClient());
+    m_Reader.reset(node.CreateStorage());
+    m_Writer.reset(node.CreateStorage());
+    m_ProgressWriter.reset(node.CreateStorage());
 }
 
 void CGridThreadContext::SetJobContext(CWorkerNodeJobContext& job_context,
@@ -282,10 +282,14 @@ bool CGridThreadContext::IsJobCommitted() const
     return m_JobContext->IsJobCommitted();
 }
 /// @internal
-IWorkerNodeJob* CGridThreadContext::CreateJob()
+IWorkerNodeJob* CGridThreadContext::GetJob()
 {
     _ASSERT(m_JobContext);
-    return m_JobContext->GetWorkerNode().CreateJob();
+    if (!CGridGlobals::GetInstance().ReuseJobObject())
+        return m_JobContext->GetWorkerNode().CreateJob();
+    if (!m_Job)
+        m_Job.Reset(m_JobContext->GetWorkerNode().CreateJob());
+    return m_Job.GetPointer();
 }
 
 void CGridThreadContext::CloseStreams()
@@ -309,6 +313,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.15  2006/02/15 19:48:34  didenko
+ * Added new optional config parameter "reuse_job_object" which allows reusing
+ * IWorkerNodeJob objects in the jobs' threads instead of creating
+ * a new object for each job.
+ *
  * Revision 6.14  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.
