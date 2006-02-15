@@ -1065,51 +1065,6 @@ const string CSeq_id::AsFastaString(void) const
     return CNcbiOstrstreamToString(str);
 }
 
-//
-// Local functions for producing a sequence ID 'score'
-// These functions produce scores in FastA order
-//
-static int s_ScoreNAForFasta(const CSeq_id* id)
-{
-    switch (id->Which()) {
-    case CSeq_id::e_not_set:
-    case CSeq_id::e_Giim:
-    case CSeq_id::e_Pir:
-    case CSeq_id::e_Swissprot:
-    case CSeq_id::e_Prf:       return kMax_Int;
-    case CSeq_id::e_Local:     return 230;
-    case CSeq_id::e_Gi:        return 120;
-    case CSeq_id::e_General:   return 50;
-    case CSeq_id::e_Patent:    return 40;
-    case CSeq_id::e_Gibbsq:
-    case CSeq_id::e_Gibbmt:
-    case CSeq_id::e_Pdb:       return 30;
-    case CSeq_id::e_Other:     return 15;
-    default:                   return 20; // [third party] GenBank/EMBL/DDBJ
-    }
-}
-
-
-static int s_ScoreAAForFasta(const CSeq_id* id)
-{
-    switch (id->Which()) {
-    case CSeq_id::e_not_set:
-    case CSeq_id::e_Giim:      return kMax_Int;
-    case CSeq_id::e_Local:     return 230;
-    case CSeq_id::e_Gi:        return 120;
-    case CSeq_id::e_General:   return 90;
-    case CSeq_id::e_Patent:    return 80;
-    case CSeq_id::e_Prf:       return 70;
-    case CSeq_id::e_Pdb:       return 50;
-    case CSeq_id::e_Gibbsq:
-    case CSeq_id::e_Gibbmt:    return 40;
-    case CSeq_id::e_Pir:       return 30;
-    case CSeq_id::e_Swissprot: return 20;
-    case CSeq_id::e_Other:     return 15;
-    default:                   return 60; // [third party] GenBank/EMBL/DDBJ
-    }
-}
-
 
 //
 // GetStringDescr()
@@ -1121,8 +1076,8 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
 {
     bool is_na            = bioseq.GetInst().GetMol() != CSeq_inst::eMol_aa;
     CRef<CSeq_id> best_id = FindBestChoice(bioseq.GetId(),
-                                           is_na ? s_ScoreNAForFasta
-                                           : s_ScoreAAForFasta);
+                                           is_na ? CSeq_id::FastaNARank
+                                           : CSeq_id::FastaAARank);
     switch (fmt) {
     case eFormat_FastA:
         {
@@ -1627,6 +1582,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.122  2006/02/15 17:17:42  ucko
+ * Expose ranking methods used for FASTA deflines per Tom Madden's request.
+ *
  * Revision 6.121  2006/02/07 19:29:11  ucko
  * Use pgp|... rather than pat|... for "pre-grant patents" (applications).
  *
