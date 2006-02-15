@@ -31,15 +31,12 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/ncbi_service.h>
-#include <connect/ncbi_socket.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <util/request_control.hpp>
-
 #include <stdlib.h>
 #include <memory>
 
@@ -82,6 +79,7 @@ CNetScheduleClient_LB::CNetScheduleClient_LB(const string& client_name,
     SetClientNameComment(lb_service_name);
 }
 
+
 CNetScheduleClient_LB::~CNetScheduleClient_LB()
 {
 }
@@ -98,6 +96,7 @@ bool CNetScheduleClient_LB::NeedRebalance(time_t curr) const
     }
     return false;
 }
+
 
 bool CNetScheduleClient_LB::CheckConnect(const string& key)
 {
@@ -175,6 +174,7 @@ bool CNetScheduleClient_LB::CheckConnect(const string& key)
     return TParent::CheckConnect(key);
 }
 
+
 void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
 {
     _ASSERT(!service_name.empty());
@@ -207,7 +207,6 @@ void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
 
     m_ServList.resize(0);
 
-
     SConnNetInfo* net_info = ConnNetInfo_Create(service_name.c_str());
     TSERV_Type stype = fSERV_Any;
     if (m_DiscoverLowPriorityServers) {
@@ -215,7 +214,6 @@ void CNetScheduleClient_LB::ObtainServerList(const string& service_name)
     }
     SERV_ITER srv_it = SERV_Open(service_name.c_str(), stype, 0, net_info);
     ConnNetInfo_Destroy(net_info);
-
 
     string err_msg = "Cannot connect to netschedule service (";
     if (srv_it == 0) {
@@ -238,6 +236,7 @@ err_service_not_found:
         goto err_service_not_found;
     }
 }
+
 
 void CNetScheduleClient_LB::AddServiceAddress(const string&  hostname,
                                               unsigned short port)
@@ -287,6 +286,7 @@ string CNetScheduleClient_LB::SubmitJob(const string& input,
     } // for
     return kEmptyStr;
 }
+
 
 void CNetScheduleClient_LB::SubmitJobBatch(SJobBatch& subm)
 {
@@ -388,6 +388,7 @@ bool CNetScheduleClient_LB::GetJob(string* job_key,
     return false;
 }
 
+
 bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
                                         string* job_key, 
                                         string* input, 
@@ -405,6 +406,7 @@ bool CNetScheduleClient_LB::x_TryGetJob(SServiceAddress& sa,
     bool job_received = TParent::GetJob(job_key, input, udp_port);
     return job_received;
 }
+
 
 bool CNetScheduleClient_LB::WaitJob(string*        job_key, 
                                     string*        input, 
@@ -501,6 +503,7 @@ bool CNetScheduleClient_LB::WaitJob(string*        job_key,
     return GetJob(job_key, input, udp_port);
 }
 
+
 bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
                                                string*    job_key, 
                                                string*    input, 
@@ -521,11 +524,11 @@ bool CNetScheduleClient_LB::x_GetJobWaitNotify(SServiceAddress& sa,
     return job_received;
 }
 
+
 string CNetScheduleClient_LB::GetConnectionInfo() const
 {
     return m_LB_ServiceName;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -651,6 +654,7 @@ protected:
 
 };
 
+
 void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetschedule(
      CPluginManager<CNetScheduleClient>::TDriverInfoList&   info_list,
      CPluginManager<CNetScheduleClient>::EEntryPointRequest method)
@@ -661,12 +665,15 @@ void NCBI_XCONNECT_EXPORT NCBI_EntryPoint_xnetschedule(
 }
 
 
-
 END_NCBI_SCOPE
+
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/02/15 19:07:00  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.20  2005/12/14 22:03:01  lavr
  * ESERV_SpecialType reinstated public
  *
@@ -726,7 +733,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2005/03/07 17:31:05  kuznets
  * Initial revision
- *
  *
  * ===========================================================================
  */

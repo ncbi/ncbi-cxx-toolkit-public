@@ -40,7 +40,6 @@
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <connect/services/netservice_client.hpp>
 #include <corelib/plugin_manager.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <corelib/version.hpp>
 #include <util/transmissionrw.hpp>
 
@@ -634,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/02/15 19:05:50  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.54  2006/02/15 18:37:18  lavr
  * Remove inclusion of unnecessary header files
  *

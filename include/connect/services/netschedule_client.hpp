@@ -37,16 +37,11 @@
 /// NetSchedule client specs. 
 ///
 
-#include <connect/connect_export.h>
-#include <connect/ncbi_types.h>
 #include <connect/services/netservice_client.hpp>
-#include <corelib/ncbistd.hpp>
 #include <corelib/plugin_manager.hpp>
 
+
 BEGIN_NCBI_SCOPE
-
-
-class CSocket;
 
 
 /** @addtogroup NetScheduleClient
@@ -94,7 +89,6 @@ public:
         /// use this mode very carefully
         eKeepConnection    
     };
-
 
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
@@ -183,8 +177,6 @@ public:
         eLastStatus         ///< Fake status (do not use)
     };
 
-
-
     /// Submit job to server
     ///
     /// @param input
@@ -241,7 +233,6 @@ public:
     virtual
     void SubmitJobBatch(SJobBatch& subm);
 
-
     /// Submit job to server and wait for the result.
     /// This function should be used if we expect that job execution
     /// infrastructure is capable of finishing job in the specified 
@@ -290,8 +281,6 @@ public:
     ///    Job identification string
     virtual
     void CancelJob(const string& job_key);
-
-
 
     /// Get a pending job. 
     /// When function returns TRUE and job_key job receives running status,
@@ -354,7 +343,6 @@ public:
                  unsigned       wait_time,
                  unsigned short udp_port);
 
-
     /// Put job result (job should be received by GetJob() or WaitJob())
     /// 
     /// @param job_key
@@ -368,7 +356,6 @@ public:
     void PutResult(const string& job_key, 
                    int           ret_code, 
                    const string& output);
-
 
     /// Put job result, get new job from the queue
     /// If this is the first call and there is no previous job 
@@ -404,7 +391,6 @@ public:
     virtual
     string GetProgressMsg(const string& job_key);
 
-
     /// Submit job failure diagnostics. This method indicates that
     /// job failed because of some fatal, unrecoverable error.
     /// 
@@ -416,7 +402,6 @@ public:
     virtual
     void PutFailure(const string& job_key, 
                     const string& err_msg);
-
 
     /// Request of current job status
     /// eJobNotFound is returned if job status cannot be found 
@@ -541,8 +526,6 @@ protected:
 
     EIO_Status Connect(unsigned int addr, unsigned short port);
 
-protected:
-
     /// @return TRUE if actually reconnected
     virtual bool CheckConnect(const string& key);
 
@@ -605,9 +588,6 @@ protected:
 };
 
 
-
-
-
 /// Client API for NetSchedule server.
 ///
 /// The same API as provided by CNetScheduleClient, 
@@ -629,7 +609,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleClient_LB : public CNetScheduleClient
 {
 public:
     typedef CNetScheduleClient  TParent;
-
 
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
@@ -676,15 +655,12 @@ public:
     void DiscoverLowPriorityServers(bool on_off) 
         { m_DiscoverLowPriorityServers = on_off; }
 
-
-
     virtual
     string SubmitJob(const string& input, 
                      const string& progress_msg = kEmptyStr);
 
     virtual
     void SubmitJobBatch(SJobBatch& subm);
-
 
     virtual
     bool GetJob(string*        job_key, 
@@ -700,16 +676,13 @@ public:
     ///
     virtual string GetConnectionInfo() const; 
 
-
 protected:
     virtual bool CheckConnect(const string& key);
 
     bool NeedRebalance(time_t curr) const;
 
 public:
-
-    struct SServiceAddress
-    {
+    struct SServiceAddress {
         unsigned int     host;           ///< host address in network bo
         unsigned short   port;           ///< port (host bo)
         time_t           conn_fail_time; ///< conn failure timestamp
@@ -744,6 +717,7 @@ private:
 private:
     CNetScheduleClient_LB(const CNetScheduleClient_LB&);
     CNetScheduleClient_LB& operator=(const CNetScheduleClient_LB&);
+
 private:
     string        m_LB_ServiceName;
 
@@ -807,6 +781,7 @@ public:
 extern NCBI_XCONNECT_EXPORT
 void CNetSchedule_ParseJobKey(CNetSchedule_Key* key, const string& key_str);
 
+
 /// Parse job key, extract job id
 extern NCBI_XCONNECT_EXPORT
 unsigned CNetSchedule_GetJobId(const string&  key_str);
@@ -857,6 +832,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2006/02/15 19:05:56  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.44  2006/02/08 15:16:30  kuznets
  * Added support of job affinity
  *
@@ -989,7 +967,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.1  2005/02/07 13:02:32  kuznets
  * Initial revision
- *
  *
  * ===========================================================================
  */
