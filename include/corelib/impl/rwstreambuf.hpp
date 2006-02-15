@@ -1,5 +1,5 @@
-#ifndef UTIL___RWSTREAMBUF__HPP
-#define UTIL___RWSTREAMBUF__HPP
+#ifndef CORELIB___RWSTREAMBUF__HPP
+#define CORELIB___RWSTREAMBUF__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -37,16 +37,14 @@
 /// Reader-writer based stream buffer
 /// @sa IReader, IWriter, IReaderWriter
 
-
-#include <util/reader_writer.hpp>
-#include <util/stream_utils.hpp>
-
+#include <corelib/ncbistre.hpp>
+#include <corelib/reader_writer.hpp>
 
 #ifdef NCBI_COMPILER_MIPSPRO
 #  define CRWStreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
 #  define CRWStreambufBase CNcbiStreambuf
-#endif/*NCBI_COMPILER_MIPSPRO*/
+#endif //NCBI_COMPILER_MIPSPRO
 
 
 BEGIN_NCBI_SCOPE
@@ -115,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/02/15 17:40:24  lavr
+ * IReader/IWriter API moved (along with RWStream[buf]) to corelib
+ *
  * Revision 1.10  2005/12/20 13:45:14  lavr
  * Formatting/commenting
  *
@@ -148,4 +149,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif /* UTIL___RWSTREAMBUF__HPP */
+#endif /* CORELIB___RWSTREAMBUF__HPP */

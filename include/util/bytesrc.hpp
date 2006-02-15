@@ -36,7 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <util/reader_writer.hpp>
+#include <corelib/reader_writer.hpp>
 
 
 /** @addtogroup StreamSupport
@@ -478,6 +478,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2006/02/15 17:40:25  lavr
+ * IReader/IWriter API moved (along with RWStream[buf]) to corelib
+ *
  * Revision 1.28  2005/11/03 15:12:44  gouriano
  * Use streampos instead of streamoff for positioning
  *

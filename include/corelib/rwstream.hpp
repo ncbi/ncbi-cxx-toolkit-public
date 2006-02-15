@@ -1,5 +1,5 @@
-#ifndef UTIL___RWSTREAM__HPP
-#define UTIL___RWSTREAM__HPP
+#ifndef CORELIB___RWSTREAM__HPP
+#define CORELIB___RWSTREAM__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -38,7 +38,7 @@
 /// @sa IReader, IWriter, IReaderWriter, CRWStreambuf
 
 
-#include <util/rwstreambuf.hpp>
+#include <corelib/impl/rwstreambuf.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -146,6 +146,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/02/15 17:40:23  lavr
+ * IReader/IWriter API moved (along with RWStream[buf]) to corelib
+ *
  * Revision 1.11  2005/12/20 13:44:53  lavr
  * Declare (optional) dtors as (explicitly) virtual
  *
@@ -182,4 +185,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif /* UTIL___RWSTREAM__HPP */
+#endif /* CORELIB___RWSTREAM__HPP */

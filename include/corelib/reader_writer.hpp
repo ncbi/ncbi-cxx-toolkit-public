@@ -1,5 +1,5 @@
-#ifndef UTIL___READER_WRITER__HPP
-#define UTIL___READER_WRITER__HPP
+#ifndef CORELIB___READER_WRITER__HPP
+#define CORELIB___READER_WRITER__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -62,24 +62,24 @@ enum ERW_Result {
 class IReader
 {
 public:
-    /// Read as many as count bytes into a buffer pointed
-    /// to by buf argument.  Store the number of bytes actually read,
+    /// Read as many as "count" bytes into a buffer pointed
+    /// to by "buf" argument.  Store the number of bytes actually read,
     /// or 0 on EOF or error, via the pointer "bytes_read", if provided.
-    /// Special case:  if count passed as 0, then the value of
-    /// buf is ignored, and the return value is always eRW_Success, but
-    /// no change is actually done to the state of input device.
+    /// Special case:  if "count" passed as 0, then the value of
+    /// "buf" is ignored, and the return value is always eRW_Success,
+    /// but no change should be actually made to the state of input device.
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0) = 0;
 
     /// Via parameter "count" (which is guaranteed to be supplied non-NULL)
     /// return the number of bytes that are ready to be read from input
-    /// device without blocking.  Return eRW_Success if the number
-    /// of pending bytes was stored at the location pointed to by "count".
+    /// device without blocking.  Return eRW_Success if the number of
+    /// pending bytes has been stored at the location pointed to by "count".
     /// Return eRW_NotImplemented if the number cannot be determined.
     /// Otherwise, return other eRW_... condition to reflect the problem.
-    /// Note that if reporting 0 bytes ready, the method can either return
-    /// eRW_Success and zero *count, or return eRW_NotImplemented alone.
+    /// Note that if reporting 0 bytes ready, the method may return either
+    /// both eRW_Success and zero *count, or return eRW_NotImplemented alone.
     virtual ERW_Result PendingCount(size_t* count) = 0;
 
     virtual ~IReader() {}
@@ -92,11 +92,11 @@ public:
 class IWriter
 {
 public:
-    /// Write up to count bytes from the buffer pointed to by
-    /// buf argument onto output device.  Store the number
-    /// of bytes actually written, or 0 if either count was
-    /// passed as 0 (buf is ignored in this case) or an error occurred,
-    /// via the "bytes_written" pointer, if provided.
+    /// Write up to "count" bytes from the buffer pointed to by
+    /// "buf" argument onto output device.  Store the number
+    /// of bytes actually written, or 0 if "count" has been passed as 0
+    /// ("buf" is ignored in this case), via the "bytes_written" pointer,
+    /// if provided non-NULL.
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
                              size_t*     bytes_written = 0) = 0;
@@ -124,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/02/15 17:40:23  lavr
+ * IReader/IWriter API moved (along with RWStream[buf]) to corelib
+ *
  * Revision 1.14  2006/01/11 16:24:29  lavr
  * A comment fixed
  *
@@ -168,4 +171,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* UTIL___READER_WRITER__HPP */
+#endif  /* CORELIB___READER_WRITER__HPP */

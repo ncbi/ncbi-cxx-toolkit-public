@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbiexpt.hpp>
-#include <util/rwstreambuf.hpp>
+#include <corelib/impl/rwstreambuf.hpp>
 
 
 #define RWSTREAMBUF_CATCH_ALL(message, action)                                \
@@ -332,6 +332,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2006/02/15 17:41:39  lavr
+ * IReader/IWriter API moved (along with RWStream[buf]) to corelib
+ *
  * Revision 1.16  2006/01/18 03:04:45  lavr
  * Formatting
  *

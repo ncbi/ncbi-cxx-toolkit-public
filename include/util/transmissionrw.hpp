@@ -1,5 +1,5 @@
-#ifndef UTIL___TRANSRWCHECK__HPP
-#define UTIL___TRANSRWCHECK__HPP
+#ifndef UTIL___TRANSMISSIONRW__HPP
+#define UTIL___TRANSMISSIONRW__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -38,9 +38,11 @@
 /// @sa IReader, IWriter
 
 #include <corelib/ncbimisc.hpp>
-#include <util/reader_writer.hpp>
+#include <corelib/reader_writer.hpp>
+
 
 BEGIN_NCBI_SCOPE
+
 
 /// IReader implementation with transmission control
 ///
@@ -86,6 +88,7 @@ private:
     bool       m_StartRead;
 };
 
+
 /// IWriter with transmission control
 ///
 class NCBI_XUTIL_EXPORT CTransmissionWriter : public IWriter
@@ -110,12 +113,16 @@ private:
     EOwnership   m_OwnWrt;
 };
 
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2006/02/15 17:40:25  lavr
+ * IReader/IWriter API moved (along with RWStream[buf]) to corelib
+ *
  * Revision 1.3  2005/06/08 13:17:10  kuznets
  * Added accessor functions for underlying IReader/IWriter
  *
@@ -129,4 +136,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif /* UTIL___TRANSRWCHECK__HPP */
+#endif /* UTIL___TRANSMISSIONRW__HPP */

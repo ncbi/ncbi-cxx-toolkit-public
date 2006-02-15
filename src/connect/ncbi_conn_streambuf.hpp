@@ -36,13 +36,11 @@
 #include <corelib/ncbistre.hpp>
 #include <connect/ncbi_connection.h>
 
-
 #ifdef NCBI_COMPILER_MIPSPRO
-#  include <util/stream_utils.hpp>
 #  define CConn_StreambufBase CMIPSPRO_ReadsomeTolerantStreambuf
 #else
 #  define CConn_StreambufBase CNcbiStreambuf
-#endif/*NCBI_COMPILER_MIPSPRO*/
+#endif //NCBI_COMPILER_MIPSPRO
 
 
 BEGIN_NCBI_SCOPE
@@ -102,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2006/02/15 17:41:26  lavr
+ * IReader/IWriter API moved (along with RWStream[buf]) to corelib
+ *
  * Revision 6.38  2006/02/14 20:40:05  lavr
  * Formatting
  *
