@@ -402,13 +402,13 @@ RunTest() {
                }' \$x_log >> \$x_test_out
 
                # Get application execution time
-               exec_time=\`\$build_dir/sysdep.sh tl 5 \$x_log | \\
-                          tr '\n' '?' |        \\
+               exec_time=\`\$build_dir/sysdep.sh tl 5 \$x_log | tr '\n' '?'\`
+               exec_time=\`echo \$exec_time |  \\
                           sed -e 's/?$//'      \\
                               -e 's/?/, /g'    \\
                               -e 's/[ ] */ /g' \\
-                              -e 's/^.*\(real [0-9]\+[.][0-9]\+\)/\1/' \\
-                              -e 's/\(sys [0-9]\+[.][0-9]\+\) .*/\1/' \\
+                              -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
+                              -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]\) .*/\1/' \\
                               -e 's/\(Maximum .* is exceeded\).*$/\1/'\`
 
                # Analize check tool output
