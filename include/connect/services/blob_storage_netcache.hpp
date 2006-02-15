@@ -32,7 +32,6 @@
 
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_config.hpp>
-#include <corelib/plugin_manager.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/blob_storage.hpp>
 #include <connect/services/netcache_client.hpp>
@@ -209,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/02/15 20:38:42  lavr
+ * Remove inclusion of unnecessary header files
+ *
  * Revision 1.2  2005/12/23 15:22:35  didenko
  * Added comments
  *
