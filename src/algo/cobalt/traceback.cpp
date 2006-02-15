@@ -70,10 +70,8 @@ CEditScript::CEditScript(GapEditScript *blast_tback)
 {
     _ASSERT(blast_tback);
 
-    GapEditScript *s = blast_tback;
-    while (s != NULL) {
-        AddOps(s->op_type, s->num);
-        s = s->next;
+    for (Int4 i = 0;  i < blast_tback->size;  ++i) {
+        AddOps(blast_tback->op_type[i], blast_tback->num[i]);
     }
 }
 
@@ -476,6 +474,9 @@ END_NCBI_SCOPE
 
 /*------------------------------------------------------------------------
   $Log$
+  Revision 1.5  2006/02/15 15:53:36  ucko
+  Change GapEditScript to use arrays rather than be a linked list.
+
   Revision 1.4  2005/11/21 21:03:00  papadopo
   fix documentation, add doxygen
 
