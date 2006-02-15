@@ -10,8 +10,8 @@ SRC = dbapi_sample
 # the lines reading "### BEGIN/END COPIED SETTINGS" in any way.
 
 ### BEGIN COPIED SETTINGS
-LIB  = dbapi dbapi_driver xncbi
-LIBS = $(DL_LIBS) $(ORIG_LIBS)
+LIB  = dbapi dbapi_driver $(XCONNEXT) xconnect xncbi
+LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
 
 # CHECK_CMD = dbapi_sample.sh
