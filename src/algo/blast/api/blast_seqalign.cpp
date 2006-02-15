@@ -110,7 +110,7 @@ s_GetCurrPos(int& pos, int pos2advance)
 /// editing script.
 /// @param curr_pos Current position on input, modified to next position on 
 ///                 output [in] [out]
-/// @param esp Traceback editing script [in]
+/// @param num number of letters specified by traceback edit [in]
 /// @param strand Sequence strand [in]
 /// @param translate Is sequence translated? [in]
 /// @param length Sequence length [in]
@@ -119,7 +119,7 @@ s_GetCurrPos(int& pos, int pos2advance)
 /// @param frame Translating frame [in]
 /// @return Start position of the current alignment segment.
 static TSeqPos
-s_GetAlignmentStart(int& curr_pos, const GapEditScript* esp, 
+s_GetAlignmentStart(int& curr_pos, int num,
         ENa_strand strand, bool translate, int length, int original_length, 
         short frame)
 {
@@ -129,17 +129,17 @@ s_GetAlignmentStart(int& curr_pos, const GapEditScript* esp,
 
         if (translate)
             retval = original_length - 
-                CODON_LENGTH*(s_GetCurrPos(curr_pos, esp->num) + esp->num)
+                CODON_LENGTH*(s_GetCurrPos(curr_pos, num) + num)
                 + frame + 1;
         else
-            retval = length - s_GetCurrPos(curr_pos, esp->num) - esp->num;
+            retval = length - s_GetCurrPos(curr_pos, num) - num;
 
     } else {
 
         if (translate)
-            retval = frame - 1 + CODON_LENGTH*s_GetCurrPos(curr_pos, esp->num);
+            retval = frame - 1 + CODON_LENGTH*s_GetCurrPos(curr_pos, num);
         else
-            retval = s_GetCurrPos(curr_pos, esp->num);
+            retval = s_GetCurrPos(curr_pos, num);
 
     }
 
@@ -162,7 +162,8 @@ s_GetProteinFrameLength(Int4 nuc_length, Int2 frame)
 /// collected from the esp_head argument for nsegs segments. This editing script may
 /// not be the full editing scripg if a discontinuous alignment is being built.
 /// @param hsp HSP structure containing traceback information. [in]
-/// @param esp_head Traceback editing script linked list [in]
+/// @param esp Traceback edit script [in]
+/// @param first first element of GapEditScript to use [in]
 /// @param nsegs Number of alignment segments [in]
 /// @param starts Vector of starting positions to fill [out]
 /// @param lengths Vector of segment lengths to fill [out]
@@ -172,15 +173,14 @@ s_GetProteinFrameLength(Int4 nuc_length, Int2 frame)
 /// @param translate1 Is query translated? [in]
 /// @param translate2 Is subject translated? [in]
 static void
-s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp_head, 
-                      unsigned int nsegs, vector<TSignedSeqPos>& starts, 
+s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp, 
+                      unsigned int first, unsigned int nsegs, vector<TSignedSeqPos>& starts, 
                       vector<TSeqPos>& lengths, vector<ENa_strand>& strands,
                       Int4 query_length, Int4 subject_length,
                       bool translate1, bool translate2)
 {
     ASSERT(hsp != NULL);
 
-    GapEditScript* esp = const_cast<GapEditScript*>(esp_head);
     ENa_strand m_strand, s_strand;    // strands of alignment
     TSignedSeqPos m_start, s_start;   // running starts of alignment
     int start1 = hsp->query.offset;   // start of alignment on master sequence
@@ -196,16 +196,16 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp_head,
     m_strand = s_Frame2Strand(hsp->query.frame);
     s_strand = s_Frame2Strand(hsp->subject.frame);
 
-    for (unsigned int i = 0; esp && i < nsegs; esp = esp->next, i++) {
-        switch (esp->op_type) {
+    for (unsigned int esp_index = first; esp_index< (unsigned int)esp->size && esp_index < (unsigned int)(first+nsegs); esp_index++) {
+        switch (esp->op_type[esp_index]) {
         case eGapAlignDecline:
         case eGapAlignSub:
             m_start = 
-                s_GetAlignmentStart(start1, esp, m_strand, translate1, length1,
+                s_GetAlignmentStart(start1, esp->num[esp_index], m_strand, translate1, length1,
                                     query_length, hsp->query.frame);
 
             s_start = 
-                s_GetAlignmentStart(start2, esp, s_strand, translate2, length2,
+                s_GetAlignmentStart(start2, esp->num[esp_index], s_strand, translate2, length2,
                                     subject_length, hsp->subject.frame);
 
             strands.push_back(m_strand);
@@ -217,13 +217,13 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp_head,
         // Insertion on the master sequence (gap on slave)
         case eGapAlignIns:
             m_start = 
-                s_GetAlignmentStart(start1, esp, m_strand, translate1, length1,
+                s_GetAlignmentStart(start1, esp->num[esp_index], m_strand, translate1, length1,
                                     query_length, hsp->query.frame);
 
             s_start = GAP_VALUE;
 
             strands.push_back(m_strand);
-            strands.push_back(i == 0 ? eNa_strand_unknown : s_strand);
+            strands.push_back(esp_index == 0 ? eNa_strand_unknown : s_strand);
             starts.push_back(m_start);
             starts.push_back(s_start);
             break;
@@ -233,10 +233,10 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp_head,
             m_start = GAP_VALUE;
 
             s_start = 
-                s_GetAlignmentStart(start2, esp, s_strand, translate2, length2,
+                s_GetAlignmentStart(start2, esp->num[esp_index], s_strand, translate2, length2,
                                     subject_length, hsp->subject.frame);
 
-            strands.push_back(i == 0 ? eNa_strand_unknown : m_strand);
+            strands.push_back(esp_index == 0 ? eNa_strand_unknown : m_strand);
             strands.push_back(s_strand);
             starts.push_back(m_start);
             starts.push_back(s_start);
@@ -246,7 +246,7 @@ s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp_head,
             break;
         }
 
-        lengths.push_back(esp->num);
+        lengths.push_back(esp->num[esp_index]);
     }
 
     // Make sure the vectors have the right size
@@ -378,37 +378,23 @@ s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
 static void 
 s_CorrectUASequence(BlastHSP* hsp)
 {
-    GapEditScript* curr = NULL,* curr_last = NULL;
-    GapEditScript* indel_prev = NULL; // pointer to node before the last
-            // insertion or deletion followed immediately by GAPALIGN_DECLINE
-    bool last_indel = false;    // last operation was an insertion or deletion
-
-    for (curr = hsp->gap_info; curr; curr = curr->next) {
-
+    GapEditScript* esp = hsp->gap_info;
+    for (int index=0; index<esp->size; index++)
+    {
         // if GAPALIGN_DECLINE immediately follows an insertion or deletion
-        if (curr->op_type == eGapAlignDecline && last_indel) {
+        if (index > 0 && esp->op_type[index] == eGapAlignDecline && 
+           (esp->op_type[index-1] == eGapAlignIns || esp->op_type[index-1] == eGapAlignDel)) 
+        {
             /* This is invalid condition and regions should be
                exchanged */
+            int temp_num = esp->num[index];
+            EGapAlignOpType temp_op = esp->op_type[index];
 
-            if (indel_prev != NULL)
-                indel_prev->next = curr;
-            else
-                hsp->gap_info = curr; /* First element in a list */
-
-            // CC: If flaking gaps are allowed, curr_last could be NULL and the
-            // following statement would core dump...
-            curr_last->next = curr->next;
-            curr->next = curr_last;
+            esp->num[index] = esp->num[index-1];
+            esp->op_type[index] = esp->op_type[index-1];
+            esp->num[index-1] = temp_num;
+            esp->op_type[index-1] = temp_op;
         }
-
-        last_indel = false;
-
-        if (curr->op_type == eGapAlignIns || curr->op_type == eGapAlignDel) {
-            last_indel = true;
-            indel_prev = curr_last;
-        }
-
-        curr_last = curr;
     }
     return;
 }
@@ -465,13 +451,16 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
     vector<TSignedSeqPos> starts;
     vector<TSeqPos> lengths;
     vector<ENa_strand> strands;
-    bool is_disc_align = false;
-    int nsegs = 0;      // number of segments in edit_block->esp
     bool translate1, translate2;
+    bool is_disc_align = false;
 
-    for (GapEditScript* t = hsp->gap_info; t; t = t->next, nsegs++) {
-        if (t->op_type == eGapAlignDecline)
+    GapEditScript* t = hsp->gap_info;
+    for (int i=0; i<t->size; i++) {
+        if (t->op_type[i] == eGapAlignDecline)
+        {
             is_disc_align = true;
+            break;
+        }
     }
 
     translate1 = (program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
@@ -491,19 +480,22 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
         seqalign->SetDim(2);         // BLAST only creates pairwise alignments
 
         bool skip_region;
-        GapEditScript* curr = NULL,* curr_head = hsp->gap_info;
+        GapEditScript* esp=hsp->gap_info;
+        int nsegs = 0;
 
-        while (curr_head) {
+        for (int index=0; index< esp->size; index++)
+        {
             skip_region = false;
-
-            for (nsegs = 0, curr = curr_head; curr; curr = curr->next, nsegs++){
-                if (curr->op_type == eGapAlignDecline) {
+            int index2 = index;
+            int first = index;
+            for (index2=first; index2<esp->size; index2++, nsegs++){
+                if (esp->op_type[index2] == eGapAlignDecline) {
                     if (nsegs != 0) { // end of aligned region
                         break;
                     } else {
-                        while (curr && curr->op_type == eGapAlignDecline) {
+                        while (index2<esp->size && esp->op_type[index2] == eGapAlignDecline) {
                             nsegs++;
-                            curr = curr->next;
+                            index2++;
                         }
                         skip_region = true;
                         break;
@@ -514,7 +506,7 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
             // build seqalign for required regions only
             if (!skip_region) {
 
-                s_CollectSeqAlignData(hsp, curr_head, nsegs, starts, lengths, 
+                s_CollectSeqAlignData(hsp, esp, 0, nsegs, starts, lengths, 
                                       strands, query_length, subject_length,
                                       translate1, translate2);
 
@@ -526,14 +518,13 @@ s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 if (sa_tmp)
                     seqalign->SetSegs().SetDisc().Set().push_back(sa_tmp);
             }
-            curr_head = curr;
         }
 
         return seqalign;
 
     } else {
 
-        s_CollectSeqAlignData(hsp, hsp->gap_info, nsegs, starts, lengths, 
+        s_CollectSeqAlignData(hsp, hsp->gap_info, 0, hsp->gap_info->size, starts, lengths, 
                               strands, query_length, subject_length,
                               translate1, translate2);
 
@@ -561,7 +552,6 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
     CRef<CSeq_align> seqalign(new CSeq_align());
 
     Boolean reverse = FALSE;
-    GapEditScript* curr,* esp;
     Int2 frame1, frame2;
     Int4 start1, start2;
     Int4 original_length1, original_length2;
@@ -599,25 +589,25 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
     strand1 = s_Frame2Strand(frame1);
     strand2 = s_Frame2Strand(frame2);
     
-    esp = hsp->gap_info;
-    
-    seqalign->SetDim(2); /**only two dimention alignment**/
+    seqalign->SetDim(2); /**only two dimensional alignment**/
     
     seqalign->SetType(CSeq_align::eType_partial); /**partial for gapped translating search. */
 
     first_shift = false;
 
-    for (curr=esp; curr; curr=curr->next) {
+    GapEditScript* esp = hsp->gap_info;
 
+    for (int index=0; index<esp->size; index++)
+    {
         slp1.Reset(new CSeq_loc());
         slp2.Reset(new CSeq_loc());
         
-        switch (curr->op_type) {
+        switch (esp->op_type[index]) {
         case eGapAlignDel: /* deletion of three nucleotides. */
             
             first_shift = false;
 
-            slp1->SetInt().SetFrom(s_GetCurrPos(start1, curr->num));
+            slp1->SetInt().SetFrom(s_GetCurrPos(start1, esp->num[index]));
             slp1->SetInt().SetTo(MIN(start1,original_length1) - 1);
             tmp.Reset(new CSeq_id(id1->AsFastaString()));
             slp1->SetInt().SetId(*tmp);
@@ -696,7 +686,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
             slp1->SetEmpty(*tmp);
             
             /* Nucleotide scale shifted by 3, protein gapped */
-            from2 = s_GetCurrPos(start2, curr->num*3);
+            from2 = s_GetCurrPos(start2, esp->num[index]*3);
             to2 = MIN(start2,original_length2) - 1;
             slp2->SetInt().SetFrom(from2);
             slp2->SetInt().SetTo(to2);
@@ -720,11 +710,11 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
             first_shift = false;
 
             /* Protein coordinates */
-            from1 = s_GetCurrPos(start1, curr->num);
+            from1 = s_GetCurrPos(start1, esp->num[index]);
             to1 = MIN(start1, original_length1) - 1;
             /* Adjusting last segment and new start point in
                nucleotide coordinates */
-            from2 = s_GetCurrPos(start2, curr->num*((Uint1)curr->op_type));
+            from2 = s_GetCurrPos(start2, esp->num[index]*((Uint1)esp->op_type[index]));
             to2 = start2 - 1;
             /* Chop off three bases and one residue at a time.
                Why does this happen, seems like a bug?
@@ -768,7 +758,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                 to1 = MIN(start1,original_length1) - 1;
 
                 /* Nucleotide scale shifted by op_type */
-                from2 = s_GetCurrPos(start2, (Uint1)curr->op_type);
+                from2 = s_GetCurrPos(start2, (Uint1)esp->op_type[index]);
                 to2 = start2 - 1;
                 if (to2 >= original_length2) {
                     to2 = original_length2 -1;
@@ -806,7 +796,7 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                old one */
 
             if(seq_int2_last) {
-                s_GetCurrPos(start2, curr->num*((Uint1)curr->op_type-3));
+                s_GetCurrPos(start2, esp->num[index]*((Uint1)esp->op_type[index]-3));
                 if(strand2 != eNa_strand_minus) {
                     seq_int2_last->SetTo(start2 - 1);
                 } else {
@@ -829,13 +819,13 @@ s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
                         seq_int1_last->SetTo(seq_int1_last->GetTo() + 1);
                 }
 
-            } else if ((Uint1)curr->op_type > 3) {
+            } else if ((Uint1)esp->op_type[index] > 3) {
                 /* Protein piece is empty */
                 tmp.Reset(new CSeq_id(id1->AsFastaString()));
                 slp1->SetEmpty(*tmp);
                 /* Simulating insertion of nucleotides */
                 from2 = s_GetCurrPos(start2, 
-                                     curr->num*((Uint1)curr->op_type-3));
+                                     esp->num[index]*((Uint1)esp->op_type[index]-3));
                 to2 = MIN(start2,original_length2) - 1;
 
                 /* Transfer to DNA minus strand coordinates */
@@ -1622,6 +1612,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.65  2006/02/15 15:07:32  madden
+* Changes for GapEditScript structure change
+*
 * Revision 1.64  2006/01/13 13:42:25  madden
 * In s_BuildScoreList, add the comp_adjustment_method to the score set
 * if it is nonzero.  This field is understood by the formatter. (from Mike Gertz).

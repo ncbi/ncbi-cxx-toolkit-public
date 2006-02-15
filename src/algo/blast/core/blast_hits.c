@@ -171,17 +171,7 @@ s_BlastHSPCopy(const BlastHSP* hsp)
     new_hsp->bit_score = hsp->bit_score;
     new_hsp->comp_adjustment_method = hsp->comp_adjustment_method;
     if (hsp->gap_info) {
-        GapEditScript* edit_script = hsp->gap_info;
-        GapEditScript* new_edit_script;
-        new_hsp->gap_info = new_edit_script =
-            (GapEditScript*) BlastMemDup(edit_script, sizeof(GapEditScript));
-        /* Copy the linked list of edit scripts. */
-        for (edit_script = edit_script->next; edit_script; 
-             edit_script = edit_script->next) {
-            new_edit_script->next =
-                (GapEditScript*) BlastMemDup(edit_script, sizeof(GapEditScript));
-            new_edit_script = new_edit_script->next;
-        }
+        new_hsp->gap_info = GapEditScriptDup(hsp->gap_info);
     }
 
     if (hsp->pat_info) {
@@ -230,11 +220,9 @@ s_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp,
  * @param best_q_end Pointer to end of the new alignment in query [in]
  * @param best_s_start Pointer to start of the new alignment in subject [in]
  * @param best_s_end Pointer to end of the new alignment in subject [in]
- * @param best_start_esp Link in the edit script chain where the new alignment
+ * @param best_start_esp_index index of the edit script array where the new alignment
  *                       starts. [in]
- * @param best_prev_esp Link in the edit script chain immediately preceding
- *                      best_start_esp. [in]
- * @param best_end_esp Link in the edit script chain where the new alignment 
+ * @param best_end_esp_index index in the edit script array where the new alignment 
  *                     ends. [in]
  * @param best_end_esp_num Number of edit operations in the last edit script,
  *                         that are included in the alignment. [in]
@@ -246,29 +234,14 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
                        Int4 score, Uint1* query_start, Uint1* subject_start, 
                        Uint1* best_q_start, Uint1* best_q_end, 
                        Uint1* best_s_start, Uint1* best_s_end, 
-                       GapEditScript* best_start_esp, 
-                       GapEditScript* best_prev_esp, GapEditScript* best_end_esp,
-                       Int4 best_end_esp_num)
+                       int best_start_esp_index,
+                       int best_end_esp_index,
+                       int best_end_esp_num)
 {
     Boolean delete_hsp = TRUE;
 
     hsp->score = score;
 
-    /* Make corrections in edit block and free any parts that are no longer
-       needed */
-    if (gapped && best_start_esp && best_start_esp != hsp->gap_info) {
-        /* best_prev_esp is the link in the chain exactly preceding the starting
-           edit script of the best part of the alignment. If best alignment was
-           found, but it does not start from the original start, best_prev_esp 
-           cannot be NULL. */
-        ASSERT (best_prev_esp);
-        /* Unlink the good part of the alignment from the previous 
-           (negative-scoring) part that is being deleted. */
-        best_prev_esp->next = NULL;
-        GapEditScriptDelete(hsp->gap_info);
-        hsp->gap_info = best_start_esp;
-    }
-    
     if (hsp->score >= cutoff_score) {
         /* Update all HSP offsets. */
         hsp->query.offset = best_q_start - query_start;
@@ -277,11 +250,17 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
         hsp->subject.end = hsp->subject.offset + best_s_end - best_s_start;
 
         if (gapped) {
-            if (best_end_esp->next != NULL) {
-                GapEditScriptDelete(best_end_esp->next);
-                best_end_esp->next = NULL;
+            int last_num=hsp->gap_info->size - 1;
+            if (best_end_esp_index != last_num|| best_start_esp_index > 0)
+            {
+                GapEditScript* esp_temp = GapEditScriptNew(best_end_esp_index-best_start_esp_index+1);
+                GapEditScriptPartialCopy(esp_temp, 0, hsp->gap_info, best_start_esp_index, best_end_esp_index);
+                hsp->gap_info = GapEditScriptDelete(hsp->gap_info);
+                hsp->gap_info = esp_temp;
             }
-            best_end_esp->num = best_end_esp_num;
+            last_num = hsp->gap_info->size - 1;
+            hsp->gap_info->num[last_num] = best_end_esp_num;
+            ASSERT(best_end_esp_num >= 0);
         }
         delete_hsp = FALSE;
     }
@@ -296,35 +275,24 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
            BlastScoreBlk* sbp)
 {
    Int4 sum, score, gap_open, gap_extend;
+   Int4 index; /* loop index */
 
-   GapEditScript* best_start_esp; /* Starting edit script for the best scoring
-                                     piece of the alignment. */
-   GapEditScript* best_end_esp; /* Ending edit script for the best scoring piece
-                                   of the alignment. */
-   GapEditScript* best_prev_esp; /* Previous link in the edit script chain 
-                                    before best_end_esp. */
-   Int4 best_end_esp_num; /* Number of operations inside the ending edit script
-                             for the best scoring piece. */
+   int best_start_esp_index = 0;
+   int best_end_esp_index = 0;
+   int current_start_esp_index = 0;
+   int best_end_esp_num = 0;
+   GapEditScript* esp;  /* Used to hold GapEditScript of hsp->gap_info */
 
    Uint1* best_q_start; /* Start of the best scoring part in query. */
    Uint1* best_s_start; /* Start of the best scoring part in subject. */
    Uint1* best_q_end;   /* End of the best scoring part in query. */
    Uint1* best_s_end;   /* End of the best scoring part in subject. */
    
-   GapEditScript* current_start_esp; /* Starting edit script for the current 
-                                        part of the alignment. */
-   GapEditScript* current_esp; /* Ending edit script for the current part
-                          of the alignment. */
-   GapEditScript* current_prev_esp; /* Previous link in the edit script chain 
-                                       before current_esp. */
-   GapEditScript* current_start_prev_esp; /* Previous link in the edit script 
-                                             chain before current_start_esp. */
 
    Uint1* current_q_start; /* Start of the current part of the alignment in 
                            query. */
    Uint1* current_s_start; /* Start of the current part of the alignment in 
                            subject. */
-   Int4 op_index; /* Index of an operation within a single edit script. */
 
    Uint1* query,* subject;
    Int4** matrix;
@@ -354,87 +322,78 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    /* Point all pointers to the beginning of the alignment. */
    best_q_start = best_q_end = current_q_start = query;
    best_s_start = best_s_end = current_s_start = subject;
-   best_start_esp = best_end_esp = current_start_esp = current_esp =
-       hsp->gap_info;
    /* There are no previous edit scripts at the beginning. */
-   best_prev_esp = current_prev_esp = current_start_prev_esp = NULL;
-   best_end_esp_num = 0;
-   op_index = 0;
    
-   while (current_esp) {
-       /* Process substitutions one operation at a time, full gaps in one 
-          step. */
-       if (current_esp->op_type == eGapAlignSub) {
-           sum += factor*matrix[*query & kResidueMask][*subject];
-           query++;
-           subject++;
-           op_index++;
-       } else if (current_esp->op_type == eGapAlignDel) {
-           sum -= gap_open + gap_extend * current_esp->num;
-           subject += current_esp->num;
-           op_index += current_esp->num;
-       } else if (current_esp->op_type == eGapAlignIns) {
-           sum -= gap_open + gap_extend * current_esp->num;
-           query += current_esp->num;
-           op_index += current_esp->num;
-       }
+   best_end_esp_num = -1;
+   esp = hsp->gap_info;
+   for (index=0; index<esp->size; index++)
+   {
+       int op_index = 0;  /* Index of an operation within a single edit script. */
+       for (op_index=0; op_index<esp->num[index]; )
+       {
+          /* Process substitutions one operation at a time, full gaps in one step. */
+          if (esp->op_type[index] == eGapAlignSub) {
+              sum += factor*matrix[*query & kResidueMask][*subject];
+              query++;
+              subject++;
+              op_index++;
+          } else if (esp->op_type[index] == eGapAlignDel) {
+              sum -= gap_open + gap_extend * esp->num[index];
+              subject += esp->num[index];
+              op_index += esp->num[index];
+          } else if (esp->op_type[index] == eGapAlignIns) {
+              sum -= gap_open + gap_extend * esp->num[index];
+              query += esp->num[index];
+              op_index += esp->num[index];
+          }
       
-       if (sum < 0) {
+          if (sum < 0) {
            /* Point current edit script chain start to the new place.
               If we are in the middle of an edit script, reduce its length and
               point operation index to the beginning of a modified edit script;
               if we are at the end, move to the next edit script. */
-           if (op_index < current_esp->num) {
-               current_esp->num -= op_index;
-               current_start_esp = current_esp;
-               current_start_prev_esp = current_prev_esp;
-               op_index = 0;
-           } else {
-               current_start_esp = current_esp->next;
-               current_start_prev_esp = current_esp;
-           }
-           /* Set sum to 0, to start a fresh count. */
-           sum = 0;
-           /* Set current starting positions in sequences to the new start. */
-           current_q_start = query;
-           current_s_start = subject;
+              if (op_index < esp->num[index]) {
+                  esp->num[index] -= op_index;
+                  current_start_esp_index = index;
+                  op_index = 0;
+              } else {
+                  current_start_esp_index = index + 1;
+              }
+              /* Set sum to 0, to start a fresh count. */
+              sum = 0;
+              /* Set current starting positions in sequences to the new start. */
+              current_q_start = query;
+              current_s_start = subject;
 
-           /* If score has passed the cutoff at some point, leave the best score
-              and edit scripts positions information untouched, otherwise reset
-              the best score to 0 and point the best edit script positions to
-              the new start. */
-           if (score < hit_params->cutoff_score) {
-               /* Start from new offset; discard all previous information. */
-               best_q_start = query;
-               best_s_start = subject;
-               score = 0; 
+              /* If score has passed the cutoff at some point, leave the best score
+                 and edit scripts positions information untouched, otherwise reset
+                 the best score to 0 and point the best edit script positions to
+                 the new start. */
+              if (score < hit_params->cutoff_score) {
+                  /* Start from new offset; discard all previous information. */
+                  best_q_start = query;
+                  best_s_start = subject;
+                  score = 0; 
                
-               /* Set best start and end edit script pointers to new start. */
-               best_start_esp = current_start_esp;
-               best_end_esp = current_start_esp;
-               best_prev_esp = current_prev_esp;
-           }
-       } else if (sum > score) {
-           /* Remember this point as the best scoring end point, and the current
+                  /* Set best start and end edit script pointers to new start. */
+                  best_start_esp_index = current_start_esp_index;
+                  best_end_esp_index = current_start_esp_index;
+              }
+             /* break; */ /* start on next GapEditScript. */
+          } else if (sum > score) {
+              /* Remember this point as the best scoring end point, and the current
               start of the alignment as the start of the best alignment. */
-           score = sum;
+              score = sum;
            
-           best_q_start = current_q_start;
-           best_s_start = current_s_start;
-           best_q_end = query;
-           best_s_end = subject;
+              best_q_start = current_q_start;
+              best_s_start = current_s_start;
+              best_q_end = query;
+              best_s_end = subject;
            
-           best_start_esp = current_start_esp;
-           best_end_esp = current_esp;
-           best_prev_esp = current_start_prev_esp;
-           best_end_esp_num = op_index;
-       }
-       /* If operation index has reached the end of the current edit script, 
-          move on to the next link in the edit script chain. */
-       if (op_index >= current_esp->num) {
-           op_index = 0;
-           current_prev_esp = current_esp;
-           current_esp = current_esp->next;
+              best_start_esp_index = current_start_esp_index;
+              best_end_esp_index = index;
+              best_end_esp_num = op_index;
+          }
        }
    } /* loop on edit scripts */
    
@@ -445,7 +404,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
        s_UpdateReevaluatedHSP(hsp, TRUE, hit_params->cutoff_score, score, 
                               query_start, subject_start, best_q_start, 
                               best_q_end, best_s_start, best_s_end, 
-                              best_start_esp, best_prev_esp, best_end_esp, 
+                              best_start_esp_index, best_end_esp_index,
                               best_end_esp_num);
 }
 
@@ -472,7 +431,7 @@ s_UpdateReevaluatedHSPUngapped(BlastHSP* hsp, Int4 cutoff_score, Int4 score,
     return
         s_UpdateReevaluatedHSP(hsp, FALSE, cutoff_score, score, query_start, 
                                subject_start, best_q_start, best_q_end, 
-                               best_s_start, best_s_end, NULL, NULL, NULL, 0);
+                               best_s_start, best_s_end, 0, 0, 0);
 }
 
 Boolean 
@@ -542,7 +501,6 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject,
 {
    Int4 i, num_ident, align_length, q_off, s_off;
    Uint1* q,* s;
-   GapEditScript* esp;
    Int4 q_length = hsp->query.end - hsp->query.offset;
    Int4 s_length = hsp->subject.end - hsp->subject.offset;
 
@@ -570,24 +528,27 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject,
             num_ident++;
       }
    } else {
-      for (esp = hsp->gap_info; esp; esp = esp->next) {
-         align_length += esp->num;
-         switch (esp->op_type) {
+      Int4 index;
+      GapEditScript* esp = hsp->gap_info;
+      for (index=0; index<esp->size; index++)
+      {
+         align_length += esp->num[index];
+         switch (esp->op_type[index]) {
          case eGapAlignSub:
-            for (i=0; i<esp->num; i++) {
+            for (i=0; i<esp->num[index]; i++) {
                if (*q++ == *s++)
                   num_ident++;
             }
             break;
          case eGapAlignDel:
-            s += esp->num;
+            s += esp->num[index];
             break;
          case eGapAlignIns:
-            q += esp->num;
+            q += esp->num[index];
             break;
          default: 
-            s += esp->num;
-            q += esp->num;
+            s += esp->num[index];
+            q += esp->num[index];
             break;
          }
       }
@@ -603,7 +564,8 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
    BlastHSP* hsp, EBlastProgramType program, 
    Int4* num_ident_ptr, Int4* align_length_ptr)
 {
-   Int4 i, num_ident, align_length;
+   Int4 num_ident, align_length;
+   Int4 index;
    Uint1* q,* s;
    GapEditScript* esp;
 
@@ -622,11 +584,14 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
    num_ident = 0;
    align_length = 0;
 
-   for (esp = hsp->gap_info; esp; esp = esp->next) {
-      switch (esp->op_type) {
+   esp = hsp->gap_info;
+   for (index=0; index<esp->size; index++)
+   {
+      int i;
+      switch (esp->op_type[index]) {
       case eGapAlignSub: /* Substitution */
-         align_length += esp->num;
-         for (i=0; i<esp->num; i++) {
+         align_length += esp->num[index];
+         for (i=0; i<esp->num[index]; i++) {
             if (*q == *s)
                num_ident++;
             ++q;
@@ -634,12 +599,12 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
          }
          break;
       case eGapAlignIns: /* Insertion */
-         align_length += esp->num;
-         s += esp->num * CODON_LENGTH;
+         align_length += esp->num[index];
+         s += esp->num[index] * CODON_LENGTH;
          break;
       case eGapAlignDel: /* Deletion */
-         align_length += esp->num;
-         q += esp->num;
+         align_length += esp->num[index];
+         q += esp->num[index];
          break;
       case eGapAlignDel2: /* Gap of two nucleotides. */
          s -= 2;
@@ -654,8 +619,8 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
          s += 2;
          break;
       default: 
-         s += esp->num * CODON_LENGTH;
-         q += esp->num;
+         s += esp->num[index] * CODON_LENGTH;
+         q += esp->num[index];
          break;
       }
    }
@@ -721,14 +686,15 @@ Blast_HSPCalcLengthAndGaps(const BlastHSP* hsp, Int4* length_out,
 
    if (hsp->gap_info) {
       GapEditScript* esp = hsp->gap_info;
-      for ( ; esp; esp = esp->next) {
-         if (esp->op_type == eGapAlignDel) {
-            length += esp->num;
-            gaps += esp->num;
+      Int4 index;
+      for (index=0; index<esp->size; index++) {
+         if (esp->op_type[index] == eGapAlignDel) {
+            length += esp->num[index];
+            gaps += esp->num[index];
             ++gap_opens;
-         } else if (esp->op_type == eGapAlignIns) {
+         } else if (esp->op_type[index] == eGapAlignIns) {
             ++gap_opens;
-            gaps += esp->num;
+            gaps += esp->num[index];
          }
       }
    } else if (s_length > length) {
@@ -1070,19 +1036,30 @@ typedef struct BlastHSPSegment {
     Int4 length;  /**< length of segments. */
     Int4 diagonal; /**< diagonal (q_start - s_start). */
     GapEditScript* esp; /**< pointer to edit script, not owned! */
+    Int4 esp_offset;  /**< element of above esp this node refers to */
 } BlastHSPSegment;
 
 
+/** function to create and populate a BlastHSPSegement.
+ *  The new segemnt is added to an existing chain unless NULL
+ *
+ * @param segment object to be allocated and populated [in|out]
+ * @param q_start start of match on query [in]
+ * @param s_start start of match on subject [in]
+ * @param esp GapEditScript for this alignment [in]
+ * @param esp_offset relevant element of GapEditScript [in]
+ */
 static void
-s_AddHSPSegment(BlastHSPSegment** segment, int q_start, int s_start, GapEditScript* esp)
+s_AddHSPSegment(BlastHSPSegment** segment, int q_start, int s_start, GapEditScript* esp, int esp_offset)
 {
     BlastHSPSegment* new = malloc(sizeof(BlastHSPSegment));
     new->next = NULL;
     new->q_start = q_start;
     new->s_start = s_start;
-    new->length = esp->num;
+    new->length = esp->num[esp_offset];
     new->diagonal = q_start - s_start;
     new->esp = esp;
+    new->esp_offset = esp_offset;
     if (*segment)
     {
         BlastHSPSegment* var = *segment;
@@ -1096,6 +1073,10 @@ s_AddHSPSegment(BlastHSPSegment** segment, int q_start, int s_start, GapEditScri
     return;
 }
 
+/** Deallocates all segments in chain.
+ * Does not free underlying data
+ * @param segments linked list of segments
+ */
 static BlastHSPSegment*
 s_DeleteAllHSPSegments(BlastHSPSegment* segments)
 {
@@ -1120,6 +1101,7 @@ BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    GapEditScript* esp;
    Int4 q_start, s_start;  /* start on query and subject sequences. */
    Int4 max_s_end = -1, max_q_end = -1;  /* furthest extent of first HSP. */
+   Int4 index; /* loop index. */
 
    if (!hsp1->gap_info || !hsp2->gap_info)
    {
@@ -1137,48 +1119,44 @@ BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    esp = hsp1->gap_info;
    q_start = hsp1->query.offset;
    s_start = hsp1->subject.offset;
-   while (esp)
+   for (index=0; index<esp->size; index++)
    {
-      if (esp->op_type == eGapAlignSub)
+      if (esp->op_type[index] == eGapAlignSub)
       {
-            if (s_start+esp->num > start)  /* End of segment within overlap region. */
+            if (s_start+(esp->num[index]) > start)  /* End of segment within overlap region. */
             {
-                s_AddHSPSegment(&segment1, q_start, s_start, esp);
-                max_q_end = MAX(max_q_end, q_start+esp->num);
-                max_s_end = MAX(max_s_end, s_start+esp->num);
+                s_AddHSPSegment(&segment1, q_start, s_start, esp, index);
+                max_q_end = MAX(max_q_end, q_start+esp->num[index]);
+                max_s_end = MAX(max_s_end, s_start+esp->num[index]);
             }
-            q_start += esp->num;
-            s_start += esp->num;
+            q_start += esp->num[index];
+            s_start += esp->num[index];
       } 
-      else if (esp->op_type == eGapAlignIns)
-            q_start += esp->num;
-      else if (esp->op_type == eGapAlignDel)
-            s_start += esp->num;
-
-      esp = esp->next;
+      else if (esp->op_type[index] == eGapAlignIns)
+            q_start += esp->num[index];
+      else if (esp->op_type[index] == eGapAlignDel)
+            s_start += esp->num[index];
    }
 
    esp = hsp2->gap_info;
    q_start = hsp2->query.offset;
    s_start = hsp2->subject.offset;
-   while (esp)
+   for (index=0; index<esp->size; index++)
    {
-      if (esp->op_type == eGapAlignSub)
+      if (esp->op_type[index] == eGapAlignSub)
       {
             if (max_s_end > s_start)
-                s_AddHSPSegment(&segment2, q_start, s_start, esp);
+                s_AddHSPSegment(&segment2, q_start, s_start, esp, index);
             else 
                 break;
 
-            q_start += esp->num;
-            s_start += esp->num;
+            q_start += esp->num[index];
+            s_start += esp->num[index];
       } 
-      else if (esp->op_type == eGapAlignIns)
-            q_start += esp->num;
-      else if (esp->op_type == eGapAlignDel)
-            s_start += esp->num;
-
-      esp = esp->next;
+      else if (esp->op_type[index] == eGapAlignIns)
+            q_start += esp->num[index];
+      else if (esp->op_type[index] == eGapAlignDel)
+            s_start += esp->num[index];
    }
 
    if (segment1 && segment2)
@@ -1211,12 +1189,24 @@ BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
        { 
            int end_1 = segment1_var->q_start + segment1_var->length;
            int end_2 = segment2_var->q_start + segment2_var->length;
-           segment1_var->esp->num += (end_2 - end_1);
-           GapEditScriptDelete(segment1_var->esp->next);
-           segment1_var->esp->next = segment2_var->esp->next;
-           segment2_var->esp->next = NULL;
+           GapEditScript* esp_temp_1 = segment1_var->esp;
+           GapEditScript* esp_temp_2 = segment2_var->esp;
+           GapEditScript* new_esp = NULL;
+           int new_size = 0;
+
+           /* we use the GapEditScript element pointed to be segment1_var, ignoring the one
+              pointed to by segment2_var as it overlaps with the first.  */
+           esp_temp_1->num[segment1_var->esp_offset] += (end_2 - end_1);
+           new_size = segment1_var->esp_offset + esp_temp_2->size - segment2_var->esp_offset;
+           new_esp = GapEditScriptNew(new_size);
+           GapEditScriptPartialCopy(new_esp, 0, esp_temp_1, 0, segment1_var->esp_offset); 
+           GapEditScriptPartialCopy(new_esp, 1+segment1_var->esp_offset, esp_temp_2, 
+                  segment2_var->esp_offset+1, esp_temp_2->size-1); 
+           hsp1->gap_info = GapEditScriptDelete(hsp1->gap_info);
+           hsp1->gap_info = new_esp;
            hsp1->query.end = hsp2->query.end;
            hsp1->subject.end = hsp2->subject.end;
+           hsp1->score = MAX(hsp1->score, hsp2->score);  /* Neither score may be correct, so we use the highest one. */
        }
    }
 
@@ -1226,13 +1216,11 @@ BlastMergeTwoHSPs(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    return found;  
 }
 
-
 /** Maximal diagonal distance between HSP starting offsets, within which HSPs 
  * from search of different chunks of subject sequence are considered for 
  * merging.
  */
 #define OVERLAP_DIAG_CLOSE 10
-
 /********************************************************************************
           Functions manipulating BlastHSPList's
 ********************************************************************************/

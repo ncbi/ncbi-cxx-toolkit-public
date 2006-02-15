@@ -2114,51 +2114,59 @@ GapEditScript*
 Blast_PrelimEditBlockToGapEditScript (GapPrelimEditBlock* rev_prelim_tback,
                                       GapPrelimEditBlock* fwd_prelim_tback)
 {
-   GapEditScript* esp_start = NULL,* esp;
+   Boolean merge_ops = FALSE;
+   GapEditScript* esp;
    GapPrelimEditScript *op;
    Int4 i;
+   Int4 index=0;
+   Int4 size = 0;
 
    if (rev_prelim_tback == NULL || fwd_prelim_tback == NULL)
       return NULL;
 
-   /* turn the right extension into a linked list (built
-      last to first). Reverse the edit script in the process */
+   /* The fwd_prelim_tback script will get reversed here as the traceback started from the highest scoring point
+     and worked backwards. The rev_prelim_tback script does NOT get reversed.  Since it was reversed when the 
+     traceback was produced it's already "forward" */
 
-   for (i=0; i < fwd_prelim_tback->num_ops; i++) {
-      esp = (GapEditScript*) malloc(sizeof(GapEditScript));
-      op = fwd_prelim_tback->edit_ops + i;
-      esp->op_type = op->op_type;
-      esp->num = op->num;
-      esp->next = esp_start;
-      esp_start = esp;
+   if (fwd_prelim_tback->num_ops > 0 && rev_prelim_tback->num_ops > 0 &&
+       fwd_prelim_tback->edit_ops[(fwd_prelim_tback->num_ops)-1].op_type == 
+         rev_prelim_tback->edit_ops[(rev_prelim_tback->num_ops)-1].op_type)
+     merge_ops = TRUE;
+ 
+   size = fwd_prelim_tback->num_ops+rev_prelim_tback->num_ops;
+   if (merge_ops)
+     size--;
+
+   esp = GapEditScriptNew(size);
+
+   index = 0;
+   for (i=0; i < rev_prelim_tback->num_ops; i++) {
+      op = rev_prelim_tback->edit_ops + i;
+      esp->op_type[index] = op->op_type;
+      esp->num[index] = op->num;
+      index++;
    }
 
-   /* if the first operation in the forward script matches the
-      last operation in the reverse script, merge the two 
-      operations */
+   if (fwd_prelim_tback->num_ops == 0)
+      return esp;
 
-   if (rev_prelim_tback->num_ops == 0)
-       return esp_start;
+   if (merge_ops)
+       esp->num[index-1] += fwd_prelim_tback->edit_ops[(fwd_prelim_tback->num_ops)-1].num;
 
-   i = rev_prelim_tback->num_ops - 1;
-   op = rev_prelim_tback->edit_ops + i;
-   if (esp_start && esp_start->op_type == op->op_type) {
-       esp_start->num += op->num;
-       i--;
-   }
-
-   /* prepend the reverse script to the list of actions */
+   /* If we merge, then we skip the first one. */
+   if (merge_ops)
+      i = fwd_prelim_tback->num_ops - 2;
+   else
+      i = fwd_prelim_tback->num_ops - 1;
 
    for (; i >= 0; i--) {
-      esp = (GapEditScript*) malloc(sizeof(GapEditScript));
-      op = rev_prelim_tback->edit_ops + i;
-      esp->op_type = op->op_type;
-      esp->num = op->num;
-      esp->next = esp_start;
-      esp_start = esp;
+      op = fwd_prelim_tback->edit_ops + i;
+      esp->op_type[index] = op->op_type;
+      esp->num[index] = op->num;
+      index++;
    }
 
-   return esp_start;
+   return esp;
 }
 
 /** Fills the BlastGapAlignStruct structure with the results of a gapped 
@@ -3054,6 +3062,7 @@ s_BlastOOFTracebackToGapEditScript(GapPrelimEditBlock *rev_prelim_tback,
     Int4 last_num;
     GapPrelimEditBlock *tmp_prelim_tback;
     Int4 i, num_nuc;
+    int extra_needed=0;
     
     /* prepend a substitution, since the input sequences were
        shifted prior to the OOF alignment */
@@ -3148,70 +3157,85 @@ s_BlastOOFTracebackToGapEditScript(GapPrelimEditBlock *rev_prelim_tback,
     }
 
     /* form the final edit block */
-
-    *edit_script_ptr = e_script =
-        Blast_PrelimEditBlockToGapEditScript(tmp_prelim_tback,
-                                         fwd_prelim_tback);
+    e_script = Blast_PrelimEditBlockToGapEditScript(tmp_prelim_tback, fwd_prelim_tback);
+    GapPrelimEditBlockFree(tmp_prelim_tback);
 
     /* postprocess the edit script */
-
     num_nuc = 0;
-    while (e_script != NULL) {
-
+    for (i=0; i<e_script->size; i++)
+    {
+        int total_actions=0;
         /* Count the number of nucleotides in the next 
            traceback operation and delete any traceback operations
            that would make the alignment too long. This check is
            not needed for in-frame alignment because the
            traceback is never changed after it is computed */
 
-        last_op = e_script->op_type;
+        last_op = e_script->op_type[i];
 
         if (last_op == eGapAlignIns)
             last_op = eGapAlignSub;
-        i = last_op * e_script->num;
 
-        if (num_nuc + i >= nucl_align_length) {
-            e_script->num = (nucl_align_length - num_nuc + 
+        total_actions = last_op * e_script->num[i];
+
+        if (num_nuc + total_actions >= nucl_align_length) {
+            e_script->num[i] = (nucl_align_length - num_nuc + 
                              last_op - 1) / last_op;
-            e_script->next = GapEditScriptDelete(e_script->next);
+            break; /* We delete the rest of the script. */
         }
         else {
-            num_nuc += i;
+            num_nuc += total_actions;;
         }
-
-        /* Only one frame shift operation at a time is
-           allowed in a single edit script element. */
-        last_op = e_script->op_type;
-        if (last_op % 3 != 0 && e_script->num > 1) {
-            Int4 num_ops = e_script->num;
-            GapEditScript *last = e_script->next;
-            e_script->next = NULL;
-            e_script->num = 1;
-            for (i = 1; i < num_ops; i++) {
-                e_script = GapEditScriptNew(e_script);
-                e_script->op_type = last_op;
-                e_script->num = 1;
-            }
-            e_script->next = last;
-        }
-        e_script = e_script->next;
     }
+    e_script->size = i;  /* If we broke out early then we truncate the edit script. */
+
+    extra_needed = 0;
+    for (i=0; i<e_script->size; i++)
+    {
+        if (e_script->op_type[i] % 3 != 0 && e_script->num[i] > 1) {
+           extra_needed += e_script->num[i] - 1;
+        }
+    }
+
+    if (extra_needed)
+    {
+        GapEditScript* new_esp = GapEditScriptNew(extra_needed+e_script->size);
+        int new_esp_i=0;
+        for (i=0; i<e_script->size; i++)
+        {
+           /* Only one frame shift operation at a time is
+           allowed in a single edit script element. */
+           new_esp->num[new_esp_i] = e_script->num[i];
+           new_esp->op_type[new_esp_i] = e_script->op_type[i];
+           new_esp_i++;
+           last_op = e_script->op_type[i];
+           if (last_op % 3 != 0 && e_script->num[i] > 1) {
+               Int4 num_ops = e_script->num[i];
+               int esp_index=0;
+               new_esp->num[new_esp_i-1] = 1;
+               for (esp_index = 1; esp_index < num_ops; esp_index++) {
+                   new_esp->num[new_esp_i] = 1;
+                   new_esp->op_type[new_esp_i] = last_op;
+                   new_esp_i++;
+               }
+           }
+       }
+       e_script = GapEditScriptDelete(e_script);
+       e_script = new_esp;
+    }
+    *edit_script_ptr = e_script;
 
     /* finally, add one to the size of any block of substitutions
        that follows a frame shift op */
+    last_op = e_script->op_type[0];
+    for (i=1; i<e_script->size; i++)
+    {
+        if (e_script->op_type[i] == eGapAlignSub && (last_op % 3) != 0)
+            (e_script->num[i])++;
 
-    e_script = *edit_script_ptr;
-    last_op = e_script->op_type;
-    e_script = e_script->next;
-    while (e_script != NULL) {
-        if (e_script->op_type == eGapAlignSub && (last_op % 3) != 0)
-            e_script->num++;
-
-        last_op = e_script->op_type;
-        e_script = e_script->next;
+        last_op = e_script->op_type[i];
     }
 
-    GapPrelimEditBlockFree(tmp_prelim_tback);
     return 0;
 }
 

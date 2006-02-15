@@ -170,19 +170,18 @@ s_HSPListRescaleScores(BlastHSPList* hsp_list, double scale_factor)
 static void 
 s_BlastHSPRPSUpdate(BlastHSP *hsp)
 {
-   GapEditScript *esp;
+   GapEditScript *esp = hsp->gap_info;
+   Int4 index;
 
    if (hsp->gap_info == NULL)
       return;
 
-   esp = hsp->gap_info;
-   while (esp != NULL) {
-      if (esp->op_type == eGapAlignIns)
-          esp->op_type = eGapAlignDel;
-      else if (esp->op_type == eGapAlignDel)
-          esp->op_type = eGapAlignIns;
-
-      esp = esp->next;
+   for (index=0; index<esp->size; index++)
+   {
+      if (esp->op_type[index] == eGapAlignIns)
+          esp->op_type[index] = eGapAlignDel;
+      else if (esp->op_type[index] == eGapAlignDel)
+          esp->op_type[index] = eGapAlignIns;
    }
 }
 
