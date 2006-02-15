@@ -278,8 +278,10 @@ class CWorkerNodeIdleThread;
 class NCBI_XCONNECT_EXPORT CWorkerNodeIdleTaskContext
 {
 public:
-    
+
+    void RequestShutdown();
     bool IsShutdownRequested() const;
+
     void SetRunAgain() { m_RunAgain = true; }
     bool NeedRunAgain() const { return m_RunAgain; }
 
@@ -287,9 +289,9 @@ public:
 
 private:
     friend class CWorkerNodeIdleThread;
-    CWorkerNodeIdleTaskContext(const CWorkerNodeIdleThread& thread);
+    CWorkerNodeIdleTaskContext(CWorkerNodeIdleThread& thread);
 
-    const CWorkerNodeIdleThread& m_Thread;
+    CWorkerNodeIdleThread& m_Thread;
     bool m_RunAgain;
 };
 
@@ -569,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/02/15 17:15:41  didenko
+ * Added ReqeustShutdown method to worker node idle task context
+ *
  * Revision 1.34  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.

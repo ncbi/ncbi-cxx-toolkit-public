@@ -328,7 +328,7 @@ CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
 //
 //     CWorkerNodeIdleTaskContext      -- 
 CWorkerNodeIdleTaskContext::
-CWorkerNodeIdleTaskContext(const CWorkerNodeIdleThread& thread)
+CWorkerNodeIdleTaskContext(CWorkerNodeIdleThread& thread)
     : m_Thread(thread), m_RunAgain(false)
 {
 }
@@ -341,6 +341,12 @@ void CWorkerNodeIdleTaskContext::Reset()
     m_RunAgain = false;
 }
 
+void CWorkerNodeIdleTaskContext::RequestShutdown()
+{
+    m_Thread.RequestShutdown();
+    CGridGlobals::GetInstance().
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -633,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.13  2006/02/15 17:16:02  didenko
+ * Added ReqeustShutdown method to worker node idle task context
+ *
  * Revision 6.12  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.
