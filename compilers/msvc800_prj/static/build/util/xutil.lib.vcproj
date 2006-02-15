@@ -254,19 +254,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\src\util\rwstreambuf.cpp"
-				>
-				<FileConfiguration
-					Name="ReleaseDLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						PreprocessorDefinitions="NCBI_USE_PCH"
-						PrecompiledHeaderThrough="ncbi_pch.hpp"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="..\..\..\..\..\src\util\smalldns.cpp"
 				>
 				<FileConfiguration
@@ -461,10 +448,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\util\rwstream.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\..\include\util\rwstreambuf.hpp"
 				>
 			</File>
 			<File

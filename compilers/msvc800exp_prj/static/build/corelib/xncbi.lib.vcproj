@@ -516,6 +516,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\src\corelib\rwstreambuf.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\src\corelib\syslog.cpp"
 				>
 				<FileConfiguration
@@ -728,6 +732,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\include\corelib\plugin_manager_store.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\include\corelib\impl\rwstreambuf.hpp"
 				>
 			</File>
 			<File
