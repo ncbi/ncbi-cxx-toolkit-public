@@ -1,4 +1,4 @@
--- $Id: pcassay.asn,v 1.12 2006/01/10 12:54:50 bolton Exp $
+-- $Id: pcassay.asn,v 1.13 2006/02/15 22:38:26 ywang Exp $
 -- ===========================================================================
 --
 --                            PUBLIC DOMAIN NOTICE
@@ -88,7 +88,9 @@ PC-AssayResults ::= SEQUENCE {
                                                              --   Note: Larger numbers are more active
     data              SEQUENCE OF PC-AssayData     OPTIONAL, -- Assay Data Reported for this SID (vector)
     url               VisibleString                OPTIONAL, -- Depositor provided URL for this Result
-    xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL  -- Annotated Cross-Reference Information
+    xref              SEQUENCE OF PC-AnnotatedXRef OPTIONAL, -- Annotated Cross-Reference Information
+    date              Date                         OPTIONAL  -- Pubchem Release Date
+
 }
 
 
@@ -246,6 +248,9 @@ END
 
 -- ===========================================================================
 -- $Log: pcassay.asn,v $
+-- Revision 1.13  2006/02/15 22:38:26  ywang
+-- add optional Pubchem Release Date to PC-AssayResults
+--
 -- Revision 1.12  2006/01/10 12:54:50  bolton
 -- Major change to meaning of PC-ID version, now an assay restatement
 -- identifier.  New revision identifier added to AssayDescription to
