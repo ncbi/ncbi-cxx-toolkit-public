@@ -357,22 +357,28 @@ public:
     static SIZE_TYPE ParseFastaIds(CBioseq::TId& ids, const string& s,
                                    bool allow_partial_failure = false);
 
-    /// Numerical quality ranking; lower is better.
-    /// (Text)Score and WorstRank both basically correspond to the C
-    /// Toolkit's SeqIdFindWorst, which favors textual accessions,
-    /// whereas BestRank corresponds to the C Toolkit's SeqIdFindBest
-    /// and favors GIs.  All three give a slight bonus to accessions
-    /// that carry versions.
+    /// Numerical quality ranking; lower is better.  (Text)Score, aka
+    /// WorstRank, corresponds to the C Toolkit's SeqIdFindWorst,
+    /// which favors textual accessions, whereas BestRank corresponds
+    /// to the C Toolkit's SeqIdFindBest and favors GIs.  In addition,
+    /// there is a pair of methods corresponding to the C Toolkit's
+    /// GetOrderBySeqId, used when generating FASTA deflines.
+    ///
+    /// All rankings give a slight bonus to accessions that carry
+    /// versions.
 
     int AdjustScore       (int base_score) const;
     int BaseTextScore     (void)           const;
     int BaseBestRankScore (void)           const;
-    int BaseWorstRankScore(void)           const;
+    int BaseWorstRankScore(void)           const { return BaseTextScore(); }
+    int BaseFastaAAScore  (void)           const;
+    int BaseFastaNAScore  (void)           const;
 
     int TextScore     (void) const { return AdjustScore(BaseTextScore()); }
     int BestRankScore (void) const { return AdjustScore(BaseBestRankScore()); }
-    int WorstRankScore(void) const
-        { return AdjustScore(BaseWorstRankScore()); }
+    int WorstRankScore(void) const { return TextScore(); }
+    int FastaAAScore  (void) const { return AdjustScore(BaseFastaAAScore()); }
+    int FastaNAScore  (void) const { return AdjustScore(BaseFastaNAScore()); }
 
     /// Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id)
@@ -380,7 +386,11 @@ public:
     static int BestRank(const CRef<CSeq_id>& id)
         { return id ? id->BestRankScore() : kMax_Int; }
     static int WorstRank(const CRef<CSeq_id>& id)
-        { return id ? id->WorstRankScore() : kMax_Int; }
+        { return Score(id); }
+    static int FastaAARank(const CRef<CSeq_id>& id)
+        { return id ? id->FastaAAScore() : kMax_Int; }
+    static int FastaNARank(const CRef<CSeq_id>& id)
+        { return id ? id->FastaNAScore() : kMax_Int; }
 
     /// Optimized implementation of CSerialObject::Assign, which is
     /// not so efficient.
@@ -512,7 +522,7 @@ inline
 int CSeq_id::BaseTextScore(void) const
 {
     switch (Which()) {
-    case e_not_set:                                return kMax_Int;
+    case e_not_set:                                return 83;
     case e_Giim:    case e_Gi:                     return 20;
     case e_General: case e_Gibbsq: case e_Gibbmt:  return 15;
     case e_Local:   case e_Patent:                 return 10;
@@ -533,38 +543,48 @@ int CSeq_id::BaseBestRankScore(void) const
     case e_Gpipe:                                 return 68;
     case e_Patent:                                return 67;
     case e_Other:                                 return 65;
-
-    case e_Ddbj: case e_Prf: case e_Pdb:
-    case e_Tpe:  case e_Tpd: case e_Embl:
-    case e_Pir:  case e_Swissprot:
-    case e_Tpg:  case e_Genbank:                  return 60;
-
     case e_Gi:                                    return 51;
-    default:                                      return 5;
+    default:                                      return 60;
     }
 }
 
 
 inline
-int CSeq_id::BaseWorstRankScore(void) const
+int CSeq_id::BaseFastaNAScore(void) const
 {
     switch (Which()) {
-    case e_not_set:                               return 83;
-    case e_Gi: case e_Giim:                       return 20;
-    case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
-    case e_Local: case e_Patent:                  return 10;
-    case e_Gpipe:                                 return 9;
-    case e_Other:                                 return 8;
-
-    case e_Ddbj: case e_Prf: case e_Pdb:
-    case e_Tpe:  case e_Tpd: case e_Embl:
-    case e_Pir:  case e_Swissprot:
-    case e_Tpg:  case e_Genbank:                  return 5;
-
-    default:                                      return 3;
+        // these few are bogus, at least for nucleotide sequences
+    case e_not_set: case e_Giim:
+    case e_Pir: case e_Swissprot: case e_Prf:  return 255;
+    case e_Local:                              return 230;
+    case e_Gi:                                 return 120;
+    case e_General:                            return 50;
+    case e_Patent:                             return 40;
+    case e_Gibbsq: case e_Gibbmt: case e_Pdb:  return 30;
+    case e_Other:                              return 15;
+    default: /* [third party] GB/EMBL/DDBJ */  return 20;
     }
 }
 
+
+inline
+int CSeq_id::BaseFastaAAScore(void) const
+{
+    switch (Which()) {
+    case e_not_set: case e_Giim:   return 255;
+    case e_Local:                  return 230;
+    case e_Gi:                     return 120;
+    case e_General:                return 90;
+    case e_Patent:                 return 80;
+    case e_Prf:                    return 70;
+    case e_Pdb:                    return 50;
+    case e_Gibbsq: case e_Gibbmt:  return 40;
+    case e_Pir:                    return 30;
+    case e_Swissprot:              return 20;
+    case e_Other:                  return 15;
+    default:                       return 60; // [third party] GB/EMBL/DDBJ
+    }
+}
 
 /////////////////// end of CSeq_id inline methods
 
@@ -578,6 +598,11 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.54  2006/02/15 17:17:27  ucko
+ * Expose ranking methods used for FASTA deflines per Tom Madden's request.
+ * Don't return kMax_Int from Base*Score, whose result is subject to scaling.
+ * Unify "Text" and "Worst" scores, which had no significant differences.
+ *
  * Revision 1.53  2006/02/07 19:29:48  ucko
  * Document that release_in may be set to "pgp" for pre-grant patents.
  *
