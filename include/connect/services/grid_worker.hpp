@@ -87,7 +87,6 @@ public:
 
 class CWorkerNodeJobContext;
 class CWorkerNodeControlThread;
-
 /// Worker Node Job interface.
 /// 
 /// This interface is a worker node workhorse. 
@@ -97,7 +96,7 @@ class CWorkerNodeControlThread;
 ///
 /// @sa CWorkerNodeJobContext, IWorkerNodeInitContext
 ///
-class IWorkerNodeJob
+class IWorkerNodeJob : public CObject
 {
 public:
     virtual ~IWorkerNodeJob() {}
@@ -123,6 +122,7 @@ public:
 
 class CGridWorkerNode;
 class CGridThreadContext;
+class CWorkerNodeRequest;
 
 /// Worker Node job context
 ///
@@ -239,6 +239,8 @@ private:
     string& SetJobOutput()             { return m_JobOutput; }
     string& SetJobProgressMsgKey()     { return m_ProgressMsgKey; }
     size_t& SetJobInputBlobSize()      { return m_InputBlobSize; }
+    
+    friend class CWorkerNodeRequest;
     CGridWorkerNode& GetWorkerNode()   { return m_WorkerNode; }
     bool IsJobCommitted() const        { return m_JobCommitted; }   
     unsigned int GetJobNumber() const  { return m_JobNumber; }
@@ -571,6 +573,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/02/15 20:27:45  didenko
+ * Added new optional config parameter "reuse_job_object" which allows
+ * reusing IWorkerNodeJob objects in the jobs' threads instead of
+ * creating a new object for each job.
+ *
  * Revision 1.35  2006/02/15 17:15:41  didenko
  * Added ReqeustShutdown method to worker node idle task context
  *

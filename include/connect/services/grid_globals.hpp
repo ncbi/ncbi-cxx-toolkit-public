@@ -52,6 +52,9 @@ public:
     int GetNewJobNumber();
     void SetMaxJobsAllowed(int value) { m_MaxJobsAllowed = value; }
 
+    bool ReuseJobObject() const { return m_ReuseJobObject; }
+    void  SetReuseJobObject(bool value) { m_ReuseJobObject = value; }
+
     /// Request node shutdown
     void RequestShutdown(CNetScheduleClient::EShutdownLevel level) 
                       { m_ShutdownLevel = level; }
@@ -69,6 +72,7 @@ private:
 
     int m_JobsStarted;
     int m_MaxJobsAllowed;
+    bool m_ReuseJobObject;
 
     volatile CNetScheduleClient::EShutdownLevel m_ShutdownLevel;
 
@@ -84,6 +88,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/02/15 20:27:45  didenko
+ * Added new optional config parameter "reuse_job_object" which allows
+ * reusing IWorkerNodeJob objects in the jobs' threads instead of
+ * creating a new object for each job.
+ *
  * Revision 1.1  2006/02/15 15:19:03  didenko
  * Implemented an optional possibility for a worker node to have a permanent connection
  * to a NetSchedule server.
