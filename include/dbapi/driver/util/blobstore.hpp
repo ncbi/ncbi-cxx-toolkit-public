@@ -32,7 +32,7 @@
  *
  */
 
-#include <util/reader_writer.hpp>
+#include <corelib/reader_writer.hpp>
 #include <dbapi/driver/public.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/15 19:56:54  lavr
+ * IReader/IWriter moved to corelib
+ *
  * Revision 1.8  2004/11/24 19:11:07  ivanovsk
  * Set TEXTSIZE on server in CBlobStore classes.
  *
