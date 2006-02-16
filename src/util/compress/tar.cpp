@@ -30,7 +30,7 @@
  *   Tar archive API.
  *
  *   Supports subset of POSIX.1-1988 (ustar) format.
- *   Old GNU (POSIX 1003.1) and V7 formats are also supported partially.
+ *   Old GNU (POSIX 1003.1) and V7 formats are also partially supported.
  *   New archives are created using POSIX (genuine ustar) format, using
  *   GNU extensions for long names/links only when unavoidable.
  *   Can handle no exotics like sparse files, devices, etc,
@@ -817,7 +817,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 
     // Mode
     if (!s_OctalToNum(value, h->mode, sizeof(h->mode))) {
-        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad file mode");
+        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad entry mode");
     }
     info.m_Stat.st_mode = (mode_t) value;
 
@@ -835,7 +835,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(CTarEntryInfo& info)
 
     // Size
     if (!s_OctalToNum(value, h->size, sizeof(h->size))) {
-        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad file size");
+        NCBI_THROW(CTarException, eUnsupportedTarFormat, "Bad entry size");
     }
     info.m_Stat.st_size = value;
 
@@ -1029,7 +1029,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
 {
     char*      storage = link ? h->linkname         : h->name;
     size_t        size = link ? sizeof(h->linkname) : sizeof(h->name);
-    const string& name = link ? info.GetLinkName( ) : info.GetName();
+    const string& name = link ? info.GetLinkName()  : info.GetName();
     size_t         len = name.length();
 
     if (len <= size) {
@@ -1670,6 +1670,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/02/16 19:51:55  lavr
+ * Use "entry" instead of "file" in exception text
+ *
  * Revision 1.37  2005/12/02 05:43:32  lavr
  * Few minor mods (comment fixes mostly)
  *
