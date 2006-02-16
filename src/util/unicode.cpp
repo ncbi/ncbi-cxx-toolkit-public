@@ -36,33 +36,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(utf8)
 
-#include "unicode_plans/plan00.inc"
-#include "unicode_plans/plan01.inc"
-#include "unicode_plans/plan02.inc"
-#include "unicode_plans/plan03.inc"
-#include "unicode_plans/plan04.inc"
-#include "unicode_plans/plan1e.inc"
-#include "unicode_plans/plan20.inc"
-#include "unicode_plans/plan21.inc"
-#include "unicode_plans/plan22.inc"
-#include "unicode_plans/plan23.inc"
-#include "unicode_plans/plan24.inc"
-#include "unicode_plans/plan25.inc"
-#include "unicode_plans/plan26.inc"
-#include "unicode_plans/plan27.inc"
-#include "unicode_plans/plan30.inc"
-#include "unicode_plans/plane0.inc"
-#include "unicode_plans/plane2.inc"
-#include "unicode_plans/plane3.inc"
-#include "unicode_plans/plane4.inc"
-#include "unicode_plans/plane5.inc"
-#include "unicode_plans/plane6.inc"
-#include "unicode_plans/plane7.inc"
-#include "unicode_plans/plane8.inc"
-#include "unicode_plans/planea.inc"
-#include "unicode_plans/planeb.inc"
-#include "unicode_plans/planfb.inc"
-#include "unicode_plans/planfe.inc"
+#include "unicode_plans.inl"
 
 
 static TUnicodeTable g_DefaultUnicodeTable =
@@ -352,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2006/02/16 19:29:33  gouriano
+ * Use unicode_plans.inl
+ *
  * Revision 1.8  2005/04/25 19:05:24  ivanov
  * Fixed compilation warnings on 64-bit Worshop compiler
  *
