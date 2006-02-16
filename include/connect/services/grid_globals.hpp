@@ -42,6 +42,8 @@ BEGIN_NCBI_SCOPE
 ///
 /// @sa CNetScheduleClient
 ///
+
+/// @internal
 class NCBI_XCONNECT_EXPORT CGridGlobals
 {
 public:
@@ -88,6 +90,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/02/16 15:39:09  didenko
+ * If an instance of a job's class could not be create then the worker node
+ * should shutdown itself.
+ *
  * Revision 1.2  2006/02/15 20:27:45  didenko
  * Added new optional config parameter "reuse_job_object" which allows
  * reusing IWorkerNodeJob objects in the jobs' threads instead of

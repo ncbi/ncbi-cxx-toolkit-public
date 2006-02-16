@@ -285,11 +285,29 @@ bool CGridThreadContext::IsJobCommitted() const
 IWorkerNodeJob* CGridThreadContext::GetJob()
 {
     _ASSERT(m_JobContext);
-    if (!CGridGlobals::GetInstance().ReuseJobObject())
-        return m_JobContext->GetWorkerNode().CreateJob();
-    if (!m_Job)
-        m_Job.Reset(m_JobContext->GetWorkerNode().CreateJob());
-    return m_Job.GetPointer();
+    IWorkerNodeJob* ret = m_Job.GetPointer();
+    if (!ret) {
+        try {
+            if (!CGridGlobals::GetInstance().ReuseJobObject())
+                ret = m_JobContext->GetWorkerNode().CreateJob();
+            else {
+                m_Job.Reset(m_JobContext->GetWorkerNode().CreateJob());
+                ret = m_Job.GetPointer(); 
+            }
+        } catch (...) {
+            ERR_POST( "Could not create an instance of a job class." );
+            CGridGlobals::GetInstance().
+                RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+            throw;
+        }
+    }
+    if (!ret) {
+        CGridGlobals::GetInstance().
+            RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        NCBI_THROW(CException, eInvalid, 
+                   "Could not create an instance of a job class.");
+    }
+    return ret;
 }
 
 void CGridThreadContext::CloseStreams()
@@ -313,6 +331,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.16  2006/02/16 15:39:10  didenko
+ * If an instance of a job's class could not be create then the worker node
+ * should shutdown itself.
+ *
  * Revision 6.15  2006/02/15 19:48:34  didenko
  * Added new optional config parameter "reuse_job_object" which allows reusing
  * IWorkerNodeJob objects in the jobs' threads instead of creating
