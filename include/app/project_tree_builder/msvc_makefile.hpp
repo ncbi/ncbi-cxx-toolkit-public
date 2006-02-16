@@ -191,6 +191,7 @@ class CMsvcProjectMakefile : public CMsvcMetaMakefile,
 public:
     CMsvcProjectMakefile(const string& file_path);
 
+    string GetGUID(void) const;
     // IMsvcProjectMakefile
     virtual bool IsExcludeProject        (bool default_val) const;
 
@@ -377,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/02/16 19:24:41  gouriano
+ * Use predefined GUID for MSVC type projects
+ *
  * Revision 1.12  2004/10/12 13:27:02  gouriano
  * Added possibility to specify which headers to include into project
  *

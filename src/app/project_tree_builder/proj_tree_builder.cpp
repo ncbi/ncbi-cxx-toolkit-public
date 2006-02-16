@@ -1098,6 +1098,10 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
     list<string> include_dirs;
     list<string> defines;
 
+    CMsvcProjectMakefile project_makefile
+                       ((CDirEntry::ConcatPath( source_base_dir, 
+                           CreateMsvcProjectMakefileName(proj_name, 
+                                                         CProjKey::eMsvc))));
     CProjKey proj_key(CProjKey::eMsvc, proj_id);
     tree->m_Projects[proj_key] = CProjItem(CProjKey::eMsvc,
                                            proj_name, 
@@ -1109,7 +1113,8 @@ CProjKey SMsvcProjectT::DoCreate(const string&      source_base_dir,
                                            libs_3_party,
                                            include_dirs,
                                            defines,
-                                           maketype);
+                                           maketype,
+                                           project_makefile.GetGUID());
     return proj_key;
 }
 //-----------------------------------------------------------------------------
@@ -1585,6 +1590,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2006/02/16 19:24:16  gouriano
+ * Use predefined GUID for MSVC type projects
+ *
  * Revision 1.32  2005/12/28 20:37:43  gouriano
  * Add parameterization into VCPROJ definition
  *

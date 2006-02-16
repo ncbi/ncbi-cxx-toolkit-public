@@ -217,6 +217,11 @@ CMsvcProjectMakefile::CMsvcProjectMakefile(const string& file_path)
 }
 
 
+string CMsvcProjectMakefile::GetGUID(void) const
+{
+    return m_MakeFile.GetString("Common", "ProjectGUID", "");
+}
+
 bool CMsvcProjectMakefile::IsExcludeProject(bool default_val) const
 {
     string val = m_MakeFile.GetString("Common", "ExcludeProject", "");
@@ -613,6 +618,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/02/16 19:24:16  gouriano
+ * Use predefined GUID for MSVC type projects
+ *
  * Revision 1.20  2005/09/15 18:25:48  gouriano
  * Log info about msvc metamakefiles used
  *

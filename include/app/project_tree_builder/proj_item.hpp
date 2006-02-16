@@ -106,7 +106,8 @@ public:
               const list<string>&   libs_3_party,
               const list<string>&   include_dirs,
               const list<string>&   defines,
-              EMakeFileType maketype);
+              EMakeFileType maketype,
+              const string& guid = kEmptyStr);
     
     ~CProjItem(void);
 
@@ -169,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/02/16 19:24:41  gouriano
+ * Use predefined GUID for MSVC type projects
+ *
  * Revision 1.22  2006/01/23 18:26:33  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *

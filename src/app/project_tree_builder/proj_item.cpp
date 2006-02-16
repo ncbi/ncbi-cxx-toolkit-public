@@ -140,7 +140,8 @@ CProjItem::CProjItem(TProjType type,
                      const list<string>&   libs_3_party,
                      const list<string>&   include_dirs,
                      const list<string>&   defines,
-                     EMakeFileType maketype)
+                     EMakeFileType maketype,
+                     const string& guid)
    :m_Name    (name), 
     m_ID      (id),
     m_ProjType(type),
@@ -154,7 +155,7 @@ CProjItem::CProjItem(TProjType type,
     m_Defines (defines),
     m_MakeType(maketype)
 {
-    m_GUID = GenerateSlnGUID();
+    m_GUID = guid.empty() ? GenerateSlnGUID() : guid;
 }
 
 
@@ -196,6 +197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2006/02/16 19:24:16  gouriano
+ * Use predefined GUID for MSVC type projects
+ *
  * Revision 1.28  2006/01/23 18:26:15  gouriano
  * Generate project GUID early, sort projects in solution by GUID
  *
