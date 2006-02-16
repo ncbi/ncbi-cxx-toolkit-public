@@ -2126,24 +2126,23 @@ s_BlastHSPListsCombineByScore(BlastHSPList* hsp_list,
    hsp_list->hspcnt = 0;
 }
 
-Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
+Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
         BlastHSPList** combined_hsp_list_ptr, Int4 hsp_num_max)
 {
    BlastHSPList* combined_hsp_list = *combined_hsp_list_ptr;
-   BlastHSP** new_hsp_array;
+   BlastHSPList* hsp_list = *old_hsp_list_ptr;
    Int4 new_hspcnt;
 
    if (!hsp_list || hsp_list->hspcnt == 0)
       return 0;
 
-   /* If no previous HSP list, just return a copy of the new one. */
+   /* If no previous HSP list, return a pointer to the old one */
    if (!combined_hsp_list) {
-      if (!(combined_hsp_list = s_BlastHSPListReleaseHSPs(hsp_list)))
-         return 1;
-      *combined_hsp_list_ptr = combined_hsp_list;
-
+      *combined_hsp_list_ptr = hsp_list;
+      *old_hsp_list_ptr = NULL;
       return 0;
    }
+
    /* Just append new list to the end of the old list, in case of 
       multiple frames of the subject sequence */
    new_hspcnt = MIN(combined_hsp_list->hspcnt + hsp_list->hspcnt, 
@@ -2151,6 +2150,7 @@ Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
    if (new_hspcnt > combined_hsp_list->allocated && 
        !combined_hsp_list->do_not_reallocate) {
       Int4 new_allocated = MIN(2*new_hspcnt, hsp_num_max);
+      BlastHSP** new_hsp_array;
       new_hsp_array = (BlastHSP**) 
          realloc(combined_hsp_list->hsp_array, 
                  new_allocated*sizeof(BlastHSP*));
@@ -2167,6 +2167,8 @@ Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
       combined_hsp_list->do_not_reallocate = TRUE;
 
    s_BlastHSPListsCombineByScore(hsp_list, combined_hsp_list, new_hspcnt);
+
+   *old_hsp_list_ptr = NULL;
 
    return 0;
 }
