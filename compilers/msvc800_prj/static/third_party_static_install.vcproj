@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="third_party_static_install"
+	ProjectGUID="{9E4B5381-9B6C-4867-BF8A-F1AAA1FD580E}"
 	Keyword="MakeFileProj">
 	<Platforms>
 		<Platform
