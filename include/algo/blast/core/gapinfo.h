@@ -108,9 +108,9 @@ GapEditScriptDup (const GapEditScript* old);
 
 /** Copies the portion of the GapEditScript specified by start and stop to a new one
  * the new one should already exist.
- *  @param new edit script to copy to [in|out]
+ *  @param new_esp edit script to copy to [in|out]
  *  @param offset starting element in new one to copy to [in]
- *  @param old edit script to copy from [in]
+ *  @param old_esp edit script to copy from [in]
  *  @param start first element to copy from (zero-offset) [in]
  *  @param stop last element to copy [in]
  *  @return 0 on success
