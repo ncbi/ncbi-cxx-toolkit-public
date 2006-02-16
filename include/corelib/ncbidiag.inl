@@ -427,7 +427,7 @@ const CNcbiDiag& Trace(const CNcbiDiag& diag)  {
 inline
 void CDiagBuffer::Reset(const CNcbiDiag& diag) {
     if (&diag == m_Diag)
-        m_Stream->rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
+        m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
 }
 
 inline
@@ -639,6 +639,9 @@ const CNcbiDiag& operator<< (const CNcbiDiag& diag, const MDiagFunction& functio
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/02/16 13:17:57  lavr
+ * SEEKOFF -> PUBSEEKOFF (SEEKOFF is obsolescent a long ago)
+ *
  * Revision 1.54  2006/01/17 16:30:02  grichenk
  * Fixed output for std stream manipulators.
  *
