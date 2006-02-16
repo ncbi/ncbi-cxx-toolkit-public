@@ -486,16 +486,15 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
 
 /** Append one HSP list to the other. Discard lower scoring HSPs if there is
  * not enough space to keep all.
- * @param hsp_list New list of HSPs [in]
+ * @param old_hsp_list_ptr list of HSPs, will be NULLed out on return [in|out]
  * @param combined_hsp_list_ptr Pointer to the combined list of HSPs, possibly
  *                              containing previously saved HSPs [in] [out]
  * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if INT4_MAX) [in]
  * @return Status: 0 on success, -1 on failure.
  */ 
 NCBI_XBLAST_EXPORT
-Int2 Blast_HSPListAppend(BlastHSPList* hsp_list, 
-                         BlastHSPList** combined_hsp_list_ptr, 
-                         Int4 hsp_num_max);
+Int2 Blast_HSPListAppend(BlastHSPList** old_hsp_list_ptr,
+        BlastHSPList** combined_hsp_list_ptr, Int4 hsp_num_max);
 
 /** Merge an HSP list from a chunk of the subject sequence into a previously
  * computed HSP list.

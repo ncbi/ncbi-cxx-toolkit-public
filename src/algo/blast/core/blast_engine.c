@@ -237,7 +237,6 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
    Int4* frame_offsets_a = NULL; /* Will be freed if non-null */
    BlastHitSavingOptions* hit_options = hit_params->options;
    BlastScoringOptions* score_options = score_params->options;
-   BlastHSPList* combined_hsp_list = NULL;
    Int2 status = 0;
    Uint4 context, first_context, last_context;
    Int4 orig_length = subject->length;
@@ -313,6 +312,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
       Int4 num_chunks; /* loop variable below. */
       Int4 offset = 0; /* Used as offset into subject sequence (if chunked) */
       Int4 total_subject_length; /* Length of subject sequence used when split. */
+      BlastHSPList* combined_hsp_list = NULL;
 
       if (kTranslatedSubject) {
          subject->frame =
@@ -404,11 +404,10 @@ s_BlastSearchEngineCore(EBlastProgramType program_number, BLAST_SequenceBlk* que
             (Boolean)(prelim_traceback || !score_options->gapped_calculation));
       } /* End loop on chunks of subject sequence */
 
-      if (Blast_HSPListAppend(combined_hsp_list, hsp_list_out, hsp_num_max)) {
+      if (Blast_HSPListAppend(&combined_hsp_list, hsp_list_out, hsp_num_max)) {
          status = 1;
          break;
       }
-      combined_hsp_list = Blast_HSPListFree(combined_hsp_list);
    } /* End loop on frames */
 
    /* Restore the original contents of the subject block */
