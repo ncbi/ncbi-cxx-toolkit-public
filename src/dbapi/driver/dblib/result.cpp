@@ -794,7 +794,7 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
 
     STATUS s;
     while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
-        val->Append(m_Buff, (s < sizeof(m_Buff))? (size_t)s : sizeof(m_Buff));
+        val->Append(m_Buff, (size_t(s) < sizeof(m_Buff))? size_t(s) : sizeof(m_Buff));
 
     switch (s) {
     case NO_MORE_ROWS:
@@ -1619,6 +1619,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2006/02/16 19:37:42  ssikorsk
+ * Get rid of compilation warnings
+ *
  * Revision 1.33  2005/12/06 19:31:15  ssikorsk
  * Revamp code to use GetResultSet/SetResultSet/ClearResultSet
  * methods instead of raw data access.

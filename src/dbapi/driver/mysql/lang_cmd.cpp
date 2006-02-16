@@ -81,7 +81,9 @@ bool CMySQL_LangCmd::Send()
     }
     
     my_ulonglong nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
-    m_HasResults = nof_Rows == -1 || nof_Rows > 0;
+    // There is not too much sence in comparing unsigned value with -1.
+    // m_HasResults = nof_Rows == -1 || nof_Rows > 0;
+    m_HasResults = nof_Rows > 0;
     return true;
 }
 
@@ -168,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/02/16 19:37:42  ssikorsk
+ * Get rid of compilation warnings
+ *
  * Revision 1.11  2005/10/31 12:27:38  ssikorsk
  * Get rid of warnings.
  *

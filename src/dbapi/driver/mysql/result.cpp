@@ -193,48 +193,70 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
     }
 
     long   int_val;
+    Int8   int8_val;
     double double_val;
 
     switch ( data_type ) {
+    case eDB_Bit:
     case eDB_TinyInt:
     case eDB_SmallInt:
     case eDB_Int:
-        int_val = NStr::StringToInt(d_ptr);
+        int_val = NStr::StringToLong(d_ptr);
+        break;
+        
+    case eDB_BigInt:
+        int8_val = NStr::StringToLong(d_ptr);
         break;
 
     case eDB_Float:
     case eDB_Double:
         double_val = NStr::StringToDouble(d_ptr);
         break;
+    default:
+        break;
     }
 
     switch ( b_type ) {
     case eDB_TinyInt: {
         if ( item_buff )
-            *((CDB_TinyInt*) item_buff) = (Uint1) int_val;
+            *((CDB_TinyInt*) item_buff) = Uint1(int_val);
         else
-            item_buff = new CDB_TinyInt((Uint1) int_val);
+            item_buff = new CDB_TinyInt(Uint1(int_val));
+        break;
+    }
+    case eDB_Bit: {
+        if ( item_buff )
+            *((CDB_Bit*) item_buff) = int(int_val);
+        else
+            item_buff = new CDB_Bit(int(int_val));
         break;
     }
     case eDB_SmallInt: {
         if ( item_buff )
-            *((CDB_SmallInt*) item_buff) = (Uint2) int_val;
+            *((CDB_SmallInt*) item_buff) = Int2(int_val);
         else
-            item_buff = new CDB_SmallInt((Uint2) int_val);
+            item_buff = new CDB_SmallInt(Int2(int_val));
         break;
     }
     case eDB_Int: {
         if ( item_buff )
-            *((CDB_Int*) item_buff) = (Uint4) int_val;
+            *((CDB_Int*) item_buff) = Int4(int_val);
         else
-            item_buff = new CDB_Int((Uint4) int_val);
+            item_buff = new CDB_Int(Int4(int_val));
+        break;
+    }
+    case eDB_BigInt: {
+        if ( item_buff )
+            *((CDB_BigInt*) item_buff) = Int8(int_val);
+        else
+            item_buff = new CDB_BigInt(Int8(int_val));
         break;
     }
     case eDB_Float: {
         if ( item_buff )
-            *((CDB_Float*) item_buff) = (float) double_val;
+            *((CDB_Float*) item_buff) = float(double_val);
         else
-            item_buff = new CDB_Float((float) double_val);
+            item_buff = new CDB_Float(float(double_val));
         break;
     }
     case eDB_Double: {
@@ -266,6 +288,8 @@ static CDB_Object* s_GetItem(EDB_Type    data_type,
             item_buff = new CDB_SmallDateTime(time);
         break;
     }
+    default:
+        break;
     }
 
     if (d_len == 0  &&  item_buff) {
@@ -317,6 +341,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2006/02/16 19:37:42  ssikorsk
+ * Get rid of compilation warnings
+ *
  * Revision 1.10  2005/09/07 11:06:32  ssikorsk
  * Added a GetColumnNum implementation
  *

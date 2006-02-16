@@ -774,7 +774,7 @@ CDB_Object* CTDS_BlobResult::GetItem(CDB_Object* item_buff)
 
     STATUS s;
     while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0) {
-        val->Append(m_Buff, (s < sizeof(m_Buff))? (size_t)s : sizeof(m_Buff));
+        val->Append(m_Buff, (size_t(s) < sizeof(m_Buff))? size_t(s) : sizeof(m_Buff));
     }
 
     switch (s) {
@@ -1475,6 +1475,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/02/16 19:37:42  ssikorsk
+ * Get rid of compilation warnings
+ *
  * Revision 1.24  2005/11/02 14:16:59  ssikorsk
  * Rethrow catched CDB_Exception to preserve useful information.
  *
