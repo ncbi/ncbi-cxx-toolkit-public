@@ -188,7 +188,7 @@ static void StringFromStdaa(const vector < char >& vec, string *str)
 }
 
 Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
-    StructureBase(parent), bioseqASN(&bioseq), molecule(NULL), isProtein(false)
+    StructureBase(parent), bioseqASN(&bioseq), identifier(NULL), molecule(NULL), isProtein(false)
 {
     int gi = MoleculeIdentifier::VALUE_NOT_SET, mmdbID = MoleculeIdentifier::VALUE_NOT_SET,
         pdbChain = MoleculeIdentifier::VALUE_NOT_SET;
@@ -205,14 +205,18 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
                 pdbChain = (*s)->GetPdb().GetChain();
             else
                 pdbChain = ' ';
-        } else if ((*s)->IsLocal() && (*s)->GetLocal().IsStr()) {
-            accession = (*s)->GetLocal().GetStr();
-            // special case where local accession is actually a PDB chain + extra stuff
-            if (pdbID.size() == 0 && accession.size() >= 7 &&
-                    accession[4] == ' ' && accession[6] == ' ' && isalpha((unsigned char) accession[5])) {
-                pdbID = accession.substr(0, 4);
-                pdbChain = accession[5];
-                accession.erase();
+        } else if ((*s)->IsLocal()) {
+            if ((*s)->GetLocal().IsStr()) {
+                accession = (*s)->GetLocal().GetStr();
+                // special case where local accession is actually a PDB chain + extra stuff
+                if (pdbID.size() == 0 && accession.size() >= 7 &&
+                        accession[4] == ' ' && accession[6] == ' ' && isalpha((unsigned char) accession[5])) {
+                    pdbID = accession.substr(0, 4);
+                    pdbChain = accession[5];
+                    accession.erase();
+                }
+            } else {
+                accession = NStr::IntToString((*s)->GetLocal().GetId());
             }
         } else if ((*s)->IsGenbank() && (*s)->GetGenbank().IsSetAccession()) {
             accession = (*s)->GetGenbank().GetAccession();
@@ -621,6 +625,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2006/02/16 23:13:39  thiessen
+* better handling of non-standard fasta deflines
+*
 * Revision 1.75  2005/11/04 20:45:32  thiessen
 * major reorganization to remove all C-toolkit dependencies
 *
