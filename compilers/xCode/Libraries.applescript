@@ -152,7 +152,7 @@ property seqedit : {name:"seqedit", path:"objects:seqedit", inc:{"seqedit__.cpp"
 property submit : {name:"submit", path:"objects:submit", inc:{"submit__.cpp", "submit___.cpp"}, asn1:true}
 property taxon1 : {name:"taxon1", path:"objects:taxon1", inc:{"taxon1__.cpp", "taxon1___.cpp", "taxon1.cpp", "cache.cpp", "utils.cpp", "ctreecont.cpp"}, asn1:true}
 property tinyseq : {name:"tinyseq", path:"objects:tinyseq", inc:{"tinyseq__.cpp", "tinyseq___.cpp"}, asn1:true}
-
+property valerr : {name:"valerr", path:"objects:valerr", inc:{"valerr__.cpp", "valerr___.cpp"}, asn1:true}
 
 (* ObjTools libs*)
 property xobjmgr : {name:"xobjmgr", path:"objmgr"}
@@ -284,7 +284,7 @@ property ncbi_pub : {name:"ncbi_pub", libs:{biblio, medline, medlars, mla, mlacl
 property ncbi_seq : {name:"ncbi_seq", libs:{seq, seqset, seqcode, submit, scoremat, xnetblast, xnetblastcli, blastdb, blastxml, taxon1, seqtest, seqedit, seqres, seqloc, seqfeat, seqblock, seqalign}, dep:"ncbi_core ncbi_general ncbi_pub", fworks:"Carbon", req:true}
 property ncbi_mmdb : {name:"ncbi_mmdb", libs:{cdd, cn3d, ncbimime, mmdb1, mmdb2, mmdb3}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq", req:true}
 property ncbi_seqext : {name:"ncbi_seqext", libs:{xalnmgr, xobjmgr, xobjread, xobjwrite, xobjutil, xobjmanip, xformat, seqdb, id1, id1cli, id2, id2cli, id2_split, seqsplit, xobjedit, xobjcleanup}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_dbapi_driver ncbi_dbapi ncbi_web", fworks:"Carbon", req:true}
-property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
+property ncbi_validator : {name:"ncbi_validator", libs:{xvalidate, valerr}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
 property ncbi_lds : {name:"ncbi_lds", libs:{lds}, dep:"ncbi_core ncbi_xcache_bdb ncbi_bdb ncbi_general ncbi_seq ncbi_seqext", req:true}
 property ncbi_xreader : {name:"ncbi_xreader", libs:{xreader}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext", req:true}
 property ncbi_xreader_id1 : {name:"ncbi_xreader_id1", libs:{xreader_id1}, dep:"ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext ncbi_xreader", req:true}
@@ -352,6 +352,7 @@ property coretest : {name:"coretest", path:"corelib:test", inc:{"coretest.cpp"},
 -- object manager
 property test_objmgr : {name:"test_objmgr", path:"objmgr:test", inc:{"test_objmgr.cpp", "test_helper.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
 property test_objmgr_basic : {name:"test_objmgr_basic", path:"objmgr:test", inc:{"test_objmgr_basic.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
+property test_validator : {name:"test_validator", path:"objtools:validator:test", inc:{"test_validator.cpp"}, dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb ncbi_validator", req:false}
 -- App
 --property asn2flat : {name:"asn2flat", path:"app:asn2flat", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank", req:false}
 property asn2asn : {name:"asn2asn", path:"app:asn2asn", inc:{"asn2asn.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:false}
@@ -362,6 +363,7 @@ property id1_fetch : {name:"id1_fetch", path:"app:id1_fetch", inc:{"id1_fetch.cp
 property id1_fetch_simple : {name:"id1_fetch_simple", path:"app:id1_fetch", inc:{"id1_fetch_simple.cpp"}, dep:"ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext", req:false}
 property objmgr_demo : {name:"objmgr_demo", path:"app:objmgr:demo", dep:"ncbi_core ncbi_bdb ncbi_general ncbi_seq ncbi_seqext ncbi_xreader_id1 ncbi_lds ncbi_xreader ncbi_xloader_genbank ncbi_xloader_lds ncbi_xloader_blastdb", req:false}
 property blast_client : {name:"blast_client", path:"app:blast_client", dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_algo ncbi_lds ncbi_xloader_genbank", req:false}
+property convert_seq : {name:"convert_seq", path:"app:convert_seq", dep:"ncbi_core ncbi_general ncbi_seq ncbi_misc ncbi_seqext ncbi_xloader_genbank", req:false}
 
 property datatool : {name:"datatool", path:"serial:datatool", dep:"ncbi_core", req:true}
 
@@ -407,7 +409,7 @@ property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite,
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
-property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo}
+property allCTools : {datatool, gbench_plugin_scan, gbench_monitor, gbench_feedback_agent, test_ncbi_tree, test_plugins, test_ncbitime, test_ncbithr, test_ncbistr, test_ncbifile, test_ncbiexpt, test_ncbiexec, test_ncbi_system, test_ncbi_process, test_ncbi_os_unix, test_ncbi_limits, test_objmgr_basic, test_objmgr, test_validator, coretest, gi2taxid, asn2asn, id1_fetch, id1_fetch_simple, objmgr_demo, convert_seq}
 --property allCTools : {tests}
 
 
@@ -431,6 +433,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2006/02/16 18:39:15  rsmith
+ * Use new objects::valerr class to store validation errors.
+ *
  * Revision 1.88  2006/02/02 19:16:08  lebedev
  * +=seqedit +=web_page
  *

@@ -37,6 +37,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/serialbase.hpp>
+#include <objects/valerr/ValidErrItem.hpp>
+#include <objects/valerr/ValidError.hpp>
 
 #include <map>
 
@@ -55,171 +57,6 @@ class CObjectManager;
 class CScope;
 
 BEGIN_SCOPE(validator)
-
-class CValidError;
-
-class NCBI_VALIDATOR_EXPORT CValidErrItem : public CObject 
-{
-public:
-    
-
-    // destructor
-    ~CValidErrItem(void);
-
-    // Severity of error
-    EDiagSev                GetSeverity (void) const;
-    // Error code
-    const string&           GetErrCode  (void) const;
-    unsigned int            GetErrIndex (void) const;
-    static unsigned int     GetErrCount(void);
-    // Error group (SEQ_FEAT, SEQ_INST etc.)
-    const string&           GetErrGroup (void) const;
-    // Error message
-    const string&           GetMsg      (void) const;
-    // Verbose message
-    const string&           GetVerbose  (void) const;
-    // Offending ovject description
-    const string&           GetObjDesc  (void) const;
-    // Offending object
-    const CSerialObject&    GetObject   (void) const;
-    // Accession
-    const string&           GetAccession(void) const;
-
-    // Convert Severity from enum to a string representation
-    static const string& ConvertSeverity(EDiagSev sev);
-    static const string& ConvertErrCode(unsigned int);
-
-    bool IsSetContext(void) const { return m_Ctx.NotEmpty(); }
-    const CSeq_entry& GetContext(void) const { return *m_Ctx; }
-    void SetContext(const CSeq_entry& ctx);
-    
-private:
-    friend class CValidError;
-
-    typedef CConstRef<CSerialObject>    TObject;
-
-    // constructor
-    CValidErrItem(EDiagSev             sev,       // severity
-                  unsigned int         ec,        // error code
-                  const string&        msg,       // message
-                  const string&        obj_desc,  // object description
-                  const CSerialObject& obj,       // offending object
-                  CScope&              scope);    // scope
-    
-    CValidErrItem(void);
-    CValidErrItem(const CValidErrItem&);
-
-    void x_SetAcc(void);
-    void x_SetAcc(const CBioseq& seq);
-
-    // member data values
-    EDiagSev      m_Severity;   // severity level
-    unsigned int  m_ErrIndex;   // error code index
-    string        m_Message;    // specific error message
-    string        m_Desc;       // offending object's description
-    TObject       m_Object;     // offending object
-    string        m_Acc;        // accession
-    CRef<CScope>  m_Scope;      // scope
-
-    // currently used for Seqdesc objects only
-    CConstRef<CSeq_entry> m_Ctx;
-
-    static const string sm_Terse[];
-    static const string sm_Verbose[];
-};
-
-
-class NCBI_VALIDATOR_EXPORT CValidError : public CObject
-{
-public:
-    // constructors
-    CValidError(const CSerialObject* obj = NULL);
-    
-    void AddValidErrItem(EDiagSev             sev,     // severity
-                         unsigned int         ec,      // error code
-                         const string&        msg,     // specific error message
-                         const string&        desc,    // offending object's description
-                         const CSerialObject& obj,     // offending object
-                         CScope&              scope);  // scope
-
-    void AddValidErrItem(EDiagSev             sev,     // severity
-                         unsigned int         ec,      // error code
-                         const string&        msg,     // specific error message
-                         const string&        desc,    // offending object's description
-                         const CSeqdesc&      seqdesc, // offending object
-                         const CSeq_entry&    ctx,     // place of packaging
-                         CScope&              scope);  // scope
-
-    // Statistics
-    SIZE_TYPE TotalSize(void)    const;
-    SIZE_TYPE Size(EDiagSev sev) const;
-
-    SIZE_TYPE InfoSize    (void) const;
-    SIZE_TYPE WarningSize (void) const;
-    SIZE_TYPE ErrorSize   (void) const;
-    SIZE_TYPE CriticalSize(void) const;
-    SIZE_TYPE FatalSize   (void) const;
-
-    // Get the validated object (Seq-entry, Seq-submit or Seq-align)
-    const CSerialObject* GetValidated(void) const;
-
-    // destructor
-    ~CValidError(void);
-
-private:
-
-    friend class CValidError_CI;
-
-    typedef vector < CConstRef < CValidErrItem > > TErrs;
-    typedef map<EDiagSev, SIZE_TYPE>               TSevStats;
-    typedef CConstRef<CSerialObject>               TValidated;
-    typedef CConstRef<CSeq_entry>                  TContext;
-
-    // Prohibit copy constructor & assignment operator
-    CValidError(const CValidError&);
-    CValidError& operator= (const CValidError&);
-
-    // data
-    TErrs       m_ErrItems;  // Error list
-    TSevStats   m_Stats;     // severity statistics
-    TValidated  m_Validated; // the validated object
-    TContext    m_Context;
-};
-
-
-class NCBI_VALIDATOR_EXPORT CValidError_CI
-{
-public:
-    CValidError_CI(void);
-    CValidError_CI(const CValidError& ve,
-                   const string& errcode = kEmptyStr,
-                   EDiagSev minsev  = eDiagSevMin,
-                   EDiagSev maxsev  = eDiagSevMax);
-    CValidError_CI(const CValidError_CI& iter);
-    virtual ~CValidError_CI(void);
-
-    CValidError_CI& operator=(const CValidError_CI& iter);
-    CValidError_CI& operator++(void);
-
-    bool IsValid(void) const;
-    DECLARE_OPERATOR_BOOL(IsValid());
-
-    const CValidErrItem& operator* (void) const;
-    const CValidErrItem* operator->(void) const;
-
-private:
-    bool Filter(const CValidErrItem& item) const;
-    bool AtEnd(void) const;
-    void Next(void);
-
-    CConstRef<CValidError>               m_Validator;
-    CValidError::TErrs::const_iterator   m_Current;
-
-    // filters:
-    string                               m_ErrCodeFilter;
-    EDiagSev                             m_MinSeverity;
-    EDiagSev                             m_MaxSeverity;
-};
 
 
 class NCBI_VALIDATOR_EXPORT CValidator : public CObject 
@@ -329,60 +166,6 @@ private:
 
 // Inline Functions:
 
-inline
-SIZE_TYPE CValidError::TotalSize(void) const 
-{
-    return m_ErrItems.size();
-}
-
-
-inline
-SIZE_TYPE CValidError::Size(EDiagSev sev) const 
-{
-    return const_cast<CValidError*>(this)->m_Stats[sev]; 
-}
-
-
-inline
-SIZE_TYPE CValidError::InfoSize(void) const
-{
-    return Size(eDiag_Info);
-}
-
-
-inline
-SIZE_TYPE CValidError::WarningSize(void) const
-{
-    return Size(eDiag_Warning);
-}
-
-
-inline
-SIZE_TYPE CValidError::ErrorSize(void) const
-{
-    return Size(eDiag_Error);
-}
-
-
-inline
-SIZE_TYPE CValidError::CriticalSize(void) const
-{
-    return Size(eDiag_Critical);
-}
-
-
-inline
-SIZE_TYPE CValidError::FatalSize(void) const
-{
-    return Size(eDiag_Fatal);
-}
-
-inline
-const CSerialObject* CValidError::GetValidated(void) const
-{
-    return m_Validated.GetPointerOrNull();
-}
-
 
 END_SCOPE(validator)
 END_SCOPE(objects)
@@ -393,6 +176,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2006/02/16 18:39:15  rsmith
+* Use new objects::valerr class to store validation errors.
+*
 * Revision 1.23  2006/01/25 19:16:00  rsmith
 * Validate(Seq-entry-handle)
 *
