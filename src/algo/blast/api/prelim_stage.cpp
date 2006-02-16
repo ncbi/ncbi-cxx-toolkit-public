@@ -41,7 +41,10 @@ static char const rcsid[] =
 #include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/uniform_search.hpp>    // for CSearchDatabase
 
+#include <objects/scoremat/PssmWithParameters.hpp>
+
 #include "prelim_search_runner.hpp"
+#include "psiblast_aux_priv.hpp"
 #include "blast_seqsrc_adapter_priv.hpp"
 
 /** @addtogroup AlgoBlast
@@ -92,7 +95,8 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        const CSearchDatabase& dbinfo)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
-    x_Init(query_factory, options, dbinfo.GetDatabaseName());
+    x_Init(query_factory, options, CRef<CPssmWithParameters>(), 
+           dbinfo.GetDatabaseName());
 
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(dbinfo);
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
@@ -104,22 +108,25 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
     BlastSeqSrc* seqsrc = ssa.GetBlastSeqSrc();
-    x_Init(query_factory, options, BlastSeqSrcGetName(seqsrc));
+    x_Init(query_factory, options, CRef<CPssmWithParameters>(),
+           BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
 }
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
                                        CRef<CBlastOptions> options,
-                                       BlastSeqSrc* seqsrc)
+                                       BlastSeqSrc* seqsrc,
+                                       CConstRef<CPssmWithParameters> pssm)
     : m_QueryFactory(query_factory), m_InternalData(new SInternalData)
 {
-    x_Init(query_factory, options, BlastSeqSrcGetName(seqsrc));
+    x_Init(query_factory, options, pssm, BlastSeqSrcGetName(seqsrc));
     m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, 0));
 }
 
 void
 CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                            CRef<CBlastOptions> options,
+                           CConstRef<CPssmWithParameters> pssm,
                            const string& dbname)
 {
     options->Validate();
@@ -149,6 +156,9 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
                                         m_InternalData->m_RpsData);
     m_InternalData->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp,
                                                        BlastScoreBlkFree));
+    if (pssm.NotEmpty()) {
+        PsiBlastSetupScoreBlock(sbp, pssm);
+    }
 
     // 5. Create lookup table
     LookupTableWrap* lut =

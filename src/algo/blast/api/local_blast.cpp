@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/api/uniform_search.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
 #include "blast_aux_priv.hpp"
+#include <objects/scoremat/PssmWithParameters.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -47,6 +48,7 @@ static char const rcsid[] =
  */
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
@@ -78,7 +80,8 @@ CLocalBlast::CLocalBlast(CRef<IQueryFactory> qf,
 : m_QueryFactory    (qf),
   m_Opts            (const_cast<CBlastOptions*>(&opts_handle->GetOptions())),
   m_InternalData    (0),
-  m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, seqsrc)),
+  m_PrelimSearch    (new CBlastPrelimSearch(qf, m_Opts, seqsrc,
+                                            CRef<CPssmWithParameters>())),
   m_TbackSearch     (0)
 {}
 

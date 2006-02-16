@@ -45,11 +45,17 @@
  */
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CPssmWithParameters;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(blast)
 
 // Forward declaration
 class IBlastSeqSrcAdapter;
 
+/// Search class to perform the preliminary stage of the BLAST search
 /// NOTE: Non-const CBlastOptions is only needed for RPS-BLAST!!!
 class NCBI_XBLAST_EXPORT CBlastPrelimSearch : public CObject, public CThreadable
 {
@@ -60,14 +66,13 @@ public:
                        const CSearchDatabase& dbinfo);
     // we don't own the BlastSeqSrc
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
-                       //CConstRef<CBlastOptions> options,
                        CRef<CBlastOptions> options,
                        IBlastSeqSrcAdapter& db);
     // we don't own the BlastSeqSrc
     CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
-                       //CConstRef<CBlastOptions> options,
                        CRef<CBlastOptions> options,
-                       BlastSeqSrc* seqsrc);
+                       BlastSeqSrc* seqsrc,
+                       CConstRef<objects::CPssmWithParameters> pssm);
     ~CBlastPrelimSearch();
 
     /// Borrow the internal data and results results. 
@@ -79,8 +84,10 @@ public:
                                             Uint4 max_num_hsps = 0,
                                             bool* rm_hsps = NULL) const;
 
+    /// Retrieve any error/warning messages that occurred during the search
     TSearchMessages GetSearchMessages() const;
 
+    /// Retrieve the filtered/masked query regions
     TSeqLocInfoVector GetFilteredQueryRegions() const;
 
 private:
@@ -89,8 +96,16 @@ private:
     /// Prohibit assignment operator
     CBlastPrelimSearch& operator=(const CBlastPrelimSearch& rhs);
 
+    /// Internal initialization function
+    /// Initializes internal data structures except the BlastSeqSrc
+    /// @param query_factory Contains query related data [in]
+    /// @param options BLAST algorithm options [in]
+    /// @param pssm PSSM to initialize PSI-BLAST
+    /// @param dbname required for RPS-BLAST to initialize the RPS-BLAST
+    /// related data structures from the RPS-BLAST database [in]
     void x_Init(CRef<IQueryFactory> query_factory,
                 CRef<CBlastOptions> options,
+                CConstRef<objects::CPssmWithParameters> pssm,
                 const string& dbname);
 
     /// Runs the preliminary search in multi-threaded mode
