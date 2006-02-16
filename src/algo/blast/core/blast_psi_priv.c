@@ -483,6 +483,8 @@ char GetResidue(char input)
     case 23: return ('Z');
     case 24: return ('U');
     case 25: return ('*');
+    case 26: return ('O');
+    case 27: return ('J');
     default: return ('?');
     }
 }
@@ -2378,6 +2380,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/02/16 18:47:18  camacho
+ * + encoding translations for O and J
+ *
  * Revision 1.57  2005/11/18 20:09:45  camacho
  * Fixes for backwards compatibility with C toolkit PSSM engine for certain corner
  * cases.
