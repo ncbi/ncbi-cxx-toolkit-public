@@ -109,9 +109,11 @@ CDbapiSampleApp::GetServerType(void) const
 {
     if ( GetServerName() == "STRAUSS" ||
          GetServerName() == "MOZART" ||
+         GetServerName() == "SCHUMANN" ||
          NStr::StartsWith(GetServerName(), "BARTOK") ) {
         return eSybase;
-    } else if (NStr::StartsWith(GetServerName(), "MS_DEV")) {
+    } else if (NStr::StartsWith(GetServerName(), "MS_DEV") ||
+               NStr::StartsWith(GetServerName(), "MSSQL")) {
         return eMsSql;
     }
 
@@ -536,6 +538,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/16 15:52:47  ssikorsk
+ * Added SCHUMANN to a list of Sybase servers.
+ *
  * Revision 1.19  2006/01/26 12:15:37  ssikorsk
  * Revamp code to include <dbapi/driver/dbapi_svc_mapper.hpp>;
  * Removed protection of DBLB_INSTALL_DEFAULT;
