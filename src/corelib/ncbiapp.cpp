@@ -188,7 +188,7 @@ SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
         }
         m_DiagStream.reset(0);
     } else {
-        ostr->rdbuf()->SEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
+        ostr->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
     }
 
     // return # of bytes dumped to "os"
@@ -1026,6 +1026,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.115  2006/02/16 13:18:50  lavr
+ * SEEKOFF -> PUBSEEKOFF (SEEKOFF has been made obsolescent a long ago)
+ *
  * Revision 1.114  2006/01/09 15:59:52  vakatov
  * CNcbiApplication::x_SetupStdio() -- work around the STDIO destruction
  * glitch that appeared on WorkShop 5.5 on Solaris 10/SPARC
