@@ -297,15 +297,14 @@ void WritePrintable(CNcbiOstream& out, char c)
     case '\r':  out.write("\\r",  2);  break;
     case '\v':  out.write("\\v",  2);  break;
     default:
-        {
-            if ( isprint((unsigned char) c) ) {
-                out.put(c);
-            } else {
-                out.write("\\x", 2);
-                out.put(s_Hex[(unsigned char) c / 16]);
-                out.put(s_Hex[(unsigned char) c % 16]);
-            }
+        if ( isprint((unsigned char) c) ) {
+            out.put(c);
+        } else {
+            out.write("\\x", 2);
+            out.put(s_Hex[(unsigned char) c / 16]);
+            out.put(s_Hex[(unsigned char) c % 16]);
         }
+        break;
     }
 }
 
@@ -415,6 +414,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/02/16 16:15:56  lavr
+ * WritePrintable():  Remove unnecessary block
+ *
  * Revision 1.43  2006/02/16 16:11:02  lavr
  * Reduce header inclusions; use proper NCBI_OS_MSWIN macro (not _WIN32)
  *
