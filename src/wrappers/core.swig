@@ -141,8 +141,11 @@ corelib/ncbitime.hpp
 corelib/ncbiutil.hpp
 corelib/plugin_manager.hpp
 corelib/plugin_manager_impl.hpp
+corelib/reader_writer.hpp
+corelib/rwstream.hpp
 corelib/syslog.hpp
 corelib/version.hpp
+
 util/compress/bzip2.hpp
 util/compress/compress.hpp
 util/compress/reader_zlib.hpp
@@ -170,13 +173,10 @@ util/random_gen.hpp
 util/range.hpp
 util/range_coll.hpp
 util/rangemap.hpp
-util/reader_writer.hpp
 util/regexp.hpp
 util/request_control.hpp
 util/resize_iter.hpp
 util/resource_pool.hpp
-util/rwstream.hpp
-util/rwstreambuf.hpp
 util/sgml_entity.hpp
 util/smalldns.hpp
 util/static_map.hpp
@@ -341,6 +341,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/02/16 17:27:08  jcherry
+ * Reflect header rearrangement
+ *
  * Revision 1.13  2006/01/03 14:38:02  jcherry
  * Added headers
  *
