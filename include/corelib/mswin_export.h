@@ -124,6 +124,7 @@
 #  define NCBI_FORMAT_EXPORTS
 #  define NCBI_XOBJEDIT_EXPORTS
 #  define NCBI_CLEANUP_EXPORTS
+#  define NCBI_VALERR_EXPORTS
 #endif
 
 
@@ -145,7 +146,6 @@
 #  define NCBI_PROJ_EXPORTS
 #  define NCBI_PCASSAY_EXPORTS
 #  define NCBI_PCSUBSTANCE_EXPORTS
-#  define NCBI_VALERR_EXPORTS
 #endif
 
 
@@ -1202,6 +1202,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.112  2006/02/16 16:01:35  rsmith
+ * move valerr from ncbi_seqmisc to ncbi_seqext
+ *
  * Revision 1.111  2006/02/07 15:27:44  rsmith
  * add NCBI_VALERR_EXPORT
  *
