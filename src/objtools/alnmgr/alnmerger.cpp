@@ -623,6 +623,9 @@ CAlnMixMerger::x_Merge()
                             }
                         }
 #if _DEBUG && _ALNMGR_DEBUG                        
+                        seg->StartItsConsistencyCheck(*seq1,
+                                                      start,
+                                                      m_MatchIdx);
                         prev_seg->StartItsConsistencyCheck(*seq1,
                                                            start,
                                                            m_MatchIdx);
@@ -1263,6 +1266,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2006/02/16 18:15:06  todorov
+* Added another consistency check for the current segment.
+*
 * Revision 1.12  2005/08/18 19:37:29  todorov
 * Fixed a matches iteration problem that was causing an infinite loop:
 * m_MatchList was not being properly shrinked due to sequence reference
