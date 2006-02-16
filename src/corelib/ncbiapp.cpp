@@ -188,7 +188,7 @@ SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
         }
         m_DiagStream.reset(0);
     } else {
-        ostr->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
+        ostr->seekp(0, IOS_BASE::beg);
     }
 
     // return # of bytes dumped to "os"
@@ -1026,6 +1026,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.116  2006/02/16 15:18:18  lavr
+ * Replace use of PUBSEEKOFF macro with equiv. stream positioning method
+ *
  * Revision 1.115  2006/02/16 13:18:50  lavr
  * SEEKOFF -> PUBSEEKOFF (SEEKOFF has been made obsolescent a long ago)
  *
