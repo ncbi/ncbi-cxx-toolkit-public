@@ -315,7 +315,7 @@ void CValidError_imp::PostErr
             desc += "]";
         }
     }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ft, GetAccessionFromObjects(&ft, NULL, *m_Scope));
 }
 
 
@@ -334,7 +334,7 @@ void CValidError_imp::PostErr
     // Append bioseq label
     string desc;
     s_AppendBioseqLabel(desc, sq, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, sq, GetAccessionFromObjects(&sq, NULL, *m_Scope));
 }
 
 
@@ -357,7 +357,7 @@ void CValidError_imp::PostErr
     // Append Bioseq_set label
     string desc = "BIOSEQ-SET: ";
     s_AppendSetLabel(desc, st, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, st, GetAccessionFromObjects(&st, NULL, *m_Scope));
 }
 
 
@@ -377,7 +377,7 @@ void CValidError_imp::PostErr
     } else {
         s_AppendSetLabel(desc, ctx.GetSet(), m_SuppressContext);
     }
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, ds, ctx, GetAccessionFromObjects(&ds, &ctx, *m_Scope));
 }
 
 
@@ -425,7 +425,7 @@ void CValidError_imp::PostErr
 
     // !!! need to decide on the message
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, an, GetAccessionFromObjects(&an, NULL, *m_Scope));
 }
 
 
@@ -445,7 +445,7 @@ void CValidError_imp::PostErr
     desc += " ";
     graph.GetLoc().GetLabel(&desc);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, GetAccessionFromObjects(&graph, NULL, *m_Scope));
 }
 
 
@@ -466,7 +466,7 @@ void CValidError_imp::PostErr
     desc += " ";
     graph.GetLoc().GetLabel(&desc);
     s_AppendBioseqLabel(desc, sq, m_SuppressContext);
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, graph, GetAccessionFromObjects(&graph, NULL, *m_Scope));
 }
 
 
@@ -489,7 +489,7 @@ void CValidError_imp::PostErr
     desc += " SEGS: ";
     desc += align.GetSegs().SelectionName(align.GetSegs().Which());
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, align, GetAccessionFromObjects(&align, NULL, *m_Scope));
 }
 
 
@@ -502,7 +502,7 @@ void CValidError_imp::PostErr
     string desc = "SEQ-ENTRY: ";
     entry.GetLabel(&desc, CSeq_entry::eContent);
 
-    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, *m_Scope);
+    m_ErrRepository->AddValidErrItem(sv, et, msg, desc, entry, GetAccessionFromObjects(&entry, NULL, *m_Scope));
 }
 
 
@@ -2676,6 +2676,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.72  2006/02/16 21:56:53  rsmith
+* Use new objects::valerr class to store validation errors.
+*
 * Revision 1.71  2006/02/09 14:50:45  rsmith
 * report descr errors even when no context.
 *

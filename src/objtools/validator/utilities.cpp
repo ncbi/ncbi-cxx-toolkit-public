@@ -86,7 +86,7 @@ const string& CGbqualType::GetString(CGbqualType::EType gbqual)
     return GetTypeInfo_enum_EType()->FindName(gbqual, true);
 }
 
-        
+
 BEGIN_NAMED_ENUM_IN_INFO("", CGbqualType::, EType, false)
 {
     ADD_ENUM_VALUE("bad",               e_Bad);
@@ -221,8 +221,8 @@ void CFeatQualAssoc::PoplulateLegalGbquals(void)
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Product );
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Standard_name );
     Associate( CSeqFeatData::eSubtype_gene, CGbqualType::e_Usedin );
-    
- 
+
+
     // CDS
     Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Allele );
     Associate( CSeqFeatData::eSubtype_cdregion, CGbqualType::e_Codon );
@@ -1056,7 +1056,7 @@ bool IsDeltaOrFarSeg(const CSeq_loc& loc, CScope* scope)
             }
         }
     }
-    
+
     return false;
 }
 
@@ -1122,15 +1122,116 @@ CSeqVector GetSequenceFromFeature
  CBioseq_Handle::EVectorCoding coding,
  bool product)
 {
-    
+
     if ( (product   &&  !feat.CanGetProduct())  ||
          (!product  &&  !feat.CanGetLocation()) ) {
         return CSeqVector();
     }
-    
+
     const CSeq_loc* loc = product ? &feat.GetProduct() : &feat.GetLocation();
     return GetSequenceFromLoc(*loc, scope, coding);
 }
+
+
+/***** Calculate Accession for a given object *****/
+
+static string s_GetBioseqAcc(const CBioseq_Handle& handle)
+{
+    if (handle) {
+        try {
+            return sequence::GetId(handle).GetSeqId()->GetSeqIdString();
+        } catch (CException&) {}
+    }
+    return kEmptyStr;
+}
+
+
+static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope)
+{
+    CBioseq_Handle seq = sequence::GetBioseqFromSeqLoc(feat.GetLocation(), scope);
+    return s_GetBioseqAcc(seq);
+}
+
+
+static string s_GetBioseqAcc(const CBioseq& seq, CScope& scope)
+{
+    CBioseq_Handle handle = scope.GetBioseqHandle(seq);
+    return s_GetBioseqAcc(handle);
+}
+
+static const CBioseq* s_GetSeqFromSet(const CBioseq_set& bsst, CScope& scope)
+{
+    const CBioseq* retval = NULL;
+
+    switch (bsst.GetClass()) {
+        case CBioseq_set::eClass_gen_prod_set:
+            // find the genomic bioseq
+            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+                if ((*it)->IsSeq()) {
+                    const CSeq_inst& inst = (*it)->GetSeq().GetInst();
+                    if (inst.IsSetMol()  &&  inst.GetMol() == CSeq_inst::eMol_dna) {
+                        retval = &(*it)->GetSeq();
+                        break;
+                    }
+                }
+            }
+            break;
+        case CBioseq_set::eClass_nuc_prot:
+            // find the nucleotide bioseq
+            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+                if ((*it)->IsSeq()  &&  (*it)->GetSeq().IsNa()) {
+                    retval = &(*it)->GetSeq();
+                    break;
+                }
+            }
+            break;
+        case CBioseq_set::eClass_segset:
+            // find the master bioseq
+            ITERATE (CBioseq_set::TSeq_set, it, bsst.GetSeq_set()) {
+                if ((*it)->IsSeq()) {
+                    retval = &(*it)->GetSeq();
+                    break;
+                }
+            }
+            break;
+
+        default:
+            break;
+    }
+
+    return retval;
+}
+
+
+string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope)
+{
+    if (ctx) {
+        if (ctx->IsSeq()) {
+            return s_GetBioseqAcc(ctx->GetSeq(), scope);
+        } else if (ctx->IsSet()) {
+            const CBioseq* seq = s_GetSeqFromSet(ctx->GetSet(), scope);
+            if (seq != NULL) {
+                return s_GetBioseqAcc(*seq, scope);
+            }
+        }
+    } else if (obj) {
+        if (obj->GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+            const CSeq_feat& feat = dynamic_cast<const CSeq_feat&>(*obj);
+            return s_GetSeq_featAcc(feat, scope);
+        } if (obj->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
+            const CBioseq& seq = dynamic_cast<const CBioseq&>(*obj);
+            return s_GetBioseqAcc(seq, scope);
+        } else if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
+            const CBioseq_set& bsst = dynamic_cast<const CBioseq_set&>(*obj);
+            const CBioseq* seq = s_GetSeqFromSet(bsst, scope);
+            if (seq != NULL) {
+                return s_GetBioseqAcc(*seq, scope);
+            }
+        } // TO DO: graph
+    }
+    return kEmptyStr;
+}
+
 
 
 END_SCOPE(validator)
@@ -1142,6 +1243,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2006/02/16 21:56:53  rsmith
+* Use new objects::valerr class to store validation errors.
+*
 * Revision 1.24  2005/06/03 17:02:31  lavr
 * Explicit (unsigned char) casts in ctype routines
 *

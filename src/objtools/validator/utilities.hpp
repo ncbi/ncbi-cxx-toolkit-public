@@ -193,6 +193,7 @@ CSeqVector GetSequenceFromFeature(const CSeq_feat& feat, CScope& scope,
 
 inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
+string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope);
 
 
 END_SCOPE(validator)
@@ -204,6 +205,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2006/02/16 21:56:53  rsmith
+* Use new objects::valerr class to store validation errors.
+*
 * Revision 1.13  2003/10/27 14:15:51  shomrat
 * added utility functions for retrieving sequence under Seq-loc or Seq-feat
 *
