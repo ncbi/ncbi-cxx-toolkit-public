@@ -178,7 +178,7 @@ SIZE_TYPE CNcbiApplication::FlushDiag(CNcbiOstream* os, bool close_diag)
 
     if ( n_write ) {
         os->write(ostr->str(), n_write);
-        ostr->rdbuf()->freeze(0);
+        ostr->freeze(false);
     }
 
     // reset output buffer or destroy
@@ -695,10 +695,12 @@ void CNcbiApplication::DisableArgDescriptions(TDisableArgDesc disable)
     m_DisableArgDesc = disable;
 }
 
+
 void CNcbiApplication::HideStdArgs(THideStdArgs hide_mask)
 {
     m_HideArgs = hide_mask;
 }
+
 
 void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
 {
@@ -707,6 +709,7 @@ void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
     _ASSERT(m_StdioFlags == 0);
     m_StdioFlags = stdio_flags;
 }
+
 
 void CNcbiApplication::x_SetupStdio(void)
 {
@@ -723,7 +726,7 @@ void CNcbiApplication::x_SetupStdio(void)
         &&  !isatty(0)
 #endif
         ) {
-#if defined(NCBI_COMPILER_GCC)
+#if defined(NCBI_COMPILER_GCC)  &&  defined(NCBI_OS_SOLARIS)
 #  if NCBI_COMPILER_VERSION >= 300
         _ASSERT(!m_CinBuffer);
         // Ugly workaround for ugly interaction between g++ and Solaris C RTL
@@ -733,7 +736,7 @@ void CNcbiApplication::x_SetupStdio(void)
 #  endif
 #endif
     }
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     if ((m_StdioFlags & fBinaryCin) != 0) {
         setmode(fileno(stdin), O_BINARY);
     }
@@ -776,7 +779,7 @@ string CNcbiApplication::FindProgramExecutablePath
 
 #elif defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
-#  if defined (NCBI_OS_MSWIN)
+#  ifdef NCBI_OS_MSWIN
     // MS Windows: Try more accurate method of detection
     // XXX - use this only for real_path?
     try {
@@ -826,7 +829,7 @@ string CNcbiApplication::FindProgramExecutablePath
     // This method didn't work -- use standard method
 #  endif
 
-#  if defined(NCBI_OS_LINUX)
+#  ifdef NCBI_OS_LINUX
     // Linux OS: Try more accurate method of detection for real_path
     if (real_path) {
         char   buf[PATH_MAX + 1];
@@ -843,7 +846,7 @@ string CNcbiApplication::FindProgramExecutablePath
     string app_path = argv[0];
 
     if ( !CDirEntry::IsAbsolutePath(app_path) ) {
-#  if defined(NCBI_OS_MSWIN)
+#  ifdef NCBI_OS_MSWIN
         // Add default ".exe" extention to the name of executable file
         // if it running without extension
         string dir, title, ext;
@@ -863,7 +866,7 @@ string CNcbiApplication::FindProgramExecutablePath
             // Try to determine that path.
             string env_path = GetEnvironment().Get("PATH");
             list<string> split_path;
-#  if defined(NCBI_OS_MSWIN)
+#  ifdef NCBI_OS_MSWIN
             NStr::Split(env_path, ";", split_path);
 #  else
             NStr::Split(env_path, ":", split_path);
@@ -882,7 +885,7 @@ string CNcbiApplication::FindProgramExecutablePath
 
 #else  // defined (NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
 
-#  error "Platform unrecognized"
+#  error "Unsupported platform, sorry -- please contact NCBI"
 #endif
     if (real_path) {
         *real_path = CDirEntry::NormalizePath(ret_val, eFollowLinks);
@@ -919,6 +922,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             }
         }
     }
+
     // Debugging features
 
     // [DEBUG.DIAG_TRACE]
@@ -955,7 +959,6 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             SetDiagErrCodeInfo(info);
         }
     }
-
 
     // CPU and heap limitations
 
@@ -1003,6 +1006,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
         SetDiagFilter(eDiagFilter_Post, post_filter.c_str());
 }
 
+
 bool CNcbiApplication::x_SetupLogFile(const string& name, ios::openmode mode)
 {
     auto_ptr<CNcbiOfstream> os(new CNcbiOfstream(name.c_str(), mode));
@@ -1026,6 +1030,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.117  2006/02/16 15:50:18  lavr
+ * Use ostrstream's freeze(), not strstreambuf's one
+ *
  * Revision 1.116  2006/02/16 15:18:18  lavr
  * Replace use of PUBSEEKOFF macro with equiv. stream positioning method
  *
