@@ -32,26 +32,27 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+
 Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos)
 {
-#ifdef _WIN32
+#ifdef NCBI_OS_MSWIN
     fpos_t fp(stream_pos.seekpos());
-    return (Int8)fp;
+    return (Int8) fp;
 #else
-    return (CT_OFF_TYPE) (stream_pos - CT_POS_TYPE(0));
+    return (CT_OFF_TYPE)(stream_pos - CT_POS_TYPE(0));
 #endif
 }
 
+
 CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
 {
-#ifdef _WIN32
+#ifdef NCBI_OS_MSWIN
     fpos_t fp(pos);
     mbstate_t mbs;
     memset (&mbs, '\0', sizeof (mbs));
@@ -61,7 +62,6 @@ CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
     return CT_POS_TYPE(0) + CT_OFF_TYPE(pos);
 #endif
 }
-
 
 
 CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
@@ -129,6 +129,7 @@ CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, const string& delims)
     is.flags(f);
     return is;
 }
+
 
 #ifdef NCBI_COMPILER_GCC
 #  if NCBI_COMPILER_VERSION < 300
@@ -211,6 +212,7 @@ CNcbiOstrstreamToString::operator string(void) const
     return string(str, length);
 }
 
+
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {
@@ -219,6 +221,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
     return out;
 }
 
+
 CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {
@@ -226,6 +229,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CLocaseStringConverter s)
     }
     return out;
 }
+
 
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseCharPtrConverter s)
 {
@@ -305,6 +309,7 @@ void WritePrintable(CNcbiOstream& out, char c)
     }
 }
 
+
 CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {
@@ -321,6 +326,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, CPrintableCharPtrConverter s)
     }
     return out;
 }
+
 
 #if defined(NCBI_COMPILER_WORKSHOP)
 // We have to use two #if's here because KAI C++ cannot handle #if foo == bar
@@ -403,13 +409,15 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 }
 
 
-
 #endif  /* NCBI_USE_OLD_IOSTREAM */
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2006/02/16 16:11:02  lavr
+ * Reduce header inclusions; use proper NCBI_OS_MSWIN macro (not _WIN32)
+ *
  * Revision 1.42  2005/10/20 17:33:19  ucko
  * Add a special case to the multidelimiter version of NcbiGetline:
  * if two different delimiters are back to back, treat them as a single
