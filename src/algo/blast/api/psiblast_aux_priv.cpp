@@ -86,11 +86,26 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     }
 
     // Assign the gapped Karlin-Altschul block
-    score_blk->kbp_gap_psi[0]->Lambda =
-        pssm->GetPssm().GetFinalData().GetLambda();
-    score_blk->kbp_gap_psi[0]->K = pssm->GetPssm().GetFinalData().GetKappa();
+    if (pssm->GetPssm().GetFinalData().GetLambda() > 0) {
+        score_blk->kbp_gap_psi[0]->Lambda =
+            pssm->GetPssm().GetFinalData().GetLambda();
+    } else {
+        score_blk->kbp_gap_psi[0]->Lambda = score_blk->kbp_gap_std[0]->Lambda;
+    }
+
+    if (pssm->GetPssm().GetFinalData().GetKappa() > 0) {
+        score_blk->kbp_gap_psi[0]->K = 
+            pssm->GetPssm().GetFinalData().GetKappa();
+    } else {
+        score_blk->kbp_gap_psi[0]->K = score_blk->kbp_gap_std[0]->K;
+    }
     score_blk->kbp_gap_psi[0]->logK = log(score_blk->kbp_gap_psi[0]->K);
-    score_blk->kbp_gap_psi[0]->H = pssm->GetPssm().GetFinalData().GetH();
+
+    if (pssm->GetPssm().GetFinalData().GetH() > 0) {
+        score_blk->kbp_gap_psi[0]->H = pssm->GetPssm().GetFinalData().GetH();
+    } else {
+        score_blk->kbp_gap_psi[0]->H = score_blk->kbp_gap_std[0]->H;
+    }
 
     // Assign the matrix scores/frequency ratios
     const size_t kQueryLength = pssm->GetPssm().GetNumColumns();
