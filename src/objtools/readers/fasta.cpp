@@ -389,7 +389,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                 s_FixSeqData(seq);
                 if (was_lc) {
                     lowercase->SetPacked_int().AddInterval
-                        (*best_id, lc_start, pos);
+                        (*best_id, lc_start, pos - 1);
                 }
             }
             seq = new CBioseq;
@@ -459,7 +459,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                             lc_start = pos;
                         } else if (was_lc && !is_lc) {
                             lowercase->SetPacked_int().AddInterval
-                                (*best_id, lc_start, pos);
+                                (*best_id, lc_start, pos - 1);
                         }
                         was_lc = is_lc;
                         ++pos;
@@ -528,7 +528,7 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
     if (seq) {
         s_FixSeqData(seq);
         if (was_lc) {
-            lowercase->SetPacked_int().AddInterval(*best_id, lc_start, pos);
+            lowercase->SetPacked_int().AddInterval(*best_id, lc_start, pos - 1);
         }
     }
     // simplify if possible
@@ -634,6 +634,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2006/02/17 15:40:18  ucko
+* ReadFasta: correct off-by-one error in lowercase-interval reporting
+* caught by Josh Cherry.
+*
 * Revision 1.25  2005/11/08 19:37:47  ucko
 * ReadFasta: strip off trailing \r characters, as CGIs may encounter
 * them but they confuse some code (particularly s_ParseFastaDefline).
