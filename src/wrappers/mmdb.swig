@@ -199,6 +199,8 @@ objects/mmdb1/Residue_id.hpp
 objects/mmdb1/Residue_id_.hpp
 objects/mmdb1/MMDB_Chemical_graph_module.hpp
 objects/mmdb1/MMDB_module.hpp
+objects/mmdb1/PCSubstance_id.hpp
+objects/mmdb1/PCSubstance_id_.hpp
 
 objects/mmdb2/Alternate_conformation_id.hpp
 objects/mmdb2/Alternate_conformation_id_.hpp
@@ -343,6 +345,9 @@ objects/ncbimime/NCBI_Mime_module.hpp
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/02/17 17:56:33  jcherry
+ * Added PCSubstance_id headers
+ *
  * Revision 1.2  2005/10/27 12:37:18  jcherry
  * Added *_module.hpp
  *
