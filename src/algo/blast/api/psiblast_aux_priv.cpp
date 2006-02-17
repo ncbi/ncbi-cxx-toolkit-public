@@ -149,7 +149,7 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
             for (TSeqPos r = 0; r < freq_ratios->GetRows(); r++) {
                 score_blk->psi_matrix->freq_ratios[c][r] = 
                     (*freq_ratios)(r, c);
-                if (freq_ratios_all_zeros || (*freq_ratios)(r,c) > kEpsilon) {
+                if ((*freq_ratios)(r,c) > kEpsilon) {
                     freq_ratios_all_zeros = false;
                 }
             }
