@@ -295,15 +295,18 @@ void CNetServiceClient::CreateSocket(const string& hostname,
 }
 
 
-void CNetServiceClient::WaitForServer()
+void CNetServiceClient::WaitForServer(unsigned wait_sec)
 {
-    STimeout to = {2, 0};
+    STimeout to = {wait_sec, 0};
     while (true) {
         EIO_Status io_st = m_Sock->Wait(eIO_Read, &to);
-        if (io_st == eIO_Timeout)
-            continue;
-        else 
-            break;            
+        if (io_st == eIO_Timeout) {
+            NCBI_THROW(CNetServiceException, eTimeout, 
+                       "No response from the server");
+        }
+        else {
+            break;
+        }
     }
 }
 
@@ -364,6 +367,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/17 17:06:50  kuznets
+ * Fixed the infinite loop in WaitForServer
+ *
  * Revision 1.16  2006/02/15 18:36:49  lavr
  * Remove inclusion of unnecessary header files
  *
