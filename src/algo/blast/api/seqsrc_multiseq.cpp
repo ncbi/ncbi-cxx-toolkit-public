@@ -208,11 +208,11 @@ s_MultiSeqGetTotLen(void* /*multiseq_handle*/, void*)
     return 0;
 }
 
-/// Needed for completeness only. Returns NULL as "database" name
+/// Always returns NcbiEmptyCStr
 static const char* 
 s_MultiSeqGetName(void* /*multiseq_handle*/, void*)
 {
-    return NULL;
+    return NcbiEmptyCStr;
 }
 
 /// Answers whether this object is for protein or nucleotide sequences.
@@ -445,6 +445,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.37  2006/02/17 16:14:09  camacho
+ * Return NcbiEmptyCStr from GetName function
+ *
  * Revision 1.36  2005/09/23 14:06:46  camacho
  * Remove unneeded include
  *

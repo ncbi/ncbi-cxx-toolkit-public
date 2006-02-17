@@ -195,11 +195,11 @@ s_QueryFactoryGetTotLen(void* /*multiseq_handle*/, void*)
     return 0;
 }
 
-/// Needed for completeness only. Returns NULL as "database" name
+/// Always returns NcbiEmptyCStr
 static const char* 
 s_QueryFactoryGetName(void* /*multiseq_handle*/, void*)
 {
-    return NULL;
+    return NcbiEmptyCStr;
 }
 
 /// Answers whether this object is for protein or nucleotide sequences.
