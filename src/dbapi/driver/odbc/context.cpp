@@ -258,7 +258,7 @@ CODBCContext::MakeIConnection(const SConnAttr& conn_attr)
     t_con->m_Server      = conn_attr.srv_name;
     t_con->m_User        = conn_attr.user_name;
     t_con->m_Passwd      = conn_attr.passwd;
-//    t_con->m_BCPAble     = (mode & fBcpIn) != 0;
+    t_con->m_BCPable     = (conn_attr.mode & fBcpIn) != 0;
     t_con->m_SecureLogin = (conn_attr.mode & fPasswordEncrypted) != 0;
     
     return t_con;
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/02/17 17:58:47  ssikorsk
+ * Initialize Connection::m_BCPable value using connection mode.
+ *
  * Revision 1.37  2006/02/09 12:03:19  ssikorsk
  * Set severity level of error messages with native error num == 0 to informational.
  *
