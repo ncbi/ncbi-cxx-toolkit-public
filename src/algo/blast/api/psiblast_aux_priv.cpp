@@ -46,6 +46,7 @@ static char const rcsid[] =
 #include <algo/blast/api/blast_options_handle.hpp>
 #include <algo/blast/api/objmgrfree_query_data.hpp>
 #include "blast_aux_priv.hpp"
+#include "../core/blast_psi_priv.h"
 
 // Utility headers
 #include <util/format_guess.hpp>
@@ -75,7 +76,9 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
-                             CConstRef<CPssmWithParameters> pssm)
+                             CConstRef<CPssmWithParameters> pssm,
+                             TSearchMessages& messages,
+                             CConstRef<CBlastOptions> options)
 {
     ASSERT(score_blk);
     ASSERT(pssm.NotEmpty());
@@ -131,6 +134,9 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
 
     // Get the frequency ratios
     bool missing_freq_ratios = false;
+    // are all of the frequency ratios zeros? if so, issue a warning
+    bool freq_ratios_all_zeros = true;
+
     try {
         auto_ptr< CNcbiMatrix<double> > freq_ratios
             (CScorematPssmConverter::GetFreqRatios(pssm));
@@ -143,6 +149,9 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
             for (TSeqPos r = 0; r < freq_ratios->GetRows(); r++) {
                 score_blk->psi_matrix->freq_ratios[c][r] = 
                     (*freq_ratios)(r, c);
+                if (freq_ratios_all_zeros || (*freq_ratios)(r,c) > kEpsilon) {
+                    freq_ratios_all_zeros = false;
+                }
             }
         }
     } catch (const std::runtime_error&) {
@@ -152,6 +161,18 @@ void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
     if (missing_scores && missing_freq_ratios) {
         NCBI_THROW(CBlastException, eInvalidArgument,
                    "Missing scores and frequency ratios in PSSM");
+    }
+
+    if ((options->GetCompositionBasedStats() == eCompositionBasedStats) &&
+        freq_ratios_all_zeros) {
+        CNcbiOstrstream os;
+        os << "Frequency ratios for PSSM are all zeros, frequency ratios for ";
+        os << options->GetMatrixName() << " will be used during traceback ";
+        os << "in composition based statistics";
+        CRef<CSearchMessage> sm(new CSearchMessage(eBlastSevWarning, 0,
+                                                   os.str()));
+        _ASSERT(messages.size() == 1); // PSI-BLAST only works with one query
+        messages.front().push_back(sm);
     }
 }
 

@@ -63,6 +63,7 @@ BEGIN_SCOPE(blast)
 class CBlastOptions;
 class CBlastOptionsHandle;
 class IQueryFactory;
+class TSearchMessages;
 
 /////////////////////////////////////////////////////////////////////////////
 // Function prototypes/Class definitions
@@ -70,9 +71,13 @@ class IQueryFactory;
 /** Setup CORE BLAST score block structure with data from the scoremat PSSM.
  * @param score_blk BlastScoreBlk structure to set up [in|out]
  * @param pssm scoremat PSSM [in]
+ * @param messages Error/warning messages [in|out]
+ * @param options PSI-BLAST options [in]
  */
 void PsiBlastSetupScoreBlock(BlastScoreBlk* score_blk,
-                             CConstRef<objects::CPssmWithParameters> pssm);
+                             CConstRef<objects::CPssmWithParameters> pssm,
+                             TSearchMessages& messages,
+                             CConstRef<CBlastOptions> options);
 
 /** Given a PSSM with frequency ratios and options, invoke the PSSM engine to
  * compute the scores.
