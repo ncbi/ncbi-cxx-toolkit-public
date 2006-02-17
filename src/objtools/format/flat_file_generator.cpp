@@ -285,7 +285,7 @@ string CFlatFileGenerator::GetSeqFeatText
     }
 
     string text;
-    os.ToString(text);
+    os.ToString(&text);
     return text;
 }
 
@@ -298,6 +298,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2006/02/17 16:52:15  vakatov
+* Replace the now deprecated version of CConn_MemoryStream::ToString()
+*
 * Revision 1.15  2005/03/28 17:19:17  shomrat
 * Support for complex user location
 *
