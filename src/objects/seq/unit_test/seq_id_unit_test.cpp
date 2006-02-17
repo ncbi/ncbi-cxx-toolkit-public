@@ -44,6 +44,11 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 
+// Keep Boost's inclusion of <limits> from breaking under old WorkShop versions.
+#if defined(numeric_limits)  &&  defined(NCBI_NUMERIC_LIMITS)
+#  undef numeric_limits
+#endif
+
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 #ifndef BOOST_PARAM_TEST_CASE
@@ -697,6 +702,10 @@ BOOST_AUTO_UNIT_TEST(s_TestListOps)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/02/17 16:04:43  ucko
+* #undef numeric_limits on older versions of WorkShop to keep Boost's
+* inclusion of <limits> from breaking.
+*
 * Revision 1.7  2006/02/08 21:50:23  ucko
 * Remember to mark string literals supplied to CHECK_EQUAL for the sake
 * of WorkShop.
