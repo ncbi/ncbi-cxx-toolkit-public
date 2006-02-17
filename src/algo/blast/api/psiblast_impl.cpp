@@ -36,9 +36,9 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include "psiblast_impl.hpp"
-#include "prelim_search_runner.hpp"
 #include "psiblast_aux_priv.hpp"
 #include <algo/blast/api/psiblast_options.hpp>
+#include <algo/blast/api/prelim_stage.hpp>
 #include <algo/blast/api/traceback_stage.hpp>
 #include <algo/blast/api/setup_factory.hpp>
 #include <algo/blast/api/blast_exception.hpp>
@@ -122,94 +122,32 @@ CPsiBlastImpl::x_ExtractQueryFromPssm()
     m_Query.Reset(new CObjMgrFree_QueryFactory(query_bioseq));
 }
 
-static CRef<SInternalData> 
-s_SetUpInternalDataStructures(CRef<IQueryFactory> query_factory,
-                              IPsiBlastSubject* subject,
-                              CConstRef<CPssmWithParameters> pssm,
-                              const CBlastOptions& options)
-{
-    CRef<SInternalData> retval(new SInternalData);
-
-    // 1. Initialize the query data (borrow it from the factory)
-    CRef<ILocalQueryData> query_data = 
-        query_factory->MakeLocalQueryData(&options);
-    retval->m_Queries = query_data->GetSequenceBlk();
-    retval->m_QueryInfo = query_data->GetQueryInfo();
-
-    // 2. Create the options memento
-    CConstRef<CBlastOptionsMemento> opts_memento(options.CreateSnapshot());
-
-    // 3. Create the BlastScoreBlk
-    BlastSeqLoc* lookup_segments(0);
-    TSearchMessages search_messages;
-    BlastScoreBlk* sbp =
-        CSetupFactory::CreateScoreBlock(opts_memento, query_data,
-                                        &lookup_segments,
-                                        search_messages,
-                                        /* FIXME: masked locations */ 0);
-    retval->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp, BlastScoreBlkFree));
-    if (pssm.NotEmpty()) {
-        PsiBlastSetupScoreBlock(sbp, pssm);
-    }
-    if (search_messages.HasMessages()) {
-        // FIXME: this shouldn't be throw, this is just so that the code
-        // compiles
-        throw search_messages;
-    }
-
-    // 4. Create lookup table
-    LookupTableWrap* lut =
-        CSetupFactory::CreateLookupTable(query_data, opts_memento, 
-                                         retval->m_ScoreBlk->GetPointer(), 
-                                         lookup_segments);
-    retval->m_LookupTable.Reset(new TLookupTableWrap(lut, LookupTableWrapFree));
-    lookup_segments = BlastSeqLocFree(lookup_segments);
-    ASSERT(lookup_segments == NULL);
-
-    // 5. Create diagnostics
-    BlastDiagnostics* diags = CSetupFactory::CreateDiagnosticsStructure();
-    retval->m_Diagnostics.Reset(new TBlastDiagnostics(diags, 
-                                                      Blast_DiagnosticsFree));
-
-    // 6. Create HSP stream
-    BlastHSPStream* hsp_stream = 
-        CSetupFactory::CreateHspStream(opts_memento, 
-                                       query_data->GetNumQueries());
-    retval->m_HspStream.Reset(new TBlastHSPStream(hsp_stream, 
-                                                  BlastHSPStreamFree));
-
-    // 7. Set up the BlastSeqSrc
-    subject->ResetBlastSeqSrcIteration();
-    retval->m_SeqSrc.Reset(new TBlastSeqSrc(subject->MakeSeqSrc(), 0));
-
-    return retval;
-}
-
 CRef<CSearchResults>
 CPsiBlastImpl::Run()
 {
-    int status(0);
-    const CBlastOptions& opts = m_OptsHandle->GetOptions();
-    CRef<SInternalData> core_data(s_SetUpInternalDataStructures(m_Query, 
-                                                                m_Subject, 
-                                                                m_Pssm,
-                                                                opts));
-    CConstRef<CBlastOptionsMemento> opts_memento(opts.CreateSnapshot());
+    CRef<CBlastOptions>
+        opts(const_cast<CBlastOptions*>(&m_OptsHandle->GetOptions()));
+
+    // FIXME: Move the following line and initialization of all
+    // BlastSeqSrc/subjects to CBlastPrelimSearch::x_Init
+    m_Subject->ResetBlastSeqSrcIteration();
 
     // Run the preliminary stage
-    status = CPrelimSearchRunner(*core_data, opts_memento)();
-    if (status) {
-        string msg("Preliminary search failed with status ");
-        msg += NStr::IntToString(status);
-        NCBI_THROW(CBlastException, eCoreBlastError, msg);
-    }
+    CBlastPrelimSearch prelim_search(m_Query, 
+                                     opts, 
+                                     m_Subject->MakeSeqSrc(), 
+                                     m_Pssm);
+    CRef<SInternalData> core_data = prelim_search.Run();
 
     // Run the traceback stage
     IBlastSeqInfoSrc* seqinfo_src(m_Subject->MakeSeqInfoSrc());
     ASSERT(seqinfo_src);
-    TSearchMessages search_msgs;
-    CBlastTracebackSearch tback(m_Query, core_data, opts, *seqinfo_src,
-                                search_msgs);
+    TSearchMessages search_messages = prelim_search.GetSearchMessages();
+    CBlastTracebackSearch tback(m_Query, 
+                                core_data, 
+                                *opts, 
+                                *seqinfo_src,
+                                search_messages);
     tback.SetResultType(m_ResultType);
     m_Results = tback.Run();
     return CRef<CSearchResults>(&m_Results[0]);
