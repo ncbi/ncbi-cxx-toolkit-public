@@ -173,6 +173,8 @@ objects/gbseq/GBSeqid.hpp
 objects/gbseq/GBSeqid_.hpp
 objects/gbseq/GBSet.hpp
 objects/gbseq/GBSet_.hpp
+objects/gbseq/GBXref.hpp
+objects/gbseq/GBXref_.hpp
 objects/gbseq/NCBI_GBSeq_module.hpp
 
 objects/mim/Mim_allelic_variant.hpp
@@ -327,11 +329,20 @@ objects/insdseq/INSDSet.hpp
 objects/insdseq/INSDSet_.hpp
 objects/insdseq/INSD_INSDSeq_module.hpp
 
+objects/valerr/ValidErrItem.hpp
+objects/valerr/ValidErrItem_.hpp
+objects/valerr/ValidError.hpp
+objects/valerr/ValidError_.hpp
+objects/valerr/NCBI_ValErrors_module.hpp
+
 %%
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2006/02/17 17:56:01  jcherry
+ * Added objects/valerr and other headers
+ *
  * Revision 1.6  2005/11/10 19:06:50  jcherry
  * Big change to docsum ASN.1 spec again
  *
