@@ -53,13 +53,15 @@ static bool ODBC_xSendDataGetId(CStatementBase& stmt,
 CODBC_Connection::CODBC_Connection(CODBCContext* cntx, 
                                    SQLHDBC conn,
                                    bool reusable, 
-                                   const string& pool_name)
-: m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx->GetReporter())
+                                   const string& pool_name) :
+m_Link(conn),
+m_Context(cntx),
+m_Pool(pool_name),
+m_Reporter(0, SQL_HANDLE_DBC, conn, &cntx->GetReporter()),
+m_Reusable(reusable),
+m_BCPable(false),
+m_SecureLogin(false)
 {
-    m_Link     = conn;
-    m_Context  = cntx;
-    m_Reusable = reusable;
-    m_Pool     = pool_name;
     m_Reporter.SetHandlerStack(&m_MsgHandlers);
 }
 
@@ -76,14 +78,6 @@ bool CODBC_Connection::IsAlive()
 CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query,
                                           unsigned int  nof_params)
 {
-    // Original handle allocation logic ...
-//     SQLHSTMT cmd;
-//     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-//
-//     if(r == SQL_ERROR) {
-//         m_Reporter.ReportErrors();
-//     }
-
     string extra_msg = "SQL Command: \"" + lang_query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
 
@@ -102,24 +96,12 @@ CDB_LangCmd* CODBC_Connection::LangCmd(const string& lang_query,
 CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name,
                                 unsigned int  nof_args)
 {
-#if 0
-    return 0;
-#else
-    // Original handle allocation logic ...
-//     SQLHSTMT cmd;
-//     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-//
-//     if(r == SQL_ERROR) {
-//         m_Reporter.ReportErrors();
-//     }
-
     string extra_msg = "RPC Command: " + rpc_name;
     m_Reporter.SetExtraMsg( extra_msg );
 
     CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(this, rpc_name, nof_args);
     m_CMDs.Add(rcmd);
     return Create_RPCCmd(*rcmd);
-#endif
 }
 
 
@@ -146,17 +128,6 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
                                       unsigned int  nof_params,
                                       unsigned int  batch_size)
 {
-#if 0
-    return 0;
-#else
-    // Original handle allocation logic ...
-//     SQLHSTMT cmd;
-//     SQLRETURN r= SQLAllocHandle(SQL_HANDLE_STMT, m_Link, &cmd);
-//
-//     if(r == SQL_ERROR) {
-//         m_Reporter.ReportErrors();
-//     }
-
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
         query + "\"";
     m_Reporter.SetExtraMsg( extra_msg );
@@ -167,7 +138,6 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
                                                 nof_params);
     m_CMDs.Add(ccmd);
     return Create_CursorCmd(*ccmd);
-#endif
 }
 
 
@@ -679,6 +649,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2006/02/17 18:00:29  ssikorsk
+ * Set CODBC_Connection::m_BCPable to false in ctor.
+ *
  * Revision 1.15  2005/12/01 14:40:32  ssikorsk
  * Staticfunctions ODBC_xSendDataPrepare and ODBC_xSendDataGetId take
  * statement instead of connection as a parameter now.
