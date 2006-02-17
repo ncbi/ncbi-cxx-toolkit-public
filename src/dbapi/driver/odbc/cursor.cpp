@@ -98,9 +98,11 @@ CDB_Result* CODBC_CursorCmd::Open()
     // buff = "open " + m_Name;
 
     try {
-        m_LCmd = GetConnection().xLangCmd("open " + m_Name);
-        m_LCmd->Send();
-        m_LCmd->DumpResults();
+        auto_ptr<I_LangCmd> stmt(
+            GetConnection().xLangCmd("open " + m_Name));
+
+        stmt->Send();
+        stmt->DumpResults();
 #if 0
         while (m_LCmd->HasMoreResults()) {
             CDB_Result* r = m_LCmd->Result();
@@ -111,18 +113,12 @@ CDB_Result* CODBC_CursorCmd::Open()
             }
         }
 #endif
-        m_LCmd->Release();
     } catch (const CDB_Exception& e) {
-        if (m_LCmd) {
-            m_LCmd->Release();
-            m_LCmd = 0;
-        }
         string err_message = "failed to open cursor" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422002 );
     }
     m_IsOpen = true;
 
-    m_LCmd = 0;
     //buff = "fetch " + m_Name;
 
     m_LCmd = GetConnection().xLangCmd("fetch " + m_Name);
@@ -136,8 +132,6 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
     if (!m_IsOpen)
         return false;
 
-    CDB_LangCmd* cmd = 0;
-
     try {
         m_LCmd->Cancel();
 #if 0
@@ -147,7 +141,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
         }
 #endif
         string buff = upd_query + " where current of " + m_Name;
-        cmd = GetConnection().LangCmd(buff);
+        auto_ptr<CDB_LangCmd> cmd( GetConnection().LangCmd(buff) );
         cmd->Send();
         cmd->DumpResults();
 #if 0
@@ -160,10 +154,7 @@ bool CODBC_CursorCmd::Update(const string&, const string& upd_query)
             }
         }
 #endif
-        delete cmd;
     } catch (const CDB_Exception& e) {
-        if (cmd)
-            delete cmd;
         string err_message = "update failed" + GetDiagnosticInfo();
         DATABASE_DRIVER_ERROR_EX( e, err_message, 422004 );
     }
@@ -363,6 +354,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/02/17 17:56:32  ssikorsk
+ * Use auto_ptr to manage dynamically allocated objects.
+ *
  * Revision 1.11  2005/12/01 14:42:33  ssikorsk
  * Restored statement canceling in CODBC_CursorCmd::SendDataCmd
  *
