@@ -10,5 +10,5 @@ LDFLAGS       = $(FAST_LDFLAGS)
 NCBI_C_LIBS = -lncbimmdb -lncbitool -lblastcompadj -lncbiobj -lncbi
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(ORIG_LIBS)
 
-REQUIRES = objects
+REQUIRES = objects C-Toolkit
 
