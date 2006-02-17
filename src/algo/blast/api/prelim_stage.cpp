@@ -136,6 +136,7 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
         query_data(query_factory->MakeLocalQueryData(&*options));
     m_InternalData->m_Queries = query_data->GetSequenceBlk();
     m_InternalData->m_QueryInfo = query_data->GetQueryInfo();
+    m_Messages.resize(query_data->GetNumQueries());
 
     // 2. Take care of any rps information
     if (Blast_ProgramIsRpsBlast(options->GetProgramType())) {
@@ -157,7 +158,7 @@ CBlastPrelimSearch::x_Init(CRef<IQueryFactory> query_factory,
     m_InternalData->m_ScoreBlk.Reset(new TBlastScoreBlk(sbp,
                                                        BlastScoreBlkFree));
     if (pssm.NotEmpty()) {
-        PsiBlastSetupScoreBlock(sbp, pssm);
+        PsiBlastSetupScoreBlock(sbp, pssm, m_Messages, options);
     }
 
     // 5. Create lookup table
