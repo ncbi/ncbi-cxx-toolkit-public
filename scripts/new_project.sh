@@ -28,6 +28,7 @@ ARGUMENTS:
      lib/dtd         to build a library from an XML DTD
      app[/basic]     to build a simple application
      app/alnmgr      to build an application using the alignment manager
+     app/blast       to build an application using BLAST
      app/cgi         to build a CGI or FastCGI application
      app/dbapi       to build a DBAPI application
      app/gui         to build an FLTK application
