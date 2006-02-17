@@ -151,7 +151,7 @@ protected:
     bool ReadStr(CSocket& sock, string* str);
     void WriteStr(const char* str, size_t len);
     void CreateSocket(const string& hostname, unsigned port);
-    void WaitForServer();
+    void WaitForServer(unsigned wait_sec=20);
     /// Remove "ERR:" prefix 
     static
     void TrimErr(string* err_msg);
@@ -228,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/17 17:05:27  kuznets
+ * Added explicit timeout to WaitForServer()
+ *
  * Revision 1.16  2006/02/15 18:36:01  lavr
  * Remove inclusion of unnecessary header files
  *
