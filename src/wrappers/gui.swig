@@ -157,6 +157,7 @@ gui/core/doc_manager.hpp
 gui/core/docmgr_view.hpp
 gui/core/document.hpp
 gui/core/idocument.hpp
+gui/core/iselection_service.hpp
 gui/core/iservice.hpp
 gui/core/iview.hpp
 gui/core/iview_composite.hpp
@@ -177,7 +178,8 @@ gui/core/plugin_utils.hpp
 gui/core/project_manager.hpp
 // Seems to be dead
 //gui/core/registry.hpp
-gui/core/selection_service.hpp
+// dead? conflicts with iselection_service.hpp
+//gui/core/selection_service.hpp
 gui/core/task_manager.hpp
 gui/core/task_queue.hpp
 gui/core/version.hpp
@@ -323,6 +325,9 @@ VECTOR_CREF(vector_CRef_CLayoutFeat, ncbi::CLayoutFeat);
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2006/02/19 14:54:15  jcherry
+ * Add iselection_service.hpp, remove selection_service.hpp
+ *
  * Revision 1.8  2005/12/09 17:53:54  jcherry
  * Added some headers from gui/core
  *
