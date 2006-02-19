@@ -54,6 +54,6 @@ util/regexp$
 util/sequtil$
 util/unicode_plans$
 -gui/core
--gui/service
+-gui/services
 -gui/gbench
 -gui/plugins
