@@ -1243,11 +1243,13 @@ CCallableStmtHelper::NextRS(void)
 pythonpp::CTuple
 MakeTupleFromResult(IResultSet& rs)
 {
-    // Set data. Make a sequence (tuple) ...
-    int col_num = rs.GetColumnNo();
-    
-    // Previous implementation of GetColumnNo used to return invalid value ...
+    // Previous implementation of GetColumnNo/GetTotalColumns used to return 
+    // invalid value ...
     // col_num = (col_num > 0 ? col_num - 1 : col_num);
+    
+    // Set data. Make a sequence (tuple) ...
+    int col_num = rs.GetTotalColumns();
+    
     pythonpp::CTuple tuple(col_num);
 
     for ( int i = 0; i < col_num; ++i) {
@@ -2582,6 +2584,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.28  2006/02/21 19:21:53  ssikorsk
+* Replaced GetColumnNo with GetTotalColumns.
+*
 * Revision 1.27  2005/12/21 15:23:22  ssikorsk
 * Get rid of warnings
 *

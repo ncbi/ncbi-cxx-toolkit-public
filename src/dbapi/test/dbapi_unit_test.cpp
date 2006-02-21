@@ -144,7 +144,7 @@ CDBAPIUnitTest::TestInit(void)
 //         {
 //             auto_ptr<ICallableStatement> auto_stmt( m_Conn->GetCallableStatement("TestProc") );
 //
-//             auto_stmt->Execute();
+//             auto_stmt->SendSql();
 //             while(auto_stmt->HasMoreResults()) {
 //                 if( auto_stmt->HasRows() ) {
 //                     auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
@@ -477,7 +477,7 @@ CDBAPIUnitTest::Test_DateTime(void)
         {
             bool already_exist = false;
             
-            // auto_stmt->Execute( "select * FROM sysobjects WHERE xtype = 'P' AND name = 'sp_test_datetime'" );
+            // auto_stmt->SendSql( "select * FROM sysobjects WHERE xtype = 'P' AND name = 'sp_test_datetime'" );
             auto_stmt->SendSql( "select * FROM sysobjects WHERE name = 'sp_test_datetime'" );
             while( auto_stmt->HasMoreResults() ) { 
                 if( auto_stmt->HasRows() ) { 
@@ -670,7 +670,7 @@ CDBAPIUnitTest::Test_LOB(void)
             out.flush();
         }
         
-//         auto_stmt->Execute( sql );
+//         auto_stmt->SendSql( sql );
 //         while( auto_stmt->HasMoreResults() ) {
 //             if( auto_stmt->HasRows() ) {
 //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
@@ -870,7 +870,7 @@ CDBAPIUnitTest::Test_GetColumnNo(void)
 //                     break;
 //                 }
                 
-                col_num = rs->GetColumnNo();
+                col_num = rs->GetTotalColumns();
                 BOOST_CHECK_EQUAL( 14, col_num );
             } 
         }
@@ -958,7 +958,7 @@ CDBAPIUnitTest::Test_Bulk_Overflow(void)
 //     {
 //         sql = "SELECT * FROM #test_bulk_overflow";
 //
-//         auto_stmt->Execute( sql );
+//         auto_stmt->SendSql( sql );
 //         BOOST_CHECK( auto_stmt->HasMoreResults() );
 //         BOOST_CHECK( !auto_stmt->HasRows() );
 //         auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
@@ -1371,7 +1371,7 @@ CDBAPIUnitTest::GetNumOfRecords(const auto_ptr<IStatement>& auto_stmt,
 {
     DumpResults(auto_stmt);
     auto_stmt->ClearParamList();
-    auto_stmt->Execute( "select count(*) FROM " + table_name );
+    auto_stmt->SendSql( "select count(*) FROM " + table_name );
     BOOST_CHECK( auto_stmt->HasMoreResults() );
     BOOST_CHECK( auto_stmt->HasRows() );
     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
@@ -1538,7 +1538,7 @@ CDBAPIUnitTest::Test_SelectStmt(void)
 //
 //         sql  = "SELECT len(seq_loc) l, seq_loc FROM protein where ProtGi =56964519";
 //
-//         auto_stmt->Execute( sql );
+//         auto_stmt->SendSql( sql );
 //         while( auto_stmt->HasMoreResults() ) {
 //             if( auto_stmt->HasRows() ) {
 //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
@@ -1827,7 +1827,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
         
         // Execute it first time ...
-        // auto_stmt->Execute( "exec sp_databases" );
+        // auto_stmt->SendSql( "exec sp_databases" );
         auto_stmt->SendSql( "SELECT name FROM sysobjects" );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
@@ -1858,7 +1858,7 @@ CDBAPIUnitTest::Test_Procedure(void)
         }
         
         // Execute it second time ...
-        // auto_stmt->Execute( "exec sp_databases" );
+        // auto_stmt->SendSql( "exec sp_databases" );
         auto_stmt->SendSql( "SELECT name FROM sysobjects" );
         while( auto_stmt->HasMoreResults() ) { 
             if( auto_stmt->HasRows() ) { 
@@ -3620,6 +3620,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.66  2006/02/21 19:23:51  ssikorsk
+ * Replaced GetColumnNo with GetTotalColumns.
+ *
  * Revision 1.65  2006/02/14 17:50:39  ssikorsk
  * Added removing of added message handlers from a handler stack in Test_UserErrorHandler.
  *
