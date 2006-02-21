@@ -368,7 +368,7 @@ void CBDB_Env::SetMaxLocks(unsigned locks)
 
 void CBDB_Env::LsnReset(const char* file_name)
 {
-    int ret = m_Env->lsn_reset(m_Env, file_name, 0);
+    int ret = m_Env->lsn_reset(m_Env, const_cast<char*>(file_name), 0);
     BDB_CHECK(ret, "DB_ENV::lsn_reset");
 }
 
@@ -500,6 +500,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2006/02/21 15:45:03  ucko
+ * Add a const_cast to LsnReset for the sake of DB 4.3.  (This should be
+ * safe, as its code never actually tries to modify the argument.)
+ *
  * Revision 1.35  2006/02/21 14:40:25  kuznets
  * Added LSN recovery options
  *
