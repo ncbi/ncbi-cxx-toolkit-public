@@ -1472,34 +1472,53 @@ void CNetScheduleServer::ProcessStatistics(CSocket&                sock,
              CNetScheduleClient::EJobStatus st = 
                                 (CNetScheduleClient::EJobStatus) i;
              unsigned count = queue.CountStatus(st);
-             string st_name = CNetScheduleClient::StatusToString(st);
-             st_name += ": ";
-             st_name += NStr::UIntToString(count);
-             WriteMsg(sock, "OK:", st_name.c_str());
+
+
+             string st_str = CNetScheduleClient::StatusToString(st);
+             st_str += ": ";
+             st_str += NStr::UIntToString(count);
+
+             WriteMsg(sock, "OK:", st_str.c_str());
+
+             CNetScheduler_JobStatusTracker::TBVector::statistics 
+                 bv_stat;
+             queue.StatusStatistics(st, &bv_stat);
+             st_str = "   bit_blk="; 
+                st_str.append(NStr::UIntToString(bv_stat.bit_blocks));
+             st_str += "; gap_blk=";
+                st_str.append(NStr::UIntToString(bv_stat.gap_blocks));
+             st_str += "; mem_used=";
+                st_str.append(NStr::UIntToString(bv_stat.memory_used));
+             WriteMsg(sock, "OK:", st_str.c_str());
+             
     } // for
 
-    unsigned db_recs = queue.CountRecs();
-    string recs = "Records:";
-    recs += NStr::UIntToString(db_recs);
-    WriteMsg(sock, "OK:", recs.c_str());
-    WriteMsg(sock, "OK:", "[Database statistics]:");
+    if (tdata.req.job_key_str == "ALL") {
 
-    {{
-        CNcbiOstrstream ostr;
-        queue.PrintStat(ostr);
-        ostr << ends;
+        unsigned db_recs = queue.CountRecs();
+        string recs = "Records:";
+        recs += NStr::UIntToString(db_recs);
+        WriteMsg(sock, "OK:", recs.c_str());
+        WriteMsg(sock, "OK:", "[Database statistics]:");
 
-        char* stat_str = ostr.str();
-//        size_t os_str_len = ostr.pcount()-1;
-//        stat_str[os_str_len] = 0;
-        try {
-            WriteMsg(sock, "OK:", stat_str);
-        } catch (...) {
+        {{
+            CNcbiOstrstream ostr;
+            queue.PrintStat(ostr);
+            ostr << ends;
+
+            char* stat_str = ostr.str();
+    //        size_t os_str_len = ostr.pcount()-1;
+    //        stat_str[os_str_len] = 0;
+            try {
+                WriteMsg(sock, "OK:", stat_str);
+            } catch (...) {
+                ostr.freeze(false);
+                throw;
+            }
             ostr.freeze(false);
-            throw;
-        }
-        ostr.freeze(false);
-    }}
+        }}
+
+    }
 
     WriteMsg(sock, "OK:", "[Worker node statistics]:");
 
@@ -1733,7 +1752,7 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
     // 7. SHUTDOWN
     // 8. VERSION
     // 9. LOG [ON/OFF]
-    // 10.STAT
+    // 10.STAT [ALL]
     // 11.QUIT 
     // 12.DROPQ
     // 13.WGET udp_port_number timeout
@@ -1768,6 +1787,9 @@ void CNetScheduleServer::ParseRequest(const char* reqstr, SJS_Request* req)
                 }
             } else {
                 req->req_type = eStatistics;
+                NS_SKIPSPACE(s)
+                NS_RETEND(s)
+                NS_GETSTRING(s, req->job_key_str)
                 return;
             }
             return;
@@ -2509,6 +2531,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2006/02/21 14:44:57  kuznets
+ * Bug fixes, improvements in statistics
+ *
  * Revision 1.62  2006/02/08 15:17:33  kuznets
  * Tuning and bug fixing of job affinity
  *

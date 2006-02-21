@@ -276,6 +276,9 @@ public:
 
         unsigned CountStatus(CNetScheduleClient::EJobStatus) const;
 
+        void StatusStatistics(CNetScheduleClient::EJobStatus status,
+            CNetScheduler_JobStatusTracker::TBVector::statistics* st) const;
+
         /// Count database records
         unsigned CountRecs();
 
@@ -482,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/02/21 14:44:57  kuznets
+ * Bug fixes, improvements in statistics
+ *
  * Revision 1.37  2006/02/08 15:17:33  kuznets
  * Tuning and bug fixing of job affinity
  *

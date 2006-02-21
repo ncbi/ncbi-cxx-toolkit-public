@@ -51,6 +51,10 @@ BEGIN_NCBI_SCOPE
 class CNetScheduler_JobStatusTracker
 {
 public:
+    typedef bm::bvector<>     TBVector;
+    typedef vector<TBVector*> TStatusStorage;
+
+public:
     CNetScheduler_JobStatusTracker();
     ~CNetScheduler_JobStatusTracker();
 
@@ -164,6 +168,9 @@ public:
     /// Return number of jobs in specified status
     unsigned CountStatus(CNetScheduleClient::EJobStatus status) const;
 
+    void StatusStatistics(CNetScheduleClient::EJobStatus status,
+                          TBVector::statistics*          st) const;
+
     static
     bool IsCancelCode(CNetScheduleClient::EJobStatus status)
     {
@@ -179,10 +186,6 @@ public:
 
     void PrintStatusMatrix(CNcbiOstream& out) const;
 
-private:
-
-    typedef bm::bvector<>     TBVector;
-    typedef vector<TBVector*> TStatusStorage;
 
 protected:
 
@@ -327,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/02/21 14:44:57  kuznets
+ * Bug fixes, improvements in statistics
+ *
  * Revision 1.14  2006/02/09 17:07:41  kuznets
  * Various improvements in job scheduling with respect to affinity
  *

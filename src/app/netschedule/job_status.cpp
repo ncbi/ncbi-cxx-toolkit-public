@@ -43,6 +43,8 @@ CNetScheduler_JobStatusTracker::CNetScheduler_JobStatusTracker()
 {
     for (int i = 0; i < CNetScheduleClient::eLastStatus; ++i) {
         bm::bvector<>* bv;
+        bv = new bm::bvector<>(bm::BM_GAP);
+/*
         if (i == (int)CNetScheduleClient::eDone     ||
             i == (int)CNetScheduleClient::eCanceled ||
             i == (int)CNetScheduleClient::eFailed   ||
@@ -52,6 +54,7 @@ CNetScheduler_JobStatusTracker::CNetScheduler_JobStatusTracker()
         } else {
             bv = new bm::bvector<>();
         }
+*/
         m_StatusStor.push_back(bv);
     }
 }
@@ -101,6 +104,20 @@ CNetScheduler_JobStatusTracker::CountStatus(
     }
     return cnt;
 }
+
+void 
+CNetScheduler_JobStatusTracker::StatusStatistics(
+                      CNetScheduleClient::EJobStatus status,
+                      TBVector::statistics*          st) const
+{
+    _ASSERT(st);
+    CReadLockGuard guard(m_Lock);
+
+    const TBVector& bv = *m_StatusStor[(int)status];
+    bv.calc_stat(st);
+
+}
+
 
 
 void CNetScheduler_JobStatusTracker::Return2Pending()
@@ -438,7 +455,6 @@ CNetScheduler_JobStatusTracker::PutDone_GetPending(
     TBVector& bv = *m_StatusStor[(int)CNetScheduleClient::ePending];
     TBVector  bv_pending;
     {{
-        unsigned p_id;
         {{
             CWriteLockGuard guard(m_Lock);
             if (done_job_id) { // return job first
@@ -809,6 +825,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/02/21 14:44:57  kuznets
+ * Bug fixes, improvements in statistics
+ *
  * Revision 1.24  2006/02/09 17:07:42  kuznets
  * Various improvements in job scheduling with respect to affinity
  *

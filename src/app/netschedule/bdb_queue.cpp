@@ -202,6 +202,30 @@ void CQueueDataBase::Open(const string& path,
     m_Env = new CBDB_Env();
 
 
+    // memory log option. we probably need to reset LSN
+    // numbers
+/*
+    if (log_mem_size) {
+    }
+
+    // Private environment for LSN recovery
+    {{
+        m_Name = "jsqueue";
+        string err_file = m_Path + "err" + string(m_Name) + ".log";
+        m_Env->OpenErrFile(err_file.c_str());
+
+        m_Env->SetCacheSize(1024*1024);
+        m_Env->OpenPrivate(path.c_str());
+        
+        m_Env->LsnReset("jsq_test.db");
+
+        delete m_Env;
+        m_Env = new CBDB_Env();
+    }}
+*/
+
+
+
     m_Name = "jsqueue";
     string err_file = m_Path + "err" + string(m_Name) + ".log";
     m_Env->OpenErrFile(err_file.c_str());
@@ -564,8 +588,8 @@ void CQueueDataBase::MountQueue(const string& queue_name,
     }
 
     auto_ptr<SLockedQueue> q(new SLockedQueue(queue_name));
-    q->db.SetEnv(*m_Env);
     string fname = string("jsq_") + queue_name + string(".db");
+    q->db.SetEnv(*m_Env);
 
     q->db.SetPageSize(8 * 1024);
     q->db.Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
@@ -642,10 +666,13 @@ void CQueueDataBase::Close()
     StopPurgeThread();
     StopExecutionWatcherThread();
 
+    if (m_Env) {
+        m_Env->TransactionCheckpoint();
+    }
+
     m_QueueCollection.Close();
     try {
         if (m_Env) {
-            m_Env->TransactionCheckpoint();
             if (m_Env->CheckRemove()) {
                 LOG_POST(Info    <<
                          "JS: '" <<
@@ -1329,6 +1356,15 @@ CQueueDataBase::CQueue::CountStatus(CNetScheduleClient::EJobStatus st) const
     return m_LQueue.status_tracker.CountStatus(st);
 }
 
+void 
+CQueueDataBase::CQueue::StatusStatistics(
+    CNetScheduleClient::EJobStatus status,
+    CNetScheduler_JobStatusTracker::TBVector::statistics* st) const
+{
+    m_LQueue.status_tracker.StatusStatistics(status, st);
+}
+
+
 void CQueueDataBase::CQueue::Cancel(unsigned int job_id)
 {
 //    CIdBusyGuard id_guard(&m_Db.m_UsedIds, job_id, 3);
@@ -1627,43 +1663,45 @@ CQueueDataBase::CQueue::PutResultGetJob(unsigned int   done_job_id,
         }
         //CBDB_FileCursor& cur = *GetCursor(trans);
         CBDB_FileCursor& cur = *pcur;
-        CBDB_CursorGuard cg(cur);
+        {{
+            CBDB_CursorGuard cg(cur);
 
-        // put result
-        if (need_update) {
-            done_rec_updated =
-                x_UpdateDB_PutResultNoLock(
-                    *pqdb, curr, cur, done_job_id, ret_code, output, NULL);
-        }
+            // put result
+            if (need_update) {
+                done_rec_updated =
+                    x_UpdateDB_PutResultNoLock(
+                      *pqdb, curr, cur, done_job_id, ret_code, output, NULL);
+            }
 
-        if (pending_job_id) {
-            *job_id = pending_job_id;
-            EGetJobUpdateStatus upd_status;
-            upd_status =
-                x_UpdateDB_GetJobNoLock(*pqdb, curr, cur, trans,
-                                        worker_node, pending_job_id, input,
-                                        &job_aff_id);
-            switch (upd_status) {
-            case eGetJobUpdate_JobFailed:
-                m_LQueue.status_tracker.ChangeStatus(*job_id, 
-                                            CNetScheduleClient::eFailed);
-                *job_id = 0;
-                break;
-            case eGetJobUpdate_JobStopped:
-                *job_id = 0;
-                break;
-            case eGetJobUpdate_NotFound:
-                *job_id = 0;
-                break;
-            case eGetJobUpdate_Ok:
-                break;
-            default:
-                _ASSERT(0);
-            } // switch
+            if (pending_job_id) {
+                *job_id = pending_job_id;
+                EGetJobUpdateStatus upd_status;
+                upd_status =
+                    x_UpdateDB_GetJobNoLock(*pqdb, curr, cur, trans,
+                                         worker_node, pending_job_id, input,
+                                          &job_aff_id);
+                switch (upd_status) {
+                case eGetJobUpdate_JobFailed:
+                    m_LQueue.status_tracker.ChangeStatus(*job_id, 
+                                                CNetScheduleClient::eFailed);
+                    *job_id = 0;
+                    break;
+                case eGetJobUpdate_JobStopped:
+                    *job_id = 0;
+                    break;
+                case eGetJobUpdate_NotFound:
+                    *job_id = 0;
+                    break;
+                case eGetJobUpdate_Ok:
+                    break;
+                default:
+                    _ASSERT(0);
+                } // switch
 
-        } else {
-            *job_id = 0;
-        }
+            } else {
+                *job_id = 0;
+            }
+        }}
 
         if (use_db_mutex) {
             m_LQueue.lock.Unlock();
@@ -2897,7 +2935,7 @@ void CQueueDataBase::CQueue::Truncate()
     SQueueDB& db = m_LQueue.db;
     CFastMutexGuard guard(m_LQueue.lock);
     CBDB_Transaction trans(*db.GetEnv(), 
-                           CBDB_Transaction::eTransSync);
+                           CBDB_Transaction::eTransASync);
     db.SetTransaction(&trans);
     db.Truncate();
     trans.Commit();
@@ -3325,6 +3363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/02/21 14:44:57  kuznets
+ * Bug fixes, improvements in statistics
+ *
  * Revision 1.56  2006/02/09 17:07:42  kuznets
  * Various improvements in job scheduling with respect to affinity
  *

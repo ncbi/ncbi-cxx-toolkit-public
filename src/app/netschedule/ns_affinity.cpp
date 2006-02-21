@@ -75,17 +75,18 @@ void CAffinityDict::Open(CBDB_Env& env, const string& queue_name)
     CFastMutexGuard guard(m_DbLock);
 
     m_AffDictDB = new SAffinityDictDB();
-    m_AffDictDB->SetEnv(env);
     m_AffDict_TokenIdx = new SAffinityDictTokenIdx();
-    m_AffDict_TokenIdx->SetEnv(env);
 
     {{
     string fname = string("jsq_") + queue_name + string("_affdict.db");
+    m_AffDictDB->SetEnv(env);
     m_AffDictDB->Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
+
     }}
 
     {{
     string fname = string("jsq_") + queue_name + string("_affdict_token.idx");
+    m_AffDict_TokenIdx->SetEnv(env);
     m_AffDict_TokenIdx->Open(fname.c_str(), CBDB_RawFile::eReadWriteCreate);
     }}
 
@@ -318,6 +319,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2006/02/21 14:44:57  kuznets
+ * Bug fixes, improvements in statistics
+ *
  * Revision 1.2  2006/02/09 17:07:42  kuznets
  * Various improvements in job scheduling with respect to affinity
  *
