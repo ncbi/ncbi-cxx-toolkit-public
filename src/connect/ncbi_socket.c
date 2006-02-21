@@ -1587,7 +1587,7 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
         CORE_TRACEF(("LSOCK#%u[%u]: Closing at %s "
                      "(%u accept%s total)", lsock->id,
                      (unsigned int) lsock->sock, c,
-                     lsock->n_accept, lsock->n_accept == 1? "":"s"));
+                     lsock->n_accept, lsock->n_accept == 1 ? "" : "s"));
     }
 
     status = eIO_Success;
@@ -2383,7 +2383,7 @@ static EIO_Status s_Read(SOCK        sock,
 
         if (sock->r_status == eIO_Closed  ||  sock->eof) {
             if ( !sock->eof ) {
-                char _id[32];
+                CORE_DEBUG_ARG(char _id[32]);
                 CORE_TRACEF(("%s[SOCK::s_Read]  Socket has already "
                              "been shut down for reading",
                              s_ID(sock, _id)));
@@ -2451,7 +2451,7 @@ static EIO_Status s_Write(SOCK        sock,
 
     if (sock->w_status == eIO_Closed) {
         if (size != 0) {
-            char _id[32];
+            CORE_DEBUG_ARG(char _id[32]);
             CORE_TRACEF(("%s[SOCK::s_Write]  Socket has already "
                          "been shut down for writing",
                          s_ID(sock, _id)));
@@ -4554,11 +4554,15 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.186  2006/02/21 14:56:55  lavr
+ * Take advantage of new CORE_DEBUG_ARG to suppress Release-mode unused vars
+ *
  * Revision 6.185  2006/02/14 15:49:42  lavr
  * Introduce and use CORE_TRACE macros (NOP in Release mode)
  *
  * Revision 6.184  2006/01/27 17:11:41  lavr
- * Added SOCK_StringToHostPort() and SOCK_HostPortToString() [from ncbi_connutil]
+ * Added SOCK_StringToHostPort() and SOCK_HostPortToString()
+ * [from ncbi_connutil]
  *
  * Revision 6.183  2006/01/24 20:07:49  lavr
  * +SOCK_ETIMEDOUT
