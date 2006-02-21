@@ -204,6 +204,7 @@ property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
 property gui_print : {name:"gui_print", path:"gui:print"}
 property gui_math : {name:"gui_math", path:"gui:math"}
+property gui__services : {name:"gui__services", path:"gui:services"}
 
 property gui_dlg_entry_form : {name:"gui_dlg_entry_form", path:"gui:dialogs:entry_form"}
 --property gui_dlg_multi_col : {name:"gui_dlg_multi_col", path:"gui:dialogs:col"}
@@ -303,10 +304,11 @@ property ncbi_xobjsimple : {name:"ncbi_xobjsimple", libs:{xobjsimple}, dep:"ncbi
 property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_image ncbi_general ncbi_misc" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", fworks:"OpenGL", req:true}
-property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_html, w_serial_browse}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
+property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable, w_config, w_controls, w_html, w_serial_browse, w_object_list}, dep:"gui_config gui_utils ncbi_image ncbi_core ncbi_general" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_featedit, gui_dlg_edit, gui_dlg_feat_search, gui_dlg_seq_goto}, dep:"gui_widgets gui_config gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext" & FLTK_LIBS, fworks:"Carbon OpenGL", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project, data_handle, gbench_svc, gbench_svc_cli}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_web ncbi_general ncbi_seq ncbi_seqext ncbi_misc" & FLTK_LIBS, req:true}
-property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d, w_object_list}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
+property gui_services : {name:"gui_services", libs:{gui__services}, dep:"gui_core gui_config gui_utils gui_widgets ncbi_core ncbi_general ncbi_misc ncbi_seq ncbi_seqext" & FLTK_LIBS, req:true}
+property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_image ncbi_seq ncbi_seqext ncbi_general ncbi_misc gui_utils gui_graph gui_widgets gui_config" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_feat_table, w_seq_text}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets" & FLTK_LIBS, fworks:"OpenGL", req:true}
 property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_data, w_aln_data, seqalign_ext, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq" & FLTK_LIBS, fworks:"OpenGL", req:true} --gui_core
 -- PLUG-INS
@@ -405,7 +407,7 @@ property gbench_feedback_agent : {name:"gbench_feedback_agent", path:"gui:gbench
 
 
 -- All Libraries to build
-property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_blastdb, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, gui_utils, gui_config, gui_graph, gui_widgets, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_webpage, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
+property allLibs : {ncbi_core, ncbi_web, ncbi_bdb, ncbi_xcache_bdb, ncbi_sqlite, ncbi_image, ncbi_dbapi_driver, ncbi_dbapi, ncbi_general, ncbi_pub, ncbi_seq, ncbi_mmdb, ncbi_misc, ncbi_seqext, ncbi_validator, ncbi_lds, ncbi_xreader, ncbi_xreader_id1, ncbi_xreader_id2, ncbi_xreader_cache, ncbi_xreader_pubseqos, ncbi_xloader_cdd, ncbi_xloader_genbank, ncbi_xloader_blastdb, ncbi_xloader_lds, ncbi_xloader_table, ncbi_xloader_trace, ncbi_xobjsimple, ncbi_algo, gui_utils, gui_config, gui_graph, gui_widgets, gui_services, gui_dialogs, gui_core, gui_widgets_misc, gui_widgets_seq, gui_widgets_aln, algo_align, algo_basic, algo_cn3d, algo_external, algo_gnomon, algo_init, algo_linkout, algo_phylo, algo_webpage, algo_validator, dload_basic, dload_table, view_align, view_graphic, view_phylotree, view_table, view_taxplot, view_text, view_validator}
 
 --property allLibs : {ncbi_dbapi_driver}
 -- Tools packs
@@ -433,6 +435,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2006/02/21 14:03:07  lebedev
+ * Lib gui_services added
+ *
  * Revision 1.89  2006/02/16 18:39:15  rsmith
  * Use new objects::valerr class to store validation errors.
  *
