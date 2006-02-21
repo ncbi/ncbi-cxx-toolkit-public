@@ -86,6 +86,14 @@ CMsvcSolutionGenerator::AddBuildAllProject(const string& full_path,
     m_PathToName[full_path] = prj.GetAttlist().GetName();
 }
 
+void 
+CMsvcSolutionGenerator::AddAsnAllProject(const string& full_path,
+                                         const CVisualStudioProject& prj)
+{
+    m_AsnAllProject = TUtilityProject(full_path, prj.GetAttlist().GetProjectGUID());
+    m_PathToName[full_path] = prj.GetAttlist().GetName();
+}
+
 void CMsvcSolutionGenerator::VerifyProjectDependencies(void)
 {
     for (bool changed=true; changed;) {
@@ -152,6 +160,11 @@ CMsvcSolutionGenerator::SaveSolution(const string& file_path)
     if ( !m_BuildAllProject.first.empty() &&
         !m_BuildAllProject.second.empty() ) {
         WriteBuildAllProject(m_BuildAllProject, ofs);
+    }
+    // AsnAll project
+    if ( !m_AsnAllProject.first.empty() &&
+        !m_AsnAllProject.second.empty() ) {
+        WriteAsnAllProject(m_AsnAllProject, ofs);
     }
 
     // Projects from the projects tree
@@ -450,6 +463,31 @@ CMsvcSolutionGenerator::WriteBuildAllProject(const TUtilityProject& project,
     EndUtilityProject(project,ofs);
 }
 
+void 
+CMsvcSolutionGenerator::WriteAsnAllProject(const TUtilityProject& project, 
+                                             CNcbiOfstream&         ofs)
+{
+    BeginUtilityProject(project,ofs);
+    list<string> proj_guid;
+    
+    ITERATE(TProjects, p, m_Projects) {
+        const CPrjContext& prj_i = p->second;
+        if (!prj_i.m_Project.m_DatatoolSources.empty()) {
+            proj_guid.push_back(prj_i.m_GUID);
+        }
+    }
+
+    if (!proj_guid.empty()) {
+        ofs << '\t' << "ProjectSection(ProjectDependencies) = postProject" << endl;
+        proj_guid.sort();
+        ITERATE(list<string>, p, proj_guid) {
+            ofs << '\t' << '\t' << *p << " = " << *p << endl;
+        }
+        ofs << '\t' << "EndProjectSection" << endl;
+    }
+    EndUtilityProject(project,ofs);
+}
+
 
 void 
 CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs, 
@@ -546,6 +584,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2006/02/21 19:13:55  gouriano
+ * Added DATASPEC_ALL project
+ *
  * Revision 1.31  2006/02/15 19:47:24  gouriano
  * Exclude projects with unmet requirements from BUILD-ALL
  *

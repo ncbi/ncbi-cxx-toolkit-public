@@ -227,7 +227,7 @@ struct PIsExcludedByRequires
 //-----------------------------------------------------------------------------
 CProjBulderApp::CProjBulderApp(void)
 {
-    SetVersion( CVersionInfo(1,1,0) );
+    SetVersion( CVersionInfo(1,1,1) );
 
     m_ScanningWholeTree = false;
     m_Dll = false;
@@ -491,7 +491,16 @@ int CProjBulderApp::Run(void)
             CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
         build_all_prj_path += MSVC_PROJECT_FILE_EXT;
         SaveIfNewer(build_all_prj_path, build_all_xmlprj);
-        //
+
+        // AsnAll utility project
+        CVisualStudioProject asn_all_xmlprj;
+        CreateUtilityProject("-DATASPEC-ALL-", 
+                             GetRegSettings().m_ConfigInfo, 
+                             &asn_all_xmlprj);
+        string asn_all_prj_path = 
+            CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
+        asn_all_prj_path += MSVC_PROJECT_FILE_EXT;
+        SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
 
         // Solution
         CMsvcSolutionGenerator sln_gen(GetRegSettings().m_ConfigInfo);
@@ -505,6 +514,7 @@ int CProjBulderApp::Run(void)
             sln_gen.AddConfigureProject (configure_generator.GetPath(true),
                                          configure_generator.GetVisualStudioProject(true));
             sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+            sln_gen.AddAsnAllProject(asn_all_prj_path, asn_all_xmlprj);
         }
         sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
         sln_gen.SaveSolution(m_Solution);
@@ -597,7 +607,16 @@ int CProjBulderApp::Run(void)
             CDirEntry::ConcatPath(utility_projects_dir, "_BUILD_ALL_");
         build_all_prj_path += MSVC_PROJECT_FILE_EXT;
         SaveIfNewer(build_all_prj_path, build_all_xmlprj);
-        //
+
+        // AsnAll utility project
+        CVisualStudioProject asn_all_xmlprj;
+        CreateUtilityProject("-DATASPEC-ALL-", 
+                             GetRegSettings().m_ConfigInfo, 
+                             &asn_all_xmlprj);
+        string asn_all_prj_path = 
+            CDirEntry::ConcatPath(utility_projects_dir, "_DATASPEC_ALL_");
+        asn_all_prj_path += MSVC_PROJECT_FILE_EXT;
+        SaveIfNewer(asn_all_prj_path, asn_all_xmlprj);
 
         // Solution
         CMsvcSolutionGenerator sln_gen(dll_configs);
@@ -611,6 +630,7 @@ int CProjBulderApp::Run(void)
             sln_gen.AddConfigureProject (configure_generator.GetPath(true),
                                          configure_generator.GetVisualStudioProject(true));
             sln_gen.AddUtilityProject (index_prj_path, index_xmlprj);
+            sln_gen.AddAsnAllProject(asn_all_prj_path, asn_all_xmlprj);
         }
         sln_gen.AddBuildAllProject(build_all_prj_path, build_all_xmlprj);
         sln_gen.SaveSolution(m_Solution);
@@ -1159,6 +1179,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2006/02/21 19:13:55  gouriano
+ * Added DATASPEC_ALL project
+ *
  * Revision 1.72  2006/02/15 19:47:24  gouriano
  * Exclude projects with unmet requirements from BUILD-ALL
  *

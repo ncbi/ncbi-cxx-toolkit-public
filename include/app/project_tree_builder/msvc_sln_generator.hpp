@@ -57,6 +57,7 @@ public:
     void AddUtilityProject  (const string& full_path, const CVisualStudioProject& prj);
     void AddConfigureProject(const string& full_path, const CVisualStudioProject& prj);
     void AddBuildAllProject (const string& full_path, const CVisualStudioProject& prj);
+    void AddAsnAllProject   (const string& full_path, const CVisualStudioProject& prj);
 
     void VerifyProjectDependencies(void);
     void SaveSolution(const string& file_path);
@@ -74,6 +75,7 @@ private:
     list<TUtilityProject> m_ConfigureProjects;
     // BuildAll utility project
     TUtilityProject m_BuildAllProject; 
+    TUtilityProject m_AsnAllProject; 
     map<string, string> m_PathToName;
 
     class CPrjContext
@@ -118,6 +120,9 @@ private:
     void WriteBuildAllProject  (const TUtilityProject& project, 
                                 CNcbiOfstream& ofs);
 
+    void WriteAsnAllProject    (const TUtilityProject& project, 
+                                CNcbiOfstream& ofs);
+
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
                                     const CPrjContext& project);
     void WriteProjectConfigurations(CNcbiOfstream&     ofs, 
@@ -139,6 +144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/21 19:14:18  gouriano
+ * Added DATASPEC_ALL project
+ *
  * Revision 1.16  2006/02/15 19:47:44  gouriano
  * Exclude projects with unmet requirements from BUILD-ALL
  *
