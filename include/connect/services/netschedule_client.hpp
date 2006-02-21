@@ -507,7 +507,14 @@ protected:
     ///
     void DropQueue();
 
-    void PrintStatistics(CNcbiOstream & out);
+    enum EStatisticsOptions 
+    {
+        eStatisticsAll,
+        eStaticticsBrief,
+    };
+
+    void PrintStatistics(CNcbiOstream&      out, 
+                         EStatisticsOptions opt = eStaticticsBrief);
 
     void DumpQueue(CNcbiOstream& out, 
                    const string& job_key = kEmptyStr);
@@ -832,6 +839,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/02/21 14:34:42  kuznets
+ * Added options for printing statistics
+ *
  * Revision 1.45  2006/02/15 19:05:56  lavr
  * Remove inclusion of unnecessary header files
  *

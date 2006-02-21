@@ -1232,7 +1232,8 @@ void CNetScheduleClient::DumpQueue(CNcbiOstream& out,
 }
 
 
-void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
+void CNetScheduleClient::PrintStatistics(CNcbiOstream & out,
+                                         EStatisticsOptions opt)
 {
     if (m_RequestRateControl) {
         s_Throttler.Approve(CRequestRateControl::eSleep);
@@ -1242,6 +1243,9 @@ void CNetScheduleClient::PrintStatistics(CNcbiOstream & out)
     CSockGuard sg(GetConnMode() == eKeepConnection ? 0 : m_Sock);
 
     MakeCommandPacket(&m_Tmp, "STAT ", connected);
+    if (opt == eStatisticsAll) {
+        m_Tmp.append("ALL");
+    }
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
 
     WaitForServer();
@@ -1536,6 +1540,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2006/02/21 14:35:37  kuznets
+ * Added options for printing statistics
+ *
  * Revision 1.43  2006/02/15 19:06:51  lavr
  * Remove inclusion of unnecessary header files
  * Remove extra parameter for unmatching format spec. in sprintf()
