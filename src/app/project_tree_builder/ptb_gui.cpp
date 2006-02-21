@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 void CenterWindow(HWND hWnd);
 BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet);
-BOOL CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -90,11 +90,11 @@ BOOL UpdateData(HWND hDlg, CProjBulderApp* pApp, BOOL bGet)
     return TRUE;
 }
 
-BOOL CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg) {
     case WM_INITDIALOG:
-        SetWindowLong( hDlg, DWL_USER, lParam );
+        SetWindowLongPtr( hDlg, DWLP_USER, lParam );
         UpdateData( hDlg,(CProjBulderApp*)lParam,FALSE );
         CenterWindow(hDlg);
         SetFocus( GetDlgItem(hDlg,IDOK));
@@ -102,7 +102,7 @@ BOOL CALLBACK PtbConfigDialog(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
     case WM_COMMAND:
         switch (wParam) {
         case IDOK:
-            if (UpdateData( hDlg,(CProjBulderApp*)GetWindowLong(hDlg,DWL_USER),TRUE )) {
+            if (UpdateData( hDlg,(CProjBulderApp*)GetWindowLongPtr(hDlg,DWLP_USER),TRUE )) {
                 EndDialog(hDlg,IDOK);
             }
             break;
@@ -138,6 +138,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2006/02/21 15:44:34  gouriano
+ * Use 64bits-compatible code
+ *
  * Revision 1.1  2005/05/09 17:01:46  gouriano
  * Initial revision
  *
