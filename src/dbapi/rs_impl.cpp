@@ -32,6 +32,8 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
+
 #include "stmt_impl.hpp"
 #include "cstmt_impl.hpp"
 #include "conn_impl.hpp"
@@ -43,7 +45,6 @@
 #include <dbapi/driver/public.hpp>
 #include <dbapi/driver/exception.hpp>
 
-#include <corelib/ncbistr.hpp>
 
 #include <typeinfo>
 
@@ -168,7 +169,6 @@ bool CResultSet::Next()
 
             if( !IsBindBlob() ) {
                 if( type == eDB_Text || type == eDB_Image )  {
-                    m_column = m_rs->CurrentItemNo();
                     break;
                 }
             }
@@ -184,11 +184,10 @@ bool CResultSet::Next()
                     break;
                 }
             }
-
             m_rs->GetItem(m_data[i].GetNonNullData());
         }
-
     }
+    m_column = m_rs->CurrentItemNo();
 
     if( !more ) {
         if( m_ostr ) {
@@ -220,16 +219,12 @@ size_t CResultSet::Read(void* buf, size_t size)
 {
 
     if( m_column < 0 ) {
-        _TRACE("CResulstSet: Column for raw Read not set, current column: "
+        _TRACE("CResulstSet: No available column for Read(), current column: "
                 << m_rs->CurrentItemNo());
-#ifdef _DEBUG
-        _ASSERT(0);
-#else
-        NCBI_DBAPI_THROW( "Column for BLOB I/O is not initialized" );
-#endif
+		NCBI_DBAPI_THROW( "No available column for Read()" );
     }
     else {
-        _TRACE("Last column: " << m_column);
+		_TRACE("CResultSet: Last column: " << m_column);
     }
 
     if( m_column != m_rs->CurrentItemNo() ) {
@@ -254,7 +249,7 @@ bool CResultSet::WasNull()
 
 int CResultSet::GetColumnNo()
 {
-    return m_rs->GetColumnNum();
+    return m_rs->CurrentItemNo() + 1;
 }
 
 unsigned int CResultSet::GetTotalColumns()
@@ -262,15 +257,10 @@ unsigned int CResultSet::GetTotalColumns()
     return m_rs->NofItems();
 }
 
-istream& CResultSet::GetBlobIStream(size_t buf_size)
+CNcbiIstream& CResultSet::GetBlobIStream(size_t buf_size)
 {
-#if 0
-    if( m_istr == 0 ) {
-        m_istr = new CBlobIStream(this, buf_size);
-    }
-#endif
     delete m_istr;
-    m_istr = new CBlobIStream(this, buf_size);
+	m_istr = new CRStream(new CxBlobReader(this), buf_size, 0, CRWStreambuf::fOwnReader);
 
     return *m_istr;
 }
@@ -283,41 +273,28 @@ IReader* CResultSet::GetBlobReader()
     return m_rd;
 }
 
-ostream& CResultSet::GetBlobOStream(size_t blob_size,
-                                    EAllowLog log_it,
-                                    size_t buf_size)
+CNcbiOstream& CResultSet::GetBlobOStream(size_t blob_size,
+										 EAllowLog log_it,
+										 size_t buf_size)
 {
-    // GetConnAux() returns pointer to pooled CDB_Connection.
-    // we need to delete it every time we request new one.
-    // The same with ITDescriptor
-    delete m_ostr;
-
-    // Call ReadItem(0, 0) before getting text/image descriptor
-    m_rs->ReadItem(0, 0);
-
-
-    I_ITDescriptor* desc = m_rs->GetImageOrTextDescriptor();
-    if( desc == 0 ) {
-#ifdef _DEBUG
-        NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;
-        _ASSERT(0);
-#else
-        NCBI_DBAPI_THROW( "CResultSet::GetBlobOStream(): Invalid IT Descriptor" );
-#endif
-    }
-
-    m_ostr = new CBlobOStream(m_conn->CloneCDB_Conn(),
-                              desc,
-                              blob_size,
-                              buf_size,
-                              log_it == eEnableLog,
-                              true);
-    return *m_ostr;
+	return xGetBlobOStream(m_conn->CloneCDB_Conn(), blob_size,
+                           log_it, buf_size, true);
 }
 
-ostream& CResultSet::GetBlobOStream(IConnection *conn, size_t blob_size,
-                                    EAllowLog log_it,
-                                    size_t buf_size)
+CNcbiOstream& CResultSet::GetBlobOStream(IConnection *conn, 
+										  size_t blob_size,
+                                          EAllowLog log_it,
+                                          size_t buf_size)
+{
+	return xGetBlobOStream(conn->GetCDB_Connection(), blob_size,
+                           log_it, buf_size, false);
+}
+
+CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn, 
+										  size_t blob_size,
+                                          EAllowLog log_it,
+                                          size_t buf_size,
+										  bool destroy)
 {
     // GetConnAux() returns pointer to pooled CDB_Connection.
     // we need to delete it every time we request new one.
@@ -338,11 +315,8 @@ ostream& CResultSet::GetBlobOStream(IConnection *conn, size_t blob_size,
 #endif
     }
 
-    m_ostr = new CBlobOStream(conn->GetCDB_Connection(),
-                              desc,
-                              blob_size,
-                              buf_size,
-                              log_it == eEnableLog);
+    m_ostr = new CWStream(new CxBlobWriter(cdb_conn, *desc, blob_size, log_it == eEnableLog, destroy),
+		                   buf_size, 0, CRWStreambuf::fOwnWriter);
     return *m_ostr;
 }
 
@@ -422,6 +396,9 @@ void CResultSet::CheckIdx(unsigned int idx)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.44  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.43  2005/12/13 17:27:04  kholodov
 * Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
 *

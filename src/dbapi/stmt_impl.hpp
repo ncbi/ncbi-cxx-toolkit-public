@@ -77,7 +77,11 @@ public:
 
     virtual IConnection* GetParentConn();
 
-    virtual IWriter* GetBlobWriter(CDB_ITDescriptor &d, size_t blob_size, EAllowLog log_it);
+    virtual IWriter* GetBlobWriter(I_ITDescriptor &d, size_t blob_size, EAllowLog log_it);
+    virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d, 
+		                                 size_t blob_size, 
+										 EAllowLog log_it,
+										 size_t buf_size);
 
     CConnection* GetConnection() {
         return m_conn;
@@ -125,6 +129,7 @@ private:
     //RequestedRsList m_requestedRsList;
     class CResultSet*   m_irs;
     class IWriter*      m_wr;
+	class CWStream*	    m_ostr;
     bool                m_AutoClearInParams;
 };
 
@@ -134,6 +139,9 @@ END_NCBI_SCOPE
 #endif // _STMT_IMPL_HPP_
 /*
 * $Log$
+* Revision 1.19  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.18  2005/12/01 18:59:20  kholodov
 * Added: SendSql() method
 *

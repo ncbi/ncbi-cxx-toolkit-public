@@ -62,7 +62,7 @@ public:
                           const string& name);
 
     virtual IResultSet* Open();
-    ostream& GetBlobOStream(unsigned int col,
+    CNcbiOstream& GetBlobOStream(unsigned int col,
                             size_t blob_size, 
                             EAllowLog log_it,
                             size_t buf_size);
@@ -101,6 +101,9 @@ private:
 //====================================================================
 /*
 * $Log$
+* Revision 1.12  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.11  2005/12/13 17:27:04  kholodov
 * Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
 *

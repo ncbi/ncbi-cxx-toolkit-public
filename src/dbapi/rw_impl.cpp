@@ -78,15 +78,16 @@ ERW_Result CxBlobReader::PendingCount(size_t* /* count */)
 CxBlobWriter::CxBlobWriter(CDB_CursorCmd* curCmd,
                          unsigned int item_num,
                          size_t datasize, 
-                         bool log_it) 
+						 bool log_it) : m_destroy(false), m_cdbConn(0)
 {
     m_dataCmd = curCmd->SendDataCmd(item_num, datasize, log_it);
 }
 
 CxBlobWriter::CxBlobWriter(CDB_Connection* conn,
-                         CDB_ITDescriptor &d,
+                         I_ITDescriptor &d,
                          size_t blobsize, 
-                         bool log_it) 
+                         bool log_it,
+						 bool destroy) : m_destroy(destroy), m_cdbConn(conn)
 {
     m_dataCmd = conn->SendDataCmd(d, blobsize, log_it);
 }
@@ -115,6 +116,8 @@ CxBlobWriter::~CxBlobWriter()
 {
     try {
         delete m_dataCmd;
+		if( m_destroy )
+			delete m_cdbConn;
     }
     NCBI_CATCH_ALL( kEmptyStr )
 }
@@ -123,6 +126,9 @@ CxBlobWriter::~CxBlobWriter()
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.5  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.4  2005/12/13 17:27:04  kholodov
 * Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
 *

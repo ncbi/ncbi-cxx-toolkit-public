@@ -32,6 +32,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/rwstream.hpp>
 #include "conn_impl.hpp"
 #include "cursor_impl.hpp"
 #include "rs_impl.hpp"
@@ -111,7 +112,7 @@ void CCursor::Delete(const string& table)
     GetCursorCmd()->Delete(table);
 }
 
-ostream& CCursor::GetBlobOStream(unsigned int col,
+CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
                                  size_t blob_size, 
                                  EAllowLog log_it,
                                  size_t buf_size)
@@ -119,11 +120,11 @@ ostream& CCursor::GetBlobOStream(unsigned int col,
     // Delete previous ostream
     delete m_ostr;
 
-    m_ostr = new CBlobOStream(GetCursorCmd(),
-                              col - 1,
-                              blob_size,
-                              buf_size,
-                              log_it == eEnableLog);
+    m_ostr = new CWStream(new CxBlobWriter(GetCursorCmd(),
+                                           col - 1,
+                                           blob_size,
+                                           log_it == eEnableLog), 
+							  buf_size, 0, CRWStreambuf::fOwnWriter);
     return *m_ostr;
 }
 
@@ -192,6 +193,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.21  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.20  2005/12/20 22:44:13  vakatov
 * Ended EOL at EOF
 *

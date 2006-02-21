@@ -164,7 +164,7 @@ public:
     ///
     /// False by default.
     /// @param
-    ///   Disables binding when set to true.
+    ///   Disables column binding when set to true.
     virtual void DisableBind(bool b) = 0;
 
     /// Bind blob to variant.
@@ -172,10 +172,10 @@ public:
     /// If this mode is true, BLOB data is returned as CVariant
     /// False by default.
     /// @param
-    ///   Disables blob binding when set to true.
+    ///   Enables blob binding when set to true.
     virtual void BindBlobToVariant(bool b) = 0;
 
-    /// Read unformtted data.
+    /// Read unformatted data.
     ///
     /// Reads unformatted data, returns bytes actually read.
     /// Advances to next column as soon as data is read from the previous one.
@@ -198,10 +198,11 @@ public:
     ///   DisableBind().
     virtual bool WasNull() = 0;
 
-    /// Get column number.
+    /// Get column number, currently available for Read()
     ///
     /// @return
-    ///   Returns current column number (while using Read()).
+	///    Returns current item number we can retrieve (1,2,...) using Read()
+    ///    Returns "0" if no more items left (or available) to read
     virtual int GetColumnNo() = 0;
 
     /// Get total columns.
@@ -210,11 +211,11 @@ public:
     ///   Returns total number of columns in the resultset
     virtual unsigned int GetTotalColumns() = 0;
 
-    /// Get Blob output stream.
+    /// Get Blob input stream.
     ///
     /// @param buf_size
-    ///   buf_size is the size of internal buffer, default 1024.
-    virtual istream& GetBlobIStream(size_t buf_size = 1024) = 0;
+    ///   buf_size is the size of internal buffer, default 4096.
+    virtual CNcbiIstream& GetBlobIStream(size_t buf_size = 0) = 0;
 
     /// Get Blob output stream. The existing connection is
     /// cloned for writing blob.
@@ -225,10 +226,10 @@ public:
     ///    Enables transaction log for BLOB (enabled by default).
     ///    Make sure you have enough log segment space, or disable it.
     /// @param buf_size
-    ///   The size of internal buffer, default 1024.
-    virtual ostream& GetBlobOStream(size_t blob_size,
-                                    EAllowLog log_it = eEnableLog,
-                                    size_t buf_size = 1024) = 0;
+    ///   The size of internal buffer, default 4096.
+    virtual CNcbiOstream& GetBlobOStream(size_t blob_size,
+                                         EAllowLog log_it = eEnableLog,
+                                         size_t buf_size = 0) = 0;
 
     /// Get Blob output stream with explicit additional connection.
     ///
@@ -241,12 +242,13 @@ public:
     ///    Enables transaction log for BLOB (enabled by default).
     ///    Make sure you have enough log segment space, or disable it.
     /// @param buf_size
-    ///   The size of internal buffer, default 1024.
-    virtual ostream& GetBlobOStream(IConnection *conn,
-                                    size_t blob_size,
-                                    EAllowLog log_it = eEnableLog,
-                                    size_t buf_size = 1024) = 0;
-    /// Get the Blob Reader.
+    ///   The size of internal buffer, default 4096.
+    virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
+                                         size_t blob_size,
+                                         EAllowLog log_it = eEnableLog,
+                                         size_t buf_size = 0) = 0;
+
+    /// Get a Blob Reader. 
     ///
     /// @param
     ///  Pointer to the Blob Reader.
@@ -270,7 +272,7 @@ public:
 ///
 ///  Interface for a SQL statement
 
-class CDB_ITDescriptor;
+class I_ITDescriptor;
 
 class NCBI_DBAPI_EXPORT IStatement
 {
@@ -382,11 +384,26 @@ public:
     ///   Size of BLOB to write
     /// @param log_it
     ///   Enable or disable logging
-    virtual IWriter* GetBlobWriter(CDB_ITDescriptor &d,
+    virtual IWriter* GetBlobWriter(I_ITDescriptor &d,
                                    size_t blob_size,
                                    EAllowLog log_it) = 0;
 
-    /// Get the parent connection.
+    /// Get an ostream for writing BLOBs using previously created
+    /// CDB_ITDescriptor
+    /// @param d
+    ///   Descriptor
+    /// @param blob_size
+    ///   Size of BLOB to write
+    /// @param log_it
+    ///   Enable or disable logging
+    /// @param buf_size
+    ///   Buffer size, default 4096
+    virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d,
+                                         size_t blob_size,
+                                         EAllowLog log_it = eEnableLog,
+										 size_t buf_size = 0) = 0;
+
+	/// Get the parent connection.
     ///
     /// If the original connections was cloned, returns cloned
     /// connection.
@@ -497,13 +514,13 @@ public:
     ///    Enables transaction log for BLOB (enabled by default).
     ///    Make sure you have enough log segment space, or disable it.
     /// @param buf_size
-    ///   The size of internal buffer, default 1024.
-    virtual ostream& GetBlobOStream(unsigned int col,
-                                    size_t blob_size,
-                                    EAllowLog log_it = eEnableLog,
-                                    size_t buf_size = 1024) = 0;
+    ///   The size of internal buffer, default 4096.
+    virtual CNcbiOstream& GetBlobOStream(unsigned int col,
+                                         size_t blob_size,
+                                         EAllowLog log_it = eEnableLog,
+                                         size_t buf_size = 0) = 0;
 
-    /// Get Blob Writer.
+    /// Get Blob Writer 
     ///
     /// Implementation of IWriter interface
     /// @param col
@@ -812,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2006/02/21 14:59:05  kholodov
+ * Streams implemented thru Reader/Writer interface
+ *
  * Revision 1.47  2006/02/15 18:26:01  lavr
  * IReader/IWriter moved to corelib
  *

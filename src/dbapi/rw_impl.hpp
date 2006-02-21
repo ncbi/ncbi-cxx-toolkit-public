@@ -60,16 +60,17 @@ private:
     CResultSet *m_rs;
 };
 
-class CDB_ITDescriptor;
+class I_ITDescriptor;
 
 class CxBlobWriter : public IWriter
 {
 public:
 
     CxBlobWriter(CDB_Connection* conn,
-                CDB_ITDescriptor &d,
+                I_ITDescriptor &d,
                 size_t blobsize, 
-                bool log_it);
+                bool log_it,
+				bool destroy);
 
     CxBlobWriter(CDB_CursorCmd* curCmd,
                 unsigned int item_num,
@@ -87,6 +88,8 @@ public:
 private:
 
     CDB_SendDataCmd *m_dataCmd;
+	bool m_destroy;
+	CDB_Connection *m_cdbConn;
 };
 
 END_NCBI_SCOPE
@@ -95,6 +98,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.4  2005/12/13 17:27:04  kholodov
 * Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
 *

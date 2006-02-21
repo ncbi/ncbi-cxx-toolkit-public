@@ -35,6 +35,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/rwstream.hpp>
 #include "conn_impl.hpp"
 #include "stmt_impl.hpp"
 #include "rs_impl.hpp"
@@ -52,6 +53,7 @@ CStatement::CStatement(CConnection* conn)
     , m_failed(false)
     , m_irs(0)
     , m_wr(0)
+	, m_ostr(0)
     , m_AutoClearInParams(false)
 {
     SetIdent("CStatement");
@@ -208,11 +210,21 @@ bool CStatement::HasRows()
     return m_irs != 0;
 }
 
-IWriter* CStatement::GetBlobWriter(CDB_ITDescriptor &d, size_t blob_size, EAllowLog log_it)
+IWriter* CStatement::GetBlobWriter(I_ITDescriptor &d, size_t blob_size, EAllowLog log_it)
 {
     delete m_wr;
-    m_wr = new CxBlobWriter(GetConnection()->GetCDB_Connection(), d, blob_size, log_it == eEnableLog);
+    m_wr = new CxBlobWriter(GetConnection()->GetCDB_Connection(), 
+		d, blob_size, log_it == eEnableLog, false);
     return m_wr;
+}
+
+CNcbiOstream& CStatement::GetBlobOStream(I_ITDescriptor &d, size_t blob_size, 
+										 EAllowLog log_it, size_t buf_size)
+{
+    delete m_ostr;
+    m_ostr = new CWStream(new CxBlobWriter(GetConnection()->GetCDB_Connection(), 
+		d, blob_size, log_it == eEnableLog, false), buf_size, 0, CRWStreambuf::fOwnWriter);
+    return *m_ostr;
 }
 
 CDB_Result* CStatement::GetCDB_Result() {
@@ -252,6 +264,8 @@ void CStatement::FreeResources()
 
     delete m_wr;
     m_wr = 0;
+	delete m_ostr;
+	m_ostr = 0;
 
     ClearParamList();
 }
@@ -310,6 +324,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.35  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.34  2005/12/13 17:25:32  kholodov
 * Modified: Execute() method deprecated
 *

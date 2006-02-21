@@ -37,12 +37,11 @@
 */
 
 #include <dbapi/dbapi.hpp>
+#include <corelib/rwstream.hpp>
 
 #include "rw_impl.hpp"
 #include "active_obj.hpp"
-//#include "array.hpp"
-//#include "dbexception.hpp"
-#include "blobstream.hpp"
+//#include "blobstream.hpp"
 
 #include <vector>
 
@@ -75,18 +74,18 @@ public:
     virtual void Close();
     virtual const IResultSetMetaData* GetMetaData(EOwnership ownership);
 
-    virtual istream& GetBlobIStream(size_t buf_size);
+    virtual CNcbiIstream& GetBlobIStream(size_t buf_size);
 
-    virtual ostream& GetBlobOStream(size_t blob_size, 
-                                    EAllowLog log_it,
-                                    size_t buf_size);
+    virtual CNcbiOstream& GetBlobOStream(size_t blob_size, 
+                                         EAllowLog log_it,
+                                         size_t buf_size);
 
-    virtual ostream& GetBlobOStream(IConnection *conn,
-                                    size_t blob_size, 
-                                    EAllowLog log_it,
-                                    size_t buf_size);
+    virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
+                                         size_t blob_size, 
+                                         EAllowLog log_it,
+                                         size_t buf_size);
 
-    virtual IReader* GetBlobReader();
+	virtual IReader* GetBlobReader();
 
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);
@@ -122,12 +121,17 @@ protected:
 
 private:
     
+	CNcbiOstream& xGetBlobOStream(CDB_Connection *cdb_conn, 
+		                          size_t blob_size,
+                                  EAllowLog log_it,
+                                  size_t buf_size,
+					  			  bool destroy);
     class CConnection* m_conn;
     CDB_Result *m_rs;
     //CResultSetMetaDataImpl *m_metaData;
     vector<CVariant> m_data;
-    CBlobIStream *m_istr;
-    CBlobOStream *m_ostr;
+    CRStream *m_istr;
+    CWStream *m_ostr;
     int m_column;
     bool m_bindBlob;
     bool m_disableBind;
@@ -142,6 +146,9 @@ private:
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.21  2006/02/21 14:59:23  kholodov
+* Streams implemented thru Reader/Writer interface
+*
 * Revision 1.20  2005/12/13 17:27:04  kholodov
 * Modified: renamed CBlobReader/Writer to CxBlobReader/Writer
 *
