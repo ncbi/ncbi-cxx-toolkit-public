@@ -901,7 +901,7 @@ void CDisplaySeqalign::x_PrintFeatures(list<SAlnFeatureInfo*> feature,
             !(NStr::IsBlank((*iter)->feature_string.
                             substr(aln_start, line_length)) &&
               m_AlignOption & eShowCdsFeature)){  
-            if((m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)
+            if((m_AlignOption&eHtml)&&(m_AlignOption&eMergeAlign)
                && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
                 char checkboxBuf[200];
                 sprintf(checkboxBuf,  k_UncheckabeCheckbox.c_str(),
@@ -1102,7 +1102,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                    (int)m_LineLen, &seqStarts[row], &seqStops[row]);
         //make feature. Only for pairwise and untranslated for subject nuc seq
         if(!(m_AlignOption & eMasterAnchored) &&
-           !(m_AlignOption & eMultiAlign) && m_AV->GetWidth(row) != 3 &&
+           !(m_AlignOption & eMergeAlign) && m_AV->GetWidth(row) != 3 &&
            !(m_AlignType & eProt)){
             if(m_AlignOption & eShowCdsFeature){
                 int master_gi = FindGi(m_AV->GetBioseqHandle(0).
@@ -1151,7 +1151,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
     bool colorMismatch = false; //color the mismatches
     //output identities info 
     if(((m_AlignOption & eShowBlastInfo) || (m_AlignOption & eShowMiddleLine))
-       && !(m_AlignOption&eMultiAlign)) {
+       && !(m_AlignOption&eMergeAlign)) {
         int match = 0;
         int positive = 0;
         int gap = 0;
@@ -1207,42 +1207,48 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                                     master_feat_str, out); 
                 }
 
-                if(row == 0&&(m_AlignOption&eHtml)
-                   &&(m_AlignOption&eMultiAlign) 
-                   && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
-                    char checkboxBuf[200];
-                    sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(), m_QueryNumber);
-                    out << checkboxBuf;
-                }
-
-                string urlLink;
+                string urlLink = NcbiEmptyString;
                 //setup url link for seqid
-                if(row>0&&(m_AlignOption&eHtml)&&(m_AlignOption&eMultiAlign)){
+                if(m_AlignOption & eHtml){
                     int gi = 0;
                     if(m_AV->GetSeqId(row).Which() == CSeq_id::e_Gi){
                         gi = m_AV->GetSeqId(row).GetGi();
                     }
                     if(!(gi > 0)){
-                        gi = s_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
+                        gi = s_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
                                                  GetBioseqCore()->GetId());
                     }
-                    if(gi > 0){
-                        out<<"<a name="<<gi<<"></a>";
-                    } else {
-                        out<<"<a name="<<seqidArray[row]<<"></a>";
+                    if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
+                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
+                        
+                        if(gi > 0){
+                            out<<"<a name="<<gi<<"></a>";
+                        } else {
+                            out<<"<a name="<<seqidArray[row]<<"></a>";
+                        }
                     }
                     //get sequence checkbox
-                    if(m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq){
-                        char checkBoxBuf[512];
-                        sprintf(checkBoxBuf, k_Checkbox.c_str(), gi > 0 ?
-                                NStr::IntToString(gi).c_str() : seqidArray[row].c_str(),                       
-                                m_QueryNumber);
-                        out << checkBoxBuf;        
+                    if((m_AlignOption & eMergeAlign) && 
+                       (m_AlignOption & eSequenceRetrieval) && m_CanRetrieveSeq){
+                        char checkboxBuf[512];
+                        if (row == 0) {
+                            sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),
+                                    m_QueryNumber); 
+                        } else {
+                            sprintf(checkboxBuf, k_Checkbox.c_str(), gi > 0 ?
+                                    NStr::IntToString(gi).c_str() :
+                                    seqidArray[row].c_str(), m_QueryNumber);
+                        }
+                        out << checkboxBuf;        
                     }
-                    urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).\
-                                       GetBioseqCore()->GetId(), gi, 
-                                       row, taxid[row]);     
-                    out << urlLink;                    
+                    
+                    if((row == 0 && (m_AlignOption & eHyperLinkMasterSeqid)) ||
+                       (row > 0 && (m_AlignOption & eHyperLinkSlaveSeqid))){
+                        urlLink = x_GetUrl(m_AV->GetBioseqHandle(row).
+                                           GetBioseqCore()->GetId(), gi, 
+                                           row, taxid[row]);     
+                        out << urlLink;            
+                    }        
                 }
                 
                 bool has_mismatch = false;
@@ -1260,20 +1266,21 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 }
                 
                 //highlight the seqid for pairwise-with-identity format
-                if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMultiAlign)
+                if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
                    && m_AlignOption&eShowIdentity && has_mismatch){
                     out<< "<font color = ff0000><b>";         
                 }
                 out<<seqidArray[row]; 
-                if(row>0&& m_AlignOption&eHtml && m_AlignOption&eMultiAlign
-                   && urlLink != NcbiEmptyString){
-                    out<<"</a>";   
-                }
+               
                 //highlight the seqid for pairwise-with-identity format
-                if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMultiAlign)
+                if(row>0 && m_AlignOption&eHtml && !(m_AlignOption&eMergeAlign)
                    && m_AlignOption&eShowIdentity && has_mismatch){
                     out<< "</b></font>";         
                 } 
+                
+                if(urlLink != NcbiEmptyString){
+                    out<<"</a>";   
+                }
                 
                 //print out sequence line
                 //adjust space between id and start
@@ -1297,7 +1304,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                         iter != inserts.end(); iter ++){   
                         if(!insertAlready){
                             if((m_AlignOption&eHtml)
-                               &&(m_AlignOption&eMultiAlign) 
+                               &&(m_AlignOption&eMergeAlign) 
                                && (m_AlignOption&eSequenceRetrieval 
                                    && m_CanRetrieveSeq)){
                                 char checkboxBuf[200];
@@ -1314,7 +1321,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                             out << insertPosString<<endl;
                         }
                         if((m_AlignOption&eHtml)
-                           &&(m_AlignOption&eMultiAlign) 
+                           &&(m_AlignOption&eMergeAlign) 
                            && (m_AlignOption&eSequenceRetrieval && m_CanRetrieveSeq)){
                             char checkboxBuf[200];
                             sprintf(checkboxBuf, k_UncheckabeCheckbox.c_str(),
@@ -1338,7 +1345,7 @@ void CDisplaySeqalign::x_DisplayAlnvec(CNcbiOstream& out)
                 }
                 //display middle line
                 if (row == 0 && ((m_AlignOption & eShowMiddleLine)) 
-                    && !(m_AlignOption&eMultiAlign)) {
+                    && !(m_AlignOption&eMergeAlign)) {
                     CSeq_id no_id;
                     CBlastFormatUtil::
                         AddSpace(out, maxIdLen + k_IdStartMargin
@@ -1428,7 +1435,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
     }
     auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
     //*out2 << *m_SeqalignSetRef;
-    if(!(m_AlignOption&eMultiAlign)){
+    if(!(m_AlignOption&eMergeAlign)){
         /*pairwise alignment. Note we can't just show each alnment as we go
           because we will need seg information form all hsp's with the same id
           for genome url link.  As a result we show hsp's with the same id 
@@ -1561,7 +1568,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out)
             }
             avList.clear();
         }
-    } else if(m_AlignOption&eMultiAlign){ //multiple alignment
+    } else if(m_AlignOption&eMergeAlign){ //multiple alignment
         CRef<CAlnMix>* mix = new CRef<CAlnMix>[k_NumFrame]; 
         //each for one frame for translated alignment
         for(int i = 0; i < k_NumFrame; i++){
@@ -1907,7 +1914,7 @@ void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
     
     if(actualSeqloc.empty()){//no need to add font tag
         if((m_AlignOption & eColorDifferentBases) && (m_AlignOption & eHtml)
-           && color_mismatch){
+           && color_mismatch && (m_AlignOption & eShowIdentity)){
             //color the mismatches. Only for rows without mask. 
             //Otherwise it may confilicts with mask font tag.
             s_ColorDifferentBases(actualSeq, k_IdentityChar, out);
@@ -2463,7 +2470,7 @@ void CDisplaySeqalign::x_GetInserts(list<SInsertInformation*>& insert_list,
 string CDisplaySeqalign::x_GetSegs(int row) const 
 {
     string segs = NcbiEmptyString;
-    if(m_AlignOption & eMultiAlign){ //only show this hsp
+    if(m_AlignOption & eMergeAlign){ //only show this hsp
         segs = NStr::IntToString(m_AV->GetSeqStart(row))
             + "-" + NStr::IntToString(m_AV->GetSeqStop(row));
     } else { //for all segs
@@ -2764,7 +2771,7 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out,
         }
         
         //output dynamic feature lines
-        if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMultiAlign) 
+        if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMergeAlign) 
            && (m_AlignOption&eDynamicFeature) 
            && (int)m_AV->GetBioseqHandle(1).GetBioseqLength() 
            >= k_GetDynamicFeatureSeqLength){ 
@@ -2988,7 +2995,7 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
         if(row==0){//query
             id="Query";
         } else {//hits
-            if (!(m_AlignOption&eMultiAlign)){
+            if (!(m_AlignOption&eMergeAlign)){
                 //hits for pairwise 
                 id="Sbjct";
             } else {
@@ -3053,6 +3060,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.102  2006/02/21 15:15:14  jianye
+*eMultiAlign to eMergeAlign and add seqid hyperlink
+*
 *Revision 1.101  2006/02/01 19:20:52  jianye
 *fixed cds frame calculation on minus strand
 *

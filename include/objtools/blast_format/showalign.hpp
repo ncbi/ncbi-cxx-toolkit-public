@@ -98,8 +98,7 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
         eHtml = (1 << 0),               // Html output. Default text.
         eLinkout = (1 << 1),            // Linkout gifs. 
         eSequenceRetrieval = (1 << 2),  // Get sequence feature
-        eMultiAlign = (1 << 3),         // Multiple alignment view. 
-                                        // default pairwise
+        eMergeAlign = (1 << 3),         // Merge alignment
         eShowMiddleLine = (1 << 4),     // Show line that indicates identity 
                                         // between query and hit. 
         eShowGi = (1 << 6),
@@ -123,14 +122,17 @@ class NCBI_XBLASTFORMAT_EXPORT CDisplaySeqalign {
         eMasterAnchored = (1 << 13),    // Query anchored, for 
                                         // multialignment only, default not 
                                         // anchored
-        eColorDifferentBases = (1 << 14),       // Coloring mismatches for
-                                                // subject seq
+        eColorDifferentBases = (1 << 14),    // Coloring mismatches for
+                                             // subject seq for eShowIdentity
+                                             // case
         eTranslateNucToNucAlignment = (1 << 15), //nuecleotide to nucleotide
                                                 //alignment as translated
         eShowBl2seqLink = (1 << 16),    // Show web link to bl2seq
         eDynamicFeature = (1 << 17),    //show dynamic feature line
-        eShowNoDeflineInfo = (1 << 18)  //Don't show defline when eShowBlastInfo
+        eShowNoDeflineInfo = (1 << 18), //Don't show defline when eShowBlastInfo
                                         //is chosen
+        eHyperLinkSlaveSeqid = (1 << 19),    //Hyperlink slave seqids 
+        eHyperLinkMasterSeqid = (1 << 20)    //Hyperlink master seqids 
     };
     
     ///Middle line style option
@@ -594,6 +596,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.44  2006/02/21 15:15:23  jianye
+*eMultiAlign to eMergeAlign and add seqid hyperlink
+*
 *Revision 1.43  2006/02/01 15:33:27  jianye
 *delete unneeded parameter
 *
