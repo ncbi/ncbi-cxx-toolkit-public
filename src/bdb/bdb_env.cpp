@@ -49,7 +49,8 @@ BEGIN_NCBI_SCOPE
 CBDB_Env::CBDB_Env()
 : m_Env(0),
   m_Transactional(false),
-  m_ErrFile(0)
+  m_ErrFile(0),
+  m_LogInMemory(false)
 {
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV");
@@ -58,7 +59,8 @@ CBDB_Env::CBDB_Env()
 CBDB_Env::CBDB_Env(DB_ENV* env)
 : m_Env(env),
   m_Transactional(false),
-  m_ErrFile(0)
+  m_ErrFile(0),
+  m_LogInMemory(false)
 {
 }
 
@@ -149,6 +151,14 @@ void CBDB_Env::OpenWithLocks(const char* db_home)
     Open(db_home, DB_CREATE/*|DB_RECOVER*/|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
+void CBDB_Env::OpenPrivate(const char* db_home)
+{
+    int ret = x_Open(db_home, 
+                     DB_CREATE|DB_PRIVATE|DB_INIT_MPOOL);
+    BDB_CHECK(ret, "DB_ENV");
+}
+
+
 void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
 {
     int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
@@ -165,6 +175,9 @@ void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
 # endif
     if (opt & eThreaded) {
         flag |= DB_THREAD;
+    }
+    if (opt & ePrivate) {
+        flag |= DB_PRIVATE;
     }
     
     // Run recovery procedure, reinitialize the environment
@@ -352,6 +365,13 @@ void CBDB_Env::SetMaxLocks(unsigned locks)
     BDB_CHECK(ret, "DB_ENV::set_lk_max_locks");
 }
 
+
+void CBDB_Env::LsnReset(const char* file_name)
+{
+    int ret = m_Env->lsn_reset(m_Env, file_name, 0);
+    BDB_CHECK(ret, "DB_ENV::lsn_reset");
+}
+
 unsigned CBDB_Env::GetMaxLocks()
 {
     u_int32_t lk_max;
@@ -371,6 +391,7 @@ void CBDB_Env::SetLogInMemory(bool on_off)
 {
     int ret = m_Env->set_flags(m_Env, DB_LOG_INMEMORY, on_off);
     BDB_CHECK(ret, "DB_ENV::set_flags");
+    m_LogInMemory = on_off;
 }
 
 void CBDB_Env::SetTasSpins(unsigned tas_spins)
@@ -479,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2006/02/21 14:40:25  kuznets
+ * Added LSN recovery options
+ *
  * Revision 1.34  2006/02/15 15:12:38  kuznets
  * Fixed compilation of set_tas_spin for BerkeleyDB 4.4
  *

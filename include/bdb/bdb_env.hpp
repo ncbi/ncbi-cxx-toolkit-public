@@ -56,7 +56,8 @@ public:
     enum EEnvOptions {
         eThreaded = (1 << 0),          ///< corresponds to DB_THREAD 
         eRunRecovery = (1 << 1),       ///< Run DB recovery first
-        eRunRecoveryFatal = (1 << 2)   ///< Run DB recovery first
+        eRunRecoveryFatal = (1 << 2),  ///< Run DB recovery first
+        ePrivate = (1 << 3)            ///< Create private directory
     };
     
     /// OR-ed combination of EEnvOptions    
@@ -83,6 +84,9 @@ public:
     ///
     /// @param db_home destination directory for the database
     void OpenWithLocks(const char* db_home);
+
+    /// Open-create private environment
+    void OpenPrivate(const char* db_home);
 
     /// Open environment with CDB locking (DB_INIT_CDB)
     ///
@@ -155,6 +159,8 @@ public:
     /// Configure environment for non-durable in-memory logging
     void SetLogInMemory(bool on_off);
 
+    bool IsLogInMemory() const { return m_LogInMemory; }
+
     /// Set max number of locks in the database
     ///
     /// see DB_ENV->set_lk_max_locks for more details
@@ -195,6 +201,9 @@ public:
 
     /// Close the environment;
     void Close();
+
+    /// Reset log sequence number
+    void LsnReset(const char* file_name);
     
 private:
     /// Opens BDB environment returns error code
@@ -209,6 +218,7 @@ private:
     bool     m_Transactional; ///< TRUE if environment is transactional
     FILE*    m_ErrFile;
     string   m_HomePath;
+    bool     m_LogInMemory;
 };
 
 /* @} */
@@ -218,6 +228,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2006/02/21 14:40:08  kuznets
+ * Added LSN recovery options
+ *
  * Revision 1.24  2006/01/03 15:40:48  kuznets
  * Cosmetics
  *
