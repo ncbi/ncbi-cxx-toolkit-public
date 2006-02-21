@@ -158,6 +158,7 @@ DB_TXN* CBDB_RawFile::GetTxn()
 
 void CBDB_RawFile::x_Close(EIgnoreError close_mode)
 {
+    LOG_POST("Closing: " << m_FileName);
     if ( m_FileName.empty() )
         return;
 
@@ -171,6 +172,10 @@ void CBDB_RawFile::x_Close(EIgnoreError close_mode)
         m_DB = 0;
         if (close_mode == eThrowOnError) {
             BDB_CHECK(ret, m_FileName.c_str());
+        } else {
+            if (ret != 0) {
+                ERR_POST("Error when closing " << m_FileName);
+            }
         }
     }
 
@@ -1237,6 +1242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/02/21 14:40:53  kuznets
+ * Diagnostics
+ *
  * Revision 1.56  2005/12/14 19:26:42  kuznets
  * Added support for queue db type
  *
