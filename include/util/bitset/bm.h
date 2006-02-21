@@ -2088,6 +2088,15 @@ private:
                                       int arg_gap,
                                       bm::operation opcode)
     {
+        if (!blk && arg_gap && get_new_blocks_strat() == BM_GAP) {
+            blk = 
+                blockman_.check_allocate_block(nb, 
+                                            0,
+                                            BM_GAP, 
+                                            (int*)&gap,
+                                            false /*no null return*/);
+        }
+
          if (gap) // our block GAP-type
          {
              if (arg_gap)  // both blocks GAP-type
