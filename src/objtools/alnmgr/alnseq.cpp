@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objtools/alnmgr/alnseq.hpp>
+#include <objtools/alnmgr/alnsegments.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -189,6 +190,7 @@ CAlnMixSequences::Add(const CDense_seg& ds, TAddFlags flags)
                     another_row->m_SeqId        = aln_seq->m_SeqId;
                     another_row->m_Width        = aln_seq->m_Width;
                     another_row->m_SeqIdx       = aln_seq->m_SeqIdx;
+                    another_row->m_ChildIdx     = aln_seq->m_ChildIdx + 1;
                     another_row->m_DsIdx        = m_DsCnt;
                     another_row->m_RowIdx       = row;
 
@@ -282,22 +284,25 @@ CAlnMixSequences::InitRowsStartIts()
 {
     NON_CONST_ITERATE (TSeqs, row_i, m_Rows) {
         CAlnMixSeq * row = *row_i;
-        if ( !row->m_Starts.empty() ) {
+        if ( !row->GetStarts().empty() ) {
             if (row->m_PositiveStrand) {
-                row->m_StartIt = row->m_Starts.begin();
+                row->SetStarts().current = row->GetStarts().begin();
             } else {
-                row->m_StartIt = row->m_Starts.end();
-                row->m_StartIt--;
+                row->SetStarts().current = row->GetStarts().end();
+                row->SetStarts().current--;
             }
         } else {
-            row->m_StartIt = row->m_Starts.end();
+            row->SetStarts().current = row->GetStarts().end();
 #if _DEBUG
             string errstr =
                 string("CAlnMixSequences::InitRowsStartIts():") +
                 " Internal error: no starts for row " +
                 NStr::IntToString(row->m_RowIdx) +
                 " (seq " +
-                NStr::IntToString(row->m_SeqIdx) + ").";
+                NStr::IntToString(row->m_SeqIdx) +
+                " child " +
+                NStr::IntToString(row->m_ChildIdx) +
+                ").";
             NCBI_THROW(CAlnException, eMergeFailure, errstr);
 #endif
         }
@@ -310,15 +315,15 @@ CAlnMixSequences::InitExtraRowsStartIts()
 {
     NON_CONST_ITERATE (list<CRef<CAlnMixSeq> >, row_i, m_ExtraRows) {
         CAlnMixSeq * row = *row_i;
-        if ( !row->m_Starts.empty() ) {
+        if ( !row->GetStarts().empty() ) {
             if (row->m_PositiveStrand) {
-                row->m_StartIt = row->m_Starts.begin();
+                row->SetStarts().current = row->GetStarts().begin();
             } else {
-                row->m_StartIt = row->m_Starts.end();
-                row->m_StartIt--;
+                row->SetStarts().current = row->GetStarts().end();
+                row->SetStarts().current--;
             }
         } else {
-            row->m_StartIt = row->m_Starts.end();
+            row->SetStarts().current = row->GetStarts().end();
 #if _DEBUG
             string errstr =
                 string("CAlnMixSequences::InitExtraRowStartIts():") +
@@ -334,8 +339,8 @@ CAlnMixSequences::InitExtraRowsStartIts()
 void
 CAlnMixSequences::RowsStartItsContsistencyCheck(size_t match_idx)
 {
-    ITERATE (TSeqs, row_i, m_Rows) {
-        ITERATE (CAlnMixSeq::TStarts, st_i, (*row_i)->m_Starts) {
+    NON_CONST_ITERATE (TSeqs, row_i, m_Rows) {
+        ITERATE (CAlnMixStarts, st_i, (*row_i)->GetStarts()) {
             st_i->second->
                 StartItsConsistencyCheck(**row_i,
                                          st_i->first,
@@ -345,6 +350,25 @@ CAlnMixSequences::RowsStartItsContsistencyCheck(size_t match_idx)
 }
 
 
+CAlnMixSeq::CAlnMixSeq(void)
+    : m_DsCnt(0),
+      m_Score(0),
+      m_ChainScore(0),
+      m_StrandScore(0),
+      m_Width(1),
+      m_Frame(-1),
+      m_RefBy(0),
+      m_ExtraRow(0),
+      m_ExtraRowIdx(0),
+      m_AnotherRow(0),
+      m_DsIdx(0),
+      m_ChildIdx(0),
+      m_RowIdx(-1),
+      m_Starts(new CAlnMixStarts())
+{
+};
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -352,6 +376,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2006/02/21 15:58:59  todorov
+* CAlnMixSeq::TStarts -> CAlnMixStarts.
+* + CAlnMixSeq::m_ChildIdx
+*
 * Revision 1.4  2005/06/22 22:14:33  todorov
 * Added an option to process stronger input alns first
 *

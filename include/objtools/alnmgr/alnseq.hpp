@@ -36,7 +36,6 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <objtools/alnmgr/alnsegments.hpp>
 #include <objtools/alnmgr/alnexception.hpp>
 
 
@@ -46,6 +45,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 class CAlnMixSeq;
+class CAlnMixStarts;
 class CAlnMixSegment;
 class CAlnMixMatch;
 class CAlnMixMerger;
@@ -139,23 +139,9 @@ private:
 class NCBI_XALNMGR_EXPORT CAlnMixSeq : public CObject
 {
 public:
-    CAlnMixSeq(void) 
-        : m_DsCnt(0),
-          m_Score(0),
-          m_ChainScore(0),
-          m_StrandScore(0),
-          m_Width(1),
-          m_Frame(-1),
-          m_RefBy(0),
-          m_ExtraRow(0),
-          m_ExtraRowIdx(0),
-          m_AnotherRow(0),
-          m_DsIdx(0),
-          m_RowIdx(-1)
-    {};
+    CAlnMixSeq(void);
 
-    typedef CAlnMixSegment::TStarts TStarts;
-    typedef list<CAlnMixMatch *>                TMatchList;
+    typedef list<CAlnMixMatch *>          TMatchList;
 
     int                   m_DsCnt;
     const CBioseq_Handle* m_BioseqHandle;
@@ -167,16 +153,18 @@ public:
     unsigned              m_Width;
     int                   m_Frame;
     bool                  m_PositiveStrand;
-    TStarts               m_Starts;
     CAlnMixSeq *          m_RefBy;
     CAlnMixSeq *          m_ExtraRow;
     int                   m_ExtraRowIdx;
     CAlnMixSeq *          m_AnotherRow;
-    int                   m_SeqIdx;
     int                   m_DsIdx;
+    int                   m_SeqIdx;
+    int                   m_ChildIdx;
     int                   m_RowIdx;
-    TStarts::iterator     m_StartIt;
     TMatchList            m_MatchList;
+
+    const CAlnMixStarts& GetStarts() const { return *m_Starts; }
+    CAlnMixStarts& SetStarts() { return *m_Starts; }
 
     CSeqVector& GetPlusStrandSeqVector(void)
     {
@@ -216,7 +204,7 @@ public:
                 m_SeqId->AsFastaString() + "\" "
                 "start=" + NStr::IntToString(start) + " "
                 "length=" + NStr::IntToString(len) + ".";
-            NCBI_THROW(CAlnException, eInvalidSegment,
+            NCBI_THROW(CAlnException, eInvalidSeqId,
                        errstr);
         }
     }
@@ -224,6 +212,7 @@ public:
 private:
     CRef<CSeqVector> m_PlusStrandSeqVector;
     CRef<CSeqVector> m_MinusStrandSeqVector;
+    auto_ptr<CAlnMixStarts> m_Starts;
 };
 
 
@@ -237,6 +226,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2006/02/21 15:59:20  todorov
+* CAlnMixSeq::TStarts -> CAlnMixStarts.
+* + CAlnMixSeq::m_ChildIdx
+*
 * Revision 1.5  2005/08/03 18:18:44  jcherry
 * Added export specifiers
 *
