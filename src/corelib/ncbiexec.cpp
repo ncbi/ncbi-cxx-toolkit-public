@@ -207,8 +207,6 @@ int CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
 {
     int status;
     GET_EXEC_ARGS;
-    CDir::SetCwd("c://Perl");
-
 #if defined(NCBI_OS_MSWIN)
     _flushall();
     status = spawnv(s_GetRealMode(mode), cmdname, args);
@@ -361,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2006/02/21 16:13:11  ivanov
+ * Deleted debug code from CExec::SpawnL()
+ *
  * Revision 1.25  2006/01/23 16:20:05  ivanov
  * Flushes all streams on MS Windows before spawn a process.
  * Removed double diagnostic messages.
