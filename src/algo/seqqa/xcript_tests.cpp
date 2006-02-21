@@ -582,15 +582,22 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
                                      CFeat_CI feat_iter,
                                      CSeq_test_result& result)
 {
-    const CSeq_loc& prod_loc = feat_iter->GetOriginalFeature().GetProduct();
-    const CSeq_id& prod_id = sequence::GetId(prod_loc, 0);
-    CSeqVector prod_vec(prod_loc, ctx->GetScope());
-    prod_vec.SetIupacCoding();
-
     string translation;
     CCdregion_translate::TranslateCdregion(translation,
                                            feat_iter->GetOriginalFeature(),
                                            ctx->GetScope(), false);
+    result.SetOutput_data().AddField("length_translation",
+                                     int(translation.size()));
+
+    if (!feat_iter->GetOriginalFeature().CanGetProduct()) {
+        // can't do comparison if there's no product annotated
+        return;
+    }
+
+    const CSeq_loc& prod_loc = feat_iter->GetOriginalFeature().GetProduct();
+    const CSeq_id& prod_id = sequence::GetId(prod_loc, 0);
+    CSeqVector prod_vec(prod_loc, ctx->GetScope());
+    prod_vec.SetIupacCoding();
 
     TSeqPos ident_count = 0;
     for (TSeqPos i = 0;
@@ -602,9 +609,6 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
     
     result.SetOutput_data().AddField("length_annotated_prot_prod",
                                      int(prod_vec.size()));
-    result.SetOutput_data().AddField("length_translation",
-                                     int(translation.size()));
-
     result.SetOutput_data()
         .AddField("fraction_identity",
                   double(ident_count)
@@ -903,6 +907,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/02/21 15:26:45  jcherry
+ * Deal with CDS features that lack an annotated product
+ *
  * Revision 1.21  2006/02/14 20:53:32  jcherry
  * Rearranged ambiguity count to deal with case of no CDS
  *
