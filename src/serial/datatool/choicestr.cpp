@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2006/02/21 19:15:22  gouriano
+* In DoSelect define pool var only when needed
+*
 * Revision 1.54  2006/01/19 18:21:23  gouriano
 * Added possibility to save bit string data in compressed format
 *
@@ -875,8 +878,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate Select method
     {
         methods <<
-            "void "<<methodPrefix<<"DoSelect("STATE_ENUM" index, NCBI_NS_NCBI::CObjectMemoryPool* pool)\n"
-            "{\n";
+            "void "<<methodPrefix<<"DoSelect("STATE_ENUM" index, NCBI_NS_NCBI::CObjectMemoryPool* ";
+        if ( haveUnion || haveObjectPointer ) {
+            ITERATE ( TVariants, i, m_Variants ) {
+                if (!i->attlist && i->memberType == eObjectPointerMember) {
+                    methods << "pool";
+                    break;
+                }
+            }
+        }
+        methods << ")\n{\n";
         if ( haveUnion || haveObjectPointer ) {
             methods <<
                 "    switch ( index ) {\n";
