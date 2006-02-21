@@ -495,7 +495,7 @@ public:
         {
         }
 
-    void Lock(const Interface* object) const
+    void Lock(const Interface* object)
         {
             _ASSERT(!m_ObjectPtr);
             m_ObjectPtr = dynamic_cast<const CObject*>(object);
@@ -505,20 +505,20 @@ public:
             m_ObjectPtr->AddReference();
         }
 
-    void Relock(const Interface* _DEBUG_ARG(object)) const
+    void Relock(const Interface* _DEBUG_ARG(object))
         {
             _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
             m_ObjectPtr->AddReference();
         }
 
-    void Unlock(const Interface* _DEBUG_ARG(object)) const
+    void Unlock(const Interface* _DEBUG_ARG(object))
         {
             _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
             m_ObjectPtr->RemoveReference();
             m_ObjectPtr = 0;
         }
 
-    void UnlockRelease(const Interface* _DEBUG_ARG(object)) const
+    void UnlockRelease(const Interface* _DEBUG_ARG(object))
         {
             _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
             m_ObjectPtr->ReleaseReference();
@@ -1903,6 +1903,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2006/02/21 21:07:42  vasilche
+ * Removed constness from interface locker methods.
+ *
  * Revision 1.67  2006/02/21 14:38:59  vasilche
  * Implemented templates CIRef and CIConstRef.
  *
