@@ -71,6 +71,7 @@
 
 #ifdef _WIN64
 typedef __int64 ssize_t;
+#define HAVE_INTPTR_T
 #else
 typedef   int   ssize_t;
 #endif
