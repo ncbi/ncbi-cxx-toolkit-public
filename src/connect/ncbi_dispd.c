@@ -175,7 +175,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     /* This will also send all the HTTP data, and trigger header callback */
     CONN_Flush(c);
     CONN_Close(c);
-    return data->n_cand != 0;
+    return data->n_cand != 0  ||
+        (!data->disp_fail  &&  net_info->stateless  &&  net_info->firewall);
 }
 
 
@@ -294,9 +295,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     size_t n;
 
     assert(data);
-    if (s_IsUpdateNeeded(data) && !s_Resolve(iter))
+    if (s_IsUpdateNeeded(data)  &&  (!s_Resolve(iter)  ||  !data->n_cand))
         return 0;
-    assert(data->n_cand != 0);
 
     for (n = 0; n < data->n_cand; n++)
         data->cand[n].status = data->cand[n].info->rate;
@@ -405,6 +405,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.77  2006/02/21 14:57:59  lavr
+ * Dispatcher to not require server-infos for stateless firewalled client
+ *
  * Revision 6.76  2006/02/01 17:13:30  lavr
  * Remove spurious definition of g_NCBI_ConnectRandomSeed (ncbi_priv.c has it)
  *
