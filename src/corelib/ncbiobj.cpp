@@ -598,6 +598,18 @@ void CObject::ThrowNullPointerException(void)
 }
 
 
+void CObjectCounterLocker::ReportIncompatibleType(const type_info& type)
+{
+#ifdef _DEBUG
+    ERR_POST(Fatal <<
+             "Type " << type.name() << " must be derived from CObject");
+#else
+    NCBI_THROW(CCoreException, eInvalidArg,
+               string("Type ")+type.name()+" must be derived from CObject");
+#endif
+}
+
+
 END_NCBI_SCOPE
 
 #ifdef USE_DEBUG_NEW
@@ -894,6 +906,9 @@ void  operator delete[](void* ptr, const std::nothrow_t&) throw()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2006/02/21 14:38:59  vasilche
+ * Implemented templates CIRef and CIConstRef.
+ *
  * Revision 1.54  2006/01/09 19:31:49  grichenk
  * Fixed names of env. variables.
  *

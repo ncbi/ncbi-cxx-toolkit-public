@@ -39,6 +39,7 @@
 #include <corelib/ncbicntr.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ddumpable.hpp>
+#include <typeinfo>
 
 /// this relieves us of some nastiness with Win32's version of GetObject(),
 /// which prevents us from using CRef<>::GetObject in lots of places
@@ -449,20 +450,83 @@ void CObject::RemoveReference(void) const
 class CObjectCounterLocker
 {
 public:
+    // Mark object as "locked" from deletion.
     void Lock(const CObject* object) const
         {
             object->AddReference();
         }
 
+    // Mark object as "locked" from deletion if it was already locked by
+    // another locker object.
+    // Preconditions: this locker was assigned from the another locker object.
+    void Relock(const CObject* object) const
+        {
+            Lock(object);
+        }
+
+    // Mark object as "unlocked" for deletion,
+    // delete it if last lock was removed.
     void Unlock(const CObject* object) const
         {
             object->RemoveReference();
         }
 
+    // Mark object as "unlocked" for deletion, but do not delete it.
     void UnlockRelease(const CObject* object) const
         {
             object->ReleaseReference();
         }
+
+    static
+    void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
+};
+
+
+////////////////////////////////////////////////////////////////////////////
+// Locker class for interfaces, later derived from CObject
+////////////////////////////////////////////////////////////////////////////
+
+template<class Interface>
+class CInterfaceObjectLocker
+{
+public:
+    CInterfaceObjectLocker(void)
+        : m_ObjectPtr(0)
+        {
+        }
+
+    void Lock(const Interface* object) const
+        {
+            _ASSERT(!m_ObjectPtr);
+            m_ObjectPtr = dynamic_cast<const CObject*>(object);
+            if ( !m_ObjectPtr ) {
+                CObjectCounterLocker::ReportIncompatibleType(typeid(*object));
+            }
+            m_ObjectPtr->AddReference();
+        }
+
+    void Relock(const Interface* _DEBUG_ARG(object)) const
+        {
+            _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
+            m_ObjectPtr->AddReference();
+        }
+
+    void Unlock(const Interface* _DEBUG_ARG(object)) const
+        {
+            _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
+            m_ObjectPtr->RemoveReference();
+            m_ObjectPtr = 0;
+        }
+
+    void UnlockRelease(const Interface* _DEBUG_ARG(object)) const
+        {
+            _ASSERT(m_ObjectPtr == dynamic_cast<const CObject*>(object));
+            m_ObjectPtr->ReleaseReference();
+            m_ObjectPtr = 0;
+        }
+
+private:
+    const CObject* m_ObjectPtr;
 };
 
 
@@ -508,9 +572,13 @@ public:
 
     /// Copy constructor from an existing CRef object, 
     CRef(const TThisType& ref)
-        : m_Data(ref.m_Data.first(), 0)
+        : m_Data(ref.GetLocker(), 0)
         {
-            x_Set(ref.m_Data.second());
+            TObjectType* newPtr = ref.GetNCPointerOrNull();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+                m_Data.second() = newPtr;
+            }
         }
 
     /// Destructor.
@@ -714,7 +782,19 @@ public:
     /// Assignment operator for references.
     TThisType& operator=(const TThisType& ref)
         {
-            Reset(ref.m_Data.second());
+            TObjectType* oldPtr = m_Data.second();
+            TObjectType* newPtr = ref.m_Data.second();
+            if ( newPtr != oldPtr ) {
+                if ( oldPtr ) {
+                    m_Data.second() = 0;
+                    m_Data.first().Unlock(oldPtr);
+                }
+                if ( newPtr ) {
+                    m_Data.first() = ref.m_Data.first();
+                    m_Data.first().Relock(newPtr);
+                    m_Data.second() = newPtr;
+                }
+            }
             return *this;
         }
 
@@ -1040,16 +1120,24 @@ public:
 
     /// Constructor from an existing CConstRef object, 
     CConstRef(const TThisType& ref)
-        : m_Data(ref.m_Data.first(), 0)
+        : m_Data(ref.GetLocker(), 0)
         {
-            x_Set(ref.m_Data.second());
+            TObjectType* newPtr = ref.GetPointerOrNull();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+                m_Data.second() = newPtr;
+            }
         }
 
     /// Constructor from an existing CRef object, 
     CConstRef(const CRef<C, Locker>& ref)
         : m_Data(ref.GetLocker(), 0)
         {
-            x_Set(ref.GetPointerOrNull());
+            TObjectType* newPtr = ref.GetPointerOrNull();
+            if ( newPtr ) {
+                m_Data.first().Relock(newPtr);
+                m_Data.second() = newPtr;
+            }
         }
 
     /// Destructor.
@@ -1253,7 +1341,19 @@ public:
     /// Assignment operator for const references.
     TThisType& operator=(const TThisType& ref)
         {
-            Reset(ref.m_Data.second());
+            TObjectType* oldPtr = m_Data.second();
+            TObjectType* newPtr = ref.m_Data.second();
+            if ( newPtr != oldPtr ) {
+                if ( oldPtr ) {
+                    m_Data.second() = 0;
+                    m_Data.first().Unlock(oldPtr);
+                }
+                if ( newPtr ) {
+                    m_Data.first() = ref.m_Data.first();
+                    m_Data.first().Relock(newPtr);
+                    m_Data.second() = newPtr;
+                }
+            }
             return *this;
         }
 
@@ -1631,6 +1731,78 @@ CConstRef<C> ConstRef(const C* object)
 
 
 
+template<class Interface, class Locker = CInterfaceObjectLocker<Interface> >
+class CIRef : public CRef<Interface, Locker>
+{
+    typedef CRef<Interface, Locker> TParent;
+public:
+    typedef typename TParent::TObjectType TObjectType;
+    typedef typename TParent::locker_type locker_type;
+    // We have to redefine all constructors
+
+    /// Constructor for null pointer.
+    CIRef(void) THROWS_NONE
+        {
+        }
+
+    /// Constructor for ENull pointer.
+    CIRef(ENull /*null*/) THROWS_NONE
+        {
+        }
+
+    /// Constructor for explicit type conversion from pointer to object.
+    explicit CIRef(TObjectType* ptr)
+        : TParent(ptr)
+        {
+        }
+
+    /// Constructor for explicit type conversion from pointer to object.
+    CIRef(TObjectType* ptr, const locker_type& locker_value)
+        : TParent(ptr, locker_value)
+        {
+        }
+};
+
+
+template<class Interface, class Locker = CInterfaceObjectLocker<Interface> >
+class CConstIRef : public CConstRef<Interface, Locker>
+{
+    typedef CConstRef<Interface, Locker> TParent;
+public:
+    typedef typename TParent::TObjectType TObjectType;
+    typedef typename TParent::locker_type locker_type;
+    // We have to redefine all constructors
+
+    /// Constructor for null pointer.
+    CConstIRef(void) THROWS_NONE
+        {
+        }
+
+    /// Constructor for ENull pointer.
+    CConstIRef(ENull /*null*/) THROWS_NONE
+        {
+        }
+
+    /// Constructor for explicit type conversion from pointer to object.
+    explicit CConstIRef(TObjectType* ptr)
+        : TParent(ptr)
+        {
+        }
+
+    /// Constructor for explicit type conversion from pointer to object.
+    CConstIRef(TObjectType* ptr, const locker_type& locker_value)
+        : TParent(ptr, locker_value)
+        {
+        }
+
+    /// Constructor from an existing CRef object, 
+    CConstIRef(const CIRef<Interface, Locker>& ref)
+        : TParent(ref)
+        {
+        }
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CObjectFor --
@@ -1731,6 +1903,9 @@ END_STD_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.67  2006/02/21 14:38:59  vasilche
+ * Implemented templates CIRef and CIConstRef.
+ *
  * Revision 1.66  2005/06/17 21:37:45  vasilche
  * Fixed type in CRef<>::ReleaseOrNull().
  *
