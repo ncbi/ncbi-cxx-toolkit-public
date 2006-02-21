@@ -46,6 +46,10 @@ class CTSE_ScopeLocker : protected CObjectCounterLocker
 {
 public:
     void Lock(CTSE_ScopeInfo* tse) const;
+    void Relock(CTSE_ScopeInfo* tse) const
+        {
+            Lock(tse);
+        }
 };
 
 

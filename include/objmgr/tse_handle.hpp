@@ -436,6 +436,10 @@ public:
             CObjectCounterLocker::Lock(info);
             info->AddInfoLock();
         }
+    void Relock(CScopeInfo_Base* info) const
+        {
+            Lock(info);
+        }
     void Unlock(CScopeInfo_Base* info) const
         {
             info->RemoveInfoLock();

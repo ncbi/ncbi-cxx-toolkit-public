@@ -126,6 +126,10 @@ public:
             CObjectCounterLocker::Lock(info);
             info->AddLock();
         }
+    void Relock(const CSeq_id_Info* info) const
+        {
+            Lock(info);
+        }
     void Unlock(const CSeq_id_Info* info) const
         {
             info->RemoveLock();
@@ -273,6 +277,9 @@ END_STD_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2006/02/21 14:33:26  vasilche
+* Added Locker::Relock().
+*
 * Revision 1.37  2005/07/14 16:48:49  vasilche
 * Removed unnecessary checks.
 *
