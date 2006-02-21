@@ -95,8 +95,8 @@ PSSMWrapper::PSSMWrapper(const BlockMultipleAlignment *bma) : multiple(bma)
         // use PssmMaker to create PSSM using consensus
         cd_utils::PssmMaker pm(&c, true, true);
         cd_utils::PssmMakerOptions options; // comes with defaults
-        options.requestFrequencyRatios = true;
-        options.scalingFactor = 100;
+        options.requestFrequencyRatios = true;  // necessary for psi-blast
+//        options.scalingFactor = 100;          // do *NOT* use SF other than 1 for psi-blast
         pm.setOptions(options);
         pssm = pm.make();
 
@@ -339,6 +339,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2006/02/21 17:15:07  thiessen
+* tweaks to blast/pssm for proper usage of PSI-BLAST sequence-vs-pssm
+*
 * Revision 1.20  2006/02/10 14:14:59  thiessen
 * add user title to pssm
 *
