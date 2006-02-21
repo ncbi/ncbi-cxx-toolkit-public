@@ -35,7 +35,7 @@
 
 
 #include <corelib/ncbiobj.hpp>
-
+#include <objtools/alnmgr/alnseq.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -46,8 +46,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-class CAlnMixSeq;
-class CAlnMixSequences;
 class CAlnMixSegment;
 
 
@@ -79,7 +77,7 @@ private:
     void x_MinimizeGaps   (TSegmentsContainer& gapped_segs);
 
     TSegments                   m_Segments;
-
+    
     CRef<CAlnMixSequences>      m_AlnMixSequences;
     vector<CRef<CAlnMixSeq> >&  m_Rows;
     list<CRef<CAlnMixSeq> >&    m_ExtraRows;
@@ -87,14 +85,24 @@ private:
 };
 
 
+class NCBI_XALNMGR_EXPORT CAlnMixStarts : public map<TSeqPos, CRef<CAlnMixSegment> >
+{
+public:
+    CAlnMixStarts::const_iterator current;
+};
+
 
 class NCBI_XALNMGR_EXPORT CAlnMixSegment : public CObject
 {
 public:
-    // TStarts really belongs in CAlnMixSeq, but had to move here as
-    // part of a workaround for Compaq's compiler's bogus behavior
-    typedef map<TSeqPos, CRef<CAlnMixSegment> > TStarts;
-    typedef map<CAlnMixSeq*, TStarts::iterator> TStartIterators;
+    struct SSeqComp {
+        bool operator () (const CAlnMixSeq* seq1, const CAlnMixSeq* seq2) const {
+            return seq1->m_SeqIdx < seq2->m_SeqIdx  ||
+                seq1->m_SeqIdx == seq2->m_SeqIdx  &&  
+                seq1->m_ChildIdx < seq2->m_ChildIdx;
+        }
+    };
+    typedef map<CAlnMixSeq*, CAlnMixStarts::iterator, SSeqComp> TStartIterators;
         
     void StartItsConsistencyCheck(const CAlnMixSeq& seq,
                                   const TSeqPos&    start,
@@ -116,6 +124,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2006/02/21 15:57:31  todorov
+* CAlnMixSeq::TStarts -> CAlnMixStarts.
+*
 * Revision 1.3  2005/08/03 18:18:44  jcherry
 * Added export specifiers
 *

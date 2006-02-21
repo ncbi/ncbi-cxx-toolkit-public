@@ -73,7 +73,7 @@ CAlnMixSegments::Build(bool gap_join,
         CAlnMixSeq * refseq = 0;
         while (refseq_it != m_Rows.end()) {
             refseq = *(refseq_it++);
-            if (refseq->m_StartIt != refseq->m_Starts.end()) {
+            if (refseq->GetStarts().current != refseq->GetStarts().end()) {
                 break;
             } else {
                 refseq = 0;
@@ -106,11 +106,11 @@ CAlnMixSegments::Build(bool gap_join,
              << " seq " << refseq->m_SeqIdx << "\n";
 #endif
         // for each refseq segment
-        while (refseq->m_StartIt != refseq->m_Starts.end()) {
+        while (refseq->GetStarts().current != refseq->GetStarts().end()) {
             stack< CRef<CAlnMixSegment> > seg_stack;
-            seg_stack.push(refseq->m_StartIt->second);
+            seg_stack.push(refseq->GetStarts().current->second);
 #if _DEBUG
-            const TSeqPos& refseq_start = refseq->m_StartIt->first;
+            const TSeqPos& refseq_start = refseq->GetStarts().current->first;
 #if _DEBUG && _ALNMGR_TRACE
             cerr << "  [row " << refseq->m_RowIdx
                  << " seq " << refseq->m_SeqIdx
@@ -128,9 +128,9 @@ CAlnMixSegments::Build(bool gap_join,
 
                     CAlnMixSeq * row = start_its_i->first;
 
-                    if (row->m_StartIt != start_its_i->second) {
+                    if (row->GetStarts().current != start_its_i->second) {
 #if _DEBUG
-                        const TSeqPos& curr_row_start = row->m_StartIt->first;
+                        const TSeqPos& curr_row_start = row->GetStarts().current->first;
                         const TSeqPos& row_start      = start_its_i->second->first;
 
                         if (row->m_PositiveStrand ?
@@ -154,7 +154,7 @@ CAlnMixSegments::Build(bool gap_join,
                             NCBI_THROW(CAlnException, eMergeFailure, errstr);
                         }
 #endif
-                        seg_stack.push(row->m_StartIt->second);
+                        seg_stack.push(row->GetStarts().current->second);
 #if _DEBUG && _ALNMGR_TRACE
                         cerr << "  [row " << row->m_RowIdx
                              << " seq " << row->m_SeqIdx
@@ -183,7 +183,7 @@ CAlnMixSegments::Build(bool gap_join,
                         CAlnMixSeq * row = start_its_i->first;
 
 #if _DEBUG
-                        const TSeqPos& curr_row_start = row->m_StartIt->first;
+                        const TSeqPos& curr_row_start = row->GetStarts().current->first;
                         const TSeqPos& row_start      = start_its_i->second->first;
 
                         if (row->m_PositiveStrand  &&
@@ -210,12 +210,12 @@ CAlnMixSegments::Build(bool gap_join,
 #endif
 
                         if (row->m_PositiveStrand) {
-                            row->m_StartIt++;
+                            row->SetStarts().current++;
                         } else {
-                            if (row->m_StartIt == row->m_Starts.begin()) {
-                                row->m_StartIt = row->m_Starts.end();
+                            if (row->SetStarts().current == row->GetStarts().begin()) {
+                                row->SetStarts().current = row->GetStarts().end();
                             } else {
-                                row->m_StartIt--;
+                                row->SetStarts().current--;
                             }
                         }
                     }
@@ -260,7 +260,7 @@ CAlnMixSegments::Build(bool gap_join,
                     } // if (seg_stack.size() > 1)
                 } // if (popseg)
             } // while ( !seg_stack.empty() )
-        } // while (refseq->m_StartIt != refseq->m_Starts.end())
+        } // while (refseq->GetStarts().current != refseq->GetStarts().end())
         orig_refseq = false;
     } // while (true)
 
@@ -306,8 +306,8 @@ CAlnMixSegments::FillUnalignedRegions()
                         new_start = start_plus_len;
                         seg->m_Len = (prev_start - new_start) / width;
                     }                            
-                    row->m_Starts[new_start] = seg;
-                    CAlnMixSeq::TStarts::iterator start_i =
+                    row->SetStarts()[new_start] = seg;
+                    CAlnMixStarts::iterator start_i =
                         start_its_i->second;
                     seg->m_StartIts[row] = 
                         row->m_PositiveStrand ?
@@ -509,8 +509,8 @@ CAlnMixSegments::x_MinimizeGaps(TSegmentsContainer& gapped_segs)
                             seq->m_Width;
 
                         // create the bindings:
-                        seq->m_Starts[this_start] = seg;
-                        seg->m_StartIts[seq] = seq->m_Starts.find(this_start);
+                        seq->SetStarts()[this_start] = seg;
+                        seg->m_StartIts[seq] = seq->SetStarts().find(this_start);
                         len_i++;
                         len_so_far += seg->m_Len;
                     }
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2006/02/21 15:57:10  todorov
+* CAlnMixSeq::TStarts -> CAlnMixStarts.
+*
 * Revision 1.7  2005/12/13 23:07:59  todorov
 * Perform m_AlnMixSequences->RowsStartItsContsistencyCheck(0);
 * only #if _DEBUG && _ALNMGR_DEBUG

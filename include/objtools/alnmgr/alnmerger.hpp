@@ -39,6 +39,7 @@
 #include <objtools/alnmgr/alnmatch.hpp>
 #include <objtools/alnmgr/alndiag.hpp>
 #include <objtools/alnmgr/task_progress.hpp>
+#include <objtools/alnmgr/alnsegments.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -48,7 +49,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CAlnMixMatches;
 class CAlnMixMatch;
-class CAlnMixSegments;
 class CAlnMixSequences;
 class CAlnMixSeq;
 
@@ -194,6 +194,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2006/02/21 15:56:21  todorov
+* CAlnMixSeq::TStarts -> CAlnMixStarts.
+*
 * Revision 1.9  2005/08/18 17:03:50  todorov
 * Derive from CTaskProgressReporter
 *
