@@ -166,10 +166,10 @@ C_xDriverMgr::GetDriverContext(
         throw;
     }
     catch ( const exception& e ) {
-        DATABASE_DRIVER_FATAL( driver_name + " is not available :: " + e.what(), 300 );
+        DATABASE_DRIVER_ERROR( driver_name + " is not available :: " + e.what(), 300 );
     }
     catch ( ... ) {
-        DATABASE_DRIVER_FATAL( driver_name + " was unable to load due an unknown error", 300 );
+        DATABASE_DRIVER_ERROR( driver_name + " was unable to load due an unknown error", 300 );
     }
 
     return drv;
@@ -251,7 +251,7 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
         }
         FDriverRegister reg = entry_point();
         if(!reg) {
-            DATABASE_DRIVER_FATAL( "driver reports an unrecoverable error "
+            DATABASE_DRIVER_ERROR( "driver reports an unrecoverable error "
                                "(e.g. conflict in libraries)", 300 );
         }
         reg(*this);
@@ -364,10 +364,10 @@ Get_I_DriverContext(const string& driver_name, const map<string, string>* attr)
         throw;
     }
     catch ( const exception& e ) {
-        DATABASE_DRIVER_FATAL( driver_name + " is not available :: " + e.what(), 300 );
+        DATABASE_DRIVER_ERROR( driver_name + " is not available :: " + e.what(), 300 );
     }
     catch ( ... ) {
-        DATABASE_DRIVER_FATAL( driver_name + " was unable to load due an unknown error", 300 );
+        DATABASE_DRIVER_ERROR( driver_name + " was unable to load due an unknown error", 300 );
     }
 
     return drv;
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/02/22 16:05:35  ssikorsk
+ * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
+ *
  * Revision 1.30  2005/11/02 14:32:39  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

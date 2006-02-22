@@ -782,7 +782,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
                         for (int i = 0; i < test_size; ++i) {
                             strm >> j;
                             if (i == 5000) {
-                                DATABASE_DRIVER_FATAL( "Exception safety test.", 0 );
+                                DATABASE_DRIVER_ERROR( "Exception safety test.", 0 );
                             }
                             BOOST_CHECK_EQUAL(strm.good(), true);
                             BOOST_CHECK_EQUAL(strm.eof(), false);
@@ -3620,6 +3620,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.68  2006/02/22 16:05:35  ssikorsk
+ * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
+ *
  * Revision 1.67  2006/02/22 15:29:48  ssikorsk
  * Renamed Test_GetColumnNo to Test_GetTotalColumns.
  *

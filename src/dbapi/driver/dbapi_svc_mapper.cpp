@@ -95,7 +95,7 @@ make_server(const string& specification, double& preference)
     }
     
     if (server.empty() && host.empty()) {
-        DATABASE_DRIVER_FATAL("Either server name or host name expected.", 110100 );
+        DATABASE_DRIVER_ERROR("Either server name or host name expected.", 110100 );
     }
     if (server.empty() && !host.empty()) {
         server = host;
@@ -709,6 +709,9 @@ CDBServiceMapperTraits<CDBUniversalMapper>::GetName(void)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/02/22 16:05:35  ssikorsk
+ * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
+ *
  * Revision 1.4  2006/01/26 12:10:32  ssikorsk
  * Added implementation of CDBUDRandomMapper, CDBUDPriorityMapper and CDBUniversalMapper.
  *

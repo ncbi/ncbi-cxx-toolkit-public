@@ -226,7 +226,7 @@ CDBConnectionFactory::DispatchServerName(
                 return NULL;
             }
         } else if (conn_attr.pool_name.empty()) {
-            DATABASE_DRIVER_FATAL
+            DATABASE_DRIVER_ERROR
                 ("Neither server name nor pool name provided.", 111000);
         }
 
@@ -422,6 +422,9 @@ CTrivialConnValidator::Validate(CDB_Connection& conn)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2006/02/22 16:05:35  ssikorsk
+ * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
+ *
  * Revision 1.4  2006/01/26 12:08:27  ssikorsk
  * Improved implementation of the class CTrivialConnValidator.
  *
