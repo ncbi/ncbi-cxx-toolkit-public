@@ -170,6 +170,7 @@ public:
     void Test_UNIQUE(void);
     void Test_DateTime(void);
     void Test_Insert(void);
+    void Test_HasMoreResults(void);
 
 public:
     void Test_Exception_Safety(void);
@@ -226,6 +227,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.35  2006/02/22 17:11:11  ssikorsk
+ * Added Test_HasMoreResults to the test-suite.
+ *
  * Revision 1.34  2006/02/22 15:29:29  ssikorsk
  * Renamed Test_GetColumnNo to Test_GetTotalColumns.
  *

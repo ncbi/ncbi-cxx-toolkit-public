@@ -297,6 +297,31 @@ bool CTestErrHandler::HandleIt(CDB_Exception* ex)
     return false;
 }
 
+
+/////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
+void 
+CDBAPIUnitTest::Test_HasMoreResults(void)
+{
+    string sql;
+    auto_ptr<IStatement> auto_stmt( m_Conn->GetStatement() );
+    
+    // First test ...
+    {
+        auto_stmt->SendSql( "exec sp_spaceused @updateusage='true'" );
+
+        BOOST_CHECK( auto_stmt->HasMoreResults() );
+        BOOST_CHECK( auto_stmt->HasRows() );
+        auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() ); 
+        BOOST_CHECK( rs.get() != NULL );
+        
+        while (auto_stmt->HasMoreResults()) {
+            if (auto_stmt->HasRows()) {
+                auto_ptr<IResultSet> rs( auto_stmt->GetResultSet() );
+            }
+        }
+    }
+}
+
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
 CDBAPIUnitTest::Test_Insert(void)
@@ -3356,6 +3381,11 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 
     add(tc_init);
 
+    // development ....
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_HasMoreResults, DBAPIInstance);
+    tc->depends_on(tc_init);
+    add(tc);
+    
     add(BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_Variant, DBAPIInstance));
 
     tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::TestGetRowCount, DBAPIInstance);
@@ -3620,6 +3650,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.69  2006/02/22 17:11:24  ssikorsk
+ * Added Test_HasMoreResults to the test-suite.
+ *
  * Revision 1.68  2006/02/22 16:05:35  ssikorsk
  * DATABASE_DRIVER_FALAL --> DATABASE_DRIVER_ERROR
  *
