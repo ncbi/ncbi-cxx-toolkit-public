@@ -438,6 +438,8 @@ public:
 
     /// Check old/new format flag (for compatibility only)
     static bool IsSetOldPostFormat(void);
+    /// Set old/new format flag
+    static void SetOldPostFormat(bool value);
 
     /// Set username property
     /// @sa SetDiagUserAndHost
@@ -1327,6 +1329,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.100  2006/02/22 16:37:46  grichenk
+ * Added CDiagContext::SetOldPostFormat()
+ *
  * Revision 1.99  2006/01/30 19:54:32  grichenk
  * Added SetUsername() and SetHostname() to CDiagContext.
  *

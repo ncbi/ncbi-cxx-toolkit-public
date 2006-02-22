@@ -372,6 +372,12 @@ bool CDiagContext::IsSetOldPostFormat(void)
 }
 
 
+void CDiagContext::SetOldPostFormat(bool value)
+{
+    TOldPostFormatParam::SetDefault(value);
+}
+
+
 void CDiagContext::SetUsername(const string& username)
 {
     SetProperty("username", username);
@@ -1923,6 +1929,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.109  2006/02/22 16:37:46  grichenk
+ * Added CDiagContext::SetOldPostFormat()
+ *
  * Revision 1.108  2006/01/30 19:54:32  grichenk
  * Added SetUsername() and SetHostname() to CDiagContext.
  *
