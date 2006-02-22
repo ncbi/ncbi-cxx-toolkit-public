@@ -313,6 +313,40 @@ void CDirEntry::SplitPath(const string& path, string* dir,
 }
 
 
+void CDirEntry::SplitPathEx(const string& path,
+                            string* disk, string* dir,
+                            string* base, string* ext)
+{
+    size_t start_pos = 0;
+
+    // Get disk
+    if ( disk ) {
+        if ( isalpha((unsigned char)path[0])  &&  path[1] == ':' ) {
+            *disk = path.substr(0, 2);
+            start_pos = 2;
+        } else {
+            *disk = kEmptyStr;
+        }
+    }
+    // Get file name
+    size_t pos = path.find_last_of(ALL_OS_SEPARATORS);
+    string filename = (pos == NPOS) ? path : path.substr(pos+1);
+    // Get dir
+    if ( dir ) {
+        *dir = (pos == NPOS) ? kEmptyStr : 
+                               path.substr(start_pos, pos - start_pos + 1);
+    }
+    // Split file name to base and extension
+    pos = filename.rfind('.');
+    if ( base ) {
+        *base = (pos == NPOS) ? filename : filename.substr(0, pos);
+    }
+    if ( ext ) {
+        *ext = (pos == NPOS) ? kEmptyStr : filename.substr(pos);
+    }
+}
+
+
 string CDirEntry::MakePath(const string& dir, const string& base, 
                            const string& ext)
 {
@@ -530,7 +564,7 @@ string CDirEntry::CreateRelativePath( const string& path_from,
 
 string CDirEntry::ConvertToOSPath(const string& path)
 {
-    // Not process empty and absolute path
+    // Not process empty or absolute path
     if ( path.empty() || IsAbsolutePathEx(path) ) {
         return path;
     }
@@ -3887,6 +3921,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.138  2006/02/22 19:40:08  ivanov
+ * + CDirEntry::SplitPathEx
+ *
  * Revision 1.137  2006/01/23 15:25:13  ivanov
  * + CDir::SetCwd() -- change the current working directory
  *

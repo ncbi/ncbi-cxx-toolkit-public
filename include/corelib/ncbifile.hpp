@@ -139,7 +139,7 @@ public:
 /// - base - file name without ext ("autoexec")
 /// - ext  - file extension        (".bat" - whatever goes after a last dot)
 ///
-/// Supported filename formats:  MS DOS/Windows, UNIX, and MAC.
+/// Supported filename formats:  MS DOS/Windows, UNIX.
 
 class NCBI_XNCBI_EXPORT CDirEntry
 {
@@ -185,6 +185,27 @@ public:
     ///   (example: ".bat").
     static void SplitPath(const string& path,
                           string* dir = 0, string* base = 0, string* ext = 0);
+
+    /// Split a path string into its basic components.
+    ///
+    /// Note that the arguments are not OS-specific.
+    /// @param path
+    ///   Path string to be split.
+    /// @param disk
+    ///   Disk name if present like "C:" (MS Windows paths only),
+    ///   otherwise empty string.
+    /// @param dir
+    ///   The directory component that is returned. This will always have
+    ///   a terminating path separator (example: "/usr/local/").
+    /// @param base
+    ///   File name with both directory (if any) and extension (if any)
+    ///   parts stripped.
+    /// @param ext
+    ///   The extension component (if any), always has a leading dot
+    ///   (example: ".bat").
+    static void SplitPathEx(const string& path,
+                            string* disk = 0, string* dir = 0,
+                            string* base = 0, string* ext = 0);
 
     /// Get the directory component for this directory entry.
     string GetDir (void) const;
@@ -238,7 +259,7 @@ public:
 
     /// Check if the "path" is absolute for any OS.
     ///
-    /// Note that the "path" can be for any OS (MSWIN, UNIX, MAC).
+    /// Note that the "path" can be for any OS (MSWIN, UNIX).
     static bool IsAbsolutePathEx(const string& path);
 
     /// Create a relative path between two points in the file
@@ -2645,6 +2666,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2006/02/22 19:39:56  ivanov
+ * + CDirEntry::SplitPathEx
+ *
  * Revision 1.73  2006/01/23 15:24:56  ivanov
  * + CDir::SetCwd() -- change the current working directory
  *
