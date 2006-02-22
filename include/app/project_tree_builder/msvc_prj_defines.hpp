@@ -35,7 +35,6 @@
 /// MSVC 7.10 project defines
 #define MSVC_PROJECT_FILE_EXT   ".vcproj"
 
-#define MSVC_PROJECT_PLATFORM       "Win32"
 #define MSVC_PROJECT_PROJECT_TYPE   "Visual C++"
 #define MSVC_PROJECT_KEYWORD_WIN32  "Win32Proj"
 
@@ -60,6 +59,9 @@
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2006/02/22 17:32:44  gouriano
+ * Get ready for 64 bits platform
+ *
  * Revision 1.9  2006/01/10 17:39:42  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

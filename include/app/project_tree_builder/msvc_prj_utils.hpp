@@ -173,7 +173,11 @@ class CMsvc7RegSettings
 public:
     enum EMsvcVersion {
         eMsvc710 = 0,
-        eMsvc800express
+        eMsvc800
+    };
+    enum EMsvcPlatform {
+        eMsvcWin32 = 0,
+        eMsvcX64
     };
 
     CMsvc7RegSettings(void);
@@ -188,10 +192,14 @@ public:
 
     static EMsvcVersion    GetMsvcVersion(void);
     static string          GetMsvcSection(void);
+    static EMsvcPlatform   GetMsvcPlatform(void);
+    static string          GetMsvcPlatformName(void);
+
     string    GetProjectFileFormatVersion(void) const;
     string    GetSolutionFileFormatVersion(void) const;
 private:
     static EMsvcVersion   sm_MsvcVersion;
+    static EMsvcPlatform  sm_MsvcPlatform;
     CMsvc7RegSettings(const CMsvc7RegSettings&);
     CMsvc7RegSettings& operator= (const CMsvc7RegSettings&);
 };
@@ -485,6 +493,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2006/02/22 17:32:44  gouriano
+ * Get ready for 64 bits platform
+ *
  * Revision 1.30  2006/01/10 17:39:42  gouriano
  * Corrected solution generation for MSVC 2005 Express
  *

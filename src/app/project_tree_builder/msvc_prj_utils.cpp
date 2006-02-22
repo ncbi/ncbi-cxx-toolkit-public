@@ -311,10 +311,18 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
 //-----------------------------------------------------------------------------
 CMsvc7RegSettings::EMsvcVersion CMsvc7RegSettings::sm_MsvcVersion =
 #if _MSC_VER >= 1400
-    CMsvc7RegSettings::eMsvc800express;
+    CMsvc7RegSettings::eMsvc800;
 #else
     CMsvc7RegSettings::eMsvc710;
 #endif
+
+CMsvc7RegSettings::EMsvcPlatform CMsvc7RegSettings::sm_MsvcPlatform =
+#ifdef _WIN64
+    CMsvc7RegSettings::eMsvcX64;
+#else
+    CMsvc7RegSettings::eMsvcWin32;
+#endif
+
 
 CMsvc7RegSettings::EMsvcVersion  CMsvc7RegSettings::GetMsvcVersion(void)
 {
@@ -326,8 +334,20 @@ string CMsvc7RegSettings::GetMsvcSection(void)
     if (GetMsvcVersion() == eMsvc710) {
         return string(MSVC_REG_SECTION) + "710";
     } else {
-        return string(MSVC_REG_SECTION) + "800exp";
+        return string(MSVC_REG_SECTION) + "800";
     }
+}
+CMsvc7RegSettings::EMsvcPlatform  CMsvc7RegSettings::GetMsvcPlatform(void)
+{
+    return sm_MsvcPlatform;
+}
+
+string CMsvc7RegSettings::GetMsvcPlatformName(void)
+{
+    if (GetMsvcPlatform() == eMsvcX64) {
+        return "x64";
+    }
+    return "Win32";
 }
 
 CMsvc7RegSettings::CMsvc7RegSettings(void)
@@ -381,6 +401,7 @@ string GetOpt(const CNcbiRegistry& registry,
     string spec = config.m_Debug ? "debug": "release";
     list<string> entries;
     entries.push_front(section);
+    entries.push_front(section + "." + CMsvc7RegSettings::GetMsvcPlatformName());
     entries.push_front(section + "." + build);
     entries.push_front(section + "." + spec);
     entries.push_front(section + "." + build + "." + spec);
@@ -398,7 +419,7 @@ string GetOpt(const CNcbiRegistry& registry,
 
 string ConfigName(const string& config)
 {
-    return config +'|'+ MSVC_PROJECT_PLATFORM;
+    return config +'|'+ CMsvc7RegSettings::GetMsvcPlatformName();
 }
 
 
@@ -925,7 +946,7 @@ void CreateUtilityProject(const string&            name,
     {{
         //Platforms
          CRef<CPlatform> platform(new CPlatform(""));
-         platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
+         platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
          project->SetPlatforms().SetPlatform().push_back(platform);
     }}
 
@@ -1109,6 +1130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/02/22 17:33:23  gouriano
+ * Get ready for 64 bits platform
+ *
  * Revision 1.45  2006/01/24 21:27:57  gouriano
  * Undo the last change
  *

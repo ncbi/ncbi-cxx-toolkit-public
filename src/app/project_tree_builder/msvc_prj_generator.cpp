@@ -87,7 +87,7 @@ void CMsvcProjectGenerator::Generate(CProjItem& prj)
     // Platforms
     {{
         CRef<CPlatform> platform(new CPlatform(""));
-        platform->SetAttlist().SetName(MSVC_PROJECT_PLATFORM);
+        platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
         xmlprj.SetPlatforms().SetPlatform().push_back(platform);
     }}
 
@@ -482,6 +482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2006/02/22 17:33:23  gouriano
+ * Get ready for 64 bits platform
+ *
  * Revision 1.45  2006/02/15 19:47:24  gouriano
  * Exclude projects with unmet requirements from BUILD-ALL
  *

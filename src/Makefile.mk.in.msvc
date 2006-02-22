@@ -1,5 +1,5 @@
 [Common]
-Version=7.10
+#Version=7.10 8.00
 
 
 [Compiler]
@@ -10,7 +10,6 @@ StructMemberAlignment=0
 UsePrecompiledHeader=0
 CallingConvention=0
 CompileAs=0
-Detect64BitPortabilityProblems=FALSE
 IgnoreStandardIncludePath=FALSE
 StringPooling=FALSE
 MinimalRebuild=
@@ -20,6 +19,12 @@ RuntimeTypeInfo=TRUE
 DisableSpecificWarnings=
 UndefinePreprocessorDefinitions=
 AdditionalOptions=
+
+[Compiler.Win32]
+Detect64BitPortabilityProblems=FALSE
+
+[Compiler.x64]
+Detect64BitPortabilityProblems=TRUE
 
 [Compiler.debug]
 DebugInformationFormat=3
@@ -50,12 +55,17 @@ EnableFunctionLevelLinking=TRUE
 LinkIncremental=1
 AdditionalLibraryDirectories=
 SubSystem=1
-TargetMachine=1
 AdditionalOptions=
 ProgramDatabaseFile=
 ImportLibrary=
 IgnoreAllDefaultLibraries=FALSE
 IgnoreDefaultLibraryNames=FALSE
+
+[Linker.Win32]
+TargetMachine=1
+
+[Linker.x64]
+TargetMachine=17
 
 [Linker.debug]
 GenerateDebugInformation=TRUE
