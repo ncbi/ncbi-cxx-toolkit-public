@@ -1,5 +1,5 @@
 @ECHO OFF
-REM $Id: build_exec.bat,v 1.7 2006/02/09 16:11:00 ivanov Exp $
+REM $Id: build_exec.bat,v 1.8 2006/02/22 15:14:41 gouriano Exp $
 REM ===========================================================================
 REM 
 REM                            PUBLIC DOMAIN NOTICE
@@ -44,4 +44,4 @@ exit 1
 :be_build
 rem Next command should be executed last! No other code after it, please.
 
-vcexpress %1 /%2 %3 /project "%4" /out "%5"
+%DEVENV% %1 /%2 %3 /project "%4" /out "%5"

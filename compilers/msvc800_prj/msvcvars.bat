@@ -1,9 +1,14 @@
 @echo off
 REM
-REM $Id: msvcvars.bat,v 1.2 2006/01/26 19:40:25 gouriano Exp $
+REM $Id: msvcvars.bat,v 1.3 2006/02/22 15:14:41 gouriano Exp $
 REM
 
-@if not "%VSINSTALLDIR%"=="" goto end
+@if not "%VSINSTALLDIR%"=="" goto devenv
 @call "%VS80COMNTOOLS%vsvars32.bat"
+
+:devenv
+
+if exist "%VS80COMNTOOLS%..\IDE\VCExpress.*" set DEVENV="%VS80COMNTOOLS%..\IDE\VCExpress"
+if exist "%VS80COMNTOOLS%..\IDE\devenv.*" set DEVENV="%VS80COMNTOOLS%..\IDE\devenv"
 
 :end
