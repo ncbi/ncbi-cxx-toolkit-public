@@ -708,7 +708,9 @@ static void s_FillCdsStartPosition(string& line, string& concat_exon,
         if(feat_strand == eNa_strand_minus){
             //remember the amino acid in this case goes backward
             //therefore we count backward too
-            if(isalpha((unsigned char) concat_exon[concat_exon.size() -1 - i])){
+            
+            int pos = concat_exon.size() -1 - i;
+            if(pos >= 0 && isalpha((unsigned char) concat_exon[pos])){
                 previous_num_letter ++;
             }
             
@@ -3060,6 +3062,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.103  2006/02/22 19:51:46  jianye
+*never compare size_t to 0
+*
 *Revision 1.102  2006/02/21 15:15:14  jianye
 *eMultiAlign to eMergeAlign and add seqid hyperlink
 *
