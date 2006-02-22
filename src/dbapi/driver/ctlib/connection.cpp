@@ -176,7 +176,7 @@ CDB_CursorCmd* CTL_Connection::Cursor(const string& cursor_name,
 CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                              size_t data_size, bool log_it)
 {
-    CHECK_DRIVER_FATAL( !data_size, "wrong (zero) data size", 110092 );
+    CHECK_DRIVER_ERROR( !data_size, "wrong (zero) data size", 110092 );
 
     I_ITDescriptor* p_desc= 0;
 
@@ -570,7 +570,7 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection* con, CS_COMMAND* cmd,
 
 size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
-    CHECK_DRIVER_FATAL( 
+    CHECK_DRIVER_ERROR( 
         !pChunk  ||  !nof_bytes, 
         "wrong (zero) arguments", 
         190000 );
@@ -695,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/02/22 15:56:40  ssikorsk
+ * CHECK_DRIVER_FATAL --> CHECK_DRIVER_ERROR
+ *
  * Revision 1.23  2006/02/22 15:15:50  ssikorsk
  * *** empty log message ***
  *

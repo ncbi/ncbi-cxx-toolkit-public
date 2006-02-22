@@ -332,7 +332,7 @@ bool CTL_BCPInCmd::SendRow()
         return true;
     default:
         m_HasFailed = true;
-        CHECK_DRIVER_FATAL( m_HasFailed, "blk_rowxfer failed", 123007 );
+        CHECK_DRIVER_ERROR( m_HasFailed, "blk_rowxfer failed", 123007 );
     }
 
     return false;
@@ -431,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/02/22 15:56:39  ssikorsk
+ * CHECK_DRIVER_FATAL --> CHECK_DRIVER_ERROR
+ *
  * Revision 1.14  2006/02/22 15:15:50  ssikorsk
  * *** empty log message ***
  *

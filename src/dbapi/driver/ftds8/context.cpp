@@ -116,7 +116,7 @@ CTDSContext::CTDSContext(DBINT version)
     }
 #endif
 
-    CHECK_DRIVER_FATAL( 
+    CHECK_DRIVER_ERROR( 
         dbinit() != SUCCEED,
         "dbinit failed", 
         200001 );
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2006/02/22 15:56:40  ssikorsk
+ * CHECK_DRIVER_FATAL --> CHECK_DRIVER_ERROR
+ *
  * Revision 1.57  2006/02/22 15:15:51  ssikorsk
  * *** empty log message ***
  *
