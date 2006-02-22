@@ -51,6 +51,7 @@ class NCBI_XBLAST_EXPORT CObjMgr_QueryFactory : public IQueryFactory
 {
 public:
     CObjMgr_QueryFactory(TSeqLocVector& queries);
+    CObjMgr_QueryFactory(CBlastQueryVector & queries);
     CObjMgr_QueryFactory(CRef<objects::CSeq_loc> seqloc);
     
     /// FIXME: perhaps this can be changed to CSeq_intervals
@@ -64,6 +65,8 @@ protected:
 
 private:
     TSeqLocVector* m_SSeqLocVector;
+    CRef<CBlastQueryVector> m_QueryVector;
+    
     const TSeqLocs* m_SeqLocs;
     const bool m_OwnSeqLocs;
 };

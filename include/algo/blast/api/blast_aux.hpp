@@ -163,6 +163,24 @@ typedef list< CRef<CSeqLocInfo> > TMaskedQueryRegions;
 /// @note this supports tra
 typedef vector< TMaskedQueryRegions > TSeqLocInfoVector;
 
+
+/// Build a TMaskedQueryRegions from a Packed CSeq_loc.
+/// @param sloc Seq-loc describing masked query regions.
+/// @return List of masked query regions.
+TMaskedQueryRegions
+PackedSeqLocToMaskedQueryRegions(CConstRef<objects::CSeq_loc> sloc);
+
+
+/// Interface to build a CSeq-loc from a TMaskedQueryRegion; this
+/// method always throws an exception, because conversion in this
+/// direction can be lossy.  The conversion could be supported for
+/// cases where it can be done safely, but it might be better to
+/// convert the calling code to use a CBlastQueryVector.
+
+CRef<objects::CSeq_loc>
+MaskedQueryRegionsToPackedSeqLoc( const TMaskedQueryRegions & sloc);
+
+
 /// Converts a BlastMaskLoc internal structure into an object returned by the 
 /// C++ API.
 /// @param program Type of BLAST program [in]
@@ -272,6 +290,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.68  2006/02/22 18:18:35  bealer
+* - Blastx filtering support.
+*
 * Revision 1.67  2005/12/22 16:44:48  camacho
 * added typedef for masked query regions
 *

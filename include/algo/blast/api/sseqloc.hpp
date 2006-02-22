@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
@@ -47,14 +48,14 @@ struct SSeqLoc {
     /// The types of Seq-loc currently supported are: whole, seq-interval...
     /// @todo FIXME Complete the list of supported seq-locs
     CConstRef<objects::CSeq_loc>     seqloc;
-
+    
     /// Scope where the sequence referenced can be found by the toolkit's
     /// object manager
     mutable CRef<objects::CScope>    scope;
-
+    
     /// Seq-loc describing regions to mask in the seqloc field
     CConstRef<objects::CSeq_loc>     mask;
-
+    
     SSeqLoc()
         : seqloc(), scope(), mask() {}
     SSeqLoc(const objects::CSeq_loc* sl, objects::CScope* s)
@@ -72,7 +73,181 @@ struct SSeqLoc {
 /// Vector of sequence locations
 typedef vector<SSeqLoc>   TSeqLocVector;
 
+
+/// Search Query
+///
+/// This class represents the data relevant to one query in a blast
+/// search.  The types of Seq-loc currently supported are "whole" and
+/// "int".  The scope is expected to contain this Seq-loc, and the
+/// mask represents the regions of this query that are disabled for
+/// this search, or for some frames of this search, via one of several
+/// algorithms, or that are specified by the user as masked regions.
+class CBlastSearchQuery : public CObject {
+public:
+    /// Constructor
+    ///
+    /// Build a CBlastSearchQuery object.
+    ///
+    /// @param sl The query itself.
+    /// @param sc The scope containing the query.
+    /// @param m Regions of the query that are masked.
+    CBlastSearchQuery(const objects::CSeq_loc & sl,
+                      objects::CScope         & sc,
+                      TMaskedQueryRegions       m)
+        : seqloc(& sl), scope(& sc), mask(m)
+    {
+    }
+    
+    /// Default constructor
+    ///
+    /// This is necessary in order to add this type to a std::vector.
+    CBlastSearchQuery()
+    {
+    }
+    
+    /// Get the query Seq-loc.
+    /// @return The Seq-loc representing the query
+    CConstRef<objects::CSeq_loc> GetQuerySeqLoc() const
+    {
+        return seqloc;
+    }
+    
+    /// Get the query CScope.
+    /// @return The CScope containing the query
+    CRef<objects::CScope> GetScope() const
+    {
+        return scope;
+    }
+    
+    /// Get the masked query regions.
+    ///
+    /// The masked regions of the query, or of some frames or strands of the
+    /// query, are returned.
+    ///
+    /// @return The masked regions of the query.
+    TMaskedQueryRegions GetMaskedRegions() const
+    {
+        return mask;
+    }
+    
+    /// Set the masked query regions.
+    ///
+    /// The indicated set of masked regions is applied to this query,
+    /// replacing any existing masked regions.
+    ///
+    /// @param mqr The set of regions to mask.
+    void SetMaskedRegions(TMaskedQueryRegions mqr)
+    {
+        mask = mqr;
+    }
+    
+    /// Masked a region of this query.
+    ///
+    /// The CSeqLocInfo object is added to the list of masked regions
+    /// of this query.
+    ///
+    /// @param sli A CSeqLocInfo indicating the region to mask.
+    void AddMask(CRef<CSeqLocInfo> sli)
+    {
+        mask.push_back(sli);
+    }
+    
+private:
+    /// The Seq-loc representing the query.
+    CConstRef<objects::CSeq_loc> seqloc;
+    
+    /// This scope contains the query.
+    mutable CRef<objects::CScope> scope;
+    
+    /// These regions of the query are masked.
+    TMaskedQueryRegions mask;
+};
+
+
+/// Query Vector
+///
+/// This class represents the data relevant to all queries in a blast
+/// search.  The queries are represented as CBlastSearchQuery objects.
+/// Each contains a Seq-loc, scope, and a list of filtered regions.
+
+class CBlastQueryVector : public CObject {
+public:
+    /// Add a query to the set.
+    ///
+    /// The CBlastSearchQuery is added to the list of queries for this
+    /// search.
+    ///
+    /// @param q A query to add to the set.
+    void AddQuery(CRef<CBlastSearchQuery> q)
+    {
+        m_Queries.push_back(q);
+    }
+    
+    /// Returns true if this query vector is empty.
+    bool Empty() const
+    {
+        return m_Queries.empty();
+    }
+    
+    /// Returns the number of queries found in this query vector.
+    int Size() const
+    {
+        return m_Queries.size();
+    }
+    
+    /// Get the query Seq-loc for a query by index.
+    /// @param i The index of a query.
+    /// @return The Seq-loc representing the query.
+    CConstRef<objects::CSeq_loc> GetQuerySeqLoc(int i) const
+    {
+        _ASSERT(i < (int) m_Queries.size());
+        return m_Queries[i]->GetQuerySeqLoc();
+    }
+    
+    /// Get the scope containing a query by index.
+    /// @param i The index of a query.
+    /// @return The CScope containing the query.
+    CRef<objects::CScope> GetScope(int i) const
+    {
+        _ASSERT(i < (int) m_Queries.size());
+        return m_Queries[i]->GetScope();
+    }
+    
+    /// Get the masked regions for a query by number.
+    /// @param i The index of a query.
+    /// @return The masked (filtered) regions of that query.
+    TMaskedQueryRegions GetMaskedRegions(int i) const
+    {
+        _ASSERT(i < (int) m_Queries.size());
+        return m_Queries[i]->GetMaskedRegions();
+    }
+    
+    /// Assign a list of masked regions to one query.
+    /// @param i The index of the query.
+    /// @param mqr The masked regions for this query.
+    void SetMaskedRegions(int i, TMaskedQueryRegions mqr)
+    {
+        _ASSERT(i < (int) m_Queries.size());
+        m_Queries[i]->SetMaskedRegions(mqr);
+    }
+    
+    /// Add a masked region to the set for a query.
+    /// @param i The index of the query.
+    /// @param mqr The masked region to add.
+    void AddMask(int i, CRef<CSeqLocInfo> sli)
+    {
+        m_Queries[i]->AddMask(sli);
+    }
+    
+private:
+    /// The set of queries used for a search.
+    vector< CRef<CBlastSearchQuery> > m_Queries;
+};
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
 #endif  /* ALGO_BLAST_API___SSEQLOC__HPP */
+
+
