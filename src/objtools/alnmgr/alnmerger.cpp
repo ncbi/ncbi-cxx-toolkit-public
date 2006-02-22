@@ -537,7 +537,7 @@ CAlnMixMerger::x_Merge()
                                 seq->SetStarts()
                                     [tmp_start_i->first + len1 * seq->m_Width]
                                     = seg;
-                                if (tmp_start_i != seq->GetStarts().end()) {
+                                if (tmp_start_i != seq->SetStarts().end()) {
                                     seg->m_StartIts[seq] = ++tmp_start_i;
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
@@ -550,7 +550,7 @@ CAlnMixMerger::x_Merge()
                                     = prev_seg;
                                 seq->SetStarts()[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
-                                if (tmp_start_i != seq->GetStarts().end()) {
+                                if (tmp_start_i != seq->SetStarts().end()) {
                                     prev_seg->m_StartIts[seq] = ++tmp_start_i;
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
@@ -601,7 +601,7 @@ CAlnMixMerger::x_Merge()
                                 seq->SetStarts()[tmp_start_i->first +
                                              curr_len * seq->m_Width]
                                     = seg;
-                                if (tmp_start_i != seq->GetStarts().end()) {
+                                if (tmp_start_i != seq->SetStarts().end()) {
                                     seg->m_StartIts[seq] = ++tmp_start_i;
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
@@ -614,7 +614,7 @@ CAlnMixMerger::x_Merge()
                                     = prev_seg;
                                 seq->SetStarts()[tmp_start_i->first] = seg;
                                 seg->m_StartIts[seq] = tmp_start_i;
-                                if (tmp_start_i != seq->GetStarts().end()) {
+                                if (tmp_start_i != seq->SetStarts().end()) {
                                     prev_seg->m_StartIts[seq] = ++tmp_start_i;
                                 } else {
                                     NCBI_THROW(CAlnException, eMergeFailure,
@@ -1269,6 +1269,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2006/02/22 00:19:28  ucko
+* Avoid comparing regular and const_ iterators, which had let to
+* compilation errors under WorkShop.
+*
 * Revision 1.14  2006/02/21 15:56:00  todorov
 * CAlnMixSeq::TStarts -> CAlnMixStarts.
 *
