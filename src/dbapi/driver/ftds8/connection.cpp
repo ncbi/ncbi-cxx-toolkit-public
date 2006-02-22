@@ -106,7 +106,7 @@ CDB_SendDataCmd* CTDS_Connection::SendDataCmd(I_ITDescriptor& descr_in,
                                               size_t data_size, bool log_it)
 {
     if (data_size < 1) {
-        DATABASE_DRIVER_FATAL( "wrong (zero) data size", 210092 );
+        DATABASE_DRIVER_ERROR( "wrong (zero) data size", 210092 );
     }
 
     I_ITDescriptor* p_desc= 0;
@@ -332,7 +332,7 @@ bool CTDS_Connection::x_SendData(I_ITDescriptor& descr_in,
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
             dbcancel(m_Link);
-            DATABASE_DRIVER_FATAL( "Text/Image data corrupted", 210032 );
+            DATABASE_DRIVER_ERROR( "Text/Image data corrupted", 210032 );
         }
         if (dbmoretext(m_Link, (DBINT) s, (BYTE*) buff) != SUCCEED) {
             dbcancel(m_Link);
@@ -500,7 +500,7 @@ CTDS_SendDataCmd::CTDS_SendDataCmd(CTDS_Connection* con, DBPROCESS* cmd,
 size_t CTDS_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 {
     if (!pChunk  ||  !nof_bytes) {
-        DATABASE_DRIVER_FATAL( "wrong (zero) arguments", 290000 );
+        DATABASE_DRIVER_ERROR( "wrong (zero) arguments", 290000 );
     }
     if (!m_Bytes2go)
         return 0;
@@ -558,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.14  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

@@ -341,7 +341,7 @@ bool CDBL_Connection::x_SendData(I_ITDescriptor& descr_in,
         size_t s = stream.Read(buff, sizeof(buff));
         if (s < 1) {
             dbcancel(m_Link);
-            DATABASE_DRIVER_FATAL( "Text/Image data corrupted", 210032 );
+            DATABASE_DRIVER_ERROR( "Text/Image data corrupted", 210032 );
         }
         if (dbmoretext(m_Link, (DBINT) s, (BYTE*) buff) != SUCCEED) {
             dbcancel(m_Link);
@@ -636,6 +636,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.20  2005/10/31 12:19:58  ssikorsk
  * Do not use separate include files for msdblib.
  *

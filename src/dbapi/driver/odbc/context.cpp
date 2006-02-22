@@ -180,7 +180,7 @@ CODBCContext::CODBCContext(SQLINTEGER version, bool use_dsn)
 
     if(SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &m_Context) != SQL_SUCCESS) {
         string err_message = "Cannot allocate a context" + m_Reporter.GetExtraMsg();
-        DATABASE_DRIVER_FATAL( err_message, 400001 );
+        DATABASE_DRIVER_ERROR( err_message, 400001 );
     }
 
     m_Reporter.SetHandle(m_Context);
@@ -569,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.38  2006/02/17 17:58:47  ssikorsk
  * Initialize Connection::m_BCPable value using connection mode.
  *

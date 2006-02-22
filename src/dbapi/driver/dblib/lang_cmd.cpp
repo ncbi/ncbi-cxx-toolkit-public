@@ -96,7 +96,7 @@ bool CDBL_LangCmd::Send()
     if (dbcmd(m_Cmd, (char*)(m_Query.c_str())) != SUCCEED) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "dbcmd failed", 220001 );
+        DATABASE_DRIVER_ERROR( "dbcmd failed", 220001 );
     }
 
   
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.22  2005/12/06 19:30:32  ssikorsk
  * Revamp code to use GetResultSet/SetResultSet/ClearResultSet
  * methods instead of raw data access.

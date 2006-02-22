@@ -52,7 +52,7 @@ CTDS_BCPInCmd::CTDS_BCPInCmd(CTDS_Connection* con,
     m_HasTextImage(false), m_WasBound(false)
 {
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
-        DATABASE_DRIVER_FATAL( "bcp_init failed", 223001 );
+        DATABASE_DRIVER_ERROR( "bcp_init failed", 223001 );
     }
 }
 
@@ -484,6 +484,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.12  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

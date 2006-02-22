@@ -95,7 +95,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
         cs_ctx_alloc(version, &m_Context);
     if (r != CS_SUCCEED) {
         m_Context = 0;
-        DATABASE_DRIVER_FATAL( "Cannot allocate a context", 100001 );
+        DATABASE_DRIVER_ERROR( "Cannot allocate a context", 100001 );
     }
 
     CS_VOID*     cb;
@@ -1119,6 +1119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.59  2006/02/15 22:53:49  soussov
  * removes filter for messages that have msgnum == 0 and severity == 0
  *

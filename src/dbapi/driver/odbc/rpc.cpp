@@ -132,7 +132,7 @@ bool CODBC_RPCCmd::Send()
         m_HasFailed = true;
         {
             string err_message = "SQLExecDirect failed" + GetDiagnosticInfo();
-            DATABASE_DRIVER_FATAL( err_message, 420001 );
+            DATABASE_DRIVER_ERROR( err_message, 420001 );
         }
 
     case SQL_SUCCESS_WITH_INFO:
@@ -147,7 +147,7 @@ bool CODBC_RPCCmd::Send()
         {
             string err_message = "Some other query is executing on this connection" + 
                 GetDiagnosticInfo();
-            DATABASE_DRIVER_FATAL( err_message, 420002 );
+            DATABASE_DRIVER_ERROR( err_message, 420002 );
         }
         
     case SQL_INVALID_HANDLE:
@@ -155,7 +155,7 @@ bool CODBC_RPCCmd::Send()
         {
             string err_message = "The statement handler is invalid (memory corruption suspected)" + 
                 GetDiagnosticInfo();
-            DATABASE_DRIVER_FATAL( err_message, 420004 );
+            DATABASE_DRIVER_ERROR( err_message, 420004 );
         }
         
     default:
@@ -164,7 +164,7 @@ bool CODBC_RPCCmd::Send()
         m_HasFailed = true;
         {
             string err_message = "Unexpected error" + GetDiagnosticInfo();
-            DATABASE_DRIVER_FATAL( err_message, 420005 );
+            DATABASE_DRIVER_ERROR( err_message, 420005 );
         }
         
     }
@@ -602,6 +602,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.16  2005/11/28 13:22:59  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.

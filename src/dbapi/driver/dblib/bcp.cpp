@@ -54,7 +54,7 @@ CDBL_BCPInCmd::CDBL_BCPInCmd(CDBL_Connection* con,
     m_HasTextImage(false), m_WasBound(false)
 {
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
-        DATABASE_DRIVER_FATAL( "bcp_init failed", 223001 );
+        DATABASE_DRIVER_ERROR( "bcp_init failed", 223001 );
     }
 }
 
@@ -509,6 +509,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.19  2005/10/31 12:18:55  ssikorsk
  * Do not use separate include files for msdblib.
  *

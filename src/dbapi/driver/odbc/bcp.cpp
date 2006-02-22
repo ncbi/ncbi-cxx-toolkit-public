@@ -66,7 +66,7 @@ CODBC_BCPInCmd::CODBC_BCPInCmd(CODBC_Connection* conn,
     if (bcp_init(cmd, (char*) table_name.c_str(), 0, 0, DB_IN) != SUCCEED) {
         ReportErrors();
         string err_message = "bcp_init failed" + GetDiagnosticInfo();
-        DATABASE_DRIVER_FATAL( err_message, 423001 );
+        DATABASE_DRIVER_ERROR( err_message, 423001 );
     }
 }
 
@@ -461,6 +461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.11  2005/11/28 13:22:59  ssikorsk
  * Report SQL statement and database connection parameters in case
  * of an error in addition to a server error message.

@@ -84,7 +84,7 @@ CDB_Result* CTL_CursorCmd::Open()
             break;
         case CS_FAIL:
             m_HasFailed = true;
-            DATABASE_DRIVER_FATAL( "ct_cursor(DECLARE) failed", 122001 );
+            DATABASE_DRIVER_ERROR( "ct_cursor(DECLARE) failed", 122001 );
         case CS_BUSY:
             DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
         }
@@ -107,7 +107,7 @@ CDB_Result* CTL_CursorCmd::Open()
                 break;
             case CS_FAIL:
                 m_HasFailed = true;
-                DATABASE_DRIVER_FATAL( "ct_cursor(ROWS) failed", 122004 );
+                DATABASE_DRIVER_ERROR( "ct_cursor(ROWS) failed", 122004 );
             case CS_BUSY:
                 DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
             }
@@ -123,7 +123,7 @@ CDB_Result* CTL_CursorCmd::Open()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "ct_cursor(open) failed", 122005 );
+        DATABASE_DRIVER_ERROR( "ct_cursor(open) failed", 122005 );
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 122002 );
     }
@@ -212,7 +212,7 @@ bool CTL_CursorCmd::Update(const string& table_name, const string& upd_query)
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "ct_cursor(update) failed", 122030 );
+        DATABASE_DRIVER_ERROR( "ct_cursor(update) failed", 122030 );
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 122031 );
     }
@@ -352,7 +352,7 @@ bool CTL_CursorCmd::Delete(const string& table_name)
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "ct_cursor(delete) failed", 122040 );
+        DATABASE_DRIVER_ERROR( "ct_cursor(delete) failed", 122040 );
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 122041 );
     }
@@ -454,7 +454,7 @@ bool CTL_CursorCmd::Close()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "ct_cursor(close) failed", 122020 );
+        DATABASE_DRIVER_ERROR( "ct_cursor(close) failed", 122020 );
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 122021 );
     }
@@ -706,6 +706,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.13  2005/10/31 12:29:14  ssikorsk
  * Get rid of warnings.
  *

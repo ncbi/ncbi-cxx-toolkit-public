@@ -141,7 +141,7 @@ CDBLibContext::CDBLibContext(DBINT version)
     WSADATA wsaData; 
     if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
     {
-        DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
+        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
     }
 #endif
 
@@ -151,7 +151,7 @@ CDBLibContext::CDBLibContext(DBINT version)
     if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
 #endif
     {
-        DATABASE_DRIVER_FATAL( "dbinit failed", 200001 );
+        DATABASE_DRIVER_ERROR( "dbinit failed", 200001 );
     }
 
     dberrhandle(s_DBLIB_err_callback);
@@ -1091,6 +1091,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.64  2006/02/01 13:58:29  ssikorsk
  * Report server and user names in case of a failed connection attempt.
  *

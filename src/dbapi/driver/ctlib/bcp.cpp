@@ -271,7 +271,7 @@ bool CTL_BCPInCmd::SendRow()
         if (blk_init(m_Cmd, CS_BLK_IN, (CS_CHAR*) m_Query.c_str(), CS_NULLTERM)
             != CS_SUCCEED) {
             m_HasFailed = true;
-            DATABASE_DRIVER_FATAL( "blk_init failed", 123001 );
+            DATABASE_DRIVER_ERROR( "blk_init failed", 123001 );
         }
         m_WasSent = true;
 
@@ -349,7 +349,7 @@ bool CTL_BCPInCmd::Cancel()
     case CS_SUCCEED: m_WasSent= false; return true;
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "blk_done failed", 123020 );
+        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
     default: m_WasSent = false; return false;
     }
 }
@@ -365,7 +365,7 @@ bool CTL_BCPInCmd::CompleteBatch()
     case CS_SUCCEED: return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "blk_done failed", 123020 );
+        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
     default: return false;
     }
 }
@@ -381,7 +381,7 @@ bool CTL_BCPInCmd::CompleteBCP()
     case CS_SUCCEED: m_WasSent= false; return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "blk_done failed", 123020 );
+        DATABASE_DRIVER_ERROR( "blk_done failed", 123020 );
     default: m_WasSent= false; return false;
     }
 }
@@ -431,6 +431,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.13  2005/12/06 19:11:25  ssikorsk
  * Catch exceptions by const ref
  *

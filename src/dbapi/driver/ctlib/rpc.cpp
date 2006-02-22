@@ -87,7 +87,7 @@ bool CTL_RPCCmd::Send()
         break;
     case CS_FAIL:
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "ct_command failed", 121001 );
+        DATABASE_DRIVER_ERROR( "ct_command failed", 121001 );
     case CS_BUSY:
         DATABASE_DRIVER_ERROR( "the connection is busy", 121002 );
     }
@@ -102,7 +102,7 @@ bool CTL_RPCCmd::Send()
         m_HasFailed = true;
         if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
             // we need to close this connection
-            DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_send. "
+            DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_send. "
                                "Connection must be closed", 121004 );
         }
         DATABASE_DRIVER_ERROR( "ct_send failed", 121005 );
@@ -185,7 +185,7 @@ CDB_Result* CTL_RPCCmd::Result()
             m_HasFailed = true;
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
-                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
                                    "Connection must be closed", 121012 );
             }
             m_WasSent = false;
@@ -261,7 +261,7 @@ void CTL_RPCCmd::DumpResults()
             m_HasFailed = true;
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
-                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
                                    "Connection must be closed", 121012 );
             }
             m_WasSent = false;
@@ -417,6 +417,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.13  2005/12/06 19:13:08  ssikorsk
  * Catch exceptions by const ref
  *

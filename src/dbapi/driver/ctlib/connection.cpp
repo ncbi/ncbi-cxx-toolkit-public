@@ -53,9 +53,9 @@ CmdAlloc(CS_CONNECTION*  link, CS_COMMAND** cmd)
     case CS_SUCCEED:
         break;
     case CS_FAIL:
-        DATABASE_DRIVER_FATAL( "ct_cmd_alloc failed", 110001 );
+        DATABASE_DRIVER_ERROR( "ct_cmd_alloc failed", 110001 );
     case CS_BUSY:
-        DATABASE_DRIVER_FATAL( "the connection is busy", 110002 );
+        DATABASE_DRIVER_ERROR( "the connection is busy", 110002 );
     }
 }
 
@@ -148,7 +148,7 @@ CDB_BCPInCmd* CTL_Connection::BCPIn(const string& table_name,
 
     CS_BLKDESC* cmd;
     if (blk_alloc(m_Link, BLK_VERSION_100, &cmd) != CS_SUCCEED) {
-        DATABASE_DRIVER_FATAL( "blk_alloc failed", 110004 );
+        DATABASE_DRIVER_ERROR( "blk_alloc failed", 110004 );
     }
 
     CTL_BCPInCmd* bcmd = new CTL_BCPInCmd(this, cmd, table_name, nof_columns);
@@ -196,7 +196,7 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     if (ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA)
         != CS_SUCCEED) {
         ct_cmd_drop(cmd);
-        DATABASE_DRIVER_FATAL( "ct_command failed", 110093 );
+        DATABASE_DRIVER_ERROR( "ct_command failed", 110093 );
     }
 
     CTL_ITDescriptor& desc = p_desc? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
@@ -208,7 +208,7 @@ CDB_SendDataCmd* CTL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     if (ct_data_info(cmd, CS_SET, CS_UNUSED, &desc.m_Desc) != CS_SUCCEED) {
         ct_cancel(0, cmd, CS_CANCEL_ALL);
         ct_cmd_drop(cmd);
-        DATABASE_DRIVER_FATAL( "ct_data_info failed", 110093 );
+        DATABASE_DRIVER_ERROR( "ct_data_info failed", 110093 );
     }   
 
     CTL_SendDataCmd* sd_cmd = new CTL_SendDataCmd(this, cmd, data_size);
@@ -387,7 +387,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     if (ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA)
         != CS_SUCCEED) {
         ct_cmd_drop(cmd);
-        DATABASE_DRIVER_FATAL( "ct_command failed", 110031 );
+        DATABASE_DRIVER_ERROR( "ct_command failed", 110031 );
     }
 
     CTL_ITDescriptor& desc = p_desc ?
@@ -409,12 +409,12 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
         if ( !n_read ) {
             ct_cancel(0, cmd, CS_CANCEL_ALL);
             ct_cmd_drop(cmd);
-            DATABASE_DRIVER_FATAL( "Text/Image data corrupted", 110032 );
+            DATABASE_DRIVER_ERROR( "Text/Image data corrupted", 110032 );
         }
         if (ct_send_data(cmd, buff, n_read) != CS_SUCCEED) {
             ct_cancel(0, cmd, CS_CANCEL_CURRENT);
             ct_cmd_drop(cmd);
-            DATABASE_DRIVER_FATAL( "ct_send_data failed", 110033 );
+            DATABASE_DRIVER_ERROR( "ct_send_data failed", 110033 );
         }
         size -= n_read;
     }
@@ -422,7 +422,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
     if (ct_send(cmd) != CS_SUCCEED) {
         ct_cancel(0, cmd, CS_CANCEL_CURRENT);
         ct_cmd_drop(cmd);
-        DATABASE_DRIVER_FATAL( "ct_send failed", 110034 );
+        DATABASE_DRIVER_ERROR( "ct_send failed", 110034 );
     }
 
     for (;;) {
@@ -467,7 +467,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
                 }
                 if (ret_code != CS_END_DATA) {
                     ct_cmd_drop(cmd);
-                    DATABASE_DRIVER_FATAL( "ct_fetch failed", 110036 );
+                    DATABASE_DRIVER_ERROR( "ct_fetch failed", 110036 );
                 }
                 break;
             }
@@ -487,7 +487,7 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& img,
             if (ct_cancel(0, cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
                 // we need to close this connection
                 ct_cmd_drop(cmd);
-                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
                                    "Connection must be closed", 110033 );
             }
             ct_cmd_drop(cmd);
@@ -582,7 +582,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         nof_bytes = m_Bytes2go;
 
     if (ct_send_data(m_Cmd, (void*) pChunk, (CS_INT) nof_bytes) != CS_SUCCEED){
-        DATABASE_DRIVER_FATAL( "ct_send_data failed", 190001 );
+        DATABASE_DRIVER_ERROR( "ct_send_data failed", 190001 );
     }
 
     m_Bytes2go -= nof_bytes;
@@ -591,7 +591,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
 
     if (ct_send(m_Cmd) != CS_SUCCEED) {
         ct_cancel(0, m_Cmd, CS_CANCEL_CURRENT);
-        DATABASE_DRIVER_FATAL( "ct_send failed", 190004 );
+        DATABASE_DRIVER_ERROR( "ct_send failed", 190004 );
     }
 
     for (;;) {
@@ -632,7 +632,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
                 while ((ret_code = ct_fetch(m_Cmd, CS_UNUSED, CS_UNUSED,
                                             CS_UNUSED, 0)) == CS_SUCCEED);
                 if (ret_code != CS_END_DATA) {
-                    DATABASE_DRIVER_FATAL( "ct_fetch failed", 190006 );
+                    DATABASE_DRIVER_ERROR( "ct_fetch failed", 190006 );
                 }
                 break;
             }
@@ -651,7 +651,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* pChunk, size_t nof_bytes)
         }
         default: {
             if (ct_cancel(0, m_Cmd, CS_CANCEL_ALL) != CS_SUCCEED) {
-                DATABASE_DRIVER_FATAL( "Unrecoverable crash of ct_result. "
+                DATABASE_DRIVER_ERROR( "Unrecoverable crash of ct_result. "
                                    "Connection must be closed", 190002 );
             }
             DATABASE_DRIVER_ERROR( "ct_result failed", 190003 );
@@ -695,6 +695,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2006/02/22 15:15:50  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.22  2005/09/19 14:19:02  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *

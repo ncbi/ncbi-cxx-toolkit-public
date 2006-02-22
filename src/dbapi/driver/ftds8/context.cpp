@@ -112,7 +112,7 @@ CTDSContext::CTDSContext(DBINT version)
     WSADATA wsaData; 
     if (WSAStartup(MAKEWORD(1, 1), &wsaData) != 0)
     {
-        DATABASE_DRIVER_FATAL( "winsock initialization failed", 200001 );
+        DATABASE_DRIVER_ERROR( "winsock initialization failed", 200001 );
     }
 #endif
 
@@ -668,6 +668,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.56  2006/02/01 13:58:45  ssikorsk
  * Report server and user names in case of a failed connection attempt.
  *

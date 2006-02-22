@@ -85,7 +85,7 @@ bool CTDS_RPCCmd::Send()
     if (dbcmd(m_Cmd, (char*)(cmd.c_str())) != SUCCEED) {
         dbfreebuf(m_Cmd);
         m_HasFailed = true;
-        DATABASE_DRIVER_FATAL( "dbcmd failed", 221002 );
+        DATABASE_DRIVER_ERROR( "dbcmd failed", 221002 );
     }
 
     if (!x_AssignParams()) {
@@ -541,6 +541,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2006/02/22 15:15:51  ssikorsk
+ * *** empty log message ***
+ *
  * Revision 1.16  2005/09/19 14:19:05  ssikorsk
  * Use NCBI_CATCH_ALL macro instead of catch(...)
  *
