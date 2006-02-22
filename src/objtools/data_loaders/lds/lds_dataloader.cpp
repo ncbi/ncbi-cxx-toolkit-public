@@ -56,6 +56,10 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects)
 
+DEFINE_STATIC_FAST_MUTEX(sx_LDS_Lock);
+
+
+
 /// @internal
 ///
 struct SLDS_ObjectDisposition
@@ -229,6 +233,8 @@ string CLDS_DataLoader::GetLoaderNameFromArgs(CLDS_Database& lds_db)
 CDataLoader*
 CLDS_DataLoader::CLDS_LoaderMaker::CreateLoader(void) const
 {
+    CFastMutexGuard mg(sx_LDS_Lock);
+
     bool is_created = false;
     auto_ptr<CLDS_Database> lds_db
         (CLDS_Management::OpenCreateDB(m_Param, "lds",
@@ -303,6 +309,8 @@ CLDS_DataLoader::CLDS_DataLoader(const string& dl_name,
    m_OwnDatabase(true)
 {
     try {
+       CFastMutexGuard mg(sx_LDS_Lock);
+
         m_LDS_db->Open();
     } 
     catch(...)
@@ -322,8 +330,11 @@ CLDS_DataLoader::~CLDS_DataLoader()
 void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
                                   const string&  dl_name)
 {
-    if (m_LDS_db && m_OwnDatabase)
+    CFastMutexGuard mg(sx_LDS_Lock);
+
+    if (m_LDS_db && m_OwnDatabase) {
         delete m_LDS_db;
+    }
     m_LDS_db = &lds_db;
     SetName(dl_name);
 }
@@ -336,50 +347,55 @@ CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
     CHandleRangeMap hrmap;
     hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
 
-    SLDS_TablesCollection& db = m_LDS_db->GetTables();
-    CLDS_Query lds_query(*m_LDS_db);
+    CLDS_FindSeqIdFunc search_func(m_LDS_db->GetTables(), hrmap);
 
-    // index screening
-    CLDS_Set       cand_set;
     {{
-    CBDB_FileCursor cur_int_idx(db.obj_seqid_int_idx);
-    cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
+    CFastMutexGuard mg(sx_LDS_Lock);
 
-    CBDB_FileCursor cur_txt_idx(db.obj_seqid_txt_idx);
-    cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
+        SLDS_TablesCollection& db = m_LDS_db->GetTables();
+        CLDS_Query lds_query(*m_LDS_db);
 
-    SLDS_SeqIdBase sbase;
+        // index screening
+        CLDS_Set       cand_set;
+        {{
+        CBDB_FileCursor cur_int_idx(db.obj_seqid_int_idx);
+        cur_int_idx.SetCondition(CBDB_FileCursor::eEQ);
 
-    ITERATE (CHandleRangeMap, it, hrmap) {
-        CSeq_id_Handle seq_id_hnd = it->first;
-        CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
+        CBDB_FileCursor cur_txt_idx(db.obj_seqid_txt_idx);
+        cur_txt_idx.SetCondition(CBDB_FileCursor::eEQ);
 
-        LDS_GetSequenceBase(*seq_id, &sbase);
+        SLDS_SeqIdBase sbase;
 
-        if (!sbase.str_id.empty()) {
-            NStr::ToUpper(sbase.str_id);
+        ITERATE (CHandleRangeMap, it, hrmap) {
+            CSeq_id_Handle seq_id_hnd = it->first;
+            CConstRef<CSeq_id> seq_id = seq_id_hnd.GetSeqId();
+
+            LDS_GetSequenceBase(*seq_id, &sbase);
+
+            if (!sbase.str_id.empty()) {
+                NStr::ToUpper(sbase.str_id);
+            }
+
+            lds_query.ScreenSequence(sbase, 
+                                    &cand_set, 
+                                    cur_int_idx, 
+                                    cur_txt_idx);
+
+
+        } // ITER
+
+        }}
+
+        // finding matching sequences using pre-screened result set
+
+        if (cand_set.any()) {
+
+            BDB_iterate_file(db.object_db, 
+                            cand_set.first(), cand_set.end(), 
+                            search_func);        
         }
 
-        lds_query.ScreenSequence(sbase, 
-                                 &cand_set, 
-                                 cur_int_idx, 
-                                 cur_txt_idx);
-
-
-    } // ITER
-
     }}
-
-    // finding matching sequences using pre-screened result set
-
-    CLDS_FindSeqIdFunc search_func(m_LDS_db->GetTables(), hrmap);
-    if (cand_set.any()) {
-
-        BDB_iterate_file(db.object_db, 
-                         cand_set.first(), cand_set.end(), 
-                         search_func);        
-    }
-
 
     // load objects
 
@@ -555,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2006/02/22 17:18:10  kuznets
+ * Added mutex to protect LDS database from parallel calls from OM
+ *
  * Revision 1.37  2005/12/21 15:27:17  kuznets
  * Fixed recursion and control sum parameters
  *
@@ -608,69 +627,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.20  2004/08/04 14:56:35  vasilche
  * Updated to changes in TSE locking scheme.
- *
- * Revision 1.19  2004/08/02 17:34:44  grichenk
- * Added data_loader_factory.cpp.
- * Renamed xloader_cdd to ncbi_xloader_cdd.
- * Implemented data loader factories for all loaders.
- *
- * Revision 1.18  2004/07/28 14:02:57  grichenk
- * Improved MT-safety of RegisterInObjectManager(), simplified the code.
- *
- * Revision 1.17  2004/07/26 14:13:32  grichenk
- * RegisterInObjectManager() return structure instead of pointer.
- * Added CObjectManager methods to manipuilate loaders.
- *
- * Revision 1.16  2004/07/21 15:51:26  grichenk
- * CObjectManager made singleton, GetInstance() added.
- * CXXXXDataLoader constructors made private, added
- * static RegisterInObjectManager() and GetLoaderNameFromArgs()
- * methods.
- *
- * Revision 1.15  2004/05/21 21:42:52  gorelenk
- * Added PCH ncbi_pch.hpp
- *
- * Revision 1.14  2004/03/09 17:17:20  kuznets
- * Merge object attributes with objects
- *
- * Revision 1.13  2003/12/16 20:49:18  vasilche
- * Fixed compile errors - added missing includes and declarations.
- *
- * Revision 1.12  2003/12/16 17:55:22  kuznets
- * Added plugin entry point
- *
- * Revision 1.11  2003/11/28 13:41:10  dicuccio
- * Fixed to match new API in CDataLoader
- *
- * Revision 1.10  2003/10/28 14:01:20  kuznets
- * Added constructor parameter name of the dataloader
- *
- * Revision 1.9  2003/10/08 19:40:55  kuznets
- * kEmptyStr instead database path as default alias
- *
- * Revision 1.8  2003/10/08 19:29:08  ucko
- * Adapt to new (multi-DB-capable) LDS API.
- *
- * Revision 1.7  2003/09/30 16:36:37  vasilche
- * Updated CDataLoader interface.
- *
- * Revision 1.6  2003/08/19 14:21:24  kuznets
- * +name("LDS_dataloader") for the dataloader class
- *
- * Revision 1.5  2003/07/30 19:52:15  kuznets
- * Cleaned compilation warnings
- *
- * Revision 1.4  2003/07/30 19:46:54  kuznets
- * Implemented alias search mode
- *
- * Revision 1.3  2003/07/30 18:36:38  kuznets
- * Minor syntactic fix
- *
- * Revision 1.2  2003/06/18 18:49:01  kuznets
- * Implemented new constructor.
- *
- * Revision 1.1  2003/06/16 15:48:28  kuznets
- * Initial revision.
  *
  *
  * ===========================================================================
