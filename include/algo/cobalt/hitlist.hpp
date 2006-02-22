@@ -59,7 +59,7 @@ public:
     ///
     CHitList() {}
 
-    /// constructor (deletes all hits stored)
+    /// destructor (deletes all hits stored)
     ///
     ~CHitList() 
     {
@@ -195,8 +195,11 @@ END_NCBI_SCOPE
 
 /*--------------------------------------------------------------------
   $Log$
+  Revision 1.6  2006/02/22 21:38:11  papadopo
+  fix typos
+
   Revision 1.5  2005/11/16 16:59:56  papadopo
-  replace += operatof with Append member
+  replace += operator with Append member
 
   Revision 1.4  2005/11/15 23:24:15  papadopo
   add doxygen
