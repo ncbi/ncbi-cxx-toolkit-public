@@ -26,7 +26,8 @@
  * Authors:  Josh Cherry
  *
  * File Description:
- *   Read an AGP file, build Seq-entry's or Seq-submit's, and do some validation
+ *   Read an AGP file, build Seq-entry's or Seq-submit's,
+ *   and do some validation
  *
  */
 
@@ -63,6 +64,8 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/taxon1/taxon1.hpp>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -306,22 +309,55 @@ int CAgpconvertApplication::Run(void)
             sub_source->SetName(args["sc"].AsString());
             source_desc->SetSource().SetSubtype().push_back(sub_source);
         }
-        if (args["nt"]) {
-            CRef<CDbtag> dbtag(new CDbtag);
-            dbtag->SetDb("taxon");
-            dbtag->SetTag().SetId(args["nt"].AsInteger());
-            source_desc->SetSource().SetOrg().SetDb().push_back(dbtag);
+        if (args["sn"]) {
+            if (!args["on"] || !args["nt"]) {
+                throw runtime_error("-sn requires -nt and -on");
+            }
         }
         if (args["on"]) {
-            source_desc->SetSource().SetOrg()
-                .SetTaxname(args["on"].AsString());
+            if (!args["nt"]) {
+                throw runtime_error("-on requires -nt");
+            }
         }
-        if (args["sn"]) {
-            CRef<COrgMod> mod(new COrgMod);
-            mod->SetSubtype(COrgMod::eSubtype_strain);
-            mod->SetSubname(args["sn"].AsString());
-            source_desc->SetSource().SetOrg()
-                .SetOrgname().SetMod().push_back(mod);
+        if (args["nt"]) {
+            int taxid = args["nt"].AsInteger();
+            CRef<CDbtag> dbtag(new CDbtag);
+            dbtag->SetDb("taxon");
+            dbtag->SetTag().SetId(taxid);
+            source_desc->SetSource().SetOrg().SetDb().push_back(dbtag);
+            CTaxon1 cl;
+            if (!cl.Init()) {
+                throw runtime_error("failure contacting taxonomy server");
+            }
+            bool is_species, is_uncultured;
+            string blast_name;
+            CConstRef<COrg_ref> org_ref
+                = cl.GetOrgRef(taxid, is_species, is_uncultured, blast_name);
+            source_desc->SetSource().SetOrg().Assign(*org_ref);
+            source_desc->SetSource().SetOrg().ResetSyn();  // lose any synonyms
+            if (!is_species) {
+                cerr << "** Warning:  taxid " << taxid <<
+                    " is not species level or below" << endl;
+            }
+            // Check that command line is consistent with what server returns
+            if (!args["on"]) {
+                throw runtime_error("-nt requires -on");
+            }
+            const string& taxname = args["on"].AsString();
+            if (taxname != org_ref->GetTaxname()) {
+                throw runtime_error("taxname given on command line ("
+                                    + taxname + ") not equal to that "
+                                    "returned by server ("
+                                    + org_ref->GetTaxname()
+                                    + ")");
+            }
+            if (args["sn"]) {
+                CRef<COrgMod> mod(new COrgMod);
+                mod->SetSubtype(COrgMod::eSubtype_strain);
+                mod->SetSubname(args["sn"].AsString());
+                source_desc->SetSource().SetOrg()
+                    .SetOrgname().SetMod().push_back(mod);
+            }
         }
         ent_templ.SetSeq().SetDescr().Set().push_back(source_desc);
     }
@@ -510,6 +546,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2006/02/22 15:57:56  jcherry
+ * Added ability to get taxonomic information from server
+ *
  * Revision 1.7  2006/02/13 19:31:09  jcherry
  * Added ability to specify Title and BioSource info on command line
  *
