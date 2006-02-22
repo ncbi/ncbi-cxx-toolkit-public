@@ -800,7 +800,7 @@ CDBAPIUnitTest::Test_BlobStream(void)
 
 /////////1/////////2/////////3/////////4/////////5/////////6/////////7/////////8
 void 
-CDBAPIUnitTest::Test_GetColumnNo(void)
+CDBAPIUnitTest::Test_GetTotalColumns(void)
 { 
     string sql;
     
@@ -3449,7 +3449,7 @@ CDBAPITestSuite::CDBAPITestSuite(const CTestArguments& args)
 //         add(tc);
 //     }
 
-    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetColumnNo, DBAPIInstance);
+    tc = BOOST_CLASS_TEST_CASE(&CDBAPIUnitTest::Test_GetTotalColumns, DBAPIInstance);
     tc->depends_on(tc_init);
     add(tc);
 
@@ -3620,6 +3620,9 @@ init_unit_test_suite( int argc, char * argv[] )
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.67  2006/02/22 15:29:48  ssikorsk
+ * Renamed Test_GetColumnNo to Test_GetTotalColumns.
+ *
  * Revision 1.66  2006/02/21 19:23:51  ssikorsk
  * Replaced GetColumnNo with GetTotalColumns.
  *

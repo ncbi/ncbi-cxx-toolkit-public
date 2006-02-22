@@ -164,7 +164,7 @@ public:
     void Test_Procedure(void);
     void Test_Bulk_Writing(void);
     void Test_Bulk_Overflow(void);
-    void Test_GetColumnNo(void);
+    void Test_GetTotalColumns(void);
     void Test_LOB(void);
     void Test_BlobStream(void);
     void Test_UNIQUE(void);
@@ -226,6 +226,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
  *
  * $Log$
+ * Revision 1.34  2006/02/22 15:29:29  ssikorsk
+ * Renamed Test_GetColumnNo to Test_GetTotalColumns.
+ *
  * Revision 1.33  2006/02/14 18:43:41  ucko
  * Declare ~CDBAPIUnitTest, which has acquired a (trivial) definition.
  *
