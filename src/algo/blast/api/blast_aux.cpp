@@ -459,6 +459,24 @@ CSeqLoc2BlastSeqLoc(const objects::CSeq_loc* slp)
     return retval.Release();
 }
 
+BlastSeqLoc*
+MaskedQueryRegionsToBlastSeqLoc(const TMaskedQueryRegions & mqr)
+{
+    if (mqr.empty()) {
+        return NULL;
+    }
+    
+    CBlastSeqLoc retval;
+    
+    ITERATE(TMaskedQueryRegions, itr, mqr) {
+        const CSeq_interval & intv = (**itr).GetInterval();
+        
+        BlastSeqLocNew(&retval, intv.GetFrom(), intv.GetTo());
+    }
+    
+    return retval.Release();
+}
+
 TAutoUint1ArrayPtr
 FindGeneticCode(int genetic_code)
 {
@@ -776,6 +794,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.89  2006/02/22 18:34:17  bealer
+ * - Blastx filtering support, CBlastQueryVector class.
+ *
  * Revision 1.88  2006/01/24 19:16:46  camacho
  * Remove unnecessary assertion
  *

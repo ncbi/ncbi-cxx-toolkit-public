@@ -228,38 +228,53 @@ SetupQueryInfo_OMF(const IBlastQuerySource& queries,
 }
 
 static void
-s_AddMask(EBlastProgramType prog, BlastMaskLoc* mask,
-          int query_index, BlastSeqLoc* core_seqloc, ENa_strand strand,
+s_ComputeStartEndContexts(ENa_strand   strand,
+                          int          num_contexts,
+                          int        & start,
+                          int        & end)
+{
+    start = end = num_contexts;
+    
+    switch (strand) {
+    case eNa_strand_minus: 
+        start = num_contexts/2; 
+        end = num_contexts;
+        break;
+    case eNa_strand_plus: 
+        start = 0; 
+        end = num_contexts/2;
+        break;
+    case eNa_strand_both:
+        start = 0;
+        end = num_contexts;
+        break;
+    default:
+        abort();
+    }
+}
+
+static void
+s_AddMask(EBlastProgramType prog,
+          BlastMaskLoc* mask,
+          int query_index,
+          BlastSeqLoc* core_seqloc,
+          ENa_strand strand,
           TSeqPos query_length)
 {
     ASSERT(query_index < mask->total_size);
-    const unsigned int kNumContexts = GetNumberOfContexts(prog);
-
+    unsigned num_contexts = GetNumberOfContexts(prog);
+    
     if (Blast_QueryIsTranslated(prog)) {
-
-        int starting_context(kNumContexts);
-        int ending_context(kNumContexts);
-
-        switch (strand) {
-        case eNa_strand_minus: 
-            starting_context = kNumContexts/2; 
-            ending_context = kNumContexts;
-            break;
-        case eNa_strand_plus: 
-            starting_context = 0; 
-            ending_context = kNumContexts/2;
-            break;
-        case eNa_strand_both:
-            starting_context = 0;
-            ending_context = kNumContexts;
-            break;
-        default:
-            abort();
-        }
-
+        int starting_context(0), ending_context(0);
+        
+        s_ComputeStartEndContexts(strand,
+                                  num_contexts,
+                                  starting_context,
+                                  ending_context);
+        
         const TSeqPos dna_length = query_length;
         BlastSeqLoc** frames_seqloc = 
-            &(mask->seqloc_array[query_index*kNumContexts]);
+            &(mask->seqloc_array[query_index*num_contexts]);
         for (int i = starting_context; i < ending_context; i++) {
             BlastSeqLoc* prot_seqloc(0);
             for (BlastSeqLoc* itr = core_seqloc; itr; itr = itr->next) {
@@ -281,18 +296,19 @@ s_AddMask(EBlastProgramType prog, BlastMaskLoc* mask,
 
     } else if (Blast_QueryIsNucleotide(prog) && 
                !Blast_ProgramIsPhiBlast(prog)) {
+        
         switch (strand) {
         case eNa_strand_plus:
-            mask->seqloc_array[query_index*kNumContexts] = core_seqloc;
+            mask->seqloc_array[query_index*num_contexts] = core_seqloc;
             break;
 
         case eNa_strand_minus:
-            mask->seqloc_array[query_index*kNumContexts+1] = core_seqloc;
+            mask->seqloc_array[query_index*num_contexts+1] = core_seqloc;
             break;
 
         case eNa_strand_both:
-            mask->seqloc_array[query_index*kNumContexts] = core_seqloc;
-            mask->seqloc_array[query_index*kNumContexts+1] =
+            mask->seqloc_array[query_index*num_contexts] = core_seqloc;
+            mask->seqloc_array[query_index*num_contexts+1] =
                 BlastSeqLocListDup(core_seqloc);
             break;
 
@@ -302,6 +318,164 @@ s_AddMask(EBlastProgramType prog, BlastMaskLoc* mask,
     } else  {
         mask->seqloc_array[query_index] = core_seqloc;
     }
+}
+
+static void
+s_AddMask(EBlastProgramType           prog,
+          BlastMaskLoc              * mask,
+          int                         query_index,
+          CBlastQueryFilteredFrames & seqloc_frames,
+          ENa_strand                  strand,
+          TSeqPos                     query_length)
+{
+    ASSERT(query_index < mask->total_size);
+    unsigned num_contexts = GetNumberOfContexts(prog);
+    
+    if (Blast_QueryIsTranslated(prog)) {
+        assert(seqloc_frames.QueryIsMulti());
+        
+        int starting_context(0), ending_context(0);
+        
+        s_ComputeStartEndContexts(strand,
+                                  num_contexts,
+                                  starting_context,
+                                  ending_context);
+        
+        const TSeqPos dna_length = query_length;
+        
+        BlastSeqLoc** frames_seqloc = 
+            & (mask->seqloc_array[query_index*num_contexts]);
+        
+        seqloc_frames.UseProteinCoords(dna_length);
+            
+        for (int i = starting_context; i < ending_context; i++) {
+            short frame = BLAST_ContextToFrame(eBlastTypeBlastx, i);
+            frames_seqloc[i] = *seqloc_frames[frame];
+            seqloc_frames.Release(frame);
+        }
+    } else if (Blast_QueryIsNucleotide(prog) && 
+               !Blast_ProgramIsPhiBlast(prog)) {
+        
+        int posframe = CSeqLocInfo::eFramePlus1;
+        int negframe = CSeqLocInfo::eFrameMinus1;
+        
+        if (*seqloc_frames[posframe]) {
+            assert(*seqloc_frames[negframe]);
+        }
+        
+        switch (strand) {
+        case eNa_strand_plus:
+            mask->seqloc_array[query_index*num_contexts] =
+                *seqloc_frames[posframe];
+            seqloc_frames.Release(posframe);
+            break;
+            
+        case eNa_strand_minus:
+            mask->seqloc_array[query_index*num_contexts+1] =
+                *seqloc_frames[negframe];
+            seqloc_frames.Release(negframe);
+            break;
+            
+        case eNa_strand_both:
+            mask->seqloc_array[query_index*num_contexts] =
+                *seqloc_frames[posframe];
+            
+            mask->seqloc_array[query_index*num_contexts+1] =
+                *seqloc_frames[negframe];
+            
+            seqloc_frames.Release(posframe);
+            seqloc_frames.Release(negframe);
+            break;
+            
+        default:
+            abort();
+        }
+        
+    } else {
+        mask->seqloc_array[query_index] = *seqloc_frames[0];
+        seqloc_frames.Release(0);
+    }
+}
+
+void
+s_RestrictSeqLocs_OneFrame(BlastSeqLoc             ** bsl,
+                           const IBlastQuerySource  & queries,
+                           int                        query_index,
+                           const BlastQueryInfo     * qinfo)
+{
+    for(int ci = qinfo->first_context; ci <= qinfo->last_context; ci++) {
+        if (qinfo->contexts[ci].query_index == query_index) {
+            CConstRef<CSeq_loc> qseqloc = queries.GetSeqLoc(query_index);
+            
+            BlastSeqLoc_RestrictToInterval(bsl,
+                                           qseqloc->GetStart(eExtreme_Positional),
+                                           qseqloc->GetStop (eExtreme_Positional));
+            
+            break;
+        }
+    }
+}
+
+void
+s_RestrictSeqLocs_Multiframe(CBlastQueryFilteredFrames & frame_to_bsl,
+                             const IBlastQuerySource   & queries,
+                             int                         query_index,
+                             const BlastQueryInfo      * qinfo)
+{
+    typedef vector<CSeqLocInfo::ETranslationFrame> TFrameVec;
+    
+    TFrameVec frames = frame_to_bsl.ListFrames();
+    
+    ITERATE(TFrameVec, iter, frames) {
+        int seqloc_frame = *iter;
+        BlastSeqLoc ** bsl = frame_to_bsl[seqloc_frame];
+        
+        for(int ci = qinfo->first_context; ci <= qinfo->last_context; ci++) {
+            if (qinfo->contexts[ci].query_index != query_index)
+                continue;
+            
+            int context_frame = qinfo->contexts[ci].frame;
+            
+            if (context_frame == seqloc_frame) {
+                CConstRef<CSeq_loc> qseqloc = queries.GetSeqLoc(query_index);
+                    
+                BlastSeqLoc_RestrictToInterval(bsl,
+                                               qseqloc->GetStart(eExtreme_Positional),
+                                               qseqloc->GetStop (eExtreme_Positional));
+                    
+                break;
+            }
+        }
+    }
+}
+
+CRef<CBlastQueryFilteredFrames>
+s_GetRestrictedBlastSeqLocs(const IBlastQuerySource & queries,
+                            int                       query_index,
+                            const BlastQueryInfo    * qinfo,
+                            EBlastProgramType         program)
+{
+    TMaskedQueryRegions mqr =
+        queries.GetMaskedRegions(query_index);
+    
+    CRef<CBlastQueryFilteredFrames> frame_to_bsl
+        (new CBlastQueryFilteredFrames(program, mqr));
+    
+    if (! frame_to_bsl->Empty()) {
+        if (frame_to_bsl->QueryIsMulti()) {
+            s_RestrictSeqLocs_Multiframe(*frame_to_bsl,
+                                         queries,
+                                         query_index,
+                                         qinfo);
+        } else {
+            s_RestrictSeqLocs_OneFrame((*frame_to_bsl)[0],
+                                       queries,
+                                       query_index,
+                                       qinfo);
+        }
+    }
+    
+    return frame_to_bsl;
 }
 
 static void
@@ -350,7 +524,9 @@ SetupQueries_OMF(IBlastQuerySource& queries,
 
     for(TSeqPos index = 0; index < queries.Size(); index++) {
         ENa_strand strand = eNa_strand_unknown;
-        BlastSeqLoc* bsl_tmp=NULL;
+        
+        CRef<CBlastQueryFilteredFrames> frame_to_bsl;
+        
         try {
 
             if ((is_na || translate) &&
@@ -368,11 +544,10 @@ SetupQueries_OMF(IBlastQuerySource& queries,
                 strand = strand_opt;
             }
             
-            bsl_tmp = CSeqLoc2BlastSeqLoc(queries.GetMask(index));
-            
-            BlastSeqLoc_RestrictToInterval(&bsl_tmp,
-                   queries.GetSeqLoc(index)->GetStart(eExtreme_Positional),
-                   queries.GetSeqLoc(index)->GetStop(eExtreme_Positional));
+            frame_to_bsl =  s_GetRestrictedBlastSeqLocs(queries,
+                                                        index,
+                                                        qinfo,
+                                                        prog);
             
             // Set the id if this is possible
             if (const CSeq_id* id = queries.GetSeqId(index)) {
@@ -458,17 +633,23 @@ SetupQueries_OMF(IBlastQuerySource& queries,
             messages[index].push_back(m);
             s_InvalidateQueryContexts(qinfo, index);
         }
-        s_AddMask(prog, mask, index, bsl_tmp, strand,
-                      BlastQueryInfoGetQueryLength(qinfo, prog, index));
+        
+        TSeqPos qlen = BlastQueryInfoGetQueryLength(qinfo, prog, index);
+        
+        s_AddMask(prog, mask, index, *frame_to_bsl, strand, qlen);
+        
+        // AddMask releases the elements of frame_to_bsl that it uses;
+        // the rest are freed by frame_to_bsl in the destructor.
+        
         ctx_index += kNumContexts;
     }
-
+    
     if (BlastSeqBlkNew(seqblk) < 0) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory, "Query sequence block");
     }
-
+    
     BlastSeqBlkSetSequence(*seqblk, buf.release(), buflen - 2);
-
+    
     (*seqblk)->lcase_mask = mask.Release();
     (*seqblk)->lcase_mask_allocated = TRUE;
 }
@@ -518,11 +699,20 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
             CBlastMaskLoc mask(BlastMaskLocNew(GetNumberOfContexts(prog)));
             const int kSubjectMaskIndex(0);
             const ENa_strand kSubjectStrands2Search(eNa_strand_both);
+            
+            // Note: this could, and probably will, be modified to use
+            // the types introduced with CBlastQueryVector, as done in
+            // SetupQueries; it would allow removal of the older
+            // version of s_AddMask(), but would not affect output
+            // unless CBl2Seq is modified to use the CBlastQueryVector
+            // code.
+            
             s_AddMask(prog, mask,
                       kSubjectMaskIndex,
                       CSeqLoc2BlastSeqLoc(subjects.GetMask(i)),
                       kSubjectStrands2Search,
                       subjects.GetLength(i));
+            
             subj->lcase_mask = mask.Release();
             subj->lcase_mask_allocated = TRUE;
         }
@@ -1171,6 +1361,215 @@ SafeSetupQueryInfo(const IBlastQuerySource& queries,
     }
     return retval.Release();
 }
+
+
+bool CBlastQueryFilteredFrames::x_NeedsTrans()
+{
+    switch(m_Program) {
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastx:
+    case eBlastTypeRpsTblastn:
+        return true;
+        break;
+            
+    default:
+        return false;
+    }
+}
+
+CBlastQueryFilteredFrames::
+CBlastQueryFilteredFrames(EBlastProgramType program)
+    : m_Program(program)
+{
+    m_TranslateCoords = x_NeedsTrans();
+}
+
+CBlastQueryFilteredFrames::
+CBlastQueryFilteredFrames(EBlastProgramType           program,
+                          const TMaskedQueryRegions & mqr)
+    : m_Program(program)
+{
+    m_TranslateCoords = x_NeedsTrans();
+    
+    if (mqr.empty()) {
+        return;
+    }
+    
+    ITERATE(TMaskedQueryRegions, itr, mqr) {
+        const CSeq_interval & intv = (**itr).GetInterval();
+        
+        ETranslationFrame frame =
+            (ETranslationFrame) (**itr).GetFrame();
+        
+        AddSeqLoc(intv, frame);
+    }
+}
+
+CBlastQueryFilteredFrames::~CBlastQueryFilteredFrames()
+{
+    ITERATE(TFrameSet, iter, m_Seqlocs) {
+        if ((*iter).second != 0) {
+            BlastSeqLocFree((*iter).second);
+        }
+    }
+}
+
+void CBlastQueryFilteredFrames::Release(int frame)
+{
+    m_Seqlocs.erase((ETranslationFrame)frame);
+}
+
+void CBlastQueryFilteredFrames::UseProteinCoords(TSeqPos dna_length)
+{
+    if (m_TranslateCoords) {
+        m_TranslateCoords = false;
+        
+        ITERATE(TFrameSet, iter, m_Seqlocs) {
+            short frame = iter->first;
+            BlastSeqLoc * bsl = iter->second;
+            
+            for (BlastSeqLoc* itr = bsl; itr; itr = itr->next) {
+                TSeqPos to(0), from(0);
+                
+                if (frame < 0) {
+                    from = (dna_length + frame - itr->ssr->right) / CODON_LENGTH;
+                    to = (dna_length + frame - itr->ssr->left) / CODON_LENGTH;
+                } else {
+                    from = (itr->ssr->left - frame + 1) / CODON_LENGTH;
+                    to = (itr->ssr->right - frame + 1) / CODON_LENGTH;
+                }
+                
+                itr->ssr->left  = from;
+                itr->ssr->right = to;
+            }
+        }
+    }
+}
+
+vector<CBlastQueryFilteredFrames::ETranslationFrame>
+CBlastQueryFilteredFrames::ListFrames() const
+{
+    vector<ETranslationFrame> rv;
+    
+    ITERATE(TFrameSet, iter, m_Seqlocs) {
+        if ((*iter).second != 0) {
+            rv.push_back((*iter).first);
+        }
+    }
+    
+    return rv;
+}
+
+bool CBlastQueryFilteredFrames::Empty() const
+{
+    vector<ETranslationFrame> rv = ListFrames();
+    
+    return rv.empty();
+}
+
+void CBlastQueryFilteredFrames::x_VerifyFrame(int frame)
+{
+    bool okay = true;
+    
+    switch(m_Program) {
+    case eBlastTypeBlastp:
+    case eBlastTypeTblastn:
+    case eBlastTypeRpsBlast:
+    case eBlastTypePsiBlast:
+        if (frame != 0) {
+            okay = false;
+        }
+        break;
+        
+    case eBlastTypeBlastn:
+        if ((frame != CSeqLocInfo::eFramePlus1) &&
+            (frame != CSeqLocInfo::eFrameMinus1)) {
+            okay = false;
+        }
+        break;
+        
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastx:
+    case eBlastTypeRpsTblastn:
+        switch(frame) {
+        case 1:
+        case 2:
+        case 3:
+        case -1:
+        case -2:
+        case -3:
+            break;
+            
+        default:
+            okay = false;
+        }
+        break;
+        
+    default:
+        okay = false;
+    }
+    
+    if (! okay) {
+        NCBI_THROW(CBlastException, eNotSupported, 
+                   "Frame and program values are incompatible.");
+    }
+}
+
+bool CBlastQueryFilteredFrames::QueryIsMulti() const
+{
+    switch(m_Program) {
+    case eBlastTypeBlastp:
+    case eBlastTypeTblastn:
+    case eBlastTypeRpsBlast:
+    case eBlastTypePsiBlast:
+        return false;
+        
+    case eBlastTypeBlastn:
+    case eBlastTypeBlastx:
+    case eBlastTypeTblastx:
+    case eBlastTypeRpsTblastn:
+        return true;
+        
+    default:
+        NCBI_THROW(CBlastException, eNotSupported, 
+                   "IsMulti: unsupported program");
+    }
+    
+    return false;
+}
+
+void CBlastQueryFilteredFrames::AddSeqLoc(const CSeq_interval & intv, int frame)
+{
+    if ((frame == 0) && (m_Program == eBlastTypeBlastn)) {
+        x_VerifyFrame(CSeqLocInfo::eFramePlus1);
+        x_VerifyFrame(CSeqLocInfo::eFrameMinus1);
+        
+        BlastSeqLocNew(& m_Seqlocs[CSeqLocInfo::eFramePlus1],
+                       intv.GetFrom(),
+                       intv.GetTo());
+        
+        BlastSeqLocNew(& m_Seqlocs[CSeqLocInfo::eFrameMinus1],
+                       intv.GetFrom(),
+                       intv.GetTo());
+    } else {
+        x_VerifyFrame(frame);
+        
+        BlastSeqLocNew(& m_Seqlocs[(ETranslationFrame) frame],
+                       intv.GetFrom(),
+                       intv.GetTo());
+    }
+}
+
+BlastSeqLoc ** CBlastQueryFilteredFrames::operator[](int frame)
+{
+    // Asking for a frame verifies that it is a valid vaue for the
+    // type of search you are running.
+    
+    x_VerifyFrame(frame);
+    return & m_Seqlocs[(ETranslationFrame) frame];
+}
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -1180,6 +1579,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.105  2006/02/22 18:34:17  bealer
+ * - Blastx filtering support, CBlastQueryVector class.
+ *
  * Revision 1.104  2006/01/24 15:25:40  camacho
  * Remove const type qualifier for IBlastQuerySoruce to SetupQueries_OMF and SetupSubjects_OMF
  *

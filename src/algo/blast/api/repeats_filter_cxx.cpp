@@ -51,9 +51,13 @@ static char const rcsid[] = "$Id$";
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_nucl_options.hpp>
 #include "repeats_filter.hpp"
+#include "blast_setup.hpp"
+
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/blast_filter.h>
+
+#include <algo/blast/api/blast_aux.hpp>
 
 #include <string.h>
 
@@ -72,7 +76,9 @@ BEGIN_SCOPE(blast)
  * @return List of mask locations in a CSeq_loc form.
  */
 static CSeq_loc* 
-s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
+s_BlastSeqLoc2CSeqloc(const CSeq_loc & query,
+                      CScope         * scope,
+                      BlastSeqLoc    * loc_list)
 {
    CSeq_loc* seqloc = new CSeq_loc();
    BlastSeqLoc* loc;
@@ -80,12 +86,86 @@ s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
    seqloc->SetNull();
    for (loc = loc_list; loc; loc = loc->next) {
       seqloc->SetPacked_int().AddInterval(
-          sequence::GetId(*query.seqloc, query.scope),
+          sequence::GetId(query, scope),
           loc->ssr->left, loc->ssr->right);
    }
    
    return seqloc;
 }
+
+/** Convert a list of mask locations to a CSeq_loc object.
+ * @param query Query sequence location [in]
+ * @param loc_list List of mask locations [in]
+ * @return List of mask locations in a CSeq_loc form.
+ */
+static CSeq_loc* 
+s_BlastSeqLoc2CSeqloc(SSeqLoc& query, BlastSeqLoc* loc_list)
+{
+    return s_BlastSeqLoc2CSeqloc(*query.seqloc, &*query.scope, loc_list);
+}
+
+/** Convert a list of mask locations to TMaskedQueryRegions.
+ * @param query Query sequence location [in]
+ * @param loc_list List of mask locations [in]
+ * @return List of mask locations in TMaskedQueryRegions form.
+ */
+TMaskedQueryRegions
+s_BlastSeqLoc2MaskedRegions(const CSeq_loc & query,
+                            CScope         * scope,
+                            BlastSeqLoc    * loc_list)
+{
+    CConstRef<CSeq_loc> sloc(s_BlastSeqLoc2CSeqloc(query, scope, loc_list));
+    
+    return PackedSeqLocToMaskedQueryRegions(sloc);
+}
+
+
+/// Build a list of BlastSeqLoc's from the elements of an HSP list.
+///
+/// This function reads an HSP list, and adds the range of each hit to
+/// a list of BlastSeqLoc structures.  Frame information is used to
+/// translate hit coordinates hits to the plus strand.  All of the
+/// HSPs should refer to the same query; both the query and subject in
+/// the HSP are ignored.  This is used to construct a set of filtered
+/// areas from hits against a repeats database.
+///
+/// @param hsp_list     List of HSPs containing ranges of hits. [in]
+/// @param query_length Length of the query mentioned in these hits. [in]
+/// @param query_start  Start offset of the used part of the query. [in]
+/// @param locs         Filtered areas for this query are added here. [out]
+
+static void
+s_HspListToBlastSeqLoc(BlastHSPList * hsp_list,
+                       int            query_length,
+                       int            query_start,
+                       BlastSeqLoc ** locs)
+{
+    ASSERT(hsp_list);
+    
+    for (Int4 hsp_index = 0; hsp_index < hsp_list->hspcnt; ++hsp_index) {
+        BlastHSP * hsp = hsp_list->hsp_array[hsp_index];
+        
+        ASSERT(hsp);
+        
+        int left(0), right(0);
+        
+        if (hsp->query.frame == hsp->subject.frame) {
+            left = hsp->query.offset;
+            right = hsp->query.end - 1;
+        } else {
+            left = query_length - hsp->query.end;
+            right = query_length - hsp->query.offset - 1;
+        }
+        
+        // Shift the coordinates so they correspond to the full 
+        // sequence.
+        left += query_start;
+        right += query_start;
+        
+        BlastSeqLocNew(locs, left, right);
+    }
+}
+
 
 /** Fills the mask locations in the query SSeqLoc structures, as if it was a 
  * lower case mask, given the results of a BLAST search against a database of 
@@ -100,8 +180,6 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
     ASSERT(results->num_queries == (Int4)query.size());
     
     for (Int4 query_index = 0; query_index < (Int4)query.size(); ++query_index) {
-        BlastSeqLoc* loc_list = NULL;
-        BlastSeqLoc* ordered_loc_list = NULL;
         BlastHitList* hit_list = results->hitlist_array[query_index];
        
         if (!hit_list) {
@@ -113,39 +191,22 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
                                               query[query_index].scope);
         
         // Get the previous mask locations
-        loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
+        BlastSeqLoc* loc_list = CSeqLoc2BlastSeqLoc(query[query_index].mask);
         
         /* Find all HSP intervals in query */
         for (Int4 hit_index = 0; hit_index < hit_list->hsplist_count; 
              ++hit_index) {
-            BlastHSPList* hsp_list = hit_list->hsplist_array[hit_index];
-            /* HSP lists cannot be NULL! */
-            ASSERT(hsp_list);
-            for (Int4 hsp_index = 0; hsp_index < hsp_list->hspcnt; ++hsp_index) {
-                BlastHSP* hsp = hsp_list->hsp_array[hsp_index];
-                /* HSP cannot be NULL! */
-                ASSERT(hsp);
-
-                Int4 left, right;
-                if (hsp->query.frame == hsp->subject.frame) {
-                    left = hsp->query.offset;
-                    right = hsp->query.end - 1;
-                } else {
-                    left = query_length - hsp->query.end;
-                    right = query_length - hsp->query.offset - 1;
-                }
-
-                // Shift the coordinates so they correspond to the full 
-                // sequence.
-                left += query_start;
-                right += query_start;
-
-                BlastSeqLocNew(&loc_list, left, right);
-            }
+            
+            s_HspListToBlastSeqLoc(hit_list->hsplist_array[hit_index],
+                                   query_length,
+                                   query_start,
+                                   & loc_list);
         }
+        
         // Make the intervals unique
-        ordered_loc_list = BlastSeqLocCombine(loc_list, REPEAT_MASK_LINK_VALUE);
-
+        BlastSeqLoc* ordered_loc_list =
+            BlastSeqLocCombine(loc_list, REPEAT_MASK_LINK_VALUE);
+        
         // Free the list of locations that's no longer needed.
         loc_list = BlastSeqLocFree(loc_list);
 
@@ -158,6 +219,77 @@ s_FillMaskLocFromBlastHSPResults(TSeqLocVector& query, BlastHSPResults* results)
         ordered_loc_list = BlastSeqLocFree(ordered_loc_list);
 
         query[query_index].mask.Reset(filter_seqloc);
+    }
+}
+
+
+/** Fills the mask locations in the BlastSearchQuery structures, as if it was a
+ * lower case mask, given the results of a BLAST search against a database of 
+ * repeats.
+ * @param query Vector of queries [in] [out]
+ * @param results Internal results structure, returned from a BLAST search
+ *                against a repeats database [in]
+ */
+static void
+s_FillMaskLocFromBlastHSPResults(CBlastQueryVector & query,
+                                 BlastHSPResults   * results,
+                                 EBlastProgramType   program)
+{
+    ASSERT(results->num_queries == (Int4)query.Size());
+    
+    for (Int4 query_index = 0; query_index < (Int4)query.Size(); ++query_index) {
+        BlastHitList* hit_list = results->hitlist_array[query_index];
+        
+        if (!hit_list) {
+            continue;
+        }
+        
+        Int4 query_length = sequence::GetLength(*query.GetQuerySeqLoc(query_index),
+                                                query.GetScope(query_index));
+        
+        Int4 query_start = sequence::GetStart(*query.GetQuerySeqLoc(query_index),
+                                              query.GetScope(query_index));
+        
+        // Get the previous mask locations
+        
+        TMaskedQueryRegions mqr = query.GetMaskedRegions(query_index);
+        
+        CRef<CBlastQueryFilteredFrames> frames
+            (new CBlastQueryFilteredFrames(program, mqr));
+        
+        _ASSERT(! frames->QueryIsMulti());
+        
+        BlastSeqLoc* loc_list = *(*frames)[0];
+        
+        /* Find all HSP intervals in query */
+        for (Int4 hit_index = 0; hit_index < hit_list->hsplist_count; 
+             ++hit_index) {
+            
+            s_HspListToBlastSeqLoc(hit_list->hsplist_array[hit_index],
+                                   query_length,
+                                   query_start,
+                                   & loc_list);
+        }
+        
+        // Make the intervals unique
+        BlastSeqLoc* ordered_loc_list =
+            BlastSeqLocCombine(loc_list, REPEAT_MASK_LINK_VALUE);
+        
+        // Free the list of locations that's no longer needed.
+        loc_list = BlastSeqLocFree(loc_list);
+        
+        /* Create a CSeq_loc with these locations and fill it for the 
+           respective query */
+        
+        TMaskedQueryRegions filter_seqloc =
+            s_BlastSeqLoc2MaskedRegions(*query.GetQuerySeqLoc(query_index),
+                                        query.GetScope(query_index),
+                                        ordered_loc_list);
+        
+        // Free the combined mask list in the BlastSeqLoc form.
+        ordered_loc_list = BlastSeqLocFree(ordered_loc_list);
+        
+        query.SetMaskedRegions(query_index, filter_seqloc);
     }
 }
 
@@ -232,6 +364,56 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db)
     s_FillMaskLocFromBlastHSPResults(query, blaster.GetResults());
 }
 
+void
+Blast_FindRepeatFilterLoc(CBlastQueryVector& queries, const char* filter_db)
+{
+    bool kIsProt = false;
+    BlastSeqSrc* seq_src = SeqDbBlastSeqSrcInit(filter_db, kIsProt);
+    char* error_str = BlastSeqSrcGetInitError(seq_src);
+    if (error_str) {
+        string msg(error_str);
+        sfree(error_str);
+        NCBI_THROW(CBlastException, eSeqSrcInit, msg);
+    }
+
+    // Options for repeat filtering search
+    CBlastNucleotideOptionsHandle repeat_opts;
+
+    s_SetRepeatsSearchDefaults(repeat_opts);
+    
+    // Construct new queries without the mask info for the repeat
+    // locations search.
+    
+    // CDbBlast does not yet use CBlastQueryVector, and since masking
+    // info is not required for this search, I use a TSeqLocVector here
+    // instead of the CBlastQueryVector.
+    
+    // This code can be considered as "partially converted" to
+    // CBlastQueryVector, until (and unless) the CDbBlast code is
+    // provided with CBlastQueryVector interfaces.  When that is done,
+    // the temporary object built here should be a CBlastQueryVector,
+    // instead of a TSeqLocVector.  (-kmb)
+    
+    TSeqLocVector temp_query;
+    
+    for(int i = 0; i < queries.Size(); i++) {
+        SSeqLoc ss(*queries.GetQuerySeqLoc(i), *queries.GetScope(i));
+        temp_query.push_back(ss);
+    }
+    
+    CDbBlast blaster(temp_query, seq_src, repeat_opts);
+    blaster.PartialRun();
+    
+    seq_src = BlastSeqSrcFree(seq_src);
+    
+    // Extract the repeat locations and combine them with the previously 
+    // existing mask in queries.
+    
+    s_FillMaskLocFromBlastHSPResults(queries,
+                                     blaster.GetResults(),
+                                     eBlastTypeBlastn);
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -241,6 +423,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.25  2006/02/22 18:34:17  bealer
+ *  - Blastx filtering support, CBlastQueryVector class.
+ *
  *  Revision 1.24  2006/01/24 15:35:08  camacho
  *  Overload Blast_FindRepeatFilterLoc with repeats database filtering arguments
  *

@@ -265,6 +265,12 @@ CBlastQuerySourceBioseqSet::GetMask(int /*index*/)
     return CConstRef<objects::CSeq_loc>(0);
 }
 
+TMaskedQueryRegions
+CBlastQuerySourceBioseqSet::GetMaskedRegions(int /*index*/) const 
+{
+    return TMaskedQueryRegions();
+}
+
 CConstRef<objects::CSeq_loc> 
 CBlastQuerySourceBioseqSet::GetSeqLoc(int index) const 
 { 

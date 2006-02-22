@@ -117,6 +117,10 @@ public:
     /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetMask(int index) = 0;
     
+    /// Return the filtered (masked) regions for a sequence
+    /// @param index index of the sequence in the sequence container [in]
+    virtual TMaskedQueryRegions GetMaskedRegions(int index) const = 0;
+    
     /// Return the CSeq_loc associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int index) const = 0;
@@ -363,6 +367,113 @@ BlastQueryInfo*
 SafeSetupQueryInfo(const IBlastQuerySource& queries, 
                    const CBlastOptions* options);
 
+
+/// Collection of BlastSeqLoc lists for filtering processing.
+///
+/// This class acts as a container for frame values and collections of
+/// BlastSeqLoc objects used by the blast filtering processing code.
+/// The support for filtering of blastx searches adds complexity and
+/// creates more opportunities for errors to occur.  This class was
+/// designed to handle some of that complexity, and guard against some
+/// of those possible errors.
+
+class CBlastQueryFilteredFrames : public CObject {
+public:
+    /// Data type for frame value, however inputs to methods use "int"
+    /// instead of this type for readability and brevity.
+    typedef CSeqLocInfo::ETranslationFrame ETranslationFrame;
+    
+    /// Construct container for frame values and BlastSeqLocs for the
+    /// specified search program.
+    /// @param program The type of search being done.
+    CBlastQueryFilteredFrames(EBlastProgramType program);
+    
+    /// Construct container for frame values and BlastSeqLocs from a
+    /// TMaskedQueryRegions vector.
+    /// @param program Search program value used [in]
+    /// @param mqr MaskedQueryRegions to convert [in]
+    CBlastQueryFilteredFrames(EBlastProgramType           program,
+                              const TMaskedQueryRegions & mqr);
+    
+    /// Destructor; frees any BlastSeqLoc lists not released by the
+    /// caller.
+    ~CBlastQueryFilteredFrames();
+    
+    /// Add a masked interval to the specified frame.
+    ///
+    /// The specified interval of the specified frame is masked.  This
+    /// creates a BlastSeqLoc object inside this container for that
+    /// frame, which will be freed at destruction time unless the
+    /// client code calls Release() for that frame.
+    ///
+    /// @param intv The interval to mask.
+    /// @param frame The specific frame, expressed as a value from ETranslationFrame, on which this interval falls.
+    void AddSeqLoc(const objects::CSeq_interval & intv, int frame);
+    
+    /// Access the BlastSeqLocs for a given frame.
+    ///
+    /// A pointer is returned to the list of BlastSeqLocs associated
+    /// with a given frame.
+    /// @param frame The specific frame, expressed as a value from ETranslationFrame, on which this interval falls.
+    BlastSeqLoc ** operator[](int frame);
+    
+    /// Release the BlastSeqLocs for a given frame.
+    ///
+    /// The given frame is cleared (the data removed) without freeing
+    /// the associated objects.  The calling code takes responsibility
+    /// for freeing the associated list of objects.
+    /// @param frame The specific frame, expressed as a value from ETranslationFrame, on which this interval falls.
+    void Release(int frame);
+    
+    /// Check whether the query is multiframe for this type of search.
+    bool QueryIsMulti() const;
+    
+    /// Returns the list of frame values for which this object
+    /// contains masking information.
+    vector<ETranslationFrame> ListFrames() const;
+    
+    /// Returns true if this object contains any masking information.
+    bool Empty() const;
+    
+    /// Adjusts all stored masks from nucleotide to protein offsets.
+    ///
+    /// Values stored here must be converted to protein offsets after
+    /// a certain stage of processing.  This method only has an effect
+    /// for types of searches that need this service (which are those
+    /// searches where the query sequence is translated.)  Additional
+    /// calls to this method will have no effect.
+    ///
+    /// @param dna_length The query length in nucleotide bases.
+    void UseProteinCoords(TSeqPos dna_length);
+    
+private:
+    /// Prevent copy construction.
+    CBlastQueryFilteredFrames(CBlastQueryFilteredFrames & f);
+
+    /// Prevent assignment.
+    CBlastQueryFilteredFrames & operator=(CBlastQueryFilteredFrames & f);
+    
+    /// Verify the specified frame value.
+    void x_VerifyFrame(int frame);
+    
+    /// Returns true if this program needs coordinate translation.
+    bool x_NeedsTrans();
+    
+    /// The type of search being done.
+    EBlastProgramType m_Program;
+    
+    /// Frame and BlastSeqLoc* info type.
+    typedef map<ETranslationFrame, BlastSeqLoc*> TFrameSet;
+    
+    /// Frame and BlastSeqLoc* data.
+    TFrameSet m_Seqlocs;
+    
+    /// True if this object's masked regions store DNA coordinates
+    /// that will later be translated into protein coordinates.
+    bool m_TranslateCoords;
+};
+
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -372,6 +483,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2006/02/22 18:34:17  bealer
+* - Blastx filtering support, CBlastQueryVector class.
+*
 * Revision 1.58  2006/01/24 15:24:30  camacho
 * 1. + IBlastQuerySource::GetSeqId
 * 2. IBlastQuerySource::GetMask is not a const method anymore

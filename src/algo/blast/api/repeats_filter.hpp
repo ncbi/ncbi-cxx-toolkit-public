@@ -62,7 +62,7 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc,
                           const CBlastOptionsHandle* opts_handle);
 
 /** Overloaded version of the function above which takes the name of the
- * repeats filtering database to use
+ * repeats filtering database to use, and a TSeqLocVector.
  * @param query Vector of sequence locations. [in] [out]
  * @param filter_db Name of the BLAST database with repeats to use for
  * filtering [in]
@@ -70,6 +70,18 @@ Blast_FindRepeatFilterLoc(TSeqLocVector& query_loc,
 NCBI_XBLAST_EXPORT
 void
 Blast_FindRepeatFilterLoc(TSeqLocVector& query, const char* filter_db);
+
+
+/** Overloaded version of the function above which takes the name of the
+ * repeats filtering database to use, and a CBlastQueryVector.
+ * @param query Vector of sequence locations. [in] [out]
+ * @param filter_db Name of the BLAST database with repeats to use for
+ * filtering [in]
+ */
+NCBI_XBLAST_EXPORT
+void
+Blast_FindRepeatFilterLoc(CBlastQueryVector& query, const char* filter_db);
+
 
 END_SCOPE(BLAST)
 END_NCBI_SCOPE
@@ -80,6 +92,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2006/02/22 18:34:17  bealer
+* - Blastx filtering support, CBlastQueryVector class.
+*
 * Revision 1.10  2006/01/26 14:18:04  camacho
 * Doxygen fix
 *

@@ -104,6 +104,31 @@ CBlastQuerySourceTSeqLocs::x_CreateTSeqLocVector
 /////////////////////////////////////////////////////////////////////////////
 
 static CRef<CBioseq_set>
+s_QueryVectorToBioseqSet(const CBlastQueryVector & queries)
+{
+    list< CRef<CSeq_entry> > se_list;
+    
+    for(int i = 0; i < queries.Size(); i++) {
+        CScope & scope = *queries.GetScope(i);
+        
+        const CBioseq * cbs = 
+            scope.GetBioseqHandle(*queries.GetQuerySeqLoc(i)).GetBioseqCore();
+        
+        CRef<CBioseq> bs(const_cast<CBioseq*>(cbs));
+        
+        CRef<CSeq_entry> se(new CSeq_entry);
+        se->SetSeq(*bs);
+        
+        se_list.push_back(se);
+    }
+    
+    CRef<CBioseq_set> rv(new CBioseq_set);
+    rv->SetSeq_set().swap(se_list);
+    
+    return rv;
+}
+
+static CRef<CBioseq_set>
 s_TSeqLocVectorToBioseqSet(const TSeqLocVector* queries)
 {
     list< CRef<CSeq_entry> > se_list;
@@ -132,6 +157,21 @@ s_TSeqLocVectorToTSeqLocs(const TSeqLocVector* queries)
     ITERATE(TSeqLocVector, query, *queries) {
         CRef<CSeq_loc> sl(const_cast<CSeq_loc *>(&* query->seqloc));
         retval.push_back(sl);
+    }
+    
+    return retval;
+}
+
+static CObjMgr_QueryFactory::TSeqLocs
+s_QueryVectorToTSeqLocs(const CBlastQueryVector & queries)
+{
+    CObjMgr_QueryFactory::TSeqLocs retval;
+    
+    for(int i = 0; i < queries.Size(); i++) {
+        CSeq_loc * slp =
+            const_cast<CSeq_loc *>(&* queries.GetQuerySeqLoc(i));
+        
+        retval.push_back(CRef<CSeq_loc>(slp));
     }
     
     return retval;
@@ -169,6 +209,8 @@ class CObjMgr_LocalQueryData : public ILocalQueryData
 public:
     CObjMgr_LocalQueryData(TSeqLocVector* queries,
                            const CBlastOptions* options);
+    CObjMgr_LocalQueryData(CBlastQueryVector & queries,
+                           const CBlastOptions* options);
     CObjMgr_LocalQueryData(const CObjMgr_QueryFactory::TSeqLocs* seqlocs,
                            const CBlastOptions* options);
     
@@ -187,6 +229,7 @@ public:
     
 private:
     const TSeqLocVector* m_Queries;     ///< Adaptee in adapter design pattern
+    CRef<CBlastQueryVector> m_QueryVector;
     const CObjMgr_QueryFactory::TSeqLocs* m_SeqLocs;
     const CBlastOptions* m_Options;
     AutoPtr<IBlastQuerySource> m_QuerySource;
@@ -197,6 +240,13 @@ CObjMgr_LocalQueryData::CObjMgr_LocalQueryData(TSeqLocVector * queries,
     : m_Queries(queries), m_SeqLocs(0), m_Options(opts)
 {
     m_QuerySource.reset(new CBlastQuerySourceOM(*queries, opts));
+}
+
+CObjMgr_LocalQueryData::CObjMgr_LocalQueryData(CBlastQueryVector   & qv,
+                                               const CBlastOptions * opts)
+    : m_QueryVector(& qv), m_SeqLocs(0), m_Options(opts)
+{
+    m_QuerySource.reset(new CBlastQuerySourceOM(qv));
 }
 
 CObjMgr_LocalQueryData::CObjMgr_LocalQueryData
@@ -210,7 +260,7 @@ BLAST_SequenceBlk*
 CObjMgr_LocalQueryData::GetSequenceBlk()
 {
     if (m_SeqBlk.Get() == NULL) {
-        if (m_Queries || m_SeqLocs) {
+        if (m_Queries || m_SeqLocs || m_QueryVector.NotEmpty()) {
             m_SeqBlk.Reset(SafeSetupQueries(*m_QuerySource, 
                                             m_Options, 
                                             GetQueryInfo(),
@@ -266,6 +316,7 @@ class CObjMgr_RemoteQueryData : public IRemoteQueryData
 {
 public:
     CObjMgr_RemoteQueryData(const TSeqLocVector* queries);
+    CObjMgr_RemoteQueryData(CBlastQueryVector & queries);
     CObjMgr_RemoteQueryData(const CObjMgr_QueryFactory::TSeqLocs* queries);
     
     CRef<objects::CBioseq_set> GetBioseqSet();
@@ -273,11 +324,16 @@ public:
 
 private:
     const TSeqLocVector* m_Queries;
+    const CRef<CBlastQueryVector> m_QueryVector;
     const CObjMgr_QueryFactory::TSeqLocs* m_ClientSeqLocs;
 };
 
 CObjMgr_RemoteQueryData::CObjMgr_RemoteQueryData(const TSeqLocVector* queries)
     : m_Queries(queries), m_ClientSeqLocs(0)
+{}
+
+CObjMgr_RemoteQueryData::CObjMgr_RemoteQueryData(CBlastQueryVector & qv)
+    : m_QueryVector(& qv), m_ClientSeqLocs(0)
 {}
 
 CObjMgr_RemoteQueryData::CObjMgr_RemoteQueryData
@@ -289,7 +345,9 @@ CRef<CBioseq_set>
 CObjMgr_RemoteQueryData::GetBioseqSet()
 {
     if (m_Bioseqs.Empty()) {
-        if (m_Queries) {
+        if (m_QueryVector.NotEmpty()) {
+            m_Bioseqs.Reset(s_QueryVectorToBioseqSet(*m_QueryVector));
+        } else if (m_Queries) {
             m_Bioseqs.Reset(s_TSeqLocVectorToBioseqSet(m_Queries));
         } else if (m_ClientSeqLocs) {
             m_Bioseqs.Reset(s_TSeqLocsToBioseqSet(m_ClientSeqLocs));
@@ -304,7 +362,9 @@ IRemoteQueryData::TSeqLocs
 CObjMgr_RemoteQueryData::GetSeqLocs()
 {
     if (m_SeqLocs.empty()) {
-        if (m_Queries) {
+        if (m_QueryVector.NotEmpty()) {
+            m_SeqLocs = s_QueryVectorToTSeqLocs(*m_QueryVector);
+        } else if (m_Queries) {
             m_SeqLocs = s_TSeqLocVectorToTSeqLocs(m_Queries);
         } else if (m_ClientSeqLocs) {
             m_SeqLocs = *m_ClientSeqLocs;
@@ -326,6 +386,14 @@ CObjMgr_QueryFactory::CObjMgr_QueryFactory(TSeqLocVector& queries)
 {
     if (queries.empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, "Empty SSeqLocVector");
+    }
+}
+
+CObjMgr_QueryFactory::CObjMgr_QueryFactory(CBlastQueryVector & queries)
+    : m_QueryVector(& queries), m_SeqLocs(0), m_OwnSeqLocs(false)
+{
+    if (queries.Empty()) {
+        NCBI_THROW(CBlastException, eInvalidArgument, "Empty CBlastQueryVector");
     }
 }
 
@@ -361,6 +429,8 @@ CObjMgr_QueryFactory::x_MakeLocalQueryData(const CBlastOptions* opts)
     
     if (m_SSeqLocVector) {
         retval.Reset(new CObjMgr_LocalQueryData(m_SSeqLocVector, opts));
+    } else if (m_QueryVector.NotEmpty()) {
+        retval.Reset(new CObjMgr_LocalQueryData(*m_QueryVector, opts));
     } else if (m_SeqLocs) {
         retval.Reset(new CObjMgr_LocalQueryData(m_SeqLocs, opts));
     } else {
@@ -377,6 +447,8 @@ CObjMgr_QueryFactory::x_MakeRemoteQueryData()
 
     if (m_SSeqLocVector) {
         retval.Reset(new CObjMgr_RemoteQueryData(m_SSeqLocVector));
+    } else if (m_QueryVector.NotEmpty()) {
+        retval.Reset(new CObjMgr_RemoteQueryData(*m_QueryVector));
     } else if (m_SeqLocs) {
         retval.Reset(new CObjMgr_RemoteQueryData(m_SeqLocs));
     } else {

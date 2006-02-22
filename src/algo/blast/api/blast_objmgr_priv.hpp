@@ -72,6 +72,10 @@ public:
     /// @note that the v argument might be changed with the filtering locations
     CBlastQuerySourceOM(TSeqLocVector & v, const CBlastOptions* opts);
 
+    /// Constructor which takes a CBlastQueryVector
+    /// @param v Object containing the queries, scopes and masking info [in]
+    CBlastQuerySourceOM(CBlastQueryVector & v);
+    
     /// dtor which determines if the internal pointer to its data should be
     /// deleted or not.
     virtual ~CBlastQuerySourceOM();
@@ -79,15 +83,23 @@ public:
     /// Return strand for a sequence
     /// @param i index of the sequence in the sequence container [in]
     virtual objects::ENa_strand GetStrand(int i) const;
+    
     /// Return the filtered (masked) regions for a sequence
     /// @param i index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetMask(int i);
+    
+    /// Return the filtered (masked) regions for a sequence
+    /// @param i index of the sequence in the sequence container [in]
+    virtual TMaskedQueryRegions GetMaskedRegions(int i) const;
+    
     /// Return the CSeq_loc associated with a sequence
     /// @param i index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int i) const;
+    
     /// Return the sequence identifier associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual const objects::CSeq_id* GetSeqId(int index) const;
+    
     /// Return the sequence data for a sequence
     /// @param i index of the sequence in the sequence container [in]
     /// @param encoding desired encoding [in]
@@ -110,32 +122,37 @@ public:
     virtual TSeqPos Size() const;
     
 protected:
-    /// Reference to input TSeqLocVector
+    /// Reference to input CBlastQueryVector (or empty if not used)
+    CRef<CBlastQueryVector> m_QueryVector;
+    
+    /// Reference to input TSeqLocVector (or NULL if not used)
     TSeqLocVector* m_TSeqLocVector;
+    
     /// flag to determine if the member above should or not be deleted in the
     /// destructor
     bool m_OwnTSeqLocVector;
+    
     /// BLAST algorithm options
     const CBlastOptions* m_Options;
-
+    
 private:
     /// this flag allows for lazy initialization of the masking locations
     bool m_CalculatedMasks;
 
     /// Performs filtering on the query sequences to calculate the masked
     /// locations
-    void x_CalculateMasks(void);
+    void x_CalculateMasks();
 };
 
 /** Allocates the query information structure and fills the context 
  * offsets, in case of multiple queries, frames or strands. If query seqids
  * cannot be resolved, they will be ignored as warnings will be issued in
- * blast::SetupQueries.
+ * blast::SetupQueries.  This version takes a TSeqLocVector.
  * NB: effective length will be assigned inside the engine.
  * @param queries Vector of query locations [in]
  * @param prog program type from the CORE's point of view [in]
  * @param strand_opt Unless the strand option is set to single strand, the 
- * actual CSeq_locs in the TSeqLocVector dictacte which strand to use
+ * actual CSeq_locs in the TSeqLocVector dictate which strand to use
  * during the search [in]
  * @param qinfo Allocated query info structure [out]
  */
@@ -145,7 +162,26 @@ SetupQueryInfo(const TSeqLocVector& queries,
                objects::ENa_strand strand_opt,
                BlastQueryInfo** qinfo);
 
+/** Allocates the query information structure and fills the context 
+ * offsets, in case of multiple queries, frames or strands. If query seqids
+ * cannot be resolved, they will be ignored as warnings will be issued in
+ * blast::SetupQueries.  This version takes a CBlastQueryVector.
+ * NB: effective length will be assigned inside the engine.
+ * @param queries Vector of query locations [in]
+ * @param prog program type from the CORE's point of view [in]
+ * @param strand_opt Unless the strand option is set to single strand, the 
+ * actual CSeq_locs in the CBlastQueryVector dictate which strand to use
+ * during the search [in]
+ * @param qinfo Allocated query info structure [out]
+ */
+void
+SetupQueryInfo(const CBlastQueryVector & queries, 
+               EBlastProgramType prog,
+               objects::ENa_strand strand_opt,
+               BlastQueryInfo** qinfo);
+
 /// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST
+///
 /// @param queries vector of blast::SSeqLoc structures [in]
 /// @param qinfo BlastQueryInfo structure to obtain context information [in]
 /// @param seqblk Structure to save sequence data, allocated in this 
@@ -153,7 +189,7 @@ SetupQueryInfo(const TSeqLocVector& queries,
 /// @param messages object to save warnings/errors for all queries [out]
 /// @param prog program type from the CORE's point of view [in]
 /// @param strand_opt Unless the strand option is set to single strand, the 
-/// actual CSeq_locs in the TSeqLocVector dictacte which strand to use
+/// actual CSeq_locs in the TSeqLocVector dictate which strand to use
 /// during the search [in]
 /// @param genetic_code genetic code string as returned by
 /// blast::FindGeneticCode()
@@ -167,7 +203,35 @@ SetupQueries(const TSeqLocVector& queries,
              const Uint1* genetic_code,
              TSearchMessages& messages);
 
+/// Populates BLAST_SequenceBlk with sequence data for use in CORE BLAST
+///
+/// @param queries CBlastQueryVector set of queries [in]
+/// @param qinfo BlastQueryInfo structure to obtain context information [in]
+/// @param seqblk Structure to save sequence data, allocated in this 
+/// function [out]
+/// @param messages object to save warnings/errors for all queries [out]
+/// @param prog program type from the CORE's point of view [in]
+/// @param strand_opt Unless the strand option is set to single strand, the 
+/// actual CSeq_locs in the CBlastQueryVector dictate which strand to use
+/// during the search [in]
+/// @param genetic_code genetic code string as returned by
+/// blast::FindGeneticCode()
+
+void
+SetupQueries(const CBlastQueryVector& queries,
+             const BlastQueryInfo* qinfo, BLAST_SequenceBlk** seqblk,
+             EBlastProgramType prog, 
+             objects::ENa_strand strand_opt,
+             const Uint1* genetic_code,
+             TSearchMessages& messages);
+
 /** Sets up internal subject data structure for the BLAST search.
+ *
+ * This uses the TSeqLocVector to create subject data structures.
+ * Note that the TSeqLocVector may contain masking information, but the
+ * current versions of the blast code do not use this information for
+ * subject sequences.
+ *
  * @param subjects Vector of subject locations [in]
  * @param program BLAST program [in]
  * @param seqblk_vec Vector of subject sequence data structures [out]
@@ -175,6 +239,24 @@ SetupQueries(const TSeqLocVector& queries,
  */
 void
 SetupSubjects(const TSeqLocVector& subjects, 
+              EBlastProgramType program,
+              vector<BLAST_SequenceBlk*>* seqblk_vec, 
+              unsigned int* max_subjlen);
+
+/** Sets up internal subject data structure for the BLAST search.
+ *
+ * This uses the CBlastQueryVector to create subject data structures.
+ * Note that the query vector may contain masking information, but the
+ * current versions of the blast code do not use this information for
+ * subject sequences.
+ *
+ * @param subjects CBlastQueryVector of subject locations [in]
+ * @param program BLAST program [in]
+ * @param seqblk_vec Vector of subject sequence data structures [out]
+ * @param max_subjlen Maximal length of the subject sequences [out]
+ */
+void
+SetupSubjects(const CBlastQueryVector & subjects, 
               EBlastProgramType program,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen);
@@ -224,7 +306,7 @@ TSeqLocVector2Packed_seqint(const TSeqLocVector& sequences);
 
 /** Converts BlastHSPResults structure into a vector of CSeq_align_set classes
  * Returns one vector element per query sequence; all subject matches form a 
- * list of discontinuous CSeq_align's. 
+ * list of discontinuous CSeq_align's.  This version takes a TSeqLocVector. 
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
  * @param query All query sequences [in]
@@ -237,6 +319,25 @@ TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
                         EBlastProgramType prog,
                         TSeqLocVector &query, 
+                        const IBlastSeqInfoSrc* seqinfo_src, 
+                        bool is_gapped=true, 
+                        bool is_ooframe=false);
+
+/** Converts BlastHSPResults structure into a vector of CSeq_align_set classes
+ * Returns one vector element per query sequence; all subject matches form a 
+ * list of discontinuous CSeq_align's.  This version takes a CBlastQueryVector.
+ * @param results results from running the BLAST algorithm [in]
+ * @param prog type of BLAST program [in]
+ * @param query All query sequences [in]
+ * @param seqinfo_src Source of subject sequences information [in]
+ * @param is_gapped Is this a gapped search? [in]
+ * @param is_ooframe Is it a search with out-of-frame gapping? [in]
+ * @return Vector of seqalign sets (one set per query sequence).
+ */
+TSeqAlignVector
+BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
+                        EBlastProgramType prog,
+                        const CBlastQueryVector & query,
                         const IBlastSeqInfoSrc* seqinfo_src, 
                         bool is_gapped=true, 
                         bool is_ooframe=false);
@@ -257,6 +358,23 @@ PHIBlast_Results2CSeqAlign(const BlastHSPResults  * results,
                            const TSeqLocVector    & query,
                            const IBlastSeqInfoSrc * seqinfo_src,
                            const SPHIQueryInfo    * pattern_info);
+
+/// Converts PHI BLAST results into a Seq-align form. Results are 
+/// split into separate Seq-align-sets corresponding to different
+/// pattern occurrences in query, which are then wrapped into 
+/// discontinuous Seq-aligns and then put into a top level Seq-align-set.
+/// @param results All PHI BLAST results, with different query pattern
+///                occurrences mixed together. [in]
+/// @param prog Type of BLAST program (phiblastp or phiblastn) [in]
+/// @param query Query Seq-loc, wrapped in a CBlastQueryVector [in]
+/// @param seqinfo_src Source of subject sequence information [in]
+/// @param pattern_info Information about query pattern occurrences [in]
+TSeqAlignVector 
+PHIBlast_Results2CSeqAlign(const BlastHSPResults   * results,
+                           EBlastProgramType         prog,
+                           const CBlastQueryVector & query,
+                           const IBlastSeqInfoSrc  * seqinfo_src,
+                           const SPHIQueryInfo     * pattern_info);
 
 /////////////////////////////////////////////////////////////////////////////
 // Functions to help in PSSM generation

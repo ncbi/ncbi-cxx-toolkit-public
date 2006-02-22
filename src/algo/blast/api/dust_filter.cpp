@@ -134,6 +134,57 @@ Blast_FindDustFilterLoc(TSeqLocVector& queries,
 
 }
 
+void
+Blast_FindDustFilterLoc(CBlastQueryVector& queries, 
+                        Uint4 level, Uint4 window, Uint4 linker)
+{
+
+    for(int i = 0; i < queries.Size(); i++) {
+        CSeqVector data(*queries.GetQuerySeqLoc(i), *queries.GetScope(i),
+                        CBioseq_Handle::eCoding_Iupac);
+
+        CSymDustMasker duster(level, window, linker);
+        CSeq_id& query_id = const_cast<CSeq_id&>(*queries.GetQuerySeqLoc(i)->GetId());
+
+        CRef<CPacked_seqint> masked_locations =
+            duster.GetMaskedInts(query_id, data);
+        CPacked_seqint::Tdata locs = masked_locations->Get();
+
+        if (locs.size() > 0)
+        {
+           CRef<CSeq_loc> entire_slp(new CSeq_loc);
+           entire_slp->SetWhole().Assign(query_id);
+           
+           CSeq_loc_Mapper mapper(*entire_slp, *queries.GetQuerySeqLoc(i), &*queries.GetScope(i));
+           CRef<CSeq_loc> tmp;
+           tmp = NULL;
+           
+           // I think the TSeqLocVector version of this code merges
+           // overlapping regions.  This version does not - it does
+           // not seem to be necessary for our case, since the regions
+           // are only being memset() with the masking character, so I
+           // have not taken the time to implement overlap removal.
+           
+           ITERATE(CPacked_seqint::Tdata, masked_loc, locs)
+           {
+               CRef<CSeq_loc> seq_interval
+                   (new CSeq_loc(query_id,
+                                 (*masked_loc)->GetFrom(), 
+                                 (*masked_loc)->GetTo()));
+               
+               CRef<CSeq_loc> tmp1 = mapper.Map(*seq_interval);
+               
+               int frame = CSeqLocInfo::eFrameNotSet;
+               
+               CRef<CSeqLocInfo> sli(new CSeqLocInfo(& tmp1->SetInt(), frame));
+               
+               queries.AddMask(i, sli);
+           }
+        }
+    }
+
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -143,6 +194,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
  *  $Log$
+ *  Revision 1.6  2006/02/22 18:34:17  bealer
+ *  - Blastx filtering support, CBlastQueryVector class.
+ *
  *  Revision 1.5  2006/01/24 15:34:14  camacho
  *  Overload Blast_FindDustFilterLoc with dust filtering arguments
  *

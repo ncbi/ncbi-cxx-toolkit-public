@@ -115,25 +115,36 @@ public:
     /// @param is_prot whether the bss argument contains protein or nucleotide
     /// sequences [in]
     CBlastQuerySourceBioseqSet(const objects::CBioseq_set& bss, bool is_prot);
+
     /// Parametrized constructor for a Bioseq
     /// @param bioseq bioseq from which to extract the data [in]
     /// @param is_prot whether the bioseq argument contains a protein or 
     /// nucleotide sequence [in]
     CBlastQuerySourceBioseqSet(const objects::CBioseq& bioseq, bool is_prot);
+
     /// Return strand for a sequence
     /// @param index of the sequence in the sequence container [in]
     virtual objects::ENa_strand GetStrand(int index) const;
+
     /// Return the number of elements in the sequence container
     virtual TSeqPos Size() const;
+
     /// Return the filtered (masked) regions for a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetMask(int index);
+    
+    /// Return the filtered (masked) regions for a sequence
+    /// @param i index of the sequence in the sequence container [in]
+    virtual TMaskedQueryRegions GetMaskedRegions(int index) const;
+    
     /// Return the CSeq_loc associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual CConstRef<objects::CSeq_loc> GetSeqLoc(int index) const;
+    
     /// Return the sequence identifier associated with a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual const objects::CSeq_id* GetSeqId(int index) const;
+    
     /// Return the sequence data for a sequence
     /// @param index index of the sequence in the sequence container [in]
     /// @param encoding desired encoding [in]
@@ -149,6 +160,7 @@ public:
                      objects::ENa_strand strand,
                      ESentinelType sentinel, 
                      string* warnings = 0) const;
+
     /// Return the length of a sequence
     /// @param index index of the sequence in the sequence container [in]
     virtual TSeqPos GetLength(int index) const;
