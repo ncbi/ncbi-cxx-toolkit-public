@@ -174,9 +174,21 @@ void CLDS_Database::Sync()
 }
 
 
-void CLDS_Database::Open()
+void CLDS_Database::Open(EOpenMode omode)
 {
     string fname;
+
+    CBDB_RawFile::EOpenMode om; 
+    switch (omode) {
+    case eReadWrite:
+        om = CBDB_RawFile::eReadWrite;
+        break;
+    case eReadOnly:
+        om = CBDB_RawFile::eReadOnly;
+        break;
+    default:
+        _ASSERT(0);
+    } // switch
 
     m_LDS_DirName = CDirEntry::AddTrailingPathSeparator(m_LDS_DirName);
 
@@ -188,47 +200,47 @@ void CLDS_Database::Open()
     fname = m_LDS_DirName + "lds_file.db"; 
     m_db.file_db.Open(fname.c_str(),
                       "file",
-                      CBDB_RawFile::eReadWrite);
+                      om);
 
     fname = m_LDS_DirName + "lds_objecttype.db"; 
     m_db.object_type_db.Open(fname.c_str(),
                              "objecttype",
-                             CBDB_RawFile::eReadWrite);
+                             om);
     LoadTypeMap();
 
     fname = m_LDS_DirName + "lds_object.db"; 
     m_db.object_db.SetCacheSize(3 * (1024 * 1024));
     m_db.object_db.Open(fname.c_str(),
                         "object",
-                        CBDB_RawFile::eReadWrite);
+                        om);
 /*
     fname = m_LDS_DirName + "lds_objectattr.db"; 
     m_db.object_attr_db.Open(fname.c_str(),
                             "objectattr",
-                            CBDB_RawFile::eReadWrite);
+                            om);
 */
     fname = m_LDS_DirName + "lds_annotation.db"; 
     m_db.annot_db.Open(fname.c_str(),
                        "annotation",
-                       CBDB_RawFile::eReadWrite);
+                       om);
 
     fname = m_LDS_DirName + "lds_annot2obj.db"; 
     m_db.annot2obj_db.Open(fname.c_str(),
                            "annot2obj",
-                           CBDB_RawFile::eReadWrite);
+                           om);
 
     fname = m_LDS_DirName + "lds_seq_id_list.db"; 
     m_db.seq_id_list.Open(fname.c_str(),
                           "seq_id_list",
-                           CBDB_RawFile::eReadWrite);
+                           om);
 
     fname = m_LDS_DirName + "obj_seqid_txt.idx"; 
     m_db.obj_seqid_txt_idx.Open(fname.c_str(),
-                                CBDB_RawFile::eReadWrite);
+                                om);
 
     fname = m_LDS_DirName + "obj_seqid_int.idx"; 
     m_db.obj_seqid_int_idx.Open(fname.c_str(),
-                                CBDB_RawFile::eReadWrite);
+                                om);
 }
 
 void CLDS_Database::LoadTypeMap()
@@ -292,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2006/02/22 14:32:06  kuznets
+ * Added read-only open mode
+ *
  * Revision 1.21  2005/10/20 15:34:08  kuznets
  * Implemented duplicate id check
  *

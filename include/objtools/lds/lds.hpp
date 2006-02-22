@@ -49,7 +49,7 @@ BEGIN_SCOPE(objects)
 class NCBI_LDS_EXPORT CLDS_Database
 {
 public:
-    // Object type string to database id map
+    /// Object type string to database id map
     typedef map<string, int> TObjTypeMap;
 
 public:
@@ -63,17 +63,24 @@ public:
 
     ~CLDS_Database();
 
-    // Create the database. If the LDS database already exists all data will
-    // be cleaned up.
+    /// Create the database. If the LDS database already exists all data will
+    /// be cleaned up.
     void Create();
 
-    // Open LDS database (Read/Write mode)
-    void Open();
 
-    // Flush all cache buffers to disk
+    /// database open mode
+    enum EOpenMode {
+        eReadWrite,
+        eReadOnly
+    };
+
+    /// Open LDS database (Read/Write mode by default)
+    void Open(EOpenMode omode = eReadWrite);
+
+    /// Flush all cache buffers to disk
     void Sync();
 
-    // Return reference on database tables
+    /// Return reference on database tables
     SLDS_TablesCollection& GetTables() { return m_db; }
 
     const TObjTypeMap& GetObjTypeMap() const { return m_ObjTypeMap; }
@@ -82,7 +89,7 @@ public:
 
     void SetAlias(const string& alias) { m_Alias = alias; }
 
-    // Loads types map from m_ObjectTypeDB to memory.
+    /// Loads types map from m_ObjectTypeDB to memory.
     void LoadTypeMap();
 
     const string& GetDirName(void) const { return m_LDS_DirName; }
@@ -157,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2006/02/22 14:31:43  kuznets
+ * Added read-only open mode
+ *
  * Revision 1.23  2005/10/20 15:33:46  kuznets
  * Implemented duplicate id check
  *
